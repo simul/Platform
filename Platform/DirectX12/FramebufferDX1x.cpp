@@ -22,8 +22,6 @@
 #include <string>
 #include <assert.h>
 
-#pragma optimize("",off)
-
 using namespace simul;
 using namespace dx12;
 
@@ -85,6 +83,7 @@ void Framebuffer::MoveDepthToSlowRAM()
 void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	// This is a bit usless, Activate does the same?
+	SIMUL_BREAK("");
 }
 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
@@ -158,7 +157,7 @@ void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float 
 	mViewport.MinDepth		= Z;
 	mViewport.MaxDepth		= D;
 
-	CD3DX12_RECT scissor(0, 0, (LONG)mViewport.Width, (LONG)mViewport.Height);
+	CD3DX12_RECT scissor(0, 0, mViewport.Width, mViewport.Height);
 
 	deviceContext.asD3D12Context()->RSSetScissorRects(1, &scissor);
 	deviceContext.asD3D12Context()->RSSetViewports(1, &mViewport);

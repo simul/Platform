@@ -38,7 +38,7 @@ namespace simul
 			ID3D12DescriptorHeap* GetHeap();
 			//! Returns a CPU handle from the start of the heap at the provided offset
 			D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandleFromStartAfOffset(UINT off);
-			UINT GetHandleIncrement() { return mHandleIncrement; }
+			UINT							GetHandleIncrement()const { return mHandleIncrement; }
 			//! This method won't release or destroy anything, it will reset the internal count of handles
 			//!	and make the held handles point at the start of the heap
 			void Reset()

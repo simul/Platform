@@ -20,6 +20,36 @@
 
 namespace simul
 {
+	//! Used to hold information about the resource binding limits and
+	//! the current hardware binding tier
+	struct ResourceBindingLimits
+	{
+		ResourceBindingLimits():
+			MaxShaderVisibleDescriptors(0),
+			MaxCBVPerStage(0),
+			MaxSRVPerStage(0),
+			MaxUAVPerStage(0),
+			MaxSaplerPerStage(0),
+			BindingTier(D3D12_RESOURCE_BINDING_TIER_1)
+		{
+		}
+		D3D12_RESOURCE_BINDING_TIER BindingTier;
+
+		//! Maximum possible number of descriptors (defined by the 
+		//! hardware we are runing on)
+		int							MaxShaderVisibleDescriptors;
+		int							MaxCBVPerStage;
+		int							MaxSRVPerStage;
+		int							MaxUAVPerStage;
+		int							MaxSaplerPerStage;
+
+		//! We define here how many slots our shaders expect
+		static const int NumCBV = 14;
+		static const int NumSRV = 16;
+		static const int NumUAV = 16;
+		static const int NumSamplers = 16;
+	};
+
 	namespace crossplatform
 	{
 		class Material;
@@ -29,7 +59,6 @@ namespace simul
 	{
 		class Heap;
 		class Fence;
-		class ConstantBufferCache;
 		class Material;
 		//! A class to implement common rendering functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT RenderPlatform: public crossplatform::RenderPlatform
@@ -79,9 +108,9 @@ namespace simul
 			dx12::Heap*					DepthStencilHeap()	{ return mDepthStencilHeap; }
 
 			//! Returns the 2D dummy texture
-			crossplatform::Texture*		GetDummy2D()		{ return mDummy2D;}
+			crossplatform::Texture*		GetDummy2D()const		{ return mDummy2D;}
 			//! Returns the 3D dummy texture
-			crossplatform::Texture*		GetDummy3D()		{ return mDummy3D; }
+			crossplatform::Texture*		GetDummy3D()const		{ return mDummy3D; }
 
 			//! Returns the currently applied input layout
 			D3D12_INPUT_LAYOUT_DESC*	GetCurrentInputLayout() { return mCurInputLayout; }
@@ -97,12 +126,6 @@ namespace simul
 			void						RestoreDeviceObjects(void* device);
 			void						InvalidateDeviceObjects();
 			void						RecompileShaders();
-
-			// D3D11_MAP_FLAG				GetMapFlags() { return 0; }
-			bool						UsesFastSemantics() const
-			{
-				return !can_save_and_restore;
-			}
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
@@ -176,6 +199,12 @@ namespace simul
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
 
+			ResourceBindingLimits					GetResourceBindingLimits()const;
+			ID3D12RootSignature*					GetGraphicsRootSignature()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullUAV()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
 		protected:
 
 			//! The GPU timestamp counter frequency (in ticks/second)
@@ -207,6 +236,12 @@ namespace simul
 			dx12::Heap*					mSamplerHeap;
 			dx12::Heap*					mRenderTargetHeap;
 			dx12::Heap*					mDepthStencilHeap;
+			dx12::Heap*					mNullHeap;
+					  
+			//! Shared root signature for graphics
+			ID3D12RootSignature*		mGRootSignature;
+			//! Shared root signature for compute
+			ID3D12RootSignature*		mCRootSignature;
 					  
 			//! Dummy 2D texture
 			crossplatform::Texture*		mDummy2D;
@@ -230,6 +265,13 @@ namespace simul
 			bool isInitialized = false;
 
 			std::vector<struct RTState*>	storedRTStates;
+			
+			ResourceBindingLimits mResourceBindingLimits;
+
+			D3D12_CPU_DESCRIPTOR_HANDLE mNullCBV;
+			D3D12_CPU_DESCRIPTOR_HANDLE mNullSRV;
+			D3D12_CPU_DESCRIPTOR_HANDLE mNullUAV;
+			D3D12_CPU_DESCRIPTOR_HANDLE mNullSampler;
 		};
 	}
 }

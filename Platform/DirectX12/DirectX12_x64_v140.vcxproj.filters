@@ -326,6 +326,8 @@
       <Filter>SL</Filter>
     </None>
     <None Include="HLSL\HLSL12.json" />
+    <None Include="..\CrossPlatform\SL\brdf.sl" />
+    <None Include="..\CrossPlatform\SL\cubemap_matrices.sl" />
   </ItemGroup>
   <ItemGroup>
     <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
@@ -388,5 +390,8 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSL\GFX.hlsl" />
   </ItemGroup>
 </Project>

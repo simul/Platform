@@ -40,6 +40,7 @@ uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<uint> packedOutputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
 
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
@@ -140,16 +141,39 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
+vec4 UnpackUintToVec4(uint i)
+{
+	vec4 o;
+	o.r=((i&0x000000FFu)		)/255.0;
+	o.g=((i&0x0000FF00u)>>8u	)/255.0;
+	o.b=((i&0x00FF0000u)>>16u	)/255.0;
+	o.a=((i&0xFF000000u)>>24u	)/255.0;
+	return o;
+}
+
+uint PackVec4ToUint(vec4 i)
+{
+	uint o=0u;
+	i=saturate(i);
+	o|=(uint(i.x*255.0));
+	o|=(uint(i.y*255.0)<<8u);
+	o|=(uint(i.z*255.0)<<16u);
+	o|=(uint(i.w*255.0)<<24u);
+	//uint(i.w*255.0)|(uint(i.z*255.0)<<16u)|(uint(i.y*255.0)<<32u)|;
+	return o;
+}
+
+
 // idx is the position relative to the grid centre texel.
 // we add gridCentreTexel and mod to get the true position in the texture.
-void MixInLayer( uint3 g, uint3 t,bool clears)
+void MixInLayer( int3 p,bool clears)
 {
-	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
-	//	return;
+	int3 idx	=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	vec3 texc	=vec3(idx)*scale+offset;
 	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	vec4 res = 0.0;
@@ -169,31 +193,35 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 
 	res.z*= max_density_gm3/0.5*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
 
+	// x= edge noise, y= worley edge noise, z=density, w=sharpness.
 	res.w=1.0;
 	//res.z=saturate(texc.y>-0.5);
-	if (res.z > 0.05)
+	vec4 current=vec4(0,0,0,1.0);
+	if(!clears)
 	{
-		// stronger noise at the top:
-		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
-		// variation:
-		noise_factor *= (0.05 + rand3(idx).x);
-		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
-		res.y		=localCellNoiseStrength*noise_factor;
-		IMAGE_STORE_3D(outputTexture3d,idx,res);
+		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	}
-	else if(clears)
-	{
-		res.xy=0;
-		IMAGE_STORE_3D(outputTexture3d,idx,res);
-	}
+	
+	// stronger noise at the top:
+	float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+	// variation:
+	noise_factor *= (0.05 + rand3(idx).x);
+	res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+	res.y		=localCellNoiseStrength*noise_factor;
+
+	res.xyw		=lerp(current.xyw,res.xyw,res.z);
+	res.z		=max(res.z,current.z);
+	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
+	
 }
 
 void MixInCirrus(uint3 ii,bool clears)
 {
 	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-
-	vec3 texc	=vec3(idx)*scale+offset;
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
 	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
@@ -219,33 +247,30 @@ void MixInCirrus(uint3 ii,bool clears)
 	res.z		=saturate((res.z-0.5)/diffusivity);
 	//res.z=frac(float(idx.x)/float(windowGrid.x));
 	res.z*=saturate(1.0-fall_amount)* max_density_gm3*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
-	if (res.z > 0)
+	vec4 current=vec4(0,0,0,0.0);
+	if(!clears)
+		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	{
 		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
 		noise_factor *= (0.05 + rand3(idx).x);
 		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
 		res.y		=localCellNoiseStrength*noise_factor;
-		res.w=0.0;
-		IMAGE_STORE_3D(outputTexture3d,idx,res);
-	}
-	else if(clears)
-	{
-		res.xy=0;
-		res.w=1.0;
-		IMAGE_STORE_3D(outputTexture3d,idx,res);
+		res.xyw		=lerp(current.xyw,res.xyw,res.z);
+		res.z		=max(res.z,current.z);
+		IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 	}
 }
 
 CS_LAYOUT(4,4,4)
-shader void CS_MixInit( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+shader void CS_MixInit( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer(g,t,true);
+	MixInLayer(idx,true);
 }
 
 CS_LAYOUT(4,4,4)
-shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+shader void CS_Mix( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer(g,t,false);
+	MixInLayer(idx,false);
 }
 
 CS_LAYOUT(4,4,4)
@@ -312,7 +337,7 @@ void MapToWindow( uint3 g , uint3 t ,bool clears)
 	res.y				=localCellNoiseStrength;
 	if (clears||res.z > 0.50)
 	{
-		IMAGE_STORE_3D(outputTexture3d, idx, res);
+		IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 	}
 }
 CS_LAYOUT(4,4,4)
@@ -349,8 +374,8 @@ CS_LAYOUT(4,4,4)
 shader void CS_WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
-	//	return;
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	vec3 texc	=vec3(idx)*scale+offset;
 	idx.xy		+=gridCentreTexel;

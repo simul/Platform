@@ -236,11 +236,11 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 		SAFE_RELEASE(pUserDefinedAnnotation);
 		IUnknown *unknown=(IUnknown *)pImmediateContext;
 #ifdef _XBOX_ONE
-		V_CHECK(unknown->QueryInterface( __uuidof(pUserDefinedAnnotation), reinterpret_cast<void**>(&pUserDefinedAnnotation) ));
+		V_CHECK(unknown->QueryInterface(__uuidof(pUserDefinedAnnotation), reinterpret_cast<void**>(&pUserDefinedAnnotation)));
 #else
 		V_CHECK(unknown->QueryInterface(IID_PPV_ARGS(&pUserDefinedAnnotation)));
 #endif
-}
+	}
 #endif
 }
 
@@ -429,144 +429,19 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 
 void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
 {
- /*   glColor3f(0.0, 1.0, 1.0);
-    glLineWidth(1.0);
-	
-	
-    
-    glMultMatrixd((const double*) matrix);
-
-    glBegin(GL_LINE_LOOP);
-        glVertex3f(+1.0f, -1.0f, +1.0f);
-        glVertex3f(+1.0f, -1.0f, -1.0f);
-        glVertex3f(+1.0f, +1.0f, -1.0f);
-        glVertex3f(+1.0f, +1.0f, +1.0f);
-
-        glVertex3f(+1.0f, +1.0f, +1.0f);
-        glVertex3f(+1.0f, +1.0f, -1.0f);
-        glVertex3f(-1.0f, +1.0f, -1.0f);
-        glVertex3f(-1.0f, +1.0f, +1.0f);
-
-        glVertex3f(+1.0f, +1.0f, +1.0f);
-        glVertex3f(-1.0f, +1.0f, +1.0f);
-        glVertex3f(-1.0f, -1.0f, +1.0f);
-        glVertex3f(+1.0f, -1.0f, +1.0f);
-
-        glVertex3f(-1.0f, -1.0f, +1.0f);
-        glVertex3f(-1.0f, +1.0f, +1.0f);
-        glVertex3f(-1.0f, +1.0f, -1.0f);
-        glVertex3f(-1.0f, -1.0f, -1.0f);
-
-        glVertex3f(-1.0f, -1.0f, +1.0f);
-        glVertex3f(-1.0f, -1.0f, -1.0f);
-        glVertex3f(+1.0f, -1.0f, -1.0f);
-        glVertex3f(+1.0f, -1.0f, +1.0f);
-
-        glVertex3f(-1.0f, -1.0f, -1.0f);
-        glVertex3f(-1.0f, +1.0f, -1.0f);
-        glVertex3f(+1.0f, +1.0f, -1.0f);
-        glVertex3f(+1.0f, -1.0f, -1.0f);
-    glEnd();
-    */
 }
 
 
 void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
 {
-/*    glColor3f(1.0, 1.0, 1.0);
-    glLineWidth(1.0);
-	
-	
-    
-    glMultMatrixd((double*) pGlobalPosition);
-
-    double lCrossHair[6][3] = { { -3, 0, 0 }, { 3, 0, 0 },
-    { 0, -3, 0 }, { 0, 3, 0 },
-    { 0, 0, -3 }, { 0, 0, 3 } };
-
-    glBegin(GL_LINES);
-
-    glVertex3dv(lCrossHair[0]);
-    glVertex3dv(lCrossHair[1]);
-
-    glEnd();
-
-    glBegin(GL_LINES);
-
-    glVertex3dv(lCrossHair[2]);
-    glVertex3dv(lCrossHair[3]);
-
-    glEnd();
-
-    glBegin(GL_LINES);
-
-    glVertex3dv(lCrossHair[4]);
-    glVertex3dv(lCrossHair[5]);
-
-    glEnd();
-	
-	
-    */
 }
 
 void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
 {
- /*   glColor3d(1.0, 1.0, 1.0);
-    glLineWidth(1.0);
-	
-	
-    
-    glMultMatrixd((const double*) pGlobalPosition);
-    glRotated(pRoll, 1.0, 0.0, 0.0);
-
-    int i;
-    float lCamera[10][2] = {{ 0, 5.5 }, { -3, 4.5 },
-    { -3, 7.5 }, { -6, 10.5 }, { -23, 10.5 },
-    { -23, -4.5 }, { -20, -7.5 }, { -3, -7.5 },
-    { -3, -4.5 }, { 0, -5.5 }   };
-
-    glBegin( GL_LINE_LOOP );
-    {
-        for (i = 0; i < 10; i++)
-        {
-            glVertex3f(lCamera[i][0], lCamera[i][1], 4.5);
-        }
-    }
-    glEnd();
-
-    glBegin( GL_LINE_LOOP );
-    {
-        for (i = 0; i < 10; i++)
-        {
-            glVertex3f(lCamera[i][0], lCamera[i][1], -4.5);
-        }
-    }
-    glEnd();
-
-    for (i = 0; i < 10; i++)
-    {
-        glBegin( GL_LINES );
-        {
-            glVertex3f(lCamera[i][0], lCamera[i][1], -4.5);
-            glVertex3f(lCamera[i][0], lCamera[i][1], 4.5);
-        }
-        glEnd();
-    }
-    */
 }
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
-/*    
-    glMultMatrixd((const double*)mat);
-	glColor3f(colr[0],colr[1],colr[2]);
-	glBegin(GL_LINE_LOOP);
-	for (int lVerticeIndex = 0; lVerticeIndex < lVerticeCount; lVerticeIndex++)
-	{
-		glVertex3dv((GLdouble *)&vertexArray[lVerticeIndex*3]);
-	}
-	glEnd();
-    */
 }
 
 void RenderPlatform::ApplyDefaultMaterial()
@@ -1175,7 +1050,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
 		if(f)
 			f->viewport=*vps;
-}
+	}
 	else
 	{
 		deviceContext.defaultTargetsAndViewport.viewport=*vps;
@@ -1288,22 +1163,22 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 		storedStates.resize(std::max(1,storedStateCursor*2));
 	}
 	StoredState &s=storedStates[storedStateCursor++];
-      pContext->OMGetDepthStencilState( &s.m_pDepthStencilStateStored11, &s.m_StencilRefStored11 );
-    pContext->RSGetState(&s.m_pRasterizerStateStored11 );
-  pContext->OMGetBlendState(&s.m_pBlendStateStored11,s.m_BlendFactorStored11, &s.m_SampleMaskStored11 );
-    pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, s.m_pSamplerStateStored11 );
-    pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pVertexSamplerStateStored11 );
+	pContext->OMGetDepthStencilState( &s.m_pDepthStencilStateStored11, &s.m_StencilRefStored11 );
+	pContext->RSGetState(&s.m_pRasterizerStateStored11 );
+	pContext->OMGetBlendState(&s.m_pBlendStateStored11,s.m_BlendFactorStored11, &s.m_SampleMaskStored11 );
+	pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pSamplerStateStored11 );
+	pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
 	
-    pContext->GSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pGeometrySamplerStateStored11 );
-    pContext->CSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pComputeSamplerStateStored11 );
-
+    pContext->GSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pGeometrySamplerStateStored11 );
+    pContext->CSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pComputeSamplerStateStored11 );
+	
 	pContext->VSGetShader(&s.pVertexShader,s.m_pVertexClassInstances,&s.numVertexClassInstances);
 	pContext->PSGetShader(&s.pPixelShader,s.m_pPixelClassInstances,&s.numPixelClassInstances);
 	pContext->HSGetShader(&s.pHullShader,s.m_pHullClassInstances,&s.numHullClassInstances);
 	pContext->DSGetShader(&s.pDomainShader,s.m_pDomainClassInstances,&s.numDomainClassInstances);
 	pContext->GSGetShader(&s.pGeometryShader,s.m_pGeometryClassInstances,&s.numGeometryClassInstances);
 	pContext->CSGetShader(&s.pComputeShader,s.m_pPixelClassInstances,&s.numPixelClassInstances);
-	
+
 	pContext->CSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pCSConstantBuffers);
 	pContext->GSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pGSConstantBuffers);
 	pContext->PSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pPSConstantBuffers);
@@ -1323,7 +1198,7 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 
 
 	pContext->CSGetUnorderedAccessViews(0,D3D11_PS_CS_UAV_REGISTER_COUNT,s.m_pUnorderedAccessViews);
-		 
+
 	pContext->IAGetInputLayout( &s.m_previousInputLayout );
 	pContext->IAGetPrimitiveTopology(&s.m_previousTopology);
 
@@ -1348,9 +1223,9 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 	StoredState &s=storedStates[storedStateCursor];
 
     pContext->OMSetDepthStencilState(s.m_pDepthStencilStateStored11,s.m_StencilRefStored11 );
-    SAFE_RELEASE(s.m_pDepthStencilStateStored11 );
+    SAFE_RELEASE(s.m_pDepthStencilStateStored11);
 
-	pContext->RSSetState(s.m_pRasterizerStateStored11 );
+	pContext->RSSetState(s.m_pRasterizerStateStored11);
     SAFE_RELEASE(s.m_pRasterizerStateStored11);
 
     pContext->OMSetBlendState(s.m_pBlendStateStored11,s.m_BlendFactorStored11,s.m_SampleMaskStored11 );
@@ -1453,7 +1328,7 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 								s.m_indexFormatStored11,
 								s.m_indexOffset);
 	SAFE_RELEASE(s.pIndexBufferStored11);
-	
+
 	//pContext->RSSetScissorRects(s.m_numRects,s.m_scissorRects);
 #ifndef _XBOX_ONE
 #endif
@@ -1688,7 +1563,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 		debugConstants.rect=vec4(-1.f,-1.f,2.f,2.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
 		debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-
+		
 		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
 		if(UsesFastSemantics())
 			usage=D3D11_USAGE_DEFAULT;
@@ -1801,7 +1676,7 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContex
 									dt);
 	D3D11_VIEWPORT viewports[8];
 	for(int i=0;i<state->num;i++)
-{
+	{
 		viewports[i].Width		=(float)state->viewport.w;
 		viewports[i].Height		=(float)state->viewport.h;
 		viewports[i].TopLeftX	=(float)state->viewport.x;

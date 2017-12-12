@@ -114,9 +114,7 @@ namespace simul
 			//! Total size
 			int							mTotalSize;
 		};
-		typedef std::unordered_map<int, crossplatform::ConstantBufferBase*> ConstantBufferMap;
 
-		typedef std::unordered_map<int, crossplatform::PlatformStructuredBuffer*> StructuredBufferMap;
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
@@ -125,16 +123,10 @@ namespace simul
 			void Apply(crossplatform::DeviceContext &deviceContext,bool asCompute) override;
 			bool IsCompute()const { return mIsCompute; }
 
-			void SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,dx12::Heap* samplerHeap, ID3D12Device* device);
-			void SetConstantBuffers(ConstantBufferMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
-			void SetTextures(crossplatform::TextureAssignmentMap &textures, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
-			void SetRWTextures(crossplatform::TextureAssignmentMap &rwTextures, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
-			void SetStructuredBuffers(StructuredBufferMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
-
-			//! Returns the index of the root parameter that has the CBV_SRV_UAV table
-			int ResourceTableIndex()const { return mSrvCbvUavTableIndex; }
-			//! Returns the index of the root parameter that has the SAMPLER table
-			int SamplerTableIndex()const { return mSamplerTableIndex; }
+			void SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
+			void SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
+			void SetSRVs(crossplatform::TextureAssignmentMap &textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
+			void SetUAVs(crossplatform::TextureAssignmentMap &rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 
 		private:
 			virtual ~EffectPass();
@@ -143,15 +135,10 @@ namespace simul
 			std::map<DXGI_FORMAT, ID3D12PipelineState*> mGraphicsPsoMap;
 			//! We only have one compute Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
-			//! The root signature
-			ID3D12RootSignature* mRootS								= nullptr;
 
 			//! Is this a compute pass?
 			bool mIsCompute = false;
-			//! The index of the SRV_CBV_UAV table in the root parameters
-			INT mSrvCbvUavTableIndex	= -1;
-			//! The index of the SAMPLER table in the root parameters
-			INT mSamplerTableIndex		= -1;
+
 			//! A vector holding the root parameters (in our case it will always be 1 or 2)
 			std::vector<CD3DX12_ROOT_PARAMETER> rootParams;
 
@@ -176,7 +163,6 @@ namespace simul
 				ID3DBlob*					computeShader12;
 			};
 			ID3D12ShaderReflection*			mShaderReflection = nullptr;
-			ID3DBlob* mRootSignature = nullptr;
 		};
 		class SIMUL_DIRECTX12_EXPORT Effect:public simul::crossplatform::Effect
 		{
@@ -198,7 +184,7 @@ namespace simul
 			void Reapply(crossplatform::DeviceContext &deviceContext);
 			void Unapply(crossplatform::DeviceContext &deviceContext) override;
 			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::ConstantBufferBase *s) override;
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  crossplatform::ConstantBufferBase *s) override;
 
 			//! This method uses the shader reflection code to check the resources slots. This is needed because
 			//! the sfx compiler is not as smart as the dx compiler so it will report that some resources are in use

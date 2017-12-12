@@ -204,7 +204,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	// we have (latitudes+1)*(longitudes+1)*2 id's
 	uint vertex_id		=IN.vertex_id;
 	vec3 pos;
-	if(vertex_id<((uint)latitudes+1)*((uint)longitudes+1))
+	if(vertex_id<(latitudes+1)*(longitudes+1))
 	{
 		uint latitude_strip	=vertex_id/(longitudes+1);
 		vertex_id			-=latitude_strip*(longitudes+1);
@@ -213,8 +213,8 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float elevation		=.999*(float(latitude_strip)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el		=cos(elevation);
 		pos					=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
-		float b				=latitude_strip==(uint)latitudes/2?1.0:0.2;
-		OUT.colour			=multiplier+vec4(1.0,0.5,0.5,longitude>0&&longitude<(uint)longitudes?b:0.0);
+		float b				=latitude_strip==latitudes/2?1.0:0.2;
+		OUT.colour			=multiplier+vec4(1.0,0.5,0.5,longitude>0&&longitude<longitudes?b:0.0);
 		//OUT.colour		*=saturate(elevation/1.7);
 	}
 	else
@@ -250,7 +250,7 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	vec3 pos;
 	if(IN.vertex_id<8)
 	{
-		uint vert		=(IN.vertex_id+1)/2;
+		int vert		=(IN.vertex_id+1)/2;
 		pos				=poss[vert%4];
 		pos.xy			*=sideview;
 		pos.z			=1.0;
@@ -259,7 +259,7 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	}
 	else
 	{
-		uint vert		=IN.vertex_id-8;
+		int vert		=IN.vertex_id-8;
 		int axis		=vert/3;
 		vec3 ax			=vec3(axis==0,axis==1,axis==2);
 		pos				=vec3(0,0,1.0);

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2014 Simul Software Ltd
+#// Copyright (c) 2007-2017 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -116,7 +116,10 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	std::string str;
 	int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
 	if(idx<-1||idx>=(int)texturePathsUtf8.size())
+	{
+		SIMUL_CERR<<"Texture file not found: "<<filename<<std::endl;
 			return NULL;
+	}
 	str=filename;
 	if(idx>=0)
 		str=(texturePathsUtf8[idx]+"/")+str;
@@ -141,11 +144,21 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	int flags=0;
 	DirectX::TexMetadata metadata;
 	DirectX::ScratchImage scratchImage;
-	DirectX::LoadFromWICMemory( ptr, bytes, flags,&metadata,scratchImage );
+	HRESULT hr=S_OK;
+	if(str.find(".hdr")==str.length()-4)
+	{
+//		hr= LoadFromHDRMemory( ptr, _In_ bytes,&metadata,scratchImage );
+
+	}
+	else
+	{
+		hr=DirectX::LoadFromWICMemory( ptr, bytes, flags,&metadata,scratchImage );
+	}
+
 	const DirectX::Image *image=scratchImage.GetImage(0,0,0);
 	if(!image)
 		return NULL;
-    HRESULT hr=CreateShaderResourceView(  pd3dDevice,image, 1, metadata,&tex );
+    hr=CreateShaderResourceView(  pd3dDevice,image, 1, metadata,&tex );
 #endif
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 	return tex;
@@ -382,7 +395,7 @@ ERRNO_CHECK
 	int bpos=(int)text_filename_utf8.find_last_of("\\");
 	if(pos<0||bpos>pos)
 		pos=bpos;
-	std::string path_utf8=text_filename_utf8.substr(0,pos);
+	std::string path_utf8=text_filename_utf8.substr(0,pos>0?pos:0);
 	int dot=(int)text_filename_utf8.find_last_of(".");
 	if(dot<0)
 		dot=(int)text_filename_utf8.length();

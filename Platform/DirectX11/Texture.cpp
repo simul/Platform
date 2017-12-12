@@ -75,7 +75,10 @@ void Texture::InitUAVTables(int l,int m)
 {
 	mipUnorderedAccessViews			=nullptr;
 	if(m)
-		mipUnorderedAccessViews		=new ID3D11UnorderedAccessView*[m];		// UAV's for whole texture at different mips.
+	{
+		mipUnorderedAccessViews		=new ID3D11UnorderedAccessView*[m+1];		// UAV's for whole texture at different mips.
+		mipUnorderedAccessViews[m]=0;
+	}
 	layerMipUnorderedAccessViews	=nullptr;
 	if(l&&m)
 	{
@@ -91,7 +94,7 @@ void Texture::FreeUAVTables()
 {
 	if(mipUnorderedAccessViews)
 	{
-		for(int j=0;j<mips;j++)
+		for(int j=0;j<mips+1;j++)
 		{
 			SAFE_RELEASE(mipUnorderedAccessViews[j]);
 		}
@@ -138,7 +141,7 @@ void Texture::InvalidateDeviceObjects()
 	if(renderPlatform&&renderPlatform->GetMemoryInterface())
 	{
 		if(!external_texture)
-		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
+			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffer);
 	}
 	SAFE_RELEASE(texture);
@@ -246,7 +249,7 @@ ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::Shad
 #ifdef _DEBUG
 	if(index>=arraySize)
 	{
-		SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
+		SIMUL_BREAK_ONCE("AsD3D11ShaderResourceView: mip or index out of range");
 		return NULL;
 	}
 #endif
@@ -614,7 +617,17 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
 	pixelFormat = pf;
-	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT dxgiFormat=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT srvFormat=dxgiFormat;
+	DXGI_FORMAT uavFormat=dxgiFormat;
+	DXGI_FORMAT altUavFormat=dxgiFormat;
+	if(dxgiFormat==DXGI_FORMAT_R8G8B8A8_UNORM)
+	{
+		srvFormat	=dxgiFormat;
+		dxgiFormat	=DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		uavFormat	=DXGI_FORMAT_R8G8B8A8_UNORM;
+		altUavFormat=DXGI_FORMAT_R32_UINT;
+	}
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
@@ -626,7 +639,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=(UINT)w||textureDesc.Height!=(UINT)l||textureDesc.Depth!=(UINT)d||textureDesc.Format!=f||mips!=m)
+			if(textureDesc.Width!=(UINT)w||textureDesc.Height!=(UINT)l||textureDesc.Depth!=(UINT)d||textureDesc.Format!=dxgiFormat||mips!=m)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -648,7 +661,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		textureDesc.Width			=width=w;
 		textureDesc.Height			=length=l;
 		textureDesc.Depth			=depth=d;
-		textureDesc.Format			=dxgi_format=f;
+		textureDesc.Format			=dxgi_format=dxgiFormat;
 		textureDesc.MipLevels		=mips=m;
 		arraySize=1;
 		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
@@ -666,7 +679,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= f;
+		srv_desc.Format						= srvFormat;
 		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
 		srv_desc.Texture3D.MipLevels		= m;
 		srv_desc.Texture3D.MostDetailedMip	= 0;
@@ -687,20 +700,21 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		changed=true;
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format					=f;
+		uav_desc.Format					=uavFormat;
 		uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_TEXTURE3D;
 		uav_desc.Texture3D.MipSlice		=0;
 		uav_desc.Texture3D.WSize		=d;
 		uav_desc.Texture3D.FirstWSlice	=0;
 		
 		if(mipUnorderedAccessViews)
-		for(int i=0;i<m;i++)
 		{
-			uav_desc.Texture3D.MipSlice=i;
-			V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
-			uav_desc.Texture3D.WSize/=2;
+			for(int i=0;i<m;i++)
+			{
+				uav_desc.Texture3D.MipSlice=i;
+				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
+				uav_desc.Texture3D.WSize/=2;
+			}
 		}
-		
 		uav_desc.Texture3D.WSize	= d;
 		if(layerMipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
@@ -709,26 +723,20 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
 			uav_desc.Texture3D.WSize/=2;
 		}
+		if(mipUnorderedAccessViews)
+		{
+			if(uavFormat!=altUavFormat)
+			{
+				uav_desc.Format=altUavFormat;
+				uav_desc.Texture3D.MipSlice=0;
+				uav_desc.Texture3D.WSize=d;
+				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[m]));
+			}
+		}
 	}
 	if(d<=8&&rendertargets&&(!renderTargetViews||!renderTargetViews[0]||!ok))
 	{
 		SIMUL_BREAK("Render targets for 3D textures are not currently supported.");
-	/*	changed=true;
-		FreeRTVTables();
-		InitRTVTables(int l,int m);
-		renderTargetViews=new ID3D11RenderTargetView*[num_rt];
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=f;
-		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE3D;
-		renderTargetViewDesc.Texture2D.MipSlice	=0;
-		renderTargetViewDesc.Texture3D.WSize	=1;
-		for(int i=0;i<num_rt;i++)
-		{
-			// Setup the description of the render target view.
-			renderTargetViewDesc.Texture3D.FirstWSlice=i;
-			// Create the render target in DX11:
-			V_CHECK(r->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i])));
-		}*/
 	}
 	return changed;
 }
@@ -864,7 +872,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 				SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 			}
 		}
-		if(rendertarget&&(!renderTargetViews||!ok))
+		if(texture&&rendertarget&&(!renderTargetViews||!ok))
 		{
 			InitRTVTables(1,m);
 			// Setup the description of the render target view.

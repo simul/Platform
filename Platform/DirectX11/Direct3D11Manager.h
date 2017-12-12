@@ -34,7 +34,7 @@ namespace simul
 			D3D11_VIEWPORT				viewport;
 			crossplatform::PlatformRendererInterface *renderer;
 		};
-		//! A class intended to replace DXUT, while allowing for multiple swap chains (i.e. rendering windows) to share the same d3d device.
+		//! A class for multiple swap chains (i.e. rendering windows) to share the same d3d device.
 
 		//! Direct3D11Manager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
 		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager creates and manages a IDXGISwapChain instance.

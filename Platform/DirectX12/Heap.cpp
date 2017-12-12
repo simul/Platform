@@ -47,7 +47,7 @@ namespace simul
 		{
 			mCpuHandle.Offset(index, mHandleIncrement);
 			mGpuHandle.Offset(index, mHandleIncrement);
-			mCnt++;
+			mCnt += index;
 			if (mCnt > mTotalCnt)
 			{
 				SIMUL_BREAK_ONCE("This heap reached the maximum capacity!");

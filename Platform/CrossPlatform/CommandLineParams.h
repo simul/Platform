@@ -87,7 +87,7 @@ namespace simul
 			for(int i=0;i<argCount;i++)
 			{
 				std::string str=base::WStringToString(szArgList[i]);
-				int len=str.length();
+				int len=(int)str.length();
 				args[i]=new char[len+1];
 				strcpy_s(args[i],len+1,str.c_str());
 				args[i][str.length()]=0;

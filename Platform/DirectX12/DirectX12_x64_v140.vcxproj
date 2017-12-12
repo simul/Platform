@@ -261,6 +261,7 @@
   <ItemGroup>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\brdf.sl" />
     <None Include="..\CrossPlatform\SL\camera_constants.sl" />
     <None Include="..\CrossPlatform\SL\clouds_raytrace.sl" />
     <None Include="..\CrossPlatform\SL\clouds_simple.sl" />
@@ -270,6 +271,7 @@
     <None Include="..\CrossPlatform\SL\composite.sl" />
     <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
     <None Include="..\CrossPlatform\SL\CppSl.hs" />
+    <None Include="..\CrossPlatform\SL\cubemap_matrices.sl" />
     <None Include="..\CrossPlatform\SL\debug_constants.sl" />
     <None Include="..\CrossPlatform\SL\depth.sl" />
     <None Include="..\CrossPlatform\SL\earth_shadow.sl" />
@@ -355,6 +357,26 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSL\GFX.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">RootSignature</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">rootsig_1.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">GFXRS</EntryPointName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(SIMUL)\Platform\DirectX12\shaderbin\%(Filename).cso</ObjectFileOutput>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">rootsig_1.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GFXRS</EntryPointName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\DirectX12\shaderbin\%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">RootSignature</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GFXRS</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RootSignature</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rootsig_1.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">GFXRS</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">RootSignature</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">rootsig_1.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SIMUL)\Platform\DirectX12\shaderbin\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(SIMUL)\Platform\DirectX12\shaderbin\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

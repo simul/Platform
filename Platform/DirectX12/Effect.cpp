@@ -14,8 +14,7 @@
 
 #include <algorithm>
 #include <string>
-
-#pragma optimize("",off)
+#include <array>
 
 using namespace simul;
 using namespace dx12;
@@ -43,7 +42,7 @@ Query::Query(crossplatform::QueryType t):
 	mQueryHeap(nullptr),
 	mReadBuffer(nullptr),
 	mQueryData(nullptr),
-	mTime((UINT64)0.0),
+	mTime(0),
 	mIsDisjoint(false)
 {
 	mD3DType = dx12::RenderPlatform::ToD3dQueryType(t);
@@ -112,8 +111,6 @@ void Query::InvalidateDeviceObjects()
 	SAFE_RELEASE(mReadBuffer);
 	mQueryData = nullptr;
 }
-
-#pragma optimize( "", off)  
 
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
 {
@@ -189,7 +186,6 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 
 	return true;
 }
-#pragma optimize( "", on)  
 
 RenderState::RenderState()
 {
@@ -221,12 +217,13 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform, int ct, int unit_size, bool computable,bool cpu_read, void *init_data)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable,bool cpu_read, void *init_data)
 {
 	HRESULT res			= S_FALSE;
 	mNumElements		= ct;
 	mElementByteSize	= unit_size;
 	mTotalSize			= mNumElements * mElementByteSize;
+	renderPlatform=r;
 	mRenderPlatform		= (dx12::RenderPlatform*)renderPlatform;
 	
 	// TO-DO: do we need this? Is it different for non UAV?
@@ -540,23 +537,6 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 		}
 	}
 
-	// Load the root signature binary
-	FileBlob rootSignatureBlob;
-	filenameUtf8			= renderPlatform->GetShaderBinaryPath();
-	filenameUtf8			+= "/";
-	std::string rsFilename	= filename_utf8;
-	simul::base::find_and_replace(rsFilename, ".cso", "_withrs.cso");
-	filenameUtf8			+= rsFilename;
-	//fileLoader->AcquireFileContents(rootSignatureBlob.pData, rootSignatureBlob.DataSize, filenameUtf8.c_str(), false);
-	//if (!rootSignatureBlob.pData)
-	{
-		// SIMUL_CERR << "The root signature binary for: " << filename_utf8 << " could not be loaded! \n";
-		// Copy RootSignature
-	}
-
-	// D3DCreateBlob(rootSignatureBlob.DataSize, &mRootSignature);
-	// memcpy(mRootSignature->GetBufferPointer(), rootSignatureBlob.pData, mRootSignature->GetBufferSize());
-
 	// Copy shader
 	type = t;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
@@ -580,7 +560,6 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 	}
 
 	// Free the loaded memory
-	// fileLoader->ReleaseFileContents(rootSignatureBlob.pData);
 	fileLoader->ReleaseFileContents(shaderBlob.pData);
 }
 
@@ -833,11 +812,11 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	crossplatform::Effect::Unapply(deviceContext);
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::ConstantBufferBase *s)
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  crossplatform::ConstantBufferBase *s)
 {
 	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
 	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
-	crossplatform::Effect::SetConstantBuffer(deviceContext, name, s);
+	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
 
 void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
@@ -950,158 +929,11 @@ void EffectPass::InvalidateDeviceObjects()
 {
 	// TO-DO: nice memory leaks here
 	mComputePso = nullptr;
-	mRootS		= nullptr;
 	mGraphicsPsoMap.clear();
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asCompute)
 {		
-	if (!mRootS)
-	{
-		auto currentShader = (dx12::Shader*)(asCompute ? shaders[crossplatform::SHADERTYPE_COMPUTE] : shaders[crossplatform::SHADERTYPE_PIXEL]);
-
-		// Fill SRV_CBV_UAV ranges
-		// Constant Buffers
-		if (usesConstantBuffers())
-		{
-			for (unsigned slot = 0; slot < 32; slot++)
-			{
-				if (usesConstantBufferSlot(slot))
-				{
-					mSrvCbvUavRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, slot));
-				}
-			}
-		}
-		// Textures & RWTextures
-		unsigned int resIndex = 0;
-		if (usesTextures())
-		{
-			for (unsigned slot = 0; slot < 32; slot++)
-			{
-				if (usesTextureSlot(slot))
-				{
-					mSrvCbvUavRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, slot));
-					resIndex++;
-				}
-			}
-			for (unsigned slot = 0; slot < 32; slot++)
-			{
-				if (usesTextureSlot(slot + 1000) )
-				{
-					mSrvCbvUavRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, slot));
-					resIndex++;
-				}
-			}
-		}
-		// Structured Buffers & RWStructured Buffers
-		if (usesSBs())
-		{
-			for (unsigned int slot = 0; slot < 32; slot++)
-			{
-				if (usesTextureSlotForSB(slot))
-				{
-					mSrvCbvUavRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, slot));
-					resIndex++;
-				}
-			}
-			for (unsigned int slot = 0; slot < 32; slot++)
-			{
-				if (usesTextureSlotForSB(slot + 1000))
-				{
-					mSrvCbvUavRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, slot));
-					resIndex++;
-				}
-			}
-		}
-
-		// Samplers
-		if (usesSamplers())
-		{
-			for (unsigned slot = 0; slot < 32; slot++)
-			{
-				if (usesSamplerSlot(slot))
-				{
-					mSamplerRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, slot));
-				}
-			}
-		}
-
-		// Add a descriptor table holding all the CBV SRV and UAV
-		// usesTextures() holds both Textures and UAV
-		if (usesConstantBuffers() || usesTextures() || usesSBs())
-		{
-			mSrvCbvUavTableIndex = (INT)rootParams.size();
-			
-			rootParams.push_back(CD3DX12_ROOT_PARAMETER());
-			rootParams[mSrvCbvUavTableIndex].InitAsDescriptorTable((UINT)mSrvCbvUavRanges.size(), &mSrvCbvUavRanges[0]);
-		}
-
-		// Add a descriptor table holding all the samplers
-		if(usesSamplers())
-		{
-			mSamplerTableIndex = (INT)rootParams.size();
-
-			rootParams.push_back(CD3DX12_ROOT_PARAMETER());
-			rootParams[mSamplerTableIndex].InitAsDescriptorTable((UINT)mSamplerRanges.size(), &mSamplerRanges[0]);
-		}
-
-		auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-
-		// Used to know if we are doing computing
-		dx12::Shader* c = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
-
-		D3D12_ROOT_SIGNATURE_FLAGS rootFlags;
-		// Compute
-		if (c)
-		{
-			rootFlags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
-		}
-		// Graphics
-		else
-		{
-			rootFlags = D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-						D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | 
-						D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-			if (rPlat->GetCurrentInputLayout() != nullptr)
-			{
-				rootFlags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-			}
-		}
-
-		// Build the root signature
-		HRESULT res = S_FALSE;
-		CD3DX12_ROOT_SIGNATURE_DESC rootDesc = {};
-		rootDesc.Init
-		(
-			(UINT)rootParams.size(),
-			&rootParams[0],
-			0,
-			nullptr,
-			rootFlags
-		);
-		ID3DBlob* error;
-		ID3DBlob* rootSerialized;
-		res = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rootSerialized, &error);
-		if (res != S_OK)
-		{
-			SIMUL_CERR << "Root signature serialization failed:" << std::endl;
-			OutputDebugStringA((char*)error->GetBufferPointer());
-		}
-
-#ifdef _XBOX_ONE
-		res = rPlat->AsD3D12Device()->CreateRootSignature(0, rootSerialized->GetBufferPointer(), rootSerialized->GetBufferSize(), IID_GRAPHICS_PPV_ARGS(&mRootS));
-#else
-		res = rPlat->AsD3D12Device()->CreateRootSignature(0, rootSerialized->GetBufferPointer(), rootSerialized->GetBufferSize(), IID_PPV_ARGS(&mRootS));
-#endif
-		SIMUL_ASSERT(res == S_OK);
-
-		// Assign a name
-		std::wstring name	= L"RootSignature_";
-		mPassName			= deviceContext.renderPlatform->GetContextState(deviceContext)->currentTechnique->name;
-		name += std::wstring(mPassName.begin(), mPassName.end());
-		mRootS->SetName(name.c_str());
-	}
-
 	// DX12: For each pass we'll have a PSO. PSOs hold: shader bytecode, input vertex format,
 	// primitive topology type, blend state, rasterizer state, depth stencil state, msaa parameters, 
 	// output buffer and root signature
@@ -1114,7 +946,8 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 		dx12::Shader *p = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
 		dx12::Shader *c = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 
-		if(v && p && c)SIMUL_BREAK("A pass can't have pixel,vertex and compute shaders.")
+		if(v && p && c)
+			SIMUL_BREAK("A pass can't have pixel,vertex and compute shaders.")
 		// Init as graphics
 		if (v && p)
 		{
@@ -1189,25 +1022,25 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 			}
 
 			// Build the PSO description 
-			D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-			psoDesc.pRootSignature					= mRootS;
-			psoDesc.VS								= CD3DX12_SHADER_BYTECODE(v->vertexShader12);
-			psoDesc.PS								= CD3DX12_SHADER_BYTECODE(p->pixelShader12);
-			psoDesc.InputLayout.NumElements			= pCurInputLayout ? pCurInputLayout->NumElements : 0;
-			psoDesc.InputLayout.pInputElementDescs	= pCurInputLayout ? pCurInputLayout->pInputElementDescs : nullptr;
-			psoDesc.RasterizerState					= defaultRaster;
-			psoDesc.BlendState						= defaultBlend;
-			psoDesc.DepthStencilState				= defaultDepthStencil;
-			psoDesc.SampleMask						= UINT_MAX;
-			psoDesc.PrimitiveTopologyType			= primitiveType;
-			psoDesc.NumRenderTargets				= 1;
-			psoDesc.RTVFormats[0]					= psoPair.first;
-			psoDesc.DSVFormat						= DXGI_FORMAT_D32_FLOAT;
-			psoDesc.SampleDesc.Count				= 1;
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsoDesc = {};
+			gpsoDesc.pRootSignature					= curRenderPlat->GetGraphicsRootSignature();
+			gpsoDesc.VS								= CD3DX12_SHADER_BYTECODE(v->vertexShader12);
+			gpsoDesc.PS								= CD3DX12_SHADER_BYTECODE(p->pixelShader12);
+			gpsoDesc.InputLayout.NumElements		= pCurInputLayout ? pCurInputLayout->NumElements : 0;
+			gpsoDesc.InputLayout.pInputElementDescs	= pCurInputLayout ? pCurInputLayout->pInputElementDescs : nullptr;
+			gpsoDesc.RasterizerState				= defaultRaster;
+			gpsoDesc.BlendState						= defaultBlend;
+			gpsoDesc.DepthStencilState				= defaultDepthStencil;
+			gpsoDesc.SampleMask						= UINT_MAX;
+			gpsoDesc.PrimitiveTopologyType			= primitiveType;
+			gpsoDesc.NumRenderTargets				= 1;
+			gpsoDesc.RTVFormats[0]					= psoPair.first;
+			gpsoDesc.DSVFormat						= DXGI_FORMAT_D32_FLOAT;
+			gpsoDesc.SampleDesc.Count				= 1;
 
 			HRESULT res = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState
 			(
-				&psoDesc,
+				&gpsoDesc,
 #ifdef _XBOX_ONE
 				IID_GRAPHICS_PPV_ARGS(&psoPair.second)
 #else
@@ -1240,16 +1073,16 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 		{
 			mIsCompute = true;
 
-			D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc	= {};
-			psoDesc.CS									= CD3DX12_SHADER_BYTECODE(c->computeShader12);
+			D3D12_COMPUTE_PIPELINE_STATE_DESC cpsoDesc	= {};
+			cpsoDesc.CS									= CD3DX12_SHADER_BYTECODE(c->computeShader12);
 #ifndef _XBOX_ONE
-			psoDesc.Flags								= D3D12_PIPELINE_STATE_FLAG_NONE;
+			cpsoDesc.Flags								= D3D12_PIPELINE_STATE_FLAG_NONE;
 #endif
-			psoDesc.pRootSignature						= mRootS;
-			psoDesc.NodeMask							= 0;
+			cpsoDesc.pRootSignature						= curRenderPlat->GetGraphicsRootSignature();
+			cpsoDesc.NodeMask							= 0;
 			HRESULT res = curRenderPlat->AsD3D12Device()->CreateComputePipelineState
 			(
-				&psoDesc,
+				&cpsoDesc,
 #ifdef _XBOX_ONE
 				IID_GRAPHICS_PPV_ARGS(&mComputePso)
 #else
@@ -1263,11 +1096,20 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 			// It is causing this assert to be triggered...
 			SIMUL_ASSERT(res == S_OK);
 #endif 
-
+			if(res == S_OK)
+			{
 			std::wstring name = L"ComputePSO_";
 			std::string techName = deviceContext.renderPlatform->GetContextState(deviceContext)->currentTechnique->name;
 			name += std::wstring(techName.begin(), techName.end());
 			mComputePso->SetName(name.c_str());
+		}
+		else
+		{
+#ifndef _XBOX_ONE
+				SIMUL_BREAK("Failed to create PSO")
+				return;
+#endif 
+			}
 		}
 		else
 		{
@@ -1280,98 +1122,117 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 	auto cmdList	= curRenderPlat->AsD3D12CommandList();
 	if (mIsCompute)
 	{
-		cmdList->SetComputeRootSignature(mRootS);
-
 		cmdList->SetPipelineState(mComputePso);
 	}
 	else
 	{
-		cmdList->SetGraphicsRootSignature(mRootS);
 		auto pFormat = curRenderPlat->GetCurrentPixelFormat();
 		cmdList->SetPipelineState(mGraphicsPsoMap[pFormat]);
 	}
 }
 
-bool SortSamplerMap(const std::pair< int,crossplatform::SamplerState*>& l, const std::pair<int,crossplatform::SamplerState*>& r)
+void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers, dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
 {
-	return l.first < r.first;
-}
+	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
+	const auto resLimits	= rPlat->GetResourceBindingLimits();
+	int usedSlots			= 0;
+	auto nullSampler		= rPlat->GetNullSampler();
 
-void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers, dx12::Heap* samplerHeap, ID3D12Device* device)
-{
+	// The handles for the required constant buffers:
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumSamplers> srcHandles;
 	for(int i=0;i<numSamplerResourcerSlots;i++)
 	{
 		int slot=samplerResourceSlots[i];
-		crossplatform::SamplerState *s=samplers[slot];
-		if (usesSamplerSlot(slot))
+		auto samp	= samplers[slot];
+#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+		if (!samp)
 		{
-			auto dx12Sampler = (dx12::SamplerState*)s;
-			// Destination
-			D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = samplerHeap->CpuHandle();
-			samplerHeap->Offset();
-
-			// Source
-			D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = *dx12Sampler->AsD3D12SamplerState();
-
-			// Copy!
-			device->CopyDescriptorsSimple(1, dstHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Sampler slot " << slot << " is invalid." << std::endl;
+			SIMUL_BREAK("");
+		}
+#endif
+		srcHandles[slot] = *samp->AsD3D12SamplerState();
+		usedSlots		|= (1 << slot);
+	}
+	// Iterate over all the slots and fill them:
+	for (int s = 0; s < ResourceBindingLimits::NumSamplers; s++)
+	{
+		if (!usesSamplerSlot(s))
+		{
+			// Hardware tier 1 requires all slots to be filed:
+			if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
+			{
+				device->CopyDescriptorsSimple(1, samplerHeap->CpuHandle(), nullSampler, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+			}
 		}
 		else
 		{
-			SIMUL_BREAK_ONCE("sampler slot confusion");
+			device->CopyDescriptorsSimple(1, samplerHeap->CpuHandle(), srcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		}
+			samplerHeap->Offset();
+	}
+
+#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+	// Check slots
+	unsigned int requiredSlots = GetSamplerSlots();
+	if (requiredSlots != usedSlots)
+	{
+		unsigned int missingSlots = requiredSlots & (~usedSlots);
+		for (int i = 0; i < ResourceBindingLimits::NumSamplers; i++)
+		{
+			unsigned int testSlot = 1 << i;
+			if (testSlot & missingSlots)
+			{
+				SIMUL_CERR << "Resource binding error at: " << mPassName << ". Sampler slot " << i << " was not set!" << std::endl;
+		}
 		}
 	}
+#endif 
 }
 
-bool SortCbMap(const std::pair<int, crossplatform::ConstantBufferBase*>& l, const std::pair<int, crossplatform::ConstantBufferBase*>& r)
+void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
 {
-	return l.first < r.first;
-}
+	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
+	const auto resLimits	= rPlat->GetResourceBindingLimits();
+	int usedSlots			= 0;
+	auto nullCbv			= rPlat->GetNullCBV();
 
-void simul::dx12::EffectPass::SetConstantBuffers(ConstantBufferMap & cBuffers, dx12::Heap * frameHeap, ID3D12Device * device, crossplatform::DeviceContext& context)
+	// The handles for the required constant buffers:
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumCBV> srcHandles;
+	for (int i = 0; i < numConstantBufferResourceSlots; i++)
 {
-	// Build a sorted vector of <slot, ConstantBufferBase*>
-	/*std::vector<std::pair<int, crossplatform::ConstantBufferBase*>> cbAssignOrdered;
-	for (auto i = cBuffers.begin(); i != cBuffers.end(); i++)
+		int slot	= constantBufferResourceSlots[i];
+		auto cb		= cBuffers[slot];
+#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
 	{
-		cbAssignOrdered.push_back(std::make_pair(i->first, i->second));
+			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Constant buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_BREAK("");
 	}
-	std::sort(cbAssignOrdered.begin(), cbAssignOrdered.end(), SortCbMap);
-	*/
-	unsigned int usedSlots = 0;
-	for(int i=0;i<numConstantBufferResourceSlots;i++)
+#endif
+		auto d12cb			= (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
+		srcHandles[slot]	= d12cb->AsD3D12ConstantBuffer();
+		usedSlots			|= (1 << slot);
+	}
+	// Iterate over all the slots and fill them:
+	for (int s = 0; s < ResourceBindingLimits::NumCBV; s++)
 	{
-		int slot=constantBufferResourceSlots[i];
-		auto cb=cBuffers.find(slot);
-		if(cb==cBuffers.end())
-			continue;
-	/*for (auto i = cbAssignOrdered.begin(); i != cbAssignOrdered.end(); i++)
+		if (!usesConstantBufferSlot(s))
 	{
-		int slot = i->first;*/
-		if (!usesConstantBufferSlot(slot))
+			// Hardware tiers 1 & 2 require all slots to be filed:
+			if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
 		{
-			SIMUL_CERR_ONCE << "The constant buffer at slot: " << slot << " , is applied but the pass does not use it, ignoring it." << std::endl;
-			continue;
+				device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
 		}
-		if (slot != cb->second->GetIndex())
+		else
 		{
-			SIMUL_BREAK_ONCE("This buffer is assigned to the wrong index.");
+			device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), srcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
-
-		// Destination
-		D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = frameHeap->CpuHandle();
 		frameHeap->Offset();
-
-		// Source
-		auto dx12cb = (dx12::PlatformConstantBuffer*)cb->second->GetPlatformConstantBuffer();
-		D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = dx12cb->AsD3D12ConstantBuffer();
-
-		// Copy!
-		device->CopyDescriptorsSimple(1, dstHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		usedSlots |= (1 << slot);
 	}
 
+#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
 	// Check slots
 	unsigned int requiredSlots = GetConstantBufferSlots();
 	if (requiredSlots != usedSlots)
@@ -1386,64 +1247,99 @@ void simul::dx12::EffectPass::SetConstantBuffers(ConstantBufferMap & cBuffers, d
 			}
 		}
 	}
+#endif 
 }
 
-bool SortTextureMap(const std::pair<int, crossplatform::TextureAssignment>& l, const std::pair<int, crossplatform::TextureAssignment>& r)
+void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
 {
-	return l.first < r.first;
-}
+	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
+	const auto resLimits	= rPlat->GetResourceBindingLimits();
+	auto nullSrv			= rPlat->GetNullSRV();
+	int usedSBSlots			= 0;
+	int usedTextureSlots	= 0;
 
-void EffectPass::SetTextures(crossplatform::TextureAssignmentMap& textures, dx12::Heap* frameHeap, ID3D12Device * device, crossplatform::DeviceContext & context)
+	// The handles for the required SRVs:
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumSRV>	srcHandles;
+	memset(srcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * ResourceBindingLimits::NumSRV);
+	std::array<bool, ResourceBindingLimits::NumSRV>							usedSlotsArray;
+	memset(usedSlotsArray.data(), 0, sizeof(bool) * ResourceBindingLimits::NumSRV);
+
+	// Iterate over the textures:
+	for (int i = 0; i < numResourceSlots; i++)
 {	
-	auto rPlat = (dx12::RenderPlatform*)context.renderPlatform;
+		int slot	= resourceSlots[i];
+		auto ta		= textures[slot];
 
-	// Check for Textures (SRV)
-	unsigned int usedTextureSlots	= 0;
-	for(int i=0;i<this->numResourceSlots;i++)
+		if (!usesTextureSlot(slot))
 	{
-		int slot=this->resourceSlots[i];
-		crossplatform::TextureAssignment &ta =textures[slot];
+			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Texture slot " << slot << " is invalid." << std::endl;
+			SIMUL_BREAK("");
+		}
 
-		// If we request a NULL texture, send a dummy!
+		// If the texture is null or invalid, set a dummy:
 		if (!ta.texture || !ta.texture->IsValid())
 		{
 			if (ta.dimensions == 2)
+			{
 				ta.texture = rPlat->GetDummy2D();
+			}
 			else if (ta.dimensions == 3)
+			{
 				ta.texture = rPlat->GetDummy3D();
+			}
 			else
-				SIMUL_BREAK("Only have dummy for 2D and 3D");
+			{
+				SIMUL_CERR << "We only have dummy for 2D and 3D textures. \n";
+			}
 		}
-
-		Shader **sh = (Shader**)shaders;
-		if (!ta.uav)
-		{
-			SIMUL_ASSERT_WARN_ONCE(slot<1000, "Bad slot number");
-
-			auto rPlat = (dx12::RenderPlatform*)(context.renderPlatform);
-			UINT curFrameIndex = rPlat->GetIdx();
-
-			// Destination
-			D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = frameHeap->CpuHandle();
-			frameHeap->Offset();
-
-			// Source
-
-			D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = *ta.texture->AsD3D12ShaderResourceView(true, ta.resourceType,ta.index,ta.mip);
-
-			// Copy!
-			device->CopyDescriptorsSimple(1, dstHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-			usedTextureSlots |= (1 << slot);
-		}
+		srcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(true, ta.resourceType, ta.index, ta.mip);
+		usedSlotsArray[slot]= true;
+		usedTextureSlots |= (1 << slot);
 	}
-#if 1
-	// Check slots
+	// Iterate over the structured buffers:
+	for (int i = 0; i < numSbResourceSlots; i++)
+	{
+		int slot = sbResourceSlots[i];
+		if (usedSlotsArray[slot])
+		{
+			SIMUL_CERR << "The slot: " << slot << " at pass: " << mPassName << ", has already being used by a texture. \n";
+		}
+		auto sb = (dx12::PlatformStructuredBuffer*)sBuffers[slot];
+		if (!sb || !usesTextureSlotForSB(slot))
+		{
+			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Structured buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_BREAK("");
+		}
+		srcHandles[slot]		= *sb->AsD3D12ShaderResourceView(context);
+		usedSlotsArray[slot]	= true;
+		usedSBSlots				|= (1 << slot);
+	}
+	// Iterate over all the slots and fill them:
+	for (int s = 0; s < ResourceBindingLimits::NumSRV; s++)
+	{
+		if (!usesTextureSlot(s) && !usesTextureSlotForSB(s))
+		{
+			// Hardware tier 1 requires all slots to be filed:
+			if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
+			{
+				device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
+		}
+		else
+		{
+			device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), srcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
+			frameHeap->Offset();
+	}
+
+
+#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+	// Check texture slots
 	unsigned int requiredSlotsTexture = this->GetTextureSlots();
 	if (requiredSlotsTexture != usedTextureSlots)
 	{
 		unsigned int missingSlots = requiredSlotsTexture & (~usedTextureSlots);
-		for (int i = 0; i < 32; i++)
+		for (int i = 0; i < ResourceBindingLimits::NumSRV; i++)
 		{
 			if (this->usesTextureSlot(i))
 			{
@@ -1455,156 +1351,13 @@ void EffectPass::SetTextures(crossplatform::TextureAssignmentMap& textures, dx12
 			}
 		}
 	}
-#endif
-}
 
-void EffectPass::SetRWTextures(crossplatform::TextureAssignmentMap& rwTextures, dx12::Heap* frameHeap, ID3D12Device * device, crossplatform::DeviceContext & context)
-{	
-	auto rPlat = (dx12::RenderPlatform*)context.renderPlatform;
-	// Check for RWTextures (UAV)
-	unsigned int usedRWTextureSlots = 0;
-	for(int i=0;i<this->numRwResourceSlots;i++)
-	{
-		int slot=this->rwResourceSlots[i];
-		crossplatform::TextureAssignment &ta =rwTextures[slot];
-		// If we request a NULL texture, send a dummy!
-		if (!ta.texture || !ta.texture->IsValid())
-		{
-			if (ta.dimensions == 2)
-				ta.texture = rPlat->GetDummy2D();
-			else if (ta.dimensions == 3)
-				ta.texture = rPlat->GetDummy3D();
-			else
-				SIMUL_BREAK("Only have dummy for 2D and 3D");
-		}
-
-		Shader **sh = (Shader**)shaders;
-		if (ta.uav && sh[crossplatform::SHADERTYPE_COMPUTE] && sh[crossplatform::SHADERTYPE_COMPUTE]->usesRwTextureSlot(slot))
-		{
-			SIMUL_ASSERT_WARN_ONCE(slot >= 0, "Bad slot number");
-
-			auto rPlat = (dx12::RenderPlatform*)(context.renderPlatform);
-			UINT curFrameIndex = rPlat->GetIdx();
-
-			// Destination
-			D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = frameHeap->CpuHandle();
-			frameHeap->Offset();
-
-			// Source
-			D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = *ta.texture->AsD3D12UnorderedAccessView(ta.index, ta.mip);
-
-			// Copy!
-			device->CopyDescriptorsSimple(1, dstHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-			usedRWTextureSlots |= (1 << (slot));
-		}
-	}
-#if 1
-	// Check slots
-	unsigned int requiredSlotsRwTexture =this->GetRwTextureSlots();
-	if (requiredSlotsRwTexture != usedRWTextureSlots)
-	{
-		unsigned int missingSlots = requiredSlotsRwTexture & (~usedRWTextureSlots);
-		for (int i = 0; i < 32; i++)
-		{
-			if (this->usesRwTextureSlot(i))
-			{
-				unsigned int testSlot = 1 << i;
-				if (testSlot & missingSlots)
-				{
-					SIMUL_CERR << "Resource binding error at: " << mPassName << ". Raw Texture slot " << i << " was not set!" << std::endl;
-				}
-			}
-		}
-	}
-#endif
-}
-
-bool SortSbMap(const std::pair<int, crossplatform::PlatformStructuredBuffer*>& l, const std::pair<int, crossplatform::PlatformStructuredBuffer*>& r)
-{
-	return l.first < r.first;
-}
-
-void EffectPass::SetStructuredBuffers(StructuredBufferMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext & context)
-{
-	unsigned int usedSBSlots = 0;
-	for(int i=0;i<this->numSbResourceSlots;i++)
-	{
-		int slot=this->sbResourceSlots[i];
-		auto j=sBuffers.find(slot);
-		if(j==sBuffers.end())
-			continue;
-		crossplatform::PlatformStructuredBuffer *sb =j->second;
-	/*for (auto i = sbAssignOrdered.begin(); i != sbAssignOrdered.end(); i++)
-	{
-		int slot = i->first;
-		*/
-		if (slot<1000)
-		{
-		if (!usesTextureSlotForSB(slot))
-		{
-			SIMUL_CERR_ONCE << "The structured buffer at slot: " << slot << " , is applied but the pass does not use it, ignoring it." << std::endl;
-			continue;
-		}
-			sb->ActualApply(context, this, slot);
-		//	auto rPlat = (dx12::RenderPlatform*)(context.renderPlatform);
-			//UINT curFrameIndex = rPlat->GetIdx();
-
-			// Destination
-			D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = frameHeap->CpuHandle();
-			frameHeap->Offset();
-
-			// Source
-			D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = *sb->AsD3D12ShaderResourceView(context);
-
-			// Copy!
-			device->CopyDescriptorsSimple(1, dstHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-			usedSBSlots |= (1 << slot);
-		}
-	}
-	// RWStructuredBuffer
-	unsigned int usedRWSBSlots = 0;
-	for(int i=0;i<this->numRwSbResourceSlots;i++)
-	{
-		int slot=this->rwSbResourceSlots[i]+1000;
-		auto j=sBuffers.find(slot);
-		if(j==sBuffers.end())
-			continue;
-		crossplatform::PlatformStructuredBuffer *sb =j->second;
-
-		if (slot >= 1000)
-		{
-			if (!usesRwTextureSlotForSB(slot-1000))
-		{
-			SIMUL_CERR_ONCE << "The structured buffer at slot: " << slot << " , is applied but the pass does not use it, ignoring it." << std::endl;
-			continue;
-		}
-			sb->ActualApply(context, this, slot);
-			//auto sb = (dx12::PlatformStructuredBuffer*)i->second;
-		//	auto rPlat = (dx12::RenderPlatform*)(context.renderPlatform);
-		//	UINT curFrameIndex = rPlat->GetIdx();
-
-			// Destination
-			D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = frameHeap->CpuHandle();
-			frameHeap->Offset();
-
-			// Source
-			D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = *sb->AsD3D12UnorderedAccessView(context);
-
-			// Copy!
-			device->CopyDescriptorsSimple(1, dstHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-			usedRWSBSlots |= (1 << (slot - 1000));
-		}
-	}
-#if 1
-	// Check slots
+	// Check structured buffer slots
 	unsigned int requiredSlotsSB = GetStructuredBufferSlots();
 	if (requiredSlotsSB != usedSBSlots)
 	{
 		unsigned int missingSlots = requiredSlotsSB & (~usedSBSlots);
-		for (int i = 0; i < 32; i++)
+		for (int i = 0; i < ResourceBindingLimits::NumSRV; i++)
 		{
 			if (usesTextureSlotForSB(i))
 			{
@@ -1616,18 +1369,124 @@ void EffectPass::SetStructuredBuffers(StructuredBufferMap& sBuffers, dx12::Heap*
 			}
 		}
 	}
-	unsigned int requiredSlotsRWSB = GetRwStructuredBufferSlots();
-	if (requiredSlotsRWSB != usedRWSBSlots)
+#endif
+}
+
+void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, crossplatform::StructuredBufferAssignmentMap & sBuffers, dx12::Heap * frameHeap, ID3D12Device * device, crossplatform::DeviceContext & context)
+{	
+	auto rPlat = (dx12::RenderPlatform*)context.renderPlatform;
+	const auto resLimits	= rPlat->GetResourceBindingLimits();
+	auto nullUav			= rPlat->GetNullUAV();
+	int usedRwSBSlots		= 0;
+	int usedRwTextureSlots	= 0;
+
+	// The the handles for the required UAVs:
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumUAV>	srcHandles;
+	memset(srcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * ResourceBindingLimits::NumUAV);
+	std::array<bool, ResourceBindingLimits::NumUAV>							usedSlotsArray;
+	memset(usedSlotsArray.data(), 0, sizeof(bool) * ResourceBindingLimits::NumUAV);
+
+	// Iterate over the textures:
+	for (int i = 0; i < numRwResourceSlots; i++)
 	{
-		unsigned int missingSlots = requiredSlotsRWSB & (~usedRWSBSlots);
-		for (int i = 0; i < 32; i++)
+		int slot	= rwResourceSlots[i];
+		auto ta		= rwTextures[slot];
+
+		if (!usesRwTextureSlot(slot))
+		{
+			SIMUL_CERR << "Resource binding error at: " << mPassName << ". RWTexture slot " << slot << " is invalid." << std::endl;
+			SIMUL_BREAK("");
+		}
+
+		// If the texture is null or invalid, set a dummy:
+		if (!ta.texture || !ta.texture->IsValid())
+		{
+			if (ta.dimensions == 2)
+			{
+				ta.texture = rPlat->GetDummy2D();
+			}
+			else if (ta.dimensions == 3)
+			{
+				ta.texture = rPlat->GetDummy3D();
+			}
+			else
+			{
+				SIMUL_CERR << "We only have dummy for 2D and 3D textures. \n";
+		}
+		}
+		srcHandles[slot]	= *ta.texture->AsD3D12UnorderedAccessView(ta.index, ta.mip);
+		usedSlotsArray[slot]= true;
+		usedRwTextureSlots |= (1 << slot);
+	}
+	// Iterate over the structured buffers:
+	for (int i = 0; i < numRwSbResourceSlots; i++)
+	{
+		int slot = rwSbResourceSlots[i];
+		if (usedSlotsArray[slot])
+		{
+			SIMUL_CERR << "The slot: " << slot << " at pass: " << mPassName << ", has already being used by a RWTexture. \n";
+		}
+		auto sb = (dx12::PlatformStructuredBuffer*)sBuffers[slot];
+		if (!sb || !usesRwTextureSlotForSB(slot))
+			{
+			SIMUL_CERR << "Resource binding error at: " << mPassName << ". RWStructured buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_BREAK("");
+				}
+		srcHandles[slot]		= *sb->AsD3D12UnorderedAccessView(context);
+		usedSlotsArray[slot]	= true;
+		usedRwSBSlots			|= (1 << slot);
+			}
+	// Iterate over all the slots and fill them:
+	for (int s = 0; s < ResourceBindingLimits::NumSRV; s++)
+	{
+		if (!usesRwTextureSlot(s) && !usesRwTextureSlotForSB(s))
+		{
+			// Hardware tiers 1 & 2 require all slots to be filed:
+			if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
+			{
+				device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullUav, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
+		}
+		else
+		{
+			device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), srcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
+		frameHeap->Offset();
+	}
+
+
+#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+	// Check RwTexture slots
+	unsigned int requiredSlotsTexture = GetRwTextureSlots();
+	if (requiredSlotsTexture != usedRwTextureSlots)
+	{
+		unsigned int missingSlots = requiredSlotsTexture & (~usedRwTextureSlots);
+		for (int i = 0; i < ResourceBindingLimits::NumUAV; i++)
+		{
+			if (this->usesRwTextureSlot(i))
+			{
+				unsigned int testSlot = 1 << i;
+				if (testSlot & missingSlots)
+				{
+					SIMUL_CERR << "Resource binding error at: " << mPassName << ". RwTexture slot " << i << " was not set!" << std::endl;
+				}
+			}
+		}
+	}
+
+	// Check RwStructured buffer slots
+	unsigned int requiredSlotsSB = GetRwStructuredBufferSlots();
+	if (requiredSlotsSB != usedRwSBSlots)
+	{
+		unsigned int missingSlots = requiredSlotsSB & (~usedRwSBSlots);
+		for (int i = 0; i < ResourceBindingLimits::NumUAV; i++)
 		{
 			if (usesRwTextureSlotForSB(i))
 			{
 				unsigned int testSlot = 1 << i;
 				if (testSlot & missingSlots)
 				{
-					SIMUL_CERR << "Resource binding error at: " << mPassName << ". Raw structured buffer slot " << i << " was not set!" << std::endl;
+					SIMUL_CERR << "Resource binding error at: " << mPassName << ". RwStructured buffer slot " << i << " was not set!" << std::endl;
 				}
 			}
 		}
@@ -1641,7 +1500,6 @@ EffectPass::EffectPass()
 
 EffectPass::~EffectPass()
 {
-	SAFE_RELEASE(mRootS);
 	for (auto& ele : mGraphicsPsoMap)
 	{
 		SAFE_RELEASE(ele.second);

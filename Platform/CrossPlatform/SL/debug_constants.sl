@@ -2,7 +2,7 @@
 #ifndef DEBUG_CONSTANTS_SL
 #define DEBUG_CONSTANTS_SL
 
-SIMUL_CONSTANT_BUFFER(DebugConstants,8)
+SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 	uniform mat4 debugWorldViewProj;
 	uniform vec4 rect;
 	uniform vec4 multiplier;

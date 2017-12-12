@@ -4,6 +4,7 @@
 #include "Simul/Platform/CrossPlatform/Topology.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Base/RuntimeError.h"
 #include <string>
 #include <map>
@@ -250,6 +251,7 @@ namespace simul
 				,samplerSlots(0)
 				{
 				}
+			virtual ~Shader(){}
 			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
@@ -337,6 +339,10 @@ namespace simul
 			void SetRwTextureSlotsForSB(unsigned s) { rwTextureSlotsForSB = s; }
 			void SetSamplerSlots(unsigned s)		{ samplerSlots = s; }
 
+			unsigned GetSamplerSlots()const
+			{
+				return samplerSlots;
+			}
 			unsigned GetRwTextureSlots() const
 			{
 				return rwTextureSlots;
@@ -428,7 +434,7 @@ namespace simul
 		{
 			std::set<Effect*> linkedEffects;
 		public:
-			ConstantBuffer():ConstantBufferBase("")
+			ConstantBuffer():ConstantBufferBase(nullptr)
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -522,7 +528,9 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
 		protected:
+		public:
 			simul::crossplatform::RenderPlatform *renderPlatform;
+		protected:
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
 		public:
@@ -762,113 +770,7 @@ namespace simul
 			std::string name;
 			std::vector<std::string> options;
 		};
-		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
-		template<typename T,int count> class FastMap
-		{
-			std::set<Effect*> linkedEffects;
-			int index_limit;
-			int index_start;
-			T values[count+1];
-			unsigned has_value;
-			int sz;
-		public:
-			FastMap():index_limit(0),index_start(count),has_value(0),sz(0)
-			{
-			}
-			const T& operator[](int i) const
-			{
-				if(i>=index_limit)
-				{
-					//throw std::runtime_error("");
-				}
-				return values[i];
-			}
-			T& operator[](int i)
-			{
-				if(i>=count)
-				{
-					//throw std::runtime_error("");
-				}
-				unsigned value=(1<<i);
-				if(!(has_value&value))
-				{
-					sz++;
-					if(i>=index_limit)
-						index_limit=i+1;
-					if(i<index_start)
-						index_start=i;
-				}
-				has_value|=value;
-				return values[i];
-			}
-			void clear()
-			{
-				index_start=count;
-				index_limit=0;
-				has_value=0;
-				sz=0;
-			}
-			int size() const
-			{
-				return sz;
-			}
-			struct iterator
-			{
-				int position;
-				int first;
-				unsigned has_value;
-				bool operator==(const iterator &i)
-				{
-					return (position==i.position);
-				}
-				bool operator!=(const iterator &i)
-				{
-					return (position!=i.position);
-				}
-				iterator& operator++ ()     // prefix ++
-				{
-					do
-					{
-						first++;
-						has_value>>=(unsigned)1;
-					}
-					while((1&has_value)==0&&has_value!=0);
-					position++;
-					return *this;
-				}
-			};
-			iterator begin()
-			{
-				iterator i;
-				i.position=0;
-				i.first=index_start;
-				i.has_value=(has_value>>(unsigned)index_start);
-				return i;
-			}
-			iterator end()
-			{
-				iterator i;
-				i.position=sz;
-				i.first=index_limit;
-				i.has_value=0;
-				return i;
-			}
-		};
-		struct TextureAssignment
-		{
-			crossplatform::Texture *texture;
-			int dimensions;
-			bool uav;
-			int mip;// if -1, it's the whole texture.
-			int index;	// if -1 it's the whole texture
-			crossplatform::ShaderResourceType resourceType;
-		};
 		class Buffer;
-		typedef FastMap<TextureAssignment,32> TextureAssignmentMap;
-		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
-		typedef FastMap<ConstantBufferBase*,32> ConstantBufferAssignmentMap;
-		typedef FastMap<PlatformStructuredBuffer*,32> StructuredBufferAssignmentMap;
-		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
 
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1);
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
@@ -958,12 +860,7 @@ namespace simul
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s);
 			virtual void SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
-			virtual void SetConstantBuffer(DeviceContext &deviceContext,const char *name	,ConstantBufferBase *s);
-			//! Set a constant buffer for this effect.
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)
-			{
-				SetConstantBuffer(deviceContext,s->GetDefaultName(),s);
-			}
+			virtual void SetConstantBuffer(DeviceContext &deviceContext,ConstantBufferBase *s);
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
 			/// Activate the shader. Unapply must be called after rendering is done.
