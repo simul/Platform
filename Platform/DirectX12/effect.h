@@ -3,12 +3,14 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "SimulDirectXHeader.h"
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
+#include "Simul/Platform/DirectX12/RenderPlatform.h"
 
 #include "Heap.h"
 #include "Fence.h"
 
 #include <string>
 #include <map>
+#include <array>
 
 #pragma warning(disable:4251)
 

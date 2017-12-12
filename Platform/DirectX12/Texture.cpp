@@ -575,6 +575,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
 
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(int index, int mip)
 {
+	if(mip>=mips)
+		mip=0;
 	// Ensure a valid state for the resource
 	auto curState = GetCurrentState(mip, index);
 	if ((curState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)

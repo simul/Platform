@@ -1,6 +1,7 @@
 #ifndef CPP_HLSL
 #define CPP_HLSL
 #include "../../CrossPlatform/SL/CppSl.hs"
+#define SFX_TYPED_UAV_LOADS 1
 
 #ifndef __cplusplus
 // Disable the warning "pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values..."

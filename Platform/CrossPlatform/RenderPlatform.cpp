@@ -971,6 +971,20 @@ crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::Devic
 	return v;
 }
 
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
+{
+	if(deviceContext.GetFrameBufferStack().size())
+	{
+		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
+		if(f)
+			f->viewport=*vps;
+	}
+	else
+	{
+		deviceContext.defaultTargetsAndViewport.viewport=*vps;
+	}
+}
+
 crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
 {
 	crossplatform::Viewport v;

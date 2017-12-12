@@ -5,5 +5,11 @@
   "outputExtension": "cso",
 	"outputOption": "/Fo",
 	"entryPointOption":  "/E{name}",
-  "multiplePixelOutputFormats": false
+	"multiplePixelOutputFormats"	: false,
+	"graphicsRootSignatureBinary"	: "{SIMUL}/Platform/DirectX12/shaderbin/GFX.cso",
+	"computeRootSignatureBinary"	: "{SIMUL}/Platform/DirectX12/shaderbin/GFX.cso",
+	"rootSignatureCommand"			: "/setrootsignature {file}"
+	,"define": {
+		"SFX_TYPED_UAV_LOADS":"1"
+		}
 }

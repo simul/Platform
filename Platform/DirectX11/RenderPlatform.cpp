@@ -1045,16 +1045,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		viewports[i].MaxDepth	=1.0f;
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
-	if(deviceContext.GetFrameBufferStack().size())
-	{
-		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
-		if(f)
-			f->viewport=*vps;
-	}
-	else
-	{
-		deviceContext.defaultTargetsAndViewport.viewport=*vps;
-	}
+	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)

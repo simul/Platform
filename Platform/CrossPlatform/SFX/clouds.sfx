@@ -40,8 +40,11 @@ uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
+#ifdef SFX_TYPED_UAV_LOADS
+uniform RWTexture3D<uchar4> packedOutputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
+#else
 uniform RWTexture3D<uint> packedOutputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
-
+#endif
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
@@ -141,6 +144,17 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
+#ifdef SFX_TYPED_UAV_LOADS
+vec4 UnpackUintToVec4(vec4 a)
+{
+	return a;
+}
+vec4 PackVec4ToUint(vec4 a)
+{
+	return a;
+}
+#else
+
 vec4 UnpackUintToVec4(uint i)
 {
 	vec4 o;
@@ -162,6 +176,7 @@ uint PackVec4ToUint(vec4 i)
 	//uint(i.w*255.0)|(uint(i.z*255.0)<<16u)|(uint(i.y*255.0)<<32u)|;
 	return o;
 }
+#endif
 
 
 // idx is the position relative to the grid centre texel.
