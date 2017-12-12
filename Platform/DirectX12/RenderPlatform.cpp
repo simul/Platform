@@ -27,6 +27,8 @@
 
 #include <algorithm>
 
+#pragma optimize("",off)
+
 using namespace simul;
 using namespace dx12;
 

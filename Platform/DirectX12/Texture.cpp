@@ -755,6 +755,7 @@ void Texture::SetName(const char *n)
 	std::wstring ws=simul::base::Utf8ToWString(n);
 	mTextureDefault->SetName(ws.c_str());
 }
+
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt)
 {
 	// If it's the same as before, return.
@@ -776,13 +777,12 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
+	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	if (mTextureDefault)
 	{
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
 		// Assume it is a cubemap ??!!!
-
-
 		if (textureDesc.DepthOrArraySize == 6)
 		{
 			cubemap							= true;
@@ -799,7 +799,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			arraySize	= textureDesc.DepthOrArraySize;
 			mips		= textureDesc.MipLevels;
 
-			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+			// SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 		}
 		depth = textureDesc.DepthOrArraySize;
 		if (make_rt && (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
