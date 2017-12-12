@@ -805,7 +805,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		if(open_brace!=std::string::npos)
 			level=(Level)(level+1);
 		string word;
-		int sp = line.find(" ");
+		size_t sp = line.find(" ");
 		if(sp != std::string::npos)
 			word=line.substr(0, sp);
 		if(level==OUTSIDE)
@@ -891,13 +891,13 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				vector<string> en=base::split(enablestr,',');
 
 				desc.blend.numRTs=en.size();
-				pos++;
-				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_t));
-				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_t));
-				crossplatform::BlendOption SrcBlend			=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
-				crossplatform::BlendOption DestBlend		=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
-				crossplatform::BlendOption SrcBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
-				crossplatform::BlendOption DestBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
+				pos_t++;
+				crossplatform::BlendOperation BlendOp		= (crossplatform::BlendOperation)toInt(base::toNext(props, ',', pos_t));
+				crossplatform::BlendOperation BlendOpAlpha	= (crossplatform::BlendOperation)toInt(base::toNext(props, ',', pos_t));
+				crossplatform::BlendOption SrcBlend			= (crossplatform::BlendOption)toInt(base::toNext(props, ',', pos_t));
+				crossplatform::BlendOption DestBlend		= (crossplatform::BlendOption)toInt(base::toNext(props, ',', pos_t));
+				crossplatform::BlendOption SrcBlendAlpha	= (crossplatform::BlendOption)toInt(base::toNext(props, ',', pos_t));
+				crossplatform::BlendOption DestBlendAlpha	= (crossplatform::BlendOption)toInt(base::toNext(props, ',', pos_t));
 				pos_t++;
 				string maskstr=base::toNext(props,')',pos_t);
 				vector<string> ma=base::split(maskstr,',');

@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <string>
 
+#pragma optimize("",off)
+
 using namespace simul;
 using namespace dx12;
 
@@ -546,7 +548,7 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 	simul::base::find_and_replace(rsFilename, ".cso", "_withrs.cso");
 	filenameUtf8			+= rsFilename;
 	//fileLoader->AcquireFileContents(rootSignatureBlob.pData, rootSignatureBlob.DataSize, filenameUtf8.c_str(), false);
-	if (!rootSignatureBlob.pData)
+	//if (!rootSignatureBlob.pData)
 	{
 		// SIMUL_CERR << "The root signature binary for: " << filename_utf8 << " could not be loaded! \n";
 		// Copy RootSignature

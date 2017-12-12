@@ -412,7 +412,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
 			
 			// Set break on_x settings
-			bool breakOnWarning = false;
+			bool breakOnWarning = true;
 			SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 			if (breakOnWarning)
 			{
