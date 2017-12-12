@@ -443,7 +443,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,cro
 }
 
 
-void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
+void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	mCommandList = deviceContext.asD3D12Context();
 	immediateContext.platform_context=deviceContext.platform_context;
@@ -1300,6 +1300,8 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 
 	mCommandList->RSSetViewports(num, viewports);
 	mCommandList->RSSetScissorRects(num, scissors);
+	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
+
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
@@ -1468,7 +1470,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	mFrameSamplerHeap[mCurIdx].Reset();
 	
 	// Apply CBVs:
-		pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[mCurIdx],m12Device,deviceContext);
+	pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[mCurIdx],m12Device,deviceContext);
 
 	// Apply SRVs (textures and SB):
 	pass->SetSRVs(cs->textureAssignmentMap, cs->applyStructuredBuffers, &mFrameHeap[mCurIdx], m12Device, deviceContext);

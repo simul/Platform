@@ -1412,7 +1412,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
 			else
 			{
 				SIMUL_CERR << "We only have dummy for 2D and 3D textures. \n";
-		}
+			}
 		}
 		srcHandles[slot]	= *ta.texture->AsD3D12UnorderedAccessView(ta.index, ta.mip);
 		usedSlotsArray[slot]= true;
