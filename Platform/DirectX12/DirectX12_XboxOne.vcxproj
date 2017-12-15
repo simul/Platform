@@ -13,6 +13,7 @@
     <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
     <PlatformToolset>v140</PlatformToolset>
     <TargetRuntime>Native</TargetRuntime>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">

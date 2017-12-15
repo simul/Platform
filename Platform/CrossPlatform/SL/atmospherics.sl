@@ -56,16 +56,16 @@ float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 t
 	// if we are IN or above the clouds, we want to stay where we are.
 	// Therefore, using max(0,-texc.z) will give zero for texc.z>0, and |texc.z| for texc.z<0.
 	// dividing this by l.z will give us the projection distance up to the cloudbase, unless l.z<0
-	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)-max(0,texc.z-1.0)/min(l.z,-0.0001);
-//	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)*step(0,l.z)-max(0,texc.z-1.0)/min(l.z,-0.0001)*step(0,-l.z);
+	//float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)-max(0,texc.z-1.0)/min(l.z,-0.0001);
+	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)*step(0,l.z)-max(0,texc.z-1.0)/min(l.z,-0.0001)*step(0,-l.z);
 	texc			+=l*zproject;
 	if(clamp!=0)
 	{
 		//
-		float xproject	=max(0.0,-texc.x)/max(l.x,0.0001)-max(0,texc.x-1.0)/min(l.x,-0.0001);
+		float xproject	=max(0.0,-texc.x)/max(l.x,0.0001)*step(0,l.x)-max(0,texc.x-1.0)/min(l.x,-0.0001)*step(0,l.x);
 		texc			+=l*xproject;
 		//
-		float yproject	=max(0.0,-texc.y)/max(l.y,0.0001)-max(0,texc.y-1.0)/min(l.y,-0.0001);
+		float yproject	=max(0.0,-texc.y)/max(l.y,0.0001)*step(0,l.y)-max(0,texc.y-1.0)/min(l.y,-0.0001)*step(0,l.y);
 		texc			+=l*yproject;
 	}
 	float range=.05;
