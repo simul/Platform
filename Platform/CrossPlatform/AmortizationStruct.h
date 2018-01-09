@@ -50,7 +50,7 @@ public:
 	{
 		if(!pattern||amortization<=1)
 			return uint3(0,0,0);
-		int sub_frame = fmod((framenumber - fmod(framenumber, numOffsets))/ numOffsets, numOffsets);
+		int sub_frame = fmod((framenumber - fmod(framenumber, numOffsets)) / numOffsets, numOffsets);
 		return pattern[sub_frame];
 	}
 	void validate(int newFramenumber)

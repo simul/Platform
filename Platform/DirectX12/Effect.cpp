@@ -662,7 +662,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			{
 				// Wait for the main handle and the output pipes
 				HANDLE hWaitHandles[]	= {processInfo.hProcess, coutRead, cerrRead };
-				DWORD ret				= WaitForMultipleObjects(3, hWaitHandles, FALSE, INFINITE);
+				DWORD ret				= WaitForMultipleObjects(3, hWaitHandles, TRUE, INFINITE);
 
 				// Print the pipes
 				const DWORD BUFSIZE = 4096;
@@ -683,7 +683,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			else
 			{
 				DWORD error = GetLastError();
-				SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
+				SIMUL_CERR << "Could not create the sfx process. Error:" << error << std::endl;
 				return;
 			}
 		}
