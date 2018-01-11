@@ -61,9 +61,9 @@ namespace simul
 			//! Depth format
 			DXGI_FORMAT									mDepthStencilFmt = DXGI_FORMAT_D32_FLOAT;
 			//! Depth stencil surface
-			ID3D12Resource*								m_depthStencilTexture12;
+			//ID3D12Resource*								m_depthStencilTexture12;
 			//! Depth Stencil heap
-			ID3D12DescriptorHeap*						m_dsHeap;
+			//ID3D12DescriptorHeap*						m_dsHeap;
 			//! We need one command allocator (storage for commands) for each backbuffer
 			ID3D12CommandAllocator*						m_commandAllocators[FrameCount];
 			//! Reference to the command queue

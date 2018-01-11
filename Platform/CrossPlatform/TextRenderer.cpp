@@ -126,15 +126,17 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	renderPlatform=r;
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
+	fontChars.RestoreDeviceObjects(renderPlatform,70,false,false);
 	RecompileShaders();
 	SAFE_DELETE(font_texture);
-	ERRNO_BREAK
+	
 	font_texture=renderPlatform->CreateTexture("Font16.png");
-	ERRNO_BREAK
+	
 }
 
 void TextRenderer::InvalidateDeviceObjects()
 {
+	fontChars.InvalidateDeviceObjects();
 	constantBuffer.InvalidateDeviceObjects();
 	SAFE_DELETE(effect);
 	SAFE_DELETE(font_texture);
@@ -190,11 +192,11 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	}
 	float ht=fontScale*20.0f;
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
-	constantBuffer.text_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht/screen_height);
+	constantBuffer.background_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht/screen_height);
 	if(mirrorY)
 	{
-		constantBuffer.text_rect.y=-constantBuffer.text_rect.y;
-		constantBuffer.text_rect.w*=-1.0f;
+		constantBuffer.background_rect.y=-constantBuffer.background_rect.y;
+		constantBuffer.background_rect.w*=-1.0f;
 	}
 	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 	if(constantBuffer.background.w>0.0f)
@@ -203,10 +205,8 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		renderPlatform->DrawQuad(deviceContext);
 		effect->Unapply(deviceContext);
 	}
-
-	effect->SetTexture(deviceContext,textureResource,font_texture);
-	effect->Apply(deviceContext,textTech,0);
-
+	int n=0;
+	FontChar *charList=fontChars.GetBuffer(deviceContext);
 	for(int i=0;i<70;i++)
 	{
 		if(txt[i]==0||txt[i]=='\n')
@@ -217,15 +217,23 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		const FontIndex &f=fontIndices[idx];
 		if(idx>0)
 		{
-			constantBuffer.text_rect.x	=2.0f*x/screen_width-1.f;
-			constantBuffer.text_rect.z	=2.0f*(float)f.pixel_width*fontScale/screen_width;
+			FontChar &c=charList[n++];
+			c.text_rect=constantBuffer.background_rect;
+			c.text_rect.x	=2.0f*x/screen_width-1.f;
+			c.text_rect.z	=2.0f*(float)f.pixel_width*fontScale/screen_width;
 			static float u			=1024.f/598.f;
-			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
-			effect->SetConstantBuffer(deviceContext,&constantBuffer);
-			renderPlatform->DrawQuad(deviceContext);
+			c.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
 		}
 		x+=f.pixel_width*fontScale+1;
 	}
+
+	effect->SetTexture(deviceContext,textureResource,font_texture);
+	effect->Apply(deviceContext,textTech,0);
+	effect->SetConstantBuffer(deviceContext,&constantBuffer);
+	renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
+	fontChars.Apply(deviceContext,effect,"fontChars");
+	renderPlatform->SetTopology(deviceContext,TRIANGLELIST);
+	renderPlatform->Draw(deviceContext,6*n,0);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
 //	renderPlatform->RestoreRenderState(deviceContext);

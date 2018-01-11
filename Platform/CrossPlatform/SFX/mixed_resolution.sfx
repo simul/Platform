@@ -664,15 +664,16 @@ void MinMax(uint3 idx,bool reverseDepth)
 		return;
 	}
 	// PS4 can apparently cope with reading and writing the same RW texture in a shader, but DX11 cannot.
+	/*
 #ifdef __PSSL__
-	targetTexture[idx] *= 0.5;
-	targetTexture[idx] += 0.5*res;
+	targetTexture[idx] *= 0.9;
+	targetTexture[idx] += 0.1*res;
 #else
+	*/
 	vec4 old_res		= previousCombinedTexture[idx];
-	res					= 0.5*res+0.5*old_res;
+	res					= 0.1*res+0.9*old_res;
 	targetTexture[idx] = res;
-#endif
-
+//#endif
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

@@ -1205,10 +1205,11 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 		auto cb		= cBuffers[slot];
 #ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
 		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
-	{
+		{
 			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Constant buffer slot " << slot << " is invalid." << std::endl;
 			SIMUL_BREAK("");
-	}
+			continue;
+		}
 #endif
 		auto d12cb			= (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		srcHandles[slot]	= d12cb->AsD3D12ConstantBuffer();

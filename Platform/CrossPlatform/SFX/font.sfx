@@ -4,12 +4,25 @@
 #include "../SL/render_states.sl"
 #include "../SL/states.sl"
 #include "../SL/text_constants.sl"
+uniform StructuredBuffer<FontChar> fontChars;
 uniform Texture2D fontTexture;
+shader posTexVertexOutput BackgroundVertexShader(idOnly IN)
+{
+	posTexVertexOutput OUT	=VS_ScreenQuad(IN,background_rect);
+	OUT.texCoords			=vec2(0,0);
+	return OUT;
+}
 
 shader posTexVertexOutput FontVertexShader(idOnly IN)
 {
-    posTexVertexOutput OUT	=VS_ScreenQuad(IN,text_rect);
-	OUT.texCoords			=vec4(texc.xy+texc.zw*OUT.texCoords.xy,0.0,1.0).xy;
+	uint char_index=IN.vertex_id/6;
+	uint vert_index=IN.vertex_id-(6*char_index);
+	uint ids[]={0,1,2,2,3,1};
+	FontChar f=fontChars[char_index];
+	idOnly cIN;
+	cIN.vertex_id=ids[vert_index];
+    posTexVertexOutput OUT	=VS_ScreenQuad(cIN,f.text_rect);	
+	OUT.texCoords			=vec4(f.texc.xy+f.texc.zw*OUT.texCoords.xy,0.0,1.0).xy;
     return OUT;
 }
 
@@ -63,7 +76,7 @@ technique backg
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(vs);
+		SetVertexShader(CompileShader(vs_4_0, BackgroundVertexShader()));
 		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));
     }
 }

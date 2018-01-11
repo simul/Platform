@@ -951,7 +951,6 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
-	//UINT offset = 0;
 	ID3D11Buffer *buf[10];
 	UINT strides[10];
 	UINT offsets[10];
@@ -972,10 +971,16 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 
 		offsets[i]=0;
 	}
-	
-	deviceContext.asD3D11DeviceContext()->IASetVertexBuffers(	0,	// the first input slot for binding
+	if(num_buffers)
+		deviceContext.asD3D11DeviceContext()->IASetVertexBuffers(	0,	// the first input slot for binding
 									num_buffers,					// the number of buffers in the array
 									buf,							// the array of vertex buffers
+									strides,						// array of stride values, one for each buffer
+									offsets );						// array of offset values, one for each buffer
+	else
+		deviceContext.asD3D11DeviceContext()->IASetVertexBuffers(	0,	// the first input slot for binding
+									0,								// the number of buffers in the array
+									nullptr,						// the array of vertex buffers
 									strides,						// array of stride values, one for each buffer
 									offsets );						// array of offset values, one for each buffer
 };

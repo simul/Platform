@@ -31,6 +31,7 @@ namespace simul
 			crossplatform::EffectTechnique				*textTech;
 			crossplatform::ShaderResource				textureResource;
 			crossplatform::ConstantBuffer<TextConstants>	constantBuffer;
+			crossplatform::StructuredBuffer<FontChar> fontChars;
 			crossplatform::Texture*			font_texture;
 			crossplatform::RenderPlatform *renderPlatform;
 			bool recompile;

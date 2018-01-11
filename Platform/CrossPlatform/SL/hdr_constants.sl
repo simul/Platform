@@ -21,8 +21,8 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec4 warpHmdWarpParam;
 
-	uniform vec2 lowResTexelSizeX;
-	uniform vec2 warpLensCentre;
+	uniform vec3 cubemapGroundColour;
+	uniform float ccgcpad;
 
 	uniform vec2 warpScreenCentre;
 	uniform vec2 warpScale;

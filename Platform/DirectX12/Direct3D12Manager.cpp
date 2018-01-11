@@ -59,8 +59,8 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	// Dx12 swap chain	
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc12	= {};
 	swapChainDesc12.BufferCount				= FrameCount;
-	swapChainDesc12.Width					= screenWidth; 
-	swapChainDesc12.Height					= screenHeight; 
+	swapChainDesc12.Width					= 0; 
+	swapChainDesc12.Height					= 0; 
 	swapChainDesc12.Format					= DXGI_FORMAT_R16G16B16A16_FLOAT;
 	swapChainDesc12.BufferUsage				= DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc12.SwapEffect				= DXGI_SWAP_EFFECT_FLIP_DISCARD; 
@@ -92,14 +92,14 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 
 	// Initialize colour and depth surfaces
 	CreateRenderTarget(d3dDevice);		
-	CreateDepthStencil(d3dDevice);
+	//CreateDepthStencil(d3dDevice);
 
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(factory);
 	SAFE_RELEASE(swapChain);
 #endif
 }
-
+#pragma optimize("",off)
 
 void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 {
@@ -137,7 +137,8 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 		return;
 	if (swapDesc.Width == W && swapDesc.Height == H)
 		return;
-
+	swapDesc.Width=W;
+	swapDesc.Height=H;
 	/*
 	SAFE_RELEASE_ARRAY	(m_renderTargetView,FrameCount);
 	SAFE_RELEASE		(m_depthStencilTexture);
@@ -147,10 +148,10 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	*/
 
 	// Nacho: that format ?? We should make a member to store this format
-	hr = m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);	
+	hr = m_swapChain->ResizeBuffers(FrameCount,W,H,swapDesc.Format,swapDesc.Flags);	
 
 	CreateRenderTarget(d3dDevice);
-	CreateDepthStencil(d3dDevice);
+	//CreateDepthStencil(d3dDevice);
 
 	DXGI_SURFACE_DESC surfaceDesc;
 	m_swapChain->GetDesc1(&swapDesc);
@@ -215,55 +216,6 @@ void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 
 void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 {
-	HRESULT res = S_FALSE;
-	if (!d3dDevice)
-		return;
-
-	// Create Depth Stencil desriptor heap
-	D3D12_DESCRIPTOR_HEAP_DESC dsHeapDesc	= {};
-	dsHeapDesc.NumDescriptors				= 1;
-	dsHeapDesc.Type							= D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsHeapDesc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	res = d3dDevice->CreateDescriptorHeap
-	(
-		&dsHeapDesc,
-#ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&m_dsHeap)
-#else
-		IID_PPV_ARGS(&m_dsHeap)
-#endif
-	);
-	SIMUL_ASSERT(res == S_OK);
-
-	// Default clear
-	D3D12_CLEAR_VALUE depthClear	= {};
-	depthClear.Format				= mDepthStencilFmt;
-	depthClear.DepthStencil.Depth	= 0.0f;
-	depthClear.DepthStencil.Stencil = 0;
-
-	// Create the depth stencil texture resource
-	res = d3dDevice->CreateCommittedResource
-	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Tex2D(mDepthStencilFmt, (UINT64)m_viewport.Width, (UINT64)m_viewport.Height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&depthClear,
-#ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&m_depthStencilTexture12)
-#else
-		IID_PPV_ARGS(&m_depthStencilTexture12)
-#endif
-	);
-	SIMUL_ASSERT(res == S_OK);
-	m_depthStencilTexture12->SetName(L"Dx12MainDepthStencilTexture");
-
-	// Create a descriptor of this ds
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsViewDesc	= {};
-	dsViewDesc.Format							= mDepthStencilFmt;
-	dsViewDesc.ViewDimension					= D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsViewDesc.Flags							= D3D12_DSV_FLAG_NONE;
-	d3dDevice->CreateDepthStencilView(m_depthStencilTexture12, &dsViewDesc, m_dsHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
 void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
@@ -298,8 +250,6 @@ void Window::Release()
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE_ARRAY(m_backBuffers,FrameCount);
 	SAFE_RELEASE(m_rtvHeap);
-	SAFE_RELEASE(m_depthStencilTexture12);
-	SAFE_RELEASE(m_dsHeap);
 	SAFE_RELEASE_ARRAY(m_commandAllocators,FrameCount);
 	SAFE_RELEASE(m_dx12CommandQueue);
 	SAFE_RELEASE(d3d12Device);
@@ -612,6 +562,7 @@ void Direct3D12Manager::Render(HWND h)
 		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->hwnd<<std::endl;
 		return;
 	}
+	ResizeSwapChain(w->hwnd);
 
 #ifdef _XBOX_ONE
 	m_frameIndex = -1;
@@ -640,17 +591,16 @@ void Direct3D12Manager::Render(HWND h)
 
 	// Indicate that the back buffer will be used as a render target.
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->m_backBuffers[m_frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	m_commandList->OMSetRenderTargets(1, &w->mRtvCpuHandle[m_frameIndex], FALSE, &w->m_dsHeap->GetCPUDescriptorHandleForHeapStart());
-
+	m_commandList->OMSetRenderTargets(1, &w->mRtvCpuHandle[m_frameIndex], FALSE, nullptr);
+	
 	// Submit commands
 	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
 	m_commandList->ClearRenderTargetView(w->mRtvCpuHandle[m_frameIndex], kClearColor , 0, nullptr);
-	m_commandList->ClearDepthStencilView(w->m_dsHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+	//m_commandList->ClearDepthStencilView(w->m_dsHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
 
 	if (w->renderer)
 	{
 		w->renderer->Render(w->view_id,m_commandList,&w->mRtvCpuHandle[m_frameIndex],w->m_scissorRect.right,w->m_scissorRect.bottom);
-	
 	}
 
 	// Get ready to present
