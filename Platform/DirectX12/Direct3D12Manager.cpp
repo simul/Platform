@@ -103,13 +103,21 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 
 void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 {
-	// https://github.com/Microsoft/DirectX-Graphics-Samples/issues/48
-	// TO-DO: resize doesnt work yet
-	// TO-DO: Update the viewports and the depth texture
+	// We already waited before calling Window::Resize so we can
+	// release the resources
 
-	// We should have a wait here so we can delete the safelly the surfaces
+	// Backbuffers
+	SAFE_RELEASE(m_rtvHeap);
+	SAFE_RELEASE_ARRAY(m_backBuffers, FrameCount);
+
+	// Cmd allocators
+	SAFE_RELEASE_ARRAY(m_commandAllocators, FrameCount);
+
+	// Depth stencil
+	SAFE_RELEASE(m_dsHeap);
+	SAFE_RELEASE(m_depthStencilTexture12);
 	
-	RECT rect;
+	RECT rect = {};
 #if defined(WINVER) &&!defined(_XBOX_ONE)
 	if(!GetWindowRect(hwnd,&rect))
 		return;
@@ -131,36 +139,21 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	m_scissorRect.right		= W;
 	m_scissorRect.bottom	= H;
 
-	DXGI_SWAP_CHAIN_DESC1 swapDesc;
-	HRESULT hr = m_swapChain->GetDesc1(&swapDesc);
-	if (hr != S_OK)
-		return;
-	if (swapDesc.Width == W && swapDesc.Height == H)
-		return;
-
-	/*
-	SAFE_RELEASE_ARRAY	(m_renderTargetView,FrameCount);
-	SAFE_RELEASE		(m_depthStencilTexture);
-	SAFE_RELEASE		(m_depthStencilView);
-	SAFE_RELEASE		(m_depthStencilState);
-	SAFE_RELEASE		(m_rasterState);
-	*/
-
-	// Nacho: that format ?? We should make a member to store this format
-	hr = m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);	
+	// Resize the swapchain buffers
+	HRESULT res = m_swapChain->ResizeBuffers
+	(
+		0,						// Use current back buffer count
+		W,H,
+		DXGI_FORMAT_UNKNOWN,	// Use current format
+		0
+	);	
+	SIMUL_ASSERT(res == S_OK);
 
 	CreateRenderTarget(d3dDevice);
 	CreateDepthStencil(d3dDevice);
 
-	DXGI_SURFACE_DESC surfaceDesc;
-	m_swapChain->GetDesc1(&swapDesc);
-	surfaceDesc.Format		=swapDesc.Format;
-	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
-	surfaceDesc.Width		=swapDesc.Width;
-	surfaceDesc.Height		=swapDesc.Height;
-
-	if(renderer)
-		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+	if (renderer)
+		renderer->ResizeView(view_id, W, H);
 }
 
 void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
@@ -420,6 +413,11 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 			}
+			else
+			{
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false);
+			}
 
 			// Filter msgs
 			bool filterMsgs = true;
@@ -601,7 +599,7 @@ void Direct3D12Manager::Render(HWND h)
 	// Error checking
 	if(windows.find(h)==windows.end())
 		return;
-	Window *w=windows[h];
+	Window *w = windows[h];
 	if(!w)
 	{
 		SIMUL_CERR<<"No window exists for HWND "<<std::hex<<h<<std::endl;
@@ -650,7 +648,6 @@ void Direct3D12Manager::Render(HWND h)
 	if (w->renderer)
 	{
 		w->renderer->Render(w->view_id,m_commandList,&w->mRtvCpuHandle[m_frameIndex],w->m_scissorRect.right,w->m_scissorRect.bottom);
-	
 	}
 
 	// Get ready to present
@@ -721,12 +718,21 @@ void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 
 void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 {
-	if(windows.find(hwnd)==windows.end())
+	if (windows.find(hwnd) == windows.end())
 		return;
-	Window *w=windows[hwnd];
+	Window* w = windows[hwnd];
 	if(!w)
 		return;
+
+	// Here we should have a real wait...
+	Sleep(100);
 	w->ResizeSwapChain(m_d3d12Device);
+
+	// Reset the frame values
+	for (int i = 0; i < FrameCount; i++)
+	{
+		m_fenceValues[i] = 0;
+	}
 }
 
 

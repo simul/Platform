@@ -90,7 +90,7 @@ namespace simul
 			{
 				return NULL;
 			}
-			virtual const sce::Gnm::Sampler *AsGnmSampler() const {return 0;}
+			virtual const sce::Gnm::Sampler *AsGnmSampler() {return 0;}
 			virtual GLuint asGLuint()
 			{
 				return 0;
