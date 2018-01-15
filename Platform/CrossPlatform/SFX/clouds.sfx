@@ -224,7 +224,7 @@ void MixInLayer( int3 p,bool clears)
 	res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
 	res.y		=localCellNoiseStrength*noise_factor;
 
-	res.xyw		=lerp(current.xyw,res.xyw,res.z);
+	res.xyw		=lerp(current.xyw,res.xyw,saturate(1.0-pow(saturate(texc.z-0.5),2.0)));
 	res.z		=max(res.z,current.z);
 	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 	
@@ -261,17 +261,20 @@ void MixInCirrus(uint3 ii,bool clears)
 	float zPixel1=1.0/float(windowGrid.z);
 	res.z		=saturate((res.z-0.5)/diffusivity);
 	//res.z=frac(float(idx.x)/float(windowGrid.x));
-	res.z*=saturate(1.0-fall_amount)* max_density_gm3*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
+	res.z*=saturate(1.0-fall_amount)*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
 	vec4 current=vec4(0,0,0,0.0);
-	if(!clears)
+	if(clears)
+		current=vec4(res.xy,res.z*max_density_gm3,res.w);
+	else
 		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	{
 		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
 		noise_factor *= (0.05 + rand3(idx).x);
 		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
 		res.y		=localCellNoiseStrength*noise_factor;
-		res.xyw		=lerp(current.xyw,res.xyw,res.z);
-		res.z		=max(res.z,current.z);
+			res.xyw		=lerp(current.xyw,res.xyw,res.z);
+			//res.xyw		=lerp(current.xyw,res.xyw,saturate(1.0-pow(saturate(texc.z-0.5),2.0)));
+		res.z		=max(res.z*max_density_gm3,current.z);
 		IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 	}
 }
@@ -395,14 +398,14 @@ float ThicknessInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 CS_LAYOUT(4,4,4)
 shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 {
-	int3 idx	=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
-	vec3 texc = vec3(idx)*scale + offset;
 
 	vec3 wpos = texc / inverseScalesKm;
 	float thickness		=0.0;
