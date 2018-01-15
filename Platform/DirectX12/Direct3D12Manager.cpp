@@ -284,9 +284,8 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 
 void Window::Release()
 {
-	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
-	if(m_swapChain)
-		m_swapChain->SetFullscreenState(false, NULL);
+	// TO-DO: actual gpu wait here...
+	Sleep(1000);
 
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE_ARRAY(m_backBuffers,FrameCount);

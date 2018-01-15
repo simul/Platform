@@ -218,7 +218,13 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	const DirectX::Image*	image;
 	DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
 	image = scratchImage.GetImage(0, 0, 0);
-	
+	 
+	if (!image)
+	{
+		SIMUL_BREAK("Failed to load this texture.");
+		return;
+	}
+
 	// Make the texture description
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -1799,8 +1805,12 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
-	// Set the old rt,ds and viewports
-	rp->AsD3D12CommandList()->OMSetRenderTargets(1, m_pOldRenderTargets12[0], false, m_pOldDepthSurface12);
+	// Set the old rt
+	if (m_pOldRenderTargets12[0])
+	{
+		rp->AsD3D12CommandList()->OMSetRenderTargets(1, m_pOldRenderTargets12[0], false, m_pOldDepthSurface12);
+	}
+	// Set old Viewport and scissor
 	if (m_OldViewports12[0].Width * m_OldViewports12[0].Height > 0.0f)
 	{
 		CD3DX12_RECT scissor(0, 0, m_OldViewports12[0].Width, m_OldViewports12[0].Height);
@@ -1808,6 +1818,7 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
 		rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
 	}
+
 	rp->SetCurrentPixelFormat(mOldRtFormat);
 
 	// Again, inform crossplatform

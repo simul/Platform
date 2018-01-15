@@ -431,7 +431,6 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
 {
-	SIMUL_BREAK_ONCE("This is not working in dx12\n");
 	if (data)
 	{
 		D3D12_SUBRESOURCE_DATA dataToCopy	= {};

@@ -298,7 +298,11 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 	root->time=0.0f;
 	for(auto i=root->children.begin();i!=root->children.end();i++)
 	{
-		root->time+=i->second->time;
+		// Only add to total time if we updated the time this frame
+ 		if (i->second->updatedThisFrame)
+ 		{
+ 			root->time+=i->second->time;
+ 		}
 	}
 }
 
