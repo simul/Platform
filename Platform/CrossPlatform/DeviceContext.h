@@ -7,6 +7,12 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+
+#ifdef _MSC_VER
+	#pragma warning(push)  
+	#pragma warning(disable : 4251)  
+#endif
+
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
 struct ID3D12GraphicsCommandList;
@@ -276,4 +282,9 @@ namespace simul
 		typedef std::function<void()> ShutdownDeviceDelegate;
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)  
+#endif
+
 #endif

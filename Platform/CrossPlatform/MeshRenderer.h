@@ -2,6 +2,12 @@
 #include "RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/SL/camera_constants.sl"
 #include "Export.h"
+
+#ifdef _MSC_VER
+	#pragma warning(push)  
+	#pragma warning(disable : 4251)  
+#endif
+
 namespace simul
 {
 	namespace crossplatform
@@ -26,7 +32,9 @@ namespace simul
 			Effect *effect;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 		};
-
-
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)  
+#endif
