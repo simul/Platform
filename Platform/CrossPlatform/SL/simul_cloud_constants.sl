@@ -66,9 +66,11 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int2 gridCentreTexel;
 
 	uniform int4 exclusionRange;
+
 	uniform int initialSteps;
 	uniform uint stepPos;
 	uniform float initialStepKm;
+	uniform float sampleHeight;
 
 SIMUL_CONSTANT_BUFFER_END
 
