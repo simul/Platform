@@ -799,8 +799,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		base::ClipWhitespace(line);
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;
-		int sp=line.find(" ");
-		int open_brace=line.find("{");
+		int sp=(int)line.find(" ");
+		int open_brace= (int)line.find("{");
 		if(open_brace>=0)
 			level=(Level)(level+1);
 		string word;
@@ -888,7 +888,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string enablestr=simul::base::toNext(props,')', pos_b);
 				vector<string> en=base::split(enablestr,',');
 
-				desc.blend.numRTs=en.size();
+				desc.blend.numRTs= (int)en.size();
 				pos_b++;
 				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_b));
 				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_b));
