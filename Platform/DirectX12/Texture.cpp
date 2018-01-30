@@ -788,7 +788,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault)
 	{
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
-		// Assume it is a cubemap ??!!!
+	
+		// Assume cubemap
 		if (textureDesc.DepthOrArraySize == 6)
 		{
 			cubemap							= true;
@@ -1165,9 +1166,24 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		length = l;
 
 		InvalidateDeviceObjects();
+		// Check msaa support
 		if (num_samples > 1)
 		{
-			// TO-DO: Check multisampling
+			D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQuery = {};
+			msaaQuery.SampleCount		= num_samples / 2;
+			msaaQuery.NumQualityLevels	= aa_quality;
+			msaaQuery.Format			= srvFormat;
+			res = renderPlatform->AsD3D12Device()->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaQuery, sizeof(msaaQuery));
+			if (res == S_FALSE)
+			{
+				SIMUL_BREAK("The provided quality settings are not supported by this device. \n");
+				num_samples = 1;
+				aa_quality	= 0;
+			}
+			else
+			{
+				num_samples /= 2;
+			}
 		}
 
 		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
@@ -1246,7 +1262,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format							= srvFormat;
-		srvDesc.ViewDimension					= num_samples == 1 ? D3D12_SRV_DIMENSION_TEXTURE2D : D3D12_SRV_DIMENSION_TEXTURE2DMS;
+		srvDesc.ViewDimension					= num_samples > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels				= 1;
 
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DSrvHeap", false);
@@ -1265,7 +1281,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 			uavDesc.Format								= texture2dFormat;
 			uavDesc.ViewDimension						= D3D12_UAV_DIMENSION_TEXTURE2D;
-	
+
 			for (int i = 0; i<m; i++)
 			{
 				uavDesc.Texture2D.MipSlice = i;
@@ -1787,8 +1803,8 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		vp.num				= 1;
 		vp.m_dt				= nullptr;
 		vp.m_rt[0]			= rtView;
-		vp.viewport.w		= (float)(std::max(1, (width >> mip)));
-		vp.viewport.h		= (float)(std::max(1, (length >> mip)));
+		vp.viewport.w		= std::max(1, (width >> mip));
+		vp.viewport.h		= std::max(1, (length >> mip));
 		vp.viewport.x		= 0;
 		vp.viewport.y		= 0;
 		vp.viewport.znear	= 0.0f;
@@ -1813,12 +1829,11 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 	// Set old Viewport and scissor
 	if (m_OldViewports12[0].Width * m_OldViewports12[0].Height > 0.0f)
 	{
-		CD3DX12_RECT scissor(0, 0, m_OldViewports12[0].Width, m_OldViewports12[0].Height);
+		CD3DX12_RECT scissor(0, 0, (LONG)m_OldViewports12[0].Width, (LONG)m_OldViewports12[0].Height);
 
 		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
 		rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
 	}
-
 	rp->SetCurrentPixelFormat(mOldRtFormat);
 
 	// Again, inform crossplatform
@@ -1833,9 +1848,10 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 int Texture::GetSampleCount() const
 {
 	if (!mTextureDefault)
-		return 0;
-	int samples = mTextureDefault->GetDesc().SampleDesc.Count;
-	return samples - 1;
+	{
+		return 1;
+	}
+	return  mTextureDefault->GetDesc().SampleDesc.Count;
 }
 
 D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -1*/)
