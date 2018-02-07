@@ -17,7 +17,7 @@
     <TargetRuntime>Native</TargetRuntime>
     <ProjectName>SimulDirectX11</ProjectName>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
-    <XdkEditionTarget>170605</XdkEditionTarget>
+    <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">
