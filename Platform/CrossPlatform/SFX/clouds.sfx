@@ -376,16 +376,16 @@ float ThicknessInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	float thickness		=0.0;
 	int i				=0;
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
-	float s				=0.5*stepLengthKm;
+	float s				=0.1*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
 	vec3 tx;
-	for( i=0;i<12;i++)
+	for( i=0;i<24;i++)
 	{
 		// we expect stepLength in km for this shader
-		wpos			+=dir*s;			// we expect stepLength in km for this shader
 		tx				=wpos*inverseScalesKm;
-		float lookup	=texture_3d_wwc_lod(cloudDensity,tx,0).z*saturate((maxh-wpos.z)/s);
-		thickness		+=lookup*s;
+		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 0).z;// *saturate((maxh - wpos.z) / s);
+		thickness		+=lookup;
+		wpos			+=dir*s;	// we expect stepLength in km for this shader
 		s				*=1.3;
 	}
 	return thickness;
@@ -427,7 +427,7 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	nearest_dir=0.5+0.5*normalize(nearest_dir);*/
 	vec4 illum;
 
-	illum.x			=exp(-extinction*thickness/12.0);
+	illum.x			=exp(-extinction*thickness / 12);
 	illum.y			=exp(-extinction*thickness);
 	illum.zw = 1;// nearest_dir.xy;
 //illum=texture_3d_wwc_lod(cloudDensity,texc,0);
@@ -477,11 +477,31 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any. 
-shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
 {
-	vec3 simple_texc				=vec3(IN.texCoords,0);
-	vec2 shadow						=saturate(3.0*sample_3d_lod(cloudDensity,wwcSamplerState,simple_texc,0).xy-vec2(2.0,2.0));
-	return vec4(shadow.xy,0,shadow.x);
+	float tempLength = sqrt(pow(directionToSun.x, 2) + pow(directionToSun.y, 2));
+	float angle = sinh(directionToSun.x / tempLength);
+	float s = sin(angle);
+	float c = cos(angle);
+	angle = tanh(directionToSun.z / tempLength);
+	float scale = 1.0 / sin(angle);
+	vec2 cameraOffset = vec2(viewPosKm.xy) / 600.0;
+	vec2 cloudOffset = vec2(0.5, 0.5);
+	float tempx = (IN.texCoords.x - 0.5) * 0.125;
+	float tempy = (IN.texCoords.y - 0.5) * scale * 0.125;
+	float x = ((tempx * c) - (tempy * s)) + 0.5 -cloudOffset.x;
+	float y = ((tempx * s) + (tempy * c)) + 0.5 -cloudOffset.y;
+	vec3 adjusted_texc = vec3(x, y, sampleHeight);
+	vec3 simple_texc = vec3(IN.texCoords.xy,sampleHeight);
+	vec3 shadow = saturate(3.0*sample_3d_lod(cloudDensity, wwcSamplerState, adjusted_texc, 0.0) - vec3(2.0,2.0,2.0));
+	return vec4(shadow.xy, 0, 1.0 - shadow.z);
+}
+
+shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
+{
+	vec3 simple_texc = vec3(IN.texCoords.xy, sampleHeight);
+	vec3 shadow = saturate(3.0*sample_3d_lod(cloudDensity, wwcSamplerState, simple_texc, 0.0) - vec3(2.0, 2.0, 2.0));
+	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
@@ -1171,6 +1191,19 @@ fxgroup raytrace
 		{
 			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeNoRain_cons()));
 		}
+	}
+}
+
+technique alt_cloud_shadow
+{
+	pass p0
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(RenderNoCull);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(vs_fullscreen_5_0);
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_AltCloudShadow()));
 	}
 }
 

@@ -6,6 +6,11 @@
 #include "Simul/Base/HandleMouseInterface.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 
+#ifdef _MSC_VER
+	#pragma warning(push)  
+	#pragma warning(disable : 4251)  
+#endif
+
 namespace simul
 {
 	namespace crossplatform
@@ -71,3 +76,7 @@ namespace simul
 
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)  
+#endif

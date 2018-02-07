@@ -7,6 +7,12 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/text_constants.sl"
+
+#ifdef _MSC_VER
+	#pragma warning(push)  
+	#pragma warning(disable : 4251)  
+#endif
+
 namespace simul
 {
 	namespace crossplatform
@@ -38,4 +44,9 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)  
+#endif
+
 #endif
