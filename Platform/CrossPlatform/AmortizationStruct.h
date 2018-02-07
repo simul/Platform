@@ -44,6 +44,7 @@ public:
 		uint3 sc(1,1,1);
 		sc.x=1+amortization/2;
 		sc.y=sc.x-(amortization+1)%2;
+		sc.y=sc.y>0?sc.y:1;
 		return sc;
 	}
 	uint3 offset() const
