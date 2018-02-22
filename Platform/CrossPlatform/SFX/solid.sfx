@@ -40,7 +40,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 	vec4 opos		=vec4(IN.position.xyz,1.0);
     OUT.wpos		=mul(world, opos).xyz;
 	OUT.view		=normalize(OUT.wpos.xyz- viewPosition);
-    OUT.clip_pos	=mul(worldViewProj, opos);
+    OUT.clip_pos	=mul( opos,worldViewProj);
 	OUT.texCoords	=IN.texCoords;
 #ifdef GLSL
     OUT.normal.xyz	=mul(mat3(world),IN.normal);

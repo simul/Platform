@@ -112,7 +112,7 @@ float K(int l,int m)
 							,4.0353E-11
 	};
 	// renormalisation constant for SH function 
-	//float temp = ((2.0*l+1.0)*factorial(l-m)) / (4.0*PI*factorial(l+m)); 
+	//float temp = ((2.0*l+1.0)*factorial(l-|m|)) / (4.0*PI*factorial(l+|m|)); 
 	//return sqrt(temp);
 	int idx=l*(l+1)/2+abs(m);
 	return kval[idx];
@@ -147,6 +147,11 @@ float P(int l,int m,float x)
 	return pll; 
 }
 
+float WindowFunction(float x)
+{
+	return saturate((0.0001+sin(SIMUL_PI_F*x))/(0.0001+SIMUL_PI_F*x));
+}
+
 float SH(int l, int m, float theta, float phi) 
 { 
  // return a point sample of a Spherical Harmonic basis function 
@@ -155,12 +160,15 @@ float SH(int l, int m, float theta, float phi)
  // theta in the range [0..Pi] 
  // phi in the range [0..2*Pi] 
 	 const float sqrt2 = sqrt(2.0); 
+	 float s=0.0;
 	 if(m==0)
-		 return K(l,0)*float(P(l,m,cos(theta))); 
+		 s=K(l,0)*float(P(l,m,cos(theta))); 
 	 else if(m>0)
-		 return sqrt2*K(l, m)*cos(m*phi)*P(l, m, cos(theta));
+		 s=sqrt2*K(l, m)*cos(m*phi)*P(l, m, cos(theta));
 	 else
-		 return sqrt2*K(l,-m)*sin(-m*phi)*P(l, -m, cos(theta));
+		 s=sqrt2*K(l,-m)*sin(-m*phi)*P(l, -m, cos(theta));
+	 //s*=WindowFunction(float(l)/4.0);
+	 return s;
 }
 
 

@@ -669,7 +669,7 @@ void Direct3D11Manager::Shutdown()
 	}
 }
 
-void Direct3D11Manager::RemoveWindow(HWND hwnd)
+void Direct3D11Manager::RemoveWindow(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -679,7 +679,7 @@ void Direct3D11Manager::RemoveWindow(HWND hwnd)
 	windows.erase(hwnd);
 }
 
-IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
+IDXGISwapChain *Direct3D11Manager::GetSwapChain(cp_hwnd h)
 {
 	if(windows.find(h)==windows.end())
 		return NULL;
@@ -689,7 +689,7 @@ IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
 	return w->m_swapChain;
 }
 
-void Direct3D11Manager::Render(HWND h)
+void Direct3D11Manager::Render(cp_hwnd h)
 {
 	if(windows.find(h)==windows.end())
 		return;
@@ -697,18 +697,18 @@ ERRNO_BREAK
 	Window *w=windows[h];
 	if(!w)
 	{
-		SIMUL_CERR<<"No window exists for HWND "<<std::hex<<h<<std::endl;
+		SIMUL_CERR<<"No window exists for cp_hwnd "<<std::hex<<h<<std::endl;
 		return;
 	}
 	if(h!=w->hwnd)
 	{
-		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->hwnd<<std::endl;
+		SIMUL_CERR<<"Window for cp_hwnd "<<std::hex<<h<<" has hwnd "<<w->hwnd<<std::endl;
 		return;
 	}
 	ResizeSwapChain(w->hwnd);
 	if(!w->m_renderTargetView)
 	{
-		SIMUL_CERR<<"No renderTarget exists for HWND "<<std::hex<<h<<std::endl;
+		SIMUL_CERR<<"No renderTarget exists for cp_hwnd "<<std::hex<<h<<std::endl;
 		return;
 	}
 ERRNO_BREAK
@@ -733,7 +733,7 @@ ERRNO_BREAK
 ERRNO_BREAK
 }
 
-void Direct3D11Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
+void Direct3D11Manager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -743,7 +743,7 @@ void Direct3D11Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInt
 	w->SetRenderer(ci,  view_id);
 }
 
-int Direct3D11Manager::GetViewId(HWND hwnd)
+int Direct3D11Manager::GetViewId(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return -1;
@@ -751,7 +751,7 @@ int Direct3D11Manager::GetViewId(HWND hwnd)
 	return w->view_id;
 }
 
-Window *Direct3D11Manager::GetWindow(HWND hwnd)
+Window *Direct3D11Manager::GetWindow(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return NULL;
@@ -773,7 +773,7 @@ void Direct3D11Manager::ReportMessageFilterState()
 	free(filter);
 }
 
-void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
+void Direct3D11Manager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
 {
 	Window *w=(Window*)GetWindow(hwnd);
 	if(!w)
@@ -807,7 +807,7 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	ResizeSwapChain(hwnd);
 }
 
-void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
+void Direct3D11Manager::ResizeSwapChain(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -827,7 +827,7 @@ void* Direct3D11Manager::GetDeviceContext()
 	return d3dDeviceContext;
 }
 
-void Direct3D11Manager::AddWindow(HWND hwnd)
+void Direct3D11Manager::AddWindow(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)!=windows.end())
 		return;

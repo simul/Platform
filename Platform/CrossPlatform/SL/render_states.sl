@@ -74,6 +74,15 @@ BlendState DoBlend
 	DestBlend		=INV_SRC_ALPHA;
 };
 
+BlendState StencilBlend
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	BlendOp			=MAX;
+	SrcBlend		=One;
+	DestBlend		=One;
+};
+
 BlendState AlphaToCoverageBlend
 {
 	BlendEnable[0]			=TRUE;

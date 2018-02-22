@@ -21,7 +21,7 @@ namespace simul
 			void CreateDepthBuffer(ID3D11Device* d3dDevice);
 			void SetRenderer(crossplatform::PlatformRendererInterface *ci, int view_id);
 			void ResizeSwapChain(ID3D11Device* d3dDevice);
-			HWND hwnd;
+			cp_hwnd hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
 			int view_id;			
 			bool vsync;
@@ -45,23 +45,23 @@ namespace simul
 			~Direct3D11Manager();
 			void Initialize(bool use_debug=false,bool instrument=false,bool default_driver=false);
 			//! Add a window. Creates a new Swap Chain.
-			void AddWindow(HWND h);
+			void AddWindow(cp_hwnd h);
 			//! Removes the window and destroys its associated Swap Chain.
-			void RemoveWindow(HWND h);
+			void RemoveWindow(cp_hwnd h);
 			void Shutdown();
-			IDXGISwapChain *GetSwapChain(HWND hwnd);
-			void Render(HWND hwnd);
-			void SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
-			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
-			void ResizeSwapChain(HWND hwnd);
+			IDXGISwapChain *GetSwapChain(cp_hwnd hwnd);
+			void Render(cp_hwnd hwnd);
+			void SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
+			void SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output);
+			void ResizeSwapChain(cp_hwnd hwnd);
 			void* GetDevice();
 			void* GetDeviceContext();
 			int GetNumOutputs();
 			crossplatform::Output GetOutput(int i);
 
 			void GetVideoCardInfo(char*, int&);
-			int GetViewId(HWND hwnd);
-			Window *GetWindow(HWND hwnd);
+			int GetViewId(cp_hwnd hwnd);
+			Window *GetWindow(cp_hwnd hwnd);
 			void ReportMessageFilterState();
 		protected:
 			bool m_vsync_enabled;
@@ -71,7 +71,7 @@ namespace simul
 			ID3D11DeviceContext* d3dDeviceContext;
 			// This represents the graphics card. We support one card only.
 			IDXGIAdapter* adapter;
-			typedef std::map<HWND,Window*> WindowMap;
+			typedef std::map<cp_hwnd,Window*> WindowMap;
 			WindowMap windows;
 			typedef std::map<int,IDXGIOutput*> OutputMap;
 			OutputMap outputs;

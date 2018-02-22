@@ -25,37 +25,47 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(cbChangePerFrame,2)
 	uniform float g_Time;
 	uniform float g_ChoppyScale;
-	uniform float g_GridLen;
+	uniform float xxxxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbShading,3)
-	// The color of bottomless water body
-	uniform vec3		g_WaterbodyColor;
 
 	// The strength, direction and color of sun streak
-	uniform float		g_Shineness;
 	uniform vec3		g_SunDir;
-	uniform float		xxxxxxxxxxx;
+	uniform float		g_Shineness;
 	uniform vec3		g_SunColor;
-	uniform float		xxxxxxxxxxxx;
+	uniform bool		g_PassNo;
 	
-	// The parameter is used for fixing an artifact
-	uniform vec3		g_BendParam;
-
 	// Perlin noise for distant wave crest
-	uniform float		g_PerlinSize;
+
 	uniform vec3		g_PerlinAmplitude;
-	uniform float		xxxxxxxxxxxxxxx;
+	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinOctave;
-	uniform int			g_totalVertices;
+	uniform float		xxxxxxxxxxxxxxxx;
 	uniform vec3		g_PerlinGradient;
-	uniform int			g_quadsPerRing;
 
 	// Constants for calculating texcoord from position
 	uniform float		g_TexelLength_x2;
 	uniform float		g_UVScale;
 	uniform float		g_UVOffset;
 	uniform float		g_WorldScale;
+	uniform float		g_minQuadSize;
+	uniform uint		g_verticiesPerLayer;
+	uniform uint		g_layerDensity;
+	uniform uint		g_totalVertices;
+	uniform uint		g_noOfLayers;
+
+	uniform vec3		g_boundedDimension;
+	uniform bool		g_enableRefraction;
+	uniform vec2		g_boundedDensity;
+	uniform vec2		g_DepthScale;
+	uniform vec3		g_boundedLocation;
+	uniform float		g_waterHeight;
+
+	uniform vec3		g_scattering;
+	uniform float		g_salinity;
+	uniform vec3		g_absorption;
+	uniform float		g_temperature;
 
 	//Depth parameters for depth calculations
 	uniform vec4		g_DepthToLinFadeParams;
@@ -74,13 +84,8 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec2		g_UVBase;
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
-
-	// Atmospherics
-	uniform float		hazeEccentricity;
-	uniform vec3		mieRayleighRatio;
 	uniform float		qjk345rstj;
-	uniform vec3		lightDir;
-	uniform float		srjdtkfylu;
+
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)

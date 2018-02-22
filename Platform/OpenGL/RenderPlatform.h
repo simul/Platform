@@ -71,8 +71,10 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *);
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType type) override;
+			crossplatform::Shader					*CreateShader() override;
 			void									*GetDevice();
-			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout,const int *vertexStep=NULL);
+			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers,crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps = NULL);
+			
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &) override;
@@ -92,10 +94,12 @@ namespace simul
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source);
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8);
 			
+			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			crossplatform::ConstantBuffer<RescaleVertexShaderConstants> &GetRescaleVertexShaderConstants()
 			{
 				return rescaleVertexShaderConstants;
 			}
+
 			std::set<opengl::Material*> materials;
 			bool reverseDepth;
 			// OpenGL-specific stuff:

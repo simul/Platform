@@ -59,8 +59,6 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 		inscatter.rgb	*=inscatter.a;
 #endif
 	}
-	//c.rgb=saturate(ambient_dir);
-//	c.rgb=amb_lookup.xyz;
 	return c;
 }
 

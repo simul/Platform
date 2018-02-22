@@ -69,7 +69,9 @@ float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 t
 		texc			+=l*yproject;
 	}
 	float range=.05;
+	// NOTE(NACHO): Changed to use the global state instead of passing it to the method (dealing with glsl)wrapSamplerState
 	float light			=saturate((sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0).x-1.0+range)/range);
+	//float light			=saturate((sample_3d_lod(cloudTexture,wrapSamplerState, texc, 0).x-1.0+range)/range);
 	//if(texc.z>0&&texc.z<10.0)
 	//	light=0;
 //	texel.x				=lerp(averageIllum,texel.x,exp(-abs(zproject/1000.0)));

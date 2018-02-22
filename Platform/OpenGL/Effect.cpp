@@ -1,7 +1,6 @@
 #include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <GL/glfx.h>
 #include <string>
 
 #ifdef _MSC_VER
@@ -15,8 +14,6 @@
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
-
-#pragma comment(lib,"glfx.lib")
 
 using namespace simul;
 using namespace opengl;
@@ -208,7 +205,7 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 				,write_data(0)
 			{
 			}
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,int ct,int unit_size,bool ,void *init_data)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,int ct,int unit_size,bool ,bool,void *init_data)
 {
 	InvalidateDeviceObjects();
 	num_elements=ct;
@@ -381,97 +378,11 @@ void errorCallbackFunc(const char *errMsg)
 #include "Simul/Base/DefaultFileLoader.h"
 void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
-	filename=filename_utf8;
-	bool retry=true;
-	platform_effect = (void*)0xFFFFFFFF;
-	GL_ERROR_CHECK
-	ERRNO_BREAK
-	while(retry)
-	{
-	GL_ERROR_CHECK
-	ERRNO_BREAK
-		std::string fn_utf8(filename_utf8);
-		// PREFER to use the platform shader:
-		std::string filename_fx(filename_utf8);
-	ERRNO_BREAK
-		if(filename_fx.find(".")>=filename_fx.length())
-			filename_fx+=".glfx";
-		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(), renderPlatform->GetShaderPathsUtf8());
-GL_ERROR_CHECK
-		if(filenameInUseUtf8.length()==0)
-		{
-	ERRNO_BREAK
-			std::string filename_sfx(filename_utf8);
-			if(filename_sfx.find(".")>=filename_fx.length())
-				filename_sfx+=".sfx";
-			filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_sfx.c_str(),renderPlatform->GetShaderPathsUtf8());
-GL_ERROR_CHECK
-			fn_utf8+=".sfx";
-		}
-		else
-			fn_utf8+=".glfx";
-		if (!filenameInUseUtf8.length())
-		{
-			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() <<"; did you set the paths for this RenderPlatform?"<< std::endl;
-			return;
-		}
-		glfxSetGlslangValidationEnabled(((opengl::RenderPlatform*)renderPlatform)->GetGlslangValidation());
-		glfxSetCacheDirectory(renderPlatform->GetShaderBinaryPath());
-		GLint effect = glfxGenEffect();
-		vector<string> p = renderPlatform->GetShaderPathsUtf8();
-
-		const char **paths = new const char *[p.size() + 1];
-		for (int i = 0; i < p.size(); i++)
-			paths[i] = p[i].c_str();
-		paths[p.size()] = NULL;
-		
-	GL_ERROR_CHECK
-		const char **macros = new const char *[defines.size() + 1];
-		const char **defs = new const char *[defines.size() + 1];
-		const char **m = macros, **d = defs;
-		for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
-		{
-			*m = i->first.c_str();
-			*d = i->second.c_str();
-			m++;
-			d++;
-		}
-		*m=*d = NULL;
-	GL_ERROR_CHECK
-		//glfxSetCacheDirectory(renderPlatform->GetShaderBinaryPath());
-		if (!glfxParseEffectFromFile(effect,fn_utf8.c_str(),paths,macros,defs))
-		{
-			std::string log=glfxGetEffectLog(effect);
-			std::cerr<<log.c_str()<<std::endl;
-			DebugBreak();
-			delete paths;
-			delete defs;
-			if(renderPlatform->GetShaderBuildMode()&crossplatform::TRY_AGAIN_ON_FAIL)
-				continue;
-			else
-				break;
-		}
-		platform_effect		=(void*)effect;
-	GL_ERROR_CHECK
-	// If any technique fails, we don't want to proceed until the problem is fixed.
-		if(!FillInTechniques()&&IsDebuggerPresent())
-		{
-			DebugBreak();
-	GL_ERROR_CHECK
-			if(renderPlatform->GetShaderBuildMode()&crossplatform::ShaderBuildMode::TRY_AGAIN_ON_FAIL)
-				continue;
-			else
-				break;
-		}
-		else
-			break;
-	}
-	GL_ERROR_CHECK
+	crossplatform::Effect::Load(renderPlatform, filename_utf8);
 }
 
 Effect::~Effect()
 {
-	glfxDeleteEffect(asGLint());
 	platform_effect=0;
 }
 
@@ -491,40 +402,6 @@ void Effect::AddPass(std::string groupname,std::string techname, std::string pas
 // convert GL programs into techniques and passes.
 bool Effect::FillInTechniques()
 {
-	GLint e				=asGLint();
-	if(e<0)
-		return false;
-	GL_ERROR_CHECK
-	base::Timer t;
-	t.StartTime();
-	groups.clear();
-	int numg = (int)glfxGetTechniqueGroupCount(e);
-	for (int i = 0; i < numg; i++)
-	{
-		std::string group_name=glfxGetTechniqueGroupName(e,i);
-		glfxUseTechniqueGroup(e,i);
-		int numt = (int)glfxGetTechniqueCount(e);
-		for (int j = 0; j<numt; j++)
-		{
-			std::string tech_name = glfxGetTechniqueName(e,j);
-			int num_passes = (int)glfxGetPassCount(e, tech_name.c_str());
-			for (int k = 0; k < num_passes; k++)
-			{
-				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), k);
-				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
-				if(!t)
-				{
-					std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "<<tech_name.c_str()<<std::endl;
-					opengl::printEffectLog(asGLint());
-					return false;
-				}
-				AddPass(group_name,tech_name, pass_name, t);
-			}
-		}
-	}
-	SIMUL_CERR<<"Compile "<<t.UpdateTime()/1000.0f<<" s"<<std::endl;
-	glfxUseTechniqueGroup(e,0);
-	// ZERO is a valid number of shaders to have in an effect:
 	return true;
 }
 
@@ -537,20 +414,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	}
 	if(asGLint()==-1)
 		return NULL;
-	GLint e					=asGLint();
-	GLuint t				=glfxCompileProgram(e, name,NULL);
-	if(!t)
-	{
-		return NULL;
-	}
-	crossplatform::EffectTechnique *tech	=new opengl::EffectTechnique;
-	tech->platform_technique				=(void*)t;
-	techniques[name]						=tech;
-	// Now it needs to be in the techniques_by_index list.
-	size_t index							=glfxGetTechniqueIndex(e,name);
-	techniques_by_index[(int)index]			=tech;
-	GL_ERROR_CHECK
-	return tech;
+	return NULL;
 }
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
@@ -564,17 +428,8 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	GLint e				=asGLint();
 	if(index>=(int)techniques.size())
 		return NULL;
-	const char *name	=glfxGetTechniqueName(e,index);
-	GLuint t = glfxCompileProgram(e, name, NULL);
-	if(!t)
-	{
-		opengl::printEffectLog(e);
-		return NULL;
-	}
 	crossplatform::EffectTechnique *tech	=new opengl::EffectTechnique;
-	techniques[name]						=tech;
 	techniques_by_index[index]				=tech;
-	tech->platform_technique				=(void*)t;
 	return tech;
 }
 
@@ -600,103 +455,25 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 	{
 		if(tex)
 		{
-			//bool layered=tex->IsCubemap()||tex->GetDimension()==3;
-			glfxSetEffectTexture((int)platform_effect,texture_number
-				,tex->AsGLuint(mip),tex->GetDimension()
-				,tex->GetDepth()
-				,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
-				,true
-				,0
-				,index>=0
-				,index
-				,tex->IsCubemap());
 		}
 		else
-			glfxSetEffectTexture((int)platform_effect,texture_number
-				,0,0,0
-				,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
-				,true
-				,mip
-				,index>=0
-				,index
-				,false);
+		{
+		}
 	}
 	GL_ERROR_CHECK
 }
 
 void Effect::SetTex(const char *name,crossplatform::Texture *tex,int index,int mip)
 {
-	GL_ERROR_CHECK
-	int texture_number=-1;
-	texture_number=glfxGetEffectImageNumber((GLuint)platform_effect,name);
-	if(texture_number>=0)
-	{
-		if(tex)
-		{
-		//	bool layered=tex->IsCubemap()||tex->GetDimension()==3;
-			glfxSetEffectTexture((int)platform_effect,texture_number
-									,tex->AsGLuint(mip)
-									,tex->GetDimension()
-									,tex->GetDepth()
-									,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
-									,true
-									,0//layered?0:mip
-									,false//layered
-									,0//layered?mip:0
-									,false);
-		}
-		else
-			glfxSetEffectTexture((int)platform_effect,texture_number
-			,0
-			,0
-			,0
-			,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
-			,true
-			,0
-			,false
-			,0
-			,false);
-	}
-	else
-	{
-		if(texture_number<0)
-			texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
-		if(texture_number>=0)
-		{
-			if(tex)
-			{
-		//		bool layered=false;//tex->IsCubemap()||tex->GetDimension()==3;
-				glfxSetEffectTexture((int)platform_effect,texture_number
-					,tex->AsGLuint()
-					,tex->GetDimension()
-					,tex->GetDepth()
-				,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
-				,false
-				,mip>0?mip:0
-				,false
-				,0
-				,tex->IsCubemap());
-			}
-			else
-				glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0
-					,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
-					,false
-					,0
-					,false
-					,0
-					,false);
-		}
-	}
-	GL_ERROR_CHECK
 }
 
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
 	crossplatform::ShaderResource res;
 	res.platform_shader_resource=0;
-	int var=glfxGetEffectImageNumber((GLuint)platform_effect,name);
+	int var=9;
 	if(var<0)
-		var=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+		var=9;
 	else
 		var+=1000;
 	if(var>=0)
@@ -716,9 +493,6 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 		texture_number	-=1000;
 		write			=true;
 	}
-	if(tex)
-		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth()
-			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip,false,0,tex->IsCubemap());
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int index,int mip)
@@ -731,11 +505,9 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,cro
 	GLuint sampler_state=0;
 	if(s)
 		sampler_state=s->asGLuint();
-	GL_ERROR_CHECK
-		glfxSetEffectSamplerState((GLuint)platform_effect, name, s->asGLuint());
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &,const char *name,crossplatform::ConstantBufferBase *s)	
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceC,crossplatform::ConstantBufferBase *s)	
 {
 	if(!s)
 		return;
@@ -755,7 +527,7 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &,const char *name,c
 			GLuint program=tech->passAsGLuint(j);
 			GLint indexInShader;
 	GL_ERROR_CHECK
-			indexInShader=glGetUniformBlockIndex(program,name);
+			indexInShader=s->GetIndex();//glGetUniformBlockIndex(program,name);
 			if(indexInShader==GL_INVALID_INDEX)
 			{
 				ResetGLError();
@@ -782,91 +554,20 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &,const char *name,c
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
-	GL_ERROR_CHECK
-	apply_count++;
-	currentTechnique		=effectTechnique;
-	currentPass				=pass;
-//	CHECK_TECH_EXISTS
-	if(effectTechnique)
-	{
-		current_prog	=effectTechnique->passAsGLuint(pass);
-		GL_ERROR_CHECK
-		glfxApply((GLuint)platform_effect,current_prog);
-		GL_ERROR_CHECK
-		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
-		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
-			glEffectTechnique->passStates[currentPass]->Apply();
-		GLuint prog=effectTechnique->passAsGLuint(pass);
-		glfxApplyPassState((GLuint)platform_effect,prog);
-		GL_ERROR_CHECK
 	}
-	deviceContext.activeTechnique=effectTechnique;
-}
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
-	GL_ERROR_CHECK
-	apply_count++;
-	currentTechnique		=effectTechnique;
-	CHECK_TECH_EXISTS
-	if(effectTechnique)
-	{
-		GLuint prog=effectTechnique->passAsGLuint(pass);
-		if(prog==0)
-		{
-			SIMUL_FILE_CERR(filenameInUseUtf8.c_str())<<"Pass \""<<pass<<"\" not found in technique \""<<GetTechniqueName(effectTechnique)<<"\" of Effect "<<this->filename.c_str()<<std::endl;
-			currentPass=-1;
-			current_prog=0;
-			deviceContext.activeTechnique=NULL;
-			return;
-		}
-		for(EffectTechnique::PassIndexMap::iterator i=effectTechnique->passes_by_index.begin();
-			i!=effectTechnique->passes_by_index.end();i++)
-		{
-			if(i->second==(void*)prog)
-				currentPass				=i->first;
-		}
-		glfxApply((GLuint)platform_effect,prog);
-		glfxApplyPassState((GLuint)platform_effect,prog);
-		GL_ERROR_CHECK
-		//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
-		//	glBindSampler(i->first,i->second);
-		current_prog	=prog;
-		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
-		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
-			glEffectTechnique->passStates[currentPass]->Apply();
-	}
-	deviceContext.activeTechnique=currentTechnique;
+
 }
 
+//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
 void Effect::Reapply(crossplatform::DeviceContext &)
 {
-	if(apply_count!=1)
-		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
-	GLuint prog=current_prog;
-	glfxReapply((GLuint)platform_effect,prog);
-	glfxApplyPassState((GLuint)platform_effect,prog);
-	GL_ERROR_CHECK
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
-	GL_ERROR_CHECK
-	glfxUnapply((GLuint)platform_effect);
-	if(apply_count<=0)
-		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
-	else if(apply_count>1)
-		SIMUL_BREAK("Effect::Apply has been called too many times!")
-	currentTechnique=NULL;
-	deviceContext.activeTechnique=currentTechnique;
-	apply_count--;
-	//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
-	//	glBindSampler(i->first,0);
-GL_ERROR_CHECK
 }
 
 void Effect::UnbindTextures(crossplatform::DeviceContext &)
@@ -874,4 +575,27 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &)
 	if(apply_count!=1)
 		SIMUL_BREAK("UnbindTextures can only be called after Apply and before Unapply!")
 	// Here we should be clearing out all the textures that were set to use the shader.
+}
+
+void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
+{
+}
+
+crossplatform::EffectPass *EffectTechnique::AddPass(const char *name, int i)
+{
+	crossplatform::EffectPass *p = new opengl::EffectPass;
+	passes_by_name[name] = passes_by_index[i] = p;
+	return p;
+}
+
+EffectPass::EffectPass()
+{
+}
+
+void EffectPass::InvalidateDeviceObjects()
+{
+}
+
+void EffectPass::Apply(crossplatform::DeviceContext &deviceContext, bool asCompute) 
+{
 }

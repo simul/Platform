@@ -110,6 +110,7 @@ namespace simul
 		protected:
 			bool cubemap;
 			bool external_texture;
+			bool depthStencil;
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
@@ -135,6 +136,11 @@ namespace simul
 			void SetUnfenceable(bool v)
 			{
 				unfenceable=v;
+			}
+			/// Get whether texture is a depth stencil
+			bool IsDepthStencil() const
+			{
+				return depthStencil;
 			}
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
@@ -172,7 +178,7 @@ namespace simul
 				return pixelFormat;
 			}
 			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
-			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false)=0;
+			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false)=0;
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
@@ -182,6 +188,8 @@ namespace simul
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
+			//! Clear the depth stencil
+			virtual void ClearDepthStencil(DeviceContext &deviceContext, float = 0, int = 0) = 0;
 			//! Generate the mipmaps automatically.
 			virtual void GenerateMips(DeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.

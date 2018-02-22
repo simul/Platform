@@ -27,3 +27,6 @@ crossplatform::Effect *Material::GetEffect()
 {
 	return effect;
 }
+void Material::Apply(crossplatform::DeviceContext &, crossplatform::PhysicalLightRenderData &)
+{
+}

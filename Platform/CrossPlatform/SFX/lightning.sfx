@@ -51,7 +51,7 @@ struct F_Vertex_out
 CS_LAYOUT(1, 1, 1)
 shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 {
-	int vertex_id = idx.x;
+	int vertex_id = int(idx.x);
 	LightningVertex OUT;
 
 	vec3 startP			= startPos;
@@ -62,7 +62,7 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 	vec3 outpos[130];
 	outpos[0]			=startP;
 	outpos[num_steps]	=endP;
-	uint del			=num_steps;
+	int del				=int(num_steps);
 	float persistence	=0.8;
 	vec3 off			=vec3(1.0,1.0,vertical)*roughness;
 	float time			=phaseTime;
@@ -122,7 +122,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 	vec3 adj		=vec3(1.0,1.0,vertical);
 	dir				*=adj;
 	dir				=normalize(dir);
-	vec3 off =  roughness;//adj;//*roughness;
+	vec3 off        =vec3(roughness,roughness,roughness);//adj;//*roughness;
 
 	vec3 endP		=startP+dir*branchLengthMetres;
 
@@ -136,7 +136,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 	//float off			=roughness;
 	float time			=phaseTime;
 	OUT.position=startP;
-	OUT.texCoords=0;
+	OUT.texCoords=vec2(0,0);
 	OUT.progress=0.0;
 	verticesRW[0]			=OUT;
 
@@ -241,8 +241,8 @@ shader transformedVertex VS_Thick(idOnly id)
 {
 	LightningVertex IN[4];
 	vec4 hPos[4];
-	int vertex_id = id.vertex_id / 2;
-	int left_right = id.vertex_id % 2;
+	int vertex_id = int(id.vertex_id / 2);
+	int left_right = int(id.vertex_id % 2);
 	for (int i = 0; i < 4; i++)
 	{
 		IN[i] = vertices[vertex_id + i];

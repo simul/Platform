@@ -100,6 +100,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		//posCloudspace.z=.15;
 		//if(viewposCloudspace.z>0.0&&viewposCloudspace.z<1.0)
 		{
+			// NOTE(NACHO): dealing with glsl here
 			illum = GetCloudIllum(cloudTexture,cloudSamplerState,posCloudspace,lightDirCloudspace,clampClouds,1.0-averageCoverage);
 		}
 		total_illum				*=illum;

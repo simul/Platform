@@ -748,7 +748,7 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews12 != nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt, bool setDepthStencil)
 {
 	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt);
 }
@@ -780,10 +780,10 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 
 	std::wstring ws=simul::base::Utf8ToWString(name);
 	mTextureDefault->SetName(ws.c_str());
+    SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
-	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	if (mTextureDefault)
 	{
@@ -1706,6 +1706,11 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D12Device* pd3dDevice,int w,crossp
 	SIMUL_BREAK("Nacho has to implement this");
 }
 
+void Texture::ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear)
+{
+	SIMUL_BREAK_ONCE("Depth Stencil clearing is not implemented");
+}
+
 void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 {
 	SIMUL_BREAK_ONCE("Mip generation is not implemented");
@@ -1803,8 +1808,8 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		vp.num				= 1;
 		vp.m_dt				= nullptr;
 		vp.m_rt[0]			= rtView;
-		vp.viewport.w		= std::max(1, (width >> mip));
-		vp.viewport.h		= std::max(1, (length >> mip));
+		vp.viewport.w		= (float)(std::max(1, (width >> mip)));
+		vp.viewport.h		= (float)(std::max(1, (length >> mip)));
 		vp.viewport.x		= 0;
 		vp.viewport.y		= 0;
 		vp.viewport.znear	= 0.0f;
@@ -1821,7 +1826,7 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
-	// Set the old rt
+	// Set the old rt,ds and viewports
 	if (m_pOldRenderTargets12[0])
 	{
 		rp->AsD3D12CommandList()->OMSetRenderTargets(1, m_pOldRenderTargets12[0], false, m_pOldDepthSurface12);

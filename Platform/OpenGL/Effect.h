@@ -73,7 +73,7 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 			}
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
 			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
 			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
 			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
@@ -93,6 +93,14 @@ namespace simul
 		public:
 			virtual void Apply()=0;
 		};
+		class SIMUL_OPENGL_EXPORT EffectPass :public simul::crossplatform::EffectPass
+		{
+		public:
+			EffectPass();
+			void InvalidateDeviceObjects();
+			void Apply(crossplatform::DeviceContext &deviceContext, bool asCompute) override;
+		
+		};
 		class SIMUL_OPENGL_EXPORT EffectTechnique:public crossplatform::EffectTechnique
 		{
 		public:
@@ -101,6 +109,13 @@ namespace simul
 			int NumPasses() const;
 			GLuint passAsGLuint(int p) override;
 			GLuint passAsGLuint(const char *name) override;
+			crossplatform::EffectPass *AddPass(const char *name, int i) override;
+		};
+		class SIMUL_OPENGL_EXPORT Shader :public simul::crossplatform::Shader
+		{
+			GLuint glShader;
+		public:
+			void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) override;
 		};
 		/// The OpenGL implementation of simul::crossplatform::Effect.
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
@@ -129,7 +144,7 @@ namespace simul
 			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index=-1,int mip=-1) override;
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex,int index=-1,int mip=-1) override;
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)		override;
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)		override;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass);
 			void Reapply(crossplatform::DeviceContext &deviceContext);

@@ -215,15 +215,4 @@ void Mesh::EndDraw(crossplatform::DeviceContext &) const
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Pop OpenGL attributes.
-    
-    
-    
-    
-    
-	
-	
-    
-}
-void Mesh::GetVertices(void *,void *)
-{
 }

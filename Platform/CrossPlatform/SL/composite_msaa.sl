@@ -139,7 +139,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 			// Integral of p0 (H_km-z)/H
 		float fog_in	=1.0-saturate(exp(-s * fogExtinction));// fogExtinction is 1/km.
 			
-			vec3 fogLoss	=1.0;
+			vec3 fogLoss	=vec3(1.0,1.0,1.0);
 
 			// retain is the amount of visibility for whatever's behind the fog.
 			// It gives us the fog inscatter also.

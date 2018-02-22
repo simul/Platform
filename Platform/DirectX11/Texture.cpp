@@ -450,18 +450,18 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews!=nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt, bool setDepthStencil)
 {
-	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt);
+	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt, setDepthStencil);
 }
 
-void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
+void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt, bool setDepthStencil)
 {
 	// If it's the same as before, return.
 	if ((texture == t && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (make_rt ==( renderTargetViews != NULL)))
 		return;
 	// If it's the same texture, and we created our own srv, that's fine, return.
-	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL)
+	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL&&!setDepthStencil)
 		return;
 	FreeSRVTables();
 	renderPlatform=r;
@@ -527,6 +527,18 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 						}
 					}
 				}
+			}
+			if (setDepthStencil)
+			{
+				D3D11_TEX2D_DSV dsv;
+				dsv.MipSlice = 0;
+				D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
+				depthDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+				depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+				depthDesc.Flags = 0;
+				depthDesc.Texture2D = dsv;
+				SAFE_RELEASE(depthStencilView);
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateDepthStencilView(texture, &depthDesc, &depthStencilView));
 			}
 		}
 		else
@@ -902,6 +914,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		}
 		SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	}
+	this->depthStencil = depthstencil;
 	mips=m;
 	arraySize=1;
 	return !ok;
@@ -1240,6 +1253,15 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		}
 	}
 	mips=m;
+}
+
+void Texture::ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear)
+{
+	if (!depthStencil || !depthStencilView)
+		SIMUL_CERR << "Attempting to clear a texture that is not a Depth Stencil" << std::endl;
+
+	deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(depthStencilView, (D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL), depthClear, stencilClear);
+
 }
 
 void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)

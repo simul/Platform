@@ -172,12 +172,12 @@ namespace simul
 			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
-			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
+			virtual void DrawQuad			(DeviceContext &deviceContext){}
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(DeviceContext &deviceContext,PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false)		=0;
+			virtual void DrawLines			(DeviceContext &deviceContext,PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false){}
 			void Draw2dLine					(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
-			virtual void Draw2dLines		(DeviceContext &deviceContext,PosColourVertex *lines,int vertex_count,bool strip)		=0;
+			virtual void Draw2dLines		(DeviceContext &deviceContext,PosColourVertex *lines,int vertex_count,bool strip){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
 			/// Draw a circle in 3D space at pos
@@ -189,7 +189,7 @@ namespace simul
 			void DrawCircleOnSphere			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float crc_rad,float sph_rad,vec4 colour);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
-			virtual void					ApplyDefaultMaterial			()	=0;
+			virtual void					ApplyDefaultMaterial			(){}
 			/// Create a platform-specific material instance.
 			 Material						*GetOrCreateMaterial(const char *name);
 			/// Create a platform-specific mesh instance.
@@ -234,7 +234,7 @@ namespace simul
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
-			virtual void					SetStreamOutTarget				(DeviceContext &deviceContext,Buffer *buffer,int start_index=0)=0;
+			virtual void					SetStreamOutTarget				(DeviceContext &deviceContext,Buffer *buffer,int start_index=0){}
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
@@ -251,10 +251,10 @@ namespace simul
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
 			/// Some platforms may not support this.
-			virtual void					StoreRenderState				(DeviceContext &deviceContext)=0;
+			virtual void					StoreRenderState				(DeviceContext &deviceContext){}
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
-			virtual void					RestoreRenderState				(DeviceContext &deviceContext)=0;
+			virtual void					RestoreRenderState				(DeviceContext &deviceContext){}
 			/// Apply the RenderState to the device context - e.g. blend state, depth masking etc.
 			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
 			/// Apply a standard renderstate - e.g. opaque blending
@@ -264,7 +264,8 @@ namespace simul
 			//! Restore rendertargets and viewports from the top of the stack.
 			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
 			//! Resolve a MSAA texture to a normal texture.
-			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source)=0;
+			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source){}
+
 			void							LatLongTextureToCubemap(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8){}

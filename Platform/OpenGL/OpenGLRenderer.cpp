@@ -147,7 +147,7 @@ void OpenGLRenderer::RenderGL(int view_id)
 	GL_ERROR_CHECK
 	crossplatform::Viewport viewport	=renderPlatformOpenGL->GetViewport(deviceContext,view_id);
 
-	view->SetResolution(viewport.w,viewport.h);
+//	view->SetResolution(viewport.w,viewport.h);
 //	trueSkyRenderer.EnsureCorrectBufferSizes(view_id);
 	simul::crossplatform::SetGpuProfilingInterface(deviceContext,&simul::opengl::Profiler::GetGlobalProfiler());
 	
@@ -182,8 +182,4 @@ void OpenGLRenderer::ReloadTextures()
 
 void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
-	crossplatform::Texture *depthTexture=NULL;
-	crossplatform::MixedResolutionView *view	=trueSkyRenderer.viewManager.GetView(deviceContext.viewStruct.view_id);
-		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
-	renderPlatformOpenGL->DrawDepth(deviceContext,x0,y0,dx/2,dy/2,depthTexture);
 }

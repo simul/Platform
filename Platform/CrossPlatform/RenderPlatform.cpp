@@ -344,7 +344,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		cleared = true;
 	}
 	// Otherwise, is it computable? We can set the colour value with a compute shader.
-	// Finally, is it mappable? We can set the colour from CPU memory.
+	// Is it mappable? We can set the colour from CPU memory.
 	else if (texture->IsComputable() && !cleared)
 	{
 		int a=texture->NumFaces();
@@ -423,6 +423,11 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		}
 #endif
 		debugEffect->UnbindTextures(deviceContext);
+	}
+	//Finally, is the texture a depth stencil? In this case, we call the specified API's clear function in order to clear it.
+	else if (texture->IsDepthStencil() && !cleared)
+	{
+		texture->ClearDepthStencil(deviceContext, colour.x, 0);
 	}
 	else
 	{

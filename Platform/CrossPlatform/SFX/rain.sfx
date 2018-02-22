@@ -59,7 +59,7 @@ RandomResult Random(uint4 state)
 
 	RandomResult result;
 	result.state = state;
-	result.value = 2.3283064365387e-10 * (state.x ^ state.y ^ state.z ^ state.w);
+	result.value = 2.3283064365387e-10 * float(state.x ^ state.y ^ state.z ^ state.w);
 
 	return result;
 }

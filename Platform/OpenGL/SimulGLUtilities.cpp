@@ -251,9 +251,9 @@ bool simul::opengl::RenderAngledQuad(const float *dir,float half_angle_radians)
 		GL_ERROR_CHECK
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
 		
-	glRotatef(180.f*Yaw/pi,0.0f,0.0f,-1.0f);
+	glRotatef(180.f*Yaw/SIMUL_PI_F,0.0f,0.0f,-1.0f);
 		
-	glRotatef(180.f*Pitch/pi,1.0f,0.0f,0.0f);
+	glRotatef(180.f*Pitch/ SIMUL_PI_F,1.0f,0.0f,0.0f);
 		
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_CULL_FACE);

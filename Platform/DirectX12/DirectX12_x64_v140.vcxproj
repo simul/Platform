@@ -154,6 +154,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -223,10 +224,8 @@
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Layout.cpp" />
-    <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Material.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -247,13 +246,11 @@
     <ClInclude Include="GpuProfiler.h" />
     <ClInclude Include="Heap.h" />
     <ClInclude Include="Layout.h" />
-    <ClInclude Include="Light.h" />
     <ClInclude Include="MacrosDx1x.h" />
-    <ClInclude Include="Material.h" />
-    <ClInclude Include="Mesh.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
+    <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SimulDirectXHeader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />

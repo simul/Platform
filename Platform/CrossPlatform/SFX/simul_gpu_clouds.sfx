@@ -605,8 +605,8 @@ float CSDensity(uint3 pos)
 	//dens						=dens/diffusivity; We now apply diffusivity in the layer mixing stage.
 	float texc_scale = noiseScale.z;
 	// grid that was used to make the worley texture is 4.
-	float grid1		=fl*4;
-	float grid2		=(fl+1.0) * 4;
+	float grid1 = fl*4.0;
+	float grid2 = (fl+1.0) * 4.0;
 	vec3 wtexc		=densityspace_texcoord*noiseScale / noiseScale.x;
 	float zratio	=noiseScale.z / noiseScale.x;
 	for(int j=0;j<4;j++)

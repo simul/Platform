@@ -355,10 +355,10 @@ shader starsVertexOutput VS_Stars(idOnly IN)
 	OUT.clip_pos		=OUT.hPosition.xyzw;
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 //	OUT.hPosition.z		=isForwardDepth*OUT.hPosition.w;
-	OUT.texCoord		=vec4(0,0,0,0);
+	OUT.texCoord		=vec4(0.0,0.0,0.0,0.0);
     OUT.texCoord.z		= star.w;
 	if (OUT.clip_pos.z<0)
-		OUT.texCoord=0;
+		OUT.texCoord=vec4(0.0,0.0,0.0,0.0);
 	// Emit new triangle.
 	vec2 sz=OUT.clip_pos.w*minimumPixelSize;//45*max(minimumPixelSize, star.w)*vec2(0.25,0.5);
     vec2 g_positions[3] =
@@ -537,7 +537,7 @@ vec4 Planet(vec4 result,vec2 tex)
 	normal.y	=tex.y;
 	float l		=length(tex);
 	if(l>1.0)
-		return vec4(0,0.0,0,0.0);
+		return vec4(0.0,0.0,0.0,0.0);
 	//	discard;
 	normal.z	=-sqrt(1.0-l*l);
 	float light	=approx_oren_nayar(0.2,vec3(0,0,1.0),normal,lightDir.xyz);

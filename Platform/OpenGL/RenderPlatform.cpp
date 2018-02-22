@@ -19,7 +19,6 @@
 #include <ios>					// For std::cout and cerr .
 #include <iomanip>				// For std::cerr formatting.
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "GL/glfx.h"
 using namespace simul;
 using namespace opengl;
 
@@ -449,7 +448,7 @@ glDisable(GL_DEPTH_TEST);
 	GL_ERROR_CHECK
 	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
-	debugConstants.Apply(deviceContext);
+	effect->SetConstantBuffer(deviceContext, &debugConstants);
 	DrawQuad(deviceContext);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
@@ -462,7 +461,8 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 		return;
 	GL_ERROR_CHECK
 	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
-	rescaleVertexShaderConstants.Apply(deviceContext);
+//
+	//current_effect->SetConstantBuffer(deviceContext, &rescaleVertexShaderConstants);
 	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
 	glBindVertexArray(empty_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
@@ -495,22 +495,9 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	simul::math::Matrix4x4 wvp;
 	simul::math::Matrix4x4 model(m);
 	crossplatform::MakeWorldViewProjMatrix(wvp,model,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-	solidConstants.worldViewProj=wvp;
-	solidConstants.worldViewProj.transpose();
-	solidConstants.world=model;
-	solidConstants.world.transpose();
 	
-	solidConstants.lightIrradiance	=physicalLightRenderData.lightColour;
-	solidConstants.lightDir			=physicalLightRenderData.dirToLight;
-	solidConstants.Apply(deviceContext);
 	
-}
 
-crossplatform::Material *RenderPlatform::CreateMaterial()
-{
-	opengl::Material *mat=new opengl::Material;
-	materials.insert(mat);
-	return mat;
 }
 
 crossplatform::Mesh *RenderPlatform::CreateMesh()
@@ -1040,7 +1027,7 @@ void *RenderPlatform::GetDevice()
 	return NULL;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int /*num_buffers*/,crossplatform::Buffer **buffers,const crossplatform::Layout *,const int *)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers, crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps)
 {
 	GL_ERROR_CHECK
 	glBindVertexArray(((opengl::Buffer*)buffers[0])->vao );
@@ -1244,7 +1231,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 	if(!deviceContext.activeTechnique)
 		return;
 	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
-	rescaleVertexShaderConstants.Apply(deviceContext);
+//	rescaleVertexShaderConstants.Apply(deviceContext);
 	
 	GLint current_vao;
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&current_vao);
@@ -1260,7 +1247,7 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 		return;
 	GL_ERROR_CHECK
 	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
-	rescaleVertexShaderConstants.Apply(deviceContext);
+//	rescaleVertexShaderConstants.Apply(deviceContext);
 	//glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);
 	GL_ERROR_CHECK
 }
@@ -1289,7 +1276,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::Pos
 void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
 {
 	debugConstants.rect=vec4(0,0,1.f,1.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
-	debugConstants.Apply(deviceContext);
+//	debugConstants.Apply(deviceContext);
 	debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("lines_2d"),0);
 	glBegin(strip?GL_LINE_STRIP:GL_LINES);
 	for(int i=0;i<vertex_count;i++)
@@ -1343,4 +1330,10 @@ static vec4 Lookup(crossplatform::DeviceContext &deviceContext,crossplatform::Te
 	vec4 top		=lerp(x_interp,data[2],data[3]);
 	vec4 ret		=lerp(y_interp,bottom,top);
 	return ret;
+}
+
+crossplatform::Shader *RenderPlatform::CreateShader()
+{
+	Shader *S = new Shader();
+	return S;
 }

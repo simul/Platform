@@ -96,6 +96,7 @@ namespace simul
 			/// Default constructor.
 			ViewManager():
 				renderPlatform(NULL)
+				,last_created_view_id(-1)
 			{}
 			typedef std::map<int,View*>	ViewMap;
 			/// Restore the device objects.
@@ -122,6 +123,8 @@ namespace simul
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
 			ViewMap							views;
+			/// Identifier for the last created view.
+			int								last_created_view_id;
 		};
 	}
 }

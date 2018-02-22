@@ -27,8 +27,6 @@
 
 #include <algorithm>
 
-#pragma optimize("",off)
-
 using namespace simul;
 using namespace dx12;
 
@@ -1587,6 +1585,11 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext, c
 		}
 		debugEffect->UnbindTextures(deviceContext);
 		cleared = true;
+	}
+	// Render Depth Stencil clear
+	else if (texture->IsDepthStencil() && !cleared)
+	{
+		texture->ClearDepthStencil(deviceContext, colour.x, 0);
 	}
 	// Couldn't clear the texture
 	else

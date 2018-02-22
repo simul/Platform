@@ -41,6 +41,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Material
 		{
 		public:
+			Material() {}
 			Material(const char *name);
 			virtual ~Material();
 			void SetEffect(crossplatform::Effect *e);

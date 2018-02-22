@@ -45,7 +45,7 @@ shader void Copy3DInt4( uint3 position : SV_DispatchThreadID )
 CS_LAYOUT(64,1,1)
 shader void Copy1D( uint3 position : SV_DispatchThreadID )
 {
-	DestTex1[position.x] = SourceTex1.Load(position.x);
+	DestTex1[position.x] = SourceTex1.Load(int(position.x));
 }
 
 CS_LAYOUT(8,8,1)

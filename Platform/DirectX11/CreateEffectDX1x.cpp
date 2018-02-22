@@ -147,7 +147,7 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	HRESULT hr=S_OK;
 	if(str.find(".hdr")==str.length()-4)
 	{
-//		hr= LoadFromHDRMemory( ptr, _In_ bytes,&metadata,scratchImage );
+		hr= DirectX::LoadFromHDRMemory( ptr, _In_ bytes,&metadata,scratchImage );
 
 	}
 	else

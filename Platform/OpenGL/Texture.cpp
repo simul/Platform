@@ -238,7 +238,7 @@ bool opengl::Texture::IsValid() const
 	return (pTextureObject>0);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,void *,bool make_rt)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,void *,bool make_rt, bool setDepthStencil)
 {
 	if(!externalTextureObject)
 		SAFE_DELETE_TEXTURE(pTextureObject);
@@ -292,11 +292,14 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool comp,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
+	,crossplatform::PixelFormat p,bool comp,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap
+	,vec4 clear, float clearDepth , uint clearStencil)
+
 {
 	if(w==width&&l==length&&pixelFormat==p&&this->computable==comp)
 		return false;
 	this->computable=comp;
+	this->depthStencil = depthstencil;
 GL_ERROR_CHECK
 	pixelFormat=p;
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
@@ -737,6 +740,12 @@ bool simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 	GL_ERROR_CHECK
 	return true;
 }
+
+void Texture::ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear)
+{
+	SIMUL_BREAK_ONCE("Depth Stencil clearing is not implemented");
+}
+
 
 void Texture::GenerateMips(crossplatform::DeviceContext &)
 {
