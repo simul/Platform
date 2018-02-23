@@ -695,6 +695,9 @@
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
       <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_Desktop_2015.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
       <Private>false</Private>
