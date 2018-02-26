@@ -35,9 +35,9 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform float		g_Shineness;
 	uniform vec3		g_SunColor;
 	uniform bool		g_PassNo;
-	
-	// Perlin noise for distant wave crest
 
+	// Perlin noise for distant wave crest
+	
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinOctave;
@@ -70,6 +70,10 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	//Depth parameters for depth calculations
 	uniform vec4		g_DepthToLinFadeParams;
 	uniform vec4		g_HalfTan;
+
+	//Beaufort scaling
+	uniform float		g_foamHeight;
+	uniform float		g_foamChurn;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
