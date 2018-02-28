@@ -1199,7 +1199,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 	// The handles for the required constant buffers:
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumCBV> srcHandles;
 	for (int i = 0; i < numConstantBufferResourceSlots; i++)
-{
+	{
 		int slot	= constantBufferResourceSlots[i];
 		auto cb		= cBuffers[slot];
 #ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
