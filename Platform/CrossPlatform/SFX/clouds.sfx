@@ -618,56 +618,42 @@ void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godr
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
 
-	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-									,rainbowLookupTexture
-									,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,volumeInscatterTexture
-									,godraysTexture
-									,true
-									,dlookup
-									,view
-									,clip_pos
-									,worldspaceVolumeTexCoordsXyC
-									,true
-									,include_rain
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2
-									,num_interp
-									,do_godrays
-									);
+	RaytracePixelOutput f	=RaytraceCloudsForward(cloudDensity
+													,cloudDensity2
+													,rainMapTexture
+													,noiseTexture3D
+													,lightTableTexture
+													,illuminationTexture
+													,rainbowLookupTexture
+													,coronaLookupTexture
+													,lossTexture
+													,inscTexture
+													,skylTexture
+													,volumeInscatterTexture
+													,godraysTexture
+													,true
+													,dlookup
+													,view
+													,clip_pos
+													,worldspaceVolumeTexCoordsXyC
+													,true
+													,include_rain
+													,false
+													,cloudIrRadiance1,cloudIrRadiance2
+													,num_interp
+													,do_godrays
+													);
 	/*RaytracePixelOutput f;
 	f.colour=depthToLinFadeDistParams;
 	f.nearColour=lightResponse;
 	f.nearFarDepth=vec4(0,0,1,.5);*/
-	vec4 t2d				=vec4(0,0,0,1.0);
 	// blend:
-
-	vec4 c					=t2d;
-	c.rgb					*=f.colour[NUM_CLOUD_INTERP-1].a;
-	c.rgb					+=f.colour[NUM_CLOUD_INTERP-1].rgb;
-
-	c.a						=t2d.a*f.colour[NUM_CLOUD_INTERP-1].a;
-	
-	//c						+=vec4(saturate(view),0.0);
+	vec4 c					=f.colour[NUM_CLOUD_INTERP-1];
 	outputTexture1[pos+uint3(0,0,6*(NUM_CLOUD_INTERP-1))]		=c;
-//	outputTexture3[pos]		=f.nearFarDepth;
 	float n					=float(dlookup.y>=1.0);
 	for(int u=0;u<NUM_CLOUD_INTERP-1;u++)
 	{
-		vec4 cn					=t2d;
-		cn.rgb					*=f.colour[u].a*n;
-		cn.a					=1.0-n*(1.0-t2d.a);
-		cn.rgb					+=f.colour[u].rgb;
-		cn.a					*=f.colour[u].a;
+		vec4 cn					=f.colour[u];
 		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
 	outputTexture3[pos]		=f.nearFarDepth;
@@ -820,23 +806,9 @@ void Edge(uint3 g, uint3 t, bool rain, bool depth, bool godrays)
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-#if 1
 	Edge(g, t, false, true, true);
-#else
-	bool include_rain=false;
-	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint Z					=cubemapFaceIndex[g.z+t.z].x;
-	uint3 pos				=uint3(targetRange[Z].xy+idx,Z);
-	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
-		return;
-	vec4 u=updateTexture[pos];
-	// current value is b, old value is r
-	if (u.r<1.0&&u.b>0.0)
-	{
-		Raytrace(pos, include_rain, true,NUM_CLOUD_INTERP,true);
-	}
-#endif
 }
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
