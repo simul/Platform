@@ -1218,10 +1218,10 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 	for (int s = 0; s < ResourceBindingLimits::NumCBV; s++)
 	{
 		if (!usesConstantBufferSlot(s))
-	{
+		{
 			// Hardware tiers 1 & 2 require all slots to be filed:
 			if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
-		{
+			{
 				device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 		}

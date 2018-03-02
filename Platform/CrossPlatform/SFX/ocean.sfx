@@ -8,6 +8,7 @@
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/debug_constants.sl"
 #include "../SL/depth.sl"
+#include "../SL/noise.sl"
 
 #define PATCH_BLEND_BEGIN		2000
 #define PATCH_BLEND_END			4000
@@ -38,9 +39,9 @@ uniform TextureCube	g_texReflectCube			: register(t4);					// A skybox cube text
 
 // The following three should contains only real numbers. But we have only C2C FFT now.
 uniform StructuredBuffer<vec2>		g_InputDxyz;
-uniform StructuredBuffer<vec2>		g_InputH0;
+uniform RWStructuredBuffer<vec2>	g_InputH0	: register(u5);
 uniform RWStructuredBuffer<vec2>	g_OutputHt;
-uniform StructuredBuffer<float>		g_InputOmega;
+uniform RWStructuredBuffer<float>	g_InputOmega: register(u6);
 
 struct TwoColourCompositeOutput
 {
@@ -82,6 +83,8 @@ SamplerState g_samplerGradient SIMUL_STATE_REGISTER(7)
 #define TWIDDLE_3_8 -COS_PI_4_16, -COS_PI_4_16
 
 #define COHERENCY_GRANULARITY 128
+
+#define RAND_MAX 0x7fff
 
 float fresnel(vec3 incident, vec3 normal)
 {
@@ -254,6 +257,38 @@ shader void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
 	g_DstData[oaddr + 7 * ostride] = D[7];
 }
 
+// Generating gaussian random number with mean 0 and standard deviation 1.
+float Gauss(vec2 values)
+{
+	float u1 = rand(values.xy);
+	float u2 = rand(values.yx * 0.5);
+	if (u1 < 0.0000001f)
+		u1 = 0.0000001f;
+	return sqrt(-2.f* log(u1)) * cos(2.f*3.1415926536f * u2);
+}
+
+// Phillips Spectrum
+// K: normalized wave vector, W: wind direction, v: wind velocity, a: amplitude constant
+float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
+{
+	static float g = 981.f;
+	// largest possible wave from constant wind of velocity v
+	float l = v * v / g;
+	// damp out waves with very small length w << l
+	float w = l / 1000.f;
+
+	float Ksqr = K.x * K.x + K.y * K.y;
+	float Kcos = K.x * W.x + K.y * W.y;
+	float phillips = a * exp(-1 / (l * l * Ksqr)) / (Ksqr * Ksqr * Ksqr) * (Kcos * Kcos);
+
+	// filter out waves moving opposite to wind
+	if (Kcos < 0)
+		phillips *= dir_depend;
+
+	// damp out waves with very small length w << l
+	return phillips * exp(-Ksqr * w * w);
+}
+
 //---------------------------------------- Compute Shaders -----------------------------------------
 
 // Pre-FFT data preparation:
@@ -262,6 +297,45 @@ shader void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
 // that way we have to allocate one big buffer and manage the offsets manually. The restriction is
 // not caused by NVIDIA GPUs and does not present on NVIDIA GPUs when using other computing APIs like
 // CUDA and OpenCL.
+
+// Generate H(0)
+[numthreads(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1)]
+shader void GenerateHeightMapCS(uint3 sub_pos : SV_DispatchThreadID)
+{
+	if (sub_pos.x > g_gridSize || sub_pos.y > g_gridSize)
+		return;
+
+	static float scale = 0.5f;
+	const float HALF_SQRT_2 = 0.7071068f;
+	static float g = 981.f;
+
+	vec2 K;
+
+	// K is wave-vector, range [-|DX/W, |DX/W], [-|DY/H, |DY/H]
+	// According to Tessendorf, k points in the wave's direction of travel,
+	// and has magnitude k related to the wavelength l by k=2pi/l.
+	K.y = (-1.0f + 2.0f*(float)sub_pos.x / (float)g_gridSize)*2.0f*SIMUL_PI_F / scale;
+	// So K.y goes from -2 SIMUL_PI_F/scale to +2 SIMUL_PI_F/scale
+	// And so the wavelength range goes from scale to scale*gridsize/2
+	K.x = (-1.0f + 2.0f*(float)sub_pos.y / (float)g_gridSize)*2.0f*SIMUL_PI_F / scale;
+	// i.e. K.x goes from 
+	float phil = (K.x == 0 && K.y == 0) ? 0 : sqrt(Phillips2(K, g_windDir, g_windSpeed, g_amplitude, g_windDependency));
+
+	g_InputH0[(sub_pos.x * (g_gridSize + 4)) + sub_pos.y].x = phil*Gauss(vec2((vec2)sub_pos.xy / (float)g_gridSize))*HALF_SQRT_2;
+	g_InputH0[(sub_pos.x * (g_gridSize + 4)) + sub_pos.y].y = phil*Gauss(vec2((vec2)sub_pos.xy / (float)g_gridSize))*HALF_SQRT_2;
+
+	// The angular frequency is following the dispersion relation:
+	//            out_omega^2 = g |k|
+	// The equation of Gerstner wave:
+	//            x = x0 - K/k * A * sin(dot(K, x0) - sqrt(g * k) * t), x is a 2D vector.
+	//            z = A * cos(dot(K, x0) - sqrt(g * k) * t)
+	// Gerstner wave shows that a point on a simple sinusoid wave is doing a uniform circular
+	// motion with the center (x0, y0, z0), radius A, and the circular plane is parallel to
+	// vector K.
+	g_InputOmega[sub_pos.x * (g_gridSize + 4) + sub_pos.y] = sqrt(g * sqrt(K.x * K.x + K.y * K.y));
+
+}
+
 
 // H(0) -> H(t)
 [numthreads(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1)]
@@ -1011,7 +1085,6 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 	vPos.x += g_boundedLocation.y - ((g_boundedDimension.x / 2) * g_WorldScale);
 	vPos.y += g_boundedLocation.x - ((g_boundedDimension.y / 2) * g_WorldScale);
 	vPos.z += g_boundedLocation.z;
-	//vPos += g_boundedLocation;
 
 	float4 pos_local = float4(vPos, 1);
 
@@ -1087,8 +1160,10 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 		}
 		else
 		{
-			foamValue = g_foamAlpha.SampleLevel(wrapSamplerState, In.texCoords, 4);
+			foamValue = g_foamAlpha.Sample(wrapSamplerState, In.texCoords, 2);
 			float bubbles = g_foamTexture.Sample(wrapSamplerState, In.texCoords * 2);
+			float foamColour = 1.0 - bubbles;
+			foamValue *= foamColour;
 			if ((bubbles * bubbles) / 2.0 > foamValue)
 				foamValue = 0.0;
 		}
@@ -1358,7 +1433,7 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 	float reflectFresnel = fresnel(reflect_vec, normal);
 	float sunFresnel = fresnel(-sun_dir, normal);
 
-	Output += max(vec4(g_SunColor * sun_spot * sun_spot * sun_spot, 1.0) *  sunFresnel, 0.0);
+	Output += max(vec4(g_SunColor * sun_spot * sun_spot * sun_spot, 1.0) , 0.0);
 	Output += vec4(refl, 1.0) * reflectFresnel;
 	Output += saturate(mult);
 	//Output += SSS;
@@ -1367,8 +1442,8 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 	// --------------- Foam colour
 	if (scatteringInput.w > 0.0)
 	{
-			float foamEffect = scatteringInput.w * g_SunColor * clamp(dot(normal, g_SunDir), 0.1, 1.0);
-			Output += vec4(foamEffect, foamEffect, foamEffect, 0.0);
+			vec3 foamEffect = vec3(scatteringInput.w * g_SunColor * clamp(dot(normal, g_SunDir), 0.1, 1.0));
+			Output += vec4(foamEffect, scatteringInput.w);
 	}
 
 	return Output;
@@ -1551,6 +1626,14 @@ technique update_foam
 		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, UpdateFoamAlphaPS()));
+	}
+}
+
+technique generate_heightmap
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0, GenerateHeightMapCS()));
 	}
 }
 

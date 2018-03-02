@@ -89,7 +89,6 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
 	uniform float		qjk345rstj;
-
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)
@@ -97,6 +96,17 @@ SIMUL_CONSTANT_BUFFER(OsdConstants,5)
 	uniform float showMultiplier;
 	uniform float agaher;
 	uniform float reajst;
+	SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
+	uniform vec2	g_windDir;
+	uniform float	g_amplitude;
+	uniform float	g_windSpeed;
+
+	uniform float	g_windDependency;
+	uniform uint	g_gridSize;
+	uniform float	g_rand;	
+	uniform float	hgfdjkslgh;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
