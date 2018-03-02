@@ -437,29 +437,32 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 
 
 CS_LAYOUT(4,4,1)
-shader void CS_Mip( uint3 p: SV_DispatchThreadID )
+shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 {
-	uint3 pos=(p)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
-	uint3 pos2=pos*2;
+	int3 pos=(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if (pos.x >= exclusionRange.x&&pos.y >= exclusionRange.y&&pos.x<exclusionRange.z&&pos.y<exclusionRange.w)
+		return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	pos.xy		+= gridCentreTexel;
+	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
+	pos.xy		= pos.xy%int2(windowGrid.xy);
+	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
+	uint3 pos2	=pos*2;
 	vec4 res;
-	//uint3 dim;
-	//uint m=1,l=0;
-	//outputTexture3d.GetDimensions(m,dim.x,dim.y,dim.z,l);
-	if(pos.x<targetTextureSize.x-1&&pos.y<targetTextureSize.x-1&&pos.z<targetTextureSize.y-1)
-	//if(pos.z<dim.z/2)
 	{
-		vec4 c1		=cloudDensity[pos2];
-		vec4 c2		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c3		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c4		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c5		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c6		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c7		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c8		=cloudDensity[pos2+uint3(0,0,0)];
-		res			=(c1+c2+c3+c4+c5+c6+c7+c8)/8.0;
+		vec4 c1 = cloudDensity.SampleLevel(wwcSamplerState,texc,0);
+	/*	vec4 c2 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c3 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c4 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c5 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c7 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c8 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8) / 8.0;*/
+		res = c1;
 	}
-	else
-		res=0;
+	///else
+	//	res = vec4(1, 0, 1, 1);
 	outputTexture3d[pos]=res;
 }
 
@@ -1306,7 +1309,7 @@ technique cloud_mip
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_Mip()));
+		SetComputeShader(CompileShader(cs_5_0, CS_CloudMip()));
     }
 }
 

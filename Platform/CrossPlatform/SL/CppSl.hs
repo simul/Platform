@@ -562,6 +562,20 @@
 		{
 			return int2(x-v.x,y-v.y);
 		}
+		int2 operator*(int v)
+		{
+			return int2((x*v), (y*v));
+		}
+		int2 operator/(int v)
+		{
+			return int2((x/v), (y/v));
+		}
+		const int2 & operator/=(int v)
+		{
+			x /= v;
+			y /=v;
+			return *this;
+		}
 		int2 operator*(float v)
 		{
 			return int2(int(x*v),int(y*v));
