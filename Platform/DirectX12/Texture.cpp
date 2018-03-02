@@ -762,7 +762,7 @@ void Texture::SetName(const char *n)
 	mTextureDefault->SetName(ws.c_str());
 }
 
-void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt)
+void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil)
 {
 	// If it's the same as before, return.
 	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
@@ -839,6 +839,17 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 						mTextureRtHeap.Offset();
 					}
 				}
+			}
+			if (setDepthStencil)
+			{
+				D3D12_TEX2D_DSV dsv;
+				dsv.MipSlice = 0;
+				D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc;
+				depthDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+				depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+				depthDesc.Flags = D3D12_DSV_FLAG_NONE;
+				depthDesc.Texture2D = dsv;
+				renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &depthDesc, depthStencilView12);
 			}
 
 			SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
