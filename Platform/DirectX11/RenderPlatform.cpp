@@ -994,6 +994,25 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 	deviceContext.asD3D11DeviceContext()->SOSetTargets(1,&b,&offset );
 }
 
+void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	if(!deviceContext.asD3D11DeviceContext())
+		return;
+	auto context=deviceContext.asD3D11DeviceContext();
+	D3D11_VIEWPORT viewport;
+	ID3D11RenderTargetView **rtv=(ID3D11RenderTargetView **)deviceContext.defaultTargetsAndViewport.m_rt;
+	ID3D11DepthStencilView *dsv=(ID3D11DepthStencilView*)deviceContext.defaultTargetsAndViewport.m_dt;
+	context->OMSetRenderTargets(1,rtv,dsv);
+	
+	viewport.Width		=(float)(deviceContext.defaultTargetsAndViewport.viewport.w);
+	viewport.Height		=(float)(deviceContext.defaultTargetsAndViewport.viewport.h);
+	viewport.TopLeftX	=deviceContext.defaultTargetsAndViewport.viewport.x;
+	viewport.TopLeftY	=deviceContext.defaultTargetsAndViewport.viewport.y;
+	viewport.MinDepth	=0.0f;
+	viewport.MaxDepth	=1.0f;
+	context->RSSetViewports(1, &viewport);
+}
+
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
 	ID3D11RenderTargetView *rt[8];

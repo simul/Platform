@@ -756,7 +756,7 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
 		return;
 	vec4 u=updateTexture[pos];
-	if (u.r<1.0&&u.b>0.0)
+	if (u.g<1.0&&u.b>0.0)
 	{
 		//outputTexture1[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
@@ -802,9 +802,27 @@ shader vec4 PS_Lightpass(posTexVertexOutput IN):SV_TARGET
 	return vec4(f.farColour.rgb,1);
 }
 
+void Edge(uint3 g, uint3 t, bool rain, bool depth, bool godrays)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubemapFaceIndex[g.z + t.z].x;
+	uint3 pos = uint3(targetRange[Z].xy + idx, Z);
+	if (pos.x >= targetRange[Z].z || pos.y >= targetRange[Z].w)
+		return;
+	vec4 u = updateTexture[pos];
+	// current value is b, old value is r
+	if (u.g<1.0&&u.b>0.0)
+	{
+		Raytrace(pos, rain, depth, NUM_CLOUD_INTERP, godrays);
+	}
+}
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+#if 1
+	Edge(g, t, false, true, true);
+#else
 	bool include_rain=false;
 	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z					=cubemapFaceIndex[g.z+t.z].x;
@@ -816,26 +834,13 @@ shader void CS_Edge_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if (u.r<1.0&&u.b>0.0)
 	{
 		Raytrace(pos, include_rain, true,NUM_CLOUD_INTERP,true);
-	//	outputTexture1[pos]		=vec4(0,1,0,1);
-	//	outputTexture3[pos]		=vec4(0,1,0,1);
 	}
+#endif
 }
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint Z					=cubemapFaceIndex[g.z+t.z].x;
-	uint3 pos				=uint3(targetRange[Z].xy+idx,Z);
-	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
-		return;
-	vec4 u=updateTexture[pos];
-	// current value is b, old value is r
-	if(u.r<1.0&&u.b>0.0)
-	{
-		Raytrace(pos,true,true,NUM_CLOUD_INTERP,true);
-	//outputTexture1[pos]		=u;
-	//	outputTexture3[pos]		=vec4(0,1,0,1);
-	}
+	Edge(g, t, true, true, true);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

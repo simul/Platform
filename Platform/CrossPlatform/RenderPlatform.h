@@ -235,6 +235,8 @@ namespace simul
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
 			virtual void					SetStreamOutTarget				(DeviceContext &deviceContext,Buffer *buffer,int start_index=0){}
+
+			virtual void					ApplyDefaultRenderTargets(crossplatform::DeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
