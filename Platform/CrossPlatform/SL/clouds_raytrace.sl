@@ -282,7 +282,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm,res.colour[num_interp-1].a);
 			}
 		}
-/*		if(max(max(b.x,b.y),0)>=W)
+		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
 			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
@@ -300,7 +300,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			C0			-=	abs(C0&int3(1,1,1));
 			C0			=	C0>>1;
 			idx			++;
-		}*/
+		}
 	}
 #ifndef INFRARED
 	if(do_rainbow)

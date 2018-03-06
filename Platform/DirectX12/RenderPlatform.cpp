@@ -42,8 +42,11 @@ RenderPlatform::RenderPlatform():
 	mFrameHeap(nullptr),
 	mFrameSamplerHeap(nullptr),
 	mGRootSignature(nullptr),
-	mCRootSignature(nullptr)
+	mCRootSignature(nullptr),
+	mIsMsaaEnabled(false)
 {
+	mMsaaInfo.Count = 1;
+	mMsaaInfo.Quality = 0;
 	gpuProfiler = new crossplatform::GpuProfiler();
 }
 
@@ -983,6 +986,16 @@ UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
 	int curMip		= (mip == -1) ? 0 : mip;
 	int curLayer	= (layer == -1) ? 0 : layer;
 	return D3D12CalcSubresource(curMip,curLayer, 0, mips, layers);
+}
+
+bool RenderPlatform::MsaaEnabled()
+{
+	return mIsMsaaEnabled;
+}
+
+DXGI_SAMPLE_DESC RenderPlatform::GetMsaaInfo()
+{
+	return mMsaaInfo;
 }
 
 ResourceBindingLimits RenderPlatform::GetResourceBindingLimits() const

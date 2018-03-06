@@ -147,6 +147,15 @@ namespace simul
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSrvCbvUavRanges;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSamplerRanges;
 			std::string								mPassName;
+
+			//! Arrays used by the Set* methods declared here to avoid runtime memory allocation
+			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumCBV>	mCbSrcHandles;
+
+			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumSRV>	mSrvSrcHandles;
+			std::array<bool, ResourceBindingLimits::NumSRV>							mSrvUsedSlotsArray;
+
+			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumUAV>	mUavSrcHandles;
+			std::array<bool, ResourceBindingLimits::NumUAV>							mUavUsedSlotsArray;
 		};
 		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{

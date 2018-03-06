@@ -780,7 +780,6 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 
 	std::wstring ws=simul::base::Utf8ToWString(name);
 	mTextureDefault->SetName(ws.c_str());
-    SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
@@ -806,7 +805,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			arraySize	= textureDesc.DepthOrArraySize;
 			mips		= textureDesc.MipLevels;
 
-			// SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 		}
 		depth = textureDesc.DepthOrArraySize;
 		if (make_rt && (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))

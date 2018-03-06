@@ -60,7 +60,6 @@ SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
 	AddressV =WRAP;
 	AddressW =WRAP;
 	MipLODBias = 0;
-	MaxAnisotropy = 1;
 	//ComparisonFunc = NEVER;
 	MinLOD = 0;
 	MaxLOD = 1000000;

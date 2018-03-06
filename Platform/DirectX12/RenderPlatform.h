@@ -199,6 +199,9 @@ namespace simul
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
 
+			bool									MsaaEnabled();
+			DXGI_SAMPLE_DESC						GetMsaaInfo();
+
 			ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
@@ -263,6 +266,8 @@ namespace simul
 			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
 
 			bool isInitialized = false;
+			bool mIsMsaaEnabled;
+			DXGI_SAMPLE_DESC mMsaaInfo;
 
 			std::vector<struct RTState*>	storedRTStates;
 			
