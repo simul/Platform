@@ -20,8 +20,9 @@
 uniform StructuredBuffer<vec4> basisBuffer;
 
 uniform Texture2DArray<vec4> sourceTextureArray;
-Texture2D copySourceTexture;
+uniform Texture2D<vec4> copySourceTexture;
 uniform RWTexture2D<vec4> copyTargetTexture;
+
 uniform TextureCube sourceCubemap;
 
 
@@ -89,12 +90,6 @@ shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	return max(result,vec4(0,0,0,0));
 }
 
-float GetroughnessFromMip(float mip, float num_mips,float roughness_mip_scale)
-{
-	// exp2 is pow(2.0,x)
-	return exp2( ( 1 - num_mips + mip) / roughness_mip_scale );
-}
-
 uint Reverse_Bits(uint bits) {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
@@ -111,7 +106,6 @@ vec2 Hammersley(uint index, uint NumSamples, uint2 random)
 	float E2 = float(Reverse_Bits(index) ^ random.y) * 2.3283064365386963e-10;
 	return vec2(E1, E2);
 }
-
 
 shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
 {
@@ -176,12 +170,20 @@ vec4 ImportanceSampleGGX(vec2 E, float roughness)
 	return vec4(H, PDF);
 }
 
+
+float GetroughnessFromMip(float mip, float num_mips,float roughness_mip_scale)
+{
+	// exp2 is pow(2.0,x)
+	return exp2( ( 3 - num_mips + mip) / roughness_mip_scale );
+}
+
 vec4 RoughnessMip(vec3 view,bool rough) 
 {
 	vec4 outp;
+	float r = roughness;//exp2( ( 3 - numMips + mipIndex) / 1.2 );;
 	uint CubeSize = 1 << ( numMips - 1 );
 	const float SolidAngleTexel = 4.0 *PI / float(( 6 * CubeSize * CubeSize ) * 2);
-	const uint NumSamples =  roughness < 0.1 ? 132 : 164;
+	const uint NumSamples =  roughness < 0.1 ? 32 : 64;
 	vec4 result = vec4(0,0,0,0);
 	mat3 TangentToWorld = GetTangentBasis(view);
 	float Weight = 0.0;
@@ -193,21 +195,30 @@ vec4 RoughnessMip(vec3 view,bool rough)
 		{
 			// roughness=1, GGX is constant. Use cosine distribution instead
 			L		= CosineSampleHemisphere(E).xyz;
+			float NoL = L.z;
+			Weight += NoL;
 		}
 		else
 		{
-			vec3 H	= ImportanceSampleGGX(E*0.995, roughness).xyz;
+			E.y *= 0.995;
+			vec3 H	= ImportanceSampleGGX(E, r).xyz;
 			L		= 2*H.z*H - vec3(0,0,1.0);
-		}
+		//	L.xy*=10;
 		float NoL = L.z;
 		if (NoL>0)
 		{
-            // NACHO: Here we do vec3 * mat instead of mat * vec3. is this intended? 
+				float NoH = H.z;
+				float PDF = D_GGX( r, NoH ) * 0.25;
+				float SolidAngleSample = 1.0 / ( NumSamples * PDF );
+				float Mip = 0.5 * log2( SolidAngleSample / SolidAngleTexel );
+
+				float ConeAngle = acos( 1 - SolidAngleSample / (2*PI) );
+
 			L		= mul(L, TangentToWorld);
-            //L		= mul(TangentToWorld,L);
 			result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
 			Weight	+= NoL;
 		}
+	}
 	}
 	outp = result / Weight;
 	return vec4(outp.rgb, alpha);

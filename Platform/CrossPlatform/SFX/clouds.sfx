@@ -437,29 +437,32 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 
 
 CS_LAYOUT(4,4,1)
-shader void CS_Mip( uint3 p: SV_DispatchThreadID )
+shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 {
-	uint3 pos=(p)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
-	uint3 pos2=pos*2;
+	int3 pos=(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if (pos.x >= exclusionRange.x&&pos.y >= exclusionRange.y&&pos.x<exclusionRange.z&&pos.y<exclusionRange.w)
+		return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	pos.xy		+= gridCentreTexel;
+	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
+	pos.xy		= pos.xy%int2(windowGrid.xy);
+	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
+	uint3 pos2	=pos*2;
 	vec4 res;
-	//uint3 dim;
-	//uint m=1,l=0;
-	//outputTexture3d.GetDimensions(m,dim.x,dim.y,dim.z,l);
-	if(pos.x<targetTextureSize.x-1&&pos.y<targetTextureSize.x-1&&pos.z<targetTextureSize.y-1)
-	//if(pos.z<dim.z/2)
 	{
-		vec4 c1		=cloudDensity[pos2];
-		vec4 c2		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c3		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c4		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c5		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c6		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c7		=cloudDensity[pos2+uint3(0,0,0)];
-		vec4 c8		=cloudDensity[pos2+uint3(0,0,0)];
-		res			=(c1+c2+c3+c4+c5+c6+c7+c8)/8.0;
+		vec4 c1 = cloudDensity.SampleLevel(wwcSamplerState,texc,0);
+	/*	vec4 c2 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c3 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c4 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c5 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c7 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		vec4 c8 = cloudDensity[pos2 + uint3(0, 0, 0)];
+		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8) / 8.0;*/
+		res = c1;
 	}
-	else
-		res=0;
+	///else
+	//	res = vec4(1, 0, 1, 1);
 	outputTexture3d[pos]=res;
 }
 
@@ -486,12 +489,12 @@ shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
 	float c = cos(angle);
 	angle = tanh(directionToSun.z / tempLength);
 	float scale = 1.0 / sin(angle);
-	vec2 cameraOffset = vec2(viewPosKm.xy) / 600.0;
+	vec2 cameraOffset = vec2(viewPosKm.xy) / 75.0;
 	vec2 cloudOffset = vec2(0.5, 0.5);
 	float tempx = (IN.texCoords.x - 0.5) * 0.125;
 	float tempy = (IN.texCoords.y - 0.5) * scale * 0.125;
-	float x = ((tempx * c) - (tempy * s)) + 0.5 -cloudOffset.x;
-	float y = ((tempx * s) + (tempy * c)) + 0.5 -cloudOffset.y;
+	float x = ((tempx * c) - (tempy * s)) + 0.5 - cloudOffset.x - cameraOffset.x;
+	float y = ((tempx * s) + (tempy * c)) + 0.5 - cloudOffset.y - cameraOffset.y;
 	vec3 adjusted_texc = vec3(x, y, sampleHeight);
 	vec3 simple_texc = vec3(IN.texCoords.xy,sampleHeight);
 	vec3 shadow = saturate(3.0*sample_3d_lod(cloudDensity, wwcSamplerState, adjusted_texc, 0.0) - vec3(2.0,2.0,2.0));
@@ -618,56 +621,42 @@ void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godr
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
 
-	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-									,rainbowLookupTexture
-									,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,volumeInscatterTexture
-									,godraysTexture
-									,true
-									,dlookup
-									,view
-									,clip_pos
-									,worldspaceVolumeTexCoordsXyC
-									,true
-									,include_rain
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2
-									,num_interp
-									,do_godrays
-									);
+	RaytracePixelOutput f	=RaytraceCloudsForward(cloudDensity
+													,cloudDensity2
+													,rainMapTexture
+													,noiseTexture3D
+													,lightTableTexture
+													,illuminationTexture
+													,rainbowLookupTexture
+													,coronaLookupTexture
+													,lossTexture
+													,inscTexture
+													,skylTexture
+													,volumeInscatterTexture
+													,godraysTexture
+													,true
+													,dlookup
+													,view
+													,clip_pos
+													,worldspaceVolumeTexCoordsXyC
+													,true
+													,include_rain
+													,false
+													,cloudIrRadiance1,cloudIrRadiance2
+													,num_interp
+													,do_godrays
+													);
 	/*RaytracePixelOutput f;
 	f.colour=depthToLinFadeDistParams;
 	f.nearColour=lightResponse;
 	f.nearFarDepth=vec4(0,0,1,.5);*/
-	vec4 t2d				=vec4(0,0,0,1.0);
 	// blend:
-
-	vec4 c					=t2d;
-	c.rgb					*=f.colour[NUM_CLOUD_INTERP-1].a;
-	c.rgb					+=f.colour[NUM_CLOUD_INTERP-1].rgb;
-
-	c.a						=t2d.a*f.colour[NUM_CLOUD_INTERP-1].a;
-	
-	//c						+=vec4(saturate(view),0.0);
+	vec4 c					=f.colour[NUM_CLOUD_INTERP-1];
 	outputTexture1[pos+uint3(0,0,6*(NUM_CLOUD_INTERP-1))]		=c;
-//	outputTexture3[pos]		=f.nearFarDepth;
 	float n					=float(dlookup.y>=1.0);
 	for(int u=0;u<NUM_CLOUD_INTERP-1;u++)
 	{
-		vec4 cn					=t2d;
-		cn.rgb					*=f.colour[u].a*n;
-		cn.a					=1.0-n*(1.0-t2d.a);
-		cn.rgb					+=f.colour[u].rgb;
-		cn.a					*=f.colour[u].a;
+		vec4 cn					=f.colour[u];
 		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
 	outputTexture3[pos]		=f.nearFarDepth;
@@ -756,7 +745,7 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
 		return;
 	vec4 u=updateTexture[pos];
-	if (u.r<1.0&&u.b>0.0)
+	if (u.g<1.0&&u.b>0.0)
 	{
 		//outputTexture1[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
@@ -802,40 +791,31 @@ shader vec4 PS_Lightpass(posTexVertexOutput IN):SV_TARGET
 	return vec4(f.farColour.rgb,1);
 }
 
+void Edge(uint3 g, uint3 t, bool rain, bool depth, bool godrays)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubemapFaceIndex[g.z + t.z].x;
+	uint3 pos = uint3(targetRange[Z].xy + idx, Z);
+	if (pos.x >= targetRange[Z].z || pos.y >= targetRange[Z].w)
+		return;
+	vec4 u = updateTexture[pos];
+	// current value is b, old value is r
+	if (u.g<1.0&&u.b>0.0)
+	{
+		Raytrace(pos, rain, depth, NUM_CLOUD_INTERP, godrays);
+	}
+}
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	bool include_rain=false;
-	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint Z					=cubemapFaceIndex[g.z+t.z].x;
-	uint3 pos				=uint3(targetRange[Z].xy+idx,Z);
-	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
-		return;
-	vec4 u=updateTexture[pos];
-	// current value is b, old value is r
-	if (u.r<1.0&&u.b>0.0)
-	{
-		Raytrace(pos, include_rain, true,NUM_CLOUD_INTERP,true);
-	//	outputTexture1[pos]		=vec4(0,1,0,1);
-	//	outputTexture3[pos]		=vec4(0,1,0,1);
-	}
+	Edge(g, t, false, true, true);
 }
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint Z					=cubemapFaceIndex[g.z+t.z].x;
-	uint3 pos				=uint3(targetRange[Z].xy+idx,Z);
-	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
-		return;
-	vec4 u=updateTexture[pos];
-	// current value is b, old value is r
-	if(u.r<1.0&&u.b>0.0)
-	{
-		Raytrace(pos,true,true,NUM_CLOUD_INTERP,true);
-	//outputTexture1[pos]		=u;
-	//	outputTexture3[pos]		=vec4(0,1,0,1);
-	}
+	Edge(g, t, true, true, true);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -1301,7 +1281,7 @@ technique cloud_mip
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_Mip()));
+		SetComputeShader(CompileShader(cs_5_0, CS_CloudMip()));
     }
 }
 

@@ -35,9 +35,9 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform float		g_Shineness;
 	uniform vec3		g_SunColor;
 	uniform bool		g_PassNo;
-	
-	// Perlin noise for distant wave crest
 
+	// Perlin noise for distant wave crest
+	
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinOctave;
@@ -70,6 +70,10 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	//Depth parameters for depth calculations
 	uniform vec4		g_DepthToLinFadeParams;
 	uniform vec4		g_HalfTan;
+
+	//Beaufort scaling
+	uniform float		g_foamHeight;
+	uniform float		g_foamChurn;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
@@ -85,7 +89,6 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
 	uniform float		qjk345rstj;
-
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)
@@ -93,6 +96,17 @@ SIMUL_CONSTANT_BUFFER(OsdConstants,5)
 	uniform float showMultiplier;
 	uniform float agaher;
 	uniform float reajst;
+	SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
+	uniform vec2	g_windDir;
+	uniform float	g_amplitude;
+	uniform float	g_windSpeed;
+
+	uniform float	g_windDependency;
+	uniform uint	g_gridSize;
+	uniform float	g_rand;	
+	uniform float	hgfdjkslgh;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

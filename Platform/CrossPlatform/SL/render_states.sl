@@ -105,6 +105,15 @@ BlendState CloudBlend
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
+BlendState FoamBlend
+{
+	BlendEnable[0]	= TRUE;
+	BlendEnable[1]	= TRUE;
+	SrcBlend		= ONE;
+	DestBlend		= SRC_ALPHA;
+	BlendOp			= ADD;
+};
+
 BlendState AddDestInvAlphaBlend
 {
 	BlendEnable[0]	=TRUE;
