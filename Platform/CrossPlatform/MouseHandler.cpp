@@ -1,21 +1,18 @@
 #include "MouseHandler.h"
+
 using namespace simul;
 using namespace base;
 using namespace crossplatform;
+
 MouseHandler::MouseHandler()
 	:step_rotate_x(0)
 	,step_rotate_y(0)
 	,cameraMode(LOOKAROUND)
 	,CameraDamping(1e5f)
-	,fDeltaX(0)
-	,fDeltaY(0)
 	,minAlt(0.f)
 	,maxAlt(10000.f)
 	,fov(40.f)
 	,speed_factor(100.f)
-	,MouseX(0)
-	,MouseY(0)
-	,MouseButtons(0)
 	,y_vertical(false)
 	,aspect(1.f)
 	,camera(NULL)
@@ -74,28 +71,6 @@ void MouseHandler::setAltitudeRange(float m,float M)
 	maxAlt=M;
 }
 
-void MouseHandler::mouseRelease(int button,int x,int y)
-{
-	MouseButtons&=(~button);
-	MouseX=x;
-	MouseY=y;
-	updateViews();
-}
-
-void MouseHandler::mousePress(int button,int x,int y)
-{
-	MouseButtons|=button;
-	MouseX=x;
-	MouseY=y;
-	updateViews();
-}
-
-void MouseHandler::mouseDoubleClick(int button,int x,int y)
-{
-	MouseX=x;
-	MouseY=y;
-	updateViews();
-}
 
 static float uu=750.f;
 void MouseHandler::mouseMove(int x,int y)
@@ -117,21 +92,22 @@ void MouseHandler::getMousePosition(int &x,int &y) const
 
 bool MouseHandler::getLeftButton() const
 {
-	return (MouseButtons==LeftButton);
+	return (mouseButtons==LeftButton);
 }
 
 bool MouseHandler::getRightButton() const
 {
-	return (MouseButtons==RightButton);
+	return (mouseButtons==RightButton);
 }
 
 bool MouseHandler::getMiddleButton() const
 {
-	return (MouseButtons==MiddleButton);
+	return (mouseButtons==MiddleButton);
 }
 
 void MouseHandler::mouseWheel(int delta)
 {
+	BaseMouseHandler::mouseWheel(delta);
 	static float min_deg=5.0f;
 	if(delta<0&&fov<180.f/1.1f)
 		fov*=1.1f;
@@ -194,7 +170,7 @@ void MouseHandler::Update(float time_step)
 			up_down_spd+=cam_spd*introduce;
 		if(move_down)
 			up_down_spd-=cam_spd*introduce;
-		if((MouseButtons&MiddleButton)||MouseButtons==(LeftButton|RightButton))
+		if((mouseButtons&MiddleButton)||mouseButtons==(LeftButton|RightButton))
 		{
 			static float slide_spd=100.f;
 			right_left_spd	+=slide_spd*fDeltaX*cam_spd*introduce;
@@ -229,7 +205,7 @@ void MouseHandler::Update(float time_step)
 			tilt=asin(camera->GetOrientation().Tx().y);
 		else
 			tilt=asin(camera->GetOrientation().Tx().z);
-		if(MouseButtons==RightButton)
+		if(mouseButtons==RightButton)
 		{
 			if(!alt_down)
 			{

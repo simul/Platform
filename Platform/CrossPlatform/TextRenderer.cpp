@@ -129,9 +129,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	fontChars.RestoreDeviceObjects(renderPlatform,70,false,false);
 	RecompileShaders();
 	SAFE_DELETE(font_texture);
-	
 	font_texture=renderPlatform->CreateTexture("Font16.png");
-	
 }
 
 void TextRenderer::InvalidateDeviceObjects()
