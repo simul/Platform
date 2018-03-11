@@ -1,9 +1,8 @@
 #pragma once
-#include <functional>
 #include "Simul/Platform/CrossPlatform/Export.h"
 
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Base/HandleMouseInterface.h"
+#include "Simul/Base/BaseMouseHandler.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 
 #ifdef _MSC_VER
@@ -20,10 +19,8 @@ namespace simul
 		{
 			FLYING,LOOKAROUND,CENTRED
 		};
-		// A simple render delegate, it will usually be a function partially bound with std::bind.
-		typedef std::function<void()> UpdateViewsDelegate;
 
-		class SIMUL_CROSSPLATFORM_EXPORT MouseHandler: public simul::base::HandleMouseInterface
+		class SIMUL_CROSSPLATFORM_EXPORT MouseHandler: public simul::base::BaseMouseHandler
 		{
 		public:
 			MouseHandler();
@@ -33,9 +30,6 @@ namespace simul
 			void	setCameraMode(CameraMode c);
 			void	setAltitudeRange(float m,float M);
 
-			void	mousePress(int button,int x,int y);
-			void	mouseRelease(int button,int x,int y);
-			void	mouseDoubleClick(int button,int x,int y);
 			void	mouseMove(int x,int y);
 			void	mouseWheel(int delta);
 			void	KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown);
@@ -53,18 +47,14 @@ namespace simul
 			bool	getLeftButton() const;
 			bool	getRightButton() const;
 			bool	getMiddleButton() const;
-			UpdateViewsDelegate updateViews;
 		protected:
 			int step_rotate_x,step_rotate_y;
 			CameraMode cameraMode;
 			float centre[3];
 			float CameraDamping;
-			float fDeltaX,fDeltaY;
 			float minAlt,maxAlt;
 			float fov;
 			float speed_factor;
-			int MouseX,MouseY;
-			int MouseButtons;
 			bool y_vertical;
 			float aspect;
 			simul::crossplatform::Camera *camera;

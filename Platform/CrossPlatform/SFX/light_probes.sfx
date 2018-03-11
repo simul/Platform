@@ -174,13 +174,13 @@ vec4 ImportanceSampleGGX(vec2 E, float roughness)
 float GetroughnessFromMip(float mip, float num_mips,float roughness_mip_scale)
 {
 	// exp2 is pow(2.0,x)
-	return exp2( ( 3 - num_mips + mip) / roughness_mip_scale );
+	return saturate(exp2( ( 3 - num_mips + mip) / roughness_mip_scale ));
 }
 
 vec4 RoughnessMip(vec3 view,bool rough) 
 {
 	vec4 outp;
-	float r = roughness;//exp2( ( 3 - numMips + mipIndex) / 1.2 );;
+	float r = saturate(roughness);//exp2( ( 3 - numMips + mipIndex) / 1.2 );;
 	uint CubeSize = 1 << ( numMips - 1 );
 	const float SolidAngleTexel = 4.0 *PI / float(( 6 * CubeSize * CubeSize ) * 2);
 	const uint NumSamples =  roughness < 0.1 ? 32 : 64;
@@ -196,6 +196,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 			// roughness=1, GGX is constant. Use cosine distribution instead
 			L		= CosineSampleHemisphere(E).xyz;
 			float NoL = L.z;
+			result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
 			Weight += NoL;
 		}
 		else

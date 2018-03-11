@@ -11,15 +11,14 @@ SphericalHarmonics::SphericalHarmonics()
 ,sphericalHarmonicsEffect(nullptr)
 ,shSeed(0)
 ,lightProbesEffect(nullptr)
+, renderPlatform(nullptr)
 {
 }
-
 
 SphericalHarmonics::~SphericalHarmonics()
 {
 	InvalidateDeviceObjects();
 }
-
 
 void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
@@ -38,7 +37,6 @@ void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	shSeed=seed++;
 	probeResultsRW.InvalidateDeviceObjects();
 	probeResultsRW.RestoreDeviceObjects(renderPlatform,256,true);
-
 }
 
 void SphericalHarmonics::RecompileShaders()
@@ -66,6 +64,7 @@ float RoughnessFromMip(float mip, float numMips)
 	static float  roughness_mip_scale = 1.2f;
 	return exp2(( 3.0f+mip-numMips) / roughness_mip_scale);
 }
+
 void SphericalHarmonics::RenderMipsByRoughness(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *target)
 {
 	if (!lightProbesEffect)
