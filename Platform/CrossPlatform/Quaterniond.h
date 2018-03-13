@@ -28,6 +28,16 @@ namespace simul
 			void Define(const double ss,const double xx,const double yy,const double zz);
 			Quaterniond operator*(const Quaterniond &q) const;
 			Quaterniond operator/(const Quaterniond &q) const;
+			static Quaterniond Invalid()
+			{
+				Quaterniond q;
+				q.x=q.y=q.z=q.s=0.0f;
+				return q;
+			}
+			bool IsValid() const
+			{
+				return (x!=0.0f||y!=0.0f||z!=0.0f)||(s!=0.0f);
+			}
 			void MakeUnit();
 			double AngleInDirection(const vec3d &vv) const;
 			double Angle() const;  

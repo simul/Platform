@@ -656,7 +656,7 @@ void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origi
 	vec3 view_dir;
 	math::Vector3 cam_pos;
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_quad_on_sphere");
+	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_circle_on_sphere");
 
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=sph_rad;
