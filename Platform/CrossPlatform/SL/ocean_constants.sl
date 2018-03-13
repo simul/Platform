@@ -41,7 +41,7 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinOctave;
-	uniform float		xxxxxxxxxxxxxxxx;
+	uniform float		g_boundedRotation;
 	uniform vec3		g_PerlinGradient;
 
 	// Constants for calculating texcoord from position
@@ -74,6 +74,9 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	//Beaufort scaling
 	uniform float		g_foamHeight;
 	uniform float		g_foamChurn;
+
+	//Screen scale
+	uniform vec2		g_screenScale;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
