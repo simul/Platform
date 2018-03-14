@@ -31,7 +31,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform vec4 depthToLinFadeDistParams;
 
-	uniform vec3 scaleOfGridCoords;
+	uniform vec3 scaleOfGridCoordsKm;
 	uniform int halfClipSize;			// Actually half the full clip size.
 
 	uniform vec3 gridOriginPosKm;

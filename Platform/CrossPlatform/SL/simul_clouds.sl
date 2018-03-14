@@ -139,7 +139,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	int3 c_offset					=int3(sign(view.x),sign(view.y),sign(view.z));
 	int3 start_c_offset				=-c_offset;
 	start_c_offset					=int3(max(start_c_offset.x,0),max(start_c_offset.y,0),max(start_c_offset.z,0));
-	vec3 viewScaled					=view/scaleOfGridCoords;
+	vec3 viewScaled					=view/scaleOfGridCoordsKm;
 	viewScaled						=normalize(viewScaled);
 
 	vec3 offset_vec	=vec3(0,0,0);
@@ -154,14 +154,14 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
 	world_pos						+=offset_vec;
-	float viewScale					=length(viewScaled*scaleOfGridCoords);
+	float viewScale					=length(viewScaled*scaleOfGridCoordsKm);
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
 	vec3 offsetFromOrigin			=world_pos-gridOriginPosKm;
-	vec3 p0							=offsetFromOrigin/scaleOfGridCoords;
+	vec3 p0							=offsetFromOrigin/scaleOfGridCoordsKm;
 	int3 c0							=int3(floor(p0) + start_c_offset);
-	vec3 gridScale					=scaleOfGridCoords;
-	vec3 P0							=offsetFromOrigin/scaleOfGridCoords/2.0;
+	vec3 gridScale					=scaleOfGridCoordsKm;
+	vec3 P0							=offsetFromOrigin/scaleOfGridCoordsKm/2.0;
 	int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
@@ -180,6 +180,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	int3 b							=abs(c-C0*2);
 	for(int j=0;j<8;j++)
 	{
+		if(0)
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -261,7 +262,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			{
 				float brightness_factor;
 				float cloud_density		=density.z;
-				float cosine			=dot(N,viewScaled);
+				float cosine			=1;//dot(N,viewScaled);
 				density.z				*=cosine;
 				density.z				*=cosine;
 				density.z				*=saturate(distanceKm/0.24);
@@ -292,6 +293,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			}
 		}
 		lastFadeDistance=fadeDistance;
+		if(0)
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -410,8 +412,8 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,nearFarTexc
 										,brightness_factor);
 
-	clr[NUM_CLOUD_INTERP - 1].a			*=cosine*cosine;
-	//clr[NUM_CLOUD_INTERP - 1].rgb*=0.5*(1.0+colours[idx%7]);
+	clr[NUM_CLOUD_INTERP - 1].a			*=cosine;
+//clr[NUM_CLOUD_INTERP - 1].rgb*=0.5*(1.0+colours[idx%7]);
 	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
 
 	godraysTexCoords.z			=distanceKm*godraysScale;

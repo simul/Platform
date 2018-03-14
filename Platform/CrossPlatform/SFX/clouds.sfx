@@ -382,7 +382,7 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	for( i=0;i<9;i++)
 	{
 		// we expect stepLength in km for this shader
-		float lookup = .5;//texture_3d_wwc_lod(cloudDensity, vec3(tx), 1).z;// *saturate((maxh - wpos.z) / s);
+		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 1).z;// *saturate((maxh - wpos.z) / s);
 		thicknessKm		+=lookup*s;
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
 		s				*=1.3;

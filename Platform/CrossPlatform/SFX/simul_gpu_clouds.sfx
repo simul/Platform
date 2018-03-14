@@ -629,10 +629,10 @@ float CSDensity(uint3 pos)
 	return dens;
 }
 
-CS_LAYOUT(8,8,8)
+CS_LAYOUT(8,8,1)
 shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-	uint3 sub_pos				= g * 8 + t;
+	uint3 sub_pos				= g * uint3(8,8,1) + t;
 	uint3 pos					=sub_pos+threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
@@ -644,10 +644,10 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	IMAGE_STORE_3D(targetTexture1,int3(pos),vec4(dens,dens,dens,dens));
 }
 
-CS_LAYOUT(8, 8, 8)
+CS_LAYOUT(8, 8, 1)
 shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-	uint3 sub_pos = g * 8 + t;
+	uint3 sub_pos = g * uint3(8,8,1) + t;
 	uint3 pos = sub_pos + threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1, dims.x, dims.y, dims.z);
