@@ -773,7 +773,7 @@ shader vec4 PS_Lightpass(posTexVertexOutput IN):SV_TARGET
 	clip_pos.x				+=2.0*IN.texCoords.x;
 	clip_pos.y				-=2.0*IN.texCoords.y;
 	vec3 view				=normalize(mul(invViewProj[cubemapTargetIndex],clip_pos).xyz);
-	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
+	vec4 dlookup			=vec4(0.0,0.0,0.0,0.0);
 //	dlookup					=texture_cube_lod(depthTexture,view,0);
 
 	FarNearPixelOutput f	=Lightpass(cloudDensity

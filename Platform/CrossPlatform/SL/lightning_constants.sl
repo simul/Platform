@@ -25,6 +25,7 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform float brightness;
 	uniform float progress;
 	uniform float vertical;
+	uniform uint  branchIndex;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)

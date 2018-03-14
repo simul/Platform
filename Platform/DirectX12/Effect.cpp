@@ -1152,7 +1152,7 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 	{
 		int slot=samplerResourceSlots[i];
 		auto samp	= samplers[slot];
-#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+#if defined(SIMUL_DX12_SLOTS_CHECK) || defined(_DEBUG)
 		if (!samp)
 		{
 			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Sampler slot " << slot << " is invalid." << std::endl;
@@ -1180,7 +1180,7 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 			samplerHeap->Offset();
 	}
 
-#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+#if defined(SIMUL_DX12_SLOTS_CHECK) || defined(_DEBUG)
 	// Check slots
 	unsigned int requiredSlots = GetSamplerSlots();
 	if (requiredSlots != usedSlots)
@@ -1213,7 +1213,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 	{
 		int slot	= constantBufferResourceSlots[i];
 		auto cb		= cBuffers[slot];
-#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+#if defined(SIMUL_DX12_SLOTS_CHECK) || defined(_DEBUG)
 		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
 		{
 			SIMUL_CERR << "Resource binding error at: " << mPassName << ". Constant buffer slot " << slot << " is invalid." << std::endl;
@@ -1242,7 +1242,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 		frameHeap->Offset();
 	}
 
-#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+#if defined(SIMUL_DX12_SLOTS_CHECK) || defined(_DEBUG)
 	// Check slots
 	unsigned int requiredSlots = GetConstantBufferSlots();
 	if (requiredSlots != usedSlots)
@@ -1340,7 +1340,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			frameHeap->Offset();
 	}
 
-#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+#if defined(SIMUL_DX12_SLOTS_CHECK) || defined(_DEBUG)
 	// Check texture slots
 	unsigned int requiredSlotsTexture = this->GetTextureSlots();
 	if (requiredSlotsTexture != usedTextureSlots)
@@ -1460,7 +1460,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
 	}
 
 
-#ifdef SIMUL_DX12_SLOTS_CHECK || _DEBUG
+#if defined(SIMUL_DX12_SLOTS_CHECK) || defined(_DEBUG)
 	// Check RwTexture slots
 	unsigned int requiredSlotsTexture = GetRwTextureSlots();
 	if (requiredSlotsTexture != usedRwTextureSlots)
