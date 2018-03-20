@@ -298,6 +298,14 @@
 			z-=v[2];
 		}
 	};
+	inline vec3 cross(const vec3 &a,const vec3 &b)
+	{
+		vec3 r;
+		r.x=a.y*b.z-b.y*a.z;
+		r.y=a.z*b.x-b.z*a.x;
+		r.z=a.x*b.y-b.x*a.y;
+		return r;
+	}
 	struct mat4
 	{
 		union
@@ -379,6 +387,14 @@
 			return m;
 		}
 	};
+	inline vec3 operator*(const mat4 &m,const vec3 &v)
+	{
+		vec3 r;
+		r.x=m._11*v.x+m._12*v.y+m._13*v.z;
+		r.y=m._21*v.x+m._22*v.y+m._23*v.z;
+		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
+		return r;
+	}
 	inline vec3 operator*(float m,vec3 v)
 	{
 		vec3 r;
@@ -401,6 +417,13 @@
 			this->x=x;
 			this->y=y;
 			this->z=z;
+			this->w=w;
+		}
+		vec4(vec3 v,float w)
+		{
+			this->x=v.x;
+			this->y=v.y;
+			this->z=v.z;
 			this->w=w;
 		}
 		vec4(const float *v)
@@ -496,6 +519,15 @@
 		r.y=m*v.y;
 		r.z=m*v.z;
 		r.w=m*v.w;
+		return r;
+	}
+	inline vec4 operator*(const vec4 &v,const mat4 &m)
+	{
+		vec4 r;
+		r.x=m._11*v.x+m._21*v.y+m._31*v.z+m._41*v.w;
+		r.y=m._12*v.x+m._22*v.y+m._32*v.z+m._42*v.w;
+		r.z=m._13*v.x+m._23*v.y+m._33*v.z+m._43*v.w;
+		r.w=m._14*v.x+m._24*v.y+m._34*v.z+m._44*v.w;
 		return r;
 	}
 	inline vec4 operator*(const mat4 &m,const vec4 &v)
@@ -881,6 +913,18 @@
 		vec3d(double X,double Y,double Z)
 			:x(X),y(Y),z(Z)
 		{
+		}
+		vec3d(vec3 v)
+			:x((double)v.x),y((double)v.y),z((double)v.z)
+		{
+		}
+		operator vec3() const
+		{
+			vec3 v;
+			v.x=(float)x;
+			v.y=(float)y;
+			v.z=(float)z;
+			return v;
 		}
 		operator double *()
 		{

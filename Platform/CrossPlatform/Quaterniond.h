@@ -21,6 +21,7 @@ namespace simul
 			Quaterniond(const double *q);
 			Quaterniond(const Quaterniond &q);
 			Quaterniond(double angle_radians,const vec3d &vv);
+			operator vec4() const;
 			void Reset();
 			void Define(double angle,const vec3d &vv);
 			void Define(const vec3d &dir_sin);
@@ -57,7 +58,7 @@ namespace simul
 			vec3d operator/(const vec3d &vec) const;
 			Quaterniond operator*(double d)
 			{
-				return Quaterniond(s*d,x,y,z,false);
+				return Quaterniond(x,y,z,s*d,false);
 			}
 			/// The inverse, or opposite of the Quaterniond, representing an equal rotation
 			/// in the opposite direction.
@@ -78,6 +79,14 @@ namespace simul
 				s=q[3];
 				return *this;
 			}
+			Quaterniond& operator=(const vec4 &v)
+			{
+				x=v.x;
+				y=v.y;
+				z=v.z;
+				s=v.w;
+				return *this;
+			}
 			bool operator==(const Quaterniond &q)
 			{
 				return(s==q.s&&x==q.x&&y==q.y&&z==q.z);
@@ -89,21 +98,10 @@ namespace simul
 			/// Assignment operator. Set this Quaterniond equal to q.
 			Quaterniond& operator=(const Quaterniond &q)
 			{
-			#ifndef PLAYSTATION_2
 				x=q.x;
 				y=q.y;
 				z=q.z;
 				s=q.s;
-			#else
-				const double *Q2=&(q.x);
-				asm __volatile__("  
-						.set noreorder
-					lqc2			vf1,0(%1)			// Load q's double address into vf1
-					sqc2			vf1,0(%0)			// Load vf1 into r's double address
-					"					: /* Outputs. */
-										: /* Inputs */ "r" (this), "r" (Q2)
-										: /* Clobber */ "$vf1");
-			#endif
 				return *this;
 			}
 			//------------------------------------------------------------------------------

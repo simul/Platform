@@ -322,21 +322,23 @@ float WorleyFactor(vec3 worley_texcoord)
 	return w;//2.0*w+0.5;
 }
 
-void MapToWindow( uint3 p ,bool clears)
+void MapToWindow( uint3 ii,bool clears)
 {
-	int3 idx			=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
-	//	return;
-	idx.xy				+=gridCentreTexel;
-	idx.xy				+=int2(windowGrid.xy)/2;
-	vec3 texc			=vec3(idx)*scale;//+offset;
-	idx.xy				=idx.xy%int2(windowGrid.xy);
+	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
+	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	float sine			=0;//sin(azimuth);
 	float cosine		=1;//cos(azimuth);
 	texc.xy				-=vec2(0.5,0.5);
-	vec2 texc_r		=texc.xy;//	=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
-	//texc_r				+=vec2(0.5,0.5);
+	// rotate
+	vec2 texc_r			=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
+	texc_r				+=vec2(0.5,0.5);
+	texc.xy				+=vec2(0.5,0.5);
 
 	vec4 res			=texture_clamp_lod(rainMapTexture,texc_r.xy,0);
 	res.z				*=step(0,texc_r.x)*step(0,texc_r.y)*step(texc_r.x,1.0)*step(texc_r.y,1.0);

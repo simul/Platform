@@ -14,7 +14,7 @@ Quaterniond::Quaterniond()
 {
 	Reset();
 }
-Quaterniond::Quaterniond(double S,double X,double Y,double Z,bool normalize)
+Quaterniond::Quaterniond(double X,double Y,double Z,double S,bool normalize)
 {
 	x=X;
 	y=Y;
@@ -43,6 +43,16 @@ Quaterniond::Quaterniond(const double *q)
 	y=q[1];
 	z=q[2];
 	s=q[3];
+}
+
+Quaterniond::operator vec4() const
+{
+	vec4 v;
+	v.x=x;
+	v.y=y;
+	v.z=z;
+	v.w=s;
+	return v;
 }
 
 vec3d Quaterniond::operator*(const vec3d &vec) const

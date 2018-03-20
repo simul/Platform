@@ -159,7 +159,7 @@ float SH(int l, int m, float theta, float phi)
  // m in the range [-l..l] 
  // theta in the range [0..Pi] 
  // phi in the range [0..2*Pi] 
-	 const float sqrt2 = sqrt(2.0); 
+	 const float sqrt2 = sqrt(2.0);
 	 float s=0.0;
 	 if(m==0)
 		 s=K(l,0)*float(P(l,m,cos(theta))); 

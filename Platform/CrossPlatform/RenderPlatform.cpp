@@ -639,6 +639,43 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	debugEffect->Unapply(deviceContext);
 }
+
+
+void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
+{
+	Viewport viewport=GetViewport(deviceContext,0);
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
+
+	math::Matrix4x4 wvp,world;
+	world.ResetToUnitMatrix();
+
+	world._41=origin.x;
+	world._42=origin.y;
+	world._43=origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	debugConstants.debugWorldViewProj=wvp;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
+	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_texture_on_sphere");
+	debugEffect->SetTexture(deviceContext,imageTexture,t);
+	debugConstants.quaternion		=orient_quat;
+	debugConstants.radius			=sph_rad;
+	debugConstants.sideview			=qsize;
+	debugConstants.debugColour		=colour;
+	debugConstants.debugViewDir		=view_dir;
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+
+	SetTopology(deviceContext,TRIANGLESTRIP);
+	debugEffect->Apply(deviceContext,tech,0);
+
+	//DrawQuad(deviceContext);
+	Draw(deviceContext,16, 0);
+
+	debugEffect->Unapply(deviceContext);
+}
+
 void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour)
 {
 	Viewport viewport=GetViewport(deviceContext,0);

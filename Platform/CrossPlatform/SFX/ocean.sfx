@@ -1304,7 +1304,7 @@ shader PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 
 	if (length(g_boundedDimension) == 0.0) //Make sure foam only generated for the ocean.
 	{
-		foamValue = g_foamAlpha.Sample(wrapSamplerState, In.texCoords).x * (g_foamTexture.Sample(wrapSamplerState, In.texCoords / 400.0) / 4.0);
+		foamValue = g_foamAlpha.Sample(wrapSamplerState, In.texCoords).x * (g_foamTexture.Sample(wrapSamplerState, In.texCoords / 400.0) / 14.0);
 		float bubbles = g_foamTexture.Sample(wrapSamplerState, In.texCoords * 4);
 		float foamColour = 1.0 - bubbles;
 		foamValue *= foamColour;

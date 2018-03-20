@@ -21,6 +21,7 @@ void ViewStruct::Init()
 //	MakeWorldViewProjMatrix((float*)&modelViewProj, (const float*)&model, (const float*)&view, (const float*)&proj);
 	MakeViewProjMatrix((float*)&viewProj, (const float*)&view, (const float*)&proj);
 	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
+	view.Inverse(*((simul::math::Matrix4x4*)&invView));
 	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
 	initialized=true;
 }
