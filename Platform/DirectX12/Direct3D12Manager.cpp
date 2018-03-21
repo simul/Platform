@@ -241,7 +241,7 @@ void Window::Release()
 	SAFE_RELEASE_ARRAY(BackBuffers,FrameCount);
 	SAFE_RELEASE(RTHeap);
 	SAFE_RELEASE_ARRAY(CommandAllocators,FrameCount);
-	SAFE_RELEASE(CommandQueueRef);
+	CommandQueueRef=nullptr;
 }
 
 void Window::SetCommandQueue(ID3D12CommandQueue *commandQueue) 
@@ -576,7 +576,7 @@ void Direct3D12Manager::Render(HWND h)
 
 	// Reset command list
 	res =  mCommandList->Reset(w->CommandAllocators[mCurFrameIdx],nullptr);
-	SIMUL_ASSERT(res == S_OK);
+	SIMUL_ASSERT(res == S_OK); 
 
 	// Set viewport 
 	mCommandList->RSSetViewports(1, &w->CurViewport);
@@ -671,6 +671,7 @@ void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 
 	// Here we should have a real wait...
 	Sleep(1000);
+	mCommandList->Close();
 	w->ResizeSwapChain(mDevice);
 
 	// Reset the frame values

@@ -66,6 +66,10 @@ namespace simul
 		public:
 										RenderPlatform();
 			virtual						~RenderPlatform();
+			virtual float GetDefaultOutputGamma() const
+			{
+				return 0.44f;
+			}
 			const char*					GetName() const
 			{
 				return "DirectX 12";

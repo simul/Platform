@@ -101,6 +101,11 @@ namespace simul
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
+			virtual float GetDefaultOutputGamma() const
+			{
+				return 1.0f;
+			}
+
 			void SetCanSaveAndRestore(bool b)
 			{
 				can_save_and_restore=b;
