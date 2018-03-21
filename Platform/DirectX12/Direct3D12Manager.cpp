@@ -541,16 +541,27 @@ IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
 void Direct3D12Manager::Render(HWND h)
 {
 	HRESULT res = S_FALSE;
-
 	// Error checking
-	if(windows.find(h)==windows.end())
-		return;
-	Window *w = windows[h];
-	if(!w)
+	if (windows.find(h) == windows.end())
 	{
 		SIMUL_CERR<<"No window exists for HWND "<<std::hex<<h<<std::endl;
 		return;
 	}
+	Window* w = windows[h];
+
+	if (mMustResize)
+	{
+		Sleep(256);
+		// Here we should have a real wait...
+		w->ResizeSwapChain(mDevice);
+		// Reset the frame values
+		for (int i = 0; i < FrameCount; i++)
+		{
+			mFenceValues[i] = 0;
+		}
+		mMustResize = false;
+	}
+
 	if(h!=w->ConsoleWindowHandle)
 	{
 		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->ConsoleWindowHandle <<std::endl;
@@ -666,12 +677,13 @@ void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 	if (windows.find(hwnd) == windows.end())
 		return;
 	Window* w = windows[hwnd];
-	if(!w)
+	if (!w)
 		return;
 
+	mMustResize = true;
+
+	/*
 	// Here we should have a real wait...
-	Sleep(1000);
-	mCommandList->Close();
 	w->ResizeSwapChain(mDevice);
 
 	// Reset the frame values
@@ -679,6 +691,7 @@ void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 	{
 		mFenceValues[i] = 0;
 	}
+	*/
 }
 
 void* Direct3D12Manager::GetDevice()
