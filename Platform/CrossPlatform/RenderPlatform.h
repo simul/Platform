@@ -101,6 +101,11 @@ namespace simul
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
+			virtual float GetDefaultOutputGamma() const
+			{
+				return 1.0f;
+			}
+
 			void SetCanSaveAndRestore(bool b)
 			{
 				can_save_and_restore=b;
@@ -186,6 +191,8 @@ namespace simul
 			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
 			void DrawLatLongSphere			(DeviceContext &deviceContext,int lat,int longi,vec3 origin,float sph_radius,vec4 colour);
 			void DrawQuadOnSphere			(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,float sph_radius,vec4 colour);
+			
+			void DrawTextureOnSphere		(DeviceContext &deviceContext,crossplatform::Texture *t, vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour=vec4(1.f,1.f,1.f,1.f));
 			void DrawCircleOnSphere			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float crc_rad,float sph_rad,vec4 colour);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);

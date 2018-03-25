@@ -101,7 +101,9 @@ namespace simul
 
 		protected:
 			void						WaitForGpu();
-			void						MoveToNextFrame(Window *window);
+			void						MoveToNextFrame(Window* window);
+
+			bool mMustResize = false;
 
 			//! Map of windows
 			WindowMap					windows;

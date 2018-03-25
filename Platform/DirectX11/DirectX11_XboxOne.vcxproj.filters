@@ -282,6 +282,9 @@
     <None Include="..\CrossPlatform\SL\clouds_simple.sl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\render_states.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\CrossPlatform\SFX\atmospherics.sfx">

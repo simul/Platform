@@ -44,8 +44,8 @@ void SphericalHarmonics::RecompileShaders()
 	SAFE_DELETE(sphericalHarmonicsEffect);
 	if (!renderPlatform)
 		return;
-	lightProbesEffect = renderPlatform->CreateEffect("light_probes");
-	sphericalHarmonicsEffect = renderPlatform->CreateEffect("spherical_harmonics");
+	lightProbesEffect			=renderPlatform->CreateEffect("light_probes");
+	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect, "SphericalHarmonicsConstants");
 	//lightProbeConstants.LinkToEffect(lightProbesEffect, "LightProbeConstants");
 }
@@ -111,17 +111,17 @@ void SphericalHarmonics::CopyMip(crossplatform::DeviceContext &deviceContext,Tex
 	const bool doOldMipCopy = false;
 	if(doOldMipCopy /*|| renderPlatform->GetName() == "DirectX 12" || renderPlatform->GetName() == "PS4"*/)
 	{
-	crossplatform::EffectTechnique *tech = lightProbesEffect->GetTechniqueByName((blend>0.0f) ? "blend_mip" : "overwrite_mip");
-	// The source is the i'th mip of the faceIndex face of the cubemap texture.
-	lightProbesEffect->SetTexture(deviceContext, "sourceTextureArray", tex, face, src_mip);
-	// The target is the (i+1)'th mip of the faceIndex face.
-	tex->activateRenderTarget(deviceContext, face, src_mip + 1);
-	lightProbesEffect->Apply(deviceContext, tech, 0);
-	renderPlatform->DrawQuad(deviceContext);
-	lightProbesEffect->UnbindTextures(deviceContext);
-	lightProbesEffect->Unapply(deviceContext);
-	tex->deactivateRenderTarget(deviceContext);
-}
+		crossplatform::EffectTechnique *tech=lightProbesEffect->GetTechniqueByName((blend>0.0f)?"blend_mip":"overwrite_mip");
+		// The source is the i'th mip of the faceIndex face of the cubemap texture.
+		lightProbesEffect->SetTexture(deviceContext,"sourceTextureArray",tex,face,src_mip);
+		// The target is the (i+1)'th mip of the faceIndex face.
+		tex->activateRenderTarget(deviceContext,face,src_mip+1);
+		lightProbesEffect->Apply(deviceContext,tech,0);
+		renderPlatform->DrawQuad(deviceContext);
+		lightProbesEffect->UnbindTextures(deviceContext);
+		lightProbesEffect->Unapply(deviceContext);
+		tex->deactivateRenderTarget(deviceContext);
+	}
 	else
 	{
 		crossplatform::EffectTechniqueGroup *group	= lightProbesEffect->GetTechniqueGroupByName("mip_from_roughness");
@@ -255,8 +255,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		sphericalSamples.CloseReadBuffer(deviceContext);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
-		SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
-		crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
+	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
 	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");

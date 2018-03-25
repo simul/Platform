@@ -62,6 +62,7 @@ namespace simul
 			math::Matrix4x4 view;					///< The view matrix. If considered as row-major, position information is in the 4th row.
 			math::Matrix4x4 proj;					///< The projection matrix, row-major.
 			math::Matrix4x4 invViewProj;
+			math::Matrix4x4 invView;
 			math::Matrix4x4 viewProj;
 			////math::Matrix4x4 modelView;
 		//	math::Matrix4x4 modelViewProj; 

@@ -642,13 +642,6 @@ void Direct3D11Manager::Shutdown()
 		d3dDeviceContext->Flush();
 	}
 	SAFE_RELEASE(d3dDeviceContext);
-#ifndef _XBOX_ONE
-	if(d3dDebug)
-	{
-		// Watch out - this will ALWAYS BREAK, but that doesn't mean there are live objects.
-	//	d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-	}
-#endif
 	ReportMessageFilterState();
 	SAFE_RELEASE(d3dInfoQueue);
 #ifndef _XBOX_ONE
@@ -664,6 +657,13 @@ void Direct3D11Manager::Shutdown()
 		if(references>0)
 		{
 			SIMUL_BREAK("Unfreed references remain in DirectX 11");
+#ifndef _XBOX_ONE
+			if(d3dDebug)
+			{
+				// Watch out - this will ALWAYS BREAK, but that doesn't mean there are live objects.
+				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+			}
+#endif
 		}
 		d3dDevice=NULL;
 	}
