@@ -809,19 +809,19 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	float displayLod=0.0f;
 	if(debug)
 	{
-	count--;
-	if(!count)
-	{
-		lod++;
-		count=frames;
-	}
-	if(tex)
-	{
-		int m=tex->GetMipCount();
-		displayLod=float((lod%(m?m:1)));
-		if(!tex->IsValid())
-			tex=nullptr;
-	}
+		count--;
+		if(!count)
+		{
+			lod++;
+			count=frames;
+		}
+		if(tex)
+		{
+			int m=tex->GetMipCount();
+			displayLod=float((lod%(m?m:1)));
+			if(!tex->IsValid())
+				tex=nullptr;
+		}
 	}
 	
 	debugConstants.debugGamma=gamma;
