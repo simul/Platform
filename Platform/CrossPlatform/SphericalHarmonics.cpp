@@ -105,7 +105,7 @@ void SphericalHarmonics::CopyMip(crossplatform::DeviceContext &deviceContext,Tex
 	lightProbeConstants.cubeFace = face;
 	lightProbeConstants.mipIndex = src_mip + 1;
 	lightProbesEffect->UnbindTextures(deviceContext);
-	lightProbeConstants.roughness = RoughnessFromMip(lightProbeConstants.mipIndex, tex->mips);
+	lightProbeConstants.roughness = RoughnessFromMip((float)lightProbeConstants.mipIndex,(float)tex->mips);
 	lightProbesEffect->SetConstantBuffer(deviceContext, &lightProbeConstants);
 
 	const bool doOldMipCopy = false;
@@ -288,7 +288,7 @@ void SphericalHarmonics::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	if (!lightProbesEffect)
 		return;
 	math::Matrix4x4 invViewProj;
-	mat4 view;
+//	mat4 view;
 	float cam_pos[] = { 0,0,0 };
 	crossplatform::EffectTechnique *tech = lightProbesEffect->GetTechniqueByName("irradiance_map");
 		// For each face, 

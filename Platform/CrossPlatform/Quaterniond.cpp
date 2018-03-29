@@ -48,10 +48,10 @@ Quaterniond::Quaterniond(const double *q)
 Quaterniond::operator vec4() const
 {
 	vec4 v;
-	v.x=x;
-	v.y=y;
-	v.z=z;
-	v.w=s;
+	v.x=(float)x;
+	v.y=(float)y;
+	v.z=(float)z;
+	v.w=(float)s;
 	return v;
 }
 

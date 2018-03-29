@@ -177,10 +177,10 @@ namespace simul
 			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
-			virtual void DrawQuad			(DeviceContext &deviceContext){}
+			virtual void DrawQuad			(DeviceContext &){}
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(DeviceContext &deviceContext,PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false){}
+			virtual void DrawLines			(DeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
 			void Draw2dLine					(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
 			virtual void Draw2dLines		(DeviceContext &deviceContext,PosColourVertex *lines,int vertex_count,bool strip){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.

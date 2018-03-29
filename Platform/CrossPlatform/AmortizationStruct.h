@@ -54,7 +54,7 @@ public:
 		int sub_frame = (int)fmod((framenumber - fmod(framenumber, numOffsets)) / numOffsets, numOffsets);
 		return pattern[sub_frame];
 	}
-	void validate(int newFramenumber)
+	void validate()
 	{
 		framenumber++;// = newFramenumber;
 	}

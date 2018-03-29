@@ -966,7 +966,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				crossplatform::RenderStateDesc desc;
 				desc.type=crossplatform::DEPTH;
 				desc.depth.test=toBool(simul::base::toNext(props,',',pos_d));
-				desc.depth.write=(bool)toInt(simul::base::toNext(props,',',pos_d));
+				desc.depth.write=toInt(simul::base::toNext(props,',',pos_d))!=0;
 				desc.depth.comparison=(crossplatform::DepthComparison)toInt(simul::base::toNext(props,',',pos_d));
 				crossplatform::RenderState *ds=renderPlatform->CreateRenderState(desc);
 				depthStencilStates[name]=ds;
