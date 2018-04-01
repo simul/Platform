@@ -63,7 +63,7 @@ SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
 	//ComparisonFunc = NEVER;
 	MinLOD = 0;
 	MaxLOD = 1000000;
-	MaxAnisotropy = 4;
+	MaxAnisotropy = 16;
 };
 
 // FFT wave gradient map, converted to normal value in PS
@@ -85,14 +85,12 @@ SamplerState g_samplerGradient SIMUL_STATE_REGISTER(7)
 
 #define RAND_MAX 0x7fff
 
-float fresnel(vec3 incident, vec3 normal)
+float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 {
 	float fresnel;
 	float cos_incident = clamp(-1.0, 1.0, dot(incident, normal));
-	float airIndex = 1.0;
-	float waterindex = 1.33;
 
-	float sint = (airIndex / waterindex) * sqrt(max(0.0, 1 - (cos_incident * cos_incident)));
+	float sint = (sourceIndex / mediumIndex) * sqrt(max(0.0, 1 - (cos_incident * cos_incident)));
 	if (sint >= 1.0)
 	{
 		fresnel = 0.0;
@@ -101,8 +99,8 @@ float fresnel(vec3 incident, vec3 normal)
 	{
 		float cost = sqrt(max(0.0, 1 - sint * sint));
 		cos_incident = abs(cos_incident);
-		float Rs = ((waterindex * cos_incident) - (airIndex * cost)) / ((waterindex * cos_incident) + (airIndex * cost));
-		float Rp = ((airIndex * cos_incident) - (waterindex * cost)) / ((airIndex * cos_incident) + (waterindex * cost));
+		float Rs = ((mediumIndex * cos_incident) - (sourceIndex * cost)) / ((mediumIndex * cos_incident) + (sourceIndex * cost));
+		float Rp = ((sourceIndex * cos_incident) - (mediumIndex * cost)) / ((sourceIndex * cos_incident) + (mediumIndex * cost));
 		fresnel = ((Rs * Rs + Rp * Rp) / 2.0);
 	}
 
@@ -274,7 +272,7 @@ float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
 	// largest possible wave from constant wind of velocity v
 	float l = v * v / g;
 	// damp out waves with very small length w << l
-	float w = l / 1000.f;
+	float w = l / 10000.f;
 
 	float Ksqr = K.x * K.x + K.y * K.y;
 	float Kcos = K.x * W.x + K.y * W.y;
@@ -285,7 +283,7 @@ float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
 		phillips *= dir_depend;
 
 	// damp out waves with very small length w << l
-	return phillips * exp(-Ksqr * w * w);
+	return phillips;// *exp(-Ksqr * w * w);
 }
 
 //---------------------------------------- Compute Shaders -----------------------------------------
@@ -892,6 +890,9 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 		vec2 uv_local2 = (lerpSample2.xy * g_UVScale + g_UVOffset);
 	}
 
+	if (length(pos_local.xy) > 10000)
+		noDisplacement = true;
+
 	if (!noDisplacement)
 	{
 		// Blend displacement to avoid tiling artifact
@@ -949,13 +950,13 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 			{
 				vec2 uv_local1 = lerpSample1.xy * g_UVScale + g_UVOffset;
 				vec2 uv_local2 = lerpSample2.xy * g_UVScale + g_UVOffset;
-				vec3 displacement1 = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local1, 0).xyz;
-				vec3 displacement2 = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local2, 0).xyz;
+				vec3 displacement1 = (g_texDisplacement.SampleLevel(wrapSamplerState, uv_local1, 0).xyz + g_texDisplacement.SampleLevel(wrapSamplerState, uv_local1 / 3.5, 0).xyz);
+				vec3 displacement2 = (g_texDisplacement.SampleLevel(wrapSamplerState, uv_local2, 0).xyz + g_texDisplacement.SampleLevel(wrapSamplerState, uv_local2 / 3.5, 0).xyz);
 				displacement = lerp(displacement1, displacement2, 0.5) * g_WorldScale;
 			}
 			else
 			{
-				displacement = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz * g_WorldScale;
+				displacement = (g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wrapSamplerState, uv_local / 3.5, 0).xyz) * g_WorldScale;
 			}
 		}
 		//
@@ -993,7 +994,7 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 	if (vertexNo <= 6)
 	{
 		noDisplacement = true;
-		vPos.z = -g_boundedDimension.z* g_WorldScale;
+		vPos.z = -g_boundedDimension.z;
 		if (vertexNo) vertexNo--;
 		if (vertexNo > 3) vertexNo--;
 		if (vertexNo % 2) vPos.y = g_boundedDensity.y;
@@ -1025,7 +1026,7 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 				else
 				{
 					vPos.x = (vertexNo - 1) / 2;
-					vPos.z = -g_boundedDimension.z* g_WorldScale;
+					vPos.z = -g_boundedDimension.z;
 					noDisplacement = true;
 				}
 				if (edgeNo)
@@ -1046,7 +1047,7 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 				else
 				{
 					vPos.y = (vertexNo - 1) / 2;
-					vPos.z = -g_boundedDimension.z* g_WorldScale;
+					vPos.z = -g_boundedDimension.z;
 					noDisplacement = true;
 				}
 				if (edgeNo)
@@ -1079,10 +1080,21 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 			//Output.vecColour = vec4(vPos.y / (g_layerDensity * 2), 1.0 - (vPos.y / (g_layerDensity * 2)), 0.0, 1.0);
 		}
 	}
-	vPos.x *= (g_boundedDimension.x / (float)g_boundedDensity.x) * g_WorldScale;
-	vPos.y *= (g_boundedDimension.y / (float)g_boundedDensity.y) * g_WorldScale;
-	vPos.x += g_boundedLocation.y - ((g_boundedDimension.x / 2) * g_WorldScale);
-	vPos.y += g_boundedLocation.x - ((g_boundedDimension.y / 2) * g_WorldScale);
+	vPos.x *= (g_boundedDimension.x / (float)g_boundedDensity.x);
+	vPos.y *= (g_boundedDimension.y / (float)g_boundedDensity.y);
+
+	vPos.x -= (g_boundedDimension.x / 2.0);
+	vPos.y -= (g_boundedDimension.y / 2.0);
+
+	float rotation = -(g_boundedRotation / 360.0) * PI * 2.0;
+
+	float tempx = vPos.x*cos(rotation) - vPos.y*sin(rotation);
+	float tempy = vPos.y*cos(rotation) + vPos.x*sin(rotation);
+	vPos.x = tempx;
+	vPos.y = tempy;
+
+	vPos.x += g_boundedLocation.y;
+	vPos.y += g_boundedLocation.x;
 	vPos.z += g_boundedLocation.z;
 
 	float4 pos_local = float4(vPos, 1);
@@ -1118,7 +1130,7 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 
 		if (blend_factor > 0)
 		{
-			displacement = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz * g_WorldScale;
+			displacement = (g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wrapSamplerState, uv_local / 3.5, 0).xyz) * g_WorldScale;
 		}
 
 		displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
@@ -1138,7 +1150,7 @@ shader VS_OUTPUT BoundedWaterSurfVS(idOnly IN)
 }
 
 //Calculate water depth and render values
-shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
+shader PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
 	PS_WATER_OUTPUTS Output;
 	//Calculate depth
@@ -1150,28 +1162,7 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 	vec2 TexCoord = (vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) +vec2(1.0, 1.0))/ 2.0;
 
 	float foamValue = 0.0;
-
-	if (length(g_boundedDimension) == 0.0) //Make sure foam only generated for the ocean.
-	{
-		if (In.LocalPos.z > 0.5 && length(eye_vec) > 1000)
-		{
-			foamValue = In.LocalPos.z - 0.5;
-		}
-		else
-		{
-			foamValue = g_foamAlpha.Sample(wrapSamplerState, In.texCoords, 2);
-			float bubbles = g_foamTexture.Sample(wrapSamplerState, In.texCoords * 2);
-			float foamColour = 1.0 - bubbles;
-			foamValue *= foamColour;
-			if ((bubbles * bubbles) / 2.0 > foamValue)
-				foamValue = 0.0;
-		}
-	}
 	//foamValue = g_foamTexture.Sample(wrapSamplerState, In.texCoords * 4) / 2;
-	
-
-	Output.Scattering = vec4(g_scattering, foamValue);
-	Output.Absorption = vec4(g_absorption, g_temperature);
 
 	//Calculate normals
 	float blend_factor = (PATCH_BLEND_END - surfaceDepth) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
@@ -1193,7 +1184,7 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 	// Texcoord mash optimization: Texcoord of FFT wave is not required when blend_factor > 1
 	vec2 fft_tc = (blend_factor > 0) ? In.texCoords : 0;
 
-	vec2 grad = g_texGradient.Sample(g_samplerGradient, fft_tc).xy;
+	vec2 grad = (g_texGradient.Sample(g_samplerGradient, fft_tc).xy + g_texGradient.Sample(g_samplerGradient, fft_tc / 3.5).xy) / 2.0;
 	grad = lerp(perlin, grad, blend_factor);
 
 	// Calculate normal here.
@@ -1204,53 +1195,82 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 	float tempsample = 0.0;
 	float offset = 0.0;
 	vec3 refract_vec = vec3(0.0,0.0,0.0);
+	vec3 stepVec = vec3(0.0,0.0,0.0);
+	vec3 viewNormal = vec3(0.0, 0.0, 0.0);
 	if (g_enableRefraction)
 	{
 		if (g_PassNo == 1)
-		{
 			tempsample = g_texDepth.Sample(wrapSamplerState, TexCoord*g_DepthScale);
-		}
 		else
-		{
 			tempsample = g_waterStencil.Sample(wrapSamplerState, TexCoord*g_DepthScale);
-		}
+
 		float fulldepth = depthToFadeDistance(tempsample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
-		
+		vec3 eyeViewVec = vec3(0.0,0.0,1.0);
+
 		if (!frontFacing)
-		{
-			vec3 eyeViewVec = vec3(0.0, 0.0, 1.0);
-			vec3 viewNormal = mul(vec4(normal, 0.0), g_matWorldViewProj);
-			vec3 refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
+		{			
 			actualDepth = fulldepth - surfaceDepth;
 
 			if (actualDepth > 0.0)
 			{
-				float cosangle = acos(dot(-eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
-				float offset = tan(cosangle) * (actualDepth / fulldepth);
-				TexCoord += offset * normalize(refract_vec.xy);
-				//Output.Scattering =(vec4(cosangle, cosangle, cosangle, 1.0));
+				viewNormal = mul(vec4(normal, 0.0), g_matWorldViewProj);
+				refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
+				/*
+				vec3 stepVec = refract_vec * 0.1;
+				stepVec.xy *= g_screenScale * (actualDepth / fulldepth);
+				float currentDepth = surfaceDepth;
+				vec2 tempTexCoord = TexCoord - stepVec.xy;
+				float sampledDepth;
+				float adjustedDepth;
+				if (g_PassNo == 1)
+					sampledDepth = g_texDepth.Sample(wrapSamplerState, tempTexCoord*g_DepthScale);
+				else
+					sampledDepth = g_waterStencil.Sample(wrapSamplerState, tempTexCoord*g_DepthScale);
+
+				adjustedDepth = depthToFadeDistance(sampledDepth, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
+
+				uint count = 1;
+
+				while (currentDepth < adjustedDepth && count <= 128 && tempTexCoord.x < 1.0 && tempTexCoord.y < 1.0)
+				{
+					currentDepth += stepVec.z;
+					tempTexCoord -= normalize(vec3(stepVec.z * count, stepVec.xy)).xy * (actualDepth / fulldepth);
+					if (g_PassNo == 1)
+						sampledDepth = g_texDepth.Sample(wrapSamplerState, tempTexCoord*g_DepthScale);
+					else
+						sampledDepth = g_waterStencil.Sample(wrapSamplerState, tempTexCoord*g_DepthScale);
+					adjustedDepth = depthToFadeDistance(sampledDepth, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
+					TexCoord = tempTexCoord + (normalize(vec3(stepVec.z * count, stepVec.xy)).xy ) * (actualDepth / fulldepth);
+					count++;
+				}
+				*/
+					
+				float cosangle = acos(dot(eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
+				offset = tan(cosangle) * (actualDepth / fulldepth);
+				TexCoord -= offset * normalize(refract_vec.xy) * g_screenScale;
 			}
 			else {
 				actualDepth = 0.0;
+				//discard;
 			}
 		}
 		else
 		{
-			vec3 eyeViewVec = vec3(0.0, 0.0, 1.0);
-			vec3 viewNormal = mul(vec4(-normal, 0.0), g_matWorldViewProj);
-			vec3 refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
 			actualDepth = min(fulldepth, surfaceDepth);
+
 			if (actualDepth == surfaceDepth)
 			{
-				float cosangle = acos(dot(-eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
-				float offset = tan(cosangle) *((fulldepth - surfaceDepth) / fulldepth);
-				TexCoord += offset *normalize(refract_vec.xy);
-				//Output.Scattering =(vec4(offset, 0.0, 0.0, 1.0));
+				viewNormal = mul(vec4(-normal, 0.0), g_matWorldViewProj);
+				refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
+
+				float cosangle = acos(dot(eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
+				offset = tan(cosangle) *((fulldepth - surfaceDepth) / fulldepth);
+				TexCoord += offset * normalize(refract_vec.xy) * g_screenScale;
 			}
 		}
 	}
 
-	TexCoord = clamp(TexCoord, vec2(0.0, 0.0), vec2(0.99, 0.99));
+	TexCoord = clamp(TexCoord, vec2(0.0, 0.0), vec2(0.99,0.99));
 	float subsurfaceSample;
 	if (g_PassNo == 1)
 	{
@@ -1261,6 +1281,15 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 		subsurfaceSample = g_waterStencil.Sample(clampSamplerState, TexCoord*g_DepthScale);
 	}
 	float subsurfaceDepth = depthToFadeDistance(subsurfaceSample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
+
+	if (subsurfaceDepth < surfaceDepth)
+	{
+		TexCoord = (vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + vec2(1.0, 1.0)) / 2.0;
+		subsurfaceDepth = depthToFadeDistance(tempsample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
+	}
+
+	//else if (g_enableRefraction)
+		//TexCoord = lerp(TexCoord, ((vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + vec2(1.0, 1.0)) / 2.0), exp(tempsample - subsurfaceSample) );
 
 	float backfaceOccluded = 0.0;
 	float finalDepth;
@@ -1300,8 +1329,20 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 	//if (actualDepth == 0)
 		//discard;
 
-	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale);
-	//Output.Scattering = vec4(1.0 - actualDepth,0.0, 0.0,0.0);
+	if (length(g_boundedDimension) == 0.0) //Make sure foam only generated for the ocean.
+	{
+		foamValue = g_foamAlpha.Sample(wrapSamplerState, In.texCoords).x * (g_foamTexture.Sample(wrapSamplerState, In.texCoords / 400.0) / 4.0);
+		float bubbles = g_foamTexture.Sample(wrapSamplerState, In.texCoords * 4);
+		float foamColour = 1.0 - bubbles;
+		foamValue *= foamColour;
+		if ((bubbles * bubbles) / 3.0 > foamValue)
+			foamValue = 0.0;
+	}
+
+	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(refract_vec, 0.0); //
+
+	Output.Scattering = vec4(g_scattering, foamValue);
+	Output.Absorption = vec4(g_absorption, g_temperature);
 	Output.RefractColour = refractColour;
 	Output.Normals = vec4(normal, backfaceOccluded);
 	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, min(subsurfaceDepth, surfaceDepth));
@@ -1309,7 +1350,7 @@ shader PS_WATER_OUTPUTS PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_Is
 	return Output;
 }
 
-shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
+shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 {
 	float4 depthInput = g_waterDepth.Sample(wrapSamplerState, In.texCoords);
 	float4 absorptionInput = g_waterAbsorption.Sample(wrapSamplerState, In.texCoords);
@@ -1328,7 +1369,9 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 	
 	if (waterDepth == 0.0)
 		waterDepth = depthInput.y;
-	
+
+	//return refractColourInput;
+
 	vec4 clip = vec4((In.texCoords.x * 2) - 1, ((1 - In.texCoords.y) * 2) - 1, 1.0, 1.0);
 	vec4 v = mul(g_matInvViewProj, clip);
 	vec3 eye_dir = normalize(v.xyz / v.w);
@@ -1378,7 +1421,7 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 			}
 		}
 		else {
-			refractColourInput += vec4(scatteringInput.w, scatteringInput.w, scatteringInput.w, 0.0) / 2.0;
+			refractColourInput += vec4(scatteringInput.w, scatteringInput.w, scatteringInput.w, 0.0);
 			scatterDepth = eye_depth;
 		}
 
@@ -1386,16 +1429,27 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 		float B = acos(dot(eye_dir, -vec3(0.0, 0.0, 1.0)) / (length(eye_dir) * length(vec3(0.0, 0.0, 1.0))));
 		float c = 1.0;// (sin(A) / sin(B));
 
-		
-		float sunEffect = ((dot(eye_dir, g_SunDir) + 1.0) / 2.0);
+		//float refractFresnel = 1.0;
+
+		float sunEffect = ((dot(eye_dir, g_SunDir) + 2.0) / 2.0);
 		if (sun_dir.z < 0)
 			sunEffect = 0.0;
-		vec3 incomingRadiance = exp(-extinction * scatterDepth * fadeDistance * c ) * g_SunColor;
-		vec4 surfaceScattering = vec4(g_SunColor * exp(-fadeDistance * (eye_depth / sunAngle) * extinction), 0.0);
-		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) *refractColourInput, 0.0);
-		vec4 SSS = vec4((albedo * (p / (1 + c)) * saturate(1 - (exp(-extinction * (1 + c)  * fadeDistance * waterDepth) *  incomingRadiance))), 0.0);
 
-		Output += saturate(mult);
+		vec3 incomingRadiance = exp(-extinction * scatterDepth * fadeDistance * c) * g_SunColor;
+
+		/*
+		if (normalsInput.w)
+		{
+			vec3 refractAngle = refract(eye_dir, -normal, 1.33);
+			if (!(refractAngle.z > 0.0))
+				refractColourInput = vec4(incomingRadiance * sunEffect , 0.0);
+		}
+		*/
+		vec4 surfaceScattering = vec4(g_SunColor * exp(-fadeDistance * (eye_depth / sunAngle) * extinction), 0.0);
+		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
+		vec4 SSS = vec4((albedo * (p / (1 + c)) * saturate(1 - (exp(-extinction * (1 + c)  * fadeDistance * waterDepth) * incomingRadiance))), 0.0);
+
+		Output += mult;
 		//Output += SSS;
 		Output += (surfaceScattering * SSS * sunEffect);
 		return Output;
@@ -1414,6 +1468,7 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 	else {
 		scatterDepth = pointDepth;
 	}
+
 	vec3 reflect_vec = reflect(eye_dir, normal);
 	float sunEffect = (dot(reflect_vec, sun_dir) + 1.0) / 2.0;
 	if (sun_dir.z < 0)
@@ -1426,24 +1481,31 @@ shader float4 OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
 	// --------------- Sun spots
 	float cos_spec = dot(normalize(reflect_vec), sun_dir);
 	float sun_spot = pow(cos_spec, g_Shineness);
+	vec4 sunSpec = max(vec4(g_SunColor * sun_spot * sun_spot * sun_spot, 0.0), 0.0);
+	//if (length(sunSpec) < 1.0)
+		//sunSpec = vec4(0.0, 0.0, 0.0, 0.0);
 
 	// --------------- Reflected colour
 	vec3 refl = texture_cube_lod(g_texReflectCube,reflect_vec.yxz, 0);
-	float reflectFresnel = fresnel(reflect_vec, normal);
-	float sunFresnel = fresnel(-sun_dir, normal);
+	float reflectFresnel = fresnel(-reflect_vec, normal, 1.0, 1.33);
+	float sunFresnel = fresnel(-sun_dir, normal, 1.0, 1.33);
 
-	Output += max(vec4(g_SunColor * sun_spot * sun_spot * sun_spot, 1.0) , 0.0);
-	Output += vec4(refl, 1.0) * reflectFresnel;
-	Output += saturate(mult);
+	//vec3 h = normalize(-eye_dir + sun_dir);
+	//sunSpec = vec4( g_SunColor * (sunFresnel / (4 * pow(h , 4) * (eye_dir * normal) * dot(normalize(reflect_vec), sun_dir))), 0.0);
+	
+	Output += mult;
 	//Output += SSS;
-	Output += SSS* sunEffect;
-
+	Output += SSS * sunEffect;
+	Output += sunSpec * sunFresnel;
 	// --------------- Foam colour
 	if (scatteringInput.w > 0.0)
 	{
+			//refl -= vec3(scatteringInput.w, scatteringInput.w, scatteringInput.w);
 			vec3 foamEffect = vec3(scatteringInput.w * g_SunColor * clamp(dot(normal, g_SunDir), 0.1, 1.0));
 			Output += vec4(foamEffect, scatteringInput.w);
 	}
+
+	Output += vec4(refl, 1.0) * reflectFresnel;
 
 	return Output;
 }
@@ -1458,31 +1520,31 @@ shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
 {
 	float foam = 0.00;
 	float alpha = 0.97;
-	float displacement = g_texDisplacement.SampleLevel(g_samplerGradient, In.texCoords, 0).z;
+	float displacement = g_texDisplacement.Sample(g_samplerGradient, In.texCoords).z;
 
-	if (displacement  > g_foamHeight)
+	float derivativeX = ddx(displacement);
+	float derivativeY = ddy(displacement);
+
+	if (displacement > g_foamHeight)
 	{
-		float derivativeX = ddx(displacement);
-		float derivativeY = ddy(displacement);
-		
-		if (derivativeY < 0.00001)
+		if (derivativeY < 0.0001)
 		{
-			foam += 1.0 - (derivativeY * 100000);
+			foam += 1.0;// 1.0 - (derivativeY * 10000);
 			alpha = 1.0;
 		}
 
-		if (derivativeX < 0.00001)
+		if (derivativeX < 0.0001)
 		{
-			foam += 1.0 - (derivativeX * 100000);
+			foam += 1.0;// 1.0 - (derivativeX * 10000);
 			alpha = 1.0;
 		}
 	}
-	if ((foam < 0.5) && (displacement >= g_foamChurn))
+	if ((foam < 1.0) && (displacement >= g_foamChurn))
 	{
-		foam = (displacement - g_foamChurn) / 10.0;
-		alpha = 0.95;
+		//foam = (displacement - g_foamChurn) / 10.0;
+		//alpha = 0.95;
 	}
-	return float4(saturate(foam) / 2.0, 0.0, 0.0, alpha);
+	return float4(foam / 2.0, 0.0, 0.0, alpha);
 }
 
 shader float4 WireframePS(VS_OUTPUT IN) : SV_Target
@@ -1501,7 +1563,7 @@ shader vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
 	return vec4(showMultiplier*lookup.rgb,1.0);
 }
 
-technique ocean
+technique water_final_pass
 {
 	pass p0 
 	{
@@ -1509,7 +1571,7 @@ technique ocean
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, OceanSurfFinalPS()));
+		SetPixelShader(CompileShader(ps_5_0, WaterSurfFinalPS()));
 	}
 }
 
@@ -1599,7 +1661,7 @@ technique render_boundless_depth
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_OceanSurfDepth()));
+		SetPixelShader(CompileShader(ps_5_0,PS_WaterSurfDepth()));
 	}
 }
 
@@ -1612,7 +1674,7 @@ technique render_bounded_depth
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, BoundedWaterSurfVS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_OceanSurfDepth()));
+		SetPixelShader(CompileShader(ps_5_0, PS_WaterSurfDepth()));
 	}
 }
 

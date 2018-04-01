@@ -105,7 +105,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	int3 c_offset			=int3(2.0*step(vec3(0,0,0),view.xyz)-vec3(1,1,1));
 	int3 start_c_offset		=-c_offset;
 	start_c_offset			=int3(max(start_c_offset.x,0),max(start_c_offset.y,0),max(start_c_offset.z,0));
-	vec3 viewScaled			=view/scaleOfGridCoords;
+	vec3 viewScaled			=view/scaleOfGridCoordsKm;
 	viewScaled				=normalize(viewScaled);
 
 	vec3 offset_vec			=vec3(0,0,0);

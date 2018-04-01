@@ -30,7 +30,7 @@ shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 CS_LAYOUT(BLOCK_SIZE,1,1)
 shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint3 pos = g * BLOCK_SIZE + t;
+	uint3 pos	= g * BLOCK_SIZE + t;
 	int i		=int(pos.x); // array index 
 	if (i>= numJitterSamples)
 		return;
@@ -68,7 +68,7 @@ groupshared vec4 contribution[MAX_SH_SAMPLES];
 CS_LAYOUT(1,MAX_SH_SAMPLES,1)
 shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint3 sub_pos						= uint3(g.x,t.y,0);
+	uint3 sub_pos						=uint3(g.x,t.y,0);
 	sub_pos.x							=min(8,sub_pos.x);
 	// The sub_pos gives the co-ordinate in the table of samples
 	const float weight					=4.0*PI; 
@@ -80,7 +80,7 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	{
 		SphericalHarmonicsSample shs	=samplesBuffer[sub_pos.y];
 		vec4 colour						=texture_cube_lod(cubemapTexture,shs.dir,0);
-		contrib			=factor*shs.coeff[sub_pos.x]*colour;
+		contrib							=factor*shs.coeff[sub_pos.x]*colour;
 	}
 	
 	contribution[sub_pos.y]=contrib;
@@ -92,13 +92,13 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		return;
 	if(sub_pos.y==0)
 	{
-	vec4 total=vec4(0,0,0,0);
+		vec4 total=vec4(0,0,0,0);
 		for(int i=0;i<MAX_SH_SAMPLES;i++)
-	{ 
+		{
 			total+=contribution[i];
-	}
+		}
 		total.w=35.0;
-	targetBuffer[sub_pos.x]=total;
+		targetBuffer[sub_pos.x]=total;
 	}
 }
 

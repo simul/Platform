@@ -54,6 +54,8 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		{
 			W/=2;
 			H/=2;
+			if (W*H <= 0)
+				continue;
 			brightpassTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 			glowTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::R_32_UINT,true,false);
 		}

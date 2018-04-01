@@ -101,6 +101,11 @@ namespace simul
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
+			virtual float GetDefaultOutputGamma() const
+			{
+				return 1.0f;
+			}
+
 			void SetCanSaveAndRestore(bool b)
 			{
 				can_save_and_restore=b;
@@ -172,10 +177,10 @@ namespace simul
 			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
-			virtual void DrawQuad			(DeviceContext &deviceContext){}
+			virtual void DrawQuad			(DeviceContext &){}
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(DeviceContext &deviceContext,PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false){}
+			virtual void DrawLines			(DeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
 			void Draw2dLine					(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
 			virtual void Draw2dLines		(DeviceContext &deviceContext,PosColourVertex *lines,int vertex_count,bool strip){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.
@@ -186,6 +191,8 @@ namespace simul
 			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
 			void DrawLatLongSphere			(DeviceContext &deviceContext,int lat,int longi,vec3 origin,float sph_radius,vec4 colour);
 			void DrawQuadOnSphere			(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,float sph_radius,vec4 colour);
+			
+			void DrawTextureOnSphere		(DeviceContext &deviceContext,crossplatform::Texture *t, vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour=vec4(1.f,1.f,1.f,1.f));
 			void DrawCircleOnSphere			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float crc_rad,float sph_rad,vec4 colour);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);

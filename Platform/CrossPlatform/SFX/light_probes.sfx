@@ -90,20 +90,21 @@ shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	return max(result,vec4(0,0,0,0));
 }
 
-uint Reverse_Bits(uint bits) {
+/*
+uint ReverseBits32(uint bits) {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	return bits; 
-}
+	return (bits);
+}*/
 
 vec2 Hammersley(uint index, uint NumSamples, uint2 random)
 {
 	float E1 = frac((float)index / NumSamples + float(random.x & 0xffff) / (1 << 16));
 	// Radical inverse:
-	float E2 = float(Reverse_Bits(index) ^ random.y) * 2.3283064365386963e-10;
+	float E2 = float(reversebits(index) ^ random.y) * 2.3283064365386963e-10;
 	return vec2(E1, E2);
 }
 
@@ -205,9 +206,9 @@ vec4 RoughnessMip(vec3 view,bool rough)
 			vec3 H	= ImportanceSampleGGX(E, r).xyz;
 			L		= 2*H.z*H - vec3(0,0,1.0);
 		//	L.xy*=10;
-		float NoL = L.z;
-		if (NoL>0)
-		{
+			float NoL = L.z;
+			if( NoL > 0 )
+			{
 				float NoH = H.z;
 				float PDF = D_GGX( r, NoH ) * 0.25;
 				float SolidAngleSample = 1.0 / ( NumSamples * PDF );
@@ -215,11 +216,11 @@ vec4 RoughnessMip(vec3 view,bool rough)
 
 				float ConeAngle = acos( 1 - SolidAngleSample / (2*PI) );
 
-			L		= mul(L, TangentToWorld);
-			result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
-			Weight	+= NoL;
+				L = mul( L, TangentToWorld );
+				result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
+				Weight += NoL;
+			}
 		}
-	}
 	}
 	outp = result / Weight;
 	return vec4(outp.rgb, alpha);
@@ -336,15 +337,15 @@ fxgroup mip_from_roughness
 			SetDepthStencilState(DisableDepth, 0);
 			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
 			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Rough()));
-		SetBlendState(DontBlend, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+			SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 		pass smooth
 		{
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
-		SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Smooth()));
+			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Smooth()));
 			SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 	}

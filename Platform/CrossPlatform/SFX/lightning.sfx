@@ -48,131 +48,136 @@ struct F_Vertex_out
     vec4 hPosition	: SV_Position;
 };
 
+
 CS_LAYOUT(1, 1, 1)
 shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 {
-	int vertex_id = int(idx.x);
-	LightningVertex OUT;
-
-	vec3 startP			= startPos;
-	vec3 endP			= endPos;
-	uint MAX_OCTAVES	=7;
-	uint num_steps		=1<<MAX_OCTAVES;
-	uint num_pts		=num_steps+1;
+	int MAX_OCTAVES = 7;
+	vec3 off		= vec3(1.0,1.0,0.0)*roughness;
+	float t 		= phaseTime;
+	int steps 		= 1 << MAX_OCTAVES;
+	int delta 		= steps;
+	// Setup tmp positions
 	vec3 outpos[130];
-	outpos[0]			=startP;
-	outpos[num_steps]	=endP;
-	int del				=int(num_steps);
-	float persistence	=0.8;
-	vec3 off			=vec3(1.0,1.0,vertical)*roughness;
-	float time			=phaseTime;
-	for(uint i=0;i<MAX_OCTAVES;i++)
+	outpos[0]		=startPos;
+	outpos[steps]	=endPos;
+
+	// Mid point displacement over MAX_OCTAVES
+	for(int i=0;i<MAX_OCTAVES;i++)
 	{
-		for(uint j=del/2u;j<num_steps;j+=del)
+		for(int j = int(delta*0.5);j<steps;j+=delta)
 		{
-			// j is the index into the list of outputs.
-			vec3 s				=outpos[j-del/2u];
-			vec3 e				=outpos[j+del/2u];
-			vec3 XX				=cross(vec3(1.0,0.0,0.0),(s-e));
-			vec3 YY				=cross(vec3(0.0,1.0,0.0),(s-e));
-			vec3 x				=0.5*(s+e);
-			vec2 noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
-			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
-			float angle			=noise_lookup.x*2.0*3.14159;
-			x					+=off*noise_lookup.y*(XX*cos(angle)+YY*sin(angle));
-			outpos[j]			=x;
+			vec3 start = outpos[j - int(delta * 0.5)];
+			vec3 end   = outpos[j + int(delta * 0.5)];
+
+			vec3 XX	   =cross(vec3(1.0,0.0,0.0),(start-end));
+			vec3 YY	   =cross(vec3(0.0,1.0,0.0),(start-end));
+
+			vec2 ntc  = vec2(9.3*float(j+randomSeed)+t,3.1*float(i)+4.5*float(j));
+			vec4 nlk  = texture_wrap_lod(randomTexture,ntc,0);
+
+			vec3 mid 	= 0.5 * (start + end);
+			float angle	= nlk.x*2.0*3.14159;
+			// We add some rotation too it
+			mid			+=off * nlk.y * (XX * cos(angle) + YY * sin(angle));
+
+			outpos[j]	= mid;
 		}
-		del	/=2u;
-		time*=2.0;
+		delta	= int(delta * 0.5);
+		t		*= 2.0;
 	}
-	float t				=strikeThicknessMetres;//*100;
-	for(uint ii=0;ii<num_pts;ii++)
+
+	LightningVertex OUT;
+	for(int r=0;r<129;r++)
 	{
-		float c=saturate(float(ii)/9.0)*saturate(float(num_pts-ii)/9.0);
-		OUT.position	=outpos[ii];
-		OUT.texCoords =vec2(t,brightness);
-		OUT.progress	=ii/float(num_pts);
-		verticesRW[ii]	=OUT;
-		t				=strikeThicknessMetres;
+		OUT.position   	= outpos[r];
+		OUT.texCoords	= vec2(strikeThicknessMetres,brightness);
+		OUT.progress	= r/float(129);
+		verticesRW[r] 	= OUT;
 	}
 }
 
 CS_LAYOUT(1, 1, 1)
 shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 {
-	uint branch_start_id = 33 * idx.x;
-	LightningVertex IN0 = vertices[idx.x*1+0];
-	LightningVertex IN1 = vertices[idx.x*1+1];
+	uint branch_start_id 	= 33 * idx.x;
 	LightningVertex OUT;
+
+	// To get an "average" direction we will take as end point
+	// a position further in the strike
+	int randPos = int((rand(randomSeed) + 1.0 * 0.5) * 29.0);
+	LightningVertex IN0 	= vertices[randPos + 0];
+	LightningVertex IN1 	= vertices[randPos + 1];
 
 	vec3 startP		= IN0.position;
 	vec3 parentEndP	= IN1.position;
-	vec3 parentDir	=normalize(parentEndP-startP);
-	// dir is the direction of the main branch.
-	// We need to find a direction normal to dir.
-	// We will create a random vector, then subtract the part that is in the direction of dir.
-	vec2 noise_texc	=vec2(0.3*float(branchInterval)*float(randomSeed)+0.77*float(parent_point)
-		,1.92*float(branchInterval)+0.34*float(parent_point));
-	vec3 rndvec		=texture_wrap_lod(randomTexture,noise_texc,0).xyz;
 
+	// This is the direction of the parent branch
+	vec3 parentDir	= normalize(parentEndP-startP);
+	// Now we will create a random vector from it
+	vec2 noise_texc	=vec2(	0.3 * float(branchInterval) * float(randomSeed * idx.x)+0.77 * float(parent_point),
+							1.92 * float(branchInterval) + 0.34 * float(parent_point));
+	vec3 rndvec		=texture_wrap_lod(randomTexture,noise_texc,0).xyz;
 	float along		=dot(rndvec,parentDir);
 	rndvec			-=along*parentDir;
 	rndvec			=normalize(rndvec);
 	vec3 dir		=parentDir*cos(branchAngleRadians)+rndvec*sin(branchAngleRadians);
-	vec3 adj		=vec3(1.0,1.0,vertical);
+
+	float v = 1.0;
+	vec3 adj		=vec3(1.0,1.0,1.0);
 	dir				*=adj;
 	dir				=normalize(dir);
-	vec3 off        =vec3(roughness,roughness,roughness);//adj;//*roughness;
+	// Create a end point along the random direction:
+	vec3 endP		= startP + dir * branchLengthMetres;
 
-	vec3 endP		=startP+dir*branchLengthMetres;
-
-	int num_steps	=1<<num_octaves;
-	int num_pts		=num_steps+1;
+	int num_steps		=1<<num_octaves;
+	int num_pts			=num_steps+1; // 33
 	vec3 outpos[33];
 	outpos[0]			=startP;
 	outpos[num_steps]	=endP;
-	uint del			=(uint)num_steps;
-	float persistence	=0.8;
-	//float off			=roughness;
-	float time			=phaseTime;
-	OUT.position=startP;
-	OUT.texCoords=vec2(0,0);
-	OUT.progress=0.0;
-	verticesRW[0]			=OUT;
+	int del				=num_steps;
 
-	OUT.position=endP;
-	OUT.progress=1.0;
-	verticesRW[num_steps]	=OUT;
-	for(uint i=0;i<num_octaves;i++)
+	// Assign initial values to the output buffer:
+	OUT.texCoords			= vec2(0.0,0.0);
+	OUT.position			= startP;
+	OUT.progress 			= 0.0;
+	verticesRW[num_pts * idx.x]   				= OUT;
+
+	OUT.position    		= endP;
+	OUT.progress    		= 1.0;
+	verticesRW[(num_pts * idx.x) + num_steps]	= OUT;
+
+	float persistence	= 0.8;
+	float time			= phaseTime;
+	vec3 off 			= vec3(roughness,roughness,roughness);
+	for(int i=0;i<num_octaves;i++)
 	{
-		for(uint j=del/2u;j<(uint)num_steps;j+=del)
+		for(int j=int(del*0.5);j<num_steps;j+=del)
 		{
-			vec3 s=outpos[j-del/2u];
-			vec3 e=outpos[j+del/2u];
-			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
-			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
-			vec3 x=0.5*(s+e);
-			noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
+			vec3 s 				=outpos[j - int(del * 0.5)];
+			vec3 e 				=outpos[j + int(del * 0.5)];
+			vec3 XX 			=cross(vec3(1.0,0.0,0.0),(s-e));
+			vec3 YY 			=cross(vec3(0.0,1.0,0.0),(s-e));
+			vec3 x 				=0.5*(s+e);
+			vec2 noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
 			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
 			float angle			=noise_lookup.x*2.0*3.14159;
-			x+=off*(XX*cos(angle)+YY*sin(angle));
+			x 					+=off*(XX*cos(angle)+YY*sin(angle));
 			outpos[j]=x;
 			{
 				float v				=float(j)/float(num_pts);
 				float c				=saturate(float(num_pts-j)/5.0);
-				OUT.position		=outpos[j];
 				float br			=brightness*saturate(float(num_steps-j)/5.0);
-				float endpoint		=float(j>(uint)(num_steps-2));
+				OUT.position		=outpos[j];
 				OUT.texCoords		=c*vec2(strikeThicknessMetres,br);
 				OUT.progress		=IN0.progress+v;
+
 				verticesRW[branch_start_id+j]=OUT;
 			}
 		}
-		del/=2u;
-		//off*=persistence;
-		time*=2.0;
+		del  =int(del * 0.5);
+		time *=2.0;
 	}
-
 }
 
 technique initial_fractal
@@ -221,27 +226,32 @@ struct transformedThinVertex
 shader transformedThinVertex VS_Thin(idOnly id)
 {
     transformedThinVertex OUT;
-	LightningVertex IN = vertices[id.vertex_id];
-    OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
-	OUT.view		=vec3(0,1,0);//normalize(IN.position.xyz-viewPosition);
-	OUT.brightness	=IN.texCoords.y*10.0;
-	OUT.depth		=OUT.hPosition.z/OUT.hPosition.w;
-	OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-	OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-	OUT.progress	=IN.progress;
+
+    int idx 			=int(id.vertex_id + branchIndex + 2);
+	LightningVertex IN 	=vertices[idx];
+    OUT.hPosition		=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
+	//OUT.view			=vec3(0,1,0);//normalize(IN.position.xyz-viewPosition);
+	OUT.view			=normalize(viewPosition - IN.position.xyz);
+	OUT.brightness		=IN.texCoords.y*10.0;
+	OUT.depth			=OUT.hPosition.z/OUT.hPosition.w;
+	OUT.screenPos		=OUT.hPosition.xy/OUT.hPosition.w;
+	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+	OUT.progress		=IN.progress;
+
     return OUT;
 }
 
 vec2 PixelPos(vec4 vertex)
 {
-	return vec2(vertex.xy / vertex.w)*viewportPixels;
+	vec2 p = vec2(vertex.xy / vertex.w)*viewportPixels;
+	return p;
 }
 
 shader transformedVertex VS_Thick(idOnly id)
 {
 	LightningVertex IN[4];
 	vec4 hPos[4];
-	int vertex_id = int(id.vertex_id / 2);
+	int vertex_id = int(id.vertex_id /2);
 	int left_right = int(id.vertex_id % 2);
 	for (int i = 0; i < 4; i++)
 	{
@@ -249,13 +259,14 @@ shader transformedVertex VS_Thick(idOnly id)
 		hPos[i] = mul(worldViewProj, vec4(IN[i].position.xyz, 1.0));
 	}
 	transformedVertex OUT;
-    OUT.hPosition		=mul(worldViewProj,vec4(IN[0].position.xyz,1.0));
-	OUT.view			=normalize(IN[0].position.xyz-viewPosition);
+
+    OUT.hPosition			=mul(worldViewProj,vec4(IN[0].position.xyz,1.0));
+	OUT.view				=normalize(viewPosition - IN[0].position.xyz);
 	float thicknessMetres	=IN[0].texCoords.x;
 	float endpoint		=saturate(1.0-IN[1].texCoords.y);
 	OUT.brightness		= IN[0].texCoords.y;
 	OUT.progress		= IN[0].progress;
-	float depth			=OUT.hPosition.z/OUT.hPosition.w;
+	float depth			= OUT.hPosition.z/OUT.hPosition.w;
     //  a - - - - - - - - - - - - - - - - b
     //  |      |                   |      |
     //  |      |                   |      |
@@ -328,7 +339,10 @@ shader transformedVertex VS_Thick(idOnly id)
 		width2				=minPixelWidth/viewportPixels.x*start.w;
 	}
 	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(mitre1, n1);
-	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(mitre2, n1);
+
+	// To-DO: The max clamp is just harcoded, find a proper metric for it
+	lengthPixels_a 			= clamp(lengthPixels_a,minPixelWidth	,10.0);
+
 	float	mitre_LIMIT	=0.0;
 	OUT.hPosCentre1		=vec2(p1.xy/viewportPixels);
 	OUT.hPosCentre2		=vec2(p2.xy/viewportPixels);
@@ -339,114 +353,11 @@ shader transformedVertex VS_Thick(idOnly id)
 	// prevent excessively long mitres at sharp corners
 	vec2 mitre1_a=mitre1;
 	vec2 mitre1_b=mitre1;
-#if 0
-	if( dot(v0,v1) < -mitre_LIMIT )
-	{
-		if(dot(v0,n1)>0)
-		{
-			mitre1_a = n1;
-		}
-		else
-		{
-			mitre1_b = n1;
-		}
-		lengthPixels_a = width1;
-	}
-	//OUT.view=vec3(1,0,0);
-	OUT.view		=(IN[1].view);
-	if(dot(v0,v1)<-mitre_LIMIT)
-	{
-	//	width1=0;
-		//mitre1 = n1;
-		//lengthPixels_a = width1;
-		// close the gap
-		if(dot(v0,n1)>0)
-		{
-			OUT.screenPos	=(p1 + width1 * n0)/viewportPixels;
-			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
-		//	OUT.view		=(IN[0].view);
-			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-			OUT.along		=0;
-			OUT.brightness	=brightness1;
-			OUT.endpoint	=endpoint;
-			OUT.progress	=IN[1].progress;
-			OUT.clipPos		=OUT.hPosition;
-			SpriteStream.Append(OUT);
-			OUT.screenPos	=(p1 + width1 * n1)/viewportPixels;
-			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
-			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-			OUT.along		=0;
-			OUT.brightness	=brightness1;
-			OUT.endpoint	=endpoint;
-			OUT.progress	=IN[1].progress;
-			OUT.clipPos		=OUT.hPosition;
-			SpriteStream.Append(OUT);
-			OUT.screenPos	=(p1- lengthPixels_a * mitre1_b)/viewportPixels;
-			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
-			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-			OUT.along		=0;
-			OUT.brightness	=brightness1;
-			OUT.endpoint	=endpoint;
-			OUT.progress	=IN[1].progress;
-			OUT.clipPos		=OUT.hPosition;
-			SpriteStream.Append(OUT);
-			SpriteStream.RestartStrip();
-		}
-		else
-		{
-			OUT.screenPos	=(p1 - width2 * n1)/viewportPixels;
-			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
-		//	OUT.view		=(IN[1].view);
-			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-			OUT.along		=0;
-			OUT.brightness	=brightness1;
-			OUT.endpoint	=endpoint;
-			OUT.progress	=IN[1].progress;
-			OUT.clipPos		=OUT.hPosition;
-			SpriteStream.Append(OUT);
-			OUT.screenPos	=(p1 - width2 * n0)/viewportPixels;
-			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
-			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-			OUT.along		=0;
-			OUT.brightness	=brightness1;
-			OUT.endpoint	=endpoint;
-			OUT.progress	=IN[1].progress;
-			OUT.clipPos		=OUT.hPosition;
-			SpriteStream.Append(OUT);
-			OUT.screenPos	=(p1+ lengthPixels_a * mitre1_a)/viewportPixels;
-			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
-			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
-			OUT.along		=0;
-			OUT.brightness	=brightness1;
-			OUT.endpoint	=endpoint;
-			OUT.progress	=IN[1].progress;
-			OUT.clipPos		=OUT.hPosition;
-			SpriteStream.Append(OUT);
-			SpriteStream.RestartStrip();
-		}
-	}
-	vec2 mitre2_a=mitre2;
-	vec2 mitre2_b=mitre2;
-	if( dot(v1,v2) < -mitre_LIMIT )
-	{
-		if(dot(v1,n2)>0)
-		{
-			mitre2_a = n1;
-		}
-		else
-		{
-			mitre2_b = n1;
-		}
-		lengthPixels_b = width2;
-	}
-#endif
+
 	if (left_right == 0)
 	{
-	  // generate the triangle strip
-		OUT.clipWidth = width1 / start.w;
 		OUT.screenPos = (p1 + lengthPixels_a * mitre1_a) / viewportPixels;
 		OUT.hPosition = vec4(OUT.screenPos.xy*start.w, start.z, start.w);
-	//	OUT.view			=(IN[1].view);
 		OUT.texc = OUT.screenPos.xy*0.5 + 0.5;
 		OUT.along = 0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2*1.1-0.05;
 		OUT.brightness = brightness1;
@@ -465,28 +376,6 @@ shader transformedVertex VS_Thick(idOnly id)
 		OUT.progress = IN[1].progress;
 		OUT.clipPos = OUT.hPosition;
 	}
-	/*
-		OUT.clipWidth = width2 / end.w;
-		OUT.screenPos = (p2 + lengthPixels_b * mitre2_a) / viewportPixels;
-		OUT.hPosition = vec4(OUT.screenPos.xy*end.w, end.z, end.w);
-	//	OUT.view			=(IN[2].view);
-		OUT.texc = OUT.screenPos.xy*0.5 + 0.5;
-		OUT.along = 1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-		OUT.brightness = brightness2;
-		OUT.endpoint = endpoint;
-		OUT.progress = IN[2].progress;
-		OUT.clipPos = OUT.hPosition;
-		
-		OUT.screenPos = (p2 - lengthPixels_b * mitre2_b) / viewportPixels;
-		OUT.hPosition = vec4(OUT.screenPos.xy*end.w, end.z, end.w);
-	//	OUT.view			=(IN[2].view);
-		OUT.texc = OUT.screenPos.xy*0.5 + 0.5;
-		OUT.along = 1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-		OUT.brightness = brightness2;
-		OUT.endpoint = endpoint;
-		OUT.progress = IN[2].progress;
-		OUT.clipPos = OUT.hPosition;
-	}*/
 	return OUT;
 }
 
@@ -537,6 +426,8 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	br*=past;
 	if(br<0)
 		br=0;
+	
+	br = brightness * saturate(past) * 0.25;
 	vec4 colour			=vec4(br*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	//colour.rgb=past;
@@ -555,24 +446,21 @@ shader vec4 PS_Main_ForwardDepth(transformedVertex IN): SV_TARGET
 
 vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 {
-	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
-	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
-	vec3 view			=normalize(IN.view);
+	vec2 texc 				=vec2(IN.texc.x,1.0-IN.texc.y);
+	vec4 dlookup 			=texture_clamp(depthTexture,texc.xy);
+	vec3 view				=normalize(IN.view);
 	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
-	float depth=0;
-	if(reverseDepth)
-		depth			=max(dlookup.x,nearFarCloud.x);
-	else
-		depth			=min(dlookup.x,nearFarCloud.x);
+
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
+
+	vec2 dist				=depthToFadeDistance(vec2(IN.depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	float past				=saturate((nearFarCloud.w-dist.x)/0.008+1.0);
 	past					*=saturate((dist.y-dist.x)/0.01-0.9);
-	
-	vec4 colour		=vec4(lightningColour,.5);//*IN.brightness;//;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
-	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
+
+	vec4 colour				= vec4(lightningColour * IN.brightness * 100.0 ,1.0);	
+	colour.rgb 				= lightningColour * brightness * saturate(past) * 0.25;
     return colour;
 }
 
@@ -637,7 +525,7 @@ technique lightning_thin
     pass reverse_depth 
     {
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ReverseDepth()));
@@ -645,7 +533,7 @@ technique lightning_thin
     pass forward_depth 
     {
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));

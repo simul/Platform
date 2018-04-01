@@ -1172,6 +1172,8 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 	if (!ok)
 	{
+		if (w*l <= 0)
+			return false;
 		width = w;
 		length = l;
 

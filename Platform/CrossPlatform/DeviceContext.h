@@ -80,9 +80,9 @@ namespace simul
 				{
 					sz++;
 					if(i>=index_limit)
-						index_limit=i+1;
+						index_limit=(int)(i+1);
 					if(i<index_start)
-						index_start=i;
+						index_start=(int)i;
 				}
 				has_value|=value;
 				return values[i];
