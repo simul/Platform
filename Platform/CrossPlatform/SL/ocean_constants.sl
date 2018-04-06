@@ -60,7 +60,7 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform vec2		g_boundedDensity;
 	uniform vec2		g_DepthScale;
 	uniform vec3		g_boundedLocation;
-	uniform float		g_waterHeight;
+	uniform float		gufidghvibhi;
 
 	uniform vec3		g_scattering;
 	uniform float		g_salinity;
@@ -98,7 +98,6 @@ SIMUL_CONSTANT_BUFFER(OsdConstants,5)
 	uniform vec2 bufferGrid;
 	uniform float showMultiplier;
 	uniform float agaher;
-	uniform float reajst;
 	SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
@@ -108,8 +107,14 @@ SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
 
 	uniform float	g_windDependency;
 	uniform uint	g_gridSize;
-	uniform float	g_rand;	
+	uniform float	fgdsvcx;	
 	uniform float	hgfdjkslgh;
+SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(cbWaterProbe, 7)
+	uniform float g_UVScale2;
+	uniform float g_UVOffset2;
+	uniform vec2 hugfidoshauig;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
