@@ -95,7 +95,7 @@ shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	/
 	//result=vec4(1.0,0,0,0);
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }
-#pragma warning(disable:3556,4717)
+
 // We will store three values. The overall nearest, the nearest above and the nearest below
 vec4 Worley(vec3 texc,int grid,int seed)
 {
