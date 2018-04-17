@@ -255,7 +255,6 @@ void MixInCirrus(uint3 ii,bool clears)
 		vec4 c2		=	cloudDensity2.SampleLevel(wrapSamplerState, tc, 0);
 		res			+=	lerp(c1, c2, cloud_interp).zyxw/5.0;
 	}
-
 	float zPixel1=1.0/float(windowGrid.z);
 	res.z		=saturate((res.z-0.5)/diffusivity);
 	//res.z=frac(float(idx.x)/float(windowGrid.x));
@@ -1068,7 +1067,7 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 		texc.y			-=(1.0-yz)/float(CROSS_SECTION_STEPS);
 		texc.z			+=yz/float(CROSS_SECTION_STEPS);
 	}
-	accum=texture_wwc_lod(cloudDensity,vec3(texc.xy,0.5),0).rgb;
+	//accum=texture_wwc_lod(cloudDensity,vec3(texc.xy,0.5),0).rgb;
     return vec4(accum,1);
 }
 
