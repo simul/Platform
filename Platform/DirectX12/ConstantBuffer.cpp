@@ -6,7 +6,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "SimulDirectXHeader.h"
-
+#include "MacrosDx1x.h"
 #include <string>
 
 using namespace simul;
@@ -29,8 +29,6 @@ template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 	return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
 }
 
-
-
 PlatformConstantBuffer::PlatformConstantBuffer() :
 	mSlots(0),
 	mMaxDescriptors(0),
@@ -39,8 +37,8 @@ PlatformConstantBuffer::PlatformConstantBuffer() :
 {
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
-		mUploadHeap[i] = nullptr;
-		cpuDescriptorHandles[i]=nullptr;
+		mUploadHeap[i]          = nullptr;
+		cpuDescriptorHandles[i] = nullptr;
 	}
 }
 
@@ -50,7 +48,7 @@ PlatformConstantBuffer::~PlatformConstantBuffer()
 }
 
 static float megas = 0.0f;
-void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, void *addr) 
+void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, void* addr) 
 {
 	renderPlatform = r;
 	if (addr)
@@ -65,7 +63,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
-	int n = 0;
+	int n=0;
 	// Create the upload heap (the gpu memory that will hold the constant buffer)
 	// Each upload heap has 64KB.  (64KB aligned)
 	for (unsigned int i = 0; i < 3; i++)
@@ -78,11 +76,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-#ifdef _XBOX_ONE
-			IID_GRAPHICS_PPV_ARGS(&mUploadHeap[i])
-#else
-			IID_PPV_ARGS(&mUploadHeap[i])
-#endif	
+			SIMUL_PPV_ARGS(&mUploadHeap[i])
 		);
 		SIMUL_ASSERT(res == S_OK);
 
@@ -116,10 +110,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12Constant
 	// This method is a bit hacky, it basically returns the CPU handle of the last
 	// "current" descriptor we will increase the curApply after the aplly that's why 
 	// we substract 1 here
-	if (mCurApplyCount == 0)
+    if (mCurApplyCount == 0)
+    {
 		SIMUL_BREAK("We must apply this cb first");
+    }
 	return cpuDescriptorHandles[mLastFrameIndex][mCurApplyCount-1];
-	//return D3D12_CPU_DESCRIPTOR_HANDLE(mHeaps[mLastFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount - 1));
 }
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t size,void *addr)
@@ -137,7 +132,6 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
 {
-
 }
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
@@ -172,11 +166,11 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
-	UINT8* pDest	= nullptr;
-	UINT64 offset	= (kBufferAlign * mSlots) * mCurApplyCount;	
+	UINT8* pDest = nullptr;
+	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
 	const CD3DX12_RANGE mapRange(0, 0);
-	HRESULT hResult = mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
-	if (hResult == S_OK)
+	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
+	if(hResult==S_OK)
 	{
 		if (pDest)
 		{
@@ -186,16 +180,14 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		const CD3DX12_RANGE unMapRange(0, 1);
 		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
-
+	
 	mCurApplyCount++;
 }
 
-void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceContext, crossplatform::EffectPass *currentEffectPass, int slot)
+void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* currentEffectPass, int slot)
 {
-
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
+void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceContext)
 {
-
 }

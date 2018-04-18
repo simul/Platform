@@ -63,11 +63,16 @@ namespace simul
 			}
 			const T& operator[](size_t i) const
 			{
-				if(i>=index_limit)
+				if(i>=index_limit||!HasValue(i))
 				{
+					return nullptr;
 					//throw std::runtime_error("");
 				}
 				return values[i];
+			}
+			bool HasValue(int index)
+			{
+				return ( (((unsigned)1<<(unsigned)index)&has_value) !=0);
 			}
 			T& operator[](size_t i)
 			{

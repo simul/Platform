@@ -212,6 +212,10 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullUAV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
+
+            D3D12_DEPTH_STENCIL_DESC*               GetOverrideDepthState()const;
+            D3D12_BLEND_DESC*                       GetOverrideBlendState()const;
+
 		protected:
 
 			//! The GPU timestamp counter frequency (in ticks/second)
@@ -236,9 +240,8 @@ namespace simul
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
-			//! This heap will be bound to the pipeline and we will be copying descriptors to it.
-			//! The sampler heap is used to store SAMPLERS
-			dx12::Heap*					mFrameSamplerHeap;
+            //! Heap used to hold override sampler states
+            dx12::Heap*                 mFrameOverrideSamplerHeap;
 
 			dx12::Heap*					mSamplerHeap;
 			dx12::Heap*					mRenderTargetHeap;
@@ -249,7 +252,7 @@ namespace simul
 			ID3D12RootSignature*		mGRootSignature;
 			//! Shared root signature for compute
 			ID3D12RootSignature*		mCRootSignature;
-					  
+
 			//! Dummy 2D texture
 			crossplatform::Texture*		mDummy2D;
 			//! Dummy 3D texture
@@ -280,7 +283,10 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE mNullCBV;
 			D3D12_CPU_DESCRIPTOR_HANDLE mNullSRV;
 			D3D12_CPU_DESCRIPTOR_HANDLE mNullUAV;
-			D3D12_CPU_DESCRIPTOR_HANDLE mNullSampler;
+            D3D12_CPU_DESCRIPTOR_HANDLE mNullSampler;
+
+            D3D12_DEPTH_STENCIL_DESC*   mOverrideDepthState;
+            D3D12_BLEND_DESC*           mOverrideBlendState;
 		};
 	}
 }

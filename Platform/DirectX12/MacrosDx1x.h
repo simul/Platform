@@ -17,8 +17,6 @@ typedef std::basic_string<TCHAR> tstring;
 
 typedef long HRESULT;
 
-// SIMUL_HELP
-// Here we define a compile-time assert for type-checking:
 #define COMPILE_ASSERT(x) extern int __dummy[(int)x]
 #define VERIFY_EXPLICIT_CAST(from, to) COMPILE_ASSERT(sizeof(from) == sizeof(to)) 
 
@@ -38,6 +36,12 @@ extern const char *GetErrorText(HRESULT hr);
 #endif
 #ifndef SAFE_RELEASE_ARRAY
 	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }
+#endif
+
+#ifdef _XBOX_ONE
+    #define  SIMUL_PPV_ARGS IID_GRAPHICS_PPV_ARGS
+#else
+    #define  SIMUL_PPV_ARGS IID_PPV_ARGS
 #endif
 
 #endif
