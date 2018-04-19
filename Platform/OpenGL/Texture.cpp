@@ -559,6 +559,11 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 
 GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
+    if (mip == mips)
+    {
+        mip = 0;
+    }
+
     int realArray   = GetArraySize();
     bool no_array   = !cubemap && (arraySize <= 1);
     bool isUAV      = (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;

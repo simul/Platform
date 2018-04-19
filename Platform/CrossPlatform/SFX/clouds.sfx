@@ -281,13 +281,13 @@ void MixInCirrus(uint3 ii,bool clears)
 CS_LAYOUT(4,4,4)
 shader void CS_MixInit( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer(idx,true);
+	MixInLayer((int3)idx,true);
 }
 
 CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer(idx,false);
+	MixInLayer((int3)idx,false);
 }
 
 CS_LAYOUT(4,4,4)
@@ -456,7 +456,7 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 
 	illum.x			=exp(-extinctionPerKm*thicknessKm / 12);
 	illum.y			=exp(-extinctionPerKm*thicknessKm);
-	illum.zw = 1;// nearest_dir.xy;
+	illum.zw        =vec2(1.0,1.0);// nearest_dir.xy;
 //illum=texture_3d_wwc_lod(cloudDensity,texc,0);
 	IMAGE_STORE_3D(outputTexture3d,idx,illum);
 }
@@ -465,7 +465,7 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 CS_LAYOUT(4,4,1)
 shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 {
-	int3 pos=(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	int3 pos=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if (pos.x >= exclusionRange.x&&pos.y >= exclusionRange.y&&pos.x<exclusionRange.z&&pos.y<exclusionRange.w)
 		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
