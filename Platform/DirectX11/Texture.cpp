@@ -528,7 +528,7 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 					}
 				}
 			}
-			if (setDepthStencil)
+			if (setDepthStencil && (textureDesc.BindFlags&D3D11_BIND_DEPTH_STENCIL))
 			{
 				D3D11_TEX2D_DSV dsv;
 				dsv.MipSlice = 0;
