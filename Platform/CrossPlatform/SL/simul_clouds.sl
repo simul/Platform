@@ -180,7 +180,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	int3 b							=abs(c-C0*2);
 	for(int j=0;j<8;j++)
 	{
-		if(0)
+		if(false)
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -293,7 +293,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			}
 		}
 		lastFadeDistance=fadeDistance;
-		if(0)
+		if(false)
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.

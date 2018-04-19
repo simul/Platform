@@ -695,12 +695,14 @@ namespace simul
 		class SamplerState;
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
-			ShaderResource():slot(-1),dimensions(-1),valid(false){}
+			ShaderResource():slot(-1),dimensions(-1),valid(false),name("none"){}
 			ShaderResourceType shaderResourceType;
 			void *platform_shader_resource;
 			int slot;
 			int dimensions;
 			bool valid;
+            //! We only use this in some platforms (e.g Switch)
+            std::string name;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{

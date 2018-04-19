@@ -1,0 +1,40 @@
+#include "shader_platform.sl"
+#include "../SL/common.sl"
+#include "../SL/states.sl"
+
+uniform Texture3D volumeInscatterTexture SIMUL_TEXTURE_REGISTER(4);
+
+SamplerState cloudSamplerS SIMUL_SAMPLER_REGISTER(8);
+
+
+float Raytrace(Texture3D inscVol,SamplerState sampleCloud)
+{
+	float n = sample_3d_lod(inscVol,sampleCloud,vec3(1.0,1.0,1.0),0).x;
+	return n;
+}
+
+float SimpleRaytrace(Texture3D inscVol,SamplerState sampleCloud)
+{
+	float s = Raytrace(inscVol,sampleCloud);
+	return s;
+}
+
+float StartRender(uint3 id)
+{
+	float r = SimpleRaytrace(volumeInscatterTexture,cloudSamplerS);
+	return r;
+}
+
+CS_LAYOUT(8,1,1)
+shader void CS_TestShader(uint3 sub_pos: SV_DispatchThreadID )
+{
+	float col = StartRender(sub_pos);
+}
+
+technique testtech
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_TestShader()));
+    }
+}

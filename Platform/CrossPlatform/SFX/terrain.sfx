@@ -94,7 +94,7 @@ technique terrain
     pass base 
     {
 		SetRasterizerState(RenderFrontfaceCull);
-		//SetDepthStencilState(EnableDepth,0);
+		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);

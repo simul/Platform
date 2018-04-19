@@ -316,10 +316,10 @@
     <None Include="..\CrossPlatform\SL\text_constants.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="..\XboxOne\HLSL\HLSL12.json">
+    <None Include="..\XboxOne\HLSL\shader_platform.sl">
       <Filter>HLSL</Filter>
     </None>
-    <None Include="..\XboxOne\HLSL\shader_platform.sl">
+    <None Include="..\XboxOne\HLSL\HLSL12X.json">
       <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
@@ -389,5 +389,10 @@
     <FxCompile Include="..\XboxOne\HLSL\CppHLSL.hlsl">
       <Filter>HLSL</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\XboxOne\HLSL\GFX.hlsl">
+      <Filter>HLSL</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

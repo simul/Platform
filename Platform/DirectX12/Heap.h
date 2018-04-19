@@ -29,15 +29,15 @@ namespace simul
 			Heap();
 			~Heap() {}
 			//! Recreates the API DescriporHeap with the provided settings
-			void Restore(dx12::RenderPlatform* renderPlatform, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name = "Heap", bool shaderVisible = true);
+			void							Restore(dx12::RenderPlatform* renderPlatform, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name = "Heap", bool shaderVisible = true);
 			//! Offsets both CPU and GPU handles
-			void Offset(int index = 1);
-			CD3DX12_CPU_DESCRIPTOR_HANDLE CpuHandle();
-			CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandle();
-			UINT GetCount();
-			ID3D12DescriptorHeap* GetHeap();
+			void							Offset(int index = 1);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE	CpuHandle();
+			CD3DX12_GPU_DESCRIPTOR_HANDLE	GpuHandle();
+			UINT							GetCount();
+			ID3D12DescriptorHeap*			GetHeap();
 			//! Returns a CPU handle from the start of the heap at the provided offset
-			D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandleFromStartAfOffset(UINT off);
+			D3D12_CPU_DESCRIPTOR_HANDLE		GetCpuHandleFromStartAfOffset(UINT off);
 			UINT							GetHandleIncrement()const { return mHandleIncrement; }
 			//! This method won't release or destroy anything, it will reset the internal count of handles
 			//!	and make the held handles point at the start of the heap

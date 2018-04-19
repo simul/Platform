@@ -62,7 +62,7 @@
     </ClCompile>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\XboxOne\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
-      <SfxConfig>$(SIMUL)\Platform\XboxOne\HLSL\HLSL12.json</SfxConfig>
+      <SfxConfig>$(SIMUL)\Platform\XboxOne\HLSL\HLSL12X.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\XboxOne\shaderbin</OutputPath>
     </Sfx_Rule>
   </ItemDefinitionGroup>
@@ -168,7 +168,7 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
-    <None Include="..\XboxOne\HLSL\HLSL12.json" />
+    <None Include="..\XboxOne\HLSL\HLSL12X.json" />
     <None Include="..\XboxOne\HLSL\shader_platform.sl" />
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
@@ -209,6 +209,12 @@
     <FxCompile Include="..\XboxOne\HLSL\CppHLSL.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</ExcludedFromBuild>
     </FxCompile>
+    <CustomBuild Include="..\XboxOne\HLSL\GFX.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">GFXRS</EntryPointName>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(Console_SdkRoot)FXC/amd64/fxc.exe" /E"GFXRS" /Fo"$(SIMUL)\Platform\XboxOne\shaderbin\GFX.cso" /nologo  /T rootsig_1_0 "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)\Platform\XboxOne\shaderbin\GFX.cso</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

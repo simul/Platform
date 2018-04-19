@@ -16,7 +16,6 @@ namespace simul
 		//! Sampler class for DirectX12
 		class SIMUL_DIRECTX12_EXPORT SamplerState:public crossplatform::SamplerState
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE mCpuHandle;
 		public:
 			SamplerState(crossplatform::SamplerStateDesc *d);
 			virtual ~SamplerState() override;
@@ -30,6 +29,9 @@ namespace simul
 			{
 				mCpuHandle=h;
 			}
+        private:
+            D3D12_CPU_DESCRIPTOR_HANDLE     mCpuHandle;
+            crossplatform::SamplerStateDesc mCachedDesc;
 		};
 
 		//! Texture class for DirectX12, it implement the base Texture methods
@@ -93,7 +95,7 @@ namespace simul
 			{
 				return dim;
 			}
-			int GetSampleCount() const;
+			int GetSampleCount()const;
 
 			//! Returns the current state of the resource or subresource if provided.
 			D3D12_RESOURCE_STATES GetCurrentState(int mip = -1, int index = -1);

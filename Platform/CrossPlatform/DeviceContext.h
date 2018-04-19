@@ -46,6 +46,8 @@ namespace simul
 			int mip;// if -1, it's the whole texture.
 			int index;	// if -1 it's the whole texture
 			crossplatform::ShaderResourceType resourceType;
+            //! Used on gl platforms
+            std::string name;
 		};
 		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
 		template<typename T,int count> class FastMap
@@ -63,11 +65,16 @@ namespace simul
 			}
 			const T& operator[](size_t i) const
 			{
-				if(i>=index_limit)
+				if(i>=index_limit||!HasValue(i))
 				{
+					return nullptr;
 					//throw std::runtime_error("");
 				}
 				return values[i];
+			}
+			bool HasValue(int index)
+			{
+				return ( (((unsigned)1<<(unsigned)index)&has_value) !=0);
 			}
 			T& operator[](size_t i)
 			{
@@ -191,6 +198,7 @@ namespace simul
 			EffectPass *currentEffectPass;
 			EffectTechnique *currentTechnique;
 			Effect *currentEffect;
+            std::vector<TextureAssignment> appliedTextures;
 			void invalidate()
 			{
 				effectPassValid=false;

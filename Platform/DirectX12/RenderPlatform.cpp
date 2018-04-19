@@ -19,13 +19,10 @@
 #include "Simul/Platform/DirectX12/Utilities.h"
 #include "Simul/Platform/DirectX12/Heap.h"
 #include "Simul/Platform/DirectX12/Fence.h"
-
-
-#ifdef SIMUL_ENABLE_PIX
-#include "pix.h"
-#endif
-
 #include <algorithm>
+#ifdef SIMUL_ENABLE_PIX
+    #include "pix.h"
+#endif
 
 using namespace simul;
 using namespace dx12;
@@ -40,10 +37,12 @@ RenderPlatform::RenderPlatform():
 	mRenderTargetHeap(nullptr),
 	mDepthStencilHeap(nullptr),
 	mFrameHeap(nullptr),
-	mFrameSamplerHeap(nullptr),
+    mFrameOverrideSamplerHeap(nullptr),
 	mGRootSignature(nullptr),
 	mCRootSignature(nullptr),
-	mIsMsaaEnabled(false)
+	mIsMsaaEnabled(false),
+    mOverrideDepthState(nullptr),
+    mOverrideBlendState(nullptr)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -72,7 +71,7 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
-void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource * res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
+void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
@@ -99,13 +98,17 @@ void RenderPlatform::FlushBarriers()
 
 void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dName)
 {
-	if (!res)
+    if (!res)
+    {
 		return;
+    }
 	// Don't add duplicates, this operation can be potentially slow if we have tons of resources
 	for (unsigned int i = 0; i < mResourceBin.size(); i++)
 	{
-		if (res == mResourceBin[i].second.second)
+        if (res == mResourceBin[i].second.second)
+        {
 			return;
+        }
 	}
 	mResourceBin.push_back(std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>
 	(
@@ -118,7 +121,7 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dN
 	));
 }
 
-void simul::dx12::RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceContext)
 {
 	deviceContext.renderPlatform->AsD3D12CommandList()->IASetVertexBuffers(0, 1, nullptr); // Only 1? 
 	deviceContext.renderPlatform->AsD3D12CommandList()->IASetIndexBuffer(nullptr);
@@ -171,20 +174,21 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mResourceBindingLimits.MaxUAVPerStage				= 1000000;
 		mResourceBindingLimits.MaxSaplerPerStage			= 1000000;
 	}
-	SIMUL_COUT << "-Max Visible Descriptors: " << mResourceBindingLimits.MaxShaderVisibleDescriptors << std::endl;
-	SIMUL_COUT << "-Max CBV Per Stage: " << mResourceBindingLimits.MaxCBVPerStage << std::endl;
-	SIMUL_COUT << "-Max SRV Per Stage: " << mResourceBindingLimits.MaxSRVPerStage << std::endl;
-	SIMUL_COUT << "-Max UAV Per Stage: " << mResourceBindingLimits.MaxUAVPerStage << std::endl;
-	SIMUL_COUT << "-Max Samplers Per Stage: " << mResourceBindingLimits.MaxSaplerPerStage << std::endl;
+	SIMUL_COUT << "- Max Visible Descriptors: " << mResourceBindingLimits.MaxShaderVisibleDescriptors << std::endl;
+	SIMUL_COUT << "- Max CBV Per Stage: " << mResourceBindingLimits.MaxCBVPerStage << std::endl;
+	SIMUL_COUT << "- Max SRV Per Stage: " << mResourceBindingLimits.MaxSRVPerStage << std::endl;
+	SIMUL_COUT << "- Max UAV Per Stage: " << mResourceBindingLimits.MaxUAVPerStage << std::endl;
+	SIMUL_COUT << "- Max Samplers Per Stage: " << mResourceBindingLimits.MaxSaplerPerStage << std::endl;
 
 	// Create the frame heaps
 	// These heaps will be shader visible as they will be the ones bound to the command list
-	mFrameHeap			= new dx12::Heap[3];
-	mFrameSamplerHeap	= new dx12::Heap[3];
+	mFrameHeap			        = new dx12::Heap[3];
+    mFrameOverrideSamplerHeap   = new dx12::Heap[3];
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		mFrameHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"FrameHeap");
-		mFrameSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,"FrameSamplerHeap");
+        UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 10;
+		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"FrameHeap");
+        mFrameOverrideSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "FrameOverrideSamplerHeap");
 	}
 	// Create storage heaps
 	// These heaps wont be shader visible as they will be the source of the copy operation
@@ -222,7 +226,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		srvDesc.Buffer.NumElements				= 1;
 		srvDesc.Buffer.StructureByteStride		= 1;
 		srvDesc.Buffer.Flags					= D3D12_BUFFER_SRV_FLAG_NONE;
-		mNullSRV = mNullHeap->CpuHandle();
+		mNullSRV                                = mNullHeap->CpuHandle();
 		m12Device->CreateShaderResourceView(nullptr,&srvDesc, mNullSRV);
 		mNullHeap->Offset();
 	}
@@ -234,7 +238,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		uavDesc.Buffer.FirstElement				= 0;
 		uavDesc.Buffer.NumElements				= 1;
 		uavDesc.Buffer.StructureByteStride		= 1;
-		mNullUAV = mNullHeap->CpuHandle();
+		mNullUAV                                = mNullHeap->CpuHandle();
 		m12Device->CreateUnorderedAccessView(nullptr, nullptr, &uavDesc, mNullUAV);
 		mNullHeap->Offset();
 	}
@@ -245,7 +249,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		sampDesc.AddressV			= D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		sampDesc.AddressW			= D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		sampDesc.Filter				= D3D12_FILTER_MIN_MAG_MIP_POINT;
-		mNullSampler = mSamplerHeap->CpuHandle();
+		mNullSampler                = mSamplerHeap->CpuHandle();
 		m12Device->CreateSampler(&sampDesc, mNullSampler);
 		mSamplerHeap->Offset();
 	}
@@ -279,21 +283,17 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		{
 			SIMUL_CERR << "Could not load the RootSignature blob.\n";
 		}
-		D3DCreateBlob(loadedBytes, &rblob);
+		res = D3DCreateBlob(loadedBytes, &rblob);
+        SIMUL_ASSERT(res == S_OK);
 		memcpy(rblob->GetBufferPointer(), fileContents, loadedBytes);
 		fileLoader->ReleaseFileContents(fileContents);
 
-#ifdef _XBOX_ONE
-		res = m12Device->CreateRootSignature(0, rblob->GetBufferPointer(), rblob->GetBufferSize(), IID_GRAPHICS_PPV_ARGS(&mGRootSignature));
-#else
-		res = m12Device->CreateRootSignature(0, rblob->GetBufferPointer(), rblob->GetBufferSize(), IID_PPV_ARGS(&mGRootSignature));
-#endif
+        res = m12Device->CreateRootSignature(0, rblob->GetBufferPointer(), rblob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRootSignature));
 		SIMUL_ASSERT(res == S_OK);
-		if (mGRootSignature)
+        if (mGRootSignature)
 		{
 			mGRootSignature->SetName(L"GraphicsRootSignature");
 		}
-		// Release the blob?
 		rblob->Release();
 	}
 
@@ -348,7 +348,7 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 	static bool creteDummy = true;
 	if (creteDummy)
 	{
-		const uint_fast8_t dummyData[4] = { 0,0,0,0 };
+		const uint_fast8_t dummyData[4] = { 1,1,1,1 };
 		mDummy2D->setTexels(deviceContext, &dummyData[0], 0, 1);
 		mDummy3D->setTexels(deviceContext, &dummyData[0], 0, 1);
 		creteDummy = false;
@@ -364,8 +364,10 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 			if ((unsigned int)mResourceBin[i].first >= kMaxAge)
 			{
 				int remainRefs = 0;
-				if(mResourceBin[i].second.second)
-					remainRefs = mResourceBin[i].second.second->Release();
+                if (mResourceBin[i].second.second)
+                {
+                    remainRefs = mResourceBin[i].second.second->Release();
+                }
 				/*
 				if (remainRefs)
 					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " )" << std::endl;
@@ -412,7 +414,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,cro
 		SIMUL_CERR << "Dst: width: " << dstDesc.Width << ", height: " << dstDesc.Height << ", depth: " << dstDesc.DepthOrArraySize << ", mips: " << dstDesc.MipLevels << std::endl;
 		return;
 	}
-
+	
 	// Ensure source state
 	bool changedSrc = false;
 	auto srcState	= src->GetCurrentState();
@@ -480,28 +482,23 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 
 void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
 {
-
 }
 
 
 void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
 {
-
 }
 
 void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
 {
-
 }
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
-
 }
 
 void RenderPlatform::ApplyDefaultMaterial()
 {
-
 }
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
@@ -531,13 +528,10 @@ static D3D12_TEXTURE_ADDRESS_MODE ToD3D12TextureAddressMode(crossplatform::Sampl
 	{
 	case simul::crossplatform::SamplerStateDesc::WRAP:
 		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		break;
 	case simul::crossplatform::SamplerStateDesc::CLAMP:
 		return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		break;
 	case simul::crossplatform::SamplerStateDesc::MIRROR:
 		return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
-		break;
 	default:
 		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	}
@@ -563,7 +557,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	dx12::SamplerState *s = new dx12::SamplerState(d);
 
 	D3D12_SAMPLER_DESC s12	= {};
-	s12.Filter				= ToD3D12Filter(d->filtering);
+    s12.Filter				= ToD3D12Filter(d->filtering);
 	s12.AddressU			= ToD3D12TextureAddressMode(d->x);
 	s12.AddressV			= ToD3D12TextureAddressMode(d->y);
 	s12.AddressW			= ToD3D12TextureAddressMode(d->z);
@@ -985,7 +979,7 @@ UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
 	}
 	int curMip		= (mip == -1) ? 0 : mip;
 	int curLayer	= (layer == -1) ? 0 : layer;
-	return D3D12CalcSubresource(curMip,curLayer, 0, mips, layers);
+    return D3D12CalcSubresource(curMip, curLayer, 0, mips, layers);
 }
 
 bool RenderPlatform::MsaaEnabled()
@@ -1026,6 +1020,16 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullUAV() const
 D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullSampler() const
 {
 	return mNullSampler;
+}
+
+D3D12_DEPTH_STENCIL_DESC* RenderPlatform::GetOverrideDepthState() const
+{
+    return mOverrideDepthState;
+}
+
+D3D12_BLEND_DESC* RenderPlatform::GetOverrideBlendState() const
+{
+    return mOverrideBlendState;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
@@ -1392,7 +1396,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
-
+	
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
@@ -1411,7 +1415,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 		return false;
 	}
 
-	dx12::EffectPass *pass = static_cast<dx12::EffectPass*>(cs->currentEffectPass);
+	dx12::EffectPass* pass  = static_cast<dx12::EffectPass*>(cs->currentEffectPass);
 	if (!cs->effectPassValid)
 	{
 		if (cs->last_action_was_compute&&pass->shaders[crossplatform::SHADERTYPE_VERTEX] != nullptr)
@@ -1426,7 +1430,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 		pass->Apply(deviceContext, cs->last_action_was_compute);
 		cs->effectPassValid = true;
 	}
-
+	
 	// We will only set the tables once per frame
 	if (mLastFrame != deviceContext.frame_number)
 	{
@@ -1440,19 +1444,22 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 		// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
 		mFrameHeap[mCurIdx].Reset();
-		mFrameSamplerHeap[mCurIdx].Reset();
+        // Reset the override samplers heap
+        mFrameOverrideSamplerHeap[mCurIdx].Reset();
 	}
 
-	auto cmdList = deviceContext.asD3D12Context();
+	auto cmdList    = deviceContext.asD3D12Context();
+    auto dx12Effect = (dx12::Effect*)cs->currentEffect;
 
 	// Set the frame descriptor heaps
-	// TO-DO: this should be done ONLY once per frame
-	// but that is causing some trouble with UE4
-	ID3D12DescriptorHeap* currentHeaps[2] =
-	{
-		mFrameHeap[mCurIdx].GetHeap(),
-		mFrameSamplerHeap[mCurIdx].GetHeap()
-	};
+    Heap* currentSamplerHeap                = dx12Effect->GetEffectSamplerHeap();
+    ID3D12DescriptorHeap* currentHeaps[2]   = { mFrameHeap[mCurIdx].GetHeap(),currentSamplerHeap->GetHeap()};
+    // If we are overriding samplers, use the override heap instead:
+    if (cs->samplerStateOverrides.size() > 0)
+    {
+        currentSamplerHeap  = &mFrameOverrideSamplerHeap[mCurIdx];
+        currentHeaps[1]     = currentSamplerHeap->GetHeap();
+    }
 	cmdList->SetDescriptorHeaps(2, currentHeaps);
 
 	// Apply the common root signature
@@ -1461,26 +1468,25 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 	// Apply the RootDescriptor tables:
 	// NOTE: we define our RootSignature on HLSl and then, using SFX we attatch it to
-	// the shader binary, refer to Simul/Platform/<target>/HLSL/GFX.hls
+	//       the shader binary, refer to Simul/Platform/<target>/HLSL/GFX.hls
 	const UINT cbvSrvUavTableId = 0;
 	const UINT samplerTableId	= 1;
-		if (pass->IsCompute())
-		{
+	if (pass->IsCompute())
+	{
 		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
-		cmdList->SetComputeRootDescriptorTable(samplerTableId, mFrameSamplerHeap[mCurIdx].GpuHandle());
-		}
-		else
-		{
+        cmdList->SetComputeRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
+	}
+	else
+	{
 		cmdList->SetGraphicsRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
-		cmdList->SetGraphicsRootDescriptorTable(samplerTableId, mFrameSamplerHeap[mCurIdx].GpuHandle());
+        cmdList->SetGraphicsRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}
 
-	// Apply Samplers:	
-		auto dx12Effect = (dx12::Effect*)cs->currentEffect;
-	pass->SetSamplers(dx12Effect->GetSamplers(),&mFrameSamplerHeap[mCurIdx],m12Device,deviceContext);
-	// TO-DO: sampler slots will be the same across all the shaders so we don't really need
-	// to set them all the time, this is a hack tho.
-	mFrameSamplerHeap[mCurIdx].Reset();
+	// Apply Override samplers:	
+    if (cs->samplerStateOverrides.size() > 0)
+    {
+	    pass->SetSamplers(dx12Effect->GetSamplers(),&mFrameOverrideSamplerHeap[mCurIdx],m12Device,deviceContext);
+    }
 	
 	// Apply CBVs:
 	pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[mCurIdx],m12Device,deviceContext);
@@ -1491,16 +1497,21 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	// Apply UAVs (RwTextures and RwSB):
 	pass->SetUAVs(cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers, &mFrameHeap[mCurIdx], m12Device, deviceContext);
 
-	// TO-DO: Apply streamout targets
-	// TO-DO: Apply vertex buffers
-
 	// We are ready to draw/dispatch, so now flush the barriers!
 	FlushBarriers();
+
+    // Restore the override states
+    mOverrideBlendState = nullptr;
+    mOverrideDepthState = nullptr;
+
 	return true;
 }
 
-void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *texture, const vec4& colour)
+void RenderPlatform::ClearTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture, const vec4& colour)
 {
+    crossplatform::RenderPlatform::ClearTexture(deviceContext, texture, colour);
+    return;
+
 	// Silently return if not initialized
 	if (!texture->IsValid())
 		return;

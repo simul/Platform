@@ -11,11 +11,20 @@
 
 #define CLOUD_DEFS_ONLY
 #include "simul_clouds.sl"
+
+#ifdef SFX_GLSL
+struct TwoColourCompositeOutput
+{
+	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 multiply	SIMUL_RENDERTARGET_OUTPUT(0);
+};
+#else
 struct TwoColourCompositeOutput
 {
 	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
 	vec4 multiply	SIMUL_RENDERTARGET_OUTPUT(1);
 };
+#endif
 
 struct LookupQuad4
 {

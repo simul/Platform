@@ -313,12 +313,14 @@
     <None Include="..\CrossPlatform\SL\text_constants.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="HLSL\HLSL12.json" />
     <None Include="..\CrossPlatform\SL\cubemap_matrices.sl">
       <Filter>SL</Filter>
     </None>
     <None Include="..\CrossPlatform\SL\brdf.sl">
       <Filter>SL</Filter>
+    </None>
+    <None Include="HLSL\HLSL12.json">
+      <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -384,6 +386,8 @@
     </Sfx_Rule>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="HLSL\GFX.hlsl" />
+    <FxCompile Include="HLSL\GFX.hlsl">
+      <Filter>HLSL</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

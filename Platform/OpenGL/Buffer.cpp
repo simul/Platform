@@ -1,20 +1,19 @@
 #include <GL/glew.h>
+
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
 #include "Buffer.h"
-#include "SimulGLUtilities.h"
 #include "RenderPlatform.h"
 #include "Simul/Base/RuntimeError.h"
 
 using namespace simul;
 using namespace opengl;
 
-Buffer::Buffer()
-	:buf(0),tf_buffer(0),vao(0),mapped(NULL)
+Buffer::Buffer():
+    mBufferID(0)
 {
 }
-
 
 Buffer::~Buffer()
 {
@@ -23,95 +22,69 @@ Buffer::~Buffer()
 
 void Buffer::InvalidateDeviceObjects()
 {
-	SAFE_DELETE_BUFFER(buf);
-	SAFE_DELETE_VAO(vao);
-	SAFE_DELETE_TF(tf_buffer);
-}
-
-
-ID3D11Buffer *Buffer::AsD3D11Buffer()
-{
-	return NULL;
+    if(mBufferID != 0)
+    {
+        glDeleteBuffers(1, &mBufferID);
+        mBufferID = 0;
+    }
 }
 
 GLuint Buffer::AsGLuint()
 {
-	return buf;
+	return mBufferID;
 }
 
-GLuint Buffer::TransformFeedbackAsGLuint()
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_vertices,const crossplatform::Layout* layout,const void* data,bool cpu_access,bool streamout_target)
 {
-	return tf_buffer;
-}
+    InvalidateDeviceObjects();
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
-{
-	SAFE_DELETE_BUFFER(buf)
-	SAFE_DELETE_VAO(vao);
-	glGenVertexArrays(1,&vao);
-	glBindVertexArray(vao);
-    glGenBuffers(1, &buf);
-    // Save vertex attributes into GPU
-    glBindBuffer(GL_ARRAY_BUFFER, buf);
-	//usage Specifies the expected usage pattern of the data store. The symbolic constant must be
-	//GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY.
-    glBufferData(GL_ARRAY_BUFFER, num_vertices * layout->GetStructSize(), data,(cpu_access?GL_DYNAMIC_DRAW:GL_STATIC_DRAW));
+    glGenBuffers(1, &mBufferID);
+    glBindBuffer(GL_ARRAY_BUFFER, mBufferID);
+    glBufferData(GL_ARRAY_BUFFER, layout->GetStructSize() * num_vertices, data, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-	stride=layout->GetStructSize();
 
-GL_ERROR_CHECK
-	glBindBuffer(GL_ARRAY_BUFFER,buf);
-	for(int i=0;i<(int)layout->GetDesc().size();i++)
-	{
-		const crossplatform::LayoutDesc &d=layout->GetDesc()[i];
-		glEnableVertexAttribArray( i );
-		glVertexAttribPointer( i										// Attribute bind location
-								,RenderPlatform::FormatCount(d.format)	// Data type count
-								,RenderPlatform::DataType(d.format)		// Data type
-								,GL_FALSE								// Normalise this data type?
-								,stride									// Stride to the next vertex
-								,(GLvoid*)d.alignedByteOffset );		// Vertex Buffer starting offset
-	};
-	glBindVertexArray( 0 );
-
-	if(streamout_target)
-	{
-		// Generate a buffer object
-		glGenTransformFeedbacks(1, &tf_buffer);
-		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, tf_buffer);
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vao); 
-		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
-	}
-GL_ERROR_CHECK
+    mBufferLayout = (crossplatform::Layout*)layout;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *,int num_indices,int index_size_bytes,const void *data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_indices,int index_size_bytes,const void* data)
 {
-	SAFE_DELETE_BUFFER(buf)
-    glGenBuffers(1, &buf);
-    // Save vertex attributes into GPU
-    glBindBuffer(GL_ARRAY_BUFFER,buf);
-    glBufferData(GL_ARRAY_BUFFER,num_indices * index_size_bytes, data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER,0);
-	stride=index_size_bytes;
+    InvalidateDeviceObjects();
+
+    glGenBuffers(1, &mBufferID);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBufferID);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_size_bytes * num_indices, data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void *Buffer::Map(crossplatform::DeviceContext &)
+void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 {
-	if(mapped!=NULL)
-		SIMUL_BREAK("Buffer::Map - Already mapped");
-	glBindBuffer(GL_ARRAY_BUFFER, buf);
-	mapped = (void*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-
-	return mapped;
+    return glMapNamedBuffer(mBufferID, GL_READ_WRITE);
 }
 
-void Buffer::Unmap(crossplatform::DeviceContext &)
+void Buffer::Unmap(crossplatform::DeviceContext& deviceContext)
 {
-	// if the pointer is valid(mapped), update VBO
-	if(mapped)
-	{
-		glUnmapBuffer(GL_ARRAY_BUFFER); // unmap it after use
-		mapped=NULL;
-	}
+    glUnmapNamedBuffer(mBufferID);
+}
+
+void Buffer::BindVBO(crossplatform::DeviceContext & deviceContext)
+{
+    glBindBuffer(GL_ARRAY_BUFFER,mBufferID);
+    auto bufferDesc     = mBufferLayout->GetDesc();
+    size_t off          = 0;
+    unsigned int cnt    = 0;
+    for (auto ele : bufferDesc)
+    {
+        glVertexAttribPointer
+        (
+            cnt,
+            opengl::RenderPlatform::FormatCount(ele.format),
+            opengl::RenderPlatform::DataType(ele.format),
+            GL_FALSE,
+            mBufferLayout->GetStructSize(),
+            (void*)off
+        );
+        glEnableVertexAttribArray(cnt);
+        off += crossplatform::GetByteSize(ele.format);
+        cnt++;
+    }
 }

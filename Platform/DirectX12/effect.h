@@ -69,8 +69,9 @@ namespace simul
 		public:
 											PlatformStructuredBuffer();
 			virtual							~PlatformStructuredBuffer();
-			void							RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data);
-			void							Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name);
+			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data);
+			void							Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const char* name);
+            void                            ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const char* name);
 			//! Returns an initialized pointer with the size of this structured buffer that can be used to set data. After
 			//! changing the data of this pointer, we must Apply this SB so the changes will be uploaded to the GPU.
 			void*							GetBuffer(crossplatform::DeviceContext &deviceContext);
@@ -89,10 +90,15 @@ namespace simul
 			void							ActualApply(simul::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot);
 
 		private:
-			const unsigned int			mReadTotalCnt = 6;
-			ID3D12Resource*				mBufferDefault;
-			ID3D12Resource*				mBufferUpload;
-			ID3D12Resource**			mBufferRead;
+            //! If we called GetBuffer, we need to update the GPU data, this methods, handles updating the data at 
+            //! different offsets + CPU<->GPU memory transition
+            void                            UpdateBuffer(simul::crossplatform::DeviceContext& deviceContext);
+
+            const D3D12_RESOURCE_STATES mShaderResourceState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			static const unsigned int	mBuffering = 3;
+			ID3D12Resource*				mGPUBuffers[mBuffering];
+			ID3D12Resource*				mUploadBuffers[mBuffering];
+			ID3D12Resource*			    mReadBuffers[mBuffering];
 
 			//! We hold the currently mapped pointer
 			UINT8*						mReadSrc;
@@ -104,19 +110,33 @@ namespace simul
 			dx12::Heap					mBufferSrvHeap;
 			dx12::Heap					mBufferUavHeap;
 
-			D3D12_CPU_DESCRIPTOR_HANDLE mSrvHandle;
-			D3D12_CPU_DESCRIPTOR_HANDLE mUavHandle;
-			D3D12_RESOURCE_STATES		mCurrentState;
+            D3D12_CPU_DESCRIPTOR_HANDLE* mSrvViews[mBuffering];
+            D3D12_CPU_DESCRIPTOR_HANDLE* mUavViews[mBuffering];
+
+			D3D12_RESOURCE_STATES		mCurrentState[mBuffering];
 
 			dx12::RenderPlatform*		mRenderPlatform;
 			//! Total number of individual elements
 			int							mNumElements;
 			//! Size of each element
 			int							mElementByteSize;
-			//! Total size
+			//! Total size (size of one unit * max applies)
 			int							mTotalSize;
+            int                         mUnitSize;
+            //! Does this buffer allow reads from CPU?
+            bool                        mCpuRead;
+
+            //! How many times we can Apply this SB with different data
+            //! TO-DO: this is using way too much memory as many SB wont be applied that many times
+            //! the exception is the textrenderer SB. We could pass a value from Restore or maybe recreate
+            // the buffers if the default max is not enough.
+            int                         mMaxApplyMod = 300;
+            int                         mCurApplies;
+            uint64_t                    mLastFrame;
 		};
 
+        //! DirectX12 Effect Pass implementation, this will hold several PSOs, its also in charge of 
+        // setting resources.
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
@@ -130,6 +150,8 @@ namespace simul
 			void SetSRVs(crossplatform::TextureAssignmentMap &textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 			void SetUAVs(crossplatform::TextureAssignmentMap &rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 
+            void CreatePso(crossplatform::DeviceContext& deviceContext);
+
 		private:
 			virtual ~EffectPass();
 
@@ -141,12 +163,9 @@ namespace simul
 			//! Is this a compute pass?
 			bool mIsCompute = false;
 
-			//! A vector holding the root parameters (in our case it will always be 1 or 2)
-			std::vector<CD3DX12_ROOT_PARAMETER> rootParams;
-
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSrvCbvUavRanges;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSamplerRanges;
-			std::string								mPassName;
+			std::string								mTechName;
 
 			//! Arrays used by the Set* methods declared here to avoid runtime memory allocation
 			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumCBV>	mCbSrcHandles;
@@ -156,13 +175,18 @@ namespace simul
 
 			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumUAV>	mUavSrcHandles;
 			std::array<bool, ResourceBindingLimits::NumUAV>							mUavUsedSlotsArray;
+
+            D3D12_DEPTH_STENCIL_DESC*   mInUseOverrideDepthState;
+            D3D12_BLEND_DESC*           mInUseOverrideBlendState;
 		};
+
 		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
 		public:
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};
+
 		class SIMUL_DIRECTX12_EXPORT Shader :public simul::crossplatform::Shader
 		{
 		public:
@@ -175,6 +199,8 @@ namespace simul
 			};
 			ID3D12ShaderReflection*			mShaderReflection = nullptr;
 		};
+
+        //! DirectX12 Effect implementation
 		class SIMUL_DIRECTX12_EXPORT Effect:public simul::crossplatform::Effect
 		{
 		protected:
@@ -187,21 +213,27 @@ namespace simul
 			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			void PostLoad() override;
 			void InvalidateDeviceObjects();
-			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
-			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
+			crossplatform::EffectTechnique* GetTechniqueByName(const char *name);
+			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass) override;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass) override;
 			void Reapply(crossplatform::DeviceContext &deviceContext);
 			void Unapply(crossplatform::DeviceContext &deviceContext) override;
 			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  crossplatform::ConstantBufferBase *s) override;
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s) override;
 
 			//! This method uses the shader reflection code to check the resources slots. This is needed because
 			//! the sfx compiler is not as smart as the dx compiler so it will report that some resources are in use
 			//! when it is not true. In Dx12 we MUST be explicit about what are we doing so we need to know exactly the
 			//! resources that will be in use.
 			void CheckShaderSlots(dx12::Shader* shader, ID3DBlob* shaderBlob);
+
+            Heap* GetEffectSamplerHeap();
+
+        private:
+            //! Heap with the static samplers used by the effect
+            Heap* mSamplersHeap;
 		};
 	}
 }

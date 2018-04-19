@@ -2,7 +2,7 @@
 #include <sstream>
 #include <stdexcept> // for runtime_error
 #include "Profiler.h"
-#include "SimulGLUtilities.h"
+
 using std::string;
 using std::map;
 bool enabled=false;
@@ -34,6 +34,7 @@ void Profiler::Initialize(void*)
 
 void Profiler::Begin(crossplatform::DeviceContext &,const char *name)
 {
+    /*
     if(!enabled)
         return;
 	last_name=name;
@@ -49,7 +50,7 @@ void Profiler::Begin(crossplatform::DeviceContext &,const char *name)
 			//glQueryCounter(profileData.TimestampQuery[i], GL_TIMESTAMP);
 		}
     }
-GL_ERROR_CHECK
+
 	if(query_stack.size())
 	{
 		glEndQuery(GL_TIME_ELAPSED);
@@ -58,22 +59,23 @@ GL_ERROR_CHECK
 	glBeginQuery(GL_TIME_ELAPSED,profileData.TimestampQuery[currFrame]);
 	query_stack.push_back(profileData.TimestampQuery[currFrame]);
     profileData.QueryStarted = true;
-GL_ERROR_CHECK
+    */
 }
 
 void Profiler::End()
 {
+    /*
     if(!enabled)
         return;
     ProfileData& profileData = profiles[last_name];
 	last_name="";
-	glEndQuery(GL_TIME_ELAPSED);//,profileData.TimestampQuery[currFrame]);
-	//glQueryCounter(profileData.TimestampEndQuery[currFrame], GL_TIMESTAMP);
+	glEndQuery(GL_TIME_ELAPSED);
     if(profileData.QueryStarted != true)
 		return;
     _ASSERT(profileData.QueryFinished == false);
     profileData.QueryStarted = false;
     profileData.QueryFinished = true;
+    */
 }
 
 template<typename T> inline std::string ToString(const T& val)
@@ -90,6 +92,7 @@ void Profiler::StartFrame(crossplatform::DeviceContext &)
 
 void Profiler::EndFrame(crossplatform::DeviceContext &)
 {
+    /*
     if(!enabled)
         return;
 
@@ -129,6 +132,7 @@ void Profiler::EndFrame(crossplatform::DeviceContext &)
         iter->second.time=(float)time;
     }
     output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
+    */
 }
 
 // == ProfileBlock ================================================================================
@@ -150,5 +154,5 @@ float ProfileBlock::GetTime() const
 
 Profiler::ProfileData::~ProfileData()
 {
-	glDeleteQueries(Profiler::QueryLatency,TimestampQuery);
+	// glDeleteQueries(Profiler::QueryLatency,TimestampQuery);
 }
