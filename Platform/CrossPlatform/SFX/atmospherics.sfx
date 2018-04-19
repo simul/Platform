@@ -70,6 +70,11 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	uint i					=0;
 	vec4 res				=vec4(0,0,0,1.0);
 	vec3 wvec				=lightspaceToWorldMatrix._m02_m12_m22;
+    // NACHO: Using glsl friendly swizzle
+    // vec3 wvec;
+    // wvec.x = lightspaceToWorldMatrix[0][2];
+    // wvec.y = lightspaceToWorldMatrix[1][2];
+    // wvec.z = lightspaceToWorldMatrix[2][2];
 	float illum				=1.0;
 	float shadow_distance=0.0;
 	for(i=0;i<godraysVolumeDims.z;i++)
@@ -115,7 +120,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		//if(total_illum<=0)
 			//break;
 	}
-	targetTexture[idx.xy] = shadow_distance;
+	targetTexture[idx.xy]=vec4(shadow_distance,shadow_distance,shadow_distance,shadow_distance);
 }
 
 // In the second pass, we travel radially outward from the viewer. In this context, lightspace is (azimuth around lightDir, elevation towards/away from lightDir, and distance).

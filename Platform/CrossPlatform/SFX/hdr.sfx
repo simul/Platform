@@ -13,7 +13,7 @@
 
 uniform Texture2D imageTexture					SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS		SIMUL_TEXTURE_REGISTER(0);
-uniform TextureCubeArray imageCubeArray			SIMUL_TEXTURE_REGISTER(2);
+uniform TextureCubeArray imageCubeArrayTex	    SIMUL_TEXTURE_REGISTER(2);
 uniform TextureCube nearFarTexture				SIMUL_TEXTURE_REGISTER(3);
 uniform TextureCube lightpassTexture			SIMUL_TEXTURE_REGISTER(4);
 uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(1);
@@ -52,13 +52,11 @@ vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
 shader CompositeShaderInput VS_Composite(idOnly IN)
 {
 	CompositeShaderInput OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
+	vec2 poss[4];
+	poss[0] = vec2( 1.0,-1.0);
+	poss[1] = vec2( 1.0, 1.0);
+	poss[2] = vec2(-1.0,-1.0);
+	poss[3] = vec2(-1.0, 1.0);
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
@@ -267,7 +265,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 	float depth						=texture_wrap_nearest_lod(depthTexture,IN.depth_texc,0).x;
 	float dist						=depthToFadeDistance(depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.clip_pos
-															,imageCubeArray
+															,imageCubeArrayTex
 															,nearFarTexture
 															,lightpassTexture
 															,loss2dTexture
@@ -311,7 +309,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 	if(dist<=0)
 		dist=1.0;
 	TwoColourCompositeOutput result	=	CompositeAtmospherics(IN.clip_pos
-															,imageCubeArray
+															,imageCubeArrayTex
 															,nearFarTexture
 															,lightpassTexture
 															,loss2dTexture
@@ -438,7 +436,7 @@ shader vec4 PS_CubemapToScreenspaceVisibility(posTexVertexOutput IN): SV_Target
 	clip_pos.y			-=2.0*IN.texCoords.y;
 	vec3 view			=mul(invViewProj,clip_pos).xyz;
 	vec4 nearfar		=texture_cube_lod(nearFarTexture,view,0);
-	vec4 img			=texture_cube_lod(imageCubeArray,vec4(view,0),0);
+	vec4 img			=texture_cube_lod(imageCubeArrayTex,vec4(view,0),0);
 	vec4 result			=vec4(img.a,0,nearfar.zw);
 	return result;
 }
@@ -450,7 +448,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.clip_pos
 																,IN.depth_texc
-																,imageCubeArray
+																,imageCubeArrayTex
 																,nearFarTexture
 																, lightpassTexture
 																,loss2dTexture

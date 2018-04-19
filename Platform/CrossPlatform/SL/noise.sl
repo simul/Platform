@@ -63,7 +63,7 @@ vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)
     return result;
 }
 
-vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool filter=true)
+vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfilter=true)
 {
 	vec4 result		=vec4(0,0,0,0);
 	vec3 pos		=frac(texCoords)*gridsize;
@@ -71,7 +71,7 @@ vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool filter=true)
 	floatpart		=modf(pos,intpart);
 	int3 seedpos	=int3(2*seed,17*seed,7*seed);
 	int3 firstCorner=int3(intpart);
-	if (filter)
+	if (pfilter)
 	{
 		for (int i = 0; i < 2; i++)
 		{
@@ -88,7 +88,8 @@ vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool filter=true)
 					if (corner_pos.z == gridsize)
 						corner_pos.z = 0;
 					vec3 lookup_pos		=seedpos + vec3(corner_pos);
-					vec4 rnd_lookup		=rand3(lookup_pos);
+                    float rndTap        =rand3(lookup_pos);
+					vec4 rnd_lookup		=vec4(rndTap,rndTap,rndTap,rndTap);
 					float proportion	=abs(i - floatpart.x)*abs(j - floatpart.y)*abs(k - floatpart.z);
 					result				+=rnd_lookup*proportion;
 				}
@@ -100,7 +101,8 @@ vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool filter=true)
 		// nearest.
 		int3 corner_pos = int3(pos+vec3(0.5, 0.5, 0.5));
 		vec3 lookup_pos = seedpos + vec3(corner_pos);
-		result =  rand3(lookup_pos);
+        float rndTap = rand3(lookup_pos);
+		result       = vec4(rndTap,rndTap,rndTap,rndTap);
 	}
 	return result;
 }
