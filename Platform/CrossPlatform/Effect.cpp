@@ -449,6 +449,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	 
 	res.platform_shader_resource	=(void*)nullptr;
 	res.slot						=slot;
+    res.name                        =name;
 	return res;
 }
 
@@ -663,6 +664,8 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	cs->applyBuffers.clear();  //Because we might otherwise have invalid data
 	cs->applyVertexBuffers.clear();
 	cs->invalidate();
+    // Clean up the TextureAssignments (used in some platforms a.k.a. Switch and Opengl)
+    cs->appliedTextures.clear();
 }
 
 static bool is_equal(std::string str,const char *tst)

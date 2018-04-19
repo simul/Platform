@@ -23,6 +23,7 @@
     <ProjectGuid>{A4E417F3-4C5F-42AB-B1B1-BDAECE53ABC5}</ProjectGuid>
     <RootNamespace>OpenGL</RootNamespace>
     <Keyword>x64Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="Configuration">
@@ -43,6 +44,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="Sfx.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -56,8 +58,8 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulReleaseMD.props" />
     <Import Project="..\..\SimulDLL.props" />
+    <Import Project="..\..\SimulReleaseMD.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -101,8 +103,8 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Source;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Source;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;$(SIMUL)/External/glfx/include;$(SIMUL)/External/stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GLEW_STATIC;WIN64;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
@@ -112,9 +114,14 @@
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <Optimization>Disabled</Optimization>
     </ClCompile>
+    <Sfx_Rule>
+      <IncludePaths>$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <SfxConfig>$(SIMUL)\Platform\OpenGL\GLSL\GLSL.json</SfxConfig>
+      <OutputPath>$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/FreeImage/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glew/lib/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glfx/build/$(Platform)/$(PlatformToolset)/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);C:\Simul\4.2\Simul\External\glew\build\cmake\lib\Release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -123,6 +130,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
@@ -167,15 +175,11 @@
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
-    <ClCompile Include="LoadGLImage.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="objload.cpp" />
     <ClCompile Include="OpenGLRenderer.cpp" />
-    <ClCompile Include="PrintEffectLog.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
-    <ClCompile Include="SimulGLUtilities.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -185,23 +189,145 @@
     <ClInclude Include="FramebufferGL.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
-    <ClInclude Include="LoadGLImage.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLCallbackInterface.h" />
     <ClInclude Include="OpenGLRenderer.h" />
-    <ClInclude Include="PrintEffectLog.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="SimulGLUtilities.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+    </Sfx_Rule>
     <None Include="GLSL\CppGlsl.hs" />
-    <None Include="GLSL\saturate.glsl" />
+    <None Include="GLSL\GLSL.json" />
     <None Include="GLSL\shader_platform.sl" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
@@ -223,5 +349,6 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="Sfx.targets" />
   </ImportGroup>
 </Project>

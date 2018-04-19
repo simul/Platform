@@ -1,756 +1,685 @@
 #define NOMINMAX
-#include "GL/glew.h"
+
 #include "Texture.h"
-#include "LoadGLImage.h"
-#include "SimulGLUtilities.h"
-#include "FramebufferGL.h"
 #include "RenderPlatform.h"
-#include <string>
+
+#include "GL/glew.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include <algorithm>
 
 using namespace simul;
 using namespace opengl;
-#if defined(_MSC_VER) && (defined(WIN32) || defined(WIN64))
-#include <windows.h>
-#else
-#include <stdio.h>
-#include <strings.h>
-#define _stricmp strcasecmp
-#endif
 
-SamplerState::SamplerState()
-	:sampler_state(0)
+SamplerState::SamplerState():
+    mSamplerID(0)
 {
 }
 
 SamplerState::~SamplerState()
 {
-	void InvalidateDeviceObjects();
+    InvalidateDeviceObjects();
+}
+
+void SamplerState::Init(crossplatform::SamplerStateDesc* desc)
+{
+    InvalidateDeviceObjects();
+    
+    glGenSamplers(1, &mSamplerID);
+
+    // Wrapping:
+    glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_S, opengl::RenderPlatform::toGLWrapping(desc->x));
+    glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_T, opengl::RenderPlatform::toGLWrapping(desc->y));
+    glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_R, opengl::RenderPlatform::toGLWrapping(desc->z));
+
+    // Filtering:
+    glSamplerParameteri(mSamplerID, GL_TEXTURE_MIN_FILTER, opengl::RenderPlatform::toGLMinFiltering(desc->filtering));
+    glSamplerParameteri(mSamplerID, GL_TEXTURE_MAG_FILTER, opengl::RenderPlatform::toGLMaxFiltering(desc->filtering));
 }
 
 void SamplerState::InvalidateDeviceObjects()
 {
-	if(sampler_state)
-		glDeleteSamplers(1,&sampler_state);
-	sampler_state=0;
+    if (mSamplerID != 0)
+    {
+        glDeleteSamplers(1, &mSamplerID);
+        mSamplerID = 0;
+    }
 }
 
-opengl::Texture::Texture()
-	:pTextureObject(0)
-	,mipObjects(NULL)
-	,layerObjects(NULL)
-	,layerMipObjects(NULL)
-	,m_fb(0)
-	,externalTextureObject(false)
-	,computable(false)
+GLuint SamplerState::asGLuint()
+{
+    return mSamplerID;
+}
+
+Texture::Texture():
+    mTextureID(0),
+    mCubeArrayView(0)
 {
 }
 
-opengl::Texture::~Texture()
+Texture::~Texture()
 {
-	InvalidateDeviceObjects();
+    InvalidateDeviceObjects();
+}
+
+void Texture::SetName(const char* n)
+{
+    if (!n)
+    {
+        name = "texture";
+    }
+    else
+    {
+        name = n;
+    }
+}
+
+void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8)
+{
+    InvalidateDeviceObjects();
+
+    // Load from file:
+    std::string mainPath = r->GetTexturePathsUtf8()[0] + "/" + std::string(pFilePathUtf8);
+    LoadedTexture tdata = LoadTextureData(mainPath.c_str());
+
+    // Choose a format:
+    if (tdata.n == 4)
+    {
+        pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
+    }
+    else if (tdata.n == 3)
+    {
+        pixelFormat = crossplatform::PixelFormat::RGB_8_UNORM;
+    }
+    else
+    {
+        SIMUL_BREAK("");
+    }
+
+    width       = tdata.x;
+    length      = tdata.y;
+    arraySize   = 1;
+    mips        = 1 + floor(log2(width >= length ? width : length));
+    dim         = 2;
+    depth       = 1;
+    cubemap     = false;
+
+    // TO-DO: we force textures to be 4 components (loading X8R8G8B8 returns 3 components
+    // per pixel, so thats why we just override all to RGBA_8_UNORM)
+    pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
+
+    glGenTextures(1, &mTextureID);
+    {
+        glBindTexture(GL_TEXTURE_2D, mTextureID);
+        glTexImage2D
+        (
+            GL_TEXTURE_2D, 0,
+            opengl::RenderPlatform::ToGLExternalFormat(pixelFormat),
+            tdata.x, tdata.y, 0,
+            opengl::RenderPlatform::ToGLExternalFormat(pixelFormat),
+            GL_UNSIGNED_BYTE,
+            tdata.data
+        );
+        // Set default wrapping:
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // Set default filter:
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // By default, generate mips:
+    GenerateMips(crossplatform::DeviceContext());
+
+    glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
+}
+
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files)
+{
+    InvalidateDeviceObjects();
+
+    std::vector<LoadedTexture> loadedTextures(texture_files.size());
+    for (unsigned int i = 0; i < texture_files.size(); i++)
+    {
+        std::string mainPath    = r->GetTexturePathsUtf8()[0] + "/" + texture_files[i];
+        loadedTextures[i]       = LoadTextureData(mainPath.c_str());
+    }
+    
+    width       = loadedTextures[0].x;
+    length      = loadedTextures[0].y;
+    arraySize   = loadedTextures.size();
+    mips        = 1 + floor(log2(width >= length ? width : length));
+    dim         = 2;
+    depth       = 1;
+    cubemap     = false;
+
+    glGenTextures(1, &mTextureID);
+    {
+        glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureID);
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 8, GL_RGBA8, width, length, loadedTextures.size());
+        for (unsigned int i = 0; i < loadedTextures.size(); i++)
+        {
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, width, length, 1, GL_RGBA, GL_UNSIGNED_BYTE, loadedTextures[i].data);
+        }
+        // Set default wrapping:
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // Set default filter:
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+    // By default, generate mips:
+    GenerateMips(crossplatform::DeviceContext());
+
+    glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
+}
+
+bool Texture::IsValid()const
+{
+    return mTextureID != 0;
 }
 
 void Texture::InvalidateDeviceObjects()
 {
-	FreeViewTables();
-	GL_ERROR_CHECK
-	FreeRTVTables();
-	GL_ERROR_CHECK
-	mips=arraySize=0;
+    if (mTextureID != 0)
+    {
+        glDeleteTextures(1, &mTextureID);
+        mTextureID = 0;
+    }
 }
 
-GLuint Texture::AsGLuint(int index,int mip)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/)
 {
-	if(index<0)
-	{
-		if(mip<0)
-			return pTextureObject;
-		return mipObjects[mip];
-	}
-	if(index>=arraySize)
-		return NULL;
-	if(mip<0)
-		return layerObjects[index];
-	return layerMipObjects[index][mip];
+    float qw, qh;
+    glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_WIDTH, &qw);
+    glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_HEIGHT, &qh);
+
+    if (mTextureID == 0)
+    {
+        InitViews(1, 1, false);
+
+        mTextureID              = (GLuint)t;
+        mMainMipViews[0]        = mTextureID;
+        mLayerMipViews[0][0]    = mMainMipViews[0];     
+
+        dim         = 2;
+        cubemap     = false;
+        arraySize   = 1;
+        width       = qw;
+        length      = qh;
+        depth       = 1;
+    }
 }
 
-void Texture::InitViewTables(int l,int m)
+bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* renderPlatform, int w, int l,
+                                            crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
+                                            vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
 {
-	layerObjects=new GLuint[l];				// SRV's for each layer, including all mips
-	mipObjects=new GLuint[m];			// SRV's for the whole texture at different mips.
-	layerMipObjects=new GLuint*[l];			// SRV's for each layer at different mips.
-	for(int i=0;i<l;i++)
-	{
-		layerMipObjects[i]=new GLuint[m];	// SRV's for each layer at different mips.
-	}
+    if (!IsSame(w, l, 1, 1, 1, num_samples))
+    {
+        InvalidateDeviceObjects();
+
+        width       = w;
+        length      = l;
+        mips        = 1;
+        arraySize   = 1;
+        depth       = 1;
+        dim         = 2;
+        pixelFormat = f;
+        cubemap     = false;
+        mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(f);
+
+        glGenTextures(1, &mTextureID);
+        glBindTexture(num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, mTextureID);
+        if (num_samples == 1)
+        {
+            glTextureStorage2D(mTextureID, 1, mInternalGLFormat, w, l);
+        }
+        else
+        {
+            glTextureStorage2DMultisample(mTextureID, num_samples, mInternalGLFormat, w, l, GL_TRUE);
+        }
+        SetDefaultSampling(mTextureID);
+        glBindTexture(num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, 0);
+        SetName(name.c_str());
+
+        InitViews(1, 1, rendertarget);
+
+        // Layer view:
+        {
+
+        }
+
+        // Mip views:
+        {
+            mMainMipViews[0] = mTextureID;
+        }
+
+        // Layer mip:
+        {
+            mLayerMipViews[0][0] = mMainMipViews[0];
+        }
+
+        // Render targets
+        if (rendertarget)
+        {
+            CreateFBOs(num_samples);
+        }
+
+        // Depth:
+        if(depthStencil)
+        {
+
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
-void Texture::FreeViewTables()
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool ascubemap /*= false*/)
 {
-	if(!externalTextureObject)
-	{
-		SAFE_DELETE_TEXTURE(pTextureObject);
-	}
-	else
-		externalTextureObject=0;
-	externalTextureObject=false;
-	for(int i=0;i<arraySize;i++)
-	{
-		if(layerObjects)
-			SAFE_DELETE_TEXTURE(layerObjects[i]);				// SRV's for each layer, including all mips
-		if(layerMipObjects)
-		{
-			for(int j=0;j<mips;j++)
-			{
-				SAFE_DELETE_TEXTURE(layerMipObjects[i][j]);	
-			}
-			delete [] layerMipObjects[i];
-		}
-	}
-	delete [] layerObjects;
-	delete [] layerMipObjects;
-	if(mipObjects)
-	{
-		for(int j=0;j<mips;j++)
-		{
-			SAFE_DELETE_TEXTURE(mipObjects[j]);	
-		}
-	}
-	delete [] mipObjects;
+    int totalCnt = ascubemap ? 6 * num : num;
+    if (!IsSame(w, l, 1, totalCnt, nmips, 1))
+    {
+        InvalidateDeviceObjects();
+
+        width       = w;
+        length      = l;
+        mips        = nmips;
+        arraySize   = 1;
+        depth       = 1;
+        dim         = 2;
+        pixelFormat = f;
+        cubemap     = ascubemap;
+
+        mInternalGLFormat   = opengl::RenderPlatform::ToGLFormat(f);
+        
+        glGenTextures(1, &mCubeArrayView);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, mCubeArrayView);
+        glTextureStorage3D(mCubeArrayView, mips, mInternalGLFormat, width, length, totalCnt);
+        SetDefaultSampling(mCubeArrayView);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        SetGLName((name +  "_arrayview").c_str(), mCubeArrayView);
+
+        InitViews(nmips, totalCnt, rendertarget);
+
+        // Main view:
+        {
+            // We need to set the proper target:
+            if (cubemap)
+            {
+                glGenTextures(1, &mTextureID);
+                glTextureView
+                (
+                    mTextureID, 
+                    num <= 1 ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_CUBE_MAP_ARRAY, 
+                    mCubeArrayView, mInternalGLFormat,
+                    0, nmips, 
+                    0, totalCnt
+                );
+
+                SetGLName((name + "_cubeview").c_str(), mTextureID);
+            }
+            else
+            {
+                mTextureID = mCubeArrayView;
+            }
+        }
+
+        std::string viewName;
+
+        // Layer view:
+        {
+            glGenTextures(totalCnt, mLayerViews.data());
+            for (int i = 0; i < totalCnt; i++)
+            {
+                glTextureView(mLayerViews[i], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, 0, nmips, i, 1);
+                
+                // Debug name:
+                viewName = name + "_layer_" + std::to_string(i);
+                SetGLName(viewName.c_str(), mLayerViews[i]);
+            }
+        }
+
+        // Mip views:
+        {
+            if (cubemap)
+            {
+                glGenTextures(nmips, mMainMipViews.data());
+                GLenum target = GL_TEXTURE_CUBE_MAP;
+                if (num > 1)
+                {
+                    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+                }
+                for (int mip = 0; mip < nmips; mip++)
+                {
+                    glTextureView(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCnt);
+                    
+                    // Debug name:
+                    viewName = name + "_mip_" + std::to_string(mip);
+                    SetGLName(viewName.c_str(), mMainMipViews[mip]);
+                }
+            }
+            else
+            {
+                glGenTextures(nmips, mMainMipViews.data());
+                GLenum target = GL_TEXTURE_2D_ARRAY;
+                for (int mip = 0; mip < nmips; mip++)
+                {
+                    glTextureView(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCnt);
+
+
+                    // Debug name:
+                    viewName = name + "_mip_" + std::to_string(mip);
+                    SetGLName(viewName.c_str(), mMainMipViews[mip]);
+                }
+            }
+        }
+
+        // Layer mip views:
+        {
+            for (int i = 0; i < totalCnt; i++)
+            {
+                glGenTextures(nmips, mLayerMipViews[i].data());
+                for (int mip = 0; mip < nmips; mip++)
+                {
+                    glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
+
+
+                    // Debug name:
+                    viewName = name + "_layer_" + std::to_string(i) + "_mip_" + std::to_string(mip);
+                    SetGLName(viewName.c_str(), mLayerMipViews[i][mip]);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
-void Texture::FreeRTVTables()
+bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable /*= false*/, int nmips /*= 1*/, bool rendertargets /*= false*/)
 {
-	if(m_fb)
-	{
-		for(int i=0;i<arraySize;i++)
-		{
-			for(int j=0;j<mips;j++)
-			{
-				SAFE_DELETE_FRAMEBUFFER(m_fb[i][j]);
-			}
-			delete [] m_fb[i];
-		}
-		delete [] m_fb;
-		m_fb=NULL;
-	}
+    if (!IsSame(w, l, d, 1, nmips, 1))
+    {
+        InvalidateDeviceObjects();
+
+        width       = w;
+        length      = l;
+        mips        = nmips;
+        arraySize   = 1;
+        depth       = d;
+        dim         = 3;
+        pixelFormat = frmt;
+        cubemap     = false;
+
+        mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(frmt);
+
+        glGenTextures(1, &mTextureID);
+        glBindTexture(GL_TEXTURE_3D, mTextureID);
+        glTextureStorage3D(mTextureID, mips, mInternalGLFormat, width, length, depth);
+        SetDefaultSampling(mTextureID);
+        glBindTexture(GL_TEXTURE_3D, 0);
+        SetName(name.c_str());
+
+        InitViews(nmips,1, false);
+
+        std::string viewName;
+
+        // Layer views:
+        {
+
+        }
+
+        // Mip views:
+        {
+            glGenTextures(nmips, mMainMipViews.data());
+            for (int mip = 0; mip < nmips; mip++)
+            {
+                glTextureView(mMainMipViews[mip], GL_TEXTURE_3D, mTextureID, mInternalGLFormat, mip, 1, 0, 1);
+
+                // Debug name:
+                viewName = name + "_mip_" + std::to_string(mip);
+                SetGLName(viewName.c_str(), mMainMipViews[mip]);
+            }
+        }
+
+        // Layer mips:
+        {
+            for (int mip = 0; mip < nmips; mip++)
+            {
+                // Same as mip views (we just have 1 layer):
+                mLayerMipViews[0][mip] = mMainMipViews[mip];
+            }
+        }
+    
+        return true;
+    }
+
+    return false;
 }
 
-void Texture::InitRTVTables(int l,int m)
+void Texture::ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear)
 {
-	m_fb=new GLuint*[l];			// SRV's for each layer at different mips.
-	for(int i=0;i<l;i++)
-	{
-		m_fb[i]=new GLuint[m];	// SRV's for each layer at different mips.
-	}
+
 }
 
-// Load a texture file
-void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
+void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
 {
-	ERRNO_BREAK
-	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
-	dim=2;
-	std::string filename(pFilePathUtf8);
-	int dot_pos			=(int)filename.find_last_of(".");
-	std::string extension;
-	pTextureObject		=0;
-	if(dot_pos>=0&&dot_pos<(int)filename.length())
-		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
-	GL_ERROR_CHECK
-		GLint internal_format=GL_RGBA;
-	ERRNO_BREAK
-	pTextureObject		=LoadGLImage(pFilePathUtf8,pathsUtf8,GL_REPEAT,&width,&length,&internal_format);
-	ERRNO_BREAK
-	pixelFormat			=opengl::RenderPlatform::FromGLFormat(internal_format);
-	GL_ERROR_CHECK
-	externalTextureObject=false;
+    if (IsValid())
+    {
+        glGenerateTextureMipmap(mTextureID);
+    }
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *renderPlatform,const std::vector<std::string> &texture_files)
+void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void* src, int texel_index, int num_texels)
 {
-ERRNO_CHECK
-	const std::vector<std::string> &texturePathsUtf8=renderPlatform->GetTexturePathsUtf8();
-	glGenTextures(1, &pTextureObject);
-	if(!IsExtensionSupported("GL_EXT_texture_array"))
-	{
-		simul::base::RuntimeError("LoadTextureArray needs the GL_EXT_texture_array extension.");
-		return;
-	}
-ERRNO_CHECK
-	//GL_TEXTURE_2D_ARRAY_EXT
-	glBindTexture(GL_TEXTURE_2D_ARRAY, pTextureObject);
-	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
-	unsigned bpp;
-	GL_ERROR_CHECK
-	unsigned char *data=LoadGLBitmap(texture_files[0].c_str(),texturePathsUtf8,bpp,width,length);
-	GL_ERROR_CHECK
-ERRNO_CHECK
-	if(!data)
-		return;
-	GL_ERROR_CHECK
-	delete [] data;
-	GL_ERROR_CHECK
-	dim=2;
-	arraySize=(int)texture_files.size();
-	int num_mips=8;
-	int m=1;
-	depth=arraySize;
-	glTexStorage3D(	GL_TEXTURE_2D_ARRAY
- 					,num_mips
- 					,GL_RGBA8
- 					,width
- 					,length
-					,arraySize);
-	GL_ERROR_CHECK
-	//for(int i=0;i<num_mips;i++)
-	{
-		//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, i,0,0,0,width/m,length/m,depth,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	GL_ERROR_CHECK
-	//	if(i==0)
-		{
-			for(int j=0;j<arraySize;j++)
-			{
-				unsigned char *data=LoadGLBitmap(texture_files[j].c_str(),texturePathsUtf8,bpp,width,length);
-				glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,0,0,0,j,width/m,length/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
-			}
-		}
-	GL_ERROR_CHECK
-		m*=2;
-	}
-	GL_ERROR_CHECK
-	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA, width/2, height/2, num_layers, ...);
-	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 2, GL_RGBA, width/4, height/4, num_layers, ...);
-
-	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-	GL_ERROR_CHECK
-	externalTextureObject=false;
+    if (dim == 2)
+    {
+        glTextureSubImage2D(mTextureID, 0, 0, 0, width, length, RenderPlatform::ToGLExternalFormat(pixelFormat), RenderPlatform::DataType(pixelFormat), src);
+    }
+    else if (dim == 3)
+    {
+        glTextureSubImage3D(mTextureID, 0, 0, 0, 0, width, length, depth, RenderPlatform::ToGLExternalFormat(pixelFormat), RenderPlatform::DataType(pixelFormat), src);
+    }
 }
 
-bool opengl::Texture::IsValid() const
+void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, int array_index /*= -1*/, int mip_index /*= 0*/)
 {
-	return (pTextureObject>0);
+    if (array_index == -1)
+    {
+        array_index = 0;
+    }
+    if (mip_index == -1)
+    {
+        mip_index = 0;
+    }
+
+    targetsAndViewport.num              = 1;
+    targetsAndViewport.m_rt[0]          = (void*)mTextureFBOs[array_index][mip_index];
+    targetsAndViewport.m_dt             = nullptr;
+    targetsAndViewport.viewport.x       = 0;
+    targetsAndViewport.viewport.y       = 0;
+    targetsAndViewport.viewport.w       = std::max(1, (width >> mip_index));
+    targetsAndViewport.viewport.h       = std::max(1, (length >> mip_index));
+    targetsAndViewport.viewport.zfar    = 1.0f;
+    targetsAndViewport.viewport.znear   = 0.0f;
+
+    // Activate the render target and set the viewport:
+    GLuint id = (GLuint)targetsAndViewport.m_rt[0];
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
+
+    // Cache it:
+    deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,void *,bool make_rt, bool setDepthStencil)
+void Texture::deactivateRenderTarget(crossplatform::DeviceContext& deviceContext)
 {
-	if(!externalTextureObject)
-		SAFE_DELETE_TEXTURE(pTextureObject);
-	externalTextureObject=true;
-	pTextureObject=(GLuint)t;
-	if(pTextureObject)
-	{
-		glBindTexture(GL_TEXTURE_2D,pTextureObject);
-		GLint internal_format;
-		glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D,0, GL_TEXTURE_HEIGHT,&length);
-		dim=2;
-//		glGetTexLevelParameteriv(GL_TEXTURE_2D,0, GL_TEXTURE_DEPTH,&depth);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_INTERNAL_FORMAT,&internal_format);
-		GLint m=0,l=0;
-		glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,&m);
-		glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_VIEW_NUM_LAYERS,&l);
-		pixelFormat=opengl::RenderPlatform::FromGLFormat(internal_format);
-
-		//m_fb;
-		main_viewport[0]=0;
-		main_viewport[1]=0;
-		main_viewport[2]=width;
-		main_viewport[3]=length;
-		if(make_rt&&pixelFormat)
-		{
-			FreeRTVTables();
-			InitRTVTables(l,m);
-			arraySize=l;
-			mips=m;
-			for(int i=0;i<l;i++)
-			{
-				for(int j=0;j<m;j++)
-				{
-					glGenFramebuffers(1, &m_fb[i][j]);
-					glBindFramebuffer(GL_FRAMEBUFFER, m_fb[i][j]);
-					glFramebufferTextureLayer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, pTextureObject,j,i);
-		
-					GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-					if(status!=GL_FRAMEBUFFER_COMPLETE)
-					{
-						FramebufferGL::CheckFramebufferStatus();
-						SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
-					}
-				}
-			}
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-		glBindTexture(GL_TEXTURE_2D,0);
-	}
+    deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool comp,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap
-	,vec4 clear, float clearDepth , uint clearStencil)
-
+int Texture::GetLength()const
 {
-	if(w==width&&l==length&&pixelFormat==p&&this->computable==comp)
-		return false;
-	this->computable=comp;
-	this->depthStencil = depthstencil;
-GL_ERROR_CHECK
-	pixelFormat=p;
-	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
-	width=w;
-	length=l;
-	dim=2;
-	glGenTextures(1,&pTextureObject);
-GL_ERROR_CHECK
-	glBindTexture(GL_TEXTURE_2D,pTextureObject);
-GL_ERROR_CHECK
-	glTexStorage2D(	GL_TEXTURE_2D,
- 					1,
- 					internal_format,
- 					w,
- 					l);
-GL_ERROR_CHECK
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w,l, internal_format, RenderPlatform::ToGLExternalFormat(pixelFormat), NULL);
-	//glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,RenderPlatform::ToGLExternalFormat(pixelFormat),RenderPlatform::DataType(pixelFormat),NULL);
-	glGenerateMipmap(GL_TEXTURE_2D); 
-GL_ERROR_CHECK
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap?GL_REPEAT:GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap?GL_REPEAT:GL_CLAMP_TO_EDGE);
-GL_ERROR_CHECK
-	if(rendertarget)
-	{
-		FreeRTVTables();
-		InitRTVTables(1,1);
-		glGenFramebuffers(1, &m_fb[0][0]);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_fb[0][0]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
-		
-		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		if(status!=GL_FRAMEBUFFER_COMPLETE)
-		{
-			FramebufferGL::CheckFramebufferStatus();
-			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
-		}
-	}
-	else if(depthstencil)
-	{
-		FreeRTVTables();
-		InitRTVTables(1,1);
-		glGenFramebuffers(1, &m_fb[0][0]);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_fb[0][0]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, pTextureObject, 0);
-		
-		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		if(status!=GL_FRAMEBUFFER_COMPLETE)
-		{
-			FramebufferGL::CheckFramebufferStatus();
-			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
-		}
-	}
-	glBindTexture(GL_TEXTURE_2D,0);
-GL_ERROR_CHECK
-	return true;
+    return cubemap ? arraySize * 6 : arraySize;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,int m,crossplatform::PixelFormat f,bool comp,bool /*rendertarget*/,bool cubemap)
+int Texture::GetWidth()const
 {
-	pixelFormat=f;
-	if(w==width&&l==length&&cubemap==this->cubemap&&comp==this->IsComputable())
-		return false;
-	this->computable=comp;
-	InvalidateDeviceObjects();
-	this->cubemap=cubemap;
-	pixelFormat=f;
-	GL_ERROR_CHECK
-	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
-//	GLuint layout=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
-//	GLenum datatype=opengl::RenderPlatform::DataType(pixelFormat);
-	width=w;
-	length=l;
-	if(cubemap)
-	{
-		SIMUL_ASSERT(num_layers==6&&w==l);
-	}
-	arraySize=depth=num_layers;
-	dim=2;
-	glGenTextures(1,&pTextureObject);
-	GL_ERROR_CHECK
-	
-	if(cubemap)
-	{
-		glBindTexture(GL_TEXTURE_CUBE_MAP,pTextureObject);
-		glTexStorage2D(	GL_TEXTURE_CUBE_MAP
- 						,m		// Num levels i.e. MIPS
- 						,internal_format
- 						,w
- 						,l);
-		glBindTexture(GL_TEXTURE_CUBE_MAP,0);
-		GL_ERROR_CHECK
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D_ARRAY,pTextureObject);
-		glTexStorage3D(	GL_TEXTURE_2D_ARRAY
- 						,m		// Num levels i.e. MIPS
- 						,internal_format
- 						,w
- 						,l
-						,depth);
-		GL_ERROR_CHECK
-		glGenerateMipmap(GL_TEXTURE_2D_ARRAY); 
-		GL_ERROR_CHECK
-		glBindTexture(GL_TEXTURE_2D_ARRAY,0);
-	GL_ERROR_CHECK
-	}
-	if(comp&&num_layers>0)
-	{
-		FreeViewTables();
-		InitViewTables(num_layers,m);
-		glGenTextures(m,mipObjects);
-		glGenTextures(num_layers,layerObjects);
-		for(int i=0;i<num_layers;i++)
-		{
-			glTextureView(	layerObjects[i]
- 							,GL_TEXTURE_2D
- 							,pTextureObject
- 							,internal_format
- 							,0
- 							,m
- 							,i
- 							,1);
-			for(int j=0;j<m;j++)
-			{
-				glTextureView(	layerMipObjects[i][j]
- 								,GL_TEXTURE_2D
- 								,pTextureObject
- 								,internal_format
- 								,j
- 								,1
- 								,i
- 								,1);
-			}
-
-		GL_ERROR_CHECK
-		}
-		for(int j=0;j<m;j++)
-		{
-			glTextureView(	mipObjects[j]
- 							,GL_TEXTURE_2D
- 							,pTextureObject
- 							,internal_format
- 							,j
- 							,1
- 							,0
- 							,num_layers);
-		}
-		GL_ERROR_CHECK
-	}
-	arraySize=num_layers;
-	mips=m;
-	return true;
+    return width;
 }
 
-void Texture::setTexels(crossplatform::DeviceContext &,const void *src,int texel_index,int num_texels)
+int Texture::GetDimension()const
 {
-	GL_ERROR_CHECK
-//	GLuint frmt		=opengl::RenderPlatform::ToGLFormat(pixelFormat);
-	GLenum ext_frmt	=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
-	GLenum dt		=opengl::RenderPlatform::DataType(pixelFormat);
-	if(dim==2)
-	{
-		glBindTexture(GL_TEXTURE_2D,pTextureObject);
-		GL_ERROR_CHECK
-		if(texel_index==0&&num_texels==width*length)
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width,length, ext_frmt, dt, src);
-//	glTexImage2D(GL_TEXTURE_2D,0,frmt,width,length,0,ext_frmt,dt,src);
-	glGenerateMipmap(GL_TEXTURE_2D); 
-		GL_ERROR_CHECK
-	glBindTexture(GL_TEXTURE_2D,0);
-	}
-	else if(dim==3)
-	{
-		glBindTexture(GL_TEXTURE_3D,pTextureObject);
-		GL_ERROR_CHECK
-		if(texel_index==0&&num_texels==width*length*depth)
-			glTexSubImage3D(GL_TEXTURE_3D,0,0,0,0,width,length,depth,ext_frmt,dt,src);
-	glGenerateMipmap(GL_TEXTURE_3D); 
-		GL_ERROR_CHECK
-		glBindTexture(GL_TEXTURE_3D,0);
-	}
-#if 0
-	int start_slice				=it.texel_index/sliceStride;
-	int start_texel_in_slice	=it.texel_index-start_slice*sliceStride;
-	int start_row				=start_texel_in_slice/stride;
-	int start_texel_in_row		=start_texel_in_slice-start_row*stride;
-
-	int end_slice				=(it.texel_index+num_texels)/sliceStride;
-	int end_texel_in_slice		=(it.texel_index+num_texels)-end_slice*sliceStride;
-	int end_row					=end_texel_in_slice/stride;
-	int end_texel_in_row		=end_texel_in_slice-end_row*stride;
-
-	int first_row_length		=stride-start_texel_in_row;
-	int first_slice_rows		=sent_length-start_row-1;
-
-	if(first_row_length==stride)
-	{
-		first_row_length=0;
-		first_slice_rows++;
-		start_row--;
-	}
-	int num_slices=end_slice-start_slice-1;
-	if(first_slice_rows==(int)sent_length)
-	{
-		first_slice_rows=0;
-		num_slices++;
-		start_slice--;
-	}
-	if(end_slice==start_slice)
-	{
-		if(end_row==start_row)
-		{
-			first_row_length=end_texel_in_row-start_texel_in_row;
-			end_texel_in_row=0;
-		}
-		first_slice_rows=end_row-start_row-1;
-	}
-	const unsigned *uptr=&((fillTextures[it.texture_index].texels)[it.texel_index]);
-	int num_written=0;
-	if(first_row_length>0)
-	{
-		block_texture_fill t(start_texel_in_row,start_row,start_slice,first_row_length,1,1,uptr);
-		num_written+=first_row_length;
-		texel_index+=t.w*t.l*t.d;
-	glTexImage2D(GL_TEXTURE_2D,0,frmt,w,l,0,GL_RGBA,GL_UNSIGNED_INT,NULL);
-	}
-	// The rest of the first slice:
-	if(first_slice_rows>0)
-	{
-		block_texture_fill t(0,start_row+1,start_slice,stride,first_slice_rows,1,uptr);
-		uptr+=stride*first_slice_rows;
-		num_written+=stride*first_slice_rows;
-		it.texel_index+=t.w*t.l*t.d;
-		return t;
-	}
-	// The main block:
-	if(num_slices>0)
-	{
-		block_texture_fill t(0,0,start_slice+1,stride,sent_length,num_slices,uptr);
-		uptr+=stride*sent_length*num_slices;
-		num_written+=stride*sent_length*num_slices;
-		it.texel_index+=t.w*t.l*t.d;
-		return t;
-	}
-	// the rows at the end:
-	if(end_slice!=start_slice&&end_row>0)
-	{
-		block_texture_fill t(0,0,end_slice,stride,end_row,1,uptr);
-		uptr+=stride*end_row;
-		num_written+=stride*end_row;
-		it.texel_index+=t.w*t.l*t.d;
-		return t;
-	}
-	// and the final row:
-	if(end_texel_in_row>0)
-	{
-		block_texture_fill t(0,end_row,end_slice,end_texel_in_row,1,1,uptr);
-		uptr+=end_texel_in_row;
-		num_written+=end_texel_in_row;
-		it.texel_index+=t.w*t.l*t.d;
-		return t;
-	}
-
-#endif
+    return dim;
 }
 
-void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &,int array_index,int mip_index)
+int Texture::GetSampleCount()const
 {
-	if(!m_fb)
-		return;
-	if (array_index < 0) array_index = 0;
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fb[array_index][mip_index]); 
-	GL_ERROR_CHECK
-	FramebufferGL::CheckFramebufferStatus();
-	glGetIntegerv(GL_VIEWPORT,main_viewport);
-	GL_ERROR_CHECK
-	glViewport(0,0,width,length);
-	GL_ERROR_CHECK
-	FramebufferGL::fb_stack.push(m_fb[array_index][mip_index]);
-/*	if(depth>1)
-	{
-		const GLenum buffers[9] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7 };
-		glDrawBuffers(depth, buffers);
-	}*/
-	GL_ERROR_CHECK
+    return 0;
 }
 
-void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
+bool Texture::IsComputable()const
 {
-	if(!m_fb)
-		return;
-	GL_ERROR_CHECK
-	FramebufferGL::CheckFramebufferStatus();
-	GL_ERROR_CHECK
-	// remove m_fb from the stack and...
-	FramebufferGL::fb_stack.pop();
-	// ..restore the n one down.
-	GLuint last_fb=FramebufferGL::fb_stack.size()?FramebufferGL::fb_stack.top():0;
-	GL_ERROR_CHECK
-    glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
-	GL_ERROR_CHECK
-	glViewport(0,0,main_viewport[2],main_viewport[3]);
-	GL_ERROR_CHECK
-	if(last_fb)
-	{
-		const GLenum buffers[9] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7 };
-		glDrawBuffers(1, buffers);
-		GL_ERROR_CHECK
-	}
+    return true;
 }
 
-int Texture::GetLength() const
+void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* target, int start_texel, int num_texels)
 {
-	return length;
+
 }
 
-int Texture::GetWidth() const
+GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
-	return width;
+    int realArray   = GetArraySize();
+    bool no_array   = !cubemap && (arraySize <= 1);
+    bool isUAV      = (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
+
+    // Base view:
+    if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
+    {
+        if (cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY))
+        {
+            return mCubeArrayView;
+        }
+        return mTextureID;
+    }
+    // Layer view:
+    if (mip < 0 || mips <= 1)
+    {
+        if (layer < 0 || no_array)
+        {
+            return mTextureID;
+        }
+        return mLayerViews[layer];
+    }
+    // Mip view:
+    if (layer < 0)
+    {
+        return mMainMipViews[mip];
+    }
+    // Layer mip view:
+    return mLayerMipViews[layer][mip];
 }
 
-int Texture::GetSampleCount() const
+GLuint Texture::GetGLMainView()
 {
-	return 0;
+    return mTextureID;
 }
 
-bool Texture::IsComputable() const
+LoadedTexture Texture::LoadTextureData(const char* path)
 {
-	return (computable);
+    LoadedTexture lt    = {0,0,0,0,nullptr};
+    lt.data             = stbi_load(path, &lt.x, &lt.y, &lt.n, 4);
+    if (!lt.data)
+    {
+        SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
+    }
+    return lt;
 }
 
-int Texture::GetDimension() const
+bool Texture::IsSame(int w, int h, int d, int arraySize, int m, int msaa)
 {
-	return dim;
+    // If we are not created yet...
+    if (mTextureID == 0)
+    {
+        return false;
+    }
+
+    return true;
 }
 
-
-
-void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d)
+void Texture::InitViews(int mipCount, int layers, bool isRenderTarget)
 {
-	glTexSubImage3D(	GL_TEXTURE_3D,0,
-						x,y,z,
-						w,l,d,
-						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-						src);
+    mLayerViews.resize(layers);
+
+    mMainMipViews.resize(mipCount);
+
+    mLayerMipViews.resize(layers);
+    for (int i = 0; i < layers; i++)
+    {
+        mLayerMipViews[i].resize(mipCount);
+    }
+
+    if (isRenderTarget)
+    {
+        mTextureFBOs.resize(layers);
+        for (int i = 0; i < layers; i++)
+        {
+            mTextureFBOs[i].resize(mipCount);
+        }
+    }
 }
 
-bool simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
+void Texture::CreateFBOs(int sampleCount)
 {
-	if(w==width&&l==length&&d==depth&&cubemap==this->cubemap&&computable==this->IsComputable()&&pf==pixelFormat&&mips==m)
-		return false;
-	GL_ERROR_CHECK
-	pixelFormat=pf;
-	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
-	dim=3;
-	width=w;
-	length=l;
-	depth=d;
-	if(pTextureObject)
-	{
-		int W,L,D;
-		glBindTexture(GL_TEXTURE_3D,pTextureObject);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&W);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&L);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&D);
-		if(w!=W||l!=L||d!=D)
-		{
-			SAFE_DELETE_TEXTURE(pTextureObject);
-		}
-	}
-	GL_ERROR_CHECK
-	if(!pTextureObject)
-	{
-		glGenTextures(1,&(pTextureObject));
-		glBindTexture(GL_TEXTURE_3D,pTextureObject);
-		GLenum number_format=GL_RGBA;
-		GLenum number_type	=GL_UNSIGNED_INT;
-		switch(frmt)
-		{
-		case GL_RGBA:
-			number_format	=GL_RGBA;
-			number_type		=GL_UNSIGNED_INT;
-			break;
-		case GL_RGBA32F:
-			number_format	=GL_RGBA;
-			number_type		=GL_FLOAT;
-			break;
-		case GL_LUMINANCE32F_ARB:
-			number_format	=GL_LUMINANCE;
-			number_type		=GL_FLOAT;
-			break;
-		//((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT)
-		default:
-			break;
-		};
-		glTexStorage3D(	GL_TEXTURE_3D
- 					,m
- 					,frmt
- 					,w
- 					,l
-					,d);
-		//glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
-	GL_ERROR_CHECK
-	//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_REPEAT);
-	}
-	if(rendertargets)
-	{
-		SIMUL_BREAK("rendertargets not supported for 3D textures at present");
-	/*	SAFE_DELETE_FRAMEBUFFER(m_fb);
-		glGenFramebuffers(1, &m_fb);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-		num_rt=std::min(8,d);
-		for (int i=0;i<8&&i<num_rt;i++)
-		{
-			glFramebufferTextureLayer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+i, pTextureObject, 0,i);
-		}
-		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		if(status!=GL_FRAMEBUFFER_COMPLETE)
-		{
-			FramebufferGL::CheckFramebufferStatus();
-			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
-		}*/
-	}
-	mips=m;
-	arraySize=1;
-	GL_ERROR_CHECK
-	return true;
+    for (int i = 0; i < arraySize; i++)
+    {
+        for (int mip = 0; mip < mips; mip++)
+        {
+            glGenFramebuffers(1, &mTextureFBOs[i][mip]);
+            glBindFramebuffer(GL_FRAMEBUFFER, mTextureFBOs[i][mip]);
+            if (GetSampleCount() == 0)
+            {
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mLayerMipViews[i][mip], 0);
+            }
+            else
+            {
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, mLayerMipViews[i][mip], 0);
+            }
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            {
+                SIMUL_CERR << "FBO is not complete!\n";
+            }
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+    }
 }
 
-void Texture::ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear)
+void Texture::SetDefaultSampling(GLuint texId)
 {
-	SIMUL_BREAK_ONCE("Depth Stencil clearing is not implemented");
+    // Wrapping:
+    glTextureParameteri(texId, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(texId, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(texId, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    
+    // Filter:
+    glTextureParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-
-void Texture::GenerateMips(crossplatform::DeviceContext &)
+void Texture::SetGLName(const char* n, GLuint id)
 {
-}
-
-void Texture::copyToMemory(crossplatform::DeviceContext &,void *,int ,int )
-{
+    if (mTextureID != 0)
+    {
+        glObjectLabel(GL_TEXTURE, id, -1, n);
+    }
 }

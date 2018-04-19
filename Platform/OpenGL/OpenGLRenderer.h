@@ -2,7 +2,6 @@
 #include "Simul/Platform/OpenGL/OpenGLCallbackInterface.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
-#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Clouds/TrueSkyRenderer.h"
 

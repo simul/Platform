@@ -5,14 +5,15 @@ namespace simul
 {
 	namespace opengl
 	{
+        //! Holds current vertex buffer layout information:
 		class Layout:public crossplatform::Layout
 		{
 		public:
-			Layout();
+			        Layout();
 			virtual ~Layout();
-			void InvalidateDeviceObjects();
-			void Apply(crossplatform::DeviceContext &deviceContext);
-			void Unapply(crossplatform::DeviceContext &deviceContext);
+			void    InvalidateDeviceObjects();
+			void    Apply(crossplatform::DeviceContext& deviceContext);
+			void    Unapply(crossplatform::DeviceContext& deviceContext);
 		};
 
 	}

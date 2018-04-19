@@ -9,7 +9,10 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Shaders">
+    <Filter Include="SFX">
+      <UniqueIdentifier>{136266bc-2958-4886-8eb0-17dc74091421}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLSL">
       <UniqueIdentifier>{c51d314d-d24a-45d0-b450-9c10e4d7ef2b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -17,19 +20,10 @@
     <ClCompile Include="FramebufferGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LoadGLImage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="objload.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OpenGLRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Profiler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulGLUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderPlatform.cpp">
@@ -56,9 +50,6 @@
     <ClCompile Include="Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintEffectLog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -67,22 +58,10 @@
     <ClInclude Include="FramebufferGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LoadGLImage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="objload.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OpenGLRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Profiler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulGLUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderPlatform.h">
@@ -112,19 +91,84 @@
     <ClInclude Include="Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintEffectLog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="GLSL\CppGlsl.hs">
-      <Filter>Shaders</Filter>
+      <Filter>GLSL</Filter>
     </None>
     <None Include="GLSL\shader_platform.sl">
-      <Filter>Shaders</Filter>
+      <Filter>GLSL</Filter>
     </None>
-    <None Include="GLSL\saturate.glsl">
-      <Filter>Shaders</Filter>
+    <None Include="GLSL\GLSL.json">
+      <Filter>GLSL</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
   </ItemGroup>
 </Project>
