@@ -2,8 +2,7 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-
-#include "GL/glew.h"
+#include "glad/glad.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

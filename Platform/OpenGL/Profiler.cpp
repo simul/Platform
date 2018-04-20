@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include <sstream>
 #include <stdexcept> // for runtime_error
 #include "Profiler.h"

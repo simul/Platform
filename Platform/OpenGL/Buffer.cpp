@@ -1,7 +1,5 @@
-#include <GL/glew.h>
-
 #ifdef _MSC_VER
-#include <windows.h>
+    #include <windows.h>
 #endif
 #include "Buffer.h"
 #include "RenderPlatform.h"

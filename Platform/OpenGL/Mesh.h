@@ -4,6 +4,7 @@
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
+#include "glad/glad.h"
 
 namespace simul
 {

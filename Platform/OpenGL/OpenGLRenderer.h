@@ -4,6 +4,7 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Clouds/TrueSkyRenderer.h"
+#include "glad/glad.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

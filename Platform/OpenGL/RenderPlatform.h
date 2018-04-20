@@ -5,14 +5,19 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-
-#include <GL/glew.h>
+#include "glad/glad.h"
 
 namespace simul
 {
 	namespace opengl
 	{
+        // typedef unsigned int    GLenum;
+        // typedef unsigned int    GLuint;
+        // typedef int             GLint;
+        // typedef uint64_t        GLuint64;
+
 		class Material;
+
 		//! OpenGL renderplatform implementation
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{

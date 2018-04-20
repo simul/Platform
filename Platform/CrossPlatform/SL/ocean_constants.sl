@@ -34,49 +34,34 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform vec3		g_SunDir;
 	uniform float		g_Shineness;
 	uniform vec3		g_SunColor;
-	uniform bool		g_PassNo;
+	uniform float		g_ShoreExtent;
 
 	// Perlin noise for distant wave crest
 	
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinOctave;
-	uniform float		g_boundedRotation;
+	uniform float		gycvudiosby;
+
 	uniform vec3		g_PerlinGradient;
+	uniform bool		gfdvravdcx;
 
 	// Constants for calculating texcoord from position
 	uniform float		g_TexelLength_x2;
 	uniform float		g_UVScale;
 	uniform float		g_UVOffset;
 	uniform float		g_WorldScale;
-	uniform float		g_minQuadSize;
-	uniform uint		g_verticiesPerLayer;
-	uniform uint		g_layerDensity;
-	uniform uint		g_totalVertices;
-	uniform uint		g_noOfLayers;
 
-	uniform vec3		g_boundedDimension;
-	uniform bool		g_enableRefraction;
-	uniform vec2		g_boundedDensity;
+	//Screen scale
 	uniform vec2		g_DepthScale;
-	uniform vec3		g_boundedLocation;
-	uniform float		gufidghvibhi;
-
-	uniform vec3		g_scattering;
-	uniform float		g_salinity;
-	uniform vec3		g_absorption;
-	uniform float		g_temperature;
+	uniform vec2		g_screenScale;
 
 	//Depth parameters for depth calculations
 	uniform vec4		g_DepthToLinFadeParams;
 	uniform vec4		g_HalfTan;
 
-	//Beaufort scaling
-	uniform float		g_foamHeight;
-	uniform float		g_foamChurn;
-
-	//Screen scale
-	uniform vec2		g_screenScale;
+	uniform vec3		g_ShoreDepthTextureLocation;
+	uniform float		g_ShoreWidth;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
@@ -91,7 +76,25 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec2		g_UVBase;
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
-	uniform float		qjk345rstj;
+	uniform bool		g_PassNo;
+
+	uniform vec3		g_boundedDimension;
+	uniform float		gufidghvibhi;
+
+	uniform vec3		g_boundedLocation;
+	uniform float		g_boundedRotation;
+
+	uniform vec3		g_absorption;
+	uniform uint		g_totalVertices;
+	uniform vec3		g_scattering;
+	uniform float		nvjiodfsnbui;
+
+	uniform float		g_minQuadSize;
+	uniform uint		g_verticiesPerLayer;
+	uniform uint		g_layerDensity;
+	uniform uint		g_noOfLayers;
+
+	uniform vec2		g_boundedDensity;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)
@@ -111,10 +114,18 @@ SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
 	uniform float	hgfdjkslgh;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbWaterProbe, 7)
+SIMUL_CONSTANT_BUFFER(cbWaterProbe, 8)
 	uniform float g_UVScale2;
 	uniform float g_UVOffset2;
-	uniform vec2 hugfidoshauig;
+	uniform float g_surfaceHeight;
+	uniform float hugfidoshauig;
 SIMUL_CONSTANT_BUFFER_END
 
+
+SIMUL_CONSTANT_BUFFER(cbWaterFoam, 9)
+	//Beaufort scaling
+	uniform float		g_foamHeight;
+	uniform float		g_foamChurn;
+	uniform vec2		hvyidbs;
+SIMUL_CONSTANT_BUFFER_END
 #endif

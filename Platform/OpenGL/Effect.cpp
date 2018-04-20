@@ -14,8 +14,6 @@
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Base/StringFunctions.h"
 
-#include <GL/glew.h>
-
 using namespace simul;
 using namespace opengl;
 

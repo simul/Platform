@@ -1,10 +1,8 @@
 #pragma once
+
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/CrossPlatform/Buffer.h"
-#include <string>
-#include <map>
-
-#pragma warning(disable:4251)
+#include "glad/glad.h"
 
 namespace simul
 {
