@@ -89,31 +89,30 @@ namespace simul
         //! OpenGL Structured Buffer implementation (SSBO)
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{
-			GLuint								ssbo;
-			int num_elements;
-			int element_bytesize;
-			unsigned char *read_data;
-			unsigned char *write_data;
 		public:
-			PlatformStructuredBuffer();
-			virtual ~PlatformStructuredBuffer()
-			{
-				InvalidateDeviceObjects();
-			}
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
-			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
-			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void SetData(crossplatform::DeviceContext &deviceContext,void *data);
-			GLuint AsGLuint() const
-			{
-				return ssbo;
-			}
-			void InvalidateDeviceObjects();
-			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
-			void Unbind(crossplatform::DeviceContext &deviceContext);
+			            PlatformStructuredBuffer();
+            virtual     ~PlatformStructuredBuffer();
+
+			void        RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
+			void*       GetBuffer(crossplatform::DeviceContext &deviceContext);
+			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void        CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void        CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void        SetData(crossplatform::DeviceContext &deviceContext,void *data);
+			void        InvalidateDeviceObjects();
+
+			void        Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			void        ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			
+            void        Unbind(crossplatform::DeviceContext &deviceContext);
+
+        private:
+            GLuint      mGPUBuffer;
+            GLuint      mReadBuffer;
+            size_t      mTotalSize;
+            int         mBinding;
+
+            bool        mGPUIsMapped;
 		};
 
         //! An OpenGl program object (combination of shaders)

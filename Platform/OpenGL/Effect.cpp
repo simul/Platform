@@ -103,59 +103,113 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceC
 {
 }
 
-static const int NUM_STAGING_BUFFERS=3;
-PlatformStructuredBuffer::PlatformStructuredBuffer()
-				:num_elements(0)
-				,element_bytesize(0)
-				,ssbo(0)
-				,read_data(0)
-				,write_data(0)
+PlatformStructuredBuffer::PlatformStructuredBuffer():
+    mGPUBuffer(0),
+    mReadBuffer(0),
+    mTotalSize(0),
+    mBinding(-1),
+    mGPUIsMapped(false)
 {
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,int ct,int unit_size,bool ,bool,void *init_data)
+PlatformStructuredBuffer::~PlatformStructuredBuffer()
 {
+    InvalidateDeviceObjects();
 }
 
-void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpu_read,bool,void* init_data)
 {
-	return nullptr;
+    InvalidateDeviceObjects();
+
+    mTotalSize      = ct * unit_size;
+    this->cpu_read  = cpu_read;
+
+    // Create the SSBO:
+    glGenBuffers(1, &mGPUBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer);
+    // GL_DYNAMIC_STORAGE_BIT   -> we may call SetData (glBufferSubData)
+    // GL_MAP_WRITE_BIT         -> we may call GetBuffer()
+    GLenum flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT;
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    
+    // Create the readback buffer:
+    if (cpu_read)
+    {
+        glGenBuffers(1, &mReadBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, mReadBuffer);
+        // GL_MAP_READ_BIT  -> we want to map and read data
+        glBufferStorage(GL_COPY_WRITE_BUFFER, mTotalSize, init_data, GL_MAP_READ_BIT);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+    }
 }
 
-const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &)
+void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    return nullptr;
+    mGPUIsMapped = true;
+	return glMapNamedBuffer(mGPUBuffer,GL_WRITE_ONLY);
 }
 
-void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &)
+const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+    return glMapNamedBuffer(mReadBuffer, GL_READ_ONLY);
 }
 
-void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &)
+void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+    glUnmapNamedBuffer(mReadBuffer);
 }
 
-
-void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &,void *data)
+void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+    glCopyNamedBufferSubData(mGPUBuffer, mReadBuffer, 0, 0, mTotalSize);
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatform::Effect *effect,const char *name)
+void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
 {
+    if (data)
+    {
+        void* pDataGPU = glMapNamedBuffer(mGPUBuffer, GL_WRITE_ONLY);
+        memcpy(pDataGPU, data, mTotalSize);
+        glUnmapNamedBuffer(mGPUBuffer);
+    }
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
 {
-	// GLSL makes no distinction between settting StructuredBuffers for read and for write.
+    if (mBinding == -1)
+    {
+        mBinding = effect->GetSlot(name);
+    }
+    if (mGPUIsMapped)
+    {
+        mGPUIsMapped = false;
+        glUnmapNamedBuffer(mGPUBuffer);
+    }
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer);
+}
+
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
+{
 	Apply(deviceContext,effect,name);
 }
 
-void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &)
+void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContext)
 {
 }
 
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
+    if (mGPUBuffer != 0)
+    {
+        glDeleteBuffers(1, &mGPUBuffer);
+        mGPUBuffer = 0;
+    }
+    if (mReadBuffer != 0)
+    {
+        glDeleteBuffers(1, &mReadBuffer);
+        mReadBuffer = 0;
+    }
 }
 
 Effect::Effect()
@@ -630,43 +684,6 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
             }
         }
     }
-
-    // For each of the applied textures:
-    // for (const auto ta : cs.appliedTextures)
-    // {
-    //     auto texBinding = mTextureMap.find(ta.name);
-    //     if (texBinding != mTextureMap.end())
-    //     {
-    //         // For each sampler state:
-    //         for (const auto sampler : texBinding->second)
-    //         {
-    //             // TO-DO: dummy textures!!!
-    //             opengl::Texture* tex = (opengl::Texture*)ta.texture;
-    //             if (!tex)
-    //             {
-    //                 continue;
-    //             }
-    //             GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-    //             GLuint64 thandle    = 0;
-    // 
-    //             // No sampler (fetch/getsize):
-    //             if (sampler.Sampler.empty())
-    //             {
-    //                 thandle  = glGetTextureHandleARB(tview);
-    //             }
-    //             // With sampler, lets combine it:
-    //             else
-    //             {
-    //                 opengl::SamplerState* ss    = (opengl::SamplerState*)rPlat->GetOrCreateSamplerStateByName(sampler.Sampler.c_str());
-    //                 GLuint sid                  = ss->asGLuint();
-    //                 thandle                     = glGetTextureSamplerHandleARB(tview, sid);
-    //             }
-    //             rPlat->MakeTextureResident(thandle);
-    //             mHandlesUBO->Update(thandle, sampler.Offset);
-    //         }
-    //     }
-    // }
-
     mHandlesUBO->Bind(mProgramId);
 }
 
