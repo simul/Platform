@@ -1,6 +1,5 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
-#include <GL/glew.h>
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #endif
 #include "OpenGLRenderer.h"

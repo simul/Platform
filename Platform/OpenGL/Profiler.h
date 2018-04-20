@@ -4,7 +4,11 @@
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include <string>
 #include <map>
+#include "glad/glad.h"
+
 #pragma warning(disable:4251)
+
+typedef unsigned int GLuint;
 namespace simul
 {
 	namespace opengl

@@ -1,11 +1,11 @@
-#ifndef FRAMEBUFFERGL_H
-#define FRAMEBUFFERGL_H
+#pragma once
 
 #include <stack>
 #include "stdint.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "glad/glad.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -16,6 +16,7 @@ namespace simul
 {
 	namespace opengl
 	{
+        //! GL Framebuffer implementation
 		class SIMUL_OPENGL_EXPORT FramebufferGL:public simul::crossplatform::BaseFramebuffer
 		{
 		public:
@@ -43,7 +44,6 @@ namespace simul
 
         protected:
             GLuint mFBOId;
-
 		};
 	}
 }
@@ -51,4 +51,3 @@ namespace simul
 	#pragma warning(pop)
 #endif
 
-#endif // RENDER_TEXTURE_FBO__H

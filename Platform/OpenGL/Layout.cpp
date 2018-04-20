@@ -1,5 +1,3 @@
-#include <GL/glew.h>
-
 #include "Layout.h"
 #include "RenderPlatform.h"
 

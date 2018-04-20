@@ -2,8 +2,7 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
-
-#include "GL/glew.h"
+#include "glad/glad.h"
 
 namespace simul
 {

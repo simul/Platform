@@ -18,6 +18,12 @@
     <Filter Include="SL">
       <UniqueIdentifier>{b743cb56-2447-4081-a691-64ea8fda1cf2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\glad">
+      <UniqueIdentifier>{b15212b5-7032-4fcf-ab42-88e30541f941}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\glad">
+      <UniqueIdentifier>{a280d3f1-f994-4902-bed7-c93a9583691b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FramebufferGL.cpp">
@@ -35,9 +41,6 @@
     <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Material.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -52,6 +55,9 @@
     </ClCompile>
     <ClCompile Include="Buffer.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
+      <Filter>Source Files\glad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,9 +79,6 @@
     <ClInclude Include="Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Material.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -93,6 +96,12 @@
     </ClInclude>
     <ClInclude Include="Buffer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glad\glad.h">
+      <Filter>Header Files\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="KHR\khrplatform.h">
+      <Filter>Header Files\glad</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

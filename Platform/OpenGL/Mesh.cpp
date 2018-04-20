@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include "Mesh.h"
 
 using namespace simul;

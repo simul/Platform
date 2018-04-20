@@ -1,6 +1,4 @@
-﻿#include "GL/glew.h"
-#include "Simul/Platform/OpenGL/RenderPlatform.h"
-#include "Simul/Platform/OpenGL/Material.h"
+﻿#include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/Mesh.h"
 #include "Simul/Platform/OpenGL/Texture.h"
 #include "Simul/Platform/OpenGL/Effect.h"
@@ -32,13 +30,18 @@ RenderPlatform::~RenderPlatform()
 
 void RenderPlatform::RestoreDeviceObjects(void* unused)
 {
-    glewExperimental    = true;
-    GLenum res          = glewInit();
-    if (res != GLEW_OK)
-    {
-        SIMUL_BREAK("");
-    }
+    // glewExperimental    = true;
+    // GLenum res          = glewInit();
+    // if (res != GLEW_OK)
+    // {
+    //     SIMUL_BREAK("");
+    // }
     
+    if (gladLoadGL())
+    {
+        // error?
+    }
+
     // Generate and bind a dummy vao:
     glGenVertexArrays(1, &mNullVAO);
     glBindVertexArray(mNullVAO);
@@ -370,9 +373,9 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 	case R_32_FLOAT:
 		return GL_RED;
 	case LUM_32_FLOAT:
-		return GL_LUMINANCE;
+		return GL_RGBA;
 	case INT_32_FLOAT:
-		return GL_INTENSITY;
+		return GL_RGBA;
 	case RGBA_8_UNORM:
 		return GL_RGBA;
 	case RGBA_8_SNORM:
