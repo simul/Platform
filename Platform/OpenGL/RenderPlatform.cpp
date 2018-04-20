@@ -78,7 +78,6 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
     ApplyCurrentPass(deviceContext);
-
     glDispatchCompute(w, l, d);
 }
 
@@ -114,7 +113,6 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
 {
     ApplyCurrentPass(deviceContext);
-
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
@@ -645,9 +643,12 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
     if (state->type == crossplatform::RenderStateType::BLEND)
     {
         crossplatform::BlendDesc bdesc = state->desc.blend;
-        for (int i = 0; i < bdesc.numRTs; i++)
+        // We need to iterate over all the rts as we may have some settings
+        // from older passes:
+        const int kBlendMaxRt = 8;
+        for (int i = 0; i < kBlendMaxRt; i++)
         {
-            if (bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
+            if (i >= bdesc.numRTs || bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
             {
                 glDisablei(GL_BLEND, i);
             }
@@ -841,13 +842,11 @@ GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
 void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
     ApplyCurrentPass(deviceContext);
-
     glDrawArrays(mCurTopology, start_vert, num_verts);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
-    ApplyCurrentPass(deviceContext);
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
