@@ -129,7 +129,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer);
     // GL_DYNAMIC_STORAGE_BIT   -> we may call SetData (glBufferSubData)
     // GL_MAP_WRITE_BIT         -> we may call GetBuffer()
-    glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+    GLenum flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT;
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     
     // Create the readback buffer:
@@ -166,7 +167,12 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
 {
-    
+    if (data)
+    {
+        void* pDataGPU = glMapNamedBuffer(mGPUBuffer, GL_WRITE_ONLY);
+        memcpy(pDataGPU, data, mTotalSize);
+        glUnmapNamedBuffer(mGPUBuffer);
+    }
 }
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
@@ -678,43 +684,6 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
             }
         }
     }
-
-    // For each of the applied textures:
-    // for (const auto ta : cs.appliedTextures)
-    // {
-    //     auto texBinding = mTextureMap.find(ta.name);
-    //     if (texBinding != mTextureMap.end())
-    //     {
-    //         // For each sampler state:
-    //         for (const auto sampler : texBinding->second)
-    //         {
-    //             // TO-DO: dummy textures!!!
-    //             opengl::Texture* tex = (opengl::Texture*)ta.texture;
-    //             if (!tex)
-    //             {
-    //                 continue;
-    //             }
-    //             GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-    //             GLuint64 thandle    = 0;
-    // 
-    //             // No sampler (fetch/getsize):
-    //             if (sampler.Sampler.empty())
-    //             {
-    //                 thandle  = glGetTextureHandleARB(tview);
-    //             }
-    //             // With sampler, lets combine it:
-    //             else
-    //             {
-    //                 opengl::SamplerState* ss    = (opengl::SamplerState*)rPlat->GetOrCreateSamplerStateByName(sampler.Sampler.c_str());
-    //                 GLuint sid                  = ss->asGLuint();
-    //                 thandle                     = glGetTextureSamplerHandleARB(tview, sid);
-    //             }
-    //             rPlat->MakeTextureResident(thandle);
-    //             mHandlesUBO->Update(thandle, sampler.Offset);
-    //         }
-    //     }
-    // }
-
     mHandlesUBO->Bind(mProgramId);
 }
 
