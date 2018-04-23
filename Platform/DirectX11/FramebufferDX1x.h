@@ -36,10 +36,7 @@ namespace simul
 			virtual void MoveDepthToSlowRAM();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 			virtual void Activate(crossplatform::DeviceContext &deviceContext);
-			virtual void ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4]);
 			virtual void ActivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH );
-			virtual void ActivateColour(crossplatform::DeviceContext &deviceContext);
 			virtual void Deactivate(crossplatform::DeviceContext &deviceContext);
 			virtual void DeactivateDepth(crossplatform::DeviceContext &deviceContext);
 			virtual void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);

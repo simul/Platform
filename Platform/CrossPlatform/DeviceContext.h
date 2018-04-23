@@ -52,7 +52,7 @@ namespace simul
 		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
 		template<typename T,int count> class FastMap
 		{
-			std::set<Effect*> linkedEffects;
+		//	std::set<Effect*> linkedEffects;
 			int index_limit;
 			int index_start;
 			T values[count+1];
@@ -62,6 +62,10 @@ namespace simul
 			FastMap():index_limit(0),index_start(count),has_value(0),sz(0)
 			{
 				memset (values,0,(count+1)*sizeof(T));
+			}
+			~FastMap()
+			{
+				//linkedEffects.clear();
 			}
 			const T& operator[](size_t i) const
 			{

@@ -30,8 +30,6 @@ namespace simul
             bool CreateBuffers() override;
             void Activate(crossplatform::DeviceContext &deviceContext) override;
             void SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth) override;
-            void ActivateViewport(crossplatform::DeviceContext &deviceContext,float x,float y,float w,float h) override;
-            void ActivateColour(crossplatform::DeviceContext& deviceContext, const float viewportXYWH[4])override;
             void Deactivate(crossplatform::DeviceContext &deviceContext) override;
             void DeactivateDepth(crossplatform::DeviceContext &deviceContext) override;
             void Clear(crossplatform::DeviceContext &deviceContext,float,float,float,float,float,int mask = 0) override;

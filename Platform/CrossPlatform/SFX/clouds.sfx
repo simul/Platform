@@ -400,20 +400,20 @@ shader void CS_MapToWindowInit(uint3 idx : SV_DispatchThreadID)
 
 float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 {
-	float thicknessKm		=0.0;
+	float thicknessKm	=0.0;
 	int i				=0;
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	float s				=0.2*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
 	vec3 tx				=texc;
 	vec3 dir_texc		=dir*inverseScalesKm;
-	for( i=0;i<9;i++)
+	for( i=0;i<36;i++)
 	{
 		// we expect stepLength in km for this shader
 		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 1).z;// *saturate((maxh - wpos.z) / s);
 		thicknessKm		+=lookup*s;
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
-		s				*=1.3;
+		s				*=1.6;
 	}
 	return thicknessKm;
 }
