@@ -198,7 +198,6 @@ namespace simul
 			EffectPass *currentEffectPass;
 			EffectTechnique *currentTechnique;
 			Effect *currentEffect;
-            std::vector<TextureAssignment> appliedTextures;
 			void invalidate()
 			{
 				effectPassValid=false;

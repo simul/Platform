@@ -214,11 +214,6 @@ Effect::Effect()
 {
 }
 
-crossplatform::ShaderResource Effect::GetShaderResource(const char* name)
-{
-    return crossplatform::Effect::GetShaderResource(name);
-}
-
 void Effect::Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines)
 {
     SIMUL_COUT << "Loading OpenGL effect:" << filename_utf8 << std::endl;
@@ -235,23 +230,24 @@ EffectTechnique* Effect::CreateTechnique()
 	return new opengl::EffectTechnique;
 }
 
-crossplatform::EffectTechnique* Effect::GetTechniqueByName(const char* name)
-{
-    return groupCharMap[0]->GetTechniqueByName(name);
-}
-
 crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
 {
-    if (groupCharMap[0]->techniques_by_index.find(index) != groupCharMap[0]->techniques_by_index.end())
-    {
-        return groupCharMap[0]->techniques_by_index[index];
-    }
-    return nullptr;
+    return techniques_by_index[index];
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index, int mip)
 {
-    SetUnorderedAccessView(deviceContext, GetShaderResource(name), tex, index, mip);
+    auto res = GetShaderResource(name);
+    SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+
+    // if (name == nullptr)
+    // {
+    //     SetUnorderedAccessView(deviceContext, nullptr, tex, index, mip);
+    // }
+    // else
+    // {
+    //     SetUnorderedAccessView(deviceContext, GetShaderResource(name), tex, index, mip);
+    // }
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
@@ -259,20 +255,8 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
     opengl::Texture* gTex = (opengl::Texture*)tex;
     if (gTex)
     {
-
-#if 0
-        int selectedMip = mip == -1 ? 0 : mip;
-        int allLayers = index == -1;
-        if (index == -1)
-        {
-            index = 0;
-        }
-        // NOTE: SFX knows if an image is used in load operations,so we could be more accurate (GL_READ/GL_READ_WRITE)
-        glBindImageTexture(name.slot, gTex->GetGLMainView(), selectedMip, allLayers, index, GL_READ_WRITE, RenderPlatform::ToGLFormat(tex->GetFormat()));
-#else
         GLuint imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
         glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLFormat(tex->GetFormat()));
-#endif
     }
     else
     {
@@ -281,79 +265,12 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
     }
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext& deviceContext,crossplatform::ShaderResource& shaderResource,crossplatform::Texture *tex,int index,int mip)
+void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)
 {
-    if (!shaderResource.valid)
-    {
-        return;
-    }
-    crossplatform::ContextState* cs = renderPlatform->GetContextState(deviceContext);
-    unsigned long slot = shaderResource.slot;
-    unsigned long dim = shaderResource.dimensions;
+    RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+    s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
 
-    crossplatform::TextureAssignment& ta = cs->textureAssignmentMap[slot];
-    ta.resourceType = shaderResource.shaderResourceType;
-    ta.texture      = (tex&&tex->IsValid() && shaderResource.valid) ? tex : 0;
-    ta.dimensions   = dim;
-    ta.uav          = false;
-    ta.index        = index;
-    ta.mip          = mip;
-    ta.name         = shaderResource.name;
-    cs->textureAssignmentMapValid = false;
-
-    bool found = false;
-    for (auto& cta : cs->appliedTextures)
-    {
-        if (cta.name == shaderResource.name)
-        {
-            found = true;
-            cta = ta;
-            break;
-        }
-    }
-    if (!found)
-    {
-        cs->appliedTextures.push_back(ta);
-    }
-}
-
-void Effect::SetTexture(crossplatform::DeviceContext& deviceContext,const char* name,crossplatform::Texture *tex,int index,int mip)
-{
-    crossplatform::ContextState* cs = renderPlatform->GetContextState(deviceContext);
-    int slot    = GetSlot(name);
-    int dim     = GetDimensions(name);
-    crossplatform::TextureAssignment& ta = cs->textureAssignmentMap[slot];
-    ta.resourceType = GetResourceType(name);
-    ta.texture      = (tex&&tex->IsValid()) ? tex : 0;
-    ta.dimensions   = dim;
-    ta.uav          = false;
-    ta.index        = index;
-    ta.mip          = mip;
-    ta.name         = name;
-    cs->textureAssignmentMapValid = false;
-
-    bool found = false;
-    for (auto& cta : cs->appliedTextures)
-    {
-        if (cta.name == name)
-        {
-            found = true;
-            cta = ta;
-            break;
-        }
-    }
-    if (!found)
-    {
-        cs->appliedTextures.push_back(ta);
-    }
-}
-
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceC,crossplatform::ConstantBufferBase *s)	
-{
-    RenderPlatform *r = (RenderPlatform *)deviceC.renderPlatform;
-    s->GetPlatformConstantBuffer()->Apply(deviceC, s->GetSize(), s->GetAddr());
-
-    crossplatform::Effect::SetConstantBuffer(deviceC, s);
+    crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass)
@@ -394,16 +311,19 @@ void Effect::UnbindTextures(crossplatform::DeviceContext& deviceContext)
 Shader::Shader():
     ShaderId(0)
 {
-
 }
 
 Shader::~Shader()
 {
-
+    Release();
 }
 
 void Shader::load(crossplatform::RenderPlatform* renderPlatform, const char* filename_utf8, crossplatform::ShaderType t)
 {
+    Release();
+
+    type = t;
+
     simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
     std::string shaderSourcePath        = renderPlatform->GetShaderBinaryPath() + std::string("/") + filename_utf8;
 
@@ -443,6 +363,15 @@ void Shader::load(crossplatform::RenderPlatform* renderPlatform, const char* fil
     glCompileShader(ShaderId);
 }
 
+void Shader::Release()
+{
+    if (ShaderId != 0)
+    {
+        glDeleteShader(ShaderId);
+        ShaderId = 0;
+    }
+}
+
 crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 {
 	crossplatform::EffectPass* p    = new opengl::EffectPass;
@@ -455,6 +384,10 @@ EffectPass::EffectPass():
     mHandlesUBO(nullptr),
     PassName("passname")
 {
+    for (int i = 0; i < 32; i++)
+    {
+        mTexturesUBOMapping[i] = -1;
+    }
 }
 
 EffectPass::~EffectPass()
@@ -473,6 +406,11 @@ void EffectPass::InvalidateDeviceObjects()
     {
         delete mHandlesUBO;
     }
+    for (int i = 0; i < 32; i++)
+    {
+        mTexturesUBOMapping[i] = -1;
+    }
+    mUsedTextures.clear();
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) 
@@ -480,8 +418,9 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
     // Create the program:
     if (mProgramId == 0)
     {
-        auto cs     = deviceContext.contextState;
-        PassName    = cs.currentTechnique->name;
+        InvalidateDeviceObjects();
+        crossplatform::ContextState* cs     = deviceContext.renderPlatform->GetContextState(deviceContext);
+        PassName                            = cs->currentTechnique->name;
 
         opengl::Shader* v   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
         opengl::Shader* f   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
@@ -521,84 +460,17 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             return;
         }
 
-        // We want to find out the _TextureHandles_ UBO, then check all the used textureSamplers:
+        // Detach shaders:
+        if (v && f)
         {
-            GLint numUbos = 0;
-            glGetProgramInterfaceiv(mProgramId, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &numUbos);
-            for (int i = 0; i < numUbos; i++)
-            {
-                // Get ubo name lenght:
-                const GLenum nameProps[1] = { GL_NAME_LENGTH };
-                GLint nameRes[1];
-                glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, nameProps, 1, nullptr, nameRes);
-                
-                // Get ubo name:
-                std::string name;
-                name.resize(nameRes[0]);
-                glGetProgramResourceName(mProgramId, GL_UNIFORM_BLOCK, i, name.size(), nullptr, &name[0]);
-
-                // We only care about the tex _TextureHandles_ UBO:
-                const char* kTexHandleUbo = "_TextureHandles_";
-                if (strcmp(name.c_str(), kTexHandleUbo) != 0)
-                {
-                    continue;
-                }
-
-                // Get UBO acvtive members:
-                const GLenum activeProps[1] = { GL_NUM_ACTIVE_VARIABLES };
-                GLint activeRes;
-                glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, activeProps, 1, nullptr, &activeRes);
-                if (activeRes <= 0)
-                {
-                    continue;
-                }
-
-                // TO-DO: slot?? ¯\_(ツ)_/¯
-                int slot = 0;
-
-                // Create the handles UBO:
-                mHandlesUBO = new TexHandlesUBO;
-                mHandlesUBO->Init(activeRes * 16,mProgramId,slot);
-
-                // Get active member indices:
-                const GLenum activeUnifProp[1] = { GL_ACTIVE_VARIABLES };
-                std::vector<GLint> memIdxs(activeRes);
-                glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, activeUnifProp, activeRes, nullptr, &memIdxs[0]);
-
-                // Build a list of active members:
-                const GLenum memProps[3] = { GL_NAME_LENGTH,GL_OFFSET,GL_ARRAY_SIZE };
-                const GLenum refProps[3] = { GL_REFERENCED_BY_VERTEX_SHADER,GL_REFERENCED_BY_FRAGMENT_SHADER,GL_REFERENCED_BY_COMPUTE_SHADER };
-                for (int j = 0; j < activeRes; j++)
-                {
-                    GLint refRes[3];
-                    glGetProgramResourceiv(mProgramId, GL_UNIFORM, memIdxs[j], 3, refProps, 3, nullptr, refRes);
-                    if (refRes[0] || refRes[1] || refRes[2])
-                    {
-                        GLint memRes[3];
-                        glGetProgramResourceiv(mProgramId, GL_UNIFORM, memIdxs[j], 3, memProps, 3, nullptr, &memRes[0]);
-                        std::string memName;
-                        memName.resize(memRes[0]);
-                        glGetProgramResourceName(mProgramId, GL_UNIFORM, memIdxs[j], memName.size(), nullptr, &memName[0]);
-                        // Get the texture and sampler names:
-                        {
-                            size_t idPoss = memName.find("[0]");
-                            if (idPoss != std::string::npos && memRes[2] == 16)
-                            {
-                                std::string texName(memName.begin(),memName.begin() + idPoss);
-                                // mTextureMap[texName].push_back({ sampName, memRes[1]});
-                                mTextureSet[texName] = memRes[1];
-                            }
-                            // else
-                            // {
-                            //     // Texture without a sampler, probably used in a fetch/get size operation:
-                            //     mTextureMap[memName].push_back({ "",memRes[1] });
-                            // }
-                        }
-                    }
-                }
-
-            }
+            glDetachShader(mProgramId, v->ShaderId);
+            glDetachShader(mProgramId, f->ShaderId);
         }
+        else
+        {
+            glDetachShader(mProgramId, c->ShaderId);
+        }
+        MapTexturesToUBO(cs->currentEffect);
     }
 
     // Activate the program!
@@ -631,8 +503,8 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
         return;
     }
 
-    auto cs = deviceContext.contextState;
-    auto rPlat = (opengl::RenderPlatform*)deviceContext.renderPlatform;
+    crossplatform::ContextState* cs = deviceContext.renderPlatform->GetContextState(deviceContext);
+    auto rPlat                      = (opengl::RenderPlatform*)deviceContext.renderPlatform;
 
     /*
         uniform _TextureHandles
@@ -646,39 +518,64 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
         }
     */
 
-    for (const auto ta : cs.appliedTextures)
+    for (unsigned int i = 0; i < numResourceSlots; i++)
     {
-        auto texBinding = mTextureSet.find(ta.name);
-        if (texBinding != mTextureSet.end())
+        // Find the texture in the texture assignment:
+        int slot                = resourceSlots[i];
+        auto ta                 = cs->textureAssignmentMap[slot];
+        opengl::Texture* tex    = (opengl::Texture*)ta.texture;
+        if (!tex)
         {
-            opengl::Texture* tex = (opengl::Texture*)ta.texture;
-            if (!tex)
+            if (ta.dimensions == 3)
             {
-                continue; // dummy tex?
+                tex = rPlat->GetDummy3D();
             }
-
-            // Texture view
-            GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-            GLuint64 thandle    = glGetTextureHandleARB(tview);
-            rPlat->MakeTextureResident(thandle);
-            mHandlesUBO->Update(thandle, texBinding->second);
-
-            // Texture + sampler
-            for (int i = 0; i < numSamplerResourcerSlots; i++)
+            else
             {
-                int sslot = samplerResourceSlots[i];
-                if (usesSamplerSlot(sslot))
+                tex = rPlat->GetDummy2D();
+            }
+        }
+
+        int uboOffset = mTexturesUBOMapping[slot];
+
+        // The program does not use that slot:
+        if (uboOffset == -1)
+        {
+            continue;
+        }
+
+        // We first bind the texture handle alone (for fetch and get size operations)
+        GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
+        GLuint64 thandle    = glGetTextureHandleARB(tview);
+        rPlat->MakeTextureResident(thandle);
+        mHandlesUBO->Update(thandle, uboOffset);
+
+        // Now we bind the combined texture + sampler:
+        for (int i = 0; i < numSamplerResourcerSlots; i++)
+        {
+            int sslot = samplerResourceSlots[i];
+            if (usesSamplerSlot(sslot))
+            {
+                if (sslot >= 15)
                 {
-                    if (sslot >= 15)
-                    {
-                        SIMUL_BREAK("");
-                    }
-                    auto glsampler      = (opengl::SamplerState*)cs.currentEffect->GetSamplers()[sslot];
-                    GLuint sview        = glsampler->asGLuint();
-                    GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
-                    rPlat->MakeTextureResident(chandle);
-                    mHandlesUBO->Update(chandle, texBinding->second + (sizeof(GLuint64) * (sslot + 1)));
+                    SIMUL_BREAK("");
                 }
+                auto effectSamp                     = (opengl::SamplerState*)cs->currentEffect->GetSamplers()[sslot];
+                opengl::SamplerState* samplerState  = effectSamp;
+                // Check for sampler overrides:
+                if (cs->samplerStateOverrides.size() > 0 && cs->samplerStateOverrides.HasValue(sslot))
+                {
+                    samplerState = (opengl::SamplerState*)cs->samplerStateOverrides[sslot];
+                    // If invalid, provide an effect sampler state:
+                    if (!samplerState)
+                    {
+                        samplerState = effectSamp;
+                    }
+                }
+                GLuint sview        = samplerState->asGLuint();
+                GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
+                rPlat->MakeTextureResident(chandle);
+                mHandlesUBO->Update(chandle, uboOffset + (sizeof(GLuint64) * (sslot + 1)));
             }
         }
     }
@@ -688,6 +585,88 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 GLuint EffectPass::GetGLId()
 {
     return mProgramId;
+}
+
+void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
+{
+    mUsedTextures.clear();
+    GLint numUbos = 0;
+    glGetProgramInterfaceiv(mProgramId, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &numUbos);
+    for (int i = 0; i < numUbos; i++)
+    {
+        // Get ubo name lenght:
+        const GLenum nameProps[1] = { GL_NAME_LENGTH };
+        GLint nameRes[1];
+        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, nameProps, 1, nullptr, nameRes);
+
+        // Get ubo name:
+        std::string name;
+        name.resize(nameRes[0]);
+        glGetProgramResourceName(mProgramId, GL_UNIFORM_BLOCK, i, name.size(), nullptr, &name[0]);
+
+        // We only care about the tex _TextureHandles_ UBO:
+        const char* kTexHandleUbo = "_TextureHandles_";
+        if (strcmp(name.c_str(), kTexHandleUbo) != 0)
+        {
+            continue;
+        }
+
+        // Get UBO acvtive members:
+        const GLenum uboProps[2] = { GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING };
+        // [0] = Active Members
+        // [1] = Binding
+        GLint uboRes[2];
+        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 2, uboProps, 2, nullptr, uboRes);
+        if (uboRes[0] <= 0)
+        {
+            continue;
+        }
+
+        // Create the handles UBO:
+        mHandlesUBO = new TexHandlesUBO;
+        mHandlesUBO->Init(uboRes[0] * 16, mProgramId, uboRes[1]);
+
+        // Get active member indices:
+        const GLenum activeUnifProp[1] = { GL_ACTIVE_VARIABLES };
+        std::vector<GLint> memIdxs(uboRes[0]);
+        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, activeUnifProp, uboRes[0], nullptr, memIdxs.data());
+
+        // Build a list of active members:
+        const GLenum memProps[3] = { GL_NAME_LENGTH,GL_OFFSET,GL_ARRAY_SIZE };
+        const GLenum refProps[3] = { GL_REFERENCED_BY_VERTEX_SHADER,GL_REFERENCED_BY_FRAGMENT_SHADER,GL_REFERENCED_BY_COMPUTE_SHADER };
+        for (int j = 0; j < uboRes[0]; j++)
+        {
+            GLint refRes[3];
+            glGetProgramResourceiv(mProgramId, GL_UNIFORM, memIdxs[j], 3, refProps, 3, nullptr, refRes);
+            if (refRes[0] || refRes[1] || refRes[2])
+            {
+                // [0] = Name Lenght
+                // [1] = Offset
+                // [2] = Array Size
+                GLint memRes[3];
+                glGetProgramResourceiv(mProgramId, GL_UNIFORM, memIdxs[j], 3, memProps, 3, nullptr, memRes);
+                std::vector<GLchar> memNameVec(memRes[0]);
+                glGetProgramResourceName(mProgramId, GL_UNIFORM, memIdxs[j], memNameVec.size(), nullptr, memNameVec.data());
+                std::string memName = std::string(memNameVec.begin(),memNameVec.end() - 1);
+                // Get the texture and sampler names:
+                {
+                    size_t idPoss = memName.find("[0]");
+                    if (idPoss != std::string::npos && memRes[2] == 16)
+                    {
+                        std::string texName(memName.begin(), memName.begin() + idPoss);        
+                        mUsedTextures.push_back(texName);
+                        auto res = curEffect->GetShaderResource(mUsedTextures[mUsedTextures.size()-1].c_str());
+                        if (!res.valid)
+                        {
+                            SIMUL_CERR << "Invalid shader resource, could not make a mapping.\n";
+                            continue;
+                        }
+                        mTexturesUBOMapping[res.slot] = memRes[1];
+                    }
+                }
+            }
+        }
+    }
 }
 
 TexHandlesUBO::TexHandlesUBO():
