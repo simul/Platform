@@ -527,7 +527,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             glGetProgramInterfaceiv(mProgramId, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &numUbos);
             for (int i = 0; i < numUbos; i++)
             {
-                // Get ubo name lenght:
+                // Get ubo name length:
                 const GLenum nameProps[1] = { GL_NAME_LENGTH };
                 GLint nameRes[1];
                 glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, nameProps, 1, nullptr, nameRes);
