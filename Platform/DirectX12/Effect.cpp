@@ -413,8 +413,9 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 {
 	// Resources on D3D12_HEAP_TYPE_READBACK heaps do not support persistent map
 	// We intend to read from CPU so we pass a valid range!
+    // We read from the oldest buffer
 	const CD3DX12_RANGE readRange(0, 1);
-	unsigned int curIdx = deviceContext.frame_number % mBuffering;
+	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
     mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
 	return mReadSrc;
 }
@@ -424,32 +425,32 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 	// We are mapping from a readback buffer so it doesnt matter what we modified,
 	// the GPU won't have acces to it. We pass a 0,0 range here.
 	const CD3DX12_RANGE readRange(0, 0);
-	unsigned int curIdx = deviceContext.frame_number % mBuffering;
+	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
 	mReadBuffers[curIdx]->Unmap(0, &readRange);
 }
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    // We will try to read from this data in: frame_number + mBuffering
 	unsigned int curIdx = deviceContext.frame_number % mBuffering;
-	unsigned int oldestIdx = (deviceContext.frame_number+1) % mBuffering;
+
 	
 	dx12::RenderPlatform *mRenderPlatform		=static_cast<dx12::RenderPlatform*>(renderPlatform);
 	// Check state
 	bool changed = false;
-	if ((mCurrentState[oldestIdx] & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
+	if ((mCurrentState[curIdx] & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
 	{
 		changed = true;
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[oldestIdx], mCurrentState[oldestIdx], D3D12_RESOURCE_STATE_COPY_SOURCE,true);
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[curIdx], mCurrentState[curIdx], D3D12_RESOURCE_STATE_COPY_SOURCE,true);
 	}
 
 	// Schedule a copy
-	deviceContext.renderPlatform->AsD3D12CommandList()->CopyResource(mReadBuffers[oldestIdx], mGPUBuffers[oldestIdx]);
+    UINT64 dataPortion = (mTotalSize + 1) / mMaxApplyMod;
+    deviceContext.renderPlatform->AsD3D12CommandList()->CopyBufferRegion(mReadBuffers[curIdx], 0, mGPUBuffers[curIdx], 0, dataPortion);
 	
     // Restore state
 	if (changed)
 	{
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[oldestIdx], D3D12_RESOURCE_STATE_COPY_SOURCE, mCurrentState[oldestIdx],true);
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[curIdx], D3D12_RESOURCE_STATE_COPY_SOURCE, mCurrentState[curIdx],true);
 	}
 }
 
@@ -806,7 +807,7 @@ void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,con
     // handles we will override this values
     mSamplersHeap->Reset();
 }
-#pragma optimize("",off)
+
 void Effect::PostLoad()
 {
 	// Ensure slots are correct

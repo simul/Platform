@@ -614,11 +614,11 @@ const ShaderResource *Effect::GetTextureDetails(const char *name)
 	auto j=textureCharMap.find(name);
 	if(j!=textureCharMap.end())
 		return j->second;
-	for(auto i:textureDetailsMap)
+	for(const auto& i:textureDetailsMap)
 	{
 		if(strcmp(i.first.c_str(),name)==0)
 		{
-			textureCharMap[name]=i.second;
+            textureCharMap.insert({ i.first.c_str(),i.second });
 			return i.second;
 		}
 	}
@@ -833,7 +833,6 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				bool rw=is_equal(read_write,"read_write");
 				bool ar=is_equal(is_array,"array");
 				crossplatform::ShaderResource *tds=new crossplatform::ShaderResource;
-				textureDetailsMap[texture_name]=tds;
 				tds->slot				=slot;
 				tds->dimensions			=dim;
 				crossplatform::ShaderResourceType rt=crossplatform::ShaderResourceType::COUNT;
@@ -881,6 +880,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				if(ar)
 					rt=rt|crossplatform::ShaderResourceType::ARRAY;
 				tds->shaderResourceType=rt;
+				textureDetailsMap[texture_name]=tds;
 			}
 			else if(is_equal(word, "BlendState"))
 			{
