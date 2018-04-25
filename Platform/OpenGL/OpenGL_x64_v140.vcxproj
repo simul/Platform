@@ -88,6 +88,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4055</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -114,6 +115,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <Optimization>Disabled</Optimization>
+      <DisableSpecificWarnings>4055</DisableSpecificWarnings>
     </ClCompile>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
@@ -147,6 +149,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4055</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <TargetMachine>MachineX64</TargetMachine>
@@ -165,6 +168,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4055</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <TargetMachine>MachineX64</TargetMachine>

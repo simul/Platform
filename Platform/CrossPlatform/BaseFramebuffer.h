@@ -33,12 +33,8 @@ namespace simul
 			virtual void SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth);
 			//! Call this if needed (not usually) to ensure that the buffers are created.
 			virtual bool CreateBuffers();
-			//! Activate the framebuffer and set the viewport- must be followed after rendering by a call to \ref Deactivate().
-			virtual void ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH)=0;
 			//! Activate the framebuffer - must be followed after rendering by a call to \ref Deactivate().
 			virtual void Activate(crossplatform::DeviceContext &)=0;
-			//! Activate the colour part of this framebuffer, without depth - must be followed after rendering by a call to \ref Deactivate().
-			virtual void ActivateColour(crossplatform::DeviceContext &,const float viewportXYWH[4])=0;
 			virtual void ActivateDepth(crossplatform::DeviceContext &)=0;
 			//! Return true if the framebuffer's depth buffer has been activated and not yet deactivated.
 			virtual bool IsDepthActive() const;

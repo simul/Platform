@@ -327,7 +327,7 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth,bool msaa)
 	}
 	if(rain_dist>solid_dist)
 	{
-	return vec4(solid_dist,0,0,0.5);
+	//return vec4(solid_dist,0,0,0.5);
 		discard;
 	}
 

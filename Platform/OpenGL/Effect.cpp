@@ -460,18 +460,18 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             return;
         }
 
-        // Detach shaders:
+        // We want to find out the _TextureHandles_ UBO, then check all the used textureSamplers:
         if (v && f)
         {
             glDetachShader(mProgramId, v->ShaderId);
             glDetachShader(mProgramId, f->ShaderId);
-        }
+                }
         else
-        {
+                {
             glDetachShader(mProgramId, c->ShaderId);
-        }
+                }
         MapTexturesToUBO(cs->currentEffect);
-    }
+                            }
 
     // Activate the program!
     GLint curProgram = -1;
@@ -504,7 +504,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
     }
 
     crossplatform::ContextState* cs = deviceContext.renderPlatform->GetContextState(deviceContext);
-    auto rPlat                      = (opengl::RenderPlatform*)deviceContext.renderPlatform;
+    auto rPlat = (opengl::RenderPlatform*)deviceContext.renderPlatform;
 
     /*
         uniform _TextureHandles
@@ -523,9 +523,9 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
         // Find the texture in the texture assignment:
         int slot                = resourceSlots[i];
         auto ta                 = cs->textureAssignmentMap[slot];
-        opengl::Texture* tex    = (opengl::Texture*)ta.texture;
-        if (!tex)
-        {
+            opengl::Texture* tex = (opengl::Texture*)ta.texture;
+            if (!tex)
+            {
             if (ta.dimensions == 3)
             {
                 tex = rPlat->GetDummy3D();
@@ -538,28 +538,28 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 
         int uboOffset = mTexturesUBOMapping[slot];
 
-        // The program does not use that slot:
+            // Texture view
         if (uboOffset == -1)
         {
             continue;
         }
 
         // We first bind the texture handle alone (for fetch and get size operations)
-        GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-        GLuint64 thandle    = glGetTextureHandleARB(tview);
-        rPlat->MakeTextureResident(thandle);
+            GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
+            GLuint64 thandle    = glGetTextureHandleARB(tview);
+            rPlat->MakeTextureResident(thandle);
         mHandlesUBO->Update(thandle, uboOffset);
 
-        // Now we bind the combined texture + sampler:
-        for (int i = 0; i < numSamplerResourcerSlots; i++)
-        {
-            int sslot = samplerResourceSlots[i];
-            if (usesSamplerSlot(sslot))
+            // Texture + sampler
+            for (int i = 0; i < numSamplerResourcerSlots; i++)
             {
-                if (sslot >= 15)
+                int sslot = samplerResourceSlots[i];
+                if (usesSamplerSlot(sslot))
                 {
-                    SIMUL_BREAK("");
-                }
+                    if (sslot >= 15)
+                    {
+                        SIMUL_BREAK("");
+                    }
                 auto effectSamp                     = (opengl::SamplerState*)cs->currentEffect->GetSamplers()[sslot];
                 opengl::SamplerState* samplerState  = effectSamp;
                 // Check for sampler overrides:
@@ -573,12 +573,12 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                     }
                 }
                 GLuint sview        = samplerState->asGLuint();
-                GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
-                rPlat->MakeTextureResident(chandle);
+                    GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
+                    rPlat->MakeTextureResident(chandle);
                 mHandlesUBO->Update(chandle, uboOffset + (sizeof(GLuint64) * (sslot + 1)));
+                }
             }
         }
-    }
     mHandlesUBO->Bind(mProgramId);
 }
 

@@ -280,6 +280,8 @@ namespace simul
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8){}
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
+			/// Fill in mipmaps from the zero level down.
+			void							GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
 			// Get a blank (black) resource texture.
 			//virtual Texture					*GetDummyTexture(crossplatform::);
 			//! Query for the texture value at the specified position in the texture. On most API's, the query will have a few frames' latency.

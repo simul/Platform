@@ -55,36 +55,6 @@ void Framebuffer::InvalidateDeviceObjects()
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
-void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4])
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	if(!pContext)
-		return;
-	if((!buffer_texture||!buffer_texture->AsD3D11Texture2D())&&(!buffer_depth_texture||!buffer_depth_texture->AsD3D11Texture2D()))
-		CreateBuffers();
-	ID3D11RenderTargetView *renderTargetView=nullptr;
-	if(buffer_texture->AsD3D11RenderTargetView())
-	{
-		colour_active=true;
-		renderTargetView=buffer_texture->AsD3D11RenderTargetView();
-		dx11::Texture *t=(dx11::Texture *)buffer_texture;
-		if(is_cubemap)
-			renderTargetView=t->AsD3D11RenderTargetView(current_face,0);
-		pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
-	}
-	SetViewport(deviceContext,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3],0,1.f);
-	targetsAndViewport.m_rt[0]=renderTargetView;
-	targetsAndViewport.m_dt=nullptr;
-	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
-	targetsAndViewport.viewport.w=Width;
-	targetsAndViewport.viewport.h=Height;
-	targetsAndViewport.viewport.zfar=1.0f;
-	targetsAndViewport.viewport.znear=0.0f;
-	targetsAndViewport.num=1;
-	renderPlatform->PushRenderTargets(deviceContext,&targetsAndViewport);
-}
-
-
 void Framebuffer::MoveToFastRAM()
 {
 	if(useESRAM&&buffer_texture)
@@ -105,12 +75,6 @@ void Framebuffer::MoveDepthToSlowRAM()
 {
 	if(useESRAMforDepth)
 		buffer_depth_texture->MoveToSlowRAM();
-}
-
-void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH)
-{
-	Activate(deviceContext);
-	SetViewport(deviceContext,viewportX,viewportY,viewportW,viewportH,0,1.f);
 }
 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
@@ -202,27 +166,6 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 
 	// Create the viewport.
 	pContext->RSSetViewports(1, &viewport);
-}
-
-void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
-{
-	if((!buffer_texture||!buffer_texture->AsD3D11Texture2D())&&(!buffer_depth_texture||!buffer_depth_texture->AsD3D11Texture2D()))
-		CreateBuffers();
-	if(!buffer_texture->AsD3D11RenderTargetView())
-		return;
-	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
-	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,NULL);
-	colour_active=true;
-	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
-	targetsAndViewport.m_rt[0]=renderTargetView;
-	targetsAndViewport.m_dt=nullptr;
-	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
-	targetsAndViewport.viewport.w=Width;
-	targetsAndViewport.viewport.h=Height;
-	targetsAndViewport.viewport.zfar=1.0f;
-	targetsAndViewport.viewport.znear=0.0f;
-	targetsAndViewport.num=1;
-	renderPlatform->PushRenderTargets(deviceContext,&targetsAndViewport);
 }
 
 void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)

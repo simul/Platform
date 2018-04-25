@@ -435,6 +435,24 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	}
 }
 
+void RenderPlatform::GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
+{
+	if(!t||!t->IsValid())
+		return;
+	debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("copy_2d"),"wrap");
+	for(int i=0;i<t->mips-1;i++)
+	{
+		int m0=i,m1=i+1;
+		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,m0);
+		{
+			t->activateRenderTarget(deviceContext,array_idx,m1);
+			DrawQuad(deviceContext);
+			t->deactivateRenderTarget(deviceContext);
+		}
+	}
+	debugEffect->Unapply(deviceContext);
+}
+
 vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture)
 {
 	if((int)query_id>=textureQueryResult.count)

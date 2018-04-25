@@ -728,6 +728,18 @@ ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 			}
 		}
 	}
+	if (!found_buffer )
+	{
+		SIMUL_CERR << "No Constant buffer found at slot " << Slot << " in effect " << this->GetName() << std::endl;
+		SIMUL_BREAK_ONCE("Constant buffer not found");
+		return nullptr;
+	}
+	if (found_buffer&&!found_buffer->IsValid())
+	{
+		SIMUL_CERR << "Invalid Constant buffer at slot " << Slot << " in effect " << this->GetName()  << std::endl;
+		SIMUL_BREAK_ONCE("Constant buffer is not valid");
+		return nullptr;
+	}
 	constantBuffersBySlot[Slot]=found_buffer;
 	return found_buffer;
 }

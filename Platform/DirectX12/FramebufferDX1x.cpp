@@ -48,11 +48,6 @@ void Framebuffer::InvalidateDeviceObjects()
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
-void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4])
-{	
-	SIMUL_BREAK_ONCE("Nacho has to check this");
-}
-
 void Framebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
 {
 	//SIMUL_BREAK_ONCE("Nacho has to check this");
@@ -78,12 +73,6 @@ void Framebuffer::MoveDepthToSlowRAM()
 {
 	if(useESRAMforDepth)
 		buffer_depth_texture->MoveToSlowRAM();
-}
-
-void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH)
-{
-	// This is a bit usless, Activate does the same?
-	SIMUL_BREAK("");
 }
 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
@@ -164,11 +153,6 @@ void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float 
 }
 
 void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
-{
-	SIMUL_BREAK_ONCE("Nacho has to check this");
-}
-
-void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 {
 	SIMUL_BREAK_ONCE("Nacho has to check this");
 }

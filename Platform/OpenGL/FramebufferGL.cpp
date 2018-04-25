@@ -237,21 +237,6 @@ void FramebufferGL::SetExternalTextures(crossplatform::Texture* colour, crosspla
     BaseFramebuffer::SetExternalTextures(colour, depth);
 }
 
-void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &deviceContext, float x, float y, float w, float h)
-{
-    SIMUL_BREAK("");
-}
-
-void FramebufferGL::ActivateColour(crossplatform::DeviceContext& deviceContext, const float viewportXYWH[4])
-{
-    Activate(deviceContext);
-    if (viewportXYWH[0] != 0 || viewportXYWH[1] != 0 ||
-        viewportXYWH[2] != Width || viewportXYWH[3] != Height)
-    {
-        SIMUL_BREAK("");
-    }
-}
-
 void FramebufferGL::Clear(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
 {
     if (!colour_active)

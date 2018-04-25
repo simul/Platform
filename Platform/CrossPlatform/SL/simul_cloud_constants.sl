@@ -79,7 +79,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float rainbowIntensity;
 
 	uniform vec3 ambientColour;
-	uniform float cloud_interpXXXXX;
+	uniform int stepCycle;
 
 	uniform vec3 fractalScale;
 	uniform float cloudEccentricity;
