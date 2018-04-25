@@ -115,7 +115,6 @@ namespace simul
 
 			D3D12_RESOURCE_STATES		mCurrentState[mBuffering];
 
-			dx12::RenderPlatform*		mRenderPlatform;
 			//! Total number of individual elements
 			int							mNumElements;
 			//! Size of each element

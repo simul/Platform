@@ -368,7 +368,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					L=(l+8-1)/8;
 					D = d;
 					techname = "compute_clear_2d_array";
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM)
+					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB)
 					{
 						techname="compute_clear_2d_array_u8";
 						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i);
@@ -387,7 +387,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				}
 				else if(texture->dim==3)
 				{
-					if (texture->GetFormat() == PixelFormat::RGBA_8_UNORM)
+					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB)
 					{
 						techname = "compute_clear_3d_u8";
 						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);

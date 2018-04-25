@@ -176,7 +176,7 @@ int Texture::GetMemorySize() const
 	return mem*ByteSizeOfFormatElement(dxgi_format);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int m)
 {
 	renderPlatform=r;
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
@@ -195,25 +195,19 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 			return;
 		textures[i]->GetDesc(&desc);
 	}
-	static int m=5;
-	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
-	desc.Usage=D3D11_USAGE_DEFAULT;
-	desc.CPUAccessFlags=0;
-	desc.ArraySize=(UINT)textures.size();
-	desc.MiscFlags=D3D11_RESOURCE_MISC_GENERATE_MIPS;
-	desc.MipLevels=m;
-	ID3D11Texture2D *tex;
-	r->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
-	texture=tex;
+	auto format = RenderPlatform::FromDxgiFormat(desc.Format);
+
+	ensureTextureArraySizeAndFormat(r,desc.Width,desc.Height,textures.size(),m,format,false,true);
+	
 	external_texture=false;
-	if(renderPlatform->GetMemoryInterface())
-		renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
-	if(tex)
+	//if(renderPlatform->GetMemoryInterface())
+	//	renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
+	if(texture)
 	for(unsigned i=0;i<textures.size();i++)
 	{
 		// Copy the resource directly, no CPU mapping
 		pContext->CopySubresourceRegion(
-						tex
+						texture
 						,i*m
 						,0
 						,0
@@ -223,18 +217,18 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 						,NULL
 						);
 	}
-	void FreeSRVTables();
-	void FreeRTVTables();
-//	InitSRVTables(texture_files.size(),m);
-	V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView));
+	//void FreeSRVTables();
+	//void FreeRTVTables();
+	//InitRTVTables(texture_files.size(),m);
+	//V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView));
 	for(unsigned i=0;i<textures.size();i++)
 	{
 		SAFE_RELEASE(textures[i])
 	}
-	pContext->GenerateMips(mainShaderResourceView);
+	//pContext->GenerateMips(mainShaderResourceView);
 	SAFE_RELEASE(pContext)
-	mips=m;
-	arraySize=(int)texture_files.size();
+	//mips=m;
+	//arraySize=(int)texture_files.size();
 }
 
 bool Texture::IsValid() const

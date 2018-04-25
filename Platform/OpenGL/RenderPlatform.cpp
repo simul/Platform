@@ -284,6 +284,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_INTENSITY32F_ARB;
 	case RGBA_8_UNORM:
 		return GL_RGBA8;
+	case RGBA_8_UNORM_SRGB:
+		return GL_SRGB8_ALPHA8;
 	case RGBA_8_SNORM:
 		return GL_RGBA8_SNORM;
 	case RGB_8_UNORM:
@@ -334,6 +336,8 @@ crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p)
 			return INT_32_FLOAT;
 		case GL_RGBA8:
 			return RGBA_8_UNORM;
+		case GL_SRGB8_ALPHA8:
+			return RGBA_8_UNORM_SRGB;
 		case GL_RGBA8_SNORM:
 			return RGBA_8_SNORM;
 		case GL_RGB8:
@@ -392,6 +396,8 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 		return GL_RGBA;
 	case RGBA_8_UNORM:
 		return GL_RGBA;
+	case RGBA_8_UNORM_SRGB:
+		return GL_SRGB8_ALPHA8;
 	case RGBA_8_SNORM:
 		return GL_RGBA;
 	case RGB_8_UNORM:
@@ -435,17 +441,14 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return 1;
 	case RGBA_8_UNORM:
-		return 4;
+	case RGBA_8_UNORM_SRGB:
 	case RGBA_8_SNORM:
 		return 4;
 	case RGB_8_UNORM:
-		return 3;
 	case RGB_8_SNORM:
 		return 3;
 	case R_8_UNORM:
-		return 1;
 	case R_8_SNORM:
-		return 1;
 	case R_32_UINT:
 		return 1;
 	case RG_32_UINT:
@@ -526,6 +529,7 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 		return GL_FLOAT;
 	case INT_32_FLOAT:
 		return GL_FLOAT;
+	case RGBA_8_UNORM_SRGB:
 	case RGBA_8_UNORM:
 		return GL_UNSIGNED_INT;
 	case RGBA_8_SNORM:

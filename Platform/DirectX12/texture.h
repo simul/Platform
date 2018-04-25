@@ -48,7 +48,7 @@ namespace simul
 			//! Loads this texture from a file
 			void							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			//! Loads this texture from multiple files
-			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
+			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
 			bool							IsValid() const;
 			
 			ID3D12Resource*					AsD3D12Resource() override;

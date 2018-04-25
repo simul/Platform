@@ -577,6 +577,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case RGBA_8_UNORM_SRGB:
+		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case RGBA_8_UNORM_COMPRESSED:
 		return DXGI_FORMAT_BC7_UNORM;
 	case RGBA_8_SNORM:
@@ -621,6 +623,8 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RG_32_FLOAT;
 	case DXGI_FORMAT_R32_FLOAT:
 		return R_32_FLOAT;
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		return RGBA_8_UNORM_SRGB;
 	case DXGI_FORMAT_R8G8B8A8_UNORM:
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_R8G8B8A8_SNORM:

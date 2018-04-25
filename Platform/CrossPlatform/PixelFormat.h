@@ -19,6 +19,7 @@ namespace simul
 			,INT_32_FLOAT
 			,RGBA_8_UNORM
 			,RGBA_8_UNORM_COMPRESSED
+			,RGBA_8_UNORM_SRGB
 			,RGBA_8_SNORM
 			,RGB_8_UNORM
 			,RGB_8_SNORM
@@ -115,6 +116,7 @@ namespace simul
 			case D_24_UNORM_S_8_UINT:
 				return sizeof(unsigned int);
 			case RGBA_8_UNORM:
+			case RGBA_8_UNORM_SRGB:
 			case RGBA_8_SNORM:
 			case R_8_UNORM:
 			case R_8_SNORM:
@@ -131,6 +133,7 @@ namespace simul
 			case RGBA_32_UINT:
 			case RGBA_16_FLOAT:
 			case RGBA_8_UNORM:
+			case RGBA_8_UNORM_SRGB:
 			case RGBA_8_SNORM:
 				return 4;
 			case RGB_32_FLOAT:

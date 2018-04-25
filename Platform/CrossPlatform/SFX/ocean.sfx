@@ -1418,7 +1418,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, true);
+	return PS_WaterSurfDepth(In, frontFacing, false);
 }
 
 shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target

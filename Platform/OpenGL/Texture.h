@@ -38,7 +38,7 @@ namespace simul
             void            SetName(const char* n)override;
 
 			void            LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
-			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
+			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
 			bool            IsValid() const;
 			void            InvalidateDeviceObjects();
 			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false) override;
