@@ -363,7 +363,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		auto curContents = &fileContents[i];
 		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(curContents->ptr, curContents->bytes, strPaths[i].c_str(), false);
 	}
-
 	// Convert into WIC 
 	struct WicContents
 	{
@@ -380,7 +379,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		DirectX::LoadFromWICMemory(curContents->ptr, curContents->bytes, curContents->flags, &curWic->metadata, curWic->scratchImage);
 		curWic->image = curWic->scratchImage.GetImage(0, 0, 0);
 	}
-
 	// Check that formats and sizes are the same (we will use as reference the first image in the array)
 	unsigned int	mainWidth	= (unsigned int)wicContents[0].metadata.width;
 	unsigned int	mainLength	= (unsigned int)wicContents[0].metadata.height;
@@ -395,7 +393,14 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 			return;
 		}
 	}
-
+	static int m=5;
+	
+	auto format = RenderPlatform::FromDxgiFormat(mainFormat);
+	// Clean resources
+	SAFE_RELEASE(mTextureDefault);
+	SAFE_RELEASE(mTextureUpload);
+	ensureTextureArraySizeAndFormat(r,wicContents[0].metadata.width,wicContents[0].metadata.height,arraySize,m,format,true,true);
+	
 	// Make the texture description
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -403,17 +408,15 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	textureDesc.Width				= mainWidth;
 	textureDesc.Height				= mainLength;
 	textureDesc.DepthOrArraySize	= arraySize;
-	textureDesc.MipLevels			= 1;
+	textureDesc.MipLevels			= m;
 	textureDesc.Format				= mainFormat;
 	textureDesc.SampleDesc.Count	= 1;
 	textureDesc.SampleDesc.Quality	= 0;
 	textureDesc.Layout				= D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
-	textureDesc.Flags				= D3D12_RESOURCE_FLAG_NONE;
+	textureDesc.Flags				= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-	// Clean resources
-	SAFE_RELEASE(mTextureDefault);
-	SAFE_RELEASE(mTextureUpload);
-
+	SetCurrentState(D3D12_RESOURCE_STATE_COPY_DEST);
+#if 0
 	// Create the texture resource (GPU, with an implicit heap)
 	res = r->AsD3D12Device()->CreateCommittedResource
 	(
@@ -425,6 +428,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
         SIMUL_PPV_ARGS(&mTextureDefault)
 	);
 	SIMUL_ASSERT(res == S_OK);
+#endif
+	textureDesc=mTextureDefault->GetDesc();
 	std::string sName = name;
 	std::wstring n = L"Texture2DArrayDefaultResource_";
 	n += std::wstring(sName.begin(), sName.end());
@@ -472,17 +477,17 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	auto rPlat = (dx12::RenderPlatform*)(r);
 	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
 	
+#if 0
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
 	mTextureSrvHeap.Restore(rPlat, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureCpuHeap", false);
-	
 	// Create the descriptor (view) of this texture
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc		= {};
 	srvDesc.Shader4ComponentMapping				= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format								= textureDesc.Format;
 	srvDesc.ViewDimension						= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 	srvDesc.Texture2DArray.MostDetailedMip		= 0;
-	srvDesc.Texture2DArray.MipLevels			= 1;
+	srvDesc.Texture2DArray.MipLevels			= m;
 	srvDesc.Texture2DArray.FirstArraySlice		= 0;
 	srvDesc.Texture2DArray.ArraySize			= arraySize;
 	srvDesc.Texture2DArray.PlaneSlice			= 0;
@@ -491,10 +496,10 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	rPlat->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 	mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 	mTextureSrvHeap.Offset();
-	
 	// Set the properties of this texture
 	width			= (int)textureDesc.Width;
 	length			= (int)textureDesc.Height;
+#endif
 	mLoadedFromFile = true;
 	
 	// Clean!
