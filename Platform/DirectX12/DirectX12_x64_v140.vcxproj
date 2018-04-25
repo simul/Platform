@@ -121,7 +121,6 @@
       <TargetMachine>MachineX64</TargetMachine>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
-      <ShowProgress>LinkVerboseLib</ShowProgress>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>

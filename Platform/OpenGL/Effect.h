@@ -13,14 +13,6 @@ namespace simul
 {
 	namespace opengl
 	{
-        /*
-        struct TextureComb
-        {
-            std::string Sampler;
-            GLint       Offset; //! In bytes
-        };
-        */
-
         //! Used internally to bind texture handles:
         class TexHandlesUBO
         {
@@ -40,6 +32,7 @@ namespace simul
             int     mSlot;
         };
 
+        // Opengl Query implementation
 		struct SIMUL_OPENGL_EXPORT Query:public crossplatform::Query
 		{
 			GLuint glQuery[crossplatform::Query::QueryLatency];
@@ -118,19 +111,36 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT EffectPass :public simul::crossplatform::EffectPass
 		{
 		public:
-			        EffectPass();
-                    ~EffectPass();
-			void    InvalidateDeviceObjects();
-			void    Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
-            void    SetTextureHandles(crossplatform::DeviceContext& deviceContext);
-            GLuint  GetGLId();
+			            EffectPass();
+                        ~EffectPass();
+			void        InvalidateDeviceObjects();
+
+			void        Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
+            void        SetTextureHandles(crossplatform::DeviceContext& deviceContext);
+            GLuint      GetGLId();
 
             std::string PassName;
         private:
+            //! SFX will generate an UBO with arrays of handles, the idea is to map the slot
+            //! provided by .sfxo and map it to the actual location within the UBO so we 
+            //! avoid doing string checks
+            //! test.sfxo
+            //!     pass CS_Godrays.glsl, t:(3), c(12) etc
+            //!                              ^ This maps to pseudo slot number 3
+            //!     uniform _TextureHandles_
+            //!     {
+            //!         uint64_t godraysTexture[16];    ... but the texture is in the UBO member = 0!
+            //!     };
+            //!     int slotsmTexturesUBOMappingMap[32] { -1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1 };
+            //!                                                    ^ maps to UBO slot 0! so slotsMap[slot] IS the UBO offset!
+            //! NOTE: we use int as we store byte offsets (we could calc a "unit" off as it should 
+            //!       only store uint64t)
+            void MapTexturesToUBO(crossplatform::Effect* curEffect);
+
             GLuint                                          mProgramId;
-            // std::map<std::string, std::vector<TextureComb>> mTextureMap;
-            std::map<std::string,int>                       mTextureSet;
+            int                                             mTexturesUBOMapping[32];
             TexHandlesUBO*                                  mHandlesUBO;
+            std::vector<std::string> mUsedTextures;
 		};
 
         //! Holds Passes
@@ -144,38 +154,36 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT Shader:public simul::crossplatform::Shader
 		{
 		public:
-            Shader();
-            ~Shader();
-            void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) override;
-        
-            GLuint ShaderId;
+                    Shader();
+                    ~Shader();
+            void    load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) override;
+            
+            GLuint  ShaderId;
+        private: 
+            void    Release();
 		};
 
 		//! The OpenGL implementation of Effect
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
 		{
-			EffectTechnique *CreateTechnique();
 		public:
-			Effect();
-			~Effect();
-            virtual crossplatform::ShaderResource GetShaderResource(const char *name)override;
-			void Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines);
-			crossplatform::EffectTechnique* GetTechniqueByName(const char* name);
+			                                Effect();
+			                                ~Effect();
+			void                            Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines);
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
-            void SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
-            void SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
-
-            void SetTexture(crossplatform::DeviceContext& deviceContext,crossplatform::ShaderResource& shaderResource,crossplatform::Texture* t,int index=-1,int mip=-1) override;
-			void SetTexture(crossplatform::DeviceContext& deviceContext,const char* name,crossplatform::Texture* tex,int index=-1,int mip=-1) override;
-		
-            void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase* s)override;
+            void                            SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
+            void                            SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;		
+            void                            SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase* s)override;
 			
-            void Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass);
-			void Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,const char* pass);
-			void Reapply(crossplatform::DeviceContext& deviceContext);
-			void Unapply(crossplatform::DeviceContext& deviceContext);
-			void UnbindTextures(crossplatform::DeviceContext& deviceContext);
+            void                            Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass);
+			void                            Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,const char* pass);
+			void                            Reapply(crossplatform::DeviceContext& deviceContext);
+			void                            Unapply(crossplatform::DeviceContext& deviceContext);
+			void                            UnbindTextures(crossplatform::DeviceContext& deviceContext);
+        
+        private:
+            EffectTechnique*                CreateTechnique();
 		};
 	}
 }

@@ -403,18 +403,31 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	float thicknessKm	=0.0;
 	int i				=0;
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
-	float s				=0.2*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
 	vec3 tx				=texc;
 	vec3 dir_texc		=dir*inverseScalesKm;
+#if 0
+	float s				=0.2*stepLengthKm;
 	for( i=0;i<36;i++)
 	{
 		// we expect stepLength in km for this shader
-		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 1).z;// *saturate((maxh - wpos.z) / s);
-		thicknessKm		+=lookup*s;
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
+		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 1).z;// *saturate((maxh - wpos.z) / s);
+		thicknessKm += lookup*s;
 		s				*=1.6;
 	}
+#else
+	float s				=1.5*stepLengthKm;
+	s *= (1.0+float(stepCycle) / 100.0);
+	for( i=0;i<1;i++)
+	{
+		// we expect stepLength in km for this shader
+		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
+		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 0).z;// *saturate((maxh - wpos.z) / s);
+		thicknessKm += lookup*s;
+		s				*=4.5;
+	}
+#endif
 	return thicknessKm;
 }
 
@@ -437,28 +450,28 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	float s				=0.5*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
-
+	// We will blend with the existing value, to temporally amortize the calculation effort:
+	vec4 current = vec4(0, 0, 0, 0);
+	{
+		current = UnpackUintToVec4(packedOutputTexture3d[idx]);
+	}
+	//
 	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir);
 
 	// find nearest direction to light for ambient lighting:
 	float nearest=10000.0;
 	vec3 nearest_dir=vec3(0,0,0);
 	float total=0.0;
-/*	for(int i=0;i<12;i++)
- 	{
-		vec3 random_dir=SphericalRandom(i*1.15+texc);
-		float t			=0.00001+ThicknessInDirection(texc,inverseScalesKm,random_dir);
-		nearest_dir+=random_dir/t;
-		total+=1.0/t;
-	}
-	nearest_dir=0.5+0.5*normalize(nearest_dir);*/
+
 	vec4 illum;
 
 	illum.x			=exp(-extinctionPerKm*thicknessKm / 12);
 	illum.y			=exp(-extinctionPerKm*thicknessKm);
 	illum.zw        =vec2(1.0,1.0);// nearest_dir.xy;
-//illum=texture_3d_wwc_lod(cloudDensity,texc,0);
-	IMAGE_STORE_3D(outputTexture3d,idx,illum);
+
+	illum = current*.992 + illum*0.008;
+
+	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 
 

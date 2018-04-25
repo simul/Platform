@@ -11,6 +11,7 @@
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Simul/Platform/OpenGL/Texture.h"
 
 using namespace simul;
 using namespace opengl;
@@ -70,6 +71,16 @@ void RenderPlatform::EndRender(crossplatform::DeviceContext &deviceContext)
 {
 }
 
+void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
+{
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 123, -1, name);
+}
+
+void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
+{
+    glPopDebugGroup();
+}
+
 void RenderPlatform::SetReverseDepth(bool r)
 {
 }
@@ -80,8 +91,10 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
+    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyCurrentPass(deviceContext);
     glDispatchCompute(w, l, d);
+    EndEvent(deviceContext);
 }
 
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *debugEffect,crossplatform::EffectTechnique *tech,int pass)
@@ -115,8 +128,10 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
 {
+    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyCurrentPass(deviceContext);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    EndEvent(deviceContext);
 }
 
 void RenderPlatform::ApplyDefaultMaterial()
@@ -133,8 +148,8 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
 {
-    auto cs                     = deviceContext.contextState;
-    opengl::EffectPass* pass    = (opengl::EffectPass*)cs.currentEffectPass;
+    crossplatform::ContextState* cs = &deviceContext.contextState;
+    opengl::EffectPass* pass    = (opengl::EffectPass*)cs->currentEffectPass;
     
     pass->SetTextureHandles(deviceContext);
 }
@@ -219,7 +234,6 @@ crossplatform::Effect* RenderPlatform::CreateEffect()
 	opengl::Effect* e=new opengl::Effect();
 	return e;
 }
-
 
 crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
@@ -463,6 +477,30 @@ void RenderPlatform::MakeTextureResident(GLuint64 handle)
 GLuint RenderPlatform::GetHelperFBO()
 {
     return mHelperFBO;
+}
+
+const float whiteTexel[4] = { 1.0f,1.0f,1.0f,1.0f};
+
+opengl::Texture* RenderPlatform::GetDummy2D()
+{
+    if (!mDummy2D)
+    {
+        mDummy2D = (opengl::Texture*)CreateTexture("dummy2d");
+        mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+        mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+    }
+    return mDummy2D;
+}
+
+opengl::Texture* RenderPlatform::GetDummy3D()
+{
+    if (!mDummy3D)
+    {
+        mDummy3D = (opengl::Texture*)CreateTexture("dummy3d");
+        mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1,1, crossplatform::PixelFormat::RGBA_8_UNORM);
+        mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+    }
+    return mDummy3D;
 }
 
 GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
@@ -844,8 +882,10 @@ GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
 
 void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
+    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyCurrentPass(deviceContext);
     glDrawArrays(mCurTopology, start_vert, num_verts);
+    EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)

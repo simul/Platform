@@ -66,9 +66,11 @@ shader void CS_InterpLightTable(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 	IMAGE_STORE(targetTexture,pos.xy,clr);
 }
 
-CS_LAYOUT(1,1,1)
+CS_LAYOUT(32,1,1)
 shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
+	if (sub_pos.x >= numQueries)
+		return;
 	uint num				=0;
 	uint byteStride			=0;
 	LightingQueryResult res;

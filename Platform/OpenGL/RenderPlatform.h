@@ -11,12 +11,8 @@ namespace simul
 {
 	namespace opengl
 	{
-        // typedef unsigned int    GLenum;
-        // typedef unsigned int    GLuint;
-        // typedef int             GLint;
-        // typedef uint64_t        GLuint64;
-
 		class Material;
+        class Texture;
 
 		//! OpenGL renderplatform implementation
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
@@ -32,6 +28,8 @@ namespace simul
 			void InvalidateDeviceObjects() override;
 			void StartRender(crossplatform::DeviceContext &deviceContext);
 			void EndRender(crossplatform::DeviceContext &deviceContext);
+            void BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
+            void EndEvent(crossplatform::DeviceContext& deviceContext)override;
 			void SetReverseDepth(bool);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
 			void DispatchCompute	(crossplatform::DeviceContext& deviceContext,int w,int l,int d);
@@ -101,6 +99,9 @@ namespace simul
             void                                    MakeTextureResident(GLuint64 handle);
 
             GLuint                                  GetHelperFBO();
+            opengl::Texture*                        GetDummy2D();
+            opengl::Texture*                        GetDummy3D();
+
         private:
             GLuint              mNullVAO;
             GLenum              mCurTopology;
@@ -109,6 +110,9 @@ namespace simul
             GLuint              mHelperFBO;
             GLint               mMaxViewports;
             GLint               mMaxColorAttatch;
+
+            opengl::Texture*    mDummy2D;
+            opengl::Texture*    mDummy3D;
 		};
 	}
 }

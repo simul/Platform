@@ -433,22 +433,23 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 {
     // We will try to read from this data in: frame_number + mBuffering
 	unsigned int curIdx = deviceContext.frame_number % mBuffering;
-
+	unsigned int oldestIdx = (deviceContext.frame_number+1) % mBuffering;
+	
 	// Check state
 	bool changed = false;
-	if ((mCurrentState[curIdx] & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
+	if ((mCurrentState[oldestIdx] & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
 	{
 		changed = true;
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[curIdx], mCurrentState[curIdx], D3D12_RESOURCE_STATE_COPY_SOURCE,true);
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[oldestIdx], mCurrentState[oldestIdx], D3D12_RESOURCE_STATE_COPY_SOURCE,true);
 	}
 
 	// Schedule a copy
-	deviceContext.renderPlatform->AsD3D12CommandList()->CopyResource(mReadBuffers[curIdx], mGPUBuffers[curIdx]);
+	deviceContext.renderPlatform->AsD3D12CommandList()->CopyResource(mReadBuffers[oldestIdx], mGPUBuffers[oldestIdx]);
 	
     // Restore state
 	if (changed)
 	{
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[curIdx], D3D12_RESOURCE_STATE_COPY_SOURCE, mCurrentState[curIdx],true);
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[oldestIdx], D3D12_RESOURCE_STATE_COPY_SOURCE, mCurrentState[oldestIdx],true);
 	}
 }
 

@@ -68,7 +68,12 @@ EffectPass::EffectPass()
 		shaders[i]=NULL;
 	for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
 		pixelShaders[i]=NULL;
-	memset(resourceSlots,0,sizeof(resourceSlots));
+    memset(resourceSlots, 0, sizeof(resourceSlots));
+    memset(rwResourceSlots, 0, sizeof(rwResourceSlots));
+    memset(sbResourceSlots, 0, sizeof(sbResourceSlots));
+    memset(rwSbResourceSlots, 0, sizeof(rwSbResourceSlots));
+    memset(samplerResourceSlots, 0, sizeof(samplerResourceSlots));
+    memset(constantBufferResourceSlots, 0, sizeof(constantBufferResourceSlots));
 }
 
 void EffectPass::MakeResourceSlotMap()
@@ -438,18 +443,17 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		int s=GetSamplerStateSlot(name);
 		if(s<0)
 		{
-		res.valid = false;
-		SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
-		//SIMUL_BREAK_ONCE("Invalid Shader resource")
-		return res;
-	}
+		    res.valid = false;
+		    SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
+		    //SIMUL_BREAK_ONCE("Invalid Shader resource")
+		    return res;
+	    }
 		slot=s;
 		res.shaderResourceType		=ShaderResourceType::SAMPLER;
 	}
 	 
 	res.platform_shader_resource	=(void*)nullptr;
 	res.slot						=slot;
-    res.name                        =name;
 	return res;
 }
 
@@ -665,7 +669,6 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	cs->applyVertexBuffers.clear();
 	cs->invalidate();
     // Clean up the TextureAssignments (used in some platforms a.k.a. Switch and Opengl)
-    cs->appliedTextures.clear();
 }
 
 static bool is_equal(std::string str,const char *tst)
