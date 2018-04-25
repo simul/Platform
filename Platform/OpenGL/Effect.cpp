@@ -239,15 +239,6 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 {
     auto res = GetShaderResource(name);
     SetUnorderedAccessView(deviceContext, res, tex, index, mip);
-
-    // if (name == nullptr)
-    // {
-    //     SetUnorderedAccessView(deviceContext, nullptr, tex, index, mip);
-    // }
-    // else
-    // {
-    //     SetUnorderedAccessView(deviceContext, GetShaderResource(name), tex, index, mip);
-    // }
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
@@ -442,7 +433,6 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
         glLinkProgram(mProgramId);
 
         // Check link status:
-        // TO-DO: Why the debug manager does not catch this?
         GLint isLinked = 0;
         glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
         if (isLinked == 0)
@@ -460,18 +450,20 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             return;
         }
 
-        // We want to find out the _TextureHandles_ UBO, then check all the used textureSamplers:
+        // Perform sfxo slot mapping to the _TextureHandles_ UBO offsets:
+        MapTexturesToUBO(cs->currentEffect);
+
+        // Detach the shaders:
         if (v && f)
         {
             glDetachShader(mProgramId, v->ShaderId);
             glDetachShader(mProgramId, f->ShaderId);
-                }
+        }
         else
-                {
+        {
             glDetachShader(mProgramId, c->ShaderId);
-                }
-        MapTexturesToUBO(cs->currentEffect);
-                            }
+        }
+    }
 
     // Activate the program!
     GLint curProgram = -1;
@@ -507,25 +499,30 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
     auto rPlat = (opengl::RenderPlatform*)deviceContext.renderPlatform;
 
     /*
-        uniform _TextureHandles
-        {
-            uint64_t texa[16];
-            uint64_t texb[16];
-                .   
-                .
-                .
-            uint64_t texn[16];
-        }
-    */
+        For each applied texture, get the view and apply it to
+        the _TextureHandles_ UBO:
 
+        uniform _TextureHandles_
+        {
+            uint64  cloudVolume[16];
+            uint64  nextUpdate[16];
+            etc.
+        }
+                    cloudVolume[0]               --->   texture only, used in texelFetch and textureSize operations
+                                                        we just set it for every applied texture
+                    cloudVolume[samplerSlot + 1] --->   this is the texture + sampling state from 'samplerSlot'
+    */
     for (unsigned int i = 0; i < numResourceSlots; i++)
     {
         // Find the texture in the texture assignment:
         int slot                = resourceSlots[i];
         auto ta                 = cs->textureAssignmentMap[slot];
-            opengl::Texture* tex = (opengl::Texture*)ta.texture;
-            if (!tex)
-            {
+        opengl::Texture* tex    = (opengl::Texture*)ta.texture;
+        int uboOffset           = mTexturesUBOMapping[slot];
+        
+        // ... Or we may be selecting it conditionaly
+        if (!tex)
+        {
             if (ta.dimensions == 3)
             {
                 tex = rPlat->GetDummy3D();
@@ -535,31 +532,28 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                 tex = rPlat->GetDummy2D();
             }
         }
-
-        int uboOffset = mTexturesUBOMapping[slot];
-
-            // Texture view
+        // The shader does not use the texture so skip it:
         if (uboOffset == -1)
         {
             continue;
         }
 
         // We first bind the texture handle alone (for fetch and get size operations)
-            GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-            GLuint64 thandle    = glGetTextureHandleARB(tview);
-            rPlat->MakeTextureResident(thandle);
+        GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
+        GLuint64 thandle    = glGetTextureHandleARB(tview);
+        rPlat->MakeTextureResident(thandle);
         mHandlesUBO->Update(thandle, uboOffset);
 
-            // Texture + sampler
-            for (int i = 0; i < numSamplerResourcerSlots; i++)
+        // Texture + sampler
+        for (int i = 0; i < numSamplerResourcerSlots; i++)
+        {
+            int sslot = samplerResourceSlots[i];
+            if (usesSamplerSlot(sslot))
             {
-                int sslot = samplerResourceSlots[i];
-                if (usesSamplerSlot(sslot))
+                if (sslot >= 15)
                 {
-                    if (sslot >= 15)
-                    {
-                        SIMUL_BREAK("");
-                    }
+                    SIMUL_BREAK("");
+                }
                 auto effectSamp                     = (opengl::SamplerState*)cs->currentEffect->GetSamplers()[sslot];
                 opengl::SamplerState* samplerState  = effectSamp;
                 // Check for sampler overrides:
@@ -573,12 +567,12 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                     }
                 }
                 GLuint sview        = samplerState->asGLuint();
-                    GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
-                    rPlat->MakeTextureResident(chandle);
+                GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
+                rPlat->MakeTextureResident(chandle);
                 mHandlesUBO->Update(chandle, uboOffset + (sizeof(GLuint64) * (sslot + 1)));
-                }
             }
         }
+    }
     mHandlesUBO->Bind(mProgramId);
 }
 
@@ -589,80 +583,69 @@ GLuint EffectPass::GetGLId()
 
 void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 {
-    mUsedTextures.clear();
-    GLint numUbos = 0;
-    glGetProgramInterfaceiv(mProgramId, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &numUbos);
-    for (int i = 0; i < numUbos; i++)
+    const char* kTexHandleUbo   = "_TextureHandles_";
+    GLuint texHandlesIdx        = glGetProgramResourceIndex(mProgramId,GL_UNIFORM_BLOCK,kTexHandleUbo);
+    if (texHandlesIdx != GL_INVALID_INDEX)
     {
-        // Get ubo name lenght:
-        const GLenum nameProps[1] = { GL_NAME_LENGTH };
-        GLint nameRes[1];
-        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, nameProps, 1, nullptr, nameRes);
+        // 1) Query the slot and the number of active members
+        GLenum uboProps[2]  = { GL_BUFFER_BINDING,GL_NUM_ACTIVE_VARIABLES };
+        GLint uboRes[2]     = { -1,-1 };
+        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, texHandlesIdx, 2, uboProps, 2, nullptr, uboRes);
+        GLint numActiveMem  = uboRes[1];
+        GLint uboSlot       = uboRes[0];
 
-        // Get ubo name:
-        std::string name;
-        name.resize(nameRes[0]);
-        glGetProgramResourceName(mProgramId, GL_UNIFORM_BLOCK, i, name.size(), nullptr, &name[0]);
-
-        // We only care about the tex _TextureHandles_ UBO:
-        const char* kTexHandleUbo = "_TextureHandles_";
-        if (strcmp(name.c_str(), kTexHandleUbo) != 0)
+        // If we have active members...
+        if (numActiveMem > 0)
         {
-            continue;
-        }
+            // Create the UBO
+            const int numMemberEles = 16; // TO-DO: we can query this but it shold be the same 
+            mHandlesUBO = new TexHandlesUBO;
+            mHandlesUBO->Init(numActiveMem * numMemberEles, mProgramId, uboSlot);
 
-        // Get UBO acvtive members:
-        const GLenum uboProps[2] = { GL_NUM_ACTIVE_VARIABLES, GL_BUFFER_BINDING };
-        // [0] = Active Members
-        // [1] = Binding
-        GLint uboRes[2];
-        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 2, uboProps, 2, nullptr, uboRes);
-        if (uboRes[0] <= 0)
-        {
-            continue;
-        }
+            // 2) Build a list with each member index
+            GLenum uboMemProps = GL_ACTIVE_VARIABLES;
+            std::vector<GLint> uboMemIndices(numActiveMem);
+            glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, texHandlesIdx, 1, &uboMemProps, numActiveMem, nullptr, uboMemIndices.data());
 
-        // Create the handles UBO:
-        mHandlesUBO = new TexHandlesUBO;
-        mHandlesUBO->Init(uboRes[0] * 16, mProgramId, uboRes[1]);
-
-        // Get active member indices:
-        const GLenum activeUnifProp[1] = { GL_ACTIVE_VARIABLES };
-        std::vector<GLint> memIdxs(uboRes[0]);
-        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, i, 1, activeUnifProp, uboRes[0], nullptr, memIdxs.data());
-
-        // Build a list of active members:
-        const GLenum memProps[3] = { GL_NAME_LENGTH,GL_OFFSET,GL_ARRAY_SIZE };
-        const GLenum refProps[3] = { GL_REFERENCED_BY_VERTEX_SHADER,GL_REFERENCED_BY_FRAGMENT_SHADER,GL_REFERENCED_BY_COMPUTE_SHADER };
-        for (int j = 0; j < uboRes[0]; j++)
-        {
-            GLint refRes[3];
-            glGetProgramResourceiv(mProgramId, GL_UNIFORM, memIdxs[j], 3, refProps, 3, nullptr, refRes);
-            if (refRes[0] || refRes[1] || refRes[2])
+            // 3) Query info of each member:
+            GLenum memProps[5] = 
             {
-                // [0] = Name Lenght
-                // [1] = Offset
-                // [2] = Array Size
-                GLint memRes[3];
-                glGetProgramResourceiv(mProgramId, GL_UNIFORM, memIdxs[j], 3, memProps, 3, nullptr, memRes);
-                std::vector<GLchar> memNameVec(memRes[0]);
-                glGetProgramResourceName(mProgramId, GL_UNIFORM, memIdxs[j], memNameVec.size(), nullptr, memNameVec.data());
-                std::string memName = std::string(memNameVec.begin(),memNameVec.end() - 1);
-                // Get the texture and sampler names:
+                GL_NAME_LENGTH, GL_OFFSET,
+                GL_REFERENCED_BY_COMPUTE_SHADER,
+                GL_REFERENCED_BY_VERTEX_SHADER,GL_REFERENCED_BY_FRAGMENT_SHADER 
+            };
+            for (const GLint member : uboMemIndices)
+            {
+                GLint memRes[5] = { -1,-1,-1,-1,-1 };
+                glGetProgramResourceiv(mProgramId, GL_UNIFORM, member, 5, memProps, 5, nullptr, memRes);
+                if (memRes[2] == 0 && memRes[3] == 0 && memRes[4] == 0)
                 {
-                    size_t idPoss = memName.find("[0]");
-                    if (idPoss != std::string::npos && memRes[2] == 16)
-                    {
-                        std::string texName(memName.begin(), memName.begin() + idPoss);        
-                        mUsedTextures.push_back(texName);
-                        auto res = curEffect->GetShaderResource(mUsedTextures[mUsedTextures.size()-1].c_str());
-                        if (!res.valid)
-                        {
-                            SIMUL_CERR << "Invalid shader resource, could not make a mapping.\n";
-                            continue;
-                        }
-                        mTexturesUBOMapping[res.slot] = memRes[1];
-                    }
+                    continue;
+                }
+                GLint memStrSize = memRes[0];
+                // This is the name of the member, it will look like textureName[0]:
+                std::string memberName;
+                memberName.resize(memStrSize);
+                glGetProgramResourceName(mProgramId, GL_UNIFORM, member, memStrSize, nullptr, (GLchar*)memberName.data());
+
+                // 4) Fix the name:
+                size_t arrPos = memberName.find("[0]");
+                if (arrPos == std::string::npos)
+                {
+                    SIMUL_BREAK("This can not happen");
+                }
+                std::string newName(memberName.begin(), memberName.begin() + arrPos);
+
+                // 5) Now that we now the name used by SFXO, we can cache the offset:
+                // Each member will take sizeof(uint64_t) * 16, so offsets should be
+                // multiples of that number
+                GLint baseOffset                = memRes[1]; 
+                int texSlot                     = curEffect->GetSlot(newName.c_str());
+                mTexturesUBOMapping[texSlot]    = baseOffset;
+                
+                if ((baseOffset % (sizeof(GLuint64) * 16)) != 0)
+                {
+                    SIMUL_BREAK("This can not happen");
                 }
             }
         }

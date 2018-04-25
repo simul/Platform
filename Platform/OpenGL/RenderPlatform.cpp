@@ -29,18 +29,17 @@ RenderPlatform::~RenderPlatform()
 	InvalidateDeviceObjects();
 }
 
+const char* RenderPlatform::GetName()const
+{
+    return "OpenGL";
+}
+
 void RenderPlatform::RestoreDeviceObjects(void* unused)
 {
-    // glewExperimental    = true;
-    // GLenum res          = glewInit();
-    // if (res != GLEW_OK)
-    // {
-    //     SIMUL_BREAK("");
-    // }
-    
-    if (gladLoadGL())
+    if (!gladLoadGL())
     {
-        // error?
+        std::cout << "[ERROR] Could not initialize glad.\n";
+        return;
     }
 
     // Generate and bind a dummy vao:
@@ -61,6 +60,7 @@ void RenderPlatform::RestoreDeviceObjects(void* unused)
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+    // glDeleteVertexArrays(1, &mNullVAO);
 }
 
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
@@ -81,14 +81,6 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
     glPopDebugGroup();
 }
 
-void RenderPlatform::SetReverseDepth(bool r)
-{
-}
-
-void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
-{
-}
-
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
     BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
@@ -97,23 +89,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
     EndEvent(deviceContext);
 }
 
-void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *debugEffect,crossplatform::EffectTechnique *tech,int pass)
-{
-}
-		
-void RenderPlatform::DrawMarker(crossplatform::DeviceContext &,const double *matrix)
-{
-}
-
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
-{
-}
-
-void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &,const double *)
-{
-}
-
-void RenderPlatform::DrawCamera(crossplatform::DeviceContext &,const double *pGlobalPosition, double pRoll)
 {
 }
 
@@ -132,18 +108,6 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)
     ApplyCurrentPass(deviceContext);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     EndEvent(deviceContext);
-}
-
-void RenderPlatform::ApplyDefaultMaterial()
-{
-}
-
-void MakeWorldViewProjMatrix(float *wvp, const double *w, const float *v, const float *p)
-{
-}
-
-void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
-{
 }
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
@@ -472,11 +436,6 @@ void RenderPlatform::MakeTextureResident(GLuint64 handle)
         mResidentTextures.insert(handle);
         glMakeTextureHandleResidentARB(handle);
     }
-}
-
-GLuint RenderPlatform::GetHelperFBO()
-{
-    return mHelperFBO;
 }
 
 const float whiteTexel[4] = { 1.0f,1.0f,1.0f,1.0f};
