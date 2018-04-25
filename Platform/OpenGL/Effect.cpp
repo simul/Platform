@@ -102,12 +102,16 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceC
 }
 
 PlatformStructuredBuffer::PlatformStructuredBuffer():
-    mGPUBuffer(0),
-    mReadBuffer(0),
     mTotalSize(0),
     mBinding(-1),
     mGPUIsMapped(false)
 {
+    for (int i = 0; i < mNumBuffers; i++)
+    {
+        mReadBuffer[i]  = 0;
+        mGPUBuffer[i]   = 0;
+        mMappedReadPtrs[i] = nullptr;
+    }
 }
 
 PlatformStructuredBuffer::~PlatformStructuredBuffer()
@@ -121,60 +125,74 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
     mTotalSize      = ct * unit_size;
     this->cpu_read  = cpu_read;
-
-    // Create the SSBO:
-    glGenBuffers(1, &mGPUBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer);
-    // GL_DYNAMIC_STORAGE_BIT   -> we may call SetData (glBufferSubData)
-    // GL_MAP_WRITE_BIT         -> we may call GetBuffer()
-    GLenum flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT;
-    glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     
-    // Create the readback buffer:
+    // Create the SSBO:
+    glGenBuffers(mNumBuffers, &mGPUBuffer[0]);
     if (cpu_read)
     {
-        glGenBuffers(1, &mReadBuffer);
-        glBindBuffer(GL_COPY_WRITE_BUFFER, mReadBuffer);
-        // GL_MAP_READ_BIT  -> we want to map and read data
-        glBufferStorage(GL_COPY_WRITE_BUFFER, mTotalSize, init_data, GL_MAP_READ_BIT);
-        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+        glGenBuffers(mNumBuffers, &mReadBuffer[0]);
+    }
+    for (int i = 0; i < mNumBuffers; i++)
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
+        // GL_DYNAMIC_STORAGE_BIT   -> we may call SetData (glBufferSubData)
+        // GL_MAP_WRITE_BIT         -> we may call GetBuffer()
+        GLenum flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT;
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        // Create the readback buffer:
+        if (cpu_read)
+        {
+            glBindBuffer(GL_COPY_WRITE_BUFFER, mReadBuffer[i]);
+            // GL_MAP_READ_BIT  -> we want to map and read data
+            glBufferStorage(GL_COPY_WRITE_BUFFER, mTotalSize, init_data, GL_MAP_READ_BIT);
+            glBindBuffer(GL_COPY_WRITE_BUFFER, 0);   
+
+            glMapNamedBuffer(mReadBuffer[i], GL_READ_ONLY);
+        }
     }
 }
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
+    int idx = deviceContext.frame_number % mNumBuffers;
     mGPUIsMapped = true;
-	return glMapNamedBuffer(mGPUBuffer,GL_WRITE_ONLY);
+	return glMapNamedBuffer(mGPUBuffer[idx],GL_WRITE_ONLY);
 }
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    return glMapNamedBuffer(mReadBuffer, GL_READ_ONLY);
+    int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+    return glMapNamedBuffer(mReadBuffer[idx], GL_READ_ONLY);
 }
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    glUnmapNamedBuffer(mReadBuffer);
+    int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+    glUnmapNamedBuffer(mReadBuffer[idx]);
 }
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    glCopyNamedBufferSubData(mGPUBuffer, mReadBuffer, 0, 0, mTotalSize);
+    // https://www.khronos.org/opengl/wiki/Sync_Object#Fence
+    int idx = deviceContext.frame_number % mNumBuffers;
+    glCopyNamedBufferSubData(mGPUBuffer[idx], mReadBuffer[idx], 0, 0, mTotalSize);
 }
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
 {
     if (data)
     {
-        void* pDataGPU = glMapNamedBuffer(mGPUBuffer, GL_WRITE_ONLY);
-        memcpy(pDataGPU, data, mTotalSize);
-        glUnmapNamedBuffer(mGPUBuffer);
+        //void* pDataGPU = glMapNamedBuffer(mGPUBuffer, GL_WRITE_ONLY);
+        //memcpy(pDataGPU, data, mTotalSize);
+        //glUnmapNamedBuffer(mGPUBuffer);
     }
 }
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
 {
+    int idx = deviceContext.frame_number % mNumBuffers;
     if (mBinding == -1)
     {
         mBinding = effect->GetSlot(name);
@@ -182,9 +200,9 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     if (mGPUIsMapped)
     {
         mGPUIsMapped = false;
-        glUnmapNamedBuffer(mGPUBuffer);
+        glUnmapNamedBuffer(mGPUBuffer[idx]);
     }
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
 }
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
@@ -198,15 +216,13 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContex
 
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
-    if (mGPUBuffer != 0)
+    if (mGPUBuffer[0] != 0)
     {
-        glDeleteBuffers(1, &mGPUBuffer);
-        mGPUBuffer = 0;
+        glDeleteBuffers(mNumBuffers, &mGPUBuffer[0]);
     }
-    if (mReadBuffer != 0)
+    if (mReadBuffer[0] != 0)
     {
-        glDeleteBuffers(1, &mReadBuffer);
-        mReadBuffer = 0;
+        glDeleteBuffers(mNumBuffers, &mReadBuffer[0]);
     }
 }
 

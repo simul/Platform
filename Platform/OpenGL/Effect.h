@@ -99,8 +99,11 @@ namespace simul
             void        Unbind(crossplatform::DeviceContext &deviceContext);
 
         private:
-            GLuint      mGPUBuffer;
-            GLuint      mReadBuffer;
+            static const int mNumBuffers =2;
+            GLuint      mGPUBuffer[mNumBuffers];
+            GLuint      mReadBuffer[mNumBuffers];
+            void*       mMappedReadPtrs[mNumBuffers];
+
             size_t      mTotalSize;
             int         mBinding;
 

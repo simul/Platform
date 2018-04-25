@@ -173,6 +173,9 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
     GenerateMips(crossplatform::DeviceContext());
 
     glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
+
+    InitViews(mips, arraySize, true);
+    CreateFBOs(1);
 }
 
 bool Texture::IsValid()const
