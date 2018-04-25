@@ -22,6 +22,10 @@ RenderPlatform::RenderPlatform():
     mirrorY     = true;
     mirrorY2    = true;
     mirrorYText = true;
+
+    mCachedState.Vao            = 0;
+    mCachedState.Program        = 0;
+    mCachedState.Framebuffer    = 0;
 }
 
 RenderPlatform::~RenderPlatform()
@@ -79,6 +83,25 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 {
     glPopDebugGroup();
+}
+
+void RenderPlatform::StoreGLState()
+{
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING,      &mCachedState.Vao);
+    glGetIntegerv(GL_CURRENT_PROGRAM,           &mCachedState.Program);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,  &mCachedState.Framebuffer); //draw, read col0,1 etc -_-
+
+    // TO-DO: blend,depth,raster
+
+    // Lets bind our dummy vao
+    glBindVertexArray(mNullVAO);
+}
+
+void RenderPlatform::RestoreGLState()
+{
+    glBindVertexArray(mCachedState.Vao);
+    glUseProgram(mCachedState.Program);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mCachedState.Framebuffer);
 }
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
@@ -658,8 +681,8 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
                 glBlendEquationSeparate(toGlFun(bdesc.RenderTarget[i].blendOperation), toGlFun(bdesc.RenderTarget[i].blendOperationAlpha));
                 glBlendFuncSeparate
                 (
-                    toGlBlendOp(bdesc.RenderTarget[i].SrcBlend), toGlBlendOp(bdesc.RenderTarget[i].SrcBlendAlpha),
-                    toGlBlendOp(bdesc.RenderTarget[i].DestBlend), toGlBlendOp(bdesc.RenderTarget[i].DestBlendAlpha)
+                    toGlBlendOp(bdesc.RenderTarget[i].SrcBlend), toGlBlendOp(bdesc.RenderTarget[i].DestBlend),
+                    toGlBlendOp(bdesc.RenderTarget[i].SrcBlendAlpha), toGlBlendOp(bdesc.RenderTarget[i].DestBlendAlpha)
                 );
                 unsigned char msk = bdesc.RenderTarget[i].RenderTargetWriteMask;
                 glColorMaski
@@ -706,6 +729,11 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
     {
         SIMUL_CERR << "Trying to set an invalid render state \n";
     }
+}
+
+void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)
+{
+    SetRenderState(deviceContext, standardRenderStates[s]);
 }
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)

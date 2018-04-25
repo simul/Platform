@@ -14,6 +14,18 @@ namespace simul
 		class Material;
         class Texture;
 
+        //! Holds a GL state snapshot
+        struct GLSnapState
+        {
+            GLint                       Vao;       
+            GLint                       Program;
+            GLint                       Framebuffer;
+
+            crossplatform::RenderState  Blend;
+            crossplatform::RenderState  Depth;
+            crossplatform::RenderState  Raster;
+        };
+
 		//! OpenGL renderplatform implementation
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
@@ -27,7 +39,10 @@ namespace simul
 			void        EndRender(crossplatform::DeviceContext &deviceContext);
             void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
             void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
-			
+            //! Before starting trueSKY rendering is a good idea to save all the previous state
+            void        StoreGLState();
+            //! Once we are done, we can restore it
+            void        RestoreGLState();
             void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d);
             void        Draw(crossplatform::DeviceContext& deviceContext, int num_verts, int start_vert);
             void        DrawIndexed(crossplatform::DeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0);
@@ -74,6 +89,7 @@ namespace simul
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s);
+            void					                SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source);
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8);
 			
@@ -106,6 +122,8 @@ namespace simul
 
             opengl::Texture*    mDummy2D;
             opengl::Texture*    mDummy3D;
+
+            GLSnapState         mCachedState;
 		};
 	}
 }
