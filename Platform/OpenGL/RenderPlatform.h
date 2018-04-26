@@ -57,6 +57,8 @@ namespace simul
             //! textures. Here we will apply the textures.
             void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
 
+            void        InsertFences(crossplatform::DeviceContext& deviceContext);
+
             crossplatform::Material*                CreateMaterial();
 			crossplatform::Mesh*                    CreateMesh();
 			crossplatform::Light*                   CreateLight();

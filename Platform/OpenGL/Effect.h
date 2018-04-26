@@ -95,19 +95,19 @@ namespace simul
 
 			void        Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void        ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
-			
+            void        AddFence(crossplatform::DeviceContext& deviceContext);
+
             void        Unbind(crossplatform::DeviceContext &deviceContext);
 
         private:
-            static const int mNumBuffers =2;
-            GLuint      mGPUBuffer[mNumBuffers];
-            GLuint      mReadBuffer[mNumBuffers];
-            void*       mMappedReadPtrs[mNumBuffers];
+            static const int    mNumBuffers =3;
+            GLuint              mGPUBuffer[mNumBuffers];
+            size_t              mTotalSize;
+            int                 mBinding;
+            bool                mGPUIsMapped;
 
-            size_t      mTotalSize;
-            int         mBinding;
-
-            bool        mGPUIsMapped;
+            GLsync              mFences[mNumBuffers];
+            void* mCurReadMap = nullptr;
 		};
 
         //! An OpenGl program object (combination of shaders)
