@@ -15,9 +15,19 @@ Window::Window():
 	IRendererRef(nullptr),
 	WindowUID(-1),
 	vsync(false),
+    MustResize(false),
 	SwapChain(nullptr),
-	DeviceRef(nullptr)
+	DeviceRef(nullptr),
+    RTHeap(nullptr),
+    CommandQueueRef(nullptr)
 {
+    for (int i = 0; i < FrameCount; i++)
+    {
+        BackBuffers[i]          = nullptr;
+        GPUFences[i]            = nullptr;
+        CommandAllocators[i]    = nullptr;
+        FenceValues[i]          = 0;
+    }
 }
 
 Window::~Window()
@@ -29,9 +39,9 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 {
 	if (!d3dDevice)
 		return;
-
 	HRESULT res = S_FALSE;
 	RECT rect	= {};
+    DeviceRef   = d3dDevice;
 
 #if defined(WINVER) && !defined(_XBOX_ONE)
 	GetWindowRect(ConsoleWindowHandle, &rect);
@@ -67,7 +77,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	swapChainDesc12.SampleDesc.Quality		= 0;
 
 	IDXGIFactory4* factory		= nullptr;
-	res							= CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
+	res							= CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
 	SIMUL_ASSERT(res == S_OK);
 
 	// Create it
@@ -96,13 +106,14 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	SAFE_RELEASE(factory);
 	SAFE_RELEASE(swapChain);
 #endif
+
+    CreateSyncObjects();
 }
-#pragma optimize("",off)
 
 void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 {
-	// We already waited before calling Window::Resize so we can
-	// release the resources
+    WaitForAllWorkDone();
+    MustResize = false;
 
 	// Backbuffers
 	SAFE_RELEASE(RTHeap);
@@ -151,8 +162,8 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 
 	CreateRenderTarget(d3dDevice);
 
-	if (IRendererRef)
-		IRendererRef->ResizeView(WindowUID, W, H);
+	//if (IRendererRef)
+		//IRendererRef->ResizeView(WindowUID, W, H);
 }
 
 void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
@@ -166,11 +177,7 @@ void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 	rtvHeapDesc.NumDescriptors				= FrameCount; 
 	rtvHeapDesc.Type						= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-#ifdef _XBOX_ONE
-	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_GRAPHICS_PPV_ARGS(&RTHeap));
-#else
-	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&RTHeap));
-#endif
+	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, SIMUL_PPV_ARGS(&RTHeap));
 	SIMUL_ASSERT(result == S_OK);
 
 	RTHeap->SetName(L"Dx12BackbufferRtHeap");
@@ -196,11 +203,7 @@ void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 		rtvHandle.Offset(1, rtHandleSize);
 
 		// 3)
-#ifdef _XBOX_ONE
-		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_GRAPHICS_PPV_ARGS(&CommandAllocators[n]));
-#else
-		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&CommandAllocators[n]));
-#endif
+		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&CommandAllocators[n]));
 		SIMUL_ASSERT(result == S_OK);
 	}
 }
@@ -229,7 +232,8 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	{
 		WindowUID				=IRendererRef->AddView();
 	}
-	IRendererRef->ResizeView(WindowUID,surfaceDesc.Width,surfaceDesc.Height);
+	
+    // IRendererRef->ResizeView(WindowUID,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::Release()
@@ -249,12 +253,69 @@ void Window::SetCommandQueue(ID3D12CommandQueue *commandQueue)
 	CommandQueueRef = commandQueue;
 }
 
+void Window::StartFrame()
+{
+    UINT idx = GetCurrentIndex();   
+    // If the GPU is behind, wait:
+    if (GPUFences[idx]->GetCompletedValue() < FenceValues[idx])
+    {
+        GPUFences[idx]->SetEventOnCompletion(FenceValues[idx], WindowEvent);
+        WaitForSingleObject(WindowEvent, INFINITE);
+    }
+    // EndFrame will Signal this value:
+    FenceValues[idx]++;
+}
+
+void Window::EndFrame()
+{
+    // Cache the current idx:
+    int idx = GetCurrentIndex();
+
+    // Present new frame
+    const DWORD dwFlags     = 0;
+    const UINT SyncInterval = 1;
+    HRESULT res             = SwapChain->Present(SyncInterval, dwFlags);
+    SIMUL_ASSERT(res == S_OK);
+
+    // Signal at the end of the pipe, note that we use the cached index 
+    // or we will be adding a fence for the next frame!
+    CommandQueueRef->Signal(GPUFences[idx], FenceValues[idx]);
+}
+
+void Window::WaitForAllWorkDone()
+{
+    for (int i = 0; i < FrameCount; i++)
+    {
+        // Start waiting from the oldest frame?
+        int idx = (GetCurrentIndex() + 1) % FrameCount;
+        if (GPUFences[idx]->GetCompletedValue() < FenceValues[idx])
+        {
+            GPUFences[idx]->SetEventOnCompletion(FenceValues[idx], WindowEvent);
+            WaitForSingleObject(WindowEvent, INFINITE);
+        }
+    }
+}
+
+UINT Window::GetCurrentIndex()
+{
+    return SwapChain->GetCurrentBackBufferIndex();
+}
+
+void Window::CreateSyncObjects()
+{
+    WindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    for (int i = 0; i < FrameCount; i++)
+    {
+        FenceValues[i] = 0;
+        DeviceRef->CreateFence(FenceValues[i], D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&GPUFences[i]));
+    }
+}
 
 Direct3D12Manager::Direct3D12Manager():
 	mDevice(nullptr),
 	mCommandQueue(nullptr),
 	mCommandList(nullptr),
-	mFence(nullptr)
+    mCommandListRecording(false)
 {
 }
 
@@ -278,7 +339,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	if (use_debug)
 	{
 		ID3D12Debug* debugController = nullptr;
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		if (SUCCEEDED(D3D12GetDebugInterface(SIMUL_PPV_ARGS(&debugController))))
 		{
 			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 			debugController->EnableDebugLayer();
@@ -289,7 +350,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			if (doGPUValidation)
 			{
 				ID3D12Debug1* debugController1 = nullptr;
-				debugController->QueryInterface(IID_PPV_ARGS(&debugController1));
+				debugController->QueryInterface(SIMUL_PPV_ARGS(&debugController1));
 				debugController1->SetEnableGPUBasedValidation(true);
 			}
 		}
@@ -298,7 +359,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 
 	// Create a DirectX graphics interface factory.
 	IDXGIFactory4* factory	= nullptr;
-	res						= CreateDXGIFactory2(dxgiFactoryFlags,IID_PPV_ARGS(&factory));
+	res						= CreateDXGIFactory2(dxgiFactoryFlags, SIMUL_PPV_ARGS(&factory));
 	SIMUL_ASSERT(res == S_OK);
 
 	bool mUseWarpDevice = false;
@@ -306,8 +367,8 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	if (mUseWarpDevice)
 	{
 		IDXGIAdapter* warpAdapter	= nullptr;
-		factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
-		res							= D3D12CreateDevice(warpAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&mDevice));
+		factory->EnumWarpAdapter(SIMUL_PPV_ARGS(&warpAdapter));
+		res							= D3D12CreateDevice(warpAdapter,D3D_FEATURE_LEVEL_11_0, SIMUL_PPV_ARGS(&mDevice));
 		SIMUL_ASSERT(res == S_OK);
 		SAFE_RELEASE(warpAdapter);
 	}
@@ -340,7 +401,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			}
 			curAdapterIdx++;
 		}
-		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&mDevice));
+		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0, SIMUL_PPV_ARGS(&mDevice));
 		SIMUL_ASSERT(res == S_OK);
 
 		// We must crete the device with debug flags if we want break on severity
@@ -348,10 +409,13 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		if(use_debug)
 		{
 			ID3D12InfoQueue* infoQueue = nullptr;
-			mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
+			mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue));
 			
 			// Set break on_x settings
 			bool breakOnWarning = false;
+            // vvvvvvv
+            // WARNING: PIX does not like having breakOnWarning enabled, so you better disable it!
+            // ^^^^^^^
 			SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 			if (breakOnWarning)
 			{
@@ -391,17 +455,17 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		SIMUL_COUT << "-Adapter: " << gpuDesc << std::endl;
 		SIMUL_COUT << "-Adapter memory: " << gpuMem << "(MB)" << std::endl;
 
-		// Enumerate outputs(monitors)
+		// Enumerate mOutputs(monitors)
 		IDXGIOutput* output = nullptr;
 		int outputIdx		= 0;
 		while (hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
 		{
-			outputs[outputIdx] = output;
+			mOutputs[outputIdx] = output;
 			SIMUL_ASSERT(res == S_OK);
 			outputIdx++;
 			if (outputIdx>100)
 			{
-				std::cerr << "Tried 100 outputs: no adaptor was found." << std::endl;
+				std::cerr << "Tried 100 mOutputs: no adaptor was found." << std::endl;
 				return;
 			}
 		}
@@ -413,24 +477,22 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	D3D12_COMMAND_QUEUE_DESC queueDesc	= {};
 	queueDesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
-	res									= mDevice->CreateCommandQueue(&queueDesc,IID_PPV_ARGS(&mCommandQueue));
+	res									= mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mCommandQueue));
 	SIMUL_ASSERT(res == S_OK);
-
-	// The window will create the swap chain latter...
-
+    mCommandQueue->SetName(L"CommandQueue");
 #endif
 }
 
 int Direct3D12Manager::GetNumOutputs()
 {
-	return (int)outputs.size();
+	return (int)mOutputs.size();
 }
 
 crossplatform::Output Direct3D12Manager::GetOutput(int i)
 {
 	unsigned numModes;
 	crossplatform::Output o;
-	IDXGIOutput *output=outputs[i];
+	IDXGIOutput *output=mOutputs[i];
 #ifndef _XBOX_ONE
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
@@ -497,42 +559,41 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 void Direct3D12Manager::Shutdown()
 {
 	// TO-DO: wait for the GPU to complete last work
-	for(OutputMap::iterator i=outputs.begin();i!=outputs.end();i++)
+	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
 	{
 		SAFE_RELEASE(i->second);
 	}
-	outputs.clear();
+	mOutputs.clear();
 	
-	for(WindowMap::iterator i=windows.begin();i!=windows.end();i++)
+	for(WindowMap::iterator i=mWindows.begin();i!=mWindows.end();i++)
 	{
 		SetFullScreen(i->second->ConsoleWindowHandle,false,0);
 		delete i->second;
 	}
-	windows.clear();
+	mWindows.clear();
 
 	ReportMessageFilterState();
 
 	SAFE_RELEASE(mDevice);
-	//SAFE_RELEASE(m_commandQueue);
-	//SAFE_RELEASE(m_commandList);
-	//SAFE_DELETE(m_fence);
 }
 
 void Direct3D12Manager::RemoveWindow(HWND hwnd)
 {
-	if(windows.find(hwnd)==windows.end())
+    if (mWindows.find(hwnd) == mWindows.end())
+    {
 		return;
-	Window *w=windows[hwnd];
+    }
+    Window* w = mWindows[hwnd];
 	SetFullScreen(hwnd,false,0);
 	delete w;
-	windows.erase(hwnd);
+	mWindows.erase(hwnd);
 }
 
 IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
 {
-	if(windows.find(h)==windows.end())
+	if(mWindows.find(h)==mWindows.end())
 		return NULL;
-	Window *w=windows[h];
+	Window *w=mWindows[h];
 	if(!w)
 		return NULL;
 	return w->SwapChain;
@@ -540,53 +601,42 @@ IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
 
 void Direct3D12Manager::Render(HWND h)
 {
-	HRESULT res = S_FALSE;
-	// Error checking
-	if (windows.find(h) == windows.end())
+    // Check that the window exists:
+	if (mWindows.find(h) == mWindows.end())
 	{
-		SIMUL_CERR<<"No window exists for HWND "<<std::hex<<h<<std::endl;
+        SIMUL_CERR << "No window exists for HWND " << std::hex << h << std::endl;
 		return;
 	}
-	Window* w = windows[h];
+	Window* w = mWindows[h];
 
-	if (mMustResize)
+    // First lets check if there is a pending resize:
+    bool resizeRenderer = false;
+	if (w->MustResize)
 	{
-		Sleep(256);
-		// Here we should have a real wait...
 		w->ResizeSwapChain(mDevice);
-		// Reset the frame values
-		for (int i = 0; i < FrameCount; i++)
-		{
-			mFenceValues[i] = 0;
-		}
-		mMustResize = false;
+        resizeRenderer = true;
 	}
 
-	if(h!=w->ConsoleWindowHandle)
+    if (h != w->ConsoleWindowHandle)
 	{
 		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->ConsoleWindowHandle <<std::endl;
 		return;
 	}
 
-#ifdef _XBOX_ONE
-	mCurFrameIdx = -1;
-#else
-	mCurFrameIdx = w->SwapChain->GetCurrentBackBufferIndex();
-#endif
+    // First lets make sure is safe to start working on this frame:
+    w->StartFrame();
 
-	if(!w->BackBuffers[mCurFrameIdx])
-	{
-		SIMUL_CERR<< "No renderTarget exists for HWND "<<std::hex<<h<<std::endl;
-		return;
-	}
+    UINT curIdx = w->GetCurrentIndex();
+    HRESULT res = S_FALSE;
 
 	// To start, first we have to setup dx12 for the new frame
 	// Reset command allocators	
-	res = w->CommandAllocators[mCurFrameIdx]->Reset();
+	res = w->CommandAllocators[curIdx]->Reset();
 	SIMUL_ASSERT(res == S_OK);
 
 	// Reset command list
-	res =  mCommandList->Reset(w->CommandAllocators[mCurFrameIdx],nullptr);
+	res =  mCommandList->Reset(w->CommandAllocators[curIdx],nullptr);
+    mCommandListRecording = true;
 	SIMUL_ASSERT(res == S_OK); 
 
 	// Set viewport 
@@ -594,40 +644,42 @@ void Direct3D12Manager::Render(HWND h)
 	mCommandList->RSSetScissorRects(1, &w->CurScissor);
 
 	// Indicate that the back buffer will be used as a render target.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[mCurFrameIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	mCommandList->OMSetRenderTargets(1, &w->RTHandles[mCurFrameIdx], FALSE, nullptr);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[curIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	mCommandList->OMSetRenderTargets(1, &w->RTHandles[curIdx], FALSE, nullptr);
 	
 	// Submit commands
 	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
-	mCommandList->ClearRenderTargetView(w->RTHandles[mCurFrameIdx], kClearColor , 0, nullptr);
+	mCommandList->ClearRenderTargetView(w->RTHandles[curIdx], kClearColor , 0, nullptr);
 
 	if (w->IRendererRef)
 	{
-		w->IRendererRef->Render(w->WindowUID,mCommandList,&w->RTHandles[mCurFrameIdx],w->CurScissor.right,w->CurScissor.bottom);
+        // Only call resize on the render interface during command list recording:
+        if (resizeRenderer)
+        {
+            w->IRendererRef->ResizeView(w->WindowUID, w->CurViewport.Width, w->CurViewport.Height);
+            resizeRenderer = false;
+        }
+		w->IRendererRef->Render(w->WindowUID,mCommandList,&w->RTHandles[curIdx],w->CurScissor.right,w->CurScissor.bottom);
 	}
 
 	// Get ready to present
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[mCurFrameIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
 	// Closing  the command list and executing it with the recorded commands
 	res = mCommandList->Close();
 	SIMUL_ASSERT(res == S_OK);
+    mCommandListRecording = false;
 	ID3D12CommandList* ppCommandLists[] = { mCommandList };
 	mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	static DWORD dwFlags		= 0;
-	static UINT SyncInterval	= 1;									
-	res = w->SwapChain->Present(SyncInterval,dwFlags);			
-	SIMUL_ASSERT(res == S_OK);
-
-	MoveToNextFrame(w);
+    
+    w->EndFrame();
 }
 
 void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
-	if(windows.find(hwnd)==windows.end())
+	if(mWindows.find(hwnd)==mWindows.end())
 		return;
-	Window *w=windows[hwnd];
+	Window *w=mWindows[hwnd];
 	if(!w)
 		return;
 	w->SetRenderer(ci,  view_id);
@@ -635,17 +687,17 @@ void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInt
 
 int Direct3D12Manager::GetViewId(HWND hwnd)
 {
-	if(windows.find(hwnd)==windows.end())
+	if(mWindows.find(hwnd)==mWindows.end())
 		return -1;
-	Window *w=windows[hwnd];
+	Window *w=mWindows[hwnd];
 	return w->WindowUID;
 }
 
 Window *Direct3D12Manager::GetWindow(HWND hwnd)
 {
-	if(windows.find(hwnd)==windows.end())
+	if(mWindows.find(hwnd)==mWindows.end())
 		return NULL;
-	Window *w=windows[hwnd];
+	Window *w=mWindows[hwnd];
 	return w;
 }
 
@@ -656,42 +708,30 @@ void Direct3D12Manager::ReportMessageFilterState()
 
 void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
 {
-	HRESULT res = S_FALSE;
-	Window *w=(Window*)GetWindow(hwnd);
-	if(!w)
-		return;
-	IDXGIOutput *output=outputs[which_output];
-	if(!w->SwapChain)
-		return;
-	BOOL current_fullscreen;
-	res = w->SwapChain->GetFullscreenState(&current_fullscreen, NULL);
-	SIMUL_ASSERT(res == S_OK);
-	if((current_fullscreen==TRUE)==fullscreen)
-		return;
-	res = w->SwapChain->SetFullscreenState(fullscreen, NULL);
-	ResizeSwapChain(hwnd);
+	// HRESULT res = S_FALSE;
+	// Window *w=(Window*)GetWindow(hwnd);
+	// if(!w)
+	// 	return;
+	// IDXGIOutput *output=mOutputs[which_output];
+	// if(!w->SwapChain)
+	// 	return;
+	// BOOL current_fullscreen;
+	// res = w->SwapChain->GetFullscreenState(&current_fullscreen, NULL);
+	// SIMUL_ASSERT(res == S_OK);
+	// if((current_fullscreen==TRUE)==fullscreen)
+	// 	return;
+	// res = w->SwapChain->SetFullscreenState(fullscreen, NULL);
+	// ResizeSwapChain(hwnd);
 }
 
 void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 {
-	if (windows.find(hwnd) == windows.end())
+    if (mWindows.find(hwnd) == mWindows.end())
+    {
 		return;
-	Window* w = windows[hwnd];
-	if (!w)
-		return;
-
-	mMustResize = true;
-
-	/*
-	// Here we should have a real wait...
-	w->ResizeSwapChain(mDevice);
-
-	// Reset the frame values
-	for (int i = 0; i < FrameCount; i++)
-	{
-		mFenceValues[i] = 0;
-	}
-	*/
+    }
+	Window* w = mWindows[hwnd];
+    w->MustResize = true;
 }
 
 void* Direct3D12Manager::GetDevice()
@@ -704,9 +744,49 @@ void* Direct3D12Manager::GetDeviceContext()
 	return 0; 
 }
 
-void* Direct3D12Manager::GetCommandList()
+void* Direct3D12Manager::GetCommandList(HWND hwnd)
 {
+    // If the command list is not recording, we should open it:
+    if (!mCommandListRecording)
+    {
+        if (mWindows.find(hwnd) == mWindows.end())
+        {
+            SIMUL_BREAK("");
+            return nullptr;
+        }
+        Window* window = mWindows[hwnd];
+        mCommandListRecording = true;
+        mCommandList->Reset(window->CommandAllocators[window->GetCurrentIndex()], nullptr);
+    }
 	return mCommandList;
+}
+
+void Direct3D12Manager::FlushToGPU(HWND hwnd)
+{
+    HRESULT res = S_FALSE;
+    if (mWindows.find(hwnd) == mWindows.end())
+    {
+        SIMUL_BREAK("");
+        return;
+    }
+    Window* window = mWindows[hwnd];
+
+    // If we are recording, first submit the work
+    if (mCommandListRecording)
+    {
+        res = mCommandList->Close();
+        SIMUL_ASSERT(res == S_OK);
+        mCommandListRecording = false;
+        ID3D12CommandList* ppCommandLists[] = { mCommandList };
+        mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+        // Lets insert a signal at the end of the pipe:
+        int idx = window->GetCurrentIndex();
+        window->FenceValues[idx]++;
+        mCommandQueue->Signal(window->GPUFences[idx], window->FenceValues[idx]);
+    }
+    // Now, lets wait:
+    window->WaitForAllWorkDone();
 }
 
 void* Direct3D12Manager::GetCommandQueue()
@@ -716,95 +796,30 @@ void* Direct3D12Manager::GetCommandQueue()
 
 void Direct3D12Manager::AddWindow(HWND hwnd)
 {
-	if(windows.find(hwnd)!=windows.end())
+    if (mWindows.find(hwnd) != mWindows.end())
+    {
 		return;
-	Window *window	= new Window;
-	windows[hwnd]=window;
-	window->ConsoleWindowHandle = hwnd;
+    }
 
+	crossplatform::Output o     = GetOutput(0);
+	Window* window	            = new Window;
+	mWindows[hwnd]              = window;
+	window->ConsoleWindowHandle = hwnd;
 	window->SetCommandQueue(mCommandQueue);
 	
-	crossplatform::Output o = GetOutput(0);
-	// TO-DO: VSync
 	window->RestoreDeviceObjects(mDevice, false, o.numerator, o.denominator);
 
-	// Create the command list
-#ifdef _XBOX_ONE
-	mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->CommandAllocators[mCurFrameIdx], nullptr, IID_GRAPHICS_PPV_ARGS(&mCommandList));
-#else
-	mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->CommandAllocators[mCurFrameIdx], nullptr, IID_PPV_ARGS(&mCommandList));
-#endif // _XBOX_ONE
-
-	mCommandList->SetName(L"Dx12CommandList");
+    // We delay the command list creating until we have a command allocator, this is not ideal
+    // as it forces us to have a window
+    if (!mCommandList)
+    {
+        mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->CommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
+        mCommandList->SetName(L"CommandList");
+        mCommandList->Close();
+    }
 }
 
-void simul::dx12::Direct3D12Manager::InitialWaitForGpu()
-{
-	// Close the command list and execute it to begin initial copies
-	mCommandList->Close();
-	ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-	// Create synchronization objects and wait until assets have been uploaded to the GPU.
-	{
-#ifdef _XBOX_ONE
-		mDevice->CreateFence(mFenceValues[mCurFrameIdx], D3D12_FENCE_FLAG_NONE, IID_GRAPHICS_PPV_ARGS(&mFence));
-#else
-		mDevice->CreateFence(mFenceValues[mCurFrameIdx], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
-#endif // _XBOX_ONE
 
-		mFenceValues[mCurFrameIdx]++;
 
-		// Create an event handle to use for frame synchronization.
-		mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		if (mFenceEvent == nullptr)
-		{
-			HRESULT result = HRESULT_FROM_WIN32(GetLastError());
-		}
 
-		// Wait for the command list to execute; we are reusing the same command 
-		// list in our main loop but for now, we just want to wait for setup to 
-		// complete before continuing.
-		WaitForGpu();
-	}
-}
-
-// Wait for pending GPU work to complete.
-void Direct3D12Manager::WaitForGpu()
-{
-	// Schedule a Signal command in the queue.
-	mCommandQueue->Signal(mFence, mFenceValues[mCurFrameIdx]);
-
-	// Wait until the fence has been processed.
-	mFence->SetEventOnCompletion(mFenceValues[mCurFrameIdx], mFenceEvent);
-	DWORD ret = WaitForSingleObjectEx(mFenceEvent, INFINITE, FALSE);
-
-	// Increment the fence value for the current frame.
-	mFenceValues[mCurFrameIdx]++;
-}
-
-// Prepare to render the next frame.
-void Direct3D12Manager::MoveToNextFrame(Window *window)
-{
-	// Schedule a Signal command in the queue.
-	const UINT64 currentFenceValue = mFenceValues[mCurFrameIdx];
-	mCommandQueue->Signal(mFence, currentFenceValue);
-
-	// Update the frame index.
-#ifdef _XBOX_ONE
-	mCurFrameIdx = -1;
-#else
-	mCurFrameIdx = window->SwapChain->GetCurrentBackBufferIndex();
-#endif 
-
-	// If the next frame is not ready to be rendered yet, wait until it is ready.
-	DWORD ret = 0x1234F0AD;
-	if (mFence->GetCompletedValue() < mFenceValues[mCurFrameIdx])
-	{
-		mFence->SetEventOnCompletion(mFenceValues[mCurFrameIdx], mFenceEvent);
-		ret = WaitForSingleObjectEx(mFenceEvent, INFINITE, FALSE);
-	}
-
-	// Set the fence value for the next frame.
-	mFenceValues[mCurFrameIdx] = currentFenceValue + 1;
-}

@@ -260,6 +260,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Refer to UE4:(XboxOneD3D12Device.cpp) FXboxOneD3D12DynamicRHI::GetHardwareGPUFrameTime() 
 	mTimeStampFreq					= D3D11X_XBOX_GPU_TIMESTAMP_FREQUENCY;
 #else
+    // Time stamp freq:
 	D3D12_COMMAND_QUEUE_DESC qdesc	= {};
 	qdesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
 	qdesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;

@@ -57,6 +57,7 @@ void RenderPlatform::RestoreDeviceObjects(void* unused)
     // Lets configure OpenGL:
     //  glClipControl() needs OpenGL >= 4.5
     glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+    
 
     crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
     RecompileShaders();
@@ -109,6 +110,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
     BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyCurrentPass(deviceContext);
     glDispatchCompute(w, l, d);
+    InsertFences(deviceContext);
     EndEvent(deviceContext);
 }
 
@@ -139,6 +141,24 @@ void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceConte
     opengl::EffectPass* pass    = (opengl::EffectPass*)cs->currentEffectPass;
     
     pass->SetTextureHandles(deviceContext);
+}
+
+void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
+{
+    auto pass = (opengl::EffectPass*)deviceContext.contextState.currentEffectPass;
+
+    if (pass->usesRwSBs())
+    {
+        for (int i = 0; i < pass->numRwSbResourceSlots; i++)
+        {
+            int slot    = pass->rwSbResourceSlots[i];
+            auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
+            if (rwsb && pass->usesRwTextureSlotForSB(slot))
+            {
+                rwsb->AddFence(deviceContext);
+            }
+        }
+    }
 }
 
 crossplatform::Mesh* RenderPlatform::CreateMesh()

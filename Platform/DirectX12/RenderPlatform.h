@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
@@ -6,12 +7,8 @@
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "SimulDirectXHeader.h"
-
-
-
 #include <vector>
 #include <queue>
-
 
 #ifdef _MSC_VER
 	#pragma warning(push)
