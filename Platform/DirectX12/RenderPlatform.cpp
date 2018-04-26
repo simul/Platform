@@ -625,6 +625,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case RGBA_8_UNORM_SRGB:
+		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case RGBA_8_UNORM_COMPRESSED:
 		return DXGI_FORMAT_BC7_UNORM;
 	case RGBA_8_SNORM:
@@ -670,9 +672,9 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	case DXGI_FORMAT_R32_FLOAT:
 		return R_32_FLOAT;
 	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-		return RGBA_8_UNORM;
+		return RGBA_8_UNORM_SRGB;
 	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
-		return RGBA_8_SNORM;
+		return RGBA_8_UNORM_SRGB;
 	case DXGI_FORMAT_R8G8B8A8_UNORM:
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_R8G8B8A8_SNORM:
@@ -1548,7 +1550,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext& deviceContext, c
 					L = (l + 8 - 1) / 8;
 					D = d;
 					techname = "compute_clear_2d_array";
-					if (texture->GetFormat() == crossplatform::PixelFormat::RGBA_8_UNORM)
+					if(texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM||texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM_SRGB)
 					{
 						techname = "compute_clear_2d_array_u8";
 						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArrayU8", texture, i);
@@ -1567,7 +1569,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext& deviceContext, c
 				}
 				else if (texture->dim == 3)
 				{
-					if (texture->GetFormat() == crossplatform::PixelFormat::RGBA_8_UNORM)
+					if(texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM||texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM_SRGB)
 					{
 						techname = "compute_clear_3d_u8";
 						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);

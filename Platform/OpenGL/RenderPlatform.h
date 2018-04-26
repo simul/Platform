@@ -14,42 +14,48 @@ namespace simul
 		class Material;
         class Texture;
 
+        //! Holds a GL state snapshot
+        struct GLSnapState
+        {
+            GLint                       Vao;       
+            GLint                       Program;
+            GLint                       Framebuffer;
+
+            crossplatform::RenderState  Blend;
+            crossplatform::RenderState  Depth;
+            crossplatform::RenderState  Raster;
+        };
+
 		//! OpenGL renderplatform implementation
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 		public:
-			RenderPlatform();
-			virtual~ RenderPlatform();
-			const char* GetName() const
-			{
-				return "OpenGL";
-			}
-			void RestoreDeviceObjects(void*) override;
-			void InvalidateDeviceObjects() override;
-			void StartRender(crossplatform::DeviceContext &deviceContext);
-			void EndRender(crossplatform::DeviceContext &deviceContext);
-            void BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
-            void EndEvent(crossplatform::DeviceContext& deviceContext)override;
-			void SetReverseDepth(bool);
-			void IntializeLightingEnvironment(const float pAmbientLight[3]);
-			void DispatchCompute	(crossplatform::DeviceContext& deviceContext,int w,int l,int d);
-			void ApplyShaderPass	(crossplatform::DeviceContext& deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int);
-			void Draw				(crossplatform::DeviceContext& deviceContext,int num_verts,int start_vert);
-			void DrawIndexed		(crossplatform::DeviceContext& deviceContext,int num_indices,int start_index=0,int base_vertex=0);
-			void DrawMarker			(crossplatform::DeviceContext& deviceContext,const double *matrix);
-			void DrawLine			(crossplatform::DeviceContext& deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width);
-			void DrawCrossHair		(crossplatform::DeviceContext& deviceContext,const double *pGlobalPosition);
-			void DrawCamera			(crossplatform::DeviceContext& deviceContext,const double *pGlobalPosition, double pRoll);
-			void DrawLineLoop		(crossplatform::DeviceContext& deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]);
-			void DrawTexture        (crossplatform::DeviceContext& deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false);
-			void DrawQuad			(crossplatform::DeviceContext& deviceContext);
-			void DrawLines			(crossplatform::DeviceContext& deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
-			void Draw2dLines		(crossplatform::DeviceContext& deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip);
-			void DrawCircle			(crossplatform::DeviceContext& context,const float *dir,float rads,const float *colr,bool fill=false);
-			void ApplyDefaultMaterial();
-			void SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
-			
-            void ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
+			            RenderPlatform();
+			virtual~    RenderPlatform();
+            const char* GetName() const;
+			void        RestoreDeviceObjects(void*) override;
+			void        InvalidateDeviceObjects() override;
+			void        StartRender(crossplatform::DeviceContext &deviceContext);
+			void        EndRender(crossplatform::DeviceContext &deviceContext);
+            void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
+            void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
+            //! Before starting trueSKY rendering is a good idea to save all the previous state
+            void        StoreGLState();
+            //! Once we are done, we can restore it
+            void        RestoreGLState();
+            void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d);
+            void        Draw(crossplatform::DeviceContext& deviceContext, int num_verts, int start_vert);
+            void        DrawIndexed(crossplatform::DeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0);
+            void        DrawLine(crossplatform::DeviceContext& deviceContext, const double *pGlobalBasePosition, const double *pGlobalEndPosition, const float *colour, float width);
+            void        DrawLineLoop(crossplatform::DeviceContext& deviceContext, const double *mat, int num, const double *vertexArray, const float colr[4]);
+            void        DrawTexture(crossplatform::DeviceContext& deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false);
+            void        DrawQuad(crossplatform::DeviceContext& deviceContext);
+            void        DrawLines(crossplatform::DeviceContext& deviceContext, crossplatform::PosColourVertex* lines, int count, bool strip = false, bool test_depth = false, bool view_centred = false);
+            void        Draw2dLines(crossplatform::DeviceContext& deviceContext, crossplatform::PosColourVertex* lines, int count, bool strip);
+            void        DrawCircle(crossplatform::DeviceContext& context, const float *dir, float rads, const float* colr, bool fill = false);
+            //! This should be called after a Draw/Dispatch command that uses
+            //! textures. Here we will apply the textures.
+            void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
 
             crossplatform::Material*                CreateMaterial();
 			crossplatform::Mesh*                    CreateMesh();
@@ -83,6 +89,7 @@ namespace simul
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s);
+            void					                SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source);
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8);
 			
@@ -96,23 +103,27 @@ namespace simul
 			static                                  GLenum DataType(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);
             
+            //! Makes the handle resident only if its not resident already
             void                                    MakeTextureResident(GLuint64 handle);
-
-            GLuint                                  GetHelperFBO();
+            //! Returns 2D dummy texture 1 white texel
             opengl::Texture*                        GetDummy2D();
+            //! Returns 3D dummy texture 1 white texel
             opengl::Texture*                        GetDummy3D();
 
         private:
+            //! GL forces us to have a VertexArrayObject bound, we bind it but we dont use it
             GLuint              mNullVAO;
             GLenum              mCurTopology;
+            //! Used to hold the current resident textures.
             std::set<GLuint64>  mResidentTextures;
 
-            GLuint              mHelperFBO;
             GLint               mMaxViewports;
             GLint               mMaxColorAttatch;
 
             opengl::Texture*    mDummy2D;
             opengl::Texture*    mDummy3D;
+
+            GLSnapState         mCachedState;
 		};
 	}
 }

@@ -322,7 +322,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int m)
 {
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
@@ -331,7 +331,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 
 	// Set initial properties of the texture
 	name			= "Array:" + texture_files[0] + ",...";
-	mips			= 1;
+	mips			= m;
 	arraySize		= (int)texture_files.size();
 	depth			= (int)texture_files.size();
 	cubemap			= false;
@@ -393,13 +393,12 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 			return;
 		}
 	}
-	static int m=5;
 	
 	auto format = RenderPlatform::FromDxgiFormat(mainFormat);
 	// Clean resources
 	SAFE_RELEASE(mTextureDefault);
 	SAFE_RELEASE(mTextureUpload);
-	ensureTextureArraySizeAndFormat(r,wicContents[0].metadata.width,wicContents[0].metadata.height,arraySize,m,format,true,true);
+	ensureTextureArraySizeAndFormat(r,wicContents[0].metadata.width,wicContents[0].metadata.height,arraySize,m,format,false,true);
 	
 	// Make the texture description
 	D3D12_RESOURCE_DESC textureDesc = {};
@@ -415,7 +414,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	textureDesc.Layout				= D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
 	textureDesc.Flags				= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-	SetCurrentState(D3D12_RESOURCE_STATE_COPY_DEST);
+	
 #if 0
 	// Create the texture resource (GPU, with an implicit heap)
 	res = r->AsD3D12Device()->CreateCommittedResource
@@ -436,12 +435,17 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	mTextureDefault->SetName(n.c_str());
 	
 	// Create an upload heap
+	UINT64 sliceSize [16];
 	UINT64 textureUploadBufferSize = 0;
+	UINT   numRows[16];
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT pLayouts[16];
+	// only single mip in the upload.
+	textureDesc.MipLevels=1;
 	r->AsD3D12Device()->GetCopyableFootprints
 	(
 		&textureDesc,
 		0, arraySize, 0,
-		nullptr, nullptr, nullptr,
+		pLayouts, numRows, sliceSize,
 		&textureUploadBufferSize
 	);
 	res = r->AsD3D12Device()->CreateCommittedResource
@@ -449,8 +453,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
+		D3D12_RESOURCE_STATE_GENERIC_READ
+		,nullptr,
         SIMUL_PPV_ARGS(&mTextureUpload)
 	);
 	SIMUL_ASSERT(res == S_OK);
@@ -461,21 +465,24 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Perform the texture copy
 	std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas;
 	textureSubDatas.resize(arraySize);
+	dx12::RenderPlatform *dx12RenderPlatform		= (dx12::RenderPlatform*)renderPlatform;
 	for (int i = 0; i < arraySize; i++)
 	{
 		textureSubDatas[i].pData = wicContents[i].image->pixels;
 		textureSubDatas[i].RowPitch = wicContents[i].image->rowPitch;
 		textureSubDatas[i].SlicePitch = wicContents[i].image->rowPitch * textureDesc.Height;
+		dx12RenderPlatform->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_COPY_DEST, true);
+		UpdateSubresources(r->AsD3D12CommandList(), mTextureDefault, mTextureUpload,pLayouts[i].Offset, i*m, 1, &textureSubDatas[i]);
+		dx12RenderPlatform->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(), true);
 	}
-	UpdateSubresources(r->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, arraySize, &textureSubDatas[0]);
 	
 	// Init states
-	InitStateTable(arraySize, mips);
+	//InitStateTable(arraySize, mips);
 
 	// Transition the resource to be used in the shaders
-	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+	//SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto rPlat = (dx12::RenderPlatform*)(r);
-	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
+	//rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
 	
 #if 0
 	// Create a descriptor heap for this texture
@@ -887,7 +894,16 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	HRESULT res = S_FALSE;
 
 	pixelFormat		= pf;
-	DXGI_FORMAT f	= dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT dxgiFormat	= dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT srvFormat	=dxgiFormat;
+	DXGI_FORMAT uavFormat	=dxgiFormat;
+	if(dxgiFormat==DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
+	{
+		srvFormat	=dxgiFormat;
+		dxgiFormat	=DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		uavFormat	=DXGI_FORMAT_R8G8B8A8_UNORM;
+	}
+
 	dim				= 3;
 	renderPlatform  = r;
 	bool ok			= true;
@@ -895,7 +911,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	if (mTextureDefault)
 	{
 		auto desc = mTextureDefault->GetDesc();
-		if (desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || desc.Format != f)
+		if (desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || desc.Format != dxgiFormat)
 			ok = false;
 		if (computable != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
 			ok = false;
@@ -909,7 +925,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	bool changed = !ok;
 	if (!ok)
 	{
-		dxgi_format = f;
+		dxgi_format = dxgiFormat;
 		width		= w;
 		length		= l;
 		depth		= d;
@@ -939,7 +955,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		D3D12_CLEAR_VALUE clearValues = {};
 		if (rendertargets)
 		{
-			clearValues.Format		= f;
+			clearValues.Format		= dxgiFormat;
 			clearValues.Color[0]	= 1.0f;
 			clearValues.Color[1]	= 0.0f;
 			clearValues.Color[2]	= 0.0f;
@@ -973,7 +989,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		// Create the main SRV
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format							= f;
+		srvDesc.Format							= dxgiFormat;
 		srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_TEXTURE3D;
 		srvDesc.Texture3D.MipLevels				= m;
 		srvDesc.Texture3D.MostDetailedMip		= 0;
@@ -1004,7 +1020,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			mTextureUavHeap.Restore((dx12::RenderPlatform*)r, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DUavHeap", false);
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
-			uavDesc.Format								= f;
+			uavDesc.Format								= dxgiFormat;
 			uavDesc.ViewDimension						= D3D12_UAV_DIMENSION_TEXTURE3D;
 			uavDesc.Texture3D.MipSlice					= 0;
 			uavDesc.Texture3D.WSize						= d;

@@ -60,6 +60,8 @@ XG_FORMAT ToXgFormat(crossplatform::PixelFormat p)
 		return XG_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
 		return XG_FORMAT_R8G8B8A8_UNORM;
+	case RGBA_8_UNORM_SRGB:
+		return XG_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case RGBA_8_SNORM:
 		return XG_FORMAT_R8G8B8A8_SNORM;
 	case R_8_UNORM:
