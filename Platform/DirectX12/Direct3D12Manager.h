@@ -32,6 +32,15 @@ namespace simul
 			void SetRenderer(crossplatform::PlatformRendererInterface *ci, int view_id);
 			void ResizeSwapChain(ID3D12Device* d3dDevice);
 			void SetCommandQueue(ID3D12CommandQueue *commandQueue);
+            
+            //! Checks if it is safe to start rendering to the current buffer.
+            //! This method will block if needed
+            void StartFrame();
+            //! Schedules a present command and setups required sync for next frames.
+            void EndFrame();
+            //! Waits until all GPU work is completed
+            void WaitForAllWorkDone();
+
             //! Returns the current backbuffer index (0,1,2 if 3x buffering)
             UINT GetCurrentIndex();
 
@@ -68,6 +77,17 @@ namespace simul
 			ID3D12CommandQueue*							CommandQueueRef;
 			//! Reference to the device
 			ID3D12Device*								DeviceRef;
+
+            //! Event used to synchronize
+            HANDLE						                WindowEvent;
+            //! Fences to syn with the GPU
+            ID3D12Fence*				                GPUFences[FrameCount];
+            //! Storage for the values of the fence
+            UINT64						                FenceValues[FrameCount];
+
+        private:
+            //! Called when we add the window
+            void CreateSyncObjects();
 		};
 
 		//! Manages the rendering
@@ -92,37 +112,30 @@ namespace simul
 			void						ResizeSwapChain(HWND hwnd);
 			void*						GetDevice();
 			void*						GetDeviceContext();
-			void*						GetCommandList();
+			void*						GetCommandList(HWND hwnd);
+            //! Executes the commands in the command list and waits until its done
+            void                        FlushToGPU(HWND hwnd);
 			void*						GetCommandQueue();
 			int							GetNumOutputs();
 			crossplatform::Output		GetOutput(int i);
-
-			void						InitialWaitForGpu();
 			int							GetViewId(HWND hwnd);
 			Window*						GetWindow(HWND hwnd);
 			void						ReportMessageFilterState();
 
 		protected:
-			void						WaitForGpu();
-			void						MoveToNextFrame(Window* window);
 			//! Map of windows
-			WindowMap					windows;
+			WindowMap					mWindows;
 			//! Map of displays
-			OutputMap					outputs;
+			OutputMap					mOutputs;
 
 			//! The D3D device
 			ID3D12Device*				mDevice;
-			//! The command queue
+			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mCommandQueue;		
-			//! A command list used to record commands
+			//! Used to record commands
 			ID3D12GraphicsCommandList*	mCommandList;
 
-			//! Event used to synchronize
-			HANDLE						mFenceEvent;
-			//! A d3d fence object
-			ID3D12Fence*				mFence;
-			//! Storage for the values of the fence
-			UINT64						mFenceValues[FrameCount];
+            bool mCommandListRecording;
 		};
 	}
 }
