@@ -93,8 +93,8 @@ namespace simul
 			void        SetData(crossplatform::DeviceContext &deviceContext,void *data);
 			void        InvalidateDeviceObjects();
 
-			void        Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
-			void        ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			void        Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
+			void        ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
 			
             void        Unbind(crossplatform::DeviceContext &deviceContext);
 

@@ -40,9 +40,12 @@ namespace simul
 		}
 		GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context)
 		{
-			if(gpuProfilingInterface.find(context.platform_context)==gpuProfilingInterface.end())
-				return NULL;
-			return gpuProfilingInterface[context.platform_context];
+			if(gpuProfilingInterface.empty())
+				return nullptr;
+			auto u=gpuProfilingInterface.find(context.platform_context);
+			if(u==gpuProfilingInterface.end())
+				return nullptr;
+			return u->second;
 		}
 		void ClearGpuProfilers()
 		{

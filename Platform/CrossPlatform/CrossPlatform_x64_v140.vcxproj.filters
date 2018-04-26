@@ -415,5 +415,6 @@
     <None Include="SL\composite_msaa.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="SL\brdf.sl" />
   </ItemGroup>
 </Project>

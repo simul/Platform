@@ -275,6 +275,21 @@ namespace simul
 			unsigned constantBufferSlots;	//b
 			unsigned samplerSlots;			//s
 		};
+		/// A class representing a shader resource.
+		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
+		{
+			ShaderResource():   shaderResourceType(crossplatform::ShaderResourceType::UNKNOWN), 
+                                platform_shader_resource(nullptr),
+                                slot(-1),
+                                dimensions(-1),
+                                valid(false)
+            {}
+			ShaderResourceType  shaderResourceType;
+			void*               platform_shader_resource;
+			int                 slot;
+			int                 dimensions;
+			bool                valid;
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
@@ -538,8 +553,8 @@ namespace simul
 			virtual ~PlatformStructuredBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,bool cpu_read,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void Apply(DeviceContext &deviceContext,Effect *effect,const char *name);
-			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name);
+			virtual void Apply(DeviceContext &deviceContext,Effect *effect, const ShaderResource &shaderResource);
+			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect, const ShaderResource &shaderResource);
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
@@ -657,23 +672,23 @@ namespace simul
 				}
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
-			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
+			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const crossplatform::ShaderResource &shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return ;
 				}
-					platformStructuredBuffer->Apply(pContext,effect,name);
+				platformStructuredBuffer->Apply(pContext,effect,shaderResource);
 			}
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const crossplatform::ShaderResource &shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return;
 				}
-					platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
+				platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,shaderResource);
 			}
 			void InvalidateDeviceObjects()
 			{
@@ -693,20 +708,6 @@ namespace simul
 		};
 		class Texture;
 		class SamplerState;
-		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
-		{
-			ShaderResource():   shaderResourceType(crossplatform::ShaderResourceType::UNKNOWN), 
-                                platform_shader_resource(nullptr),
-                                slot(-1),
-                                dimensions(-1),
-                                valid(false)
-            {}
-			ShaderResourceType  shaderResourceType;
-			void*               platform_shader_resource;
-			int                 slot;
-			int                 dimensions;
-			bool                valid;
-		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
@@ -862,7 +863,6 @@ namespace simul
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1);
 			//! Set the texture for this effect.
-			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s);
 			virtual void SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
 			virtual void SetConstantBuffer(DeviceContext &deviceContext,ConstantBufferBase *s);

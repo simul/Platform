@@ -190,12 +190,12 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
     }
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
     int idx = deviceContext.frame_number % mNumBuffers;
     if (mBinding == -1)
     {
-        mBinding = effect->GetSlot(name);
+        mBinding = shaderResource.slot;
     }
     if (mGPUIsMapped)
     {
@@ -205,9 +205,9 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
-	Apply(deviceContext,effect,name);
+	Apply(deviceContext,effect,shaderResource);
 }
 
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContext)
