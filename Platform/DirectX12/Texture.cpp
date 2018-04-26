@@ -791,6 +791,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault != NULL && mTextureDefault == t && mainShaderResourceView12.ptr != -1 && srv == NULL)
 		return;
 
+    SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	FreeSRVTables();
 	renderPlatform				= r;
@@ -824,8 +825,6 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			CreateSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels, cubemap, false, textureDesc.SampleDesc.Count > 1);
 			arraySize	= textureDesc.DepthOrArraySize;
 			mips		= textureDesc.MipLevels;
-
-			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 		}
 		depth = textureDesc.DepthOrArraySize;
 		if (make_rt && (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))

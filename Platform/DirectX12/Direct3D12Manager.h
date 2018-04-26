@@ -32,6 +32,8 @@ namespace simul
 			void SetRenderer(crossplatform::PlatformRendererInterface *ci, int view_id);
 			void ResizeSwapChain(ID3D12Device* d3dDevice);
 			void SetCommandQueue(ID3D12CommandQueue *commandQueue);
+            //! Returns the current backbuffer index (0,1,2 if 3x buffering)
+            UINT GetCurrentIndex();
 
 			HWND										ConsoleWindowHandle;
 			crossplatform::PlatformRendererInterface*	IRendererRef;
@@ -39,6 +41,8 @@ namespace simul
 			//! The id assigned by the renderer to correspond to this hwnd
 			int											WindowUID;			
 			bool										vsync;
+            //! If we called ResizeSwapChain(), we will cache that a resize should happen:
+            bool                                        MustResize;
 
 			//! The swap chain used to present the rendered scene
 #ifdef _XBOX_ONE
@@ -97,14 +101,10 @@ namespace simul
 			int							GetViewId(HWND hwnd);
 			Window*						GetWindow(HWND hwnd);
 			void						ReportMessageFilterState();
-			unsigned int				GetCurrentBackbufferIndex() { return mCurFrameIdx; }
 
 		protected:
 			void						WaitForGpu();
 			void						MoveToNextFrame(Window* window);
-
-			bool mMustResize = false;
-
 			//! Map of windows
 			WindowMap					windows;
 			//! Map of displays
@@ -116,9 +116,6 @@ namespace simul
 			ID3D12CommandQueue*			mCommandQueue;		
 			//! A command list used to record commands
 			ID3D12GraphicsCommandList*	mCommandList;
-
-			//! The current frame index 
-			UINT						mCurFrameIdx;
 
 			//! Event used to synchronize
 			HANDLE						mFenceEvent;
