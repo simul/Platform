@@ -376,7 +376,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 	mapped.pData=NULL;
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
@@ -385,34 +385,27 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 		return;
 	if(!effect->asD3DX11Effect())
 		return;
-	if(!effect->asD3DX11Effect()->GetVariableByName(name))
-		return;
-	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
+	ID3DX11EffectShaderResourceVariable *var	=static_cast<ID3DX11EffectShaderResourceVariable *>(shaderResource.platform_shader_resource);
 		
 	if(!var->IsValid())
 	{
-		SIMUL_CERR<<"Constant Buffer not found: "<<name<<", in effect "<<effect->filename.c_str()<<std::endl;
-		if(effect->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(effect->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
+		return;
 	}
 	var->SetResource(shaderResourceView);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
 	if (!effect->asD3DX11Effect())
 		return;
-	if (!effect->asD3DX11Effect()->GetVariableByName(name))
-		return;
-	ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
+	ID3DX11EffectUnorderedAccessViewVariable *var	=static_cast<ID3DX11EffectUnorderedAccessViewVariable *>(shaderResource.platform_shader_resource);
+	//ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
 	if(!var->IsValid())
 	{
-		SIMUL_CERR<<"Constant Buffer not found: "<<name<<", in effect "<<effect->filename.c_str()<<std::endl;
-		if(effect->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(effect->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
+		return;
 	}
 	var->SetUnorderedAccessView(unorderedAccessView);
 }
@@ -833,19 +826,6 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	}
 	res.valid=true;
 	return res;
-}
-
-void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
-{
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	if (!s)
-		return;
-	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
-	var->SetSampler(0,s->asD3D11SamplerState());
 }
 
 void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &res	,crossplatform::SamplerState *s)

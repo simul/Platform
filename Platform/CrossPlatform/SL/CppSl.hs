@@ -920,11 +920,11 @@
 		}
 		operator vec3() const
 		{
-			vec3 r;
-			r.x=(float)x;
-			r.y=(float)y;
-			r.z=(float)z;
-			return r;
+			vec3 o;
+			o.x=(float)x;
+			o.y=(float)y;
+			o.z=(float)z;
+			return o;
 		}
 		operator double *()
 		{

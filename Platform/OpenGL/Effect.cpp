@@ -13,6 +13,7 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Base/StringFunctions.h"
+#include "Simul/Base/Timer.h"
 
 using namespace simul;
 using namespace opengl;
@@ -108,9 +109,7 @@ PlatformStructuredBuffer::PlatformStructuredBuffer():
 {
     for (int i = 0; i < mNumBuffers; i++)
     {
-        mReadBuffer[i]  = 0;
         mGPUBuffer[i]   = 0;
-        mMappedReadPtrs[i] = nullptr;
     }
 }
 
@@ -128,30 +127,17 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     
     // Create the SSBO:
     glGenBuffers(mNumBuffers, &mGPUBuffer[0]);
+    GLenum flags = GL_MAP_WRITE_BIT;
     if (cpu_read)
     {
-        glGenBuffers(mNumBuffers, &mReadBuffer[0]);
+        flags |= GL_MAP_READ_BIT;
     }
     for (int i = 0; i < mNumBuffers; i++)
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
-        // GL_DYNAMIC_STORAGE_BIT   -> we may call SetData (glBufferSubData)
-        // GL_MAP_WRITE_BIT         -> we may call GetBuffer()
-        GLenum flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT;
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-        // Create the readback buffer:
-        if (cpu_read)
-        {
-            glBindBuffer(GL_COPY_WRITE_BUFFER, mReadBuffer[i]);
-            // GL_MAP_READ_BIT  -> we want to map and read data
-            glBufferStorage(GL_COPY_WRITE_BUFFER, mTotalSize, init_data, GL_MAP_READ_BIT);
-            glBindBuffer(GL_COPY_WRITE_BUFFER, 0);   
-
-            glMapNamedBuffer(mReadBuffer[i], GL_READ_ONLY);
         }
-    }
 }
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
@@ -163,21 +149,37 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+    if (deviceContext.frame_number >= mNumBuffers)
+    {
+        // We want to map from the oldest buffer:
     int idx = (deviceContext.frame_number + 1) % mNumBuffers;
-    return glMapNamedBuffer(mReadBuffer[idx], GL_READ_ONLY);
+        const GLuint64 maxTimeOut = 100000; // 0.1ms
+        GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
+        if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
+        {
+            mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
+            return mCurReadMap;
+        }
+        else
+        {
+            std::cout << "[WARNING] We timeouted while waiting to it to be ready! \n";
+        }
+    }
+    return nullptr;
 }
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+    if (mCurReadMap)
+    {
     int idx = (deviceContext.frame_number + 1) % mNumBuffers;
-    glUnmapNamedBuffer(mReadBuffer[idx]);
+        mCurReadMap = nullptr;
+        glUnmapNamedBuffer(mGPUBuffer[idx]);
+    }
 }
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    // https://www.khronos.org/opengl/wiki/Sync_Object#Fence
-    int idx = deviceContext.frame_number % mNumBuffers;
-    glCopyNamedBufferSubData(mGPUBuffer[idx], mReadBuffer[idx], 0, 0, mTotalSize);
 }
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
@@ -190,12 +192,12 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
     }
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
     int idx = deviceContext.frame_number % mNumBuffers;
     if (mBinding == -1)
     {
-        mBinding = effect->GetSlot(name);
+        mBinding = shaderResource.slot;
     }
     if (mGPUIsMapped)
     {
@@ -205,9 +207,20 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const char* name)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
-	Apply(deviceContext,effect,name);
+    crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
+	Apply(deviceContext,effect,shaderResource);
+}
+
+void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceContext)
+{
+    // Insert a fence:
+    if (cpu_read)
+    {
+        int idx     = deviceContext.frame_number % mNumBuffers;
+        mFences[idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    }
 }
 
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContext)
@@ -219,10 +232,6 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
     if (mGPUBuffer[0] != 0)
     {
         glDeleteBuffers(mNumBuffers, &mGPUBuffer[0]);
-    }
-    if (mReadBuffer[0] != 0)
-    {
-        glDeleteBuffers(mNumBuffers, &mReadBuffer[0]);
     }
 }
 

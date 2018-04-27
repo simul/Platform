@@ -155,10 +155,10 @@ void TextRenderer::Recompile()
 	SAFE_DELETE(effect);
 	effect=renderPlatform->CreateEffect("font",defines);
 	constantBuffer.LinkToEffect(effect,"TextConstants");
-//	renderPlatform->GetDebugConstantBuffer().LinkToEffect(effect,"DebugConstants");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
-	textureResource=effect->GetShaderResource("fontTexture");
+	textureResource	=effect->GetShaderResource("fontTexture");
+	_fontChars		=effect->GetShaderResource("fontChars");
 }
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
@@ -229,7 +229,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	effect->Apply(deviceContext,textTech,0);
 	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 	renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
-	fontChars.Apply(deviceContext,effect,"fontChars");
+	fontChars.Apply(deviceContext,effect,_fontChars);
 	renderPlatform->SetTopology(deviceContext,TRIANGLELIST);
 	renderPlatform->Draw(deviceContext,6*n,0);
 	effect->UnbindTextures(deviceContext);

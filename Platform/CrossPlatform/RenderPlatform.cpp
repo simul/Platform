@@ -462,7 +462,7 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	}
 	debugConstants.queryPos=pos;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect,"textureQueryResults");
+	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect,debugEffect->GetShaderResource("textureQueryResults"));
 	debugEffect->SetTexture(deviceContext,"imageTexture",texture);
 	debugEffect->Apply(deviceContext,"texel_query",0);
 	DispatchCompute(deviceContext,textureQueryResult.count,1,1);

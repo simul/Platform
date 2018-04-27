@@ -23,27 +23,16 @@ ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer
 		defaultName = name + 7;
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const ShaderResource &shaderResource)
 {
-	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
-	Effect *e = (Effect *)effect;
-	int index = e->GetSlot(name) ;
-	cs->applyRwStructuredBuffers[index] = this;
+	if(shaderResource.slot>=0)
+		deviceContext.contextState.applyRwStructuredBuffers[shaderResource.slot] = this;
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const ShaderResource &shaderResource)
 {
-	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
-	Effect *e = (Effect *)effect;
-	int index = e->GetSlot(name);
-	if(index<0)
-	{
-		SIMUL_CERR_ONCE<<"SB "<<name<<"not found in effect "<<e->GetName()<<std::endl;
-		return;
-	}
-	cs->applyStructuredBuffers[index] = this;
+	if(shaderResource.slot>=0)
+		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
 }
 
 EffectPass::EffectPass()
@@ -304,12 +293,6 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 	return nullptr;
 }
 
-void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::SamplerState *s)
-{
-	auto res=GetShaderResource(name);
-	SetSamplerState(deviceContext,res,s);
-}
-
 void Effect::SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s)
 {
 	if(name.slot>128)
@@ -443,6 +426,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		int s=GetSamplerStateSlot(name);
 		if(s<0)
 		{
+
 		    res.valid = false;
 		    SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
 		    //SIMUL_BREAK_ONCE("Invalid Shader resource")
@@ -832,9 +816,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				bool is_cubemap=is_equal(texture_dim,"cubemap");
 				bool rw=is_equal(read_write,"read_write");
 				bool ar=is_equal(is_array,"array");
-				crossplatform::ShaderResource *tds=new crossplatform::ShaderResource;
-				tds->slot				=slot;
-				tds->dimensions			=dim;
+				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
+				res->slot				=slot;
+				res->dimensions			=dim;
 				crossplatform::ShaderResourceType rt=crossplatform::ShaderResourceType::COUNT;
 				if(!rw)
 				{
@@ -879,8 +863,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				}
 				if(ar)
 					rt=rt|crossplatform::ShaderResourceType::ARRAY;
-				tds->shaderResourceType=rt;
-				textureDetailsMap[texture_name]=tds;
+				res->shaderResourceType=rt;
+				textureDetailsMap[texture_name]=res;
 			}
 			else if(is_equal(word, "BlendState"))
 			{
@@ -996,6 +980,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(sampler_name.c_str(),&desc);
 				samplerStates[sampler_name]=ss;
 				samplerSlots[reg]=ss;
+				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
+				res->slot				=reg;
+				res->shaderResourceType	=ShaderResourceType::SAMPLER;
+				textureDetailsMap[sampler_name]=res;
 			}
 		}
 		else if (level == GROUP)

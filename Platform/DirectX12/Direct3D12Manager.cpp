@@ -10,8 +10,6 @@
 using namespace simul;
 using namespace dx12;
 
-#pragma optimize("",off)
-
 Window::Window():
 	ConsoleWindowHandle(0),
 	IRendererRef(nullptr),

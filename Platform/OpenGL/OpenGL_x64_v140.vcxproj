@@ -114,7 +114,6 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <Optimization>Disabled</Optimization>
       <DisableSpecificWarnings>4055</DisableSpecificWarnings>
     </ClCompile>
     <Sfx_Rule>

@@ -36,6 +36,7 @@ namespace simul
 			crossplatform::EffectTechnique				*backgTech;
 			crossplatform::EffectTechnique				*textTech;
 			crossplatform::ShaderResource				textureResource;
+			crossplatform::ShaderResource				_fontChars;
 			crossplatform::ConstantBuffer<TextConstants>	constantBuffer;
 			crossplatform::StructuredBuffer<FontChar> fontChars;
 			crossplatform::Texture*			font_texture;

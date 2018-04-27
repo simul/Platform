@@ -64,7 +64,17 @@ namespace simul
 			Effect										*sphericalHarmonicsEffect;
 			int											shSeed;
 			crossplatform::Effect						*lightProbesEffect;
+			crossplatform::EffectTechnique				*mip_from_roughness_blend;
+			crossplatform::EffectTechnique				*mip_from_roughness_no_blend;
+			crossplatform::EffectTechnique				*jitter;
+			crossplatform::EffectTechnique				*encode;
 			crossplatform::ConstantBuffer<LightProbeConstants>	lightProbeConstants;
+			crossplatform::ShaderResource				_samplesBuffer;
+			crossplatform::ShaderResource				_targetBuffer;
+			crossplatform::ShaderResource				_basisBuffer;
+			crossplatform::ShaderResource				_samplesBufferRW;
+			crossplatform::ShaderResource				_cubemapTexture;
+			
 		};
 
 	}
