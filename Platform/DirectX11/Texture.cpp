@@ -1048,103 +1048,109 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap,bool volume,bool msaa)
 
 	if(!volume)
 	{
-	SRVDesc.Format						= TypelessToSrvFormat(dxgi_format);
-	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
-	int total_num						=cubemap?6*num:num;
-	if(cubemap)
-	{
-		if(num<=1)
+		SRVDesc.Format						= TypelessToSrvFormat(dxgi_format);
+		SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
+		int total_num						=cubemap?6*num:num;
+		if(cubemap)
 		{
-			SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
-			SRVDesc.TextureCube.MipLevels		=m;
-			SRVDesc.TextureCube.MostDetailedMip =0;
+			if(num<=1)
+			{
+				SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
+				SRVDesc.TextureCube.MipLevels		=m;
+				SRVDesc.TextureCube.MostDetailedMip =0;
+			}
+			else
+			{
+				SRVDesc.ViewDimension						=D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+				SRVDesc.TextureCubeArray.MipLevels			=m;
+				SRVDesc.TextureCubeArray.MostDetailedMip	=0;
+				SRVDesc.TextureCubeArray.First2DArrayFace	=0;
+				SRVDesc.TextureCubeArray.NumCubes			=num;
+			}
 		}
-		else
+		else if(num>1)
 		{
-			SRVDesc.ViewDimension						=D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-			SRVDesc.TextureCubeArray.MipLevels			=m;
-			SRVDesc.TextureCubeArray.MostDetailedMip	=0;
-			SRVDesc.TextureCubeArray.First2DArrayFace	=0;
-			SRVDesc.TextureCubeArray.NumCubes			=num;
+			SRVDesc.ViewDimension					=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			SRVDesc.Texture2DArray.ArraySize		=num;
+			SRVDesc.Texture2DArray.FirstArraySlice	=0;		
+			SRVDesc.Texture2DArray.MipLevels		=m;
+			SRVDesc.Texture2DArray.MostDetailedMip	=0;
 		}
-	}
-	else if(num>1)
-	{
-		SRVDesc.ViewDimension					=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		SRVDesc.Texture2DArray.ArraySize		=num;
-		SRVDesc.Texture2DArray.FirstArraySlice	=0;		
-		SRVDesc.Texture2DArray.MipLevels		=m;
-		SRVDesc.Texture2DArray.MostDetailedMip	=0;
-	}
 		else if(msaa)
 		{
 			SRVDesc.ViewDimension					=D3D11_SRV_DIMENSION_TEXTURE2DMS;
 		}
-	else
-	{ 
-		SRVDesc.Texture2D.MipLevels				=m;
-		SRVDesc.Texture2D.MostDetailedMip		 =0;
-	}
-	SAFE_RELEASE(mainShaderResourceView);
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc,&mainShaderResourceView));
-	
-	SAFE_RELEASE(arrayShaderResourceView);
-	if(cubemap)
-	{
-		SRVDesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		SRVDesc.Texture2DArray.ArraySize=total_num;
-		SRVDesc.Texture2DArray.FirstArraySlice=0;
-		SRVDesc.Texture2DArray.MipLevels=m;
-		SRVDesc.Texture2DArray.MostDetailedMip=0;
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc, &arrayShaderResourceView));
-	}
-	if(mainMipShaderResourceViews)
-	{
-		if (cubemap)
-		{
-			SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-			SRVDesc.TextureCube.MipLevels = 1;
-			SRVDesc.TextureCube.MostDetailedMip;
-	for(int j=0;j<m;j++)
-	{
-				SRVDesc.Texture3D.MostDetailedMip = j;
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &SRVDesc, &mainMipShaderResourceViews[j]));
-			}
-		}
 		else
-		{
-		SRVDesc.Texture3D.MipLevels=1;
-			for (int j = 0; j < m; j++)
-			{
-		SRVDesc.Texture3D.MostDetailedMip=j;
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &SRVDesc, &mainMipShaderResourceViews[j]));
-	}
+		{ 
+			SRVDesc.Texture2D.MipLevels				=m;
+			SRVDesc.Texture2D.MostDetailedMip		 =0;
 		}
-	}
-	if(layerShaderResourceViews||layerMipShaderResourceViews)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC face_srv_desc;
-		ZeroMemory(&face_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		face_srv_desc.Format					= SRVDesc.Format;
-		face_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		for(int i=0;i<total_num;i++)
+		SAFE_RELEASE(mainShaderResourceView);
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc,&mainShaderResourceView));
+	
+		SAFE_RELEASE(arrayShaderResourceView);
+		if(cubemap)
 		{
-			face_srv_desc.Texture2DArray.ArraySize=1;
-			face_srv_desc.Texture2DArray.FirstArraySlice=i;
-			face_srv_desc.Texture2DArray.MipLevels=m;
-			face_srv_desc.Texture2DArray.MostDetailedMip=0;
-			if(layerShaderResourceViews)
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &face_srv_desc, &layerShaderResourceViews[i]));
-			if(layerMipShaderResourceViews)
+			SRVDesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			SRVDesc.Texture2DArray.ArraySize=total_num;
+			SRVDesc.Texture2DArray.FirstArraySlice=0;
+			SRVDesc.Texture2DArray.MipLevels=m;
+			SRVDesc.Texture2DArray.MostDetailedMip=0;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc, &arrayShaderResourceView));
+		}
+		if(mainMipShaderResourceViews)
+		{
+			if (cubemap)
+			{
+				SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+				SRVDesc.TextureCube.MipLevels = 1;
+				SRVDesc.TextureCube.MostDetailedMip;
 				for(int j=0;j<m;j++)
 				{
-					face_srv_desc.Texture2DArray.MipLevels=1;
-					face_srv_desc.Texture2DArray.MostDetailedMip=j;
-					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &face_srv_desc, &layerMipShaderResourceViews[i][j]));
+					SRVDesc.Texture3D.MostDetailedMip = j;
+					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &SRVDesc, &mainMipShaderResourceViews[j]));
 				}
+			}
+			else
+			{
+				if(SRVDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2D)
+					SRVDesc.Texture2D.MipLevels=1;
+				if(SRVDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DARRAY)
+					SRVDesc.Texture2DArray.MipLevels=1;
+				for (int j = 0; j < m; j++)
+				{
+					if(SRVDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2D)
+						SRVDesc.Texture2D.MostDetailedMip=j;
+					if(SRVDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DARRAY)
+						SRVDesc.Texture2DArray.MostDetailedMip=j;
+					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &SRVDesc, &mainMipShaderResourceViews[j]));
+				}
+			}
+		}
+		if(layerShaderResourceViews||layerMipShaderResourceViews)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC face_srv_desc;
+			ZeroMemory(&face_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+			face_srv_desc.Format					= SRVDesc.Format;
+			face_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			for(int i=0;i<total_num;i++)
+			{
+				face_srv_desc.Texture2DArray.ArraySize=1;
+				face_srv_desc.Texture2DArray.FirstArraySlice=i;
+				face_srv_desc.Texture2DArray.MipLevels=m;
+				face_srv_desc.Texture2DArray.MostDetailedMip=0;
+				if(layerShaderResourceViews)
+					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &face_srv_desc, &layerShaderResourceViews[i]));
+				if(layerMipShaderResourceViews)
+					for(int j=0;j<m;j++)
+					{
+						face_srv_desc.Texture2DArray.MipLevels=1;
+						face_srv_desc.Texture2DArray.MostDetailedMip=j;
+						V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &face_srv_desc, &layerMipShaderResourceViews[i][j]));
+					}
+			}
 		}
 	}
-}
 	else
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;

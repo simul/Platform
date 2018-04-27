@@ -88,16 +88,17 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 		renderTargetView=t->AsD3D11RenderTargetView(current_face);
 	else
 		renderTargetView=buffer_texture->AsD3D11RenderTargetView();
+	ID3D11DepthStencilView *dt=buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL;
 	if(renderTargetView)
 	{
 		colour_active=true;
 		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
-		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
+		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,dt);
 	}
 	else if(buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
 		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
-		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(0,nullptr,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
+		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(0,nullptr,dt);
 	}
 	else
 	{
@@ -106,7 +107,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	}
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 	targetsAndViewport.m_rt[0]=renderTargetView;
-	targetsAndViewport.m_dt=nullptr;
+	targetsAndViewport.m_dt=dt;
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
 	targetsAndViewport.viewport.w=Width;
 	targetsAndViewport.viewport.h=Height;
@@ -139,18 +140,7 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 	HRESULT hr=S_OK;
 	
 	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
-//	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
-	{
-	//	pContext->RSGetViewports(&num_OldViewports,NULL);
-	//	if(num_OldViewports>0)
-	//		pContext->RSGetViewports(&num_OldViewports,m_OldViewports);
-	//	pContext->OMGetRenderTargets(	1,
-	//									&m_pOldRenderTarget,
-	//									&m_pOldDepthSurface
-	//									);
-	//	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
-	}
-	//else
+
 	{
 		pContext->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
 	}
@@ -192,6 +182,9 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 		renderTargetView=t->AsD3D11RenderTargetView(current_face);
 	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	depth_active=false;
+
+	auto &fb=deviceContext.GetFrameBufferStack().top();
+	fb->m_dt=nullptr;
 }
 
 void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)

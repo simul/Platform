@@ -136,7 +136,7 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.texCoords.xy, viewportToTexRegionScaleBias);
-#if SFX_GLSL
+#ifdef SFX_GLSL
     depth_texc.y = 1.0 - depth_texc.y;
 #endif
 	float depth			=texture_clamp(depthTexture,depth_texc).x;
@@ -180,7 +180,7 @@ float ms_depth(vec2 depth_texc)
 vec4 PS_BackgroundLatLongSphere_MSAA(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.texCoords.xy, viewportToTexRegionScaleBias);
-#if SFX_GLSL
+#ifdef SFX_GLSL
     depth_texc.y = 1.0 - depth_texc.y;
 #endif
 	float depth=ms_depth(depth_texc);
