@@ -293,12 +293,12 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 	return nullptr;
 }
 
-void Effect::SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s)
+void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &name	,SamplerState *s)
 {
 	if(name.slot>128)
 		return;
 	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-	crossplatform::SamplerState *ss = s;
+
 	cs->samplerStateOverrides[name.slot] = s;
 	cs->samplerStateOverridesValid = false;
 }
@@ -314,7 +314,7 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  cro
 	pcb->SetChanged();
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if(!res.valid)
@@ -363,7 +363,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 	cs->textureAssignmentMapValid=false;
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if(!res.valid)

@@ -857,13 +857,13 @@ namespace simul
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int index=-1,int mip=-1)	;
 			virtual ShaderResource GetShaderResource(const char *name);
 			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int index=-1,int mip=-1)	;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const ShaderResource &name,Texture *tex,int index=-1,int mip=-1)	;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int array_idx=-1,int mip=-1);
+			virtual void SetTexture		(DeviceContext &deviceContext,const ShaderResource &name	,Texture *tex,int array_idx=-1,int mip=-1);
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1);
 			//! Set the texture for this effect.
-			virtual void SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s);
+			virtual void SetSamplerState(DeviceContext &deviceContext,const ShaderResource &name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
 			virtual void SetConstantBuffer(DeviceContext &deviceContext,ConstantBufferBase *s);
 			/// Activate the shader. Unapply must be called after rendering is done.

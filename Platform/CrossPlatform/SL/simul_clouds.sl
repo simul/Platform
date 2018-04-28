@@ -94,9 +94,9 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist,inout vec4 density,out vec4 light)
 {
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*(noiseval.xyz);
-	density				=sample_3d_lod(cloudDensity,cloudSamplerState,pos,dist*4.0);
+	density				=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
 	// NOTE: VERY VERY IMPORTANT to use the original, not noise-modified, texture-coordinates for light.
-	light				=sample_3d_lod(cloudLight,cloudSamplerState,texCoords,dist*4.0);
+	light				=sample_3d_lod(cloudLight,cloudSamplerState,texCoords,0);
 	float tz			=texCoords.z*32.0;
 	density.z			*=layerFade*saturate(tz+1.0)*saturate(32.0-tz);
 }

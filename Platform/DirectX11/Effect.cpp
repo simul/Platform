@@ -665,7 +665,7 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const 
 }
 
 
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	// If invalid, we already had the error when we assigned this ShaderResource. So fail silently to avoid spamming output.
 	if(!shaderResource.valid)
@@ -834,7 +834,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	return res;
 }
 
-void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &res	,crossplatform::SamplerState *s)
+void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &res	,crossplatform::SamplerState *s)
 {
 	if(!asD3DX11Effect())
 	{

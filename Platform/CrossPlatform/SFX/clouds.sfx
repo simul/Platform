@@ -334,7 +334,7 @@ void MapToWindow( uint3 ii,bool clears)
 	float cosine		=1;//cos(azimuth);
 	texc.xy				-=vec2(0.5,0.5);
 	texc				*=scale;
-	texc.xy				+=offset;
+	texc.xy				+=offset.xy;
 	vec2 texc_r			=texc.xy;
 	// rotate
 /*	vec2 texc_r			=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);*/

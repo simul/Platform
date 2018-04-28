@@ -298,7 +298,11 @@ void Window::WaitForAllWorkDone()
 
 UINT Window::GetCurrentIndex()
 {
+#ifdef _XBOX_ONE
+	return 0;
+#else
     return SwapChain->GetCurrentBackBufferIndex();
+#endif
 }
 
 void Window::CreateSyncObjects()

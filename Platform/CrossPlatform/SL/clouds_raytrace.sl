@@ -230,7 +230,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		b							=abs(c.xy-C0.xy*2);
 		if(fade>0)
 		{
-			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, fadeDistance*4.0);
+			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
 			/*if(!found)
 			{
 				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
