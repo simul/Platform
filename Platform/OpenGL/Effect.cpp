@@ -266,7 +266,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
     SetUnorderedAccessView(deviceContext, res, tex, index, mip);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
 {
     opengl::Texture* gTex = (opengl::Texture*)tex;
     if (gTex)
