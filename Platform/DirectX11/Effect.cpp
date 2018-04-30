@@ -622,7 +622,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
 	if(!asD3DX11Effect())
