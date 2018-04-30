@@ -2,7 +2,6 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX12/MacrosDx1x.h"
-#include "Simul/Platform/DirectX12/Utilities.h"
 #include "Simul/Platform/DirectX12/SimulDirectXHeader.h"
 
 #include <iomanip>

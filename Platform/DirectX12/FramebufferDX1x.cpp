@@ -12,7 +12,6 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "MacrosDX1x.h"
-#include "Utilities.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"

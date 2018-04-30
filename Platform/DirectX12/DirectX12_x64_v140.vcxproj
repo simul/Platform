@@ -211,25 +211,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
-    <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="Direct3D12Manager.cpp" />
     <ClCompile Include="Direct3D12Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Effect.cpp" />
-    <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
-    <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
-    <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="Direct3D12CallbackInterface.h" />
@@ -239,19 +234,15 @@
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
-    <ClInclude Include="Fence.h" />
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuProfiler.h" />
     <ClInclude Include="Heap.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="MacrosDx1x.h" />
     <ClInclude Include="RenderPlatform.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
-    <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SimulDirectXHeader.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />

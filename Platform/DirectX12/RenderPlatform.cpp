@@ -11,14 +11,11 @@
 #include "Simul/Platform/DirectX12/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/DirectX12/CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/DirectX12/Utilities.h"
 #include "Simul/Platform/DirectX12/Heap.h"
-#include "Simul/Platform/DirectX12/Fence.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
     #include "pix.h"

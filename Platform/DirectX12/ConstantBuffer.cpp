@@ -1,5 +1,4 @@
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
-#include "Utilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
