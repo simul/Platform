@@ -139,8 +139,8 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE		mRtvHandle;
 			D3D12_CPU_DESCRIPTOR_HANDLE		mDsvHandle;
 
-			D3D12_CPU_DESCRIPTOR_HANDLE*	m_pOldRenderTargets12[16];
-			D3D12_CPU_DESCRIPTOR_HANDLE*	m_pOldDepthSurface12;
+			// D3D12_CPU_DESCRIPTOR_HANDLE*	m_pOldRenderTargets12[16];
+			//D3D12_CPU_DESCRIPTOR_HANDLE*	m_pOldDepthSurface12;
 			DXGI_FORMAT						mOldRtFormat;
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips.	
@@ -156,8 +156,8 @@ namespace simul
 
 			D3D12_CPU_DESCRIPTOR_HANDLE		depthStencilView12;
 			D3D12_CPU_DESCRIPTOR_HANDLE**	renderTargetViews12;			// 2D table: layers and mips.
-			D3D12_VIEWPORT					m_OldViewports12[16];
-			unsigned int					num_OldViewports12;
+			//D3D12_VIEWPORT					m_OldViewports12[16];
+			//unsigned int					num_OldViewports12;
 			unsigned int					mRowPitch;
 			unsigned int					mDepthPitch;
 		};

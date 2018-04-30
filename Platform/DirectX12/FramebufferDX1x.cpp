@@ -6,7 +6,6 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-// Framebuffer.cpp A renderer for skies, clouds and weather effects.
 #define NOMINMAX
 #include "FramebufferDX1x.h"
 
@@ -25,11 +24,8 @@
 using namespace simul;
 using namespace dx12;
 
-
 Framebuffer::Framebuffer(const char *n) :
 	BaseFramebuffer(n)
-	,useESRAM(false)
-	,useESRAMforDepth(false)
 {
 }
 
@@ -48,38 +44,19 @@ void Framebuffer::InvalidateDeviceObjects()
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
-void Framebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::SetAntialiasing(int a)
 {
-	//SIMUL_BREAK_ONCE("Nacho has to check this");
-}
-
-void Framebuffer::MoveToFastRAM()
-{
-	if(useESRAM&&buffer_texture)
-		buffer_texture->MoveToFastRAM();
-	if(useESRAMforDepth&&buffer_depth_texture)
-		buffer_depth_texture->MoveToFastRAM();
-}
-
-void Framebuffer::MoveToSlowRAM()
-{
-	if(useESRAM)
-		buffer_texture->MoveToSlowRAM();
-	if(useESRAMforDepth)
-		buffer_depth_texture->MoveToSlowRAM();
-}
-
-void Framebuffer::MoveDepthToSlowRAM()
-{
-	if(useESRAMforDepth)
-		buffer_depth_texture->MoveToSlowRAM();
+    if (numAntialiasingSamples != a)
+    {
+        numAntialiasingSamples = a;
+        InvalidateDeviceObjects();
+    }
 }
 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
-	SaveOldRTs(deviceContext);
 	if ((!buffer_texture || !buffer_texture->IsValid()) && (!buffer_depth_texture || !buffer_depth_texture->IsValid()))
 		CreateBuffers();
 	SIMUL_ASSERT(IsValid());
@@ -160,35 +137,7 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-
-	// We should leave the state as it was when we started rendering
-	if (deviceContext.GetFrameBufferStack().size() <= 1)
-	{
-		// Set the default targets
-		deviceContext.GetFrameBufferStack().pop();
-		deviceContext.asD3D12Context()->OMSetRenderTargets
-		(
-			1,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0],
-			false,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
-		);
-	}
-	else
-	{
-		// There are other plugin Framebuffers
-		deviceContext.GetFrameBufferStack().pop();
-		auto curTargets = deviceContext.GetFrameBufferStack().top();
-		SIMUL_ASSERT(curTargets->num == 1);
-		deviceContext.asD3D12Context()->OMSetRenderTargets
-		(
-			1,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[0],
-			false,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_dt
-		);
-	}
-
+    rPlat->DeactivateRenderTargets(deviceContext);
 	rPlat->SetCurrentPixelFormat(mLastPixelFormat);
 
 	colour_active	= false;
@@ -212,16 +161,14 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 		rtView = buffer_texture->AsD3D12RenderTargetView();
 	}
 	deviceContext.asD3D12Context()->OMSetRenderTargets(1,rtView,false,nullptr);
+    depth_active = false;
 
-	depth_active=false;
-
-	// TO-DO: check this NACHOOOOO! :)
+	// Inform that depth is not active:
 	if (deviceContext.GetFrameBufferStack().size())
 	{
 		auto curTop = deviceContext.GetFrameBufferStack().top();
 		curTop->m_dt = nullptr;
 	}
-	// And this :]
 	else
 	{
 		deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
@@ -245,7 +192,6 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 	ClearDepth(deviceContext, depth);
 
 	// Leave it in the same state
-	// TO-DO: Actual "same" state check if depth or colour
 	if (changed)
 	{
 		Deactivate(deviceContext);
