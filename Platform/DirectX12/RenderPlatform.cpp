@@ -47,6 +47,10 @@ RenderPlatform::RenderPlatform():
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
 	gpuProfiler = new crossplatform::GpuProfiler();
+
+    mCurBarriers    = 0;
+    mTotalBarriers  = 16; 
+    mPendingBarriers.resize(mTotalBarriers);
 }
 
 RenderPlatform::~RenderPlatform()
@@ -74,26 +78,33 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
-	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
-	(
-		res,before,after,subRes
-	);
-	mPendingBarriers.push_back(barrier);
-
+    auto& barrier = mPendingBarriers[mCurBarriers++];
+    barrier = CD3DX12_RESOURCE_BARRIER::Transition
+    (
+        res, before, after, subRes
+    );
 	if (flush)
 	{
 		FlushBarriers();
 	}
+    // Check if we need more space:
+    if (mCurBarriers >= mTotalBarriers)
+    {
+        FlushBarriers();
+        mTotalBarriers += 16;
+        mPendingBarriers.resize(mTotalBarriers);
+        SIMUL_COUT << "[PERF] Resizing barrier holder to: " << mTotalBarriers << std::endl;
+    }
 }
 
 void RenderPlatform::FlushBarriers()
 {
-	if (mPendingBarriers.empty())
-	{
-		return;
-	}
-	mCommandList->ResourceBarrier(mPendingBarriers.size(), &mPendingBarriers[0]);
-	mPendingBarriers.clear();
+    if (mCurBarriers <= 0) 
+    {
+        return; 
+    }
+    mCommandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+    mCurBarriers = 0;
 }
 
 void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dName)
