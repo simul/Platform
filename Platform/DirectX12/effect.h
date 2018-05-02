@@ -6,7 +6,6 @@
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 
 #include "Heap.h"
-#include "Fence.h"
 
 #include <string>
 #include <map>

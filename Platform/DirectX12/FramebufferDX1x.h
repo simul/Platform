@@ -17,23 +17,7 @@ namespace simul
 			virtual ~Framebuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
-			virtual void SetUseFastRAM(bool colour,bool depth)
-			{
-				useESRAM=colour;
-				useESRAMforDepth=depth;
-			}
-			virtual void SetAntialiasing(int a)
-			{
-				if(numAntialiasingSamples!=a)
-				{
-					numAntialiasingSamples=a;
-					InvalidateDeviceObjects();
-				}
-			}
-			//! Call this when the device has been lost.
-			virtual void MoveToFastRAM();
-			virtual void MoveToSlowRAM();
-			virtual void MoveDepthToSlowRAM();
+            virtual void SetAntialiasing(int a);
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 			virtual void Activate(crossplatform::DeviceContext &deviceContext);
 			virtual void ActivateDepth(crossplatform::DeviceContext &deviceContext);
@@ -44,9 +28,6 @@ namespace simul
 			virtual void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
 
 		protected:
-			bool useESRAM,useESRAMforDepth;
-		protected:
-			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
 			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);
 
 			//! Holds the targets and viewports of this frame buffer, we push it into

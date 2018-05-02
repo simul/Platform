@@ -11,14 +11,11 @@
 #include "Simul/Platform/DirectX12/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/DirectX12/CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/DirectX12/Utilities.h"
 #include "Simul/Platform/DirectX12/Heap.h"
-#include "Simul/Platform/DirectX12/Fence.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
     #include "pix.h"
@@ -47,6 +44,10 @@ RenderPlatform::RenderPlatform():
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
 	gpuProfiler = new crossplatform::GpuProfiler();
+
+    mCurBarriers    = 0;
+    mTotalBarriers  = 16; 
+    mPendingBarriers.resize(mTotalBarriers);
 }
 
 RenderPlatform::~RenderPlatform()
@@ -74,26 +75,33 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
-	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
-	(
-		res,before,after,subRes
-	);
-	mPendingBarriers.push_back(barrier);
-
+    auto& barrier = mPendingBarriers[mCurBarriers++];
+    barrier = CD3DX12_RESOURCE_BARRIER::Transition
+    (
+        res, before, after, subRes
+    );
 	if (flush)
 	{
 		FlushBarriers();
 	}
+    // Check if we need more space:
+    if (mCurBarriers >= mTotalBarriers)
+    {
+        FlushBarriers();
+        mTotalBarriers += 16;
+        mPendingBarriers.resize(mTotalBarriers);
+        SIMUL_COUT << "[PERF] Resizing barrier holder to: " << mTotalBarriers << std::endl;
+    }
 }
 
 void RenderPlatform::FlushBarriers()
 {
-	if (mPendingBarriers.empty())
-	{
-		return;
-	}
-	mCommandList->ResourceBarrier(mPendingBarriers.size(), &mPendingBarriers[0]);
-	mPendingBarriers.clear();
+    if (mCurBarriers <= 0) 
+    {
+        return; 
+    }
+    mCommandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+    mCurBarriers = 0;
 }
 
 void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dName)
@@ -1293,6 +1301,33 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
+    deviceContext.GetFrameBufferStack().pop();
+
+    // Stack is empty so apply default targets:
+    if (deviceContext.GetFrameBufferStack().empty())
+    {
+        deviceContext.asD3D12Context()->OMSetRenderTargets
+        (
+            1,
+            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0],
+            false,
+            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
+        );
+        SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
+    }
+    // Apply top target:
+    else
+    {
+        auto curTargets = deviceContext.GetFrameBufferStack().top();
+        deviceContext.asD3D12Context()->OMSetRenderTargets
+        (
+            1,
+            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[0],
+            false,
+            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_dt
+        );
+        SetViewports(deviceContext, 1, &curTargets->viewport);
+    }
 }
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
@@ -1325,7 +1360,6 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	mCommandList->RSSetViewports(num, viewports);
 	mCommandList->RSSetScissorRects(num, scissors);
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
-
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)

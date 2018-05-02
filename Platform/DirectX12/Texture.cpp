@@ -38,24 +38,18 @@ Texture::Texture():
 	mipUnorderedAccessViews12(nullptr),
 	layerMipUnorderedAccessViews12(nullptr),
 	renderTargetViews12(nullptr),
-	mLoadedFromFile(false),
-	m_pOldDepthSurface12(nullptr)
+	mLoadedFromFile(false)
 {
-    for (int i = 0; i < 16; i++)
-		m_pOldRenderTargets12[i] = nullptr;
-
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
 	arrayShaderResourceView12.ptr	= -1;
 	depthStencilView12.ptr			= -1;
 }
 
-
 Texture::~Texture()
 {
 	InvalidateDeviceObjects();
 }
-
 
 void Texture::FreeRTVTables()
 {
@@ -144,17 +138,11 @@ void Texture::InvalidateDeviceObjects()
 	FreeUAVTables();
 	FreeSRVTables();
 
-	for(int i=0;i<16;i++)
-	{
-		m_pOldRenderTargets12[i] = nullptr;
-	}
-
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
 	arrayShaderResourceView12.ptr	= -1;
 	depthStencilView12.ptr			= -1;
 
-	m_pOldDepthSurface12	= nullptr;
 	arraySize				= 0;
 	mips					= 0;
 
@@ -1693,18 +1681,7 @@ void Texture::unmap()
 
 vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap)
 {
-	/*
-		Getting a texel from a texture is actually a complicated operation (in the case of DX12).
-		First, we should create a READBACK buffer (with the size of one texel) then, we will copy the
-		data(texel) from the DEFAULT resource to the READBACK buffer and finally we could Map() and
-		return the texel value.
-
-		So far so good, the problem is, that we need to call CopyTextureRegion (in the command list) this
-		means that the operation will be done once the command list is executed!
-		To solve this, we could have a CopyCommandList and we should submit this copy command there, execute it and
-		do some fencing to check that the operation is completed.
-	*/
-	SIMUL_BREAK_ONCE("Getting a texel is not implemented.");
+    SIMUL_BREAK("")
 	return vec4(0.0f,0.0f,0.0f,0.0f);
 }
 
@@ -1722,38 +1699,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
     {
 		return;
     }
-
-	// Store old render targets and viewports:
-	// TO-DO: Check for more than 1!
-	// Option 1: There are FBO on the stack
-	if (deviceContext.GetFrameBufferStack().size())
-	{
-		auto curTarget					= deviceContext.GetFrameBufferStack().top();
-
-		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)curTarget->m_rt[0];
-		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)curTarget->m_dt;
-
-		m_OldViewports12[0].Width		= (float)curTarget->viewport.w;
-		m_OldViewports12[0].Height		= (float)curTarget->viewport.h;
-		m_OldViewports12[0].TopLeftX	= (float)curTarget->viewport.x;
-		m_OldViewports12[0].TopLeftY	= (float)curTarget->viewport.y;
-		m_OldViewports12[0].MinDepth	= curTarget->viewport.znear;
-		m_OldViewports12[0].MaxDepth	= curTarget->viewport.zfar;
-	}
-	// Option 2: There are not FBO on the stack ( apply default render targets)
-	else
-	{
-		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0];
-		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt;
-
-		m_OldViewports12[0].Width		= (float)deviceContext.defaultTargetsAndViewport.viewport.w;
-		m_OldViewports12[0].Height		= (float)deviceContext.defaultTargetsAndViewport.viewport.h;
-		m_OldViewports12[0].TopLeftX	= (float)deviceContext.defaultTargetsAndViewport.viewport.x;
-		m_OldViewports12[0].TopLeftY	= (float)deviceContext.defaultTargetsAndViewport.viewport.y;
-		m_OldViewports12[0].MinDepth	= deviceContext.defaultTargetsAndViewport.viewport.znear;
-		m_OldViewports12[0].MaxDepth	= deviceContext.defaultTargetsAndViewport.viewport.zfar;
-	}
-
+	
 	if (renderTargetViews12)
 	{
 		auto rp		= (dx12::RenderPlatform*)deviceContext.renderPlatform;
@@ -1795,29 +1741,8 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-
-	// Set the old rt,ds and viewports
-	if (m_pOldRenderTargets12[0])
-	{
-		rp->AsD3D12CommandList()->OMSetRenderTargets(1, m_pOldRenderTargets12[0], false, m_pOldDepthSurface12);
-	}
-	// Set old Viewport and scissor
-	if (m_OldViewports12[0].Width * m_OldViewports12[0].Height > 0.0f)
-	{
-		CD3DX12_RECT scissor(0, 0, (LONG)m_OldViewports12[0].Width, (LONG)m_OldViewports12[0].Height);
-
-		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
-		rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
-	}
-	rp->SetCurrentPixelFormat(mOldRtFormat);
-
-	// Again, inform crossplatform
-	deviceContext.GetFrameBufferStack().pop();
-
-	m_pOldRenderTargets12[0]	= nullptr;
-	m_pOldDepthSurface12		= nullptr;
-	m_OldViewports12[0]			= {};
-
+    rp->DeactivateRenderTargets(deviceContext);
+    rp->SetCurrentPixelFormat(mOldRtFormat);
 }
 
 int Texture::GetSampleCount()const

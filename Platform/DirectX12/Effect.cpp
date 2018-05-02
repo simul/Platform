@@ -1,7 +1,6 @@
 #define NOMINMAX
 
 #include "Effect.h"
-#include "Utilities.h"
 #include "Texture.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
