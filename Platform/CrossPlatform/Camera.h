@@ -169,12 +169,12 @@ namespace simul
 		public:
 			Camera();
 			~Camera();
-			META_BeginStates
-			META_EndStates
+			
+			
 			META_BeginProperties
-				META_ValueRangeProperty(float,HorizontalFieldOfViewInRadians,3.1416f*90.f	,0,3.1416f*179.f,"Horizontal Field Of View In Radians")
-				META_ValueRangeProperty(float,VerticalFieldOfViewInRadians	,0				,0,3.1416f*179.f,"Vertical Field Of View In Radians")
-				META_ReferenceProperty(simul::geometry::SimulOrientation	,Orientation	,"Orientation")
+				META_RangeProperty(float,HorizontalFieldOfViewInRadians,3.1416f*90.f	,0,3.1416f*179.f,"Horizontal Field Of View In Radians")
+				META_RangeProperty(float,VerticalFieldOfViewInRadians	,0				,0,3.1416f*179.f,"Vertical Field Of View In Radians")
+				META_Property(simul::geometry::SimulOrientation	,Orientation	,"Orientation")
 			META_EndProperties
 	
 			void SetCameraViewStruct(const CameraViewStruct &c);

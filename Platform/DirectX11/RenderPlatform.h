@@ -53,10 +53,7 @@ namespace simul
 			{
 				return !can_save_and_restore;
 			}
-			ID3D11Device *AsD3D11Device()
-			{
-				return device;
-			}
+			ID3D11Device *AsD3D11Device();
 			virtual void BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void EndEvent			(crossplatform::DeviceContext &deviceContext);
 			void StartRender(crossplatform::DeviceContext &deviceContext);

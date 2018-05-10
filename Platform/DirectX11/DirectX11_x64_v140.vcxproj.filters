@@ -269,15 +269,6 @@
     <None Include="..\CrossPlatform\SL\render_states.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="..\CrossPlatform\SL\simul_2d_cloud_constants.sl">
-      <Filter>SL</Filter>
-    </None>
-    <None Include="..\CrossPlatform\SL\simul_2d_cloud_detail.sl">
-      <Filter>SL</Filter>
-    </None>
-    <None Include="..\CrossPlatform\SL\simul_2d_clouds.sl">
-      <Filter>SL</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\simul_cloud_constants.sl">
       <Filter>SL</Filter>
     </None>
@@ -362,9 +353,6 @@
       <Filter>SFX</Filter>
     </FxCompile>
     <FxCompile Include="..\CrossPlatform\SFX\rain.sfx">
-      <Filter>SFX</Filter>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
       <Filter>SFX</Filter>
     </FxCompile>
     <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">

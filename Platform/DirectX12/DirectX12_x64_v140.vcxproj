@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>SimulDirectX12</ProjectName>
-    <ProjectGuid>{866CE181-E49D-4834-AB01-82F72FF1BB09}</ProjectGuid>
+    <ProjectGuid>{E5C264EF-011A-43A6-B805-6DE799C43A9B}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
     <Keyword>x64Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
@@ -152,7 +152,6 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
-      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>

@@ -22,7 +22,7 @@ namespace simul
 			LensFlare();
 			~LensFlare();
 			META_BeginProperties
-				META_ValueRangeProperty(float,Strength	,0.f,0.f	,1.f	,"Strength from 0 to 1 of the flare effect, calculated each frame automatically.")
+				META_RangeProperty(float,Strength	,0.f,0.f	,1.f	,"Strength from 0 to 1 of the flare effect, calculated each frame automatically.")
 			META_EndProperties
 			//! Set the camera and light directions. Do this once per frame to update the flare positions.
 			void UpdateCamera(const float *cam_dir,const float *dir_to_light);

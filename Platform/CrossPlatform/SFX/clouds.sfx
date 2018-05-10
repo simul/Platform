@@ -406,7 +406,7 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	float maxh			=1.0/inverseScalesKm.z;
 	vec3 tx				=texc;
 	vec3 dir_texc		=dir*inverseScalesKm;
-#if 0
+#if 1
 	float s				=0.2*stepLengthKm;
 	for( i=0;i<36;i++)
 	{
@@ -469,7 +469,7 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	illum.y			=exp(-extinctionPerKm*thicknessKm);
 	illum.zw        =vec2(1.0,1.0);// nearest_dir.xy;
 
-	illum = current*.99 + illum*0.01;
+	illum = illum*0.02+current*.98;
 
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }

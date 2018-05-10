@@ -106,11 +106,11 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform float rain;
 	uniform float maxFadeDistanceKm;
-	uniform float noise3DPersistence;
+	uniform float noise3DPersistenceXXX;
 	uniform float minSunlightAltitudeKm;
 
 	uniform vec3 crossSectionOffset;
-	uniform int noise3DOctaves;
+	uniform int noise3DOctavesXXX;
 
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
@@ -119,7 +119,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float yz;
 
 	uniform vec3 cloudIrRadiance2;
-	uniform float noise3DOctaveScale;
+	uniform float noise3DOctaveScaleXXX;
 
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactorDeprecated;
