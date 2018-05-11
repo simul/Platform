@@ -536,9 +536,17 @@ dx11::Effect::~Effect()
 
 void Effect::InvalidateDeviceObjects()
 {
+	crossplatform::Effect::InvalidateDeviceObjects();
+
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
 	platform_effect=e;
+}
+
+EffectTechnique::~EffectTechnique()
+{
+	ID3DX11EffectTechnique *t=asD3DX11EffectTechnique();
+	SAFE_RELEASE(t);
 }
 
 crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *name)
@@ -622,7 +630,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
 	if(!asD3DX11Effect())
@@ -704,7 +712,9 @@ ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 	D3DX11_EFFECT_VARIABLE_DESC desc;
 	ID3DX11EffectConstantBuffer *found_buffer=nullptr;
 	const char *firstname="";
-	for (int i=0;i<32;i++)
+	D3DX11_EFFECT_DESC eDesc;
+	effect->GetDesc(&eDesc);
+	for (int i=0;i<eDesc.ConstantBuffers;i++)
 	{
 		auto *b=effect->GetConstantBufferByIndex(i);
 		if(!b->IsValid())

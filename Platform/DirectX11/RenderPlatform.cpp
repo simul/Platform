@@ -177,6 +177,16 @@ RenderPlatform::~RenderPlatform()
 	InvalidateDeviceObjects();
 }
 
+ID3D11Device *RenderPlatform::AsD3D11Device()
+{
+/*	if(!device)
+		return 0;
+	((ID3D11Device*)device)->AddRef();
+	int ref=((ID3D11Device*)device)->Release();
+	std::cerr<<ref<<" ";*/
+	return device;
+}
+
 #ifdef _XBOX_ONE
 ESRAMManager *eSRAMManager=NULL;
 #endif
@@ -1010,8 +1020,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext &dev
 	
 	viewport.Width		=(float)(deviceContext.defaultTargetsAndViewport.viewport.w);
 	viewport.Height		=(float)(deviceContext.defaultTargetsAndViewport.viewport.h);
-	viewport.TopLeftX	=deviceContext.defaultTargetsAndViewport.viewport.x;
-	viewport.TopLeftY	=deviceContext.defaultTargetsAndViewport.viewport.y;
+	viewport.TopLeftX	=(float)deviceContext.defaultTargetsAndViewport.viewport.x;
+	viewport.TopLeftY	=(float)deviceContext.defaultTargetsAndViewport.viewport.y;
 	viewport.MinDepth	=0.0f;
 	viewport.MaxDepth	=1.0f;
 	context->RSSetViewports(1, &viewport);

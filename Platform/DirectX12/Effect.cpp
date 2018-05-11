@@ -1,7 +1,6 @@
 #define NOMINMAX
 
 #include "Effect.h"
-#include "Utilities.h"
 #include "Texture.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
@@ -862,6 +861,8 @@ void Effect::InvalidateDeviceObjects()
 			pass12->InvalidateDeviceObjects();
 		}
 	}
+	techniques.clear();
+	crossplatform::Effect::InvalidateDeviceObjects();
 }
 
 crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByName(const char *name)

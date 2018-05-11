@@ -2,7 +2,6 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX12/MacrosDx1x.h"
-#include "Simul/Platform/DirectX12/Utilities.h"
 #include "Simul/Platform/DirectX12/SimulDirectXHeader.h"
 
 #include <iomanip>
@@ -414,39 +413,41 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		{
 			ID3D12InfoQueue* infoQueue = nullptr;
 			mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue));
-			
-			// Set break on_x settings
-			bool breakOnWarning = false;
-            // vvvvvvv
-            // WARNING: PIX does not like having breakOnWarning enabled, so you better disable it!
-            // ^^^^^^^
-			SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
-			if (breakOnWarning)
+			if(infoQueue)
 			{
-				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-			}
-			else
-			{
-				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
-				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false);
-			}
-
-			// Filter msgs
-			bool filterMsgs = true;
-			if (filterMsgs)
-			{
-				D3D12_MESSAGE_ID msgs[] =
+				// Set break on_x settings
+				bool breakOnWarning = false;
+				// vvvvvvv
+				// WARNING: PIX does not like having breakOnWarning enabled, so you better disable it!
+				// ^^^^^^^
+				SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
+				if (breakOnWarning)
 				{
-					D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
-					D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
-				};
-				D3D12_INFO_QUEUE_FILTER filter	= {};
-				filter.DenyList.pIDList			= msgs;
-				filter.DenyList.NumIDs			= _countof(msgs);
-				infoQueue->AddStorageFilterEntries(&filter);
+					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+				}
+				else
+				{
+					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false);
+				}
+
+				// Filter msgs
+				bool filterMsgs = true;
+				if (filterMsgs)
+				{
+					D3D12_MESSAGE_ID msgs[] =
+					{
+						D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+						D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+					};
+					D3D12_INFO_QUEUE_FILTER filter	= {};
+					filter.DenyList.pIDList			= msgs;
+					filter.DenyList.NumIDs			= _countof(msgs);
+					infoQueue->AddStorageFilterEntries(&filter);
+				}
+				SAFE_RELEASE(infoQueue);
 			}
-			SAFE_RELEASE(infoQueue);
 		}
 
 		// Store information about the GPU

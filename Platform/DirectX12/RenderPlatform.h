@@ -267,6 +267,10 @@ namespace simul
 			//! Holds resources to be deleted and its age
 			std::vector<std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
 
+            //! Default number of barriers we hold, the number will increase
+            //! if we run out of barriers
+            int mTotalBarriers;
+            int mCurBarriers;
 			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
 
 			bool isInitialized = false;

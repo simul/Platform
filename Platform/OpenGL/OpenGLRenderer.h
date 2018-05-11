@@ -45,8 +45,8 @@ namespace simul
 			}
 			clouds::TrueSkyRenderer trueSkyRenderer;
 			META_BeginProperties
-				META_ValueProperty(bool,ShowWater,"Show water surfaces.")
-				META_ValueProperty(float,Exposure,"A linear multiplier for rendered brightness.")
+				META_Property(bool,ShowWater,"Show water surfaces.")
+				META_Property(float,Exposure,"A linear multiplier for rendered brightness.")
 			META_EndProperties
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();

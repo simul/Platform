@@ -518,7 +518,7 @@ math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
 
 Camera::Camera():Orientation()
 {
-	InitializePropertiesDefinition();
+	InitializeProperties();
 	VerticalFieldOfViewInRadians=60.f*SIMUL_PI_F/180.f;
 	HorizontalFieldOfViewInRadians=0;
 	Orientation.Rotate(3.14f/2.f,simul::math::Vector3(1,0,0));
