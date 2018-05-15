@@ -2,7 +2,6 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
 
-#define MaxNoiseAmplitudeKm 3.0
 #define CLOUD_FADEIN_DIST 0.24
 
 struct LayerData
@@ -119,7 +118,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float yz;
 
 	uniform vec3 cloudIrRadiance2;
-	uniform float noise3DOctaveScaleXXX;
+	uniform float MaxNoiseAmplitudeKm;
 
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactorDeprecated;

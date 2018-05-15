@@ -413,13 +413,13 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
 		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 1).z;// *saturate((maxh - wpos.z) / s);
 		thicknessKm += lookup*s;
-		s				*=1.1;
+		s				*=1.4;
 	}
 #else
 	float dist_km		=rand*max_dist_km;
 	// we expect stepLength in km for this shader
 	tx				+=dir_texc*dist_km;
-	float lookup	= texture_3d_wwc_lod(cloudDensity, vec3(tx), 0).z;
+	float lookup	= texture_3d_wwc_lod(cloudDensity, vec3(tx),1).z;
 	thicknessKm		+= lookup*max_dist_km;
 #endif
 	return thicknessKm;
@@ -443,7 +443,7 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	int i				=0;
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	float s				=0.5*stepLengthKm;
-	float maxh			=1.0/inverseScalesKm.z;
+	float max_h_km		=1.0/inverseScalesKm.z;
 	// We will blend with the existing value, to temporally amortize the calculation effort:
 	vec4 current = vec4(0, 0, 0, 0);
 	{
@@ -451,7 +451,11 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	}
 	// a random number between 0 and 1.0:
 	float randm=rand3(vec3(idx+uint3(stepCycle,stepCycle,stepCycle)));
-	float extinction_distance_km=max(log(100)/extinctionPerKm,2.0/inverseScalesKm.x/float(windowGrid.x));
+
+	// how many km from top.
+	float z_from_top_km=max_h_km*float(1+windowGrid.z-idx.z)/float(windowGrid.z);
+
+	float extinction_distance_km=min(2.0*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001));//max(log(100)/extinctionPerKm,2.0/inverseScalesKm.x/float(windowGrid.x));
 	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir,randm,extinction_distance_km);
 
 	// find nearest direction to light for ambient lighting:
@@ -460,12 +464,14 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	float total=0.0;
 
 	vec4 illum;
-
+	float t			=saturate(thicknessKm/extinction_distance_km);
+	t				=t*0.03+current.z*0.97;
+	thicknessKm		=t*extinction_distance_km;
 	illum.x			=exp(-extinctionPerKm*thicknessKm / 12);
 	illum.y			=exp(-extinctionPerKm*thicknessKm);
-	illum.zw        =vec2(1.0,1.0);// nearest_dir.xy;
+	illum.zw        =vec2(t,1.0);
 
-	illum = illum*0.01+current*.99;
+	illum.xyw= illum.xyw*0.03+current.xyw*.97;
 
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }

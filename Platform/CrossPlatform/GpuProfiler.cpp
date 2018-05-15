@@ -147,6 +147,10 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 			profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
 			profileData->TimestampEndQuery		=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
 			profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+
+			profileData->DisjointQuery->SetName((n+" disjoint").c_str());
+			profileData->TimestampStartQuery->SetName((n+" start").c_str());
+			profileData->TimestampEndQuery->SetName((n+" end").c_str());
 		}
 		if(profileData->DisjointQuery)
 		{
