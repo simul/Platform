@@ -514,13 +514,14 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 	uint centerVerticies = (boundingVerticies * g_layerDensity) + 1;
 	bool noDisplacement = false;
 
-	//if (g_verticiesPerLayer < 500)
-		//noDisplacement = true;
+	if (g_verticiesPerLayer < 500)
+		noDisplacement = true;
 
 	uint vertexNo = IN.vertex_id;
 
 	if (vertexNo) vertexNo--;
 
+	//Bottom of the ocean
 	if (vertexNo < 6)
 	{
 		noDisplacement = true;
@@ -555,6 +556,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		if (vertexNo % 2) vPos.y = g_layerDensity * 4;
 		if (vertexNo < 2) vPos.x = g_layerDensity * 4;
 	}
+	//Bounding verticies for underwater 
 	else if (vertexNo < boundingVerticies + 6)
 	{
 		vertexNo -= 6;
@@ -639,6 +641,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			}
 		}
 	}
+	//Surface Verticies
 	else 
 	{
 		vertexNo -= boundingVerticies + 6;
@@ -858,6 +861,8 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		}
 	}
 
+	//Deal with boundary verticies
+
 	bool lerpDisplacement = false;
 	vec2 lerpSample1;
 	vec2 lerpSample2;
@@ -878,9 +883,10 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		lerpSample2.y = vPos.y;		
 	}
 	
-	//Center and scale verticies to final position
+	//Scale
 	vPos *= layerQuadSize;
 
+	//Center
 	vPos.x += layerX - (layerQuadSize * g_layerDensity * 2);
 	vPos.y += layerY - (layerQuadSize * g_layerDensity * 2);
 	vPos.z += g_oceanHeight;
@@ -919,6 +925,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		}
 	}
 	
+	//If there is displacement to be calculated, do it
 	if (!noDisplacement)
 	{
 		// Blend displacement to avoid tiling artifact
@@ -947,6 +954,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			}
 		}
 		
+		//Calclate Shore damping
 		float shoreDepth = 1.0;
 		vec3 detailDisplacement = vec3(0.0, 0.0, 0.0);
 		float fade = 1.0;
@@ -1026,7 +1034,8 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	bool noDisplacement = false;
 
 	if (vertexNo) vertexNo--;
-
+	
+	//Bottom of the object
 	if (vertexNo <= 6)
 	{
 		noDisplacement = true;
@@ -1039,6 +1048,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	else
 	{
 		vertexNo -= 6;
+		//Bounding faces
 		if (vertexNo < boundingVerticies) {
 			int edgeNo = 0;
 			if (vertexNo >= boundingVerticies / 2)
@@ -1093,6 +1103,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 				}
 			}
 		}
+		//Surface
 		else
 		{
 			vertexNo -= boundingVerticies;
@@ -1116,19 +1127,21 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 			//Output.vecColour = vec4(vPos.y / (g_layerDensity * 2), 1.0 - (vPos.y / (g_layerDensity * 2)), 0.0, 1.0);
 		}
 	}
+	//Scale
 	vPos.x *= (g_boundedDimension.x / (float)g_boundedDensity.x);
 	vPos.y *= (g_boundedDimension.y / (float)g_boundedDensity.y);
 
+	//Center
 	vPos.x -= (g_boundedDimension.x / 2.0);
 	vPos.y -= (g_boundedDimension.y / 2.0);
 
+	//Rotation
 	float rotation = -(g_boundedRotation / 360.0) * PI * 2.0;
-
 	float tempx = vPos.x*cos(rotation) - vPos.y*sin(rotation);
 	float tempy = vPos.y*cos(rotation) + vPos.x*sin(rotation);
-	vPos.x = tempx;
-	vPos.y = tempy;
+	vPos.xy = vec2(vPos.x*cos(rotation) - vPos.y*sin(rotation), vPos.y*cos(rotation) + vPos.x*sin(rotation));
 
+	//Transform
 	vPos += g_boundedLocation.yxz;
 
 	float4 pos_local = float4(vPos, 1);
@@ -1178,6 +1191,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	vec3 eye_vec = g_LocalEye - In.LocalPos;
 	float surfaceDepth = length(eye_vec)/ 300000.0;
 
+	//Disable refraction if camera is far enough away
 	if(enableRefraction)
 		if (surfaceDepth > 50.0)
 		{
@@ -1205,6 +1219,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	float subsurfaceSample;
 	float subsurfaceDepth;
 
+	//Calculate gradient
 	vec2 grad = ((g_texGradient.Sample(g_samplerGradient, In.texCoords).xy + g_texGradient.Sample(g_samplerGradient, In.texCoords / 3.95).xy) / 2.0);// *In.vecColour.w;
 	
 	if (In.vecColour.z != 1.0)
@@ -1494,6 +1509,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 				refractColourInput = vec4(sunEffect, sunEffect, sunEffect, sunEffect);
 		}*/
 
+		//Subsurface and light transportation calculations
 		vec3 incomingRadiance = exp(-extinction * scatterDepth * fadeDistance) * g_SunColor;
 		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
 		vec4 surfaceScattering = vec4(g_SunColor * exp(-fadeDistance * (eye_depth ) * extinction ) , 0.0);
@@ -1535,6 +1551,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 
 	float eye_depth = abs(depthInput.z);
 
+	//Subsurface and light transportation calculations
 	vec3 incomingRadiance = exp(-extinction  * (waterDepth) * fadeDistance) * g_SunColor;
 	vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
 	vec4 surfaceScattering = vec4(g_SunColor * exp(-extinction) , 0.0);
@@ -1542,7 +1559,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 
 	// --------------- Reflected colour
 	vec3 refl = texture_cube(g_texReflectCube, normalize(reflect_vec.yxz));
-	float reflectFresnel = fresnel(normalize(-reflect_vec), normal, 1.0, 1.33);
+	float reflectFresnel = fresnel(normalize(-reflect_vec), normal, 1.0,1.33);
 
 	Output += mult;
 	Output += SSS * surfaceScattering ;
