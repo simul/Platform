@@ -465,7 +465,7 @@ shader void UpdateProbeValuesCS(uint3 sub_pos : SV_DispatchThreadID)
 {
 	vec2 uv_local = (g_ProbePos[sub_pos.x].xy * g_UVScale2 + g_UVOffset2);
 	vec3 displacement = g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xyz;
-	float height = (displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z;
+	float height = max((displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z,0.0);
 	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
 }
 
@@ -883,6 +883,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 
 	vPos.x += layerX - (layerQuadSize * g_layerDensity * 2);
 	vPos.y += layerY - (layerQuadSize * g_layerDensity * 2);
+	vPos.z += g_oceanHeight;
 	
 	float4 pos_local = float4(vPos, 1);
 	
@@ -955,7 +956,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			fade = saturate(((length(pos_local.xy - cameraCenter) * g_UVScale) - 0.4) / 0.6);
 
 			vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
-			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - g_ShoreDepthTextureLocation.z, 0.0, 5.0) / 5.0;
+			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 5.0) / 5.0;
 			displacement *= shoreDepth;
 			/*
 			if (lerpDisplacement)
@@ -1359,7 +1360,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(offset,0.0, 0.0,0.0); // length(g_texDisplacement.SampleLevel(wrapSamplerState, In.texCoords, 0).xy);//
 
-	//float4 refractColour = vec4(0.0,0.0,0.0,1.0);
+	//float4 refractColour = vec4(In.vecColour.w, In.vecColour.w, In.vecColour.w, In.vecColour.w);
 
 	Output.Scattering = vec4(g_scattering, foamValue);
 	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
@@ -1538,9 +1539,6 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 	vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
 	vec4 surfaceScattering = vec4(g_SunColor * exp(-extinction) , 0.0);
 	vec4 SSS = vec4((albedo * (p / (1 + c)) * (1 - (exp(-extinction * (1 + c)  * fadeDistance * absoluteDepth)))), 0.0);
-
-	//SSS = max(SSS, vec4(0.0, 0.0, 0.0, 0.0));
-	//surfaceScattering = max(surfaceScattering, vec4(0.0, 0.0, 0.0, 0.0));
 
 	// --------------- Reflected colour
 	vec3 refl = texture_cube(g_texReflectCube, normalize(reflect_vec.yxz));
