@@ -45,7 +45,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
 	vec3 ambient				=amb_lookup.rgb*light.w;
 	vec4 c;
-	float l						=lerp(0.2, 0.5, density.z);
+	float l						=lerp(0.42, 0.5, density.z);
 	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 
@@ -412,7 +412,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,nearFarTexc
 										,brightness_factor);
 
-	clr[NUM_CLOUD_INTERP - 1].a			*=cosine;
+	clr[NUM_CLOUD_INTERP - 1].a			*=cosine*cosine;
 //clr[NUM_CLOUD_INTERP - 1].rgb*=0.5*(1.0+colours[idx%7]);
 	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
 
