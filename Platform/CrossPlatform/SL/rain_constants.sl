@@ -11,6 +11,7 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform vec3 meanFallVelocity;
 	uniform float intensity;
 	uniform float flurry;
+	uniform float flurryRate;
 	uniform float phase0;
 	uniform float phase1;
 	uniform float timeStepSeconds;

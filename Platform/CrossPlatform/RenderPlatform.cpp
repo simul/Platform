@@ -655,7 +655,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=qsize;
+	debugConstants.sideview			=qsize*0.5f;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -690,7 +690,7 @@ void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatf
 	debugEffect->SetTexture(deviceContext,imageTexture,t);
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=qsize;
+	debugConstants.sideview			=qsize*0.5f;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);

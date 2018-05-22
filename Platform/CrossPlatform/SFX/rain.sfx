@@ -31,6 +31,7 @@ uniform StructuredBuffer<vec4> particlePos;
 uniform RWStructuredBuffer<vec4> particlePosRW;
 uniform Texture2D rainDepthTexture;
 
+
 // from http://http.developer.nvidia.com/GPUGems3/gpugems3_ch37.html
 
 struct RandomResult
@@ -122,11 +123,6 @@ vec3 Frac(vec3 pos,vec3 p1,float scale)
 	return pos;
 }
 
-shader posTexVertexOutput VS_ShowTexture(idOnly id)
-{
-    return VS_ScreenQuad(id,rect);
-}
-
 
 CS_LAYOUT(16,1,1)
 shader void CS_InitParticles(uint3 idx : SV_DispatchThreadID)
@@ -195,7 +191,7 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	targetTextureArray[idx]	=result;
 }
 
-shader ParticleGeometryOutput VS_SnowParticles(uint vertex_id : SV_VertexID)
+ParticleGeometryOutput VS_SnowParticles(uint vertex_id,bool rainMaskEnabled)
 {
 	uint particle_id = vertex_id / 6;
 	uint vertex_index = vertex_id - (particle_id * 6);
@@ -231,8 +227,13 @@ shader ParticleGeometryOutput VS_SnowParticles(uint vertex_id : SV_VertexID)
 	float mapped_rain	=texture_wrap_lod(rainMapTexture,map_texc.xy,0).x;
 
 	// discard if under surface.
-	vec3 in_depth_space	=0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0);
-	float depth			=texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,1.0-in_depth_space.y),0).x*rainDepthTextureScale;
+	vec3 in_depth_space		= vec3(1.0,1.0,1.0);
+	float depth 			= 1.0;
+	if(rainMaskEnabled)
+	{
+		in_depth_space	= 0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0.0);
+		depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale;
+	}
 
 	int maxtype			=int(16.0*mapped_rain);
 	p.type				=p.type%maxtype;
@@ -248,15 +249,15 @@ shader ParticleGeometryOutput VS_SnowParticles(uint vertex_id : SV_VertexID)
 	float w		=particleWidth;
 
 	vec3 dir;
-	uint corner_id = (vertex_index + (vertex_index == 2) - 1 * (vertex_index > 2)) % 4;
+	uint corner_id = (vertex_index + uint(vertex_index == 2) - 1 * uint(vertex_index > 2)) % 4;
 	
 	{
 		vec3 eyeVec = normalize(-position0.xyz);
 		float width = w*fade;
 		vec3 v1 = cross(eyeVec, vec3(0, 0, 1));
 		vec3 v2 = cross(eyeVec, vec3(0, 1, 0));
-		vel		= vel+0.0001*vec3(0, 0, 1);
-		float height = w +length(vel);	// g_SpriteSize/2.0;
+		vel		= vel+0.000001*vec3(0, 0, 1);
+		float height = w + 6*length(vel);	// g_SpriteSize/2.0;
 		float dist = length(position0.xyz);
 		fade *= max(.025, saturate(1.0 * width / height));
 
@@ -303,16 +304,12 @@ shader ParticleGeometryOutput VS_SnowParticles(uint vertex_id : SV_VertexID)
 }
 
 
-vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth,bool msaa)
+vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth)
 {
 	vec4 clip_pos		=IN.clip_pos/IN.clip_pos.w;
 	vec2 screen_texc	=vec2(0.5*(clip_pos.x+1.0),0.5*(1.0-clip_pos.y));
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
-	float solid_depth	=1.0;
-	if(msaa)
-		solid_depth		=1.0;
-	else
-		solid_depth=texture_clamp(depthTexture,depth_texc.xy).x;
+	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
 	float render_depth	=clip_pos.z;
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
@@ -321,45 +318,64 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth,bool msaa)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistRain;
 	float rain_dist		=depthToFadeDistance(render_depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	
-	if(IN.strength<=0)
-	{
-		discard;
-	}
 	if(rain_dist>solid_dist)
 	{
-	//return vec4(solid_dist,0,0,0.5);
 		discard;
 	}
 
-	vec4 result				=cubeTexture.SampleLevel(wrapSamplerState,mul(cubemapTransform,vec4(IN.dir,0)).xyz,4);
 	vec2 pos				=IN.texCoords.xy;
-	float cos0				=dot(IN.dir,lightDir);
-	float BetaMie			=HenyeyGreenstein(0.5,cos0);
-	vec3 directionalLight	=BetaMie*lightColour.rgb;
-	result.rgb				+=directionalLight.rgb;
+	vec3 result 			= IN.betaMie*lightColour.rgb + IN.light;
 	float radius1			=pow(length(pos.xy),.5);
-	float angle				=atan2(pos.x,pos.y);
-//	float spoke			=fract(angle/SIMUL_PI_F*3.0)-0.5;
-	float opacity			=IN.strength*saturate(1.0-radius1);//-spoke*spoke);
+	float opacity			= IN.strength*saturate(1.0-2.0*radius1);
+	
 	return vec4(result.rgb,opacity);
 }
 
 
-shader ParticleGeometryOutput VS_RainParticles(uint vertex_id : SV_VertexID)
+shader vec4 PS_SnowParticles(ParticleGeometryOutput IN): SV_TARGET
+{
+	return PSSnowParticles(IN,true);
+}
+
+shader vec4 PS_SnowParticles_NoCubemap(ParticleGeometryOutput IN): SV_TARGET
+{
+	//float cos0				=dot(IN.dir,lightDir);
+	//float BetaMie			=HenyeyGreenstein(0.5,cos0);
+	vec3 directionalLight	=IN.betaMie*lightColour.rgb;
+	vec4 result				=vec4(directionalLight.rgb,1.0);
+	vec2 pos				=IN.dir.xy*2.0-1.0;
+	float radius1			=length(pos.xy);
+	float angle				=atan2(pos.x,pos.y);
+//	float spoke			=fract(angle/SIMUL_PI_F*3.0)-0.5;
+	float opacity			=IN.strength*saturate(1.0-radius1);//-spoke*spoke);
+	
+	//return vec4(1,0,1,opacity);
+	return vec4(result.rgb,opacity);
+}
+
+shader ParticleGeometryOutput VS_SnowParticles_NoMask(uint vertex_id : SV_VertexID)
+{
+	return VS_SnowParticles(vertex_id,false);	
+}
+
+shader ParticleGeometryOutput VS_SnowParticles_Mask(uint vertex_id : SV_VertexID)
+{
+	return VS_SnowParticles(vertex_id,true);	
+}
+
+ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled)
  {    
 	uint particle_id = vertex_id / 6;
 	uint vertex_index = vertex_id - (particle_id * 6);
 	ParticleGeometryOutput p;
-		
-	p.betaMie   =0;
-	p.light     =vec3(0,0,0);
-			
 #if 1
 	uint4 state = uint4(163 + particle_id % 71, 83117 + particle_id / 51, 195 + particle_id / 1001, 9019 + particle_id % 507);
 	RandomResult r1 = Random(state);
 	RandomResult r2 = Random(r1.state);
 	RandomResult r3 = Random(r2.state);
 	RandomResult r4 = Random(r3.state);
+	RandomResult r5 = Random(r4.state);
+	RandomResult r6 = Random(r5.state);
 	vec3 p_pos = 2.0*vec3(r4.value, r2.value, r3.value);
 	p_pos -= vec3(1.0, 1.0, 1.0);
 	p.type				=particle_id%uint(32);
@@ -367,8 +383,17 @@ shader ParticleGeometryOutput VS_RainParticles(uint vertex_id : SV_VertexID)
 	vec3 p_pos			=particlePos[particle_id].xyz;
 	p.type				=int(particlePos[particle_id].w);
 #endif
-	vec3 position		=vec3(p_pos)*particleZoneSize;
-	vec3 position0		=position - offset[0].xyz;
+	vec3 x				=vec3(r5.value-0.5,r2.value-0.5,r1.value-0.5);
+	vec3 y				=vec3(r4.value-0.5,r6.value-0.5,r3.value-0.5);
+	float time0			=3.14126536*70.0*(phase0+r6.value);
+	float time1			=3.14126536*70.0*(phase1+r6.value);
+
+	vec3 flurry_offset0	=0.5*(x*sin(time0)+y*cos(time0));
+	vec3 flurry_offset1	=0.5*(x*sin(time1)+y*cos(time1));
+	vec3 position		=vec3(p_pos)*particleZoneSize-offset[0].xyz;
+	position			=WrapParticleZone(position, particleZoneSize/2);
+	vec3 position0		=position+flurry*flurry_offset0;
+	vec3 position1		=position-viewPositionOffset.xyz+flurry*flurry_offset1;
 	position0			=WrapParticleZone(position0, particleZoneSize/2);
 
 	
@@ -376,8 +401,13 @@ shader ParticleGeometryOutput VS_RainParticles(uint vertex_id : SV_VertexID)
 	float mapped_rain	=texture_wrap_lod(rainMapTexture,map_texc.xy,0).x;
 
 	// discard if under surface.
-	vec3 in_depth_space	=0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0);
-	float depth			=texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,1.0-in_depth_space.y),0).x*rainDepthTextureScale;
+	vec3 in_depth_space		= vec3(1.0,1.0,1.0);
+	float depth 			= 1.0;
+	if(rainMaskEnabled)
+	{
+		in_depth_space	= 0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0.0);
+		depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale;
+	}
 
 	int maxtype			=int(16.0*mapped_rain);
 	p.type				=p.type%maxtype;
@@ -391,16 +421,15 @@ shader ParticleGeometryOutput VS_RainParticles(uint vertex_id : SV_VertexID)
 	////if (p.type <= 0 || clip_pos.z < 0)
 	//	discard;
 	
-		float g_FrameRate		=20.0;
 	vec3 pos;
 	
-	vec3 vel	=(viewPositionOffset.xyz);
+	vec3 vel	=(position1-position0);
 	float fade = p.strength;
 	float w = particleWidth;
 //	if (p.type == 44)
 //		w *= 10.0;
 	vec3 dir;
-	uint corner_id = (vertex_index + (vertex_index == 2) - 1 * (vertex_index > 2)) % 4;
+	uint corner_id = (vertex_index + uint(vertex_index == 2) - 1 * uint(vertex_index > 2)) % 4;
 	
 	{
 		vec3 eyeVec = normalize(-position0.xyz);
@@ -435,19 +464,32 @@ shader ParticleGeometryOutput VS_RainParticles(uint vertex_id : SV_VertexID)
 	p.position	=mul(worldViewProj[1], vec4(pos, 1.0));
 	p.clip_pos = p.position;
 	p.dir		=dir;
-#if 0
-	//p.view		=normalize(pos);
-	p.dir		=0;//dir;// g_texcoords[corner_id] * 2.0 - vec2(1.0, 1.0);
-	//p.view		=vel;
-	if(in_depth_space.x>0&&in_depth_space.y>0&&in_depth_space.x<1.0&&in_depth_space.y<1.0&&in_depth_space.z>0.0&&in_depth_space.z<1.0)
+	p.betaMie   =0.0;
+	p.light     =cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(-dir.xyz, 0)).xyz,0).rgb;
+	if(rainMaskEnabled)
 	{
-		p.dir=saturate(in_depth_space.xyz);
-		if(in_depth_space.z>depth)
-			p.type=44;
+		//p.view		=normalize(pos);
+	//	p.dir		=depth;//saturate(in_depth_space);//dir;// g_texcoords[corner_id] * 2.0 - vec2(1.0, 1.0);
+		//p.view		=vel;
+		if(in_depth_space.x>0.0&&in_depth_space.y>0.0&&in_depth_space.x<1.0&&in_depth_space.y<1.0)
+		{
+			//p.dir=in_depth_space.xyz;//saturate(in_depth_space.xyz);
+			//p.dir		=0*saturate(in_depth_space.z);//
+			//p.dir.g		=saturate((depth-0.4999)*1000.0);//saturate(1000.0*(depth-in_depth_space.z));//
+			if(depth<1.0&&in_depth_space.z<depth+0.01)
+			{
+				p.type=44;
+			}
+		}
+		else
+		{
+		/*	if(in_depth_space.z<0.0)
+				p.dir=0.0;
+			else if(in_depth_space.z>=1.0)
+				p.dir=1.0;*/
+		//	p.type=44;
+		}
 	}
-	else
-		p.type=44;
-#endif
 	//p.dir=depth;
     return p;
 }
@@ -462,8 +504,13 @@ SamplerState samAniso
     AddressV = Wrap;
 };
 
-vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth,vec3 light,bool msaa)
+vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth,vec3 light)
 {
+	if(IN.type==44)
+	{
+		discard;
+	}
+	//return vec4(IN.light.xyz,0.5);;//
 	vec4 clip_pos		=IN.clip_pos/IN.clip_pos.w;
 	vec2 nxy			=IN.dir.xy;
 	float r				=length(IN.texCoords.xy);
@@ -473,11 +520,7 @@ vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth,vec3 light,boo
 	float vis			=saturate(100.0*(1.0 - r));// *texel.a;//
 	vec2 screen_texc	=vec2(0.5*(clip_pos.x+1.0),0.5*(1.0-clip_pos.y));
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
-	float solid_depth=1.0;
-	if(msaa)
-		solid_depth	=1.0;
-	else
-		solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
+	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
 	float render_depth	=clip_pos.z;
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
@@ -487,138 +530,64 @@ vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth,vec3 light,boo
 	float rain_dist		=depthToFadeDistance(render_depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	
 	float mapped_rain	=IN.strength;
-	vis					=mapped_rain;//=saturate(vis*mapped_rain);
+	vis					=mapped_rain;
 	vec3 normal			=mul(worldView[1],vec4(n,0.0)).xyz;
 	float fresnel		=r;
 	vec4 result			=vec4(light,1.0-lerp(0.0,vis,fresnel));
 
-	//result.rg			= nxy;
-	//result.a = .5;// vec4(IN.view, 0.5);
-	if(rain_dist>solid_dist-splashDelta)
-	{
-	//	result.rgb		*=10.0;//vec3(1,1,1);
-	}
-	if(IN.type==44)
-	{
-	//	result.gb=0;
-		discard;
-	}
 	if(mapped_rain<=0||rain_dist>solid_dist)
 	{
-	//return vec4(10000,1,1,1);
 		discard;
 	}
-	//return vec4(IN.dir,0.5);
-	//return saturate(vec4(rain_dist*30000.0,0,solid_dist*30000.0,1.0));
-	
 	return result;
 }
 
-vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth,bool msaa)
+shader ParticleGeometryOutput VS_RainParticles_NoMask(uint vertex_id : SV_VertexID)
 {
-	vec3 light = cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(-IN.dir.xyz, 0)).xyz,0).rgb;
-	//c.rgb *= exposure;  instead we apply this in the cubemap.
-	//light = pow(light, vec3(gamma, gamma, gamma));
-	return PSRainParticles(IN, reverseDepth, light,msaa);
+	return VS_RainParticles(vertex_id,false);
 }
 
-vec4 PSSnowParticles_NoCubemap(ParticleGeometryOutput IN,bool msaa)
+shader ParticleGeometryOutput VS_RainParticles_Mask(uint vertex_id : SV_VertexID)
 {
-	float cos0				=dot(IN.dir,lightDir);
-	float BetaMie			=HenyeyGreenstein(0.5,cos0);
-	vec3 directionalLight	=BetaMie*lightColour.rgb;
-	vec4 result				=vec4(directionalLight.rgb,1.0);
-	vec2 pos				=IN.dir.xy*2.0-1.0;
-	float radius1			=length(pos.xy);
-	float angle				=atan2(pos.x,pos.y);
-	//float spoke			=fract(angle/SIMUL_PI_F*3.0)-0.5;
-	float opacity			=IN.strength*saturate(1.0-radius1);//-spoke*spoke);
-
-	return vec4(result.rgb,opacity);
+	return VS_RainParticles(vertex_id,true);
 }
 
-vec4 PS_RainParticles(ParticleGeometryOutput IN,bool reverseDepth,bool msaa)
+vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth)
 {
-	return PSRainParticles(IN,reverseDepth,msaa);
+	//vec3 light = cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(-IN.dir.xyz, 0)).xyz,0).rgb;
+	return PSRainParticles(IN, reverseDepth, IN.light);
+}
+
+vec4 PS_RainParticles(ParticleGeometryOutput IN,bool reverseDepth)
+{
+	return PSRainParticles(IN,reverseDepth);
 }
 
 shader vec4 PS_RainParticles_ReverseDepth(ParticleGeometryOutput IN) : SV_Target
 {
-	return PS_RainParticles(IN,true,false);
+	return PS_RainParticles(IN,true);
 }
 
 shader vec4 PS_RainParticles_ForwardDepth(ParticleGeometryOutput IN) : SV_Target
 {
-	return PS_RainParticles(IN,false,false);
+	return PS_RainParticles(IN,false);
 }
 
-vec4 PS_RainParticles_NoCubemap(ParticleGeometryOutput IN,bool reverseDepth,bool msaa) 
+vec4 PS_RainParticles_NoCubemap(ParticleGeometryOutput IN,bool reverseDepth) 
 {
 	vec3 light				=lightColour.rgb;
-	return PSRainParticles(IN,reverseDepth,light,msaa);
+	return PSRainParticles(IN,reverseDepth,light);
 }
 
 shader vec4 PS_RainParticles_NoCubemap_ReverseDepth(ParticleGeometryOutput IN) : SV_Target
 {
-	return PS_RainParticles_NoCubemap(IN,true,false);
+	return PS_RainParticles_NoCubemap(IN,true);
 }
 
 shader vec4 PS_RainParticles_NoCubemap_ForwardDepth(ParticleGeometryOutput IN) : SV_Target
 {
-	return PS_RainParticles_NoCubemap(IN,false,false);
+	return PS_RainParticles_NoCubemap(IN,false);
 }
-
-shader vec4 PS_SnowParticles(ParticleGeometryOutput IN): SV_TARGET
-{
-	return PSSnowParticles(IN,true,false);
-}
-
-shader vec4 PS_SnowParticles_NoCubemap(ParticleGeometryOutput IN): SV_TARGET
-{
-	return PSSnowParticles_NoCubemap(IN,false);
-}
-
-
-
-
-
-
-shader vec4 PS_RainParticles_ReverseDepth_MSAA(ParticleGeometryOutput IN) : SV_Target
-{
-	return PS_RainParticles(IN,true,true);
-}
-
-shader vec4 PS_RainParticles_ForwardDepth_MSAA(ParticleGeometryOutput IN) : SV_Target
-{
-	return PS_RainParticles(IN,false,true);
-}
-
-vec4 PS_RainParticles_NoCubemap_MSAA(ParticleGeometryOutput IN,bool reverseDepth) 
-{
-	vec3 light				=lightColour.rgb;
-	return PSRainParticles(IN,reverseDepth,light,true);
-}
-
-shader vec4 PS_RainParticles_NoCubemap_ReverseDepth_MSAA(ParticleGeometryOutput IN) : SV_Target
-{
-	return PS_RainParticles_NoCubemap(IN,true,true);
-}
-
-shader vec4 PS_RainParticles_NoCubemap_ForwardDepth_MSAA(ParticleGeometryOutput IN) : SV_Target
-{
-	return PS_RainParticles_NoCubemap(IN,false,true);
-}
-
-shader vec4 PS_SnowParticles_MSAA(ParticleGeometryOutput IN): SV_TARGET
-{
-	return PSSnowParticles(IN,true,true);
-}
-shader vec4 PS_SnowParticles_NoCubemap_MSAA(ParticleGeometryOutput IN): SV_TARGET
-{
-	return PSSnowParticles_NoCubemap(IN,true);
-}
-
-
 
 BlendState AddAlphaBlendNoAlphaWrite
 {
@@ -643,12 +612,12 @@ BlendState AlphaBlendNoAlphaWrite
 	RenderTargetWriteMask[1]=7;
 };
 
-technique rain_particles
+technique rain_particles_mask
 {
 		pass reverse_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask()));
 			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
@@ -657,37 +626,40 @@ technique rain_particles
 		pass forward_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask()));
 			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
 			SetDepthStencilState( DisableDepth, 0 );
 		}
-		pass reverse_depth_msaa
+}
+technique rain_particles_nomask
+{
+    pass reverse_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
-			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth_MSAA()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
 			SetDepthStencilState( DisableDepth, 0 );
 		}
-		pass forward_depth_msaa
+    pass forward_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
-			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth_MSAA()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
 			SetDepthStencilState( DisableDepth, 0 );
 		}
 	}
-technique rain_particles_no_cubemap
+technique rain_particles_no_cubemap_mask
 	{
 		pass reverse_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask()));
 			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
@@ -696,39 +668,41 @@ technique rain_particles_no_cubemap
 		pass forward_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask()));
 			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
 			SetDepthStencilState( DisableDepth, 0 );
 		}
-		pass reverse_depth_msaa
+}
+technique rain_particles_no_cubemap_nomask
+{
+	pass reverse_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
-			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth_MSAA()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
 			SetDepthStencilState( DisableDepth, 0 );
 		}
-		pass forward_depth_msaa
+	pass forward_depth
 		{
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
-			SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth_MSAA()));
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
         
 			SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
 			SetDepthStencilState( DisableDepth, 0 );
 		}
 	}
         
-technique snow_particles
+technique snow_particles_mask
 	{
 		pass reverse_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask()));
 			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
@@ -736,67 +710,66 @@ technique snow_particles
 		pass forward_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask()));
 			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-		pass reverse_depth_msaa
+}
+technique snow_particles_nomask
+{
+    pass reverse_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
-			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_MSAA()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-		pass forward_depth_msaa
+    pass forward_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
-			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_MSAA()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
 	}
 
-technique snow_particles_no_cubemap
+technique snow_particles_no_cubemap_mask
 	{
-		pass reverse_depth_msaa
+	 pass reverse_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
-			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap_MSAA()));
-			SetDepthStencilState(DisableDepth,0);
-			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		}
-		pass reverse_depth 
-		{
-			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
-			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
 		pass forward_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask()));
 			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-		pass forward_depth_msaa
+}
+technique snow_particles_no_cubemap_nomask
+{
+    pass reverse_depth 
+	{
+		SetRasterizerState(RenderNoCull);
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+	}
+    pass forward_depth 
 		{
 			SetRasterizerState(RenderNoCull);
-			//SetRasterizerState( wireframeRasterizer );
-			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
-			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap_MSAA()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}

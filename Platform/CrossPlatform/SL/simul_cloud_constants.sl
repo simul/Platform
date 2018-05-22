@@ -60,14 +60,18 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform vec3 offset;
 	uniform float azimuth;
+	
+	uniform vec3 mapScale;
+	uniform int initialSteps;
+
+	uniform vec3 mapOffset;
+	uniform uint stepPos;
 
 	uniform int2 gridBackCornerTexel;
 	uniform int2 gridCentreTexel;
 
 	uniform int4 exclusionRange;
 
-	uniform int initialSteps;
-	uniform uint stepPos;
 	uniform float initialStepKm;
 	uniform float sampleHeight;
 

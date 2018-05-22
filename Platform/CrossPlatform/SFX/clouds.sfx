@@ -189,8 +189,7 @@ void MixInLayer( int3 p,bool clears)
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	idx.xy		+=gridCentreTexel;
 	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
-//	if(texc.z<0||texc.z>1.0)
-//		return;
+
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	vec4 res = vec4(0.0,0.0,0.0,0.0);
@@ -321,71 +320,78 @@ float WorleyFactor(vec3 worley_texcoord)
 	return w;//2.0*w+0.5;
 }
 
-void MapToWindow( uint3 ii,bool clears)
+void MapToWindow(uint3 p,bool clears)
 {
-	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	int3 idx	=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
-	vec3 texc	=vec3(idx)/vec3(windowGrid);//;
-	idx.xy		-=windowGrid.xy/2;
-	texc.y		=1.0-texc.y;
+
+	vec3 texc1			=vec3(idx)/vec3(windowGrid);
+	texc1.y				=1.0-texc1.y;
+	texc1.xy			-=vec2(0.5,0.5);
+	texc1				=texc1*mapScale+mapOffset;
+	float sine			=sin(azimuth);
+	float cosine		=cos(azimuth);
+	texc1.xy				=vec2(texc1.x*cosine-texc1.y*sine,texc1.y*cosine+texc1.x*sine);
+	texc1.xy			+=vec2(0.5,0.5);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	float sine			=0;//sin(azimuth);
-	float cosine		=1;//cos(azimuth);
-	texc.xy				-=vec2(0.5,0.5);
-	texc				*=scale;
-	texc.xy				+=offset.xy;
-	vec2 texc_r			=texc.xy;
-	// rotate
-/*	vec2 texc_r			=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);*/
-	texc_r				+=vec2(0.5,0.5);
-	texc.xy				+=vec2(0.5,0.5);
+	idx					=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	idx.xy				+=gridCentreTexel;
+	vec3 texc			=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;//+mapOffset*scale/mapScale;
 
-	idx.xy		+=gridCentreTexel;
-	// We will write to the texel represented by idx. We add half the grid to convert from (0,0)=centre to (0,0)=corner.
-	idx.xy		+=int2(windowGrid.xy);
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
-	vec4 current;
-	if(clears)
-		current=vec4(0,0,0,0);
-	else
+	float zPixel1=1.0/float(windowGrid.z);
+	float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z)/ zPixel1);
+	vec4 res = vec4(0.0,0.0,0.0,0.0);
+	vec4 current=vec4(0,0,0,1.0);
+	if(!clears)
+	{
 		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
-	vec4 res=current;
-	if(texc_r.x>0.0&&texc_r.y>=0.0&&texc_r.x<=1.0&&texc_r.y<=1.0)
+	}
+	if(texc1.x>0.0&&texc1.y>=0.0&&texc1.x<=1.0&&texc1.y<=1.0)
 	{
-		float zPixel1		=1.0/float(windowGrid.z);
+		// The position translates to a texture coordinate in the current cloudDensity texture:
+		vec4 local_res = vec4(0.0,0.0,0.0,0.0);
+		for (int i = -2; i < 3; i++)
+		{
+			vec3 tc		= texc;
+			tc.z		+= zPixel*i;
+			vec4 c1		= cloudDensity.SampleLevel(wwcSamplerState, tc, 0);
+			vec4 c2		= cloudDensity2.SampleLevel(wwcSamplerState, tc, 0);
+			local_res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+		}
+		//local_res.z		=saturate((local_res.z-0.25)/diffusivity+0.25);
+		//local_res.z*= 1.0/0.5*layer_saturate;
 
-		res					=texture_clamp_lod(rainMapTexture,texc_r.xy,0);
-	///res.z				*=step(0,texc_r.x)*step(0,texc_r.y)*step(texc_r.x,1.0)*step(texc_r.y,1.0); not needed, and also crashes fxc.exe
-	
-		res.z				*=GetHumidityMultiplier(texc.z,res.z,baseLayer,transition,upperDensity);
+		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
+		local_res.w=1.0;
+
+		res					=texture_clamp_lod(rainMapTexture,texc1.xy,0);
 		
-		float maxz			=res.x;
-		//res.z				*=saturate((maxz-texc.z)/0.1);
+		res.z				*=local_res.z;//GetHumidityMultiplier(texc.z,res.z,baseLayer,transition,upperDensity);
+		
+	/*	float maxz			=res.x;
 		float minz			=(cloudBaseKm-cloudOriginKm.z)/cloudScalesKm.z;
-		res.z				*=saturate((texc.z-minz)/0.1);
-		vec3 worley_texc	=0*worleyNoiseScale*vec3(idx)/float(windowGrid.z);
-		float w				=WorleyFactor(worley_texc);
-		res.z				=saturate(3.0*res.z-1.0+worleyNoiseStrength*w);
-		//res.xyw=2.0*(float(idx.z)/64.0-0.5);
-		res.x				=saturate(localNoiseStrength/MaxNoiseAmplitudeKm);
-		res.y				=localCellNoiseStrength;
+		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
+		res.w=1.0;
 	
-		float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
-		res.xyw					=lerp(current.xyw,res.xyw,layer_saturate);
-		res.z					=max(res.z*max_density_gm3,current.z);
-		
-	//	res.xy		=texc_r;
+		res.z*= 1.0/0.5*layer_saturate;
+	
+		// stronger noise at the top:
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		// variation:
+		noise_factor *= (0.05 + rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y		=localCellNoiseStrength*noise_factor;*/
 	}
-	else
-	{
-		res=vec4(0,0,0,0);
-	}
-	if (clears||res.z > 0.50)
-	{
-		IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(frac(res)));
-	}
+
+	//res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
+	//res.z		=max(res.z*max_density_gm3,current.z);
+//	res=vec4(texc1.xy,0,1);//
+	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 }
+
 CS_LAYOUT(4,4,4)
 shader void CS_MapToWindow(uint3 idx : SV_DispatchThreadID)
 {
@@ -419,7 +425,7 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 	float dist_km		=rand*max_dist_km;
 	// we expect stepLength in km for this shader
 	tx				+=dir_texc*dist_km;
-	float lookup	= texture_3d_wwc_lod(cloudDensity, vec3(tx),1).z;
+	float lookup	= saturate(1.5*texture_3d_wwc_lod(cloudDensity, vec3(tx),1).z-0.5);
 	thicknessKm		+= lookup*max_dist_km;
 #endif
 	return thicknessKm;
@@ -1061,16 +1067,17 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 {
 	vec2 texCoords=IN.texCoords;
 	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
-//	texc.xy		+=vec2(gridCentreTexel+windowGrid.xy/2)/vec2(windowGrid.xy);
+texc.xy		+=vec2(gridCentreTexel+windowGrid.xy/2)/vec2(windowGrid.xy);
 	int i		=0;
 	vec3 accum	=vec3(0.0,0.5,1.0);
 	texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
 	//texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	vec2 uv = vec2(0,0);
-	for(i=0;i<CROSS_SECTION_STEPS;i++)
+	//for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		vec4 density	=texture_wwc_lod(cloudDensity,texc,2);
-		vec4 light		=texture_wwc_lod(cloudDensity2,texc,2);
+		texc.z=0.5;
+		vec4 density	=texture_wwc_lod(cloudDensity,texc,0);
+		vec4 light		=texture_wwc_lod(cloudDensity2,texc,0);
 		vec3 colour		=light.rgb;//(lightResponse.x*light.y+lightResponse.y*light.x);
 		colour.gb		+=vec2(.125,.25)*(lightResponse.z*light.w);
 		float opacity	=density.z;
@@ -1080,6 +1087,7 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 		uv				+=density.xy;
 		texc.y			-=(1.0-yz)/float(CROSS_SECTION_STEPS);
 		texc.z			+=yz/float(CROSS_SECTION_STEPS);
+		accum=density;
 	}
 	//accum=texture_wwc_lod(cloudDensity,vec3(texc.xy,0.5),0).rgb;
     return vec4(accum,1);
@@ -1297,20 +1305,18 @@ technique mix_cirrus
 	}
 }
 
-technique map_to_window
+technique mix_map
 {
-    pass p0
-    {
+	pass init
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindowInit()));
+	}
+		pass main
+	{
 		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindow()));
     }
 }
-technique map_to_window_init
-{
-    pass p0
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindowInit()));
-    }
-}
+
 technique window_lighting
 {
     pass p0
