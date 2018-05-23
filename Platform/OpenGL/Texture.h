@@ -4,6 +4,11 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "glad/glad.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable:4251)
+#endif
+
 namespace simul
 {
 	namespace opengl
@@ -86,3 +91,7 @@ namespace simul
         };
 	}
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
