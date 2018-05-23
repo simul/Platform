@@ -49,15 +49,33 @@ namespace simul
 			UINT64					mTime;
 		};
 
+        //! Holds dx12 rendering state
 		struct SIMUL_DIRECTX12_EXPORT RenderState:public crossplatform::RenderState
 		{
+			                            RenderState();
+			virtual                     ~RenderState();
+
 			D3D12_BLEND_DESC			BlendDesc;
 			D3D12_RASTERIZER_DESC		RasterDesc;
 			D3D12_DEPTH_STENCIL_DESC	DepthStencilDesc;
-
-			RenderState();
-			virtual ~RenderState();
 		};
+
+        //! Holds information about the render target outputs
+        struct SIMUL_DIRECTX12_EXPORT RenderTargetState
+        {
+                    RenderTargetState();
+            //! Returns true if this state uses depth
+            bool    IsDepthEnabled();
+            //! Ret
+            int    GetHash();
+
+            //! Number of colour outputs
+            int                         Num;
+            //! Formats for each output
+            crossplatform::PixelFormat  ColourFmts[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+            //! If needed, depth stencil format
+            crossplatform::PixelFormat  DepthStencilFmt;
+        };
 
 		//! DirectX12 structured buffer class
 		class EffectPass;

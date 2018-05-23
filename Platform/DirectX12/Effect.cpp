@@ -17,6 +17,8 @@
 using namespace simul;
 using namespace dx12;
 
+#pragma optimize("",off)
+
 inline bool IsPowerOfTwo( UINT64 n )
 {
     return ( ( n & (n-1) ) == 0 && (n) != 0 );
@@ -73,11 +75,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	hDesc.Count					= QueryLatency;
 	hDesc.NodeMask				= 0;
 	hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(type);
-#ifdef _XBOX_ONE
-	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc,IID_GRAPHICS_PPV_ARGS(&mQueryHeap));
-#else
-	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc,IID_PPV_ARGS(&mQueryHeap));
-#endif
+	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc, SIMUL_PPV_ARGS(&mQueryHeap));
 	SIMUL_ASSERT(res == S_OK);
 
 	// Create a redback buffer to get data
@@ -88,11 +86,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 		&CD3DX12_RESOURCE_DESC::Buffer(QueryLatency * sizeof(UINT64)),
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
-#ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&mReadBuffer)
-#else
-		IID_PPV_ARGS(&mReadBuffer)
-#endif
+        SIMUL_PPV_ARGS(&mReadBuffer)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mReadBuffer->SetName(L"QueryReadBuffer");
@@ -187,14 +181,41 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 
 RenderState::RenderState()
 {
-	BlendDesc			= CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	RasterDesc			= CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	DepthStencilDesc	= CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	RasterDesc.FrontCounterClockwise = true;	
+	BlendDesc			                = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	RasterDesc			                = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	DepthStencilDesc	                = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	RasterDesc.FrontCounterClockwise    = true;	
 }
 
 RenderState::~RenderState()
 {
+}
+
+RenderTargetState::RenderTargetState() :
+    Num(0)
+{
+    DepthStencilFmt = crossplatform::PixelFormat::UNKNOWN;
+    for (int i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+    {
+        ColourFmts[i] = DepthStencilFmt;
+    }
+}
+
+bool RenderTargetState::IsDepthEnabled()
+{
+    return DepthStencilFmt != crossplatform::PixelFormat::UNKNOWN;
+}
+
+int RenderTargetState::GetHash()
+{
+    size_t h = 0;
+    h       |= unsigned(Num << 0);
+    h       |= unsigned(DepthStencilFmt << 8);
+    for (int i = 0; i < Num; i++) // we only account for used formats
+    {
+        h   |= unsigned(ColourFmts[i] << (16 + (8 * i)));
+    }
+    return h;
 }
 
 PlatformStructuredBuffer::PlatformStructuredBuffer():
