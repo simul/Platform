@@ -92,22 +92,22 @@ void MouseHandler::getMousePosition(int &x,int &y) const
 
 bool MouseHandler::getLeftButton() const
 {
-	return (mouseButtons==LeftButton);
+	return (mouseButtons==base::LeftButton);
 }
 
 bool MouseHandler::getRightButton() const
 {
-	return (mouseButtons==RightButton);
+	return (mouseButtons==base::RightButton);
 }
 
 bool MouseHandler::getMiddleButton() const
 {
-	return (mouseButtons==MiddleButton);
+	return (mouseButtons==base::MiddleButton);
 }
 
-void MouseHandler::mouseWheel(int delta)
+void MouseHandler::mouseWheel(int delta,int modifiers)
 {
-	BaseMouseHandler::mouseWheel(delta);
+	BaseMouseHandler::mouseWheel(delta,modifiers);
 	static float min_deg=5.0f;
 	if(delta<0&&fov<180.f/1.1f)
 		fov*=1.1f;
@@ -170,7 +170,7 @@ void MouseHandler::Update(float time_step)
 			up_down_spd+=cam_spd*introduce;
 		if(move_down)
 			up_down_spd-=cam_spd*introduce;
-		if((mouseButtons&MiddleButton)||mouseButtons==(LeftButton|RightButton))
+		if((mouseButtons&base::MiddleButton)||mouseButtons==(base::LeftButton|base::RightButton))
 		{
 			static float slide_spd=100.f;
 			right_left_spd	+=slide_spd*fDeltaX*cam_spd*introduce;
@@ -205,7 +205,7 @@ void MouseHandler::Update(float time_step)
 			tilt=asin(camera->GetOrientation().Tx().y);
 		else
 			tilt=asin(camera->GetOrientation().Tx().z);
-		if(mouseButtons==RightButton)
+		if(mouseButtons==base::RightButton)
 		{
 			if(!alt_down)
 			{

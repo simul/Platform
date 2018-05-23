@@ -2,7 +2,6 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
 
-#define MaxNoiseAmplitudeKm 3.0
 #define CLOUD_FADEIN_DIST 0.24
 
 struct LayerData
@@ -61,14 +60,18 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform vec3 offset;
 	uniform float azimuth;
+	
+	uniform vec3 mapScale;
+	uniform int initialSteps;
+
+	uniform vec3 mapOffset;
+	uniform uint stepPos;
 
 	uniform int2 gridBackCornerTexel;
 	uniform int2 gridCentreTexel;
 
 	uniform int4 exclusionRange;
 
-	uniform int initialSteps;
-	uniform uint stepPos;
 	uniform float initialStepKm;
 	uniform float sampleHeight;
 
@@ -106,11 +109,11 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform float rain;
 	uniform float maxFadeDistanceKm;
-	uniform float noise3DPersistence;
+	uniform float noise3DPersistenceXXX;
 	uniform float minSunlightAltitudeKm;
 
 	uniform vec3 crossSectionOffset;
-	uniform int noise3DOctaves;
+	uniform int noise3DOctavesXXX;
 
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
@@ -119,7 +122,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float yz;
 
 	uniform vec3 cloudIrRadiance2;
-	uniform float noise3DOctaveScale;
+	uniform float MaxNoiseAmplitudeKm;
 
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactorDeprecated;

@@ -42,6 +42,7 @@ void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 void SphericalHarmonics::RecompileShaders()
 {
 	SAFE_DELETE(sphericalHarmonicsEffect);
+	SAFE_DELETE(lightProbesEffect);
 	if (!renderPlatform)
 		return;
 	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");

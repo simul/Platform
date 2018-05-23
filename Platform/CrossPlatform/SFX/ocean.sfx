@@ -30,7 +30,7 @@ uniform Texture2D	g_foamTexture				SIMUL_TEXTURE_REGISTER(5);		// Foam colour
 uniform Texture2D	g_foamAlpha					SIMUL_TEXTURE_REGISTER(6);		// Foam Alpha
 uniform Texture2D	g_surfaceFoamTexture		SIMUL_TEXTURE_REGISTER(7);		// Foam Surface colour
 uniform Texture2D	g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(8);		// Shore depth for shallow water effects
-uniform Texture2D	g_texDetailMapDisplacement	SIMUL_TEXTURE_REGISTER(9);	// Detail map displacement
+uniform Texture2D	g_texDetailMapDisplacement	SIMUL_TEXTURE_REGISTER(9);		// Detail map displacement
 
 uniform Texture2D	g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
 uniform Texture2D	g_waterAbsorption			SIMUL_TEXTURE_REGISTER(1);		// Absorption of the water, 4th value Salinity
@@ -43,7 +43,7 @@ uniform StructuredBuffer<vec2>		g_InputDxyz;
 uniform RWStructuredBuffer<vec2>	g_InputH0	: register(u5);
 uniform RWStructuredBuffer<vec2>	g_OutputHt;
 uniform RWStructuredBuffer<float>	g_InputOmega: register(u6);
-uniform RWStructuredBuffer<vec3>	g_ProbePos:	register(u7);
+uniform StructuredBuffer<vec3>		g_ProbePos  SIMUL_TEXTURE_REGISTER(1);
 uniform RWStructuredBuffer<vec4>	g_ProbeOutputs;
 
 struct TwoColourCompositeOutput
@@ -283,7 +283,7 @@ float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
 	// largest possible wave from constant wind of velocity v
 	float l = v * v / g;
 	// damp out waves with very small length w << l
-	float w = l / 10000.f;
+	float w = 0;// l / 10000.f;
 
 	float Ksqr = K.x * K.x + K.y * K.y;
 	float Kcos = K.x * W.x + K.y * W.y;
@@ -459,13 +459,12 @@ shader float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 	return vec4(gradient, 0, fold);
 }
 
-
-[numthreads(BLOCK_SIZE_X, 1, 1)]
+[numthreads(32, 1, 1)]
 shader void UpdateProbeValuesCS(uint3 sub_pos : SV_DispatchThreadID)
 {
 	vec2 uv_local = (g_ProbePos[sub_pos.x].xy * g_UVScale2 + g_UVOffset2);
 	vec3 displacement = g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xyz;
-	float height = max((displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z, 0.0);
+	float height = max((displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z,0.0);
 	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
 }
 
@@ -503,7 +502,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 	vec2 cameraCenter;
 	cameraCenter.x = g_LocalEye.x;
 	cameraCenter.y = g_LocalEye.y;
-	Output.vecColour = vec4(0.0, 0.0, 0.0, 0.0);
+	Output.vecColour = vec4(0.0, 0.0, 0.0, 1.0);
 	vPos = vec3(0.0, 0.0, 0.0);
 	float layerQuadSize;
 	float layerX = 0.0;
@@ -514,13 +513,14 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 	uint centerVerticies = (boundingVerticies * g_layerDensity) + 1;
 	bool noDisplacement = false;
 
-	//if (g_verticiesPerLayer < 500)
-		//noDisplacement = true;
+	if (g_verticiesPerLayer < 500)
+		noDisplacement = true;
 
 	uint vertexNo = IN.vertex_id;
 
 	if (vertexNo) vertexNo--;
 
+	//Bottom of the ocean
 	if (vertexNo < 6)
 	{
 		noDisplacement = true;
@@ -555,6 +555,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		if (vertexNo % 2) vPos.y = g_layerDensity * 4;
 		if (vertexNo < 2) vPos.x = g_layerDensity * 4;
 	}
+	//Bounding verticies for underwater 
 	else if (vertexNo < boundingVerticies + 6)
 	{
 		vertexNo -= 6;
@@ -639,6 +640,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			}
 		}
 	}
+	//Surface Verticies
 	else 
 	{
 		vertexNo -= boundingVerticies + 6;
@@ -858,6 +860,8 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		}
 	}
 
+	//Deal with boundary verticies
+
 	bool lerpDisplacement = false;
 	vec2 lerpSample1;
 	vec2 lerpSample2;
@@ -865,24 +869,23 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 	if (((vPos.x == 0) || (vPos.x == (g_layerDensity * 4))) && (vPos.y % 2 == 1))
 	{
 		lerpDisplacement = true;
-		lerpSample1.x = vPos.x;
-		lerpSample1.y = vPos.y + 1;
-		lerpSample2.x = vPos.x;
-		lerpSample2.y = vPos.y - 1;
+		lerpSample1 = vec2(vPos.x, vPos.y + 1);
+		lerpSample2 = vec2(vPos.x, vPos.y - 1);
+
 	} else if (((vPos.y == 0) || (vPos.y == (g_layerDensity * 4))) && (vPos.x % 2 == 1))
 	{
 		lerpDisplacement = true;
-		lerpSample1.x = vPos.x + 1;
-		lerpSample1.y = vPos.y;
-		lerpSample2.x = vPos.x - 1;
-		lerpSample2.y = vPos.y;		
+		lerpSample1 = vec2(vPos.x + 1, vPos.y);
+		lerpSample2 = vec2(vPos.x - 1, vPos.y);
 	}
 	
-	//Center and scale verticies to final position
+	//Scale
 	vPos *= layerQuadSize;
 
+	//Center
 	vPos.x += layerX - (layerQuadSize * g_layerDensity * 2);
 	vPos.y += layerY - (layerQuadSize * g_layerDensity * 2);
+	vPos.z += g_oceanHeight;
 	
 	float4 pos_local = float4(vPos, 1);
 	
@@ -918,6 +921,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		}
 	}
 	
+	//If there is displacement to be calculated, do it
 	if (!noDisplacement)
 	{
 		// Blend displacement to avoid tiling artifact
@@ -946,6 +950,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			}
 		}
 		
+		//Calclate Shore damping
 		float shoreDepth = 1.0;
 		vec3 detailDisplacement = vec3(0.0, 0.0, 0.0);
 		float fade = 1.0;
@@ -955,7 +960,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			fade = saturate(((length(pos_local.xy - cameraCenter) * g_UVScale) - 0.4) / 0.6);
 
 			vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
-			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - g_ShoreDepthTextureLocation.z, 0.0, 5.0) / 5.0;
+			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 5.0) / 5.0;
 			displacement *= shoreDepth;
 			/*
 			if (lerpDisplacement)
@@ -1025,7 +1030,8 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	bool noDisplacement = false;
 
 	if (vertexNo) vertexNo--;
-
+	
+	//Bottom of the object
 	if (vertexNo <= 6)
 	{
 		noDisplacement = true;
@@ -1038,6 +1044,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	else
 	{
 		vertexNo -= 6;
+		//Bounding faces
 		if (vertexNo < boundingVerticies) {
 			int edgeNo = 0;
 			if (vertexNo >= boundingVerticies / 2)
@@ -1092,6 +1099,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 				}
 			}
 		}
+		//Surface
 		else
 		{
 			vertexNo -= boundingVerticies;
@@ -1115,19 +1123,17 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 			//Output.vecColour = vec4(vPos.y / (g_layerDensity * 2), 1.0 - (vPos.y / (g_layerDensity * 2)), 0.0, 1.0);
 		}
 	}
-	vPos.x *= (g_boundedDimension.x / (float)g_boundedDensity.x);
-	vPos.y *= (g_boundedDimension.y / (float)g_boundedDensity.y);
+	//Scale
+	vPos.xy *= g_boundedDimension / g_boundedDensity;
 
-	vPos.x -= (g_boundedDimension.x / 2.0);
-	vPos.y -= (g_boundedDimension.y / 2.0);
+	//Center
+	vPos.xy -= g_boundedDimension / 2.0;
 
+	//Rotation
 	float rotation = -(g_boundedRotation / 360.0) * PI * 2.0;
+	vPos.xy = vec2(vPos.x*cos(rotation) - vPos.y*sin(rotation), vPos.y*cos(rotation) + vPos.x*sin(rotation));
 
-	float tempx = vPos.x*cos(rotation) - vPos.y*sin(rotation);
-	float tempy = vPos.y*cos(rotation) + vPos.x*sin(rotation);
-	vPos.x = tempx;
-	vPos.y = tempy;
-
+	//Transform
 	vPos += g_boundedLocation.yxz;
 
 	float4 pos_local = float4(vPos, 1);
@@ -1141,11 +1147,6 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 		float dist_2d = length(eye_vec.xy);
 		float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
 		blend_factor = clamp(blend_factor, 0, 1);
-		
-		// Add perlin noise to distant patches
-		float perlin = 0;
-		vec2 perlin_tc = uv_local * g_PerlinSize + g_UVBase;
-		float perlinMovement = 0;
 
 		// Displacement map
 		vec3 displacement = vec3(0, 0, 0);
@@ -1155,15 +1156,15 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 			displacement = (g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 1).xyz) * g_WorldScale;
 		}
 
-		displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
+		displacement = lerp(vec3(0, 0, 0), displacement, blend_factor);
 		pos_local.xyz += displacement;
 	}
+
 	// Transform
 	Output.Position = mul(g_matWorldViewProj, pos_local);
 	Output.LocalPos = pos_local.xyz;
 	// Pass through texture coordinates
 	Output.texCoords = uv_local;
-
 	Output.SurePosition = Output.Position;
 
 	return Output;
@@ -1177,6 +1178,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	vec3 eye_vec = g_LocalEye - In.LocalPos;
 	float surfaceDepth = length(eye_vec)/ 300000.0;
 
+	//Disable refraction if camera is far enough away
 	if(enableRefraction)
 		if (surfaceDepth > 50.0)
 		{
@@ -1196,14 +1198,15 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	vec3 eyeViewVec = vec3(0.0, 0.0, 1.0);
 
 	float backfaceOccluded = 0.0;
-	float finalDepth;
-	float eyeDepth;
-
 	float foamValue = 0.0;
 	float surfaceFoamValue = 0.0;
+
+	float finalDepth;
+	float eyeDepth;
 	float subsurfaceSample;
 	float subsurfaceDepth;
 
+	//Calculate gradient
 	vec2 grad = ((g_texGradient.Sample(g_samplerGradient, In.texCoords).xy + g_texGradient.Sample(g_samplerGradient, In.texCoords / 3.95).xy) / 2.0);// *In.vecColour.w;
 	
 	if (In.vecColour.z != 1.0)
@@ -1269,7 +1272,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 				viewNormal = mul(vec4(-normal, 0.0), g_matWorldViewProj);
 				refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
 
-				fresnelFactor = fresnel(eyeViewVec, viewNormal, 1.33, 1.0);
+				//fresnelFactor = fresnel(eyeViewVec, viewNormal, 1.33, 1.0);
 
 				float cosangle = acos(dot(-eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
 				offset = tan(cosangle) *((fulldepth - surfaceDepth) / fulldepth) * (1.0 - saturate((g_LocalEye.z - 35.0) / 5.0));
@@ -1325,6 +1328,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	if (enableFoam) //Make sure foam only generated for the ocean.
 	{
 		vec2 foamSamples = g_foamAlpha.Sample(wwcSamplerState, vec3(In.texCoords, 0));
+
 		float bubbles = g_foamTexture.Sample(wwcSamplerState, vec3(In.texCoords * 4, 0)).x;
 		float surfaceFoamTextureSample = g_surfaceFoamTexture.Sample(wwcSamplerState, In.texCoords * 6.0).x / 2.0;
 
@@ -1339,6 +1343,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		if (foamSamples.y / 8.0 > 0.95)
 			surfaceFoamValue += ((foamSamples.y / 8.0) - 0.95) / 10.0;
 
+		if ((bubbles * bubbles) > foamValue)
+			foamValue = 0.0;
+
 		if ((bubbles * bubbles) > surfaceFoamValue)
 			surfaceFoamValue = 0.0;
 		//surfaceFoamValue = foamSamples.y;
@@ -1346,7 +1353,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		clamp(surfaceFoamValue, 0.0, 1.0);
 		clamp(foamValue, 0.0, 1.0);
 
-		eyeDepth = g_LocalEye.z / 300000.0;
+		eyeDepth = (g_LocalEye.z - g_oceanHeight) / 300000.0;
 	}
 	else
 	{
@@ -1355,7 +1362,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(offset,0.0, 0.0,0.0); // length(g_texDisplacement.SampleLevel(wrapSamplerState, In.texCoords, 0).xy);//
 
-	//float4 refractColour = vec4(0.0,0.0,0.0,1.0);
+	//float4 refractColour = vec4(In.vecColour.w, In.vecColour.w, In.vecColour.w, In.vecColour.w);
 
 	Output.Scattering = vec4(g_scattering, foamValue);
 	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
@@ -1368,7 +1375,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, true, false);
+	return PS_WaterSurfDepth(In, frontFacing, g_enableFoam, false);
 }
 
 shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
@@ -1378,7 +1385,7 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing 
 
 shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, true, true);
+	return PS_WaterSurfDepth(In, frontFacing, g_enableFoam, true);
 }
 
 shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
@@ -1476,7 +1483,6 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 			scatterDepth = eye_depth;
 		}
 
-
 		float sunEffect = ((dot(eye_dir, sun_dir) + 1.0) / 2.0);
 
 		if (sun_dir.z <= 0.0)
@@ -1489,6 +1495,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 				refractColourInput = vec4(sunEffect, sunEffect, sunEffect, sunEffect);
 		}*/
 
+		//Subsurface and light transportation calculations
 		vec3 incomingRadiance = exp(-extinction * scatterDepth * fadeDistance) * g_SunColor;
 		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
 		vec4 surfaceScattering = vec4(g_SunColor * exp(-fadeDistance * (eye_depth ) * extinction ) , 0.0);
@@ -1530,33 +1537,25 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 
 	float eye_depth = abs(depthInput.z);
 
-	vec3 incomingRadiance = exp(-extinction  *(waterDepth) * fadeDistance) * g_SunColor;
+	//Subsurface and light transportation calculations
+	vec3 incomingRadiance = exp(-extinction  * (waterDepth) * fadeDistance) * g_SunColor;
 	vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
 	vec4 surfaceScattering = vec4(g_SunColor * exp(-extinction) , 0.0);
 	vec4 SSS = vec4((albedo * (p / (1 + c)) * (1 - (exp(-extinction * (1 + c)  * fadeDistance * absoluteDepth)))), 0.0);
 
-	//SSS = max(SSS, vec4(0.0, 0.0, 0.0, 0.0));
-	//surfaceScattering = max(surfaceScattering, vec4(0.0, 0.0, 0.0, 0.0));
+	// --------------- Reflected colour
+	vec3 refl = texture_cube(g_texReflectCube, normalize(reflect_vec.yxz));
+	float reflectFresnel = fresnel(normalize(-reflect_vec), normal, 1.0,1.33);
 
 	Output += mult;
-	Output += SSS * surfaceScattering;
-	Output += SSS * sunScatter;
+	Output += SSS * surfaceScattering ;
+	Output += SSS * sunScatter * (1.0 - reflectFresnel);
 
 	// --------------- Sun spots
 	float cos_spec = dot(normalize(reflect_vec), sun_dir);
-	//float sun_spot = pow(cos_spec, g_Shineness);
-	//vec4 sunSpec = max(vec4(g_SunColor * sun_spot * sun_spot * sun_spot, 0.0), 0.0);
-
-	vec4 sunSpec = vec4(((g_Shineness + 1) / (2 * SIMUL_PI_F)) * pow(saturate(cos_spec), g_Shineness) *g_SunColor, 0.0);
+	vec4 sunSpec = vec4(((g_Shineness + 1) / (2 * SIMUL_PI_F)) * pow(saturate(cos_spec), g_Shineness) * g_SunColor, 0.0);
 	float sunFresnel = fresnel(-sun_dir, normal, 1.0, 1.33);
-	Output += sunSpec *sunFresnel;
-	
-	// --------------- Reflected colour
-	vec3 refl = texture_cube_lod(g_texReflectCube, reflect_vec.yxz, 0);
-	float reflectFresnel = fresnel(-reflect_vec, normal, 1.0, 1.33);
-
-
-	float ramp = lerp(reflectFresnel, 0.2f, (0.1f - reflect_vec.z) / 0.5);
+	Output += sunSpec * sunFresnel;
 
 	Output += vec4(refl * reflectFresnel, 0.0);
 
@@ -1565,13 +1564,14 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 	{
 			//refl -= vec3(scatteringInput.w, scatteringInput.w, scatteringInput.w);
 			vec3 foamEffect = vec3(scatteringInput.w, scatteringInput.w, scatteringInput.w);
-			//Output -= vec4(vec3(scatteringInput.w, scatteringInput.w, scatteringInput.w) , scatteringInput.w);
-			//Output -= vec4(vec3(absorptionInput.w, absorptionInput.w, absorptionInput.w), 0.0)  * 0.5;
+
 			Output += vec4(foamEffect * albedo, 1.0) * surfaceScattering * clamp(dot(normal, sun_dir), 0.1, 1.0);
-			Output += vec4(g_SunColor, 0.0) * absorptionInput.w * clamp(dot(normal, sun_dir), 0.1, 1.0);
+			Output += vec4(g_SunColor, 0.0) * absorptionInput.w  * clamp(dot(normal, sun_dir), 0.1, 1.0);
 	}
 
 	return Output;
+
+	//return min(Output, vec4(1.0,1.0,1.0,1.0));
 }
 
 shader float4 CopyDepthStencilPS(posTexVertexOutput In) : SV_Target
@@ -1595,14 +1595,12 @@ shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
 		if (derivativeY < 0.0001)
 		{
 			surfaceFoam += 0.5;// 1.0 - (derivativeY * 10000);
-			//surfaceFoam = 1.0;
 			alpha = 1.0;
 		}
 
 		if (derivativeX < 0.0001)
 		{
 			surfaceFoam += 0.5;// 1.0 - (derivativeX * 10000);
-			//surfaceFoam = 1.0;
 			alpha = 1.0;
 		}
 	}

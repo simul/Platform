@@ -347,7 +347,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(pData,sz,binary_filename_utf8,false);
 	if(sz>0)
 	{
-		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
+		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect,binary_filename_utf8);
 		if(hr!=S_OK)
 			std::cerr<<"D3DX11CreateEffectFromBinaryFile error "<<(int)hr<<std::endl;
 	}

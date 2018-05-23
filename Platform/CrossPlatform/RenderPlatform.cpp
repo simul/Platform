@@ -190,6 +190,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	gpuProfiler->InvalidateDeviceObjects();
+	
 	if(textRenderer)
 		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
@@ -198,33 +199,45 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(textRenderer);
 	debugConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(debugEffect);
+	
 	SAFE_DELETE(solidEffect);
+	
 	SAFE_DELETE(copyEffect);
+	
 	textured=NULL;
 	untextured=nullptr;
 	showVolume=NULL;
 	textureQueryResult.InvalidateDeviceObjects();
-
-
+	
+	
 
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
 	}
+	
 }
 
 void RenderPlatform::RecompileShaders()
 {
-	
+	AsD3D11Device();
 	SAFE_DELETE(debugEffect);
+	AsD3D11Device();
+	std::map<std::string, std::string> defines;
+	debugEffect=CreateEffect("debug",defines);
+	AsD3D11Device();
 	SAFE_DELETE(solidEffect);
+	AsD3D11Device();
+	solidEffect=CreateEffect("solid",defines);
+	AsD3D11Device();
 	SAFE_DELETE(copyEffect);
+	AsD3D11Device();
+	copyEffect=CreateEffect("copy",defines);
+	AsD3D11Device();
 	
 	textRenderer->RecompileShaders();
 	
-	std::map<std::string, std::string> defines;
-	debugEffect=CreateEffect("debug",defines);
 	if(debugEffect)
 	{
 		textured=debugEffect->GetTechniqueByName("textured");
@@ -233,9 +246,8 @@ void RenderPlatform::RecompileShaders()
 		volumeTexture=debugEffect->GetShaderResource("volumeTexture");
 		imageTexture=debugEffect->GetShaderResource("imageTexture");
 	}		
-	solidEffect=CreateEffect("solid",defines);
-	copyEffect=CreateEffect("copy",defines);
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
+	AsD3D11Device();
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
@@ -643,7 +655,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=qsize;
+	debugConstants.sideview			=qsize*0.5f;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -678,7 +690,7 @@ void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatf
 	debugEffect->SetTexture(deviceContext,imageTexture,t);
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=qsize;
+	debugConstants.sideview			=qsize*0.5f;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);

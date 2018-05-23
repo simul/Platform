@@ -96,6 +96,7 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
 		public:
+			~EffectTechnique();
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};

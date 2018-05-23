@@ -244,6 +244,7 @@ shader void CS_ScatteringVolume_Godrays(uint3 p: SV_DispatchThreadID)
 {
 	ScatteringVolume(p,true);
 }
+
 CS_LAYOUT(BLOCK_X,BLOCK_Y,1)
 shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 {

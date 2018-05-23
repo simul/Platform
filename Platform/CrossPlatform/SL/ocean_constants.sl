@@ -41,10 +41,10 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinOctave;
-	uniform float		gycvudiosby;
+	uniform float		g_oceanHeight;
 
 	uniform vec3		g_PerlinGradient;
-	uniform bool		gfdvravdcx;
+	uniform bool		g_enableFoam;
 
 	// Constants for calculating texcoord from position
 	uniform float		g_TexelLength_x2;

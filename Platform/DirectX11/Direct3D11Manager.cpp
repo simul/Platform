@@ -25,6 +25,11 @@ Window::~Window()
 {
 	Release();
 }
+#define REFCT \
+
+//{d3dDevice->AddRef(); \
+//	int ref=d3dDevice->Release(); \
+//	std::cerr<<ref<<" ";}
 
 void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,int numerator,int denominator)
 {
@@ -456,13 +461,13 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 #endif
 	//std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,default_driver?D3D_DRIVER_TYPE_REFERENCE:D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
+	REFCT
 	if(result!=S_OK)
 	{
 		SIMUL_CERR<<"D3D11CreateDevice result "<<result<<std::endl;
 		return;
 	}
-	//d3dDevice->AddRef();
-	//UINT refcount=d3dDevice->Release();
+
 	UINT exc=d3dDevice->GetExceptionMode();
 	if(exc>0)
 		std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
@@ -474,20 +479,22 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 	{
 	#ifndef _XBOX_ONE
 		d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
+	REFCT
 		if(d3dDebug)
 			d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
+	REFCT
 	#endif
 		if(d3dInfoQueue)
 		{
-			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
+		/*	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
-			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
+			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, false );
 			
 			ReportMessageFilterState();
 			d3dInfoQueue->ClearStoredMessages();
 			d3dInfoQueue->ClearRetrievalFilter();
 			d3dInfoQueue->ClearStorageFilter();
-			ReportMessageFilterState();
+			ReportMessageFilterState();*/
 		}
 	
 /*	D3D11_MESSAGE_CATEGORY cats[] = {/*D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
@@ -542,9 +549,7 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 		}
 		ReportMessageFilterState();
 	}
-	//d3dDevice->AddRef();
-	//UINT refcount2=d3dDevice->Release();
-	//std::cout<<"result "<<result<<std::endl;
+	REFCT
 	SIMUL_ASSERT(result==S_OK);
 }
 
@@ -643,29 +648,35 @@ void Direct3D11Manager::Shutdown()
 	}
 	SAFE_RELEASE(d3dDeviceContext);
 	ReportMessageFilterState();
-	SAFE_RELEASE(d3dInfoQueue);
-#ifndef _XBOX_ONE
-	SAFE_RELEASE(d3dDebug);
-#endif
 	// Finally, we can destroy the device.
 	if(d3dDevice)
 	{
+		REFCT
 		UINT exc=d3dDevice->GetExceptionMode();
 		if(exc>0)
 			std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
+		d3dDevice->AddRef();
 		UINT references=d3dDevice->Release();
-		if(references>0)
+		uint acceptable_refs=1+(d3dDebug?1:0)+(d3dInfoQueue?1:0);
+		if(references>acceptable_refs)
 		{
 			SIMUL_BREAK("Unfreed references remain in DirectX 11");
 #ifndef _XBOX_ONE
 			if(d3dDebug)
 			{
 				// Watch out - this will ALWAYS BREAK, but that doesn't mean there are live objects.
-				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL|D3D11_RLDO_IGNORE_INTERNAL);
 			}
 #endif
 		}
-		d3dDevice=NULL;
+#ifndef _XBOX_ONE
+		SAFE_RELEASE(d3dDebug);
+#endif
+		REFCT
+		SAFE_RELEASE(d3dInfoQueue);
+		REFCT
+		//d3dDevice->Release();
+		SAFE_RELEASE(d3dDevice);
 	}
 }
 
@@ -769,7 +780,7 @@ void Direct3D11Manager::ReportMessageFilterState()
 	memset( filter, 0, filterlength );
 	int numfilt=d3dInfoQueue->GetStorageFilterStackSize();
 	d3dInfoQueue->GetStorageFilter(filter,&filterlength);
-	std::cout<<filter->AllowList.NumSeverities<<std::endl;
+	//std::cout<<filter->AllowList.NumSeverities<<std::endl;
 	free(filter);
 }
 

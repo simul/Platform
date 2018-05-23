@@ -882,6 +882,8 @@ void Effect::InvalidateDeviceObjects()
 			pass12->InvalidateDeviceObjects();
 		}
 	}
+	techniques.clear();
+	crossplatform::Effect::InvalidateDeviceObjects();
 }
 
 crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByName(const char *name)

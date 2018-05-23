@@ -231,6 +231,8 @@ void Effect::InvalidateDeviceObjects()
 	}
 	groups.clear();
 	groupCharMap.clear();
+	techniqueCharMap.clear();
+	techniques.clear();
 }
 
 EffectTechnique::EffectTechnique()

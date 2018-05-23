@@ -31,7 +31,7 @@ namespace simul
 			void	setAltitudeRange(float m,float M);
 
 			void	mouseMove(int x,int y);
-			void	mouseWheel(int delta);
+			void	mouseWheel(int delta,int modifiers);
 			void	KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown);
 
 			float	getFov() const{return fov;}
