@@ -137,7 +137,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        }
+    }
 }
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
@@ -152,18 +152,18 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
     if (deviceContext.frame_number >= mNumBuffers)
     {
         // We want to map from the oldest buffer:
-    int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+        int idx = (deviceContext.frame_number + 1) % mNumBuffers;
         const GLuint64 maxTimeOut = 100000; // 0.1ms
-        GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
-        if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
+        //GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
+        //if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
         {
             mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
             return mCurReadMap;
         }
-        else
-        {
-            std::cout << "[WARNING] We timeouted while waiting to it to be ready! \n";
-        }
+        //else
+        //{
+        //    std::cout << "[WARNING] We timeouted while waiting to it to be ready! \n";
+        //}
     }
     return nullptr;
 }

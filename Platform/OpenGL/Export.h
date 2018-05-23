@@ -18,12 +18,12 @@
 #endif
 
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
-// In this lib:
+    // In this lib:
 	#if !defined(SIMUL_OPENGL_DLL) 
-	// If we're building dll libraries but not in this library IMPORT the classes
+	    // If we're building dll libraries but not in this library IMPORT the classes
 		#define SIMUL_OPENGL_EXPORT __declspec(dllimport)
 	#else
-	// In ALL OTHER CASES we EXPORT the classes!
+	    // In ALL OTHER CASES we EXPORT the classes!
 		#define SIMUL_OPENGL_EXPORT __declspec(dllexport)
 	#endif
 #else

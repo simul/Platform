@@ -151,6 +151,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
     dim         = 2;
     depth       = 1;
     cubemap     = false;
+    mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(crossplatform::PixelFormat::RGBA_8_UNORM);
+
 
     glGenTextures(1, &mTextureID);
     {
@@ -175,7 +177,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
     glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
 
     InitViews(mips, arraySize, true);
-    CreateFBOs(1);
+    
+    // CreateFBOs(1);
 }
 
 bool Texture::IsValid()const
@@ -198,7 +201,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPla
     glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_WIDTH, &qw);
     glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_HEIGHT, &qh);
 
-    if (mTextureID == 0)
+    if (mTextureID == 0 || mTextureID != (GLuint)t || qw != width || qh != length)
     {
         InitViews(1, 1, false);
 
@@ -610,10 +613,15 @@ LoadedTexture Texture::LoadTextureData(const char* path)
     return lt;
 }
 
-bool Texture::IsSame(int w, int h, int d, int arraySize, int m, int msaa)
+bool Texture::IsSame(int w, int h, int d, int arr, int m, int msaa)
 {
     // If we are not created yet...
     if (mTextureID == 0)
+    {
+        return false;
+    }
+
+    if (w != width || h != length || d != depth || m != mips)
     {
         return false;
     }
@@ -659,7 +667,8 @@ void Texture::CreateFBOs(int sampleCount)
             {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, mLayerMipViews[i][mip], 0);
             }
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
             {
                 SIMUL_CERR << "FBO is not complete!\n";
             }
