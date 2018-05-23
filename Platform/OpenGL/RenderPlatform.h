@@ -7,6 +7,11 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "glad/glad.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable:4251)
+#endif
+
 namespace simul
 {
 	namespace opengl
@@ -53,6 +58,7 @@ namespace simul
             void        DrawLines(crossplatform::DeviceContext& deviceContext, crossplatform::PosColourVertex* lines, int count, bool strip = false, bool test_depth = false, bool view_centred = false);
             void        Draw2dLines(crossplatform::DeviceContext& deviceContext, crossplatform::PosColourVertex* lines, int count, bool strip);
             void        DrawCircle(crossplatform::DeviceContext& context, const float *dir, float rads, const float* colr, bool fill = false);
+            void        GenerateMips(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
             //! This should be called after a Draw/Dispatch command that uses
             //! textures. Here we will apply the textures.
             void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
@@ -129,3 +135,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif

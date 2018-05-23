@@ -57,6 +57,7 @@ namespace simul
 		class Heap;
 		class Fence;
 		class Material;
+        struct RenderTargetState;
 		//! A class to implement common rendering functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT RenderPlatform: public crossplatform::RenderPlatform
 		{
@@ -212,6 +213,9 @@ namespace simul
 
             D3D12_DEPTH_STENCIL_DESC*               GetOverrideDepthState()const;
             D3D12_BLEND_DESC*                       GetOverrideBlendState()const;
+
+            std::map<size_t, dx12::RenderTargetState*>  RTStateMap;
+            RenderTargetState*                          CurrentRTState;
 
 		protected:
 

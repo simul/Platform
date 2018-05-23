@@ -115,6 +115,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <DisableSpecificWarnings>4055</DisableSpecificWarnings>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>

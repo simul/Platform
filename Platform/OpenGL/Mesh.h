@@ -1,10 +1,14 @@
-#ifndef SIMUL_OPENGL_MESH_H
-#define SIMUL_OPENGL_MESH_H
+#pragma once
 
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 #include "glad/glad.h"
+
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable:4251)
+#endif
 
 namespace simul
 {
@@ -36,4 +40,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
 #endif

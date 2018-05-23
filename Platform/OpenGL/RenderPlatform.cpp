@@ -147,18 +147,18 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 {
     auto pass = (opengl::EffectPass*)deviceContext.contextState.currentEffectPass;
 
-    if (pass->usesRwSBs())
-    {
-        for (int i = 0; i < pass->numRwSbResourceSlots; i++)
-        {
-            int slot    = pass->rwSbResourceSlots[i];
-            auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
-            if (rwsb && pass->usesRwTextureSlotForSB(slot))
-            {
-                rwsb->AddFence(deviceContext);
-            }
-        }
-    }
+    //if (pass->usesRwSBs())
+    //{
+    //    for (int i = 0; i < pass->numRwSbResourceSlots; i++)
+    //    {
+    //        int slot    = pass->rwSbResourceSlots[i];
+    //        auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
+    //        if (rwsb && pass->usesRwTextureSlotForSB(slot))
+    //        {
+    //            rwsb->AddFence(deviceContext);
+    //        }
+    //    }
+    //}
 }
 
 crossplatform::Mesh* RenderPlatform::CreateMesh()
@@ -913,6 +913,11 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 
 void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &,const float *,float ,const float *,bool)
 {
+}
+
+void RenderPlatform::GenerateMips(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
+{
+    t->GenerateMips(deviceContext);
 }
 
 crossplatform::Shader* RenderPlatform::CreateShader()

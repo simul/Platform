@@ -24,6 +24,8 @@
 using namespace simul;
 using namespace dx12;
 
+#pragma optimize("",off)
+
 RenderPlatform::RenderPlatform():
 	mCommandList(nullptr),
 	m12Device(nullptr),
@@ -39,7 +41,8 @@ RenderPlatform::RenderPlatform():
 	mCRootSignature(nullptr),
 	mIsMsaaEnabled(false),
     mOverrideDepthState(nullptr),
-    mOverrideBlendState(nullptr)
+    mOverrideBlendState(nullptr),
+    CurrentRTState(nullptr)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -1294,9 +1297,44 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
-	
+    if (num > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT)
+    {
+        SIMUL_CERR << "Too many textures!";
+        return;
+    }
+
+    // First lets activate the render targets:
+    {
+        auto cmdList = deviceContext.asD3D12Context();
+        D3D12_CPU_DESCRIPTOR_HANDLE* chandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+        D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = ((dx12::Texture*)(depth))->AsD3D12DepthStencilView();
+        for (int i = 0; i < num; i++)
+        {
+            chandles[i] = ((dx12::Texture*)(depth))->AsD3D12RenderTargetView();
+        }
+        cmdList->OMSetRenderTargets(num, chandles[0], false, depthHandle);
+    }
+
+    // We also need to create and set a render target state
+    // so the EffectPass can apply a valid PSO:
+    {
+        RenderTargetState rtState   = {};
+        rtState.Num                 = num;
+        for (int i = 0; i < num; i++) { rtState.ColourFmts[i] = targs[i]->GetFormat(); }
+        rtState.DepthStencilFmt     = depth == nullptr ? simul::crossplatform::PixelFormat::UNKNOWN : depth->GetFormat();
+
+        size_t rtHash   = rtState.GetHash();
+        auto curRt      = RTStateMap.find(rtHash);
+        if (curRt == RTStateMap.end())
+        {
+            RTStateMap[rtHash] = new dx12::RenderTargetState(rtState);
+        }
+
+        // Cache it:
+        CurrentRTState = RTStateMap[rtHash];
+    }
 }
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
