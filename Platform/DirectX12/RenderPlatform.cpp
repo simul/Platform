@@ -1254,6 +1254,10 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 		s->DepthStencilDesc.DepthFunc			= toD3d12Comparison(desc.depth.comparison);
 		s->DepthStencilDesc.StencilEnable		= false;
 	}
+    else if (desc.type == crossplatform::RTFORMAT)
+    {
+
+    }
 	else
 	{
 		SIMUL_BREAK("Not recognised render state type");

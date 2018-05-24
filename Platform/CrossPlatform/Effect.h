@@ -216,11 +216,7 @@ namespace simul
         //! Specifies the bound render target pixel format
         struct RenderTargetFormatDesc
         {
-            RenderTargetFormatDesc()
-            {
-                memset(formats, 0, sizeof(formats));
-            }
-            PixelOutputFormat formats[8];
+            PixelOutputFormat   formats[8];
         };
 		enum RenderStateType
 		{
@@ -241,7 +237,7 @@ namespace simul
 				DepthStencilDesc        depth;
 				BlendDesc               blend;
 				RasterizerDesc          rasterizer;
-                RenderTargetFormatDesc  format;
+                RenderTargetFormatDesc  rtFormat;
 			};
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
@@ -307,6 +303,7 @@ namespace simul
 			crossplatform::RenderState *blendState;
 			crossplatform::RenderState *depthStencilState;
 			crossplatform::RenderState *rasterizerState;
+            crossplatform::RenderState *renderTargetFormatState;
 			
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
@@ -813,6 +810,7 @@ namespace simul
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
+            std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}

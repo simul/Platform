@@ -17,6 +17,8 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+#pragma optimize ("",off)
+
 ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(NULL)
 {
 	if (name&&strlen(name) >7)
@@ -922,6 +924,28 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				crossplatform::RenderState *bs=renderPlatform->CreateRenderState(desc);
 				blendStates[name]=bs;
 			}
+            else if (is_equal(word, "RenderTargetFormatState"))
+            {
+                crossplatform::RenderStateDesc desc;
+                string name         = words[1];
+                desc.type           = crossplatform::RTFORMAT;
+                /*
+                    OceanConfig(3,3,3,3,0,0,0,0) *PixelOutputFormat*
+                */
+                vector<string> props = simul::base::split(words[2], ',');
+                if (props.size() != 8)
+                {
+                    SIMUL_CERR << "Invalid number of formats for: " << name << std::endl;
+                }
+                props[0].erase(0,1);
+                props[7].erase(1,1);
+                for (int i = 0; i < 8; i++)
+                {
+                    desc.rtFormat.formats[i] = (PixelOutputFormat)toInt(props[i]);
+                }
+                crossplatform::RenderState* s   = renderPlatform->CreateRenderState(desc);
+                rtFormatStates[name]            = s;
+            }
 			else if(is_equal(word, "RasterizerState"))
 			{
 				string name		=words[1];
@@ -1051,6 +1075,17 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						SIMUL_CERR<<"Rasterizer state not found: "<<name<<std::endl;
 					}
 				}
+                else if (_stricmp(type.c_str(), "targetformat") == 0)
+                {
+                    if (rtFormatStates.find(name) != rtFormatStates.end())
+                    {
+                        p->renderTargetFormatState = rtFormatStates[name];
+                    }
+                    else
+                    {
+                        SIMUL_CERR << "Render Target Format state not found: " << name << std::endl;
+                    }
+                }
 				else if(_stricmp(type.c_str(),"depthstencil")==0)
 				{
 					if(depthStencilStates.find(name)!=depthStencilStates.end())
