@@ -1,7 +1,6 @@
 #include "Simul/Platform/DirectX12/Direct3D12Manager.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
-#include "Simul/Platform/DirectX12/MacrosDx1x.h"
 #include "Simul/Platform/DirectX12/SimulDirectXHeader.h"
 
 #include <iomanip>
@@ -661,7 +660,7 @@ void Direct3D12Manager::Render(HWND h)
         // Only call resize on the render interface during command list recording:
         if (resizeRenderer)
         {
-            w->IRendererRef->ResizeView(w->WindowUID, w->CurViewport.Width, w->CurViewport.Height);
+            w->IRendererRef->ResizeView(w->WindowUID, (int)w->CurViewport.Width, (int)w->CurViewport.Height);
             resizeRenderer = false;
         }
 		w->IRendererRef->Render(w->WindowUID,mCommandList,&w->RTHandles[curIdx],w->CurScissor.right,w->CurScissor.bottom);

@@ -1,7 +1,6 @@
 #include "SimulDirectXHeader.h"
 #include "Buffer.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX12/MacrosDX1x.h"
 
 using namespace simul;
 using namespace dx12;

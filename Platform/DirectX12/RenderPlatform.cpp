@@ -8,7 +8,6 @@
 #include "Simul/Platform/DirectX12/Effect.h"
 #include "Simul/Platform/DirectX12/Buffer.h"
 #include "Simul/Platform/DirectX12/Layout.h"
-#include "Simul/Platform/DirectX12/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
@@ -1391,8 +1390,8 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		// Configure scissor
 		scissors[i].left		= (LONG)viewports[i].TopLeftX;
 		scissors[i].top			= (LONG)viewports[i].TopLeftY;
-		scissors[i].right		= (LONG)viewports[i].TopLeftX+viewports[i].Width;
-		scissors[i].bottom		= (LONG)viewports[i].TopLeftY+viewports[i].Height;
+		scissors[i].right		= (LONG)viewports[i].TopLeftX+(LONG)viewports[i].Width;
+		scissors[i].bottom		= (LONG)viewports[i].TopLeftY+(LONG)viewports[i].Height;
 	}
 
 	mCommandList->RSSetViewports(num, viewports);

@@ -10,8 +10,6 @@
 #include <string>
 #include <algorithm>
 
-#include "MacrosDX1x.h"
-
 using namespace simul;
 using namespace dx12;
 

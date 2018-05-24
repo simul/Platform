@@ -1,6 +1,5 @@
 #pragma once
 #include "SimulDirectXHeader.h"
-#include "Simul/Platform/DirectX12/MacrosDx1x.h"
 #include "Simul/Platform/DirectX12/Export.h"
 #include "Simul/Platform/DirectX12/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
