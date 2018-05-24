@@ -40,11 +40,12 @@ uniform TextureCube	g_texReflectCube			: register(t5);					// A skybox cube text
 
 // The following three should contains only real numbers. But we have only C2C FFT now.
 uniform StructuredBuffer<vec2>		g_InputDxyz;
-uniform RWStructuredBuffer<vec2>	g_InputH0	: register(u5);
+uniform RWStructuredBuffer<vec2>	g_InputH0:		register(u5);
 uniform RWStructuredBuffer<vec2>	g_OutputHt;
-uniform RWStructuredBuffer<float>	g_InputOmega: register(u6);
-uniform StructuredBuffer<vec3>		g_ProbePos  SIMUL_TEXTURE_REGISTER(1);
-uniform RWStructuredBuffer<vec4>	g_ProbeOutputs;
+uniform RWStructuredBuffer<float>	g_InputOmega:	register(u6);
+uniform StructuredBuffer<vec3>		g_ProbePos		SIMUL_TEXTURE_REGISTER(10);
+uniform StructuredBuffer<vec4>	g_ProbeValues	SIMUL_TEXTURE_REGISTER(11);
+uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
 
 struct TwoColourCompositeOutput
 {
@@ -462,9 +463,14 @@ shader float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 [numthreads(32, 1, 1)]
 shader void UpdateProbeValuesCS(uint3 sub_pos : SV_DispatchThreadID)
 {
-	vec2 uv_local = (g_ProbePos[sub_pos.x].xy * g_UVScale2 + g_UVOffset2);
+	vec2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_UVScale2) + g_UVOffset2);
 	vec3 displacement = g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xyz;
-	float height = max((displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z,0.0);
+
+	vec2 grad = ((g_texGradient.SampleLevel(wwcSamplerState, uv_local, 0).xy + g_texGradient.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xy) / 2.0);// *In.vecColour.w;
+	vec3 normal = normalize(vec3(grad.x, grad.y, 1.0)) * 0.1;
+
+	displacement *= 0.1;
+	float height = (displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z;
 	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
 }
 
@@ -930,10 +936,6 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
 		blend_factor = 1.0;// clamp(blend_factor, 0, 1);
 		
-		// Add perlin noise to distant patches
-		float perlin = 0;
-		vec2 perlin_tc = uv_local * g_PerlinSize + g_UVBase;
-		
 		// Displacement map
 		vec3 displacement = vec3(0, 0, 0);
 
@@ -1267,7 +1269,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 		if (enableRefraction)
 		{
-			if (actualDepth == surfaceDepth && actualDepth < 0.0001)
+			if (actualDepth == surfaceDepth)
 			{
 				viewNormal = mul(vec4(-normal, 0.0), g_matWorldViewProj);
 				refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
@@ -1338,7 +1340,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 		foamValue = (1.0 - bubbles) * foamSamples.x;
 
-		surfaceFoamValue = foamSamples.y * pow(surfaceFoamTextureSample, 5.0);
+		surfaceFoamValue += foamSamples.y;
+
+		surfaceFoamValue *= pow(surfaceFoamTextureSample, 5.0);
 
 		if (foamSamples.y / 8.0 > 0.95)
 			surfaceFoamValue += ((foamSamples.y / 8.0) - 0.95) / 10.0;
@@ -1359,10 +1363,28 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	{
 		eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
 	}
+
 	
 	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(offset,0.0, 0.0,0.0); // length(g_texDisplacement.SampleLevel(wrapSamplerState, In.texCoords, 0).xy);//
 
 	//float4 refractColour = vec4(In.vecColour.w, In.vecColour.w, In.vecColour.w, In.vecColour.w);
+
+	/* Test for probe positions and values
+	int x;
+	for (x = 0; x < 32; x++)
+	{
+		vec2 probePos = (g_ProbePos[x].yx  * g_UVScale) + g_UVOffset;
+		if ((probePos.x < In.texCoords.x + 0.01)
+			&& (probePos.x > In.texCoords.x - 0.01)
+			&& (probePos.y < In.texCoords.y + 0.01)
+			&& (probePos.y > In.texCoords.y - 0.01))
+		{
+			refractColour = vec4(g_ProbeValues[x].x, 0.0, 0.0, 0.0);
+			break;
+		}
+		else
+			refractColour = vec4(0.0, 0.0, 0.0, 0.0);
+	} */
 
 	Output.Scattering = vec4(g_scattering, foamValue);
 	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
@@ -1419,7 +1441,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 	float4 refractColourInput = g_waterRefractColour.Sample(clampSamplerState, In.texCoords);
 	vec3 normal = normalsInput.xyz;
 	
-	//return refractColourInput;
+	//return refractColourInput; // Debug line
 
 	float scatterDepth = 0.0;
 	float fadeDistance = 300000;
@@ -1493,8 +1515,8 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 			float refractFresnel = fresnel(eye_dir, -normal, 1.0, 1.33);
 			if (!length(refractFresnel))
 				refractColourInput = vec4(sunEffect, sunEffect, sunEffect, sunEffect);
-		}*/
-
+		}
+		*/
 		//Subsurface and light transportation calculations
 		vec3 incomingRadiance = exp(-extinction * scatterDepth * fadeDistance) * g_SunColor;
 		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance) * refractColourInput, 0.0);
