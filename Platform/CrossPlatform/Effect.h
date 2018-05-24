@@ -204,7 +204,7 @@ namespace simul
 		{
 			POLYGON_OFFSET_ENABLE           = 1, ///< Enable polygon offset.
 			POLYGON_OFFSET_DISABLE          = 0, ///< Disable polygon offset.
-		} ;
+		};
 		struct RasterizerDesc
 		{
 			ViewportScissor		viewportScissor;
@@ -213,24 +213,31 @@ namespace simul
 			PolygonMode			polygonMode;
 			PolygonOffsetMode	polygonOffsetMode;
 		};
+        //! Specifies the bound render target pixel format
+        struct RenderTargetFormatDesc
+        {
+            PixelOutputFormat   formats[8];
+        };
 		enum RenderStateType
 		{
 			NONE
 			,BLEND
 			,DEPTH
 			,RASTERIZER
+            ,RTFORMAT
 			,NUM_RENDERSTATE_TYPES
 		};
-		/// An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
-		/// then store the returned pointer. Delete the pointer when done.
+		//! An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
+		//! then store the returned pointer. Delete the pointer when done.
 		struct RenderStateDesc
 		{
 			RenderStateType type;
 			union
 			{
-				DepthStencilDesc depth;
-				BlendDesc blend;
-				RasterizerDesc rasterizer;
+				DepthStencilDesc        depth;
+				BlendDesc               blend;
+				RasterizerDesc          rasterizer;
+                RenderTargetFormatDesc  rtFormat;
 			};
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
@@ -296,6 +303,7 @@ namespace simul
 			crossplatform::RenderState *blendState;
 			crossplatform::RenderState *depthStencilState;
 			crossplatform::RenderState *rasterizerState;
+            crossplatform::RenderState *renderTargetFormatState;
 			
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
@@ -802,6 +810,7 @@ namespace simul
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
+            std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}

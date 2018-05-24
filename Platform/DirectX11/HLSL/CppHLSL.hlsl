@@ -27,19 +27,20 @@
 #define sampler3D texture3D
 
 #ifndef __cplusplus
-#define char4 snorm float4
-#define vec2 float2
-#define vec3 float3
-#define vec4 float4
-#define uchar4 unorm float4
-#define mat2 float2x2
-#define mat3 float3x3
-#define mat4 float4x4
-#define mix lerp
-#define fract frac
-#define layout(a)
-
-	
+    #define char4 snorm float4
+    #define vec2 float2
+    #define vec3 float3
+    #define vec4 float4
+    #define uchar4 unorm float4
+    #define mat2 float2x2
+    #define mat3 float3x3
+    #define mat4 float4x4
+    #define mix lerp
+    #define fract frac
+    #define layout(a)
+    // This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
+    // we will pass a dummy SetGeometryShader(a), we should 
+    #define SetRenderTargetFormatState SetGeometryShader
 #endif
 
 #endif

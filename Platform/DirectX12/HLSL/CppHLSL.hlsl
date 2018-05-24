@@ -29,6 +29,8 @@
 	#define mix lerp
 	#define fract frac
 	#define layout(a)
+
+    #define SFX
 #endif
 
 #endif

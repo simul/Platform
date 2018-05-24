@@ -2,6 +2,20 @@
 #ifndef RENDER_STATES_SL
 #define RENDER_STATES_SL
 #include "states.sl"
+
+#ifdef SFX
+	RenderTargetFormatState OceanTargetFormats
+	{
+		TargetFormat[0] = FMT_FP16_ABGR;
+		TargetFormat[1] = FMT_FP16_ABGR;
+		TargetFormat[2] = FMT_FP16_ABGR;
+		TargetFormat[3] = FMT_FP16_ABGR;
+		TargetFormat[4] = FMT_FP16_ABGR;
+	};
+#else
+	#define OceanTargetFormats 0
+#endif
+
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;
@@ -230,7 +244,6 @@ RasterizerState wireframeRasterizer
 	MultisampleEnable			= false;
 	AntialiasedLineEnable		= true;
 };
-
 
 BlendState DontBlend
 {

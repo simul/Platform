@@ -11,7 +11,6 @@
 
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
-#include "MacrosDX1x.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
@@ -122,7 +121,7 @@ void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float 
 	mViewport.MinDepth		= Z;
 	mViewport.MaxDepth		= D;
 
-	CD3DX12_RECT scissor(0, 0, mViewport.Width, mViewport.Height);
+	CD3DX12_RECT scissor(0, 0, (LONG)mViewport.Width, (LONG)mViewport.Height);
 
 	deviceContext.asD3D12Context()->RSSetScissorRects(1, &scissor);
 	deviceContext.asD3D12Context()->RSSetViewports(1, &mViewport);

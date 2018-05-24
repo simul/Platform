@@ -67,7 +67,7 @@ namespace simul
             //! Returns true if this state uses depth
             bool    IsDepthEnabled();
             //! Ret
-            int    GetHash();
+            size_t  GetHash();
 
             //! Number of colour outputs
             int                         Num;

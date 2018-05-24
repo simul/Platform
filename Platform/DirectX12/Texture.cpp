@@ -10,8 +10,6 @@
 #include <string>
 #include <algorithm>
 
-#include "MacrosDX1x.h"
-
 using namespace simul;
 using namespace dx12;
 
@@ -205,8 +203,9 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	DirectX::TexMetadata	metadata;
 	DirectX::ScratchImage	scratchImage;
 	const DirectX::Image*	image;
-	DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
-	image = scratchImage.GetImage(0, 0, 0);
+	res     = DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
+    SIMUL_ASSERT(res == S_OK)
+	image   = scratchImage.GetImage(0, 0, 0);
 	 
 	if (!image)
 	{

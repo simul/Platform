@@ -9,7 +9,6 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "SimulDirectXHeader.h"
-#include "MacrosDx1x.h"
 
 #include <algorithm>
 #include <string>
@@ -206,7 +205,7 @@ bool RenderTargetState::IsDepthEnabled()
     return DepthStencilFmt != crossplatform::PixelFormat::UNKNOWN;
 }
 
-int RenderTargetState::GetHash()
+size_t RenderTargetState::GetHash()
 {
     size_t h = 0;
     h       |= unsigned(Num << 0);
@@ -664,7 +663,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
 	{
 		std::string simulPath = std::getenv("SIMUL");
-
+        
 		if (simulPath != "")
 		{
 			// Sfx path
