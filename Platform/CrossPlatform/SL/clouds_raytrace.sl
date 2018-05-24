@@ -261,8 +261,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 						minDistance			=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
 						vec4 worley			=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 						float wo			=4*density.y*(worley.w-0.6)*saturate(1.0/(12.0*fadeDistance));//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-						density.z			=lerp(density.z,saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z))),density.w);
-						//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
+						density.z			=lerp(density.z,saturate(0.3+(1.0)*((density.z+wo)-0.3-saturate(0.6-density.z))),density.w);
+						density.z			=saturate(0.3+(1.0+1.0*alphaSharpness)*(density.z-0.3));
 						//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3+saturate(density.z-0.6)));
 						amb_dir				=lerp(amb_dir,worley.xyz,0.1*density.z);
 					}
@@ -325,7 +325,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.zw	    =	vec2(meanFadeDistance,meanFadeDistance);
 	for(int k=0;k<num_interp;k++)
-		res.colour[k].rgb+=insc[k].rgb;//*gr;
+	{
+		//float alpha0=saturate(1.0-res.colour[k].a);
+		//float alpha=saturate(0.15+((alpha0-0.15)*(1.0+10.0*alphaSharpness)));
+		//res.colour[k].a=1.0-alpha;
+		//res.colour[k].rgb*=saturate(alpha/(0.0001+alpha0));
+		res.colour[k].rgb+=insc[k].rgb;
+	}
 	return res;
 }
 #endif
