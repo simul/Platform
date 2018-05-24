@@ -1727,6 +1727,7 @@ technique render_boundless_depth
 {
 	pass no_refraction
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0 );
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1737,6 +1738,7 @@ technique render_boundless_depth
 
 	pass refraction_no_backface
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1747,6 +1749,7 @@ technique render_boundless_depth
 
 	pass refraction
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1760,6 +1763,7 @@ technique render_boundless_depth_shore
 {
 	pass no_refraction
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1770,6 +1774,7 @@ technique render_boundless_depth_shore
 
 	pass refraction_no_backface
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1780,6 +1785,7 @@ technique render_boundless_depth_shore
 
 	pass refraction
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1793,6 +1799,7 @@ technique render_bounded_depth
 {
 	pass no_refraction
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1803,6 +1810,7 @@ technique render_bounded_depth
 
 	pass refraction
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
@@ -1813,6 +1821,7 @@ technique render_bounded_depth
 
 	pass refraction_no_backface
 	{
+		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);

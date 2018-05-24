@@ -927,15 +927,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string name		=words[1];
 				crossplatform::RenderStateDesc desc;
 				desc.type=crossplatform::RASTERIZER;
-				// e.g. RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
-				vector<string> props=simul::base::split(words[2],',');
-				//desc.rasterizer.antialias=toInt(props[0]);
-				desc.rasterizer.cullFaceMode=toCullFadeMode(props[1]);
-				desc.rasterizer.frontFace=toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
-				desc.rasterizer.polygonMode=toPolygonMode(props[5]);
-				desc.rasterizer.polygonOffsetMode=crossplatform::POLYGON_OFFSET_DISABLE;
-				desc.rasterizer.viewportScissor=toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
 				/*
+				    RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
 					0 AntialiasedLineEnable
 					1 cullMode
 					2 DepthBias
@@ -946,9 +939,17 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					7 MultisampleEnable
 					8 ScissorEnable
 					9 SlopeScaledDepthBias
-			*/
-				crossplatform::RenderState *bs=renderPlatform->CreateRenderState(desc);
-				rasterizerStates[name]=bs;
+			    */
+				vector<string> props=simul::base::split(words[2],',');
+				//desc.rasterizer.antialias         =toInt(props[0]);
+				desc.rasterizer.cullFaceMode        =toCullFadeMode(props[1]);
+				desc.rasterizer.frontFace           =toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
+				desc.rasterizer.polygonMode         =toPolygonMode(props[5]);
+				desc.rasterizer.polygonOffsetMode   =crossplatform::POLYGON_OFFSET_DISABLE;
+				desc.rasterizer.viewportScissor     =toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
+				
+                crossplatform::RenderState *bs      =renderPlatform->CreateRenderState(desc);
+				rasterizerStates[name]              =bs;
 			}
 			else if(is_equal(word, "DepthStencilState"))
 			{

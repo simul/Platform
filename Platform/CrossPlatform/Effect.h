@@ -204,7 +204,7 @@ namespace simul
 		{
 			POLYGON_OFFSET_ENABLE           = 1, ///< Enable polygon offset.
 			POLYGON_OFFSET_DISABLE          = 0, ///< Disable polygon offset.
-		} ;
+		};
 		struct RasterizerDesc
 		{
 			ViewportScissor		viewportScissor;
@@ -213,24 +213,35 @@ namespace simul
 			PolygonMode			polygonMode;
 			PolygonOffsetMode	polygonOffsetMode;
 		};
+        //! Specifies the bound render target pixel format
+        struct RenderTargetFormatDesc
+        {
+            RenderTargetFormatDesc()
+            {
+                memset(formats, 0, sizeof(formats));
+            }
+            PixelOutputFormat formats[8];
+        };
 		enum RenderStateType
 		{
 			NONE
 			,BLEND
 			,DEPTH
 			,RASTERIZER
+            ,RTFORMAT
 			,NUM_RENDERSTATE_TYPES
 		};
-		/// An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
-		/// then store the returned pointer. Delete the pointer when done.
+		//! An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
+		//! then store the returned pointer. Delete the pointer when done.
 		struct RenderStateDesc
 		{
 			RenderStateType type;
 			union
 			{
-				DepthStencilDesc depth;
-				BlendDesc blend;
-				RasterizerDesc rasterizer;
+				DepthStencilDesc        depth;
+				BlendDesc               blend;
+				RasterizerDesc          rasterizer;
+                RenderTargetFormatDesc  format;
 			};
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
