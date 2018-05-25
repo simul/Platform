@@ -1383,7 +1383,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 
     // This call will ensure that we cache the viewport change inside 
     // the target stack:
-	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
+	// crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)

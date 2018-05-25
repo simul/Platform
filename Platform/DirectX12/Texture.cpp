@@ -1700,16 +1700,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	{
 		auto rp		= (dx12::RenderPlatform*)deviceContext.renderPlatform;
 		auto rtView = AsD3D12RenderTargetView(array_index, mip);
-		// rp->AsD3D12CommandList()->OMSetRenderTargets(1, rtView,false, nullptr);
-
-		// D3D12_VIEWPORT viewport;
-		// viewport.Width		= (float)(std::max(1, (width >> mip)));
-		// viewport.Height		= (float)(std::max(1, (length >> mip)));
-		// viewport.TopLeftX	= 0;
-		// viewport.TopLeftY	= 0;
-		// viewport.MinDepth	= 0.0f;
-		// viewport.MaxDepth	= 1.0f;
-
 
         targetsAndViewport.num				= 1;
         targetsAndViewport.m_dt				= nullptr;
@@ -1723,30 +1713,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
         targetsAndViewport.viewport.zfar	= 1.0f;
 
         rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
-
-
-		// CD3DX12_RECT scissor(0, 0, (LONG)viewport.Width, (LONG)viewport.Height);
-		// 
-		// rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
-		// rp->AsD3D12CommandList()->RSSetViewports(1, &viewport);
-	    // 
-		// // Inform crossplatform!
-		// crossplatform::TargetsAndViewport vp {};
-		// vp.num				= 1;
-		// vp.m_dt				= nullptr;
-		// vp.m_rt[0]			= rtView;
-        // vp.rtFormats[0]     = pixelFormat;
-		// vp.viewport.w		= (float)(std::max(1, (width >> mip)));
-		// vp.viewport.h		= (float)(std::max(1, (length >> mip)));
-		// vp.viewport.x		= 0;
-		// vp.viewport.y		= 0;
-		// vp.viewport.znear	= 0.0f;
-		// vp.viewport.zfar	= 1.0f;
-		// deviceContext.GetFrameBufferStack().push(&vp);
-
-		// Make sure to cache the current pixel format so we can reset it after we deactivate the render target
-		// mOldRtFormat = rp->GetCurrentPixelFormat();
-		// rp->SetCurrentPixelFormat(dxgi_format);
 	}
 }
 
@@ -1754,7 +1720,6 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
     rp->DeactivateRenderTargets(deviceContext);
-    //rp->SetCurrentPixelFormat(mOldRtFormat);
 }
 
 int Texture::GetSampleCount()const

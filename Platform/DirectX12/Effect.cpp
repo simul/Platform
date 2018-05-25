@@ -1065,7 +1065,8 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
     DXGI_FORMAT curFormat;
     if (deviceContext.targetStack.empty())
     {
-        curFormat = RenderPlatform::ToDxgiFormat(deviceContext.defaultTargetsAndViewport.rtFormats[0]);
+        // curFormat = RenderPlatform::ToDxgiFormat(deviceContext.defaultTargetsAndViewport.rtFormats[0]);
+        curFormat = RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
     }
     else
     {
@@ -1482,7 +1483,13 @@ void EffectPass::CreatePso(crossplatform::DeviceContext& deviceContext)
         DXGI_FORMAT curFormat;
         if (deviceContext.targetStack.empty())
         {
-            curFormat = RenderPlatform::ToDxgiFormat(deviceContext.defaultTargetsAndViewport.rtFormats[0]);
+            // curFormat = RenderPlatform::ToDxgiFormat(deviceContext.defaultTargetsAndViewport.rtFormats[0]);
+
+            // if the default targets do not provide a format, we must guess it.
+            // if we leave it as unknown, its probably using a low precission UNORM8 perhaps
+            // and that will cause artifacts
+            
+            curFormat = RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
         }
         else
         {

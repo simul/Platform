@@ -55,11 +55,6 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	// Get the views that we want to activate:
 	dx12::Texture* col12Texture		    = (dx12::Texture*)buffer_texture;
 	dx12::Texture* depth12Texture	    = (dx12::Texture*)buffer_depth_texture;
-	if (!col12Texture && !depth12Texture)
-	{
-		SIMUL_BREAK_ONCE("No valid textures in the framebuffer");
-        return;
-	}
 	D3D12_CPU_DESCRIPTOR_HANDLE* rtView = nullptr;
 	D3D12_CPU_DESCRIPTOR_HANDLE* dsView = nullptr;
 	if (is_cubemap)
@@ -107,7 +102,7 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
     if (!colour_active && !depth_active)
     {
-        SIMUL_CERR << "Deactivate was called on an already deactivated FBO \n";
+        SIMUL_CERR << "Deactivate was called on an already deactivated FBO. \n";
         return;
     }
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
@@ -117,9 +112,9 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 
 void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	if (!depth_active)
+	if (!buffer_depth_texture->IsValid() || !depth_active)
 	{
-        SIMUL_CERR << "Depth is not active for this FBO \b";
+        SIMUL_CERR << "This FBO wasn't creted with depth or depth is not active.\n";
 		return;
 	}
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
