@@ -190,33 +190,6 @@ RenderState::~RenderState()
 {
 }
 
-RenderTargetState::RenderTargetState() :
-    Num(0)
-{
-    DepthStencilFmt = crossplatform::PixelFormat::UNKNOWN;
-    for (int i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
-    {
-        ColourFmts[i] = DepthStencilFmt;
-    }
-}
-
-bool RenderTargetState::IsDepthEnabled()
-{
-    return DepthStencilFmt != crossplatform::PixelFormat::UNKNOWN;
-}
-
-size_t RenderTargetState::GetHash()
-{
-    size_t h = 0;
-    h       |= unsigned(Num << 0);
-    h       |= unsigned(DepthStencilFmt << 8);
-    for (int i = 0; i < Num; i++) // we only account for used formats
-    {
-        h   |= unsigned(ColourFmts[i] << (16 + (8 * i)));
-    }
-    return h;
-}
-
 PlatformStructuredBuffer::PlatformStructuredBuffer():
 	mNumElements(0),
 	mElementByteSize(0),
@@ -1087,9 +1060,21 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
         mInUseOverrideBlendState = oveBlend;
         oveStateValid = false;
     }
+
+    // Get current format
+    DXGI_FORMAT curFormat;
+    if (deviceContext.targetStack.empty())
+    {
+        curFormat = RenderPlatform::ToDxgiFormat(deviceContext.defaultTargetsAndViewport.rtFormats[0]);
+    }
+    else
+    {
+        curFormat = RenderPlatform::ToDxgiFormat(deviceContext.targetStack.top()->rtFormats[0]);
+    }
+
     // Create the PSO:
 	if ((mGraphicsPsoMap.empty() && !mComputePso) ||
-		(((mGraphicsPsoMap.find(curRenderPlat->GetCurrentPixelFormat()) == mGraphicsPsoMap.end()) && !mComputePso)) ||
+		(((mGraphicsPsoMap.find(curFormat) == mGraphicsPsoMap.end()) && !mComputePso)) ||
         !oveStateValid)
 	{
         CreatePso(deviceContext);
@@ -1104,8 +1089,8 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 	}
 	else
 	{
-		auto pFormat = curRenderPlat->GetCurrentPixelFormat();
-		cmdList->SetPipelineState(mGraphicsPsoMap[pFormat]);
+		//auto pFormat = curRenderPlat->GetCurrentPixelFormat();
+		cmdList->SetPipelineState(mGraphicsPsoMap[curFormat]);
 	}
 }
 
@@ -1494,10 +1479,20 @@ void EffectPass::CreatePso(crossplatform::DeviceContext& deviceContext)
     // Init as graphics
     if (v && p)
     {
+        DXGI_FORMAT curFormat;
+        if (deviceContext.targetStack.empty())
+        {
+            curFormat = RenderPlatform::ToDxgiFormat(deviceContext.defaultTargetsAndViewport.rtFormats[0]);
+        }
+        else
+        {
+            curFormat = RenderPlatform::ToDxgiFormat(deviceContext.targetStack.top()->rtFormats[0]);
+        }
+
         // Build a new pso pair <pixel format, PSO>
         std::pair<DXGI_FORMAT, ID3D12PipelineState*> psoPair;
-        psoPair.first = curRenderPlat->GetCurrentPixelFormat();
-        mIsCompute = false;
+        psoPair.first   = curFormat;
+        mIsCompute      = false;
     
         // Try to get the input layout (if none, we dont need to set it to the pso)
         D3D12_INPUT_LAYOUT_DESC* pCurInputLayout = curRenderPlat->GetCurrentInputLayout();
@@ -1506,8 +1501,13 @@ void EffectPass::CreatePso(crossplatform::DeviceContext& deviceContext)
         dx12::RenderState* effectBlendState = (dx12::RenderState*)(blendState);
         dx12::RenderState* effectRasterizerState = (dx12::RenderState*)(rasterizerState);
         dx12::RenderState* effectDepthStencilState = (dx12::RenderState*)(depthStencilState);
-    
+
         // Find out the states this effect will use
+        // Target output formats
+        if (renderTargetFormatState)
+        {
+
+        }
         // Blend state:
         CD3DX12_BLEND_DESC defaultBlend = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
         if (effectBlendState)

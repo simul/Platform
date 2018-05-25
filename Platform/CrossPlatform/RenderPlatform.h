@@ -246,7 +246,8 @@ namespace simul
 			virtual void					ApplyDefaultRenderTargets(crossplatform::DeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-			virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
+            virtual void                    ActivateRenderTargets(DeviceContext &deviceContext, TargetsAndViewport* targets) {}
+            virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps);
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index);

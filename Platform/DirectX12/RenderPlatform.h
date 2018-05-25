@@ -57,7 +57,6 @@ namespace simul
 		class Heap;
 		class Fence;
 		class Material;
-        struct RenderTargetState;
 		//! A class to implement common rendering functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT RenderPlatform: public crossplatform::RenderPlatform
 		{
@@ -118,10 +117,6 @@ namespace simul
 			D3D12_INPUT_LAYOUT_DESC*	GetCurrentInputLayout() { return mCurInputLayout; }
 			//! Sets the current input layout
 			void						SetCurrentInputLayout(D3D12_INPUT_LAYOUT_DESC* l) { mCurInputLayout = l; }
-			//! Returns the current render target pixel format
-			DXGI_FORMAT					GetCurrentPixelFormat() { return mCurPixelFormat; }
-			//! Sets the current render target pixel format
-			void						SetCurrentPixelFormat(DXGI_FORMAT format) { mCurPixelFormat = format; }
 			//! Returns the current applied primitive topology
 			D3D_PRIMITIVE_TOPOLOGY		GetCurrentPrimitiveTopology() { return mStoredTopology; }
 
@@ -169,8 +164,11 @@ namespace simul
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
+
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
-			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
+            void                                    ActivateRenderTargets(crossplatform::DeviceContext &deviceContext, crossplatform::TargetsAndViewport* targets)override;
+            
+            void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
 		
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
@@ -213,9 +211,6 @@ namespace simul
 
             D3D12_DEPTH_STENCIL_DESC*               GetOverrideDepthState()const;
             D3D12_BLEND_DESC*                       GetOverrideBlendState()const;
-
-            std::map<size_t, dx12::RenderTargetState*>  RTStateMap;
-            RenderTargetState*                          CurrentRTState;
 
 		protected:
 
@@ -261,9 +256,6 @@ namespace simul
 
 			//! Current applied input layout
 			D3D12_INPUT_LAYOUT_DESC*	mCurInputLayout;
-
-			//! Current render target format
-			DXGI_FORMAT					mCurPixelFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 			//! The primitive topology in use
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;

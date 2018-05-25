@@ -12,32 +12,18 @@ namespace simul
 		SIMUL_DIRECTX12_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
 		{
 		public:
-			Framebuffer(const char *name);
-			virtual ~Framebuffer();
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			void InvalidateDeviceObjects();
-            virtual void SetAntialiasing(int a);
-			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			virtual void Activate(crossplatform::DeviceContext &deviceContext);
-			virtual void ActivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void Deactivate(crossplatform::DeviceContext &deviceContext);
-			virtual void DeactivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
-			virtual void ClearDepth(crossplatform::DeviceContext &context,float);
-			virtual void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
-
-		protected:
-			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);
-
-			//! Holds the targets and viewports of this frame buffer, we push it into
-			//! the frame buffer stack
-			crossplatform::TargetsAndViewport							mTargetAndViewport;
-
-			//! Viewport structure of this framebuffer
-			D3D12_VIEWPORT												mViewport;
-
-			//! We store the last pixel format so when we deactivate, we set it again
-			DXGI_FORMAT													mLastPixelFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			                Framebuffer(const char *name);
+			virtual         ~Framebuffer();
+			void            RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			void            InvalidateDeviceObjects();
+            virtual void    SetAntialiasing(int a);
+			virtual void    Activate(crossplatform::DeviceContext &deviceContext);
+			virtual void    ActivateDepth(crossplatform::DeviceContext &deviceContext);
+			virtual void    Deactivate(crossplatform::DeviceContext &deviceContext);
+			virtual void    DeactivateDepth(crossplatform::DeviceContext &deviceContext);
+			virtual void    Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
+			virtual void    ClearDepth(crossplatform::DeviceContext &context,float);
+			virtual void    ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
 		};
 	}
 }
