@@ -39,8 +39,12 @@ RenderPlatform::RenderPlatform():
 	mGRootSignature(nullptr),
 	mCRootSignature(nullptr),
 	mIsMsaaEnabled(false),
-    mOverrideDepthState(nullptr),
-    mOverrideBlendState(nullptr)
+    DepthStateOverride(nullptr),
+    BlendStateOverride(nullptr),
+    RasterStateOverride(nullptr),
+    DefaultDepthState(nullptr),
+    DefaultBlendState(nullptr),
+    DefaultRasterState(nullptr)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -150,6 +154,10 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		m12Device = (ID3D12Device*)device;
 	}
 	immediateContext.platform_context = mCommandList;
+
+    DefaultBlendState   = &CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    DefaultRasterState  = &CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    DefaultDepthState   = &CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
 	// Lets query some information from the device
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions;
@@ -608,6 +616,37 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return b;
 }
 
+DXGI_FORMAT simul::dx12::RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
+{
+    // We are forced to use this formats as thats what PS4 needs,
+    // but there is not a perfect match btween the formats
+    switch (p)
+    {
+    case simul::crossplatform::FMT_UNKNOWN:
+        return DXGI_FORMAT_UNKNOWN;
+    case simul::crossplatform::FMT_32_GR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_32_AR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_FP16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_UNORM16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_SNORM16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_UINT16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_SINT16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_32_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_32_FLOAT);
+    case simul::crossplatform::OUTPUT_FORMAT_COUNT:
+    default:
+        return DXGI_FORMAT_UNKNOWN;
+        break;
+    }
+}
+
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
@@ -1038,16 +1077,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullSampler() const
 	return mNullSampler;
 }
 
-D3D12_DEPTH_STENCIL_DESC* RenderPlatform::GetOverrideDepthState() const
-{
-    return mOverrideDepthState;
-}
-
-D3D12_BLEND_DESC* RenderPlatform::GetOverrideBlendState() const
-{
-    return mOverrideBlendState;
-}
-
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
 {
 	dx12::Layout *l = new dx12::Layout();
@@ -1255,7 +1284,16 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 	}
     else if (desc.type == crossplatform::RTFORMAT)
     {
-
+        int cnt = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            if (desc.rtFormat.formats[i] <= crossplatform::UNKNOWN)
+            {
+                cnt++;
+                s->RtFormatDesc.RTFormats[i] = ToDxgiFormat(desc.rtFormat.formats[i]);
+            }
+        }
+        s->RtFormatDesc.Count = cnt;
     }
 	else
 	{
@@ -1383,7 +1421,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 
     // This call will ensure that we cache the viewport change inside 
     // the target stack:
-	// crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
+	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
@@ -1443,20 +1481,29 @@ void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,cross
 	}
 }
 
-void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
+void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
-	
+	mCommandList		                = deviceContext.asD3D12Context();
+	immediateContext.platform_context   = deviceContext.platform_context;
+    dx12::RenderState* state            = (dx12::RenderState*)s;
+    // We cache the description, during EffectPass::Aply() we will check if the PSO
+    // needs to be recreated
 	if (s->type == crossplatform::BLEND)
 	{
-		//const float blendFactor[] = { 0.0f,0.0f,0.0f,0.0f };
-		//mCommandList->OMSetBlendFactor(&blendFactor[0]);
+        BlendStateOverride = &state->BlendDesc;
 	}
-	if (s->type == crossplatform::DEPTH)
+	else if (s->type == crossplatform::DEPTH)
 	{
-		//mCommandList->OMSetStencilRef(0);
+        DepthStateOverride = &state->DepthStencilDesc;
 	}
+    else if (s->type == crossplatform::RASTERIZER)
+    {
+        RasterStateOverride = &state->RasterDesc;
+    }
+    else
+    {
+        SIMUL_CERR << "Provided an invalid render state \n";
+    }
 }
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
@@ -1565,9 +1612,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	// We are ready to draw/dispatch, so now flush the barriers!
 	FlushBarriers();
 
-    // Restore the override states
-    mOverrideBlendState = nullptr;
-    mOverrideDepthState = nullptr;
+    // We are now done with this states
+    DepthStateOverride  = nullptr;
+    BlendStateOverride  = nullptr;
+    RasterStateOverride = nullptr;
 
 	return true;
 }

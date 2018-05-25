@@ -61,68 +61,55 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT RenderPlatform: public crossplatform::RenderPlatform
 		{
 		public:
-										RenderPlatform();
-			virtual						~RenderPlatform();
-			virtual float GetDefaultOutputGamma() const
-			{
-				return 0.44f;
-			}
-			const char*					GetName() const
-			{
-				return "DirectX 12";
-			}
-
+										    RenderPlatform();
+			virtual						    ~RenderPlatform();
+			virtual float                   GetDefaultOutputGamma() const   {return 0.44f;}
+			const char*					    GetName() const                 {return "DirectX 12";}
 			//! Returns the current idx (used in ring buffers)
-			UCHAR GetIdx()const { return mCurIdx; }
-
+			UCHAR                           GetIdx()const                   { return mCurIdx; }
 			//! Returns the time stamp freq value
-			UINT64 GetTimeStampFreq()const { return mTimeStampFreq; }
-
+			UINT64                          GetTimeStampFreq()const         { return mTimeStampFreq; }
 			//! Sets the reference of a command list. This is usually not needed as we will cache
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
-			void SetCommandList(ID3D12GraphicsCommandList* cmdList);
-
+			void                            SetCommandList(ID3D12GraphicsCommandList* cmdList);
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
-			ID3D12CommandQueue*				GetCommandQueue() { return m12Queue; }
-
+			ID3D12CommandQueue*				GetCommandQueue()               { return m12Queue; }
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
-			void						ResourceTransitionSimple(ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool flush = false, UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
-
+			void						    ResourceTransitionSimple(ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool flush = false, UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			//! Pushes the pending barriers.
-			void						FlushBarriers();
-			
+			void						    FlushBarriers();
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
-			void						PushToReleaseManager(ID3D12DeviceChild* res, std::string dName);
+			void						    PushToReleaseManager(ID3D12DeviceChild* res, std::string dName);
 			//! Clears the input assembler state (index and vertex buffers)
-			void						ClearIA(crossplatform::DeviceContext &deviceContext);
+			void						    ClearIA(crossplatform::DeviceContext &deviceContext);
 
-			dx12::Heap*					SamplerHeap()		{return mSamplerHeap;}
-			dx12::Heap*					RenderTargetHeap()	{ return mRenderTargetHeap; }
-			dx12::Heap*					DepthStencilHeap()	{ return mDepthStencilHeap; }
+			dx12::Heap*					    SamplerHeap()		        {return mSamplerHeap;}
+			dx12::Heap*					    RenderTargetHeap()	        { return mRenderTargetHeap; }
+			dx12::Heap*					    DepthStencilHeap()	        { return mDepthStencilHeap; }
 
 			//! Returns the 2D dummy texture
-			crossplatform::Texture*		GetDummy2D()const		{ return mDummy2D;}
+			crossplatform::Texture*		    GetDummy2D()const		    { return mDummy2D;}
 			//! Returns the 3D dummy texture
-			crossplatform::Texture*		GetDummy3D()const		{ return mDummy3D; }
+			crossplatform::Texture*		    GetDummy3D()const		    { return mDummy3D; }
 
 			//! Returns the currently applied input layout
-			D3D12_INPUT_LAYOUT_DESC*	GetCurrentInputLayout() { return mCurInputLayout; }
+			D3D12_INPUT_LAYOUT_DESC*	    GetCurrentInputLayout()     { return mCurInputLayout; }
 			//! Sets the current input layout
-			void						SetCurrentInputLayout(D3D12_INPUT_LAYOUT_DESC* l) { mCurInputLayout = l; }
+			void						    SetCurrentInputLayout(D3D12_INPUT_LAYOUT_DESC* l) { mCurInputLayout = l; }
 			//! Returns the current applied primitive topology
-			D3D_PRIMITIVE_TOPOLOGY		GetCurrentPrimitiveTopology() { return mStoredTopology; }
+			D3D_PRIMITIVE_TOPOLOGY		    GetCurrentPrimitiveTopology() { return mStoredTopology; }
 
-			void						RestoreDeviceObjects(void* device);
-			void						InvalidateDeviceObjects();
-			void						RecompileShaders();
+			void						    RestoreDeviceObjects(void* device);
+			void						    InvalidateDeviceObjects();
+			void						    RecompileShaders();
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
@@ -187,6 +174,7 @@ namespace simul
 
 			virtual void							ClearTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *texture, const vec4& colour) override;
 
+            static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelOutputFormat p);
 			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static									crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType		FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
@@ -198,25 +186,32 @@ namespace simul
 			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
-
-			bool									MsaaEnabled();
+			
+            bool									MsaaEnabled();
 			DXGI_SAMPLE_DESC						GetMsaaInfo();
-
-			ResourceBindingLimits					GetResourceBindingLimits()const;
+			
+            ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
-			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
+			
+            D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullUAV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
 
-            D3D12_DEPTH_STENCIL_DESC*               GetOverrideDepthState()const;
-            D3D12_BLEND_DESC*                       GetOverrideBlendState()const;
+            //! Holds, if any, an override depth state
+            D3D12_DEPTH_STENCIL_DESC*               DepthStateOverride;
+            //! Holds, if any, an override blend state
+            D3D12_BLEND_DESC*                       BlendStateOverride;
+            //! Holds, if any, an override raster state
+            D3D12_RASTERIZER_DESC*                  RasterStateOverride;
+
+            D3D12_DEPTH_STENCIL_DESC*               DefaultDepthState;
+            D3D12_BLEND_DESC*                       DefaultBlendState;
+            D3D12_RASTERIZER_DESC*                  DefaultRasterState;
 
 		protected:
-
 			//! The GPU timestamp counter frequency (in ticks/second)
-			UINT64 mTimeStampFreq;
-
+			UINT64                      mTimeStampFreq;
 			//! Last frame number
 			long long					mLastFrame;
 			//! Value used to determine the number of "x" that we will have, this is useful in dx12
@@ -225,25 +220,21 @@ namespace simul
 			static const int			kNumIdx = 3;
 			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
 			UCHAR						mCurIdx;
-
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device;
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
 			//! Reference to a command list
 			ID3D12GraphicsCommandList*	mCommandList;
-
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
             //! Heap used to hold override sampler states
             dx12::Heap*                 mFrameOverrideSamplerHeap;
-
 			dx12::Heap*					mSamplerHeap;
 			dx12::Heap*					mRenderTargetHeap;
 			dx12::Heap*					mDepthStencilHeap;
 			dx12::Heap*					mNullHeap;
-					  
 			//! Shared root signature for graphics
 			ID3D12RootSignature*		mGRootSignature;
 			//! Shared root signature for compute
@@ -253,37 +244,27 @@ namespace simul
 			crossplatform::Texture*		mDummy2D;
 			//! Dummy 3D texture
 			crossplatform::Texture*		mDummy3D;
-
 			//! Current applied input layout
 			D3D12_INPUT_LAYOUT_DESC*	mCurInputLayout;
-
 			//! The primitive topology in use
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;
 
 			//! Holds resources to be deleted and its age
 			std::vector<std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
-
             //! Default number of barriers we hold, the number will increase
             //! if we run out of barriers
-            int mTotalBarriers;
-            int mCurBarriers;
+            int                                 mTotalBarriers;
+            int                                 mCurBarriers;
 			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			bool                            isInitialized = false;
+			bool                            mIsMsaaEnabled;
+			DXGI_SAMPLE_DESC                mMsaaInfo;			
 
-			bool isInitialized = false;
-			bool mIsMsaaEnabled;
-			DXGI_SAMPLE_DESC mMsaaInfo;
-
-			std::vector<struct RTState*>	storedRTStates;
-			
-			ResourceBindingLimits mResourceBindingLimits;
-
-			D3D12_CPU_DESCRIPTOR_HANDLE mNullCBV;
-			D3D12_CPU_DESCRIPTOR_HANDLE mNullSRV;
-			D3D12_CPU_DESCRIPTOR_HANDLE mNullUAV;
-            D3D12_CPU_DESCRIPTOR_HANDLE mNullSampler;
-
-            D3D12_DEPTH_STENCIL_DESC*   mOverrideDepthState;
-            D3D12_BLEND_DESC*           mOverrideBlendState;
+			ResourceBindingLimits           mResourceBindingLimits;
+			D3D12_CPU_DESCRIPTOR_HANDLE     mNullCBV;
+			D3D12_CPU_DESCRIPTOR_HANDLE     mNullSRV;
+			D3D12_CPU_DESCRIPTOR_HANDLE     mNullUAV;
+            D3D12_CPU_DESCRIPTOR_HANDLE     mNullSampler;
 		};
 	}
 }

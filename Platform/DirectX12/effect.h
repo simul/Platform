@@ -51,19 +51,19 @@ namespace simul
 
         struct D3D12_RENDER_TARGET_FORMAT_DESC
         {
-            int Number;
-
+            UINT        Count;
+            DXGI_FORMAT RTFormats[8];
         };
 
         //! Holds dx12 rendering state
 		struct SIMUL_DIRECTX12_EXPORT RenderState:public crossplatform::RenderState
 		{
-			                            RenderState();
-			virtual                     ~RenderState();
-
-			D3D12_BLEND_DESC			BlendDesc;
-			D3D12_RASTERIZER_DESC		RasterDesc;
-			D3D12_DEPTH_STENCIL_DESC	DepthStencilDesc;
+			                                RenderState();
+			virtual                         ~RenderState();
+			D3D12_BLEND_DESC			    BlendDesc;
+			D3D12_RASTERIZER_DESC		    RasterDesc;
+			D3D12_DEPTH_STENCIL_DESC	    DepthStencilDesc;
+            D3D12_RENDER_TARGET_FORMAT_DESC RtFormatDesc;
 		};
 
 		//! DirectX12 structured buffer class
@@ -145,33 +145,30 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
-			EffectPass();
-			void InvalidateDeviceObjects();
-			void Apply(crossplatform::DeviceContext &deviceContext,bool asCompute) override;
-			bool IsCompute()const { return mIsCompute; }
+			            EffectPass();
+			void        InvalidateDeviceObjects();
+			void        Apply(crossplatform::DeviceContext &deviceContext,bool asCompute) override;
+			bool        IsCompute()const { return mIsCompute; }
 
-			void SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
-			void SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
-			void SetSRVs(crossplatform::TextureAssignmentMap &textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
-			void SetUAVs(crossplatform::TextureAssignmentMap &rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
+			void        SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
+			void        SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
+			void        SetSRVs(crossplatform::TextureAssignmentMap &textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
+			void        SetUAVs(crossplatform::TextureAssignmentMap &rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 
-            void CreatePso(crossplatform::DeviceContext& deviceContext);
-
+            void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
+            uint32_t    CreateGraphicsPso(crossplatform::DeviceContext& deviceContext);
 		private:
-			virtual ~EffectPass();
-
-			//! This map will hold Pipeline states for the different output formats
-			std::map<DXGI_FORMAT, ID3D12PipelineState*> mGraphicsPsoMap;
+			virtual     ~EffectPass();
+			//! We hold a map with unique PSOs
+			std::map<uint32_t, ID3D12PipelineState*>            mGraphicsPsoMap;
+            std::map<uint32_t, D3D12_RENDER_TARGET_FORMAT_DESC*> mTargetsMap;
 			//! We only have one compute Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
-
 			//! Is this a compute pass?
-			bool mIsCompute = false;
-
-			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSrvCbvUavRanges;
-			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSamplerRanges;
-			std::string								mTechName;
-
+			bool                                        mIsCompute = false;
+			std::vector<CD3DX12_DESCRIPTOR_RANGE>	    mSrvCbvUavRanges;
+			std::vector<CD3DX12_DESCRIPTOR_RANGE>	    mSamplerRanges;
+			std::string								    mTechName;
 			//! Arrays used by the Set* methods declared here to avoid runtime memory allocation
 			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumCBV>	mCbSrcHandles;
 
