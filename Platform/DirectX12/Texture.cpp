@@ -10,8 +10,6 @@
 #include <string>
 #include <algorithm>
 
-#include "MacrosDX1x.h"
-
 using namespace simul;
 using namespace dx12;
 
@@ -205,8 +203,9 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	DirectX::TexMetadata	metadata;
 	DirectX::ScratchImage	scratchImage;
 	const DirectX::Image*	image;
-	DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
-	image = scratchImage.GetImage(0, 0, 0);
+	res     = DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
+    SIMUL_ASSERT(res == S_OK)
+	image   = scratchImage.GetImage(0, 0, 0);
 	 
 	if (!image)
 	{
@@ -244,7 +243,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	);
 	SIMUL_ASSERT(res == S_OK);
 	std::string sName = pFilePathUtf8;
-	std::wstring n = L"Texture2DDefaultResource_";
+	std::wstring n = L"GPU_";
 	n += std::wstring(sName.begin(), sName.end());
 	mTextureDefault->SetName(n.c_str());
 
@@ -267,8 +266,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
         SIMUL_PPV_ARGS(&mTextureUpload)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	n = L"Texture2DUploadResource_";
-	n += std::wstring(sName.begin(), sName.end());
+	n = L"UPLOAD_";
+	n = std::wstring(sName.begin(), sName.end());
 	mTextureUpload->SetName(std::wstring(sName.begin(), sName.end()).c_str());
 
 	// Perform the texture copy
@@ -418,7 +417,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 #endif
 	textureDesc=mTextureDefault->GetDesc();
 	std::string sName = name;
-	std::wstring n = L"Texture2DArrayDefaultResource_";
+	std::wstring n = L"GPU_";
 	n += std::wstring(sName.begin(), sName.end());
 	mTextureDefault->SetName(n.c_str());
 	
@@ -446,7 +445,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
         SIMUL_PPV_ARGS(&mTextureUpload)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	n = L"Texture2DArrayUploadResource_";
+	n = L"UPLOAD_";
 	n += std::wstring(sName.begin(), sName.end());
 	mTextureUpload->SetName(std::wstring(sName.begin(), sName.end()).c_str());
 	
@@ -787,9 +786,6 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
 
-	std::wstring ws=simul::base::Utf8ToWString(name);
-	mTextureDefault->SetName(ws.c_str());
-
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
 
@@ -969,7 +965,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
             SIMUL_PPV_ARGS(&mTextureDefault)
 		);
 		SIMUL_ASSERT(res == S_OK);
-		std::wstring n = L"Texture3DDefaultResource_";
+		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
 
@@ -1201,7 +1197,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
             SIMUL_PPV_ARGS(&mTextureDefault)
 		);
 		SIMUL_ASSERT(res == S_OK);
-		std::wstring n = L"Texture2DDefaultResource_";
+		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
 
@@ -1389,7 +1385,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
         SIMUL_PPV_ARGS(&mTextureDefault)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	std::wstring n = L"Texture2DArrayDefaultResource_";
+	std::wstring n = L"GPU_";
 	n += std::wstring(name.begin(), name.end());
 	mTextureDefault->SetName(n.c_str());
 
@@ -1704,37 +1700,19 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	{
 		auto rp		= (dx12::RenderPlatform*)deviceContext.renderPlatform;
 		auto rtView = AsD3D12RenderTargetView(array_index, mip);
-		rp->AsD3D12CommandList()->OMSetRenderTargets(1, rtView,false, nullptr);
 
-		D3D12_VIEWPORT viewport;
-		viewport.Width		= (float)(std::max(1, (width >> mip)));
-		viewport.Height		= (float)(std::max(1, (length >> mip)));
-		viewport.TopLeftX	= 0;
-		viewport.TopLeftY	= 0;
-		viewport.MinDepth	= 0.0f;
-		viewport.MaxDepth	= 1.0f;
+        targetsAndViewport.num				= 1;
+        targetsAndViewport.m_dt				= nullptr;
+        targetsAndViewport.m_rt[0]			= rtView;
+        targetsAndViewport.rtFormats[0]     = pixelFormat;
+        targetsAndViewport.viewport.w		= (float)(std::max(1, (width >> mip)));
+        targetsAndViewport.viewport.h		= (float)(std::max(1, (length >> mip)));
+        targetsAndViewport.viewport.x		= 0;
+        targetsAndViewport.viewport.y		= 0;
+        targetsAndViewport.viewport.znear	= 0.0f;
+        targetsAndViewport.viewport.zfar	= 1.0f;
 
-		CD3DX12_RECT scissor(0, 0, (LONG)viewport.Width, (LONG)viewport.Height);
-		
-		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
-		rp->AsD3D12CommandList()->RSSetViewports(1, &viewport);
-	
-		// Inform crossplatform!
-		crossplatform::TargetsAndViewport vp {};
-		vp.num				= 1;
-		vp.m_dt				= nullptr;
-		vp.m_rt[0]			= rtView;
-		vp.viewport.w		= (float)(std::max(1, (width >> mip)));
-		vp.viewport.h		= (float)(std::max(1, (length >> mip)));
-		vp.viewport.x		= 0;
-		vp.viewport.y		= 0;
-		vp.viewport.znear	= 0.0f;
-		vp.viewport.zfar	= 1.0f;
-		deviceContext.GetFrameBufferStack().push(&vp);
-
-		// Make sure to cache the current pixel format so we can reset it after we deactivate the render target
-		mOldRtFormat = rp->GetCurrentPixelFormat();
-		rp->SetCurrentPixelFormat(dxgi_format);
+        rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
 	}
 }
 
@@ -1742,7 +1720,6 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
     rp->DeactivateRenderTargets(deviceContext);
-    rp->SetCurrentPixelFormat(mOldRtFormat);
 }
 
 int Texture::GetSampleCount()const

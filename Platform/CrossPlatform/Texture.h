@@ -55,7 +55,7 @@ namespace simul
 			Filtering filtering;
 			int slot;			// register slot
 		};
-		/// A crossplatform viewport structure.
+		//! A crossplatform viewport structure.
 		struct Viewport
 		{
 			int x,y;
@@ -64,17 +64,24 @@ namespace simul
 		};
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;
-		// TODO: Can only store a single rt here, what if we need to restore a multi-buffer rt?
+		//! Stores information about the current render targets
 		struct SIMUL_CROSSPLATFORM_EXPORT TargetsAndViewport
 		{
-			TargetsAndViewport():temp(false),num(0)
+			TargetsAndViewport():temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)
 			{
+                for (int i = 0; i < 8; i++) { m_rt[i] = nullptr; rtFormats[i] = UNKNOWN; }
 			}
-			bool temp;
-			int num;
-			const ApiRenderTarget *m_rt[8];
-			const ApiDepthRenderTarget *m_dt;
-			crossplatform::Viewport viewport;
+			bool                        temp;
+			int                         num;
+            //! API pointer to the target
+			const ApiRenderTarget*      m_rt[8];
+            //! The pixel format of the target
+            PixelFormat                 rtFormats[8];
+            //! If any, the API pointer to the depth surface
+			const ApiDepthRenderTarget* m_dt;
+            //! Depth format
+            PixelFormat                 depthFormat;
+			crossplatform::Viewport     viewport;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT SamplerState
 		{

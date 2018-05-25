@@ -20,9 +20,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DX11Exception.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="FramebufferDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -58,19 +55,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DX11Exception.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MacrosDx1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourcesDx1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderPlatform.h">

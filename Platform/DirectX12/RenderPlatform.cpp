@@ -8,7 +8,6 @@
 #include "Simul/Platform/DirectX12/Effect.h"
 #include "Simul/Platform/DirectX12/Buffer.h"
 #include "Simul/Platform/DirectX12/Layout.h"
-#include "Simul/Platform/DirectX12/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
@@ -40,9 +39,12 @@ RenderPlatform::RenderPlatform():
 	mGRootSignature(nullptr),
 	mCRootSignature(nullptr),
 	mIsMsaaEnabled(false),
-    mOverrideDepthState(nullptr),
-    mOverrideBlendState(nullptr),
-    CurrentRTState(nullptr)
+    DepthStateOverride(nullptr),
+    BlendStateOverride(nullptr),
+    RasterStateOverride(nullptr),
+    DefaultDepthState(nullptr),
+    DefaultBlendState(nullptr),
+    DefaultRasterState(nullptr)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -152,6 +154,10 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		m12Device = (ID3D12Device*)device;
 	}
 	immediateContext.platform_context = mCommandList;
+
+    DefaultBlendState   = &CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    DefaultRasterState  = &CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    DefaultDepthState   = &CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
 	// Lets query some information from the device
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions;
@@ -610,6 +616,37 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return b;
 }
 
+DXGI_FORMAT simul::dx12::RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
+{
+    // We are forced to use this formats as thats what PS4 needs,
+    // but there is not a perfect match btween the formats
+    switch (p)
+    {
+    case simul::crossplatform::FMT_UNKNOWN:
+        return DXGI_FORMAT_UNKNOWN;
+    case simul::crossplatform::FMT_32_GR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_32_AR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_FP16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_UNORM16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_SNORM16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_UINT16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_SINT16_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
+    case simul::crossplatform::FMT_32_ABGR:
+        return ToDxgiFormat(crossplatform::RGBA_32_FLOAT);
+    case simul::crossplatform::OUTPUT_FORMAT_COUNT:
+    default:
+        return DXGI_FORMAT_UNKNOWN;
+        break;
+    }
+}
+
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
@@ -1040,16 +1077,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullSampler() const
 	return mNullSampler;
 }
 
-D3D12_DEPTH_STENCIL_DESC* RenderPlatform::GetOverrideDepthState() const
-{
-    return mOverrideDepthState;
-}
-
-D3D12_BLEND_DESC* RenderPlatform::GetOverrideBlendState() const
-{
-    return mOverrideBlendState;
-}
-
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
 {
 	dx12::Layout *l = new dx12::Layout();
@@ -1255,6 +1282,19 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 		s->DepthStencilDesc.DepthFunc			= toD3d12Comparison(desc.depth.comparison);
 		s->DepthStencilDesc.StencilEnable		= false;
 	}
+    else if (desc.type == crossplatform::RTFORMAT)
+    {
+        int cnt = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            if (desc.rtFormat.formats[i] <= crossplatform::UNKNOWN)
+            {
+                cnt++;
+                s->RtFormatDesc.RTFormats[i] = ToDxgiFormat(desc.rtFormat.formats[i]);
+            }
+        }
+        s->RtFormatDesc.Count = cnt;
+    }
 	else
 	{
 		SIMUL_BREAK("Not recognised render state type");
@@ -1299,42 +1339,23 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
-    if (num > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT)
+}
+
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport* targets)
+{
+    SIMUL_ASSERT(targets->num <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
+    mCommandList                                                                    = deviceContext.asD3D12Context();
+    immediateContext.platform_context                                               = deviceContext.platform_context;
+    D3D12_CPU_DESCRIPTOR_HANDLE* tHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT]   = {};
+    for (int i = 0; i < targets->num; i++)
     {
-        SIMUL_CERR << "Too many textures!";
-        return;
+        SIMUL_ASSERT(targets->m_rt[i] != nullptr);
+        tHandles[i] = (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_rt[i];
     }
+    mCommandList->OMSetRenderTargets((UINT)targets->num, tHandles[0], false, (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt);
+    deviceContext.targetStack.push(targets);
 
-    // First lets activate the render targets:
-    {
-        auto cmdList = deviceContext.asD3D12Context();
-        D3D12_CPU_DESCRIPTOR_HANDLE* chandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
-        D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = ((dx12::Texture*)(depth))->AsD3D12DepthStencilView();
-        for (int i = 0; i < num; i++)
-        {
-            chandles[i] = ((dx12::Texture*)(depth))->AsD3D12RenderTargetView();
-        }
-        cmdList->OMSetRenderTargets(num, chandles[0], false, depthHandle);
-    }
-
-    // We also need to create and set a render target state
-    // so the EffectPass can apply a valid PSO:
-    {
-        RenderTargetState rtState   = {};
-        rtState.Num                 = num;
-        for (int i = 0; i < num; i++) { rtState.ColourFmts[i] = targs[i]->GetFormat(); }
-        rtState.DepthStencilFmt     = depth == nullptr ? simul::crossplatform::PixelFormat::UNKNOWN : depth->GetFormat();
-
-        size_t rtHash   = rtState.GetHash();
-        auto curRt      = RTStateMap.find(rtHash);
-        if (curRt == RTStateMap.end())
-        {
-            RTStateMap[rtHash] = new dx12::RenderTargetState(rtState);
-        }
-
-        // Cache it:
-        CurrentRTState = RTStateMap[rtHash];
-    }
+    SetViewports(deviceContext, 1, &targets->viewport);
 }
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
@@ -1346,7 +1367,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
     {
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
-            1,
+            (UINT)deviceContext.defaultTargetsAndViewport.num,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0],
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
@@ -1359,7 +1380,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
         auto curTargets = deviceContext.GetFrameBufferStack().top();
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
-            1,
+            (UINT)curTargets->num,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[0],
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_dt
@@ -1373,10 +1394,10 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	mCommandList		= deviceContext.asD3D12Context();
 	immediateContext.platform_context=deviceContext.platform_context;
 
-	SIMUL_ASSERT(num <= D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE);
+	SIMUL_ASSERT(num <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
 
-	D3D12_VIEWPORT viewports[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]	= {};
-	D3D12_RECT	   scissors[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]	= {};
+	D3D12_VIEWPORT viewports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT]	= {};
+	D3D12_RECT	   scissors[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT]	    = {};
 
 	for(int i=0;i<num;i++)
 	{
@@ -1391,12 +1412,15 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		// Configure scissor
 		scissors[i].left		= (LONG)viewports[i].TopLeftX;
 		scissors[i].top			= (LONG)viewports[i].TopLeftY;
-		scissors[i].right		= (LONG)viewports[i].TopLeftX+viewports[i].Width;
-		scissors[i].bottom		= (LONG)viewports[i].TopLeftY+viewports[i].Height;
+		scissors[i].right		= (LONG)viewports[i].TopLeftX+(LONG)viewports[i].Width;
+		scissors[i].bottom		= (LONG)viewports[i].TopLeftY+(LONG)viewports[i].Height;
 	}
 
 	mCommandList->RSSetViewports(num, viewports);
 	mCommandList->RSSetScissorRects(num, scissors);
+
+    // This call will ensure that we cache the viewport change inside 
+    // the target stack:
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
@@ -1457,20 +1481,29 @@ void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,cross
 	}
 }
 
-void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
+void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
-	
+	mCommandList		                = deviceContext.asD3D12Context();
+	immediateContext.platform_context   = deviceContext.platform_context;
+    dx12::RenderState* state            = (dx12::RenderState*)s;
+    // We cache the description, during EffectPass::Aply() we will check if the PSO
+    // needs to be recreated
 	if (s->type == crossplatform::BLEND)
 	{
-		//const float blendFactor[] = { 0.0f,0.0f,0.0f,0.0f };
-		//mCommandList->OMSetBlendFactor(&blendFactor[0]);
+        BlendStateOverride = &state->BlendDesc;
 	}
-	if (s->type == crossplatform::DEPTH)
+	else if (s->type == crossplatform::DEPTH)
 	{
-		//mCommandList->OMSetStencilRef(0);
+        DepthStateOverride = &state->DepthStencilDesc;
 	}
+    else if (s->type == crossplatform::RASTERIZER)
+    {
+        RasterStateOverride = &state->RasterDesc;
+    }
+    else
+    {
+        SIMUL_CERR << "Provided an invalid render state \n";
+    }
 }
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
@@ -1579,9 +1612,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	// We are ready to draw/dispatch, so now flush the barriers!
 	FlushBarriers();
 
-    // Restore the override states
-    mOverrideBlendState = nullptr;
-    mOverrideDepthState = nullptr;
+    // We are now done with this states
+    DepthStateOverride  = nullptr;
+    BlendStateOverride  = nullptr;
+    RasterStateOverride = nullptr;
 
 	return true;
 }

@@ -5,7 +5,6 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "SimulDirectXHeader.h"
-#include "MacrosDx1x.h"
 #include <string>
 
 using namespace simul;

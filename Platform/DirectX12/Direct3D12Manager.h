@@ -85,10 +85,21 @@ namespace simul
             //! Storage for the values of the fence
             UINT64						                FenceValues[FrameCount];
 
+            //! Used to record commands
+            ID3D12GraphicsCommandList*	                CommandList;
+            bool                                        RecordingCommands;
+
         private:
             //! Called when we add the window
             void CreateSyncObjects();
 		};
+
+        struct InmediateContext
+        {
+            ID3D12GraphicsCommandList*  ICommandList;
+            ID3D12CommandAllocator*     IAllocator;
+            bool                        IRecording;
+        };
 
 		//! Manages the rendering
 		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
@@ -112,9 +123,10 @@ namespace simul
 			void						ResizeSwapChain(HWND hwnd);
 			void*						GetDevice();
 			void*						GetDeviceContext();
-			void*						GetCommandList(HWND hwnd);
-            //! Executes the commands in the command list and waits until its done
-            void                        FlushToGPU(HWND hwnd);
+
+            void*                       GetInmediateCommandList();
+            void                        FlushInmediateCommandList();
+
 			void*						GetCommandQueue();
 			int							GetNumOutputs();
 			crossplatform::Output		GetOutput(int i);
@@ -123,6 +135,7 @@ namespace simul
 			void						ReportMessageFilterState();
 
 		protected:
+            InmediateContext            mIContext;
 			//! Map of windows
 			WindowMap					mWindows;
 			//! Map of displays
@@ -131,11 +144,7 @@ namespace simul
 			//! The D3D device
 			ID3D12Device*				mDevice;
 			//! Used to submit commands to the GPU
-			ID3D12CommandQueue*			mCommandQueue;		
-			//! Used to record commands
-			ID3D12GraphicsCommandList*	mCommandList;
-
-            bool mCommandListRecording;
+			ID3D12CommandQueue*			mCommandQueue;
 		};
 	}
 }

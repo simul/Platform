@@ -37,4 +37,20 @@
 	#pragma comment(lib,"DXGI.lib")
 #endif 
 
+#ifndef SAFE_RELEASE
+	#define SAFE_RELEASE(p)			{ if(p) { (p)->Release(); (p)=NULL; } }
+#endif
+#ifndef SAFE_RELEASE_ARRAY
+	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }
+#endif
+#ifndef SAFE_DELETE
+    #define SAFE_DELETE(p)          { if(p) { delete p; p=NULL;} }
+#endif
+
+#ifdef _XBOX_ONE
+    #define  SIMUL_PPV_ARGS IID_GRAPHICS_PPV_ARGS
+#else
+    #define  SIMUL_PPV_ARGS IID_PPV_ARGS
+#endif
+
 

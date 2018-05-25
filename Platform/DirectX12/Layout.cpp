@@ -1,5 +1,4 @@
 #include "Layout.h"
-#include "MacrosDX1x.h"
 #include "SimulDirectXHeader.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Base/RuntimeError.h"
