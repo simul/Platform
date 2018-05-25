@@ -231,7 +231,6 @@ RasterizerState wireframeRasterizer
 	AntialiasedLineEnable		= true;
 };
 
-
 BlendState DontBlend
 {
 	BlendEnable[0] = FALSE;

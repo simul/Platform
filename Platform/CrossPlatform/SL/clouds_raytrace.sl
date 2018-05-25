@@ -147,7 +147,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	const float range				=ends-start;
 
 	float lastFadeDistance			=0.0;
-	int2 b							=abs(c.xy-C0.xy*2);
+	int3 b							=abs(c-C0*2);
 
 	vec3 amb_dir=view;
 	
@@ -157,24 +157,25 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
 			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
-			c0.xy				=	C0.xy;
-			c.xy				+=	start_c_offset.xy;
-			c.xy				-=	abs(c.xy&int2(1,1));
-			c.xy				=	c.xy >>1;
-			gridScale.xy		*=	2.0;
+			c0			=	C0;
+			c			+=	start_c_offset;
+			c			-=	abs(c&int3(1,1,1));
+			c			=	c>>1;
+			gridScale	*=	2.0;
+			//viewScale	*=	2.0;
 			if(idx==0)
 				W*=2;
-			p0.xy				=	P0.xy;
-			P0.xy				=	startOffsetFromOriginKm.xy/gridScale.xy/2.0;
-			C0.xy				+=	start_c_offset.xy;
-			C0.xy				-=	abs(C0.xy&int2(1,1));
-			C0.xy				=	C0.xy>>1;
+			p0			=	P0;
+			P0			=	(startOffsetFromOriginKm/gridScale)/2.0;
+			C0			+=	start_c_offset;
+			C0			-=	abs(C0&int3(1,1,1));
+			C0			=	C0>>1;
 			viewGridspace		=view/gridScale;
 			viewGridspace		=normalize(viewGridspace);
 			unitStepKm			=viewGridspace*gridScale;
 			unitStepLengthKm	= length(unitStepKm);
 			idx			++;
-			b = abs(c.xy - C0.xy * 2);
+			b			=abs(c-C0*2);
 		}
 		else break;
 	}
@@ -215,20 +216,26 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
 		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
 		c							+=c_step;
-		int2 intermediate			=abs(c.xy&int2(1,1));
-		float is_inter				=dot(N.xy,vec2(intermediate));
+		int3 intermediate			=abs(c.xyz&int3(1,1,1));
+		float is_inter				=dot(N.xyz,vec3(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		vec3 pw						=abs(p1-p0);//+start_c_offset
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(3.0-2.0*is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
 		float fade					=1.0- fade_inter;
+//	fade*=abs(N.z);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
 		maxDistance					=max(fadeDistance,maxDistance);
-		b							=abs(c.xy-C0.xy*2);
-		if(fade>0)
+		b 							=abs(c-C0*2);
+#ifdef XBOX
+			if(b.x < 0) b.x = -b.x;
+			if(b.y < 0) b.y = -b.y;
+#endif
+		
+		if(fade>0.0)
 		{
 			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
 			/*if(!found)
@@ -241,7 +248,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
-				float cosine			=dot(N,abs(view));//viewGridspace
+				float cosine			=dot(N,abs(viewGridspace));//viewGridspace
 				if(noise&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
@@ -297,18 +304,19 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
 			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
-			c0.xy			=	C0.xy;
-			c.xy			+=	start_c_offset.xy;
-			c.xy			-=	abs(c.xy&int2(1,1));
-			c.xy			=	c.xy>>1;
-			gridScale.xy	*=	2.0;
+			c0			=	C0;
+			c			+=	start_c_offset;
+			c			-=	abs(c&int3(1,1,1));
+			c			=	c>>1;
+			gridScale	*=	2.0;
+			//viewScale	*=	2.0;
 			if(idx==0)
 				W*=2;
-			p0.xy			=	P0.xy;
-			P0.xy			=	startOffsetFromOriginKm.xy/gridScale.xy/2.0;
-			C0.xy			+=	start_c_offset.xy;
-			C0.xy			-=	abs(C0.xy&int2(1,1));
-			C0.xy			=	C0.xy>>1;
+			p0			=	P0;
+			P0			=	(startOffsetFromOriginKm/gridScale)/2.0;
+			C0			+=	start_c_offset;
+			C0			-=	abs(C0&int3(1,1,1));
+			C0			=	C0>>1;
 			viewGridspace	=view/gridScale;
 			viewGridspace	=normalize(viewGridspace);
 			//unitStepKm.xy	*=	2.0; doesn't work.
@@ -325,13 +333,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.zw	    =	vec2(meanFadeDistance,meanFadeDistance);
 	for(int k=0;k<num_interp;k++)
-	{
-		//float alpha0=saturate(1.0-res.colour[k].a);
-		//float alpha=saturate(0.15+((alpha0-0.15)*(1.0+10.0*alphaSharpness)));
-		//res.colour[k].a=1.0-alpha;
-		//res.colour[k].rgb*=saturate(alpha/(0.0001+alpha0));
-		res.colour[k].rgb+=insc[k].rgb;
-	}
+		res.colour[k].rgb+=insc[k].rgb;//*gr;
 	return res;
 }
 #endif

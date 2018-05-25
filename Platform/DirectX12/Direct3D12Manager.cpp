@@ -731,7 +731,7 @@ void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 
 void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 {
-    if (mWindows.find(hwnd) == mWindows.end())
+    if(mWindows.find(hwnd) == mWindows.end())
     {
 		return;
     }

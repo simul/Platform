@@ -530,42 +530,6 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//outputTexture3d[pos].rgba=res;
 }
 
-// Pass a texc that is 0-1 in the z and repeats in the x and y.
-// ignore any cell that would extend beyond 0 or 1 in the z direction.
-float RestrictedWorley(vec3 texc, int grid, int seed, float zmax)
-{
-	vec3 pos	=float(grid)*texc;
-	vec3 fractional, intpart;
-	fractional	=modf(pos,intpart);
-	int3 ip		=int3(intpart);
-	vec3 loc	=fractional - vec3(0.5, 0.5, 0.5);
-	float g		=float(grid);
-	float n		=g;
-	for (int i = -1; i < 2; ++i)
-	{
-		for (int j = -1; j < 2; ++j)
-		{
-			for (int k = -1; k < 2; ++k)
-			{
-				vec3 c		= vec3(i, j, k);
-				int3 u		= (ip + int3(i, j, k));
-				int3 v		= (u + int3(grid, grid, grid)) % int3(grid, grid, grid);
-				vec3 random = SphericalRandom(vec3(v)*seed);
-				c			+= random.xyz;
-				vec3 diff	= loc - c;
-				float dist	= length(diff);
-
-				float top = (ip.z+c.z + 1.0) / g;
-				float bot = (ip.z+c.z - 1.0) / g;
-				if(top<zmax)//&&bot>-1.0)
-					n = min(n, dist);
-			}
-		}
-	}
-	float p = saturate(1.0 - n / 1.0);
-	return p;
-}
-
 float CSDensity(uint3 pos)
 {
 	uint3 dims;
@@ -608,8 +572,9 @@ float CSDensity(uint3 pos)
 	float grid1 = fl*4.0;
 	float grid2 = (fl+1.0) * 4.0;
 	vec3 wtexc		=densityspace_texcoord*noiseScale / noiseScale.x;
-	float zratio	=noiseScale.z / noiseScale.x;
-	for(int j=0;j<4;j++)
+	//wtexc.z*=0.5;
+	float zratio	=4.0*noiseScale.z / noiseScale.x;
+	for(int j=0;j<2;j++)
 	{
 		float w1 = RestrictedWorley(wtexc, (int)grid1, (int)grid1, zratio);
 		float w2 = RestrictedWorley(wtexc, (int)grid2, (int)grid2, zratio);
