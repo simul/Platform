@@ -205,9 +205,9 @@ namespace simul
             //! Holds, if any, an override raster state
             D3D12_RASTERIZER_DESC*                  RasterStateOverride;
 
-            D3D12_DEPTH_STENCIL_DESC*               DefaultDepthState;
-            D3D12_BLEND_DESC*                       DefaultBlendState;
-            D3D12_RASTERIZER_DESC*                  DefaultRasterState;
+            D3D12_DEPTH_STENCIL_DESC                DefaultDepthState;
+            D3D12_BLEND_DESC                        DefaultBlendState;
+            D3D12_RASTERIZER_DESC                   DefaultRasterState;
 
 		protected:
 			//! The GPU timestamp counter frequency (in ticks/second)
@@ -265,6 +265,8 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE     mNullSRV;
 			D3D12_CPU_DESCRIPTOR_HANDLE     mNullUAV;
             D3D12_CPU_DESCRIPTOR_HANDLE     mNullSampler;
+
+            crossplatform::TargetsAndViewport mTargets;
 		};
 	}
 }
