@@ -41,10 +41,7 @@ RenderPlatform::RenderPlatform():
 	mIsMsaaEnabled(false),
     DepthStateOverride(nullptr),
     BlendStateOverride(nullptr),
-    RasterStateOverride(nullptr),
-    DefaultDepthState(nullptr),
-    DefaultBlendState(nullptr),
-    DefaultRasterState(nullptr)
+    RasterStateOverride(nullptr)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -155,9 +152,9 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	}
 	immediateContext.platform_context = mCommandList;
 
-    DefaultBlendState   = &CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    DefaultRasterState  = &CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    DefaultDepthState   = &CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    DefaultBlendState   = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    DefaultRasterState  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    DefaultDepthState   = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
 	// Lets query some information from the device
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions;
@@ -1284,10 +1281,11 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 	}
     else if (desc.type == crossplatform::RTFORMAT)
     {
+        s->RtFormatDesc = {};
         int cnt = 0;
         for (int i = 0; i < 8; i++)
         {
-            if (desc.rtFormat.formats[i] <= crossplatform::UNKNOWN)
+            if (desc.rtFormat.formats[i] != crossplatform::UNKNOWN)
             {
                 cnt++;
                 s->RtFormatDesc.RTFormats[i] = ToDxgiFormat(desc.rtFormat.formats[i]);
@@ -1339,6 +1337,21 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
+    mTargets        = {};
+    mTargets.num    = num;
+    for (int i = 0; i < num; i++)
+    {
+        mTargets.m_rt[i]        = targs[i]->AsD3D12RenderTargetView(0, 0);
+        mTargets.rtFormats[i]   = targs[i]->pixelFormat;
+    }
+    if (depth)
+    {
+        mTargets.m_dt           = depth->AsD3D12DepthStencilView();
+        mTargets.depthFormat    = depth->pixelFormat;
+    }
+    mTargets.viewport           = { 0,0,targs[0]->GetWidth(),targs[0]->GetLength(),0.0f,1.0f };
+
+    ActivateRenderTargets(deviceContext, &mTargets);
 }
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport* targets)
@@ -1346,13 +1359,13 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
     SIMUL_ASSERT(targets->num <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
     mCommandList                                                                    = deviceContext.asD3D12Context();
     immediateContext.platform_context                                               = deviceContext.platform_context;
-    D3D12_CPU_DESCRIPTOR_HANDLE* tHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT]   = {};
+    D3D12_CPU_DESCRIPTOR_HANDLE tHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT]   = {};
     for (int i = 0; i < targets->num; i++)
     {
         SIMUL_ASSERT(targets->m_rt[i] != nullptr);
-        tHandles[i] = (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_rt[i];
+        tHandles[i] = *(D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_rt[i];
     }
-    mCommandList->OMSetRenderTargets((UINT)targets->num, tHandles[0], false, (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt);
+    mCommandList->OMSetRenderTargets((UINT)targets->num, tHandles, FALSE, /*(D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt*/ nullptr);
     deviceContext.targetStack.push(targets);
 
     SetViewports(deviceContext, 1, &targets->viewport);

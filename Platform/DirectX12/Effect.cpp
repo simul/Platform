@@ -1519,7 +1519,7 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
     }
 
     // Get the current blend state:
-    D3D12_BLEND_DESC* finalBlend = curRenderPlat->DefaultBlendState;
+    D3D12_BLEND_DESC* finalBlend = &curRenderPlat->DefaultBlendState;
     if (blendState)
     {
         finalBlend = &((dx12::RenderState*)blendState)->BlendDesc;
@@ -1530,7 +1530,7 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
     }
 
     // Get current depth state:
-    D3D12_DEPTH_STENCIL_DESC* finalDepth = curRenderPlat->DefaultDepthState;
+    D3D12_DEPTH_STENCIL_DESC* finalDepth = &curRenderPlat->DefaultDepthState;
     if (depthStencilState)
     {
         finalDepth = &((dx12::RenderState*)depthStencilState)->DepthStencilDesc;
@@ -1541,7 +1541,7 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
     }
 
     // Get current raster:
-    D3D12_RASTERIZER_DESC* finalRaster = curRenderPlat->DefaultRasterState;
+    D3D12_RASTERIZER_DESC* finalRaster = &curRenderPlat->DefaultRasterState;
     if (rasterizerState)
     {
         finalRaster = &((dx12::RenderState*)rasterizerState)->RasterDesc;
@@ -1572,6 +1572,13 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
         for (int i = 0; i < targets->num; i++)
         {
             tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(targets->rtFormats[i]);
+            // We don't want to have an unknow state as this will end up randomly choosen by the DX
+            // driver, probably causing gliches or crashes
+            // To fix this, we could either send the ID3D12Resource or send the format from the client
+            if (tmpState.RTFormats[i] == DXGI_FORMAT_UNKNOWN)
+            {
+                tmpState.RTFormats[i] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+            }
         }
         
         // Compute a hash for this state

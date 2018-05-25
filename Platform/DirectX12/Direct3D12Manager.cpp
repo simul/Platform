@@ -391,7 +391,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 #ifndef _XBOX_ONE
 
 	// Debug layer
-	UINT dxgiFactoryFlags = 0;
+    UINT dxgiFactoryFlags = 0;
 	if (use_debug)
 	{
 		ID3D12Debug* debugController = nullptr;
