@@ -35,7 +35,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 				,vec3 world_pos,vec3 cloudTexCoords,vec3 amb_dir
 				,vec2 fade_texc
 				,out float brightnessFactor
-				,out vec4 inscatter)
+				,out vec4 inscatter,float fade)
 {
 	float alt_texc				=(world_pos.z/fadeAltitudeRangeKm);
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
@@ -47,7 +47,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec4 c;
 	float l						=lerp(0.02, 1.5, density.z);
 	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
-	c.a							=density.z;
+	c.a							=density.z*fade;
 
 	{
 		vec3 loss		=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0).rgb;
@@ -91,14 +91,14 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	return c;
 }
 
-void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist,inout vec4 density,out vec4 light)
+void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4 noiseval,vec3 fractalScale,float mip,inout vec4 density,out vec4 light)
 {
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*(noiseval.xyz);
-	density				=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
+	density				=sample_3d_lod(cloudDensity,wwcSamplerState,pos,0);
 	// NOTE: VERY VERY IMPORTANT to use the original, not noise-modified, texture-coordinates for light.
-	light				=sample_3d_lod(cloudLight,cloudSamplerState,texCoords,0);
+	light				=sample_3d_lod(cloudLight,wwcSamplerState,texCoords,mip);
 	float tz			=texCoords.z*32.0;
-	density.z			*=layerFade*saturate(tz+1.0)*saturate(32.0-tz);
+	density.z			*=saturate(tz+1.0)*saturate(32.0-tz);
 }
 
 FarNearPixelOutput Lightpass(Texture3D cloudDensity
@@ -256,8 +256,8 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
 			vec4 density =sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, fadeDistance*4.0);
 			vec4 light;
-			calcDensity(cloudDensity,cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
-			
+			calcDensity(cloudDensity,cloudDensity,cloudTexCoords,noiseval,fractalScale,fadeDistance,density,light);
+			density.z*=fade;
 			if(density.z>0)
 			{
 				float brightness_factor;
@@ -381,7 +381,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 				,bool do_depth_mix
 				,float distScale
 				,int idx
-				,vec4 noiseval)
+				,vec4 noiseval,float fade)
 {
 	density.z				*=saturate(distanceKm/CLOUD_FADEIN_DIST);
 	vec4 clr[NUM_CLOUD_INTERP];
@@ -399,7 +399,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,amb_dir
 										,fade_texc
 										,brightness_factor
-										,inscatter);
+										,inscatter, fade);
 	else
 		clr[NUM_CLOUD_INTERP - 1]	=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
 										,vec4(light.xyw,density.z)
