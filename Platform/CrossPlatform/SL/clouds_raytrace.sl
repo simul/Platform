@@ -173,7 +173,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			viewGridspace		=normalize(viewGridspace);
 			unitStepKm			=viewGridspace*gridScale;
 			unitStepLengthKm	= length(unitStepKm);
-			idx			++;
+			idx					++;
 			b = abs(c.xy - C0.xy * 2);
 		}
 		else break;
@@ -222,13 +222,19 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 pw						=abs(p1-p0);//+start_c_offset
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(3.0-2.0*is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
-		float fade					=1.0- fade_inter;
+		float fade					=1.0-fade_inter;
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
 		maxDistance					=max(fadeDistance,maxDistance);
 		b							=abs(c.xy-C0.xy*2);
-		if(fade>0)
+#ifdef XBOX
+			if(b.x < 0) b.x = -b.x;
+			if(b.y < 0) b.y = -b.y;
+#endif
+		
+		if(fade>0.0)
+		//if(abs(N.z)>0.0)
 		{
 			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
 			/*if(!found)
@@ -241,35 +247,35 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
-				float cosine			=dot(N,abs(view));//viewGridspace
+				float cosine			=dot(N,abs(view));//viewGridspace would cause a visible break at detail transitions.
 				if(noise&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
-				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
+				calcDensity(cloudDensity,cloudLight,cloudTexCoords,noiseval,fractalScale,4.0*fadeDistance,density,light);
+			
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
-					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
+					float dm			=rainEffect*1.0*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 					moisture			+=0.01*dm*light.x;
 					density.z			=saturate(density.z+dm);
 				}
-				//density.z = 1;
+			
 				if(density.z>0)
 				{
-					{
-						vec3 worley_texc	=(world_pos.xyz+worleyTexcoordOffset)*worleyTexcoordScale;
-						minDistance			=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
-						vec4 worley			=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
-						float wo			=4*density.y*(worley.w-0.6)*saturate(1.0/(12.0*fadeDistance));//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-						density.z			=lerp(density.z,saturate(0.3+(1.0)*((density.z+wo)-0.3-saturate(0.6-density.z))),density.w);
-						density.z			=saturate(0.3+(1.0+1.0*alphaSharpness)*(density.z-0.3));
-						//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3+saturate(density.z-0.6)));
-						amb_dir				=lerp(amb_dir,worley.xyz,0.1*density.z);
-					}
+					vec3 worley_texc	=(world_pos.xyz+worleyTexcoordOffset)*worleyTexcoordScale;
+					minDistance			=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
+					vec4 worley			=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
+					float wo			=4*density.y*(worley.w-0.6)*saturate(1.0/(12.0*fadeDistance));//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
+					density.z			=lerp(density.z,saturate(0.3+(1.0)*((density.z+wo)-0.3-saturate(0.6-density.z))),density.w);
+					//density.z			=saturate(0.3+(1.0+1.0*alphaSharpness)*(density.z-0.3));
+					//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3+saturate(density.z-0.6)));
+					amb_dir				=lerp(amb_dir,worley.xyz,0.1*density.z);
+					
 					float brightness_factor;
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
-
+					
 					//density.z = saturate(cloudWorldOffsetKm.z-19);
 					ColourStep( res.colour,insc, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture
@@ -280,7 +286,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,cosine, volumeTexCoords,amb_dir
 								,BetaClouds, BetaRayleigh, BetaMie
-								,solidDist_nearFar, noise, do_depth_mix,distScale,idx,noiseval);
+								,solidDist_nearFar, noise, do_depth_mix,distScale,idx,noiseval,fade,alphaSharpness);
 					if(res.colour[0].a*brightness_factor<0.003)
 					{
 						for(int o=0;o<num_interp;o++)
@@ -309,12 +315,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			C0.xy			+=	start_c_offset.xy;
 			C0.xy			-=	abs(C0.xy&int2(1,1));
 			C0.xy			=	C0.xy>>1;
-			viewGridspace	=view/gridScale;
-			viewGridspace	=normalize(viewGridspace);
+			viewGridspace		=view/gridScale;
+			viewGridspace		=normalize(viewGridspace);
 			//unitStepKm.xy	*=	2.0; doesn't work.
 			unitStepKm			=viewGridspace*gridScale;
 			unitStepLengthKm	= length(unitStepKm);
-			idx			++;
+			idx					++;
 		}
 	}
 #ifndef INFRARED
@@ -326,11 +332,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.nearFarDepth.zw	    =	vec2(meanFadeDistance,meanFadeDistance);
 	for(int k=0;k<num_interp;k++)
 	{
-		//float alpha0=saturate(1.0-res.colour[k].a);
-		//float alpha=saturate(0.15+((alpha0-0.15)*(1.0+10.0*alphaSharpness)));
-		//res.colour[k].a=1.0-alpha;
-		//res.colour[k].rgb*=saturate(alpha/(0.0001+alpha0));
 		res.colour[k].rgb+=insc[k].rgb;
+		//float s=saturate(0.3+((0.3-res.colour[k].a)*(1.0+10.0*alphaSharpness)));
+		//res.colour[k].a=1.0-(s)*(1.0-res.colour[k].a);
+		//res.colour[k].rgb*=s;
 	}
 	return res;
 }

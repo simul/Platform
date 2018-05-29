@@ -119,7 +119,7 @@ void SphericalHarmonics::CopyMip(crossplatform::DeviceContext &deviceContext,Tex
 	lightProbeConstants.roughness = RoughnessFromMip((float)lightProbeConstants.mipIndex,(float)tex->mips);
 	lightProbesEffect->SetConstantBuffer(deviceContext, &lightProbeConstants);
 
-	const bool doOldMipCopy = false;
+	static bool doOldMipCopy = false;
 	if(doOldMipCopy /*|| renderPlatform->GetName() == "DirectX 12" || renderPlatform->GetName() == "PS4"*/)
 	{
 		crossplatform::EffectTechnique *tech=lightProbesEffect->GetTechniqueByName((blend>0.0f)?"blend_mip":"overwrite_mip");

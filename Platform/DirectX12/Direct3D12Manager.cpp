@@ -401,7 +401,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			debugController->EnableDebugLayer();
 
 			// Enable GPU validation (it will report a list of errors if ocurred after ExecuteCommandList())
-			bool doGPUValidation = false;
+			bool doGPUValidation = true;
 			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{
@@ -742,7 +742,7 @@ void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 
 void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 {
-    if (mWindows.find(hwnd) == mWindows.end())
+    if(mWindows.find(hwnd) == mWindows.end())
     {
 		return;
     }

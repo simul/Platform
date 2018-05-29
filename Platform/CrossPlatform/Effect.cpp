@@ -756,6 +756,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	if (filenameUtf8.find(".sfxo") == std::string::npos)
 		filenameUtf8 += ".sfxo";
 	filenameUtf8=filepathUtf8+filenameUtf8;
+#ifdef __ORBIS__
+	base::find_and_replace(filenameUtf8,"\\","/");
+#endif
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 	{
 		// Some engines force filenames to lower case because reasons:

@@ -183,7 +183,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 	vec4 outp;
 	float r = saturate(roughness);//exp2( ( 3 - numMips + mipIndex) / 1.2 );;
 	uint CubeSize = 1 << ( numMips - 1 );
-	const float SolidAngleTexel = 4.0 *PI / float(( 6 * CubeSize * CubeSize ) * 2);
+	const float SolidAngleTexel = 4.0 *PI / float(( 6.0 * CubeSize * CubeSize ) * 2.0);
 	const uint NumSamples =  roughness < 0.1 ? 32 : 64;
 	vec4 result = vec4(0,0,0,0);
 	mat3 TangentToWorld = GetTangentBasis(view);
@@ -205,7 +205,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 			E.y *= 0.995;
 			vec3 H	= ImportanceSampleGGX(E, r).xyz;
 			L		= 2*H.z*H - vec3(0,0,1.0);
-		//	L.xy*=10;
+	
 			float NoL = L.z;
 			if( NoL > 0 )
 			{
@@ -214,10 +214,13 @@ vec4 RoughnessMip(vec3 view,bool rough)
 				float SolidAngleSample = 1.0 / ( NumSamples * PDF );
 				float Mip = 0.5 * log2( SolidAngleSample / SolidAngleTexel );
 
-				float ConeAngle = acos( 1 - SolidAngleSample / (2*PI) );
+				float ConeAngle = acos(saturate( 1.0 - SolidAngleSample / (2.0*PI) ));
 
 				L = mul( L, TangentToWorld );
-				result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
+				// Apply a limit to avoid numerical issues:
+				vec4 lookup=100.0*saturate(0.01*sourceCubemap.SampleLevel(cubeSamplerState, L, 0));
+				result	+= NoL*lookup;
+			
 				Weight += NoL;
 			}
 		}

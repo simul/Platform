@@ -55,16 +55,17 @@ float GetHumidityMultiplier(float z,float maxz,float baseLayer,float transition,
 	return m;
 }
 
-float GetHumidityMultiplier2(float z,float baseLayer,float transition,float upperDensity)
+float GetHumidityMultiplier2(float z,float baseLayerZ,float transitionZ,float upperDensity)
 {
-	float i		=saturate((z-baseLayer)/transition);
-	float m		=lerp(1.0,upperDensity,i);//*i;
-	float t2	=max(1.0-baseLayer-transition,0.0001);
-	float upperLayer=1.0-baseLayer-transition;
-	float j		=1.0-saturate((1.0-z)/upperLayer);
-	float n		=upperDensity*sqrt(1.0-j*j);
-	m			*=step(z,baseLayer+transition);
-	m			=max(m,n);
+	float upperLayerZ	=1.0-baseLayerZ-transitionZ;
+	// how far from base layer to upper layer?
+	float i				=saturate((z-baseLayerZ)/transitionZ);
+	// how far from upper layer to top?
+	float j				=1.0-saturate((1.0-z)/upperLayerZ);
+	float m				=lerp(1.0,upperDensity,i);
+	float n				=upperDensity*sqrt(1.0-j*j);
+	m					*=step(z,baseLayerZ+transitionZ);
+	m					=max(m,n);
 
 	return m;
 }
@@ -182,4 +183,41 @@ float GpuCloudMask(vec2 texCoords, vec2 maskCentre, float maskRadius, float mask
     return dens;
 }
 
+
+// Pass a texc that is 0-1 in the z and repeats in the x and y.
+// ignore any cell that would extend beyond 0 or 1 in the z direction.
+float RestrictedWorley(vec3 texc, int grid, int seed, float zmax)
+{
+	vec3 pos	=float(grid)*texc;
+	vec3 fractional, intpart;
+	fractional	=modf(pos,intpart);
+	int3 ip		=int3(intpart);
+	vec3 loc	=fractional - vec3(0.5, 0.5, 0.5);
+	float g		=float(grid);
+	float n		=g;
+	for (int i = -1; i < 2; ++i)
+	{
+		for (int j = -1; j < 2; ++j)
+		{
+			for (int k = -1; k < 2; ++k)
+			{
+				int3 I		=int3(i, j, k);
+				vec3 c		= vec3(I);
+				int3 u		= (ip + I);
+				int3 v		= (u + int3(grid, grid, grid)) % int3(grid, grid, grid);
+				vec3 random = SphericalRandom(vec3(v)*seed);
+				c			+= .5*random.xyz;
+				vec3 diff	= loc - c;
+				float dist	= length(diff);
+
+				float top = (ip.z+c.z + 1.0) / g;
+				float bot = (ip.z+c.z - 1.0) / g;
+				if(top<zmax)//&&bot>-1.0)
+					n = min(n, dist);
+			}
+		}
+	}
+	float p = saturate(1.0 - n / 1.0);
+	return p;
+}
 #endif
