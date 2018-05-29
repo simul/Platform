@@ -623,7 +623,7 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
         if (numActiveMem > 0)
         {
             // Create the UBO
-            const int numMemberEles = 16; // TO-DO: we can query this but it shold be the same 
+            const int numMemberEles = 24; // TO-DO: we can query this but it shold be the same 
             mHandlesUBO = new TexHandlesUBO;
             mHandlesUBO->Init(numActiveMem * numMemberEles, mProgramId, uboSlot);
 
@@ -662,13 +662,13 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
                 std::string newName(memberName.begin(), memberName.begin() + arrPos);
 
                 // 5) Now that we now the name used by SFXO, we can cache the offset:
-                // Each member will take sizeof(uint64_t) * 16, so offsets should be
+                // Each member will take sizeof(uint64_t) * 24, so offsets should be
                 // multiples of that number
                 GLint baseOffset                = memRes[1]; 
                 int texSlot                     = curEffect->GetSlot(newName.c_str());
                 mTexturesUBOMapping[texSlot]    = baseOffset;
                 
-                if ((baseOffset % (sizeof(GLuint64) * 16)) != 0)
+                if ((baseOffset % (sizeof(GLuint64) * 24)) != 0)
                 {
                     SIMUL_BREAK("This can not happen");
                 }
