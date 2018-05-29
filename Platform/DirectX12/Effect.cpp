@@ -269,14 +269,18 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     mUnitSize           = mNumElements * mElementByteSize;
     mTotalSize			= mUnitSize * mMaxApplyMod;
 
-    renderPlatform      = r;
-	dx12::RenderPlatform *mRenderPlatform		= (dx12::RenderPlatform*)renderPlatform;
-	mCpuRead            = cpu_read;
+    renderPlatform                          = r;
+	dx12::RenderPlatform *mRenderPlatform	= (dx12::RenderPlatform*)renderPlatform;
+	mCpuRead                                = cpu_read;
 
 	if (mTotalSize <= 0)
 	{
-		SIMUL_BREAK("You are creating a StructuredBuffer of size 0");
+        SIMUL_CERR << "The size of a Structured Buffer can not be 0 \n";
+        return;
 	}
+
+    size_t totalGpuBytes = mBuffering* mTotalSize;
+    SIMUL_COUT << "Allocating GPU memory for Structured Buffer: " << totalGpuBytes << " (" << (float)totalGpuBytes / 1024.0f / 1024.0f << ")\n";
 
     // Create the buffers:
     D3D12_RESOURCE_STATES initState     = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : mShaderResourceState;
@@ -296,7 +300,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
             SIMUL_PPV_ARGS(&mGPUBuffers[i])
         );
         SIMUL_ASSERT(res == S_OK);
-        mGPUBuffers[i]->SetName(L"SBDefaultBuffer");
+        mGPUBuffers[i]->SetName(L"GPU_SB");
 
         // Upload heap:
         res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
@@ -309,7 +313,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
             SIMUL_PPV_ARGS(&mUploadBuffers[i])
         );
         SIMUL_ASSERT(res == S_OK);
-        mUploadBuffers[i]->SetName(L"SBUploadBuffer");
+        mUploadBuffers[i]->SetName(L"CPU_SB");
 
         // If provided data, init the GPU buffer with it:
         if (init_data)
@@ -343,7 +347,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
                 SIMUL_PPV_ARGS(&mReadBuffers[i])
             );
             SIMUL_ASSERT(res == S_OK);
-            mReadBuffers[i]->SetName(L"SBReadbackBuffer");
+            mReadBuffers[i]->SetName(L"READ_SB");
         }
     }
 
@@ -532,9 +536,9 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	{
         SAFE_DELETE(mSrvViews[i]);
         SAFE_DELETE(mUavViews[i]);
-	    mRenderPlatform->PushToReleaseManager(mUploadBuffers[i], "SBUpload");
-	    mRenderPlatform->PushToReleaseManager(mGPUBuffers[i], "SBDefault");
-		mRenderPlatform->PushToReleaseManager(mReadBuffers[i], "SBRead");
+	    mRenderPlatform->PushToReleaseManager(mUploadBuffers[i], "CPU_SB");
+	    mRenderPlatform->PushToReleaseManager(mGPUBuffers[i], "GPU_SB");
+		mRenderPlatform->PushToReleaseManager(mReadBuffers[i], "READ_SB");
 	}
 }
 
@@ -1584,7 +1588,9 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
         // Compute a hash for this state
         uint32_t rthash     = 0xFFFFFFFF;
         rthash              = (rthash >> 8) ^ kCrc32[(rthash & 0xff) ^ tmpState.Count];
-        for (int i = 0; i < 8; i++)
+        // Should we iterate over all the formats? Maybe that will increate the % of hash collision
+        // as most of the formats will be UNKNOWN
+        for (int i = 0; i < tmpState.Count; i++)
         {
             rthash          = (rthash >> 8) ^ kCrc32[(rthash & 0xff) ^ tmpState.RTFormats[i]];
         }

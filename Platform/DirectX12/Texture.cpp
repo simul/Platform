@@ -196,7 +196,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// Load the data
 	void *ptr		= NULL;
 	unsigned bytes	= 0;
-	int flags		= 0;
+	int flags		= DirectX::WIC_FLAGS_NONE;
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr, bytes, strPath.c_str(), false);
 
 	// Convert into WIC 
@@ -713,7 +713,7 @@ bool Texture::HasRenderTargets() const
 
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt, bool setDepthStencil)
 {
-	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt);
+	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt,setDepthStencil);
 }
 
 void Texture::SetName(const char *n)
@@ -767,55 +767,72 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			mips		= textureDesc.MipLevels;
 		}
 		depth = textureDesc.DepthOrArraySize;
-		if (make_rt && (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
+
+        // Create render target views for this external texture:
+		if (make_rt && !setDepthStencil)
 		{
-			FreeSRVTables();
+            if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
+            {
+                FreeSRVTables();
 
-			D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
-			rtDesc.Format	= RenderPlatform::TypelessToSrvFormat(textureDesc.Format);
-			InitRTVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
-			arraySize		= textureDesc.DepthOrArraySize;
-			mips			= textureDesc.MipLevels;
-			if (renderTargetViews12)
-			{
-				rtDesc.ViewDimension					= (textureDesc.SampleDesc.Count) >1 ?	D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : 
-																								D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-				rtDesc.Texture2DArray.FirstArraySlice	= 0;
-				rtDesc.Texture2DArray.ArraySize			= 1;
+                D3D12_RENDER_TARGET_VIEW_DESC rtDesc    = {};
+                rtDesc.Format                           = RenderPlatform::TypelessToSrvFormat(textureDesc.Format);
+                InitRTVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
+                arraySize                               = textureDesc.DepthOrArraySize;
+                mips                                    = textureDesc.MipLevels;
+                if (renderTargetViews12)
+                {
+                    rtDesc.ViewDimension                    = (textureDesc.SampleDesc.Count) >1 ? D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+                    rtDesc.Texture2DArray.FirstArraySlice   = 0;
+                    rtDesc.Texture2DArray.ArraySize         = 1;
 
-				mTextureRtHeap.Restore((dx12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels,D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRtHeap", false);
+                    mTextureRtHeap.Restore((dx12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRtHeap", false);
 
-				for (int i = 0; i < (int)textureDesc.DepthOrArraySize; i++)
-				{
-					rtDesc.Texture2DArray.FirstArraySlice = i;
-					for (int j = 0; j<(int)textureDesc.MipLevels; j++)
-					{
-						rtDesc.Texture2DArray.MipSlice = j;
+                    for (int i = 0; i < (int)textureDesc.DepthOrArraySize; i++)
+                    {
+                        rtDesc.Texture2DArray.FirstArraySlice = i;
+                        for (int j = 0; j<(int)textureDesc.MipLevels; j++)
+                        {
+                            rtDesc.Texture2DArray.MipSlice = j;
 
-						r->AsD3D12Device()->CreateRenderTargetView(mTextureDefault, &rtDesc, mTextureRtHeap.CpuHandle());
-						renderTargetViews12[i][j] = mTextureRtHeap.CpuHandle();
-						mTextureRtHeap.Offset();
-					}
-				}
-			}
-			if (setDepthStencil)
-			{
-				D3D12_TEX2D_DSV dsv;
-				dsv.MipSlice = 0;
-				D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc;
-				depthDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-				depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-				depthDesc.Flags = D3D12_DSV_FLAG_NONE;
-				depthDesc.Texture2D = dsv;
-				renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &depthDesc, depthStencilView12);
-			}
-
-			SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+                            r->AsD3D12Device()->CreateRenderTargetView(mTextureDefault, &rtDesc, mTextureRtHeap.CpuHandle());
+                            renderTargetViews12[i][j] = mTextureRtHeap.CpuHandle();
+                            mTextureRtHeap.Offset();
+                        }
+                    }
+                }
+                SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+            }
+            else
+            {
+                SIMUL_CERR << "This external texture can not be created as a render target. The flags do not support it.\n";
+                return;
+            }
 		}
-		else
-		{
-			//SIMUL_BREAK("Not a valid D3D12 texture");
-		}
+
+        // Create depth stencil views from this texture:
+        if (setDepthStencil)
+        {
+            if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
+            {
+                    D3D12_TEX2D_DSV dsv                     = {};
+                    dsv.MipSlice                            = 0;
+                    D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc = {};
+                    depthDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
+                    depthDesc.Format                        = DXGI_FORMAT_D24_UNORM_S8_UINT;
+                    depthDesc.Flags                         = D3D12_DSV_FLAG_NONE;
+                    depthDesc.Texture2D                     = dsv;
+
+                    mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "Texture2DDSVHeap", false);
+                    renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &depthDesc, mTextureDsHeap.CpuHandle());
+                    depthStencilView12 = mTextureDsHeap.CpuHandle();
+                    mTextureDsHeap.Offset();
+            }
+            else
+            {
+                SIMUL_CERR << "This external texture can not be created as a depth stencil. The flags do not support it.\n";
+            }
+        }
 	}
 
 	dim			= 2;
