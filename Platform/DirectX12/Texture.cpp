@@ -382,6 +382,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	}
 	
 	auto format = RenderPlatform::FromDxgiFormat(mainFormat);
+
 	// Clean resources
 	SAFE_RELEASE(mTextureDefault);
 	SAFE_RELEASE(mTextureUpload);
@@ -401,20 +402,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	textureDesc.Layout				= D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
 	textureDesc.Flags				= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-	
-#if 0
-	// Create the texture resource (GPU, with an implicit heap)
-	res = r->AsD3D12Device()->CreateCommittedResource
-	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&textureDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-        SIMUL_PPV_ARGS(&mTextureDefault)
-	);
-	SIMUL_ASSERT(res == S_OK);
-#endif
 	textureDesc=mTextureDefault->GetDesc();
 	std::string sName = name;
 	std::wstring n = L"GPU_";
@@ -463,37 +450,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		dx12RenderPlatform->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(), true);
 	}
 	
-	// Init states
-	//InitStateTable(arraySize, mips);
-
-	// Transition the resource to be used in the shaders
-	//SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
-	auto rPlat = (dx12::RenderPlatform*)(r);
-	//rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
-	
-#if 0
-	// Create a descriptor heap for this texture
-	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
-	mTextureSrvHeap.Restore(rPlat, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureCpuHeap", false);
-	// Create the descriptor (view) of this texture
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc		= {};
-	srvDesc.Shader4ComponentMapping				= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format								= textureDesc.Format;
-	srvDesc.ViewDimension						= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-	srvDesc.Texture2DArray.MostDetailedMip		= 0;
-	srvDesc.Texture2DArray.MipLevels			= m;
-	srvDesc.Texture2DArray.FirstArraySlice		= 0;
-	srvDesc.Texture2DArray.ArraySize			= arraySize;
-	srvDesc.Texture2DArray.PlaneSlice			= 0;
-	//srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-
-	rPlat->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
-	mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
-	mTextureSrvHeap.Offset();
-	// Set the properties of this texture
-	width			= (int)textureDesc.Width;
-	length			= (int)textureDesc.Height;
-#endif
 	mLoadedFromFile = true;
 	
 	// Clean!

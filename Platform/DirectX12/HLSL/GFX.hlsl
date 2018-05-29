@@ -2,7 +2,7 @@
 "DescriptorTable" \
 "("\
 	"CBV(b0, numDescriptors = 14)," \
-	"SRV(t0, numDescriptors = 16)," \
+	"SRV(t0, numDescriptors = 24)," \
 	"UAV(u0, numDescriptors = 16)" \
 ")," \
 "DescriptorTable" \

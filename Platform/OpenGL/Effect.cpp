@@ -575,7 +575,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
             int sslot = samplerResourceSlots[i];
             if (usesSamplerSlot(sslot))
             {
-                if (sslot >= 15)
+                if (sslot >= 23)
                 {
                     SIMUL_BREAK("");
                 }

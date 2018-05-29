@@ -1620,6 +1620,17 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
         hash            = hash ^ 0xFFFFFFFF;
     }
 
+    // Runtime check for depth write:
+    if (finalDepth->DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO && !targets->m_dt)
+    {
+        SIMUL_CERR_ONCE << "This pass(" << mTechName << ") expects a depth target to be bound (write), but there isn't one. \n";
+    }
+    // Runtime check for depth read:
+    if (finalDepth->DepthEnable && !targets->m_dt)
+    {
+        SIMUL_CERR_ONCE << "This pass(" << mTechName << ") expects a depth target to be bound (read), but there isn't one. \n";
+    }
+
     // If the map has items, and the item is in the map, just return
     if (!mGraphicsPsoMap.empty() && mGraphicsPsoMap.find(hash) != mGraphicsPsoMap.end())
     {

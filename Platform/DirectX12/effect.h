@@ -135,7 +135,7 @@ namespace simul
             //! TO-DO: this is using way too much memory as many SB wont be applied that many times
             //! the exception is the textrenderer SB. We could pass a value from Restore or maybe recreate
             // the buffers if the default max is not enough.
-            int                         mMaxApplyMod = 300;
+            int                         mMaxApplyMod = 10;
             int                         mCurApplies;
             uint64_t                    mLastFrame;
 		};
