@@ -35,7 +35,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 				,vec3 world_pos,vec3 cloudTexCoords,vec3 amb_dir
 				,vec2 fade_texc
 				,out float brightnessFactor
-				,out vec4 inscatter,float fade)
+				,out vec4 inscatter,float fade,float alphaSharpness)
 {
 	float alt_texc				=(world_pos.z/fadeAltitudeRangeKm);
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
@@ -45,10 +45,11 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
 	vec3 ambient				=amb_lookup.rgb*light.w;
 	vec4 c;
-	float l						=lerp(0.02, 1.5, density.z);
+	float l						=lerp(0.05, 1.2, density.z);
 	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z*fade;
-
+	c.a			=saturate(0.3+(1.0+1.0*density.w*alphaSharpness)*(c.a-0.3));
+					
 	{
 		vec3 loss		=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0).rgb;
 		c.rgb			*=loss;
@@ -94,7 +95,7 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4 noiseval,vec3 fractalScale,float mip,inout vec4 density,out vec4 light)
 {
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*(noiseval.xyz);
-	density				=sample_3d_lod(cloudDensity,wwcSamplerState,pos,0);
+	density				=sample_3d_lod(cloudDensity,wwcSamplerState,pos,mip);
 	// NOTE: VERY VERY IMPORTANT to use the original, not noise-modified, texture-coordinates for light.
 	light				=sample_3d_lod(cloudLight,wwcSamplerState,texCoords,mip);
 	float tz			=texCoords.z*32.0;
@@ -381,7 +382,8 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 				,bool do_depth_mix
 				,float distScale
 				,int idx
-				,vec4 noiseval,float fade)
+				,vec4 noiseval,float fade
+				,float alphaSharpness)
 {
 	density.z				*=saturate(distanceKm/CLOUD_FADEIN_DIST);
 	vec4 clr[NUM_CLOUD_INTERP];
@@ -399,7 +401,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,amb_dir
 										,fade_texc
 										,brightness_factor
-										,inscatter, fade);
+										,inscatter, fade,alphaSharpness);
 	else
 		clr[NUM_CLOUD_INTERP - 1]	=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
 										,vec4(light.xyw,density.z)
@@ -413,7 +415,9 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,brightness_factor);
 
 	clr[NUM_CLOUD_INTERP - 1].a			*=cosine*cosine;
+
 //clr[NUM_CLOUD_INTERP - 1].rgb*=0.5*(1.0+colours[idx%7]);
+//	clr[NUM_CLOUD_INTERP - 1].rgb		*=fade;
 	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
 
 	godraysTexCoords.z			=distanceKm*godraysScale;
