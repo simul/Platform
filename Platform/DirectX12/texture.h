@@ -76,7 +76,6 @@ namespace simul
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void							ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear) override;
 			void							GenerateMips(crossplatform::DeviceContext &deviceContext) override;
-			// void							map(ID3D11DeviceContext *context);
 			bool							isMapped() const;
 			void							unmap();
 			vec4							GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
@@ -132,9 +131,7 @@ namespace simul
 			dx12::Heap						mTextureDsHeap;
 
 			bool							mLoadedFromFile;	
-			bool							mIsUavAndRt = false; // UA will be initial state
 			bool							mInitializedFromExternal = false;
-			bool							mIsSettingTexels = false;
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips.	
 

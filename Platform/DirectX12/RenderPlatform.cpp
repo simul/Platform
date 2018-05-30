@@ -23,8 +23,6 @@
 using namespace simul;
 using namespace dx12;
 
-#pragma optimize("",off)
-
 RenderPlatform::RenderPlatform():
 	mCommandList(nullptr),
 	m12Device(nullptr),

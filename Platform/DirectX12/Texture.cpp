@@ -144,11 +144,6 @@ void Texture::InvalidateDeviceObjects()
 	arraySize				= 0;
 	mips					= 0;
 
-	if (mIsSettingTexels)
-	{
-		
-	}
-
 	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 	// We dont want to release the resources of the external texture
 	if (!mInitializedFromExternal)
@@ -649,7 +644,6 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			SIMUL_BREAK("The texture is invalid");
 			return;
 		}
-		mIsSettingTexels = true;
 		renderPlat->PushToReleaseManager(mTextureUpload, "TextureSetTexelsUpload");
 
 		// We neen to know the size of the texture (DEFAULT)
@@ -1344,10 +1338,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
     {
 		SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
-    if (computable && rendertarget)
-    {
-		mIsUavAndRt = true;
-    }
 
 	// Clear resources
 	SAFE_RELEASE(mTextureDefault);
@@ -1723,21 +1713,23 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 	// Return the resource state
 	if (mip == -1 && index == -1)
 	{
+        const int numLayers = cubemap ? 6 * arraySize : arraySize;
+
 		// If we request the state of the whole resource, we have to make sure
 		// that all of the subresources are in the correct state. The correct state
 		// will be the main resource state.
-		if (!mSubResourcesStates.empty())
-		{
+        if (!mSubResourcesStates.empty())
+        {
 			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-			for (unsigned int l = 0; l < mSubResourcesStates.size(); l++)
+			for (unsigned int l = 0; l < numLayers; l++)
 			{
-				for (unsigned int m = 0; m < mSubResourcesStates[0].size(); m++)
+				for (unsigned int m = 0; m < mips; m++)
 				{
 					auto curState = mSubResourcesStates[l][m];
 					if (curState != mResourceState)
 					{
 						rPlat->ResourceTransitionSimple(mTextureDefault, curState, mResourceState, false,
-														RenderPlatform::GetResourceIndex(m,l,mips, (int)mSubResourcesStates.size()));
+														RenderPlatform::GetResourceIndex(m,l,mips, numLayers));
 						mSubResourcesStates[l][m] = mResourceState;
 					}
 				}
@@ -1756,16 +1748,20 @@ void Texture::SetCurrentState(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int
 	// Set the resource state
 	if (mip == -1 && index == -1)
 	{
-		mResourceState = state;
+        const int numLayers = cubemap ? 6 * arraySize : arraySize;
+		mResourceState      = state;
 		// And set all the subresources to that state
 		// We understand that we transitioned ALL the resources
-		for (int l = 0; l < mSubResourcesStates.size(); l++)
-		{
-			for (int m = 0; m < mSubResourcesStates[l].size(); m++)
-			{
-				mSubResourcesStates[l][m] = state;
-			}
-		}
+        if (!mSubResourcesStates.empty())
+        {
+            for (int l = 0; l < numLayers; l++)
+		    {
+		    	for (int m = 0; m < mips; m++)
+		    	{
+		    		mSubResourcesStates[l][m] = state;
+		    	}
+		    }
+        }
 	}
 	// Set a subresource state
 	else

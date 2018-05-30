@@ -16,8 +16,6 @@
 using namespace simul;
 using namespace dx12;
 
-#pragma optimize("",off)
-
 // 0x04C11DB7 is the official polynomial used by PKZip, WinZip and Ethernet
 static const uint32_t kCrc32[] =
 {
@@ -1210,10 +1208,10 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 
 void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
 {
-	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
-	const auto resLimits	= rPlat->GetResourceBindingLimits();
-	int usedSlots			= 0;
-	auto nullCbv			= rPlat->GetNullCBV();
+	auto rPlat				    = (dx12::RenderPlatform*)context.renderPlatform;
+	const auto resLimits	    = rPlat->GetResourceBindingLimits();
+	int usedSlots			    = 0;
+	auto nullCbv			    = rPlat->GetNullCBV();
 
 	// Clean up the handles array
 	memset(mCbSrcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * mCbSrcHandles.size());
