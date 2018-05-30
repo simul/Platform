@@ -614,6 +614,7 @@
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\camera_constants.sl" />
+    <None Include="..\CrossPlatform\SL\clouds_lightpass.sl" />
     <None Include="..\CrossPlatform\SL\clouds_raytrace.sl" />
     <None Include="..\CrossPlatform\SL\clouds_simple.sl" />
     <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />

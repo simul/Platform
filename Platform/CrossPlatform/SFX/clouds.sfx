@@ -14,6 +14,7 @@
 uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 
 #include "../SL/simul_clouds.sl"
+#include "../SL/clouds_lightpass.sl"
 #include "../SL/clouds_simple.sl"
 #include "../SL/clouds_raytrace.sl"
 #include "../SL/states.sl"
@@ -191,41 +192,39 @@ void MixInLayer( int3 p,bool clears)
 	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
-	vec3 wtexc		=vec3(idx)/vec3(windowGrid);//*noiseScale / noiseScale.x;
-	wtexc.z	/=72.0;
 	vec4 res	=vec4(0.0,0.0,0.0,0.0);
-	for (int i = -2; i < 3; i++)
+	float zPixel1			=1.0/float(windowGrid.z);
+	float layer_saturate	=saturate(texc.z / zPixel1+1.0)*saturate((1.0+zPixel1 - texc.z)/ zPixel1);
+	if((texc.z>=-2.0*zPixel1&&texc.z<=1.0+2.0*zPixel1))
+	//if(clears)
 	{
-		vec3 tc		= texc;
-		tc.z		+= zPixel*i;
-		vec4 c1		= cloudDensity.SampleLevel(wwcSamplerState, tc, 0);
-		vec4 c2		= cloudDensity2.SampleLevel(wwcSamplerState, tc, 0);
+		for (int i = -2; i < 3; i++)
+		{
+			vec3 tc		= texc;
+			tc.z		+= zPixel1*i*.5;
+			vec4 c1		= cloudDensity.SampleLevel(wwcSamplerState, tc, 0);
+			vec4 c2		= cloudDensity2.SampleLevel(wwcSamplerState, tc, 0);
 
-		res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+			res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+		}
+	
+		res.z			=saturate(2.0*layer_saturate*((res.z-0.15)/diffusivity+0.15));
+
+		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
+		res.w=edgeSharpness;
+
+		// stronger noise at the top:
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		// variation:
+		noise_factor *= (0.5 + rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y		=saturate(localCellNoiseStrength*noise_factor);
 	}
-	
-	float zPixel1=1.0/float(windowGrid.z);
-
-	res.z		=saturate((res.z-0.25)/diffusivity+0.25);
-	float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z)/ zPixel1);
-	res.z*= 1.0/0.5*layer_saturate;
-
-	// x= edge noise, y= worley edge noise, z=density, w=sharpness.
-	//res.w=1.0;
-	
-	vec4 current=vec4(0,0,0,1.0);
+	vec4 current=res;
 	if(!clears)
 	{
 		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	}
-	
-	// stronger noise at the top:
-	float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
-	// variation:
-	noise_factor *= (0.05 + rand3(idx).x);
-	res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
-	res.y		=localCellNoiseStrength*noise_factor;
-
 	res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
 	res.z		=max(res.z*max_density_gm3,current.z);
 	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
@@ -271,7 +270,7 @@ void MixInCirrus(uint3 ii,bool clears)
 		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
 		res.y		=localCellNoiseStrength*noise_factor;
 		res.w		=0;
-			//res.xyw		=lerp(current.xyw,res.xyw,res.z);
+		
 		res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
 		res.z		=max(res.z*max_density_gm3,current.z);
 		IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
@@ -372,7 +371,7 @@ void MapToWindow(uint3 p,bool clears)
 		res.z		*= 1.0/0.5*layer_saturate;
 
 		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
-		res.w=1.0;
+		res.w=edgeSharpness;
 	
 		// stronger noise at the top:
 		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
@@ -404,23 +403,28 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	vec3 tx				=texc;
 	vec3 dir_texc		=dir*inverseScalesKm;
-#if 0
-	float s				=max_dist_km/330.0;//0.2*stepLengthKm;
+
+#if 1
+	float s				=max_dist_km/80.0;	// 1.2^24 ~ 80
 	int i				=0;
-	for( i=0;i<36;i++)
+	for( i=0;i<24;i++)
 	{
 		// we expect stepLength in km for this shader
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
-		float lookup = texture_3d_wwc_lod(cloudDensity, vec3(tx), 0).z;// *saturate((maxh - wpos.z) / s);
-		thicknessKm += lookup*s;
-		s				*=1.4;
+		vec4 lookup		=texture_3d_wwc_lod(cloudDensity, vec3(tx),0);
+		float density	=lookup.z*step(tx.z,1.0);
+		density			=saturate(0.3+(1.0+1.0*lookup.w*2.0)*(density-0.3));
+		thicknessKm += density*s;
+		s				*=1.2;
 	}
 #else
 	float dist_km		=rand*max_dist_km;
 	// we expect stepLength in km for this shader
-	tx				+=dir_texc*dist_km;
-	float lookup	= saturate(1.5*texture_3d_wwc_lod(cloudDensity, vec3(tx),1).z-0.5);
-	thicknessKm		+= lookup*max_dist_km;
+	tx					+=dir_texc*dist_km;
+	vec4 lookup			=texture_3d_wwc_lod(cloudDensity, vec3(tx),0);
+	float density		=lookup.z*step(tx.z,1.0);
+	density				=saturate(0.3+(1.0+1.0*lookup.w*2.0)*(density-0.3));
+	thicknessKm			+= density*max_dist_km;
 #endif
 	return thicknessKm;
 }
@@ -455,7 +459,7 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	// how many km from top.
 	float z_from_top_km=max_h_km*float(1+windowGrid.z-idx.z)/float(windowGrid.z);
 
-	float extinction_distance_km=min(2.0*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001));//max(log(100)/extinctionPerKm,2.0/inverseScalesKm.x/float(windowGrid.x));
+	float extinction_distance_km=max(5.0,min(5.5*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001)));//max(log(100)/extinctionPerKm,2.0/inverseScalesKm.x/float(windowGrid.x));
 	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir,randm,extinction_distance_km);
 
 	// find nearest direction to light for ambient lighting:
@@ -465,13 +469,13 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 
 	vec4 illum;
 	float t			=saturate(thicknessKm/extinction_distance_km);
-	t				=t*0.02+current.z*0.98;
+	t				=t*0.5+current.z*0.5;
 	thicknessKm		=t*extinction_distance_km;
-	illum.x			=max(0.05,exp(-extinctionPerKm*1.0*thicknessKm/12.0));
-	illum.y			=exp(-extinctionPerKm*1.0*thicknessKm);
+	illum.x			=max(.01,exp(-extinctionPerKm*thicknessKm/12.0));
+	illum.y			=exp(-extinctionPerKm*thicknessKm);
 	illum.zw        =vec2(t,1.0);
 
-	const float v=2.0/255.0;
+	const float v=127.0/255.0;
 	illum.xyw= lerp(current.xyw,illum.xyw,v);
 
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
@@ -499,9 +503,9 @@ shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 		vec4 c5 = cloudDensity[pos2 + uint3(0,-1, 0)];
 		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 1)];
 		vec4 c7 = cloudDensity[pos2 + uint3(0, 0,-1)];
-		res =c1;// (c1 + c2 + c3 + c4 + c5 + c6 + c7 ) / 7.0;
-		res.z=max(max(max(max(max(max(c1.z,c2.z),c3.z),c4.z),c5.z),.5*c6.z),.5*c7.z);
-	res.w*=0.5;
+		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 ) / 7.0;
+		//res.z=max(max(max(max(max(max(c1.z,c2.z),c3.z),c4.z),c5.z),.5*c6.z),.5*c7.z);
+	res.xyw*=0.5;
 	}
 	///else
 	//	res = vec4(1, 0, 1, 1);
@@ -1101,6 +1105,7 @@ texc.xy		+=vec2(gridCentreTexel+windowGrid.xy/2)/vec2(windowGrid.xy);
 		vec4 light		=texture_wwc_lod(cloudDensity2,texc,0);
 		vec3 colour		=light.rgb;//(lightResponse.x*light.y+lightResponse.y*light.x);
 		colour.gb		+=vec2(.125,.25)*(lightResponse.z*light.w);
+		colour.b		+=density.w;
 		float opacity	=density.z;
 		colour			*=opacity;
 		accum			*=1.0-opacity;

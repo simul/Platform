@@ -236,7 +236,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		if(fade>0.0)
 		//if(abs(N.z)>0.0)
 		{
-			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
+			// mip-mapping: we should move to higher mips only when the step size (or render pixel size) gets bigger than the texel size.
+			float mip=0.0;//texelSizeKm/stepKm;
+			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, mip);
 			/*if(!found)
 			{
 				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
@@ -251,7 +253,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(noise&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
-				calcDensity(cloudDensity,cloudLight,cloudTexCoords,noiseval,fractalScale,4.0*fadeDistance,density,light);
+				calcDensity(cloudDensity,cloudLight,cloudTexCoords,noiseval,fractalScale,mip,density,light);
 			
 				if(do_rain_effect)
 				{
@@ -263,13 +265,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			
 				if(density.z>0)
 				{
+					density.z			=saturate(0.3+(1.0+5.0*density.y)*(density.z-0.3));
 					vec3 worley_texc	=(world_pos.xyz+worleyTexcoordOffset)*worleyTexcoordScale;
 					minDistance			=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
 					vec4 worley			=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 					float wo			=4*density.y*(worley.w-0.6)*saturate(1.0/(12.0*fadeDistance));//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-					density.z			=lerp(density.z,saturate(0.3+(1.0)*((density.z+wo)-0.3-saturate(0.6-density.z))),density.w);
-					//density.z			=saturate(0.3+(1.0+1.0*alphaSharpness)*(density.z-0.3));
-					//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3+saturate(density.z-0.6)));
+					density.z			=lerp(density.z,density.z*saturate(0.3+((density.z+wo)-0.3-saturate(0.6-density.z))),density.y);
+					
 					amb_dir				=lerp(amb_dir,worley.xyz,0.1*density.z);
 					
 					float brightness_factor;
