@@ -159,7 +159,6 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Lets query some information from the device
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions;
 	m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &featureOptions, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS));
-	SIMUL_COUT << "-Resource binding limits for tier = " << featureOptions.ResourceBindingTier << std::endl;
 	mResourceBindingLimits.BindingTier = featureOptions.ResourceBindingTier;
 	// TIER1
 	if (featureOptions.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1)
@@ -188,11 +187,6 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mResourceBindingLimits.MaxUAVPerStage				= 1000000;
 		mResourceBindingLimits.MaxSaplerPerStage			= 1000000;
 	}
-	SIMUL_COUT << "- Max Visible Descriptors: " << mResourceBindingLimits.MaxShaderVisibleDescriptors << std::endl;
-	SIMUL_COUT << "- Max CBV Per Stage: " << mResourceBindingLimits.MaxCBVPerStage << std::endl;
-	SIMUL_COUT << "- Max SRV Per Stage: " << mResourceBindingLimits.MaxSRVPerStage << std::endl;
-	SIMUL_COUT << "- Max UAV Per Stage: " << mResourceBindingLimits.MaxUAVPerStage << std::endl;
-	SIMUL_COUT << "- Max Samplers Per Stage: " << mResourceBindingLimits.MaxSaplerPerStage << std::endl;
 
 	// Create the frame heaps
 	// These heaps will be shader visible as they will be the ones bound to the command list
@@ -298,18 +292,88 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		{
 			SIMUL_CERR << "Could not load the RootSignature blob.\n";
 		}
-		res = D3DCreateBlob(loadedBytes, &rblob);
+		res                         = D3DCreateBlob(loadedBytes, &rblob);
         SIMUL_ASSERT(res == S_OK);
 		memcpy(rblob->GetBufferPointer(), fileContents, loadedBytes);
 		fileLoader->ReleaseFileContents(fileContents);
 
-        res = m12Device->CreateRootSignature(0, rblob->GetBufferPointer(), rblob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRootSignature));
+        res                         = m12Device->CreateRootSignature
+        (
+            0, 
+            rblob->GetBufferPointer(), 
+            rblob->GetBufferSize(), 
+            SIMUL_PPV_ARGS(&mGRootSignature)
+        );
 		SIMUL_ASSERT(res == S_OK);
         if (mGRootSignature)
 		{
 			mGRootSignature->SetName(L"GraphicsRootSignature");
 		}
+
+        // Finally lets check which slots does the rs expect
+        ID3D12RootSignatureDeserializer* rsDeserial = nullptr;
+        res                                         = D3D12CreateRootSignatureDeserializer
+        (
+            rblob->GetBufferPointer(), rblob->GetBufferSize(), SIMUL_PPV_ARGS(&rsDeserial)
+        );
+        SIMUL_ASSERT(res == S_OK);
+        D3D12_ROOT_SIGNATURE_DESC rsDesc            = {};
+        rsDesc                                      = *rsDeserial->GetRootSignatureDesc();
+        if (rsDesc.NumParameters == 2)
+        {
+            D3D12_ROOT_PARAMETER param = rsDesc.pParameters[0];
+            // CBV_SRV_UAV
+            if (param.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+            {
+                D3D12_ROOT_DESCRIPTOR_TABLE table = param.DescriptorTable;
+                if (table.NumDescriptorRanges == 3)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        D3D12_DESCRIPTOR_RANGE range = table.pDescriptorRanges[i];
+                        if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_CBV)
+                        {
+                            SIMUL_ASSERT(ResourceBindingLimits::NumCBV == range.NumDescriptors);
+                        }
+                        else if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_UAV)
+                        {
+                            SIMUL_ASSERT(ResourceBindingLimits::NumUAV == range.NumDescriptors);
+                        }
+                        else if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
+                        {
+                            SIMUL_ASSERT(ResourceBindingLimits::NumSRV == range.NumDescriptors);
+                        }
+                        else
+                        {
+                            SIMUL_CERR << "Unexpected range type in root signature. \n";
+                        }
+                    }
+                }
+            }
+            // SAMPLERS
+            param = rsDesc.pParameters[1];
+            SIMUL_ASSERT(ResourceBindingLimits::NumSamplers == param.DescriptorTable.pDescriptorRanges[0].NumDescriptors);
+        }
+        rsDeserial->Release();
 		rblob->Release();
+
+        // Check agains the hardware limits:
+        if (ResourceBindingLimits::NumUAV > mResourceBindingLimits.MaxUAVPerStage)
+        {
+            SIMUL_CERR << "Current max num uav: " << ResourceBindingLimits::NumUAV << ", but hardware only supports: " << mResourceBindingLimits.MaxUAVPerStage << std::endl;
+        }
+        if (ResourceBindingLimits::NumSRV > mResourceBindingLimits.MaxSRVPerStage)
+        {
+            SIMUL_CERR << "Current max num srv: " << ResourceBindingLimits::NumSRV << ", but hardware only supports: " << mResourceBindingLimits.MaxSRVPerStage << std::endl;
+        }
+        if (ResourceBindingLimits::NumCBV > mResourceBindingLimits.MaxCBVPerStage)
+        {
+            SIMUL_CERR << "Current max num cbv: " << ResourceBindingLimits::NumCBV << ", but hardware only supports: " << mResourceBindingLimits.MaxCBVPerStage << std::endl;
+        }
+        if (ResourceBindingLimits::NumSamplers > mResourceBindingLimits.MaxSaplerPerStage)
+        {
+            SIMUL_CERR << "Current max num samplers: " << ResourceBindingLimits::NumSamplers << ", but hardware only supports: " << mResourceBindingLimits.NumSamplers << std::endl;
+        }
 	}
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
@@ -353,8 +417,8 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	// Store a reference to the device context
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	mCommandList                        = deviceContext.asD3D12Context();
+	immediateContext.platform_context   = deviceContext.platform_context;
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
@@ -370,7 +434,7 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 	}
 
 	// Age and delete old objects
-	unsigned int kMaxAge = 4;
+	unsigned int kMaxAge = 8;
 	if (!mResourceBin.empty())
 	{
 		for (int i = (int)(mResourceBin.size() - 1); i >= 0; i--)
@@ -1365,7 +1429,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
         SIMUL_ASSERT(targets->m_rt[i] != nullptr);
         tHandles[i] = *(D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_rt[i];
     }
-    mCommandList->OMSetRenderTargets((UINT)targets->num, tHandles, FALSE, /*(D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt*/ nullptr);
+    mCommandList->OMSetRenderTargets((UINT)targets->num, tHandles, FALSE, (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt);
     deviceContext.targetStack.push(targets);
 
     SetViewports(deviceContext, 1, &targets->viewport);
@@ -1633,121 +1697,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	return true;
 }
 
-void RenderPlatform::ClearTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture, const vec4& colour)
-{
-    crossplatform::RenderPlatform::ClearTexture(deviceContext, texture, colour);
-    return;
-
-	// Silently return if not initialized
-	if (!texture->IsValid())
-		return;
-	
-	bool cleared				= false;
-	debugConstants.debugColour	= colour;
-	debugConstants.texSize		= uint4(texture->width, texture->length, texture->depth, 1);
-	debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
-
-	// Compute clear
-	if (texture->IsComputable())
-	{
-		int a = texture->NumFaces();
-		if (a == 0)
-			a = 1;
-		for (int i = 0; i<a; i++)
-		{
-			int w = texture->width;
-			int l = texture->length;
-			int d = texture->depth;
-			for (int j = 0; j<texture->mips; j++)
-			{
-				const char *techname = "compute_clear";
-				int W = (w + 4 - 1) / 4;
-				int L = (l + 4 - 1) / 4;
-				int D = d;
-				if (texture->dim == 2 && texture->NumFaces()>1)
-				{
-					W = (w + 8 - 1) / 8;
-					L = (l + 8 - 1) / 8;
-					D = d;
-					techname = "compute_clear_2d_array";
-					if(texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM||texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM_SRGB)
-					{
-						techname = "compute_clear_2d_array_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArrayU8", texture, i);
-					}
-					else
-					{
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, i);
-					}
-				}
-				else if (texture->dim == 2)
-				{
-					W = (w + 8 - 1) / 8;
-					L = (l + 8 - 1) / 8;
-					D = 1;
-					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, i, j);
-				}
-				else if (texture->dim == 3)
-				{
-					if(texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM||texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM_SRGB)
-					{
-						techname = "compute_clear_3d_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);
-					}
-					else
-					{
-						techname = "compute_clear_3d";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
-					}
-				}
-				else
-				{
-					SIMUL_CERR_ONCE << ("Can't clear texture dim.\n	");
-				}
-				debugEffect->Apply(deviceContext, techname, 0);
-				DispatchCompute(deviceContext, W, L, D);
-
-				debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", nullptr);
-				debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", nullptr);
-				w /= 2;
-				l /= 2;
-				d /= 2;
-				debugEffect->Unapply(deviceContext);
-			}
-		}
-		debugEffect->UnbindTextures(deviceContext);
-		cleared = true;
-	}
-	// Render target clear
-	else if (texture->HasRenderTargets() && !cleared)
-	{
-		int total_num = texture->arraySize*(texture->IsCubemap() ? 6 : 1);
-		for (int i = 0; i<total_num; i++)
-		{
-			for (int j = 0; j<texture->mips; j++)
-			{
-				texture->activateRenderTarget(deviceContext, i, j);
-				debugEffect->Apply(deviceContext, "clear", 0);
-				DrawQuad(deviceContext);
-				debugEffect->Unapply(deviceContext);
-				texture->deactivateRenderTarget(deviceContext);
-			}
-		}
-		debugEffect->UnbindTextures(deviceContext);
-		cleared = true;
-	}
-	// Render Depth Stencil clear
-	else if (texture->IsDepthStencil() && !cleared)
-	{
-		texture->ClearDepthStencil(deviceContext, colour.x, 0);
-	}
-	// Couldn't clear the texture
-	else
-	{
-		SIMUL_CERR_ONCE << ("No method was found to clear this texture.\n");
-	}
-}
-
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
 	mCommandList		= deviceContext.asD3D12Context();
@@ -1756,7 +1705,6 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 
 void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
-
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend/*=false*/,float gamma, bool debug)

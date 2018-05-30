@@ -401,7 +401,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			debugController->EnableDebugLayer();
 
 			// Enable GPU validation (it will report a list of errors if ocurred after ExecuteCommandList())
-			bool doGPUValidation = true;
+			bool doGPUValidation = false;
 			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{

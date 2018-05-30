@@ -91,8 +91,8 @@ namespace simul
 			void							SetData(crossplatform::DeviceContext &deviceContext,void *data);
 			void							InvalidateDeviceObjects();
 			void							Unbind(crossplatform::DeviceContext &deviceContext);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
+			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
+			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
 			void							ActualApply(simul::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot);
 
 		private:
@@ -102,8 +102,8 @@ namespace simul
 
             const D3D12_RESOURCE_STATES mShaderResourceState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 			static const unsigned int	mBuffering = 3;
-			ID3D12Resource*				mGPUBuffers[mBuffering];
-			ID3D12Resource*				mUploadBuffers[mBuffering];
+			ID3D12Resource*				mGPUBuffer;
+			ID3D12Resource*				mUploadBuffer;
 			ID3D12Resource*			    mReadBuffers[mBuffering];
 
 			//! We hold the currently mapped pointer
@@ -116,10 +116,13 @@ namespace simul
 			dx12::Heap					mBufferSrvHeap;
 			dx12::Heap					mBufferUavHeap;
 
-            D3D12_CPU_DESCRIPTOR_HANDLE* mSrvViews[mBuffering];
-            D3D12_CPU_DESCRIPTOR_HANDLE* mUavViews[mBuffering];
+            std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> mSrvViews;
+            std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> mUavViews;
 
-			D3D12_RESOURCE_STATES		mCurrentState[mBuffering];
+            // D3D12_CPU_DESCRIPTOR_HANDLE** mSrvViews;
+            // D3D12_CPU_DESCRIPTOR_HANDLE** mUavViews;
+
+			D3D12_RESOURCE_STATES		mCurrentState;
 
 			//! Total number of individual elements
 			int							mNumElements;
@@ -132,10 +135,8 @@ namespace simul
             bool                        mCpuRead;
 
             //! How many times we can Apply this SB with different data
-            //! TO-DO: this is using way too much memory as many SB wont be applied that many times
-            //! the exception is the textrenderer SB. We could pass a value from Restore or maybe recreate
-            // the buffers if the default max is not enough.
-            int                         mMaxApplyMod = 300;
+            //! During runtime we will check the current applies and recreate if needed
+            int                         mMaxApplyMod = 1;
             int                         mCurApplies;
             uint64_t                    mLastFrame;
 		};

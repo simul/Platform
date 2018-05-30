@@ -40,11 +40,10 @@ namespace simul
 		int							MaxUAVPerStage;
 		int							MaxSaplerPerStage;
 
-		//! We define here how many slots our shaders expect
-		static const int NumCBV = 14;
-		static const int NumSRV = 16;
-		static const int NumUAV = 16;
-		static const int NumSamplers = 16;
+		static const int NumCBV         = 14;
+        static const int NumSRV         = 24;
+        static const int NumUAV         = 16;
+        static const int NumSamplers    = 16;
 	};
 
 	namespace crossplatform
@@ -171,8 +170,6 @@ namespace simul
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			bool									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
-
-			virtual void							ClearTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *texture, const vec4& colour) override;
 
             static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelOutputFormat p);
 			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);

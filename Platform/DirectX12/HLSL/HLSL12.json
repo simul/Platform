@@ -6,6 +6,7 @@
 	"outputOption"					: "/Fo",
 	"entryPointOption"				: "/E{name}",
 	"multiplePixelOutputFormats"	: false,
+    "generateSlots"                 : true,
     "define": 
     {
         "SFX_TYPED_UAV_LOADS"       : "1"

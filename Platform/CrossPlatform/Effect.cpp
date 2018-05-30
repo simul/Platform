@@ -947,8 +947,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
                 {
                     desc.rtFormat.formats[i] = (PixelOutputFormat)toInt(props[i]);
                 }
-                crossplatform::RenderState* s   = renderPlatform->CreateRenderState(desc);
-                rtFormatStates[name]            = s;
+                rtFormatStates[name]            = renderPlatform->CreateRenderState(desc);
             }
 			else if(is_equal(word, "RasterizerState"))
 			{

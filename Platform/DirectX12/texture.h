@@ -135,10 +135,6 @@ namespace simul
 			bool							mIsUavAndRt = false; // UA will be initial state
 			bool							mInitializedFromExternal = false;
 			bool							mIsSettingTexels = false;
-
-			D3D12_CPU_DESCRIPTOR_HANDLE		mRtvHandle;
-			D3D12_CPU_DESCRIPTOR_HANDLE		mDsvHandle;
-			DXGI_FORMAT						mOldRtFormat;
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips.	
 
