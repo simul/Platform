@@ -417,8 +417,8 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	// Store a reference to the device context
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	mCommandList                        = deviceContext.asD3D12Context();
+	immediateContext.platform_context   = deviceContext.platform_context;
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
@@ -434,7 +434,7 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 	}
 
 	// Age and delete old objects
-	unsigned int kMaxAge = 4;
+	unsigned int kMaxAge = 8;
 	if (!mResourceBin.empty())
 	{
 		for (int i = (int)(mResourceBin.size() - 1); i >= 0; i--)
@@ -1697,121 +1697,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	return true;
 }
 
-void RenderPlatform::ClearTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture, const vec4& colour)
-{
-    crossplatform::RenderPlatform::ClearTexture(deviceContext, texture, colour);
-    return;
-
-	// Silently return if not initialized
-	if (!texture->IsValid())
-		return;
-	
-	bool cleared				= false;
-	debugConstants.debugColour	= colour;
-	debugConstants.texSize		= uint4(texture->width, texture->length, texture->depth, 1);
-	debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
-
-	// Compute clear
-	if (texture->IsComputable())
-	{
-		int a = texture->NumFaces();
-		if (a == 0)
-			a = 1;
-		for (int i = 0; i<a; i++)
-		{
-			int w = texture->width;
-			int l = texture->length;
-			int d = texture->depth;
-			for (int j = 0; j<texture->mips; j++)
-			{
-				const char *techname = "compute_clear";
-				int W = (w + 4 - 1) / 4;
-				int L = (l + 4 - 1) / 4;
-				int D = d;
-				if (texture->dim == 2 && texture->NumFaces()>1)
-				{
-					W = (w + 8 - 1) / 8;
-					L = (l + 8 - 1) / 8;
-					D = d;
-					techname = "compute_clear_2d_array";
-					if(texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM||texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM_SRGB)
-					{
-						techname = "compute_clear_2d_array_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArrayU8", texture, i);
-					}
-					else
-					{
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, i);
-					}
-				}
-				else if (texture->dim == 2)
-				{
-					W = (w + 8 - 1) / 8;
-					L = (l + 8 - 1) / 8;
-					D = 1;
-					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, i, j);
-				}
-				else if (texture->dim == 3)
-				{
-					if(texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM||texture->GetFormat()==crossplatform::PixelFormat::RGBA_8_UNORM_SRGB)
-					{
-						techname = "compute_clear_3d_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);
-					}
-					else
-					{
-						techname = "compute_clear_3d";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
-					}
-				}
-				else
-				{
-					SIMUL_CERR_ONCE << ("Can't clear texture dim.\n	");
-				}
-				debugEffect->Apply(deviceContext, techname, 0);
-				DispatchCompute(deviceContext, W, L, D);
-
-				debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", nullptr);
-				debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", nullptr);
-				w /= 2;
-				l /= 2;
-				d /= 2;
-				debugEffect->Unapply(deviceContext);
-			}
-		}
-		debugEffect->UnbindTextures(deviceContext);
-		cleared = true;
-	}
-	// Render target clear
-	else if (texture->HasRenderTargets() && !cleared)
-	{
-		int total_num = texture->arraySize*(texture->IsCubemap() ? 6 : 1);
-		for (int i = 0; i<total_num; i++)
-		{
-			for (int j = 0; j<texture->mips; j++)
-			{
-				texture->activateRenderTarget(deviceContext, i, j);
-				debugEffect->Apply(deviceContext, "clear", 0);
-				DrawQuad(deviceContext);
-				debugEffect->Unapply(deviceContext);
-				texture->deactivateRenderTarget(deviceContext);
-			}
-		}
-		debugEffect->UnbindTextures(deviceContext);
-		cleared = true;
-	}
-	// Render Depth Stencil clear
-	else if (texture->IsDepthStencil() && !cleared)
-	{
-		texture->ClearDepthStencil(deviceContext, colour.x, 0);
-	}
-	// Couldn't clear the texture
-	else
-	{
-		SIMUL_CERR_ONCE << ("No method was found to clear this texture.\n");
-	}
-}
-
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
 	mCommandList		= deviceContext.asD3D12Context();
@@ -1820,7 +1705,6 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 
 void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
-
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend/*=false*/,float gamma, bool debug)

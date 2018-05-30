@@ -239,6 +239,8 @@ RenderState::~RenderState()
 }
 
 PlatformStructuredBuffer::PlatformStructuredBuffer():
+    mGPUBuffer(nullptr),
+    mUploadBuffer(nullptr),
 	mNumElements(0),
 	mElementByteSize(0),
 	mChanged(false),
@@ -250,8 +252,7 @@ PlatformStructuredBuffer::PlatformStructuredBuffer():
 {
     for (int i = 0; i < mBuffering; i++)
     {
-        mGPUBuffers[i] = mUploadBuffers[i] = mReadBuffers[i] = nullptr;
-        mSrvViews[i] = mUavViews[i] = nullptr;
+        mReadBuffers[i] = nullptr;
     }
 }
 
@@ -270,7 +271,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     mTotalSize			= mUnitSize * mMaxApplyMod;
 
     renderPlatform                          = r;
-	dx12::RenderPlatform *mRenderPlatform	= (dx12::RenderPlatform*)renderPlatform;
+	dx12::RenderPlatform* mRenderPlatform	= (dx12::RenderPlatform*)renderPlatform;
 	mCpuRead                                = cpu_read;
 
 	if (mTotalSize <= 0)
@@ -279,63 +280,63 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         return;
 	}
 
-    size_t totalGpuBytes = mBuffering* mTotalSize;
-    SIMUL_COUT << "Allocating GPU memory for Structured Buffer: " << totalGpuBytes << " (" << (float)totalGpuBytes / 1024.0f / 1024.0f << ")\n";
+    // size_t totalGpuBytes = mTotalSize;
+    // SIMUL_COUT << "Allocating GPU memory for Structured Buffer: " << totalGpuBytes << " (" << (float)totalGpuBytes / 1024.0f / 1024.0f << ")\n";
 
     // Create the buffers:
     D3D12_RESOURCE_STATES initState     = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : mShaderResourceState;
 	D3D12_RESOURCE_FLAGS bufferFlags    = computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS   : D3D12_RESOURCE_FLAG_NONE;
-    for (unsigned int i = 0; i < mBuffering; i++)
+    mCurrentState                       = initState;
+
+    // Default heap:
+    res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
+    (
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize, bufferFlags),
+        initState,
+        nullptr,
+        SIMUL_PPV_ARGS(&mGPUBuffer)
+    );
+    SIMUL_ASSERT(res == S_OK);
+    mGPUBuffer->SetName(L"GPU_SB");
+
+    // Upload heap:
+    res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
+    (
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize),
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        SIMUL_PPV_ARGS(&mUploadBuffer)
+    );
+    SIMUL_ASSERT(res == S_OK);
+    mUploadBuffer->SetName(L"CPU_SB");
+
+    // If provided data, init the GPU buffer with it:
+    if (init_data)
     {
-        mCurrentState[i] = initState;
+        void* pNewData = malloc(mTotalSize);
+        memset(pNewData, 0, mTotalSize);
+        memcpy(pNewData, init_data, mUnitSize);
+        
+        D3D12_SUBRESOURCE_DATA dataToCopy   = {};
+        dataToCopy.pData                    = pNewData;
+        dataToCopy.RowPitch                 = dataToCopy.SlicePitch = mUnitSize;
+        
+        mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST, true);
+        UpdateSubresources(mRenderPlatform->AsD3D12CommandList(), mGPUBuffer, mUploadBuffer, 0, 0, 1, &dataToCopy);
+        mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState, true);
+        
+        free(pNewData);
+    }
 
-        // Default heap:
-        res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
-        (
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-            D3D12_HEAP_FLAG_NONE,
-            &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize, bufferFlags),
-            initState,
-            nullptr,
-            SIMUL_PPV_ARGS(&mGPUBuffers[i])
-        );
-        SIMUL_ASSERT(res == S_OK);
-        mGPUBuffers[i]->SetName(L"GPU_SB");
-
-        // Upload heap:
-        res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
-        (
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-            D3D12_HEAP_FLAG_NONE,
-            &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize),
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            SIMUL_PPV_ARGS(&mUploadBuffers[i])
-        );
-        SIMUL_ASSERT(res == S_OK);
-        mUploadBuffers[i]->SetName(L"CPU_SB");
-
-        // If provided data, init the GPU buffer with it:
-        if (init_data)
-        {
-            void* pNewData = malloc(mTotalSize);
-            memset(pNewData, 0, mTotalSize);
-            memcpy(pNewData, init_data, mUnitSize);
-
-            D3D12_SUBRESOURCE_DATA dataToCopy   = {};
-            dataToCopy.pData                    = pNewData;
-            dataToCopy.RowPitch                 = dataToCopy.SlicePitch = mUnitSize;
-
-            mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[i], mCurrentState[i], D3D12_RESOURCE_STATE_COPY_DEST, true);
-            UpdateSubresources(mRenderPlatform->AsD3D12CommandList(), mGPUBuffers[i], mUploadBuffers[i], 0, 0, 1, &dataToCopy);
-            mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[i], D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState[i], true);
-
-            free(pNewData);
-        }
-
-        // If this Structured Buffer supports CPU read,
-        // we initialize a set of READ_BACK buffers:
-        if (mCpuRead)
+    // If this Structured Buffer supports CPU read,
+    // we initialize a set of READ_BACK buffers:
+    if (mCpuRead)
+    {
+        for (unsigned int i = 0; i < mBuffering; i++)
         {
             res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
             (
@@ -352,7 +353,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     }
 
 	// Create the SR views:
-	mBufferSrvHeap.Restore(mRenderPlatform, mBuffering * mMaxApplyMod, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "SBSrvHeap", false);
+	mBufferSrvHeap.Restore(mRenderPlatform, mMaxApplyMod, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "SBSrvHeap", false);
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format							= DXGI_FORMAT_UNKNOWN;
@@ -360,24 +361,21 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	srvDesc.Buffer.NumElements				= mNumElements;
 	srvDesc.Buffer.StructureByteStride		= mElementByteSize;
 	srvDesc.Buffer.Flags					= D3D12_BUFFER_SRV_FLAG_NONE;
-    for (unsigned int i = 0; i < mBuffering; i++)
+
+    mSrvViews.resize(mMaxApplyMod);
+    for (int v = 0; v < mMaxApplyMod; v++)
     {
-        mSrvViews[i] = new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxApplyMod];
+	    srvDesc.Buffer.FirstElement	= v * mNumElements;
 
-        for (int v = 0; v < mMaxApplyMod; v++)
-        {
-	        srvDesc.Buffer.FirstElement	= v * mNumElements;
-
-	        mRenderPlatform->AsD3D12Device()->CreateShaderResourceView(mGPUBuffers[i], &srvDesc, mBufferSrvHeap.CpuHandle());
-	        mSrvViews[i][v] = mBufferSrvHeap.CpuHandle();
-	        mBufferSrvHeap.Offset();
-        }
+	    mRenderPlatform->AsD3D12Device()->CreateShaderResourceView(mGPUBuffer, &srvDesc, mBufferSrvHeap.CpuHandle());
+	    mSrvViews[v] = mBufferSrvHeap.CpuHandle();
+	    mBufferSrvHeap.Offset();
     }
 
 	// If requested, create UA views:
 	if (computable)
 	{
-		mBufferUavHeap.Restore(mRenderPlatform, mBuffering * mMaxApplyMod, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "SBUavHeap", false);
+		mBufferUavHeap.Restore(mRenderPlatform, mMaxApplyMod, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "SBUavHeap", false);
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 		uavDesc.ViewDimension						= D3D12_UAV_DIMENSION_BUFFER;
 		uavDesc.Format								= DXGI_FORMAT_UNKNOWN;
@@ -385,24 +383,25 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		uavDesc.Buffer.NumElements					= mNumElements;
 		uavDesc.Buffer.StructureByteStride			= mElementByteSize;
 		uavDesc.Buffer.Flags						= D3D12_BUFFER_UAV_FLAG_NONE;
-        for (unsigned int i = 0; i < mBuffering; i++)
+        
+        mUavViews.resize(mMaxApplyMod);
+        for (int v = 0; v < mMaxApplyMod; v++)
         {
-            mUavViews[i] = new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxApplyMod];
-            
-            for (int v = 0; v < mMaxApplyMod; v++)
-            {
-                uavDesc.Buffer.FirstElement = v * mNumElements;
+            uavDesc.Buffer.FirstElement = v * mNumElements;
 
-		        mRenderPlatform->AsD3D12Device()->CreateUnorderedAccessView(mGPUBuffers[i], nullptr, &uavDesc, mBufferUavHeap.CpuHandle());
-		        mUavViews[i][v] = mBufferUavHeap.CpuHandle();
-		        mBufferUavHeap.Offset();
-            }
-        }   
+		    mRenderPlatform->AsD3D12Device()->CreateUnorderedAccessView(mGPUBuffer, nullptr, &uavDesc, mBufferUavHeap.CpuHandle());
+		    mUavViews[v] = mBufferUavHeap.CpuHandle();
+		    mBufferUavHeap.Offset();
+        }
 	}
 
 	// Create a temporal buffer that we will use to upload data to the GPU
-	mTempBuffer = malloc(mTotalSize);
-	memset(mTempBuffer, 0, mTotalSize);
+	mTempBuffer = malloc(mUnitSize);
+	memset(mTempBuffer, 0, mUnitSize);
+    if (init_data)
+    {
+        memcpy(mTempBuffer, init_data, mUnitSize);
+    }
 }
 
 
@@ -475,26 +474,24 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-	unsigned int curIdx = deviceContext.frame_number % mBuffering;
+	unsigned int curIdx                     = deviceContext.frame_number % mBuffering;
+	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
-	
-	dx12::RenderPlatform *mRenderPlatform		=static_cast<dx12::RenderPlatform*>(renderPlatform);
 	// Check state
 	bool changed = false;
-	if ((mCurrentState[curIdx] & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
+	if ((mCurrentState & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
 	{
 		changed = true;
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[curIdx], mCurrentState[curIdx], D3D12_RESOURCE_STATE_COPY_SOURCE,true);
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_COPY_SOURCE,true);
 	}
 
 	// Schedule a copy
-    UINT64 dataPortion = (mTotalSize + 1) / mMaxApplyMod;
-    deviceContext.renderPlatform->AsD3D12CommandList()->CopyBufferRegion(mReadBuffers[curIdx], 0, mGPUBuffers[curIdx], 0, dataPortion);
+    deviceContext.renderPlatform->AsD3D12CommandList()->CopyBufferRegion(mReadBuffers[curIdx], 0, mGPUBuffer, 0, mUnitSize);
 	
     // Restore state
 	if (changed)
 	{
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[curIdx], D3D12_RESOURCE_STATE_COPY_SOURCE, mCurrentState[curIdx],true);
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, mCurrentState,true);
 	}
 }
 
@@ -511,12 +508,9 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
         dataToCopy.RowPitch = dataToCopy.SlicePitch = mUnitSize;
 		
 		dx12::RenderPlatform *mRenderPlatform		=static_cast<dx12::RenderPlatform*>(renderPlatform);
-        for (unsigned int i = 0; i < mBuffering; i++)
-        {
-            mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[i], mCurrentState[i], D3D12_RESOURCE_STATE_COPY_DEST, true);
-            UpdateSubresources(mRenderPlatform->AsD3D12CommandList(), mGPUBuffers[i], mUploadBuffers[i], 0, 0, 1, &dataToCopy);
-            mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[i], D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState[i], true);
-        }
+        mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST, true);
+        UpdateSubresources(mRenderPlatform->AsD3D12CommandList(), mGPUBuffer, mUploadBuffer, 0, 0, 1, &dataToCopy);
+        mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState, true);
 
         free(pNewData);
 	}
@@ -529,15 +523,13 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 		delete mTempBuffer;
 		mTempBuffer = nullptr;
 	}
-	dx12::RenderPlatform *mRenderPlatform		=static_cast<dx12::RenderPlatform*>(renderPlatform);
+	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 	mBufferSrvHeap.Release(mRenderPlatform);
 	mBufferUavHeap.Release(mRenderPlatform);
+    mRenderPlatform->PushToReleaseManager(mUploadBuffer, "CPU_SB");
+    mRenderPlatform->PushToReleaseManager(mGPUBuffer, "GPU_SB");
 	for (unsigned int i = 0; i < mBuffering; i++)
 	{
-        SAFE_DELETE(mSrvViews[i]);
-        SAFE_DELETE(mUavViews[i]);
-	    mRenderPlatform->PushToReleaseManager(mUploadBuffers[i], "CPU_SB");
-	    mRenderPlatform->PushToReleaseManager(mGPUBuffers[i], "GPU_SB");
 		mRenderPlatform->PushToReleaseManager(mReadBuffers[i], "READ_SB");
 	}
 }
@@ -548,62 +540,97 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContex
 
 void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext& deviceContext)
 {
-    int idx     = deviceContext.frame_number % mBuffering;
-	auto r      = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-	mChanged    = false;
+	auto r  = (dx12::RenderPlatform*)deviceContext.renderPlatform;
+
+    // We need to recreate the internal buffers:
+    if (mCurApplies >= mMaxApplyMod)
+    {
+        void* pCacheData = malloc(mUnitSize);
+        memcpy(pCacheData, mTempBuffer, mUnitSize);
+
+        mMaxApplyMod    = mMaxApplyMod * 2 + 50;
+        bool isUav      = !mUavViews.empty();
+        InvalidateDeviceObjects();
+        
+        SIMUL_COUT << "Resizing Structured Buffer(" << mMaxApplyMod << ")\n";
+        RestoreDeviceObjects(deviceContext.renderPlatform, mNumElements, mElementByteSize, isUav, mCpuRead, pCacheData);
+        
+        free(pCacheData);
+        mCurApplies     = 0;
+        r->FlushBarriers();
+    }
 
     // First update the UPLOAD buffer at the apply offset:
     UINT8* pBuffer  = nullptr;
     UINT curOff     = mCurApplies * mUnitSize;
     const CD3DX12_RANGE readRange(0, 0);
-    HRESULT res = mUploadBuffers[idx]->Map(0, &readRange, (void**)&pBuffer);
+    HRESULT res = mUploadBuffer->Map(0, &readRange, (void**)&pBuffer);
     memcpy(pBuffer + curOff, mTempBuffer, mUnitSize);
-    mUploadBuffers[idx]->Unmap(0, nullptr);
+    mUploadBuffer->Unmap(0, nullptr);
     
     // Now copy the updated region from the UPLOAD to the DEFAULT buffer:
-    r->ResourceTransitionSimple(mGPUBuffers[idx], mCurrentState[idx], D3D12_RESOURCE_STATE_COPY_DEST, true);
-    r->AsD3D12CommandList()->CopyBufferRegion(mGPUBuffers[idx], curOff, mUploadBuffers[idx], curOff, mUnitSize);
-    r->ResourceTransitionSimple(mGPUBuffers[idx], D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState[idx], true);
+    r->ResourceTransitionSimple(mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST, true);
+    r->AsD3D12CommandList()->CopyBufferRegion(mGPUBuffer, curOff, mUploadBuffer, curOff, mUnitSize);
+    r->ResourceTransitionSimple(mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState, true);
     
     //... we won't increse the apply count until we get the view
+    //... we will set mChange to false when we get the view
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext)
 {
-    int idx = deviceContext.frame_number % mBuffering;
-	dx12::RenderPlatform *mRenderPlatform		=static_cast<dx12::RenderPlatform*>(renderPlatform);
+	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
+
 	// Check the resource state
-	if (mCurrentState[idx] != mShaderResourceState)
+	if (mCurrentState != mShaderResourceState)
 	{
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[idx], mCurrentState[idx], mShaderResourceState);
-        mCurrentState[idx] = mShaderResourceState;
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, mCurrentState, mShaderResourceState);
+        mCurrentState = mShaderResourceState;
 	}
-    // Safety check
-    if (mCurApplies > mMaxApplyMod - 1)
+
+    // Return the current view
+    D3D12_CPU_DESCRIPTOR_HANDLE* view = &mSrvViews[0];
+    if (mChanged)
     {
-        SIMUL_CERR << "Reached the maximum apply for this SB! \n";
-        return &mSrvViews[idx][0];
+        if (mCurApplies >= mMaxApplyMod)
+        {
+            SIMUL_CERR << "Reached the maximum apply for this SB! \n";
+        }
+        else
+        {
+            view = &mSrvViews[mCurApplies++];
+        }
+        mChanged = false;
     }
-	return &mSrvViews[idx][mCurApplies++];
+    return view;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessView(crossplatform::DeviceContext& deviceContext,int mip /*= 0*/)
 {
-    int idx = deviceContext.frame_number % mBuffering;
-	dx12::RenderPlatform *mRenderPlatform		=static_cast<dx12::RenderPlatform*>(renderPlatform);
+	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
+
 	// Check the resource state
-	if (mCurrentState[idx] != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	if (mCurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	{
-		mRenderPlatform->ResourceTransitionSimple(mGPUBuffers[idx], mCurrentState[idx], D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-        mCurrentState[idx] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        mCurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	}
-    // Safety check
-    if (mCurApplies > mMaxApplyMod - 1)
+
+    // Return the current view
+    D3D12_CPU_DESCRIPTOR_HANDLE* view = &mUavViews[0];
+    if (mChanged)
     {
-        SIMUL_CERR << "Reached the maximum apply for this SB! \n";
-        return &mUavViews[idx][0];
+        if (mCurApplies >= mMaxApplyMod)
+        {
+            SIMUL_CERR << "Reached the maximum apply for this SB! \n";
+        }
+        else
+        {
+            view = &mUavViews[mCurApplies++];
+        }
+        mChanged = false;
     }
-	return &mUavViews[idx][mCurApplies++];
+    return view;
 }
 
 void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot)
@@ -1567,6 +1594,15 @@ uint32_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceConte
     if (renderTargetFormatState)
     {
         finalRt = &((dx12::RenderState*)renderTargetFormatState)->RtFormatDesc;
+        // Check formats against currently bound targets
+        // The debug layer will catch this, but its nice for us to be aware of this issue
+        for (int i = 0; i < finalRt->Count; i++)
+        {
+            if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i]))
+            {
+                SIMUL_CERR << "Current applied render target idx(" << i << ")" <<  " does not match the format specified by the effect (" << mTechName << "). \n";
+            }
+        }
     }
     else
     {

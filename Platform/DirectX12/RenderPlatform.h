@@ -171,8 +171,6 @@ namespace simul
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			bool									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
 
-			virtual void							ClearTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *texture, const vec4& colour) override;
-
             static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelOutputFormat p);
 			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static									crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);

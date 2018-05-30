@@ -766,7 +766,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			arraySize	= textureDesc.DepthOrArraySize;
 			mips		= textureDesc.MipLevels;
 		}
-		depth = textureDesc.DepthOrArraySize;
+		depth       = textureDesc.DepthOrArraySize;
 
         // Create render target views for this external texture:
 		if (make_rt && !setDepthStencil)
@@ -827,6 +827,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
                     renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &depthDesc, mTextureDsHeap.CpuHandle());
                     depthStencilView12 = mTextureDsHeap.CpuHandle();
                     mTextureDsHeap.Offset();
+
+                    depthStencil = true;
             }
             else
             {
@@ -1246,6 +1248,8 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &dsDesc, mTextureDsHeap.CpuHandle());
 			depthStencilView12 = mTextureDsHeap.CpuHandle();
 			mTextureDsHeap.Offset();
+
+            depthStencil = true;
 		}
 		auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 		rPlat->FlushBarriers();
@@ -1631,11 +1635,18 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D12Device* pd3dDevice,int w,crossp
 
 void Texture::ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear)
 {
-
+    const D3D12_CLEAR_FLAGS kFlags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
+    deviceContext.asD3D12Context()->ClearDepthStencilView(*AsD3D12DepthStencilView(), kFlags, depthClear, stencilClear, 0, nullptr);
 }
 
-void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
+void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
 {
+    if (mips == 1)
+    {
+        SIMUL_CERR << "Calling GenerateMips on the texture: " << name << " which only has 1 mip (this has no effect). \n";
+        return;
+    }
+    deviceContext.renderPlatform->GenerateMips(deviceContext, this, true, 0);
 }
 
 
@@ -1712,7 +1723,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 	// Return the resource state
 	if (mip == -1 && index == -1)
 	{
-		// If we request the state of the hole resource, we have to make sure
+		// If we request the state of the whole resource, we have to make sure
 		// that all of the subresources are in the correct state. The correct state
 		// will be the main resource state.
 		if (!mSubResourcesStates.empty())
