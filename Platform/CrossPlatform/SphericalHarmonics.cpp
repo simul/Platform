@@ -165,7 +165,6 @@ bool SphericalHarmonics::Probe(crossplatform::DeviceContext &deviceContext
 	,uint2 size
 	,vec4 *targetValuesFloat4)
 {
-	crossplatform::Effect *sphericalHarmonicsEffect = renderPlatform->GetEffect("spherical_harmonics");
 	crossplatform::EffectTechnique *tech=sphericalHarmonicsEffect->GetTechniqueByName("probe_query");
 
 	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapAsTexture2DArray",buffer_texture);
