@@ -7,9 +7,11 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform vec4 yRange;
 	uniform vec3 noiseScale;
 	uniform float sourceNoiseScaleKm;
+
 	uniform vec2 extinctions;
 	uniform float stepLength;
-	uniform float cloudBaseKm;		
+	uniform float cloudBaseKm;	
+
 	uniform uint3 threadOffset;
 	uniform int octaves;
 
@@ -55,6 +57,8 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float localCellNoiseStrength;
 	uniform float baseNoiseFactor;
 	uniform float max_density_gm3;
+
+	uniform float edgeSharpness;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus

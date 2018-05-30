@@ -311,6 +311,9 @@
     <None Include="..\CrossPlatform\SL\composite_msaa.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\clouds_lightpass.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\CrossPlatform\SFX\terrain.sfx">

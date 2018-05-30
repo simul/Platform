@@ -96,7 +96,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float hazeEccentricity;
 
 	uniform vec3 sunlightColour1;
-	uniform float fractalRepeatLength;
+	uniform float maxMip;
 
 	uniform vec3 sunlightColour2;
 	uniform float fadeAltitudeRangeKm;
