@@ -51,6 +51,22 @@ namespace simul
 
         struct D3D12_RENDER_TARGET_FORMAT_DESC
         {
+            //! Returns an unique number that represents this rt desc
+            inline size_t GetHash()
+            {
+                const size_t charSize = sizeof(char);
+                size_t h      = 0;
+                h            |= (size_t)RTFormats[0] << charSize * 8 * 0;
+                h            |= (size_t)RTFormats[1] << charSize * 8 * 1;
+                h            |= (size_t)RTFormats[2] << charSize * 8 * 2;
+                h            |= (size_t)RTFormats[3] << charSize * 8 * 3;
+                h            |= (size_t)RTFormats[4] << charSize * 8 * 4;
+                h            |= (size_t)RTFormats[5] << charSize * 8 * 5;
+                h            |= (size_t)RTFormats[6] << charSize * 8 * 6;
+                h            |= (size_t)RTFormats[7] << charSize * 8 * 7;
+                h            ^= (size_t)Count;
+                return h;
+            }
             UINT        Count;
             DXGI_FORMAT RTFormats[8];
         };
@@ -155,14 +171,16 @@ namespace simul
 			void        SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
 			void        SetSRVs(crossplatform::TextureAssignmentMap &textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 			void        SetUAVs(crossplatform::TextureAssignmentMap &rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
+            
+            void        CheckSlots(int requiredSlots, int usedSlots, int numSlots, const char* type);
 
             void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
-            uint32_t    CreateGraphicsPso(crossplatform::DeviceContext& deviceContext);
+            size_t      CreateGraphicsPso(crossplatform::DeviceContext& deviceContext);
 		private:
 			virtual     ~EffectPass();
 			//! We hold a map with unique PSOs
-			std::map<uint32_t, ID3D12PipelineState*>            mGraphicsPsoMap;
-            std::map<uint32_t, D3D12_RENDER_TARGET_FORMAT_DESC*> mTargetsMap;
+			std::unordered_map<size_t, ID3D12PipelineState*>                mGraphicsPsoMap;
+            std::unordered_map<size_t, D3D12_RENDER_TARGET_FORMAT_DESC*>    mTargetsMap;
 			//! We only have one compute Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
 			//! Is this a compute pass?

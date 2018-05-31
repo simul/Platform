@@ -198,7 +198,14 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	DirectX::TexMetadata	metadata;
 	DirectX::ScratchImage	scratchImage;
 	const DirectX::Image*	image;
-	res     = DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
+    if (name.find(".dds") != std::string::npos)
+    {
+        res = DirectX::LoadFromDDSMemory(ptr, bytes, flags, &metadata, scratchImage);
+    }
+    else
+    {
+	    res = DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
+    }
     SIMUL_ASSERT(res == S_OK)
 	image   = scratchImage.GetImage(0, 0, 0);
 	 
@@ -358,7 +365,14 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	{
 		auto curContents	= &fileContents[i];
 		auto curWic			= &wicContents[i];
-		DirectX::LoadFromWICMemory(curContents->ptr, curContents->bytes, curContents->flags, &curWic->metadata, curWic->scratchImage);
+        if (texture_files[0].find(".dds") != std::string::npos)
+        {
+            res = DirectX::LoadFromDDSMemory(curContents->ptr, curContents->bytes, curContents->flags, &curWic->metadata, curWic->scratchImage);
+        }
+        else
+        {
+            res = DirectX::LoadFromWICMemory(curContents->ptr, curContents->bytes, curContents->flags, &curWic->metadata, curWic->scratchImage);
+        }
 		curWic->image = curWic->scratchImage.GetImage(0, 0, 0);
 	}
 	// Check that formats and sizes are the same (we will use as reference the first image in the array)
@@ -1713,8 +1727,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 	// Return the resource state
 	if (mip == -1 && index == -1)
 	{
-        const int numLayers = cubemap ? 6 * arraySize : arraySize;
-
+        int numLayers = mSubResourcesStates.size();
 		// If we request the state of the whole resource, we have to make sure
 		// that all of the subresources are in the correct state. The correct state
 		// will be the main resource state.
@@ -1748,7 +1761,7 @@ void Texture::SetCurrentState(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int
 	// Set the resource state
 	if (mip == -1 && index == -1)
 	{
-        const int numLayers = cubemap ? 6 * arraySize : arraySize;
+        int numLayers       = mSubResourcesStates.size();
 		mResourceState      = state;
 		// And set all the subresources to that state
 		// We understand that we transitioned ALL the resources

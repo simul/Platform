@@ -1352,6 +1352,10 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
                 cnt++;
                 s->RtFormatDesc.RTFormats[i] = ToDxgiFormat(desc.rtFormat.formats[i]);
             }
+            else
+            {
+                s->RtFormatDesc.RTFormats[i] = DXGI_FORMAT_UNKNOWN;
+            }
         }
         s->RtFormatDesc.Count = cnt;
     }
