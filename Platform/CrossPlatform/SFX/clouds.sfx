@@ -243,7 +243,7 @@ void MixInCirrus(uint3 ii,bool clears)
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	
 	float fall_amount=saturate(1.0-texc.z);
-	texc.xy+=0.1*pow(fall_amount,3.0);
+texc.xy+=cirrusWindVector.xy*pow(fall_amount,2.0);
 	// fall streaks.
 	vec4 res = vec4(0.0,0.0,0.0,0.0);
 	for (int i = -2; i < 3; i++)
@@ -258,7 +258,7 @@ void MixInCirrus(uint3 ii,bool clears)
 	res.z		=saturate((res.z-0.5)/diffusivity);
 	//res.z=frac(float(idx.x)/float(windowGrid.x));
 	float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
-	res.z*=saturate(1.0-fall_amount)*layer_saturate;
+	res.z*=layer_saturate;//saturate(1.0-fall_amount)
 	vec4 current=vec4(0,0,0,0.0);
 	if(clears)
 		current=vec4(res.xy,res.z*max_density_gm3,res.w);
