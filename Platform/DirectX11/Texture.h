@@ -72,8 +72,6 @@ namespace simul
 			}
 			bool IsComputable() const override;
 			bool HasRenderTargets() const override;
-			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. If a srv is not provided, one will be created internally. If \a make_rt is true and it is a rendertarget texture, a rendertarget will be created.
-			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt=false, bool setDepthStencil=false);
 			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false) override;
 			void InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
 			ID3D11Resource				*stagingBuffer;
@@ -115,6 +113,8 @@ namespace simul
 			int GetMemorySize() const;
 			ID3D11DeviceContext *last_context;
 			ID3D11Resource*				texture;
+			ID3D11Resource				*external_copy_source;			// If this is a copy of an external texture, but that texture was stupidly not created to have SRV's,
+																		// we must copy it for every update.
 			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	
 			ID3D11ShaderResourceView*	arrayShaderResourceView;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 			ID3D11ShaderResourceView**	layerShaderResourceViews;		// SRV's for each layer, including all mips

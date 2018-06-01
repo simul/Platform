@@ -246,7 +246,7 @@ namespace simul
 			virtual void					ApplyDefaultRenderTargets(crossplatform::DeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-            virtual void                    ActivateRenderTargets(DeviceContext &deviceContext, TargetsAndViewport* targets) {}
+            virtual void                    ActivateRenderTargets(DeviceContext &, TargetsAndViewport* targets) {}
             virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps);
 			/// Get the viewport at the given index.
@@ -261,7 +261,7 @@ namespace simul
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
 			/// Some platforms may not support this.
-			virtual void					StoreRenderState				(DeviceContext &deviceContext){}
+			virtual void					StoreRenderState				(DeviceContext &){}
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
 			virtual void					RestoreRenderState				(DeviceContext &deviceContext){}
@@ -273,8 +273,8 @@ namespace simul
 			virtual void					PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv);
 			//! Restore rendertargets and viewports from the top of the stack.
 			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
-			//! Resolve a MSAA texture to a normal texture.
-			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source){}
+			//! Resolve an MSAA texture to a normal texture.
+			virtual void					Resolve(DeviceContext &,Texture *destination,Texture *source){}
 
 			void							LatLongTextureToCubemap(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
@@ -381,9 +381,10 @@ namespace simul
 		template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable, bool cpu_read, T *data)
 		{
 			count = ct;
-			delete platformStructuredBuffer;
-			platformStructuredBuffer = NULL;
-			platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
+			if(!platformStructuredBuffer)
+				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
+			else
+				platformStructuredBuffer->InvalidateDeviceObjects();
 			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data);
 		}
 #endif

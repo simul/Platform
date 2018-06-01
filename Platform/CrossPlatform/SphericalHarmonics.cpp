@@ -48,12 +48,12 @@ void SphericalHarmonics::RecompileShaders()
 	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect, "SphericalHarmonicsConstants");
 	
-	jitter	=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
-	encode	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	_samplesBuffer		=sphericalHarmonicsEffect->GetShaderResource("samplesBuffer");
-	_targetBuffer		=sphericalHarmonicsEffect->GetShaderResource("targetBuffer");
-	_samplesBufferRW	=sphericalHarmonicsEffect->GetShaderResource("samplesBufferRW");
-	_cubemapTexture		=sphericalHarmonicsEffect->GetShaderResource("cubemapTexture");
+	jitter							=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
+	encode							=sphericalHarmonicsEffect->GetTechniqueByName("encode");
+	_samplesBuffer					=sphericalHarmonicsEffect->GetShaderResource("samplesBuffer");
+	_targetBuffer					=sphericalHarmonicsEffect->GetShaderResource("targetBuffer");
+	_samplesBufferRW				=sphericalHarmonicsEffect->GetShaderResource("samplesBufferRW");
+	_cubemapTexture					=sphericalHarmonicsEffect->GetShaderResource("cubemapTexture");
 	lightProbesEffect				=renderPlatform->CreateEffect("light_probes");
 	auto group						=lightProbesEffect->GetTechniqueGroupByName("mip_from_roughness");
 	mip_from_roughness_blend		=group->GetTechniqueByName("mip_from_roughness_blend");

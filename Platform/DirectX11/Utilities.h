@@ -26,6 +26,7 @@ namespace simul
 	{
 		extern bool IsTypeless(DXGI_FORMAT fmt, bool partialTypeless);
 		extern DXGI_FORMAT TypelessToSrvFormat(DXGI_FORMAT fmt);
+		extern DXGI_FORMAT ResourceToDsvFormat(DXGI_FORMAT fmt);
 		struct ComputableTexture
 		{
 			ComputableTexture();

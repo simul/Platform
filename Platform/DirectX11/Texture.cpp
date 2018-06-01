@@ -32,6 +32,7 @@ void SamplerState::InvalidateDeviceObjects()
 
 Texture::Texture()
 	:texture(NULL)
+	,external_copy_source(nullptr)
 	,mainShaderResourceView(NULL)
 	,arrayShaderResourceView(nullptr)
 	,layerShaderResourceViews(NULL)
@@ -147,6 +148,8 @@ void Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(stagingBuffer);
+	SAFE_RELEASE(external_copy_source);
+	external_texture=false;
 	arraySize=0;
 	mips=0;
 }
@@ -444,37 +447,42 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews!=nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt, bool setDepthStencil)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,bool make_rt, bool setDepthStencil)
 {
-	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt, setDepthStencil);
-}
-
-void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt, bool setDepthStencil)
-{
+	ID3D11Texture2D *t=(ID3D11Texture2D *)T;
+	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView *)SRV;
+	make_rt&=(!setDepthStencil);
 	// If it's the same as before, return.
 	if ((texture == t && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (make_rt ==( renderTargetViews != NULL)))
+		return;
+	if(texture==t&&mainShaderResourceView!=nullptr)
 		return;
 	// If it's the same texture, and we created our own srv, that's fine, return.
 	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL&&!setDepthStencil)
 		return;
-	FreeSRVTables();
 	renderPlatform=r;
+	if(external_copy_source==t)
+	{
+		r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
+		return;
+	}
+	external_texture=true;
+	t->AddRef();
+	FreeSRVTables();
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
 	if(!external_texture&&renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
-	texture=t;
-	external_texture=true;
+	SAFE_RELEASE(external_copy_source);
 	mainShaderResourceView=srv;
 	if(mainShaderResourceView)
 		mainShaderResourceView->AddRef();
-	if(texture)
+	if(t)
 	{
-		texture->AddRef();
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;
-		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
+		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
 			// ASSUME it's a cubemap if it's an array of six.
@@ -483,6 +491,23 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 				cubemap=(textureDesc.ArraySize==6);
 				textureDesc.ArraySize=1;
 			}
+			// Can this texture have SRV's? If not we must COPY the resource.
+			if(textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)
+			{
+				texture=t;
+			}
+			else
+			{
+				external_copy_source=t;
+				textureDesc.BindFlags|=D3D11_BIND_SHADER_RESOURCE;
+				if(make_rt)
+					textureDesc.BindFlags|=D3D11_BIND_RENDER_TARGET;
+				if(setDepthStencil)
+					textureDesc.BindFlags|=D3D11_BIND_DEPTH_STENCIL;
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+				r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
+			}
+
 			dxgi_format=textureDesc.Format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
@@ -507,7 +532,7 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 				mips=textureDesc.MipLevels;
 				if(renderTargetViews)
 				{
-					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY:D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 				
 					renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
 					renderTargetViewDesc.Texture2DArray.ArraySize			=1;
@@ -527,8 +552,8 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 				D3D11_TEX2D_DSV dsv;
 				dsv.MipSlice = 0;
 				D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
-				depthDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-				depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+				depthDesc.ViewDimension =(textureDesc.SampleDesc.Count)>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D ;
+				depthDesc.Format = ResourceToDsvFormat(textureDesc.Format);
 				depthDesc.Flags = 0;
 				depthDesc.Texture2D = dsv;
 				SAFE_RELEASE(depthStencilView);
@@ -560,6 +585,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	external_texture=true;
 	SAFE_RELEASE(texture);
+	SAFE_RELEASE(external_copy_source);
 	texture=(ID3D11Resource*)ta;
 	mainShaderResourceView=(ID3D11ShaderResourceView*)srv;
 	if(mainShaderResourceView)
@@ -747,19 +773,8 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	return changed;
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
-												 ,int w,int l
-												 ,crossplatform::PixelFormat f
-												 ,bool computable,bool rendertarget,bool depthstencil
-												 ,int num_samples,int aa_quality,bool
-												 ,vec4 clear, float clearDepth, uint clearStencil)
+void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT &texture2dFormat,DXGI_FORMAT &srvFormat)
 {
-	int m=1;
-	renderPlatform=r;
-	pixelFormat=f;
-	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
-	DXGI_FORMAT texture2dFormat=dxgi_format;
-	DXGI_FORMAT srvFormat=dxgi_format;
 	if(texture2dFormat==DXGI_FORMAT_D32_FLOAT)
 	{
 		texture2dFormat	=DXGI_FORMAT_R32_TYPELESS;
@@ -775,6 +790,27 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		texture2dFormat	=DXGI_FORMAT_R24G8_TYPELESS ;
 		srvFormat		=DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
+	if(texture2dFormat==DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
+	{
+		texture2dFormat	=DXGI_FORMAT_R32G8X24_TYPELESS;
+		srvFormat		=DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+	}
+}
+
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
+												 ,int w,int l
+												 ,crossplatform::PixelFormat f
+												 ,bool computable,bool rendertarget,bool depthstencil
+												 ,int num_samples,int aa_quality,bool
+												 ,vec4 clear, float clearDepth, uint clearStencil)
+{
+	int m=1;
+	renderPlatform=r;
+	pixelFormat=f;
+	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT texture2dFormat=dxgi_format;
+	DXGI_FORMAT srvFormat=dxgi_format;
+	DepthFormatToResourceAndSrvFormats(texture2dFormat,srvFormat);
 	dim=2;
 	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -977,6 +1013,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	if(!external_texture&&renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
+	SAFE_RELEASE(external_copy_source);
 	external_texture=false;
 	texture=pArrayTexture;
 	if(!texture)
@@ -1048,7 +1085,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap,bool volume,bool msaa)
 
 	if(!volume)
 	{
-		SRVDesc.Format						= TypelessToSrvFormat(dxgi_format);
+		SRVDesc.Format						=TypelessToSrvFormat(dxgi_format);
 		SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
 		int total_num						=cubemap?6*num:num;
 		if(cubemap)
