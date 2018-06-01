@@ -153,6 +153,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
       <Command>

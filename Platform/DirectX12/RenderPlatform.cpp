@@ -23,8 +23,6 @@
 using namespace simul;
 using namespace dx12;
 
-#pragma optimize("",off)
-
 RenderPlatform::RenderPlatform():
 	mCommandList(nullptr),
 	m12Device(nullptr),
@@ -1353,6 +1351,10 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
             {
                 cnt++;
                 s->RtFormatDesc.RTFormats[i] = ToDxgiFormat(desc.rtFormat.formats[i]);
+            }
+            else
+            {
+                s->RtFormatDesc.RTFormats[i] = DXGI_FORMAT_UNKNOWN;
             }
         }
         s->RtFormatDesc.Count = cnt;
