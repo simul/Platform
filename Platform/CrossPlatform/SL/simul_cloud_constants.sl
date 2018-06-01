@@ -71,7 +71,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int2 gridCentreTexel;
 
 	uniform int4 exclusionRange;
-
+	
+	uniform vec2 cirrusWindVector;
 	uniform float initialStepKm;
 	uniform float sampleHeight;
 

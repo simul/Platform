@@ -3,7 +3,6 @@
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 uniform sampler3D			densityTexture SIMUL_TEXTURE_REGISTER(0);
-uniform sampler2D			maskTexture SIMUL_TEXTURE_REGISTER(3);
 uniform sampler3D			ambientTexture;
 uniform sampler3D			volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
 uniform sampler3D			worleyTexture3D SIMUL_TEXTURE_REGISTER(7);
@@ -65,14 +64,6 @@ shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 	return result;
 }
 
-shader vec4 PS_CloudPlacementTexture(vertexOutput IN) SIMUL_TARGET_OUTPUT
-{
-	vec2 wPosKm		=0.001*(mul(transformMatrix, vec4(IN.texCoords.xy,0, 1.0))).xy;
-	vec2 offs_km	=wPosKm.xy - maskCentre;
-	vec2 texCoords	=vec2(0.5,0.5)+offs_km/cloudScalesKm.xy;
-	vec4 lookup		=texture_clamp_lod(maskTexture,texCoords,0);
-	return lookup;
-}
 
 vec3 convertPosToTexc(uint3 pos,uint3 dims)
 {
@@ -602,7 +593,7 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	uint3 noise_dims			=uint3(128,128,128);
-	//GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
+	
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float dens = CSDensity(pos);
@@ -661,19 +652,6 @@ technique density_mask
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_DensityMask()));
-    }
-}
-
-technique cloud_placement_texture
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState(DisableDepth, 0 );
-		SetBlendState(AddBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_CloudPlacementTexture()));
     }
 }
 
