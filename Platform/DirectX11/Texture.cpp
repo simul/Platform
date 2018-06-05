@@ -61,6 +61,7 @@ void Texture::FreeRTVTables()
 		int total_num=cubemap?arraySize*6:arraySize;
 		for(int i=0;i<total_num;i++)
 		{
+			if(renderTargetViews[i])
 			for(int j=0;j<mips;j++)
 			{
 				SAFE_RELEASE(renderTargetViews[i][j]);
@@ -1393,7 +1394,7 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 
 	srcBox.back		=1;
 	srcBox.front	=0;
-	void *pixel;
+	void *pixel=nullptr;
 	if(!texture)
 		return vec4(0,0,0,0);
 	try
