@@ -1096,12 +1096,18 @@ UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
     return D3D12CalcSubresource(curMip, curLayer, 0, mips, layers);
 }
 
-bool RenderPlatform::MsaaEnabled()
+void RenderPlatform::SetCurrentSamples(int samples, int quality/*=0*/)
 {
-	return mIsMsaaEnabled;
+    mMsaaInfo.Count     = samples;
+    mMsaaInfo.Quality   = quality;
 }
 
-DXGI_SAMPLE_DESC RenderPlatform::GetMsaaInfo()
+bool RenderPlatform::IsMSAAEnabled()
+{
+    return mMsaaInfo.Count != 1;
+}
+
+DXGI_SAMPLE_DESC RenderPlatform::GetMSAAInfo()
 {
 	return mMsaaInfo;
 }
@@ -1585,9 +1591,38 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
     }
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture* destination,crossplatform::Texture* source)
 {
-	
+    mCommandList                        = deviceContext.asD3D12Context();
+    immediateContext.platform_context   = mCommandList;
+    dx12::Texture* src                  = (dx12::Texture*)source;
+    dx12::Texture* dst                  = (dx12::Texture*)dst;
+    if (!src || !dst)
+    {
+        SIMUL_CERR << "Failed to Resolve.\n";
+        return;
+    }
+
+    DXGI_FORMAT resolveFormat = {};
+    // Both are typed
+    if (IsTypeless(src->dxgi_format,false) && !IsTypeless(dst->dxgi_format,false))
+    {
+        resolveFormat = src->dxgi_format;
+    }
+
+    
+    // NOTE: we resolve from/to mip = 0 & index = 0
+    // Transition the resources:
+    auto srcInitState = src->GetCurrentState(0,0);
+    ResourceTransitionSimple(src->AsD3D12Resource(), srcInitState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, true);
+    auto dstInitState = dst->GetCurrentState(0,0);
+    ResourceTransitionSimple(dst->AsD3D12Resource(), dstInitState, D3D12_RESOURCE_STATE_RESOLVE_DEST, true);
+    {
+        mCommandList->ResolveSubresource(dst->AsD3D12Resource(),0,src->AsD3D12Resource(),0,src->dxgi_format);
+    }
+    // Revert states:
+    ResourceTransitionSimple(src->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, srcInitState);
+    ResourceTransitionSimple(dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_DEST, dstInitState);
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)

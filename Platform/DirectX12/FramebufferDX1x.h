@@ -24,6 +24,8 @@ namespace simul
 			virtual void    Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
 			virtual void    ClearDepth(crossplatform::DeviceContext &context,float);
 			virtual void    ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
+        private:
+            DXGI_SAMPLE_DESC mCachedMSAAState;
 		};
 	}
 }

@@ -6,11 +6,11 @@
 #ifdef SFX
 	RenderTargetFormatState OceanTargetFormats
 	{
-		TargetFormat[0] = FMT_FP16_ABGR;
+		TargetFormat[0] = FMT_32_ABGR;
 		TargetFormat[1] = FMT_FP16_ABGR;
 		TargetFormat[2] = FMT_FP16_ABGR;
 		TargetFormat[3] = FMT_FP16_ABGR;
-		TargetFormat[4] = FMT_FP16_ABGR;
+		TargetFormat[4] = FMT_32_ABGR;
 	};
 #else
 	#define OceanTargetFormats 0

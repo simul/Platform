@@ -1491,6 +1491,14 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
         finalRaster = curRenderPlat->RasterStateOverride;
     }
 
+    // Get current MSAA:
+    DXGI_SAMPLE_DESC msaaDesc = {1,0};
+    if (curRenderPlat->IsMSAAEnabled())
+    {
+        msaaDesc = curRenderPlat->GetMSAAInfo();
+    }
+    size_t msaaHash = msaaDesc.Count + msaaDesc.Quality;
+
     // Get the current targets:
     const crossplatform::TargetsAndViewport* targets = &deviceContext.defaultTargetsAndViewport;
     if (!deviceContext.targetStack.empty())
@@ -1544,9 +1552,9 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     }
 
     // Get hash for the current config:
-    // TO-DO: what about the depth format, or msaa state?
+    // TO-DO: what about the depth format
     // This is a bad hashing method
-    size_t hash = (uint64_t)&finalBlend ^ (uint64_t)&finalDepth ^ (uint64_t)&finalRaster ^ finalRt->GetHash();
+    size_t hash = (uint64_t)&finalBlend ^ (uint64_t)&finalDepth ^ (uint64_t)&finalRaster ^ finalRt->GetHash() ^ msaaHash;
 
     // Runtime check for depth write:
     if (finalDepth->DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO && !targets->m_dt)
@@ -1617,7 +1625,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     gpsoDesc.NumRenderTargets                   = finalRt->Count;
     memcpy(gpsoDesc.RTVFormats, finalRt->RTFormats, sizeof(DXGI_FORMAT) * finalRt->Count);
     gpsoDesc.DSVFormat                          = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat): DXGI_FORMAT_UNKNOWN;
-    gpsoDesc.SampleDesc                         = curRenderPlat->GetMsaaInfo();
+    gpsoDesc.SampleDesc                         = msaaDesc;
 
     // Create it:
     HRESULT res             = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState(&gpsoDesc,SIMUL_PPV_ARGS(&psoPair.second));
