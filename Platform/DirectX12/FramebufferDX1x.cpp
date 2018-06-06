@@ -51,6 +51,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 		CreateBuffers();
     }
 	SIMUL_ASSERT(IsValid());
+    auto rPlat                          = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
 	// Get the views that we want to activate:
 	dx12::Texture* col12Texture		    = (dx12::Texture*)buffer_texture;
@@ -87,6 +88,11 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	targetsAndViewport.viewport.zfar	= 1.0f;
 
     deviceContext.renderPlatform->ActivateRenderTargets(deviceContext, &targetsAndViewport);
+    
+    // Inform current samples
+    mCachedMSAAState = rPlat->GetMSAAInfo();
+    int colSamples = col12Texture->GetSampleCount();
+    rPlat->SetCurrentSamples(colSamples == 0 ? 1 : colSamples);
 
     // Cache current state
 	colour_active	                    = true;
@@ -108,6 +114,9 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
 	colour_active	= false;
 	depth_active	= false;
+
+    // Restore MSAA
+    ((dx12::RenderPlatform*)deviceContext.renderPlatform)->SetCurrentSamples(mCachedMSAAState.Count, mCachedMSAAState.Quality);
 }
 
 void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)

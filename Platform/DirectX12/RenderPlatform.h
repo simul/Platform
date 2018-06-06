@@ -183,9 +183,10 @@ namespace simul
 			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
-			
-            bool									MsaaEnabled();
-			DXGI_SAMPLE_DESC						GetMsaaInfo();
+			//! We cache the current number of samples
+            void                                    SetCurrentSamples(int samples, int quality = 0);
+            bool                                    IsMSAAEnabled();
+			DXGI_SAMPLE_DESC						GetMSAAInfo();
 			
             ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
