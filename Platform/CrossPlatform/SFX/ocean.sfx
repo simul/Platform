@@ -1233,7 +1233,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	float fresnelFactor = 1.0;
 
-	if (!frontFacing)
+	if (frontFacing)
 	{			
 		actualDepth = saturate(fulldepth - surfaceDepth);
 
@@ -1308,7 +1308,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	//else if (g_enableRefraction)
 		//TexCoord = lerp(TexCoord, ((vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + vec2(1.0, 1.0)) / 2.0), exp(tempsample - subsurfaceSample) );
 	
-	if (frontFacing)
+	if (!frontFacing)
 	{
 		finalDepth = -min(actualDepth, surfaceDepth);
 		if (subsurfaceDepth > actualDepth) {
@@ -1752,7 +1752,7 @@ technique render_boundless_depth
 	pass no_refraction
 	{
 		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderFrontfaceCull);
+		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0 );
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0,VS_OceanSurfNoShore()));
@@ -1763,7 +1763,7 @@ technique render_boundless_depth
 	pass refraction_no_backface
 	{
 		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderFrontfaceCull);
+		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfNoShore()));
@@ -1788,7 +1788,7 @@ technique render_boundless_depth_shore
 	pass no_refraction
 	{
 		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderFrontfaceCull);
+		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
@@ -1799,7 +1799,7 @@ technique render_boundless_depth_shore
 	pass refraction_no_backface
 	{
 		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderFrontfaceCull);
+		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
