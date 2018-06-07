@@ -1652,7 +1652,7 @@ void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
 {
     if (mips == 1)
     {
-        SIMUL_CERR << "Calling GenerateMips on the texture: " << name << " which only has 1 mip (this has no effect). \n";
+        SIMUL_CERR_ONCE << "Calling GenerateMips on the texture: " << name << " which only has 1 mip (this has no effect). \n";
         return;
     }
     deviceContext.renderPlatform->GenerateMips(deviceContext, this, true, 0);

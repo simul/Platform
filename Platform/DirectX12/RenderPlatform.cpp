@@ -308,6 +308,8 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 			mGRootSignature->SetName(L"GraphicsRootSignature");
 		}
 
+        // If we call this (D3D12CreateRootSignatureDeserializer) d3d12.dll won't be delay loaded 
+#if 0
         // Finally lets check which slots does the rs expect
         ID3D12RootSignatureDeserializer* rsDeserial = nullptr;
         res                                         = D3D12CreateRootSignatureDeserializer
@@ -355,7 +357,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         rsDeserial->Release();
 		rblob->Release();
 
-        // Check agains the hardware limits:
+        // Check against the hardware limits:
         if (ResourceBindingLimits::NumUAV > mResourceBindingLimits.MaxUAVPerStage)
         {
             SIMUL_CERR << "Current max num uav: " << ResourceBindingLimits::NumUAV << ", but hardware only supports: " << mResourceBindingLimits.MaxUAVPerStage << std::endl;
@@ -372,6 +374,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         {
             SIMUL_CERR << "Current max num samplers: " << ResourceBindingLimits::NumSamplers << ", but hardware only supports: " << mResourceBindingLimits.NumSamplers << std::endl;
         }
+#endif
 	}
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
@@ -523,7 +526,6 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,cro
 		ResourceTransitionSimple(dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_COPY_DEST, dstState,true);
 	}
 }
-
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
