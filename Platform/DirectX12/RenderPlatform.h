@@ -115,12 +115,10 @@ namespace simul
 			void									StartRender(crossplatform::DeviceContext &deviceContext);
 			void									EndRender(crossplatform::DeviceContext &deviceContext);
 			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
+            void                                    ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
-
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
-			
 			void									ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
-			
 			void									Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			void									DrawMarker		(crossplatform::DeviceContext &deviceContext,const double *matrix);

@@ -1504,7 +1504,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 			//refractColourInput += vec4(scatteringInput.w, scatteringInput.w, scatteringInput.w, 0.0);
 			scatterDepth = eye_depth;
 		}
-
+		
 		float sunEffect = ((dot(eye_dir, sun_dir) + 1.0) / 2.0);
 
 		if (sun_dir.z <= 0.0)
@@ -1754,7 +1754,7 @@ technique render_boundless_depth
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0 );
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0,VS_OceanSurfNoShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepth()));
@@ -1765,7 +1765,7 @@ technique render_boundless_depth
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfNoShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1776,7 +1776,7 @@ technique render_boundless_depth
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfNoShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1790,7 +1790,7 @@ technique render_boundless_depth_shore
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepth()));
@@ -1801,7 +1801,7 @@ technique render_boundless_depth_shore
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1812,7 +1812,7 @@ technique render_boundless_depth_shore
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1826,7 +1826,7 @@ technique render_bounded_depth
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepth()));
@@ -1837,7 +1837,7 @@ technique render_bounded_depth
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepthRefraction()));
@@ -1848,7 +1848,7 @@ technique render_bounded_depth
 		SetRenderTargetFormatState(OceanTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepthRefraction()));
