@@ -44,7 +44,7 @@ uniform RWStructuredBuffer<vec2>	g_InputH0:		register(u5);
 uniform RWStructuredBuffer<vec2>	g_OutputHt;
 uniform RWStructuredBuffer<float>	g_InputOmega:	register(u6);
 uniform StructuredBuffer<vec3>		g_ProbePos		SIMUL_TEXTURE_REGISTER(10);
-uniform StructuredBuffer<vec4>	g_ProbeValues	SIMUL_TEXTURE_REGISTER(11);
+uniform StructuredBuffer<vec4>		g_ProbeValues	SIMUL_TEXTURE_REGISTER(11);
 uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
 
 struct TwoColourCompositeOutput
@@ -530,7 +530,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 	if (vertexNo < 6)
 	{
 		noDisplacement = true;
-		vPos.z = -10000;
+		vPos.z = -100;
 		layerQuadSize = (1 << (g_noOfLayers - 2)) * g_minQuadSize;
 
 		float externalLayerQuadSize = layerQuadSize * 2.0;
@@ -615,7 +615,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			else
 			{
 				vPos.x = (vertexNo - 1) / 2;
-				vPos.z = -10000;
+				vPos.z = -100;
 				noDisplacement = true;
 			}
 			if (edgeNo)
@@ -636,7 +636,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			else
 			{
 				vPos.y = (vertexNo - 1) / 2;
-				vPos.z = -10000;
+				vPos.z = -100;
 				noDisplacement = true;
 			}
 			if (edgeNo)
