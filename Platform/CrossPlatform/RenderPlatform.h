@@ -58,18 +58,19 @@ namespace simul
 		struct Query;
 		struct TargetsAndViewport;
 
+
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
 		{
-			Unknown=-1,
-			OpenGL				 =  0, // Desktop OpenGL
-			D3D11				 =  2, // Direct3D 11
-			Null				= 4,	// null means don't render, as opposed to Unknwon which means uninitialized.
-			PS4					 = 13, // PlayStation 4
-			XboxOne				 = 14, // Xbox One        
-			Metal				 = 16, // iOS Metal
-			D3D12				 = 18, // Direct3D 12
-			D3D11_FastSemantics	= 1002, // Direct3D 11
+			Unknown                 = -1,
+			OpenGL				    = 0,    // Desktop OpenGL
+			D3D11				    = 2,    // Direct3D 11
+			Null				    = 4,    // null means don't render, as opposed to Unknwon which means uninitialized.
+			PS4					    = 13,   // PlayStation 4
+			XboxOne				    = 14,   // Xbox One        
+			Metal				    = 16,   // iOS Metal
+			D3D12				    = 18,   // Direct3D 12
+			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		/// A vertex format for debugging.
 		struct PosColourVertex
