@@ -16,6 +16,20 @@
 	#define OceanTargetFormats 0
 #endif
 
+BlendState OceanNoBlend
+{
+	BlendEnable[0] = FALSE;	
+	BlendEnable[1] = FALSE;
+	BlendEnable[2] = FALSE;
+	BlendEnable[3] = FALSE;
+	BlendEnable[4] = FALSE;
+	RenderTargetWriteMask[0]=15;
+	RenderTargetWriteMask[1]=15;
+	RenderTargetWriteMask[2]=15;
+	RenderTargetWriteMask[3]=15;
+	RenderTargetWriteMask[4]=15;
+};
+
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;

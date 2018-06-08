@@ -460,15 +460,48 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 
 void RenderPlatform::EndRender(crossplatform::DeviceContext &)
 {
-
 }
 
 void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 {
-
 }
 
-void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
+void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
+{
+    mCommandList                        = deviceContext.asD3D12Context();
+    immediateContext.platform_context   = deviceContext.platform_context;
+    dx12::Texture* t12                  = (dx12::Texture*)t;
+
+    switch (transition)
+    {
+        case simul::crossplatform::Readable: 
+        {
+            t12->AsD3D12ShaderResourceView(true, crossplatform::ShaderResourceType::TEXTURE_2D); 
+            break;
+        }
+        case simul::crossplatform::Writeable:
+        {
+            if (t12->HasRenderTargets())
+            {
+                t12->AsD3D12RenderTargetView();
+            }
+            else if (t12->IsDepthStencil())
+            {
+                t12->AsD3D12DepthStencilView();
+            }
+            break;
+        }
+        case simul::crossplatform::UnorderedAccess:
+        {
+            t12->AsD3D12UnorderedAccessView();
+            break;
+        }
+    }
+
+    FlushBarriers();
+}
+
+void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
 {
 	mCommandList		= deviceContext.asD3D12Context();
 	immediateContext.platform_context	= deviceContext.platform_context;

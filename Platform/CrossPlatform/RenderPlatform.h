@@ -58,7 +58,13 @@ namespace simul
 		struct Query;
 		struct TargetsAndViewport;
 
-
+        //! Type of resource transition, some platforms used this (dx12)
+        enum ResourceTransition
+        {
+            Readable        = 0,
+            Writeable       = 1,
+            UnorderedAccess = 2
+        };
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
 		{
@@ -159,7 +165,8 @@ namespace simul
 			virtual void EndEvent			(DeviceContext &);
 			virtual void StartRender		(DeviceContext &){}
 			virtual void EndRender			(DeviceContext &){}
-
+            //! Makes sure the resource is in the required state specified by transition. 
+            virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition transition) {};
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
