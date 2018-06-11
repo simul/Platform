@@ -53,15 +53,15 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	// Viewport
 	CurViewport.TopLeftX		= 0;
 	CurViewport.TopLeftY		= 0;
-	CurViewport.Width		= (float)screenWidth;
-	CurViewport.Height		= (float)screenHeight;
+	CurViewport.Width		    = (float)screenWidth;
+	CurViewport.Height		    = (float)screenHeight;
 	CurViewport.MinDepth		= 0.0f;
 	CurViewport.MaxDepth		= 1.0f;
 
 	// Scissor
 	CurScissor.left		= 0;
 	CurScissor.top		= 0;
-	CurScissor.right		= screenWidth;
+	CurScissor.right	= screenWidth;
 	CurScissor.bottom	= screenHeight;
 
 #ifndef _XBOX_ONE
@@ -244,7 +244,7 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 		WindowUID				=IRendererRef->AddView();
 	}
 	
-    // IRendererRef->ResizeView(WindowUID,surfaceDesc.Width,surfaceDesc.Height);
+    IRendererRef->ResizeView(WindowUID,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::Release()

@@ -58,18 +58,25 @@ namespace simul
 		struct Query;
 		struct TargetsAndViewport;
 
+        //! Type of resource transition, some platforms used this (dx12)
+        enum ResourceTransition
+        {
+            Readable        = 0,
+            Writeable       = 1,
+            UnorderedAccess = 2
+        };
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
 		{
-			Unknown=-1,
-			OpenGL				 =  0, // Desktop OpenGL
-			D3D11				 =  2, // Direct3D 11
-			Null				= 4,	// null means don't render, as opposed to Unknwon which means uninitialized.
-			PS4					 = 13, // PlayStation 4
-			XboxOne				 = 14, // Xbox One        
-			Metal				 = 16, // iOS Metal
-			D3D12				 = 18, // Direct3D 12
-			D3D11_FastSemantics	= 1002, // Direct3D 11
+			Unknown                 = -1,
+			OpenGL				    = 0,    // Desktop OpenGL
+			D3D11				    = 2,    // Direct3D 11
+			Null				    = 4,    // null means don't render, as opposed to Unknwon which means uninitialized.
+			PS4					    = 13,   // PlayStation 4
+			XboxOne				    = 14,   // Xbox One        
+			Metal				    = 16,   // iOS Metal
+			D3D12				    = 18,   // Direct3D 12
+			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		/// A vertex format for debugging.
 		struct PosColourVertex
@@ -158,7 +165,8 @@ namespace simul
 			virtual void EndEvent			(DeviceContext &);
 			virtual void StartRender		(DeviceContext &){}
 			virtual void EndRender			(DeviceContext &){}
-
+            //! Makes sure the resource is in the required state specified by transition. 
+            virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition transition) {};
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;

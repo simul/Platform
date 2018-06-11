@@ -41,11 +41,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-#ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&mUploadHeap)
-#else
-		IID_PPV_ARGS(&mUploadHeap)
-#endif
+		SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mUploadHeap->SetName(L"VertexUpload");
@@ -77,11 +73,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-#ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&mUploadHeap)
-#else
-		IID_PPV_ARGS(&mUploadHeap)
-#endif
+        SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mUploadHeap->SetName(L"IndexUpload");

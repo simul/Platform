@@ -6,15 +6,29 @@
 #ifdef SFX
 	RenderTargetFormatState OceanTargetFormats
 	{
-		TargetFormat[0] = FMT_FP16_ABGR;
+		TargetFormat[0] = FMT_32_ABGR;
 		TargetFormat[1] = FMT_FP16_ABGR;
 		TargetFormat[2] = FMT_FP16_ABGR;
 		TargetFormat[3] = FMT_FP16_ABGR;
-		TargetFormat[4] = FMT_FP16_ABGR;
+		TargetFormat[4] = FMT_32_ABGR;
 	};
 #else
 	#define OceanTargetFormats 0
 #endif
+
+BlendState OceanNoBlend
+{
+	BlendEnable[0] = FALSE;	
+	BlendEnable[1] = FALSE;
+	BlendEnable[2] = FALSE;
+	BlendEnable[3] = FALSE;
+	BlendEnable[4] = FALSE;
+	RenderTargetWriteMask[0]=15;
+	RenderTargetWriteMask[1]=15;
+	RenderTargetWriteMask[2]=15;
+	RenderTargetWriteMask[3]=15;
+	RenderTargetWriteMask[4]=15;
+};
 
 DepthStencilState DisableDepth
 {

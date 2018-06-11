@@ -307,6 +307,7 @@ namespace simul
 			
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
+            std::string rtFormatState;
 			EffectPass();
 			virtual ~EffectPass(){}
 

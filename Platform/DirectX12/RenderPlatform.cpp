@@ -308,6 +308,8 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 			mGRootSignature->SetName(L"GraphicsRootSignature");
 		}
 
+        // If we call this (D3D12CreateRootSignatureDeserializer) d3d12.dll won't be delay loaded 
+#if 0
         // Finally lets check which slots does the rs expect
         ID3D12RootSignatureDeserializer* rsDeserial = nullptr;
         res                                         = D3D12CreateRootSignatureDeserializer
@@ -355,7 +357,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         rsDeserial->Release();
 		rblob->Release();
 
-        // Check agains the hardware limits:
+        // Check against the hardware limits:
         if (ResourceBindingLimits::NumUAV > mResourceBindingLimits.MaxUAVPerStage)
         {
             SIMUL_CERR << "Current max num uav: " << ResourceBindingLimits::NumUAV << ", but hardware only supports: " << mResourceBindingLimits.MaxUAVPerStage << std::endl;
@@ -372,6 +374,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         {
             SIMUL_CERR << "Current max num samplers: " << ResourceBindingLimits::NumSamplers << ", but hardware only supports: " << mResourceBindingLimits.NumSamplers << std::endl;
         }
+#endif
 	}
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
@@ -457,15 +460,48 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 
 void RenderPlatform::EndRender(crossplatform::DeviceContext &)
 {
-
 }
 
 void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 {
-
 }
 
-void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
+void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
+{
+    mCommandList                        = deviceContext.asD3D12Context();
+    immediateContext.platform_context   = deviceContext.platform_context;
+    dx12::Texture* t12                  = (dx12::Texture*)t;
+
+    switch (transition)
+    {
+        case simul::crossplatform::Readable: 
+        {
+            t12->AsD3D12ShaderResourceView(true, crossplatform::ShaderResourceType::TEXTURE_2D); 
+            break;
+        }
+        case simul::crossplatform::Writeable:
+        {
+            if (t12->HasRenderTargets())
+            {
+                t12->AsD3D12RenderTargetView();
+            }
+            else if (t12->IsDepthStencil())
+            {
+                t12->AsD3D12DepthStencilView();
+            }
+            break;
+        }
+        case simul::crossplatform::UnorderedAccess:
+        {
+            t12->AsD3D12UnorderedAccessView();
+            break;
+        }
+    }
+
+    FlushBarriers();
+}
+
+void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
 {
 	mCommandList		= deviceContext.asD3D12Context();
 	immediateContext.platform_context	= deviceContext.platform_context;
@@ -523,7 +559,6 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,cro
 		ResourceTransitionSimple(dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_COPY_DEST, dstState,true);
 	}
 }
-
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
@@ -1096,12 +1131,18 @@ UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
     return D3D12CalcSubresource(curMip, curLayer, 0, mips, layers);
 }
 
-bool RenderPlatform::MsaaEnabled()
+void RenderPlatform::SetCurrentSamples(int samples, int quality/*=0*/)
 {
-	return mIsMsaaEnabled;
+    mMsaaInfo.Count     = samples;
+    mMsaaInfo.Quality   = quality;
 }
 
-DXGI_SAMPLE_DESC RenderPlatform::GetMsaaInfo()
+bool RenderPlatform::IsMSAAEnabled()
+{
+    return mMsaaInfo.Count != 1;
+}
+
+DXGI_SAMPLE_DESC RenderPlatform::GetMSAAInfo()
 {
 	return mMsaaInfo;
 }
@@ -1585,9 +1626,38 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
     }
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture* destination,crossplatform::Texture* source)
 {
-	
+    mCommandList                        = deviceContext.asD3D12Context();
+    immediateContext.platform_context   = mCommandList;
+    dx12::Texture* src                  = (dx12::Texture*)source;
+    dx12::Texture* dst                  = (dx12::Texture*)dst;
+    if (!src || !dst)
+    {
+        SIMUL_CERR << "Failed to Resolve.\n";
+        return;
+    }
+
+    DXGI_FORMAT resolveFormat = {};
+    // Both are typed
+    if (IsTypeless(src->dxgi_format,false) && !IsTypeless(dst->dxgi_format,false))
+    {
+        resolveFormat = src->dxgi_format;
+    }
+
+    
+    // NOTE: we resolve from/to mip = 0 & index = 0
+    // Transition the resources:
+    auto srcInitState = src->GetCurrentState(0,0);
+    ResourceTransitionSimple(src->AsD3D12Resource(), srcInitState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, true);
+    auto dstInitState = dst->GetCurrentState(0,0);
+    ResourceTransitionSimple(dst->AsD3D12Resource(), dstInitState, D3D12_RESOURCE_STATE_RESOLVE_DEST, true);
+    {
+        mCommandList->ResolveSubresource(dst->AsD3D12Resource(),0,src->AsD3D12Resource(),0,src->dxgi_format);
+    }
+    // Revert states:
+    ResourceTransitionSimple(src->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, srcInitState);
+    ResourceTransitionSimple(dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_DEST, dstInitState);
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)

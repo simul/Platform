@@ -1056,6 +1056,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				const string &name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
 				PixelOutputFormat fmt=FMT_UNKNOWN;
+                std::string passRtFormat = "";
 				if(_stricmp(type.c_str(),"blend")==0)
 				{
 					if(blendStates.find(name)!=blendStates.end())
@@ -1122,6 +1123,16 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 								fmt=FMT_SNORM16_ABGR;
 							else if(_stricmp(out_fmt.c_str(),"unorm16abgr")==0)
 								fmt=FMT_UNORM16_ABGR;
+                            else
+                            {
+                                // Handle rt format state
+                                size_t pb = type.find("(");
+                                size_t pe = type.find(")");
+                                if (pe - pb > 1)
+                                {
+                                    passRtFormat = std::string(type.begin() + pb, type.begin() + pe);
+                                }
+                            }
 						}
 					}
 					else if(_stricmp(type.c_str(),"compute")==0)
@@ -1138,6 +1149,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							p->pixelShaders[fmt]=s;
 						else
 							p->shaders[t]=s;
+                        if (!passRtFormat.empty())
+                        {
+                            p->rtFormatState = passRtFormat;
+                        }
+                        
 					}
 					// Set what the shader uses.
 

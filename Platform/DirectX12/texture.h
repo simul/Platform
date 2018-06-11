@@ -146,6 +146,10 @@ namespace simul
 
 			D3D12_CPU_DESCRIPTOR_HANDLE		depthStencilView12;
 			D3D12_CPU_DESCRIPTOR_HANDLE**	renderTargetViews12;			// 2D table: layers and mips.
+
+            //! We need to store the old MSAA state
+            DXGI_SAMPLE_DESC                mCachedMSAAState;
+            int                             mNumSamples;
 		};
 	}
 }

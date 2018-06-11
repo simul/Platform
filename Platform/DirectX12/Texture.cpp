@@ -36,7 +36,8 @@ Texture::Texture():
 	mipUnorderedAccessViews12(nullptr),
 	layerMipUnorderedAccessViews12(nullptr),
 	renderTargetViews12(nullptr),
-	mLoadedFromFile(false)
+	mLoadedFromFile(false),
+    mNumSamples(1)
 {
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
@@ -767,6 +768,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		pixelFormat = RenderPlatform::FromDxgiFormat(dxgi_format);
 		width		= (int)textureDesc.Width;
 		length		= (int)textureDesc.Height;
+        mNumSamples = textureDesc.SampleDesc.Count;
 		if (!srv)
 		{
 			InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
@@ -1076,6 +1078,10 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
         {
 			ok = false;
         }
+        if (desc.SampleDesc.Count != num_samples)
+        {
+            ok = false;
+        }
 	}
 	else
 	{
@@ -1094,20 +1100,20 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		if (num_samples > 1)
 		{
 			D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQuery = {};
-			msaaQuery.SampleCount		= num_samples / 2;
+			msaaQuery.SampleCount		= num_samples;
 			msaaQuery.NumQualityLevels	= aa_quality;
 			msaaQuery.Format			= srvFormat;
-			res = renderPlatform->AsD3D12Device()->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaQuery, sizeof(msaaQuery));
-			if (res == S_FALSE)
+			res                         = renderPlatform->AsD3D12Device()->CheckFeatureSupport
+            (
+                D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaQuery, sizeof(msaaQuery)
+            );
+			if (FAILED(res))
 			{
-				SIMUL_BREAK("The provided quality settings are not supported by this device. \n");
+				SIMUL_CERR << "The provided quality settings are not supported by this device. \n";
 				num_samples = 1;
 				aa_quality	= 0;
 			}
-			else
-			{
-				num_samples /= 2;
-			}
+            mNumSamples = num_samples;
 		}
 
 		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
@@ -1234,7 +1240,6 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			D3D12_RENDER_TARGET_VIEW_DESC rtDesc	= {};
 			rtDesc.Format							= texture2dFormat;
 			rtDesc.ViewDimension					= num_samples>1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D;		
-
 			for (int j = 0; j<m; j++)
 			{
 				rtDesc.Texture2D.MipSlice = j;
@@ -1647,7 +1652,7 @@ void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
 {
     if (mips == 1)
     {
-        SIMUL_CERR << "Calling GenerateMips on the texture: " << name << " which only has 1 mip (this has no effect). \n";
+        SIMUL_CERR_ONCE << "Calling GenerateMips on the texture: " << name << " which only has 1 mip (this has no effect). \n";
         return;
     }
     deviceContext.renderPlatform->GenerateMips(deviceContext, this, true, 0);
@@ -1701,6 +1706,10 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
         targetsAndViewport.viewport.zfar	= 1.0f;
 
         rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
+        
+        // Inform the render platform of the current number of MSAA samples
+        mCachedMSAAState = rp->GetMSAAInfo();
+        rp->SetCurrentSamples(mNumSamples);
 	}
 }
 
@@ -1708,18 +1717,13 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
     rp->DeactivateRenderTargets(deviceContext);
+    // Restore MSAA state
+    rp->SetCurrentSamples(mCachedMSAAState.Count,mCachedMSAAState.Quality);
 }
 
 int Texture::GetSampleCount()const
 {
-    return 0;
-    // 0 = no msaa
-	// if (!mTextureDefault)
-	// {
-	// 	return 0;
-	// }
-    // auto desc = mTextureDefault->GetDesc();
-	// return desc.SampleDesc.Count == 1 ? 0 : desc.SampleDesc.Count;
+    return mNumSamples == 1 ? 0 : mNumSamples;
 }
 
 D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -1*/)

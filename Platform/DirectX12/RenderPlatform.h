@@ -115,12 +115,10 @@ namespace simul
 			void									StartRender(crossplatform::DeviceContext &deviceContext);
 			void									EndRender(crossplatform::DeviceContext &deviceContext);
 			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
+            void                                    ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
-
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
-			
 			void									ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
-			
 			void									Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			void									DrawMarker		(crossplatform::DeviceContext &deviceContext,const double *matrix);
@@ -183,9 +181,10 @@ namespace simul
 			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
-			
-            bool									MsaaEnabled();
-			DXGI_SAMPLE_DESC						GetMsaaInfo();
+			//! We cache the current number of samples
+            void                                    SetCurrentSamples(int samples, int quality = 0);
+            bool                                    IsMSAAEnabled();
+			DXGI_SAMPLE_DESC						GetMSAAInfo();
 			
             ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
