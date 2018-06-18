@@ -39,7 +39,7 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	// Perlin noise for distant wave crest
 	
 	uniform vec3		g_PerlinAmplitude;
-	uniform float		g_PerlinSize;
+	uniform float		g_unityRender;
 	uniform vec3		g_PerlinOctave;
 	uniform float		g_oceanHeight;
 
@@ -79,7 +79,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform bool		g_PassNo;
 
 	uniform vec3		g_boundedDimension;
-	uniform float		gufidghvibhi;
+	uniform float		jghnufidosn;
 
 	uniform vec3		g_boundedLocation;
 	uniform float		g_boundedRotation;
