@@ -1456,7 +1456,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
         mTargets.m_dt           = depth->AsD3D12DepthStencilView();
         mTargets.depthFormat    = depth->pixelFormat;
     }
-    mTargets.viewport           = { 0,0,targs[0]->GetWidth(),targs[0]->GetLength(),0.0f,1.0f };
+    mTargets.viewport           = { 0,0,targs[0]->GetWidth(),targs[0]->GetLength() };
 
     ActivateRenderTargets(deviceContext, &mTargets);
 }
@@ -1485,6 +1485,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
     // Stack is empty so apply default targets:
     if (deviceContext.GetFrameBufferStack().empty())
     {
+		if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
             (UINT)deviceContext.defaultTargetsAndViewport.num,
@@ -1492,7 +1493,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
         );
-        SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
+		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
+	        SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
     }
     // Apply top target:
     else
@@ -1526,8 +1528,8 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		viewports[i].Height		= (float)vps[i].h;
 		viewports[i].TopLeftX	= (float)vps[i].x;
 		viewports[i].TopLeftY	= (float)vps[i].y;
-		viewports[i].MinDepth	= vps[i].znear;
-		viewports[i].MaxDepth	= vps[i].zfar;
+		viewports[i].MinDepth	= 0.0f;
+		viewports[i].MaxDepth	= 1.0f;
 
 		// Configure scissor
 		scissors[i].left		= (LONG)viewports[i].TopLeftX;

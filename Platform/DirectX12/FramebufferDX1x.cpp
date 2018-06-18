@@ -84,8 +84,6 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	targetsAndViewport.viewport.h		= Height;
 	targetsAndViewport.viewport.x		= 0;
 	targetsAndViewport.viewport.y		= 0;
-	targetsAndViewport.viewport.znear	= 0.0f;
-	targetsAndViewport.viewport.zfar	= 1.0f;
 
     deviceContext.renderPlatform->ActivateRenderTargets(deviceContext, &targetsAndViewport);
     

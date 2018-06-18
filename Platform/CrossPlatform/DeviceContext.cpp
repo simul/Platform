@@ -38,6 +38,4 @@ void DeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt,
 	defaultTargetsAndViewport.viewport.y = viewportTop;
 	defaultTargetsAndViewport.viewport.w = viewportRight - viewportLeft;
 	defaultTargetsAndViewport.viewport.h = viewportBottom - viewportTop;
-	defaultTargetsAndViewport.viewport.znear = 0.0f;
-	defaultTargetsAndViewport.viewport.zfar = 1.0f;
 }

@@ -86,6 +86,8 @@ namespace simul
 		};
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
+		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
+		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const int4 *vi,const Texture *t);
 
 		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
 			in a cross-platform manner. By abstracting the common functionality of the different graphics API's

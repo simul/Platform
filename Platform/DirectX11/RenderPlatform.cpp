@@ -1039,7 +1039,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
 
 	int w=targs[0]->width, h = targs[0]->length;
-	crossplatform::Viewport v[] = { { 0, 0, w, h, 0, 1.f }, { 0, 0, w, h, 0, 1.f }, { 0, 0, w, h, 0, 1.f } };
+	crossplatform::Viewport v[] = { { 0, 0, w, h }, { 0, 0, w, h }, { 0, 0, w, h } };
 
 	crossplatform::TargetsAndViewport *targetAndViewport=new crossplatform::TargetsAndViewport;
 	targetAndViewport->temp=true;
@@ -1055,8 +1055,6 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	targetAndViewport->viewport.x=targetAndViewport->viewport.y=0;
 	targetAndViewport->viewport.w=targs[0]->width;
 	targetAndViewport->viewport.h=targs[0]->length;
-	targetAndViewport->viewport.zfar=1.0f;
-	targetAndViewport->viewport.znear=0.0f;
 	PushRenderTargets(deviceContext,targetAndViewport);
 
 	SetViewports(deviceContext,num,v);

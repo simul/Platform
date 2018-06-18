@@ -199,7 +199,12 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	DirectX::TexMetadata	metadata;
 	DirectX::ScratchImage	scratchImage;
 	const DirectX::Image*	image;
-    if (name.find(".dds") != std::string::npos)
+	if(name.find(".hdr")==name.length()-4)
+	{
+		res= DirectX::LoadFromHDRMemory( ptr, _In_ bytes,&metadata,scratchImage );
+
+	}
+    else if (name.find(".dds") != std::string::npos)
     {
         res = DirectX::LoadFromDDSMemory(ptr, bytes, flags, &metadata, scratchImage);
     }
@@ -1702,8 +1707,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
         targetsAndViewport.viewport.h		= (float)(std::max(1, (length >> mip)));
         targetsAndViewport.viewport.x		= 0;
         targetsAndViewport.viewport.y		= 0;
-        targetsAndViewport.viewport.znear	= 0.0f;
-        targetsAndViewport.viewport.zfar	= 1.0f;
 
         rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
         
