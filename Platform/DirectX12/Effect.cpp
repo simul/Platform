@@ -556,6 +556,8 @@ void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext&
         free(pCacheData);
         mCurApplies     = 0;
         r->FlushBarriers();
+
+        mChanged        = false;
     }
 
     // First update the UPLOAD buffer at the apply offset:
