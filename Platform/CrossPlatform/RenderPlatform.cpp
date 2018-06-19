@@ -600,7 +600,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 
 void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 &view=deviceContext.viewStruct.view;
 	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 	math::Matrix4x4 wvp,world;
@@ -636,7 +636,7 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 
 void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
@@ -671,7 +671,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
@@ -706,7 +706,7 @@ void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatf
 
 void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
@@ -747,8 +747,6 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	Viewport viewport;
 	viewport.w		=(int)(oldv.w*size);
 	viewport.h		=(int)(oldv.h*size);
-	viewport.zfar	=1.0f;
-	viewport.znear	=0.0f;
 	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
 	viewport.y		=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
@@ -1191,6 +1189,23 @@ namespace simul
 				texcXYWH.y=(float)v->y/(float)t->length;
 				texcXYWH.z=(float)v->w/(float)t->width;
 				texcXYWH.w=(float)v->h/(float)t->length;
+			}
+			else
+			{
+				texcXYWH=vec4(0,0,1.f,1.f);
+			}
+			return texcXYWH;
+		}
+		vec4 ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
+		{
+		
+			vec4 texcXYWH;
+			if(v&&t)
+			{
+				texcXYWH.x=(float)v->x/(float)t->width;
+				texcXYWH.y=(float)v->y/(float)t->length;
+				texcXYWH.z=(float)v->z/(float)t->width;
+				texcXYWH.w=(float)v->w/(float)t->length;
 			}
 			else
 			{

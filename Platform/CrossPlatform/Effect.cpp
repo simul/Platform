@@ -41,7 +41,12 @@ EffectPass::EffectPass()
 	:blendState(NULL)
 	,depthStencilState(NULL)
 	,rasterizerState(NULL)
-    ,renderTargetFormatState(NULL)
+	,renderTargetFormatState(NULL)
+	,numResourceSlots(0)
+	,numRwResourceSlots(0)
+	,numSbResourceSlots(0)
+	,numRwSbResourceSlots(0)
+	,numSamplerResourcerSlots(0)
 	,samplerSlots(0)
 	,constantBufferSlots(0)
 	,textureSlots(0)
@@ -50,11 +55,6 @@ EffectPass::EffectPass()
 	,rwTextureSlotsForSB(0)
 	,should_fence_outputs(true)
 	,platform_pass(nullptr)
-	,numResourceSlots(0)
-	,numRwResourceSlots(0)
-	,numSbResourceSlots(0)
-	,numRwSbResourceSlots(0)
-	,numSamplerResourcerSlots(0)
 {
 	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
 		shaders[i]=NULL;
@@ -782,7 +782,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	// Load all the .sb's
 	int pos					=0;
 	int next				=(int)str.find('\n',pos+1);
-	int line_number			=0;
+	//int line_number			=0;
 	enum Level
 	{
 		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,TOO_FAR=4
@@ -1341,7 +1341,7 @@ bool Shader::usesConstantBufferSlot(int s) const
 
 bool Shader::usesSamplerSlot(int s) const
 {
-	unsigned m=((unsigned)1<<(unsigned)s);
+	//unsigned m=((unsigned)1<<(unsigned)s);
 	return true;//(samplerSlots&m)!=0;
 }
 

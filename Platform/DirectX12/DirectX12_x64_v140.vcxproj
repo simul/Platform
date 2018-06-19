@@ -276,7 +276,6 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
@@ -287,6 +286,7 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSL\GFX.hlsl">

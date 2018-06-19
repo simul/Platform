@@ -8,10 +8,10 @@ using namespace crossplatform;
 
 SphericalHarmonics::SphericalHarmonics()
 	:bands(4)
-,sphericalHarmonicsEffect(nullptr)
-,shSeed(0)
-,lightProbesEffect(nullptr)
-, renderPlatform(nullptr)
+	,renderPlatform(nullptr)
+	,sphericalHarmonicsEffect(nullptr)
+	,shSeed(0)
+	,lightProbesEffect(nullptr)
 {
 }
 
@@ -78,29 +78,11 @@ float RoughnessFromMip(float mip, float numMips)
 
 void SphericalHarmonics::RenderMipsByRoughness(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *target)
 {
-	if (!lightProbesEffect)
-		RecompileShaders();
-	lightProbesEffect->SetConstantBuffer(deviceContext, &lightProbeConstants);
-	lightProbeConstants.numMips = target->mips;
 	for (int m = 0; m < target->mips - 1; m++)
 	{
-		lightProbeConstants.mipIndex = m+1;
-		lightProbeConstants.roughness = RoughnessFromMip(float(lightProbeConstants.mipIndex), float(target->mips) );
-		const char *passname = (lightProbeConstants.roughness < 0.01f) ? "smooth" : (lightProbeConstants.roughness < 0.99f ? "general" : "rough");
 		for (int j = 0; j < 6; j++)
 		{
-			lightProbeConstants.cubeFace = j; 
-			lightProbesEffect->SetConstantBuffer(deviceContext, &lightProbeConstants);
-			// The source is the i'th mip of the faceIndex face of the cubemap texture.
-			lightProbesEffect->SetTexture(deviceContext, "sourceCubemap", target, -1, m);
-			// The target is the (i+1)'th mip of the faceIndex face.
-			target->activateRenderTarget(deviceContext, j, m+1);
-			lightProbesEffect->Apply(deviceContext, mip_from_roughness_no_blend,passname);
-			renderPlatform->DrawQuad(deviceContext);
-			lightProbesEffect->UnbindTextures(deviceContext);
-			lightProbesEffect->Unapply(deviceContext);
-			target->deactivateRenderTarget(deviceContext);
-			SIMUL_BREAK_ONCE("deprecated")
+			CopyMip(deviceContext,target,j,m,0.0f);
 		}
 	}
 }
@@ -295,8 +277,8 @@ void SphericalHarmonics::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	if (!lightProbesEffect)
 		return;
 	math::Matrix4x4 invViewProj;
-//	mat4 view;
-	float cam_pos[] = { 0,0,0 };
+	//mat4 view;
+	//float cam_pos[] = { 0,0,0 };
 	crossplatform::EffectTechnique *tech = lightProbesEffect->GetTechniqueByName("irradiance_map");
 		// For each face, 
 		SIMUL_COMBINED_PROFILE_START(deviceContext, "RenderEnvmap draw")

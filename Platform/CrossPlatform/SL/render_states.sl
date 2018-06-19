@@ -4,7 +4,7 @@
 #include "states.sl"
 
 #ifdef SFX
-	RenderTargetFormatState OceanTargetFormats
+	RenderTargetFormatState WaterTargetFormats
 	{
 		TargetFormat[0] = FMT_32_ABGR;
 		TargetFormat[1] = FMT_FP16_ABGR;
@@ -13,10 +13,10 @@
 		TargetFormat[4] = FMT_32_ABGR;
 	};
 #else
-	#define OceanTargetFormats 0
+	#define WaterTargetFormats 0
 #endif
 
-BlendState OceanNoBlend
+BlendState WaterNoBlend
 {
 	BlendEnable[0] = FALSE;	
 	BlendEnable[1] = FALSE;

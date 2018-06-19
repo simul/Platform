@@ -94,7 +94,7 @@ namespace simul
             void CreateSyncObjects();
 		};
 
-        struct InmediateContext
+        struct ImmediateContext
         {
             ID3D12GraphicsCommandList*  ICommandList;
             ID3D12CommandAllocator*     IAllocator;
@@ -124,8 +124,8 @@ namespace simul
 			void*						GetDevice();
 			void*						GetDeviceContext();
 
-            void*                       GetInmediateCommandList();
-            void                        FlushInmediateCommandList();
+            void*                       GetImmediateCommandList();
+            void                        FlushImmediateCommandList();
 
 			void*						GetCommandQueue();
 			int							GetNumOutputs();
@@ -135,7 +135,7 @@ namespace simul
 			void						ReportMessageFilterState();
 
 		protected:
-            InmediateContext            mIContext;
+            ImmediateContext            mIContext;
 			//! Map of windows
 			WindowMap					mWindows;
 			//! Map of displays

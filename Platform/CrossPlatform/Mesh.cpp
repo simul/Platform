@@ -93,7 +93,7 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 
 void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
+	//ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(layout)
 		layout->Apply(deviceContext);
 	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLELIST);

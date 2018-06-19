@@ -206,16 +206,6 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
     </CustomBuild>
-    <CustomBuild Include="..\CrossPlatform\SFX\ocean.sfx">
-      <FileType>Document</FileType>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
-    </CustomBuild>
     <CustomBuild Include="..\CrossPlatform\SFX\optics.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
@@ -337,6 +327,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
     </CustomBuild>
+    <None Include="..\CrossPlatform\SFX\water.sfx" />
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\clouds_raytrace.sl" />
@@ -360,7 +351,6 @@
     <None Include="..\CrossPlatform\SL\mixed_resolution_constants.sl" />
     <None Include="..\CrossPlatform\SL\noise.sl" />
     <None Include="..\CrossPlatform\SL\noise_constants.sl" />
-    <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
     <None Include="..\CrossPlatform\SL\rain_constants.sl" />
     <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
@@ -380,6 +370,8 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics.sl" />
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
+    <None Include="..\CrossPlatform\SL\water.sl" />
+    <None Include="..\CrossPlatform\SL\water_constants.sl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_XboxOneXDK.vcxproj">

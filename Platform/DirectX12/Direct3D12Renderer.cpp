@@ -57,10 +57,6 @@ void Direct3D11Renderer::SetRenderDelegate(int view_id,crossplatform::RenderDele
 	renderDelegate[view_id]=d;
 }
 
-void Direct3D11Renderer::RegisterStartupDelegate(crossplatform::StartupDeviceDelegate d)
-{
-	startupDeviceDelegates.push_back(d);
-}
 
 void Direct3D11Renderer::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDelegate d)
 {

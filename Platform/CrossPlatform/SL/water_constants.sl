@@ -1,6 +1,6 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
-#ifndef OCEAN_CONSTANTS_SL
-#define OCEAN_CONSTANTS_SL
+#ifndef WATER_CONSTANTS_SL
+#define WATER_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(FftConstants,0)
 	uint thread_count;
@@ -37,9 +37,10 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform float		g_ShoreExtent;
 
 	// Perlin noise for distant wave crest
-	
-	uniform vec3		g_PerlinAmplitude;
+	uniform vec3		fnbhjdiosabh;
 	uniform float		g_PerlinSize;
+	uniform vec3		g_PerlinAmplitude;
+	uniform float		g_unityRender;
 	uniform vec3		g_PerlinOctave;
 	uniform float		g_oceanHeight;
 
@@ -76,10 +77,10 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec2		g_UVBase;
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
-	uniform bool		g_PassNo;
+	uniform float		gfuodsphu9inu;
 
 	uniform vec3		g_boundedDimension;
-	uniform float		gufidghvibhi;
+	uniform float		jghnufidosn;
 
 	uniform vec3		g_boundedLocation;
 	uniform float		g_boundedRotation;

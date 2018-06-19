@@ -167,6 +167,8 @@ SIMUL_ASSERT(result==S_OK);*/
 
 	// Create the rasterizer state from the description we just filled out.
 	result = d3dDevice->CreateRasterizerState(&rasterDesc, &m_rasterState);
+	if(renderer)
+		renderer->ResizeView(view_id,swapChainDesc.BufferDesc.Width,swapChainDesc.BufferDesc.Height);
 	SIMUL_ASSERT(result==S_OK);
 }
 
@@ -199,7 +201,8 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
-//		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+	// TODO: WHy was this disabled?:
+		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
@@ -345,7 +348,8 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
 		view_id				=renderer->AddView();
-//	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+	// TODO: Why was this disabled?
+	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::Release()

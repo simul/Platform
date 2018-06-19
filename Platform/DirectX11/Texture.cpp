@@ -1448,8 +1448,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
 	targetsAndViewport.viewport.w=(int)viewport.Width;
 	targetsAndViewport.viewport.h=(int)viewport.Height;
-	targetsAndViewport.viewport.zfar=1.0f;
-	targetsAndViewport.viewport.znear=0.0f;
 	targetsAndViewport.num=1;
 	
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);

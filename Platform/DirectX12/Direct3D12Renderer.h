@@ -43,7 +43,6 @@ namespace simul
 			virtual void	Render						(int,void* context,void* rendertexture);
 			virtual void	OnLostDevice				();
 			void			SetRenderDelegate			(int view_id,crossplatform::RenderDelegate d);
-			void			RegisterStartupDelegate		(crossplatform::StartupDeviceDelegate d);
 			void			RegisterShutdownDelegate	(crossplatform::ShutdownDeviceDelegate d);
 		};
 	}

@@ -4,16 +4,16 @@
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/states.sl"
-#include "../SL/ocean_constants.sl"
+#include "../SL/water_constants.sl"
+#include "../SL/water.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/debug_constants.sl"
 #include "../SL/depth.sl"
 #include "../SL/noise.sl"
 
-#define PATCH_BLEND_BEGIN		2000
-#define PATCH_BLEND_END			4000
+#define PATCH_BLEND_BEGIN		200
+#define PATCH_BLEND_END			10000
 
-#define PI 3.1415926536f
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
 
@@ -31,6 +31,7 @@ uniform Texture2D	g_foamAlpha					SIMUL_TEXTURE_REGISTER(6);		// Foam Alpha
 uniform Texture2D	g_surfaceFoamTexture		SIMUL_TEXTURE_REGISTER(7);		// Foam Surface colour
 uniform Texture2D	g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(8);		// Shore depth for shallow water effects
 uniform Texture2D	g_texDetailMapDisplacement	SIMUL_TEXTURE_REGISTER(9);		// Detail map displacement
+//uniform Texture2D	g_texPerlin					SIMUL_TEXTURE_REGISTER(10);		// Perlin map for tiling reduction
 
 uniform Texture2D	g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
 uniform Texture2D	g_waterAbsorption			SIMUL_TEXTURE_REGISTER(1);		// Absorption of the water, 4th value Salinity
@@ -46,12 +47,6 @@ uniform RWStructuredBuffer<float>	g_InputOmega:	register(u6);
 uniform StructuredBuffer<vec3>		g_ProbePos		SIMUL_TEXTURE_REGISTER(10);
 uniform StructuredBuffer<vec4>		g_ProbeValues	SIMUL_TEXTURE_REGISTER(11);
 uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
-
-struct TwoColourCompositeOutput
-{
-	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 multiply	SIMUL_RENDERTARGET_OUTPUT(1);
-};
 
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
 //SamplerState g_samplerDisplacement	now use nearestWrap
@@ -88,117 +83,6 @@ SamplerState bbbSamplerState SIMUL_STATE_REGISTER(8)
 	AddressV = BORDER;
 	AddressW = BORDER;
 };
-
-#define COS_PI_4_16 0.70710678118654752440084436210485f
-#define TWIDDLE_1_8 COS_PI_4_16, -COS_PI_4_16
-#define TWIDDLE_3_8 -COS_PI_4_16, -COS_PI_4_16
-
-#define COHERENCY_GRANULARITY 128
-
-#define RAND_MAX 0x7fff
-
-float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
-{
-	float fresnel;
-	float cos_incident = clamp(-1.0, 1.0, dot(incident, normal));
-
-	float sint = (sourceIndex / mediumIndex) * sqrt(max(0.0, 1 - (cos_incident * cos_incident)));
-	if (sint >= 1.0)
-	{
-		fresnel = 0.0;
-	}
-	else
-	{
-		float cost = sqrt(max(0.0, 1 - sint * sint));
-		cos_incident = abs(cos_incident);
-		float Rs = ((mediumIndex * cos_incident) - (sourceIndex * cost)) / ((mediumIndex * cos_incident) + (sourceIndex * cost));
-		float Rp = ((sourceIndex * cos_incident) - (mediumIndex * cost)) / ((sourceIndex * cos_incident) + (mediumIndex * cost));
-		fresnel = ((Rs * Rs + Rp * Rp) / 2.0);
-	}
-
-	return fresnel;
-
-}
-
-void FT2(inout float2 a, inout float2 b)
-{
-	float t;
-
-	t = a.x;
-	a.x += b.x;
-	b.x = t - b.x;
-
-	t = a.y;
-	a.y += b.y;
-	b.y = t - b.y;
-}
-
-void CMUL_forward(inout float2 a, float bx, float by)
-{
-	float t = a.x;
-	a.x = t * bx - a.y * by;
-	a.y = t * by + a.y * bx;
-}
-
-void UPD_forward(inout float2 a, inout float2 b)
-{
-	float A = a.x;
-	float B = b.y;
-
-	a.x += b.y;
-	b.y = a.y + b.x;
-	a.y -= b.x;
-	b.x = A - B;
-}
-
-
-void FFT_forward_4(inout float2 D[8])
-{
-	FT2(D[0], D[2]);
-	FT2(D[1], D[3]);
-	FT2(D[0], D[1]);
-
-	UPD_forward(D[2], D[3]);
-}
-
-void FFT_forward_8(inout float2 D[8])
-{
-	FT2(D[0], D[4]);
-	FT2(D[1], D[5]);
-	FT2(D[2], D[6]);
-	FT2(D[3], D[7]);
-
-	UPD_forward(D[4], D[6]);
-	UPD_forward(D[5], D[7]);
-
-	CMUL_forward(D[5], TWIDDLE_1_8);
-	CMUL_forward(D[7], TWIDDLE_3_8);
-
-	FFT_forward_4(D);
-	FT2(D[4], D[5]);
-	FT2(D[6], D[7]);
-}
-
-void TWIDDLE(inout float2 d, float phase)
-{
-	float tx, ty;
-
-	sincos(phase, ty, tx);
-	float t = d.x;
-	d.x = t * tx - d.y * ty;
-	d.y = t * ty + d.y * tx;
-}
-
-void TWIDDLE_8(inout float2 D[8], float phase)
-{
-	TWIDDLE(D[4], 1 * phase);
-	TWIDDLE(D[2], 2 * phase);
-	TWIDDLE(D[6], 3 * phase);
-	TWIDDLE(D[1], 4 * phase);
-	TWIDDLE(D[5], 5 * phase);
-	TWIDDLE(D[3], 6 * phase);
-	TWIDDLE(D[7], 7 * phase);
-}
 
 uniform StructuredBuffer<float2>	g_SrcData ;
 uniform RWStructuredBuffer<float2>	g_DstData ;
@@ -474,24 +358,6 @@ shader void UpdateProbeValuesCS(uint3 sub_pos : SV_DispatchThreadID)
 	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
 }
 
-struct VS_OUTPUT
-{
-	vec4 Position	: SV_POSITION;
-	vec2 texCoords	: TEXCOORD0;
-	vec3 LocalPos	: TEXCOORD1;
-	vec4 vecColour  : TEXCOORD2;
-	vec4 SurePosition : TEXCOORD3;
-};
-
-struct PS_WATER_OUTPUTS
-{
-	vec4 Depth			SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 Scattering		SIMUL_RENDERTARGET_OUTPUT(1);
-	vec4 Absorption		SIMUL_RENDERTARGET_OUTPUT(2);
-	vec4 Normals		SIMUL_RENDERTARGET_OUTPUT(3);
-	vec4 RefractColour	SIMUL_RENDERTARGET_OUTPUT(4);
-};
-
 //-----------------------------------------------------------------------------
 // Name: VS_OceanSurfVS
 // Type: Vertex shader									  
@@ -591,7 +457,7 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			layerY = cameraCenter.y - ySnapDifference;
 		}
 
-		int edgeNo = 0;
+		uint edgeNo = 0;
 		if (vertexNo >= boundingEdgeVerticies * 2)
 		{
 			edgeNo += 2;
@@ -934,8 +800,49 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 		vec3 eye_vec = pos_local.xyz - g_LocalEye;
 		float dist_2d = length(eye_vec.xy);
 		float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
-		blend_factor = 1.0;// clamp(blend_factor, 0, 1);
+		blend_factor = clamp(blend_factor, 0, 1);
 		
+		/*
+		// Add perlin noise to distant patches
+		float perlin = 0;
+		vec2 perlin_tc = uv_local * g_PerlinSize + g_UVBase;
+
+		if (blend_factor <= 1)
+		{
+			if (lerpDisplacement)
+			{
+				vec2 perlin_tc1 = uv_local1 * g_PerlinSize + g_UVBase;
+				vec2 perlin_tc2 = uv_local2 * g_PerlinSize + g_UVBase;
+				float perlin_01 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
+				float perlin_02 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
+				float perlin_11 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
+				float perlin_12 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
+				float perlin_21 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
+				float perlin_22 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
+
+				float perlin_0 = lerp(perlin_01, perlin_02, 0.5);
+				float perlin_1 = lerp(perlin_11, perlin_12, 0.5);
+				float perlin_2 = lerp(perlin_21, perlin_22, 0.5);
+
+				perlin = (perlin_0 * g_PerlinAmplitude.x + perlin_1 * g_PerlinAmplitude.y + perlin_2 * g_PerlinAmplitude.z);
+
+				float perlinTemp1 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc1 / 32.f + g_PerlinMovement / 4.f, 0).w;
+				float perlinTemp2 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc2 / 32.f + g_PerlinMovement / 4.f, 0).w;
+
+				//perlinMovement = lerp(perlinTemp1, perlinTemp2, 0.5);
+			}
+			else
+			{
+				float perlin_0 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
+				float perlin_1 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
+				float perlin_2 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
+
+				perlin = (perlin_0 * g_PerlinAmplitude.x + perlin_1 * g_PerlinAmplitude.y + perlin_2 * g_PerlinAmplitude.z);
+
+				//perlinMovement = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc / 32.f + g_PerlinMovement / 4.f, 0).w;
+			}
+		}
+		*/
 		// Displacement map
 		vec3 displacement = vec3(0, 0, 0);
 
@@ -952,10 +859,12 @@ VS_OUTPUT VS_OceanSurf(idOnly IN, bool shoreEffects)
 			}
 		}
 		
-		//Calclate Shore damping
+		//Calculate Shore damping
 		float shoreDepth = 1.0;
 		vec3 detailDisplacement = vec3(0.0, 0.0, 0.0);
 		float fade = 1.0;
+
+		//displacement = lerp(vec3(0, 0, perlin * g_WorldScale), displacement, blend_factor);
 
 		if (shoreEffects)
 		{
@@ -1024,7 +933,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	uint vertexNo = IN.vertex_id;
 	//if (vertexNo != g_totalVertices - 1) vertexNo++;
 	Output.vecColour = vec4(0.0, 0.0, 0.0, 1.0);
-	vec3 vPos = (0.0,0.0,0.0);
+	vec3 vPos = vec3(0.0,0.0,0.0);
 
 	uint boundingVerticies = ((((2 * g_boundedDensity.x) + 4) + ((2 * g_boundedDensity.y) + 4)) * 2);
 	uint xBoundingVerticies = (2 * g_boundedDensity.x) + 4;
@@ -1048,7 +957,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 		vertexNo -= 6;
 		//Bounding faces
 		if (vertexNo < boundingVerticies) {
-			int edgeNo = 0;
+			uint edgeNo = 0;
 			if (vertexNo >= boundingVerticies / 2)
 			{
 				edgeNo += 2;
@@ -1182,7 +1091,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 	//Disable refraction if camera is far enough away
 	if(enableRefraction)
-		if (surfaceDepth > 50.0)
+		if (length(eye_vec) > 100.0)
 		{
 			enableRefraction = false;
 		}
@@ -1208,9 +1117,29 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	float subsurfaceSample;
 	float subsurfaceDepth;
 
+	/*
+	float blend_factor = (PATCH_BLEND_END - length(eye_vec)) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
+	blend_factor = clamp(blend_factor * blend_factor * blend_factor, 0, 1);
+
+	// Compose perlin waves from three octaves
+	vec2 perlin_tc = In.texCoords * g_PerlinSize + g_UVBase;
+	vec2 perlin_tc0 = (blend_factor <= 1) ? perlin_tc * g_PerlinOctave.x + g_PerlinMovement : 0;
+	vec2 perlin_tc1 = (blend_factor <= 1) ? perlin_tc * g_PerlinOctave.y + g_PerlinMovement : 0;
+	vec2 perlin_tc2 = (blend_factor <= 1) ? perlin_tc * g_PerlinOctave.z + g_PerlinMovement : 0;
+
+	vec2 perlin_0 = g_texPerlin.Sample(g_samplerPerlin, perlin_tc0).xy;
+	vec2 perlin_1 = g_texPerlin.Sample(g_samplerPerlin, perlin_tc1).xy;
+	vec2 perlin_2 = g_texPerlin.Sample(g_samplerPerlin, perlin_tc2).xy;
+
+	vec2 perlin = (perlin_0 * g_PerlinGradient.x + perlin_1 * g_PerlinGradient.y + perlin_2 * g_PerlinGradient.z);
+	*/
 	//Calculate gradient
 	vec2 grad = ((g_texGradient.Sample(g_samplerGradient, In.texCoords).xy + g_texGradient.Sample(g_samplerGradient, In.texCoords / 3.95).xy) / 2.0);// *In.vecColour.w;
 	
+	//grad = lerp(perlin, grad, blend_factor);
+
+	grad += ddx(grad) + ddy(grad);
+
 	if (In.vecColour.z != 1.0)
 	{
 		grad *= In.vecColour.w;// ((g_texGradient.Sample(g_samplerGradient, fft_tc).xy + g_texGradient.Sample(g_samplerGradient, fft_tc / 3.95).xy) / 2.0);
@@ -1226,6 +1155,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	// Calculate normal here.
 	vec3 normal = normalize(vec3(grad.x, grad.y, 1.0)) ;
+
+	//normal += ddx(normal);
+	//normal += ddy(normal);
 
 	//Caluclate refraction
 	float tempsample = g_texDepth.Sample(clampSamplerState,TexCoord*g_DepthScale);
@@ -1256,7 +1188,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 			actualDepth = 0.0;
 			Output.Scattering = vec4(g_scattering, 0.0);
 			Output.Absorption = vec4(g_absorption, 0.0);
-			Output.RefractColour = vec4(0.0,0.0,0.0,0.0);
+			Output.RefractColour = vec4(0.0, 0.0, 0.0, 0.0);
 			Output.Normals = vec4(0.0, 0.0, 0.0, 0.0);
 			Output.Depth = vec4(0.0, 0.0, 0.0, 0.0);
 
@@ -1308,16 +1240,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	//else if (g_enableRefraction)
 		//TexCoord = lerp(TexCoord, ((vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + vec2(1.0, 1.0)) / 2.0), exp(tempsample - subsurfaceSample) );
 	
-	if (!frontFacing)
+	if (frontFacing)
 	{
-		finalDepth = -min(actualDepth, surfaceDepth);
-		if (subsurfaceDepth > actualDepth) {
-			backfaceOccluded = 1.0;
-		}
-	}
-	else 
-	{
-		if (subsurfaceDepth > surfaceDepth) 
+		if (subsurfaceDepth > surfaceDepth)
 		{
 			finalDepth = subsurfaceDepth - surfaceDepth;
 		}
@@ -1326,10 +1251,17 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 			finalDepth = 0.0;
 		}
 	}
+	else 
+	{
+		finalDepth = -min(actualDepth, surfaceDepth);
+		if (subsurfaceDepth > actualDepth) {
+			backfaceOccluded = 1.0;
+		}
+	}
 
 	if (enableFoam) //Make sure foam only generated for the ocean.
 	{
-		vec2 foamSamples = g_foamAlpha.Sample(wwcSamplerState, vec3(In.texCoords, 0));
+		vec2 foamSamples = g_foamAlpha.Sample(wwcSamplerState, vec3(In.texCoords, 0)).xy;
 
 		float bubbles = g_foamTexture.Sample(wwcSamplerState, vec3(In.texCoords * 4, 0)).x;
 		float surfaceFoamTextureSample = g_surfaceFoamTexture.Sample(wwcSamplerState, In.texCoords * 6.0).x / 2.0;
@@ -1397,22 +1329,22 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, g_enableFoam, false);
+	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing: frontFacing, g_enableFoam, false);
 }
 
 shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, false, false);
+	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing : frontFacing, false, false);
 }
 
 shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, g_enableFoam, true);
+	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing : frontFacing, g_enableFoam, true);
 }
 
 shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	return PS_WaterSurfDepth(In, frontFacing, false, true);
+	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing : frontFacing, false, true);
 }
 
 
@@ -1599,7 +1531,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 
 shader float4 CopyDepthStencilPS(posTexVertexOutput In) : SV_Target
 {
-	float4 Output = g_texDepth.Sample(wwcSamplerState, In.texCoords);
+	float4 Output =  g_texDepth.SampleLevel(wwcSamplerState, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
 	return Output;
 }
 
@@ -1751,10 +1683,10 @@ technique render_boundless_depth
 {
 	pass no_refraction
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderBackfaceCull);
+		SetRenderTargetFormatState(WaterTargetFormats);
+		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0 );
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0,VS_OceanSurfNoShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepth()));
@@ -1762,10 +1694,10 @@ technique render_boundless_depth
 
 	pass refraction_no_backface
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderBackfaceCull);
+		SetRenderTargetFormatState(WaterTargetFormats);
+		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfNoShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1773,10 +1705,10 @@ technique render_boundless_depth
 
 	pass refraction
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
+		SetRenderTargetFormatState(WaterTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfNoShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1787,10 +1719,10 @@ technique render_boundless_depth_shore
 {
 	pass no_refraction
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderBackfaceCull);
+		SetRenderTargetFormatState(WaterTargetFormats);
+		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepth()));
@@ -1798,10 +1730,10 @@ technique render_boundless_depth_shore
 
 	pass refraction_no_backface
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
-		SetRasterizerState(RenderBackfaceCull);
+		SetRenderTargetFormatState(WaterTargetFormats);
+		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1809,10 +1741,10 @@ technique render_boundless_depth_shore
 
 	pass refraction
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
+		SetRenderTargetFormatState(WaterTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_OceanSurfShore()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_OceanWaterSurfDepthRefraction()));
@@ -1823,10 +1755,10 @@ technique render_bounded_depth
 {
 	pass no_refraction
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
+		SetRenderTargetFormatState(WaterTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepth()));
@@ -1834,10 +1766,10 @@ technique render_bounded_depth
 
 	pass refraction
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
+		SetRenderTargetFormatState(WaterTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepthRefraction()));
@@ -1845,10 +1777,10 @@ technique render_bounded_depth
 
 	pass refraction_no_backface
 	{
-		SetRenderTargetFormatState(OceanTargetFormats);
+		SetRenderTargetFormatState(WaterTargetFormats);
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(OceanNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
+		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepthRefraction()));

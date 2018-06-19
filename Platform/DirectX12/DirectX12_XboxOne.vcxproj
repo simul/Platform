@@ -129,7 +129,6 @@
     <None Include="..\CrossPlatform\SL\noise_constants.sl" />
     <None Include="..\CrossPlatform\SL\nv_multi_res.sl" />
     <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl" />
-    <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
     <None Include="..\CrossPlatform\SL\quaternion.sl" />
     <None Include="..\CrossPlatform\SL\rain.sl" />
@@ -152,6 +151,8 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
+    <None Include="..\CrossPlatform\SL\water.sl" />
+    <None Include="..\CrossPlatform\SL\water_constants.sl" />
     <None Include="..\XboxOne\HLSL\HLSL12X.json" />
     <None Include="..\XboxOne\HLSL\shader_platform.sl" />
     <None Include="SimulUseWin8SDK.props" />
@@ -166,7 +167,6 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
@@ -177,8 +177,12 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_XboxOneXDK.vcxproj">
+      <Project>{8424aed1-3dbf-44fa-9cf9-7fbdf1c18596}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Geometry\Geometry_XboxOne.vcxproj">
       <Project>{9e740574-8f09-4485-b4eb-53abb425732b}</Project>
     </ProjectReference>

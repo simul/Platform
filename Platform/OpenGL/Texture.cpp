@@ -512,8 +512,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
     targetsAndViewport.viewport.y       = 0;
     targetsAndViewport.viewport.w       = std::max(1, (width >> mip_index));
     targetsAndViewport.viewport.h       = std::max(1, (length >> mip_index));
-    targetsAndViewport.viewport.zfar    = 1.0f;
-    targetsAndViewport.viewport.znear   = 0.0f;
 
     // Activate the render target and set the viewport:
     GLuint id = (GLuint)targetsAndViewport.m_rt[0];
