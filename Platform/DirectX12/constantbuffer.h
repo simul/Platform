@@ -34,7 +34,7 @@ namespace simul
 			
 		private:
 			//! Total allocated size for each buffer
-			static const UINT				mBufferSize = 1024 * 64 * 2;
+			static const UINT				mBufferSize = 1024 * 64 * 4;
 			//! Number of ring buffers
 			static const UINT				kNumBuffers = 3;
 			UINT							mSlots;

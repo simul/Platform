@@ -170,11 +170,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
 	if(hResult==S_OK)
 	{
-		if (pDest)
-		{
-			memset(pDest + offset, 0, kBufferAlign * mSlots);
-			memcpy(pDest + offset, addr, size);
-		}
+		memcpy(pDest + offset, addr, size);
 		const CD3DX12_RANGE unMapRange(0, 1);
 		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
