@@ -20,12 +20,9 @@ RenderDelegater::~RenderDelegater()
 	OnLostDevice();
 }
 
-void RenderDelegater::OnCreateDevice(void* dev)
+void RenderDelegater::SetRenderPlatform(crossplatform::RenderPlatform *r)
 {
-	device=dev;
-	for(auto d:startupDeviceDelegates)
-		d(device);
-	renderPlatform->RestoreDeviceObjects(device);
+	renderPlatform=r;
 }
 
 void RenderDelegater::OnLostDevice()
@@ -51,11 +48,6 @@ void RenderDelegater::ResizeView(int view_id,int w,int h)
 void RenderDelegater::SetRenderDelegate(int view_id,crossplatform::RenderDelegate d)
 {
 	renderDelegate[view_id]=d;
-}
-
-void RenderDelegater::RegisterStartupDelegate(crossplatform::StartupDeviceDelegate d)
-{
-	startupDeviceDelegates.push_back(d);
 }
 
 void RenderDelegater::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDelegate d)

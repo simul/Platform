@@ -29,18 +29,17 @@ namespace simul
 			void *device;
 			int last_view_id;
 			unsigned long long frame;
+			simul::crossplatform::RenderPlatform *renderPlatform;
 		public:
 			RenderDelegater(crossplatform::RenderPlatform *r,simul::base::MemoryInterface *m);
 			~RenderDelegater();
-			simul::crossplatform::RenderPlatform *renderPlatform;
-			virtual void	OnCreateDevice				(void* pd3dDevice);
+			virtual void SetRenderPlatform(crossplatform::RenderPlatform *r);
 			virtual int		AddView						();
 			virtual void	RemoveView					(int);
 			virtual void	ResizeView					(int view_id,int w,int h);
 			virtual void	Render						(int,void* context,void* rendertarget,int w,int h);
 			virtual void	OnLostDevice				();
 			void			SetRenderDelegate			(int view_id,crossplatform::RenderDelegate d);
-			void			RegisterStartupDelegate		(crossplatform::StartupDeviceDelegate d);
 			void			RegisterShutdownDelegate	(crossplatform::ShutdownDeviceDelegate d);
 		};
 	}

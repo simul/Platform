@@ -60,7 +60,6 @@ namespace simul
 		{
 			int x,y;
 			int w,h;
-			float znear,zfar;
 		};
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;

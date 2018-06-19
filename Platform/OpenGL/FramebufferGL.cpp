@@ -223,8 +223,6 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
     targetsAndViewport.viewport.y       = 0;
     targetsAndViewport.viewport.w       = Width;
     targetsAndViewport.viewport.h       = Height;
-    targetsAndViewport.viewport.zfar    = 1.0f;
-    targetsAndViewport.viewport.znear   = 0.0f;
 
     deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
 

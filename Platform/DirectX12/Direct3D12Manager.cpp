@@ -760,7 +760,7 @@ void* Direct3D12Manager::GetDeviceContext()
 	return 0; 
 }
 
-void* Direct3D12Manager::GetInmediateCommandList()
+void* Direct3D12Manager::GetImmediateCommandList()
 {
     if (!mIContext.ICommandList)
     {
@@ -772,7 +772,7 @@ void* Direct3D12Manager::GetInmediateCommandList()
 
     if (mIContext.IRecording)
     {
-        FlushInmediateCommandList();
+        FlushImmediateCommandList();
     }
 
     mIContext.IAllocator->Reset();
@@ -782,7 +782,7 @@ void* Direct3D12Manager::GetInmediateCommandList()
     return mIContext.ICommandList;
 }
 
-void Direct3D12Manager::FlushInmediateCommandList()
+void Direct3D12Manager::FlushImmediateCommandList()
 {
     if (!mIContext.IRecording)
     {

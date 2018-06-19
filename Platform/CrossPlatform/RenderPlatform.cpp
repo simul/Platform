@@ -747,8 +747,6 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	Viewport viewport;
 	viewport.w		=(int)(oldv.w*size);
 	viewport.h		=(int)(oldv.h*size);
-	viewport.zfar	=1.0f;
-	viewport.znear	=0.0f;
 	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
 	viewport.y		=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
@@ -1191,6 +1189,23 @@ namespace simul
 				texcXYWH.y=(float)v->y/(float)t->length;
 				texcXYWH.z=(float)v->w/(float)t->width;
 				texcXYWH.w=(float)v->h/(float)t->length;
+			}
+			else
+			{
+				texcXYWH=vec4(0,0,1.f,1.f);
+			}
+			return texcXYWH;
+		}
+		vec4 ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
+		{
+		
+			vec4 texcXYWH;
+			if(v&&t)
+			{
+				texcXYWH.x=(float)v->x/(float)t->width;
+				texcXYWH.y=(float)v->y/(float)t->length;
+				texcXYWH.z=(float)v->z/(float)t->width;
+				texcXYWH.w=(float)v->w/(float)t->length;
 			}
 			else
 			{
