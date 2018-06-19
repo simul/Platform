@@ -199,9 +199,6 @@
     <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="..\CrossPlatform\SL\ocean_constants.sl">
-      <Filter>SL</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\optics_constants.sl">
       <Filter>SL</Filter>
     </None>
@@ -274,6 +271,12 @@
     <None Include="..\XboxOne\HLSL\HLSL12X.json">
       <Filter>HLSL</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\water.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\water_constants.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
@@ -301,9 +304,6 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
@@ -334,6 +334,9 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
   </ItemGroup>

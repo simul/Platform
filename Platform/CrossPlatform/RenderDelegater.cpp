@@ -10,8 +10,8 @@ using namespace crossplatform;
 RenderDelegater::RenderDelegater(crossplatform::RenderPlatform *r,simul::base::MemoryInterface *m)
 	:device(nullptr)
 	,last_view_id(0)
-	,renderPlatform(r)
 	,frame(0)
+	,renderPlatform(r)
 {
 }
 

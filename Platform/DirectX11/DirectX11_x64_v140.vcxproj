@@ -421,7 +421,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(SIMUL)\Media\shaderbin\%(Filename).fxo</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Media\shaderbin\%(Filename).fxo</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\ocean.sfx">
+    <FxCompile Include="..\CrossPlatform\SFX\water.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">Effect</ShaderType>
@@ -644,7 +644,7 @@
     <None Include="..\CrossPlatform\SL\noise_constants.sl" />
     <None Include="..\CrossPlatform\SL\nv_multi_res.sl" />
     <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl" />
-    <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
+    <None Include="..\CrossPlatform\SL\water_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
     <None Include="..\CrossPlatform\SL\quaternion.sl" />
     <None Include="..\CrossPlatform\SL\rain.sl" />
@@ -664,10 +664,12 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
+    <None Include="..\CrossPlatform\SL\water.sl" />
     <None Include="HLSL\CppHLSL.hlsl" />
     <None Include="HLSL\shader_platform.sl" />
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
+    <None Include="water.sl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">

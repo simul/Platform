@@ -8,10 +8,10 @@ using namespace crossplatform;
 
 SphericalHarmonics::SphericalHarmonics()
 	:bands(4)
-,sphericalHarmonicsEffect(nullptr)
-,shSeed(0)
-,lightProbesEffect(nullptr)
-, renderPlatform(nullptr)
+	,renderPlatform(nullptr)
+	,sphericalHarmonicsEffect(nullptr)
+	,shSeed(0)
+	,lightProbesEffect(nullptr)
 {
 }
 
@@ -295,8 +295,8 @@ void SphericalHarmonics::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	if (!lightProbesEffect)
 		return;
 	math::Matrix4x4 invViewProj;
-//	mat4 view;
-	float cam_pos[] = { 0,0,0 };
+	//mat4 view;
+	//float cam_pos[] = { 0,0,0 };
 	crossplatform::EffectTechnique *tech = lightProbesEffect->GetTechniqueByName("irradiance_map");
 		// For each face, 
 		SIMUL_COMBINED_PROFILE_START(deviceContext, "RenderEnvmap draw")

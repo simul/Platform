@@ -600,7 +600,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 
 void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 &view=deviceContext.viewStruct.view;
 	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 	math::Matrix4x4 wvp,world;
@@ -636,7 +636,7 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 
 void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
@@ -671,7 +671,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
@@ -706,7 +706,7 @@ void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatf
 
 void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour)
 {
-	Viewport viewport=GetViewport(deviceContext,0);
+	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
