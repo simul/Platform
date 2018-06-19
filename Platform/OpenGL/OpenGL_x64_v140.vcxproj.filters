@@ -317,9 +317,6 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
@@ -351,6 +348,9 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
   </ItemGroup>
