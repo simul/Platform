@@ -264,12 +264,6 @@
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
     </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
-      <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
-    </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
@@ -391,6 +385,7 @@
     <None Include="GLSL\GLSL.json" />
     <None Include="GLSL\shader_platform.sl" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
