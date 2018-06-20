@@ -350,8 +350,8 @@ shader void UpdateProbeValuesCS(uint3 sub_pos : SV_DispatchThreadID)
 	vec2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_UVScale2) + g_UVOffset2);
 	vec3 displacement = g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xyz;
 
-	vec2 grad = ((g_texGradient.SampleLevel(wwcSamplerState, uv_local, 0).xy + g_texGradient.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xy) / 2.0);// *In.vecColour.w;
-	vec3 normal = normalize(vec3(grad.x, grad.y, 1.0)) * 0.1;
+	//vec2 grad = ((g_texGradient.SampleLevel(wwcSamplerState, uv_local, 0).xy + g_texGradient.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xy) / 2.0);// *In.vecColour.w;
+	//vec3 normal = normalize(vec3(grad.x, grad.y, 1.0)) * 0.1;
 
 	displacement *= 0.1;
 	float height = (displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z;
