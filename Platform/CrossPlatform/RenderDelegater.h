@@ -20,18 +20,17 @@ namespace simul
 		/// A class that faces the raw API and implements PlatformRendererInterface
 		/// in order to translate to the platform-independent renderer.
 		class SIMUL_CROSSPLATFORM_EXPORT RenderDelegater
-			:public crossplatform::PlatformRendererInterface
+			:public PlatformRendererInterface
 		{
 			std::unordered_map<int,crossplatform::RenderDelegate> renderDelegate;
 			std::unordered_map<int,int2> viewSize;
 			std::vector<crossplatform::StartupDeviceDelegate> startupDeviceDelegates;
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
-			void *device;
 			int last_view_id;
 			unsigned long long frame;
 			simul::crossplatform::RenderPlatform *renderPlatform;
 		public:
-			RenderDelegater(crossplatform::RenderPlatform *r,simul::base::MemoryInterface *m);
+			RenderDelegater(crossplatform::RenderPlatform *r=nullptr);
 			~RenderDelegater();
 			virtual void SetRenderPlatform(crossplatform::RenderPlatform *r);
 			virtual int		AddView						();
