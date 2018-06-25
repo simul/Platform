@@ -183,7 +183,6 @@
     <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D11Manager.cpp" />
-    <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
@@ -204,7 +203,6 @@
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D11Manager.h" />
     <ClInclude Include="Direct3D11ManagerInterface.h" />
-    <ClInclude Include="direct3d11renderer.h" />
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />

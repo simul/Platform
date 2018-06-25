@@ -47,9 +47,6 @@
     <ClCompile Include="Direct3D12Manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Direct3D12Renderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GpuProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -95,9 +92,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Direct3D12ManagerInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Direct3D12Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GpuProfiler.h">

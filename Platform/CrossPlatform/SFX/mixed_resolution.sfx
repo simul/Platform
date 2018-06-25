@@ -137,8 +137,8 @@ bool GetStochasticSamples_twoEyes(Texture2D sourceDepthTexture
 {
 	// Stochastic offset goes from -1 to +1
 	vec2 texCoords[2];
-	texCoords[0] = sourceTexCoords[0] + .3*texelRange*stochasticOffset;// / vec2(scale);
-	texCoords[1] = sourceTexCoords[1] + .3*texelRange*stochasticOffset;// / vec2(scale);
+	texCoords[0] = sourceTexCoords[0] + .3*texelRange*stochasticOffset;
+	texCoords[1] = sourceTexCoords[1] + .3*texelRange*stochasticOffset;
 	vec4 fn = vec4(0.0, 1.0, 0.0, 1.0);
 	vec2 thr = vec2(nearThresholdDist, nearThresholdDist);
 	vec2 offsets[3];
@@ -159,6 +159,11 @@ bool GetStochasticSamples_twoEyes(Texture2D sourceDepthTexture
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				if(d.x>=1.0)
+					continue;
+			}
+			else
+			{
+				if(d.x<=0.0)
 					continue;
 			}
 			vec2 dist = depthToFadeDistance(d, frustum_clip_pos[j].xy, depthInterpretationStruct, tanHalfFov);
@@ -364,13 +369,13 @@ void DownscaleStochastic_twoEyes(uint3 idx,bool depth,bool reverseDepth,bool two
 	float oldDepthValid = u.b;
 	if (depth)
 	{
-	DepthInterpretationStruct ds;
-	ds.depthToLinFadeDistParams		= depthToLinFadeDistParams;
-	ds.reverseDepth					= reverseDepth;
-	vec4 res						= vec4(0, 0, 0, 0);
-	bool any_result					= false;
-	if (!invalid0 && !invalid1)
-	{
+		DepthInterpretationStruct ds;
+		ds.depthToLinFadeDistParams		= depthToLinFadeDistParams;
+		ds.reverseDepth					= reverseDepth;
+		vec4 res						= vec4(0, 0, 0, 0);
+		bool any_result					= false;
+		if (!invalid0 && !invalid1)
+		{
 			if(msaa)
 				any_result	=GetStochasticSamples_twoEyes_MSAA(sourceMSDepthTexture
 																, sourceTexCoords
@@ -384,15 +389,15 @@ void DownscaleStochastic_twoEyes(uint3 idx,bool depth,bool reverseDepth,bool two
 																, res);
 			else
 				any_result = GetStochasticSamples_twoEyes(sourceDepthTexture
-			, sourceTexCoords
-			, frustum_clip_pos
-			, texelRange
-			, ds
-			, tanHalfFov
-			, nearThresholdDepth
-			, stochasticOffset
-			, scale
-			, res);
+														, sourceTexCoords
+														, frustum_clip_pos
+														, texelRange
+														, ds
+														, tanHalfFov
+														, nearThresholdDepth
+														, stochasticOffset
+														, scale
+														, res);
 	}
 	else
 	{
@@ -419,21 +424,21 @@ void DownscaleStochastic_twoEyes(uint3 idx,bool depth,bool reverseDepth,bool two
 			, stochasticOffset
 			, scale, false,j,res);
 		}
-	if(!any_result)
-	{
-		nextUpdateTexture[idx]=vec4(0,0,0,0);
-		return;
-	}
-	targetTexture[idx]		=res;
-	vec4 oldAggregateDepth	=sourceTexture1[idx];
-	// If the far depth (x) has radically increased, we need to fill in behind:
-		oldDepthValid		=u.b*step((res.x-oldAggregateDepth.x),0.01)*step(oldAggregateDepth.y-res.y,0.01);//+saturate(res.y-oldAggregateDepth.y));
-	// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
-	if(u.b==0)
-	{
-		targetTexture2[idx]		=res;
-		targetTexture3[idx]		=res;
-	}
+		if(!any_result)
+		{
+			nextUpdateTexture[idx]=vec4(0,0,0,0);
+			return;
+		}
+		targetTexture[idx]		=res;
+		vec4 oldAggregateDepth	=sourceTexture1[idx];
+		// If the far depth (x) has radically increased, we need to fill in behind:
+			oldDepthValid		=u.b*step((res.x-oldAggregateDepth.x),0.01)*step(oldAggregateDepth.y-res.y,0.01);//+saturate(res.y-oldAggregateDepth.y));
+		// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
+		if(u.b==0)
+		{
+			targetTexture2[idx]		=res;
+			targetTexture3[idx]		=res;
+		}
 	}
 	nextUpdateTexture[idx] = vec4(u.b, oldDepthValid, 1.0, 0.0);
 }
