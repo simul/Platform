@@ -667,7 +667,6 @@
     <None Include="HLSL\shader_platform.sl" />
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
-    <None Include="water.sl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
