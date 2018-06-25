@@ -311,9 +311,6 @@
     <None Include="..\CrossPlatform\SL\clouds_lightpass.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="water.sl">
-      <Filter>SL</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\water.sl">
       <Filter>SL</Filter>
     </None>
