@@ -12,6 +12,7 @@
 #ifndef CLOUD_DEFS_ONLY
 
 SamplerState cloudSamplerState: register( s0);
+
 struct RaytracePixelOutput
 {
 	vec4 colour[NUM_CLOUD_INTERP];
@@ -28,7 +29,6 @@ float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
 	return max(1.0,(Beta+lightResponse.y)+ambientColour.b);
 }
-
 
 vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volumeTexCoords,Texture2D lightTableTexture
 				,vec4 density,vec4 light,float Beta,vec4 lightResponse,vec3 ambientColour
