@@ -551,9 +551,9 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 	//outputTexture3d[pos].rgba=res;
 }
-// Given texture position from texCoords, convert to a worldpos with shadowMatrix.
-// Then, trace towards sun to find initial intersection with cloud volume
-// Then trace down to find first intersection with clouds, if any. 
+
+//Unity cloud shadow generator
+//Get new texcoords by rotating and scaling the old texcoords so texture will be prjected correctly over the scene
 shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
 {
 	float tempLength = sqrt(pow(directionToSun.x, 2) + pow(directionToSun.y, 2));
