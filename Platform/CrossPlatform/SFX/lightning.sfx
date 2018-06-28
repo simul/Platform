@@ -1,7 +1,4 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
-
-// PS4 register overrun - must fix
-#pragma warning(disable:7203)
+//  Copyright (c) 2015-2018 Simul Software Ltd. All rights reserved.
 
 #include "shader_platform.sl"
 
@@ -12,42 +9,17 @@
 #include "../SL/render_states.sl"
 #include "../SL/noise.sl"
 
-uniform Texture2D lightningTexture;
-uniform Texture2D depthTexture;
-uniform Texture2DMS<vec4> depthTextureMS;
-uniform TextureCube cloudDepthTexture;
-uniform Texture2D randomTexture;
-uniform StructuredBuffer<LightningVertex> vertices;
+uniform TextureCube cloudDepthTexture 					SIMUL_TEXTURE_REGISTER(0);
+uniform Texture2D randomTexture 						SIMUL_TEXTURE_REGISTER(1);	
+uniform Texture2D depthTexture 							SIMUL_TEXTURE_REGISTER(2);
+uniform StructuredBuffer<LightningVertex> 	vertices;
 uniform RWStructuredBuffer<LightningVertex> verticesRW;
  
 shader vec4 PS_Random(posTexVertexOutput IN) : SV_TARGET
 {
-	// Range from -1 to 1.
 	vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
-	//vec4 c=vec4(SphericalRandom(IN.texCoords),2.0*rand(513.1*IN.texCoords)-1.0);
     return c;
 }
-
-struct F_Vertex
-{
-    vec3 position	: POSITION;
-    vec2 texcoord	: TEXCOORD0;
-    float progress	: TEXCOORD1;
-};
-
-struct F_IdVertex
-{
-    vec3 position	: POSITION;
-    vec2 texcoord	: TEXCOORD0;
-    float progress	: TEXCOORD1;
-	uint vertex_id	: TEXCOORD2;
-};
-
-struct F_Vertex_out
-{
-    vec4 hPosition	: SV_Position;
-};
-
 
 CS_LAYOUT(1, 1, 1)
 shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
@@ -55,17 +27,18 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 	int MAX_OCTAVES = 7;
 	vec3 off		= vec3(1.0,1.0,0.0)*roughness;
 	float t 		= phaseTime;
-	int steps 		= 1 << MAX_OCTAVES;
+	int steps 		= 1 << MAX_OCTAVES; // 128
 	int delta 		= steps;
-	// Setup tmp positions
-	vec3 outpos[130];
-	outpos[0]		=startPos;
-	outpos[steps]	=endPos;
+
+	// Setup and array to hold all the tmp vertices:
+	vec3 outpos[129];
+	outpos[0]		= startPos;
+	outpos[steps]	= endPos;
 
 	// Mid point displacement over MAX_OCTAVES
-	for(int i=0;i<MAX_OCTAVES;i++)
+	for(int i = 0; i < MAX_OCTAVES; i++)
 	{
-		for(int j = int(delta*0.5);j<steps;j+=delta)
+		for(int j = int(delta*0.5); j < steps; j += delta)
 		{
 			vec3 start = outpos[j - int(delta * 0.5)];
 			vec3 end   = outpos[j + int(delta * 0.5)];
@@ -78,7 +51,7 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 
 			vec3 mid 	= 0.5 * (start + end);
 			float angle	= nlk.x*2.0*3.14159;
-			// We add some rotation too it
+			// Add random rotation
 			mid			+=off * nlk.y * (XX * cos(angle) + YY * sin(angle));
 
 			outpos[j]	= mid;
@@ -92,7 +65,7 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 	{
 		OUT.position   	= outpos[r];
 		OUT.texCoords	= vec2(strikeThicknessMetres,brightness);
-		OUT.progress	= r/float(129);
+		OUT.progress	= r/float(128);
 		verticesRW[r] 	= OUT;
 	}
 }
@@ -100,83 +73,102 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 CS_LAYOUT(1, 1, 1)
 shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 {
-	uint branch_start_id 	= 33 * idx.x;
-	LightningVertex OUT;
+	int MAX_OCTAVES_BRANCH 	= 5;
+	int steps				= 1 << MAX_OCTAVES_BRANCH;  // 32
+	int numVtx				= steps + 1; 				// 33
+	int delta 				= steps;
 
-	// To get an "average" direction we will take as end point
-	// a position further in the strike
-	int randPos = int((rand(randomSeed) + 1.0 * 0.5) * 29.0);
-	LightningVertex IN0 	= vertices[randPos + 0];
-	LightningVertex IN1 	= vertices[randPos + 1];
+	LightningVertex OUT; 	
+ 	LightningVertex IN0;
+ 	LightningVertex IN1;
 
-	vec3 startP		= IN0.position;
-	vec3 parentEndP	= IN1.position;
+ 	// Parent level is trunk
+ 	if(curLevel == 1)
+ 	{
+ 		int rndStart 	= int(rand(randomSeed * (idx.x + 1)) * 100.0);
+ 		rndStart 		+= 27;
+ 		IN0 			= vertices[rndStart];
+		IN1 			= vertices[128];
+ 	}
+ 	// Parent level is another branch
+ 	else
+ 	{
+ 		// Find the parent branch offset
+ 		// numBranches = the requested number of branches (storm properties)
+ 		int parentBranchOff = int(idx.x  / numBranches) * numVtx;
+ 		int rndStart 		= int(rand(randomSeed * (idx.x + 1)) * 15.0);
+ 		rndStart			+= 15;
+ 		IN0 				= vertices[parentBranchOff + rndStart];
+		IN1 				= vertices[parentBranchOff + 32];
+ 	}
+
+	vec3 startP				= IN0.position;
+	vec3 parentEndP			= IN1.position;
 
 	// This is the direction of the parent branch
-	vec3 parentDir	= normalize(parentEndP-startP);
+	vec3 parentDir			= normalize(parentEndP - startP);
 	// Now we will create a random vector from it
-	vec2 noise_texc	=vec2(	0.3 * float(branchInterval) * float(randomSeed * idx.x)+0.77 * float(parent_point),
-							1.92 * float(branchInterval) + 0.34 * float(parent_point));
-	vec3 rndvec		=texture_wrap_lod(randomTexture,noise_texc,0).xyz;
-	float along		=dot(rndvec,parentDir);
-	rndvec			-=along*parentDir;
-	rndvec			=normalize(rndvec);
-	vec3 dir		=parentDir*cos(branchAngleRadians)+rndvec*sin(branchAngleRadians);
-
-	float v = 1.0;
-	vec3 adj		=vec3(1.0,1.0,1.0);
-	dir				*=adj;
-	dir				=normalize(dir);
+	vec2 noise_texc			= vec2( 0.3 * float(branchInterval) * float(randomSeed * (idx.x + 1))+0.77 * float(parent_point),1.92 * float(branchInterval) + 0.34 * float(parent_point));
+	vec3 rndvec				= texture_wrap_lod(randomTexture,noise_texc,0).xyz;
+	float along				= dot(rndvec,parentDir);
+	rndvec			        -= along * parentDir;
+	rndvec					= normalize(rndvec);
+	vec3 dir				= parentDir * cos(branchAngleRadians) + rndvec * sin(branchAngleRadians);
+	dir						= normalize(dir);
+	
 	// Create a end point along the random direction:
-	vec3 endP		= startP + dir * branchLengthMetres;
+	float randLen 			= rand(randomSeed * (idx.x + 1)) * branchLengthMetres;
+	randLen					+= branchLengthMetres * 0.25; // smallest branch 1/4 of the lenght
+	randLen 				= min(branchLengthMetres,randLen);
+	vec3 endP				= startP + dir * randLen;
+	endP.z 					= max(endP.z,0.0);
 
-	int num_steps		=1<<num_octaves;
-	int num_pts			=num_steps+1; // 33
 	vec3 outpos[33];
-	outpos[0]			=startP;
-	outpos[num_steps]	=endP;
-	int del				=num_steps;
-
-	// Assign initial values to the output buffer:
-	OUT.texCoords			= vec2(0.0,0.0);
-	OUT.position			= startP;
-	OUT.progress 			= 0.0;
-	verticesRW[num_pts * idx.x]   				= OUT;
-
-	OUT.position    		= endP;
-	OUT.progress    		= 1.0;
-	verticesRW[(num_pts * idx.x) + num_steps]	= OUT;
+	outpos[0]				= startP;
+	outpos[steps]			= endP;
 
 	float persistence	= 0.8;
 	float time			= phaseTime;
-	vec3 off 			= vec3(roughness,roughness,roughness);
-	for(int i=0;i<num_octaves;i++)
-	{
-		for(int j=int(del*0.5);j<num_steps;j+=del)
-		{
-			vec3 s 				=outpos[j - int(del * 0.5)];
-			vec3 e 				=outpos[j + int(del * 0.5)];
-			vec3 XX 			=cross(vec3(1.0,0.0,0.0),(s-e));
-			vec3 YY 			=cross(vec3(0.0,1.0,0.0),(s-e));
-			vec3 x 				=0.5*(s+e);
-			vec2 noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
-			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
-			float angle			=noise_lookup.x*2.0*3.14159;
-			x 					+=off*(XX*cos(angle)+YY*sin(angle));
-			outpos[j]=x;
-			{
-				float v				=float(j)/float(num_pts);
-				float c				=saturate(float(num_pts-j)/5.0);
-				float br			=brightness*saturate(float(num_steps-j)/5.0);
-				OUT.position		=outpos[j];
-				OUT.texCoords		=c*vec2(strikeThicknessMetres,br);
-				OUT.progress		=IN0.progress+v;
+	vec3 off 			= vec3(1.0,1.0,1.0)*roughness;
 
-				verticesRW[branch_start_id+j]=OUT;
-			}
+	// Mid point displacement over MAX_OCTAVES_BRANCH
+	for(int i = 0; i < MAX_OCTAVES_BRANCH; i++)
+	{
+		for(int j = int(delta * 0.5); j < steps; j += delta)
+		{
+			vec3 s 				= outpos[j - int(delta * 0.5)];
+			vec3 e 				= outpos[j + int(delta * 0.5)];
+			vec3 XX 			= cross(vec3(1.0,0.0,0.0),(s-e));
+			vec3 YY 			= cross(vec3(0.0,1.0,0.0),(s-e));
+			vec3 x 				= 0.5*(s+e);
+
+			vec2 noise_texc		= vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
+			vec4 noise_lookup	= texture_wrap_lod(randomTexture,noise_texc,0);
+			float angle			= noise_lookup.x*2.0*3.14159;
+			x 					+=off*(XX*cos(angle)+YY*sin(angle));
+
+			outpos[j]			= x;
 		}
-		del  =int(del * 0.5);
-		time *=2.0;
+		delta  	= int(delta * 0.5);
+		time 	*= 2.0;
+	}
+
+	// Store the vertices
+	for(int i = 0; i < numVtx; i++)
+	{
+		//float v				= float(j)/float(numVtx);
+		//float c				= saturate(float(numVtx-j)/5.0);
+		//float br			= brightness*saturate(float(numVtx-j)/5.0);
+		//OUT.position		= outpos[j];
+		//OUT.texCoords		= c*vec2(strikeThicknessMetres,br);
+		//OUT.progress		= IN0.progress+v;
+
+		//OUT.position 		= vec3(numVtx * idx.x,(numVtx * idx.x) + numVtx,branch_start_id+j);
+
+		OUT.position 	= outpos[i];
+		OUT.progress 	= float(i) / float(steps);
+		OUT.texCoords 	= vec2(0,0);
+		verticesRW[i + (numVtx * idx.x)]	= OUT;
 	}
 }
 
@@ -225,12 +217,12 @@ struct transformedThinVertex
 
 shader transformedThinVertex VS_Thin(idOnly id)
 {
-    transformedThinVertex OUT;
+	transformedThinVertex OUT;
 
-    int idx 			=int(id.vertex_id + branchIndex + 2);
-	LightningVertex IN 	=vertices[idx];
+    int idx 			=int(id.vertex_id + branchIndex);
+    LightningVertex IN 	=vertices[idx];
+	
     OUT.hPosition		=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
-	//OUT.view			=vec3(0,1,0);//normalize(IN.position.xyz-viewPosition);
 	OUT.view			=normalize(viewPosition - IN.position.xyz);
 	OUT.brightness		=IN.texCoords.y*10.0;
 	OUT.depth			=OUT.hPosition.z/OUT.hPosition.w;
@@ -354,28 +346,25 @@ shader transformedVertex VS_Thick(idOnly id)
 	vec2 mitre1_a=mitre1;
 	vec2 mitre1_b=mitre1;
 
+	// Calc screen position:
 	if (left_right == 0)
 	{
 		OUT.screenPos = (p1 + lengthPixels_a * mitre1_a) / viewportPixels;
-		OUT.hPosition = vec4(OUT.screenPos.xy*start.w, start.z, start.w);
-		OUT.texc = OUT.screenPos.xy*0.5 + 0.5;
-		OUT.along = 0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2*1.1-0.05;
-		OUT.brightness = brightness1;
-		OUT.endpoint = endpoint;
-		OUT.progress = IN[1].progress;
-		OUT.clipPos = OUT.hPosition;
 	}
 	else
 	{
 		OUT.screenPos = (p1 - lengthPixels_a * mitre1_b) / viewportPixels;
-		OUT.hPosition = vec4(OUT.screenPos.xy*start.w, start.z, start.w);
-		OUT.texc = OUT.screenPos.xy*0.5 + 0.5;
-		OUT.along = 0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-		OUT.brightness = brightness1;
-		OUT.endpoint = endpoint;
-		OUT.progress = IN[1].progress;
-		OUT.clipPos = OUT.hPosition;
 	}
+
+	// Fill the rest of the out struct:
+	OUT.hPosition 	= vec4(OUT.screenPos.xy*start.w, start.z, start.w);
+	OUT.texc 		= OUT.screenPos.xy * 0.5 + 0.5;
+	OUT.along 		= 0.0;
+	OUT.brightness 	= brightness1;
+	OUT.endpoint 	= endpoint;
+	OUT.progress 	= IN[1].progress;
+	OUT.clipPos 	= OUT.hPosition;
+
 	return OUT;
 }
 
@@ -384,13 +373,13 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
+	
 	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec2 screen_texc		=vec2(0.5*(IN.clipPos.x/IN.clipPos.w+1.0),0.5*(1.0-IN.clipPos.y/IN.clipPos.w));
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
 	vec4 dlookup 			=texture_clamp(depthTexture,depth_texc.xy);
 	vec3 view				=normalize(IN.view);
 	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
-
 	vec4 clip_pos			=vec4(IN.screenPos,1.0,1.0);
 	float l_depth			=IN.clipPos.z/IN.clipPos.w;
 	vec2 dist				=depthToFadeDistance(vec2(l_depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
@@ -427,10 +416,9 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	if(br<0)
 		br=0;
 	
-	br = brightness * saturate(past) * 0.25;
-	vec4 colour			=vec4(br*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
-	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
-	//colour.rgb=past;
+	br 					= brightness * saturate(past) * 0.25;
+	vec4 colour			=vec4(br*lightningColour.rgb,1.0);
+	//colour				*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
 }
 
@@ -461,7 +449,8 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 
 	vec4 colour				= vec4(lightningColour * IN.brightness * 100.0 ,1.0);	
 	colour.rgb 				= lightningColour * brightness * saturate(past) * 0.25;
-    return colour;
+	float f 				= pow(1.0 - IN.progress,1.5);
+    return colour * f;
 }
 
 shader vec4 PS_Thin_ReverseDepth(transformedThinVertex IN): SV_TARGET
@@ -489,18 +478,18 @@ technique lightning_thick
 {
     pass reverse_depth 
     {
-		//SetDepthStencilState(TestReverseDepth,0);
+		SetDepthStencilState(DisableDepth, 0);
         SetRasterizerState(RenderNoCull);
-		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ReverseDepth()));
     }
     pass forward_depth 
     {
-		//SetDepthStencilState(TestForwardDepth,0);
+		SetDepthStencilState(DisableDepth, 0);
         SetRasterizerState(RenderNoCull);
-		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ForwardDepth()));
@@ -524,16 +513,18 @@ technique lightning_thin
 {
     pass reverse_depth 
     {
+    	SetDepthStencilState(DisableDepth, 0);
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ReverseDepth()));
     }
     pass forward_depth 
     {
+    	SetDepthStencilState(DisableDepth, 0);
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));
