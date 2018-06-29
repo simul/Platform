@@ -85,7 +85,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
  	// Parent level is trunk
  	if(curLevel == 1)
  	{
- 		int rndStart 	= int(rand(randomSeed * idx.x)) * 128;
+ 		int rndStart 	= int(rand(idx.x + randomSeed) * 128.0);
  		rndStart 		= clamp(rndStart,0,125);
  		IN0 			= vertices[rndStart];
 		IN1 			= vertices[128];
@@ -96,7 +96,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
  		// Find the parent branch offset
  		// numBranches = the requested number of branches (storm properties)
  		int parentBranchOff = int(idx.x  / numBranches) * numVtx;
- 		int rndStart 		= int(rand(randomSeed * idx.x )) * 33;
+ 		int rndStart 		= int(rand(idx.x + randomSeed) * 33.0);
  		rndStart			= clamp(rndStart,0,31);
  		IN0 				= vertices[parentBranchOff + rndStart];
 		IN1 				= vertices[parentBranchOff + 32];
@@ -416,7 +416,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	if(br<0)
 		br=0;
 	
-	br 					= brightness * saturate(past) * 0.25;
+	br 					= brightness * saturate(past) * 0.05;
 	vec4 colour			=vec4(br*lightningColour.rgb,1.0);
 	//colour				*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
