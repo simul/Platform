@@ -195,7 +195,7 @@ void Texture::InvalidateDeviceObjects()
     }
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
     float qw, qh;
     glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_WIDTH, &qw);

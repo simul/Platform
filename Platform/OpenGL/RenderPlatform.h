@@ -80,6 +80,8 @@ namespace simul
 			crossplatform::RenderState*             CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query*                   CreateQuery(crossplatform::QueryType type) override;
 			crossplatform::Shader*                  CreateShader() override;
+			crossplatform:: SwapChain				*CreateSwapChain() override;
+			virtual void							PresentSwapChain(crossplatform::DeviceContext &,crossplatform::SwapChain *s) override {}
 			void*                                   GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers,crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps = NULL);
 			

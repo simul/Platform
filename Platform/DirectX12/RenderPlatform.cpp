@@ -1827,3 +1827,22 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	Shader *S = new Shader();
 	return S;
 }
+
+#include "SwapChain.h"
+crossplatform::SwapChain *RenderPlatform::CreateSwapChain()
+{
+	SwapChain *S = new SwapChain();
+	return S;
+}
+
+
+
+void RenderPlatform::PresentSwapChain(crossplatform::DeviceContext &,crossplatform::SwapChain *s)
+{
+	static DWORD dwFlags = 0;
+	// 0 - don't wait for 60Hz refresh.
+	static UINT SyncInterval = 0;
+    // Show the frame on the primary surface.
+	// TODO: what if the device is lost?
+	s->AsDXGISwapChain()->Present(SyncInterval,dwFlags);
+}

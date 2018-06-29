@@ -12,6 +12,7 @@
 
 //! Number of backbuffers
 static const UINT			FrameCount = 3;
+#define cp_hwnd HWND
 
 namespace simul
 {
@@ -101,7 +102,7 @@ namespace simul
             bool                        IRecording;
         };
 
-		//! Manages the rendering
+		//! Manages the rendering device
 		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
@@ -110,17 +111,7 @@ namespace simul
 
 			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void						Initialize(bool use_debug=false,bool instrument= false, bool default_driver = false);
-			//! Add a window. Creates a new Swap Chain.
-			void						AddWindow(HWND h);
-			//! Removes the window and destroys its associated Swap Chain.
-			void						RemoveWindow(HWND h);
 			void						Shutdown();
-			IDXGISwapChain*				GetSwapChain(HWND hwnd);
-			void						Render(HWND hwnd);
-			
-			void						SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
-			void						SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
-			void						ResizeSwapChain(HWND hwnd);
 			void*						GetDevice();
 			void*						GetDeviceContext();
 
@@ -130,21 +121,44 @@ namespace simul
 			void*						GetCommandQueue();
 			int							GetNumOutputs();
 			crossplatform::Output		GetOutput(int i);
-			int							GetViewId(HWND hwnd);
-			Window*						GetWindow(HWND hwnd);
 			void						ReportMessageFilterState();
 
 		protected:
             ImmediateContext            mIContext;
-			//! Map of windows
-			WindowMap					mWindows;
 			//! Map of displays
 			OutputMap					mOutputs;
-
 			//! The D3D device
 			ID3D12Device*				mDevice;
 			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mCommandQueue;
+		};
+		
+		class SIMUL_DIRECTX12_EXPORT Direct3D12WindowManager: public crossplatform::WindowManagerInterface
+		{
+		public:
+			Direct3D12WindowManager();
+			~Direct3D12WindowManager();
+			void Initialize(void* d3dDevice,void *imm);
+			void Shutdown();
+			// Implementing Window Manager, which associates Hwnd's with renderers and view ids:
+			//! Add a window. Creates a new Swap Chain.
+			void AddWindow(cp_hwnd h);
+			//! Removes the window and destroys its associated Swap Chain.
+			void RemoveWindow(cp_hwnd h);
+			IDXGISwapChain *GetSwapChain(cp_hwnd hwnd);
+			void Render(cp_hwnd hwnd);
+			void SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
+			void SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output);
+			void ResizeSwapChain(cp_hwnd hwnd);
+			int GetViewId(cp_hwnd hwnd);
+			Window *GetWindow(cp_hwnd hwnd);
+		protected:
+			//! The D3D device
+			ID3D12Device*				mDevice;
+			//! Used to submit commands to the GPU
+			ID3D12CommandQueue*			mCommandQueue;
+			//! Map of windows
+			WindowMap					mWindows;
 		};
 	}
 }

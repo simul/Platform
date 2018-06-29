@@ -925,3 +925,7 @@ crossplatform::Shader* RenderPlatform::CreateShader()
 	Shader* S = new Shader();
 	return S;
 }
+crossplatform::SwapChain*RenderPlatform::CreateSwapChain()
+{
+	return nullptr;
+}

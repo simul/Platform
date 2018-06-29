@@ -623,6 +623,28 @@ void Direct3D12Manager::Shutdown()
 		SAFE_RELEASE(i->second);
 	}
 	mOutputs.clear();
+
+	ReportMessageFilterState();
+
+	SAFE_RELEASE(mDevice);
+}
+Direct3D12WindowManager::Direct3D12WindowManager()
+{
+}
+
+void Direct3D12WindowManager::Initialize(void * d,void *q)
+{
+	mDevice=(ID3D12Device*)d;
+	mCommandQueue=(ID3D12CommandQueue*)q;
+}
+
+Direct3D12WindowManager::~Direct3D12WindowManager()
+{
+	Shutdown();
+}
+
+void Direct3D12WindowManager::Shutdown()
+{
 	
 	for(WindowMap::iterator i=mWindows.begin();i!=mWindows.end();i++)
 	{
@@ -630,13 +652,9 @@ void Direct3D12Manager::Shutdown()
 		delete i->second;
 	}
 	mWindows.clear();
-
-	ReportMessageFilterState();
-
-	SAFE_RELEASE(mDevice);
 }
 
-void Direct3D12Manager::RemoveWindow(HWND hwnd)
+void Direct3D12WindowManager::RemoveWindow(cp_hwnd hwnd)
 {
     if (mWindows.find(hwnd) == mWindows.end())
     {
@@ -648,7 +666,7 @@ void Direct3D12Manager::RemoveWindow(HWND hwnd)
 	mWindows.erase(hwnd);
 }
 
-IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
+IDXGISwapChain* Direct3D12WindowManager::GetSwapChain(cp_hwnd h)
 {
 	if(mWindows.find(h)==mWindows.end())
 		return NULL;
@@ -658,18 +676,18 @@ IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
 	return w->SwapChain;
 }
 
-void Direct3D12Manager::Render(HWND h)
+void Direct3D12WindowManager::Render(cp_hwnd h)
 {
     // Check that the window exists:
 	if (mWindows.find(h) == mWindows.end())
 	{
-        SIMUL_CERR << "No window exists for HWND " << std::hex << h << std::endl;
+        SIMUL_CERR << "No window exists for cp_hwnd " << std::hex << h << std::endl;
 		return;
 	}
 	Window* w = mWindows[h];
     if (h != w->ConsoleWindowHandle)
 	{
-		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->ConsoleWindowHandle <<std::endl;
+		SIMUL_CERR<<"Window for cp_hwnd "<<std::hex<<h<<" has hwnd "<<w->ConsoleWindowHandle <<std::endl;
 		return;
 	}
 
@@ -704,8 +722,9 @@ void Direct3D12Manager::Render(HWND h)
     w->EndFrame();
 }
 
-void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
+void Direct3D12WindowManager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
+	AddWindow(hwnd);
 	if(mWindows.find(hwnd)==mWindows.end())
 		return;
 	Window *w=mWindows[hwnd];
@@ -714,7 +733,7 @@ void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInt
 	w->SetRenderer(ci,  view_id);
 }
 
-int Direct3D12Manager::GetViewId(HWND hwnd)
+int Direct3D12WindowManager::GetViewId(cp_hwnd hwnd)
 {
 	if(mWindows.find(hwnd)==mWindows.end())
 		return -1;
@@ -722,7 +741,7 @@ int Direct3D12Manager::GetViewId(HWND hwnd)
 	return w->WindowUID;
 }
 
-Window *Direct3D12Manager::GetWindow(HWND hwnd)
+Window *Direct3D12WindowManager::GetWindow(cp_hwnd hwnd)
 {
 	if(mWindows.find(hwnd)==mWindows.end())
 		return NULL;
@@ -735,12 +754,12 @@ void Direct3D12Manager::ReportMessageFilterState()
 
 }
 
-void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
+void Direct3D12WindowManager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
 {
     SIMUL_CERR << "Not implemented \n";
 }
 
-void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
+void Direct3D12WindowManager::ResizeSwapChain(cp_hwnd hwnd)
 {
     if(mWindows.find(hwnd) == mWindows.end())
     {
@@ -807,20 +826,19 @@ void* Direct3D12Manager::GetCommandQueue()
 	return mCommandQueue;
 }
 
-void Direct3D12Manager::AddWindow(HWND hwnd)
+void Direct3D12WindowManager::AddWindow(cp_hwnd hwnd)
 {
     if (mWindows.find(hwnd) != mWindows.end())
     {
 		return;
     }
-
-	crossplatform::Output o     = GetOutput(0);
+	//crossplatform::Output o     = GetOutput(0);
 	Window* window	            = new Window;
 	mWindows[hwnd]              = window;
 	window->ConsoleWindowHandle = hwnd;
 	window->SetCommandQueue(mCommandQueue);
 	
-	window->RestoreDeviceObjects(mDevice, false, o.numerator, o.denominator);
+	window->RestoreDeviceObjects(mDevice, false, 0,1);//o.numerator, o.denominator);
 }
 
 

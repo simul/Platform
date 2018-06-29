@@ -50,6 +50,9 @@
     <ClCompile Include="GpuProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SwapChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -95,6 +98,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GpuProfiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SwapChain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

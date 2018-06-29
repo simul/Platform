@@ -220,6 +220,7 @@
     <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -237,6 +238,7 @@
     <ClInclude Include="Layout.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="SimulDirectXHeader.h" />
+    <ClInclude Include="SwapChain.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

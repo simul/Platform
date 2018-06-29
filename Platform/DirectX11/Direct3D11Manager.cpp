@@ -27,10 +27,6 @@ Window::~Window()
 }
 #define REFCT \
 
-//{d3dDevice->AddRef(); \
-//	int ref=d3dDevice->Release(); \
-//	std::cerr<<ref<<" ";}
-
 void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,int numerator,int denominator)
 {
 	if(!d3dDevice)
@@ -135,7 +131,7 @@ SIMUL_ASSERT(result==S_OK);*/
 	IDXGIFactory * factory;
 	V_CHECK(pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory));
 	V_CHECK(factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain));
-//	CreateSwapChainForHwnd 
+
 	SAFE_RELEASE(factory);
 	SAFE_RELEASE(pDXGIAdapter);
 	SAFE_RELEASE(pDXGIDevice);
@@ -630,6 +626,7 @@ crossplatform::Output Direct3D11Manager::GetOutput(int i)
 #endif
 	return o;
 }
+
 void Direct3D11Manager::Shutdown()
 {
 	// Release the adapter.
@@ -639,12 +636,6 @@ void Direct3D11Manager::Shutdown()
 		SAFE_RELEASE(i->second);
 	}
 	outputs.clear();
-	for(WindowMap::iterator i=windows.begin();i!=windows.end();i++)
-	{
-		SetFullScreen(i->second->hwnd,false,0);
-		delete i->second;
-	}
-	windows.clear();
 	if(d3dDeviceContext)
 	{
 		d3dDeviceContext->ClearState();
@@ -684,7 +675,7 @@ void Direct3D11Manager::Shutdown()
 	}
 }
 
-void Direct3D11Manager::RemoveWindow(cp_hwnd hwnd)
+void Direct3D11WindowManager::RemoveWindow(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -694,7 +685,7 @@ void Direct3D11Manager::RemoveWindow(cp_hwnd hwnd)
 	windows.erase(hwnd);
 }
 
-IDXGISwapChain *Direct3D11Manager::GetSwapChain(cp_hwnd h)
+IDXGISwapChain *Direct3D11WindowManager::GetSwapChain(cp_hwnd h)
 {
 	if(windows.find(h)==windows.end())
 		return NULL;
@@ -704,17 +695,17 @@ IDXGISwapChain *Direct3D11Manager::GetSwapChain(cp_hwnd h)
 	return w->m_swapChain;
 }
 
-void Direct3D11Manager::Render(cp_hwnd h)
+void Direct3D11WindowManager::Render(cp_hwnd h)
 {
 	if(windows.find(h)==windows.end())
 		return;
-ERRNO_BREAK
 	Window *w=windows[h];
 	if(!w)
 	{
 		SIMUL_CERR<<"No window exists for cp_hwnd "<<std::hex<<h<<std::endl;
 		return;
 	}
+	//w->Render();
 	if(h!=w->hwnd)
 	{
 		SIMUL_CERR<<"Window for cp_hwnd "<<std::hex<<h<<" has hwnd "<<w->hwnd<<std::endl;
@@ -726,18 +717,15 @@ ERRNO_BREAK
 		SIMUL_CERR<<"No renderTarget exists for cp_hwnd "<<std::hex<<h<<std::endl;
 		return;
 	}
-ERRNO_BREAK
-	// Set the depth stencil state.
-	//d3dDeviceContext->OMSetDepthStencilState(w->m_depthStencilState, 1);
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	d3dDeviceContext->OMSetRenderTargets(1, &w->m_renderTargetView,nullptr);//w->m_depthStencilView);
+	d3dImmediateDeviceContext->OMSetRenderTargets(1, &w->m_renderTargetView,nullptr);//w->m_depthStencilView);
 	// Create the viewport.
-	d3dDeviceContext->RSSetViewports(1, &w->viewport);
+	d3dImmediateDeviceContext->RSSetViewports(1, &w->viewport);
 	// Now set the rasterizer state.
-	d3dDeviceContext->RSSetState(w->m_rasterState);
+	d3dImmediateDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 	{
-		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView,(int)w->viewport.Width,(int)w->viewport.Height);
+		w->renderer->Render(w->view_id,d3dImmediateDeviceContext, w->m_renderTargetView,(int)w->viewport.Width,(int)w->viewport.Height);
 	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.
@@ -745,11 +733,36 @@ ERRNO_BREAK
     // Show the frame on the primary surface.
 	// TODO: what if the device is lost?
 	V_CHECK(w->m_swapChain->Present(SyncInterval,dwFlags));
-ERRNO_BREAK
 }
 
-void Direct3D11Manager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
+Direct3D11WindowManager::Direct3D11WindowManager()
 {
+}
+
+void Direct3D11WindowManager::Initialize(void* d,void *imm)
+{
+	d3dDevice=(ID3D11Device*)d;
+	d3dImmediateDeviceContext=(ID3D11DeviceContext*)imm;
+}
+
+Direct3D11WindowManager::~Direct3D11WindowManager()
+{
+	Shutdown();
+}
+
+void Direct3D11WindowManager::Shutdown()
+{
+	for(WindowMap::iterator i=windows.begin();i!=windows.end();i++)
+	{
+		SetFullScreen(i->second->hwnd,false,0);
+		delete i->second;
+	}
+	windows.clear();
+}
+
+void Direct3D11WindowManager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
+{
+	AddWindow(hwnd);
 	if(windows.find(hwnd)==windows.end())
 		return;
 	Window *w=windows[hwnd];
@@ -758,7 +771,7 @@ void Direct3D11Manager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRenderer
 	w->SetRenderer(ci,  view_id);
 }
 
-int Direct3D11Manager::GetViewId(cp_hwnd hwnd)
+int Direct3D11WindowManager::GetViewId(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return -1;
@@ -766,7 +779,7 @@ int Direct3D11Manager::GetViewId(cp_hwnd hwnd)
 	return w->view_id;
 }
 
-Window *Direct3D11Manager::GetWindow(cp_hwnd hwnd)
+Window *Direct3D11WindowManager::GetWindow(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return NULL;
@@ -784,52 +797,7 @@ void Direct3D11Manager::ReportMessageFilterState()
 	memset( filter, 0, filterlength );
 	int numfilt=d3dInfoQueue->GetStorageFilterStackSize();
 	d3dInfoQueue->GetStorageFilter(filter,&filterlength);
-	//std::cout<<filter->AllowList.NumSeverities<<std::endl;
 	free(filter);
-}
-
-void Direct3D11Manager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
-{
-	Window *w=(Window*)GetWindow(hwnd);
-	if(!w)
-		return;
-	IDXGIOutput *output=outputs[which_output];
-	if(!w->m_swapChain)
-		return;
-	BOOL current_fullscreen;
-	V_CHECK(w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL));
-	if((current_fullscreen==TRUE)==fullscreen)
-		return;
-	V_CHECK(w->m_swapChain->SetFullscreenState(fullscreen, NULL));
-/*	DXGI_OUTPUT_DESC outputDesc;
-	V_CHECK(output->GetDesc(&outputDesc));
-	int W=0,H=0;
-	if(fullscreen)
-	{
-		W=outputDesc.DesktopCoordinates.right-outputDesc.DesktopCoordinates.left;
-		H=outputDesc.DesktopCoordinates.bottom-outputDesc.DesktopCoordinates.top;
-	}
-	else
-	{
-		// Will this work, or will the hwnd just be the size of the full screen initially?
-		RECT rect;
-#if defined(WINVER) &&!defined(_XBOX_ONE)
-		GetWindowRect(hwnd,&rect);
-#endif
-		W	=abs(rect.right-rect.left);
-		H=abs(rect.bottom-rect.top);
-	}*/
-	ResizeSwapChain(hwnd);
-}
-
-void Direct3D11Manager::ResizeSwapChain(cp_hwnd hwnd)
-{
-	if(windows.find(hwnd)==windows.end())
-		return;
-	Window *w=windows[hwnd];
-	if(!w)
-		return;
-	w->ResizeSwapChain(d3dDevice);
 }
 
 void* Direct3D11Manager::GetDevice()
@@ -842,13 +810,38 @@ void* Direct3D11Manager::GetDeviceContext()
 	return d3dDeviceContext;
 }
 
-void Direct3D11Manager::AddWindow(cp_hwnd hwnd)
+void Direct3D11WindowManager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
+{
+	Window *w=(Window*)GetWindow(hwnd);
+	if(!w)
+		return;
+	if(!w->m_swapChain)
+		return;
+	BOOL current_fullscreen;
+	V_CHECK(w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL));
+	if((current_fullscreen==TRUE)==fullscreen)
+		return;
+	V_CHECK(w->m_swapChain->SetFullscreenState(fullscreen, NULL));
+	ResizeSwapChain(hwnd);
+}
+
+void Direct3D11WindowManager::ResizeSwapChain(cp_hwnd hwnd)
+{
+	if(windows.find(hwnd)==windows.end())
+		return;
+	Window *w=windows[hwnd];
+	if(!w)
+		return;
+	w->ResizeSwapChain(d3dDevice);
+}
+
+void Direct3D11WindowManager::AddWindow(cp_hwnd hwnd)
 {
 	if(windows.find(hwnd)!=windows.end())
 		return;
 	Window *window=new Window;
 	windows[hwnd]=window;
 	window->hwnd=hwnd;
-	crossplatform::Output o=GetOutput(0);
-	window->RestoreDeviceObjects(d3dDevice,m_vsync_enabled,o.numerator,o.denominator);
+	//crossplatform::Output o=GetOutput(0);
+	window->RestoreDeviceObjects(d3dDevice,false,0,1);//o.numerator,o.denominator);
 }

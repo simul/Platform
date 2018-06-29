@@ -61,9 +61,10 @@ namespace simul
 			bool							HasRenderTargets() const override;
 
 			//! Initializes this texture from an external (already created texture)
-			void							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false, bool setDepthStencil = false);
-			void							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false) override;
+			void							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false, bool setDepthStencil = false,bool need_srv=true);
+			void							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
 			void							InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
+			void							InitFromSwapChain(crossplatform::RenderPlatform *,crossplatform::SwapChain *) override{}
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void							setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);

@@ -50,16 +50,21 @@ namespace simul
 		public:
 			virtual void	Initialize(bool use_debug, bool instrument, bool default_driver) = 0;
 			virtual void	Shutdown() = 0;
-			virtual void	AddWindow(cp_hwnd h)=0;
-			virtual void	RemoveWindow(cp_hwnd h)=0;
-			virtual void	Render(cp_hwnd h)=0;
-			virtual void	SetRenderer(cp_hwnd,PlatformRendererInterface *ci,int view_id)=0;
-			virtual void	SetFullScreen(cp_hwnd cp_hwnd,bool fullscreen,int which_output)=0;
-			virtual void	ResizeSwapChain(cp_hwnd cp_hwnd)=0;
 			virtual void*	GetDevice()=0;
 			virtual void*	GetDeviceContext()=0;
 			virtual int		GetNumOutputs()=0;
 			virtual Output	GetOutput(int i)=0;
+		};
+		
+		class WindowManagerInterface
+		{
+		public:
+			virtual void	AddWindow(cp_hwnd h)=0;
+			virtual void	RemoveWindow(cp_hwnd h)=0;
+			virtual void	Render(cp_hwnd h)=0;
+			virtual void	SetRenderer(cp_hwnd,PlatformRendererInterface *ci,int view_id)=0;
+			virtual void	SetFullScreen(cp_hwnd h,bool fullscreen,int which_output)=0;
+			virtual void	ResizeSwapChain(cp_hwnd h)=0;
 			virtual int		GetViewId(cp_hwnd h)=0;
 		};
 	}

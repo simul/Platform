@@ -15,6 +15,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/DirectX11/SwapChain.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
@@ -558,6 +559,21 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 crossplatform::Shader *RenderPlatform::CreateShader()
 {
 	return new Shader;
+}
+
+crossplatform::SwapChain *RenderPlatform::CreateSwapChain()
+{
+	return new SwapChain;
+}
+
+void RenderPlatform::PresentSwapChain(crossplatform::DeviceContext &,crossplatform::SwapChain *s)
+{
+	static DWORD dwFlags = 0;
+	// 0 - don't wait for 60Hz refresh.
+	static UINT SyncInterval = 0;
+    // Show the frame on the primary surface.
+	// TODO: what if the device is lost?
+	V_CHECK(s->AsDXGISwapChain()->Present(SyncInterval,dwFlags));
 }
 
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)

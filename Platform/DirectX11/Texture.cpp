@@ -6,6 +6,7 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Simul/Platform/DirectX11/SwapChain.h"
 #include <string>
 #include <algorithm>
 
@@ -448,7 +449,7 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews!=nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,bool make_rt, bool setDepthStencil)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,bool make_rt, bool setDepthStencil,bool need_srv)
 {
 	ID3D11Texture2D *t=(ID3D11Texture2D *)T;
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView *)SRV;
@@ -493,7 +494,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				textureDesc.ArraySize=1;
 			}
 			// Can this texture have SRV's? If not we must COPY the resource.
-			if(textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)
+			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)!=D3D11_BIND_SHADER_RESOURCE)||!need_srv)
 			{
 				texture=t;
 			}
@@ -513,7 +514,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
-			if(!srv)
+			if(!srv&&need_srv)
 			{
 				InitSRVTables(textureDesc.ArraySize,textureDesc.MipLevels);
 				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap,false,textureDesc.SampleDesc.Count>1);
@@ -647,6 +648,21 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 	}
 	dim=3;
 }
+
+void Texture::InitFromSwapChain(crossplatform::RenderPlatform *renderPlatform,crossplatform::SwapChain *swapChain)
+{
+	if(!swapChain)
+		return;
+	if(!swapChain->AsDXGISwapChain())
+		return;
+	ID3D11Texture2D *t=nullptr;
+	V_CHECK(swapChain->AsDXGISwapChain()->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&t));
+	InitFromExternalTexture2D(renderPlatform,t,nullptr,true,false,false);// need_srv=false: we don't want to read this texture.
+	// the above fn adds a ref, so we should subtract one:
+	t->Release();
+}
+
+
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
 	pixelFormat = pf;

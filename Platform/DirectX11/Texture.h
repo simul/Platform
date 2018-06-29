@@ -72,8 +72,9 @@ namespace simul
 			}
 			bool IsComputable() const override;
 			bool HasRenderTargets() const override;
-			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false) override;
+			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
 			void InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
+			void InitFromSwapChain(crossplatform::RenderPlatform *renderPlatform,crossplatform::SwapChain *) override;
 			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;

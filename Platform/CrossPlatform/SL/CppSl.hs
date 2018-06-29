@@ -676,6 +676,10 @@
 			x=v[0];
 			y=v[1];
 		}
+		bool operator==(const uint2 &v) const
+		{
+			return (x==v.x&&y==v.y);
+		}
 	};
 	struct uint3
 	{
@@ -709,6 +713,10 @@
 			x=v[0];
 			y=v[1];
 			z=v[2];
+		}
+		bool operator==(const uint3 &v) const
+		{
+			return (x==v.x&&y==v.y&&z==v.z);
 		}
 	};
 	struct int3
@@ -769,6 +777,10 @@
 			x/=u;
 			y/=u;
 			z/=u;
+		}
+		bool operator==(const int3 &v) const
+		{
+			return (x==v.x&&y==v.y&&z==v.z);
 		}
 	};
 	
