@@ -61,12 +61,13 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 	}
 
 	LightningVertex OUT;
-	for(int r=0;r<129;r++)
+	float rsteps = 1.0 / float(steps);
+	for(int ii = 0; ii < 129; ii++)
 	{
-		OUT.position   	= outpos[r];
+		OUT.position   	= outpos[ii];
 		OUT.texCoords	= vec2(strikeThicknessMetres,brightness);
-		OUT.progress	= r/float(128);
-		verticesRW[r] 	= OUT;
+		OUT.progress	= float(ii) * rsteps;
+		verticesRW[ii] 	= OUT;
 	}
 }
 
@@ -85,8 +86,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
  	// Parent level is trunk
  	if(curLevel == 1)
  	{
- 		int rndStart 	= int(rand(idx.x + randomSeed) * 128.0);
- 		rndStart 		= clamp(rndStart,0,125);
+ 		int rndStart 	= int(rand(idx.x + randomSeed) * 90.0);
  		IN0 			= vertices[rndStart];
 		IN1 			= vertices[128];
  	}
@@ -154,21 +154,13 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 	}
 
 	// Store the vertices
-	for(int i = 0; i < numVtx; i++)
+	float rsteps = 1.0 / float(steps);
+	for(int ii = 0; ii < numVtx; ii++)
 	{
-		//float v				= float(j)/float(numVtx);
-		//float c				= saturate(float(numVtx-j)/5.0);
-		//float br			= brightness*saturate(float(numVtx-j)/5.0);
-		//OUT.position		= outpos[j];
-		//OUT.texCoords		= c*vec2(strikeThicknessMetres,br);
-		//OUT.progress		= IN0.progress+v;
-
-		//OUT.position 		= vec3(numVtx * idx.x,(numVtx * idx.x) + numVtx,branch_start_id+j);
-
-		OUT.position 	= outpos[i];
-		OUT.progress 	= float(i) / float(steps);
+		OUT.position 	= outpos[ii];
+		OUT.progress 	= float(ii) * rsteps;
 		OUT.texCoords 	= vec2(0,0);
-		verticesRW[i + (numVtx * idx.x)]	= OUT;
+		verticesRW[ii + (numVtx * idx.x)] = OUT;
 	}
 }
 
@@ -415,10 +407,8 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	br*=past;
 	if(br<0)
 		br=0;
-	
-	br 					= brightness * saturate(past) * 0.05;
-	vec4 colour			=vec4(br*lightningColour.rgb,1.0);
-	//colour				*=saturate(1.0-(dist.y-dist.x)/0.001);
+	br 				= brightness * saturate(past) * 0.05;
+	vec4 colour		= vec4(br*lightningColour.rgb,1.0);
     return colour;
 }
 
