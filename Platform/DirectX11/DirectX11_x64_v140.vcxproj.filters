@@ -317,6 +317,9 @@
     <None Include="..\CrossPlatform\SL\water_constants.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="..\CrossPlatform\SFX\copy.sfx">
+      <Filter>SFX</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\CrossPlatform\SFX\terrain.sfx">

@@ -73,6 +73,7 @@
     <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SphericalHarmonics.cpp" />
+    <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -108,6 +109,7 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="SphericalHarmonics.h" />
+    <ClInclude Include="SwapChain.h" />
     <ClInclude Include="TextInputOutput.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />

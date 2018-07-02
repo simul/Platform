@@ -486,12 +486,6 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
-			// ASSUME it's a cubemap if it's an array of six.
-			if(textureDesc.ArraySize==6)
-			{
-				cubemap=(textureDesc.ArraySize==6);
-				textureDesc.ArraySize=1;
-			}
 			// Can this texture have SRV's? If not we must COPY the resource.
 			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)!=D3D11_BIND_SHADER_RESOURCE)||!need_srv)
 			{
@@ -508,14 +502,21 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 				r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
 			}
-
+			
+			// ASSUME it's a cubemap if it's an array of six.
+			if(textureDesc.ArraySize==6)
+			{
+				cubemap=(textureDesc.ArraySize==6);
+				textureDesc.ArraySize=1;
+			}
 			dxgi_format=textureDesc.Format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
+			int total_num=textureDesc.ArraySize*(cubemap?6:1);
 			if(!srv&&need_srv)
 			{
-				InitSRVTables(textureDesc.ArraySize,textureDesc.MipLevels);
+				InitSRVTables(total_num,textureDesc.MipLevels);
 				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap,false,textureDesc.SampleDesc.Count>1);
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
@@ -527,7 +528,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 				renderTargetViewDesc.Format = TypelessToSrvFormat(textureDesc.Format);
-				InitRTVTables(textureDesc.ArraySize,textureDesc.MipLevels);
+				InitRTVTables(total_num,textureDesc.MipLevels);
 
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
@@ -537,7 +538,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				
 					renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
 					renderTargetViewDesc.Texture2DArray.ArraySize			=1;
-					for(int i=0;i<(int)textureDesc.ArraySize;i++)
+					for(int i=0;i<(int)total_num;i++)
 					{
 						renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
 						for(int j=0;j<(int)textureDesc.MipLevels;j++)
