@@ -185,7 +185,6 @@
     <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="RenderDelegater.h" />
     <ClInclude Include="SphericalHarmonics.h" />
-    <ClInclude Include="SwapChain.h" />
     <ClInclude Include="View.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
@@ -195,8 +194,8 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
-    <ClInclude Include="Window.h" />
-    <ClInclude Include="WindowManager.h" />
+    <ClInclude Include="DisplaySurface.h" />
+    <ClInclude Include="DisplaySurfaceManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AmortizationStruct.cpp" />
@@ -219,15 +218,14 @@
     <ClCompile Include="MouseHandler.cpp" />
     <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="SphericalHarmonics.cpp" />
-    <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="View.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Window.cpp" />
-    <ClCompile Include="WindowManager.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
+    <ClCompile Include="DisplaySurfaceManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx" />

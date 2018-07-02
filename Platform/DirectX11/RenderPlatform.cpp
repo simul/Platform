@@ -15,13 +15,13 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX11/SwapChain.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "D3dx11effect.h"
+#include "DisplaySurface.h"
 
 #ifdef _XBOX_ONE
 #include "Simul/Platform/DirectX11/ESRAMManager.h"
@@ -561,19 +561,9 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return new Shader;
 }
 
-crossplatform::SwapChain *RenderPlatform::CreateSwapChain()
+crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	return new SwapChain;
-}
-
-void RenderPlatform::PresentSwapChain(crossplatform::DeviceContext &,crossplatform::SwapChain *s)
-{
-	static DWORD dwFlags = 0;
-	// 0 - don't wait for 60Hz refresh.
-	static UINT SyncInterval = 0;
-    // Show the frame on the primary surface.
-	// TODO: what if the device is lost?
-	V_CHECK(s->AsDXGISwapChain()->Present(SyncInterval,dwFlags));
+    return new dx11::DisplaySurface();
 }
 
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)

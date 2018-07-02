@@ -39,7 +39,6 @@ namespace simul
 {
 	namespace crossplatform
 	{
-		class SwapChain;
 		class RenderPlatform;
 		struct DeviceContext;
 		struct SamplerStateDesc
@@ -187,7 +186,6 @@ namespace simul
 			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
 			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true)=0;
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
-			virtual void InitFromSwapChain(crossplatform::RenderPlatform *,SwapChain *) =0;
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,

@@ -58,6 +58,8 @@ namespace simul
 		struct Query;
 		struct TargetsAndViewport;
 		class SwapChain;
+        struct Window;
+        class DisplaySurface;
 
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
@@ -248,10 +250,7 @@ namespace simul
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
 			/// Create a shader.
 			virtual Shader					*CreateShader()=0;
-			/// Create a SwapChain.
-			virtual SwapChain				*CreateSwapChain();
-			/// Put the swapchain's updated image to the screen.
-			virtual void					PresentSwapChain(DeviceContext &,SwapChain *s)=0;
+            virtual DisplaySurface*         CreateDisplaySurface();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;

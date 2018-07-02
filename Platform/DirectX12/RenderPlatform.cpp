@@ -15,6 +15,7 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/DirectX12/Heap.h"
+#include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
     #include "pix.h"
@@ -153,6 +154,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
     DefaultBlendState   = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     DefaultRasterState  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     DefaultDepthState   = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    DefaultOutputFormat = crossplatform::PixelFormat::RGBA_16_FLOAT;
 
 	// Lets query some information from the device
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions;
@@ -1828,21 +1830,7 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return S;
 }
 
-#include "SwapChain.h"
-crossplatform::SwapChain *RenderPlatform::CreateSwapChain()
+crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	SwapChain *S = new SwapChain();
-	return S;
-}
-
-
-
-void RenderPlatform::PresentSwapChain(crossplatform::DeviceContext &,crossplatform::SwapChain *s)
-{
-	static DWORD dwFlags = 0;
-	// 0 - don't wait for 60Hz refresh.
-	static UINT SyncInterval = 0;
-    // Show the frame on the primary surface.
-	// TODO: what if the device is lost?
-	s->AsDXGISwapChain()->Present(SyncInterval,dwFlags);
+    return new dx12::DisplaySurface();
 }
