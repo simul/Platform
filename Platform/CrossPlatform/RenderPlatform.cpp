@@ -11,7 +11,7 @@
 #include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/SwapChain.h"
+#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -1176,9 +1176,9 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 		EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
 
-SwapChain *RenderPlatform::CreateSwapChain()
+DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	return new SwapChain;
+    return nullptr;
 }
 
 namespace simul

@@ -103,13 +103,10 @@
     <ClInclude Include="SphericalHarmonics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SwapChain.h">
+    <ClInclude Include="DisplaySurface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowManager.h">
+    <ClInclude Include="DisplaySurfaceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -206,13 +203,10 @@
     <ClCompile Include="SphericalHarmonics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SwapChain.cpp">
+    <ClCompile Include="DisplaySurface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WindowManager.cpp">
+    <ClCompile Include="DisplaySurfaceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

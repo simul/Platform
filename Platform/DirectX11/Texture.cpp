@@ -6,7 +6,6 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/DirectX11/SwapChain.h"
 #include <string>
 #include <algorithm>
 
@@ -648,20 +647,6 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 	}
 	dim=3;
 }
-
-void Texture::InitFromSwapChain(crossplatform::RenderPlatform *renderPlatform,crossplatform::SwapChain *swapChain)
-{
-	if(!swapChain)
-		return;
-	if(!swapChain->AsDXGISwapChain())
-		return;
-	ID3D11Texture2D *t=nullptr;
-	V_CHECK(swapChain->AsDXGISwapChain()->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&t));
-	InitFromExternalTexture2D(renderPlatform,t,nullptr,true,false,false);// need_srv=false: we don't want to read this texture.
-	// the above fn adds a ref, so we should subtract one:
-	t->Release();
-}
-
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {

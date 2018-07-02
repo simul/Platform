@@ -144,9 +144,9 @@ namespace simul
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Shader					*CreateShader() override;
-			crossplatform::SwapChain				*CreateSwapChain() override;
+            crossplatform::DisplaySurface*          CreateDisplaySurface()override;
 
-			void PresentSwapChain(crossplatform::DeviceContext &,crossplatform::SwapChain *s) override;
+            void PresentSwapChain(crossplatform::DeviceContext &, crossplatform::Window *s) {};
 
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
@@ -207,6 +207,8 @@ namespace simul
             D3D12_DEPTH_STENCIL_DESC                DefaultDepthState;
             D3D12_BLEND_DESC                        DefaultBlendState;
             D3D12_RASTERIZER_DESC                   DefaultRasterState;
+
+            crossplatform::PixelFormat              DefaultOutputFormat;
 
 		protected:
 			//! The GPU timestamp counter frequency (in ticks/second)
