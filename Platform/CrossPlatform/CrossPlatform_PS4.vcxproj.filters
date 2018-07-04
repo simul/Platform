@@ -103,6 +103,9 @@
     <ClInclude Include="View.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SwapChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -192,6 +195,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DeviceContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SwapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

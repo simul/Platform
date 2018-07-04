@@ -100,7 +100,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 #endif
 
 	// Initialize render targets
-	CreateRenderTarget(d3dDevice);		
+	CreateRenderTarget(d3dDevice);
 
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(factory);
@@ -628,145 +628,10 @@ void Direct3D12Manager::Shutdown()
 
 	SAFE_RELEASE(mDevice);
 }
-Direct3D12WindowManager::Direct3D12WindowManager()
-{
-}
-
-void Direct3D12WindowManager::Initialize(void * d,void *q)
-{
-	mDevice=(ID3D12Device*)d;
-	mCommandQueue=(ID3D12CommandQueue*)q;
-}
-
-Direct3D12WindowManager::~Direct3D12WindowManager()
-{
-	Shutdown();
-}
-
-void Direct3D12WindowManager::Shutdown()
-{
-	
-	for(WindowMap::iterator i=mWindows.begin();i!=mWindows.end();i++)
-	{
-		SetFullScreen(i->second->ConsoleWindowHandle,false,0);
-		delete i->second;
-	}
-	mWindows.clear();
-}
-
-void Direct3D12WindowManager::RemoveWindow(cp_hwnd hwnd)
-{
-    if (mWindows.find(hwnd) == mWindows.end())
-    {
-		return;
-    }
-    Window* w = mWindows[hwnd];
-	SetFullScreen(hwnd,false,0);
-	delete w;
-	mWindows.erase(hwnd);
-}
-
-IDXGISwapChain* Direct3D12WindowManager::GetSwapChain(cp_hwnd h)
-{
-	if(mWindows.find(h)==mWindows.end())
-		return NULL;
-	Window *w=mWindows[h];
-	if(!w)
-		return NULL;
-	return w->SwapChain;
-}
-
-void Direct3D12WindowManager::Render(cp_hwnd h)
-{
-    // Check that the window exists:
-	if (mWindows.find(h) == mWindows.end())
-	{
-        SIMUL_CERR << "No window exists for cp_hwnd " << std::hex << h << std::endl;
-		return;
-	}
-	Window* w = mWindows[h];
-    if (h != w->ConsoleWindowHandle)
-	{
-		SIMUL_CERR<<"Window for cp_hwnd "<<std::hex<<h<<" has hwnd "<<w->ConsoleWindowHandle <<std::endl;
-		return;
-	}
-
-    // First lets make sure is safe to start working on this frame:
-    w->StartFrame();
-
-    UINT curIdx = w->GetCurrentIndex();
-    HRESULT res = S_FALSE;
-
-	// Set viewport 
-	w->CommandList->RSSetViewports(1, &w->CurViewport);
-    w->CommandList->RSSetScissorRects(1, &w->CurScissor);
-
-	// Indicate that the back buffer will be used as a render target.
-	w->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[curIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	w->CommandList->OMSetRenderTargets(1, &w->RTHandles[curIdx], FALSE, nullptr);
-	
-	// Submit commands
-	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
-    w->CommandList->ClearRenderTargetView(w->RTHandles[curIdx], kClearColor , 0, nullptr);
-
-	if (w->IRendererRef)
-	{
-		w->IRendererRef->Render(w->WindowUID, w->CommandList,&w->RTHandles[curIdx],w->CurScissor.right,w->CurScissor.bottom);
-	}
-
-	// Get ready to present
-    w->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
-    // This will close the command list and use the Queue reference
-    // to execute it
-    w->EndFrame();
-}
-
-void Direct3D12WindowManager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
-{
-	AddWindow(hwnd);
-	if(mWindows.find(hwnd)==mWindows.end())
-		return;
-	Window *w=mWindows[hwnd];
-	if(!w)
-		return;
-	w->SetRenderer(ci,  view_id);
-}
-
-int Direct3D12WindowManager::GetViewId(cp_hwnd hwnd)
-{
-	if(mWindows.find(hwnd)==mWindows.end())
-		return -1;
-	Window *w=mWindows[hwnd];
-	return w->WindowUID;
-}
-
-Window *Direct3D12WindowManager::GetWindow(cp_hwnd hwnd)
-{
-	if(mWindows.find(hwnd)==mWindows.end())
-		return NULL;
-	Window *w=mWindows[hwnd];
-	return w;
-}
 
 void Direct3D12Manager::ReportMessageFilterState()
 {
 
-}
-
-void Direct3D12WindowManager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
-{
-    SIMUL_CERR << "Not implemented \n";
-}
-
-void Direct3D12WindowManager::ResizeSwapChain(cp_hwnd hwnd)
-{
-    if(mWindows.find(hwnd) == mWindows.end())
-    {
-		return;
-    }
-	Window* w = mWindows[hwnd];
-    w->MustResize = true;
 }
 
 void* Direct3D12Manager::GetDevice()
@@ -825,22 +690,6 @@ void* Direct3D12Manager::GetCommandQueue()
 {
 	return mCommandQueue;
 }
-
-void Direct3D12WindowManager::AddWindow(cp_hwnd hwnd)
-{
-    if (mWindows.find(hwnd) != mWindows.end())
-    {
-		return;
-    }
-	//crossplatform::Output o     = GetOutput(0);
-	Window* window	            = new Window;
-	mWindows[hwnd]              = window;
-	window->ConsoleWindowHandle = hwnd;
-	window->SetCommandQueue(mCommandQueue);
-	
-	window->RestoreDeviceObjects(mDevice, false, 0,1);//o.numerator, o.denominator);
-}
-
 
 
 

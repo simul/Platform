@@ -68,7 +68,7 @@
     <ClCompile Include="ConstantBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SwapChain.cpp">
+    <ClCompile Include="DisplaySurface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -142,7 +142,7 @@
     <ClInclude Include="ConstantBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SwapChain.h">
+    <ClInclude Include="DisplaySurface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -316,6 +316,9 @@
     </None>
     <None Include="..\CrossPlatform\SL\water_constants.sl">
       <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\copy.sfx">
+      <Filter>SFX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

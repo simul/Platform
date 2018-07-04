@@ -15,6 +15,8 @@ typedef void* cp_hwnd;
 typedef void* cp_hwnd;
 #endif
 
+#include "DeviceContext.h"
+
 namespace simul
 {
 	namespace crossplatform
@@ -42,6 +44,7 @@ namespace simul
 			//! Render the specified view. It's up to the renderer to decide what that means. The renderTexture is required because many API's don't allow querying of the current state.
 			//! It will be assumed for simplicity that the viewport should be restored to the entire size of the renderTexture.
 			virtual void				Render(int view_id,void* pContext,void* renderTexture,int w,int h)=0;
+			virtual void				SetRenderDelegate(int view_id,crossplatform::RenderDelegate d){}
 		};
 		/// An interface class for managing GPU-accelerated graphics windows.
 		/// The derived class 
@@ -56,7 +59,7 @@ namespace simul
 			virtual Output	GetOutput(int i)=0;
 		};
 		
-		class WindowManagerInterface
+		class DisplaySurfaceManagerInterface
 		{
 		public:
 			virtual void	AddWindow(cp_hwnd h)=0;
