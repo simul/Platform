@@ -1635,7 +1635,7 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
     mCommandList                        = deviceContext.asD3D12Context();
     immediateContext.platform_context   = mCommandList;
     dx12::Texture* src                  = (dx12::Texture*)source;
-    dx12::Texture* dst                  = (dx12::Texture*)dst;
+    dx12::Texture* dst                  = (dx12::Texture*)destination;
     if (!src || !dst)
     {
         SIMUL_CERR << "Failed to Resolve.\n";

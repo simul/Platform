@@ -63,33 +63,6 @@ namespace simul
 			D3D11_VIEWPORT				viewport;
 			crossplatform::PlatformRendererInterface *renderer;
 		};
-		//! A class for multiple swap chains (i.e. rendering windows) to share the same d3d device.
-		//! With each graphics window it manages (identified by HWND's), Direct3D11WindowManager creates and manages a IDXGISwapChain instance.
-		class SIMUL_DIRECTX11_EXPORT Direct3D11WindowManager: public crossplatform::WindowManagerInterface
-		{
-		public:
-			Direct3D11WindowManager();
-			~Direct3D11WindowManager();
-			void Initialize(void* d3dDevice,void *imm);
-			void Shutdown();
-			// Implementing Window Manager, which associates Hwnd's with renderers and view ids:
-			//! Add a window. Creates a new Swap Chain.
-			void AddWindow(cp_hwnd h);
-			//! Removes the window and destroys its associated Swap Chain.
-			void RemoveWindow(cp_hwnd h);
-			IDXGISwapChain *GetSwapChain(cp_hwnd hwnd);
-			void Render(cp_hwnd hwnd);
-			void SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
-			void SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output);
-			void ResizeSwapChain(cp_hwnd hwnd);
-			int GetViewId(cp_hwnd hwnd);
-			Window *GetWindow(cp_hwnd hwnd);
-		protected:
-			ID3D11Device* d3dDevice;
-			ID3D11DeviceContext* d3dImmediateDeviceContext;
-			typedef std::map<cp_hwnd,Window*> WindowMap;
-			WindowMap windows;
-		};
 	}
 }
 #pragma warning(pop)

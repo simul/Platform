@@ -124,8 +124,9 @@ void DisplaySurface::Render()
     pImmediateContext->ClearRenderTargetView(mBackBufferRT, clear);
     pImmediateContext->RSSetViewports(1, &mViewport);
 
-    renderer->Render(mViewId, pImmediateContext, mBackBufferRT, mViewport.Width,mViewport.Height);
-
+    renderer->Render(mViewId, pImmediateContext, mBackBufferRT, mViewport.Width, mViewport.Height);
+	
+    pImmediateContext->Release();
     static DWORD dwFlags        = 0;
     static UINT SyncInterval    = 0;
     V_CHECK(mSwapChain->Present(SyncInterval, dwFlags));

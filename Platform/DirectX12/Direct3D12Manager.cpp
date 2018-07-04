@@ -100,7 +100,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 #endif
 
 	// Initialize render targets
-	CreateRenderTarget(d3dDevice);		
+	CreateRenderTarget(d3dDevice);
 
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(factory);

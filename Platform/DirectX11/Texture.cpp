@@ -497,7 +497,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				textureDesc.BindFlags|=D3D11_BIND_SHADER_RESOURCE;
 				if(make_rt)
 					textureDesc.BindFlags|=D3D11_BIND_RENDER_TARGET;
-				if(setDepthStencil)
+				if(setDepthStencil&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==0)
 					textureDesc.BindFlags|=D3D11_BIND_DEPTH_STENCIL;
 				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 				r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
@@ -514,7 +514,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 			width=textureDesc.Width;
 			length=textureDesc.Height;
 			int total_num=textureDesc.ArraySize*(cubemap?6:1);
-			if(!srv&&need_srv)
+			if(!srv&&need_srv&&(textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)!=0)
 			{
 				InitSRVTables(total_num,textureDesc.MipLevels);
 				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap,false,textureDesc.SampleDesc.Count>1);
@@ -532,18 +532,30 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
+				bool msaa=(textureDesc.SampleDesc.Count)>1;
 				if(renderTargetViews)
 				{
-					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
-				
-					renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
-					renderTargetViewDesc.Texture2DArray.ArraySize			=1;
+					renderTargetViewDesc.ViewDimension		=msaa?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
+					if(msaa)
+					{
+						renderTargetViewDesc.Texture2DMSArray.FirstArraySlice		=0;
+						renderTargetViewDesc.Texture2DMSArray.ArraySize				=1;
+					}
+					else
+					{
+						renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
+						renderTargetViewDesc.Texture2DArray.ArraySize			=1;
+					}
 					for(int i=0;i<(int)total_num;i++)
 					{
-						renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
+						if(msaa)
+							renderTargetViewDesc.Texture2DMSArray.FirstArraySlice		=0;
+						else
+							renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
 						for(int j=0;j<(int)textureDesc.MipLevels;j++)
 						{
-							renderTargetViewDesc.Texture2DArray.MipSlice			=j;
+							if(!msaa)
+								renderTargetViewDesc.Texture2DArray.MipSlice			=j;
 							V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i][j])));
 						}
 					}

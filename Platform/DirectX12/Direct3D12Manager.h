@@ -19,7 +19,6 @@ namespace simul
 	namespace dx12
 	{
 		struct Window;
-		typedef std::map<HWND, Window*> WindowMap;
 		typedef std::map<int, IDXGIOutput*> OutputMap;
 
 		//! Window class that holds the swap chain and the surfaces used to render
@@ -108,7 +107,6 @@ namespace simul
 		public:
 										Direct3D12Manager();
 										~Direct3D12Manager();
-
 			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void						Initialize(bool use_debug=false,bool instrument= false, bool default_driver = false);
 			void						Shutdown();

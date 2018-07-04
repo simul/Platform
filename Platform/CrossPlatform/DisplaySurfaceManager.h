@@ -15,7 +15,7 @@ namespace simul
 	{
 		//! A class for multiple swap chains (i.e. rendering windows) to share the same device.
 		//! With each graphics window it manages (identified by HWND's), WindowManager creates and manages a SwapChain instance.
-		class SIMUL_CROSSPLATFORM_EXPORT DisplaySurfaceManager: public crossplatform::WindowManagerInterface
+		class SIMUL_CROSSPLATFORM_EXPORT DisplaySurfaceManager: public crossplatform::DisplaySurfaceManagerInterface
 		{
 		public:
             DisplaySurfaceManager();
