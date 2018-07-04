@@ -1,31 +1,37 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+//  Copyright (c) 2015-2018 Simul Software Ltd. All rights reserved.
 #ifndef LIGHTNING_CONSTANTS_SL
 #define LIGHTNING_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(LightningConstants,10)
-	uniform vec3 lightningColour;
-	uniform float branchAngleRadians;
+	uniform vec3    lightningColour;
+	uniform float   branchAngleRadians;
 
-	uniform vec3 startPos;
-	uniform uint num_octaves;
+	uniform vec3    startPos;
+	uniform uint    num_octaves;
 
-	uniform vec3 endPos;
-	uniform float strikeThicknessMetres;
+	uniform vec3    endPos;
+	uniform float   strikeThicknessMetres;
 
-	uniform float roughness;
-	uniform float motion;
-	uniform uint numLevels;
-	uniform uint numBranches;
+	uniform float   roughness;
+	uniform float   motion;
+    //! How many times should we branch
+	uniform uint    numLevels;
+    //! This is the number of branches requested by the lighting props
+	uniform uint    numBranches;
+    //! pow(numBranches,curLevel - 1) = this is the number of branches
+    //! generated in the previous level
+    uniform uint    numBranchesPrevious;
 
-	uniform float branchLengthMetres;
-	uniform uint branchInterval;
-	uniform float phaseTime;
-	uniform int randomSeed;
+	uniform float   branchLengthMetres;
+	uniform uint    branchInterval;
+	uniform float   phaseTime;
+	uniform int     randomSeed;
 
-	uniform float brightness;
-	uniform float progress;
-	uniform float vertical;
-	uniform uint  branchIndex;
+	uniform float   brightness;
+	uniform float   progress;
+	uniform float   vertical;
+	uniform uint    branchIndex;
+    uniform uint    curLevel;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -48,28 +54,8 @@ SIMUL_CONSTANT_BUFFER_END
 struct LightningVertex
 {
     vec3 position;
-	vec2 texCoords;				// x= width in pixels
+	vec2 texCoords;		// x= width in pixels
 	float progress;
 };
-
-#ifndef __cplusplus
-struct LightningVertexInput
-{
-    vec3 position		: SV_POSITION;
-    vec2 texCoords		: TEXCOORD0;
-	float progress		: TEXCOORD1;
-};
-
-struct LightningVertexOutput
-{
-    vec4 position			: SV_POSITION;
-    float brightness		: TEXCOORD0;
-    float thicknessMetres	: TEXCOORD1;
-	float depth				: TEXCOORD2;
-	float endpoint			: TEXCOORD3;
-	float progress			: TEXCOORD4;
-	vec3 view				: TEXCOORD5;
-};
-#endif
 
 #endif
