@@ -1,4 +1,4 @@
-
+//  Copyright (c) 2015-2018 Simul Software Ltd. All rights reserved.
 FarNearPixelOutput Lightpass(Texture3D cloudDensity
 								,Texture3D noiseTexture3D
 								,vec4 dlookup
@@ -145,15 +145,12 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		b							=abs(c-C0*2);
 		if(fade>0)
 		{
-			const float mip =0.0;
-			vec3 noise_texc	=vec3(0.0,0.0,0.0);
-			vec4 noiseval	=vec4(0,0,0,0);
-			vec4 density 	=vec4(0.0,0.0,0.0,0.0);
-			vec4 light   	=vec4(0.0,0.0,0.0,0.0);
-			
-			calcDensity(cloudDensity,cloudDensity,cloudTexCoords,noiseval,fractalScale,mip,density,light);
-			
-			density.z   	*=fade;
+			const float mip = 0.0;
+			vec3 noise_texc	= vec3(0.0,0.0,0.0);
+			vec4 noiseval	= vec4(0,0,0,0);
+			vec4 density 	= sample_3d_lod(cloudDensity,wwcSamplerState,cloudTexCoords,mip);			
+			density.z   	*= fade;
+
 			if(density.z>0)
 			{
 				float brightness_factor =0.0;
@@ -171,7 +168,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				vec4 clr				=vec4(spectralFluxOver1e6.rgb*radiance*density.z,density.z);
 				brightness_factor		=max(1.0,radiance*max_spectral_flux);
 				{
-					vec4 clr_n=clr;
+					vec4 clr_n 		 	=clr;
 					clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
 					clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
 					nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
@@ -180,7 +177,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*cloud_density);
 				colour.a				*=(1.0-clr.a);
-				if(nearColour.a*brightness_factor<0.003)
+				if(nearColour.a*brightness_factor<0.3)
 				{
 					colour.a			=0.0;
 					break;
