@@ -725,9 +725,9 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews12 != nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt, bool setDepthStencil)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt, bool setDepthStencil,bool need_srv)
 {
-	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt,setDepthStencil);
+	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt,setDepthStencil,need_srv);
 }
 
 void Texture::SetName(const char *n)
@@ -739,7 +739,7 @@ void Texture::SetName(const char *n)
 	mTextureDefault->SetName(ws.c_str());
 }
 
-void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil)
+void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
 {
 	// If it's the same as before, return.
 	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
@@ -856,7 +856,6 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 	rPlat->FlushBarriers();
 }
-
 
 void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
 {
@@ -1703,8 +1702,8 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
         targetsAndViewport.m_dt				= nullptr;
         targetsAndViewport.m_rt[0]			= rtView;
         targetsAndViewport.rtFormats[0]     = pixelFormat;
-        targetsAndViewport.viewport.w		= (float)(std::max(1, (width >> mip)));
-        targetsAndViewport.viewport.h		= (float)(std::max(1, (length >> mip)));
+        targetsAndViewport.viewport.w		= (int)(std::max(1, (width >> mip)));
+        targetsAndViewport.viewport.h		= (int)(std::max(1, (length >> mip)));
         targetsAndViewport.viewport.x		= 0;
         targetsAndViewport.viewport.y		= 0;
 

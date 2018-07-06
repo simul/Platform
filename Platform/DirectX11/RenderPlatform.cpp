@@ -21,6 +21,7 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "D3dx11effect.h"
+#include "DisplaySurface.h"
 
 #ifdef _XBOX_ONE
 #include "Simul/Platform/DirectX11/ESRAMManager.h"
@@ -558,6 +559,11 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 crossplatform::Shader *RenderPlatform::CreateShader()
 {
 	return new Shader;
+}
+
+crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
+{
+    return new dx11::DisplaySurface();
 }
 
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)

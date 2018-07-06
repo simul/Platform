@@ -12,13 +12,13 @@
 
 //! Number of backbuffers
 static const UINT			FrameCount = 3;
+#define cp_hwnd HWND
 
 namespace simul
 {
 	namespace dx12
 	{
 		struct Window;
-		typedef std::map<HWND, Window*> WindowMap;
 		typedef std::map<int, IDXGIOutput*> OutputMap;
 
 		//! Window class that holds the swap chain and the surfaces used to render
@@ -101,26 +101,15 @@ namespace simul
             bool                        IRecording;
         };
 
-		//! Manages the rendering
+		//! Manages the rendering device
 		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
 										Direct3D12Manager();
 										~Direct3D12Manager();
-
 			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void						Initialize(bool use_debug=false,bool instrument= false, bool default_driver = false);
-			//! Add a window. Creates a new Swap Chain.
-			void						AddWindow(HWND h);
-			//! Removes the window and destroys its associated Swap Chain.
-			void						RemoveWindow(HWND h);
 			void						Shutdown();
-			IDXGISwapChain*				GetSwapChain(HWND hwnd);
-			void						Render(HWND hwnd);
-			
-			void						SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
-			void						SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
-			void						ResizeSwapChain(HWND hwnd);
 			void*						GetDevice();
 			void*						GetDeviceContext();
 
@@ -130,17 +119,12 @@ namespace simul
 			void*						GetCommandQueue();
 			int							GetNumOutputs();
 			crossplatform::Output		GetOutput(int i);
-			int							GetViewId(HWND hwnd);
-			Window*						GetWindow(HWND hwnd);
 			void						ReportMessageFilterState();
 
 		protected:
             ImmediateContext            mIContext;
-			//! Map of windows
-			WindowMap					mWindows;
 			//! Map of displays
 			OutputMap					mOutputs;
-
 			//! The D3D device
 			ID3D12Device*				mDevice;
 			//! Used to submit commands to the GPU

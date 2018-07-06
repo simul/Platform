@@ -68,6 +68,9 @@
     <ClCompile Include="ConstantBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DisplaySurface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h">
@@ -137,6 +140,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ConstantBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplaySurface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -310,6 +316,9 @@
     </None>
     <None Include="..\CrossPlatform\SL\water_constants.sl">
       <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\copy.sfx">
+      <Filter>SFX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

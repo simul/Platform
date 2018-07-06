@@ -448,7 +448,7 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews!=nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,bool make_rt, bool setDepthStencil)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,bool make_rt, bool setDepthStencil,bool need_srv)
 {
 	ID3D11Texture2D *t=(ID3D11Texture2D *)T;
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView *)SRV;
@@ -486,14 +486,8 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
-			// ASSUME it's a cubemap if it's an array of six.
-			if(textureDesc.ArraySize==6)
-			{
-				cubemap=(textureDesc.ArraySize==6);
-				textureDesc.ArraySize=1;
-			}
 			// Can this texture have SRV's? If not we must COPY the resource.
-			if(textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)
+			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)!=D3D11_BIND_SHADER_RESOURCE)||!need_srv)
 			{
 				texture=t;
 			}
@@ -503,19 +497,26 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				textureDesc.BindFlags|=D3D11_BIND_SHADER_RESOURCE;
 				if(make_rt)
 					textureDesc.BindFlags|=D3D11_BIND_RENDER_TARGET;
-				if(setDepthStencil)
+				if(setDepthStencil&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==0)
 					textureDesc.BindFlags|=D3D11_BIND_DEPTH_STENCIL;
 				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 				r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
 			}
-
+			
+			// ASSUME it's a cubemap if it's an array of six.
+			if(textureDesc.ArraySize==6)
+			{
+				cubemap=(textureDesc.ArraySize==6);
+				textureDesc.ArraySize=1;
+			}
 			dxgi_format=textureDesc.Format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
-			if(!srv)
+			int total_num=textureDesc.ArraySize*(cubemap?6:1);
+			if(!srv&&need_srv&&(textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)!=0)
 			{
-				InitSRVTables(textureDesc.ArraySize,textureDesc.MipLevels);
+				InitSRVTables(total_num,textureDesc.MipLevels);
 				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap,false,textureDesc.SampleDesc.Count>1);
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
@@ -527,22 +528,34 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 				renderTargetViewDesc.Format = TypelessToSrvFormat(textureDesc.Format);
-				InitRTVTables(textureDesc.ArraySize,textureDesc.MipLevels);
+				InitRTVTables(total_num,textureDesc.MipLevels);
 
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
+				bool msaa=(textureDesc.SampleDesc.Count)>1;
 				if(renderTargetViews)
 				{
-					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
-				
-					renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
-					renderTargetViewDesc.Texture2DArray.ArraySize			=1;
-					for(int i=0;i<(int)textureDesc.ArraySize;i++)
+					renderTargetViewDesc.ViewDimension		=msaa?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
+					if(msaa)
 					{
-						renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
+						renderTargetViewDesc.Texture2DMSArray.FirstArraySlice		=0;
+						renderTargetViewDesc.Texture2DMSArray.ArraySize				=1;
+					}
+					else
+					{
+						renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
+						renderTargetViewDesc.Texture2DArray.ArraySize			=1;
+					}
+					for(int i=0;i<(int)total_num;i++)
+					{
+						if(msaa)
+							renderTargetViewDesc.Texture2DMSArray.FirstArraySlice		=0;
+						else
+							renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
 						for(int j=0;j<(int)textureDesc.MipLevels;j++)
 						{
-							renderTargetViewDesc.Texture2DArray.MipSlice			=j;
+							if(!msaa)
+								renderTargetViewDesc.Texture2DArray.MipSlice			=j;
 							V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i][j])));
 						}
 					}
@@ -647,6 +660,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 	}
 	dim=3;
 }
+
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
 	pixelFormat = pf;

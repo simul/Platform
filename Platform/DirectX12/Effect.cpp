@@ -1538,7 +1538,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
             // To fix this, we could either send the ID3D12Resource or send the format from the client
             if (tmpState.RTFormats[i] == DXGI_FORMAT_UNKNOWN)
             {
-                tmpState.RTFormats[i] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+                tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(curRenderPlat->DefaultOutputFormat);
             }
         }
         rthash  = tmpState.GetHash();

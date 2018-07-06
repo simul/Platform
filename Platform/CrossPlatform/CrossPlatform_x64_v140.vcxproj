@@ -194,6 +194,8 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
+    <ClInclude Include="DisplaySurface.h" />
+    <ClInclude Include="DisplaySurfaceManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AmortizationStruct.cpp" />
@@ -222,6 +224,8 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
+    <ClCompile Include="DisplaySurfaceManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx" />

@@ -15,6 +15,8 @@ typedef void* cp_hwnd;
 typedef void* cp_hwnd;
 #endif
 
+#include "DeviceContext.h"
+
 namespace simul
 {
 	namespace crossplatform
@@ -42,6 +44,7 @@ namespace simul
 			//! Render the specified view. It's up to the renderer to decide what that means. The renderTexture is required because many API's don't allow querying of the current state.
 			//! It will be assumed for simplicity that the viewport should be restored to the entire size of the renderTexture.
 			virtual void				Render(int view_id,void* pContext,void* renderTexture,int w,int h)=0;
+			virtual void				SetRenderDelegate(int view_id,crossplatform::RenderDelegate d){}
 		};
 		/// An interface class for managing GPU-accelerated graphics windows.
 		/// The derived class 
@@ -50,16 +53,21 @@ namespace simul
 		public:
 			virtual void	Initialize(bool use_debug, bool instrument, bool default_driver) = 0;
 			virtual void	Shutdown() = 0;
-			virtual void	AddWindow(cp_hwnd h)=0;
-			virtual void	RemoveWindow(cp_hwnd h)=0;
-			virtual void	Render(cp_hwnd h)=0;
-			virtual void	SetRenderer(cp_hwnd,PlatformRendererInterface *ci,int view_id)=0;
-			virtual void	SetFullScreen(cp_hwnd cp_hwnd,bool fullscreen,int which_output)=0;
-			virtual void	ResizeSwapChain(cp_hwnd cp_hwnd)=0;
 			virtual void*	GetDevice()=0;
 			virtual void*	GetDeviceContext()=0;
 			virtual int		GetNumOutputs()=0;
 			virtual Output	GetOutput(int i)=0;
+		};
+		
+		class DisplaySurfaceManagerInterface
+		{
+		public:
+			virtual void	AddWindow(cp_hwnd h)=0;
+			virtual void	RemoveWindow(cp_hwnd h)=0;
+			virtual void	Render(cp_hwnd h)=0;
+			virtual void	SetRenderer(cp_hwnd,PlatformRendererInterface *ci,int view_id)=0;
+			virtual void	SetFullScreen(cp_hwnd h,bool fullscreen,int which_output)=0;
+			virtual void	ResizeSwapChain(cp_hwnd h)=0;
 			virtual int		GetViewId(cp_hwnd h)=0;
 		};
 	}

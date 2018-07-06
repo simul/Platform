@@ -11,6 +11,7 @@
 #include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -1173,6 +1174,11 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 	static bool enabled=true;
 	if(enabled&&simul::base::GetFeatureLevel()>=base::EXPERIMENTAL)
 		EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+}
+
+DisplaySurface* RenderPlatform::CreateDisplaySurface()
+{
+    return nullptr;
 }
 
 namespace simul

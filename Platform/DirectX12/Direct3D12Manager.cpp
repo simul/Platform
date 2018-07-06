@@ -100,7 +100,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 #endif
 
 	// Initialize render targets
-	CreateRenderTarget(d3dDevice);		
+	CreateRenderTarget(d3dDevice);
 
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(factory);
@@ -623,131 +623,15 @@ void Direct3D12Manager::Shutdown()
 		SAFE_RELEASE(i->second);
 	}
 	mOutputs.clear();
-	
-	for(WindowMap::iterator i=mWindows.begin();i!=mWindows.end();i++)
-	{
-		SetFullScreen(i->second->ConsoleWindowHandle,false,0);
-		delete i->second;
-	}
-	mWindows.clear();
 
 	ReportMessageFilterState();
 
 	SAFE_RELEASE(mDevice);
 }
 
-void Direct3D12Manager::RemoveWindow(HWND hwnd)
-{
-    if (mWindows.find(hwnd) == mWindows.end())
-    {
-		return;
-    }
-    Window* w = mWindows[hwnd];
-	SetFullScreen(hwnd,false,0);
-	delete w;
-	mWindows.erase(hwnd);
-}
-
-IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
-{
-	if(mWindows.find(h)==mWindows.end())
-		return NULL;
-	Window *w=mWindows[h];
-	if(!w)
-		return NULL;
-	return w->SwapChain;
-}
-
-void Direct3D12Manager::Render(HWND h)
-{
-    // Check that the window exists:
-	if (mWindows.find(h) == mWindows.end())
-	{
-        SIMUL_CERR << "No window exists for HWND " << std::hex << h << std::endl;
-		return;
-	}
-	Window* w = mWindows[h];
-    if (h != w->ConsoleWindowHandle)
-	{
-		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->ConsoleWindowHandle <<std::endl;
-		return;
-	}
-
-    // First lets make sure is safe to start working on this frame:
-    w->StartFrame();
-
-    UINT curIdx = w->GetCurrentIndex();
-    HRESULT res = S_FALSE;
-
-	// Set viewport 
-	w->CommandList->RSSetViewports(1, &w->CurViewport);
-    w->CommandList->RSSetScissorRects(1, &w->CurScissor);
-
-	// Indicate that the back buffer will be used as a render target.
-	w->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[curIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	w->CommandList->OMSetRenderTargets(1, &w->RTHandles[curIdx], FALSE, nullptr);
-	
-	// Submit commands
-	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
-    w->CommandList->ClearRenderTargetView(w->RTHandles[curIdx], kClearColor , 0, nullptr);
-
-	if (w->IRendererRef)
-	{
-		w->IRendererRef->Render(w->WindowUID, w->CommandList,&w->RTHandles[curIdx],w->CurScissor.right,w->CurScissor.bottom);
-	}
-
-	// Get ready to present
-    w->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
-    // This will close the command list and use the Queue reference
-    // to execute it
-    w->EndFrame();
-}
-
-void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
-{
-	if(mWindows.find(hwnd)==mWindows.end())
-		return;
-	Window *w=mWindows[hwnd];
-	if(!w)
-		return;
-	w->SetRenderer(ci,  view_id);
-}
-
-int Direct3D12Manager::GetViewId(HWND hwnd)
-{
-	if(mWindows.find(hwnd)==mWindows.end())
-		return -1;
-	Window *w=mWindows[hwnd];
-	return w->WindowUID;
-}
-
-Window *Direct3D12Manager::GetWindow(HWND hwnd)
-{
-	if(mWindows.find(hwnd)==mWindows.end())
-		return NULL;
-	Window *w=mWindows[hwnd];
-	return w;
-}
-
 void Direct3D12Manager::ReportMessageFilterState()
 {
 
-}
-
-void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
-{
-    SIMUL_CERR << "Not implemented \n";
-}
-
-void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
-{
-    if(mWindows.find(hwnd) == mWindows.end())
-    {
-		return;
-    }
-	Window* w = mWindows[hwnd];
-    w->MustResize = true;
 }
 
 void* Direct3D12Manager::GetDevice()
@@ -806,23 +690,6 @@ void* Direct3D12Manager::GetCommandQueue()
 {
 	return mCommandQueue;
 }
-
-void Direct3D12Manager::AddWindow(HWND hwnd)
-{
-    if (mWindows.find(hwnd) != mWindows.end())
-    {
-		return;
-    }
-
-	crossplatform::Output o     = GetOutput(0);
-	Window* window	            = new Window;
-	mWindows[hwnd]              = window;
-	window->ConsoleWindowHandle = hwnd;
-	window->SetCommandQueue(mCommandQueue);
-	
-	window->RestoreDeviceObjects(mDevice, false, o.numerator, o.denominator);
-}
-
 
 
 

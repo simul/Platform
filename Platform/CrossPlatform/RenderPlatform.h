@@ -57,6 +57,9 @@ namespace simul
 		struct PhysicalLightRenderData;
 		struct Query;
 		struct TargetsAndViewport;
+		class SwapChain;
+        struct Window;
+        class DisplaySurface;
 
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
@@ -168,7 +171,7 @@ namespace simul
 			virtual void StartRender		(DeviceContext &){}
 			virtual void EndRender			(DeviceContext &){}
             //! Makes sure the resource is in the required state specified by transition. 
-            virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition transition) {};
+            virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
@@ -245,18 +248,19 @@ namespace simul
 			virtual Query					*CreateQuery					(QueryType q)=0;
 			/// Get or create an API-specific shader object.
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
-			///
+			/// Create a shader.
 			virtual Shader					*CreateShader()=0;
+            virtual DisplaySurface*         CreateDisplaySurface();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
-			virtual void					SetStreamOutTarget				(DeviceContext &deviceContext,Buffer *buffer,int start_index=0){}
+			virtual void					SetStreamOutTarget				(DeviceContext &,Buffer *,int =0){}
 
 			virtual void					ApplyDefaultRenderTargets(crossplatform::DeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-            virtual void                    ActivateRenderTargets(DeviceContext &, TargetsAndViewport* targets) {}
+            virtual void                    ActivateRenderTargets(DeviceContext &, TargetsAndViewport* ) {}
             virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps);
 			/// Get the viewport at the given index.
@@ -274,7 +278,7 @@ namespace simul
 			virtual void					StoreRenderState				(DeviceContext &){}
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
-			virtual void					RestoreRenderState				(DeviceContext &deviceContext){}
+			virtual void					RestoreRenderState				(DeviceContext &){}
 			/// Apply the RenderState to the device context - e.g. blend state, depth masking etc.
 			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
 			/// Apply a standard renderstate - e.g. opaque blending
@@ -284,11 +288,11 @@ namespace simul
 			//! Restore rendertargets and viewports from the top of the stack.
 			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
 			//! Resolve an MSAA texture to a normal texture.
-			virtual void					Resolve(DeviceContext &,Texture *destination,Texture *source){}
+			virtual void					Resolve(DeviceContext &,Texture * /*destination*/,Texture * /*source*/){}
 
 			void							LatLongTextureToCubemap(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
-			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8){}
+			virtual void					SaveTexture(Texture *,const char *){}
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 			/// Fill in mipmaps from the zero level down.
