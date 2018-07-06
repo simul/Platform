@@ -59,6 +59,8 @@
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="DeviceContext.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
+    <ClCompile Include="DisplaySurfaceManager.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
@@ -73,7 +75,6 @@
     <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SphericalHarmonics.cpp" />
-    <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -90,6 +91,8 @@
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DemoOverlay.h" />
     <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="DisplaySurface.h" />
+    <ClInclude Include="DisplaySurfaceManager.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="GpuProfiler.h" />
@@ -109,7 +112,6 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="SphericalHarmonics.h" />
-    <ClInclude Include="SwapChain.h" />
     <ClInclude Include="TextInputOutput.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
