@@ -11,9 +11,9 @@
     <ProjectGuid>{92D088AE-05A6-4A0A-845C-682AC0F71BC2}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
     <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <TargetRuntime>Native</TargetRuntime>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">
@@ -70,6 +70,7 @@
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="Direct3D12Manager.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
@@ -85,6 +86,7 @@
     <ClInclude Include="Direct3D12CallbackInterface.h" />
     <ClInclude Include="Direct3D12Manager.h" />
     <ClInclude Include="Direct3D12ManagerInterface.h" />
+    <ClInclude Include="DisplaySurface.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferDX1x.h" />

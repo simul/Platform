@@ -3,16 +3,17 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)  
 	#pragma warning(disable : 4251)  
+#endif
 
 namespace simul
 {
 	namespace crossplatform
 	{
+		class DisplaySurface;
 		//! A class for multiple swap chains (i.e. rendering windows) to share the same device.
 		//! With each graphics window it manages (identified by HWND's), WindowManager creates and manages a SwapChain instance.
 		class SIMUL_CROSSPLATFORM_EXPORT DisplaySurfaceManager: public crossplatform::DisplaySurfaceManagerInterface
@@ -34,6 +35,8 @@ namespace simul
 			int GetViewId(cp_hwnd hwnd);
             DisplaySurface *GetWindow(cp_hwnd hwnd);
 
+			///
+			void EndFrame();
 		protected:
             static const PixelFormat                    kDisplayFormat = RGBA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
@@ -42,5 +45,6 @@ namespace simul
 		};
 	}
 }
+#ifdef _MSC_VER
     #pragma warning(pop)  
 #endif

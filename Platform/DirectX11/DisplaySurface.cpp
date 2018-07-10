@@ -8,7 +8,9 @@ DisplaySurface::DisplaySurface():
     mSwapChain(nullptr),
     mBackBufferRT(nullptr),
     mBackBuffer(nullptr),
-    mDeviceRef(nullptr)
+    mDeviceRef(nullptr),
+    mDeferredContext(nullptr)
+	,mCommandList(nullptr)
 {
 }
 
@@ -17,14 +19,34 @@ DisplaySurface::~DisplaySurface()
     InvalidateDeviceObjects();
 }
 
-void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)
+void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* r, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)
 {
     if (mHwnd && mHwnd == handle)
     {
         return;
     }
+	renderPlatform=r;
+	pixelFormat=outFmt;
     mDeviceRef                          = renderPlatform->AsD3D11Device();
     mHwnd                               = handle;
+}
+
+void DisplaySurface::InvalidateDeviceObjects()
+{
+    SAFE_RELEASE(mDeferredContext);
+    SAFE_RELEASE(mBackBufferRT);
+    SAFE_RELEASE(mBackBuffer);
+    SAFE_RELEASE(mSwapChain);
+    SAFE_RELEASE(mCommandList);
+	mDeviceRef=nullptr;
+}
+
+void DisplaySurface::InitSwapChain()
+{
+	if(mSwapChain)
+		return;
+	if(!renderPlatform->AsD3D11Device())
+		return;
     DXGI_SWAP_CHAIN_DESC swapChainDesc  = {};
     D3D11_RASTERIZER_DESC rasterDesc    = {};
     RECT rect;
@@ -63,7 +85,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     swapChainDesc.BufferDesc.Width                      = screenWidth;
     swapChainDesc.BufferDesc.Height                     = screenHeight;
     // Set regular 32-bit surface for the back buffer.
-    swapChainDesc.BufferDesc.Format                     = dx11::RenderPlatform::ToDxgiFormat(outFmt);
+    swapChainDesc.BufferDesc.Format                     = dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
     swapChainDesc.BufferDesc.RefreshRate.Numerator      = 0;
     swapChainDesc.BufferDesc.RefreshRate.Denominator    = 1;
     // Set the usage of the back buffer.
@@ -85,18 +107,22 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     // Get the pointer to the back buffer.
     HRESULT result = S_OK;
 #ifndef _XBOX_ONE
-    IDXGIDevice * pDXGIDevice;
-    renderPlatform->AsD3D11Device()->QueryInterface(__uuidof(IDXGIDevice), (void **)&pDXGIDevice);
-    IDXGIAdapter * pDXGIAdapter;
-    pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
-    IDXGIFactory * factory;
-    V_CHECK(pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory));
-    V_CHECK(factory->CreateSwapChain(renderPlatform->AsD3D11Device(), &swapChainDesc, &mSwapChain));
+	IDXGIDevice * pDXGIDevice;
+	renderPlatform->AsD3D11Device()->QueryInterface(__uuidof(IDXGIDevice), (void **)&pDXGIDevice);
+	IDXGIAdapter * pDXGIAdapter;
+	pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
+	IDXGIFactory * factory;
+	V_CHECK(pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory));
+	V_CHECK(factory->CreateSwapChain(renderPlatform->AsD3D11Device(), &swapChainDesc, &mSwapChain));
 
-    SAFE_RELEASE(factory);
-    SAFE_RELEASE(pDXGIAdapter);
-    SAFE_RELEASE(pDXGIDevice);
+	SAFE_RELEASE(factory);
+	SAFE_RELEASE(pDXGIAdapter);
+	SAFE_RELEASE(pDXGIDevice);
 #endif
+	UINT cf=mDeviceRef->GetCreationFlags();
+	std::cout<<"Creation flags "<<cf<<"."<<std::endl;
+	SAFE_RELEASE(mDeferredContext);
+	V_CHECK(mDeviceRef->CreateDeferredContext(0,&mDeferredContext));
 
     result = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&mBackBuffer);
     SIMUL_ASSERT(result == S_OK);
@@ -106,27 +132,37 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     SIMUL_ASSERT(result == S_OK);
 }
 
-void DisplaySurface::InvalidateDeviceObjects()
-{
-    SAFE_RELEASE(mBackBufferRT);
-    SAFE_RELEASE(mBackBuffer);
-    SAFE_RELEASE(mSwapChain);
-}
-
 void DisplaySurface::Render()
 {
-    Resize();
+	if(mCommandList)
+		return;
+	if(!mDeferredContext)
+		return;
+	deferredContext.platform_context=mDeferredContext;
+	deferredContext.renderPlatform=renderPlatform;
 
-    ID3D11DeviceContext* pImmediateContext = nullptr;
-    mDeviceRef->GetImmediateContext(&pImmediateContext);
-    pImmediateContext->OMSetRenderTargets(1, &mBackBufferRT, nullptr);
+	renderPlatform->StoreRenderState(deferredContext);
+    mDeferredContext->OMSetRenderTargets(1, &mBackBufferRT, nullptr);
+#if 1
     const float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
-    pImmediateContext->ClearRenderTargetView(mBackBufferRT, clear);
-    pImmediateContext->RSSetViewports(1, &mViewport);
+    mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
+    mDeferredContext->RSSetViewports(1, &mViewport);
 
-    renderer->Render(mViewId, pImmediateContext, mBackBufferRT, mViewport.Width, mViewport.Height);
-	
-    pImmediateContext->Release();
+    renderer->Render(mViewId, mDeferredContext, mBackBufferRT, mViewport.Width, mViewport.Height);
+#endif
+    mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
+	renderPlatform->RestoreRenderState(deferredContext);
+	mDeferredContext->FinishCommandList(true,&mCommandList);
+}
+
+void DisplaySurface::EndFrame()
+{
+	// We check for resize here, because we must manage the SwapChain from the main thread.
+    Resize();
+	if(!mCommandList)
+		return;
+	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(mCommandList,true);
+	SAFE_RELEASE(mCommandList);
     static DWORD dwFlags        = 0;
     static UINT SyncInterval    = 0;
     V_CHECK(mSwapChain->Present(SyncInterval, dwFlags));
@@ -135,6 +171,7 @@ void DisplaySurface::Render()
 void DisplaySurface::Resize()
 {
     RECT rect;
+	InitSwapChain();
 #if defined(WINVER) &&!defined(_XBOX_ONE)
     if (!GetWindowRect((HWND)mHwnd, &rect))
         return;
@@ -148,8 +185,9 @@ void DisplaySurface::Resize()
     if (swapDesc.BufferDesc.Width == W&&swapDesc.BufferDesc.Height == H)
         return;
     
-    mBackBufferRT->Release();
-    mBackBuffer->Release();
+	SAFE_RELEASE(mCommandList);
+	SAFE_RELEASE(mBackBufferRT);
+	SAFE_RELEASE(mBackBuffer);
 
     V_CHECK(mSwapChain->ResizeBuffers(0, W, H, DXGI_FORMAT_UNKNOWN, 0));
 

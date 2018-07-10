@@ -18,7 +18,7 @@ using namespace dx11;
 
 const char *GetErrorText(HRESULT hr)
 {
-	const char *err = DXGetErrorStringA(hr);
+	const char *err = DXGetErrorStringA(hr); 
 	return err;
 }
 

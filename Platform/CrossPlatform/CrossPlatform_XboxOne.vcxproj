@@ -15,6 +15,8 @@
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="DeviceContext.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
+    <ClCompile Include="DisplaySurfaceManager.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
@@ -45,6 +47,8 @@
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DemoOverlay.h" />
     <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="DisplaySurface.h" />
+    <ClInclude Include="DisplaySurfaceManager.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="GpuProfiler.h" />
@@ -76,11 +80,11 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <Keyword>Win32Proj</Keyword>
     <ApplicationEnvironment>title</ApplicationEnvironment>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
     <TargetRuntime>Native</TargetRuntime>
     <ProjectName>SimulCrossPlatform</ProjectName>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

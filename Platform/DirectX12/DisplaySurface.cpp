@@ -144,13 +144,25 @@ void DisplaySurface::InvalidateDeviceObjects()
     SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 }
 
+unsigned DisplaySurface::GetCurrentBackBufferIndex() const
+{
+	UINT curIdx =0;
+#ifndef _XBOX_ONE
+    if(mSwapChain)
+		curIdx = mSwapChain->GetCurrentBackBufferIndex();
+#endif
+	return curIdx;
+}
 void DisplaySurface::Render()
 {
     Resize();
     // First lets make sure is safe to start working on this frame:
     StartFrame();
-
-    UINT curIdx = mSwapChain->GetCurrentBackBufferIndex();
+#ifdef _XBOX_ONE
+    UINT curIdx =0;
+#else
+    UINT curIdx = GetCurrentBackBufferIndex();
+#endif
     HRESULT res = S_FALSE;
 
     // Set viewport 
@@ -223,7 +235,7 @@ void DisplaySurface::StartFrame()
     if (mRecordingCommands) { return; }
 
     HRESULT res = S_FALSE;
-    UINT idx    = mSwapChain->GetCurrentBackBufferIndex();
+    UINT idx    = GetCurrentBackBufferIndex();
 
     // If the GPU is behind, wait:
     if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
@@ -253,7 +265,7 @@ void DisplaySurface::EndFrame()
     mQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
     // Cache the current idx:
-    int idx = mSwapChain->GetCurrentBackBufferIndex();
+    int idx = GetCurrentBackBufferIndex();
 
     // Present new frame
     const DWORD dwFlags = 0;
@@ -301,7 +313,7 @@ void DisplaySurface::Resize()
         EndFrame();
     }
 
-    int idx = (mSwapChain->GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
+    int idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
     if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
     {
         mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);

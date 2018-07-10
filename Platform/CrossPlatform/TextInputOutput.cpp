@@ -177,7 +177,7 @@ void TextFileInput::Load(const std::string &text)
 		size_t brace_pos	=text.find("{",colon_pos+1);
 		size_t sq_pos		=text.find("[",colon_pos+1);
 		size_t next_ret		=text.find("\n",colon_pos+1);
-		if(sq_pos>=0&&sq_pos<next_colon&&sq_pos<brace_pos)
+		if(sq_pos<next_colon&&sq_pos<brace_pos)
 		{
 			size_t end_sq_pos=(size_t)findMatchingSq(text,(int)std::min(sq_pos,brace_pos));
 			std::string sub=text.substr(sq_pos,end_sq_pos+1-sq_pos);

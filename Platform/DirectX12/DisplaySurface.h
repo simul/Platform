@@ -2,6 +2,7 @@
 
 #include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 #include "SimulDirectXHeader.h"
+#include "Export.h"
 
 static const UINT FrameCount = 3;
 
@@ -9,7 +10,7 @@ namespace simul
 {
     namespace dx12
     {
-        class DisplaySurface : public crossplatform::DisplaySurface
+        class SIMUL_DIRECTX12_EXPORT DisplaySurface : public crossplatform::DisplaySurface
         {
         public:
             DisplaySurface();
@@ -19,6 +20,7 @@ namespace simul
             void Render();
             
         private:
+			unsigned GetCurrentBackBufferIndex() const;
             //! Query backbuffers and create render targets
             void CreateRenderTargets(ID3D12Device* device);
             //! Creates the fences used to synchronize with the GPU
