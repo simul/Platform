@@ -12,11 +12,11 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <ApplicationEnvironment>title</ApplicationEnvironment>
     <!-- - - - -->
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
     <TargetRuntime>Native</TargetRuntime>
     <ProjectName>SimulDirectX11</ProjectName>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -79,6 +79,7 @@
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D11Manager.h" />
     <ClInclude Include="Direct3D11ManagerInterface.h" />
+    <ClInclude Include="DisplaySurface.h" />
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="ESRAMManager.h" />
@@ -104,6 +105,7 @@
     <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D11Manager.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="ESRAMManager.cpp" />

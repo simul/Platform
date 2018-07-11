@@ -1,10 +1,10 @@
-#include "DisplaySurfaceManager.h"
-#include "DisplaySurface.h"
+#include "Simul/Platform/CrossPlatform/DisplaySurfaceManager.h"
+#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 
 using namespace simul;
 using namespace crossplatform;
 
-void DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
+void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;
@@ -109,4 +109,12 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd)
     DisplaySurface *window=renderPlatform->CreateDisplaySurface();
 	surfaces[hwnd]=window;
 	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,kDisplayFormat);
+}
+
+void DisplaySurfaceManager::EndFrame()
+{
+	for(auto s:surfaces)
+	{
+		s.second->EndFrame();
+	}
 }

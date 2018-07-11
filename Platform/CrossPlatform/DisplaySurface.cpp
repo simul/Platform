@@ -26,6 +26,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, RenderPlatform* r,bool
 
 void DisplaySurface::ResizeSwapChain(DeviceContext &deviceContext)
 {
+	if(renderer)
+		renderer->ResizeView(mViewId,Viewport.w,Viewport.h);
 }
 
 void DisplaySurface::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
