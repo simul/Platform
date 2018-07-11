@@ -25,7 +25,7 @@ CS_LAYOUT(1, 1, 1)
 shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 {
 	int MAX_OCTAVES = 7;
-	vec3 off		= vec3(1.0,1.0,0.0)*roughness;
+	vec3 off		= vec3(1.0,1.0,1.0)*roughness;
 	float t 		= phaseTime;
 	int steps 		= 1 << MAX_OCTAVES; // 128
 	int delta 		= steps;
