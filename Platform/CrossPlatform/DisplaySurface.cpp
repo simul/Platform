@@ -10,6 +10,7 @@ DisplaySurface::DisplaySurface():
     mHwnd(0),
     mIsVSYNC(false)
 {
+	memset(&viewport,0,sizeof(viewport));
 }
 
 DisplaySurface::~DisplaySurface()
@@ -27,7 +28,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, RenderPlatform* r,bool
 void DisplaySurface::ResizeSwapChain(DeviceContext &deviceContext)
 {
 	if(renderer)
-		renderer->ResizeView(mViewId,Viewport.w,Viewport.h);
+		renderer->ResizeView(mViewId,viewport.w,viewport.h);
 }
 
 void DisplaySurface::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
@@ -40,7 +41,7 @@ void DisplaySurface::SetRenderer(crossplatform::PlatformRendererInterface *ci,in
 	renderer	=ci;
 	if(mViewId<0)
         mViewId =renderer->AddView();
-	renderer->ResizeView(mViewId,Viewport.w,Viewport.h);
+	renderer->ResizeView(mViewId,viewport.w,viewport.h);
 }
 
 void DisplaySurface::Release()

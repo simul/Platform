@@ -160,6 +160,7 @@
   <ItemGroup>
     <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx" />

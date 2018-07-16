@@ -69,10 +69,10 @@ void DisplaySurface::InitSwapChain()
     mViewport.MinDepth   = 0.0f;
     mViewport.MaxDepth   = 1.0f;
 
-    Viewport.h          = screenHeight;
-    Viewport.w          = screenWidth;
-    Viewport.x          = 0;
-    Viewport.y          = 0;
+    viewport.h          = screenHeight;
+    viewport.w          = screenWidth;
+    viewport.x          = 0;
+    viewport.y          = 0;
 
     // Initialize the swap chain description.
     ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
@@ -198,10 +198,10 @@ void DisplaySurface::Resize()
     result = mDeviceRef->CreateRenderTargetView(mBackBuffer, NULL, &mBackBufferRT);
     SIMUL_ASSERT(result == S_OK);
    
-    Viewport.w          = W;
-    Viewport.h          = H;
-    Viewport.x          = 0;
-    Viewport.y          = 0;
+    viewport.w          = W;
+    viewport.h          = H;
+    viewport.x          = 0;
+    viewport.y          = 0;
 
     mViewport.Width      = W;
     mViewport.Height     = H;

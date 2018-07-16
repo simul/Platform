@@ -27,7 +27,7 @@ namespace simul
             cp_hwnd         GetHandle() { return mHwnd; }
             int             GetViewId() { return mViewId; }
 
-			Viewport		            Viewport;
+			Viewport		           viewport;
 			PlatformRendererInterface*  renderer;
 
 		protected:

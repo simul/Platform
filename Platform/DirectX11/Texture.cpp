@@ -237,7 +237,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 
 bool Texture::IsValid() const
 {
-	return (mainShaderResourceView!=NULL);
+	return (mainShaderResourceView!=NULL||texture!=NULL);
 }
 
 ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t,int index,int mip)
@@ -458,8 +458,8 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		return;
 	if(texture==t&&mainShaderResourceView!=nullptr)
 		return;
-	// If it's the same texture, and we created our own srv, that's fine, return.
-	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL&&!setDepthStencil)
+	// If it's the same texture, and we created our own srv or don't need one, that's fine, return.
+	if (texture!=NULL&&texture == t&&(!need_srv||(mainShaderResourceView != NULL&&srv == NULL))&&!setDepthStencil)
 		return;
 	renderPlatform=r;
 	if(external_copy_source==t)
@@ -468,7 +468,6 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		return;
 	}
 	external_texture=true;
-	t->AddRef();
 	FreeSRVTables();
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
@@ -481,13 +480,14 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		mainShaderResourceView->AddRef();
 	if(t)
 	{
+		t->AddRef();
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;
 		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
 			// Can this texture have SRV's? If not we must COPY the resource.
-			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)!=D3D11_BIND_SHADER_RESOURCE)||!need_srv)
+			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)==D3D11_BIND_SHADER_RESOURCE)||!need_srv)
 			{
 				texture=t;
 			}

@@ -21,13 +21,16 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 
 	uniform uint4 texSize;	// xy, z if needed, w=array size
 
-	uniform float displayLod;
-	uniform float displayLevel;
-
 	uniform uint2 queryPos;	// for texture queries.
 	uniform float debugGamma;
 	uniform float debugExposureXXX;
 	
 	uniform vec3 debugViewDir;
+	uniform float padwiobg;
+
+	uniform vec2 texcOffset;
+
+	uniform float displayLod;
+	uniform float displayLevel;
 SIMUL_CONSTANT_BUFFER_END
 #endif

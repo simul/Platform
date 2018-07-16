@@ -62,9 +62,9 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mCurScissor.right	    = screenWidth;
 	mCurScissor.bottom	    = screenHeight;
 
-    Viewport.w              = screenWidth;
-    Viewport.h              = screenHeight;
-    Viewport.x              = Viewport.y = 0;
+   viewport.w              = screenWidth;
+   viewport.h              = screenHeight;
+   viewport.x              = viewport.y = 0;
 
 #ifndef _XBOX_ONE
 	// Dx12 swap chain	
@@ -342,9 +342,9 @@ void DisplaySurface::Resize()
     mCurScissor.right       = screenWidth;
     mCurScissor.bottom      = screenHeight;
 
-    Viewport.w              = screenWidth;
-    Viewport.h              = screenHeight;
-    Viewport.x              = Viewport.y = 0;
+    viewport.w              = screenWidth;
+    viewport.h              = screenHeight;
+    viewport.x              = viewport.y = 0;
 
     // Resize the swapchain buffers
     HRESULT res = mSwapChain->ResizeBuffers

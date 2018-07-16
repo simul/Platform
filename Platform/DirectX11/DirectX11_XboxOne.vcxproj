@@ -327,6 +327,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
     </CustomBuild>
+    <None Include="..\CrossPlatform\SFX\cloud_edit.sfx" />
     <None Include="..\CrossPlatform\SFX\water.sfx" />
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />

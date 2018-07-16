@@ -177,6 +177,9 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSL\GFX.hlsl">

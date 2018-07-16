@@ -291,6 +291,9 @@
     <None Include="..\CrossPlatform\SFX\water.sfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\CrossPlatform\SFX\cloud_edit.sfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\CrossPlatform\SFX\atmospherics.sfx">
