@@ -294,6 +294,9 @@
     <None Include="..\CrossPlatform\SFX\cloud_edit.sfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\quaternion.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\CrossPlatform\SFX\atmospherics.sfx">

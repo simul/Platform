@@ -60,9 +60,6 @@ shader void CS_InterpLightTable(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 	vec4 colour1		=texture_3d_nearest_lod(sourceTexture,texc_3a,0);
 	vec4 colour2		=texture_3d_nearest_lod(sourceTexture,texc_3b,0);
 	vec4 clr			=lerp(colour1,colour2,skyInterp);
-	//clr=vec4(0,1.5-float(pos.y),0,0);
-	// Apply earth shadow to sunlight.
-	//colour				*=saturate(alt_texc_x-illumination_alt_texc);
 	IMAGE_STORE(targetTexture,pos.xy,clr);
 }
 

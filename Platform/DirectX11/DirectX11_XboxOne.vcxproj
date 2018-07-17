@@ -353,6 +353,7 @@
     <None Include="..\CrossPlatform\SL\noise.sl" />
     <None Include="..\CrossPlatform\SL\noise_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\quaternion.sl" />
     <None Include="..\CrossPlatform\SL\rain_constants.sl" />
     <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
     <None Include="..\CrossPlatform\SL\render_states.sl" />

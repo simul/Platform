@@ -33,8 +33,8 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 	float u=RH*RH-Rh*Rh*c*c;
 	float U=R*R-Rh*Rh*c*c;
 	// If the ray passes through the earth, infinite optical length.
-	if(sine_elevation<0&&U>0.0)
-		return 1000000.0;
+	//if(sine_elevation<0&&U>0.0)
+	//	return 1000000.0;
 	float haze_opt_len=0.0;
 	// If we have a solution, there exists a path through the constant haze area.
 	if(sine_elevation<0&&u>0)
@@ -110,27 +110,68 @@ float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_
 		float new_alt_km	=Ra-planetRadiusKm;
 		float dens_here		=texture_clamp_lod(density_texture,vec2(new_alt_km/max_altitude_km,new_alt_km/max_altitude_km),0).x;
 		total				+=dens_here*step_;
-		d+=step_;
+		d					+=step_;
 	}
 	return max(0.0,total);
 }
 
-vec4 getSunlightFactor2(Texture2D optical_depth_texture,Texture2D density_texture,float max_altitude_km,float alt_km,vec3 DirectionToLight)
+// Using scattering
+vec4 getSunlightFactor2(Texture2D optical_depth_texture,Texture2D density_texture,float max_altitude_km,float alt_km,vec3 lightDir)
 {
-	float sine				=clamp(DirectionToLight.z,-1.0,1.0);
+	float sine				=clamp(lightDir.z,-1.0,1.0);
+	float angle				=asin(sine);
 	vec2 table_texc			=vec2(0.5+0.5*sine,alt_km/maxDensityAltKm);
 
 	table_texc				+=vec2(texelOffset/tableSize.x,texelOffset/tableSize.y);
 	
 	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
-	float opt_depth_km		=GetOpticalDepth(density_texture,max_altitude_km,alt_km,DirectionToLight);
-	float vis				=lookup.y;
+	float opt_depth_km		=GetOpticalDepth(density_texture,max_altitude_km,alt_km,lightDir);
+	float vis				=1;//lookup.y;
 	float ozone_length		=lookup.w;
 	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
 	vec4 factor				=vec4(vis,vis,vis,vis);
 	factor.rgb				*=exp(-rayleigh*opt_depth_km-hazeMie*haze_opt_len-ozone*ozone_length);
 
 	return saturate(factor);
+}
+
+vec4 getSunlightFactor3(Texture2D optical_depth_texture,Texture2D density_texture,float max_altitude_km,float alt_km,vec3 lightDir,float planetRadiusKm,float radiusRadians)
+{
+	// what part of the circle is visible above the horizon?
+
+	// We will integrate the light contribution over the sun's circle.
+	if(lightDir.z>0.707)
+		return getSunlightFactor2(optical_depth_texture,density_texture,max_altitude_km,alt_km,lightDir);
+	vec3 side			=normalize(cross(lightDir,vec3(0,0,1.0)));
+	float sine			=clamp(lightDir.z,-1.0,1.0);
+	float elevation		=asin(sine);
+	vec4 result			=vec4(0,0,0,0);
+	for(int i=0;i<17;i++)
+	{
+		float new_elev	=elevation+float(i-8)/8.0*radiusRadians;
+		vec3 new_dir	=vec3(lightDir.xy,sin(new_elev));
+		new_dir.xy		=normalize(new_dir.xy);
+		new_dir.xy		*=sqrt(1.0-(new_dir.z*new_dir.z));
+		float vis		=1.0;
+		float horizon_rads			=-acos(min(planetRadiusKm/(planetRadiusKm+alt_km),1.0));
+		float above_horizon_rads	=(elevation-horizon_rads);
+		if(above_horizon_rads<-radiusRadians)
+			vis=0;
+		else if(above_horizon_rads<radiusRadians)
+		{
+			float h=clamp(above_horizon_rads/radiusRadians,-1.0,1.0);
+			// angle:
+			float a=acos(abs(h));
+			float c=(a-abs(h*sin(a)))/SIMUL_PI_F;
+			if(h<0)
+				vis*=1.0-c;
+			else
+				vis*=c;
+		}
+		vec4 fac	=getSunlightFactor2(optical_depth_texture,density_texture,max_altitude_km,alt_km,new_dir)*vis;
+		result		+=fac/17.0;
+	}
+	return result;
 }
 
 float getShortestDistanceToAltitude(float sine_elevation,float start_h_km,float finish_h_km)
