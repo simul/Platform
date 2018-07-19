@@ -594,23 +594,6 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 	deviceContext.renderPlatform->AsD3D12CommandList()->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
 }
 
-void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
-{
-}
-
-
-void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
-{
-}
-
-void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
-{
-}
-
-void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
-{
-}
-
 void RenderPlatform::ApplyDefaultMaterial()
 {
 }

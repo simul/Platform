@@ -322,28 +322,27 @@ float WorleyFactor(vec3 worley_texcoord)
 
 void MapToWindow(uint3 p,bool clears)
 {
-	int3 idx	=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	int3 idx	= int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
 
-	vec3 texc1			=vec3(idx)/vec3(windowGrid);
-	texc1.y				=1.0-texc1.y;
-	texc1.xy			-=vec2(0.5,0.5);
-	texc1				=texc1*mapScale+mapOffset;
-	float sine			=sin(azimuth);
-	float cosine		=cos(azimuth);
-	texc1.xy			=vec2(texc1.x*cosine-texc1.y*sine,texc1.y*cosine+texc1.x*sine);
-	texc1.xy			+=vec2(0.5,0.5);
+	vec3 texc1		=vec3(idx)/vec3(windowGrid);
+	texc1.y			=1.0-texc1.y;
+	texc1.xy		-=vec2(0.5,0.5);
+	texc1			=texc1*mapScale+mapOffset;
+	float sine		=sin(azimuth);
+	float cosine	=cos(azimuth);
+	texc1.xy		=vec2(texc1.x*cosine-texc1.y*sine,texc1.y*cosine+texc1.x*sine);
+	texc1.xy		+=vec2(0.5,0.5);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	idx					=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	idx.xy				+=gridCentreTexel;
-	vec3 texc			=texc1;
-	texc.z				-=mapOffset.z;
-	texc				*=scale/mapScale*vec3(windowGrid);//vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;//+mapOffset*scale/mapScale;
-	texc.z+=offset.z;
-	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
-	idx.xy		=idx.xy%int2(windowGrid.xy);
-	float zPixel1=1.0/float(windowGrid.z);
+	idx.xy			+=gridCentreTexel;
+	vec3 texc		=texc1;
+	texc.z			-=mapOffset.z;
+	texc			*=scale/mapScale*vec3(windowGrid);//vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;//+mapOffset*scale/mapScale;
+	texc.z			+=offset.z;
+	idx.xy			+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy			=idx.xy%int2(windowGrid.xy);
+	float zPixel1	=1.0/float(windowGrid.z);
 	float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z)/ zPixel1);
 	vec4 res = vec4(0.0,0.0,0.0,0.0);
 	vec4 current=vec4(0,0,0,1.0);
@@ -491,7 +490,7 @@ shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	pos.xy		+= gridCentreTexel;
 	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
-	pos.xy		= pos.xy%int2(windowGrid.xy);
+	pos.xy		= pos.xy%uint2(windowGrid.xy);
 	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
 	uint3 pos2	=pos*2;
 	vec4 res;

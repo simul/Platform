@@ -177,7 +177,7 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 #endif
 	UINT W	=abs(rect.right-rect.left);
 	UINT H	=abs(rect.bottom-rect.top);
-	ID3D11RenderTargetView *t[]={NULL};
+	//ID3D11RenderTargetView *t[]={NULL};
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	HRESULT hr=m_swapChain->GetDesc(&swapDesc);
 	if(hr!=S_OK)
@@ -560,10 +560,12 @@ int Direct3D11Manager::GetNumOutputs()
 
 crossplatform::Output Direct3D11Manager::GetOutput(int i)
 {
-	unsigned numModes;
 	crossplatform::Output o;
-	IDXGIOutput *output=outputs[i];
+
 #ifndef _XBOX_ONE
+	unsigned numModes;
+	IDXGIOutput *output = outputs[i];
+
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	SIMUL_ASSERT(result==S_OK);

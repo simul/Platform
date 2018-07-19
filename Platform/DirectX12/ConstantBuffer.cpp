@@ -61,7 +61,6 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
-	int n=0;
 	// Create the upload heap (the gpu memory that will hold the constant buffer)
 	// Each upload heap has 64KB.  (64KB aligned)
 	for (unsigned int i = 0; i < 3; i++)

@@ -110,7 +110,7 @@ crossplatform::Texture *View::GetResolvedHDRBuffer()
 void ViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	auto views=GetViews();
+	//auto views=GetViews();
 	for(auto i=views.begin();i!=views.end();i++)
 	{
 		(i->second)->RestoreDeviceObjects(renderPlatform);
@@ -120,7 +120,7 @@ void ViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 void ViewManager::InvalidateDeviceObjects()
 {
 	renderPlatform=NULL;
-	auto views=GetViews();
+	//auto views=GetViews();
 	for(auto i=views.begin();i!=views.end();i++)
 	{
 		(i->second)->InvalidateDeviceObjects();
