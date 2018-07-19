@@ -1327,22 +1327,22 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	return Output;
 }
 
-shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
+shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) 
 {
 	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing: frontFacing, g_enableFoam, false);
 }
 
-shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
+shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) 
 {
 	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing : frontFacing, false, false);
 }
 
-shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
+shader PS_WATER_OUTPUTS PS_OceanWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) 
 {
 	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing : frontFacing, g_enableFoam, true);
 }
 
-shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
+shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) 
 {
 	return PS_WaterSurfDepth(In, g_unityRender ? !frontFacing : frontFacing, false, true);
 }
