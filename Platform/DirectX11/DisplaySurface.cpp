@@ -119,16 +119,20 @@ void DisplaySurface::InitSwapChain()
 	SAFE_RELEASE(pDXGIAdapter);
 	SAFE_RELEASE(pDXGIDevice);
 #endif
-	UINT cf=mDeviceRef->GetCreationFlags();
-	std::cout<<"Creation flags "<<cf<<"."<<std::endl;
-	SAFE_RELEASE(mDeferredContext);
-	V_CHECK(mDeviceRef->CreateDeferredContext(0,&mDeferredContext));
+	if(mDeviceRef)
+	{
+		UINT cf=mDeviceRef->GetCreationFlags();
+		std::cout<<"Creation flags "<<cf<<"."<<std::endl;
+		SAFE_RELEASE(mDeferredContext);
+		V_CHECK(mDeviceRef->CreateDeferredContext(0,&mDeferredContext));
+	}
 
     result = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&mBackBuffer);
     SIMUL_ASSERT(result == S_OK);
     // Create the render target view with the back buffer pointer.
     SAFE_RELEASE(mBackBufferRT);
-    result = mDeviceRef->CreateRenderTargetView(mBackBuffer, NULL, &mBackBufferRT);
+	if(mDeviceRef)
+	    result = mDeviceRef->CreateRenderTargetView(mBackBuffer, NULL, &mBackBufferRT);
     SIMUL_ASSERT(result == S_OK);
 }
 
@@ -175,6 +179,8 @@ void DisplaySurface::Resize()
 #if defined(WINVER) &&!defined(_XBOX_ONE)
     if (!GetWindowRect((HWND)mHwnd, &rect))
         return;
+	if(!mSwapChain)
+		return;
 #endif
     UINT W = abs(rect.right - rect.left);
     UINT H = abs(rect.bottom - rect.top);
