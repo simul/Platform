@@ -1,6 +1,13 @@
 //  Copyright (c) 2018 Simul Software Ltd. All rights reserved.
 
 #include "../SL/water_constants.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/states.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/debug_constants.sl"
+#include "../SL/depth.sl"
+#include "../SL/noise.sl"
 
 #ifndef WATER_SL
 #define WATER_SL
@@ -15,6 +22,27 @@
 #define COHERENCY_GRANULARITY 128
 
 #define RAND_MAX 0x7fff
+
+//Offset values for profile buffers to remove tiling and aliasing
+float offsets[16] =
+{
+	0.54f,
+	0.18f,
+	0.61f,
+	0.28f,
+	0.09f,
+	0.71f,
+	0.99f,
+	0.43f,
+	0.11f,
+	0.85f,
+	0.24f,
+	0.67f,
+	0.31f,
+	0.36f,
+	0.13f,
+	0.01f
+};
 
 struct TwoColourCompositeOutput
 {
@@ -39,6 +67,11 @@ struct PS_WATER_OUTPUTS
 	vec4 Normals		SIMUL_RENDERTARGET_OUTPUT(3);
 	vec4 RefractColour	SIMUL_RENDERTARGET_OUTPUT(4);
 };
+
+vec3 convertPosToTexc(vec3 pos, uint3 dims)
+{
+	return (vec3(pos) + vec3(0.5, 0.5, 0.5)) / vec3(dims);
+}
 
 void FT2(inout float2 a, inout float2 b)
 {
@@ -120,16 +153,68 @@ void TWIDDLE_8(inout float2 D[8], float phase)
 	TWIDDLE(D[7], 7 * phase);
 }
 
+// Generating gaussian random number with mean 0 and standard deviation 1.
+float Gauss(vec2 values)
+{
+	float u1 = rand(values.xy);
+	float u2 = rand(values.yx * 0.5);
+	if (u1 < 0.0000001f)
+		u1 = 0.0000001f;
+	return sqrt(-2.f* log(u1)) * cos(2.f*3.1415926536f * u2);
+}
+
+// Phillips Spectrum
+// K: normalized wave vector, W: wind direction, v: wind velocity, a: amplitude constant
+float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
+{
+	static float g = 981.f;
+	// largest possible wave from constant wind of velocity v
+	float l = v * v / g;
+	// damp out waves with very small length w << l
+	float w = 0;// l / 10000.f;
+
+	float Ksqr = K.x * K.x + K.y * K.y;
+	float Kcos = K.x * W.x + K.y * W.y;
+	float phillips = a * exp(-1 / (l * l * Ksqr)) / (Ksqr * Ksqr * Ksqr) * (Kcos * Kcos);
+
+	// filter out waves moving opposite to wind
+	if (Kcos < 0)
+		phillips *= dir_depend;
+
+	// damp out waves with very small length w << l
+	return phillips *exp(-Ksqr * w * w);
+}
+
+float spectrum(float zeta, float windSpeed) {
+	float A = pow(1.1, 1.5 * zeta); // original pow(2, 1.5*zeta)
+	float B = exp(-1.8038897788076411 * pow(4, zeta) / pow(windSpeed, 4));
+	return 0.139098f * sqrt(A * B);
+}
+
+vec4 gerstner_wave(float phase /*=knum*x*/, float knum) {
+	float s = sin(phase);
+	float c = cos(phase);
+
+	return vec4(-s, c, -knum * c, -knum * s);
+}
+
+float cubic_bump(float x) {
+	if (abs(x) >= 1)
+		return 0.0f;
+	else
+		return x * x * (2 * abs(x) - 3) + 1;
+}
+
 //Calculate fresnel term
 float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 {
-	float fresnel;
+	float output;
 	float cos_incident = clamp(-1.0, 1.0, dot(incident, normal));
 
 	float sint = (sourceIndex / mediumIndex) * sqrt(max(0.0, 1 - (cos_incident * cos_incident)));
 	if (sint >= 1.0)
 	{
-		fresnel = 0.0;
+		output = 0.0;
 	}
 	else
 	{
@@ -137,10 +222,10 @@ float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 		cos_incident = abs(cos_incident);
 		float Rs = ((mediumIndex * cos_incident) - (sourceIndex * cost)) / ((mediumIndex * cos_incident) + (sourceIndex * cost));
 		float Rp = ((sourceIndex * cos_incident) - (mediumIndex * cost)) / ((sourceIndex * cos_incident) + (mediumIndex * cost));
-		fresnel = ((Rs * Rs + Rp * Rp) / 2.0);
+		output = ((Rs * Rs + Rp * Rp) / 2.0);
 	}
 
-	return fresnel;
+	return output;
 
 }
 

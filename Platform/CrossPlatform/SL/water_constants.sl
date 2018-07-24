@@ -2,7 +2,7 @@
 #ifndef WATER_CONSTANTS_SL
 #define WATER_CONSTANTS_SL
 
-SIMUL_CONSTANT_BUFFER(FftConstants,0)
+SIMUL_CONSTANT_BUFFER(FftConstants,11)
 	uint thread_count;
 	uint ostride;
 	uint istride;
@@ -25,7 +25,7 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(cbChangePerFrame,2)
 	uniform float g_Time;
 	uniform float g_ChoppyScale;
-	uniform float xxxxxx;
+	uniform vec2 bnvyduf9sabyv;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbShading,3)
@@ -37,7 +37,8 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform float		g_ShoreExtent;
 
 	// Perlin noise for distant wave crest
-	uniform vec3		fnbhjdiosabh;
+	uniform float		g_profileUVScale;
+	uniform vec2		fnbhjdiosabh;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_unityRender;
@@ -128,5 +129,21 @@ SIMUL_CONSTANT_BUFFER(cbWaterFoam, 9)
 	uniform float		g_foamHeight;
 	uniform float		g_foamChurn;
 	uniform vec2		hvyidbs;
+SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 10)
+	uniform float		g_zetaMax;
+	uniform float		g_zetaMin;
+	uniform float		g_period;
+	uniform float		g_integrationSteps;
+
+	uniform float		g_time;
+	uniform float		g_windSpeed2;
+	uniform float		g_totalWaveNumbers;
+	uniform float		g_dt;
+
+	uniform vec2		g_windDirection2;
+	uniform float		g_windDependency2;
+	uniform float		g_waveGroup;
 SIMUL_CONSTANT_BUFFER_END
 #endif

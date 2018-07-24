@@ -108,8 +108,8 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 	// This is the direction of the parent branch
 	vec3 parentDir			= normalize(parentEndP - startP);
 	// Now we will create a random vector from it
-	vec2 noise_texc			= vec2( 0.3 * float(branchInterval) * float(randomSeed * (idx.x + 1))+0.77 * float(parent_point),1.92 * float(branchInterval) + 0.34 * float(parent_point));
-	vec3 rndvec				= texture_wrap_lod(randomTexture,noise_texc,0).xyz;
+	vec2 rand_texc			= vec2( 0.3 * float(branchInterval) * float(randomSeed * (idx.x + 1))+0.77 * float(parent_point),1.92 * float(branchInterval) + 0.34 * float(parent_point));
+	vec3 rndvec				= texture_wrap_lod(randomTexture, rand_texc,0).xyz;
 	float along				= dot(rndvec,parentDir);
 	rndvec			        -= along * parentDir;
 	rndvec					= normalize(rndvec);

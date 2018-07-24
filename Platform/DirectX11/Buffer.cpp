@@ -43,7 +43,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 		usage=D3D11_USAGE_DEFAULT;
 	D3D11_BUFFER_DESC desc=
 	{
-		(unsigned)num_vertices*layout->GetStructSize()
+		(unsigned)(num_vertices*layout->GetStructSize())
 		,cpu_access?usage:D3D11_USAGE_DEFAULT
 		,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT:0)
 		,(cpu_access?D3D11_CPU_ACCESS_WRITE:0),0

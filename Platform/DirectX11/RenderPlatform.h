@@ -67,10 +67,6 @@ namespace simul
 			
 			void Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void DrawIndexed	(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
-			void DrawMarker		(crossplatform::DeviceContext &deviceContext,const double *matrix);
-			void DrawCrossHair	(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition);
-			void DrawCamera		(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll);
-			void DrawLineLoop	(crossplatform::DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false);
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext);
 

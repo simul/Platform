@@ -152,13 +152,14 @@ bool ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 												 ,crossplatform::PixelFormat pixelFormat
 												 ,bool computable,bool rendertarget,bool depthstencil
 												 ,int num_samples,int aa_quality,bool wrap
-	,vec4 clear, float clearDepth , uint clearStencil )
+												 ,vec4 clear, float clearDepth , uint clearStencil )
 {
 	bool res=dx11::Texture::ensureTexture2DSizeAndFormat(renderPlatform
 												 , w, l
 												 , pixelFormat
 												 , computable, rendertarget, depthstencil
-												 , num_samples, aa_quality,wrap);
+												 , num_samples, aa_quality, wrap
+												 , clear, clearDepth, clearStencil);
 	if(in_esram)
 		MoveToFastRAM();
 	return res;

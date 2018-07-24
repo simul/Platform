@@ -133,8 +133,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	/// (1.0 + 100.0*abs(view.z));
 
 	vec3 amb_dir=view;
-	int steps=initialSteps-((1&stepPos)!=0);
-	int in_step=0,c=0;
+	uint steps=initialSteps-((1&stepPos)!=0);
+	uint in_step=0,c=0;
 	float rangeKm				=initialSteps*stepKm;
 
 	float oddRangeKm				=(0.5*stepKm*initialSteps);

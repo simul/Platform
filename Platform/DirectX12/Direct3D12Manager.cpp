@@ -549,10 +549,12 @@ int Direct3D12Manager::GetNumOutputs()
 
 crossplatform::Output Direct3D12Manager::GetOutput(int i)
 {
-	unsigned numModes;
 	crossplatform::Output o;
-	IDXGIOutput *output=mOutputs[i];
+	
 #ifndef _XBOX_ONE
+	unsigned numModes;
+	IDXGIOutput *output = mOutputs[i];
+
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	SIMUL_ASSERT(result==S_OK);

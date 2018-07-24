@@ -29,7 +29,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 	mBufferSize = num_vertices * layout->GetStructSize();
 
 	// Just debug memory usage
-	float megas = (float)mBufferSize / 1048576.0f;
+	//float megas = (float)mBufferSize / 1048576.0f;
 	//SIMUL_COUT << "Allocating: " << std::to_string(mBufferSize) << ".bytes in the GPU, (" << std::to_string(megas) << ".MB)\n";
 
 	// Upload heap to hold the vertex data in the GPU (we will be mapping it to copy new data)
@@ -98,6 +98,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	}
 	else
 	{
+		indexFormat = DXGI_FORMAT_UNKNOWN;
 		SIMUL_BREAK("Improve this!");
 	}
 

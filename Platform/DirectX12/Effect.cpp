@@ -654,7 +654,7 @@ EffectTechnique* Effect::CreateTechnique()
 
 void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
 {
-	simul::base::MemoryInterface* allocator = renderPlatform->GetMemoryInterface();
+	//simul::base::MemoryInterface* allocator = renderPlatform->GetMemoryInterface();
 	simul::base::FileLoader* fileLoader		= simul::base::FileLoader::GetFileLoader();
 
 	struct FileBlob
@@ -997,7 +997,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 
 void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, crossplatform::ConstantBufferBase *s)
 {
-	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	//RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
 	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
 	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
@@ -1457,7 +1457,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     if (!v && !p)
     {
         SIMUL_CERR << "The pass " << mTechName << " does not have valid shaders!!! \n";
-        return -1;
+        return (size_t)-1;
     }
 
     // Get the current blend state:
@@ -1516,7 +1516,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
         finalRt = &((dx12::RenderState*)renderTargetFormatState)->RtFormatDesc;
         // Check formats against currently bound targets
         // The debug layer will catch this, but its nice for us to be aware of this issue
-        for (int i = 0; i < finalRt->Count; i++)
+        for (uint i = 0; i < finalRt->Count; i++)
         {
             if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i]))
             {

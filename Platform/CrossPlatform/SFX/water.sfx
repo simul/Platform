@@ -150,38 +150,6 @@ shader void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
 	g_DstData[oaddr + 7 * ostride] = D[7];
 }
 
-// Generating gaussian random number with mean 0 and standard deviation 1.
-float Gauss(vec2 values)
-{
-	float u1 = rand(values.xy);
-	float u2 = rand(values.yx * 0.5);
-	if (u1 < 0.0000001f)
-		u1 = 0.0000001f;
-	return sqrt(-2.f* log(u1)) * cos(2.f*3.1415926536f * u2);
-}
-
-// Phillips Spectrum
-// K: normalized wave vector, W: wind direction, v: wind velocity, a: amplitude constant
-float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
-{
-	static float g = 981.f;
-	// largest possible wave from constant wind of velocity v
-	float l = v * v / g;
-	// damp out waves with very small length w << l
-	float w = 0;// l / 10000.f;
-
-	float Ksqr = K.x * K.x + K.y * K.y;
-	float Kcos = K.x * W.x + K.y * W.y;
-	float phillips = a * exp(-1 / (l * l * Ksqr)) / (Ksqr * Ksqr * Ksqr) * (Kcos * Kcos);
-
-	// filter out waves moving opposite to wind
-	if (Kcos < 0)
-		phillips *= dir_depend;
-
-	// damp out waves with very small length w << l
-	return phillips *exp(-Ksqr * w * w);
-}
-
 //---------------------------------------- Compute Shaders -----------------------------------------
 
 // Pre-FFT data preparation:

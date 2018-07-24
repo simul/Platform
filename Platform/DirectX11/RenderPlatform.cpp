@@ -438,23 +438,6 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 	pContext->DrawIndexed(num_indices,start_index,base_vert);
 }
 
-void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
-{
-}
-
-
-void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
-{
-}
-
-void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
-{
-}
-
-void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
-{
-}
-
 void RenderPlatform::ApplyDefaultMaterial()
 {
     const float BLACK_COLOR[] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -468,7 +451,6 @@ void RenderPlatform::ApplyDefaultMaterial()
 
     glBindTexture(GL_TEXTURE_2D, 0);*/
 }
-
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
@@ -1374,7 +1356,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	debugConstants.multiplier=mult;
 	crossplatform::EffectTechnique *tech=debugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	int pass=(blend==true)?1:0;
+	//int pass=(blend==true)?1:0;
 	if(srv)
 	{
 		srv->GetDesc(&desc);
@@ -1488,7 +1470,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 		crossplatform::ContextState *cs=GetContextState(deviceContext);
 		for(auto i=cs->rwTextureAssignmentMap.begin();i!=cs->rwTextureAssignmentMap.end();++i)
 		{
-			int slot=i.first;
+			//int slot=i.first;
 			const crossplatform::TextureAssignment &ta=cs->rwTextureAssignmentMap[i.first];;
 			if(ta.texture&&!ta.texture->IsUnfenceable())
 				ta.texture->SetFence(fence);

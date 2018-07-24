@@ -714,7 +714,7 @@ ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 	const char *firstname="";
 	D3DX11_EFFECT_DESC eDesc;
 	effect->GetDesc(&eDesc);
-	for (int i=0;i<eDesc.ConstantBuffers;i++)
+	for (uint i=0;i<eDesc.ConstantBuffers;i++)
 	{
 		auto *b=effect->GetConstantBufferByIndex(i);
 		if(!b->IsValid())

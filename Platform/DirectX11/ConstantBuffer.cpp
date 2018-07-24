@@ -235,6 +235,7 @@ void *PlatformConstantBuffer::GetBaseAddr()
 #if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 	if(last_placement)
 		return last_placement;
+	return nullptr;
 #else
 	return nullptr;
  #endif

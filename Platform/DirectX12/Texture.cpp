@@ -1740,9 +1740,9 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
         if (!mSubResourcesStates.empty())
         {
 			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-			for (unsigned int l = 0; l < numLayers; l++)
+			for (int l = 0; l < numLayers; l++)
 			{
-				for (unsigned int m = 0; m < mips; m++)
+				for (int m = 0; m < mips; m++)
 				{
 					auto curState = mSubResourcesStates[l][m];
 					if (curState != mResourceState)
