@@ -37,11 +37,14 @@ void DisplaySurface::SetRenderer(crossplatform::PlatformRendererInterface *ci,in
 		return;
 	if(renderer)
 		renderer->RemoveView(mViewId);
-    mViewId=vw_id;
+    mViewId		=vw_id;
 	renderer	=ci;
-	if(mViewId<0)
-        mViewId =renderer->AddView();
-	renderer->ResizeView(mViewId,viewport.w,viewport.h);
+	if(renderer)
+	{
+		if(mViewId<0)
+			mViewId =renderer->AddView();
+		renderer->ResizeView(mViewId,viewport.w,viewport.h);
+	}
 }
 
 void DisplaySurface::Release()

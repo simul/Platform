@@ -161,15 +161,17 @@ void DisplaySurface::Render()
 
 void DisplaySurface::EndFrame()
 {
+	if(mCommandList)
+	{
+		renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(mCommandList,true);
+		SAFE_RELEASE(mCommandList);
+		static DWORD dwFlags        = 0;
+		static UINT SyncInterval    = 0;
+		V_CHECK(mSwapChain->Present(SyncInterval, dwFlags));
+	}
 	// We check for resize here, because we must manage the SwapChain from the main thread.
+	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
     Resize();
-	if(!mCommandList)
-		return;
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(mCommandList,true);
-	SAFE_RELEASE(mCommandList);
-    static DWORD dwFlags        = 0;
-    static UINT SyncInterval    = 0;
-    V_CHECK(mSwapChain->Present(SyncInterval, dwFlags));
 }
 
 void DisplaySurface::Resize()
@@ -191,9 +193,9 @@ void DisplaySurface::Resize()
     if (swapDesc.BufferDesc.Width == W&&swapDesc.BufferDesc.Height == H)
         return;
     
-	SAFE_RELEASE(mCommandList);
 	SAFE_RELEASE(mBackBufferRT);
 	SAFE_RELEASE(mBackBuffer);
+		SAFE_RELEASE(mCommandList);// got to do this for some reason.
 
     V_CHECK(mSwapChain->ResizeBuffers(0, W, H, DXGI_FORMAT_UNKNOWN, 0));
 
