@@ -195,7 +195,7 @@ void DisplaySurface::Resize()
     
 	SAFE_RELEASE(mBackBufferRT);
 	SAFE_RELEASE(mBackBuffer);
-		SAFE_RELEASE(mCommandList);// got to do this for some reason.
+	SAFE_RELEASE(mCommandList);// got to do this for some reason.
 
     V_CHECK(mSwapChain->ResizeBuffers(0, W, H, DXGI_FORMAT_UNKNOWN, 0));
 
