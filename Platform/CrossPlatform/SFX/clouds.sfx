@@ -490,7 +490,7 @@ shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	pos.xy		+= gridCentreTexel;
 	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
-	pos.xy		= pos.xy%uint2(windowGrid.xy);
+	pos.xy		= pos.xy%int2(windowGrid.xy);
 	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
 	uint3 pos2	=pos*2;
 	vec4 res;

@@ -237,7 +237,6 @@
     <None Include="SFX\lightning.sfx" />
     <None Include="SFX\light_probes.sfx" />
     <None Include="SFX\mixed_resolution.sfx" />
-    <None Include="SFX\ocean.sfx" />
     <None Include="SFX\optics.sfx" />
     <None Include="SFX\rain.sfx" />
     <None Include="SFX\simul_clouds_2d.sfx" />
@@ -249,6 +248,7 @@
     <None Include="SFX\solid.sfx" />
     <None Include="SFX\spherical_harmonics.sfx" />
     <None Include="SFX\terrain.sfx" />
+    <None Include="SFX\water.sfx" />
     <None Include="SL\atmospherics.sl" />
     <None Include="SL\atmospherics_constants.sl" />
     <None Include="SL\brdf.sl" />
