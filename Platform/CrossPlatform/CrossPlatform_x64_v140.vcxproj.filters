@@ -238,9 +238,6 @@
     <None Include="SFX\mixed_resolution.sfx">
       <Filter>SFX</Filter>
     </None>
-    <None Include="SFX\ocean.sfx">
-      <Filter>SFX</Filter>
-    </None>
     <None Include="SFX\optics.sfx">
       <Filter>SFX</Filter>
     </None>
@@ -428,5 +425,8 @@
       <Filter>SL</Filter>
     </None>
     <None Include="SL\brdf.sl" />
+    <None Include="SFX\water.sfx">
+      <Filter>SFX</Filter>
+    </None>
   </ItemGroup>
 </Project>

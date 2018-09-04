@@ -103,8 +103,12 @@
     <ClInclude Include="View.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DisplaySurface.h" />
-    <ClInclude Include="DisplaySurfaceManager.h" />
+    <ClInclude Include="DisplaySurface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplaySurfaceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -196,7 +200,11 @@
     <ClCompile Include="DeviceContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DisplaySurface.cpp" />
-    <ClCompile Include="DisplaySurfaceManager.cpp" />
+    <ClCompile Include="DisplaySurface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplaySurfaceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -84,7 +84,7 @@ vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 Directi
 		factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
 		mean_factor				+=factor;
 	}
-	return vec4(1.0,1.0,1.0,1.0);//saturate(mean_factor/3.0);
+	return saturate(mean_factor/3.0);
 }
 
 float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_km,vec3 dir)
@@ -163,10 +163,10 @@ vec4 getSunlightFactor3(Texture2D optical_depth_texture,Texture2D density_textur
 			// angle:
 			float a=acos(abs(h));
 			float c=(a-abs(h*sin(a)))/SIMUL_PI_F;
-			if(h<0)
-				vis*=1.0-c;
+			if(h>=0)
+				vis=1.0-c;
 			else
-				vis*=c;
+				vis=c;
 		}
 		vec4 fac	=getSunlightFactor2(optical_depth_texture,density_texture,max_altitude_km,alt_km,new_dir)*vis;
 		result		+=fac/17.0;
