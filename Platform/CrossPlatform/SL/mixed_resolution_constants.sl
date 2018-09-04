@@ -25,7 +25,8 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform vec4 depthWindow[2];		// xy and wh of the window of the depth texture that represents the current view.
 	
 	uniform vec2 stochasticOffset;
-	uniform vec2 tanHalfFovUnused;
+	uniform float blend;
+	uniform float padUNUSED;
 	uniform float nearThresholdDepth;
 	uniform float nearThresholdDist;
 SIMUL_CONSTANT_BUFFER_END

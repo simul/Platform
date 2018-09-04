@@ -18,6 +18,8 @@ using namespace opengl;
 
 RenderPlatform::RenderPlatform():
     mNullVAO(0)
+	,mDummy2D(nullptr)
+    ,mDummy3D(nullptr)
 {
     mirrorY     = true;
     mirrorY2    = true;
