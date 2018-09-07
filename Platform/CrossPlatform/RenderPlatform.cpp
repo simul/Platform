@@ -255,6 +255,7 @@ void RenderPlatform::PushTexturePath(const char *path_utf8)
 {
 	texturePathsUtf8.push_back(path_utf8);
 }
+
 void RenderPlatform::PopTexturePath()
 { 
 	texturePathsUtf8.pop_back();

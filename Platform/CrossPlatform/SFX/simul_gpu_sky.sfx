@@ -201,7 +201,7 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
 		vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,0.5),0);
 		float dens_factor	=lookups.x;
-		float ozone_factor	=0;//lookups.y;
+		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
 		vec4 light			=vec4(sunIrradiance,1.0)*(getSunlightFactor(optical_depth_texture,alt_km,lightDir)
 														+vec4(moonIrradianceFactor,1.0)*getSunlightFactor(optical_depth_texture,alt_km,directionToMoon));

@@ -603,7 +603,7 @@ void MinMax(uint3 idx,bool reverseDepth)
 	vec4 res	=saturate(fn);
 
 
-	//if (updateTexture[idx].g < 1.0)
+	if (updateTexture[idx].g < 1)
 	{
 		targetTexture[idx] = res;
 		return;
@@ -611,13 +611,13 @@ void MinMax(uint3 idx,bool reverseDepth)
 	// PS4 can apparently cope with reading and writing the same RW texture in a shader, but DX11 cannot.
 	/*
 #ifdef __PSSL__
-	targetTexture[idx] *= 0.9;
-	targetTexture[idx] += 0.1*res;
+	targetTexture[idx] *= (1.0-blend);
+	targetTexture[idx] += blend*res;
 #else
 	*/
 	vec4 old_res		= previousCombinedTexture[idx];
-	res					= 0.1*res+0.9*old_res;
-	targetTexture[idx] = res;
+	res					= blend*res+(1.0-blend)*old_res;
+	targetTexture[idx]	= res;
 //#endif
 }
 
