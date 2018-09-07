@@ -26,7 +26,7 @@ void SamplerState::Init(crossplatform::SamplerStateDesc* desc)
     glGenSamplers(1, &mSamplerID);
 
     // Wrapping:
-    glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_S, opengl::RenderPlatform::toGLWrapping(desc->x));
+	glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_S, opengl::RenderPlatform::toGLWrapping(desc->x));
     glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_T, opengl::RenderPlatform::toGLWrapping(desc->y));
     glSamplerParameteri(mSamplerID, GL_TEXTURE_WRAP_R, opengl::RenderPlatform::toGLWrapping(desc->z));
 
@@ -128,7 +128,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // By default, generate mips:
-    GenerateMips(crossplatform::DeviceContext());
+	crossplatform::DeviceContext dc;
+	GenerateMips(dc);
 
     glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
 }
@@ -172,7 +173,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
     // By default, generate mips:
-    GenerateMips(crossplatform::DeviceContext());
+	crossplatform::DeviceContext dc;
+	GenerateMips(dc);
 
     glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
 
@@ -198,22 +200,23 @@ void Texture::InvalidateDeviceObjects()
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
     float qw, qh;
-    glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_WIDTH, &qw);
-    glGetTextureLevelParameterfv((GLuint)t, 0, GL_TEXTURE_HEIGHT, &qh);
+	GLuint gt=GLuint(uintptr_t(t));
+	glGetTextureLevelParameterfv(gt, 0, GL_TEXTURE_WIDTH, &qw);
+	glGetTextureLevelParameterfv(gt, 0, GL_TEXTURE_HEIGHT, &qh);
 
-    if (mTextureID == 0 || mTextureID != (GLuint)t || qw != width || qh != length)
+	if (mTextureID == 0 || mTextureID != gt|| qw != width || qh != length)
     {
         InitViews(1, 1, false);
 
-        mTextureID              = (GLuint)t;
+		mTextureID              = gt;
         mMainMipViews[0]        = mTextureID;
         mLayerMipViews[0][0]    = mMainMipViews[0];     
 
         dim         = 2;
         cubemap     = false;
         arraySize   = 1;
-        width       = qw;
-        length      = qh;
+		width       = int(qw);
+		length      = int(qh);
         depth       = 1;
     }
 }
@@ -514,7 +517,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
     targetsAndViewport.viewport.h       = std::max(1, (length >> mip_index));
 
     // Activate the render target and set the viewport:
-    GLuint id = (GLuint)targetsAndViewport.m_rt[0];
+	GLuint id = GLuint(uintptr_t(targetsAndViewport.m_rt[0]));
     glBindFramebuffer(GL_FRAMEBUFFER, id);
     deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
 

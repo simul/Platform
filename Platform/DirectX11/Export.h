@@ -23,10 +23,10 @@
 // In this lib:
 	#if !defined(SIMUL_DIRECTX1x_DLL) 
 	// If we're building dll libraries but not in this library IMPORT the classes
-		#define SIMUL_DIRECTX11_EXPORT __declspec(dllimport)
+		#define SIMUL_DIRECTX11_EXPORT SIMUL_IMPORT
 	#else
 	// In ALL OTHER CASES we EXPORT the classes!
-		#define SIMUL_DIRECTX11_EXPORT __declspec(dllexport)
+		#define SIMUL_DIRECTX11_EXPORT SIMUL_EXPORT
 	#endif
 #else
 	#define SIMUL_DIRECTX11_EXPORT

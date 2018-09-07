@@ -2,8 +2,8 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/RenderDelegater.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/CrossPlatform/renderPlatform.h"
-#include "Simul/Math/pi.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Math/Pi.h"
 using namespace simul;
 using namespace crossplatform;
 

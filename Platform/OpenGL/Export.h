@@ -21,10 +21,10 @@
     // In this lib:
 	#if !defined(SIMUL_OPENGL_DLL) 
 	    // If we're building dll libraries but not in this library IMPORT the classes
-		#define SIMUL_OPENGL_EXPORT __declspec(dllimport)
+		#define SIMUL_OPENGL_EXPORT SIMUL_IMPORT
 	#else
 	    // In ALL OTHER CASES we EXPORT the classes!
-		#define SIMUL_OPENGL_EXPORT __declspec(dllexport)
+		#define SIMUL_OPENGL_EXPORT SIMUL_EXPORT
 	#endif
 #else
 	#define SIMUL_OPENGL_EXPORT

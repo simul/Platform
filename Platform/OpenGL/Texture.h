@@ -26,9 +26,9 @@ namespace simul
 		{
 		public:
 			        SamplerState();
-			virtual ~SamplerState();
+			virtual ~SamplerState() override;
             void    Init(crossplatform::SamplerStateDesc* desc);
-            void    InvalidateDeviceObjects();
+			void    InvalidateDeviceObjects() override;
             GLuint  asGLuint()override;
         private:
             GLuint mSamplerID;
@@ -38,31 +38,31 @@ namespace simul
 		{
 		public:
 			                Texture();
-			                ~Texture();
+							~Texture() override;
             
             void            SetName(const char* n)override;
 
-			void            LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
-			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
-			bool            IsValid() const;
-			void            InvalidateDeviceObjects();
+			void            LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8) override;
+			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1) override;
+			bool            IsValid() const override;
+			void            InvalidateDeviceObjects() override;
 			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
 			bool            ensureTexture2DSizeAndFormat(   crossplatform::RenderPlatform *renderPlatform, int w, int l,
                                                             crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
-				                                            vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0);
+															vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
 			bool            ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool ascubemap=false) override;
-			bool            ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false);
+			bool            ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false) override;
 			void            ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear) override;
-			void            GenerateMips(crossplatform::DeviceContext& deviceContext);
-			void            setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels);
-			void            activateRenderTarget(crossplatform::DeviceContext& deviceContext,int array_index=-1,int mip_index=0);
-			void            deactivateRenderTarget(crossplatform::DeviceContext& deviceContext);
-			int             GetLength() const;
-			int             GetWidth() const;
-			int             GetDimension() const;
-			int             GetSampleCount() const;
+			void            GenerateMips(crossplatform::DeviceContext& deviceContext) override;
+			void            setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
+			void            activateRenderTarget(crossplatform::DeviceContext& deviceContext,int array_index=-1,int mip_index=0) override;
+			void            deactivateRenderTarget(crossplatform::DeviceContext& deviceContext) override;
+			int             GetLength() const override;
+			int             GetWidth() const override;
+			int             GetDimension() const override;
+			int             GetSampleCount() const override;
 			bool            IsComputable() const override;
-			void            copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels);
+			void            copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;
 
             GLuint          AsOpenGLView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
             GLuint          GetGLMainView();

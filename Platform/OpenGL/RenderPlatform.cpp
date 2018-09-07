@@ -4,7 +4,7 @@
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/Light.h"
 #include "Simul/Platform/OpenGL/Buffer.h"
-#include "Simul/Platform/OpenGL/FrameBufferGL.h"
+#include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/Layout.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
@@ -210,7 +210,7 @@ GLenum simul::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerSta
     return GL_NEAREST;
 }
 
-GLenum RenderPlatform::toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
+GLint RenderPlatform::toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
 {
 	switch(w)
 	{
@@ -222,8 +222,6 @@ GLenum RenderPlatform::toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
 		break;
 	case crossplatform::SamplerStateDesc::MIRROR:
 		return GL_MIRRORED_REPEAT;
-		break;
-	default:
 		break;
 	}
 	return GL_REPEAT;
@@ -801,7 +799,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
         return;
     }
 }
-
+#include <cstdint>
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& deviceContext)
 {
     deviceContext.GetFrameBufferStack().pop();
@@ -810,7 +808,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
     if (deviceContext.GetFrameBufferStack().empty())
     {
         auto defT = deviceContext.defaultTargetsAndViewport;
-        GLuint id = (GLuint)defT.m_rt[0];
+		const uintptr_t ll= uintptr_t(defT.m_rt[0]);
+		GLuint id = GLuint(ll);
         glBindFramebuffer(GL_FRAMEBUFFER, id);
         SetViewports(deviceContext, 1, &defT.viewport);
     }
@@ -818,7 +817,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
     else
     {
         auto topRt = deviceContext.GetFrameBufferStack().top();
-        GLuint id = (GLuint)topRt->m_rt[0];
+		uintptr_t ll=uintptr_t(topRt->m_rt[0]);
+		GLuint id = GLuint(ll);
         glBindFramebuffer(GL_FRAMEBUFFER, id);
         SetViewports(deviceContext, 1, &topRt->viewport);
     }
