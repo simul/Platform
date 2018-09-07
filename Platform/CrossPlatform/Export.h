@@ -3,7 +3,7 @@
 
 #if defined(_MSC_VER)
 	//  Microsoft
-	#define SIMUL_EXPORT SIMUL_EXPORT
+	#define SIMUL_EXPORT __declspec(dllexport)
 	#define SIMUL_IMPORT __declspec(dllimport)
 #elif defined(__GNUC__)
 	//  GCC or Clang

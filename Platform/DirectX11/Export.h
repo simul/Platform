@@ -1,9 +1,22 @@
 #ifndef SIMUL_DIRECTX11_EXPORT_H
 #define SIMUL_DIRECTX11_EXPORT_H
-#if defined(SIMUL_DIRECTX11_DLL)  || defined(SIMUL_DIRECTX10_DLL)
-	#define SIMUL_DIRECTX1x_DLL
+
+#if defined(_MSC_VER)
+	//  Microsoft
+	#define SIMUL_EXPORT __declspec(dllexport)
+	#define SIMUL_IMPORT __declspec(dllimport)
+#elif defined(__GNUC__)
+	//  GCC or Clang
+	#define SIMUL_EXPORT __attribute__((visibility("default")))
+	#define SIMUL_IMPORT
+#else
+	//  do nothing and hope for the best?
+	#define SIMUL_EXPORT
+	#define SIMUL_IMPORT
+	#pragma warning Unknown dynamic link import/export semantics.
 #endif
-#if defined(_MSC_VER) && !defined(SIMUL_DIRECTX1x_DLL)
+
+#if defined(_MSC_VER) && !defined(SIMUL_DIRECTX11_DLL)
 	#ifdef _DEBUG
 		#ifdef _DLL
 			#pragma comment(lib,"SimulDirectX11_MDd")
@@ -21,7 +34,7 @@
 
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
 // In this lib:
-	#if !defined(SIMUL_DIRECTX1x_DLL) 
+	#if !defined(SIMUL_DIRECTX11_DLL) 
 	// If we're building dll libraries but not in this library IMPORT the classes
 		#define SIMUL_DIRECTX11_EXPORT SIMUL_IMPORT
 	#else

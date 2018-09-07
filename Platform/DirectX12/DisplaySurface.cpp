@@ -255,7 +255,9 @@ void DisplaySurface::StartFrame()
 
 void DisplaySurface::EndFrame()
 {
-    SIMUL_ASSERT(mRecordingCommands);
+	// Perfectly valid to call this if we didn't begin the frame for this surface.
+    if (!mRecordingCommands)
+		return;
     mRecordingCommands = false;
 
     HRESULT res = S_FALSE;

@@ -40,8 +40,8 @@ namespace simul
 			const char* GetName() const override;
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
-			void        StartRender(crossplatform::DeviceContext &deviceContext) override;
-			void        EndRender(crossplatform::DeviceContext &deviceContext) override;
+			void        BeginFrame() override;
+			void        EndFrame() override;
             void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
             void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
             //! Before starting trueSKY rendering is a good idea to save all the previous state

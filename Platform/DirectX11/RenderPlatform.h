@@ -56,8 +56,8 @@ namespace simul
 			ID3D11Device *AsD3D11Device();
 			virtual void BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void EndEvent			(crossplatform::DeviceContext &deviceContext);
-			void StartRender(crossplatform::DeviceContext &deviceContext);
-			void EndRender(crossplatform::DeviceContext &deviceContext);
+			void BeginFrame(crossplatform::DeviceContext &deviceContext);
+			void EndFrame(crossplatform::DeviceContext &deviceContext);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
 			void CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 

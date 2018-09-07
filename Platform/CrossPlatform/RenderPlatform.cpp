@@ -318,6 +318,22 @@ ShaderBuildMode RenderPlatform::GetShaderBuildMode() const
 void RenderPlatform::BeginEvent			(DeviceContext &deviceContext,const char *name){}
 void RenderPlatform::EndEvent			(DeviceContext &deviceContext){}
 
+void RenderPlatform::BeginFrame			()
+{
+	if(gpuProfiler)
+	{
+		gpuProfiler->StartFrame(GetImmediateContext());
+	}
+}
+
+void RenderPlatform::EndFrame			()
+{
+	if(gpuProfiler)
+	{
+		gpuProfiler->EndFrame(GetImmediateContext());
+	}
+}
+
 
 void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 {

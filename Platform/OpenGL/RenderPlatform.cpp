@@ -70,11 +70,11 @@ void RenderPlatform::InvalidateDeviceObjects()
     // glDeleteVertexArrays(1, &mNullVAO);
 }
 
-void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::BeginFrame()
 {
 }
 
-void RenderPlatform::EndRender(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::EndFrame()
 {
 }
 

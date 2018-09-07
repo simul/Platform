@@ -168,8 +168,8 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void StartRender		(DeviceContext &){}
-			virtual void EndRender			(DeviceContext &){}
+			virtual void BeginFrame			();
+			virtual void EndFrame			();
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};

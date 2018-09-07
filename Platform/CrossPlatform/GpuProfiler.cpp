@@ -17,6 +17,7 @@ using namespace std;
 static std::unordered_map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int BOOL;
+#pragma optimize("",off)
 
 ProfileData::ProfileData()
 				:DisjointQuery(NULL)
@@ -24,12 +25,14 @@ ProfileData::ProfileData()
 				,TimestampEndQuery(NULL)
 				{
 				}
+
 ProfileData::~ProfileData()
 				{
 					delete DisjointQuery;
 					delete TimestampStartQuery;
 					delete TimestampEndQuery;
 				}
+
 namespace simul
 {
 	namespace crossplatform
@@ -74,9 +77,8 @@ GpuProfiler::~GpuProfiler()
 
 void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-renderPlatform = r;
+	renderPlatform = r;
     enabled=true;
-//	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
 
 void GpuProfiler::InvalidateDeviceObjects()
@@ -260,7 +262,11 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
     crossplatform::DisjointQueryStruct disjointData;
     ok&=profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData));
 	if(!ok)
+	{
+		// Takes a few frames to spool up...
+		//SIMUL_CERR<<"Failed to retrieve timestamp data. Can only do this from the Immediate Context."<<std::endl;
 		return;
+	}
     timer.UpdateTime();
     queryTime += timer.Time;
 

@@ -318,31 +318,21 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
 #endif
 }
 
-void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::BeginFrame(crossplatform::DeviceContext &deviceContext)
 {
-	/*
-	
-	glEnable(GL_DEPTH_TEST);
-	// Draw the front face only, except for the texts and lights.
-	glEnable(GL_CULL_FACE);
-	glDisable(GL_CULL_FACE);
-	glUseProgram(solid_program);*/
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 }
 
-void RenderPlatform::EndRender(crossplatform::DeviceContext &)
+void RenderPlatform::EndFrame(crossplatform::DeviceContext &)
 {
-	/*glUseProgram(0);
-	
-	*/
 }
 
 namespace
 {
     const float DEFAULT_LIGHT_POSITION[]				={0.0f, 0.0f, 0.0f, 1.0f};
-    const float DEFAULT_DIRECTION_LIGHT_POSITION[]	={0.0f, 0.0f, 1.0f, 0.0f};
-    const float DEFAULT_SPOT_LIGHT_DIRECTION[]		={0.0f, 0.0f, -1.0f};
+    const float DEFAULT_DIRECTION_LIGHT_POSITION[]		={0.0f, 0.0f, 1.0f, 0.0f};
+    const float DEFAULT_SPOT_LIGHT_DIRECTION[]			={0.0f, 0.0f, -1.0f};
     const float DEFAULT_LIGHT_COLOR[]					={1.0f, 1.0f, 1.0f, 1.0f};
     const float DEFAULT_LIGHT_SPOT_CUTOFF				=180.0f;
 }

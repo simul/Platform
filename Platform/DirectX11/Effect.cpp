@@ -65,7 +65,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	{
 		gotResults[i]=true;
 		doneQuery[i]=false;
-		m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
+		V_CHECK(m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]));
 	}
 }
 void Query::InvalidateDeviceObjects() 

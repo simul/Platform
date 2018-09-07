@@ -16,6 +16,8 @@ void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 
 void DisplaySurfaceManager::Render(cp_hwnd h)
 {
+	if(renderPlatform&&!frame_started)
+		renderPlatform->BeginFrame();
     if (surfaces.find(h) == surfaces.end())
         return;
     DisplaySurface *w = surfaces[h];
@@ -29,10 +31,13 @@ void DisplaySurfaceManager::Render(cp_hwnd h)
         SIMUL_CERR << "Window for cp_hwnd " << std::hex << h << " has hwnd " << w->GetHandle() << std::endl;
         return;
     }
+	w->StartFrame();
     w->Render();
 }
 
-DisplaySurfaceManager::DisplaySurfaceManager()
+DisplaySurfaceManager::DisplaySurfaceManager():
+				renderPlatform(nullptr)
+				,frame_started(false)
 {
 }
 
@@ -117,4 +122,6 @@ void DisplaySurfaceManager::EndFrame()
 	{
 		s.second->EndFrame();
 	}
+	renderPlatform->EndFrame();
+	frame_started=false;
 }
