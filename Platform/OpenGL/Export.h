@@ -1,6 +1,21 @@
 #ifndef SIMUL_OPENGL_EXPORT_H
 #define SIMUL_OPENGL_EXPORT_H
 
+#if defined(_MSC_VER)
+    //  Microsoft
+    #define SIMUL_EXPORT __declspec(dllexport)
+    #define SIMUL_IMPORT __declspec(dllimport)
+#elif defined(__GNUC__)
+    //  GCC or Clang
+    #define SIMUL_EXPORT __attribute__((visibility("default")))
+    #define SIMUL_IMPORT
+#else
+    //  do nothing and hope for the best?
+    #define SIMUL_EXPORT
+    #define SIMUL_IMPORT
+    #pragma warning Unknown dynamic link import/export semantics.
+#endif
+
 #if defined(_MSC_VER) && !defined(SIMUL_OPENGL_DLL)
 	#ifdef _DEBUG
 		#ifdef _DLL
