@@ -149,7 +149,7 @@ void Query::InvalidateDeviceObjects()
 	mQueryData = nullptr;
 }
 
-void Query::Begin(crossplatform::DeviceContext &deviceContext)
+void Query::Begin(crossplatform::DeviceContext &)
 {
 
 }
@@ -439,7 +439,7 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
     }
 }
 
-void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
+void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &)
 {
 	if (mChanged)
 	{
@@ -493,7 +493,7 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 	}
 }
 
-void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
+void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& ,void* data)
 {
 	if (data)
 	{
@@ -532,7 +532,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	}
 }
 
-void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContext)
+void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& )
 {
 }
 
@@ -577,7 +577,7 @@ void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext&
     //... we will set mChange to false when we get the view
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext)
+D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView(crossplatform::DeviceContext& )
 {
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
@@ -605,7 +605,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView
     return view;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessView(crossplatform::DeviceContext& deviceContext,int mip /*= 0*/)
+D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessView(crossplatform::DeviceContext& ,int mip /*= 0*/)
 {
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
@@ -633,7 +633,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessVie
     return view;
 }
 
-void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot)
+void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& , EffectPass* , int )
 {
 }
 

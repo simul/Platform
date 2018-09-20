@@ -281,7 +281,7 @@ void RenderPlatform::RecompileShaders()
 	crossplatform::RenderPlatform::RecompileShaders();
 }
 
-void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
+void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
 {
 #ifdef SIMUL_WIN8_SDK
 	static std::unordered_map<const char*,const wchar_t*> name_map;
@@ -307,7 +307,7 @@ void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,c
 #endif
 }
 
-void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 {
 #ifdef SIMUL_WIN8_SDK
 	if(pUserDefinedAnnotation)
@@ -335,18 +335,6 @@ namespace
     const float DEFAULT_SPOT_LIGHT_DIRECTION[]			={0.0f, 0.0f, -1.0f};
     const float DEFAULT_LIGHT_COLOR[]					={1.0f, 1.0f, 1.0f, 1.0f};
     const float DEFAULT_LIGHT_SPOT_CUTOFF				=180.0f;
-}
-
-void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
-{
- /*   glLightfv(GL_LIGHT0, GL_POSITION, DEFAULT_DIRECTION_LIGHT_POSITION);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, DEFAULT_LIGHT_COLOR);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, DEFAULT_LIGHT_COLOR);
-    glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, DEFAULT_LIGHT_SPOT_CUTOFF);
-    glEnable(GL_LIGHT0);
-    // Set ambient light.
-    GLfloat lAmbientLight[] = {static_cast<GLfloat>(pAmbientLight[0]), static_cast<GLfloat>(pAmbientLight[1]),static_cast<GLfloat>(pAmbientLight[2]), 1.0f};
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);*/
 }
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)

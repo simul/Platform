@@ -14,7 +14,7 @@ using namespace dx11;
 
 #pragma optimize("",off)
 
-SamplerState::SamplerState(crossplatform::SamplerStateDesc *d)
+SamplerState::SamplerState(crossplatform::SamplerStateDesc *)
 	:m_pd3D11SamplerState(NULL)
 {
 }

@@ -639,7 +639,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(int index /*= -1*/
 	return &renderTargetViews12[index][mip];
 }
 
-void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
+void Texture::copyToMemory(crossplatform::DeviceContext &,void *,int ,int )
 {
 	SIMUL_BREAK_ONCE("This is not implemented yet.");
 }
@@ -1672,7 +1672,7 @@ void Texture::unmap()
 {
 }
 
-vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap)
+vec4 Texture::GetTexel(crossplatform::DeviceContext &,vec2 ,bool )
 {
     SIMUL_BREAK("")
 	return vec4(0.0f,0.0f,0.0f,0.0f);
@@ -1740,9 +1740,9 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
         if (!mSubResourcesStates.empty())
         {
 			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-			for (int l = 0; l < numLayers; l++)
+			for (unsigned int l = 0; l < numLayers; l++)
 			{
-				for (int m = 0; m < mips; m++)
+				for (unsigned int m = 0; m < mips; m++)
 				{
 					auto curState = mSubResourcesStates[l][m];
 					if (curState != mResourceState)

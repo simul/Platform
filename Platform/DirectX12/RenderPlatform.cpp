@@ -396,7 +396,7 @@ void RenderPlatform::RecompileShaders()
 	crossplatform::RenderPlatform::RecompileShaders();
 }
 
-void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
+void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
 {
 #ifdef SIMUL_WIN8_SDK
 
@@ -407,7 +407,7 @@ void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,c
 #endif
 }
 
-void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 {
 #ifdef SIMUL_WIN8_SDK
 
@@ -461,10 +461,6 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 }
 
 void RenderPlatform::EndRender(crossplatform::DeviceContext &)
-{
-}
-
-void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 {
 }
 
@@ -571,7 +567,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	deviceContext.renderPlatform->AsD3D12CommandList()->Dispatch(w, l, d);
 }
 
-void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int index)
+void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &,crossplatform::Effect *,crossplatform::EffectTechnique *,int)
 {
 	
 }
@@ -1422,7 +1418,7 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	);
 };
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer,int start_index)
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *,int )
 {
 
 }
@@ -1762,7 +1758,7 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 	immediateContext.platform_context=deviceContext.platform_context;
 }
 
-void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceContext )
+void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext & )
 {
 }
 
@@ -1784,26 +1780,26 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	deviceContext.renderPlatform->AsD3D12CommandList()->DrawInstanced(4, 1, 0, 0);
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *line_vertices,int vertex_count,bool strip,bool test_depth,bool view_centred)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *,int ,bool ,bool ,bool)
 {
 
 }
 
-void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
-{
-	
-}
-
-void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *,int ,bool )
 {
 	
 }
 
-void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::DrawCube(crossplatform::DeviceContext &)
+{
+	
+}
+
+void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
 {
 }
 
-void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
 {
 }
 

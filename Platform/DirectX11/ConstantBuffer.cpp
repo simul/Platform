@@ -157,7 +157,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform 
 }
 
 //! Find the constant buffer in the given effect, and link to it.
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *,const char *,int)
 {
 }
 

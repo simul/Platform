@@ -571,7 +571,7 @@ namespace simul
 			virtual void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return NULL;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(){return NULL;}
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext &) { return NULL; }
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12UnorderedAccessView(crossplatform::DeviceContext &,int = 0) { return NULL; }
 			void ResetCopies()

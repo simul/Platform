@@ -107,14 +107,14 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	mIndexBufferView.BufferLocation = mUploadHeap->GetGPUVirtualAddress();
 }
 
-void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
+void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
 	mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
 	return (void*)mGpuMappedPtr;
 }
 
-void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
+void Buffer::Unmap(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
 	mUploadHeap->Unmap(0, &range);

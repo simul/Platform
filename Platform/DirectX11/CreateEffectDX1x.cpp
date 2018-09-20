@@ -500,7 +500,7 @@ ERRNO_CHECK
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);
-		int pos = 0;
+		pos = 0;
 		int last = pos;
 		pos = (int)err.find("\n");
 		while(pos>=0&&pos<(int)err.length())

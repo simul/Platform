@@ -127,7 +127,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	SetNumBuffers( r,1, 64, 2 );
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *,const char *,int )
 {
 }
 
@@ -177,10 +177,10 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	mCurApplyCount++;
 }
 
-void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* currentEffectPass, int slot)
+void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext& , crossplatform::EffectPass* , int )
 {
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceContext)
+void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& )
 {
 }

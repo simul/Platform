@@ -29,7 +29,7 @@ void Layout::Apply(crossplatform::DeviceContext &deviceContext)
 	deviceContext.asD3D11DeviceContext()->IASetInputLayout(AsD3D11InputLayout());
 }
 
-void Layout::Unapply(crossplatform::DeviceContext &deviceContext)
+void Layout::Unapply(crossplatform::DeviceContext &)
 {
 	if(apply_count<=0)
 		SIMUL_BREAK("Layout::Unapply without a corresponding Apply!")

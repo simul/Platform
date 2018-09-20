@@ -128,7 +128,7 @@ void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 }
 
 
-void Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) const
+void Mesh::UpdateVertexPositions(int , float *) const
 {
 }
 void Mesh::apply(crossplatform::DeviceContext &deviceContext,unsigned instanceStride,Buffer *instanceBuffer)
