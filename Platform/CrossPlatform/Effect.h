@@ -308,7 +308,7 @@ namespace simul
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
             std::string rtFormatState;
-			EffectPass();
+			EffectPass(RenderPlatform *r);
 			virtual ~EffectPass(){}
 
 			//! This updates the mapping from the pass's list of resources to the effect slot numbers (0-31)
@@ -405,6 +405,7 @@ namespace simul
 			unsigned rwTextureSlotsForSB;
 			bool should_fence_outputs;
 			void *platform_pass;
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
@@ -494,6 +495,9 @@ namespace simul
 				InvalidateDeviceObjects();
 				if (p)
 				{
+					SIMUL_ASSERT(platformConstantBuffer==nullptr);
+					if(platformConstantBuffer)
+						delete platformConstantBuffer;
 					platformConstantBuffer = p->CreatePlatformConstantBuffer();
 					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
 				}
@@ -727,7 +731,7 @@ namespace simul
 			PassMap passes_by_name;
 			PassIndexMap passes_by_index;
 			IndexMap pass_indices;
-			EffectTechnique();
+			EffectTechnique(RenderPlatform *r);
 			virtual ~EffectTechnique();
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
@@ -763,6 +767,8 @@ namespace simul
 			virtual EffectPass *AddPass(const char *name,int i)=0;
 			EffectPass *GetPass(int i);
 			EffectPass *GetPass(const char *name);
+		protected:
+			RenderPlatform *renderPlatform;
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
 		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;

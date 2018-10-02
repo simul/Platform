@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/Texture.h"
@@ -195,7 +196,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	for (unsigned int i = 0; i < 3; i++)
 	{
         UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 10;
-		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"FrameHeap");
+		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,base::QuickFormat("FrameHeap %d",i));
         mFrameOverrideSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "FrameOverrideSamplerHeap");
 	}
 	// Create storage heaps
@@ -385,6 +386,49 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	if(mFrameHeap)
+	for(int i=0;i<3;i++)
+	{
+		mFrameHeap[i].Release();
+	}
+	if(mFrameOverrideSamplerHeap)
+	for(int i=0;i<3;i++)
+	{
+		mFrameOverrideSamplerHeap[i].Release();
+	}
+
+	delete [] mFrameHeap;
+	mFrameHeap=nullptr;
+	delete [] mFrameOverrideSamplerHeap;
+	mFrameOverrideSamplerHeap=nullptr;
+	
+	SAFE_DELETE(mSamplerHeap);
+	SAFE_DELETE(mRenderTargetHeap);
+	SAFE_DELETE(mDepthStencilHeap);
+	SAFE_DELETE(mNullHeap);
+
+
+
+	SAFE_RELEASE(mSamplerHeap);
+	SAFE_RELEASE(mRenderTargetHeap);
+	SAFE_RELEASE(mDepthStencilHeap);
+	SAFE_RELEASE(mNullHeap);
+	SAFE_DELETE(mDummy2D);
+	SAFE_DELETE(mDummy3D);
+	SAFE_RELEASE(mGRootSignature);
+	
+	for (int i =0;i<mResourceBin.size();i++)
+	{
+        if (mResourceBin[i].second.second)
+        {
+            int remainRefs =mResourceBin[i].second.second->Release();
+			if(remainRefs)
+			{
+				SIMUL_COUT<<"Resource "<<" has "<<remainRefs<<" refs remaining."<<std::endl;
+			}
+        }
+	}
+	mResourceBin.clear();
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 }
 
@@ -417,13 +461,14 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
 #endif
 }
 
-void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::BeginFrame()
 {
 	// Store a reference to the device context
+	auto &deviceContext=GetImmediateContext();
 	mCommandList                        = deviceContext.asD3D12Context();
 	immediateContext.platform_context   = deviceContext.platform_context;
 
-	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
 	// Create dummy textures
@@ -460,7 +505,7 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 	}
 }
 
-void RenderPlatform::EndRender(crossplatform::DeviceContext &)
+void RenderPlatform::EndFrame()
 {
 }
 
@@ -1684,7 +1729,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
-		StartRender(deviceContext);
+		BeginFrame();
 
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;

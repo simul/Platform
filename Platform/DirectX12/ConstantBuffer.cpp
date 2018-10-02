@@ -57,7 +57,8 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
+		mHeaps[i].Release();
+		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("PlatformConstantBuffer %016x CBHeap %d",this,i), false);
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
@@ -129,18 +130,25 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
 {
+	std::string mName=name;
+	for (unsigned int i = 0; i < 3; i++)
+	{
+		mHeaps[i].GetHeap()->SetName(std::wstring(mName.begin(), mName.end()).c_str());
+	}
 }
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-	for (unsigned int i = 0; i < kNumBuffers; i++)
+	for (unsigned int i = 0; i < 3; i++)
 	{
-		mHeaps[i].Release(rPlat);
-		rPlat->PushToReleaseManager(mUploadHeap[i], "ConstantBufferUpload");
+		mHeaps[i].Release();
+		SAFE_RELEASE(mUploadHeap[i]);
+//		rPlat->PushToReleaseManager(mUploadHeap[i], "ConstantBufferUpload");
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=nullptr;
 	}
+	renderPlatform=nullptr;
 }
 
 void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)

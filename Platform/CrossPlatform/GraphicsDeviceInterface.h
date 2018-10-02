@@ -62,7 +62,7 @@ namespace simul
 		class DisplaySurfaceManagerInterface
 		{
 		public:
-			virtual void	AddWindow(cp_hwnd h)=0;
+			virtual void	AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN)=0;
 			virtual void	RemoveWindow(cp_hwnd h)=0;
 			virtual void	Render(cp_hwnd h)=0;
 			virtual void	SetRenderer(cp_hwnd,PlatformRendererInterface *ci,int view_id)=0;

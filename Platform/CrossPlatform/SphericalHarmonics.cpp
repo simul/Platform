@@ -28,8 +28,8 @@ void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if (s<4)
 		s = 4;
 	sphericalHarmonics.InvalidateDeviceObjects();
-	sphericalSamples.InvalidateDeviceObjects();
 	lightProbeConstants.RestoreDeviceObjects(renderPlatform);
+
 	sphericalHarmonicsConstants.RestoreDeviceObjects(r);
 	sphericalSamples.InvalidateDeviceObjects();
 	static int seed = 0;
@@ -63,6 +63,8 @@ void SphericalHarmonics::RecompileShaders()
 
 void SphericalHarmonics::InvalidateDeviceObjects()
 {
+	lightProbeConstants.InvalidateDeviceObjects();
+	sphericalSamples.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
 	sphericalHarmonics.InvalidateDeviceObjects();
 	SAFE_DELETE(sphericalHarmonicsEffect);

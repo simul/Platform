@@ -25,7 +25,7 @@ namespace simul
 			void Shutdown();
 			// Implementing Window Manager, which associates Hwnd's with renderers and view ids:
 			//! Add a window. Creates a new Swap Chain.
-			void AddWindow(cp_hwnd h);
+			void AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN);
 			//! Removes the window and destroys its associated Swap Chain.
 			void RemoveWindow(cp_hwnd h);
 			void Render(cp_hwnd hwnd);

@@ -37,8 +37,9 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
 }
 
-EffectPass::EffectPass()
-	:blendState(NULL)
+EffectPass::EffectPass(RenderPlatform *r)
+	:renderPlatform(r)
+	,blendState(NULL)
 	,depthStencilState(NULL)
 	,rasterizerState(NULL)
 	,renderTargetFormatState(NULL)
@@ -238,8 +239,9 @@ void Effect::InvalidateDeviceObjects()
 	techniques.clear();
 }
 
-EffectTechnique::EffectTechnique()
-	:platform_technique(NULL)
+EffectTechnique::EffectTechnique(RenderPlatform *r)
+	:renderPlatform(r)
+	,platform_technique(NULL)
 	,should_fence_outputs(true)
 {
 }

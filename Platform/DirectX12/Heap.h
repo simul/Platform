@@ -29,7 +29,7 @@ namespace simul
 			Heap();
 			~Heap() {}
 			//! Recreates the API DescriporHeap with the provided settings
-			void							Restore(dx12::RenderPlatform* renderPlatform, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name = "Heap", bool shaderVisible = true);
+			void							Restore(dx12::RenderPlatform* r, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name = "Heap", bool shaderVisible = true);
 			//! Offsets both CPU and GPU handles
 			void							Offset(int index = 1);
 			CD3DX12_CPU_DESCRIPTOR_HANDLE	CpuHandle();
@@ -47,9 +47,10 @@ namespace simul
 				mGpuHandle = mHeap->GetGPUDescriptorHandleForHeapStart();
 				mCnt = 0;
 			}
-			void Release(dx12::RenderPlatform* r);
+			void Release();
 
 		private:
+			dx12::RenderPlatform* renderPlatform;
 			ID3D12DescriptorHeap*			mHeap;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE	mCpuHandle;
 			CD3DX12_GPU_DESCRIPTOR_HANDLE	mGpuHandle;

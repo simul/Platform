@@ -162,7 +162,7 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
-			            EffectPass();
+			EffectPass(crossplatform::RenderPlatform *r);
 			void        InvalidateDeviceObjects();
 			void        Apply(crossplatform::DeviceContext &deviceContext,bool asCompute) override;
 			bool        IsCompute()const { return mIsCompute; }
@@ -204,6 +204,7 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
 		public:
+			EffectTechnique(crossplatform::RenderPlatform *r);
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};

@@ -107,13 +107,15 @@ void DisplaySurfaceManager::ResizeSwapChain(cp_hwnd hwnd)
 	w->ResizeSwapChain(deviceContext);
 }
 
-void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd)
+void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fmt)
 {
 	if(surfaces.find(hwnd)!=surfaces.end())
 		return;
+	if(fmt==crossplatform::UNKNOWN)
+		fmt=kDisplayFormat;
     DisplaySurface *window=renderPlatform->CreateDisplaySurface();
 	surfaces[hwnd]=window;
-	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,kDisplayFormat);
+	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,fmt);
 }
 
 void DisplaySurfaceManager::EndFrame()

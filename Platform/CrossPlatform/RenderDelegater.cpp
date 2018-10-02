@@ -28,7 +28,10 @@ void RenderDelegater::OnLostDevice()
 {
 	for(auto d:shutdownDeviceDelegates)
 		d();
-	renderPlatform->InvalidateDeviceObjects();
+	if(renderPlatform)
+		renderPlatform->InvalidateDeviceObjects();
+	renderPlatform = nullptr;
+	shutdownDeviceDelegates.clear();
 }
 
 int	RenderDelegater::AddView()

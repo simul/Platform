@@ -4,7 +4,9 @@
 #include "Simul/Platform/DirectX12/SimulDirectXHeader.h"
 
 #include <iomanip>
-
+#ifndef _XBOX_ONE
+#include <dxgidebug.h>
+#endif
 using namespace simul;
 using namespace dx12;
 
@@ -111,7 +113,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 
     // Create this window command list
     DeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&CommandList));
-    CommandList->SetName(L"WindowCommandList");
+    CommandList->SetName(L"WindowCommandList 1");
     CommandList->Close();
     RecordingCommands = false;
 }
@@ -305,7 +307,7 @@ void Window::StartFrame()
 
     RecordingCommands = true;
 }
-
+#pragma comment(lib,"dxguid")
 void Window::EndFrame()
 {
     SIMUL_ASSERT(RecordingCommands);
@@ -458,6 +460,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			curAdapterIdx++;
 		}
 		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0, SIMUL_PPV_ARGS(&mDevice));
+		mDevice->SetName (L"D3D12 Device");
 		SIMUL_ASSERT(res == S_OK);
 
 		// We must crete the device with debug flags if we want break on severity
@@ -538,7 +541,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	queueDesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
 	res									= mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mCommandQueue));
 	SIMUL_ASSERT(res == S_OK);
-    mCommandQueue->SetName(L"CommandQueue");
+    mCommandQueue->SetName(L"Main CommandQueue");
 #endif
 }
 
@@ -577,7 +580,11 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 
        if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
        {
+#ifdef _UNICODE
            o.monitorName=base::WStringToUtf8(dispDev.DeviceName);
+#else
+           o.monitorName=dispDev.DeviceName;
+#endif
            o.desktopX	=monitor.rcMonitor.left;
            o.desktopY	=monitor.rcMonitor.top;
        }
@@ -619,6 +626,8 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 }
 void Direct3D12Manager::Shutdown()
 {
+	if(!mDevice)
+		return;
 	// TO-DO: wait for the GPU to complete last work
 	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
 	{
@@ -627,13 +636,23 @@ void Direct3D12Manager::Shutdown()
 	mOutputs.clear();
 
 	ReportMessageFilterState();
-
+	SAFE_RELEASE(mIContext.IAllocator);
+	SAFE_RELEASE(mIContext.ICommandList);
+	SAFE_RELEASE(mCommandQueue);
+	
 	SAFE_RELEASE(mDevice);
+#ifndef _XBOX_ONE
+	IDXGIDebug1 *dxgiDebug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
+    {
+        dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_DETAIL| DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+    }
+	dxgiDebug->Release();
+#endif
 }
 
 void Direct3D12Manager::ReportMessageFilterState()
 {
-
 }
 
 void* Direct3D12Manager::GetDevice()

@@ -2,6 +2,7 @@
 #include "Texture.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
@@ -151,18 +152,19 @@ void Texture::InvalidateDeviceObjects()
 	{
 		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
 		// release manager
-		rPlat->PushToReleaseManager(mTextureDefault, name + "_Default");
-		rPlat->PushToReleaseManager(mTextureUpload, name + "_Upload");
+		if(mTextureDefault)
+			rPlat->PushToReleaseManager(mTextureDefault, name + "_Default");
+		if(mTextureUpload)
+			rPlat->PushToReleaseManager(mTextureUpload, name + "_Upload");
 	}
 
-	mTextureDefault = nullptr;
-	mTextureUpload	= nullptr;
-
+	mTextureDefault=nullptr;
+	mTextureUpload=nullptr;
 	// Same for heaps (The release method will handle it)
-	mTextureSrvHeap.Release(rPlat);
-	mTextureUavHeap.Release(rPlat);
-	mTextureRtHeap.Release(rPlat);
-	mTextureDsHeap.Release(rPlat);
+	mTextureSrvHeap.Release();
+	mTextureUavHeap.Release();
+	mTextureRtHeap.Release();
+	mTextureDsHeap.Release();
 }
 
 void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
@@ -1201,7 +1203,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		srvDesc.ViewDimension					= num_samples > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels				= 1;
 
-		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DSrvHeap", false);
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
@@ -1212,7 +1214,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 				m = 1;
 			FreeUAVTables();
 			InitUAVTables(1, m);
-			mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DUavHeap", false);
+			mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("Texture2DUavHeap %s",name.c_str()), false);
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 			uavDesc.Format								= texture2dFormat;
@@ -1239,7 +1241,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		{
 			FreeRTVTables();
 			InitRTVTables(1, m);
-			mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1 * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "Texture2DRTHeap", false);
+			mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1 * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, base::QuickFormat("Texture2DRTHeap %s",name.c_str()), false);
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtDesc	= {};
 			rtDesc.Format							= texture2dFormat;
@@ -1254,7 +1256,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 		if (depthstencil && (!ok))
 		{
-			mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "Texture2DDSVHeap", false);
+			mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, base::QuickFormat("Texture2DDSVHeap %s",name.c_str()), false);
 	
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsDesc	= {};
 			dsDesc.Format							= dxgi_format;

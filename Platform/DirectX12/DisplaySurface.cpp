@@ -9,6 +9,7 @@ DisplaySurface::DisplaySurface():
     mQueue(nullptr),
     mSwapChain(nullptr),
     mRTHeap(nullptr)
+	,mCommandList(nullptr)
 {
     for (int i = 0; i < FrameCount; i++)
     {
@@ -121,7 +122,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
     // Create this window command list
     mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
-    mCommandList->SetName(L"WindowCommandList");
+    mCommandList->SetName(L"WindowCommandList 2");
     mRecordingCommands = true;
 
     // Provide a cmd list so we can start recording commands
@@ -136,6 +137,7 @@ void DisplaySurface::InvalidateDeviceObjects()
     {
         WaitForAllWorkDone();
     }
+	//SAFE_RELEASE(mCommandList);
     SAFE_RELEASE(mSwapChain);
     SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
     SAFE_RELEASE(mRTHeap);

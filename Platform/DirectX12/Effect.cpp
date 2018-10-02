@@ -522,8 +522,8 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 		mTempBuffer = nullptr;
 	}
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
-	mBufferSrvHeap.Release(mRenderPlatform);
-	mBufferUavHeap.Release(mRenderPlatform);
+	mBufferSrvHeap.Release();
+	mBufferUavHeap.Release();
     mRenderPlatform->PushToReleaseManager(mUploadBuffer, "CPU_SB");
     mRenderPlatform->PushToReleaseManager(mGPUBuffer, "GPU_SB");
 	for (unsigned int i = 0; i < mBuffering; i++)
@@ -637,6 +637,11 @@ void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& 
 {
 }
 
+EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r)
+	:crossplatform::EffectTechnique(r)
+{
+}
+
 int EffectTechnique::NumPasses() const
 {
 	return (int)passes_by_index.size();
@@ -649,7 +654,7 @@ Effect::Effect():
 
 EffectTechnique* Effect::CreateTechnique()
 {
-	return new dx12::EffectTechnique;
+	return new dx12::EffectTechnique(renderPlatform);
 }
 
 void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
@@ -843,7 +848,7 @@ void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,con
 {	
 	EnsureEffect(r, filename_utf8);
 #ifndef _XBOX_ONE
-    SIMUL_COUT << "Loading effect:" << filename_utf8 << std::endl;
+//    SIMUL_COUT << "Loading effect:" << filename_utf8 << std::endl;
 #endif
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 
@@ -934,6 +939,7 @@ void Effect::InvalidateDeviceObjects()
 		}
 	}
 	techniques.clear();
+	SAFE_RELEASE(mSamplersHeap);
 	crossplatform::Effect::InvalidateDeviceObjects();
 }
 
@@ -1107,7 +1113,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 
 crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 {
-	crossplatform::EffectPass *p=new dx12::EffectPass;
+	crossplatform::EffectPass *p=new dx12::EffectPass(renderPlatform);
 	passes_by_name[name]=passes_by_index[i]=p;
 	return p;
 }
@@ -1115,7 +1121,8 @@ crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 void EffectPass::InvalidateDeviceObjects()
 {
 	// TO-DO: nice memory leaks here
-	mComputePso = nullptr;
+	auto pl=(dx12::RenderPlatform*)renderPlatform;
+	pl->PushToReleaseManager(mComputePso,"PSO");
 	mGraphicsPsoMap.clear();
 }
 
@@ -1638,9 +1645,10 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     return hash;
 }
 
-EffectPass::EffectPass():
-    mInUseOverrideDepthState(nullptr),
-    mInUseOverrideBlendState(nullptr)
+EffectPass::EffectPass(crossplatform::RenderPlatform *r):
+	crossplatform::EffectPass(r)
+    ,mInUseOverrideDepthState(nullptr)
+    ,mInUseOverrideBlendState(nullptr)
 {
 }
 

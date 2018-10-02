@@ -440,6 +440,11 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 #endif
 }
 
+EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r)
+	:crossplatform::EffectTechnique(r)
+{
+}
+
 int EffectTechnique::NumPasses() const
 {
 	D3DX11_TECHNIQUE_DESC desc;
@@ -454,7 +459,7 @@ dx11::Effect::Effect() :currentPass(NULL)
 
 EffectTechnique *Effect::CreateTechnique()
 {
-	return new dx11::EffectTechnique;
+	return new dx11::EffectTechnique(renderPlatform);
 }
 #define D3DCOMPILE_DEBUG 1
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
@@ -510,7 +515,7 @@ void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,con
 				ID3DX11EffectTechnique *t	=g->GetTechniqueByIndex(j);
 				D3DX11_TECHNIQUE_DESC tdesc;
 				t->GetDesc(&tdesc);
-				dx11::EffectTechnique *T	=new dx11::EffectTechnique;
+				dx11::EffectTechnique *T	=new dx11::EffectTechnique(renderPlatform);
 				T->name						=tdesc.Name;
 				G->techniques[tdesc.Name]	=T;
 				T->platform_technique		=t;
@@ -577,7 +582,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
 		return nullptr;
 	}
-	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
+	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique(renderPlatform);
 	tech->platform_technique=t;
 	techniques[name]=tech;
 	techniqueCharMap[name]=tech;
@@ -615,7 +620,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 		techniques_by_index[index]=tech;
 		return tech;;
 	}
-	tech=new dx11::EffectTechnique;
+	tech=new dx11::EffectTechnique(renderPlatform);
 	tech->platform_technique=t;
 	techniques[desc.Name]=tech;
 	techniques_by_index[index]=tech;
@@ -950,6 +955,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	//UnbindTextures(deviceContext);
 	crossplatform::Effect::Unapply(deviceContext);
 }
+
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
 	auto c=deviceContext.asD3D11DeviceContext();
@@ -964,12 +970,19 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	c->CSSetUnorderedAccessViews(0,8,uav,0);
 	crossplatform::Effect::UnbindTextures(deviceContext);
 }
+
 crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 {
-	crossplatform::EffectPass *p=new dx11::EffectPass;
+	crossplatform::EffectPass *p=new dx11::EffectPass(renderPlatform);
 	passes_by_name[name]=passes_by_index[i]=p;
 	return p;
 }
+
+EffectPass::EffectPass(crossplatform::RenderPlatform *r)
+	:crossplatform::EffectPass(r)
+{
+}
+
 void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool test)
 {
 

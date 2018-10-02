@@ -771,13 +771,14 @@ void Lightpass(uint3 pos,bool depth)
 	outputTexture1[pos]		=f.farColour;
 	outputTexture1[pos+uint3(0,0,6)]		=f.nearColour;
 }
+
 #define BLOCK_SIZE 4
 void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
-	uint2 offs		= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	uint2 offs		= (amortizationOffset.xy );//+ (idx.xy + idx.yx)) % amortizationScale.xy;
 	pos.xy += offs;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
@@ -786,6 +787,57 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 	if(updateTexture[pos].b==0.0)
 		return;
 	Raytrace(pos,include_rain,depth,NUM_CLOUD_INTERP,godrays);
+}
+#define XX (3)
+#define YY (3)
+
+void Interp(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
+	uint2 offs		= (amortizationOffset.xy);// + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offs;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	vec4 u=updateTexture[pos];
+	if(u.b==0.0)
+		return;
+	int xi,yi;
+	// Interpolate the corners.
+	for(int u=0;u<NUM_CLOUD_INTERP;u++)
+	{
+		vec4 c00		=outputTexture1[pos+uint3(0,0,6*u)];
+		vec4 c20		=outputTexture1[pos+uint3(XX,0,6*u)];
+		vec4 c02		=outputTexture1[pos+uint3(0,YY,6*u)];
+		vec4 c22		=outputTexture1[pos+uint3(XX,YY,6*u)];
+		//[unroll(XX)]
+		for( xi=0;xi<XX;xi++)
+		{
+			float xf	=float(xi)/float(XX);
+			//[unroll(YY)]
+			for( yi=0;yi<YY;yi++)
+			{
+				if(xi==0&&yi==0)
+					continue;
+				uint3 posu				=pos+uint3(xi,yi,0);
+				vec4 ui					=updateTexture[posu];
+				if(ui.b==0.0)//||ui.g==1.0)
+					continue;
+				float yf				=float(yi)/float(YY);
+				vec4 cx0				=lerp(c00,c20,xf);
+				vec4 cx2				=lerp(c02,c22,xf);
+				vec4 cii				=lerp(cx0,cx2,yf);
+				uint3 post				=pos+uint3(xi,yi,6*u);
+				float r=(post.x%XX)/float(XX);
+				float g=(post.y%YY)/float(YY);
+				outputTexture1[post]	=cii;//vec4(r,g,0,0);
+			}
+		}
+	}
+	//outputTexture3[pos]		=f.nearFarDepth;
 }
 
 void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
@@ -889,6 +941,19 @@ shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	Edge(g, t, true, true, true);
 }
 
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Interp_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	Interp(g, t, false, true, true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Interp_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	Interp(g, t, true, true, true);
+}
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 {
@@ -942,22 +1007,6 @@ shader void CS_RaytraceStaticNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThre
 	CS_RaytraceStatic(g,t,false,true,true,false);
 }
 
-
-CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
-shader void CS_RaytraceStaticEdgeRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	CS_RaytraceStaticEdge(g,t,true,true,true,false);
-}
-
-
-CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
-shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	CS_RaytraceStaticEdge(g,t,false,true,true,false);
-}
-
-
-
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
@@ -978,6 +1027,17 @@ shader void CS_RaytraceStaticEdgeRain_cons(uint3 g : SV_GroupID, uint3 t : SV_Gr
 	CS_RaytraceStaticEdge(g,t,true,true,true,true);
 }
 
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,true,true,true,false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,false,true,true,false);
+}
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticEdgeNoRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
@@ -1069,7 +1129,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		vec4 density=texture_wwc_lod(cloudDensity,texc,0);
 		vec3 colour=vec3(1.0,1.0,1.0)*(lightResponse.x+lightResponse.y);
 		colour.gb+=vec2(.125,.25)*(lightResponse.z);
-		colour=.85;
+		colour=vec3(.85,.85,.85);
 		if(density.x<0)
 			colour.b=0;
 		float opacity=saturate(0.1*abs(density.x));
@@ -1193,6 +1253,20 @@ fxgroup raytrace
 		pass p0 
 		{
 			SetComputeShader(CompileShader(cs_5_0,CS_Edge_Rain()));
+		}
+	}
+	technique interp_norain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_Interp_NoRain()));
+		}
+	}
+	technique interp_rain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_Interp_Rain()));
 		}
 	}
 	technique full_compute

@@ -22,7 +22,7 @@ using std::string;
 
 TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	:good(true)
-	,fileLoader(NULL)
+	,fileLoader(nullptr)
 	,memoryInterface(m)
 {
 	fileLoader=base::FileLoader::GetFileLoader();
@@ -216,10 +216,10 @@ void TextFileInput::Load(const char *filename_utf8)
 	std::string text="";
 	if(fileLoader)
 	{
-		void *pointer=NULL;
+		void *pointer=nullptr;
 		unsigned int bytes=0;
 		fileLoader->AcquireFileContents(pointer,bytes,filename_utf8,true);
-		good=(pointer!=NULL);
+		good=(pointer!=nullptr);
 		if(pointer)
 			text=(const char *)pointer;
 		fileLoader->ReleaseFileContents(pointer);
@@ -378,18 +378,21 @@ const char *TextFileInput::Get(int propertyIndex)
 {
 	std::map<std::string,std::string>::iterator i=properties.begin();
 	if(propertyIndex>=properties.size())
-		return NULL;
+		return nullptr;
 	for(int j=0;j<propertyIndex;j++,i++)
 	{
 	}
 	if(i==properties.end())
-		return NULL;
+		return nullptr;
 	return i->first.c_str();
 }
 
 TextInput *TextFileInput::GetSubElement(const char *name)
 {
-	return &subElements[name];
+	auto &u=subElements.find(name);
+	if(u!=subElements.end())
+		return &(u->second);
+	return nullptr;
 }
 
 

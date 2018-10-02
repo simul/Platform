@@ -615,6 +615,81 @@ shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//S
 	IMAGE_STORE_3D(targetTexture1, int3(pos), vec4(dens, dens, dens, dens));
 }
 
+CS_LAYOUT(8, 8, 1)
+shader void CS_Density_Clear(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	uint3 sub_pos = g * uint3(8,8,1) + t;
+	uint3 pos = sub_pos + threadOffset;
+
+
+	
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
+	uint3 noise_dims;
+	GET_DIMENSIONS_3D(volumeNoiseTexture, noise_dims.x, noise_dims.y, noise_dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return ;
+	float dens=0.5;
+	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+//	densityspace_texcoord.x	+=0.05*densityspace_texcoord.z;
+	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale;// +vec3(1.0, 1.0, 0);
+	vec4 worley					=vec4(0,0,0,0);
+	vec3 tc						=2*noisespace_texcoord;
+	float u						=1.5;
+	float a						=.75;
+	// noise_texel is the size of a noise texel
+	float noise_texel			=1.0/float(noise_dims.z);
+	float height				=noiseScale.z;
+	float fl					=0.0;
+	float ff					=modf(worleyNoiseScale,fl);
+	vec3 worley_texcoord		=noisespace_texcoord;
+//	worley_texcoord.z			-=1.0*time;
+	float p						=0;
+	float m						=4.0;
+	//float w						=0.0;
+	// humidity is 0 - 1.
+	float hm					=2.0*(.5*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)-0.5);
+							
+	// noiseval is between -1 and 1.
+	// hm is between 0 and 1.
+
+	// Our initial density. If hm=0, this value is between -1 and 1.
+	// If hm=1, it is between 1 and 2.
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+	dens =  hm + noise_val;
+#if 1
+	
+	//dens						=dens/diffusivity; We now apply diffusivity in the layer mixing stage.
+	float texc_scale = noiseScale.z;
+	// grid that was used to make the worley texture is 4.
+	float grid1 = fl*4.0;
+	float grid2 = (fl+1.0) * 4.0;
+	vec3 wtexc		=densityspace_texcoord*noiseScale / noiseScale.x;
+	//wtexc.z*=0.5;
+	float zratio	=4.0*noiseScale.z / noiseScale.x;
+	for(int j=0;j<2;j++)
+	{
+		float w1 = RestrictedWorley(wtexc, (int)grid1, (int)grid1, zratio);
+		float w2 = RestrictedWorley(wtexc, (int)grid2, (int)grid2, zratio);
+		float w	=pow(lerp(w1,w2,ff),0.7);
+		w							=m*(w-0.52);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
+
+		dens						=(dens+worleyNoiseStrength*w);
+		m							*=.53;
+		grid1*= 2.0;
+		grid2*= 2.0;
+		grid1 += 1.0;
+		grid2 += 1.0;
+	}
+	vec3 wPos						=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
+	//dens=sin(densityspace_texcoord.x*3.14159);
+	//dens  *= saturate(densityspace_texcoord.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
+	
+#endif
+
+	IMAGE_STORE_3D(targetTexture1, int3(pos), vec4(dens, 0, 0, 0));
+}
+
 CS_LAYOUT(4,4,4)
 shader void CS_GenMip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
@@ -664,6 +739,10 @@ technique gpu_density_compute
     pass dont_wrap 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Density_DontWrap()));
+    }
+    pass clear 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Density_Clear()));
     }
 }
 
