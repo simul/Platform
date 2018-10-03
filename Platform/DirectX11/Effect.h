@@ -74,7 +74,7 @@ namespace simul
 			{
 				return shaderResourceView;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
 			{
 				return unorderedAccessView;
 			}

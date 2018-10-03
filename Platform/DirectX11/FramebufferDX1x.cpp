@@ -116,7 +116,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
-void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z,float D)
+void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float ,float )
 {
 	D3D11_VIEWPORT viewport;
 	viewport.Width = floorf((float)Width*W + 0.5f);

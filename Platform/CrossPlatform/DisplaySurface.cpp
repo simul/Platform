@@ -25,7 +25,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, RenderPlatform* r,bool
     mIsVSYNC=m_vsync_enabled;
 }
 
-void DisplaySurface::ResizeSwapChain(DeviceContext &deviceContext)
+void DisplaySurface::ResizeSwapChain(DeviceContext &)
 {
 	if(renderer)
 		renderer->ResizeView(mViewId,viewport.w,viewport.h);

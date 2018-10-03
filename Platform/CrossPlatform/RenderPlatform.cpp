@@ -315,8 +315,8 @@ ShaderBuildMode RenderPlatform::GetShaderBuildMode() const
 {
 	return shaderBuildMode;
 }
-void RenderPlatform::BeginEvent			(DeviceContext &deviceContext,const char *name){}
-void RenderPlatform::EndEvent			(DeviceContext &deviceContext){}
+void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
+void RenderPlatform::EndEvent			(DeviceContext &){}
 
 void RenderPlatform::BeginFrame			()
 {
@@ -1046,7 +1046,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 		
-crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index)
+crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &,int)
 {
 	crossplatform::Viewport v;
 	memset(&v,0,sizeof(v));

@@ -35,7 +35,7 @@ Texture::~Texture()
 {
 }
 
-void Texture::activateRenderTarget(DeviceContext &deviceContext,int array_index,int mip_index)
+void Texture::activateRenderTarget(DeviceContext &,int ,int )
 {
 }
 

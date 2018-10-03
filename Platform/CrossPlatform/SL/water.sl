@@ -23,8 +23,18 @@
 
 #define RAND_MAX 0x7fff
 
-//Offset values for profile buffers to remove tiling and aliasing
-float offsets[16] =
+#define PATCH_BLEND_BEGIN		200
+#define PATCH_BLEND_END			10000
+
+#define BLOCK_SIZE_X 16
+#define BLOCK_SIZE_Y 16
+
+#ifndef MAX_FADE_DISTANCE_METRES
+#define MAX_FADE_DISTANCE_METRES (300000.0)
+#endif
+
+//Random offset values for profile buffers to remove tiling and aliasing
+float profileOffsets[16] =
 {
 	0.54f,
 	0.18f,
@@ -39,9 +49,72 @@ float offsets[16] =
 	0.24f,
 	0.67f,
 	0.31f,
-	0.36f,
+	0.86f,
 	0.13f,
 	0.01f
+};
+
+
+vec2 profile16Directons[16] = 
+{
+	vec2(1.0f,   0.0f),
+	vec2(0.92f,  0.38f),
+	vec2(0.707f, 0.707f),
+	vec2(0.38f,  0.92f),
+
+	vec2(0.0f,   1.0f),
+	vec2(-0.38f, 0.92f),
+	vec2(-0.707f,0.707f),
+	vec2(-0.92f, 0.38f),
+
+	vec2(-1.0f,  0.0f),
+	vec2(-0.92f,-0.38f),
+	vec2(-0.707f,-0.707f),
+	vec2(-0.38f,-0.92f),
+
+	vec2(0.0f,  -1.0f),
+	vec2(0.38f, -0.92f),
+	vec2(0.707f,-0.707f),
+	vec2(0.92f, -0.38f)
+};
+
+vec2 profile32Directons[32] =
+{
+	vec2(1.0f,    0.0f),
+	vec2(0.98f,   0.19f),
+	vec2(0.92f,   0.38f),
+	vec2(0.83f,   0.55f),
+	vec2(0.707f,  0.707f),
+	vec2(0.55f,   0.83f),
+	vec2(0.38f,   0.92f),
+	vec2(0.19f,   0.98f),
+
+	vec2(0.0f,    1.0f),
+	vec2(-0.19f,  0.98f),
+	vec2(-0.38f,  0.92f),
+	vec2(-0.55f,  0.83f),
+	vec2(-0.707f, 0.707f),
+	vec2(-0.83f,  0.55f),
+	vec2(-0.92f,  0.38f),
+	vec2(-0.98f,  0.19f),
+
+	vec2(-1.0f,  -0.0f),
+	vec2(-0.98f, -0.19f),
+	vec2(-0.92f, -0.38f),
+	vec2(-0.83f, -0.55f),
+	vec2(-0.707f,-0.707f),
+	vec2(-0.55f, -0.83f),
+	vec2(-0.38f, -0.92f),
+	vec2(-0.19f, -0.98f),
+
+	vec2(0.0f,   -1.0f),
+	vec2(0.19f,  -0.98f),
+	vec2(0.38f,  -0.92f),
+	vec2(0.55f,  -0.83f),
+	vec2(0.707f, -0.707f),
+	vec2(0.83f,  -0.55f),
+	vec2(0.92f,  -0.38f),
+	vec2(0.98f,  -0.19f),
 };
 
 struct TwoColourCompositeOutput
@@ -187,7 +260,7 @@ float Phillips2(vec2 K, vec2 W, float v, float a, float dir_depend)
 
 float spectrum(float zeta, float windSpeed) {
 	float A = pow(1.1, 1.5 * zeta); // original pow(2, 1.5*zeta)
-	float B = exp(-1.8038897788076411 * pow(4, zeta) / pow(windSpeed, 4));
+	float B = exp(-1.8038897788076411 * pow(4.f, zeta) / pow(windSpeed, 4.f));
 	return 0.139098f * sqrt(A * B);
 }
 
@@ -224,6 +297,9 @@ float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 		float Rp = ((sourceIndex * cos_incident) - (mediumIndex * cost)) / ((sourceIndex * cos_incident) + (mediumIndex * cost));
 		output = ((Rs * Rs + Rp * Rp) / 2.0);
 	}
+
+	//float R = pow((sourceIndex - mediumIndex) / (sourceIndex + mediumIndex), 2);
+	//output = R + (1 - R) * pow(1 - dot(incident, normal), 5);
 
 	return output;
 

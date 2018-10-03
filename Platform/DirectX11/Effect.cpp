@@ -327,7 +327,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	return mapped.pData;
 }
 
-void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
+void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &)
 {
 	if(mapped.pData)
 		lastContext->Unmap(stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
@@ -376,7 +376,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 	mapped.pData=NULL;
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
@@ -394,7 +394,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 	var->SetResource(shaderResourceView);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
@@ -410,7 +410,7 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
 	var->SetUnorderedAccessView(unorderedAccessView);
 }
 
-void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
+void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &)
 {
 }
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
@@ -849,7 +849,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	return res;
 }
 
-void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &res	,crossplatform::SamplerState *s)
+void Effect::SetSamplerState(crossplatform::DeviceContext & ,const crossplatform::ShaderResource &res	,crossplatform::SamplerState *s)
 {
 	if(!asD3DX11Effect())
 	{

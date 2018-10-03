@@ -22,6 +22,6 @@ dx11::Light::~Light()
 {
 }
 
-void dx11::Light::UpdateLight(const double *lLightGlobalPosition,float lConeAngle,const float lLightColor[4]) const
+void dx11::Light::UpdateLight(const double *,float ,const float[4]) const
 {
 }

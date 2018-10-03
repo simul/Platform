@@ -202,7 +202,7 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
     profileData->QueryFinished = true;
 }
 
-void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
+void GpuProfiler::StartFrame(crossplatform::DeviceContext &)
 {
 	SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")
 	if(level!=0)
@@ -360,7 +360,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	return NULL;
 }
 
-float GpuProfiler::GetTime(const std::string &name) const
+float GpuProfiler::GetTime(const std::string &) const
 {
 	if(!enabled)
 		return 0.f;

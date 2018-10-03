@@ -37,8 +37,7 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform float		g_ShoreExtent;
 
 	// Perlin noise for distant wave crest
-	uniform float		g_profileUVScale;
-	uniform vec2		fnbhjdiosabh;
+	uniform vec3		fnbhjdiosabh;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_unityRender;
@@ -49,10 +48,10 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform bool		g_enableFoam;
 
 	// Constants for calculating texcoord from position
-	uniform float		g_TexelLength_x2;
 	uniform float		g_UVScale;
 	uniform float		g_UVOffset;
 	uniform float		g_WorldScale;
+	uniform float		g_SunRadius;
 
 	//Screen scale
 	uniform vec2		g_DepthScale;
@@ -78,10 +77,10 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec2		g_UVBase;
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
-	uniform float		gfuodsphu9inu;
+	uniform float		g_windDirection3;
 
 	uniform vec3		g_boundedDimension;
-	uniform float		jghnufidosn;
+	uniform float		g_windDependency3;
 
 	uniform vec3		g_boundedLocation;
 	uniform float		g_boundedRotation;
@@ -89,7 +88,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec3		g_absorption;
 	uniform uint		g_totalVertices;
 	uniform vec3		g_scattering;
-	uniform float		nvjiodfsnbui;
+	uniform float		g_amplitude2;
 
 	uniform float		g_minQuadSize;
 	uniform uint		g_verticiesPerLayer;
@@ -97,13 +96,15 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform uint		g_noOfLayers;
 
 	uniform vec2		g_boundedDensity;
+	uniform float		g_profileUVScale;
+	uniform float		g_foamStrength;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)
 	uniform vec2 bufferGrid;
 	uniform float showMultiplier;
 	uniform float agaher;
-	SIMUL_CONSTANT_BUFFER_END
+SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
 	uniform vec2	g_windDir;
@@ -120,7 +121,14 @@ SIMUL_CONSTANT_BUFFER(cbWaterProbe, 8)
 	uniform float g_UVScale2;
 	uniform float g_UVOffset2;
 	uniform float g_surfaceHeight;
-	uniform float hugfidoshauig;
+	uniform float g_probeWaveAmplitude;
+
+	uniform vec2 g_center;
+	uniform float g_probeWindDirection;
+	uniform float g_probeWindDependancy;
+
+	uniform float g_probeProfileUVScale;
+	uniform vec3 cvbhdxiobacyi;
 SIMUL_CONSTANT_BUFFER_END
 
 
@@ -139,11 +147,11 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 10)
 
 	uniform float		g_time;
 	uniform float		g_windSpeed2;
-	uniform float		g_totalWaveNumbers;
+	uniform int			g_totalWaveNumbers;
 	uniform float		g_dt;
 
 	uniform vec2		g_windDirection2;
 	uniform float		g_windDependency2;
-	uniform float		g_waveGroup;
+	uniform int			g_waveGroup;
 SIMUL_CONSTANT_BUFFER_END
 #endif

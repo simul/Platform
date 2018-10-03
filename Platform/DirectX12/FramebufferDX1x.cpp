@@ -97,7 +97,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	depth_active	                    = dsView != nullptr;
 }
 
-void Framebuffer::ActivateDepth(crossplatform::DeviceContext& deviceContext)
+void Framebuffer::ActivateDepth(crossplatform::DeviceContext&)
 {
 	SIMUL_BREAK_ONCE("Nacho has to check this");
 }
