@@ -1,4 +1,6 @@
-﻿#include "Simul/Platform/OpenGL/RenderPlatform.h"
+﻿
+#include "glad/glad.h"
+#include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/Mesh.h"
 #include "Simul/Platform/OpenGL/Texture.h"
 #include "Simul/Platform/OpenGL/Effect.h"
@@ -12,6 +14,7 @@
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/OpenGL/Texture.h"
+#include "Simul/Platform/OpenGL/DisplaySurface.h"
 
 using namespace simul;
 using namespace opengl;
@@ -40,7 +43,7 @@ const char* RenderPlatform::GetName()const
     return "OpenGL";
 }
 
-void RenderPlatform::RestoreDeviceObjects(void* unused)
+void RenderPlatform::RestoreDeviceObjects(void* hrc)
 {
     if (!gladLoadGL())
     {
@@ -62,6 +65,8 @@ void RenderPlatform::RestoreDeviceObjects(void* unused)
     
 
     crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
+
+	immediateContext.platform_context=hrc;
     RecompileShaders();
 }
 
@@ -851,6 +856,12 @@ void RenderPlatform::SetTopology(crossplatform::DeviceContext &,crossplatform::T
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
 {
+}
+
+
+crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
+{
+    return new opengl::DisplaySurface();
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)

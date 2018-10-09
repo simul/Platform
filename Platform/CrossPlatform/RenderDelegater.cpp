@@ -59,8 +59,8 @@ void RenderDelegater::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDele
 
 void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h)
 {
-	if(!rendertarget)
-		return;
+	//if(!rendertarget)
+	//	return;
 	crossplatform::DeviceContext deviceContext;
 	viewSize[view_id]					= int2(w,h);
 	deviceContext.platform_context		= context;

@@ -5,12 +5,15 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-#include "glad/glad.h"
 
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4251)
 #endif
+
+typedef int GLint;
+typedef unsigned int GLenum;
+typedef uint64_t GLuint64;
 
 namespace simul
 {
@@ -80,6 +83,8 @@ namespace simul
 			crossplatform::RenderState*             CreateRenderState(const crossplatform::RenderStateDesc &desc) override;
 			crossplatform::Query*                   CreateQuery(crossplatform::QueryType type) override;
 			crossplatform::Shader*                  CreateShader() override;
+
+			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			void*                                   GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers,crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps = NULL) override;
 			

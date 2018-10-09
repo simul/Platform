@@ -29,9 +29,6 @@
     <ClCompile Include="FramebufferGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenGLRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Profiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -59,15 +56,18 @@
     <ClCompile Include="glad.c">
       <Filter>Source Files\glad</Filter>
     </ClCompile>
+    <ClCompile Include="DeviceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplaySurface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferGL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OpenGLRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Profiler.h">
@@ -102,6 +102,12 @@
     </ClInclude>
     <ClInclude Include="KHR\khrplatform.h">
       <Filter>Header Files\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplaySurface.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -199,9 +205,6 @@
       <Filter>SL</Filter>
     </None>
     <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl">
-      <Filter>SL</Filter>
-    </None>
-    <None Include="..\CrossPlatform\SL\ocean_constants.sl">
       <Filter>SL</Filter>
     </None>
     <None Include="..\CrossPlatform\SL\optics_constants.sl">
@@ -351,6 +354,9 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
   </ItemGroup>

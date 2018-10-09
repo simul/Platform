@@ -8,7 +8,7 @@
 	</PropertyGroup>
 	<ItemDefinitionGroup>
 		<Sfx_Rule>
-			<CommandLineTemplate>$(SIMUL)/Tools/bin/Sfx.exe [inputs] [IncludePaths] [OutputPath] [SfxConfig] -m"$(SIMUL)\Platform\OpenGL\shaderbin"</CommandLineTemplate>
+			<CommandLineTemplate>$(SIMUL)/Tools/bin/Sfx.exe [inputs] [IncludePaths] [OutputPath] [SfxConfig] -m"$(SIMUL)\Platform\OpenGL\shaderbin" [AdditionalOptions]</CommandLineTemplate>
 			<Outputs>%(Filename).sfxo</Outputs>
 			<ExecutionDescription>Sfx.exe %(Filename)</ExecutionDescription>
 		</Sfx_Rule>

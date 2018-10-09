@@ -27,6 +27,7 @@ namespace simul
 			std::string logfile_utf8;
 			bool screenshot;
 			std::string screenshotFilenameUtf8;
+			std::vector<std::string> strings;
 		};
 		/// Convert the inputs to an executable into a CommandLineParams struct.
 		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const char **szArgList)
@@ -76,6 +77,8 @@ namespace simul
 						commandLineParams.screenshot=true;
 						sc=true;
 					}
+					else
+						commandLineParams.strings.push_back(arg);
 				}
 			}
 		}

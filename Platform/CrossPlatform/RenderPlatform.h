@@ -117,7 +117,6 @@ namespace simul
 			{
 				return 1.0f;
 			}
-
 			void SetCanSaveAndRestore(bool b)
 			{
 				can_save_and_restore=b;

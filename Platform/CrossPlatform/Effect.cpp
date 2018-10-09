@@ -751,7 +751,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	textureCharMap.clear();
 	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
 	std::string filepathUtf8=renderPlatform->GetShaderBinaryPath();
-	if (filepathUtf8[filepathUtf8.length() - 1] != '/')
+	if (filepathUtf8.length()&&filepathUtf8[filepathUtf8.length() - 1] != '/')
 		filepathUtf8+="/";
 	std::string filenameUtf8=filename_utf8;
 	// if (filenameUtf8.find(".") >= filenameUtf8.length())

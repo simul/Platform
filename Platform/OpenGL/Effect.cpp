@@ -241,7 +241,7 @@ Effect::Effect()
 
 void Effect::Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines)
 {
-    SIMUL_COUT << "Loading OpenGL effect:" << filename_utf8 << std::endl;
+   // SIMUL_COUT << "Loading OpenGL effect:" << filename_utf8 << std::endl;
 	crossplatform::Effect::Load(renderPlatform, filename_utf8,defines);
 }
 
@@ -377,6 +377,7 @@ void Shader::load(crossplatform::RenderPlatform* renderPlatform, const char* fil
     ShaderId                = glCreateShader(type);
     glShaderSource(ShaderId, 1, &glData, 0);
     glCompileShader(ShaderId);
+	name=filename_utf8;
 }
 
 void Shader::Release()
@@ -468,7 +469,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             std::vector<GLchar> infoLog(maxLength);
             glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);
 
-            SIMUL_CERR << "Failed to link a program! \n";
+            SIMUL_CERR << "Failed to link the program for pass: "<<this->PassName.c_str()<<"\n";
             SIMUL_COUT << infoLog.data() << std::endl;
             SIMUL_BREAK("");
 
@@ -649,6 +650,8 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
                     continue;
                 }
                 GLint memStrSize = memRes[0];
+				if(memStrSize==-1)
+					continue;
                 // This is the name of the member, it will look like textureName[0]:
                 std::string memberName;
                 memberName.resize(memStrSize);
@@ -667,6 +670,8 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
                 // multiples of that number
                 GLint baseOffset                = memRes[1]; 
                 int texSlot                     = curEffect->GetSlot(newName.c_str());
+				if(texSlot<0)
+					continue;
                 mTexturesUBOMapping[texSlot]    = baseOffset;
                 
                 if ((baseOffset % (sizeof(GLuint64) * 24)) != 0)

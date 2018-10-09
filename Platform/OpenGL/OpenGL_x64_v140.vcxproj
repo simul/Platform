@@ -79,7 +79,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/External/glfw/include;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -92,13 +92,14 @@
     </ClCompile>
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/FreeImage/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glew/lib/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glfx/build/$(Platform)/$(PlatformToolset)/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/External/glfw/build/$(Platform)/$(PlatformToolset)/src/$(Configuration);$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/FreeImage/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glew/lib/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glfx/build/$(Platform)/$(PlatformToolset)/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
@@ -110,7 +111,7 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/External/glfw/include;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -129,7 +130,7 @@
     </Sfx_Rule>
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/External/glfw/build/$(Platform)/$(PlatformToolset)/src/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -145,7 +146,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/External/glfw/include;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;FREEGLUT_STATIC;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -170,7 +171,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/stb;$(SIMUL)/External/glfw/include;$(SIMUL)/Platform/OpenGL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;FREEGLUT_STATIC;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
@@ -191,19 +192,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="DeviceManager.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="OpenGLRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
+    <ClInclude Include="DeviceManager.h" />
+    <ClInclude Include="DisplaySurface.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
@@ -213,7 +217,6 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="OpenGLCallbackInterface.h" />
-    <ClInclude Include="OpenGLRenderer.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="Texture.h" />
@@ -231,6 +234,7 @@
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
     </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
@@ -242,6 +246,7 @@
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-l %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -260,6 +265,7 @@
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\OpenGL\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-l %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -373,7 +379,6 @@
     <None Include="..\CrossPlatform\SL\noise_constants.sl" />
     <None Include="..\CrossPlatform\SL\nv_multi_res.sl" />
     <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl" />
-    <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
     <None Include="..\CrossPlatform\SL\quaternion.sl" />
     <None Include="..\CrossPlatform\SL\rain.sl" />

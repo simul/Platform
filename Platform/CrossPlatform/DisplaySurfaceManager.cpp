@@ -113,6 +113,7 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 		return;
 	if(fmt==crossplatform::UNKNOWN)
 		fmt=kDisplayFormat;
+	SIMUL_NULL_CHECK_RETURN(renderPlatform,"Can't add a window when renderPlatform has not been set.")
     DisplaySurface *window=renderPlatform->CreateDisplaySurface();
 	surfaces[hwnd]=window;
 	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,fmt);

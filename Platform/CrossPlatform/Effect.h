@@ -273,6 +273,7 @@ namespace simul
 			bool usesSamplerSlot(int s) const;
 			bool usesRwTextureSlot(int s) const;
 			std::string pixel_str;
+			std::string name;
 			crossplatform::ShaderType type;
 			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
 			unsigned textureSlots;			//t

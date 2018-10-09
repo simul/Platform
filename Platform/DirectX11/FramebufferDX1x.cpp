@@ -144,7 +144,7 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 	}
 	depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
 	D3D11_VIEWPORT viewport;
-		// Setup the viewport for rendering.
+	// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
 	viewport.Height = (float)Height;
 	viewport.MinDepth = 0.0f;
