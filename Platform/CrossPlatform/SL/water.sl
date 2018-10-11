@@ -282,16 +282,20 @@ float cubic_bump(float x) {
 float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 {
 	float output;
+	//Schlick's apporixmation, 
 	float cos_incident = clamp(-1.0, 1.0, dot(incident, normal));
+	float R0 = pow(((sourceIndex - mediumIndex) / (sourceIndex + mediumIndex)), 2.0);
+	return R0 + (1 - R0) * pow(1 - cos_incident, 5.0);
 
+	/* Old more accurate but more expensive method
 	float sint = (sourceIndex / mediumIndex) * sqrt(max(0.0, 1 - (cos_incident * cos_incident)));
 	if (sint >= 1.0)
-	{
+	{  
 		output = 0.0;
 	}
 	else
 	{
-		float cost = sqrt(max(0.0, 1 - sint * sint));
+		float cost = sqrt(max(0.0, 1 - (sint * sint)));
 		cos_incident = abs(cos_incident);
 		float Rs = ((mediumIndex * cos_incident) - (sourceIndex * cost)) / ((mediumIndex * cos_incident) + (sourceIndex * cost));
 		float Rp = ((sourceIndex * cos_incident) - (mediumIndex * cost)) / ((sourceIndex * cos_incident) + (mediumIndex * cost));
@@ -302,7 +306,7 @@ float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 	//output = R + (1 - R) * pow(1 - dot(incident, normal), 5);
 
 	return output;
-
+	*/
 }
 
 #endif

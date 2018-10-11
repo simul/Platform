@@ -128,7 +128,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	SetNumBuffers( r,1, 64, 2 );
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *,const char *name,int )
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect, const char *name, int bindingIndex)
 {
 	std::string mName=name;
 	for (unsigned int i = 0; i < 3; i++)
