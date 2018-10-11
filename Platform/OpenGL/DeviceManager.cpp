@@ -37,7 +37,7 @@ using namespace opengl;
 using namespace std;
 
 #ifdef _DEBUG
-#pragma comment(lib, "glfw3d")
+#pragma comment(lib, "glfw3")
 #else
 #pragma comment(lib, "glfw3")
 #endif
@@ -199,12 +199,6 @@ DeviceManager::~DeviceManager()
 	delete renderPlatformOpenGL;
 }
 
-int DeviceManager::AddGLView() 
-{
-	static int v=0;
-	return ++v;
-}
-
 static void GlfwErrorCallback(int errcode, const char* info)
 {
     SIMUL_CERR << " "<<errcode<<": " << info << std::endl;
@@ -299,24 +293,12 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 }
 
 
-void DeviceManager::InitializeGL()
+void DeviceManager::Activate()
 {
+    glfwMakeContextCurrent(offscreen_context);
 }
 
 void DeviceManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
-{
-}
-
-void DeviceManager::ShutdownGL()
-{
-	InvalidateDeviceObjects();
-}
-
-void DeviceManager::RenderGL(int view_id)
-{
-}
-
-void DeviceManager::ResizeGL(int view_id,int w,int h)
 {
 }
 

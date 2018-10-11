@@ -126,7 +126,7 @@ void DisplaySurface::InitSwapChain()
 		SAFE_RELEASE(mDeferredContext);
 		V_CHECK(mDeviceRef->CreateDeferredContext(0,&mDeferredContext));
 	}
-
+    SAFE_RELEASE(mBackBuffer);
     result = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&mBackBuffer);
     SIMUL_ASSERT(result == S_OK);
     // Create the render target view with the back buffer pointer.

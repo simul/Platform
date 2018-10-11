@@ -373,10 +373,14 @@ void Shader::load(crossplatform::RenderPlatform* renderPlatform, const char* fil
     default:
         break;
     }
+	
+//	HGLRC hglrc	=wglGetCurrentContext();
+//	SIMUL_COUT<<(int)hglrc<<std::endl;
     const GLchar* glData    = (const GLchar*)fileData;
     ShaderId                = glCreateShader(type);
     glShaderSource(ShaderId, 1, &glData, 0);
     glCompileShader(ShaderId);
+	src=glData;
 	name=filename_utf8;
 }
 
@@ -399,13 +403,16 @@ crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 EffectPass::EffectPass(crossplatform::RenderPlatform *r):
     crossplatform::EffectPass(r)
 	,mProgramId(0),
-    mHandlesUBO(nullptr),
     PassName("passname")
 {
-    for (int i = 0; i < 32; i++)
-    {
-        mTexturesUBOMapping[i] = -1;
-    }
+	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
+	{
+		mHandlesUBO[i]=nullptr;
+		for (int j = 0; j < 32; j++)
+		{
+			mTexturesUBOMapping[i][j] = -1;
+		}
+	}
 }
 
 EffectPass::~EffectPass()
@@ -420,13 +427,14 @@ void EffectPass::InvalidateDeviceObjects()
         glDeleteProgram(mProgramId);
         mProgramId = 0;
     }
-    if (mHandlesUBO)
+	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
     {
-        delete mHandlesUBO;
-    }
-    for (int i = 0; i < 32; i++)
-    {
-        mTexturesUBOMapping[i] = -1;
+		if (mHandlesUBO[i])
+			delete mHandlesUBO[i];
+		for (int j = 0; j < 32; j++)
+		{
+			mTexturesUBOMapping[i][j] = -1;
+		}
     }
     mUsedTextures.clear();
 }
@@ -471,7 +479,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 
             SIMUL_CERR << "Failed to link the program for pass: "<<this->PassName.c_str()<<"\n";
             SIMUL_COUT << infoLog.data() << std::endl;
-            SIMUL_BREAK("");
+            SIMUL_BREAK_ONCE("");
 
             InvalidateDeviceObjects();
             return;
@@ -517,10 +525,14 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 
 void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 {
-    if (!mHandlesUBO)
-    {
-        return;
-    }
+	bool any=false;
+	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
+	{
+		if(mHandlesUBO[i])
+			any=true;
+	}
+	if(!any)
+		return;
 
     crossplatform::ContextState* cs = deviceContext.renderPlatform->GetContextState(deviceContext);
     auto rPlat = (opengl::RenderPlatform*)deviceContext.renderPlatform;
@@ -545,9 +557,8 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
         int slot                = resourceSlots[i];
         auto ta                 = cs->textureAssignmentMap[slot];
         opengl::Texture* tex    = (opengl::Texture*)ta.texture;
-        int uboOffset           = mTexturesUBOMapping[slot];
         
-        // ... Or we may be selecting it conditionaly
+        // ... Or we may be selecting it conditionally
         if (!tex)
         {
             if (ta.dimensions == 3)
@@ -559,17 +570,17 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                 tex = rPlat->GetDummy2D();
             }
         }
-        // The shader does not use the texture so skip it:
-        if (uboOffset == -1)
-        {
-            continue;
-        }
 
         // We first bind the texture handle alone (for fetch and get size operations)
         GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
         GLuint64 thandle    = glGetTextureHandleARB(tview);
         rPlat->MakeTextureResident(thandle);
-        mHandlesUBO->Update(thandle, uboOffset);
+		for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
+		{
+			const int &uboOffset=mTexturesUBOMapping[j][slot];
+			if(mHandlesUBO[j]!=nullptr&&uboOffset!=-1)
+				mHandlesUBO[j]->Update(thandle, uboOffset);
+		}
 
         // Texture + sampler
         for (int i = 0; i < numSamplerResourcerSlots; i++)
@@ -596,11 +607,20 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                 GLuint sview        = samplerState->asGLuint();
                 GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
                 rPlat->MakeTextureResident(chandle);
-                mHandlesUBO->Update(chandle, uboOffset + (sizeof(GLuint64) * (sslot + 1)));
+				for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
+				{
+					const int &uboOffset=mTexturesUBOMapping[j][slot];
+					if(mHandlesUBO[j]!=nullptr&&uboOffset!=-1)
+						mHandlesUBO[j]->Update(chandle, uboOffset + (sizeof(GLuint64) * (sslot + 1)));
+				}
             }
         }
     }
-    mHandlesUBO->Bind(mProgramId);
+	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
+	{
+		if(mHandlesUBO[i])
+			mHandlesUBO[i]->Bind(mProgramId);
+	}
 }
 
 GLuint EffectPass::GetGLId()
@@ -610,76 +630,83 @@ GLuint EffectPass::GetGLId()
 
 void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 {
-    const char* kTexHandleUbo   = "_TextureHandles_";
-    GLuint texHandlesIdx        = glGetProgramResourceIndex(mProgramId,GL_UNIFORM_BLOCK,kTexHandleUbo);
-    if (texHandlesIdx != GL_INVALID_INDEX)
-    {
-        // 1) Query the slot and the number of active members
-        GLenum uboProps[2]  = { GL_BUFFER_BINDING,GL_NUM_ACTIVE_VARIABLES };
-        GLint uboRes[2]     = { -1,-1 };
-        glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, texHandlesIdx, 2, uboProps, 2, nullptr, uboRes);
-        GLint numActiveMem  = uboRes[1];
-        GLint uboSlot       = uboRes[0];
+    char kTexHandleUbo []  = "_TextureHandles_X";
+	char ext[]={'v','h','d','g','p','c'};
+	// Different buffer object for each shader type.
+	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
+	{
+		kTexHandleUbo[16]=ext[i];
+		GLuint texHandlesIdx        = glGetProgramResourceIndex(mProgramId,GL_UNIFORM_BLOCK,kTexHandleUbo);
+		if (texHandlesIdx != GL_INVALID_INDEX)
+		{
+			// 1) Query the slot and the number of active members
+			GLenum uboProps[2]  = { GL_BUFFER_BINDING,GL_NUM_ACTIVE_VARIABLES };
+			GLint uboRes[2]     = { -1,-1 };
+			glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, texHandlesIdx, 2, uboProps, 2, nullptr, uboRes);
+			GLint numActiveMem  = uboRes[1];
+			GLint uboSlot       = uboRes[0];
 
-        // If we have active members...
-        if (numActiveMem > 0)
-        {
-            // Create the UBO
-            const int numMemberEles = 24; // TO-DO: we can query this but it shold be the same 
-            mHandlesUBO = new TexHandlesUBO;
-            mHandlesUBO->Init(numActiveMem * numMemberEles, mProgramId, uboSlot);
+			// If we have active members...
+			if (numActiveMem > 0)
+			{
+				// Create the UBO
+				const int numMemberEles = 24; // TO-DO: we can query this but it shold be the same 
+				mHandlesUBO[i] = new TexHandlesUBO;
+				int uboIndex=glGetUniformBlockIndex(mProgramId, kTexHandleUbo);
+				mHandlesUBO[i]->Init(numActiveMem * numMemberEles, mProgramId, uboIndex, uboSlot);
 
-            // 2) Build a list with each member index
-            GLenum uboMemProps = GL_ACTIVE_VARIABLES;
-            std::vector<GLint> uboMemIndices(numActiveMem);
-            glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, texHandlesIdx, 1, &uboMemProps, numActiveMem, nullptr, uboMemIndices.data());
+				// 2) Build a list with each member index
+				GLenum uboMemProps = GL_ACTIVE_VARIABLES;
+				std::vector<GLint> uboMemIndices(numActiveMem);
+				glGetProgramResourceiv(mProgramId, GL_UNIFORM_BLOCK, texHandlesIdx, 1, &uboMemProps, numActiveMem, nullptr, uboMemIndices.data());
 
-            // 3) Query info of each member:
-            GLenum memProps[5] = 
-            {
-                GL_NAME_LENGTH, GL_OFFSET,
-                GL_REFERENCED_BY_COMPUTE_SHADER,
-                GL_REFERENCED_BY_VERTEX_SHADER,GL_REFERENCED_BY_FRAGMENT_SHADER 
-            };
-            for (const GLint member : uboMemIndices)
-            {
-                GLint memRes[5] = { -1,-1,-1,-1,-1 };
-                glGetProgramResourceiv(mProgramId, GL_UNIFORM, member, 5, memProps, 5, nullptr, memRes);
-                if (memRes[2] == 0 && memRes[3] == 0 && memRes[4] == 0)
-                {
-                    continue;
-                }
-                GLint memStrSize = memRes[0];
-				if(memStrSize==-1)
-					continue;
-                // This is the name of the member, it will look like textureName[0]:
-                std::string memberName;
-                memberName.resize(memStrSize);
-                glGetProgramResourceName(mProgramId, GL_UNIFORM, member, memStrSize, nullptr, (GLchar*)memberName.data());
+				// 3) Query info of each member:
+				GLenum memProps[5] = 
+				{
+					GL_NAME_LENGTH, GL_OFFSET,
+					GL_REFERENCED_BY_COMPUTE_SHADER,
+					GL_REFERENCED_BY_VERTEX_SHADER,GL_REFERENCED_BY_FRAGMENT_SHADER 
+				};
+				for (const GLint member : uboMemIndices)
+				{
+					GLint memRes[5] = { -1,-1,-1,-1,-1 };
+					glGetProgramResourceiv(mProgramId, GL_UNIFORM, member, 5, memProps, 5, nullptr, memRes);
+					if (memRes[2] == 0 && memRes[3] == 0 && memRes[4] == 0)
+					{
+						continue;
+					}
+					GLint memStrSize = memRes[0];
+					if(memStrSize==-1)
+						continue;
+					// This is the name of the member, it will look like textureName[0]:
+					std::string memberName;
+					memberName.resize(memStrSize);
+					glGetProgramResourceName(mProgramId, GL_UNIFORM, member, memStrSize, nullptr, (GLchar*)memberName.data());
 
-                // 4) Fix the name:
-                size_t arrPos = memberName.find("[0]");
-                if (arrPos == std::string::npos)
-                {
-                    SIMUL_BREAK("This can not happen");
-                }
-                std::string newName(memberName.begin(), memberName.begin() + arrPos);
+					// 4) Fix the name:
+					size_t arrPos = memberName.find("[0]");
+					if (arrPos == std::string::npos)
+					{
+						SIMUL_BREAK("This can not happen");
+					}
+					std::string newName(memberName.begin(), memberName.begin() + arrPos);
 
-                // 5) Now that we now the name used by SFXO, we can cache the offset:
-                // Each member will take sizeof(uint64_t) * 24, so offsets should be
-                // multiples of that number
-                GLint baseOffset                = memRes[1]; 
-                int texSlot                     = curEffect->GetSlot(newName.c_str());
-				if(texSlot<0)
-					continue;
-                mTexturesUBOMapping[texSlot]    = baseOffset;
+					// 5) Now that we now the name used by SFXO, we can cache the offset:
+					// Each member will take sizeof(uint64_t) * 24, so offsets should be
+					// multiples of that number
+					GLint baseOffset                = memRes[1]; 
+					int texSlot                     = curEffect->GetSlot(newName.c_str());
+					if(texSlot<0)
+						continue;
+					mTexturesUBOMapping[i][texSlot]    = baseOffset;
                 
-                if ((baseOffset % (sizeof(GLuint64) * 24)) != 0)
-                {
-                    SIMUL_BREAK("This can not happen");
-                }
-            }
-        }
+					if ((baseOffset % (sizeof(GLuint64) * 24)) != 0)
+					{
+						SIMUL_BREAK("This can not happen");
+					}
+				}
+			}
+		}
     }
 }
 
@@ -694,18 +721,19 @@ TexHandlesUBO::~TexHandlesUBO()
     Release();
 }
 
-void TexHandlesUBO::Init(size_t count, GLuint program, int slot)
+void TexHandlesUBO::Init(size_t count, GLuint program, int index, int slot)
 {
     Release();
 
     // Generate the UBO:
     glGenBuffers(1, &mId);
     glBindBuffer(GL_UNIFORM_BUFFER, mId);
+	size=count;
     glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Setupt the binding (the handles UBO is declared without layout):
-    glUniformBlockBinding(program, glGetUniformBlockIndex(program, Name), slot);
+    glUniformBlockBinding(program, index, slot);
     mSlot = slot;
 }
 
@@ -716,6 +744,8 @@ void TexHandlesUBO::Bind(GLuint program)
 
 void TexHandlesUBO::Update(GLuint64 value, size_t offset)
 {
+	if(offset/sizeof(GLuint64)>=size)
+		SIMUL_BREAK("");
     glBindBuffer(GL_UNIFORM_BUFFER, mId);
     glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(GLuint64), &value);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);

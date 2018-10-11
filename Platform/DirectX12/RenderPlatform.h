@@ -62,7 +62,7 @@ namespace simul
 		public:
 										    RenderPlatform();
 			virtual						    ~RenderPlatform();
-			virtual float                   GetDefaultOutputGamma() const   {return 0.44f;}
+			virtual float                   GetDefaultOutputGamma() const;
 			const char*					    GetName() const                 {return "DirectX 12";}
 			//! Returns the current idx (used in ring buffers)
 			UCHAR                           GetIdx()const                   { return mCurIdx; }

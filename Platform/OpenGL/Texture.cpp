@@ -17,7 +17,7 @@ void DeleteTextures(size_t num,GLuint *t)
 	{
 		if(t[i]!=0&&!glIsTexture(t[i]))
 		{
-			SIMUL_BREAK("Not a texture");
+			SIMUL_BREAK_ONCE("Not a texture");
 		}
 		if(t[i]==78)
 		{
@@ -28,7 +28,7 @@ void DeleteTextures(size_t num,GLuint *t)
 			SIMUL_CERR<<"349"<<std::endl;
 		}
 	}
-	//glDeleteTextures(num,t);
+	glDeleteTextures(num,t);
 }
 
 // TODO: This is ridiculous. But GL, at least in the current NVidia implementation, seems unable to write to a re-used texture id that it has generated after that id 
@@ -40,11 +40,11 @@ void glGenTextures_DONT_REUSE(int count,GLuint *tex)
 	std::vector<GLuint> del_tex;
 	static int max_texid=0;*/
 	glGenTextures(count,tex);
-		if(tex[0]==78)
+/*		if(tex[0]==78)
 		{
 			SIMUL_CERR<<"78"<<std::endl;
 		}
-/*	while(tex[count-1]<max_texid)
+	while(tex[count-1]<max_texid)
 	{
 		for(int i=0;i<count;i++)
 			del_tex.push_back(tex[count]);
@@ -148,7 +148,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	width		= tdata.x;
 	length		= tdata.y;
 	arraySize	= 1;
-	mips		= 1 + floor(log2(width >= length ? width : length));
+	mips		= 1 + int(floor(log2(width >= length ? width : length)));
 	dim		 = 2;
 	depth		= 1;
 	cubemap	 = false;
@@ -238,7 +238,7 @@ bool Texture::IsValid()const
 {
 	return mTextureID != 0;
 }
-
+#if 0
 void Texture::InvalidateDeviceObjects()
 {
 	if ((!external_texture)&&mTextureID != 0)
@@ -263,7 +263,46 @@ void Texture::InvalidateDeviceObjects()
 	mLayerMipViews.clear();
 	mTextureFBOs.clear();
 }
+#else
+void Texture::InvalidateDeviceObjects()
+{
+    std::vector<GLuint> toDeleteTextures;
+    for (auto &texIdVector: mLayerMipViews)
+    {
+        for (GLuint texId : texIdVector)
+        {
+            if (texId && texId != mTextureID)
+                toDeleteTextures.push_back(texId);
+        }
+        texIdVector.clear();
+    }
+    mLayerMipViews.clear();
+    for (GLuint texId : mMainMipViews)
+    {
+        if (texId && texId != mTextureID)
+            toDeleteTextures.push_back(texId);
+    }
+    mMainMipViews.clear();
+    for (GLuint texId : mLayerViews)
+    {
+        if (texId && texId != mTextureID)
+            toDeleteTextures.push_back(texId);
+    }
+    mLayerViews.clear();
+    if (mCubeArrayView != 0 && mCubeArrayView != mTextureID)
+    {
+        toDeleteTextures.push_back(mCubeArrayView);
+    }
+   if (mTextureID != 0)
+   {
+        toDeleteTextures.push_back(mTextureID);
+   }
 
+    glDeleteTextures(toDeleteTextures.size(), toDeleteTextures.data());
+    mCubeArrayView = 0;
+   mTextureID = 0;
+}
+#endif
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
 	float qw, qh;

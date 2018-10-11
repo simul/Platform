@@ -99,7 +99,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float moisture			=0.0;
 
 	vec3 world_pos			=viewPosKm;
-	view.xyz+=vec3(0.00001,0.00001,0.00001);
+	view.xyz				+=vec3(0.00001,0.00001,0.00001);
 	// This provides the range of texcoords that is lit.
 	// In c_offset, we want 1's or -1's. NEVER zeroes!
 	int3 c_offset			=int3(2.0*step(vec3(0,0,0),view.xyz)-vec3(1,1,1));
@@ -133,7 +133,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	/// (1.0 + 100.0*abs(view.z));
 
 	vec3 amb_dir=view;
-	uint steps=initialSteps-((1&stepPos)!=0);
+	uint steps=initialSteps-uint((1&stepPos)!=0);
 	uint in_step=0,c=0;
 	float rangeKm				=initialSteps*stepKm;
 
@@ -148,16 +148,16 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		float fade					=1.0;
 		if(consistent_steps)
 		{
-			int odd						=(steps-in_step)%2;
+			uint odd						=(steps-in_step)%2;
 			float fade_up				=saturate((rangeKm-distanceKm)/oddRangeKm);
-			fade					=odd?fade_up:1.0;
+			fade					=(odd!=0)?fade_up:1.0;
 			// doubles every P steps.
 			if(in_step++==steps)
 			{
 				stepKm					*=2.0;
 				c++;
 				uint u					=(1<<c);
-				steps					=initialSteps-((u&stepPos)!=0);
+				steps					=initialSteps-uint((u&stepPos)!=0);
 				in_step					=0;
 				// =range doubles.
 				rangeKm					=distanceKm+initialSteps*stepKm;
@@ -245,7 +245,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 #endif
 	//res.nearFarDepth.y	=	max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
-	res.nearFarDepth.zw	=	meanFadeDistance;
+	res.nearFarDepth.zw	=	vec2(meanFadeDistance,meanFadeDistance);
 //for(int i=0;i<num_interp;i++)
 	// now lose inscatter due to godrays:
 #ifdef AVERAGE_GODRAYS

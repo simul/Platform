@@ -19,17 +19,19 @@ namespace simul
         public:
                         TexHandlesUBO();
                         ~TexHandlesUBO();
-            void        Init(size_t count, GLuint program, int slot);
+            void        Init(size_t count, GLuint program, int index, int slot);
             void        Bind(GLuint program);
             void        Update(GLuint64 value,size_t offset);
 
-            const char* Name = "_TextureHandles_";
+          
 
         private:
             void    Release();
 
             GLuint  mId;
             int     mSlot;
+
+			int size;
         };
 
         // Opengl Query implementation
@@ -141,8 +143,8 @@ namespace simul
             void MapTexturesToUBO(crossplatform::Effect* curEffect);
 
             GLuint                                          mProgramId;
-            int                                             mTexturesUBOMapping[32];
-            TexHandlesUBO*                                  mHandlesUBO;
+            int                                             mTexturesUBOMapping[crossplatform::ShaderType::SHADERTYPE_COUNT][32];
+            TexHandlesUBO*                                  mHandlesUBO[crossplatform::ShaderType::SHADERTYPE_COUNT];
             std::vector<std::string> mUsedTextures;
 		};
 
@@ -167,6 +169,8 @@ namespace simul
             GLuint  ShaderId;
         private: 
             void    Release();
+			//temp:
+			std::string src;
 		};
 
 		//! The OpenGL implementation of Effect

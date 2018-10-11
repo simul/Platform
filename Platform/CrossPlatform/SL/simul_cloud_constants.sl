@@ -37,7 +37,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int cubemapViewIndex;
 
 	uniform vec3 viewPosKm;
-	uniform float forwardOffsetKm;
+	uniform float sampleHeight;
 
 	uniform float shadowRangeKm;
 	uniform int shadowTextureSize;
@@ -73,8 +73,6 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int4 exclusionRange;
 	
 	uniform vec2 cirrusWindVector;
-	uniform float initialStepKm;
-	uniform float sampleHeight;
 
 SIMUL_CONSTANT_BUFFER_END
 
@@ -110,11 +108,11 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform float rain;
 	uniform float maxFadeDistanceKm;
-	uniform float noise3DPersistenceXXX;
+	uniform float extinctionPerKm;
 	uniform float minSunlightAltitudeKm;
 
 	uniform vec3 crossSectionOffset;
-	uniform int noise3DOctavesXXX;
+	uniform int firstInput;
 
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
@@ -133,11 +131,6 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	
 	uniform vec3 worleyTexcoordScale;
 	uniform float precipitationThreshold;
-	
-	uniform float worleyScaleXXX;
-	uniform float worleyNoiseXXX;
-	uniform int firstInput;
-	uniform float extinctionPerKm;
 
 	uniform vec3 rainCentreKm;
 	uniform float rainRadiusKm;
