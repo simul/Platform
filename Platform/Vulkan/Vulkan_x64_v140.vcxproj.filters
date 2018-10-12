@@ -1,0 +1,333 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="SFX">
+      <UniqueIdentifier>{136266bc-2958-4886-8eb0-17dc74091421}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLSL">
+      <UniqueIdentifier>{c51d314d-d24a-45d0-b450-9c10e4d7ef2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SL">
+      <UniqueIdentifier>{b743cb56-2447-4081-a691-64ea8fda1cf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\glad">
+      <UniqueIdentifier>{a280d3f1-f994-4902-bed7-c93a9583691b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RenderPlatform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplaySurface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Framebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Export.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPlatform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glad\glad.h">
+      <Filter>Header Files\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="KHR\khrplatform.h">
+      <Filter>Header Files\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplaySurface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanCallbackInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GLSL\CppGlsl.hs">
+      <Filter>GLSL</Filter>
+    </None>
+    <None Include="GLSL\shader_platform.sl">
+      <Filter>GLSL</Filter>
+    </None>
+    <None Include="GLSL\GLSL.json">
+      <Filter>GLSL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\clouds_raytrace.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\clouds_simple.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\colour_packing.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\common.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\composite.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\composite_msaa.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\compositing_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\CppSl.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\cubemap_matrices.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\debug_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\depth.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\earth_shadow.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\earth_shadow_fade.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\earth_shadow_uniforms.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\foliage_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\godrays.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\gpu_sky_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\hdr_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\illumination.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\image_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\light_probe_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\lightning_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\mixed_resolution.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\mixed_resolution_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\noise.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\noise_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\nv_multi_res.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\optics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\quaternion.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\rain.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\rain_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\raytrace_new.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\render_states.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_2d_cloud_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_2d_cloud_detail.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_2d_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_cloud_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_gpu_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_gpu_sky.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_inscatter_fns.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\simul_terrain_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\sky.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\sky_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\solid_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\spherical_harmonics.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\states.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\text_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\atmospherics.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\atmospherics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\brdf.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\camera_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\cloud_shadow.sl">
+      <Filter>SL</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+  </ItemGroup>
+</Project>

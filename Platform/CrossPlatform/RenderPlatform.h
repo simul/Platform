@@ -240,7 +240,7 @@ namespace simul
 			/// Create a platform-specific buffer instance - e.g. vertex buffers, index buffers etc.
 			virtual Buffer					*CreateBuffer					()	=0;
 			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
-			virtual Layout					*CreateLayout					(int num_elements,const LayoutDesc *layoutDesc)	=0;
+			virtual Layout					*CreateLayout					(int num_elements,const LayoutDesc *layoutDesc);
 			/// Create a platform-specific RenderState object - e.g. a Blend state, Depth state, etc.
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc)=0;
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.

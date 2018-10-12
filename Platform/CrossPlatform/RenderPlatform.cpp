@@ -1170,6 +1170,11 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	return e;
 }
 
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc)
+{
+	return new Layout();
+}
+
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
 	std::string name(filenameUtf8);
