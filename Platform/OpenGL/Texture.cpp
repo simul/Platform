@@ -19,14 +19,6 @@ void DeleteTextures(size_t num,GLuint *t)
 		{
 			SIMUL_BREAK_ONCE("Not a texture");
 		}
-		if(t[i]==78)
-		{
-			SIMUL_CERR<<"78"<<std::endl;
-		}
-		if(t[i]==349)
-		{
-			SIMUL_CERR<<"349"<<std::endl;
-		}
 	}
 	glDeleteTextures(num,t);
 }
@@ -36,28 +28,7 @@ void DeleteTextures(size_t num,GLuint *t)
 // Therefore we force the issue by making the tex id's go up sequentially, not standard GL behaviour:
 void glGenTextures_DONT_REUSE(int count,GLuint *tex)
 {
-/*	GLuint *t=new GLuint[count];
-	std::vector<GLuint> del_tex;
-	static int max_texid=0;*/
 	glGenTextures(count,tex);
-/*		if(tex[0]==78)
-		{
-			SIMUL_CERR<<"78"<<std::endl;
-		}
-	while(tex[count-1]<max_texid)
-	{
-		for(int i=0;i<count;i++)
-			del_tex.push_back(tex[count]);
-		glGenTextures(count,tex);
-		if(tex[count-1]==0)
-		{
-			max_texid=0;
-			break;
-		}
-	}
-	DeleteTextures(del_tex.size(),del_tex.data());
-	max_texid=tex[count-1]+1;
-	delete [] t;*/
 }
 
 SamplerState::SamplerState():

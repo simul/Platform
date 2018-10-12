@@ -732,7 +732,7 @@ void TexHandlesUBO::Init(size_t count, GLuint program, int index, int slot)
     glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // Setupt the binding (the handles UBO is declared without layout):
+    // Setup the binding (the handles UBO is declared without layout):
     glUniformBlockBinding(program, index, slot);
     mSlot = slot;
 }

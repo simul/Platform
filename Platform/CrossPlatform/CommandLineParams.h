@@ -35,7 +35,8 @@ namespace simul
 			if (szArgList)
 			{
 				bool sc=false;
-				for (int i = 0; i < argCount; i++)
+				// Start at 1 because we don't care about the .exe name
+				for (int i = 1; i < argCount; i++)
 				{
 					std::string arg(szArgList[i]);
 					if(arg.find(".seq")==arg.length()-4&&arg.length()>4)
