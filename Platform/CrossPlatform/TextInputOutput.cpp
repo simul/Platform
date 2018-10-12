@@ -389,7 +389,7 @@ const char *TextFileInput::Get(int propertyIndex)
 
 TextInput *TextFileInput::GetSubElement(const char *name)
 {
-	auto &u=subElements.find(name);
+	std::map<std::string,TextFileInput>::iterator u=subElements.find(name);
 	if(u!=subElements.end())
 		return &(u->second);
 	return nullptr;
