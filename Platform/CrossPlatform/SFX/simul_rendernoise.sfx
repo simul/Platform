@@ -42,15 +42,14 @@ CS_LAYOUT(8,8,8)
 shader void CS_Random3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 pos = g * 8 + t;
-	uint3 dims=uint3(noise_texture_size,noise_texture_size,noise_texture_size);
-	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+
+	if(pos.x>=noise_texture_size||pos.y>=noise_texture_size||pos.z>=noise_texture_size)
 		return;
-	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec2 texc2				=texCoords.xy+dims.y*texCoords.z;
+	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/float(noise_texture_size);
+	vec2 texc2				=texCoords.xy+noise_texture_size*texCoords.z;
 	// Range from -1 to 1.
 	vec4 c					=vec4(SphericalRandom(texCoords),rand3(513.1*texCoords));
-   // vec4 c				=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
+
     IMAGE_STORE_3D(targetTexture32,pos,c.xyzw);
 }
 
@@ -58,16 +57,14 @@ CS_LAYOUT(8,8,8)
 shader void CS_Random3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 pos = g * 8 + t;
-	uint3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
-	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+	if(pos.x>=noise_texture_size||pos.y>=noise_texture_size||pos.z>=noise_texture_size)
 		return;
-	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec2 texc2				=texCoords.xy+dims.y*texCoords.z;
+	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/float(noise_texture_size);
+	vec2 texc2				=texCoords.xy+noise_texture_size*texCoords.z;
 	// Range from -1 to 1.
 	vec4 c					=vec4(SphericalRandom(texCoords),rand3(513.1*texCoords));
    // vec4 c				=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
-    targetTexture8[pos]		=c.xyzw;
+    IMAGE_STORE_3D(targetTexture8,pos,c.xyzw);
 }
 
 CS_LAYOUT(8,8,8)

@@ -19,6 +19,14 @@ float rand3(vec3 co)
     return fract(sin(dot(co.xyz,vec3(12.9898,78.233,42.1897))) * 43758.5453);
 }
 
+vec3 rand3v( vec3 p ) 
+{
+	return fract(sin(vec3(dot(p,vec3(127.1,311.7,55.3221)),
+			  			  dot(p,vec3(269.5,183.3,251.1732)),
+			  			  dot(p,vec3(12.9898,42.1287,78.233))))
+                 			* 43758.5453123);
+}
+
 /*
 float randhash(uint seed,float b)
 {

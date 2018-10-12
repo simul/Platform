@@ -12,18 +12,21 @@ using namespace opengl;
 static const char *GetErr()
 {
 	LPVOID lpMsgBuf;
-	FormatMessage( 
-	FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-	FORMAT_MESSAGE_FROM_SYSTEM | 
-	FORMAT_MESSAGE_IGNORE_INSERTS,
-	NULL,
-	GetLastError(),
-	MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-	(LPTSTR) &lpMsgBuf,
-	0,
-	NULL 
-	);
-	return (const char *)lpMsgBuf;
+	DWORD err=GetLastError();
+	FormatMessage( 	FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+					FORMAT_MESSAGE_FROM_SYSTEM | 
+					FORMAT_MESSAGE_IGNORE_INSERTS,
+					NULL,
+					err,
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+					(LPTSTR) &lpMsgBuf,
+					0,
+					NULL 
+					);
+	if(lpMsgBuf)
+		return (const char *)lpMsgBuf;
+	else
+		return "";
 }
 #endif
 
@@ -87,19 +90,30 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 			  sizeof(PIXELFORMATDESCRIPTOR),
 			  &pfd2
 			);
-	if (!(glPixelFormat=ChoosePixelFormat(hDC,&pfd))) 
+	if (!(glPixelFormat=ChoosePixelFormat(hDC,&pfd2))) 
 	{
 		SIMUL_CERR<<"ChoosePixelFormat Failed."<<std::endl;
 		return ;
 	}
-	if(!SetPixelFormat(hDC, glPixelFormat, &pfd2))
+	if(!SetPixelFormat(hDC, pf, &pfd2))
 	{
-		SIMUL_CERR<<"ChoosePixelFormat Failed."<<std::endl;
+		SIMUL_CERR<<"SetPixelFormat Failed."<<std::endl;
 		return ;
 	}
 	pixelFormat	=RenderPlatform::FromGLFormat(glPixelFormat);
+	hRC=hglrc;
+	/*
 	hRC=wglCreateContext(hDC);
-	wglShareLists(hRC,hglrc);
+	if(!wglMakeCurrent(nullptr,nullptr))
+	{
+		SIMUL_CERR<<"wglMakeCurrent Failed."<<GetErr()<<std::endl;
+		return ;
+	}
+	if(!wglShareLists(hRC,hglrc))
+	{
+		SIMUL_CERR<<"wglShareLists Failed."<<GetErr()<<std::endl;
+		return ;
+	}*/
 	if(!wglMakeCurrent(hDC,hRC))
 	{
 		SIMUL_CERR<<"wglMakeCurrent Failed."<<GetErr()<<std::endl;
@@ -120,6 +134,11 @@ void DisplaySurface::InvalidateDeviceObjects()
 	{
 		SIMUL_CERR<<"wglMakeCurrent Failed."<<GetErr()<<std::endl;
 		return;
+	}
+	if(!wglDeleteContext(hRC)  )                // Are We Able To Release The DC
+	{
+		SIMUL_CERR<<"wglDeleteContext Failed."<<GetErr()<<std::endl;
+		hRC=NULL;                           // Set DC To NULL
 	}
 	if (hDC && !ReleaseDC(mHwnd,hDC))                    // Are We Able To Release The DC
 	{
@@ -153,7 +172,8 @@ void DisplaySurface::Render()
 	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 	deferredContext.platform_context=immediateContext.platform_context;
 	deferredContext.renderPlatform=renderPlatform;
-
+	
+	HGLRC hglrc	=wglGetCurrentContext();
 	//glfwMakeContextCurrent(mWindow);
 	if(!wglMakeCurrent(hDC,hRC))
 		return;
@@ -174,7 +194,7 @@ void DisplaySurface::Render()
 	renderPlatform->RestoreRenderState(deferredContext);
 	//mDeferredContext->FinishCommandList(true,&mCommandList);          // Draw The Scene
 	SwapBuffers(hDC); 
-	wglMakeCurrent(hDC,nullptr);
+	wglMakeCurrent(hDC,hglrc);
 }
 
 void DisplaySurface::EndFrame()

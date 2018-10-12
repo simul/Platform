@@ -523,8 +523,8 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 		// set filter.AllowList as follows:
 		//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
 		//filter.AllowList.pCategoryList = cats;
-		filter.AllowList.NumSeverities = 2; 
-		filter.AllowList.pSeverityList = sevs;
+		filter.AllowList.NumSeverities = 0; 
+		//filter.AllowList.pSeverityList = sevs;
 		filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
 		filter.AllowList.NumCategories=0;
 		//..filter.AllowList.pIDList = ids;
@@ -534,7 +534,9 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 		filter.DenyList.NumSeverities=1;
 		filter.DenyList.pSeverityList=deny_sevs;
 		filter.DenyList.NumIDs=1;
-		D3D11_MESSAGE_ID deny_ids[]={D3D11_MESSAGE_ID_DESTROY_BLENDSTATE};
+		D3D11_MESSAGE_ID deny_ids[]={
+							D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS
+							,D3D11_MESSAGE_ID_DESTROY_BLENDSTATE};
 		filter.DenyList.pIDList=deny_ids;
 		// To set the type of messages to deny, set filter.DenyList 
 		// similarly to the preceding filter.AllowList.

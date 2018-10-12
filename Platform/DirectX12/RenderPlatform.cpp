@@ -57,6 +57,12 @@ RenderPlatform::~RenderPlatform()
 	InvalidateDeviceObjects();
 }
 
+float RenderPlatform::GetDefaultOutputGamma() const
+{
+	static float g=1.0f;
+	return g;
+}
+
 void RenderPlatform::SetCommandList(ID3D12GraphicsCommandList * cmdList)
 {
 	mCommandList						= cmdList;

@@ -15,7 +15,7 @@ namespace simul
 	{
 		class RenderPlatform;
 		SIMUL_OPENGL_EXPORT_CLASS DeviceManager
-			:public OpenGLCallbackInterface, public crossplatform::GraphicsDeviceInterface
+			: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
 			DeviceManager();
@@ -32,11 +32,7 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 
-			int AddGLView() override;
-			void RenderGL(int) override;
-			void ResizeGL(int view_id,int w,int h) override;
-			void InitializeGL() override;
-			void ShutdownGL() override;
+			void Activate() ;
 
 			void ReloadTextures();
 			// called late to start debug output.
