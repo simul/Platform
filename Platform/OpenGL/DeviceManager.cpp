@@ -214,7 +214,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
     glfwSetErrorCallback(GlfwErrorCallback);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	// It is profoundly stupid, but glad cannot be initialized without an existing context, i.e. a WINDOW must be created,
 	// before we can initialize the FUNCTIONS that gl runs on.
 	// So we have to create an invisible one here:

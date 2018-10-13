@@ -1,9 +1,6 @@
 #include "glad/glad.h"
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32 1
-#include <GLFW/glfw3native.h>
 
 using namespace simul;
 using namespace opengl;
@@ -121,11 +118,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	}
 
 #endif
-	//mWindow=glfwAttachWin32Window(handle, nullptr);
-	// Lets provie a user pointer to the app object
-   // glfwSetWindowUserPointer(mWindow, this);
-  //  glfwSetWindowSizeCallback(mWindow, GLFWResizeCallback);
-  //  glfwMakeContextCurrent(mWindow);
 }
 
 void DisplaySurface::InvalidateDeviceObjects()
@@ -174,17 +166,16 @@ void DisplaySurface::Render()
 	deferredContext.renderPlatform=renderPlatform;
 	
 	HGLRC hglrc	=wglGetCurrentContext();
-	//glfwMakeContextCurrent(mWindow);
 	if(!wglMakeCurrent(hDC,hRC))
 		return;
 
 	renderPlatform->StoreRenderState(deferredContext);
 
-	static vec4 clear = { 0.0f,0.0f,1.0f,1.0f};
+	static vec4 clear = { 0.0f,0.0f,0.0f,1.0f};
 	glViewport(0, 0, viewport.w, viewport.h);   
-    glClearColor(clear.x,clear.y,clear.z,clear.w);
-	glClearDepth(1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //g/lClearColor(clear.x,clear.y,clear.z,clear.w);
+	//glClearDepth(1.0f);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //  mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
  //   mDeferredContext->RSSetViewports(1, &mViewport);
 	if(renderer)

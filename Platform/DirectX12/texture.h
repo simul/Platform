@@ -150,6 +150,12 @@ namespace simul
             //! We need to store the old MSAA state
             DXGI_SAMPLE_DESC                mCachedMSAAState;
             int                             mNumSamples;
+			bool textureLoadComplete;
+			DirectX::TexMetadata	metadata;
+			DirectX::ScratchImage	scratchImage;
+			// Need an active command list to finish loading a texture!
+			void FinishLoading(crossplatform::DeviceContext &deviceContext);
+			void *ptr		;
 		};
 	}
 }

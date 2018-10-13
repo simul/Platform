@@ -237,6 +237,11 @@ void Texture::InvalidateDeviceObjects()
 #else
 void Texture::InvalidateDeviceObjects()
 {
+	for(auto i:mTextureFBOs)
+	{
+		glDeleteFramebuffers(i.size(),i.data());
+	}
+	mTextureFBOs.clear();
     std::vector<GLuint> toDeleteTextures;
     for (auto &texIdVector: mLayerMipViews)
     {
@@ -268,7 +273,6 @@ void Texture::InvalidateDeviceObjects()
    {
         toDeleteTextures.push_back(mTextureID);
    }
-
     glDeleteTextures(toDeleteTextures.size(), toDeleteTextures.data());
     mCubeArrayView = 0;
    mTextureID = 0;

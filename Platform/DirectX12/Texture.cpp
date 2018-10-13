@@ -39,6 +39,8 @@ Texture::Texture():
 	renderTargetViews12(nullptr),
 	mLoadedFromFile(false),
     mNumSamples(1)
+	,textureLoadComplete(true)
+	,ptr(nullptr)
 {
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
@@ -190,17 +192,13 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	strPath = pFilePathUtf8;
 	if (idx >= 0)
 		strPath = (pathsUtf8[idx] + "/") + strPath;
+	 name=pFilePathUtf8;
 
 	// Load the data
-	void *ptr		= NULL;
 	unsigned bytes	= 0;
 	int flags		= DirectX::WIC_FLAGS_NONE;
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr, bytes, strPath.c_str(), false);
-
-	// Convert into WIC 
-	DirectX::TexMetadata	metadata;
-	DirectX::ScratchImage	scratchImage;
-	const DirectX::Image*	image;
+	
 	if(name.find(".hdr")==name.length()-4)
 	{
 		res= DirectX::LoadFromHDRMemory( ptr, _In_ bytes,&metadata,scratchImage );
@@ -215,6 +213,15 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	    res = DirectX::LoadFromWICMemory(ptr, bytes, flags, &metadata, scratchImage);
     }
     SIMUL_ASSERT(res == S_OK)
+
+	textureLoadComplete=false;
+}
+
+void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
+{
+	// Convert into WIC 
+	const DirectX::Image*	image;
+	HRESULT res=S_OK;
 	image   = scratchImage.GetImage(0, 0, 0);
 	 
 	if (!image)
@@ -252,9 +259,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
         SIMUL_PPV_ARGS(&mTextureDefault)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	std::string sName = pFilePathUtf8;
-	std::wstring n = L"GPU_";
-	n += std::wstring(sName.begin(), sName.end());
+	std::wstring	n = L"GPU_";
+	n+=std::wstring(name.begin(), name.end());
 	mTextureDefault->SetName(n.c_str());
 
 	// Create an upload heap
@@ -277,15 +283,17 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	);
 	SIMUL_ASSERT(res == S_OK);
 	n = L"UPLOAD_";
-	n = std::wstring(sName.begin(), sName.end());
-	mTextureUpload->SetName(std::wstring(sName.begin(), sName.end()).c_str());
+	n+= std::wstring(name.begin(), name.end());
+	mTextureUpload->SetName(n.c_str());
 
 	// Perform the texture copy
 	D3D12_SUBRESOURCE_DATA textureSubData	= {};
 	textureSubData.pData					= image->pixels; 
 	textureSubData.RowPitch					= image->rowPitch; 
-	textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height; 
-	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
+	textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height;
+
+	// TODO: can't do this here, no valid command list!
+	//UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
 
 	// Init states
 	InitStateTable(arraySize, mips);
@@ -317,6 +325,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 
 	// Clean!
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
+	textureLoadComplete=true;
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int m)
@@ -492,6 +501,24 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
     {
         mip = 0;
     }
+	if(!textureLoadComplete)
+	{
+		Finish Loading(renderPlatform->GetImmediateContext());
+		textureLoadComplete=true;
+	}
+#if 0
+	if(!subResourcesUpdated)
+	{
+
+	// Perform the texture copy
+	D3D12_SUBRESOURCE_DATA textureSubData	= {};
+	textureSubData.pData					= image->pixels; 
+	textureSubData.RowPitch					= image->rowPitch; 
+	textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height;
+		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
+		subResourcesUpdated=true;
+	}
+#endif
 
 	// Ensure a valid state for the resource
 	if (setState)
