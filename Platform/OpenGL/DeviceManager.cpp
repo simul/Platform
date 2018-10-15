@@ -252,12 +252,12 @@ void DeviceManager::InitDebugging()
     
     if (GLAD_GL_KHR_debug != 1)
     {
-        SIMUL_COUT << "[WARNING] Debug was requested by the app but GL_KHR_debug is not supported, debug will be disabled.\n";
+        SIMUL_COUT << "[WARNING] OpenGL Debug was requested by the app but GL_KHR_debug is not supported, debug will be disabled.\n";
         return;
     }
     else
     {
-        SIMUL_COUT << "[INFO] The app will run with GL_DEBUG_OUTPUT. \n";
+        SIMUL_COUT << "[INFO] The OpenGL device will run with GL_DEBUG_OUTPUT. \n";
     }
    
     // Setup the debug callback

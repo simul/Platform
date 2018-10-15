@@ -99,7 +99,6 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\OpenGL\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
