@@ -11,6 +11,7 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/Vulkan/Texture.h"
 #include "Simul/Platform/Vulkan/DisplaySurface.h"
+#include <vulkan/vulkan.hpp>
 
 using namespace simul;
 using namespace vulkan;
@@ -35,12 +36,24 @@ const char* RenderPlatform::GetName()const
     return "Vulkan";
 }
 
-void RenderPlatform::RestoreDeviceObjects(void* hrc)
+void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance)
 {
     crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-
-	immediateContext.platform_context=hrc;
+	void **ptr=(void**)vkDevice_vkInstance;
+	vulkanDevice=(vk::Device*)ptr[0];
+	vulkanInstance=(vk::Instance*)ptr[1];
+	immediateContext.platform_context=vulkanDevice;
     RecompileShaders();
+}
+
+vk::Device *RenderPlatform::AsVulkanDevice()
+{
+	return vulkanDevice;
+}
+
+vk::Instance *RenderPlatform::AsVulkanInstance()
+{
+	return vulkanInstance;
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -50,6 +63,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::BeginFrame()
 {
+	auto *vulkanDevice=AsVulkanDevice();
+	//vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frame_index], VK_TRUE, UINT64_MAX);
+	//vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frame_index]);
 }
 
 void RenderPlatform::EndFrame()
@@ -709,7 +725,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 
 void* RenderPlatform::GetDevice()
 {
-	return nullptr;
+	return (void*)vulkanDevice;
 }
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext& deviceContext, int slot, int num_buffers, crossplatform::Buffer* const* buffers, const crossplatform::Layout* layout, const int* vertexSteps)

@@ -4,6 +4,13 @@
 #include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 
 typedef struct GLFWwindow GLFWwindow;
+namespace vk
+{
+	class SurfaceKHR;
+	class SwapchainKHR;
+	enum class Format;
+	enum class ColorSpaceKHR;
+}
 namespace simul
 {
     namespace vulkan
@@ -39,6 +46,11 @@ namespace simul
 			HDC             hDC;
 			HGLRC           hRC;
 #endif
+			vk::SurfaceKHR *surface;
+			vk::Format		vulkanFormat;
+			vk::ColorSpaceKHR colour_space;
+			std::unique_ptr<vk::SwapchainKHR> swapchain;
+			std::vector<struct SwapchainImageResources> swapchain_image_resources;
 			void InitSwapChain();
         };
     }

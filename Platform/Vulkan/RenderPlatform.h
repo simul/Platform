@@ -11,6 +11,11 @@
     #pragma warning(disable:4251)
 #endif
 
+#define SIMUL_VULKAN_FRAME_LAG 2
+namespace vk
+{
+	class Instance;
+}
 namespace simul
 {
 	namespace vulkan
@@ -24,6 +29,9 @@ namespace simul
 		public:
 			            RenderPlatform();
 			virtual~    RenderPlatform() override;
+
+			vk::Device *AsVulkanDevice() override;
+			vk::Instance *AsVulkanInstance();
 			const char* GetName() const override;
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
@@ -101,7 +109,8 @@ namespace simul
             vulkan::Texture*                        GetDummy3D();
 
         private:
-
+			vk::Instance		*vulkanInstance;
+			vk::Device			*vulkanDevice;
             vulkan::Texture*    mDummy2D;
             vulkan::Texture*    mDummy3D;
 		};
