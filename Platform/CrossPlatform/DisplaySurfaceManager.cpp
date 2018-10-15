@@ -16,8 +16,6 @@ void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 
 void DisplaySurfaceManager::Render(cp_hwnd h)
 {
-	if(renderPlatform&&!frame_started)
-		renderPlatform->BeginFrame();
     if (surfaces.find(h) == surfaces.end())
         return;
     DisplaySurface *w = surfaces[h];
@@ -32,6 +30,11 @@ void DisplaySurfaceManager::Render(cp_hwnd h)
         return;
     }
 	w->StartFrame();
+	if(renderPlatform&&!frame_started)
+	{
+		renderPlatform->BeginFrame();
+		frame_started=true;
+	}
     w->Render();
 }
 

@@ -8,7 +8,11 @@
 #include <string>
 
 #pragma warning(disable:4251)
-
+namespace DirectX
+{
+	struct TexMetadata;
+	struct ScratchImage;
+}
 namespace simul
 {
 	namespace dx12
@@ -102,6 +106,8 @@ namespace simul
 			void SetCurrentState(D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
 
 			DXGI_FORMAT	dxgi_format;
+			// Need an active command list to finish loading a texture!
+			void FinishLoading(crossplatform::DeviceContext &deviceContext);
 
 		protected:
 			void											InitUAVTables(int l, int m);
@@ -151,11 +157,9 @@ namespace simul
             DXGI_SAMPLE_DESC                mCachedMSAAState;
             int                             mNumSamples;
 			bool textureLoadComplete;
-			DirectX::TexMetadata	metadata;
-			DirectX::ScratchImage	scratchImage;
-			// Need an active command list to finish loading a texture!
-			void FinishLoading(crossplatform::DeviceContext &deviceContext);
-			void *ptr		;
+			DirectX::TexMetadata	*metadata;
+			DirectX::ScratchImage	*scratchImage;
+			void *loadedData;
 		};
 	}
 }

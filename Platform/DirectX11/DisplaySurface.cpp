@@ -122,7 +122,7 @@ void DisplaySurface::InitSwapChain()
 	if(mDeviceRef)
 	{
 		UINT cf=mDeviceRef->GetCreationFlags();
-		std::cout<<"Creation flags "<<cf<<"."<<std::endl;
+		//std::cout<<"Creation flags "<<cf<<"."<<std::endl;
 		SAFE_RELEASE(mDeferredContext);
 		V_CHECK(mDeviceRef->CreateDeferredContext(0,&mDeferredContext));
 	}

@@ -38,7 +38,7 @@ namespace simul
 			OutputMap outputs;
 
 			ID3D11Debug *d3dDebug;
-			ID3D11InfoQueue *d3dInfoQueue;
+			ID3D11InfoQueue *infoQueue;
 			IDXGIFactory* factory;
 		};
 		

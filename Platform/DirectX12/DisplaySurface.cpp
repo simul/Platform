@@ -159,7 +159,7 @@ void DisplaySurface::Render()
 {
     Resize();
     // First lets make sure is safe to start working on this frame:
-    StartFrame();
+   // StartFrame();
 #ifdef _XBOX_ONE
     UINT curIdx =0;
 #else
@@ -362,5 +362,6 @@ void DisplaySurface::Resize()
     CreateRenderTargets(mDeviceRef);
 
     renderer->ResizeView(mViewId, screenWidth, screenHeight);
+	StartFrame();
 }
 

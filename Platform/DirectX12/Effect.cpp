@@ -457,7 +457,13 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
     // We read from the oldest buffer
 	const CD3DX12_RANGE readRange(0, 1);
 	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
-    mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
+    HRESULT hr=mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
+	if(hr!=S_OK)
+	{
+		SIMUL_CERR<<"Failed to map PlatformStructuredBuffer for reading. "<<std::endl;
+		SIMUL_BREAK_ONCE("Failed here");
+		return nullptr;
+	}
 	return mReadSrc;
 }
 
@@ -1143,9 +1149,9 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
     }
 }
 
-void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers, dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
+void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers, dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& deviceContext)
 {
-	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
+	auto rPlat				= (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits	= rPlat->GetResourceBindingLimits();
 	int usedSlots			= 0;
 	auto nullSampler		= rPlat->GetNullSampler();
@@ -1156,9 +1162,9 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 	{
 		int slot	                        = samplerResourceSlots[i];
         crossplatform::SamplerState* samp   = nullptr;
-        if (context.contextState.samplerStateOverrides.size() > 0 && context.contextState.samplerStateOverrides.HasValue(slot))
+        if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
         {
-            samp = context.contextState.samplerStateOverrides[slot];
+            samp = deviceContext.contextState.samplerStateOverrides[slot];
             // We dont override this slot, just take a default sampler state:
             if (!samp)
             {
@@ -1201,9 +1207,9 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 #endif 
 }
 
-void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
+void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& deviceContext)
 {
-	auto rPlat				    = (dx12::RenderPlatform*)context.renderPlatform;
+	auto rPlat				    = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits	    = rPlat->GetResourceBindingLimits();
 	int usedSlots			    = 0;
 	auto nullCbv			    = rPlat->GetNullCBV();
@@ -1249,9 +1255,9 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 #endif
 }
 
-void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context)
+void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& deviceContext)
 {
-	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
+	auto rPlat				= (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits	= rPlat->GetResourceBindingLimits();
 	auto nullSrv			= rPlat->GetNullSRV();
 	int usedSBSlots			= 0;
@@ -1281,6 +1287,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				ta.texture = rPlat->GetDummy2D();
 			}
 		}
+		((dx12::Texture*)ta.texture)->FinishLoading(deviceContext);
 		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(true, ta.resourceType, ta.index, ta.mip);
 		mSrvUsedSlotsArray[slot]= true;
 		usedTextureSlots |= (1 << slot);
@@ -1300,7 +1307,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
             mSrvSrcHandles[slot] = nullSrv;
             continue;
 		}
-		mSrvSrcHandles[slot]		= *sb->AsD3D12ShaderResourceView(context);
+		mSrvSrcHandles[slot]		= *sb->AsD3D12ShaderResourceView(deviceContext);
 		mSrvUsedSlotsArray[slot]	= true;
 		usedSBSlots					|= (1 << slot);
 	}
@@ -1328,9 +1335,9 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 #endif
 }
 
-void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, crossplatform::StructuredBufferAssignmentMap & sBuffers, dx12::Heap * frameHeap, ID3D12Device * device, crossplatform::DeviceContext & context)
+void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, crossplatform::StructuredBufferAssignmentMap & sBuffers, dx12::Heap * frameHeap, ID3D12Device * device, crossplatform::DeviceContext & deviceContext)
 {
-	auto rPlat				= (dx12::RenderPlatform*)context.renderPlatform;
+	auto rPlat				= (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits	= rPlat->GetResourceBindingLimits();
 	auto nullUav			= rPlat->GetNullUAV();
 	int usedRwSBSlots		= 0;
@@ -1378,7 +1385,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
             mUavSrcHandles[slot] = nullUav;
             continue;
 		}
-		mUavSrcHandles[slot]		= *sb->AsD3D12UnorderedAccessView(context);
+		mUavSrcHandles[slot]		= *sb->AsD3D12UnorderedAccessView(deviceContext);
 		mUavUsedSlotsArray[slot]	= true;
 		usedRwSBSlots			|= (1 << slot);
 	}

@@ -28,6 +28,10 @@ struct VertexXyzRgba
 	float x,y,z;
 	float r,g,b,a;
 };
+namespace vk
+{
+	class Device;
+}
 namespace simul
 {
 	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
@@ -79,6 +83,8 @@ namespace simul
 			XboxOne				    = 14,   // Xbox One        
 			Metal				    = 16,   // iOS Metal
 			D3D12				    = 18,   // Direct3D 12
+			Vulkan					= 21,	// Vulkan
+			Switch					= 22,	// Nintendo Switch NVN API
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		/// A vertex format for debugging.
@@ -131,6 +137,7 @@ namespace simul
 			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
 			virtual ID3D12Device* AsD3D12Device();
 			virtual ID3D11Device *AsD3D11Device();
+			virtual vk::Device *AsVulkanDevice();
 			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
 			virtual void RestoreDeviceObjects(void*);
 			//! Call this once, when the 3d graphics device object is being shut down.

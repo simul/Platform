@@ -101,7 +101,7 @@ void View::SetExternalFramebuffer(bool e)
 
 crossplatform::Texture *View::GetResolvedHDRBuffer()
 {
-	if(hdrFramebuffer->GetTexture()->GetSampleCount()>1)
+	if(hdrFramebuffer->GetTexture()&&hdrFramebuffer->GetTexture()->GetSampleCount()>1)
 		return resolvedTexture;
 	else
 		return hdrFramebuffer->GetTexture();

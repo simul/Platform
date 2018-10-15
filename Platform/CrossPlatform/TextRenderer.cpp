@@ -205,6 +205,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	}
 	int n=0;
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
+	if(charList)
 	for(int i=0;i<70;i++)
 	{
 		if(txt[i]==0||txt[i]=='\n')

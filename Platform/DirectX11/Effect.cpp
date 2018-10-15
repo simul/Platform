@@ -238,7 +238,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		sbDesc.BindFlags=0;
 		sbDesc.Usage				=D3D11_USAGE_STAGING;
 		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ;
-		sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
+		sbDesc.MiscFlags			=0 ;
 		for(int i=0;i<NUM_STAGING_BUFFERS;i++)
 		{
 			renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &stagingBuffers[i]);
@@ -302,8 +302,10 @@ void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceCo
 	}
 }
 
-const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
+const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &)
 {
+	// Only immediate context works for mapping to read!
+	crossplatform::DeviceContext &deviceContext=renderPlatform->GetImmediateContext();
 	lastContext=deviceContext.asD3D11DeviceContext();
 	mapped.pData=NULL;
 	if(numCopies>=NUM_STAGING_BUFFERS)
@@ -312,13 +314,23 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 		int wait=0;
 		while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
 		{
-			hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT|SIMUL_D3D11_MAP_FLAGS,&mapped);
+			hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);//|SIMUL_D3D11_MAP_FLAGS
 			wait++;
 		}
 		if(wait>1)
 			SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
 		if(hr!=S_OK)
+		{
+			D3D11_BUFFER_DESC desc;
+			stagingBuffers[NUM_STAGING_BUFFERS-1]->GetDesc(&desc);
 			mapped.pData=NULL;
+			if(hr!=DXGI_ERROR_WAS_STILL_DRAWING)
+			{
+				SIMUL_CERR<<"Failed to map PlatformStructuredBuffer for reading. "<<desc.CPUAccessFlags<<std::endl;
+				SIMUL_BREAK_ONCE("Failed here");
+			}
+			return mapped.pData;
+		}
 		if(wait>1)
 		{
 			SIMUL_CERR_ONCE << "PlatformStructuredBuffer::OpenReadBuffer waited " << wait << " times." << std::endl;

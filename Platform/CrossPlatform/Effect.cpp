@@ -264,6 +264,8 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 {
+	if(!groupCharMap.size())
+		return nullptr;
 	return groupCharMap[0]->GetTechniqueByName(name);
 }
 

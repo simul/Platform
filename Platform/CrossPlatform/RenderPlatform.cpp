@@ -60,20 +60,20 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
-	,solidEffect(NULL)
-	,copyEffect(NULL)
+	,solidEffect(nullptr)
+	,copyEffect(nullptr)
 	,memoryInterface(m)
 	,shaderBuildMode(BUILD_IF_CHANGED)
-	,debugEffect(NULL)
-	,textured(NULL)
+	,debugEffect(nullptr)
+	,textured(nullptr)
 	,untextured(nullptr)
-	,showVolume(NULL)
+	,showVolume(nullptr)
 #ifdef _XBOX_ONE
 	,can_save_and_restore(false)
 #else
 	,can_save_and_restore(true)
 #endif
-	,textRenderer(NULL)
+	,textRenderer(nullptr)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;
@@ -99,17 +99,22 @@ crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::Devi
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
 {
-	return NULL;
+	return nullptr;
 }
 
 ID3D12Device* RenderPlatform::AsD3D12Device()
 {
-	return NULL;
+	return nullptr;
 }
 
 ID3D11Device *RenderPlatform::AsD3D11Device()
 {
-	return NULL;
+	return nullptr;
+}
+
+vk::Device *RenderPlatform::AsVulkanDevice()
+{
+	return nullptr;
 }
 
 DeviceContext &RenderPlatform::GetImmediateContext()
@@ -205,9 +210,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	SAFE_DELETE(copyEffect);
 	
-	textured=NULL;
+	textured=nullptr;
 	untextured=nullptr;
-	showVolume=NULL;
+	showVolume=nullptr;
 	textureQueryResult.InvalidateDeviceObjects();
 	
 	
@@ -801,7 +806,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	SetTopology(deviceContext,TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 
-	debugEffect->SetTexture(deviceContext, "cubeTexture", NULL);
+	debugEffect->SetTexture(deviceContext, "cubeTexture", nullptr);
 	debugEffect->Unapply(deviceContext);
 	SetViewports(deviceContext,1,&oldv);
 }
@@ -1118,7 +1123,7 @@ void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,co
 
 SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc)
 {
-	SamplerState *ss=NULL;
+	SamplerState *ss=nullptr;
 	std::string str(name_utf8);
 	if(sharedSamplerStates.find(str)!=sharedSamplerStates.end())
 	{

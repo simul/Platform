@@ -472,13 +472,11 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			if(infoQueue)
 			{
 				// Set break on_x settings
-				bool breakOnWarning = true;
+				static bool breakOnWarning = false;
 				SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 				if (breakOnWarning)
 				{
-                    SIMUL_COUT << "vvvvvvv\n";
-                    SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so you better disable it! \n";
-                    SIMUL_COUT << "^^^^^^^\n";
+                    SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
 
 					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);

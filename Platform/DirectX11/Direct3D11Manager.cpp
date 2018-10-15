@@ -366,7 +366,7 @@ Direct3D11Manager::Direct3D11Manager()
 	:d3dDevice(0)
 	,d3dDeviceContext(0)
 	,d3dDebug(NULL)
-	,d3dInfoQueue(NULL)
+	,infoQueue(NULL)
 {
 }
 
@@ -474,82 +474,80 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
 #endif
-	SAFE_RELEASE(d3dInfoQueue);
+	SAFE_RELEASE(infoQueue);
 	if(use_debug)
 	{
 	#ifndef _XBOX_ONE
 		d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
 	REFCT
 		if(d3dDebug)
-			d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
+			d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&infoQueue );
 	REFCT
 	#endif
-		if(d3dInfoQueue)
+		static bool breakOnWarning = false;
+		if (breakOnWarning)
 		{
-		/*	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
-			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
-			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, false );
-			
-			ReportMessageFilterState();
-			d3dInfoQueue->ClearStoredMessages();
-			d3dInfoQueue->ClearRetrievalFilter();
-			d3dInfoQueue->ClearStorageFilter();
-			ReportMessageFilterState();*/
+            SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
+
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+		}
+		else
+		{
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, false);
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, false);
 		}
 	
-/*	D3D11_MESSAGE_CATEGORY cats[] = {/*D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
-										,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS	
-										,D3D11_MESSAGE_CATEGORY_INITIALIZATION	
-										,D3D11_MESSAGE_CATEGORY_CLEANUP
-										,D3D11_MESSAGE_CATEGORY_COMPILATION 
-										,D3D11_MESSAGE_CATEGORY_STATE_CREATION
-										,D3D11_MESSAGE_CATEGORY_STATE_SETTING
-										,D3D11_MESSAGE_CATEGORY_STATE_GETTING
-										,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION
-										D3D11_MESSAGE_CATEGORY_EXECUTION
-									};*/
-	D3D11_MESSAGE_SEVERITY sevs[] = { 
-		D3D11_MESSAGE_SEVERITY_ERROR
-		,D3D11_MESSAGE_SEVERITY_WARNING};
-/*	UINT ids[] = { D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
-		D3D11_MESSAGE_ID_DESTROY_VERTEXSHADER,
-		D3D11_MESSAGE_ID_DESTROY_PIXELSHADER,
-		D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER };*/
+		D3D11_MESSAGE_SEVERITY sevs[] = { 	D3D11_MESSAGE_SEVERITY_ERROR
+											,D3D11_MESSAGE_SEVERITY_WARNING};
 
-		D3D11_INFO_QUEUE_FILTER filter;
-		memset( &filter, 0, sizeof(filter) );
+		D3D11_INFO_QUEUE_FILTER filter= {};
 
-		// To set the type of messages to allow, 
-		// set filter.AllowList as follows:
-		//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
-		//filter.AllowList.pCategoryList = cats;
-		filter.AllowList.NumSeverities = 0; 
-		//filter.AllowList.pSeverityList = sevs;
-		filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
-		filter.AllowList.NumCategories=0;
-		//..filter.AllowList.pIDList = ids;
-
-		D3D11_MESSAGE_SEVERITY deny_sevs[] = { 
-			D3D11_MESSAGE_SEVERITY_INFO};
-		filter.DenyList.NumSeverities=1;
-		filter.DenyList.pSeverityList=deny_sevs;
-		filter.DenyList.NumIDs=1;
 		D3D11_MESSAGE_ID deny_ids[]={
 							D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS
-							,D3D11_MESSAGE_ID_DESTROY_BLENDSTATE};
+							,D3D11_MESSAGE_ID_DESTROY_BUFFER
+							,D3D11_MESSAGE_ID_DESTROY_CLASSLINKAGE
+							,D3D11_MESSAGE_ID_DESTROY_BLENDSTATE
+							,D3D11_MESSAGE_ID_DESTROY_VERTEXSHADER
+							,D3D11_MESSAGE_ID_DESTROY_PIXELSHADER
+							,D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER
+							,D3D11_MESSAGE_ID_DESTROY_SHADERRESOURCEVIEW
+							,D3D11_MESSAGE_ID_DESTROY_UNORDEREDACCESSVIEW};
+		filter.DenyList.NumIDs=_countof(deny_ids);
 		filter.DenyList.pIDList=deny_ids;
-		// To set the type of messages to deny, set filter.DenyList 
-		// similarly to the preceding filter.AllowList.
-		if(d3dInfoQueue)
+		
+		D3D11_MESSAGE_CATEGORY deny_cats[]={
+								D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED	
+								,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS
+								,D3D11_MESSAGE_CATEGORY_INITIALIZATION
+								,D3D11_MESSAGE_CATEGORY_CLEANUP	
+								,D3D11_MESSAGE_CATEGORY_COMPILATION	
+								,D3D11_MESSAGE_CATEGORY_STATE_CREATION	
+								,D3D11_MESSAGE_CATEGORY_STATE_SETTING
+								,D3D11_MESSAGE_CATEGORY_STATE_GETTING
+								,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION
+								,D3D11_MESSAGE_CATEGORY_EXECUTION	
+								,D3D11_MESSAGE_CATEGORY_SHADER	
+		};
+		filter.DenyList.NumCategories=_countof(deny_cats);
+		filter.DenyList.pCategoryList=deny_cats;
+
+		
+		D3D11_MESSAGE_SEVERITY deny_sevs[] = { 
+			D3D11_MESSAGE_SEVERITY_INFO
+			,D3D11_MESSAGE_SEVERITY_MESSAGE};
+		filter.DenyList.NumSeverities=_countof(deny_sevs);
+		filter.DenyList.pSeverityList=deny_sevs;
+		if(infoQueue)
 		{
-			d3dInfoQueue->ClearStorageFilter();
-			d3dInfoQueue->ClearRetrievalFilter();
+			infoQueue->ClearStorageFilter();
+			infoQueue->ClearRetrievalFilter();
 			D3D11_INFO_QUEUE_FILTER filters[]={filter,NULL};
-		// The following single call sets all of the preceding information.
-			V_CHECK(d3dInfoQueue->AddStorageFilterEntries( filters ));
-			V_CHECK(d3dInfoQueue->AddRetrievalFilterEntries( filters ));
+			V_CHECK(infoQueue->AddStorageFilterEntries( filters ));
+			V_CHECK(infoQueue->AddRetrievalFilterEntries( filters ));
+			V_CHECK(infoQueue->PushStorageFilter(&filter));
 		}
-		ReportMessageFilterState();
+		//ReportMessageFilterState();
 	}
 	REFCT
 	SIMUL_ASSERT(result==S_OK);
@@ -656,7 +654,7 @@ void Direct3D11Manager::Shutdown()
 			std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
 		d3dDevice->AddRef();
 		UINT references=d3dDevice->Release();
-		uint acceptable_refs=1+(d3dDebug?1:0)+(d3dInfoQueue?1:0);
+		uint acceptable_refs=1+(d3dDebug?1:0)+(infoQueue?1:0);
 		if(references>acceptable_refs)
 		{
 			SIMUL_BREAK("Unfreed references remain in DirectX 11");
@@ -672,9 +670,9 @@ void Direct3D11Manager::Shutdown()
 		SAFE_RELEASE(d3dDebug);
 #endif
 		REFCT
-		SAFE_RELEASE(d3dInfoQueue);
+		SAFE_RELEASE(infoQueue);
 		REFCT
-		//d3dDevice->Release();
+	
 		SAFE_RELEASE(d3dDevice);
 	}
 }
@@ -682,14 +680,14 @@ void Direct3D11Manager::Shutdown()
 
 void Direct3D11Manager::ReportMessageFilterState()
 {
-	if(!d3dInfoQueue)
+	if(!infoQueue)
 		return;
 	SIZE_T filterlength;
-	d3dInfoQueue->GetStorageFilter(NULL, &filterlength);
+	infoQueue->GetStorageFilter(NULL, &filterlength);
 	D3D11_INFO_QUEUE_FILTER *filter = (D3D11_INFO_QUEUE_FILTER*)malloc(filterlength);
 	memset( filter, 0, filterlength );
-	int numfilt=d3dInfoQueue->GetStorageFilterStackSize();
-	d3dInfoQueue->GetStorageFilter(filter,&filterlength);
+	int numfilt=infoQueue->GetStorageFilterStackSize();
+	infoQueue->GetStorageFilter(filter,&filterlength);
 	free(filter);
 }
 

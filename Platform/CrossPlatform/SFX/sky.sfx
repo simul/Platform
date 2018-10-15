@@ -78,7 +78,6 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.moonlight			=lightTable2DTexture.SampleLevel(clampSamplerState,vec2(alt_texc,1.5/4.0),0).rgba;
 	res.ambient				=lightTable2DTexture.SampleLevel(clampSamplerState,vec2(alt_texc,2.5/4.0),0).rgba;
 	res.valid				=1;
-	//res.sunlight.rgb=vec3(1,0,1);
 	lightingQueryResults[sub_pos.x]=res;
 }
 
