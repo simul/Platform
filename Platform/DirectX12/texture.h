@@ -5,6 +5,7 @@
 #include "SimulDirectXHeader.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Heap.h"
+#include <DirectXTex.h>
 #include <string>
 
 #pragma warning(disable:4251)

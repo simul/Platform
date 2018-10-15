@@ -7,7 +7,6 @@
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include <DirectXTex.h>
 #include <string>
 #include <algorithm>
 
@@ -503,7 +502,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
     }
 	if(!textureLoadComplete)
 	{
-		Finish Loading(renderPlatform->GetImmediateContext());
+		FinishLoading(renderPlatform->GetImmediateContext());
 		textureLoadComplete=true;
 	}
 #if 0

@@ -15,6 +15,10 @@
 #define PI 3.1415926536f
 #endif
 
+#ifndef TAU
+#define TAU 6.28318530718f
+#endif
+
 #define COS_PI_4_16 0.70710678118654752440084436210485f
 #define TWIDDLE_1_8 COS_PI_4_16, -COS_PI_4_16
 #define TWIDDLE_3_8 -COS_PI_4_16, -COS_PI_4_16
