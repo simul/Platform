@@ -99,6 +99,7 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <ShowProgress>LinkVerbose</ShowProgress>
     </Link>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
@@ -138,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Vulkan32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">

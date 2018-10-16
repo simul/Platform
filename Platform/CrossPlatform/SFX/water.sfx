@@ -348,7 +348,6 @@ shader void PrecomputeGroupSpeedsCS(uint3 sub_pos : SV_DispatchThreadID)
 	float zetaMin = g_WaveSpectrum[sub_pos.x].x;// pos - (0.5f * dx);
 	float zetaMax = g_WaveSpectrum[sub_pos.x].y;// pos + (0.5f * dx);
 
-	const float tau = 6.28318530718f;
 	const float g = 9.81f;
 
 	dx = (zetaMax - zetaMin) / g_integrationSteps;
@@ -359,7 +358,7 @@ shader void PrecomputeGroupSpeedsCS(uint3 sub_pos : SV_DispatchThreadID)
 	for (int i = 0; i < g_integrationSteps; i++)
 	{
 		float waveLength = pow(2, x);
-		float waveNumber = tau / waveLength;
+		float waveNumber = TAU / waveLength;
 		float cg = 0.5 * sqrt(g / waveNumber);
 		float density = spectrum(x, g_windSpeed2);
 		result += dx * vec2(cg * density, density);
@@ -377,8 +376,6 @@ shader void PrecomputeGroupSpeedsCS(uint3 sub_pos : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 shader void UpdateAmplitudeGridCS(uint3 sub_pos : SV_DispatchThreadID)
 {
-	const float tau = 6.28318530718f;
-
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(g_InputAmplitude, dims.x, dims.y, dims.z);
 
@@ -390,7 +387,7 @@ shader void UpdateAmplitudeGridCS(uint3 sub_pos : SV_DispatchThreadID)
 	vec3 texc = convertPosToTexc(pos, dims).xyz;
 	vec3 traceBackTexc = convertPosToTexc(pos, dims);
 
-	float angle = (pos.z / dims.z) * tau;
+	float angle = (pos.z / dims.z) * TAU;
 	vec2 angleVec = vec2(cos(angle), sin(angle));
 
 	vec2 vel = g_dt * g_GroupSpeeds[0] * angleVec;
@@ -443,7 +440,6 @@ shader void UpdateAmplitudeGridCS(uint3 sub_pos : SV_DispatchThreadID)
 //-----------------------------------------------------------------------------
 shader vec4 PrecomputeProfileBufferPS(posTexVertexOutput In) : SV_Target
 {
-	const float tau = 6.28318530718;
 	const float g = 9.81;
 
 	float p = (In.texCoords.x * g_period);
@@ -461,7 +457,7 @@ shader vec4 PrecomputeProfileBufferPS(posTexVertexOutput In) : SV_Target
 	for (int i = 0; i <= g_integrationSteps; i++)
 	{
 		float waveLength = pow(2, x);
-		float waveNumber = tau / waveLength;
+		float waveNumber = TAU / waveLength;
 		float phase1 = waveNumber * p - sqrt(waveNumber * g) * g_time; //* 50.0;//
 		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) *g_time; //* 50.0;//
 
@@ -497,11 +493,9 @@ shader void UpdateProbeValuesBoundedCS(uint3 sub_pos : SV_DispatchThreadID)
 [numthreads(64, 1, 1)]
 shader void UpdateProbeValuesBoundlessCS(uint3 sub_pos : SV_DispatchThreadID)
 {
-	const float tau = 6.28318530718;
-
 	uint dirNum = 16;
 	uint N = 2 * dirNum;
-	float dx = dirNum * tau / N;
+	float dx = dirNum * TAU / N;
 
 	uint i;
 
@@ -512,7 +506,7 @@ shader void UpdateProbeValuesBoundlessCS(uint3 sub_pos : SV_DispatchThreadID)
 
 	for (i = 0; i < N; i++)
 	{
-		float angle = ((float)i / (float)N) * tau;
+		float angle = ((float)i / (float)N) * TAU;
 		vec2 texcDir = profile32Directons[i];// vec2(cos(angle), sin(angle));
 		vec2 texc = normalize(texcDir) * uv_local * g_probeProfileUVScale;
 
@@ -1020,11 +1014,9 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
 		//Horizontal movement in X component, Vertical movement in Y component
 		if (blend_factor > 0) 
 		{
-			const float tau = 6.28318530718;
-
 			uint dirNum = 16;
 			uint N = 2 * dirNum;
-			float dx = dirNum * tau / N;
+			float dx = dirNum * TAU / N;
 			vec2 windDirection = normalize(vec2(sin(g_windDirection3), cos(g_windDirection3)));
 
 			uint i;
@@ -1036,7 +1028,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
 
 				for (i = 0; i < N; i++)
 				{
-					float angle = ((float)i / (float)N) * tau;
+					float angle = ((float)i / (float)N) * TAU;
 					vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 					vec2 texc1 = texcDir * uv_local1 * g_profileUVScale;
 					vec2 texc2 = texcDir * uv_local2 * g_profileUVScale;
@@ -1055,7 +1047,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
 			{
 				for (i = 0; i < N; i++)
 				{
-					float angle = ((float)i / (float)N) * tau;
+					float angle = ((float)i / (float)N) * TAU;
 					vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 					vec2 texc = texcDir * uv_local * g_profileUVScale;
 
@@ -1282,14 +1274,14 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 
 			uint dirNum = 16;
 			uint N = 2 * dirNum;
-			float dx = dirNum * tau / N;
+			float dx = dirNum * TAU / N;
 			vec2 windDirection = normalize(vec2(sin(g_windDirection3), cos(g_windDirection3)));
 
 			uint i;
 
 			for (i = 0; i < N; i++)
 			{
-				float angle = ((float)i / (float)N) * tau;
+				float angle = ((float)i / (float)N) * TAU;
 				vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 				vec2 texc = texcDir * uv_local * g_profileUVScale;
 
@@ -1374,14 +1366,12 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 	if (In.vecColour.x == 0.0)
 	{
-		const float tau = 6.28318530718;
-
 		vec3 tx = vec3(0.0, 0.0, 0.0);
 		vec3 ty = vec3(0.0, 0.0, 0.0);
 
 		uint dirNum = 16;
 		uint N = 2 * dirNum;
-		float dx = dirNum * tau / N;
+		float dx = dirNum * TAU / N;
 
 		vec3 foamtemp = vec3(0.0, 0.0, 0.0);
 		vec2 windDirection = normalize(vec2(sin(g_windDirection3), cos(g_windDirection3)));
@@ -1389,7 +1379,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		uint i;
 		for (i = 0; i < N; i++)
 		{
-			float angle = ((float)i / (float)N) * tau;
+			float angle = ((float)i / (float)N) * TAU;
 			vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 			vec2 texc = texcDir * In.texCoords * g_profileUVScale;
 
