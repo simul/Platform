@@ -9,6 +9,7 @@
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include <string>
 #include <algorithm>
+#include <DirectXTex.h>
 
 using namespace simul;
 using namespace dx12;
