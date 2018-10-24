@@ -2,19 +2,25 @@
 
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/DisplaySurface.h"
+#include <vulkan/vulkan.hpp>
+#define SIMUL_VULKAN_FRAME_LAG 2
 
 typedef struct GLFWwindow GLFWwindow;
-namespace vk
-{
-	class SurfaceKHR;
-	class SwapchainKHR;
-	enum class Format;
-	enum class ColorSpaceKHR;
-}
 namespace simul
 {
     namespace vulkan
     {
+		struct SwapchainImageResources
+		{
+			vk::Image image;
+			vk::CommandBuffer cmd;
+			vk::CommandBuffer graphics_to_present_cmd;
+			vk::ImageView view;
+			vk::Buffer uniform_buffer;
+			vk::DeviceMemory uniform_memory;
+			vk::Framebuffer framebuffer;
+			vk::DescriptorSet descriptor_set;
+		} ;
         SIMUL_VULKAN_EXPORT_CLASS DisplaySurface : public crossplatform::DisplaySurface
         {
         public:
@@ -27,31 +33,46 @@ namespace simul
         private:
             //! Will resize the swap chain only if needed
             void Resize();
-            //! SwapChain used to present images
-           // IDXGISwapChain*             mSwapChain;
-            //! The back buffer render target
-           // ID3D11RenderTargetView*     mBackBufferRT;
-            //! Back Buffer texture
-            //ID3D11Texture2D*            mBackBuffer;
-            //! A reference of the device create by the manager
-            //ID3D11Device*               mDeviceRef;
-            //! Rendering viewport
-            //D3D11_VIEWPORT				mViewport;
 			crossplatform::DeviceContext deferredContext;
-			//ID3D11DeviceContext*	mDeferredContext;
-			//ID3D11CommandList *mCommandList;
 			crossplatform::PixelFormat pixelFormat;
-			//GLFWwindow* mWindow;
 #ifdef _MSC_VER
 			HDC             hDC;
 			HGLRC           hRC;
 #endif
-			vk::SurfaceKHR *surface;
 			vk::Format		vulkanFormat;
 			vk::ColorSpaceKHR colour_space;
-			std::unique_ptr<vk::SwapchainKHR> swapchain;
-			std::vector<struct SwapchainImageResources> swapchain_image_resources;
+			vk::SwapchainKHR swapchain;
+			std::vector<SwapchainImageResources> swapchain_image_resources;
+			vk::Queue graphics_queue,present_queue;
+			vk::CommandPool cmd_pool;
+			vk::CommandPool present_cmd_pool;
+			vk::CommandBuffer cmd;  
+			vk::Semaphore image_acquired_semaphores[SIMUL_VULKAN_FRAME_LAG];
+			vk::Semaphore draw_complete_semaphores[SIMUL_VULKAN_FRAME_LAG];
+			vk::Semaphore image_ownership_semaphores[SIMUL_VULKAN_FRAME_LAG];
+			vk::Fence fences[SIMUL_VULKAN_FRAME_LAG];
+			vk::RenderPass render_pass;
+
+			vk::Pipeline default_pipeline;
+			vk::PipelineCache pipelineCache;
+			vk::PipelineLayout pipeline_layout;
+			vk::DescriptorSetLayout desc_layout;
+
+			vk::SurfaceKHR surface;
 			void InitSwapChain();
+			void GetQueues();
+			void CreateRenderPass();
+			void CreateFramebuffers();
+			void CreateDefaultLayout();
+			void CreateDefaultPipeline();
+            void Present();
+			int frame_index;
+			uint32_t current_buffer;
+			uint32_t graphics_queue_family_index;
+			uint32_t present_queue_family_index;
+			vk::ShaderModule prepare_shader_module(const uint32_t *, size_t);
+			vk::ShaderModule prepare_vs();
+			vk::ShaderModule prepare_fs();
         };
     }
 }

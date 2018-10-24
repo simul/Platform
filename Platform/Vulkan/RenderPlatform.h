@@ -11,7 +11,6 @@
     #pragma warning(disable:4251)
 #endif
 
-#define SIMUL_VULKAN_FRAME_LAG 2
 namespace vk
 {
 	class Instance;

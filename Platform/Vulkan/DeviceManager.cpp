@@ -15,6 +15,7 @@
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/CrossPlatform/HdrRenderer.h"
+#include "Simul/Platform/Vulkan/DisplaySurface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -64,25 +65,14 @@ public:
 	vk::Instance instance;
 	vk::PhysicalDevice gpu;
 	vk::Device device;
-	vk::Queue graphics_queue;
-	vk::Queue present_queue;
-	vk::Semaphore image_acquired_semaphores[SIMUL_VULKAN_FRAME_LAG];
-	vk::Semaphore draw_complete_semaphores[SIMUL_VULKAN_FRAME_LAG];
-	vk::Semaphore image_ownership_semaphores[SIMUL_VULKAN_FRAME_LAG];
-    vk::Fence fences[SIMUL_VULKAN_FRAME_LAG];
 	vk::PhysicalDeviceProperties gpu_props;
-	std::unique_ptr<vk::QueueFamilyProperties[]> queue_props;
 	vk::PhysicalDeviceMemoryProperties memory_properties;
 };
 
 DeviceManager::DeviceManager()
 	:renderPlatformVulkan(NULL)
-	, enabled_extension_count(0)
-	, enabled_layer_count(0)
-	, graphics_queue_family_index(0)
-	, present_queue_family_index(0)
-	, current_buffer(0)
-	, queue_family_count(0)
+	,enabled_extension_count(0)
+	,enabled_layer_count(0)
 	,device_initialized(false)
 {
 	deviceManager=this;
@@ -202,9 +192,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	/* Look for instance extensions */
 	vk::Bool32 surfaceExtFound = VK_FALSE;
 	vk::Bool32 platformSurfaceExtFound = VK_FALSE;
-	memset(extension_names, 0, sizeof(extension_names));
 
 	auto result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
+	extension_names.resize(instance_extension_count);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	if (instance_extension_count > 0)
@@ -338,7 +328,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setEnabledLayerCount(enabled_layer_count)
 		.setPpEnabledLayerNames(instance_validation_layers)
 		.setEnabledExtensionCount(enabled_extension_count)
-		.setPpEnabledExtensionNames(extension_names);
+		.setPpEnabledExtensionNames(extension_names.data());
 
 	result = vk::createInstance(&inst_info, nullptr, &deviceManagerInternal->instance);
 	if (result == vk::Result::eErrorIncompatibleDriver)
@@ -390,7 +380,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	uint32_t device_extension_count = 0;
 	vk::Bool32 swapchainExtFound = VK_FALSE;
 	enabled_extension_count = 0;
-	memset(extension_names, 0, sizeof(extension_names));
+	memset(extension_names.data(), 0, sizeof(extension_names));
 
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, nullptr);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -422,13 +412,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
 
 	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
-
+	
+	uint32_t queue_family_count;
 	/* Call with nullptr data to get count */
 	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, nullptr);
 	assert(queue_family_count >= 1);
 
-	deviceManagerInternal->queue_props.reset(new vk::QueueFamilyProperties[queue_family_count]);
-	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, deviceManagerInternal->queue_props.get());
+	queue_props.resize(queue_family_count);
+	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, queue_props.data());
 
 
 	// Query fine-grained feature support for this device.
@@ -438,131 +429,42 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	deviceManagerInternal->gpu.getFeatures(&physDevFeatures);
 
 	InitDebugging();
+	CreateDevice();
 }
 
 void DeviceManager::CreateDevice()
 {
+	if(device_initialized)
+		return;
     float const priorities[1] = {0.0};
-
-    vk::DeviceQueueCreateInfo queues[2];
-    queues[0].setQueueFamilyIndex(graphics_queue_family_index);
-    queues[0].setQueueCount(1);
-    queues[0].setPQueuePriorities(priorities);
-
+    std::vector<vk::DeviceQueueCreateInfo> queues;
+	queues.resize(GetQueueProperties().size());
+	for(int i=0;i<queues.size();i++)
+	{
+		queues[i].setQueueFamilyIndex(i);
+		queues[i].setQueueCount(1);
+		queues[i].setPQueuePriorities(priorities);
+	}
     auto deviceInfo = vk::DeviceCreateInfo()
                           .setQueueCreateInfoCount(1)
-                          .setPQueueCreateInfos(queues)
+                          .setPQueueCreateInfos(queues.data())
                           .setEnabledLayerCount(0)
                           .setPpEnabledLayerNames(nullptr)
                           .setEnabledExtensionCount(enabled_extension_count)
-                          .setPpEnabledExtensionNames((const char *const *)extension_names)
-                          .setPEnabledFeatures(nullptr);
-
+                          .setPpEnabledExtensionNames((const char *const *)extension_names.data())
+                          .setPEnabledFeatures(nullptr)
+						.setQueueCreateInfoCount(queues.size());
+	/*
     if (separate_present_queue) {
         queues[1].setQueueFamilyIndex(present_queue_family_index);
         queues[1].setQueueCount(1);
         queues[1].setPQueuePriorities(priorities);
         deviceInfo.setQueueCreateInfoCount(2);
-    }
+    }*/
 
     auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
-    SIMUL_ASSERT(result == vk::Result::eSuccess);
-}
-
-void DeviceManager::GetQueues(vk::SurfaceKHR *surface)
-{
-	// Iterate over each queue to learn whether it supports presenting:
-	std::unique_ptr<vk::Bool32[]> supportsPresent(new vk::Bool32[queue_family_count]);
-	for (uint32_t i = 0; i < queue_family_count; i++)
-	{
-		deviceManagerInternal->gpu.getSurfaceSupportKHR(i, *surface, &supportsPresent[i]);
-	}
-
-	uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
-	uint32_t presentQueueFamilyIndex = UINT32_MAX;
-	for (uint32_t i = 0; i < queue_family_count; i++)
-	{
-		if (deviceManagerInternal->queue_props[i].queueFlags & vk::QueueFlagBits::eGraphics)
-		{
-			if (graphicsQueueFamilyIndex == UINT32_MAX)
-			{
-				graphicsQueueFamilyIndex = i;
-			}
-
-			if (supportsPresent[i] == VK_TRUE)
-			{
-				graphicsQueueFamilyIndex = i;
-				presentQueueFamilyIndex = i;
-				break;
-			}
-		}
-	}
-
-	if (presentQueueFamilyIndex == UINT32_MAX)
-	{
-// If didn't find a queue that supports both graphics and present,
-// then
-// find a separate present queue.
-		for (uint32_t i = 0; i < queue_family_count; ++i)
-		{
-			if (supportsPresent[i] == VK_TRUE)
-			{
-				presentQueueFamilyIndex = i;
-				break;
-			}
-		}
-	}
-
-	// Generate error if could not find both a graphics and a present queue
-	if (graphicsQueueFamilyIndex == UINT32_MAX || presentQueueFamilyIndex == UINT32_MAX)
-	{
-		SIMUL_BREAK("Could not find both graphics and present queues\n", "Swapchain Initialization Failure");
-	}
-	
-
-    graphics_queue_family_index = graphicsQueueFamilyIndex;
-    present_queue_family_index = presentQueueFamilyIndex;
-    separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
-	
-	if(!device_initialized)
-		CreateDevice();
-
-    deviceManagerInternal->device.getQueue(graphics_queue_family_index, 0, &deviceManagerInternal->graphics_queue);
-    if (!separate_present_queue) {
-        deviceManagerInternal->present_queue = deviceManagerInternal->graphics_queue;
-    } else {
-        deviceManagerInternal->device.getQueue(present_queue_family_index, 0, &deviceManagerInternal->present_queue);
-    }
-
-	
-
-	// Create semaphores to synchronize acquiring presentable buffers before
-	// rendering and waiting for drawing to be complete before presenting
-	auto const semaphoreCreateInfo = vk::SemaphoreCreateInfo();
-
-	// Create fences that we can use to throttle if we get too far
-	// ahead of the image presents
-	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
-	for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG; i++)
-	{
-		auto result = deviceManagerInternal->device.createFence(&fence_ci, nullptr, &deviceManagerInternal->fences[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		result = deviceManagerInternal->device.createSemaphore(&semaphoreCreateInfo, nullptr, &deviceManagerInternal->image_acquired_semaphores[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		result = deviceManagerInternal->device.createSemaphore(&semaphoreCreateInfo, nullptr, &deviceManagerInternal->draw_complete_semaphores[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		if (separate_present_queue)
-		{
-			result = deviceManagerInternal->device.createSemaphore(&semaphoreCreateInfo, nullptr, &deviceManagerInternal->image_ownership_semaphores[i]);
-			SIMUL_ASSERT(result == vk::Result::eSuccess);
-		}
-	}
-
-	// Get Memory information and properties
-	deviceManagerInternal->gpu.getMemoryProperties(&deviceManagerInternal->memory_properties);
+	device_initialized=result == vk::Result::eSuccess;
+    SIMUL_ASSERT(device_initialized);
 }
 
 std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKHR *surface)
@@ -594,6 +496,16 @@ std::vector<vk::Image> DeviceManager::GetSwapchainImages(vk::SwapchainKHR *swapc
 vk::PhysicalDevice *DeviceManager::GetGPU()
 {
 	return &deviceManagerInternal->gpu;
+}
+
+vk::Device *DeviceManager::GetVulkanDevice()
+{
+	return &deviceManagerInternal->device;
+}
+
+vk::Instance *DeviceManager::GetVulkanInstance()
+{
+	return &deviceManagerInternal->instance;
 }
 
 void DeviceManager::InitDebugging()
@@ -629,7 +541,6 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	crossplatform::Output o;
 	return o;
 }
-
 
 void DeviceManager::Activate()
 {

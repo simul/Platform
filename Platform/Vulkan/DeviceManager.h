@@ -2,20 +2,13 @@
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Platform/Vulkan/Export.h"
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
 
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace vk
-{
-	class Image;
-	class SurfaceKHR;
-	class SwapchainKHR;
-	class PhysicalDevice;
-	struct SurfaceFormatKHR;
-}
 
 namespace simul
 {
@@ -47,24 +40,31 @@ namespace simul
 			void InitDebugging();
 			simul::vulkan::RenderPlatform *renderPlatformVulkan;
 
-			void GetQueues(vk::SurfaceKHR *surface);
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
 			vk::PhysicalDevice *GetGPU();
+			vk::Device *GetVulkanDevice();
+			vk::Instance *GetVulkanInstance();
+			uint32_t QueueFamilyCount() const
+			{
+				return queue_family_count;
+			}
+			const std::vector<vk::QueueFamilyProperties> &GetQueueProperties() const
+			{
+				return queue_props;
+			}
 		protected:
 			void CreateDevice();
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			uint32_t enabled_extension_count;
 			uint32_t enabled_layer_count;
-			uint32_t graphics_queue_family_index;
-			uint32_t present_queue_family_index;
-			uint32_t current_buffer;
-			uint32_t queue_family_count;
 			bool device_initialized;
-			bool separate_present_queue;
-			char const *extension_names[64];
+			std::vector<char *> extension_names;
 			char const *enabled_layers[64];
 			DeviceManagerInternal *deviceManagerInternal;
+			bool separate_present_queue;
+			uint32_t queue_family_count;
+			std::vector<vk::QueueFamilyProperties> queue_props;
 		};
 		extern DeviceManager *deviceManager;
 	}

@@ -9,23 +9,6 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vk_sdk_platform.h>
 
-namespace simul
-{
-	namespace vulkan
-	{
-		struct SwapchainImageResources
-		{
-			vk::Image image;
-			vk::CommandBuffer cmd;
-			vk::CommandBuffer graphics_to_present_cmd;
-			vk::ImageView view;
-			vk::Buffer uniform_buffer;
-			vk::DeviceMemory uniform_memory;
-			vk::Framebuffer framebuffer;
-			vk::DescriptorSet descriptor_set;
-		} ;
-	}
-}
 
 using namespace simul;
 using namespace vulkan;
@@ -54,12 +37,11 @@ static const char *GetErr()
 
 DisplaySurface::DisplaySurface()
 	:pixelFormat(crossplatform::UNKNOWN)
-	, hDC(nullptr)
-	, hRC(nullptr)
-	, surface(nullptr)
-	, swapchain(nullptr)
+	,hDC(nullptr)
+	,hRC(nullptr)
+	,frame_index(0)
+	,current_buffer(0)
 {
-	surface = new vk::SurfaceKHR;
 }
 
 DisplaySurface::~DisplaySurface()
@@ -78,42 +60,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	pixelFormat = outFmt;
 	crossplatform::DeviceContext &immediateContext = r->GetImmediateContext();
 	mHwnd = handle;
-#ifdef _MSC_VER
-	if (!(hDC = GetDC(mHwnd)))
-	{
-		return;
-	}
-	static  PIXELFORMATDESCRIPTOR pfd =	// pfd Tells Windows How We Want Things To Be
-	{
-		sizeof(PIXELFORMATDESCRIPTOR),	// Size Of This Pixel Format Descriptor
-		1,								// Version Number
-		PFD_DRAW_TO_WINDOW |			// Format Must Support Window
-		PFD_SUPPORT_OPENGL |			// Format Must Support OpenGL...
-		PFD_DOUBLEBUFFER,				// Must Support Double Buffering
-		PFD_TYPE_RGBA,					// Request An RGBA Format
-		32,								// Select Our Color Depth
-		0, 0, 0, 0, 0, 0,				// Color Bits Ignored
-		0,								// No Alpha Buffer
-		0,								// Shift Bit Ignored
-		0,								// No Accumulation Buffer
-		0, 0, 0, 0,						// Accumulation Bits Ignored
-		0,								// 16Bit Z-Buffer (Depth Buffer)
-		0,								// No Stencil Buffer
-		0,								// No Auxiliary Buffer
-		PFD_MAIN_PLANE,					// Main Drawing Layer
-		0,								// Reserved
-		0, 0, 0							// Layer Masks Ignored
-	};
-	uint glPixelFormat;
-
-	vk::Win32SurfaceCreateInfoKHR createInfo = vk::Win32SurfaceCreateInfoKHR().setHinstance(GetModuleHandle(nullptr)).setHwnd(handle);
-	auto rv = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Instance *inst = rv->AsVulkanInstance();
-	vk::Result result = inst->createWin32SurfaceKHR(&createInfo, nullptr, surface);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-
-#endif
 }
 
 void DisplaySurface::InvalidateDeviceObjects()
@@ -125,6 +71,114 @@ void DisplaySurface::InvalidateDeviceObjects()
 	}
 	hDC = nullptr;                           // Set DC To NULL
 }
+
+
+void DisplaySurface::GetQueues()
+{
+	auto vkGpu=deviceManager->GetGPU();
+	const std::vector<vk::QueueFamilyProperties> &queue_props=deviceManager->GetQueueProperties();
+	int queue_family_count=queue_props.size();
+	// Iterate over each queue to learn whether it supports presenting:
+	std::vector<vk::Bool32> supportsPresent(queue_family_count);
+	for (uint32_t i = 0; i < queue_family_count; i++)
+	{
+		vkGpu->getSurfaceSupportKHR(i, surface, &supportsPresent[i]);
+	}
+
+	uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
+	uint32_t presentQueueFamilyIndex = UINT32_MAX;
+	for (uint32_t i = 0; i < queue_family_count; i++)
+	{
+		if (queue_props[i].queueFlags & vk::QueueFlagBits::eGraphics)
+		{
+			if (graphicsQueueFamilyIndex == UINT32_MAX)
+			{
+				graphicsQueueFamilyIndex = i;
+			}
+
+			if (supportsPresent[i] == VK_TRUE)
+			{
+				graphicsQueueFamilyIndex = i;
+				presentQueueFamilyIndex = i;
+				break;
+			}
+		}
+	}
+
+	if (presentQueueFamilyIndex == UINT32_MAX)
+	{
+// If didn't find a queue that supports both graphics and present,
+// then
+// find a separate present queue.
+		for (uint32_t i = 0; i < queue_family_count; ++i)
+		{
+			if (supportsPresent[i] == VK_TRUE)
+			{
+				presentQueueFamilyIndex = i;
+				break;
+			}
+		}
+	}
+
+	// Generate error if could not find both a graphics and a present queue
+	if (graphicsQueueFamilyIndex == UINT32_MAX || presentQueueFamilyIndex == UINT32_MAX)
+	{
+		SIMUL_BREAK("Could not find both graphics and present queues\nSwapchain Initialization Failure");
+	}
+
+	graphics_queue_family_index = graphicsQueueFamilyIndex;
+	present_queue_family_index = presentQueueFamilyIndex;
+
+    bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
+	
+	vk::Device *vkDevice=deviceManager->GetVulkanDevice();
+	vkDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
+    if (!separate_present_queue) {
+        present_queue = graphics_queue;
+    } else {
+        vkDevice->getQueue(present_queue_family_index, 0, &present_queue);
+    }
+
+	// Create semaphores to synchronize acquiring presentable buffers before
+	// rendering and waiting for drawing to be complete before presenting
+	auto const semaphoreCreateInfo = vk::SemaphoreCreateInfo();
+
+	// Create fences that we can use to throttle if we get too far
+	// ahead of the image presents
+	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
+	for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG; i++)
+	{
+		auto result = vkDevice->createFence(&fence_ci, nullptr, &fences[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		result = vkDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &image_acquired_semaphores[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		result = vkDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &draw_complete_semaphores[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		if (separate_present_queue)
+		{
+			result = vkDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &image_ownership_semaphores[i]);
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+		}
+	}
+	
+	
+    vkDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
+	if (!separate_present_queue)
+	{
+		present_queue = graphics_queue;
+	}
+	else
+	{
+		vkDevice->getQueue(present_queue_family_index, 0, &present_queue);
+	}
+
+	//vkGpu->getMemoryProperties(&memory_properties);
+}
+
+
 
 void DisplaySurface::InitSwapChain()
 {
@@ -142,9 +196,27 @@ void DisplaySurface::InitSwapChain()
 	viewport.x = 0;
 	viewport.y = 0;
 
+	
+
+	
+#ifdef _MSC_VER
+	if (!(hDC = GetDC(mHwnd)))
+	{
+		return;
+	}
+	auto hInstance=GetModuleHandle(nullptr);
+	vk::Win32SurfaceCreateInfoKHR createInfo = vk::Win32SurfaceCreateInfoKHR().setHinstance(hInstance).setHwnd(mHwnd);
+	auto rv = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Instance *inst = deviceManager->GetVulkanInstance();
+	auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &surface);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+#endif
+
+
 	// Initialize the swap chain description.
 
-	std::vector<vk::SurfaceFormatKHR> surfFormats = simul::vulkan::deviceManager->GetSurfaceFormats(surface);
+	std::vector<vk::SurfaceFormatKHR> surfFormats = simul::vulkan::deviceManager->GetSurfaceFormats(&surface);
 
 	// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
 	// the surface has no preferred format.  Otherwise, at least one
@@ -162,20 +234,20 @@ void DisplaySurface::InitSwapChain()
 	colour_space = surfFormats[0].colorSpace;
 	//if(!swapchain)
 //		swapchain.swap(new vk::SwapchainKHR);
-	vk::SwapchainKHR oldSwapchain = *swapchain.get();
+	vk::SwapchainKHR oldSwapchain = swapchain;
 
 	// Check the surface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
 	vk::PhysicalDevice *gpu=simul::vulkan::deviceManager->GetGPU();
-	auto result = gpu->getSurfaceCapabilitiesKHR(*surface, &surfCapabilities);
+	 result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	uint32_t presentModeCount;
-	result = gpu->getSurfacePresentModesKHR(*surface, &presentModeCount, nullptr);
+	result = gpu->getSurfacePresentModesKHR(surface, &presentModeCount, nullptr);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	std::unique_ptr<vk::PresentModeKHR[]> presentModes(new vk::PresentModeKHR[presentModeCount]);
-	result = gpu->getSurfacePresentModesKHR(*surface, &presentModeCount, presentModes.get());
+	result = gpu->getSurfacePresentModesKHR(surface, &presentModeCount, presentModes.get());
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	vk::Extent2D swapchainExtent;
@@ -243,9 +315,10 @@ void DisplaySurface::InitSwapChain()
 			break;
 		}
 	}
+//	gpu->GetPhysicalDeviceSurfaceSupportKHR(surface);
 
 	auto const swapchain_ci = vk::SwapchainCreateInfoKHR()
-		.setSurface(*surface)
+		.setSurface(surface)
 		.setMinImageCount(desiredNumOfSwapchainImages)
 		.setImageFormat(vulkanFormat)
 		.setImageColorSpace(colour_space)
@@ -260,9 +333,16 @@ void DisplaySurface::InitSwapChain()
 		.setPresentMode(swapchainPresentMode)
 		.setClipped(true)
 		.setOldSwapchain(oldSwapchain);
+	bool supported=false;
+	//vkGetPhysicalDeviceSurfaceSupportKHR(&gpu,0,surface,&supported);
 	
+	// MUST do GetQueues before creating the swapchain, because getSurfaceSupportKHR is treated as a PREREQUISITE
+	// to create the device, even though it's defined as a TEST. This is bad API design.
+	GetQueues();
+ // result = gpu->getSurfaceSupportKHR( 0,  surface,(vk::Bool32*)&supported) ;
+	//SIMUL_ASSERT(result == vk::Result::eSuccess);
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
-	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, swapchain.get());
+	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	// If we just re-created an existing swapchain, we should destroy the
@@ -275,7 +355,7 @@ void DisplaySurface::InitSwapChain()
 		vulkanDevice->destroySwapchainKHR(oldSwapchain, nullptr);
 	}
 	
-	std::vector<vk::Image> swapchainImages=deviceManager->GetSwapchainImages(swapchain.get());
+	std::vector<vk::Image> swapchainImages=deviceManager->GetSwapchainImages(&swapchain);
 	swapchain_image_resources.resize(swapchainImages.size());
 
 	for (uint32_t i = 0; i < swapchainImages.size(); ++i)
@@ -292,13 +372,385 @@ void DisplaySurface::InitSwapChain()
 		result = vulkanDevice->createImageView(&color_image_view, nullptr, &swapchain_image_resources[i].view);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
+	
+	// Init command buffers / pools:
+	{
+		auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index);
+		auto result = vulkanDevice->createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		auto const cmdAllocInfo = vk::CommandBufferAllocateInfo()
+											.setCommandPool(cmd_pool)
+											.setLevel(vk::CommandBufferLevel::ePrimary)
+											.setCommandBufferCount(1);
+
+		result = vulkanDevice->allocateCommandBuffers(&cmdAllocInfo,&cmd);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		auto const cmd_buf_info = vk::CommandBufferBeginInfo().setPInheritanceInfo(nullptr);
+
+		result = cmd.begin(&cmd_buf_info);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	
+
+		for (uint32_t i = 0; i < swapchainImages.size(); ++i)
+		{
+			result = vulkanDevice->allocateCommandBuffers(&cmdAllocInfo, &swapchain_image_resources[i].cmd);
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+		}
+		if (present_queue_family_index!=graphics_queue_family_index)
+		{
+			auto const present_cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(present_queue_family_index);
+
+			result = vulkanDevice->createCommandPool(&present_cmd_pool_info, nullptr, &present_cmd_pool);
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+			auto const present_cmd = vk::CommandBufferAllocateInfo()
+				.setCommandPool(present_cmd_pool)
+				.setLevel(vk::CommandBufferLevel::ePrimary)
+				.setCommandBufferCount(1);
+
+			for (uint32_t i = 0; i < swapchainImages.size(); i++)
+			{
+				result = vulkanDevice->allocateCommandBuffers(&present_cmd, &swapchain_image_resources[i].graphics_to_present_cmd);
+				SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+				{
+//void build_image_ownership_cmd(uint32_t const &i)
+					auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+					auto result = swapchain_image_resources[i].graphics_to_present_cmd.begin(&cmd_buf_info);
+					SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+					auto const image_ownership_barrier =
+						vk::ImageMemoryBarrier()
+						.setSrcAccessMask(vk::AccessFlags())
+						.setDstAccessMask(vk::AccessFlags())
+						.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
+						.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+						.setSrcQueueFamilyIndex(graphics_queue_family_index)
+						.setDstQueueFamilyIndex(present_queue_family_index)
+						.setImage(swapchain_image_resources[i].image)
+						.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+					swapchain_image_resources[i].graphics_to_present_cmd.pipelineBarrier(
+						vk::PipelineStageFlagBits::eBottomOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlagBits(), 0, nullptr, 0,
+						nullptr, 1, &image_ownership_barrier);
+					//result =
+					 swapchain_image_resources[i].graphics_to_present_cmd.end();
+					SIMUL_ASSERT(result == vk::Result::eSuccess);
+				}
+			}
+		}
+	}
+	CreateRenderPass();
+	CreateDefaultPipeline();
+	CreateFramebuffers();
 }
+
+void DisplaySurface::CreateRenderPass()
+{
+// The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
+// because at the start of the renderpass, we don't care about their contents.
+// At the start of the subpass, the color attachment's layout will be transitioned
+// to LAYOUT_COLOR_ATTACHMENT_OPTIMAL and the depth stencil attachment's layout
+// will be transitioned to LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL.  At the end of
+// the renderpass, the color attachment's layout will be transitioned to
+// LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
+// the renderpass, no barriers are necessary.
+	const vk::AttachmentDescription attachments[1] = { vk::AttachmentDescription()
+														  .setFormat(vulkanFormat)
+														  .setSamples(vk::SampleCountFlagBits::e1)
+														  .setLoadOp(vk::AttachmentLoadOp::eClear)
+														  .setStoreOp(vk::AttachmentStoreOp::eStore)
+														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+														  .setInitialLayout(vk::ImageLayout::eUndefined)
+														  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)};
+
+	auto const color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+	//auto const depth_reference =
+	//	vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+	auto const subpass = vk::SubpassDescription()
+		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+		.setInputAttachmentCount(0)
+		.setPInputAttachments(nullptr)
+		.setColorAttachmentCount(1)
+		.setPColorAttachments(&color_reference)
+		.setPResolveAttachments(nullptr)
+		.setPDepthStencilAttachment(nullptr)
+		.setPreserveAttachmentCount(0)
+		.setPPreserveAttachments(nullptr);
+
+	auto const rp_info = vk::RenderPassCreateInfo()
+		.setAttachmentCount(1)
+		.setPAttachments(attachments)
+		.setSubpassCount(1)
+		.setPSubpasses(&subpass)
+		.setDependencyCount(0)
+		.setPDependencies(nullptr);
+
+	auto result = deviceManager->GetVulkanDevice()->createRenderPass(&rp_info, nullptr, &render_pass);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+}
+
+
+void DisplaySurface::CreateFramebuffers()
+{
+	vk::ImageView attachments[1];
+
+	auto const fb_info = vk::FramebufferCreateInfo()
+		.setRenderPass(render_pass)
+		.setAttachmentCount(1)
+		.setPAttachments(attachments)
+		.setWidth((uint32_t)viewport.w)
+		.setHeight((uint32_t)viewport.h)
+		.setLayers(1);
+
+	for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG; i++)
+	{
+		attachments[0] = swapchain_image_resources[i].view;
+		auto const result = deviceManager->GetVulkanDevice()->createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+}
+
+void DisplaySurface::CreateDefaultLayout()
+{
+	vk::DescriptorSetLayoutBinding const layout_bindings[1] = { vk::DescriptorSetLayoutBinding()
+																   .setBinding(0)
+																   .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+																   .setDescriptorCount(1)
+																   .setStageFlags(vk::ShaderStageFlagBits::eVertex)
+																   .setPImmutableSamplers(nullptr) };
+
+	auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(1).setPBindings(layout_bindings);
+
+	auto result = deviceManager->GetVulkanDevice()->createDescriptorSetLayout(&descriptor_layout, nullptr, &desc_layout);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(&desc_layout);
+
+	result = deviceManager->GetVulkanDevice()->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipeline_layout);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+}
+
+
+vk::ShaderModule DisplaySurface::prepare_shader_module(const uint32_t *code, size_t size)
+{
+	const auto moduleCreateInfo = vk::ShaderModuleCreateInfo().setCodeSize(size).setPCode(code);
+
+	vk::ShaderModule module;
+	auto result = deviceManager->GetVulkanDevice()->createShaderModule(&moduleCreateInfo, nullptr, &module);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	return module;
+}
+
+vk::ShaderModule DisplaySurface::prepare_vs()
+{
+	const uint32_t vertShaderCode[] = {0x07230203,0x00010000,0x00080007,0x0000002f,0x00000000,0x00020011,0x00000001,0x0006000b,
+	0x00000001,0x4c534c47,0x6474732e,0x3035342e,0x00000000,0x0003000e,0x00000000,0x00000001,
+	0x0009000f,0x00000000,0x00000004,0x6e69616d,0x00000000,0x00000009,0x00000015,0x0000001e,
+	0x0000002b,0x00030003,0x00000002,0x00000190,0x00090004,0x415f4c47,0x735f4252,0x72617065,
+	0x5f657461,0x64616873,0x6f5f7265,0x63656a62,0x00007374,0x00090004,0x415f4c47,0x735f4252,
+	0x69646168,0x6c5f676e,0x75676e61,0x5f656761,0x70303234,0x006b6361,0x00040005,0x00000004,
+	0x6e69616d,0x00000000,0x00050005,0x00000009,0x63786574,0x64726f6f,0x00000000,0x00030005,
+	0x0000000f,0x00667562,0x00040006,0x0000000f,0x00000000,0x0050564d,0x00060006,0x0000000f,
+	0x00000001,0x69736f70,0x6e6f6974,0x00000000,0x00050006,0x0000000f,0x00000002,0x72747461,
+	0x00000000,0x00040005,0x00000011,0x66756275,0x00000000,0x00060005,0x00000015,0x565f6c67,
+	0x65747265,0x646e4978,0x00007865,0x00060005,0x0000001c,0x505f6c67,0x65567265,0x78657472,
+	0x00000000,0x00060006,0x0000001c,0x00000000,0x505f6c67,0x7469736f,0x006e6f69,0x00070006,
+	0x0000001c,0x00000001,0x505f6c67,0x746e696f,0x657a6953,0x00000000,0x00070006,0x0000001c,
+	0x00000002,0x435f6c67,0x4470696c,0x61747369,0x0065636e,0x00030005,0x0000001e,0x00000000,
+	0x00050005,0x0000002b,0x67617266,0x736f705f,0x00000000,0x00040047,0x00000009,0x0000001e,
+	0x00000000,0x00040047,0x0000000d,0x00000006,0x00000010,0x00040047,0x0000000e,0x00000006,
+	0x00000010,0x00040048,0x0000000f,0x00000000,0x00000005,0x00050048,0x0000000f,0x00000000,
+	0x00000023,0x00000000,0x00050048,0x0000000f,0x00000000,0x00000007,0x00000010,0x00050048,
+	0x0000000f,0x00000001,0x00000023,0x00000040,0x00050048,0x0000000f,0x00000002,0x00000023,
+	0x00000280,0x00030047,0x0000000f,0x00000002,0x00040047,0x00000011,0x00000022,0x00000000,
+	0x00040047,0x00000011,0x00000021,0x00000000,0x00040047,0x00000015,0x0000000b,0x0000002a,
+	0x00050048,0x0000001c,0x00000000,0x0000000b,0x00000000,0x00050048,0x0000001c,0x00000001,
+	0x0000000b,0x00000001,0x00050048,0x0000001c,0x00000002,0x0000000b,0x00000003,0x00030047,
+	0x0000001c,0x00000002,0x00040047,0x0000002b,0x0000001e,0x00000001,0x00020013,0x00000002,
+	0x00030021,0x00000003,0x00000002,0x00030016,0x00000006,0x00000020,0x00040017,0x00000007,
+	0x00000006,0x00000004,0x00040020,0x00000008,0x00000003,0x00000007,0x0004003b,0x00000008,
+	0x00000009,0x00000003,0x00040018,0x0000000a,0x00000007,0x00000004,0x00040015,0x0000000b,
+	0x00000020,0x00000000,0x0004002b,0x0000000b,0x0000000c,0x00000024,0x0004001c,0x0000000d,
+	0x00000007,0x0000000c,0x0004001c,0x0000000e,0x00000007,0x0000000c,0x0005001e,0x0000000f,
+	0x0000000a,0x0000000d,0x0000000e,0x00040020,0x00000010,0x00000002,0x0000000f,0x0004003b,
+	0x00000010,0x00000011,0x00000002,0x00040015,0x00000012,0x00000020,0x00000001,0x0004002b,
+	0x00000012,0x00000013,0x00000002,0x00040020,0x00000014,0x00000001,0x00000012,0x0004003b,
+	0x00000014,0x00000015,0x00000001,0x00040020,0x00000017,0x00000002,0x00000007,0x0004002b,
+	0x0000000b,0x0000001a,0x00000001,0x0004001c,0x0000001b,0x00000006,0x0000001a,0x0005001e,
+	0x0000001c,0x00000007,0x00000006,0x0000001b,0x00040020,0x0000001d,0x00000003,0x0000001c,
+	0x0004003b,0x0000001d,0x0000001e,0x00000003,0x0004002b,0x00000012,0x0000001f,0x00000000,
+	0x00040020,0x00000020,0x00000002,0x0000000a,0x0004002b,0x00000012,0x00000023,0x00000001,
+	0x00040017,0x00000029,0x00000006,0x00000003,0x00040020,0x0000002a,0x00000003,0x00000029,
+	0x0004003b,0x0000002a,0x0000002b,0x00000003,0x00050036,0x00000002,0x00000004,0x00000000,
+	0x00000003,0x000200f8,0x00000005,0x0004003d,0x00000012,0x00000016,0x00000015,0x00060041,
+	0x00000017,0x00000018,0x00000011,0x00000013,0x00000016,0x0004003d,0x00000007,0x00000019,
+	0x00000018,0x0003003e,0x00000009,0x00000019,0x00050041,0x00000020,0x00000021,0x00000011,
+	0x0000001f,0x0004003d,0x0000000a,0x00000022,0x00000021,0x0004003d,0x00000012,0x00000024,
+	0x00000015,0x00060041,0x00000017,0x00000025,0x00000011,0x00000023,0x00000024,0x0004003d,
+	0x00000007,0x00000026,0x00000025,0x00050091,0x00000007,0x00000027,0x00000022,0x00000026,
+	0x00050041,0x00000008,0x00000028,0x0000001e,0x0000001f,0x0003003e,0x00000028,0x00000027,
+	0x00050041,0x00000008,0x0000002c,0x0000001e,0x0000001f,0x0004003d,0x00000007,0x0000002d,
+	0x0000002c,0x0008004f,0x00000029,0x0000002e,0x0000002d,0x0000002d,0x00000000,0x00000001,
+	0x00000002,0x0003003e,0x0000002b,0x0000002e,0x000100fd,0x00010038
+	};
+
+	vk::ShaderModule vert_shader_module = prepare_shader_module(vertShaderCode, sizeof(vertShaderCode));
+
+	return vert_shader_module;
+}
+vk::ShaderModule DisplaySurface::prepare_fs()
+{
+	const uint32_t fragShaderCode[] = {
+	// 7.9.2888
+	0x07230203,0x00010000,0x00080007,0x00000030,0x00000000,0x00020011,0x00000001,0x0006000b,
+	0x00000001,0x4c534c47,0x6474732e,0x3035342e,0x00000000,0x0003000e,0x00000000,0x00000001,
+	0x0008000f,0x00000004,0x00000004,0x6e69616d,0x00000000,0x0000000b,0x00000022,0x0000002a,
+	0x00030010,0x00000004,0x00000007,0x00030003,0x00000002,0x00000190,0x00090004,0x415f4c47,
+	0x735f4252,0x72617065,0x5f657461,0x64616873,0x6f5f7265,0x63656a62,0x00007374,0x00090004,
+	0x415f4c47,0x735f4252,0x69646168,0x6c5f676e,0x75676e61,0x5f656761,0x70303234,0x006b6361,
+	0x00040005,0x00000004,0x6e69616d,0x00000000,0x00030005,0x00000009,0x00005864,0x00050005,
+	0x0000000b,0x67617266,0x736f705f,0x00000000,0x00030005,0x0000000e,0x00005964,0x00040005,
+	0x00000011,0x6d726f6e,0x00006c61,0x00040005,0x00000017,0x6867696c,0x00000074,0x00050005,
+	0x00000022,0x61724675,0x6c6f4367,0x0000726f,0x00030005,0x00000027,0x00786574,0x00050005,
+	0x0000002a,0x63786574,0x64726f6f,0x00000000,0x00040047,0x0000000b,0x0000001e,0x00000001,
+	0x00040047,0x00000022,0x0000001e,0x00000000,0x00040047,0x00000027,0x00000022,0x00000000,
+	0x00040047,0x00000027,0x00000021,0x00000001,0x00040047,0x0000002a,0x0000001e,0x00000000,
+	0x00020013,0x00000002,0x00030021,0x00000003,0x00000002,0x00030016,0x00000006,0x00000020,
+	0x00040017,0x00000007,0x00000006,0x00000003,0x00040020,0x00000008,0x00000007,0x00000007,
+	0x00040020,0x0000000a,0x00000001,0x00000007,0x0004003b,0x0000000a,0x0000000b,0x00000001,
+	0x00040020,0x00000016,0x00000007,0x00000006,0x0004002b,0x00000006,0x00000018,0x00000000,
+	0x0004002b,0x00000006,0x00000019,0x3ed91687,0x0004002b,0x00000006,0x0000001a,0x3f10e560,
+	0x0004002b,0x00000006,0x0000001b,0x3f34fdf4,0x0006002c,0x00000007,0x0000001c,0x00000019,
+	0x0000001a,0x0000001b,0x00040017,0x00000020,0x00000006,0x00000004,0x00040020,0x00000021,
+	0x00000003,0x00000020,0x0004003b,0x00000021,0x00000022,0x00000003,0x00090019,0x00000024,
+	0x00000006,0x00000001,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,0x0003001b,
+	0x00000025,0x00000024,0x00040020,0x00000026,0x00000000,0x00000025,0x0004003b,0x00000026,
+	0x00000027,0x00000000,0x00040020,0x00000029,0x00000001,0x00000020,0x0004003b,0x00000029,
+	0x0000002a,0x00000001,0x00040017,0x0000002b,0x00000006,0x00000002,0x00050036,0x00000002,
+	0x00000004,0x00000000,0x00000003,0x000200f8,0x00000005,0x0004003b,0x00000008,0x00000009,
+	0x00000007,0x0004003b,0x00000008,0x0000000e,0x00000007,0x0004003b,0x00000008,0x00000011,
+	0x00000007,0x0004003b,0x00000016,0x00000017,0x00000007,0x0004003d,0x00000007,0x0000000c,
+	0x0000000b,0x000400cf,0x00000007,0x0000000d,0x0000000c,0x0003003e,0x00000009,0x0000000d,
+	0x0004003d,0x00000007,0x0000000f,0x0000000b,0x000400d0,0x00000007,0x00000010,0x0000000f,
+	0x0003003e,0x0000000e,0x00000010,0x0004003d,0x00000007,0x00000012,0x00000009,0x0004003d,
+	0x00000007,0x00000013,0x0000000e,0x0007000c,0x00000007,0x00000014,0x00000001,0x00000044,
+	0x00000012,0x00000013,0x0006000c,0x00000007,0x00000015,0x00000001,0x00000045,0x00000014,
+	0x0003003e,0x00000011,0x00000015,0x0004003d,0x00000007,0x0000001d,0x00000011,0x00050094,
+	0x00000006,0x0000001e,0x0000001c,0x0000001d,0x0007000c,0x00000006,0x0000001f,0x00000001,
+	0x00000028,0x00000018,0x0000001e,0x0003003e,0x00000017,0x0000001f,0x0004003d,0x00000006,
+	0x00000023,0x00000017,0x0004003d,0x00000025,0x00000028,0x00000027,0x0004003d,0x00000020,
+	0x0000002c,0x0000002a,0x0007004f,0x0000002b,0x0000002d,0x0000002c,0x0000002c,0x00000000,
+	0x00000001,0x00050057,0x00000020,0x0000002e,0x00000028,0x0000002d,0x0005008e,0x00000020,
+	0x0000002f,0x0000002e,0x00000023,0x0003003e,0x00000022,0x0000002f,0x000100fd,0x00010038
+
+	};
+
+	vk::ShaderModule frag_shader_module = prepare_shader_module(fragShaderCode, sizeof(fragShaderCode));
+
+	return frag_shader_module;
+}
+
+void DisplaySurface::CreateDefaultPipeline()
+{
+	CreateDefaultLayout();
+	vk::PipelineCacheCreateInfo const pipelineCacheInfo;
+	auto result = deviceManager->GetVulkanDevice()->createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	vk::PipelineShaderStageCreateInfo const shaderStageInfo[2] = {
+		vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(prepare_vs()).setPName("main"),
+		vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eFragment).setModule(prepare_fs()).setPName("main") };
+
+	vk::PipelineVertexInputStateCreateInfo const vertexInputInfo;
+
+	auto const inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo().setTopology(vk::PrimitiveTopology::eTriangleList);
+
+	// TODO: Where are pViewports and pScissors set?
+	auto const viewportInfo = vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
+
+	auto const rasterizationInfo = vk::PipelineRasterizationStateCreateInfo()
+		.setDepthClampEnable(VK_FALSE)
+		.setRasterizerDiscardEnable(VK_FALSE)
+		.setPolygonMode(vk::PolygonMode::eFill)
+		.setCullMode(vk::CullModeFlagBits::eBack)
+		.setFrontFace(vk::FrontFace::eCounterClockwise)
+		.setDepthBiasEnable(VK_FALSE)
+		.setLineWidth(1.0f);
+
+	auto const multisampleInfo = vk::PipelineMultisampleStateCreateInfo();
+
+	auto const stencilOp =
+		vk::StencilOpState().setFailOp(vk::StencilOp::eKeep).setPassOp(vk::StencilOp::eKeep).setCompareOp(vk::CompareOp::eAlways);
+
+	auto const depthStencilInfo = vk::PipelineDepthStencilStateCreateInfo()
+		.setDepthTestEnable(VK_TRUE)
+		.setDepthWriteEnable(VK_TRUE)
+		.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
+		.setDepthBoundsTestEnable(VK_FALSE)
+		.setStencilTestEnable(VK_FALSE)
+		.setFront(stencilOp)
+		.setBack(stencilOp);
+
+	vk::PipelineColorBlendAttachmentState const colorBlendAttachments[1] = {
+		vk::PipelineColorBlendAttachmentState().setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+																  vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA) };
+
+	auto const colorBlendInfo =
+		vk::PipelineColorBlendStateCreateInfo().setAttachmentCount(1).setPAttachments(colorBlendAttachments);
+
+	vk::DynamicState const dynamicStates[2] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+
+	auto const dynamicStateInfo = vk::PipelineDynamicStateCreateInfo().setPDynamicStates(dynamicStates).setDynamicStateCount(2);
+
+	auto const pipelineInfo = vk::GraphicsPipelineCreateInfo()
+		.setStageCount(2)
+		.setPStages(shaderStageInfo)
+		.setPVertexInputState(&vertexInputInfo)
+		.setPInputAssemblyState(&inputAssemblyInfo)
+		.setPViewportState(&viewportInfo)
+		.setPRasterizationState(&rasterizationInfo)
+		.setPMultisampleState(&multisampleInfo)
+		.setPDepthStencilState(&depthStencilInfo)
+		.setPColorBlendState(&colorBlendInfo)
+		.setPDynamicState(&dynamicStateInfo)
+		.setLayout(pipeline_layout)
+		.setRenderPass(render_pass);
+
+	result = deviceManager->GetVulkanDevice()->createGraphicsPipelines(pipelineCache, 1, &pipelineInfo, nullptr, &default_pipeline);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	//device.destroyShaderModule(frag_shader_module, nullptr);
+	//device.destroyShaderModule(vert_shader_module, nullptr);
+}
+
 
 void DisplaySurface::Render()
 {
 	Resize();
 
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
+	SwapchainImageResources &res=swapchain_image_resources[current_buffer];
+	
+	static vec4 clear = { 0.0f,0.0f,1.0f,1.0f };
+	
+	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	vk::ClearValue const clearValues[1] = { vk::ClearColorValue(std::array<float, 4>({{clear.x,clear.y,clear.z,clear.w}})) };
+	auto &commandBuffer=res.cmd;
+	auto const passInfo = vk::RenderPassBeginInfo()
+		.setRenderPass(render_pass)
+		.setFramebuffer(swapchain_image_resources[current_buffer].framebuffer)
+		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)viewport.w, (uint32_t)viewport.h)))
+		.setClearValueCount(1)
+		.setPClearValues(clearValues);
+	auto result = res.cmd.begin(&commandInfo);
+	SIMUL_VK_CHECK(result);
 
 	crossplatform::DeviceContext &immediateContext = renderPlatform->GetImmediateContext();
 	deferredContext.platform_context = immediateContext.platform_context;
@@ -307,18 +759,133 @@ void DisplaySurface::Render()
 
 	renderPlatform->StoreRenderState(deferredContext);
 
-	static vec4 clear = { 0.0f,0.0f,1.0f,1.0f };
-	//glViewport(0, 0, viewport.w, viewport.h);   
-	//glClearColor(clear.x,clear.y,clear.z,clear.w);
-	//glClearDepth(1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, default_pipeline);
+	//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout, 0, 1,
+	//	&swapchain_image_resources[current_buffer].descriptor_set, 0, nullptr);
+
+	auto const vkViewport =
+		vk::Viewport().setWidth((float)viewport.w).setHeight((float)viewport.h).setMinDepth((float)0.0f).setMaxDepth((float)1.0f);
+	commandBuffer.setViewport(0, 1, &vkViewport);
+
+	vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(viewport.w, viewport.h));
+	commandBuffer.setScissor(0, 1, &scissor);
+	commandBuffer.draw(12 * 3, 1, 0, 0);
+	// Note that ending the renderpass changes the image's layout from
+	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
+	commandBuffer.endRenderPass();
+
+
+
+
 	if (renderer)
 		renderer->Render(mViewId, 0, 0, viewport.w, viewport.h);
 
 	renderPlatform->RestoreRenderState(deferredContext);
-	SwapBuffers(hDC);
-//	wglMakeCurrent(hDC,hglrc);
+	res.cmd.end();
+	Present();
 }
+
+void DisplaySurface::Present()
+{
+	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
+// Ensure no more than FRAME_LAG renderings are outstanding
+	vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
+	vulkanDevice->resetFences(1, &fences[frame_index]);
+
+	vk::Result result;
+	do
+	{
+		result =
+			vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
+		if (result == vk::Result::eErrorOutOfDateKHR)
+		{
+// demo->swapchain is out of date (e.g. the window was resized) and
+// must be recreated:
+			Resize();
+		}
+		else if (result == vk::Result::eSuboptimalKHR)
+		{
+// swapchain is not as optimal as it could be, but the platform's
+// presentation engine will still present the image correctly.
+			break;
+		}
+		else
+		{
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+		}
+	} while (result != vk::Result::eSuccess);
+
+	//update_data_buffer();
+
+	// Wait for the image acquired semaphore to be signaled to ensure
+	// that the image won't be rendered to until the presentation
+	// engine has fully released ownership to the application, and it is
+	// okay to render to the image.
+	vk::PipelineStageFlags const pipe_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	auto const submit_info = vk::SubmitInfo()
+								.setPWaitDstStageMask(&pipe_stage_flags)
+								.setWaitSemaphoreCount(1)
+								.setPWaitSemaphores(&image_acquired_semaphores[frame_index])
+								.setCommandBufferCount(1)
+								.setPCommandBuffers(&swapchain_image_resources[current_buffer].cmd)
+								.setSignalSemaphoreCount(1)
+								.setPSignalSemaphores(&draw_complete_semaphores[frame_index]);
+
+	result = graphics_queue.submit(1, &submit_info, fences[frame_index]);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	bool separate_present_queue=(graphics_queue_family_index!=present_queue_family_index);
+	if (separate_present_queue)
+	{
+// If we are using separate queues, change image ownership to the
+// present queue before presenting, waiting for the draw complete
+// semaphore and signalling the ownership released semaphore when
+// finished
+		auto const present_submit_info = vk::SubmitInfo()
+			.setPWaitDstStageMask(&pipe_stage_flags)
+			.setWaitSemaphoreCount(1)
+			.setPWaitSemaphores(&draw_complete_semaphores[frame_index])
+			.setCommandBufferCount(1)
+			.setPCommandBuffers(&swapchain_image_resources[current_buffer].graphics_to_present_cmd)
+			.setSignalSemaphoreCount(1)
+			.setPSignalSemaphores(&image_ownership_semaphores[frame_index]);
+
+		result = present_queue.submit(1, &present_submit_info, vk::Fence());
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+
+	// If we are using separate queues we have to wait for image ownership,
+	// otherwise wait for draw complete
+	auto const presentInfo = vk::PresentInfoKHR()
+		.setWaitSemaphoreCount(1)
+		.setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index]
+			: &draw_complete_semaphores[frame_index])
+		.setSwapchainCount(1)
+		.setPSwapchains(&swapchain)
+		.setPImageIndices(&current_buffer);
+
+	result = present_queue.presentKHR(&presentInfo);
+	frame_index += 1;
+	frame_index %= SIMUL_VULKAN_FRAME_LAG;
+	if (result == vk::Result::eErrorOutOfDateKHR)
+	{
+// swapchain is out of date (e.g. the window was resized) and
+// must be recreated:
+		Resize();
+	}
+	else if (result == vk::Result::eSuboptimalKHR)
+	{
+// swapchain is not as optimal as it could be, but the platform's
+// presentation engine will still present the image correctly.
+	}
+	else
+	{
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+}
+
 
 void DisplaySurface::EndFrame()
 {

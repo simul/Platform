@@ -54,4 +54,5 @@
 #define SIMUL_VULKAN_EXPORT_CLASS class SIMUL_VULKAN_EXPORT
 #define SIMUL_VULKAN_EXPORT_STRUCT struct SIMUL_VULKAN_EXPORT
 
+#define SIMUL_VK_CHECK(result) SIMUL_ASSERT(result == vk::Result::eSuccess);
 #endif
