@@ -23,7 +23,7 @@ namespace simul
 			std::vector<unsigned > m_index;
 			// TODO: All this should be PER-CONTEXT:
 			__int64 framenumber;
-			int num_this_frame;
+			UINT num_this_frame;
 			BYTE* m_pPlacementBuffer;
 	#endif
 			UINT byteWidth;
