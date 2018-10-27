@@ -81,9 +81,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="GLSL\CppGlsl.hs">
-      <Filter>GLSL</Filter>
-    </None>
     <None Include="GLSL\shader_platform.sl">
       <Filter>GLSL</Filter>
     </None>
@@ -318,12 +315,6 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">

@@ -280,13 +280,13 @@ texc.xy+=cirrusWindVector.xy*pow(fall_amount,2.0);
 CS_LAYOUT(4,4,4)
 shader void CS_MixInit( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer((int3)idx,true);
+	MixInLayer(int3(idx),true);
 }
 
 CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer((int3)idx,false);
+	MixInLayer(int3(idx),false);
 }
 
 CS_LAYOUT(4,4,4)
@@ -773,7 +773,7 @@ void Lightpass(uint3 pos,bool depth)
 }
 
 #define BLOCK_SIZE 4
-void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
+void CS_Raytrace(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -840,7 +840,7 @@ void Interp(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
 	//outputTexture3[pos]		=f.nearFarDepth;
 }
 
-void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
+void CS_RaytraceStatic(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays,bool consistent_steps)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -858,7 +858,7 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
 }
 
-void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
+void CS_RaytraceStaticEdge(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays,bool consistent_steps)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;

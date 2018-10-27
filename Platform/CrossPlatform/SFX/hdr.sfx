@@ -328,7 +328,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,true
 															,fogColour
 															,fogAmbient
-															,false);
+															,false
+															,0.0,0.0);
 	float sine_horizon = sin(-acos(R /r));
 	result.add.rgb += cubemapGroundColour*step(sine, sine_horizon)*result.multiply.rgb;
 	result.add.rgb = pow(result.add.rgb, vec3(gamma, gamma, gamma));

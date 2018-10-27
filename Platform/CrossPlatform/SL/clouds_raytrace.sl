@@ -25,7 +25,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,vec3 cloudIrRadiance1
 											,vec3 cloudIrRadiance2
 											,const int num_interp
-											,bool do_godrays=false)
+											,bool do_godrays)
 {
 	RaytracePixelOutput res;
 	vec4 insc[NUM_CLOUD_INTERP];
@@ -213,7 +213,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		// Now sample at the end point:
 		world_pos					+=stepKm*view;
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
-		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
+		vec3 cloudTexCoords			=cloudWorldOffsetKm*inverseScalesKm;
 		c							+=c_step;
 		int2 intermediate			=abs(c.xy&int2(1,1));
 		float is_inter				=dot(N.xy,vec2(intermediate));

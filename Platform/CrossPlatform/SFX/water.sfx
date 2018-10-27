@@ -304,7 +304,7 @@ shader vec4 PS_ShowSpatialStructuredBuffer( posTexVertexOutput In):SV_TARGET
 
 
 // Displacement -> Normal, Folding
-shader float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
+shader vec4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 {
 	// Sample neighbour texels
 	vec2 one_texel = vec2(1.0 / float(g_OutWidth*2), 1.0 / float(g_OutHeight*2));
@@ -1827,9 +1827,9 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 	//return min(Output, vec4(1.0,1.0,1.0,1.0));
 }
 
-shader float4 CopyDepthStencilPS(posTexVertexOutput In) : SV_Target
+shader vec4 CopyDepthStencilPS(posTexVertexOutput In) : SV_Target
 {
-	float4 Output =  g_texDepth.SampleLevel(wwcSamplerState, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
+	vec4 Output =  g_texDepth.SampleLevel(wwcSamplerState, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
 	return Output;
 }
 /*
@@ -2185,7 +2185,7 @@ technique update_probes
 }
 
 technique precompute_profile_buffer
-{
+{ 
 	pass p0
 	{
 		SetRasterizerState(RenderNoCull);

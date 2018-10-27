@@ -391,11 +391,8 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
-    <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\GLSL.json" />
     <None Include="GLSL\shader_platform.sl" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">

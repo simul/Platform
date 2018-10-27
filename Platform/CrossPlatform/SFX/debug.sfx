@@ -222,7 +222,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	{
 		vertex_id				-=(latitudes+1)*(longitudes+1);
 		uint longitude_strip	=vertex_id/(latitudes+1);
-		int latitude			=vertex_id-longitude_strip*(latitudes+1);
+		int latitude			=int(vertex_id-longitude_strip*(latitudes+1));
 		float azimuth			=2.0*3.1415926536*float(longitude_strip)/float(longitudes);
 		float elevation			=.999*(float(latitude)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el			=cos(elevation);
