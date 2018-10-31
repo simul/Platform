@@ -1,4 +1,5 @@
 #pragma once
+#include "Simul/Base/ReadWriteMutex.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
