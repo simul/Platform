@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -31,6 +32,7 @@ namespace simul
 
 			vk::Device *AsVulkanDevice() override;
 			vk::Instance *AsVulkanInstance();
+			vk::PhysicalDevice *GetVulkanGPU();
 			const char* GetName() const override;
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
@@ -51,10 +53,9 @@ namespace simul
             void        GenerateMips(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
             //! This should be called after a Draw/Dispatch command that uses
             //! textures. Here we will apply the textures.
-            void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
+			bool		ApplyContextState(crossplatform::DeviceContext &deviceContext,bool error_checking=true) override;
 
             void        InsertFences(crossplatform::DeviceContext& deviceContext);
-
             crossplatform::Material*                CreateMaterial();
 			crossplatform::Texture*                 CreateTexture(const char *lFileNameUtf8= nullptr) override;
 			crossplatform::BaseFramebuffer*         CreateFramebuffer(const char *name=nullptr) override;
@@ -90,15 +91,16 @@ namespace simul
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			
-        /*    static Vulkanenum                           toVulkanTopology(crossplatform::Topology t);
-            static Vulkanenum                           toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f);
-            static Vulkanenum                           toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
-			static Vulkanint                           toVulkanWrapping(crossplatform::SamplerStateDesc::Wrapping w);
-			static                                  Vulkanuint ToVulkanFormat(crossplatform::PixelFormat p);
-			static                                  crossplatform::PixelFormat FromVulkanFormat(Vulkanuint p);
-			static                                  Vulkanuint ToVulkanExternalFormat(crossplatform::PixelFormat p);
-			static                                  Vulkanenum DataType(crossplatform::PixelFormat p);*/
+            static vk::PrimitiveTopology			toVulkanTopology(crossplatform::Topology t);
+            static vk::Filter                       toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f);
+            static vk::Filter                       toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
+			static vk::SamplerAddressMode			toVulkanWrapping(crossplatform::SamplerStateDesc::Wrapping w);
+			static vk::Format						ToVulkanFormat(crossplatform::PixelFormat p);
+			static                                  crossplatform::PixelFormat FromVulkanFormat(vk::Format p);
+			static vk::Format						ToVulkanExternalFormat(crossplatform::PixelFormat p);
+			//static                                  Vulkanenum DataType(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);
+			bool									memory_type_from_properties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex);
             
             //! Makes the handle resident only if its not resident already
            // void                                    MakeTextureResident(Vulkanuint64 handle);
@@ -106,12 +108,15 @@ namespace simul
             vulkan::Texture*                        GetDummy2D();
             //! Returns 3D dummy texture 1 white texel
             vulkan::Texture*                        GetDummy3D();
-
+			
+			vk::Framebuffer *GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext);
         private:
 			vk::Instance		*vulkanInstance;
+			vk::PhysicalDevice	*vulkanGpu;
 			vk::Device			*vulkanDevice;
             vulkan::Texture*    mDummy2D;
             vulkan::Texture*    mDummy3D;
+			vk::DescriptorPool mDescriptorPool;
 		};
 	}
 }

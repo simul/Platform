@@ -643,8 +643,8 @@ void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& 
 {
 }
 
-EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r)
-	:crossplatform::EffectTechnique(r)
+EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r,crossplatform::Effect *e)
+	:crossplatform::EffectTechnique(r,e)
 {
 }
 
@@ -1119,7 +1119,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 
 crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 {
-	crossplatform::EffectPass *p=new dx12::EffectPass(renderPlatform);
+	crossplatform::EffectPass *p=new dx12::EffectPass(renderPlatform,effect);
 	passes_by_name[name]=passes_by_index[i]=p;
 	return p;
 }
@@ -1652,8 +1652,8 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     return hash;
 }
 
-EffectPass::EffectPass(crossplatform::RenderPlatform *r):
-	crossplatform::EffectPass(r)
+EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
+	crossplatform::EffectPass(r,e)
     ,mInUseOverrideDepthState(nullptr)
     ,mInUseOverrideBlendState(nullptr)
 {

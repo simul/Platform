@@ -37,7 +37,7 @@ namespace simul
 			static const UINT				mBufferSize = 1024 * 64 * 8;
 			//! Number of ring buffers
 			static const UINT				kNumBuffers = 3;
-			UINT							mSlots;
+			UINT							mSlots;				//number of 256-byte chunks of memory...
 			UINT							mMaxDescriptors;
 
 			UINT							mLastFrameIndex;

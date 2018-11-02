@@ -131,6 +131,8 @@ namespace simul
 			{
 				return can_save_and_restore;
 			}
+			//! Returns the current idx (used in ring buffers)
+			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
 			//! Returns the DX12 graphics command list
@@ -343,6 +345,14 @@ namespace simul
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
 			bool can_save_and_restore;
+			//! Value used to determine the number of "x" that we will have, this is useful in dx12
+			//! as many times we can not reuse the same resource as in the last frame so we need to have 
+			//! a ring buffer.
+			static const int			kNumIdx = 3;
+			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
+			UCHAR						mCurIdx;
+			//! Last frame number
+			long long					mLastFrame;
 		public:
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.

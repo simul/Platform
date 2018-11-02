@@ -3,7 +3,6 @@
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 #include <vulkan/vulkan.hpp>
-#define SIMUL_VULKAN_FRAME_LAG 2
 
 typedef struct GLFWwindow GLFWwindow;
 namespace simul

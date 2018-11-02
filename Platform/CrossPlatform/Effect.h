@@ -256,10 +256,11 @@ namespace simul
 				,rwTextureSlotsForSB(0)
 				,constantBufferSlots(0)
 				,samplerSlots(0)
+				,renderPlatform(nullptr)
 				{
 				}
 			virtual ~Shader(){}
-			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) = 0;
+			virtual void load(crossplatform::RenderPlatform *r, const char *filename, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesConstantBufferSlot(int s);
@@ -274,6 +275,7 @@ namespace simul
 			bool usesRwTextureSlot(int s) const;
 			std::string pixel_str;
 			std::string name;
+			std::string entryPoint;
 			crossplatform::ShaderType type;
 			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
 			unsigned textureSlots;			//t
@@ -282,6 +284,7 @@ namespace simul
 			unsigned rwTextureSlotsForSB;	//u
 			unsigned constantBufferSlots;	//b
 			unsigned samplerSlots;			//s
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 		/// A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
@@ -309,7 +312,7 @@ namespace simul
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
             std::string rtFormatState;
-			EffectPass(RenderPlatform *r);
+			EffectPass(RenderPlatform *r,Effect *parent);
 			virtual ~EffectPass(){}
 
 			//! This updates the mapping from the pass's list of resources to the effect slot numbers (0-31)
@@ -407,6 +410,7 @@ namespace simul
 			bool should_fence_outputs;
 			void *platform_pass;
 			crossplatform::RenderPlatform *renderPlatform;
+			crossplatform::Effect* effect;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
@@ -732,7 +736,7 @@ namespace simul
 			PassMap passes_by_name;
 			PassIndexMap passes_by_index;
 			IndexMap pass_indices;
-			EffectTechnique(RenderPlatform *r);
+			EffectTechnique(RenderPlatform *r,Effect *e);
 			virtual ~EffectTechnique();
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
@@ -747,6 +751,7 @@ namespace simul
 			{
 				return (GLuint)0;
 			}
+
 			inline int GetPassIndex(const char *n)
 			{
 				std::string str(n);
@@ -770,6 +775,7 @@ namespace simul
 			EffectPass *GetPass(const char *name);
 		protected:
 			RenderPlatform *renderPlatform;
+			crossplatform::Effect *effect;
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
 		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;
@@ -854,6 +860,7 @@ namespace simul
 				std::map<std::string,std::string> defines;
 				Load(r,filename_utf8,defines);
 			}
+			virtual void Compile(const char *filename_utf8){};
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{

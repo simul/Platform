@@ -28,8 +28,6 @@ using namespace dx12;
 RenderPlatform::RenderPlatform():
 	mCommandList(nullptr),
 	m12Device(nullptr),
-	mLastFrame(-1),
-	mCurIdx(0),
 	mTimeStampFreq(0),
 	mSamplerHeap(nullptr),
 	mRenderTargetHeap(nullptr),

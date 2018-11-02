@@ -1,2214 +1,1545 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+
+// Recommended by D Cook of MS to fix Xbox compiler crash:
+#define __XBOX_DISABLE_ITERATION
+
 #include "shader_platform.sl"
 
 #include "../SL/common.sl"
-#include "../SL/states.sl"
-#include "../SL/water_constants.sl"
-#include "../SL/water.sl"
 #include "../SL/render_states.sl"
 #include "../SL/simul_inscatter_fns.sl"
-#include "../SL/debug_constants.sl"
+#include "../SL/simul_cloud_constants.sl"
 #include "../SL/depth.sl"
+
+uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
+
+#include "../SL/simul_clouds.sl"
+#include "../SL/clouds_lightpass.sl"
+#include "../SL/clouds_simple.sl"
+#include "../SL/clouds_raytrace.sl"
+#include "../SL/states.sl"
+#include "../SL/earth_shadow_fade.sl"
+#include "../SL/debug_constants.sl"
+#include "../SL/gpu_cloud_constants.sl"
+#include "../SL/simul_gpu_clouds.sl"
 #include "../SL/noise.sl"
 
-uniform Texture2D	g_samplerDisplacementMap	SIMUL_TEXTURE_REGISTER(0);
+uniform Texture3D cloudDensity				SIMUL_TEXTURE_REGISTER(0);
+uniform Texture3D cloudDensity2				SIMUL_TEXTURE_REGISTER(1);
+uniform Texture3D noiseTexture3D			SIMUL_TEXTURE_REGISTER(2);
+uniform Texture3D godraysTexture			SIMUL_TEXTURE_REGISTER(3);
+uniform Texture3D volumeInscatterTexture	SIMUL_TEXTURE_REGISTER(4);
+uniform Texture2D skylTexture				SIMUL_TEXTURE_REGISTER(3);
+uniform Texture2D inscTexture				SIMUL_TEXTURE_REGISTER(4);
+uniform Texture2D lossTexture				SIMUL_TEXTURE_REGISTER(5);
+uniform TextureCube depthTexture;
+uniform Texture2D illuminationTexture;
+uniform Texture2D lightTableTexture;
+uniform Texture2D rainbowLookupTexture;
+uniform Texture2D coronaLookupTexture;
+uniform Texture2D rainMapTexture;
+/// The previous texture area:
+uniform Texture2DArray updateTexture;
+uniform RWTexture3D<uchar4> outputTexture3d			SIMUL_RWTEXTURE_REGISTER(0);
+#ifdef SFX_TYPED_UAV_LOADS
+uniform RWTexture3D<uchar4> packedOutputTexture3d	SIMUL_RWTEXTURE_REGISTER(0);
+#else
+uniform RWTexture3D<uint> packedOutputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
+#endif
+uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
-uniform Texture2D	showTexture					SIMUL_TEXTURE_REGISTER(0);
+uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries SIMUL_RWTEXTURE_REGISTER(4);
 
-//uniform Texture2D	g_texDisplacement			SIMUL_TEXTURE_REGISTER(0);		// FFT wave displacement map in VS
-//uniform Texture2D	g_texGradient				SIMUL_TEXTURE_REGISTER(1);		// FFT wave gradient map in PS
-uniform Texture2D	g_texColour					SIMUL_TEXTURE_REGISTER(2);		// Colour of the render target, used for refraction
-uniform Texture2D	g_texDepth					SIMUL_TEXTURE_REGISTER(3);		// Depth of rendered scene up till now
-//uniform Texture2D	g_foamTexture				SIMUL_TEXTURE_REGISTER(4);		// Foam colour
-//uniform Texture2D	g_foamAlpha					SIMUL_TEXTURE_REGISTER(5);		// Foam Alpha
-uniform Texture2D	g_surfaceFoamTexture		SIMUL_TEXTURE_REGISTER(6);		// Foam Surface colour
-uniform Texture2D	g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(7);		// Shore depth for shallow water effects
-//uniform Texture2D	g_texDetailMapDisplacement	SIMUL_TEXTURE_REGISTER(8);		// Detail map displacement
-//uniform Texture2D	g_texPerlin					SIMUL_TEXTURE_REGISTER(9);		// Perlin map for tiling reduction
-uniform Texture2DArray	g_ProfileBuffers		SIMUL_TEXTURE_REGISTER(10);		// Profile Buffer Texture
+uniform StructuredBuffer<vec3> queryInputs SIMUL_TEXTURE_REGISTER(3);
 
-uniform Texture2D	g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
-uniform Texture2D	g_waterAbsorption			SIMUL_TEXTURE_REGISTER(1);		// Absorption of the water, 4th value Foam strength
-uniform Texture2D	g_waterScattering			SIMUL_TEXTURE_REGISTER(2);		// Scattering of the water, 4th value Foam enabled
-uniform Texture2D	g_waterNormals				SIMUL_TEXTURE_REGISTER(3);		// Normals of the water held in seperate texture to allow for multiple instances, 4th value states if there is an underwater surface
-uniform Texture2D	g_waterRefractColour		SIMUL_TEXTURE_REGISTER(4);		// Colour of the refracted underwater surface
-uniform TextureCube	g_texReflectCube			: register(t5);					// A skybox cube texture for reflection
-
-
-uniform Texture3D					g_InputAmplitude;
-uniform RWTexture3D<float>			g_OutputAmplitude;
-
-uniform StructuredBuffer<vec2>		g_WaveSpectrum: register (t2);
-uniform RWStructuredBuffer<float>	g_GroupSpeeds:	register (u3);
-
-// The following three should contains only real numbers. But we have only C2C FFT now.
-uniform StructuredBuffer<vec2>		g_InputDxyz;
-uniform RWStructuredBuffer<vec2>	g_InputH0:		register(u5);
-uniform RWStructuredBuffer<vec2>	g_OutputHt;
-uniform RWStructuredBuffer<float>	g_InputOmega:	register(u6);
-
-uniform StructuredBuffer<vec3>		g_ProbePos		SIMUL_TEXTURE_REGISTER(1);
-uniform StructuredBuffer<vec4>		g_ProbeValues	SIMUL_TEXTURE_REGISTER(2);
-uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
-
-// FFT wave displacement map in VS, XY for choppy field, Z for height field
-
-// Perlin noise for composing distant waves, W for height field, XY for gradient
-SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
+uniform RWStructuredBuffer<LineQueryResult> lineQueryResults SIMUL_RWTEXTURE_REGISTER(5);
+CS_LAYOUT(1,1,1)
+shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
-	Filter =ANISOTROPIC;
-	AddressU =WRAP;
-	AddressV =WRAP;
-	AddressW =WRAP;
-	MipLODBias = 0;
-	//ComparisonFunc = NEVER;
-	MinLOD = 0;
-	MaxLOD = 1000000;
-	MaxAnisotropy = 16;
-};
+	uint num=0;
+	uint byteStride=0;
+	//queryInputs.GetDimensions(num,byteStride);
+	//if(sub_pos.x>=num)
+	//	return;
+	VolumeQueryResult res;
+	res.pos_km						=queryInputs[sub_pos.x+firstInput];
+	res.valid						=1;
+	vec3 cloudWorldOffsetKm			=res.pos_km-cornerPosKm;
+	vec3 cloudTexCoords				=cloudWorldOffsetKm*inverseScalesKm;
+	vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+	res.density						=lookup.z;
+	vec4 light_lookup				=sample_3d_lod(cloudDensity2,cloudSamplerState,cloudTexCoords,0);
+	res.direct_light				=light_lookup.y;
+	res.indirect_light				=light_lookup.x;
+	res.ambient_light				=light_lookup.w;
+	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
+	res.rain_to_snow				=0.0;
+	volumeQueries[sub_pos.x]		=res;
+}
 
-// FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient SIMUL_STATE_REGISTER(5)
+CS_LAYOUT(1,1,1)
+shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
-	Filter =ANISOTROPIC;
-	AddressU =WRAP;
-	AddressV =WRAP;
-	AddressW =WRAP;
-	MipLODBias = 0;
-	MaxAnisotropy = 16;
-};
-
-// Amplitude grid for waver wavelets
-SamplerState g_samplerAmpGrid SIMUL_STATE_REGISTER(7)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = WRAP;
-	AddressV = WRAP;
-	AddressW = WRAP;
-	MipLODBias = 0;
-	MaxAnisotropy = 16;
-};
-
-SamplerState g_samplerProfileBuffer SIMUL_STATE_REGISTER(8)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = WRAP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-	MipLODBias = 0;
-};
-
-SamplerState bbbSamplerState SIMUL_STATE_REGISTER(9)
-{
-	Filter = ANISOTROPIC;
-	AddressU = BORDER;
-	AddressV = BORDER;
-	AddressW = BORDER;
-};
-
-uniform StructuredBuffer<float2>	g_SrcData ;
-uniform RWStructuredBuffer<float2>	g_DstData ;
-
-[numthreads(COHERENCY_GRANULARITY, 1, 1)]
-shader void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
-{
-	if (thread_id.x >= thread_count)
+	vec3 orig						=queryInputs[sub_pos.x*2+firstInput];
+	vec3 start_pos					=orig;
+	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
+	vec3 diff						=end_pos-start_pos;
+	float total_dist				=length(diff);
+	if(total_dist<=0.0000001)
 		return;
-	uint threadx=thread_id.x;
-	// Fetch 8 complex numbers
-	float2 D[8];
-	uint i;
-	uint imod = threadx & (istride - 1);
-	uint iaddr = ((threadx - imod) << 3) + imod;
-	for (i = 0; i < 8; i++)
-		D[i] = g_SrcData[iaddr + i * istride];
+	float max_dist					=total_dist;
+	LineQueryResult res;
+	res.valid						=1;
+	res.density						=0.0;
+	res.visibility					=1.0;
+	res.optical_thickness_km		=0.0;
+	res.first_contact_km			=max_dist;
+	vec3 dir						=diff/total_dist;
+	float dz_plus					=max(0.0001, dir.z);
+	float dz_minus					=max(0.0001,-dir.z);
+	float start_dist=0;
+	// How far under?
+	vec3 offsetKm1					=start_pos-cornerPosKm;
+	float under						=max(0.0,-offsetKm1.z);
+	float over						=max(0.0,offsetKm1.z-1.0/inverseScalesKm.z);
+	start_dist						=max(over/dz_minus,under/dz_plus);
+	start_dist						=min(start_dist,total_dist);
+	start_pos						+=dir*start_dist;
+	
+	vec3 offsetKm2					=end_pos-cornerPosKm;
+	// How far under?
+	float under2					=max(0.0,-offsetKm2.z);
+	float over2						=max(0.0,offsetKm2.z-1.0/inverseScalesKm.z);
+	float end_dist					=total_dist+max(over2/dz_minus,under2/dz_plus);
+	end_dist						=min(end_dist,total_dist);
+	end_dist						=max(start_dist,end_dist);
+	end_pos							=start_pos+dir*end_dist;
+	diff							=end_pos-start_pos;
+	total_dist						=length(diff);
+	
+	res.pos1_km						=start_pos;
+	res.pos2_km						=end_pos;
 
-	// Math
-	FFT_forward_8(D);
-	uint p = threadx & (istride - pstride);
-	float phase = phase_base * float(p);
-	TWIDDLE_8(D, phase);
-
-	// Store the result
-	uint omod = threadx & (ostride - 1);
-	uint oaddr = ((threadx - omod) << 3) + omod;
-	g_DstData[oaddr + 0 * ostride] = D[0];
-	g_DstData[oaddr + 1 * ostride] = D[4];
-	g_DstData[oaddr + 2 * ostride] = D[2];
-	g_DstData[oaddr + 3 * ostride] = D[6];
-	g_DstData[oaddr + 4 * ostride] = D[1];
-	g_DstData[oaddr + 5 * ostride] = D[5];
-	g_DstData[oaddr + 6 * ostride] = D[3];
-	g_DstData[oaddr + 7 * ostride] = D[7];
+	//if(total_dist>0&&dot(dir,res.pos2_km-res.pos1_km)>0.0)
+	if(start_dist<max_dist)
+	{
+		float stepSize						=total_dist/32.0;
+		int i=0;
+		for( i=0;i<33;i++)
+		{
+			vec3 pos						=lerp(start_pos,end_pos,float(i)/32.0);
+			vec3 cloudTexCoords				=(pos-cornerPosKm)*inverseScalesKm;
+			vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+			if(res.density==0.0&&lookup.z>0)
+				res.first_contact_km		=min(res.first_contact_km,length(pos-orig));
+			res.density						+=lookup.z/32.0;
+			res.visibility					*=1.0-lookup.z;
+			res.optical_thickness_km		+=stepSize*lookup.z;
+		}
+	}
+	lineQueryResults[sub_pos.x]	=res;
 }
 
+#ifndef DETAIL_NOISE
+	#define DETAIL_NOISE 1
+#endif
 
-[numthreads(COHERENCY_GRANULARITY, 1, 1)]
-shader void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
+#ifdef SFX_TYPED_UAV_LOADS
+vec4 UnpackUintToVec4(vec4 a)
 {
-	if(thread_id.x >= thread_count)
+	return a;
+}
+vec4 PackVec4ToUint(vec4 a)
+{
+	return a;
+}
+#else
+
+vec4 UnpackUintToVec4(uint i)
+{
+	vec4 o;
+	o.r=((i&0x000000FFu)		)/255.0;
+	o.g=((i&0x0000FF00u)>>8u	)/255.0;
+	o.b=((i&0x00FF0000u)>>16u	)/255.0;
+	o.a=((i&0xFF000000u)>>24u	)/255.0;
+	return o;
+}
+
+uint PackVec4ToUint(vec4 i)
+{
+	uint o=0u;
+	i=saturate(i);
+	o|=(uint(i.x*255.0));
+	o|=(uint(i.y*255.0)<<8u);
+	o|=(uint(i.z*255.0)<<16u);
+	o|=(uint(i.w*255.0)<<24u);
+	//uint(i.w*255.0)|(uint(i.z*255.0)<<16u)|(uint(i.y*255.0)<<32u)|;
+	return o;
+}
+#endif
+
+
+// idx is the position relative to the grid centre texel.
+// we add gridCentreTexel and mod to get the true position in the texture.
+void MixInLayer( int3 p,bool clears)
+{
+	int3 idx	=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
-	uint threadx=thread_id.x;
-	// Fetch 8 complex numbers
-	uint i;
-	float2 D[8];
-	uint iaddr = threadx << 3;
-	for (i = 0; i < 8; i++)
-		D[i] = g_SrcData[iaddr + i];
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+	vec4 res	=vec4(0.0,0.0,0.0,0.0);
+	float zPixel1			=1.0/float(windowGrid.z);
+	float layer_saturate	=saturate(texc.z / zPixel1+1.0)*saturate((1.0+zPixel1 - texc.z)/ zPixel1);
+	if((texc.z>=-2.0*zPixel1&&texc.z<=1.0+2.0*zPixel1))
+	//if(clears)
+	{
+		for (int i = -2; i < 3; i++)
+		{
+			vec3 tc		= texc;
+			tc.z		+= zPixel1*i*.5;
+			vec4 c1		= cloudDensity.SampleLevel(wwcSamplerState, tc, 0);
+			vec4 c2		= cloudDensity2.SampleLevel(wwcSamplerState, tc, 0);
 
-	// Math
-	FFT_forward_8(D);
+			res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+		}
+	
+		res.z			=saturate(2.0*layer_saturate*((res.z-0.15)/diffusivity+0.15));
 
-	// Store the result
-	uint omod = threadx & (ostride - 1);
-	uint oaddr = ((threadx - omod) << 3) + omod;
-	g_DstData[oaddr + 0 * ostride] = D[0];
-	g_DstData[oaddr + 1 * ostride] = D[4];
-	g_DstData[oaddr + 2 * ostride] = D[2];
-	g_DstData[oaddr + 3 * ostride] = D[6];
-	g_DstData[oaddr + 4 * ostride] = D[1];
-	g_DstData[oaddr + 5 * ostride] = D[5];
-	g_DstData[oaddr + 6 * ostride] = D[3];
-	g_DstData[oaddr + 7 * ostride] = D[7];
+		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
+		res.w=edgeSharpness;
+
+		// stronger noise at the top:
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		// variation:
+		noise_factor *= (0.5 + rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y		=saturate(localCellNoiseStrength*noise_factor);
+	}
+	vec4 current=res;
+	if(!clears)
+	{
+		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
+	}
+	res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
+	res.z		=max(res.z*max_density_gm3,current.z);
+	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
+	
 }
 
-//---------------------------------------- Compute Shaders -----------------------------------------
-
-// Pre-FFT data preparation:
-
-// Notice: In CS5.0, we can output up to 8 RWBuffers but in CS4.x only one output buffer is allowed,
-// that way we have to allocate one big buffer and manage the offsets manually. The restriction is
-// not caused by NVIDIA GPUs and does not present on NVIDIA GPUs when using other computing APIs like
-// CUDA and OpenCL.
-
-// Generate H(0)
-[numthreads(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1)]
-shader void GenerateHeightMapCS(uint3 sub_pos : SV_DispatchThreadID)
+void MixInCirrus(uint3 ii,bool clears)
 {
-	if (sub_pos.x > g_gridSize || sub_pos.y > g_gridSize)
+	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
-
-	static float scale = 0.5f;
-	const float HALF_SQRT_2 = 0.7071068f;
-	static float g = 981.f;
-
-	vec2 K;
-
-	// K is wave-vector, range [-|DX/W, |DX/W], [-|DY/H, |DY/H]
-	// According to Tessendorf, k points in the wave's direction of travel,
-	// and has magnitude k related to the wavelength l by k=2pi/l.
-	K.y = (-1.0f + 2.0f*(float)sub_pos.x / (float)g_gridSize)*2.0f*SIMUL_PI_F / scale;
-	// So K.y goes from -2 SIMUL_PI_F/scale to +2 SIMUL_PI_F/scale
-	// And so the wavelength range goes from scale to scale*gridsize/2
-	K.x = (-1.0f + 2.0f*(float)sub_pos.y / (float)g_gridSize)*2.0f*SIMUL_PI_F / scale;
-	// i.e. K.x goes from 
-	float phil = (K.x == 0 && K.y == 0) ? 0 : sqrt(Phillips2(K, g_windDir, g_windSpeed, g_amplitude, g_windDependency));
-
-	g_InputH0[(sub_pos.x * (g_gridSize + 4)) + sub_pos.y].x = phil*Gauss(vec2((vec2)sub_pos.xy / (float)g_gridSize))*HALF_SQRT_2;
-	g_InputH0[(sub_pos.x * (g_gridSize + 4)) + sub_pos.y].y = phil*Gauss(vec2((vec2)sub_pos.xy / (float)g_gridSize))*HALF_SQRT_2;
-
-	// The angular frequency is following the dispersion relation:
-	//            out_omega^2 = g |k|
-	// The equation of Gerstner wave:
-	//            x = x0 - K/k * A * sin(dot(K, x0) - sqrt(g * k) * t), x is a 2D vector.
-	//            z = A * cos(dot(K, x0) - sqrt(g * k) * t)
-	// Gerstner wave shows that a point on a simple sinusoid wave is doing a uniform circular
-	// motion with the center (x0, y0, z0), radius A, and the circular plane is parallel to
-	// vector K.
-	g_InputOmega[sub_pos.x * (g_gridSize + 4) + sub_pos.y] = sqrt(g * sqrt(K.x * K.x + K.y * K.y));
-
-}
-
-
-// H(0) -> H(t)
-[numthreads(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1)]
-shader void UpdateSpectrumCS(uint3 sub_pos : SV_DispatchThreadID)
-{
-//	g_OutputHt[sub_pos.y*512+sub_pos.x]=vec2(0.2,.5);
-	int in_index = int(sub_pos.y * g_InWidth + sub_pos.x);
-	int in_mindex =int( (g_ActualDim - sub_pos.y) * g_InWidth + (g_ActualDim - sub_pos.x));
-	int out_index = int(sub_pos.y * g_OutWidth + sub_pos.x);
-
-	// H(0) -> H(t)
-	vec2 h0_k  = g_InputH0[in_index];
-	vec2 h0_mk = g_InputH0[in_mindex];
-	float sin_v, cos_v;
-	sincos(g_InputOmega[in_index] * g_Time, sin_v, cos_v);
-
-	vec2 ht;
-	ht.x = (h0_k.x + h0_mk.x) * cos_v - (h0_k.y + h0_mk.y) * sin_v;
-	ht.y = (h0_k.x - h0_mk.x) * sin_v + (h0_k.y - h0_mk.y) * cos_v;
-
-	// H(t) -> Dx(t), Dy(t)
-	float kx = sub_pos.x - g_ActualDim * 0.5;
-	float ky = sub_pos.y - g_ActualDim * 0.5;
-	float sqr_k = kx * kx + ky * ky;
-	float rsqr_k = 0;
-	if (sqr_k > 1.e-12f)
-		rsqr_k = 1 / sqrt(sqr_k);
-	//float rsqr_k = 1 / sqrtf(kx * kx + ky * ky);
-	kx *= rsqr_k;
-	ky *= rsqr_k;
-	vec2 dt_x=vec2(ht.y * kx, -ht.x * kx);
-	vec2 dt_y=vec2(ht.y * ky, -ht.x * ky);
-
-	if ((sub_pos.x < g_OutWidth) && (sub_pos.y < g_OutHeight))
-	{
-		g_OutputHt[out_index] = ht;
-		g_OutputHt[out_index + g_DxAddressOffset] = dt_x;
-		g_OutputHt[out_index + g_DyAddressOffset] = dt_y;
-	}
-}
-
-// Post-FFT data wrap up: Dx, Dy, Dz -> Displacement
-shader vec4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
-{
-	uint index_x = uint(In.texCoords.x * float(g_OutWidth));
-	uint index_y = uint(In.texCoords.y * float(g_OutHeight));
-	uint addr = g_OutWidth * index_y + index_x;
-
-	// cos(SIMUL_PI_F * (m1 + m2))
-	int sign_correction = (((index_x + index_y) & 1) != 0) ? -1 : 1;
-
-	float dx = 100.0f * g_InputDxyz[addr + g_DxAddressOffset].x * sign_correction * g_ChoppyScale;
-	float dy = 100.0f * g_InputDxyz[addr + g_DyAddressOffset].y * sign_correction * g_ChoppyScale;
-	float dz = 100.0f * g_InputDxyz[addr].x * sign_correction;
+	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+	// The position translates to a texture coordinate in the current cloudDensity texture:
 	
-	return float4(dx, dy, dz, 1);
-}
-
-shader vec4 PS_ShowFrequencyStructuredBuffer( posTexVertexOutput In):SV_TARGET
-{
-	uint index_x = uint(In.texCoords.x *float(g_ActualDim));
-	uint index_y = uint((1.0-In.texCoords.y) *float(g_ActualDim));
-	uint addr = int(bufferGrid.x) * index_y + index_x;
-    vec2 lookup	= g_InputDxyz[addr];
-	return vec4(showMultiplier*lookup.rg,0,1.0f);
-}
-
-shader vec4 PS_ShowSpatialStructuredBuffer( posTexVertexOutput In):SV_TARGET
-{ 
-	uint index_x = uint(In.texCoords.x *float(g_ActualDim));
-	uint index_y = uint((1.0-In.texCoords.y) *float(g_ActualDim));
-
-	uint addr = int(bufferGrid.x) * index_y + index_x;
-	float dx=g_InputDxyz[g_DxAddressOffset+addr].x*g_ChoppyScale;
-	float dy=g_InputDxyz[g_DyAddressOffset+addr].x*g_ChoppyScale;
-	float dz=g_InputDxyz[addr].x;
-	
-    vec3 lookup	=vec3(dx,dy,dz);
-	int sign_correction = (((index_x + index_y) & 1) != 0) ? -1 : 1;
-	lookup  *= sign_correction;
-	return vec4(showMultiplier*lookup.rgb,1.0);
-}
-
-
-// Displacement -> Normal, Folding
-shader vec4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
-{
-	// Sample neighbour texels
-	vec2 one_texel = vec2(1.0 / float(g_OutWidth*2), 1.0 / float(g_OutHeight*2));
-
-	vec2 tc_left  = vec2(In.texCoords.x - one_texel.x, In.texCoords.y);
-	vec2 tc_right = vec2(In.texCoords.x + one_texel.x, In.texCoords.y);
-	vec2 tc_back  = vec2(In.texCoords.x, In.texCoords.y - one_texel.y);
-	vec2 tc_front = vec2(In.texCoords.x, In.texCoords.y + one_texel.y);
-
-	vec3 displace_left  = g_samplerDisplacementMap.Sample(wwcSamplerState, tc_left).xyz;
-	vec3 displace_right = g_samplerDisplacementMap.Sample(wwcSamplerState, tc_right).xyz;
-	vec3 displace_back  = g_samplerDisplacementMap.Sample(wwcSamplerState, tc_back).xyz;
-	vec3 displace_front = g_samplerDisplacementMap.Sample(wwcSamplerState, tc_front).xyz;
-	
-	// Do not store the actual normal value. Using gradient instead, which preserves two differential values.
-	vec2 gradient = vec2(-(displace_right.z - displace_left.z), -(displace_front.z - displace_back.z));
-
-	// Calculate Jacobian correlation from the partial differential of height field
-	vec2 Dx = (displace_right.xy - displace_left.xy) * g_ChoppyScale;
-	vec2 Dy = (displace_front.xy - displace_back.xy) * g_ChoppyScale;
-	float J = (1.0 + Dx.x) * (1.0 + Dy.y) - Dx.y * Dy.x;
-
-	// Practical subsurface scale calculation: max[0, (1 - J) + Amplitude * (2 * Coverage - 1)].
-	float fold = max(1.0 - J, 0);
-
-	// Output
-	return vec4(gradient, 0, fold);
-}
-
-//-----------------------------------------------------------------------------
-// Name: PrecomputeGroupSpeedsCS
-// Type: Compute shader									  
-// Desc: Compute shader for initialising wave group speeds
-//-----------------------------------------------------------------------------
-[numthreads(1, 1, 1)]
-shader void PrecomputeGroupSpeedsCS(uint3 sub_pos : SV_DispatchThreadID)
-{
-	float dx = (g_WaveSpectrum[sub_pos.x].x - g_WaveSpectrum[sub_pos.x].y) / g_totalWaveNumbers;
-	float pos = g_WaveSpectrum[sub_pos.x].x + (((float)sub_pos.x + 0.5f) * dx);
-
-	float zetaMin = g_WaveSpectrum[sub_pos.x].x;// pos - (0.5f * dx);
-	float zetaMax = g_WaveSpectrum[sub_pos.x].y;// pos + (0.5f * dx);
-
-	const float g = 9.81f;
-
-	dx = (zetaMax - zetaMin) / g_integrationSteps;
-	float x = (zetaMin + 0.5f * dx);
-
-	vec2 result = vec2(0.0f, 0.0f);
-
-	for (int i = 0; i < g_integrationSteps; i++)
+	float fall_amount=saturate(1.0-texc.z);
+texc.xy+=cirrusWindVector.xy*pow(fall_amount,2.0);
+	// fall streaks.
+	vec4 res = vec4(0.0,0.0,0.0,0.0);
+	for (int i = -2; i < 3; i++)
 	{
-		float waveLength = pow(2, x);
-		float waveNumber = TAU / waveLength;
-		float cg = 0.5 * sqrt(g / waveNumber);
-		float density = spectrum(x, g_windSpeed2);
-		result += dx * vec2(cg * density, density);
-		x += dx;
+		vec3 tc		=	texc;
+		tc.z		+=	zPixel*i;
+		vec4 c1		=	cloudDensity.SampleLevel(wrapSamplerState, tc, 0);
+		vec4 c2		=	cloudDensity2.SampleLevel(wrapSamplerState, tc, 0);
+		res			+=	lerp(c1, c2, cloud_interp).zyxw/5.0;
 	}
-
-	g_GroupSpeeds[sub_pos.x] = result[0] / result[1];
-}
-
-//-----------------------------------------------------------------------------
-// Name: UpdateAmplitudeGridCS
-// Type: Compute shader									  
-// Desc: Compute shader for updating the amplitude grid
-//-----------------------------------------------------------------------------
-[numthreads(8, 8, 1)]
-shader void UpdateAmplitudeGridCS(uint3 sub_pos : SV_DispatchThreadID)
-{
-	uint3 dims;
-	GET_IMAGE_DIMENSIONS_3D(g_InputAmplitude, dims.x, dims.y, dims.z);
-
-	vec3 pos = (vec3)sub_pos;// -uint3(0, 0, 1);
-
- //	float gamma = 0.06125;// *2.0 * 0.000001 * pow(g_GroupSpeeds[g_waveGroup], 2.0);
-	float gamma = g_dt * 2.0 * pow(g_GroupSpeeds[0], 2.0) * (1.0 / dims.z);
-
-	vec3 texc = convertPosToTexc(pos, dims).xyz;
-	vec3 traceBackTexc = convertPosToTexc(pos, dims);
-
-	float angle = (pos.z / dims.z) * TAU;
-	vec2 angleVec = vec2(cos(angle), sin(angle));
-
-	vec2 vel = g_dt * g_GroupSpeeds[0] * angleVec;
-	traceBackTexc.xy -= vel / (dims.x + dims.y);
-	/*
-	if ((traceBackTexc.x > 5.0 / dims.x) && (traceBackTexc.x < 400.0 / dims.x))
+	float zPixel1=1.0/float(windowGrid.z);
+	res.z		=saturate((res.z-0.5)/diffusivity);
+	//res.z=frac(float(idx.x)/float(windowGrid.x));
+	float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
+	res.z*=layer_saturate;//saturate(1.0-fall_amount)
+	vec4 current=vec4(0,0,0,0.0);
+	if(clears)
+		current=vec4(res.xy,res.z*max_density_gm3,res.w);
+	else
+		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	{
-		traceBackTexc.x -= traceBackTexc.x - (5.0 / dims.x);
-		traceBackTexc.z = (8.0 - traceBackTexc.z) - 4.0;
-	}
-	*/
-	//Reflection calculations go here
-
-	float baseAmplitude = pow(((dot(normalize(g_windDirection2), normalize(angleVec)) + 1.0) + ((dot(normalize(-g_windDirection2), normalize(angleVec)) + 1.0) * (1.0 - g_windDependency2))) / 2.0, 2.0);
-
-	//Sample amplitude of incoming wave and diffusion from nearby waves
-	float result = (sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, traceBackTexc, 0).x * (1 - gamma)) + (gamma * 0.45 * (sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, vec3(traceBackTexc.x, traceBackTexc.y, traceBackTexc.z - (1.0 / dims.z)), 0).x + sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, vec3(traceBackTexc.x, traceBackTexc.y, traceBackTexc.z + (1.0 / dims.z)), 0).x));
-	//result = 0.0;
-
-	/*
-	if ((pos.x >= g_time)&&(pos.x <= g_time + 1)
-		&& (pos.y >= g_time) && (pos.y <= g_time + 1)
-		&& !(pos.z == 2))
-	{
-		result = 1.0;
-	}*/
-	if (((pos.x == 0) && (pos.y == 0))
-		|| ((pos.x == 1) && (pos.y == 1))
-		|| ((pos.x == 0) && (pos.y == 1))
-		|| ((pos.x == 1) && (pos.y == 0)))
-	{
-		result = 1.0;
-	}
-	/*
-	if ((pos.x > 5) && (pos.x < 400))
-	{
-		result = 0.0;
-	}
-	if (pos.z != 8)
-	{
-		baseAmplitude = 0.0;
-	}*/
-	g_OutputAmplitude[sub_pos] =  baseAmplitude / 2.0; //result;//
-}
-
-//-----------------------------------------------------------------------------
-// Name: PrecomputeProfileBufferPS
-// Type: Pixel shader									  
-// Desc: Pixel shader for computing the values in the Profile buffers
-//-----------------------------------------------------------------------------
-shader vec4 PrecomputeProfileBufferPS(posTexVertexOutput In) : SV_Target
-{
-	const float g = 9.81;
-
-	float p = (In.texCoords.x * g_period);
-
-	float dx = (g_zetaMax - g_zetaMin) / g_integrationSteps;
-	float x = (g_zetaMin + (0.5 * dx));
-
-	float weight1 = p / g_period;
-	float weight2 = 1 - weight1;
-
-	float bump1 = cubic_bump(weight1);
-	float bump2 = cubic_bump(weight2);
-
-	vec4 result = 0;
-	for (int i = 0; i <= g_integrationSteps; i++)
-	{
-		float waveLength = pow(2, x);
-		float waveNumber = TAU / waveLength;
-		float phase1 = waveNumber * p - sqrt(waveNumber * g) * g_time; //* 50.0;//
-		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) *g_time; //* 50.0;//
-
-		result += dx * waveLength * spectrum(x, g_windSpeed2) * ((bump1 * gerstner_wave(phase1, waveNumber)) + (bump2 * gerstner_wave(phase2, waveNumber)));
-
-		x += dx;
-	}
-	
-	return result;
-}
-/*
-//-----------------------------------------------------------------------------
-// Name: UpdateProbeValuesBoundedCS
-// Type: Compute shader									  
-// Desc: Compute shader for calculating water probes on FFT surfaces
-//-----------------------------------------------------------------------------
-[numthreads(64, 1, 1)]
-shader void UpdateProbeValuesBoundedCS(uint3 sub_pos : SV_DispatchThreadID)
-{
-	vec2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_UVScale2)) + g_UVOffset2 - g_center.yx * g_UVScale2 * 0.01;
-	vec3 displacement = g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 0).xyz;
-
-	displacement *= 0.1;
-	float height = (displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z;
-	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
-}*/
-
-//-----------------------------------------------------------------------------
-// Name: UpdateProbeValuesBoundlessCS
-// Type: Compute shader									  
-// Desc: Compute shader for calculating water probes on wavelet surfaces
-//-----------------------------------------------------------------------------
-[numthreads(64, 1, 1)]
-shader void UpdateProbeValuesBoundlessCS(uint3 sub_pos : SV_DispatchThreadID)
-{
-	uint dirNum = 16;
-	uint N = 2 * dirNum;
-	float dx = dirNum * TAU / N;
-
-	uint i;
-
-	vec2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_UVScale2)) + g_UVOffset2 - g_center.yx * g_UVScale2 * 0.01;
-	vec3 displacement = vec3(0.0, 0.0, 0.0);
-
-	vec2 windDirection = normalize(vec2(sin(g_probeWindDirection), cos(g_probeWindDirection)));
-
-	for (i = 0; i < N; i++)
-	{
-		float angle = ((float)i / (float)N) * TAU;
-		vec2 texcDir = profile32Directons[i];// vec2(cos(angle), sin(angle));
-		vec2 texc = normalize(texcDir) * uv_local * g_probeProfileUVScale;
-
-		float baseAmplitude = pow(((dot(windDirection, normalize(texcDir)) + 1.0) + ((dot(-windDirection, normalize(texcDir)) + 1.0) * (1.0 - g_probeWindDependancy))) / 2.0, 4.0);
-
-		vec2 displacementValue = g_probeWaveAmplitude * dx * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) * (baseAmplitude / 2.0);//texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x;
-		displacement += vec3(displacementValue.x * texcDir.x, displacementValue.x * texcDir.y, displacementValue.y);
-	}
-	//displacement *= g_WorldScale;
-
-	displacement *= 0.1;
-	float height = (displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z;
-	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
-}
-
-//-----------------------------------------------------------------------------
-// Name: VS_BoundlessWaterSurf
-// Type: Vertex shader									  
-// Desc: Ocean shading vertex shader. Check SDK document for more details
-//-----------------------------------------------------------------------------
-VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
-{
-	VS_OUTPUT Output;
-	
-	vec3 vPos;
-	vec2 cameraCenter;
-	cameraCenter.x = g_LocalEye.x;
-	cameraCenter.y = g_LocalEye.y;
-	Output.vecColour = vec4(0.0, 0.0, 0.0, 1.0);
-	vPos = vec3(0.0, 0.0, 0.0);
-	float layerQuadSize;
-	float layerX = 0.0;
-	float layerY = 0.0;
-	float perlinMovement = 0;
-
-	uint boundingVerticies = ((8 * g_layerDensity) + 4) * 4;
-	uint centerVerticies = (boundingVerticies * g_layerDensity) + 1;
-	bool noDisplacement = false;
-	bool noGradient = false;
-
-	if (g_verticiesPerLayer < 500)
-		noDisplacement = true;
-
-	uint vertexNo = IN.vertex_id;
-
-	if (vertexNo) vertexNo--;
-
-	//Bottom of the ocean
-	if (vertexNo < 6)
-	{
-		noDisplacement = true;
-		noGradient = true;
-		vPos.z = -100;
-		layerQuadSize = (1 << (g_noOfLayers - 2)) * g_minQuadSize;
-
-		float externalLayerQuadSize = layerQuadSize * 2.0;
-		float xSnapDifference = fmod(cameraCenter.x, externalLayerQuadSize);
-		float ySnapDifference = fmod(cameraCenter.y, externalLayerQuadSize);
-
-		//Calculate snapped positions
-		if (xSnapDifference > layerQuadSize)
-		{
-			layerX = cameraCenter.x + externalLayerQuadSize - xSnapDifference;
-		}
-		else
-		{
-			layerX = cameraCenter.x - xSnapDifference;
-		}
-
-		if (ySnapDifference > layerQuadSize)
-		{
-			layerY = cameraCenter.y + externalLayerQuadSize - ySnapDifference;
-		}
-		else
-		{
-			layerY = cameraCenter.y - ySnapDifference;
-		}
-
-		if (vertexNo) vertexNo--;
-		if (vertexNo > 3) vertexNo--;
-		if (vertexNo % 2) vPos.y = g_layerDensity * 4;
-		if (vertexNo < 2) vPos.x = g_layerDensity * 4;
-	}
-	//Bounding verticies for underwater 
-	else if (vertexNo < boundingVerticies + 6)
-	{
-		vertexNo -= 6;
-		layerQuadSize = (1 <<( g_noOfLayers - 2)) * g_minQuadSize;
-		uint boundingEdgeVerticies = boundingVerticies / 4;
-
-		float externalLayerQuadSize = layerQuadSize * 2.0;
-		float xSnapDifference = fmod(cameraCenter.x, externalLayerQuadSize);
-		float ySnapDifference = fmod(cameraCenter.y, externalLayerQuadSize);
-
-		//Calculate snapped positions
-		if (xSnapDifference > layerQuadSize)
-		{
-			layerX = cameraCenter.x + externalLayerQuadSize - xSnapDifference;
-		}
-		else
-		{
-			layerX = cameraCenter.x - xSnapDifference;
-		}
-
-		if (ySnapDifference > layerQuadSize)
-		{
-			layerY = cameraCenter.y + externalLayerQuadSize - ySnapDifference;
-		}
-		else
-		{
-			layerY = cameraCenter.y - ySnapDifference;
-		}
-
-		uint edgeNo = 0;
-		if (vertexNo >= boundingEdgeVerticies * 2)
-		{
-			edgeNo += 2;
-			vertexNo -= boundingEdgeVerticies * 2;
-			//Output.vecColour += vec4(1.0, 0.0, 0.0, 0.0);
-		}
-		if (vertexNo >= boundingEdgeVerticies)
-		{
-			edgeNo++;
-			vertexNo -= boundingEdgeVerticies;
-			//Output.vecColour += vec4(0.0, 1.0, 0.0, 0.0);
-		}
-		if (vertexNo == 0) vertexNo++;
-		if (edgeNo % 2 == 0)
-		{
-			if (vertexNo == (boundingEdgeVerticies - 1)) vertexNo--;
-			if (vertexNo % 2 == 0)
-			{
-				vPos.x = (vertexNo - 2) / 2;
-			}
-			else
-			{
-				vPos.x = (vertexNo - 1) / 2;
-				vPos.z = -100;
-				noDisplacement = true;
-				noGradient = true;
-			}
-			if (edgeNo)
-			{
-				vPos.x = (g_layerDensity * 4) - vPos.x;
-				vPos.y = g_layerDensity * 4;
-			}
-		}
-		else
-		{
-			edgeNo--;
-			if (vertexNo == (boundingEdgeVerticies - 1)) vertexNo--;
-				vPos.x = (g_layerDensity * 4);
-			if (vertexNo % 2 == 0)
-			{
-				vPos.y = (vertexNo - 2) / 2;
-			}
-			else
-			{
-				vPos.y = (vertexNo - 1) / 2;
-				vPos.z = -100;
-				noDisplacement = true;
-				noGradient = true;
-			}
-			if (edgeNo)
-			{
-				vPos.x = 0;
-				vPos.y = (g_layerDensity * 4) - vPos.y;
-			}
-		}
-	}
-	//Surface Verticies
-	else 
-	{
-		vertexNo -= boundingVerticies + 6;
-		if (vertexNo < centerVerticies)
-		{
-			if (vertexNo == centerVerticies - 1)
-				vertexNo--;
-			layerQuadSize = (g_minQuadSize / 2.0f);
-			float externalLayerQuadSize = layerQuadSize * 2.0f;
-			float xSnapDifference = fmod(cameraCenter.x, externalLayerQuadSize);
-			float ySnapDifference = fmod(cameraCenter.y, externalLayerQuadSize);
-
-			//Calculate snapped positions
-			if (xSnapDifference > layerQuadSize)
-			{
-				layerX = cameraCenter.x + externalLayerQuadSize - xSnapDifference;
-			}
-			else
-			{
-				layerX = cameraCenter.x - xSnapDifference;
-			}
-
-			if (ySnapDifference > layerQuadSize)
-			{
-				layerY = cameraCenter.y + externalLayerQuadSize - ySnapDifference;
-			}
-			else
-			{
-				layerY = cameraCenter.y - ySnapDifference;
-			}
-
-			uint rowVerticies = ((g_layerDensity * 8) + 4);
-			uint vertexRowNo = vertexNo % rowVerticies;
-			uint rowNo = (vertexNo - vertexRowNo) / rowVerticies;
-
-			//Assign local position
-			if (vertexRowNo == (rowVerticies - 1)) vertexRowNo--;
-			if (vertexRowNo == 0) vertexRowNo++;
-			if (vertexRowNo % 2 == 0)
-			{
-				vPos.x = (vertexRowNo - 2) / 2;
-				vPos.y = 1;
-			}
-			else
-			{
-				vPos.x = (vertexRowNo - 1) / 2;
-				vPos.y = 0;
-			}
-			vPos.y += rowNo;
-			//Output.vecColour = vec4(((float)vPos.y / (float)(g_layerDensity * 2)), 1.0 - (float)((float)vPos.y / (float)(g_layerDensity * 2)), 0.0, 1.0);
-			//Output.vecColour = vec4( ((float)vertexBlockNo / (float)blockVerticies), 1.0 - (float)((float)vertexBlockNo / (float)blockVerticies), 0.0, 1.0);
-
-		}
-		else
-		{
-			vertexNo = vertexNo - centerVerticies;
-			vertexNo = vertexNo % (g_verticiesPerLayer + 1);
-			if (vertexNo > 0) vertexNo--;
-			uint layerNo = (((IN.vertex_id) - centerVerticies) - vertexNo) / g_verticiesPerLayer;
-			layerQuadSize = (1<<layerNo) * g_minQuadSize;
-			float externalLayerQuadSize = (1 << (layerNo + 1)) * g_minQuadSize;
-			float internalLayerQuadSize = (1 << (layerNo - 1)) * g_minQuadSize;
-			if (!layerNo)
-				internalLayerQuadSize = layerQuadSize / 2.0;
-
-			float internalLayerX;
-			float internalLayerY;
-
-			float xSnapDifference = fmod(cameraCenter.x, externalLayerQuadSize);
-			float ySnapDifference = fmod(cameraCenter.y, externalLayerQuadSize);
-
-			//Calculate snapped positions
-			if (xSnapDifference > layerQuadSize)
-			{
-				layerX = cameraCenter.x + externalLayerQuadSize - xSnapDifference;
-			}
-			else
-			{
-				layerX = cameraCenter.x - xSnapDifference;
-			}
-
-			if (ySnapDifference > layerQuadSize)
-			{
-				layerY = cameraCenter.y + externalLayerQuadSize - ySnapDifference;
-			}
-			else
-			{
-				layerY = cameraCenter.y - ySnapDifference;
-			}
-
-			xSnapDifference = fmod(cameraCenter.x, layerQuadSize);
-			ySnapDifference = fmod(cameraCenter.y, layerQuadSize);
-
-			//Calculate internal snapped positions
-			if (xSnapDifference > internalLayerQuadSize)
-			{
-				internalLayerX = cameraCenter.x + layerQuadSize - xSnapDifference;
-			}
-			else
-			{
-				internalLayerX = cameraCenter.x - xSnapDifference;
-			}
-
-			if (ySnapDifference > internalLayerQuadSize)
-			{
-				internalLayerY = cameraCenter.y + layerQuadSize - ySnapDifference;
-			}
-			else
-			{
-				internalLayerY = cameraCenter.y - ySnapDifference;
-			}
-
-			//Get quad offsets
-			int xQuadOffset = 0;
-			int yQuadOffset = 0;
-
-			if (layerX != internalLayerX)
-			{
-				if ((internalLayerX - layerX) < 0.01* g_minQuadSize)
-				{
-					xQuadOffset++;
-				}
-				if ((layerX - internalLayerX) < 0.01* g_minQuadSize)
-				{
-					xQuadOffset--;
-				}
-			}
-			if ((layerY != internalLayerY))
-			{
-				if ((internalLayerY - layerY) < 0.01* g_minQuadSize)
-				{
-					yQuadOffset++;
-				}
-				if ((layerY - internalLayerY) < 0.01* g_minQuadSize)
-				{
-					yQuadOffset--;
-				}
-			}
-			//More elegant, but precision issues result in layers flickering between correct and incorrect positions (kept for reference)
-			//xQuadOffset = (int)(layerX / layerQuadSize) - (int)(internalLayerX / layerQuadSize);
-			//yQuadOffset = (int)(layerY / layerQuadSize) - (int)(internalLayerY / layerQuadSize);
-
-			uint totalColumnVerticies = (8 * g_layerDensity + 4) * g_layerDensity * 2;
-			uint columnWidth = g_layerDensity - xQuadOffset;
-			if ((layerNo % 2) == 1) totalColumnVerticies++;
-			if (vertexNo >= g_verticiesPerLayer - totalColumnVerticies)//Is the vertex in a column
-			{
-				//Output.vecColour = vec4(1.0, 0.0, 0.0, 0.0);
-				vertexNo -= g_verticiesPerLayer - totalColumnVerticies;
-				if (((layerNo % 2) == 1) && (vertexNo > 0)) vertexNo--;
-				uint sideColumnVerticies = (8 * g_layerDensity) + 4;
-				uint vertexColumnNo = vertexNo % sideColumnVerticies;
-				uint columnNo = (vertexNo - vertexColumnNo) / sideColumnVerticies;
-
-				//Assign local position
-				if (vertexColumnNo == 0) vertexColumnNo++;
-				if (vertexColumnNo == sideColumnVerticies - 1) vertexColumnNo--;
-				if (vertexColumnNo % 2 == 0)
-				{
-					vPos.x = 1;
-					vPos.y = (vertexColumnNo / 2) - 1;
-				}
-				else
-				{
-					vPos.x = 0;
-					vPos.y = ((vertexColumnNo + 1) / 2) - 1;
-				}
-
-				if (columnNo >= g_layerDensity - xQuadOffset)
-				{
-					vPos.x += columnNo;
-					vPos.x += 2 * (int)g_layerDensity;
-				}
-				else
-				{
-					vPos.x += columnNo;
-				}
-				//Output.vecColour = vec4((float)vertexNo / ((float)totalColumnVerticies), 1.0 - ((float)vertexNo / ((float)totalColumnVerticies)), 0.0, 1.0);
-			}
-			else
-			{
-				//Output.vecColour = vec4(0.0, 1.0, 0.0, 0.0);
-				uint sideRowVerticies = (4 * g_layerDensity) + 4;
-				if (((layerNo % 2) == 0) && (vertexNo == (g_verticiesPerLayer - totalColumnVerticies - 1))) vertexNo--;
-
-				uint vertexRowNo = vertexNo % sideRowVerticies;
-				uint rowNo = (vertexNo - vertexRowNo) / sideRowVerticies;
-
-				//Assign local position
-				if (vertexRowNo == 0) vertexRowNo++;
-				if (vertexRowNo == sideRowVerticies - 1) vertexRowNo--;
-				if (vertexRowNo % 2 == 0)
-				{
-					vPos.x = (vertexRowNo - 2) / 2;
-					vPos.y = 1;
-				}
-				else
-				{
-					vPos.x = (vertexRowNo - 1) / 2;
-					vPos.y = 0;
-				}
-				vPos.x += columnWidth;
-
-				if (rowNo >= g_layerDensity - yQuadOffset)
-				{
-					vPos.y += rowNo;
-					vPos.y += 2 * g_layerDensity;
-				}
-				else
-				{
-					vPos.y += rowNo;
-				}
-				//Output.vecColour = vec4((float)rowNo/(float)(2 *g_layerDensity),1 - ((float)rowNo / (float)(2 * g_layerDensity)), 0.0, 1.0);
-			}
-			//Output.vecColour = vec4(0.0, 1.0, 0.0, 1.0);
-		}
-	}
-
-	//Deal with boundary verticies
-
-	bool lerpDisplacement = false;
-	vec2 lerpSample1 = vec2(0.0, 0.0);
-	vec2 lerpSample2 = vec2(0.0, 0.0);
-
-	if (((vPos.x == 0) || (vPos.x == ((int)g_layerDensity * 4))) && (vPos.y % 2 == 1))
-	{
-		lerpDisplacement = true;
-		lerpSample1 = vec2(vPos.x, vPos.y + 1);
-		lerpSample2 = vec2(vPos.x, vPos.y - 1);
-
-	} else if (((vPos.y == 0) || (vPos.y == ((int)g_layerDensity * 4))) && (vPos.x % 2 == 1))
-	{
-		lerpDisplacement = true;
-		lerpSample1 = vec2(vPos.x + 1, vPos.y);
-		lerpSample2 = vec2(vPos.x - 1, vPos.y);
-	}
-	
-	//Scale
-	vPos.xy *= layerQuadSize;
-
-	//Center
-	vPos.x += layerX - (layerQuadSize * g_layerDensity * 2);
-	vPos.y += layerY - (layerQuadSize * g_layerDensity * 2);
-	vPos.z += g_oceanHeight;
-	
-	float4 pos_local = float4(vPos, 1);
-	
-	vec2 detail_uv_local = ((vPos.xy) * g_UVScale);
-	vec2 detail_uv_local1 = vec2(0.0, 0.0);
-	vec2 detail_uv_local2 = vec2(0.0, 0.0);
-
-	if (length(pos_local.xy - cameraCenter) > 30000)
-		noDisplacement = true;
-
-	// UV
-	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01);
-	vec2 uv_local1 = vec2(-g_boundedLocation.yx * g_UVScale * 0.01);
-	vec2 uv_local2 = vec2(-g_boundedLocation.yx * g_UVScale * 0.01);
-
-	if (lerpDisplacement)
-	{
-		lerpSample1 *= layerQuadSize;
-		lerpSample1.x += layerX - (layerQuadSize * g_layerDensity * 2);
-		lerpSample1.y += layerY - (layerQuadSize * g_layerDensity * 2);
-
-		lerpSample2 *= layerQuadSize;
-		lerpSample2.x += layerX - (layerQuadSize * g_layerDensity * 2);
-		lerpSample2.y += layerY - (layerQuadSize * g_layerDensity * 2);
-
-		uv_local1 += ((lerpSample1)* g_UVScale + g_UVOffset);
-		uv_local2 += ((lerpSample2)* g_UVScale + g_UVOffset);
-
-		if (shoreEffects)
-		{
-			detail_uv_local1 = ((lerpSample1)* g_UVScale);
-			detail_uv_local2 = ((lerpSample2)* g_UVScale);
-		}
-	}
-
-
-	//If there is displacement to be calculated, do it
-	if (!noDisplacement)
-	{
-		// Blend displacement to avoid tiling artifact
-		vec3 eye_vec = pos_local.xyz - g_LocalEye;
-		float dist_2d = length(eye_vec.xy);
-		float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
-		blend_factor = clamp(blend_factor, 0, 1);
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		noise_factor *= (0.05 + rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y		=localCellNoiseStrength*noise_factor;
+		res.w		=0;
 		
-		/*
-		// Add perlin noise to distant patches
-		float perlin = 0;
-		vec2 perlin_tc = uv_local * g_PerlinSize + g_UVBase;
-
-		if (blend_factor <= 1)
-		{
-			if (lerpDisplacement)
-			{
-				vec2 perlin_tc1 = uv_local1 * g_PerlinSize + g_UVBase;
-				vec2 perlin_tc2 = uv_local2 * g_PerlinSize + g_UVBase;
-				float perlin_01 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
-				float perlin_02 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
-				float perlin_11 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
-				float perlin_12 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
-				float perlin_21 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
-				float perlin_22 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
-
-				float perlin_0 = lerp(perlin_01, perlin_02, 0.5);
-				float perlin_1 = lerp(perlin_11, perlin_12, 0.5);
-				float perlin_2 = lerp(perlin_21, perlin_22, 0.5);
-
-				perlin = (perlin_0 * g_PerlinAmplitude.x + perlin_1 * g_PerlinAmplitude.y + perlin_2 * g_PerlinAmplitude.z);
-
-				float perlinTemp1 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc1 / 32.f + g_PerlinMovement / 4.f, 0).w;
-				float perlinTemp2 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc2 / 32.f + g_PerlinMovement / 4.f, 0).w;
-
-				//perlinMovement = lerp(perlinTemp1, perlinTemp2, 0.5);
-			}
-			else
-			{
-				float perlin_0 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
-				float perlin_1 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
-				float perlin_2 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
-
-				perlin = (perlin_0 * g_PerlinAmplitude.x + perlin_1 * g_PerlinAmplitude.y + perlin_2 * g_PerlinAmplitude.z);
-
-				//perlinMovement = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc / 32.f + g_PerlinMovement / 4.f, 0).w;
-			}
-		}
-		*/
-		// Displacement
-		vec3 displacement = vec3(0.0, 0.0, 0.0);
-
-		//Horizontal movement in X component, Vertical movement in Y component
-		if (blend_factor > 0) 
-		{
-			uint dirNum = 16;
-			uint N = 2 * dirNum;
-			float dx = dirNum * TAU / N;
-			vec2 windDirection = normalize(vec2(sin(g_windDirection3), cos(g_windDirection3)));
-
-			uint i;
-
-			if (lerpDisplacement)
-			{
-				vec3 displacement1 = vec3(0.0, 0.0, 0.0);
-				vec3 displacement2 = vec3(0.0, 0.0, 0.0);
-
-				for (i = 0; i < N; i++)
-				{
-					float angle = ((float)i / (float)N) * TAU;
-					vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
-					vec2 texc1 = texcDir * uv_local1 * g_profileUVScale;
-					vec2 texc2 = texcDir * uv_local2 * g_profileUVScale;
-
-					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency3))) / 2.0, 4.0);
-
-					vec2 displacementValue1 = g_amplitude2 * dx * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc1.x + texc1.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) * (baseAmplitude / 2.0);// texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local1.x / 5.0, uv_local1.y / 5.0, (i + 0.5) / N), 0).x;
-					vec2 displacementValue2 = g_amplitude2 * dx * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc2.x + texc2.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) * (baseAmplitude / 2.0);//texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local2.x / 5.0, uv_local2.y / 5.0, (i + 0.5) / N), 0).x;
-					displacement1 += vec3(displacementValue1.x * texcDir.x, displacementValue1.x * texcDir.y, displacementValue1.y);
-					displacement2 += vec3(displacementValue2.x * texcDir.x, displacementValue2.x * texcDir.y, displacementValue2.y);
-				}
-				displacement = lerp(displacement1, displacement2, 0.5) * g_WorldScale; 
-				
-			}
-			else
-			{
-				for (i = 0; i < N; i++)
-				{
-					float angle = ((float)i / (float)N) * TAU;
-					vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
-					vec2 texc = texcDir * uv_local * g_profileUVScale;
-
-					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency3))) / 2.0, 4.0);
-
-					vec2 displacementValue = g_amplitude2 * dx * ( g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy ) * (baseAmplitude / 2.0);//texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x;
-					displacement += vec3(displacementValue.x * texcDir.x, displacementValue.x * texcDir.y, displacementValue.y);
-				}
-				displacement *= g_WorldScale;
-			}
-		}
-		
-		//Calculate Shore damping
-		float shoreDepth = 1.0;
-		vec3 detailDisplacement = vec3(0.0, 0.0, 0.0);
-		float fade = 1.0;
-
-		//displacement = lerp(vec3(0, 0, perlin * g_WorldScale), displacement, blend_factor);
-
-		if (shoreEffects)
-		{
-			fade = saturate(((length(pos_local.xy - cameraCenter) * g_UVScale) - 0.4) / 0.6);
-
-			vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
-			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 5.0) / 5.0;
-			displacement *= shoreDepth;
-			/*
-			if (lerpDisplacement)
-			{
-				vec3 detailDisplacement1 = g_texDisplacement.SampleLevel(wwcSamplerState, -detail_uv_local1, 0).xyz;
-				vec3 detailDisplacement2 = g_texDisplacement.SampleLevel(wwcSamplerState, -detail_uv_local2, 0).xyz;
-				detailDisplacement = lerp(detailDisplacement1, detailDisplacement2, 0.5) * g_WorldScale;
-			}
-			else
-			{
-				detailDisplacement = g_texDisplacement.SampleLevel(wwcSamplerState, -detail_uv_local, 0).xyz * g_WorldScale;//1.0 - g_texDetailMapDisplacement.SampleLevel(bbbSamplerState, detail_uv_local, 0).x;
-			}
-			
-			//float zdisplacement = g_amplitude * ((sin((dot(2 * SIMUL_PI_F * g_windDir, pos_local) / (0.1 + ((2 * 0.5 * shoreDepth) / 0.1) - 0.5)) + (((2 * SIMUL_PI_F * g_windSpeed) / 0.1) * g_Time)) + 1) / 2.0);
-
-			//zdisplacement *= (1.0 - fade);
-
-			//pos_local.z += zdisplacement * 100.0;
-
-			//detailDisplacement *= (1.0 - fade);
-
-			//displacement *= fade;
-			
-			//displacement += detailDisplacement.xyz;*/
-		}
-
-		pos_local.xyz += displacement.xyz;
-
-		Output.vecColour.w = max(shoreDepth, 0.001);
-		Output.vecColour.z = fade;
-		//Output.vecColour.xy = -detail_uv_local;// detailDisplacement;	
+		res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
+		res.z		=max(res.z*max_density_gm3,current.z);
+		IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 	}
-	//pos_local.z += perlinMovement * g_WorldScale;
-	if (noGradient)
-		Output.vecColour.x = 1.0;
-	// Transform
-	Output.Position = mul(g_matWorldViewProj, pos_local);
-	Output.LocalPos = pos_local.xyz;
-	// Pass through texture coordinate
-	Output.texCoords = uv_local;
-	//Output.vecColour = vec4(1.0, 1.0, 1.0, 1.0);
-	Output.SurePosition = Output.Position;
-	return Output; 
 }
 
-shader VS_OUTPUT VS_BoundlessWaterSurfShore(idOnly IN)
+CS_LAYOUT(4,4,4)
+shader void CS_MixInit( uint3 idx : SV_DispatchThreadID )
 {
-	return VS_BoundlessWaterSurf(IN, true);
+	MixInLayer(int3(idx),true);
 }
 
-shader VS_OUTPUT VS_BoundlessWaterSurfNoShore(idOnly IN)
+CS_LAYOUT(4,4,4)
+shader void CS_Mix( uint3 idx : SV_DispatchThreadID )
 {
-	return VS_BoundlessWaterSurf(IN, false);
+	MixInLayer(int3(idx),false);
 }
 
-shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
+CS_LAYOUT(4,4,4)
+shader void CS_MixCirrusInit( uint3 idx : SV_DispatchThreadID )
 {
-	VS_OUTPUT Output;
+	MixInCirrus(idx,true);
+}
 
-	uint vertexNo = IN.vertex_id;
-	//if (vertexNo != g_totalVertices - 1) vertexNo++;
-	Output.vecColour = vec4(0.0, 0.0, 0.0, 1.0);
-	vec3 vPos = vec3(0.0,0.0,0.0);
+CS_LAYOUT(4,4,4)
+shader void CS_MixCirrus( uint3 idx : SV_DispatchThreadID )
+{
+	MixInCirrus(idx,false);
+}
 
-	uint boundingVerticies = ((((2 * g_boundedDensity.x) + 4) + ((2 * g_boundedDensity.y) + 4)) * 2);
-	uint xBoundingVerticies = (2 * g_boundedDensity.x) + 4;
-	uint yBoundingVerticies = (2 * g_boundedDensity.y) + 4;
-	bool noDisplacement = false;
-	bool noGradient = false;
-
-	if (vertexNo) vertexNo--;
-	
-	//Bottom of the object
-	if (vertexNo <= 6)
+float WorleyFactor(vec3 worley_texcoord)
+{
+	float c			=0.5;
+	float p			=0.75;
+	float m			=1.0;
+	float w			=0.0;
+	worley_texcoord	*=2.3;
+	for(int j=0;j<2;j++)
 	{
-		noDisplacement = true;
-		noGradient = true;
-		vPos.z = -g_boundedDimension.z;
-		if (vertexNo) vertexNo--;
-		if (vertexNo > 3) vertexNo--;
-		if (vertexNo % 2) vPos.y = g_boundedDensity.y;
-		if (vertexNo < 2) vPos.x = g_boundedDensity.x;
+		vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
+		w						+=m*(worley.x-c);//+p*(worley.y-c)+p*p*(worley.z-c)+p*p*p*(worley.w-c))/(1.0+p+p*p+p*p*p);
+		m						*=p;
+		worley_texcoord			*=3.7;
+	}
+	//vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
+	//float w=worley.x-c;
+	return w;//2.0*w+0.5;
+}
+
+void MapToWindow(uint3 p,bool clears)
+{
+	int3 idx	= int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
+
+	vec3 texc1		=vec3(idx)/vec3(windowGrid);
+	texc1.y			=1.0-texc1.y;
+	texc1.xy		-=vec2(0.5,0.5);
+	texc1			=texc1*mapScale+mapOffset;
+	float sine		=sin(azimuth);
+	float cosine	=cos(azimuth);
+	texc1.xy		=vec2(texc1.x*cosine-texc1.y*sine,texc1.y*cosine+texc1.x*sine);
+	texc1.xy		+=vec2(0.5,0.5);
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	idx.xy			+=gridCentreTexel;
+	vec3 texc		=texc1;
+	texc.z			-=mapOffset.z;
+	texc			*=scale/mapScale*vec3(windowGrid);//vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;//+mapOffset*scale/mapScale;
+	texc.z			+=offset.z;
+	idx.xy			+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy			=idx.xy%int2(windowGrid.xy);
+	float zPixel1	=1.0/float(windowGrid.z);
+	float layer_saturate	=saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z)/ zPixel1);
+	vec4 res = vec4(0.0,0.0,0.0,0.0);
+	vec4 current=vec4(0,0,0,1.0);
+	if(!clears)
+	{
+		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
+	}
+	if(texc1.x>0.0&&texc1.y>=0.0&&texc1.x<=1.0&&texc1.y<=1.0)
+	{
+		// The position translates to a texture coordinate in the current cloudDensity texture:
+		for (int i = -2; i < 3; i++)
+		{
+			vec3 tc		= texc;
+			tc.z		+= zPixel*i;
+			vec4 c1		= cloudDensity.SampleLevel(wwcSamplerState, tc, 0);
+			vec4 c2		= cloudDensity2.SampleLevel(wwcSamplerState, tc, 0);
+			res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+		}
+
+		vec4 map_lookup				=texture_clamp_lod(rainMapTexture,texc1.xy,0);
+		
+		res.z				*=map_lookup.z;
+		
+		res.z		=saturate((res.z-0.25)/diffusivity+0.25);
+		res.z		*= 1.0/0.5*layer_saturate;
+
+		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
+		res.w=edgeSharpness;
+	
+		// stronger noise at the top:
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		// variation:
+		noise_factor *=lerp(0.05,1.0,rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y		=localCellNoiseStrength*noise_factor;
+	}
+	res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
+	res.z		=max(res.z*max_density_gm3,current.z);
+	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_MapToWindow(uint3 idx : SV_DispatchThreadID)
+{
+	MapToWindow(idx,false);
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_MapToWindowInit(uint3 idx : SV_DispatchThreadID)
+{
+	MapToWindow(idx,true);
+}
+
+float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,float max_dist_km)
+{
+	float thicknessKm	=0.0;
+	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	vec3 tx				=texc;
+	vec3 dir_texc		=dir*inverseScalesKm;
+
+#if 1
+	float s				=max_dist_km/80.0;	// 1.2^24 ~ 80
+	int i				=0;
+	for( i=0;i<24;i++)
+	{
+		// we expect stepLength in km for this shader
+		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
+		vec4 lookup		=texture_3d_wwc_lod(cloudDensity, vec3(tx),0);
+		float density	=lookup.z*step(tx.z,1.0);
+		density			=saturate(0.3+(1.0+1.0*lookup.w*2.0)*(density-0.3));
+		thicknessKm += density*s;
+		s				*=1.2;
+	}
+#else
+	float dist_km		=rand*max_dist_km;
+	// we expect stepLength in km for this shader
+	tx					+=dir_texc*dist_km;
+	vec4 lookup			=texture_3d_wwc_lod(cloudDensity, vec3(tx),0);
+	float density		=lookup.z*step(tx.z,1.0);
+	density				=saturate(0.3+(1.0+1.0*lookup.w*2.0)*(density-0.3));
+	thicknessKm			+= density*max_dist_km;
+#endif
+	return thicknessKm;
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
+{
+	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+	vec3 texc_o	=vec3(idx)/vec3(windowGrid);
+
+	vec3 wpos = texc / inverseScalesKm;
+	float thicknessKm		=0.0;
+	int i				=0;
+	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float s				=0.5*stepLengthKm;
+	float max_h_km		=1.0/inverseScalesKm.z;
+	// We will blend with the existing value, to temporally amortize the calculation effort:
+	vec4 current = vec4(0, 0, 0, 0);
+	{
+		current = UnpackUintToVec4(packedOutputTexture3d[idx]);
+	}
+	// a random number between 0 and 1.0:
+	float randm=rand3(vec3(idx+uint3(stepCycle,stepCycle,stepCycle)));
+
+	// how many km from top.
+	float z_from_top_km=max_h_km*float(1+windowGrid.z-idx.z)/float(windowGrid.z);
+
+	float extinction_distance_km=max(5.0,min(5.5*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001)));//max(log(100)/extinctionPerKm,2.0/inverseScalesKm.x/float(windowGrid.x));
+	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir,randm,extinction_distance_km);
+
+	// find nearest direction to light for ambient lighting:
+	float nearest=10000.0;
+	vec3 nearest_dir=vec3(0,0,0);
+	float total=0.0;
+
+	vec4 illum;
+	float t			=saturate(thicknessKm/extinction_distance_km);
+	t				=t*0.5+current.z*0.5;
+	thicknessKm		=t*extinction_distance_km;
+	illum.x			=max(.01,exp(-extinctionPerKm*thicknessKm/12.0));
+	illum.y			=exp(-extinctionPerKm*thicknessKm);
+	illum.zw        =vec2(t,1.0);
+
+	const float v=127.0/255.0;
+	illum.xyw= lerp(current.xyw,illum.xyw,v);
+
+	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
+}
+
+
+CS_LAYOUT(4,4,1)
+shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
+{
+	int3 pos=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if (pos.x >= exclusionRange.x&&pos.y >= exclusionRange.y&&pos.x<exclusionRange.z&&pos.y<exclusionRange.w)
+		return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	pos.xy		+= int2(gridCentreTexel);
+	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
+	pos.xy		= pos.xy%int2(windowGrid.xy);
+	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
+	uint3 pos2	=pos*2;
+	vec4 res;
+	{
+		vec4 c1 = cloudDensity.SampleLevel(wwcSamplerState,texc,0);
+		vec4 c2 = cloudDensity[pos2 + uint3(1, 0, 0)];
+		vec4 c3 = cloudDensity[pos2 + uint3(-1,0, 0)];
+		vec4 c4 = cloudDensity[pos2 + uint3(0, 1, 0)];
+		vec4 c5 = cloudDensity[pos2 + uint3(0,-1, 0)];
+		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 1)];
+		vec4 c7 = cloudDensity[pos2 + uint3(0, 0,-1)];
+		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 ) / 7.0;
+		//res.z=max(max(max(max(max(max(c1.z,c2.z),c3.z),c4.z),c5.z),.5*c6.z),.5*c7.z);
+	res.xyw*=0.5;
+	}
+	///else
+	//	res = vec4(1, 0, 1, 1);
+	outputTexture3d[pos]=res;
+}
+
+CS_LAYOUT(4,4,1)
+shader void CS_LightMip( uint3 p: SV_DispatchThreadID )
+{
+	int3 pos=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if (pos.x >= exclusionRange.x&&pos.y >= exclusionRange.y&&pos.x<exclusionRange.z&&pos.y<exclusionRange.w)
+		return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	pos.xy		+= gridCentreTexel;
+	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
+	pos.xy		= pos.xy%int2(windowGrid.xy);
+	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
+	uint3 pos2	=pos*2;
+	vec4 res;
+	{
+		vec4 c1 = cloudDensity.SampleLevel(wwcSamplerState,texc,0);
+		vec4 c2 = cloudDensity[pos2 + uint3(1, 0, 0)];
+		vec4 c3 = cloudDensity[pos2 + uint3(-1,0, 0)];
+		vec4 c4 = cloudDensity[pos2 + uint3(0, 1, 0)];
+		vec4 c5 = cloudDensity[pos2 + uint3(0,-1, 0)];
+		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 1)];
+		vec4 c7 = cloudDensity[pos2 + uint3(0, 0,-1)];
+		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 ) / 7.0;
+	}
+	///else
+	//	res = vec4(1, 0, 1, 1);
+	outputTexture3d[pos]=res;
+}
+CS_LAYOUT(8,8,8)
+shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*8+t;
+	vec4 c1=TEXTURE_LOAD_3D(cloudDensity,pos);
+	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
+	//res.z=1.0;
+	//output[pos].rgba=res;
+    vec4 res= lerp(c1,c2,cloud_interp);
+	IMAGE_STORE_3D(outputTexture3d,pos,res);
+	//outputTexture3d[pos].rgba=res;
+}
+
+//Unity cloud shadow generator
+//Get new texcoords by rotating and scaling the old texcoords so texture will be projected correctly over the scene
+shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
+{
+	float tempLength = sqrt(pow(directionToSun.x, 2) + pow(directionToSun.y, 2));
+	float angle = sinh(directionToSun.x / tempLength);
+	float s = sin(angle);
+	float c = cos(angle);
+	angle = tanh(directionToSun.z / tempLength);
+	float mscale = 1.0 / sin(angle);
+	vec2 cameraOffset = vec2(viewPosKm.xy) / 150.0;
+	vec2 cloudOffset = vec2(0.5, 0.5);
+	float tempx = (IN.texCoords.x - 0.5) * 0.25;
+	float tempy = (IN.texCoords.y - 0.5) * mscale * 0.25;
+	float x = ((tempx * c) - (tempy * s)) + 0.5 - cloudOffset.x;
+	float y = ((tempx * s) + (tempy * c)) + 0.5 - cloudOffset.y;
+	vec3 adjusted_texc = vec3(x, y, sampleHeight);
+	vec3 shadow = saturate(3.0*sample_3d_lod(cloudDensity, wwcSamplerState, adjusted_texc, 0.0).xyz - vec3(2.0,2.0,2.0));
+	return vec4(shadow.xy, 0, 1.0 - shadow.z);
+}
+
+shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
+{
+	vec3 simple_texc = vec3((IN.texCoords.xy - vec2(0.5,0.5)) * (shadowRangeKm / 80.0), sampleHeight);
+	vec3 shadow = saturate(sample_3d_lod(cloudDensity, wwcSamplerState, simple_texc, 0).xyz);
+	return vec4(shadow.xy, 0, 1.0 - shadow.z);
+}
+
+shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
+{
+	float total_cloud=0.0;
+	float max_tex_z=0.0;
+	float thickness = 0.0;
+	// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
+	for(int i=0;i<14;i++)
+	{
+		float tex_z		=float(14.0-i)/20.0;
+		vec3 texc		=vec3(IN.texCoords.xy,tex_z);
+		vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
+		total_cloud		+=0.125*density.z;
+		thickness		+=1.0*density.z;		// effective cloud thickness in km.
+		max_tex_z		=max(max_tex_z,step(1.0, thickness)*tex_z);
+	}
+	total_cloud=saturate((total_cloud-0)/0.1);
+	return vec4(total_cloud*precipitation,max_tex_z,0,0);
+}
+
+struct FarNearDepthPixelOutput
+{
+	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
+};
+
+void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int numSteps,int num_interp,bool do_godrays,bool consistent_steps)
+{
+	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	float sineFactor		=1.0/length(clip_pos.xyz);
+	vec3 view				=normalize(mul(invViewProj[pos.z],clip_pos).xyz);
+	vec4 dlookup			=vec4(1.0,1.0,0.000001,1.0);
+	if (depth)
+	{
+		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
+	}
+	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
+	
+	RaytracePixelOutput f	=RaytraceCloudsStatic( 
+									cloudDensity
+									,cloudDensity2
+									,rainMapTexture
+									,noiseTexture3D
+									,lightTableTexture
+									,illuminationTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
+									,volumeInscatterTexture
+									,godraysTexture
+									,depth
+									,dlookup
+									,view
+									,clip_pos
+									,worldspaceVolumeTexCoordsXyC
+									,background2d		// noise? 
+									,include_rain
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2
+									,numSteps
+									,num_interp
+									,do_godrays
+									,consistent_steps);
+	vec4 t2d				=vec4(0,0,0,1.0);
+	// blend:
+
+	vec4 c					=t2d;
+	c.rgb					*=f.colour[num_interp-1].a;
+	c.rgb					+=f.colour[num_interp-1].rgb;
+	c.a						=t2d.a*f.colour[num_interp-1].a;
+	outputTexture1[pos+uint3(0,0,6*(num_interp-1))]		=c;
+	float n					=float(dlookup.y>=1.0);
+	for(int u=0;u<num_interp-1;u++)
+	{
+		vec4 cn					=t2d;
+		cn.rgb					*=f.colour[u].a*n;
+		cn.a					=1.0-n*(1.0-t2d.a);
+		cn.rgb					+=f.colour[u].rgb;
+		cn.a					*=f.colour[u].a;
+		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
+	}
+	//	outputTexture1[pos+uint3(0,0,6*2)]		=vec4(0,1,0,0);
+	if(background2d)
+		outputTexture3[pos]		=f.nearFarDepth;
+}
+
+void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godrays)
+{
+	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	float sineFactor		=1.0/length(clip_pos.xyz);
+	vec3 view				=normalize(mul(invViewProj[pos.z],clip_pos).xyz);
+	vec3 v	=abs(view);
+	float e	=max(max(v.x,v.y),v.z);
+	float ef	=max(max(view.x,view.y),view.z);
+	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+	vec3 N	=0.005*saturate(-view)+saturate(view);
+
+#if 1
+	vec4 dlookup			=vec4(1.0,1.0,0.000001,1.0);
+	if(depth)
+	{
+		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
+	}
+	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
+
+	RaytracePixelOutput f	=RaytraceCloudsForward(cloudDensity
+													,cloudDensity2
+													,rainMapTexture
+													,noiseTexture3D
+													,lightTableTexture
+													,illuminationTexture
+													,rainbowLookupTexture
+													,coronaLookupTexture
+													,lossTexture
+													,inscTexture
+													,skylTexture
+													,volumeInscatterTexture
+													,godraysTexture
+													,true
+													,dlookup
+													,view
+													,clip_pos
+													,worldspaceVolumeTexCoordsXyC
+													,true
+													,include_rain
+													,false
+													,cloudIrRadiance1,cloudIrRadiance2
+													,num_interp
+													,do_godrays
+													);
+	/*RaytracePixelOutput f;
+	f.colour=depthToLinFadeDistParams;
+	f.nearColour=lightResponse;
+	f.nearFarDepth=vec4(0,0,1,.5);*/
+	// blend:
+	vec4 c					=f.colour[NUM_CLOUD_INTERP-1];
+	outputTexture1[pos+uint3(0,0,6*(NUM_CLOUD_INTERP-1))]		=c;
+	float n					=float(dlookup.y>=1.0);
+	for(int u=0;u<NUM_CLOUD_INTERP-1;u++)
+	{
+		vec4 cn					=f.colour[u];
+		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
+	}
+	outputTexture3[pos]		=f.nearFarDepth;
+#endif
+}
+
+void Lightpass(uint3 pos,bool depth)
+{
+	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	float sineFactor		=1.0/length(clip_pos.xyz);
+	vec3 view				=normalize(mul(invViewProj[pos.z],clip_pos).xyz);
+	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
+	if(depth)
+		dlookup				=texture_cube_lod(depthTexture,view,0);
+
+	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
+
+	float ls_angle			=asin(lightspaceView.z);
+	vec3 volumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*ls_angle/SIMUL_PI_F),max(0.3,cos(ls_angle)));
+#if 1//ndef _XBOX_ONE
+	FarNearPixelOutput f	=Lightpass(cloudDensity
+										,noiseTexture3D
+										,dlookup
+										,view
+										,clip_pos
+										,sourcePosKm
+										,sourceRadiusKm
+										,spectralFluxOver1e6
+										,minCosine
+										,maxRadiusKm
+										,irradianceThreshold
+										);
+#else
+	FarNearPixelOutput f;
+	f.farColour=vec4(0,0,0,0);
+	f.nearColour=vec4(0,0,0,0);
+#endif
+	outputTexture1[pos]		=f.farColour;
+	outputTexture1[pos+uint3(0,0,6)]		=f.nearColour;
+}
+
+#define BLOCK_SIZE 4
+void CS_Raytrace(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
+	uint2 offs		= (amortizationOffset.xy );//+ (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offs;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	if(updateTexture[pos].b==0.0)
+		return;
+	Raytrace(pos,include_rain,depth,NUM_CLOUD_INTERP,godrays);
+}
+#define XX (3)
+#define YY (3)
+
+void Interp(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
+	uint2 offs		= (amortizationOffset.xy);// + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offs;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	vec4 u=updateTexture[pos];
+	if(u.b==0.0)
+		return;
+	int xi,yi;
+	// Interpolate the corners.
+	for(int u=0;u<NUM_CLOUD_INTERP;u++)
+	{
+		vec4 c00		=outputTexture1[pos+uint3(0,0,6*u)];
+		vec4 c20		=outputTexture1[pos+uint3(XX,0,6*u)];
+		vec4 c02		=outputTexture1[pos+uint3(0,YY,6*u)];
+		vec4 c22		=outputTexture1[pos+uint3(XX,YY,6*u)];
+		//[unroll(XX)]
+		for( xi=0;xi<XX;xi++)
+		{
+			float xf	=float(xi)/float(XX);
+			//[unroll(YY)]
+			for( yi=0;yi<YY;yi++)
+			{
+				if(xi==0&&yi==0)
+					continue;
+				uint3 posu				=pos+uint3(xi,yi,0);
+				vec4 ui					=updateTexture[posu];
+				if(ui.b==0.0)//||ui.g==1.0)
+					continue;
+				float yf				=float(yi)/float(YY);
+				vec4 cx0				=lerp(c00,c20,xf);
+				vec4 cx2				=lerp(c02,c22,xf);
+				vec4 cii				=lerp(cx0,cx2,yf);
+				uint3 post				=pos+uint3(xi,yi,6*u);
+				float r=(post.x%XX)/float(XX);
+				float g=(post.y%YY)/float(YY);
+				outputTexture1[post]	=cii;//vec4(r,g,0,0);
+			}
+		}
+	}
+	//outputTexture3[pos]		=f.nearFarDepth;
+}
+
+void CS_RaytraceStatic(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays,bool consistent_steps)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
+	uint2 offs		= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy			+= offs;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	if(updateTexture[pos].b==0.0)
+		return;
+	//outputTexture1[pos]		=vec4(1,1,0,1);
+	//outputTexture3[pos]		=vec4(1,1,0,1);
+	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
+}
+
+void CS_RaytraceStaticEdge(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays,bool consistent_steps)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx,Z);
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	vec4 u=updateTexture[pos];
+	if (u.g<1.0&&u.b>0.0)
+	{
+		//outputTexture1[pos]		=vec4(1,1,0,1);
+		//outputTexture3[pos]		=vec4(1,1,0,1);
+		SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
+	}
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Lightpass(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint3 pos		=uint3(targetRange[cubemapTargetIndex].xy+idx*amortizationScale.xy,cubemapTargetIndex);
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[cubemapTargetIndex].z||pos.y>=targetRange[cubemapTargetIndex].w)
+		return;
+	if(updateTexture[pos].b==0.0)
+		return;
+	Lightpass(pos,true);
+}
+
+shader vec4 PS_Lightpass(posTexVertexOutput IN):SV_TARGET
+{
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*IN.texCoords.x;
+	clip_pos.y				-=2.0*IN.texCoords.y;
+	vec3 view				=normalize(mul(invViewProj[cubemapTargetIndex],clip_pos).xyz);
+	vec4 dlookup			=vec4(0.0,0.0,0.0,0.0);
+	dlookup					=texture_cube_lod(depthTexture,view,0);
+
+	FarNearPixelOutput f	=Lightpass(cloudDensity
+										,noiseTexture3D
+										,dlookup
+										,view
+										,clip_pos
+										,sourcePosKm
+										,sourceRadiusKm
+										,spectralFluxOver1e6
+										,minCosine
+										,maxRadiusKm
+										,irradianceThreshold
+										);
+	return vec4(f.farColour.rgb,1);
+}
+
+void Edge(uint3 g, uint3 t, bool rain, bool depth, bool godrays)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubemapFaceIndex[g.z + t.z].x;
+	uint3 pos = uint3(targetRange[Z].xy + idx, Z);
+	if (pos.x >= targetRange[Z].z || pos.y >= targetRange[Z].w)
+		return;
+	vec4 u = updateTexture[pos];
+	// current value is b, old value is r
+	if (u.g<1.0&&u.b>0.0)
+	{
+		Raytrace(pos, rain, depth, NUM_CLOUD_INTERP, godrays);
+	}
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Edge_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	Edge(g, t, false, true, true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	Edge(g, t, true, true, true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Interp_NoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	Interp(g, t, false, true, true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_Interp_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	Interp(g, t, true, true, true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
+{
+	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z					=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos				=uint3(targetRange[t.z].xy+idx*amortizationScale.xy+amortizationOffset.xy,Z);
+	
+	SimpleRaytrace(pos,false,false,false,128,1,false,false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceHighDetailCubemap(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
+	uint2 offset = (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offset;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	Raytrace(pos, false, false,NUM_CLOUD_INTERP,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Raytrace(g,t,true,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Raytrace(g,t,false,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStatic(g,t,true,true,true,false);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStatic(g,t,false,true,true,false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStatic(g,t,true,true,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticNoRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStatic(g,t,false,true,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,true,true,true,true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,true,true,true,false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,false,true,true,false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeNoRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,false,true,true,true);
+}
+
+
+shader posTexVertexOutput VS_CrossSection(idOnly IN)
+{
+	return VS_ScreenQuad(IN,rect);
+}
+
+shader posTexVertexOutput VS_PlacementVolume(idOnly IN)
+{
+	posTexVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]			=vec2(0.0, 0.0);
+	poss[1]			=vec2(1.0, 0.0);
+	poss[2]			=vec2(1.0, 1.0);
+	poss[3]			=vec2(0.0, 1.0);
+	vec3 pos		=vec3(0,0,0);
+	int odd			=int(IN.vertex_id%uint(2));
+	if(IN.vertex_id<8)
+	{
+		pos.z=0.0;
+		uint j=(uint(IN.vertex_id)/2+odd);
+		pos.xy=poss[j%4];
+	}
+	else if(IN.vertex_id<16)
+	{
+		pos.z=1.0;
+		uint i=uint(IN.vertex_id)-8;
+		uint j=(i/2+odd);
+		pos.xy=poss[j%4];
 	}
 	else
 	{
-		vertexNo -= 6;
-		//Bounding faces
-		if (vertexNo < boundingVerticies) {
-			uint edgeNo = 0;
-			noGradient = true;
-			if (vertexNo >= boundingVerticies / 2)
-			{
-				edgeNo += 2;
-				vertexNo -= boundingVerticies / 2;
-			}
-			if (vertexNo >= xBoundingVerticies)
-			{
-				edgeNo++;
-				vertexNo -= xBoundingVerticies;
-			}
-			if (vertexNo == 0) vertexNo++;
-			if (edgeNo % 2 == 0)
-			{
-				if (vertexNo == (xBoundingVerticies - 1)) vertexNo--;
-				if (vertexNo % 2 == 0)
-				{
-					vPos.x = (vertexNo - 2) / 2;
-				}
-				else
-				{
-					vPos.x = (vertexNo - 1) / 2;
-					vPos.z = -g_boundedDimension.z;
-					noDisplacement = true;
-				}
-				if (edgeNo)
-				{
-					vPos.x = g_boundedDensity.x - vPos.x;
-					vPos.y = g_boundedDensity.y;
-				}
-			}
-			else
-			{
-				edgeNo--;
-				if (vertexNo == (yBoundingVerticies - 1)) vertexNo--;
-				vPos.x = g_boundedDensity.x;
-				if (vertexNo % 2 == 0)
-				{
-					vPos.y = (vertexNo - 2) / 2;
-				}
-				else
-				{
-					vPos.y = (vertexNo - 1) / 2;
-					vPos.z = -g_boundedDimension.z;
-					noDisplacement = true;
-				}
-				if (edgeNo)
-				{
-					vPos.x = 0;
-					vPos.y = g_boundedDensity.y - vPos.y;
-				}
-			}
-		}
-		//Surface
-		else
-		{
-			vertexNo -= boundingVerticies;
-			uint rowVerticies = ((g_boundedDensity.x * 2) + 4);
-			uint vertexRowNo = vertexNo % rowVerticies;
-			uint rowNo = (vertexNo - vertexRowNo) / rowVerticies;
-			//Assign local position
-			if (vertexRowNo == (rowVerticies - 1)) vertexRowNo--;
-			if (vertexRowNo == 0) vertexRowNo++;
-			if (vertexRowNo % 2 == 0)
-			{
-				vPos.x = (vertexRowNo - 2) / 2;
-				vPos.y = 1;
-			}
-			else
-			{
-				vPos.x = (vertexRowNo - 1) / 2;
-				vPos.y = 0;
-			}
-			vPos.y += rowNo;
-			//Output.vecColour = vec4(vPos.y / (g_layerDensity * 2), 1.0 - (vPos.y / (g_layerDensity * 2)), 0.0, 1.0);
-		}
-	}
-	//Scale
-	vPos.xy *= g_boundedDimension.xy / g_boundedDensity;
-
-	//Center
-	vPos.xy -= g_boundedDimension.xy / 2.0;
-
-	//Rotation
-	float rotation = -(g_boundedRotation / 360.0) * PI * 2.0;
-	vPos.xy = vec2(vPos.x*cos(rotation) - vPos.y*sin(rotation), vPos.y*cos(rotation) + vPos.x*sin(rotation));
-
-	//Transform
-	vPos += g_boundedLocation.yxz;
-
-	float4 pos_local = float4(vPos, 1);
-
-	// UV
-	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01;
-	if (!noDisplacement)
-	{
-		// Blend displacement to avoid tiling artifact
-		vec3 eye_vec = pos_local.xyz - g_LocalEye;
-		float dist_2d = length(eye_vec.xy);
-		float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
-		blend_factor = clamp(blend_factor, 0, 1);
-
-		// Displacement map
-		vec3 displacement = vec3(0, 0, 0);
-
-		if (blend_factor > 0)
-		{
-			//displacement = (g_texDisplacement.SampleLevel(wwcSamplerState, uv_local, 0).xyz + g_texDisplacement.SampleLevel(wwcSamplerState, uv_local / 3.95, 1).xyz) * g_WorldScale;
-			const float tau = 6.28318530718;
-
-			uint dirNum = 16;
-			uint N = 2 * dirNum;
-			float dx = dirNum * TAU / N;
-			vec2 windDirection = normalize(vec2(sin(g_windDirection3), cos(g_windDirection3)));
-
-			uint i;
-
-			for (i = 0; i < N; i++)
-			{
-				float angle = ((float)i / (float)N) * TAU;
-				vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
-				vec2 texc = texcDir * uv_local * g_profileUVScale;
-
-				float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency3))) / 2.0, 4.0);
-
-				vec2 displacementValue = g_amplitude2 * dx * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) * (baseAmplitude / 2.0);//texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x;
-				displacement += vec3(displacementValue.x * texcDir.x, displacementValue.x * texcDir.y, displacementValue.y);
-			}
-			displacement *= g_WorldScale;
-
-			displacement = lerp(vec3(0, 0, 0), displacement, blend_factor);
-			pos_local.xyz += displacement;
-		}	
+		uint i=uint(IN.vertex_id)-16;
+		uint j=i/2;
+		pos.z=float(i%2);
+		pos.xy=poss[j%4];
 	}
 
-	if (noGradient)
-		Output.vecColour.x = 1.0;
-	// Transform
-	Output.Position = mul(g_matWorldViewProj, pos_local);
-	Output.LocalPos = pos_local.xyz;
-	// Pass through texture coordinates
-	Output.texCoords = uv_local;
-	Output.SurePosition = Output.Position;
-
-	return Output;
+	OUT.hPosition	=mul(invViewProj[cubemapTargetIndex],vec4(pos,1.0));
+	OUT.texCoords	=vec2(pos.z,0);
+	return OUT;
 }
 
-//Calculate water depth and render values
-PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFoam, bool enableRefraction)
+shader vec4 PS_PlacementVolume(posTexVertexOutput IN):SV_TARGET
 {
-	PS_WATER_OUTPUTS Output;
-	//Calculate depth
-	vec3 eye_vec = g_LocalEye - In.LocalPos;
-	float surfaceDepth = length(eye_vec) / 300000.0;
+	return vec4(1.0,1.0,IN.texCoords.x,1.0);
+}
+shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
+{
+    vec4 lookup=texture_wrap(rainMapTexture,IN.texCoords.xy);
+					
+	return vec4(0.5*(lookup.rgb+1.0),1.0);
+}
 
-	//Disable refraction if camera is far enough away
-	if(enableRefraction)
-		if (length(eye_vec) > 100.0)
-		{
-			enableRefraction = false;
-		}
-
-	DepthInterpretationStruct dis;
-	dis.reverseDepth = true;
-	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
-	vec2 TexCoord = (vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) +vec2(1.0, 1.0))/ 2.0;
-	vec2 baseTexCoord = TexCoord;
-
-	float actualDepth = 0.0;
-	float offset = 0.0;
-	vec3 refract_vec = vec3(0.0, 0.0, 0.0);
-	vec3 viewNormal = vec3(0.0, 0.0, 0.0);
-	vec3 eyeViewVec = vec3(0.0, 0.0, 1.0);
-
-	float backfaceOccluded = 0.0;
-	float foamValue = 0.0;
-	float surfaceFoamValue = 0.0;
-
-	float finalDepth;
-	float eyeDepth;
-	float subsurfaceSample;
-	float subsurfaceDepth;
-	/*
-	float blend_factor = (PATCH_BLEND_END - length(eye_vec)) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
-	blend_factor = clamp(blend_factor * blend_factor * blend_factor, 0, 1);
-
-	// Compose perlin waves from three octaves
-	vec2 perlin_tc = In.texCoords * g_PerlinSize + g_UVBase;
-	vec2 perlin_tc0 = (blend_factor <= 1) ? perlin_tc * g_PerlinOctave.x + g_PerlinMovement : 0;
-	vec2 perlin_tc1 = (blend_factor <= 1) ? perlin_tc * g_PerlinOctave.y + g_PerlinMovement : 0;
-	vec2 perlin_tc2 = (blend_factor <= 1) ? perlin_tc * g_PerlinOctave.z + g_PerlinMovement : 0;
-
-	vec2 perlin_0 = g_texPerlin.Sample(g_samplerPerlin, perlin_tc0).xy;
-	vec2 perlin_1 = g_texPerlin.Sample(g_samplerPerlin, perlin_tc1).xy;
-	vec2 perlin_2 = g_texPerlin.Sample(g_samplerPerlin, perlin_tc2).xy;
-
-	vec2 perlin = (perlin_0 * g_PerlinGradient.x + perlin_1 * g_PerlinGradient.y + perlin_2 * g_PerlinGradient.z);
-	*/
-	vec3 normal = normalize(vec3(0.01, 0.01, 1.0f));
-	vec3 grad = vec3(0.0, 0.0, 0.0);
-
-
-	if (In.vecColour.x == 0.0)
-	{
-		vec3 tx = vec3(0.0, 0.0, 0.0);
-		vec3 ty = vec3(0.0, 0.0, 0.0);
-
-		uint dirNum = 16;
-		uint N = 2 * dirNum;
-		float dx = dirNum * TAU / N;
-
-		vec3 foamtemp = vec3(0.0, 0.0, 0.0);
-		vec2 windDirection = normalize(vec2(sin(g_windDirection3), cos(g_windDirection3)));
-
-		uint i;
-		for (i = 0; i < N; i++)
-		{
-			float angle = ((float)i / (float)N) * TAU;
-			vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
-			vec2 texc = texcDir * In.texCoords * g_profileUVScale;
-
-			float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency3))) / 2.0, 4.0);
-
-			vec2 gradientValue = g_amplitude2 * dx * (g_ProfileBuffers.Sample(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f),0).zw) * (baseAmplitude / 2.0);//texture_3d_wrap_lod(g_InputAmplitude, vec3(In.texCoords.x / 5.0, In.texCoords.y / 5.0, (i + 0.5) / N), 0).x;
-			tx += texcDir.x * vec3((-gradientValue.y), 0.0, -gradientValue.y);
-			ty += texcDir.y * vec3(0.0, (-gradientValue.y), -gradientValue.y);
-
-			foamtemp += vec3(abs(texcDir.x) * gradientValue.x, abs(texcDir.y) * gradientValue.x, 32.0);
-		}
-
-		//if(enableFoam)
-			surfaceFoamValue = pow(saturate(normalize(vec3(-foamtemp.xy, 16.0)).x), 2.0);
-		//grad = lerp(perlin, grad, blend_factor);
-
-		if (In.vecColour.z != 1.0)
-		{
-			surfaceFoamValue *= In.vecColour.w;
-			tx *= In.vecColour.w;
-			ty *= In.vecColour.w;// ((g_texGradient.Sample(g_samplerGradient, fft_tc).xy + g_texGradient.Sample(g_samplerGradient, fft_tc / 3.95).xy) / 2.0);
-			//grad += g_texGradient.Sample(g_samplerGradient, In.vecColour.xy).xy * (1.0 - In.vecColour.z);
-		}
-
-		// Calculate normal here.
-		normal = normalize(vec3(tx.xy + ty.xy, float(N / 2.0)));
-		
-		/*
-		{
-
-			//Calculate gradient
-			vec2 grad = ((g_texGradient.Sample(g_samplerGradient, In.texCoords).xy + g_texGradient.Sample(g_samplerGradient, In.texCoords / 3.95).xy) / 2.0);// *In.vecColour.w;
-			grad += ddx(grad) + ddy(grad);
-			
-			if (In.vecColour.z != 1.0)
-			{
-				surfaceFoamValue *= In.vecColour.w;
-				grad *= In.vecColour.w;
-			}
-
-			if (abs(grad.x) < 0.0001)
-				grad.x = 0.0001 * (grad.x / grad.x);
-
-			if (abs(grad.y) < 0.0001)
-				grad.y = 0.0001 * (grad.y / grad.y);
-
-			normal = normalize(vec3(grad.xy, 2.0));
-		}*/
-		//normal += ddx(normal);
-		//normal += ddy(normal);
-	}
-
-
-	//Caluclate refraction
-	float tempsample = g_texDepth.Sample(clampSamplerState,TexCoord*g_DepthScale).x;
-	float fulldepth =  depthToFadeDistance(tempsample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
+shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
+{
+	float z = 0; floor(8.0f*IN.texCoords.x) / 8.0f;
+	//if(IN.texCoords.y<0.5)
+		z=0.5;
+	vec4 lookup		=texture_3d_nearest_lod(noiseTexture3D,vec3(IN.texCoords,z),0);
 	
-	//float fresnelFactor = 1.0;
+	//vec4 lookup = VirtualNoiseLookup(vec3(IN.texCoords, z), 4, 1, true);
+	return vec4(0.5*(lookup.rgb+1.0),1.0);
+}
 
-	if (frontFacing)
-	{			
-		actualDepth = saturate(fulldepth - surfaceDepth);
+shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET
+{
+    vec4 lookup			=texture_clamp_lod(rainMapTexture,IN.texCoords.xy,0);
+	return vec4(lookup.rgb*lookup.a,1.0);
+}
 
-		if (actualDepth > 0.0)
+#define CROSS_SECTION_STEPS 32
+vec4 CrossSection(vec2 texCoords,float yz)
+{
+	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
+	int i		=0;
+	vec3 accum	=vec3(0.0,0.0,0.0);
+	texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
+	texc.z		+=0.5*yz/float(CROSS_SECTION_STEPS);
+	vec4 x_section	=texture_wwc_lod(cloudDensity,texc,0);
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
+	{
+		vec4 density=texture_wwc_lod(cloudDensity,texc,0);
+		vec3 colour=vec3(1.0,1.0,1.0)*(lightResponse.x+lightResponse.y);
+		colour.gb+=vec2(.125,.25)*(lightResponse.z);
+		colour=vec3(.85,.85,.85);
+		if(density.x<0)
+			colour.b=0;
+		float opacity=saturate(0.1*abs(density.x));
+		colour*=opacity;
+		accum*=1.0-opacity;
+		accum += colour; 
+		texc.y-=(1.0-yz)/float(CROSS_SECTION_STEPS);
+		texc.z+=yz/float(CROSS_SECTION_STEPS);
+	}
+    return vec4(x_section.xxx,1);
+}
+
+shader vec4 PS_CrossSection(posTexVertexOutput IN):SV_TARGET
+{
+    return CrossSection(IN.texCoords,yz);
+}
+
+shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
+{
+	vec2 texCoords=IN.texCoords;
+	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
+texc.xy		+=vec2(gridCentreTexel+windowGrid.xy/2)/vec2(windowGrid.xy);
+	int i		=0;
+	vec3 accum	=vec3(0.0,0.5,1.0);
+	//texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
+	//texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
+	vec2 uv = vec2(0,0);
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
+	{
+		//texc.z=0.5;
+		vec4 density	=texture_wwc_lod(cloudDensity,texc,0);
+		vec4 light		=texture_wwc_lod(cloudDensity2,texc,0);
+		vec3 colour		=light.rgb;//(lightResponse.x*light.y+lightResponse.y*light.x);
+		colour.gb		+=vec2(.125,.25)*(lightResponse.z*light.w);
+		colour.b		+=density.w;
+		float opacity	=density.z;
+		colour			*=opacity;
+		accum			*=1.0-opacity;
+		accum			+=colour;
+		uv				+=density.xy;
+		texc.y			-=(1.0-yz)/float(CROSS_SECTION_STEPS);
+		texc.z			+=yz/float(CROSS_SECTION_STEPS);
+		//accum=density;
+	}
+	//accum=texture_wwc_lod(cloudDensity,vec3(texc.xy,0.5),0).rgb;
+    return vec4(accum,1);
+}
+
+BlendState Blend1
+{
+	BlendEnable[0]	=FALSE;
+	BlendEnable[1] = FALSE;
+	BlendEnable[2] = FALSE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC_ALPHA;
+    BlendOp			=ADD;
+    SrcBlendAlpha	=ZERO;
+    DestBlendAlpha	=SRC_ALPHA;
+    BlendOpAlpha	=ADD;
+};
+
+BlendState AddBlend2
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1] = TRUE;
+	BlendEnable[2] = FALSE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
+    BlendOp			=ADD;
+    SrcBlendAlpha	=ZERO;
+    DestBlendAlpha	=ONE;
+    BlendOpAlpha	=ADD;
+};
+
+VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
+
+fxgroup raytrace
+{
+	technique skylight
+	{
+		pass p0
 		{
-			if (enableRefraction)
-			{
-				viewNormal = mul(vec4(normal, 0.0), g_matWorldViewProj).xyz;
-				refract_vec = refract(eyeViewVec, viewNormal, 1.0 / 1.33);
-
-				float cosangle = acos(dot(eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
-				offset = tan(cosangle) * (actualDepth / fulldepth) * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z -  35.0) / 5.0));
-				TexCoord += offset * (normalize(refract_vec.xy) * g_screenScale);
-
-				TexCoord = abs(TexCoord);
-			}
-			if (TexCoord.y >= 1.0)
-				TexCoord.y = 2.0 - TexCoord.y;
-
-			if (TexCoord.x >= 1.0)
-				TexCoord.x = 2.0 - TexCoord.x;
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceSimple()));
 		}
-		else 
+	}
+	technique skybox
+	{
+		pass p0
 		{
-			Output.Scattering = vec4(g_scattering, 0.0);
-			Output.Absorption = vec4(g_absorption, 0.0);
-			Output.RefractColour = vec4(0.0, 0.0, 0.0, 0.0);
-			Output.Normals = vec4(0.001, 0.001, 1.0, 0.0);
-			Output.Depth = vec4(0.0, 0.0, 0.0, 0.0);
-			actualDepth = 0.0;
-			return Output;
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceHighDetailCubemap()));
 		}
 	}
-	else
+	technique lightpass
 	{
-		actualDepth = min(fulldepth, surfaceDepth);
-
-		if (enableRefraction)
+		pass p0
 		{
-			if (actualDepth == surfaceDepth)
-			{
-				viewNormal = mul(vec4(-normal, 0.0), g_matWorldViewProj).xyz;
-				refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
-
-				//fresnelFactor = fresnel(eyeViewVec, viewNormal, 1.33, 1.0);
-
-				float cosangle = acos(dot(-eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
-				offset = tan(cosangle) *((fulldepth - surfaceDepth) / fulldepth) * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z - 35.0) / 5.0));
-				TexCoord += offset *(normalize(refract_vec.xy) * g_screenScale);
-
-				TexCoord = abs(TexCoord);
-			}
-
-			if (TexCoord.y >= 1.0)
-				TexCoord.y = 2.0 - TexCoord.y;
-
-			if (TexCoord.x >= 1.0)
-				TexCoord.x = 2.0 - TexCoord.x;
+			SetComputeShader(CompileShader(cs_5_0,CS_Lightpass()));
 		}
 	}
-		
-
-	if (enableRefraction)
+	technique lightpass_draw
 	{
-		subsurfaceSample = g_texDepth.Sample(clampSamplerState, TexCoord*g_DepthScale).x;
-		subsurfaceDepth = depthToFadeDistance(subsurfaceSample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
-		if (subsurfaceDepth < surfaceDepth)
+		pass p0
 		{
-			TexCoord = baseTexCoord;
-			subsurfaceDepth = fulldepth;
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState(RenderNoCull);
+			SetBlendState(NoBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetVertexShader(vs_fullscreen_5_0);
+			SetGeometryShader(NULL);
+			SetPixelShader(CompileShader(ps_5_0,PS_Lightpass()));
 		}
 	}
-	else
+	technique edge_norain
 	{
-		subsurfaceDepth = fulldepth;
-	}
-	//else if (g_enableRefraction)
-		//TexCoord = lerp(TexCoord, ((vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + vec2(1.0, 1.0)) / 2.0), exp(tempsample - subsurfaceSample) );
-	
-	if (frontFacing)
-	{
-		if (subsurfaceDepth > surfaceDepth)
+		pass p0 
 		{
-			finalDepth = subsurfaceDepth - surfaceDepth;
+			SetComputeShader(CompileShader(cs_5_0,CS_Edge_NoRain()));
 		}
-		else
+	}
+	technique edge_rain
+	{
+		pass p0 
 		{
-			finalDepth = 0.0;
+			SetComputeShader(CompileShader(cs_5_0,CS_Edge_Rain()));
 		}
 	}
-	else 
+	technique interp_norain
 	{
-		finalDepth = -min(actualDepth, surfaceDepth);
-		if (subsurfaceDepth > actualDepth) {
-			backfaceOccluded = 1.0;
-		}
-	}
-
-	if (enableFoam) //Make sure foam only generated for the ocean.
-	{
-		//vec2 foamSamples = g_foamAlpha.Sample(wwcSamplerState, In.texCoords.xy).xy;
-		//float bubbles = g_foamTexture.Sample(wwcSamplerState,In.texCoords.xy * 4.0f).x;
-		//float surfaceFoamTextureSample = g_surfaceFoamTexture.Sample(wwcSamplerState, In.texCoords * 24.0f).x;
-		//surfaceFoamValue *= surfaceFoamTextureSample;
-
-		//foamSamples = vec2(0.0, 0.0);
-		//bubbles = 0.0;
-		//surfaceFoamTextureSample = 0.0;
-
-		//foamValue = (1.0 - bubbles) * foamSamples.x;
-
-		//surfaceFoamValue *= bubbles;
-		//surfaceFoamValue += foamSamples.y;
-
-		//if (foamSamples.y / 8.0 > 0.95)
-		//	surfaceFoamValue += ((foamSamples.y / 8.0) - 0.95) / 10.0;
-
-		//if ((bubbles * bubbles) > foamValue)
-		//	foamValue = 0.0;
-
-		//if (surfaceFoamValue < 0.1)
-		//	surfaceFoamValue = 0.0;
-
-		//surfaceFoamValue /= 2.0;
-		//surfaceFoamValue = foamSamples.y;
-		/*
-		clamp(surfaceFoamValue, 0.0, 1.0);
-		clamp(foamValue, 0.0, 1.0);
-		*/
-	}
-	
-	eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
-		
-	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(offset,0.0, 0.0,0.0); // length(g_texDisplacement.SampleLevel(wrapSamplerState, In.texCoords, 0).xy);//
-
-	/* Test for probe positions and values 
-	int x;
-	for (x = 0; x < 64; x++)
-	{
-		vec2 probePos = (g_ProbePos[x].yx  * g_UVScale) + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01;
-		if ((probePos.x < In.texCoords.x + 0.01)
-			&& (probePos.x > In.texCoords.x - 0.01)
-			&& (probePos.y < In.texCoords.y + 0.01)
-			&& (probePos.y > In.texCoords.y - 0.01))
+		pass p0 
 		{
-			refractColour = vec4(g_ProbeValues[x].x, 0.0, 0.0, 0.0);
-			break;
+			SetComputeShader(CompileShader(cs_5_0,CS_Interp_NoRain()));
 		}
-		else
-			refractColour = vec4(0.0, 0.0, 0.0, 0.0);
 	}
-	*/
-	Output.Scattering = vec4(g_scattering, enableFoam);
-	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
-	/*
-	float ampResult = 0.0;
-	
-	int i;
-	for (i = 0; i < 16; i++)
+	technique interp_rain
 	{
-		ampResult += texture_3d_wrap_lod(g_InputAmplitude,vec3(In.texCoords.x / 5.0, In.texCoords.y / 5.0, (i + 0.5) / 16.0), 0);
-	}*/
-	Output.RefractColour = refractColour; //ampResult; //
-	Output.Normals = vec4(normal, backfaceOccluded);
-	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, fulldepth);
-
-	return Output;
-}
-
-shader PS_WATER_OUTPUTS PS_BoundlessWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace)
-{
-	bool faceDirection = g_unityRender ? !frontFacing : frontFacing;
-	return PS_WaterSurfDepth(In, faceDirection, g_enableFoam, false);
-}
-
-shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace)
-{
-	bool faceDirection = g_unityRender ? !frontFacing : frontFacing;
-	return PS_WaterSurfDepth(In, faceDirection, false, false);
-}
-
-shader PS_WATER_OUTPUTS PS_BoundlessWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace)
-{
-	bool faceDirection = g_unityRender ? !frontFacing : frontFacing;
-	return PS_WaterSurfDepth(In, faceDirection, g_enableFoam, true);
-}
-
-shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace)
-{
-	bool faceDirection = g_unityRender ? !frontFacing : frontFacing;
-	return PS_WaterSurfDepth(In, faceDirection, false, true);
-}
-
-shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
-{
-	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
-
-	//Discard occluded fragments
-	if (depthInput.y <= 0.0)
-		discard;
-
-	float waterDepth = depthInput.x;
-
-	if (waterDepth == 0.0)
-		waterDepth = depthInput.y;
-
-	float4 Output = vec4(0.0, 0.0, 0.0, 1.0);
-
-	float4 absorptionInput = g_waterAbsorption.Sample(clampSamplerState, In.texCoords);
-	vec3 absorption = absorptionInput.xyz;//vec3(0.2916, 0.0474, 0.0092);
-
-	float4 scatteringInput = g_waterScattering.Sample(clampSamplerState, In.texCoords);
-	vec3 scattering = scatteringInput.xyz;//vec3(0.17, 0.2, 0.234); //Ocean scattering
-
-	float4 normalsInput = g_waterNormals.Sample(clampSamplerState, In.texCoords);
-	float4 refractColourInput = g_waterRefractColour.Sample(clampSamplerState, In.texCoords);
-	vec3 normal = normalsInput.xyz;
-	
-	//return vec4(-normalsInput.xy, 0.0, 0.0);
-	//return refractColourInput; // Debug line
-
-	float scatterDepth = 0.f;
-	float fadeDistance = 300000.f;
-	float absoluteDepth = depthInput.y;
-
-	vec4 clip = vec4((In.texCoords.x * 2.f) - 1.f, ((1.f - In.texCoords.y) * 2.f) - 1.f, 1.f, 1.f);
-	vec4 view = mul(g_matInvViewProj, clip);
-	vec3 eye_dir = normalize(view.xyz / view.w);
-	vec3 sun_dir = normalize(g_SunDir);
-
-	float sunAngle = dot(sun_dir, vec3(0.f, 0.f, 1.f)) / (length(sun_dir) * length(vec3(0.f, 0.f, 1.f)));
-
-	// Fournier-Forand phase function
-	const float u = 4.0f;
-	float v = (3.f - u) / 2.f;
-	float b = (4.f / (3.f * pow(1.33f - 1.f, 2.f))) * (0.5f - 0.5f * (dot(eye_dir, sun_dir)));
-	float p = 1.f - ((1.f - pow(b, v + 1.f) - (0.5f * (1.f - pow(b, v)))) / ((1.f - b) * pow(b, v)));
-	
-	float A = acos(dot(sun_dir, vec3(0.f, 0.f, 1.f)) / (length(sun_dir) * length(vec3(0.f, 0.f, 1.f))));
-	float B = acos(dot(eye_dir, -vec3(0.f, 0.f, 1.f)) / (length(eye_dir) * length(vec3(0.f, 0.f, 1.f))));
-	const float c = 1.0;// (sin(A) / sin(B));//
-
-	vec3 extinction = scattering + absorption;
-	vec3 albedo = scattering / extinction;
-	
-	//Camera is below the water
-	if (waterDepth < 0.f)
-	{
-		waterDepth *= -1.f;
-		float eye_depth = abs(depthInput.z);
-		float pointDepth = 0.f;
-		
-		if (normalsInput.w == 0.f) //Depth hits a solid surface first
+		pass p0 
 		{
-			if (eye_dir.z < 0.f)
-			{
-				pointDepth = eye_depth + abs(waterDepth * dot(eye_dir, vec3(0.f, 0.f, -1.f)) / (length(eye_dir) * length(vec3(0.f, 0.f, -1.f))));
-			}
-			else
-			{
-				pointDepth = eye_depth - abs(waterDepth * sin((PI / 2.f) - acos(dot(eye_dir, vec3(0.f, 0.f, 1.f)) / (length(eye_dir) * length(vec3(0.f, 0.f, 1.f))))));
-			}
-			if ((sun_dir.z >= 0.f))
-			{
-				
-				scatterDepth = pointDepth / sunAngle;
-			}
-			else
-			{
-				scatterDepth = pointDepth;
-			}
+			SetComputeShader(CompileShader(cs_5_0,CS_Interp_Rain()));
 		}
-		else {
-			if (scatteringInput.w  > 0.f || absorptionInput.w > 0.f)
-			{
-				//vec3 foamEffect = vec3(scatteringInput.w  * g_SunColor.xyz);
-				//refractColourInput += vec4(foamEffect * 0.5, scatteringInput.w);
-				refractColourInput += vec4(absorptionInput.w * g_SunColor* clamp(dot(normal, sun_dir), 0.1, 1.0), 0.0);
-			}
-			scatterDepth = eye_depth;
-		}
-		
-		float sunEffect = ((dot(eye_dir, sun_dir) + 1.f) / 2.f);
-
-		if (sun_dir.z <= 0.f)
-			sunEffect = 0.f;
-		/*
-		if (normalsInput.w)
+	}
+	technique full_compute
+	{
+		pass p0 
 		{
-			float refractFresnel = fresnel(eye_dir, -normal, 1.0, 1.33);
-			if (!length(refractFresnel))
-				refractColourInput = vec4(sunEffect, sunEffect, sunEffect, sunEffect);
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceRain()));
 		}
-		*/
-		//Subsurface and light transportation calculations
-		vec3 incomingRadiance = exp(-extinction * (eye_depth) * fadeDistance) * g_SunColor;
-		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance).xyz * refractColourInput.xyz, 1.f);
-		vec4 surfaceScattering = vec4(incomingRadiance * exp(-extinction) , 0.f);
-		vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c) * (fadeDistance * waterDepth))))), 0.f);
-
-		//float sunScatter = saturate(dot(eye_dir, sun_dir));
-		//if (!sun_dir.z)
-			//sunScatter = 0.f;
-
-		SSS = max(SSS, vec4(0.0, 0.0, 0.0, 0.0));
-		surfaceScattering = max(surfaceScattering, vec4(0.0, 0.0, 0.0, 0.0));
-
-		Output += mult;
-		Output += SSS * surfaceScattering;
-		//Output += SSS * sunScatter * -exp(fadeDistance * eye_depth);
-
-		//float temp = (3 * (0.5 + 0.5 * cos(2 * acos(dot(eye_dir, sun_dir)))) - 1.0);//((3 * (dot(eye_dir, sun_dir) * dot(eye_dir, sun_dir))) - 1.0);
-
-		return max(Output, vec4(0.0,0.0,0.0,0.0));
 	}
-	
-	//Discard occluded fragments
-	if (depthInput.y <= 0.0000001f)
-		discard;
-
-	float pointDepth = abs(absoluteDepth * (dot(eye_dir, vec3(0.f, 0.f, -1.f)) / (length(eye_dir) * length(vec3(0.f, 0.f, -1.f)))));
-	if ((sun_dir.z >= 0.f))
+	technique no_rain_compute
 	{
-		float sunAngle = dot(-sun_dir, vec3(-sun_dir.xy, 0.f)) / (length(-sun_dir) * length(vec3(-sun_dir.xy, 0.f)));
-		scatterDepth = pointDepth / sin(acos(sunAngle)); //Water Depth to the sun
-	}
-	else {
-		scatterDepth = pointDepth;
-	}
-
-	vec3 reflect_vec = reflect(eye_dir, normal);
-	vec3 refract_vec = refract(eye_dir, normal, 1.f / 1.33f);
-
-	float sunEffect = (dot(normal, sun_dir) + 1.f) / 2.f;
-
-	//reflect_vec.z = max(reflect_vec.z, 0.f);
-	sun_dir.z = max(sun_dir.z, 0.f);
-
-	float sunScatter = saturate(dot(refract_vec, sun_dir));
-
-	if (!sun_dir.z)
-		sunScatter = 0.f;
-
-	float eye_depth = abs(depthInput.z);
-
-	//Subsurface and light transportation calculations
-	vec3 incomingRadiance = exp(-extinction  * (waterDepth) * fadeDistance) * g_SunColor;
-	vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance).xyz * refractColourInput.xyz, 1.f);
-	vec4 surfaceScattering = vec4(g_SunColor * exp(-extinction) , 0.f);
-	vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c)  * fadeDistance * absoluteDepth)))), 0.0f);
-
-	// --------------- Reflected colour
-	vec3 refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0.0);
-	float reflectFresnel = fresnel(normalize(reflect_vec), normal, 1.f ,1.33f);
-
-	Output += mult;
-	Output += SSS * surfaceScattering ;
-	Output += SSS * sunScatter * (1.f - reflectFresnel);
-	Output += SSS * absorptionInput.w;
-
-	// --------------- Sun spots
-	float cosangle = acos(dot(reflect_vec, sun_dir) / (length(reflect_vec) * length(sun_dir)));
-	if (cosangle / 2.0 < g_SunRadius * (PI / 180.0 / 60.0))
-	{
-		float cos_spec = dot(reflect_vec, sun_dir);
-		vec4 sunSpec = vec4(((g_Shineness + 1.f) / (2.f * SIMUL_PI_F)) * pow(saturate(cos_spec), g_Shineness) * g_SunColor, 0.f);
-		//float sunFresnel = fresnel(-sun_dir, normal, 1.f, 1.33f);
-		Output += sunSpec;
-	}
-
-	Output += vec4(refl * reflectFresnel, 0.f);
-
-	// --------------- Foam colour
-	if (scatteringInput.w  > 0.f && absorptionInput.w > (0.5f - g_foamStrength))
-	{
-			//refl -= vec3(scatteringInput.w, scatteringInput.w, scatteringInput.w);
-			//vec3 foamEffect = vec3(scatteringInput.w, scatteringInput.w, scatteringInput.w);
-			//float surfacefoamEffect = saturate(0.5 - absorptionInput.w);
-
-			//Output += vec4(g_SunColor, 0.0) * vec4(foamEffect * albedo, 1.0) * surfaceScattering * clamp(dot(normal, sun_dir), 0.1, 1.0);
-			Output += vec4(g_SunColor, 0.f) * (absorptionInput.w - (0.5f - g_foamStrength)) * clamp(dot(normal, sun_dir), 0.1f, 1.f);
-	}
-
-	return Output;
-	//return min(Output, vec4(1.0,1.0,1.0,1.0));
-}
-
-shader vec4 CopyDepthStencilPS(posTexVertexOutput In) : SV_Target
-{
-	vec4 Output =  g_texDepth.SampleLevel(wwcSamplerState, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
-	return Output;
-}
-/*
-shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
-{
-	float foam = 0.0;
-	float surfaceFoam = 0.0;
-	float alpha = 0.98;
-	float displacement = g_texDisplacement.Sample(g_samplerGradient, In.texCoords).z;
-
-	float derivativeX = ddx(g_texDisplacement.Sample(g_samplerGradient, In.texCoords).x);
-	float derivativeY = ddy(g_texDisplacement.Sample(g_samplerGradient, In.texCoords).y);
-
-	if (displacement > g_foamHeight)
-	{
-		if (derivativeY < 0.0001)
+		pass p0 
 		{
-			surfaceFoam += 0.5;// 1.0 - (derivativeY * 10000);
-			alpha = 1.0;
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceNoRain()));
 		}
-
-		if (derivativeX < 0.0001)
+	}
+	technique stat_rain
+	{
+		pass p0 
 		{
-			surfaceFoam += 0.5;// 1.0 - (derivativeX * 10000);
-			alpha = 1.0;
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticRain()));
 		}
 	}
-	if ((displacement >= g_foamChurn))
+	technique stat
 	{
-		foam = (displacement - g_foamChurn) / 10.0;
-		alpha = 1.0;
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticNoRain()));
+		}
 	}
-
-	return float4(foam / 2.0, surfaceFoam, 0.0, alpha);
-}
-*/
-shader float4 WireframePS(VS_OUTPUT IN) : SV_Target
-{
-	return IN.vecColour;
-}
-
-shader posTexVertexOutput VS_ShowTexture(idOnly id)
-{
-	return VS_ScreenQuad(id,rect);
-}
-
-shader vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
-{
-	vec4 lookup=showTexture.Sample(wwcSamplerState,IN.texCoords.xy);
-	return vec4(showMultiplier*lookup.rgb,1.0);
-}
-
-shader vec4 PS_ClearTexture(posTexVertexOutput IN) :SV_TARGET
-{
-	return vec4(0.0,0.0,0.0,0.0);
-}
-
-technique water_final_pass
-{
-	pass p0 
+	technique edge_stat_rain
 	{
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, WaterSurfFinalPS()));
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeRain()));
+		}
+	}
+	technique edge_stat
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeNoRain()));
+		}
+	}
+	technique cons_rain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticRain_cons()));
+		}
+	}
+	technique cons
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticNoRain_cons()));
+		}
+	}
+	technique edge_cons_rain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeRain_cons()));
+		}
+	}
+	technique edge_cons
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeNoRain_cons()));
+		}
 	}
 }
 
-technique copy_stencil
+technique alt_cloud_shadow
 {
 	pass p0
 	{
-		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(RenderNoCull);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+		SetVertexShader(vs_fullscreen_5_0);
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, CopyDepthStencilPS()));
+		SetPixelShader(CompileShader(ps_5_0, PS_AltCloudShadow()));
 	}
 }
 
-technique show_texture
+technique cloud_shadow
 {
-	pass p0
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(vs_fullscreen_5_0);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_CloudShadow()));
+    }
+}
+
+technique rain_map
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(vs_fullscreen_5_0);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_RainMap()));
+    }
+}
+
+technique mix_clouds
+{
+    pass init
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MixInit()));
+    }
+    pass main
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
+    }
+}
+
+technique mix_cirrus
+{
+	pass init
 	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MixCirrusInit()));
+	}
+		pass main
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MixCirrus()));
+	}
+}
+
+technique mix_map
+{
+	pass init
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindowInit()));
+	}
+		pass main
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindow()));
+    }
+}
+
+technique window_lighting
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_WindowLighting()));
+    }
+}
+
+technique cloud_mip
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0, CS_CloudMip()));
+    }
+}
+
+technique light_mip
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0, CS_LightMip()));
+    }
+}
+
+
+technique simulate_clouds
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Simulate()));
+    }
+}
+
+technique cloud_placement_volume
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( wireframeRasterizer );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_PlacementVolume()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_PlacementVolume()));
+    }
+}
+
+technique blended_cloud_cs
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_BlendedCrossSection()));
+    }
+}
+
+technique cross_section
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CrossSection()));
+    }
+}
+
+
+technique show_noise
+{
+    pass p0
+    {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
-	}
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowNoise()));
+    }
 }
 
-technique show_frequency_structured_buffer
+technique show_3d_noise
 {
-	pass p0
-	{
+    pass p0
+    {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_ShowFrequencyStructuredBuffer()));
-	}
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Show3DNoise()));
+    }
 }
-technique show_spatial_structured_buffer
+
+technique show_shadow
 {
-	pass p0
-	{
+    pass p0
+    {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_ShowSpatialStructuredBuffer()));
-	}
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));
+    }
 }
 
-technique wireframe_ocean
+technique point_queries
 {
-	pass p0 
-	{
-		SetRasterizerState( wireframeRasterizer );
-		SetDepthStencilState(TestReverseDepth, 0 );
-		SetBlendState(AddBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundlessWaterSurfShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,WireframePS()));
-	}
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_PointQueries()));
+    }
 }
 
-technique wireframe_bounded
+technique line_queries
 {
-	pass p0
-	{
-		SetRasterizerState(wireframeRasterizer);
-		SetDepthStencilState(TestReverseDepth, 0);
-		SetBlendState(AddBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, WireframePS()));
-	}
-}
-
-technique render_boundless_depth
-{
-	pass no_refraction
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0 );
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0,VS_BoundlessWaterSurfNoShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundlessWaterSurfDepth()));
-	}
-
-	pass refraction_no_backface
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundlessWaterSurfNoShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundlessWaterSurfDepthRefraction()));
-	}
-
-	pass refraction
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundlessWaterSurfNoShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundlessWaterSurfDepthRefraction()));
-	}
-}
-
-technique render_boundless_depth_shore
-{
-	pass no_refraction
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundlessWaterSurfShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundlessWaterSurfDepth()));
-	}
-
-	pass refraction_no_backface
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundlessWaterSurfShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundlessWaterSurfDepthRefraction()));
-	}
-
-	pass refraction
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundlessWaterSurfShore()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundlessWaterSurfDepthRefraction()));
-	}
-}
-
-technique render_bounded_depth
-{
-	pass no_refraction
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepth()));
-	}
-
-	pass refraction
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepthRefraction()));
-	}
-
-	pass refraction_no_backface
-	{
-		SetRenderTargetFormatState(WaterTargetFormats);
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(ReverseDepth, 0);
-		SetBlendState(WaterNoBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_BoundedWaterSurfDepthRefraction()));
-	}
-}
-/*
-technique update_foam
-{
-	pass p0
-	{
-		SetRasterizerState(RenderNoCull);
-		SetBlendState(FoamBlend, vec4(0.0, 0.0, 0.0, 1.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, UpdateFoamAlphaPS()));
-	}
-}
-*/
-technique generate_heightmap
-{
-	pass p0
-	{
-		SetComputeShader(CompileShader(cs_5_0, GenerateHeightMapCS()));
-	}
-}
-
-technique update_spectrum
-{
-	pass p0 
-	{
-		SetComputeShader(CompileShader(cs_5_0,UpdateSpectrumCS()));
-	}
-}
-
-technique radix_008a
-{
-	pass p0 
-	{
-		SetComputeShader(CompileShader(cs_5_0,Radix008A_CS()));
-	}
-}
-
-
-technique radix_008a2
-{
-	pass p0 
-	{
-		SetComputeShader(CompileShader(cs_5_0,Radix008A_CS2()));
-	}
-}
-
-
-technique update_displacement
-{
-	pass p0
-	{
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,UpdateDisplacementPS()));
-	}
-}
-
-technique gradient_folding
-{
-	pass p0
-	{
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,GenGradientFoldingPS()));
-	}
-}
-
-technique clear_gradient
-{
-	pass p0
-	{
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(DontBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_ClearTexture()));
-	}
-}
-
-technique update_probes
-{
-	pass boundless
-	{
-		SetComputeShader(CompileShader(cs_5_0, UpdateProbeValuesBoundlessCS()));
-	}
-	/*
-	pass bounded
-	{
-		SetComputeShader(CompileShader(cs_5_0, UpdateProbeValuesBoundedCS()));
-	}
-	*/
-}
-
-technique precompute_profile_buffer
-{
-	pass p0
-	{
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(DontBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PrecomputeProfileBufferPS()));
-	}
-}
-
-technique precompute_group_speeds
-{
-	pass p0
-	{
-		SetComputeShader(CompileShader(cs_5_0, PrecomputeGroupSpeedsCS()));
-	}
-}
-
-technique update_amplitude_grid
-{
-	pass p0
-	{
-		SetComputeShader(CompileShader(cs_5_0, UpdateAmplitudeGridCS()));
-	}
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LineQueries()));
+    }
 }

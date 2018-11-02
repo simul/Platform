@@ -26,6 +26,7 @@ Texture::Texture(const char *n)
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN)
 				,renderPlatform(NULL)
+	,textureLoadComplete(true)
 {
 	if(n)
 		name=n;

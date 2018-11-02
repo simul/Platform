@@ -375,7 +375,7 @@ void DisplaySurface::InitSwapChain()
 	
 	// Init command buffers / pools:
 	{
-		auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index);
+		auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index).setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 		auto result = vulkanDevice->createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
@@ -400,7 +400,7 @@ void DisplaySurface::InitSwapChain()
 		}
 		if (present_queue_family_index!=graphics_queue_family_index)
 		{
-			auto const present_cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(present_queue_family_index);
+			auto const present_cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(present_queue_family_index).setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
 			result = vulkanDevice->createCommandPool(&present_cmd_pool_info, nullptr, &present_cmd_pool);
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -708,7 +708,7 @@ void DisplaySurface::CreateDefaultPipeline()
 	vk::DynamicState const dynamicStates[2] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 
 	auto const dynamicStateInfo = vk::PipelineDynamicStateCreateInfo().setPDynamicStates(dynamicStates).setDynamicStateCount(2);
-
+	
 	auto const pipelineInfo = vk::GraphicsPipelineCreateInfo()
 		.setStageCount(2)
 		.setPStages(shaderStageInfo)
@@ -723,8 +723,8 @@ void DisplaySurface::CreateDefaultPipeline()
 		.setLayout(pipeline_layout)
 		.setRenderPass(render_pass);
 
-	result = deviceManager->GetVulkanDevice()->createGraphicsPipelines(pipelineCache, 1, &pipelineInfo, nullptr, &default_pipeline);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	//result = deviceManager->GetVulkanDevice()->createGraphicsPipelines(pipelineCache, 1, &pipelineInfo, nullptr, &default_pipeline);
+	//SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	//device.destroyShaderModule(frag_shader_module, nullptr);
 	//device.destroyShaderModule(vert_shader_module, nullptr);
@@ -753,7 +753,7 @@ void DisplaySurface::Render()
 	SIMUL_VK_CHECK(result);
 
 	crossplatform::DeviceContext &immediateContext = renderPlatform->GetImmediateContext();
-	deferredContext.platform_context = immediateContext.platform_context;
+	deferredContext.platform_context = &commandBuffer;
 	deferredContext.renderPlatform = renderPlatform;
 
 
@@ -761,7 +761,7 @@ void DisplaySurface::Render()
 
 	
 	commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, default_pipeline);
+	//commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, default_pipeline);
 	//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout, 0, 1,
 	//	&swapchain_image_resources[current_buffer].descriptor_set, 0, nullptr);
 
@@ -771,16 +771,15 @@ void DisplaySurface::Render()
 
 	vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(viewport.w, viewport.h));
 	commandBuffer.setScissor(0, 1, &scissor);
-	commandBuffer.draw(12 * 3, 1, 0, 0);
+	//commandBuffer.draw(12 * 3, 1, 0, 0);
 	// Note that ending the renderpass changes the image's layout from
 	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
 	commandBuffer.endRenderPass();
 
 
-
-
 	if (renderer)
-		renderer->Render(mViewId, 0, 0, viewport.w, viewport.h);
+		renderer->Render(mViewId, deferredContext.platform_context,&swapchain_image_resources[current_buffer].framebuffer
+			, viewport.w, viewport.h);
 
 	renderPlatform->RestoreRenderState(deferredContext);
 	res.cmd.end();

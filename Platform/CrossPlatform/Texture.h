@@ -19,7 +19,15 @@ namespace sce
 		class Sampler;
 	}
 }
-
+namespace vk
+{
+	class ImageView;
+	class Sampler;
+}
+namespace nvn
+{
+	class Texture;
+}
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
@@ -60,6 +68,13 @@ namespace simul
 		{
 			int x,y;
 			int w,h;
+			inline const Viewport &operator=(const int4 &i)
+			{
+				x=i.x;
+				y=i.y;
+				w=i.z;
+				h=i.w;
+			}
 		};
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;
@@ -100,6 +115,10 @@ namespace simul
 			virtual GLuint asGLuint()
 			{
 				return 0;
+			}
+			virtual vk::Sampler *AsVulkanSampler()
+			{
+				return nullptr;
 			}
 			int default_slot;
 		};
@@ -152,6 +171,7 @@ namespace simul
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
+            virtual nvn::Texture* AsNXTexture() { return 0; };
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
 			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
@@ -178,6 +198,7 @@ namespace simul
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
+			virtual vk::ImageView *AsVulkanImageView(crossplatform::ShaderResourceType=crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1,bool=false){return nullptr;}
 			//! Get the crossplatform pixel format.
 			PixelFormat GetFormat() const
 			{
@@ -228,6 +249,7 @@ namespace simul
 			{
 				return arraySize;
 			}
+			virtual void FinishLoading(DeviceContext &deviceContext) {}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
@@ -241,6 +263,7 @@ namespace simul
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
+			bool textureLoadComplete;
 		};
 	}
 }

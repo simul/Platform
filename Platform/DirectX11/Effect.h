@@ -91,13 +91,13 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
-			EffectPass(crossplatform::RenderPlatform *);
+			EffectPass(crossplatform::RenderPlatform *,crossplatform::Effect *);
 			void Apply(crossplatform::DeviceContext &deviceContext,bool test) override;
 		};
 		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
 		public:
-			EffectTechnique(simul::crossplatform::RenderPlatform *r);
+			EffectTechnique(simul::crossplatform::RenderPlatform *r,crossplatform::Effect *e);
 			~EffectTechnique();
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;

@@ -74,6 +74,8 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,can_save_and_restore(true)
 #endif
 	,textRenderer(nullptr)
+	,mCurIdx(0)
+	,mLastFrame(-1)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;
@@ -189,7 +191,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	{
 		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
 		mat->SetEffect(solidEffect);
-
 	}
 }
 

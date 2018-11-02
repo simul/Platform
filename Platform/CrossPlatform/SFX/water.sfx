@@ -274,7 +274,7 @@ shader vec4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
 	float dy = 100.0f * g_InputDxyz[addr + g_DyAddressOffset].y * sign_correction * g_ChoppyScale;
 	float dz = 100.0f * g_InputDxyz[addr].x * sign_correction;
 	
-	return float4(dx, dy, dz, 1);
+	return vec4(dx, dy, dz, 1);
 }
 
 shader vec4 PS_ShowFrequencyStructuredBuffer( posTexVertexOutput In):SV_TARGET
@@ -923,9 +923,9 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
 	vPos.y += layerY - (layerQuadSize * g_layerDensity * 2);
 	vPos.z += g_oceanHeight;
 	
-	float4 pos_local = float4(vPos, 1);
+	vec4 pos_local = vec4(vPos, 1);
 	
-	vec2 detail_uv_local = ((vPos.xy) * g_UVScale);
+	vec2 detail_uv_local = vPos.xy * g_UVScale;
 	vec2 detail_uv_local1 = vec2(0.0, 0.0);
 	vec2 detail_uv_local2 = vec2(0.0, 0.0);
 
@@ -933,7 +933,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
 		noDisplacement = true;
 
 	// UV
-	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01);
+	vec2 uv_local = (pos_local.xy * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01);
 	vec2 uv_local1 = vec2(-g_boundedLocation.yx * g_UVScale * 0.01);
 	vec2 uv_local2 = vec2(-g_boundedLocation.yx * g_UVScale * 0.01);
 
@@ -947,13 +947,13 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects)
 		lerpSample2.x += layerX - (layerQuadSize * g_layerDensity * 2);
 		lerpSample2.y += layerY - (layerQuadSize * g_layerDensity * 2);
 
-		uv_local1 += ((lerpSample1)* g_UVScale + g_UVOffset);
-		uv_local2 += ((lerpSample2)* g_UVScale + g_UVOffset);
+		uv_local1 += lerpSample1* g_UVScale + g_UVOffset;
+		uv_local2 += lerpSample2* g_UVScale + g_UVOffset;
 
 		if (shoreEffects)
 		{
-			detail_uv_local1 = ((lerpSample1)* g_UVScale);
-			detail_uv_local2 = ((lerpSample2)* g_UVScale);
+			detail_uv_local1 = (lerpSample1 * g_UVScale);
+			detail_uv_local2 = (lerpSample2 * g_UVScale);
 		}
 	}
 
@@ -1252,7 +1252,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	//Transform
 	vPos += g_boundedLocation.yxz;
 
-	float4 pos_local = float4(vPos, 1);
+	vec4 pos_local = vec4(vPos, 1);
 
 	// UV
 	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01;
@@ -1573,7 +1573,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
 		
-	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(offset,0.0, 0.0,0.0); // length(g_texDisplacement.SampleLevel(wrapSamplerState, In.texCoords, 0).xy);//
+	vec4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); //vec4(offset,0.0, 0.0,0.0); // length(g_texDisplacement.SampleLevel(wrapSamplerState, In.texCoords, 0).xy);//
 
 	/* Test for probe positions and values 
 	int x;
@@ -1633,9 +1633,9 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 	return PS_WaterSurfDepth(In, faceDirection, false, true);
 }
 
-shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
+shader vec4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 {
-	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
+	vec4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
 
 	//Discard occluded fragments
 	if (depthInput.y <= 0.0)
@@ -1646,16 +1646,16 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 	if (waterDepth == 0.0)
 		waterDepth = depthInput.y;
 
-	float4 Output = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 Output = vec4(0.0, 0.0, 0.0, 1.0);
 
-	float4 absorptionInput = g_waterAbsorption.Sample(clampSamplerState, In.texCoords);
+	vec4 absorptionInput = g_waterAbsorption.Sample(clampSamplerState, In.texCoords);
 	vec3 absorption = absorptionInput.xyz;//vec3(0.2916, 0.0474, 0.0092);
 
-	float4 scatteringInput = g_waterScattering.Sample(clampSamplerState, In.texCoords);
+	vec4 scatteringInput = g_waterScattering.Sample(clampSamplerState, In.texCoords);
 	vec3 scattering = scatteringInput.xyz;//vec3(0.17, 0.2, 0.234); //Ocean scattering
 
-	float4 normalsInput = g_waterNormals.Sample(clampSamplerState, In.texCoords);
-	float4 refractColourInput = g_waterRefractColour.Sample(clampSamplerState, In.texCoords);
+	vec4 normalsInput = g_waterNormals.Sample(clampSamplerState, In.texCoords);
+	vec4 refractColourInput = g_waterRefractColour.Sample(clampSamplerState, In.texCoords);
 	vec3 normal = normalsInput.xyz;
 	
 	//return vec4(-normalsInput.xy, 0.0, 0.0);
@@ -1735,7 +1735,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 		}
 		*/
 		//Subsurface and light transportation calculations
-		vec3 incomingRadiance = exp(-extinction * (eye_depth) * fadeDistance) * g_SunColor;
+		vec3 incomingRadiance = exp(-extinction * eye_depth * fadeDistance) * g_SunColor;
 		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance).xyz * refractColourInput.xyz, 1.f);
 		vec4 surfaceScattering = vec4(incomingRadiance * exp(-extinction) , 0.f);
 		vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c) * (fadeDistance * waterDepth))))), 0.f);
@@ -1786,7 +1786,7 @@ shader float4 WaterSurfFinalPS(posTexVertexOutput In) : SV_Target
 	float eye_depth = abs(depthInput.z);
 
 	//Subsurface and light transportation calculations
-	vec3 incomingRadiance = exp(-extinction  * (waterDepth) * fadeDistance) * g_SunColor;
+	vec3 incomingRadiance = exp(-extinction  * waterDepth * fadeDistance) * g_SunColor;
 	vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance).xyz * refractColourInput.xyz, 1.f);
 	vec4 surfaceScattering = vec4(g_SunColor * exp(-extinction) , 0.f);
 	vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c)  * fadeDistance * absoluteDepth)))), 0.0f);
@@ -1833,7 +1833,7 @@ shader vec4 CopyDepthStencilPS(posTexVertexOutput In) : SV_Target
 	return Output;
 }
 /*
-shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
+shader vec4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
 {
 	float foam = 0.0;
 	float surfaceFoam = 0.0;
@@ -1863,10 +1863,10 @@ shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
 		alpha = 1.0;
 	}
 
-	return float4(foam / 2.0, surfaceFoam, 0.0, alpha);
+	return vec4(foam / 2.0, surfaceFoam, 0.0, alpha);
 }
 */
-shader float4 WireframePS(VS_OUTPUT IN) : SV_Target
+shader vec4 WireframePS(VS_OUTPUT IN) : SV_Target
 {
 	return IN.vecColour;
 }

@@ -520,9 +520,10 @@ void	DeviceManager::Shutdown()
 
 void*	DeviceManager::GetDevice()
 {
-	static void *ptr[2];
+	static void *ptr[3];
 	ptr[0]=(void*)&deviceManagerInternal->device;
 	ptr[1]=(void*)&deviceManagerInternal->instance;
+	ptr[2]=(void*)&deviceManagerInternal->gpu;
 	return (void*)ptr;
 }
 

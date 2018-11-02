@@ -37,7 +37,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
 }
 
-EffectPass::EffectPass(RenderPlatform *r)
+EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 	:renderPlatform(r)
 	,blendState(NULL)
 	,depthStencilState(NULL)
@@ -56,6 +56,7 @@ EffectPass::EffectPass(RenderPlatform *r)
 	,rwTextureSlotsForSB(0)
 	,should_fence_outputs(true)
 	,platform_pass(nullptr)
+	,effect(parent)
 {
 	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
 		shaders[i]=NULL;
@@ -239,8 +240,9 @@ void Effect::InvalidateDeviceObjects()
 	techniques.clear();
 }
 
-EffectTechnique::EffectTechnique(RenderPlatform *r)
+EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
 	:renderPlatform(r)
+	,effect(e)
 	,platform_technique(NULL)
 	,should_fence_outputs(true)
 {
@@ -770,9 +772,14 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 		{
 			SIMUL_CERR<<"Shader effect file not found: "<<filenameUtf8.c_str()<<std::endl;
-			filenameUtf8=filename_utf8;
+			// We now attempt to build the shader from source.
+			Compile(filename_utf8);
+			if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+			{
+				filenameUtf8=filename_utf8;
 		// The sfxo does not exist, so we can't load this effect.
-			return;
+				return;
+			}
 		}
 	}
 	void *ptr;
@@ -795,6 +802,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	EffectTechnique *tech	=NULL;
 	EffectPass *p			=NULL;
 	string group_name,tech_name,pass_name;
+	int shaderCount=0;
 	while(next>=0)
 	{
 		string line		=str.substr(pos,next-pos-1);
@@ -1035,11 +1043,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				pass_name=line.substr(sp+1,line.length()-sp-1);
 				p=(EffectPass*)tech->AddPass(pass_name.c_str(),0);
+				shaderCount=0;
 			}
 		}
 		else if(level==PASS)
 		{
-			// Find the shader definitions:
+			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
 
@@ -1050,13 +1059,29 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if(cl != std::string::npos && tech)
 			{
 				string type=line.substr(0,cl);
-				string filenamestr=line.substr(cl+1,cm-cl-1);
+				string filename_entry=line.substr(cl+1,cm-cl-1);
 				string uses;
 				if(cm<line.length())
 					uses=line.substr(cm+1,line.length()-cm-1);
 				base::ClipWhitespace(uses);
 				base::ClipWhitespace(type);
-				base::ClipWhitespace(filenamestr);
+				base::ClipWhitespace(filename_entry);
+
+				
+				std::regex re_file_entry("([a-z0-9A-Z_\\.]+)(?:\\((.*)\\))?");
+				std::smatch fe_smatch;
+				
+				std::smatch sm;
+				string filenamestr;
+
+				string entry_point="main";
+				if(std::regex_search(filename_entry, sm, re_file_entry))
+				{
+					filenamestr= sm.str(1);
+					if(sm.length()>2)
+						entry_point= sm.str(2);
+				}
+
 				const string &name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
 				PixelOutputFormat fmt=FMT_UNKNOWN;
@@ -1157,7 +1182,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
                         {
                             p->rtFormatState = passRtFormat;
                         }
-                        
+                        shaderCount++;
+					}
+					else
+					{
+						SIMUL_BREAK_ONCE(base::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
 					}
 					// Set what the shader uses.
 
@@ -1257,12 +1286,20 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							break;
 					}
 					p->MakeResourceSlotMap();
+					s->entryPoint=entry_point;
 				}
 			}
 		}
 		size_t close_brace=line.find("}");
 		if (close_brace != std::string::npos)
 		{
+			if(level==PASS)
+			{
+				if(shaderCount==0)
+				{
+					SIMUL_BREAK_ONCE(base::QuickFormat("No shaders in pass %s of effect %s.",pass_name.c_str(),filename_utf8));
+				}
+			}
 			level = (Level)(level - 1);
 			if (level == OUTSIDE)
 				group_name = "";

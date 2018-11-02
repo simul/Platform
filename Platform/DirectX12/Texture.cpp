@@ -39,7 +39,6 @@ Texture::Texture():
 	renderTargetViews12(nullptr),
 	mLoadedFromFile(false),
     mNumSamples(1)
-	,textureLoadComplete(true)
 	,loadedData(nullptr)
 	,metadata(nullptr)
 	,scratchImage(nullptr)

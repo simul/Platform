@@ -252,7 +252,7 @@ Effect::~Effect()
 
 EffectTechnique* Effect::CreateTechnique()
 {
-	return new opengl::EffectTechnique(renderPlatform);
+	return new opengl::EffectTechnique(renderPlatform,this);
 }
 
 crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
@@ -395,13 +395,13 @@ void Shader::Release()
 
 crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 {
-	crossplatform::EffectPass* p    = new opengl::EffectPass(renderPlatform);
+	crossplatform::EffectPass* p    = new opengl::EffectPass(renderPlatform,effect);
 	passes_by_name[name]            = passes_by_index[i] = p;
 	return p;
 }
 
-EffectPass::EffectPass(crossplatform::RenderPlatform *r):
-    crossplatform::EffectPass(r)
+EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
+    crossplatform::EffectPass(r,e)
 	,mProgramId(0),
     PassName("passname")
 {

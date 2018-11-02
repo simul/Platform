@@ -64,8 +64,6 @@ namespace simul
 			virtual						    ~RenderPlatform();
 			virtual float                   GetDefaultOutputGamma() const;
 			const char*					    GetName() const                 {return "DirectX 12";}
-			//! Returns the current idx (used in ring buffers)
-			UCHAR                           GetIdx()const                   { return mCurIdx; }
 			//! Returns the time stamp freq value
 			UINT64                          GetTimeStampFreq()const         { return mTimeStampFreq; }
 			//! Sets the reference of a command list. This is usually not needed as we will cache
@@ -210,14 +208,6 @@ namespace simul
 		protected:
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64                      mTimeStampFreq;
-			//! Last frame number
-			long long					mLastFrame;
-			//! Value used to determine the number of "x" that we will have, this is useful in dx12
-			//! as many times we can not reuse the same resource as in the last frame so we need to have 
-			//! a ring buffer.
-			static const int			kNumIdx = 3;
-			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
-			UCHAR						mCurIdx;
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device;
 			//! Reference to the command queue
@@ -254,15 +244,15 @@ namespace simul
             int                                 mTotalBarriers;
             int                                 mCurBarriers;
 			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
-			bool                            isInitialized = false;
-			bool                            mIsMsaaEnabled;
-			DXGI_SAMPLE_DESC                mMsaaInfo;			
+			bool								isInitialized = false;
+			bool								mIsMsaaEnabled;
+			DXGI_SAMPLE_DESC					mMsaaInfo;			
 
-			ResourceBindingLimits           mResourceBindingLimits;
-			D3D12_CPU_DESCRIPTOR_HANDLE     mNullCBV;
-			D3D12_CPU_DESCRIPTOR_HANDLE     mNullSRV;
-			D3D12_CPU_DESCRIPTOR_HANDLE     mNullUAV;
-            D3D12_CPU_DESCRIPTOR_HANDLE     mNullSampler;
+			ResourceBindingLimits				mResourceBindingLimits;
+			D3D12_CPU_DESCRIPTOR_HANDLE			mNullCBV;
+			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSRV;
+			D3D12_CPU_DESCRIPTOR_HANDLE			mNullUAV;
+            D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
             crossplatform::TargetsAndViewport mTargets;
 		};

@@ -2,6 +2,7 @@
 
 #include "Simul/Platform/Vulkan/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -12,13 +13,18 @@ namespace simul
 {
 	namespace vulkan
 	{
+		// a temporary structure holding a loaded texture until it can be transferred to the main texture object.
         struct LoadedTexture
         {
+			LoadedTexture():x(0),y(0),z(0),n(0),data(nullptr){}
             int x;
             int y;
             int z;
             int n;
             unsigned char* data;
+			vk::Buffer buffer;
+			vk::MemoryAllocateInfo mem_alloc;
+			vk::DeviceMemory mem;
         };
 
 		class SIMUL_VULKAN_EXPORT SamplerState:public crossplatform::SamplerState
@@ -26,9 +32,12 @@ namespace simul
 		public:
 			        SamplerState();
 			virtual ~SamplerState() override;
-            void    Init(crossplatform::SamplerStateDesc* desc);
+            void    Init(crossplatform::RenderPlatform*r,crossplatform::SamplerStateDesc* desc);
 			void    InvalidateDeviceObjects() override;
+            vk::Sampler *AsVulkanSampler() override;
         private:
+			vk::Sampler									mSampler;
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 
 		class SIMUL_VULKAN_EXPORT Texture:public simul::crossplatform::Texture
@@ -61,12 +70,14 @@ namespace simul
 			bool            IsComputable() const override;
 			void            copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;
 
-            uint          AsVulkanView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
-         //   GLuint          GetGLMainView();
-
+            vk::ImageView	*AsVulkanImageView(crossplatform::ShaderResourceType type=crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
+			
+			// Need an active command list to finish loading a texture!
+			void			FinishLoading(crossplatform::DeviceContext &deviceContext) override;
         private:
-            LoadedTexture   LoadTextureData(const char* path);
-            bool            IsSame(int w, int h, int d,int arraySize, int m, int msaa);
+			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, bool msaa,bool computable,bool rt,bool ds,bool need_srv);
+            
+			void			LoadTextureData(LoadedTexture &lt,const char* path);
             //! Initializes the texture views
             void            InitViews(int mipCount, int layers, bool isRenderTarget);
             //! Creates the Framebuffers for this texture
@@ -74,19 +85,29 @@ namespace simul
             //! Applies default sampling parameters to the texId texture
             void            SetDefaultSampling(GLuint texId);
             //! Sets a debug label name to the provided texture _id_
-            void            SetGLName(const char* n, GLuint id);
+            void            SetVkName(const char* n );
 
-       //   GLenum                              mInternalGLFormat;
-          uint                              mTextureID;
-          uint                              mCubeArrayView;
+			void			InitViewTables(int dim,crossplatform::PixelFormat f,int mipCount, int layers, bool isRenderTarget,bool cubemap);
 
-          std::vector<uint>                 mLayerViews;
-          std::vector<uint>                 mMainMipViews;
-          std::vector<std::vector<uint>>    mLayerMipViews;
+
+			vk::Image									mImage;
+			vk::Buffer									mBuffer;
+			vk::ImageLayout								imageLayout{ vk::ImageLayout::eUndefined };
+			vk::ImageView								mMainView;
+			vk::ImageView								mCubeArrayView;
+
+			std::vector<vk::ImageView>					mLayerViews;
+			std::vector<vk::ImageView>					mMainMipViews;
+			std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
 		
+			vk::MemoryAllocateInfo mem_alloc;
+			vk::DeviceMemory mMem;
+			std::vector<LoadedTexture>					loadedTextures;
+
           std::vector<std::vector<uint>>    mTextureFBOs;
         };
 	}
+
 }
 
 #ifdef _MSC_VER

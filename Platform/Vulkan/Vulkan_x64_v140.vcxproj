@@ -135,7 +135,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
@@ -194,8 +193,12 @@
     <ClCompile Include="DeviceManager.cpp" />
     <ClCompile Include="DisplaySurface.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="EffectPass.cpp" />
     <ClCompile Include="Framebuffer.cpp" />
+    <ClCompile Include="PlatformConstantBuffer.cpp" />
+    <ClCompile Include="PlatformStructuredBuffer.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -203,12 +206,15 @@
     <ClInclude Include="DeviceManager.h" />
     <ClInclude Include="DisplaySurface.h" />
     <ClInclude Include="Effect.h" />
+    <ClInclude Include="EffectPass.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="glad\glad.h" />
     <ClInclude Include="KHR\khrplatform.h" />
-    <ClInclude Include="VulkanCallbackInterface.h" />
+    <ClInclude Include="PlatformConstantBuffer.h" />
+    <ClInclude Include="PlatformStructuredBuffer.h" />
     <ClInclude Include="RenderPlatform.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,8 @@
 #ifndef SIMUL_VULKAN_EXPORT_H
 #define SIMUL_VULKAN_EXPORT_H
 
+#define SIMUL_VULKAN_FRAME_LAG 2
+
 #if defined(_MSC_VER)
     //  Microsoft
     #define SIMUL_EXPORT __declspec(dllexport)
@@ -55,4 +57,6 @@
 #define SIMUL_VULKAN_EXPORT_STRUCT struct SIMUL_VULKAN_EXPORT
 
 #define SIMUL_VK_CHECK(result) SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+#define RETURN_FALSE_IF_FAILED(v) {if((v)!=vk::Result::eSuccess) {SIMUL_BREAK("failed in Vulkan."); return false;}}
 #endif
