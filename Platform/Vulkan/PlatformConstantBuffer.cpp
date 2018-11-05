@@ -29,7 +29,10 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	mSlots = ((sz + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
 	SIMUL_ASSERT(mSlots>0);
 	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
-	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo().setSize(mBufferSize).setUsage(vk::BufferUsageFlagBits::eUniformBuffer);
+	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo()
+		.setSize(mBufferSize)
+		.setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
+		.setSharingMode(vk::SharingMode::eExclusive);
 	vk::Device *device=renderPlatform->AsVulkanDevice();
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
@@ -143,6 +146,7 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 	if(pData)
 	{
 		memcpy(pData,src, size);
+		//memset(pData,255,size);
 		device->unmapMemory(mMemory[curFrameIndex]);
 	}
 	

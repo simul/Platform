@@ -715,6 +715,30 @@ static crossplatform::CullFaceMode toCullFadeMode(string s)
 	return crossplatform::CULL_FACE_NONE;
 }
 
+static crossplatform::Topology toTopology(string s)
+{
+	if(is_equal(s,"PointList"))
+		return crossplatform::Topology::POINTLIST;
+	else if(is_equal(s,"LineList"))
+		return crossplatform::Topology::LINELIST;
+	else if(is_equal(s,"LineStrip"))
+		return crossplatform::Topology::LINESTRIP;
+	else if(is_equal(s,"TriangleList"))
+		return crossplatform::Topology::TRIANGLELIST;
+	else if(is_equal(s,"TriangleStrip"))
+		return crossplatform::Topology::TRIANGLESTRIP;
+	else if(is_equal(s,"LineListAdjacency"))
+		return crossplatform::Topology::LINELIST_ADJ;
+	else if(is_equal(s,"LineStripAdjacency"))
+		return crossplatform::Topology::LINESTRIP_ADJ;
+	else if(is_equal(s,"TriangleListAdjacency"))
+		return crossplatform::Topology::TRIANGLELIST_ADJ;
+	else if(is_equal(s,"TriangleStripAdjacency"))
+		return crossplatform::Topology::TRIANGLESTRIP_ADJ;
+	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	return crossplatform::Topology::UNDEFINED;
+}
+
 static crossplatform::PolygonMode toPolygonMode(string s)
 {
 	if(is_equal(s,"FILL_SOLID"))
@@ -1129,6 +1153,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					{
 						SIMUL_CERR<<"Depthstencil state not found: "<<name<<std::endl;
 					}
+				}
+				else if(_stricmp(type.c_str(),"topology")==0)
+				{
+					Topology t=toTopology(name);
+					p->SetTopology(t);
 				}
 				else
 				{

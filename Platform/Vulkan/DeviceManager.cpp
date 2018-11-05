@@ -193,6 +193,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	vk::Bool32 surfaceExtFound = VK_FALSE;
 	vk::Bool32 platformSurfaceExtFound = VK_FALSE;
 
+	// naming objects.
+	vk::Bool32 nameExtFound=VK_FALSE;
+
 	auto result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
 	extension_names.resize(instance_extension_count);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -209,6 +212,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			{
 				surfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
+			}
+			if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				nameExtFound = 1;
+				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
 			}
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 			if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))

@@ -20,7 +20,7 @@
 #define f32touint16 f32tof16
 
 #endif
-
+#define SetTopology( a ) SetGeometryShader(NULL)
 #define constant_buffer ALIGN_16 cbuffer
 #define sampler1D texture1D
 #define sampler2D texture2D

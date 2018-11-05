@@ -6,7 +6,7 @@ using namespace vulkan;
 
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 	:mSlots(0)
-	,mMaxDescriptors(0)
+	,mMaxDescriptors(5)
 	,mLastFrameIndex(0)
 	,mCurApplyCount(0)
 	,last_offset(0)
@@ -23,7 +23,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpu_read,bool,void* init_data)
 {
-	HRESULT res			= S_FALSE;
+    renderPlatform                          = r;
 	mNumElements		= ct;
 	mElementByteSize	= unit_size;
 	
@@ -31,13 +31,15 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     mTotalSize			= mUnitSize * mMaxApplyMod;
 	delete [] buffer;
 	buffer=new unsigned char [mTotalSize];
-    renderPlatform                          = r;
 	vulkan::RenderPlatform* mRenderPlatform	= (vulkan::RenderPlatform*)renderPlatform;
 	mCpuRead                                = cpu_read;
 	mSlots = ((mTotalSize + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
 	
+	// 
+	int buffer_aligned_size=mSlots*kBufferAlign;
+	int alloc_size=buffer_aligned_size*mMaxDescriptors;
 	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo()
-		.setSize(mTotalSize)
+		.setSize(alloc_size)
 		.setUsage(vk::BufferUsageFlagBits::eStorageBuffer);
 	vk::Device *device=renderPlatform->AsVulkanDevice();
 	for (unsigned int i = 0; i < kNumBuffers; i++)
@@ -70,12 +72,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		device->bindBufferMemory(mBuffers[i], mMemory[i], 0);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
-	//	vk::BufferViewCreateInfo bufferViewCreateInfo=vk::BufferViewCreateInfo().setBuffer(mBuffers[i])
-			//.setRange(VK_WHOLE_SIZE).setOffset(0);
-
-			//device->createBufferView(&bufferViewCreateInfo,nullptr,&mBufferViews[i]);
 	}
-
 	// Create the "Descriptor Pool":
 	vk::DescriptorPoolSize const poolSizes[1] =
 		{
@@ -90,7 +87,6 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	last_offset=0;
 	
 	last_offset=0;
-	mMaxDescriptors=1;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 }

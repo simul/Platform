@@ -209,8 +209,6 @@
     <ClInclude Include="EffectPass.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Framebuffer.h" />
-    <ClInclude Include="glad\glad.h" />
-    <ClInclude Include="KHR\khrplatform.h" />
     <ClInclude Include="PlatformConstantBuffer.h" />
     <ClInclude Include="PlatformStructuredBuffer.h" />
     <ClInclude Include="RenderPlatform.h" />

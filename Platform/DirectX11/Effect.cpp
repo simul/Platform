@@ -471,7 +471,7 @@ dx11::Effect::Effect() :currentPass(NULL)
 
 EffectTechnique *Effect::CreateTechnique()
 {
-	return new dx11::EffectTechnique(renderPlatform);
+	return new dx11::EffectTechnique(renderPlatform,this);
 }
 #define D3DCOMPILE_DEBUG 1
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
@@ -527,7 +527,7 @@ void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,con
 				ID3DX11EffectTechnique *t	=g->GetTechniqueByIndex(j);
 				D3DX11_TECHNIQUE_DESC tdesc;
 				t->GetDesc(&tdesc);
-				dx11::EffectTechnique *T	=new dx11::EffectTechnique(renderPlatform);
+				dx11::EffectTechnique *T	=new dx11::EffectTechnique(renderPlatform,this);
 				T->name						=tdesc.Name;
 				G->techniques[tdesc.Name]	=T;
 				T->platform_technique		=t;
@@ -594,7 +594,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
 		return nullptr;
 	}
-	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique(renderPlatform);
+	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique(renderPlatform,this);
 	tech->platform_technique=t;
 	techniques[name]=tech;
 	techniqueCharMap[name]=tech;
@@ -632,7 +632,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 		techniques_by_index[index]=tech;
 		return tech;;
 	}
-	tech=new dx11::EffectTechnique(renderPlatform);
+	tech=new dx11::EffectTechnique(renderPlatform,this);
 	tech->platform_technique=t;
 	techniques[desc.Name]=tech;
 	techniques_by_index[index]=tech;

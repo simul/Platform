@@ -430,13 +430,13 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					}
 					else
 					{
-					techname="compute_clear_3d";
+						techname="compute_clear_3d";
 						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
 					}
 				}
 				else
 				{
-					SIMUL_CERR_ONCE<<("Can't clear texture dim.\n");
+					SIMUL_BREAK_ONCE("Can't clear texture dim.");
 				}
 				debugEffect->Apply(deviceContext,techname,0);
 				if(deviceContext.platform_context!=immediateContext.platform_context)
@@ -1030,7 +1030,6 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 		colr=clr;
 	if(!bkg)
 		bkg=black;
-	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	int h=(int)viewport.h;
 	int pos=0;
@@ -1061,6 +1060,8 @@ crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::Devic
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
+	if(num>0&&vps!=nullptr)
+		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
 	if(deviceContext.GetFrameBufferStack().size())
 	{
 		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
@@ -1179,6 +1180,14 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc)
 {
 	return new Layout();
+}
+
+RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
+{
+	RenderState *rs=new RenderState;
+	rs->type=desc.type;
+	rs->desc=desc;
+	return rs;
 }
 
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)

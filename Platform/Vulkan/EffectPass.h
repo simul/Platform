@@ -31,19 +31,24 @@ namespace simul
 				return mPipeline;
 			}
         private:
-			void ApplyContextState(crossplatform::DeviceContext& deviceContext);
-			void Initialize();
-			bool initialized;
+			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
+			void Initialize(vk::DescriptorSet &descriptorSet);
             void MapTexturesToUBO(crossplatform::Effect* curEffect);
-
-           // GLuint                       mProgramId;
+			
 			vk::DescriptorSetLayout		mDescLayout;
 			vk::PipelineLayout			mPipelineLayout;
 			vk::Pipeline				mPipeline;
 			vk::PipelineCache			mPipelineCache;
 			vk::RenderPass				mRenderPass;
 			vk::DescriptorPool			mDescriptorPool;
-			vk::DescriptorSet descriptorSet;
+			
+			UINT						mLastFrameIndex;
+			UINT						mCurApplyCount;
+			//! Number of ring buffers
+			static const UINT			kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);
+			// each frame in the 3-frame loop carries a variable-size list of descriptors: one for each submit.
+			std::list<vk::DescriptorSet> mDescriptorSets[kNumBuffers];
+			std::list<vk::DescriptorSet>::iterator i_desc;
 		};
 	}
 }

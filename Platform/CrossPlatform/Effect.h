@@ -242,6 +242,7 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
 		{
+			RenderStateDesc desc;
 			RenderStateType type;
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
@@ -399,6 +400,14 @@ namespace simul
 			{
 				platform_pass=p;
 			}
+			void SetTopology(Topology t=Topology::UNDEFINED)
+			{
+				topology=t;
+			}
+			Topology GetTopology()
+			{
+				return topology;
+			}
 			virtual void Apply(crossplatform::DeviceContext &deviceContext,bool test)=0;
 		protected:
 			unsigned samplerSlots;
@@ -411,6 +420,7 @@ namespace simul
 			void *platform_pass;
 			crossplatform::RenderPlatform *renderPlatform;
 			crossplatform::Effect* effect;
+			crossplatform::Topology topology=Topology::UNDEFINED;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{

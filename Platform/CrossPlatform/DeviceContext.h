@@ -161,35 +161,13 @@ namespace simul
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
 		{
-			ContextState()
-				:last_action_was_compute(false)
-				,currentEffectPass(NULL)
-				,currentTechnique(NULL)
-				,currentEffect(NULL)
-				,effectPassValid(false)
-				,vertexBuffersValid(false)
-				,constantBuffersValid(false)
-				,structuredBuffersValid(false)
-				,rwStructuredBuffersValid(false)
-				,samplerStateOverridesValid(true)
-				,textureAssignmentMapValid(false)
-				,rwTextureAssignmentMapValid(false)
-				,streamoutTargetsValid(false)
-				,textureSlots(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,textureSlotsForSB(0)
-				,bufferSlots(0)
-			{
-
-			}
-
+			ContextState();
 			~ContextState()
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
 			bool last_action_was_compute;
-
+			Viewport viewports[8];
 			std::unordered_map<int,Buffer*> applyVertexBuffers;
 			std::unordered_map<int,Buffer*> streamoutTargets;
 			ConstantBufferAssignmentMap applyBuffers;

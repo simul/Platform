@@ -1,6 +1,31 @@
 #include "DeviceContext.h"
 using namespace simul;
 using namespace crossplatform;
+
+
+ContextState::ContextState()
+				:last_action_was_compute(false)
+				,currentEffectPass(NULL)
+				,currentTechnique(NULL)
+				,currentEffect(NULL)
+				,effectPassValid(false)
+				,vertexBuffersValid(false)
+				,constantBuffersValid(false)
+				,structuredBuffersValid(false)
+				,rwStructuredBuffersValid(false)
+				,samplerStateOverridesValid(true)
+				,textureAssignmentMapValid(false)
+				,rwTextureAssignmentMapValid(false)
+				,streamoutTargetsValid(false)
+				,textureSlots(0)
+				,rwTextureSlots(0)
+				,rwTextureSlotsForSB(0)
+				,textureSlotsForSB(0)
+				,bufferSlots(0)
+{
+	memset(viewports,0,8*sizeof(Viewport));
+}
+
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
 std::stack<crossplatform::TargetsAndViewport*>& DeviceContext::GetFrameBufferStack()
 {

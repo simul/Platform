@@ -92,8 +92,13 @@ namespace simul
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			
             static vk::PrimitiveTopology			toVulkanTopology(crossplatform::Topology t);
+			static vk::CullModeFlags				toVulkanCullFace(crossplatform::CullFaceMode c);
+			static vk::CompareOp					toVulkanComparison(crossplatform::DepthComparison d);
+			static vk::BlendFactor					toVulkanBlendFactor(crossplatform::BlendOption o);
+			static vk::BlendOp						toVulkanBlendOperation(crossplatform::BlendOperation o);
             static vk::Filter                       toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f);
             static vk::Filter                       toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
+			static vk::SamplerMipmapMode			toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f);
 			static vk::SamplerAddressMode			toVulkanWrapping(crossplatform::SamplerStateDesc::Wrapping w);
 			static vk::Format						ToVulkanFormat(crossplatform::PixelFormat p);
 			static                                  crossplatform::PixelFormat FromVulkanFormat(vk::Format p);

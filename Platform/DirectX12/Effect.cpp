@@ -660,7 +660,7 @@ Effect::Effect():
 
 EffectTechnique* Effect::CreateTechnique()
 {
-	return new dx12::EffectTechnique(renderPlatform);
+	return new dx12::EffectTechnique(renderPlatform,this);
 }
 
 void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)

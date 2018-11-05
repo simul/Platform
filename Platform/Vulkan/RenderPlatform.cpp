@@ -80,7 +80,11 @@ vk::PhysicalDevice *RenderPlatform::GetVulkanGPU()
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	if(!vulkanDevice)
+		return;
+	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
+	vulkanDevice=nullptr;
 }
 
 void RenderPlatform::BeginFrame()
@@ -111,7 +115,6 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(commandBuffer)
 	{
-
 		commandBuffer->dispatch(w, l, d);
 	}
     InsertFences(deviceContext);
@@ -136,7 +139,6 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)
     BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-
 
 	if(commandBuffer)
 	{
@@ -189,6 +191,22 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	//crossplatform::PixelOutputFormat pfm=GetCurrentPixelOutputFormat(deviceContext);
 	
 	pass->Apply(deviceContext,false);
+
+	// If not a compute shader, apply viewports:
+	if(commandBuffer!=nullptr&&pass->shaders[crossplatform::SHADERTYPE_COMPUTE]==nullptr)
+	{
+		vk::Viewport vkViewports[1];
+		vk::Rect2D vkScissors[1];
+		for(int i=0;i<1;i++)
+		{
+			crossplatform::Viewport &vp=cs->viewports[i];
+			vkViewports[0].setHeight(vp.h).setWidth(vp.w).setX(vp.x).setY(vp.y)
+				.setMaxDepth(1.0f).setMinDepth(0.0f);
+			vkScissors[0].setExtent(vk::Extent2D(vp.w,vp.h)).setOffset(vk::Offset2D(vp.x,vp.y));
+		}
+		commandBuffer->setViewport(0,1,vkViewports);
+		commandBuffer->setScissor(0,1,vkScissors);
+	}
 	return true;
 }
 
@@ -311,6 +329,15 @@ vk::Filter simul::vulkan::RenderPlatform::toVulkanMaxFiltering(crossplatform::Sa
     return vk::Filter::eNearest;
 }
 
+vk::SamplerMipmapMode simul::vulkan::RenderPlatform::toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f)
+{
+    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+    {
+        return vk::SamplerMipmapMode::eLinear;
+    }
+    return vk::SamplerMipmapMode::eNearest;
+}
+
 vk::SamplerAddressMode RenderPlatform::toVulkanWrapping(crossplatform::SamplerStateDesc::Wrapping w)
 {
 	switch(w)
@@ -411,7 +438,7 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	};
 }*/
 
-static vk::CullModeFlags toGlCullFace(crossplatform::CullFaceMode c)
+vk::CullModeFlags RenderPlatform::toVulkanCullFace(crossplatform::CullFaceMode c)
 {
     switch (c)
     {
@@ -427,7 +454,7 @@ static vk::CullModeFlags toGlCullFace(crossplatform::CullFaceMode c)
     return vk::CullModeFlagBits::eFront;
 }
 
-static vk::BlendOp toVulkanBlendOperation(crossplatform::BlendOperation o)
+vk::BlendOp RenderPlatform::toVulkanBlendOperation(crossplatform::BlendOperation o)
 {
     switch (o)
     {
@@ -445,7 +472,7 @@ static vk::BlendOp toVulkanBlendOperation(crossplatform::BlendOperation o)
     return vk::BlendOp::eAdd;
 }
 
-static vk::CompareOp toVulkanComparison(crossplatform::DepthComparison d)
+vk::CompareOp RenderPlatform::toVulkanComparison(crossplatform::DepthComparison d)
 {
 	switch(d)
 	{
@@ -467,7 +494,7 @@ static vk::CompareOp toVulkanComparison(crossplatform::DepthComparison d)
 	return vk::CompareOp::eLess;
 }
 
-static vk::BlendFactor toVulkanBlendFactor(crossplatform::BlendOption o)
+vk::BlendFactor RenderPlatform::toVulkanBlendFactor(crossplatform::BlendOption o)
 {
 	switch(o)
 	{
@@ -788,16 +815,11 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
-  //  if (num >= mMaxViewports)
-    {
-     //   SIMUL_CERR << "Too many viewports \n";
-     //   return;
-    }
-    for (int i = 0; i < num; i++)
-    {
-      //  glViewportIndexedf(i, (GLfloat)vps[i].x, (GLfloat)vps[i].y, (GLfloat)vps[i].w, (GLfloat)vps[i].h);
-     //   glScissorIndexed(i,     (GLint)vps[i].x, (GLint)vps[i].y,   (GLsizei)vps[i].w, (GLsizei)vps[i].h);
-    }
+	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+	if(num>0&&vps!=nullptr)
+	{
+		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(crossplatform::Viewport));
+	}
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)
@@ -835,12 +857,28 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 {
     BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyContextState(deviceContext);
-   // glDrawArrays(mCurTopology, start_vert, num_verts);
+	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+
+	if(commandBuffer)
+	{
+		commandBuffer->draw(num_verts,1,start_vert,0);
+		commandBuffer->endRenderPass();
+	}
     EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
+    BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
+    ApplyContextState(deviceContext);
+	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+
+	if(commandBuffer)
+	{
+		commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
+		commandBuffer->endRenderPass();
+	}
+    EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)

@@ -9,8 +9,9 @@ using namespace vulkan;
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
     crossplatform::EffectPass(r,e)
-	,initialized(false),
-    PassName("passname")
+    ,PassName("passname")
+	,mLastFrameIndex(0)
+	,mCurApplyCount(0)
 {
 }
 
@@ -30,9 +31,18 @@ void EffectPass::InvalidateDeviceObjects()
 	device->destroyPipelineLayout(mPipelineLayout, nullptr);
 	device->destroyPipeline(mPipeline, nullptr);
 	device->destroyDescriptorSetLayout(mDescLayout, nullptr);
+
+	for(int i=0;i<kNumBuffers;i++)
+	{
+		for(auto r:mDescriptorSets[i])
+		{
+			//device->destroydescript(r);
+		}
+		mDescriptorSets[i].clear();
+	}
 }
 
-void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext)
+void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,vk::DescriptorSet &descriptorSet)
 {
     crossplatform::ContextState* cs = &deviceContext.contextState;
 	
@@ -43,13 +53,20 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext)
 	
     vulkan::Shader* c	= (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	
-	//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout, 0, 1,
-	//	&swapchain_image_resources[current_buffer].descriptor_set, 0, nullptr);
-	// Descriptor set is the chunk of data we send to the pass with pointers to textures, buffers etc.
 
-
-	//auto buffer_info = vk::DescriptorBufferInfo().setOffset(0).setRange(sizeof(struct vktexcube_vs_uniform));
-
+    // If valid, activate render states:
+    if (blendState)
+    {
+        deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
+    }
+    if (depthStencilState)
+    {
+        deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
+    }
+    if (rasterizerState)
+    {
+        deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
+    }
 	
 	int num_descr=numResourceSlots+numRwResourceSlots
 			+numSbResourceSlots
@@ -58,7 +75,6 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext)
 			+numConstantBufferResourceSlots;
 
 	vk::WriteDescriptorSet *writes=new vk::WriteDescriptorSet[num_descr];
-
 	
 	cs->textureSlots =0;
 	cs->rwTextureSlots =0;
@@ -89,7 +105,6 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext)
 			tex_desc.setImageView(*t);
 		tex_desc.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 		write.setPImageInfo(&tex_desc);
-		
 		cs->textureSlots |= 1 << slot;
 	}
 	for(int i=0;i<numRwResourceSlots;i++,b++)
@@ -205,13 +220,16 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext)
 		SIMUL_ASSERT(bf!=nullptr);
 		if(bf)
 		{
-			auto buffer_info = vk::DescriptorBufferInfo().setOffset(pcb->GetLastOffset()).setRange(deviceSize).setBuffer(*bf);
+			auto buffer_info = vk::DescriptorBufferInfo()
+				.setOffset(pcb->GetLastOffset())
+				.setRange(deviceSize)
+				.setBuffer(*bf);
 			write.setPBufferInfo(&buffer_info);
 		}
 		cs->bufferSlots|=(1<<slot);
 	}
 
-	device->updateDescriptorSets(num_descr, writes, 0, nullptr);
+	device->updateDescriptorSets(num_descr, writes, 0,nullptr);
 
 
 	static bool error_checking=true;
@@ -271,25 +289,29 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext)
 		vk::Framebuffer *framebuffer=((vulkan::RenderPlatform*)renderPlatform)->GetCurrentVulkanFramebuffer(deviceContext);
 		vk::ClearValue const clearValues[2] = { vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}})),
 										   vk::ClearDepthStencilValue(1.0f, 0u) };
+		crossplatform::Viewport vp=renderPlatform->GetViewport(deviceContext,0);
+		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo().setRenderPass(mRenderPass)
 													.setFramebuffer(*framebuffer)
 													.setClearValueCount(1)
-													.setPClearValues(clearValues);
+													.setPClearValues(clearValues)
+													.setRenderArea(renderArea);
 		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
 	}
 	if(c)
+	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, mPipeline);
+		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+	}
 	else
+	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline);
-	
-	commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-			  
-
+		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+	}
 }
 
-void EffectPass::Initialize()
+void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 {
-	InvalidateDeviceObjects();
 	vk::Device *device=renderPlatform->AsVulkanDevice();
 	
 	int swapchainImageCount=SIMUL_VULKAN_FRAME_LAG+1;
@@ -476,7 +498,7 @@ void EffectPass::Initialize()
 		vk::AttachmentDescription attachments[2] = { vk::AttachmentDescription()
 															  .setFormat(vk::Format::eB8G8R8A8Unorm)
 															  .setSamples(vk::SampleCountFlagBits::e1)
-															  .setLoadOp(vk::AttachmentLoadOp::eClear)
+															  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
 															  .setStoreOp(vk::AttachmentStoreOp::eStore)
 															  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 															  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
@@ -485,7 +507,7 @@ void EffectPass::Initialize()
 														  vk::AttachmentDescription()
 															  .setFormat(vk::Format::eD32Sfloat)
 															  .setSamples(vk::SampleCountFlagBits::e1)
-															  .setLoadOp(vk::AttachmentLoadOp::eClear)
+															  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
 															  .setStoreOp(vk::AttachmentStoreOp::eDontCare)
 															  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 															  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
@@ -507,34 +529,62 @@ void EffectPass::Initialize()
 			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(v->mShader).setPName(v->entryPoint.c_str()),
 			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eFragment).setModule(f->mShader).setPName(f->entryPoint.c_str()) };
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo	= vk::PipelineInputAssemblyStateCreateInfo().setTopology(vk::PrimitiveTopology::eTriangleList);
 		vk::PipelineViewportStateCreateInfo viewportInfo			= vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
 		
 		vk::PipelineRasterizationStateCreateInfo rasterizationInfo	= vk::PipelineRasterizationStateCreateInfo()
 																		.setDepthClampEnable(VK_FALSE)
 																		.setRasterizerDiscardEnable(VK_FALSE)
 																		.setPolygonMode(vk::PolygonMode::eFill)
-																		.setCullMode(vk::CullModeFlagBits::eBack)
+																		.setCullMode(vk::CullModeFlagBits::eNone)
 																		.setFrontFace(vk::FrontFace::eCounterClockwise)
 																		.setDepthBiasEnable(VK_FALSE)
 																		.setLineWidth(1.0f);
 		vk::PipelineMultisampleStateCreateInfo multisampleInfo		= vk::PipelineMultisampleStateCreateInfo();
 		vk::StencilOpState stencilOp								= vk::StencilOpState().setFailOp(vk::StencilOp::eKeep).setPassOp(vk::StencilOp::eKeep).setCompareOp(vk::CompareOp::eAlways);
 		vk::PipelineDepthStencilStateCreateInfo depthStencilInfo	= vk::PipelineDepthStencilStateCreateInfo()
-																		.setDepthTestEnable(VK_TRUE)
-																		.setDepthWriteEnable(VK_TRUE)
+																		.setDepthTestEnable(VK_FALSE)
+																		.setDepthWriteEnable(VK_FALSE)
 																		.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
 																		.setDepthBoundsTestEnable(VK_FALSE)
 																		.setStencilTestEnable(VK_FALSE)
 																		.setFront(stencilOp)
 																		.setBack(stencilOp);
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = { vk::PipelineColorBlendAttachmentState().setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-																																	vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA) };
 		
-		vk::PipelineColorBlendStateCreateInfo colorBlendInfo		= vk::PipelineColorBlendStateCreateInfo().setAttachmentCount(1).setPAttachments(colorBlendAttachments);
 		vk::DynamicState dynamicStates[2]							= { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 		auto dynamicStateInfo										= vk::PipelineDynamicStateCreateInfo().setPDynamicStates(dynamicStates).setDynamicStateCount(2);
+	
+		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo	= vk::PipelineInputAssemblyStateCreateInfo().setTopology(vk::PrimitiveTopology::eTriangleStrip);
+		if(topology!=crossplatform::Topology::UNDEFINED)
+		{
+			inputAssemblyInfo.setTopology(vulkan::RenderPlatform::toVulkanTopology(topology));
+			//	rasterizerState->type;
+		}
+		vk::PipelineColorBlendStateCreateInfo colorBlendInfo		= vk::PipelineColorBlendStateCreateInfo();
+        colorBlendInfo.setLogicOpEnable(false);
+        colorBlendInfo.setLogicOp (vk::LogicOp::eCopy);
+		colorBlendInfo.setBlendConstants({ 0.0f,0.0f,0.0f,0.0f});
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {	vk::PipelineColorBlendAttachmentState()};
+		if(blendState)
+		{
+			for(int i=0;i<1;i++)
+			{
+				auto &b=colorBlendAttachments[i];
+				auto &c=blendState->desc.blend.RenderTarget[i];
+				b.setBlendEnable(c.blendOperationAlpha!=crossplatform::BLEND_OP_NONE||c.blendOperation!=crossplatform::BLEND_OP_NONE);
+				b.setAlphaBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperationAlpha));
+				b.setColorBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperation));
+				b.setColorWriteMask(vk::ColorComponentFlagBits::eR
+									| vk::ColorComponentFlagBits::eG
+									|vk::ColorComponentFlagBits::eB
+									| vk::ColorComponentFlagBits::eA);
+				b.setDstAlphaBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.DestBlendAlpha));
+				b.setDstColorBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.DestBlend));
+				b.setSrcAlphaBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.SrcBlendAlpha));
+				b.setSrcColorBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.SrcBlend));
+			}
+		}
+		colorBlendInfo.setAttachmentCount(1).setPAttachments(colorBlendAttachments);
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo	= vk::GraphicsPipelineCreateInfo()
 																		.setStageCount(2)
 																		.setPStages(shaderStageInfo)
@@ -548,41 +598,52 @@ void EffectPass::Initialize()
 																		.setPDynamicState(&dynamicStateInfo)
 																		.setLayout(mPipelineLayout)
 																		.setRenderPass(mRenderPass);
-		//computePipelineCreateInfo	.setFlags(vk::PipelineCreateFlagBits::eDispatchBase);
 		device->createGraphicsPipelines(mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &mPipeline);
+	}
+	vk::DescriptorSetLayout		descLayout[3];
+	for(int i=0;i<kNumBuffers;i++)
+	{
+		descLayout[i]=mDescLayout;
 	}
 	
 	vk::DescriptorSetAllocateInfo alloc_info =	vk::DescriptorSetAllocateInfo()
 													.setDescriptorPool(mDescriptorPool)
 													.setDescriptorSetCount(1)
-													.setPSetLayouts(&mDescLayout);
-	result = device->allocateDescriptorSets(&alloc_info, &descriptorSet);
+													.setPSetLayouts(descLayout);
+	result = device->allocateDescriptorSets(&alloc_info,&descriptorSet);
+	/* It would be nice if this worked:
+	VkDescriptorSet ds=descriptorSet.operator VkDescriptorSet();
+	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
+		.setObjectType(vk::DebugReportObjectTypeEXT::eDescriptorSet)
+		.setObject((uint64_t)ds)
+		.setPObjectName((PassName+" descriptorSet ").c_str());
+	device->debugMarkerSetObjectNameEXT(&nameInfo);
+	*/
 	delete [] layout_bindings;
-	initialized=true;
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) 
 {
-    // Create the program:
-    if (!initialized)
-    {
-		Initialize();
-    }
-	ApplyContextState(deviceContext);
-
-    // If valid, activate render states:
-    if (blendState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
-    }
-    if (depthStencilState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
-    }
-    if (rasterizerState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
-    }
+	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
+	auto curFrameIndex = rPlat->GetIdx();
+	// If new frame, update current frame index and reset the apply count
+	if (mLastFrameIndex != curFrameIndex)
+	{
+		mLastFrameIndex = curFrameIndex;
+		mCurApplyCount = 0;
+		i_desc=mDescriptorSets[mLastFrameIndex].begin();
+	}
+	if(i_desc==mDescriptorSets[mLastFrameIndex].end())
+	{
+		//must insert a new descriptor:
+		mDescriptorSets[mLastFrameIndex].push_back(vk::DescriptorSet());
+		i_desc=mDescriptorSets[mLastFrameIndex].end();
+		i_desc--;
+		Initialize(*i_desc);
+	}
+	ApplyContextState(deviceContext,*i_desc);
+	mCurApplyCount++;
+	i_desc++;
 }
 
 void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)

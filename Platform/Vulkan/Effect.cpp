@@ -107,13 +107,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
 {
-    vulkan::Texture* gTex = (vulkan::Texture*)tex;
-    if (gTex)
-    {
-    }
-    else
-    {
-    }
+	crossplatform::Effect::SetUnorderedAccessView(deviceContext,name,tex,index,mip);
 }
 
 void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)

@@ -56,7 +56,6 @@ namespace simul
         //! Vulkan render state holder
 		struct SIMUL_VULKAN_EXPORT RenderState:public crossplatform::RenderState
 		{
-			crossplatform::RenderStateDesc desc;
 			RenderState(){}
 			virtual ~RenderState(){}
 		};

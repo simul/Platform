@@ -75,6 +75,7 @@ technique backg
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
+		SetTopology( TriangleStrip );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
@@ -88,6 +89,7 @@ technique text
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
+		SetTopology( TriangleList );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);

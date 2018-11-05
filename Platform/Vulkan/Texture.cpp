@@ -48,6 +48,21 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 	renderPlatform=r;
 	vk::Device *device=r->AsVulkanDevice();
 	vk::SamplerCreateInfo samplerCreateInfo=vk::SamplerCreateInfo();
+	
+	samplerCreateInfo
+			.setMagFilter(RenderPlatform::toVulkanMaxFiltering(desc->filtering))
+			.setMinFilter(RenderPlatform::toVulkanMinFiltering(desc->filtering))
+			.setMipmapMode(RenderPlatform::toVulkanMipmapMode(desc->filtering))
+			.setAddressModeU(RenderPlatform::toVulkanWrapping(desc->x))
+			.setAddressModeV(RenderPlatform::toVulkanWrapping(desc->y))
+			.setAddressModeW(RenderPlatform::toVulkanWrapping(desc->z))
+			.setMipLodBias(0.0f)
+			.setAnisotropyEnable(VK_FALSE)
+			.setMaxAnisotropy(1)
+			.setCompareEnable(VK_FALSE)
+			.setCompareOp(vk::CompareOp::eNever)
+			.setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
+			.setUnnormalizedCoordinates(VK_FALSE);
 	device->createSampler(&samplerCreateInfo,nullptr,&mSampler);
 }
 
@@ -104,9 +119,9 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	int num= loadedTextures.size();
 	 m= std::min(m,1 + int(floor(log2(width >= length ? width : length))));
 	if(num<=1)
-		ensureTexture2DSizeAndFormat(r,w,l,crossplatform::PixelFormat::RGBA_32_FLOAT,false,false,false);
+		ensureTexture2DSizeAndFormat(r,w,l,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
 	else
-		ensureTextureArraySizeAndFormat(r,w,l,num,m,crossplatform::PixelFormat::RGBA_32_FLOAT,false,false,false);
+		ensureTextureArraySizeAndFormat(r,w,l,num,m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
 	textureLoadComplete=false;
 }
 
@@ -387,7 +402,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::eUndefined);
+		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	
 	RETURN_FALSE_IF_FAILED( device->createImage(&imageCreateInfo, nullptr, &mImage));
 	vk::MemoryRequirements mem_reqs;
@@ -411,6 +426,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	length=l;
 	depth=1;
 	mips=1;
+	dim=2;
 	cubemap=false;
 	return true;
 }
@@ -525,7 +541,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::eUndefined);
+		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	
 	RETURN_FALSE_IF_FAILED( device->createImage(&imageCreateInfo, nullptr, &mImage));
 	vk::MemoryRequirements mem_reqs;
@@ -548,6 +564,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 	width=w;
 	length=l;
 	depth=1;
+	dim=2;
 	arraySize=num;
 	mips=m;
     cubemap   = ascubemap;
@@ -562,17 +579,14 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	}
 	renderPlatform=r;
 
-	pixelFormat=f;
-	width=w;
-	length=l;
-	depth=d;
-	mips=m;
-
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	vk::FormatProperties props;
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
 	gpu->getFormatProperties(tex_format, &props);
 	vk::Device *device=renderPlatform->AsVulkanDevice();
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled;
+	if(computable)
+		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 
 	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e3D)
@@ -582,11 +596,11 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setArrayLayers(1)
 		.setSamples(vk::SampleCountFlagBits::e1)
 		.setTiling(vk::ImageTiling::eOptimal)
-		.setUsage(vk::ImageUsageFlagBits::eSampled)
+		.setUsage(usageFlags)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::eUndefined);
+		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	
 	RETURN_FALSE_IF_FAILED( device->createImage(&imageCreateInfo, nullptr, &mImage));
@@ -602,9 +616,16 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 
 	RETURN_FALSE_IF_FAILED( device->allocateMemory(&mem_alloc, nullptr, &mMem));
 
-	 device->bindImageMemory(mImage, mMem, 0);
+	device->bindImageMemory(mImage, mMem, 0);
 	
 	InitViewTables(3,f,m, 1, false,false);
+
+	pixelFormat=f;
+	width=w;
+	length=l;
+	depth=d;
+	mips=m;
+	dim=3;
 	return true;
 }
 
@@ -750,13 +771,8 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	uint8_t *cPtr		=(uint8_t*)lt.data;
 	for (int y = 0; y < lt.y; y++)
 	{
-		uint8_t *rowPtr = rgba_data;
-		for (int x = 0; x < lt.x; x++)
-		{
-			memcpy(rowPtr, cPtr, 4);
-			rowPtr += 4;
-			cPtr += 4;
-		}
+		memcpy(rgba_data, cPtr, 4*lt.x);
+		cPtr += 4*lt.x;
 		rgba_data += layout.rowPitch;
 	}
 
