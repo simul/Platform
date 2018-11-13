@@ -114,7 +114,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 
 		res						=vec4(total_illum,total_illum,total_illum,1.0);
 		int3 pos				=int3(idx.xy,godraysVolumeDims.z-1-i);
-		shadow_distance			=lerp(shadow_distance,float(i),total_illum);
+		shadow_distance			=lerp(shadow_distance,float(i + 1),total_illum);
 
 		//shadow_distance=saturate((sample_3d_lod(cloudTexture,cloudSamplerState, posCloudspace,0).x-0.9)/0.1);
 		//if(total_illum<=0)

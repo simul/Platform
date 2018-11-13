@@ -95,7 +95,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform uint		g_layerDensity;
 	uniform uint		g_noOfLayers;
 
-	uniform vec2		g_boundedDensity;
+	uniform uint2		g_boundedDensity;
 	uniform float		g_profileUVScale;
 	uniform float		g_foamStrength;
 SIMUL_CONSTANT_BUFFER_END
@@ -128,7 +128,9 @@ SIMUL_CONSTANT_BUFFER(cbWaterProbe, 8)
 	uniform float g_probeWindDependancy;
 
 	uniform float g_probeProfileUVScale;
-	uniform vec3 cvbhdxiobacyi;
+	uniform float g_waveGridScale;
+	uniform bool  g_enableWaveGrid;
+	uniform float cvbhdxiobacyi;
 SIMUL_CONSTANT_BUFFER_END
 
 
@@ -153,5 +155,8 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 10)
 	uniform vec2		g_windDirection2;
 	uniform float		g_windDependency2;
 	uniform int			g_waveGroup;
+
+	uniform uint2		g_waveGridBound;
+	uniform vec2		nvjkodfsnzjvo;
 SIMUL_CONSTANT_BUFFER_END
 #endif
