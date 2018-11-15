@@ -209,6 +209,9 @@
     <ClCompile Include="DisplaySurfaceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PixelFormat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx">

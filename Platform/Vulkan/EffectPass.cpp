@@ -1,18 +1,21 @@
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/Vulkan/EffectPass.h"
 #include "Simul/Platform/Vulkan/RenderPlatform.h"
 #include "Simul/Platform/Vulkan/PlatformConstantBuffer.h"
 #include "Simul/Platform/Vulkan/PlatformStructuredBuffer.h"
+#include "Simul/Platform/Vulkan/Texture.h"
 
 using namespace simul;
 using namespace vulkan;
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
     crossplatform::EffectPass(r,e)
-    ,PassName("passname")
 	,mLastFrameIndex(0)
 	,mCurApplyCount(0)
 {
+	for(int i=0;i<kNumBuffers;i++)
+		i_desc[i]=mDescriptorSets[i].begin();
 }
 
 EffectPass::~EffectPass()
@@ -22,24 +25,37 @@ EffectPass::~EffectPass()
 
 void EffectPass::InvalidateDeviceObjects()
 {
-	vk::Device *device=renderPlatform->AsVulkanDevice();
-	device->destroyRenderPass(mRenderPass, nullptr);
+	if(!renderPlatform)
+		return;
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	
+	if(!vulkanDevice)
+		return;
+	for(auto i:mRenderPasses)
+	{
+		vulkanDevice->destroyRenderPass(i.second.mRenderPass, nullptr);
+		vulkanDevice->destroyPipeline(i.second.mPipeline, nullptr);
+		vulkanDevice->destroyPipelineCache(i.second.mPipelineCache, nullptr);
+	}
+	mRenderPasses.clear();
 
-//	device->destroyPipeline(mPipeline, nullptr);
-//	device->destroyPipelineCache(mPipelineCache, nullptr);
-	device->destroyRenderPass(mRenderPass, nullptr);
-	device->destroyPipelineLayout(mPipelineLayout, nullptr);
-	device->destroyPipeline(mPipeline, nullptr);
-	device->destroyDescriptorSetLayout(mDescLayout, nullptr);
-
+	vulkanDevice->destroyPipelineLayout(mPipelineLayout, nullptr);
+	vulkanDevice->destroyDescriptorSetLayout(mDescLayout, nullptr);
+	vulkanDevice->destroyDescriptorPool(mDescriptorPool,nullptr);
 	for(int i=0;i<kNumBuffers;i++)
 	{
 		for(auto r:mDescriptorSets[i])
 		{
-			//device->destroydescript(r);
+			//vulkanDevice->destroydescript(r);
 		}
 		mDescriptorSets[i].clear();
+		i_desc[i]=mDescriptorSets[i].begin();
 	}
+	renderPlatform=nullptr;
+	delete [] layout_bindings;
+	
+	layout_bindings=nullptr;
+	initialized=false;
 }
 
 void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,vk::DescriptorSet &descriptorSet)
@@ -49,11 +65,10 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(!commandBuffer)
 		return ;
-	vk::Device *device	=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice	=renderPlatform->AsVulkanDevice();
 	
     vulkan::Shader* c	= (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	
-
     // If valid, activate render states:
     if (blendState)
     {
@@ -71,7 +86,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	int num_descr=numResourceSlots+numRwResourceSlots
 			+numSbResourceSlots
 			+numRwSbResourceSlots
-			+numSamplerResourcerSlots
+			+numSamplerResourceSlots
 			+numConstantBufferResourceSlots;
 
 	vk::WriteDescriptorSet *writes=new vk::WriteDescriptorSet[num_descr];
@@ -81,7 +96,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	cs->bufferSlots =0;
 	cs->rwTextureSlotsForSB =0;
 	cs->textureSlotsForSB =0;
-
+	
+	vk::DescriptorImageInfo tex_desc[32];
 	int b=0;
 	for(int i=0;i<numResourceSlots;i++,b++)
 	{
@@ -90,23 +106,29 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		write.setDstSet(descriptorSet);
 		auto &ta = cs->textureAssignmentMap[slot];
 		vk::ImageView *t;
-		if(ta.texture&&ta.texture->IsValid())
+		vulkan::Texture *texture=(vulkan::Texture *)(ta.texture);
+		if(!texture||!texture->IsValid())
 		{
-			ta.texture->FinishLoading(deviceContext);
-			t=ta.texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip);
+			// We really don't want to have to do this, but Vulkan GLSL can't eliminate unused textures in compilation:
+			if(ta.resourceType==crossplatform::ShaderResourceType::UNKNOWN)
+			{
+				ta.resourceType=effect->GetShaderResourceAtSlot(slot)->shaderResourceType;
+			}
+			texture=((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
 		}
-		else
-			t=nullptr;
-		write.setDstBinding(slot);
+		texture->FinishLoading(deviceContext);
+		t=texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip);
+		texture->SetLayout(deviceContext,vk::ImageLayout::eShaderReadOnlyOptimal,ta.index,ta.mip);
+		write.setDstBinding(GenerateTextureSlot(slot));
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eSampledImage);
-		vk::DescriptorImageInfo tex_desc;
 		if(t)
-			tex_desc.setImageView(*t);
-		tex_desc.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-		write.setPImageInfo(&tex_desc);
+			tex_desc[i].setImageView(*t);
+		tex_desc[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+		write.setPImageInfo(&tex_desc[i]);
 		cs->textureSlots |= 1 << slot;
 	}
+	vk::DescriptorImageInfo img_desc[8];
 	for(int i=0;i<numRwResourceSlots;i++,b++)
 	{
 		int slot=rwResourceSlots[i];
@@ -114,27 +136,29 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		write.setDstSet(descriptorSet);
 		auto &ta = cs->rwTextureAssignmentMap[slot];
 		vk::ImageView *t;
-		if(ta.texture&&ta.texture->IsValid())
-			t=ta.texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip);
+		vulkan::Texture *texture=(vulkan::Texture *)(ta.texture);
+		if(texture&&texture->IsValid())
+			t=texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip,true);
 		else
-			t=nullptr;
-		write.setDstBinding(slot);
+			t=nullptr;	// This WILL kill vulkan, so don't let it happen.
+		texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,ta.index,ta.mip);
+		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageImage);
-		vk::DescriptorImageInfo tex_desc;
 		if(t)
-			tex_desc.setImageView(*t);
-		tex_desc.setImageLayout(vk::ImageLayout::eGeneral);
-		write.setPImageInfo(&tex_desc);
+			img_desc[i].setImageView(*t);
+		img_desc[i].setImageLayout(vk::ImageLayout::eGeneral);
+		write.setPImageInfo(&img_desc[i]);
 		
 		cs->rwTextureSlots |= 1 << slot;
 	}
+	vk::DescriptorBufferInfo sbInfo[8];
 	for(int i=0;i<numSbResourceSlots;i++,b++)
 	{
 		int slot=sbResourceSlots[i];
 		vk::WriteDescriptorSet &write=writes[b];
 		write.setDstSet(descriptorSet);
-		write.setDstBinding(slot);
+		write.setDstBinding(GenerateTextureSlot(slot));
 		crossplatform::PlatformStructuredBuffer *sb =cs->applyStructuredBuffers[slot];
 		if(!sb)
 		{
@@ -150,38 +174,38 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			SIMUL_ASSERT(bf!=nullptr);
 			if(bf)
 			{
-				auto buffer_info = vk::DescriptorBufferInfo().setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*bf);
-				write.setPBufferInfo(&buffer_info);
+				sbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*bf);
+				write.setPBufferInfo(&sbInfo[i]);
 			}
 		}
 	}
+	vk::DescriptorBufferInfo rwSbInfo[8];
 	for(int i=0;i<numRwSbResourceSlots;i++,b++)
 	{
 		int slot=rwSbResourceSlots[i];
 		vk::WriteDescriptorSet &write=writes[b];
 		write.setDstSet(descriptorSet);
-		write.setDstBinding(slot);
+		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		crossplatform::PlatformStructuredBuffer *sb =cs->applyRwStructuredBuffers[slot];
-
-		
 		vulkan::PlatformStructuredBuffer *psb=(vulkan::PlatformStructuredBuffer*)sb;
 		psb->ActualApply(deviceContext,this,0);
 		vk::Buffer *bf=psb->GetLastBuffer();
 		write.setDescriptorCount(1);
-		write.setDescriptorType(vk::DescriptorType::eStorageBufferDynamic);
+		write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
 		SIMUL_ASSERT(bf!=nullptr);
 		if(bf)
 		{
-			auto buffer_info = vk::DescriptorBufferInfo().setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*bf);
-			write.setPBufferInfo(&buffer_info);
+			rwSbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*bf);
+			write.setPBufferInfo(&rwSbInfo[i]);
 		}
 	}
-	for(int i=0;i<numSamplerResourcerSlots;i++,b++)
+	vk::DescriptorImageInfo samplerInfo[16];
+	for(int i=0;i<numSamplerResourceSlots;i++,b++)
 	{
 		int slot=samplerResourceSlots[i];
 		vk::WriteDescriptorSet &write=writes[b];
 		write.setDstSet(descriptorSet);
-		write.setDstBinding(slot);
+		write.setDstBinding(GenerateSamplerSlot(slot));
 		crossplatform::SamplerState *ss=nullptr;
         if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
         {
@@ -198,12 +222,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		SIMUL_ASSERT(s!=nullptr);
 		if(s)
 		{
-			vk::DescriptorImageInfo imageInfo;
-			imageInfo.setSampler(*s);
-			write.setPImageInfo(&imageInfo);
+			samplerInfo[i].setSampler(*s);
+			write.setPImageInfo(&samplerInfo[i]);
 		}
 
 	}
+	vk::DescriptorBufferInfo bufferInfo[8];
 	for(int i=0;i<numConstantBufferResourceSlots;i++,b++)
 	{
 		int slot=constantBufferResourceSlots[i];
@@ -211,25 +235,24 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		vulkan::PlatformConstantBuffer *pcb=(vulkan::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		vk::WriteDescriptorSet &write=writes[b];
 		write.setDstSet(descriptorSet);
-		write.setDstBinding(slot);
+		write.setDstBinding(GenerateConstantBufferSlot(slot));
 		pcb->ActualApply(deviceContext,this,0);
-		vk::Buffer *bf=pcb->GetLastBuffer();
-		vk::DeviceSize deviceSize=pcb->GetSize();
+		vk::Buffer *bf				=pcb->GetLastBuffer();
+		vk::DeviceSize deviceSize	=pcb->GetSize();
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
 		SIMUL_ASSERT(bf!=nullptr);
 		if(bf)
 		{
-			auto buffer_info = vk::DescriptorBufferInfo()
-				.setOffset(pcb->GetLastOffset())
+			bufferInfo[i].setOffset(pcb->GetLastOffset())
 				.setRange(deviceSize)
 				.setBuffer(*bf);
-			write.setPBufferInfo(&buffer_info);
+			write.setPBufferInfo(&bufferInfo[i]);
 		}
 		cs->bufferSlots|=(1<<slot);
 	}
 
-	device->updateDescriptorSets(num_descr, writes, 0,nullptr);
+	vulkanDevice->updateDescriptorSets(num_descr, writes, 0,nullptr);
 
 
 	static bool error_checking=true;
@@ -284,66 +307,99 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			}
 		}
 	}
+	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
 	if(!c)
+		pixelFormat=vulkanRenderPlatform->GetActivePixelFormat(deviceContext);
+	auto &p=mRenderPasses.find(pixelFormat);
+	RenderPassPipeline *renderPassPipeline=nullptr;
+	if(p==mRenderPasses.end())
 	{
-		vk::Framebuffer *framebuffer=((vulkan::RenderPlatform*)renderPlatform)->GetCurrentVulkanFramebuffer(deviceContext);
-		vk::ClearValue const clearValues[2] = { vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}})),
-										   vk::ClearDepthStencilValue(1.0f, 0u) };
-		crossplatform::Viewport vp=renderPlatform->GetViewport(deviceContext,0);
-		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
-		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo().setRenderPass(mRenderPass)
-													.setFramebuffer(*framebuffer)
-													.setClearValueCount(1)
-													.setPClearValues(clearValues)
-													.setRenderArea(renderArea);
-		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
+		renderPassPipeline=&mRenderPasses[pixelFormat];
+		InitializePipeline(deviceContext,renderPassPipeline,pixelFormat);
 	}
+	else
+		renderPassPipeline=&(mRenderPasses[pixelFormat]);
 	if(c)
 	{
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, mPipeline);
+		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute,renderPassPipeline->mPipeline);
 		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else
 	{
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline);
+		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics,renderPassPipeline->mPipeline);
 		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 }
 
-void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
+int EffectPass::GenerateSamplerSlot(int s,bool offset)
 {
-	vk::Device *device=renderPlatform->AsVulkanDevice();
-	
+	if(offset)
+		return s+300;
+	return s;
+}
+int EffectPass::GenerateTextureSlot(int s,bool offset)
+{
+	if(offset)
+		return s+100;
+	return s;
+}
+int EffectPass::GenerateTextureWriteSlot(int s,bool offset)
+{
+	if(offset)
+		return s+200;
+	return s;
+}
+int EffectPass::GenerateConstantBufferSlot(int s,bool offset)
+{
+	return s;
+}
+
+
+void EffectPass::Initialize()
+{
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	initialized=true;
 	int swapchainImageCount=SIMUL_VULKAN_FRAME_LAG+1;
+	int num_descr=numResourceSlots
+					+numRwResourceSlots
+					+numSbResourceSlots
+					+numRwSbResourceSlots
+					+numSamplerResourceSlots
+					+numConstantBufferResourceSlots;
 	// Create the "Descriptor Pool":
-	vk::DescriptorPoolSize const poolSizes[] = {
-		vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eCombinedImageSampler).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eSampledImage).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eSampler).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageBuffer).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageBufferDynamic).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageImage).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount * 32)};
+	if(!num_descr)
+		return;
+	vk::DescriptorPoolSize *poolSizes= new vk::DescriptorPoolSize[num_descr];// won't actually use that many unless we have 1 of each type.
+	int p=0;
+	static int count_per_frame=128;
+	if(numResourceSlots)																		
+		poolSizes[p++].setType(vk::DescriptorType::eSampledImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
+	if(numSamplerResourceSlots)																	
+		poolSizes[p++].setType(vk::DescriptorType::eSampler)				.setDescriptorCount(count_per_frame*swapchainImageCount * numSamplerResourceSlots);
+	if(numSbResourceSlots+numRwSbResourceSlots)																		
+		poolSizes[p++].setType(vk::DescriptorType::eStorageBuffer)			.setDescriptorCount(count_per_frame*swapchainImageCount * (numSbResourceSlots+numRwSbResourceSlots));
+	//if(numRwSbResourceSlots)																	
+	//	poolSizes[p++].setType(vk::DescriptorType::eStorageBufferDynamic)	.setDescriptorCount(count_per_frame*swapchainImageCount * numRwSbResourceSlots);
+	if(numRwResourceSlots)																		
+		poolSizes[p++].setType(vk::DescriptorType::eStorageImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numRwResourceSlots);
+	if(numConstantBufferResourceSlots)															
+		poolSizes[p++].setType(vk::DescriptorType::eUniformBuffer)			.setDescriptorCount(count_per_frame*swapchainImageCount * numConstantBufferResourceSlots);
+	//if(numResourceSlots)
+	//	poolSizes[p++].setType(vk::DescriptorType::eCombinedImageSampler)	.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
 
 	auto const descriptor_pool =
-		vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount).setPoolSizeCount(_countof(poolSizes)).setPPoolSizes(poolSizes);
+		vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount*count_per_frame).setPoolSizeCount(p).setPPoolSizes(poolSizes);
 
-	auto result = device->createDescriptorPool(&descriptor_pool, nullptr, &mDescriptorPool);
-
-
+	auto result = vulkanDevice->createDescriptorPool(&descriptor_pool, nullptr, &mDescriptorPool);
+	SetVulkanName(renderPlatform,&mDescriptorPool,base::QuickFormat("%s Descriptor pool",name.c_str()));
+	delete [] poolSizes;
     vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
     vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
     vulkan::Shader* c   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 
 // Create the "Descriptor Set Layout":
-	int num_descr=numResourceSlots+numRwResourceSlots
-			+numSbResourceSlots
-			+numRwSbResourceSlots
-			+numSamplerResourcerSlots
-			+numConstantBufferResourceSlots;
 
-	vk::DescriptorSetLayoutBinding *layout_bindings =new vk::DescriptorSetLayoutBinding[num_descr];
+	layout_bindings =new vk::DescriptorSetLayoutBinding[num_descr];
 	int b=0;
 	for(int i=0;i<numResourceSlots;i++,b++)
 	{
@@ -357,7 +413,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 		if(c&&c->usesTextureSlot(slot))
 			stageFlags|=vk::ShaderStageFlagBits::eCompute;
 
-		binding.setBinding(slot)
+		binding.setBinding(GenerateTextureSlot(slot))
 				.setDescriptorType(vk::DescriptorType::eSampledImage)
 				.setDescriptorCount(1)
 				.setStageFlags(stageFlags)
@@ -375,7 +431,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 		if(c&&c->usesRwTextureSlot(slot))
 			stageFlags|=vk::ShaderStageFlagBits::eCompute;
 
-		binding.setBinding(slot)
+		binding.setBinding(GenerateTextureWriteSlot(slot))
 				.setDescriptorType(vk::DescriptorType::eStorageImage)
 				.setDescriptorCount(1)
 				.setStageFlags(stageFlags)
@@ -393,7 +449,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 		if(c&&c->usesTextureSlotForSB(slot))
 			stageFlags|=vk::ShaderStageFlagBits::eCompute;
 
-		binding.setBinding(slot)
+		binding.setBinding(GenerateTextureSlot(slot))
 				.setDescriptorType(vk::DescriptorType::eStorageBuffer)
 				.setDescriptorCount(1)
 				.setStageFlags(stageFlags)
@@ -410,13 +466,13 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 			stageFlags|=vk::ShaderStageFlagBits::eVertex;
 		if(c&&c->usesRwTextureSlotForSB(slot))
 			stageFlags|=vk::ShaderStageFlagBits::eCompute;
-		binding.setBinding(slot)
-				.setDescriptorType(vk::DescriptorType::eStorageBufferDynamic)
+		binding.setBinding(GenerateTextureWriteSlot(slot))
+				.setDescriptorType(vk::DescriptorType::eStorageBuffer)
 				.setDescriptorCount(1)
 				.setStageFlags(stageFlags)
 				.setPImmutableSamplers(nullptr);
 	}
-	for(int i=0;i<numSamplerResourcerSlots;i++,b++)
+	for(int i=0;i<numSamplerResourceSlots;i++,b++)
 	{
 		int slot=samplerResourceSlots[i];
 		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
@@ -427,7 +483,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 			stageFlags|=vk::ShaderStageFlagBits::eVertex;
 		if(c&&c->usesSamplerSlot(slot))
 			stageFlags|=vk::ShaderStageFlagBits::eCompute;
-		binding.setBinding(slot)
+		binding.setBinding(GenerateSamplerSlot(slot))
 				.setDescriptorType(vk::DescriptorType::eSampler)
 				.setDescriptorCount(1)
 				.setStageFlags(stageFlags)
@@ -444,7 +500,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 			stageFlags|=vk::ShaderStageFlagBits::eVertex;
 		if(c&&c->usesConstantBufferSlot(slot))
 			stageFlags|=vk::ShaderStageFlagBits::eCompute;
-		binding.setBinding(slot)
+		binding.setBinding(GenerateConstantBufferSlot(slot))
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 				.setDescriptorCount(1)
 				.setStageFlags(stageFlags)
@@ -453,18 +509,45 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 
 	auto descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(b).setPBindings(layout_bindings);
 
-	result = device->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
+	result = vulkanDevice->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	SetVulkanName(renderPlatform,&mDescLayout,base::QuickFormat("%s Descriptor layout",name.c_str()));
 
 	auto pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(&mDescLayout);
 
-	result = device->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout);
+	result = vulkanDevice->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	SetVulkanName(renderPlatform,&mPipelineLayout,base::QuickFormat("%s EffectPass Pipeline layout",name.c_str()));
+}
+
+void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
+{
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::DescriptorSetLayout		descLayout[3];
+	for(int i=0;i<kNumBuffers;i++)
+	{
+		descLayout[i]=mDescLayout;
+	}
 	
-	
+	vk::DescriptorSetAllocateInfo alloc_info =	vk::DescriptorSetAllocateInfo()
+													.setDescriptorPool(mDescriptorPool)
+													.setDescriptorSetCount(1)
+													.setPSetLayouts(descLayout);
+	auto result = vulkanDevice->allocateDescriptorSets(&alloc_info,&descriptorSet);
+	SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
+}
+
+void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat)
+{
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
-	result = device->createPipelineCache(&pipelineCacheInfo, nullptr, &mPipelineCache);
+	vk::Result result = vulkanDevice->createPipelineCache(&pipelineCacheInfo, nullptr, &renderPassPipeline->mPipelineCache);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	SetVulkanName(renderPlatform,&renderPassPipeline->mPipelineCache,base::QuickFormat("%s EffectPass mPipelineCache",name.c_str()));
+
+    vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
+    vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
+    vulkan::Shader* c   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	if(c)
 	{
 		vk::PipelineShaderStageCreateInfo shaderStageInfo =
@@ -473,62 +556,63 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 																		.setLayout(mPipelineLayout)
 																		.setStage(shaderStageInfo);
 		//computePipelineCreateInfo	.setFlags(vk::PipelineCreateFlagBits::eDispatchBase);
-		device->createComputePipelines(mPipelineCache,1,&computePipelineCreateInfo, nullptr, &mPipeline);
+		vulkanDevice->createComputePipelines(renderPassPipeline->mPipelineCache,1,&computePipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline);
+		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass compute mPipeline",name.c_str()));
 	}
 	else
 	{
-		auto  color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
+		if(!rp)
+		{
+			auto  color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+					auto  depth_reference =
+				vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-		auto  depth_reference =
-			vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			auto subpass = vk::SubpassDescription()
+							.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
-		auto subpass = vk::SubpassDescription()
-						.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-
-		subpass		.setInputAttachmentCount(0)
-					.setPInputAttachments(nullptr)
-					.setColorAttachmentCount(1)
-					.setPColorAttachments(&color_reference);
-
-	/*	subpass		.setPResolveAttachments(nullptr)
-					.setPDepthStencilAttachment(&depth_reference)
-					.setPreserveAttachmentCount(0)
-					.setPPreserveAttachments(nullptr);*/
+			subpass		.setInputAttachmentCount(0)
+						.setPInputAttachments(nullptr)
+						.setColorAttachmentCount(1)
+						.setPColorAttachments(&color_reference);
 		
-		vk::AttachmentDescription attachments[2] = { vk::AttachmentDescription()
-															  .setFormat(vk::Format::eB8G8R8A8Unorm)
-															  .setSamples(vk::SampleCountFlagBits::e1)
-															  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
-															  .setStoreOp(vk::AttachmentStoreOp::eStore)
-															  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-															  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-															  .setInitialLayout(vk::ImageLayout::eUndefined)
-															  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
-														  vk::AttachmentDescription()
-															  .setFormat(vk::Format::eD32Sfloat)
-															  .setSamples(vk::SampleCountFlagBits::e1)
-															  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
-															  .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-															  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-															  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-															  .setInitialLayout(vk::ImageLayout::eUndefined)
-															  .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal) };
+			vk::AttachmentDescription attachments[2] = { vk::AttachmentDescription()
+																  .setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
+																  .setSamples(vk::SampleCountFlagBits::e1)
+																  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
+																  .setStoreOp(vk::AttachmentStoreOp::eStore)
+																  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+																  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+																  .setInitialLayout(vk::ImageLayout::eUndefined)
+																  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
+															  vk::AttachmentDescription()
+																  .setFormat(vk::Format::eD32Sfloat)
+																  .setSamples(vk::SampleCountFlagBits::e1)
+																  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
+																  .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+																  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+																  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+																  .setInitialLayout(vk::ImageLayout::eUndefined)
+																  .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal) };
 
-		auto rp_info = vk::RenderPassCreateInfo()
-			.setAttachmentCount(1)
-			.setPAttachments(attachments)
-			.setSubpassCount(1)
-			.setPSubpasses(&subpass)
-			.setDependencyCount(0)
-			.setPDependencies(nullptr);
+			auto rp_info = vk::RenderPassCreateInfo()
+				.setAttachmentCount(1)
+				.setPAttachments(attachments)
+				.setSubpassCount(1)
+				.setPSubpasses(&subpass)
+				.setDependencyCount(0)
+				.setPDependencies(nullptr);
 
-		result = device->createRenderPass(&rp_info, nullptr, &mRenderPass);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
+			result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+			SetVulkanName(renderPlatform,&renderPassPipeline->mRenderPass,base::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
+		}
 		
 		vk::PipelineShaderStageCreateInfo shaderStageInfo[2] = {
 			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(v->mShader).setPName(v->entryPoint.c_str()),
-			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eFragment).setModule(f->mShader).setPName(f->entryPoint.c_str()) };
-		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eFragment).setModule(f->mShader).setPName(f->entryPoint.c_str())
+		};
+		
 		vk::PipelineViewportStateCreateInfo viewportInfo			= vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
 		
 		vk::PipelineRasterizationStateCreateInfo rasterizationInfo	= vk::PipelineRasterizationStateCreateInfo()
@@ -549,6 +633,16 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 																		.setStencilTestEnable(VK_FALSE)
 																		.setFront(stencilOp)
 																		.setBack(stencilOp);
+		if(depthStencilState)
+		{
+			depthStencilInfo	.setDepthTestEnable(depthStencilState->desc.depth.test)
+																		.setDepthWriteEnable(depthStencilState->desc.depth.write)
+																		.setDepthCompareOp(vulkanRenderPlatform->toVulkanComparison(depthStencilState->desc.depth.comparison))
+																		.setDepthBoundsTestEnable(VK_FALSE)
+																		.setStencilTestEnable(VK_FALSE)
+																		.setFront(stencilOp)
+																		.setBack(stencilOp);
+		}
 
 		
 		vk::DynamicState dynamicStates[2]							= { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
@@ -563,7 +657,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 		vk::PipelineColorBlendStateCreateInfo colorBlendInfo		= vk::PipelineColorBlendStateCreateInfo();
         colorBlendInfo.setLogicOpEnable(false);
         colorBlendInfo.setLogicOp (vk::LogicOp::eCopy);
-		colorBlendInfo.setBlendConstants({ 0.0f,0.0f,0.0f,0.0f});
+		colorBlendInfo.setBlendConstants({ 1.0f,1.0f,1.0f,1.0f});
 		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {	vk::PipelineColorBlendAttachmentState()};
 		if(blendState)
 		{
@@ -585,6 +679,37 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 			}
 		}
 		colorBlendInfo.setAttachmentCount(1).setPAttachments(colorBlendAttachments);
+		
+		// from the vertex shader's layout:
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+		vk::VertexInputBindingDescription bindingDescription ;
+		bindingDescription.setBinding (0);
+		bindingDescription.setStride( v->layout.GetStructSize());
+		bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
+
+		const auto &layoutDesc=v->layout.GetDesc();
+		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
+		if(layoutDesc.size())
+			vertexInputs=new vk::VertexInputAttributeDescription[layoutDesc.size()];
+		int slot=0;
+		for(auto desc:layoutDesc)
+		{
+			vertexInputs[slot].binding = 0;
+			vertexInputs[slot].location = slot;
+			vertexInputs[slot].format = RenderPlatform::ToVulkanFormat(desc.format);
+			vertexInputs[slot].offset = desc.alignedByteOffset;
+			slot++;
+		}
+		
+		if(layoutDesc.size())
+		{
+			vertexInputInfo.vertexBindingDescriptionCount = 1;
+			vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)layoutDesc.size();
+			vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+			vertexInputInfo.pVertexAttributeDescriptions = vertexInputs;
+		}
+
+	
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo	= vk::GraphicsPipelineCreateInfo()
 																		.setStageCount(2)
 																		.setPStages(shaderStageInfo)
@@ -597,29 +722,12 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 																		.setPColorBlendState(&colorBlendInfo)
 																		.setPDynamicState(&dynamicStateInfo)
 																		.setLayout(mPipelineLayout)
-																		.setRenderPass(mRenderPass);
-		device->createGraphicsPipelines(mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &mPipeline);
+																		.setRenderPass(rp?*rp:renderPassPipeline->mRenderPass);
+		vulkanDevice->createGraphicsPipelines(renderPassPipeline->mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline);
+		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
+		if(vertexInputs)
+			delete []vertexInputs;
 	}
-	vk::DescriptorSetLayout		descLayout[3];
-	for(int i=0;i<kNumBuffers;i++)
-	{
-		descLayout[i]=mDescLayout;
-	}
-	
-	vk::DescriptorSetAllocateInfo alloc_info =	vk::DescriptorSetAllocateInfo()
-													.setDescriptorPool(mDescriptorPool)
-													.setDescriptorSetCount(1)
-													.setPSetLayouts(descLayout);
-	result = device->allocateDescriptorSets(&alloc_info,&descriptorSet);
-	/* It would be nice if this worked:
-	VkDescriptorSet ds=descriptorSet.operator VkDescriptorSet();
-	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
-		.setObjectType(vk::DebugReportObjectTypeEXT::eDescriptorSet)
-		.setObject((uint64_t)ds)
-		.setPObjectName((PassName+" descriptorSet ").c_str());
-	device->debugMarkerSetObjectNameEXT(&nameInfo);
-	*/
-	delete [] layout_bindings;
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) 
@@ -631,25 +739,41 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 	{
 		mLastFrameIndex = curFrameIndex;
 		mCurApplyCount = 0;
-		i_desc=mDescriptorSets[mLastFrameIndex].begin();
+		i_desc[mLastFrameIndex]=mDescriptorSets[mLastFrameIndex].begin();
 	}
-	if(i_desc==mDescriptorSets[mLastFrameIndex].end())
+	if(!initialized)
+		Initialize();
+	if(i_desc[mLastFrameIndex]==mDescriptorSets[mLastFrameIndex].end())
 	{
 		//must insert a new descriptor:
 		mDescriptorSets[mLastFrameIndex].push_back(vk::DescriptorSet());
-		i_desc=mDescriptorSets[mLastFrameIndex].end();
-		i_desc--;
-		Initialize(*i_desc);
+		i_desc[mLastFrameIndex]=mDescriptorSets[mLastFrameIndex].end();
+		i_desc[mLastFrameIndex]--;
+		Initialize(*i_desc[mLastFrameIndex]);
 	}
-	ApplyContextState(deviceContext,*i_desc);
+	ApplyContextState(deviceContext,*i_desc[mLastFrameIndex]);
 	mCurApplyCount++;
-	i_desc++;
+	if(i_desc[mLastFrameIndex]!=mDescriptorSets[mLastFrameIndex].end())
+		i_desc[mLastFrameIndex]++;
 }
 
 void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 {
 }
 
+vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::DeviceContext & deviceContext,crossplatform::PixelFormat pixelFormat)
+{
+	auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
+	if(rp)
+		return *rp;
+	auto &p=mRenderPasses.find(pixelFormat);
+	if(p==mRenderPasses.end())
+	{
+		InitializePipeline(deviceContext,&mRenderPasses[pixelFormat],pixelFormat);
+	}
+
+	return mRenderPasses[pixelFormat].mRenderPass;
+}
 
 void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 {

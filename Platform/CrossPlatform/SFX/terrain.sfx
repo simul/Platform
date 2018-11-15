@@ -94,7 +94,8 @@ technique terrain
     pass base 
     {
 		SetRasterizerState(RenderFrontfaceCull);
-		//SetDepthStencilState(EnableDepth,0); No. can't specify depth or it won't work for both forward and reverse.
+		SetDepthStencilState(ReverseDepth,0); //No. can't specify depth or it won't work for both forward and reverse.
+		SetTopology(TriangleStrip);
 		SetBlendState(DontBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
@@ -108,6 +109,7 @@ technique test_alpha_to_coverage
     {
 		SetRasterizerState(RenderNoCull);
 		//SetDepthStencilState(EnableDepth,0);
+		SetTopology(TriangleStrip);
 		SetBlendState(AlphaToCoverageBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_TestAlphaToCoverage()));
         SetGeometryShader(NULL);

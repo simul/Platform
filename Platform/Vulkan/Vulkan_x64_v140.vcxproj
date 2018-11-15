@@ -42,6 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -105,6 +106,7 @@
       <IncludePaths>$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\Vulkan\GLSL\GLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions>-d %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -338,6 +340,7 @@
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-d %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
@@ -399,6 +402,12 @@
     <None Include="GLSL\shader_platform.sl" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">
+      <Project>{21fda305-aeeb-418a-958e-5102cc5927bc}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Base\Base_x64_v140.vcxproj">
+      <Project>{9a8051a1-5c9f-4635-92cd-ad8da3f8ff41}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
       <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
       <Private>false</Private>
@@ -415,6 +424,9 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="t.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

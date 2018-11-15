@@ -38,8 +38,23 @@ namespace simul
             void SetFormat(crossplatform::PixelFormat) override;
             void SetDepthFormat(crossplatform::PixelFormat) override;
             bool IsValid() const override;
-
+			
+			vk::Framebuffer *GetVulkanFramebuffer(crossplatform::DeviceContext &deviceContext,int cube_face=-1);
+			vk::RenderPass *GetVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
         protected:
+			enum RPType
+			{
+				NONE=0
+				,COLOUR=1
+				,DEPTH=2
+				,CLEAR=4
+			};
+			vk::RenderPass mDummyRenderPasses[8];
+			std::vector<vk::Framebuffer> mFramebuffers[8];
+			void InitVulkanFramebuffer(crossplatform::DeviceContext &deviceContext);
+			bool initialized=false;
+			void InvalidateFramebuffers();
+			bool clear_next=true;
 		};
 	}
 }

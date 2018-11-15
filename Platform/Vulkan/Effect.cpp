@@ -51,6 +51,7 @@ bool Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
 Effect::Effect()
 {
 }
+
 void Effect::Compile(const char *filename_utf8)
 {
 	/* SIMUL/Tools/bin/Sfx.exe  -I"SIMUL\Platform\Vulkan\GLSL;SIMUL\Platform\CrossPlatform\SL"
@@ -154,6 +155,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext& deviceContext)
 crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 {
 	crossplatform::EffectPass* p    = new vulkan::EffectPass(renderPlatform,effect);
+	p->SetName(name);
 	passes_by_name[name]            = passes_by_index[i] = p;
 	return p;
 }

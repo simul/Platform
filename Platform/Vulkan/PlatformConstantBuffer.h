@@ -43,8 +43,7 @@ namespace simul
 
 			vk::Buffer 						mBuffers[kNumBuffers];
 			vk::DeviceMemory				mMemory[kNumBuffers];
-			vk::DescriptorSet				mDescriptorSet[kNumBuffers];
-			vk::DescriptorPool				mDescriptorPool;
+
 			const int kBufferAlign			= 256;
 			void *src;
 			size_t size;

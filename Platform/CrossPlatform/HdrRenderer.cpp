@@ -61,7 +61,7 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		}
 		H=Height/35;
 		W=Width/35;
-		if(blurTexture)
+		if(blurTexture&&W*H > 0)
 		{
 			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 		}
@@ -77,12 +77,12 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	for(int i=0;i<4;i++)
 	{
 		SAFE_DELETE(brightpassTextures[i]);
-		brightpassTextures[i]=renderPlatform->CreateTexture();
+		brightpassTextures[i]=renderPlatform->CreateTexture("brightpass");
 		SAFE_DELETE(glowTextures[i]);
-		glowTextures[i]=renderPlatform->CreateTexture();
+		glowTextures[i]=renderPlatform->CreateTexture("glow");
 	}
 	SAFE_DELETE(blurTexture);
-	blurTexture		=renderPlatform->CreateTexture();
+	blurTexture		=renderPlatform->CreateTexture("blur");
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	imageConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();

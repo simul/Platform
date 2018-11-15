@@ -38,6 +38,9 @@ namespace simul
 			int count;
 			virtual D3D12_VERTEX_BUFFER_VIEW* GetVertexBufferView() { return NULL; }
 			virtual D3D12_INDEX_BUFFER_VIEW* GetIndexBufferView() { return NULL; }
+		protected:
+            crossplatform::Layout*  mBufferLayout=nullptr;
+			crossplatform::RenderPlatform *renderPlatform=nullptr;
 		};
 	}
 }

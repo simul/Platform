@@ -583,7 +583,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 		}
 
         // Texture + sampler
-        for (int i = 0; i < numSamplerResourcerSlots; i++)
+        for (int i = 0; i < numSamplerResourceSlots; i++)
         {
             int sslot = samplerResourceSlots[i];
             if (usesSamplerSlot(sslot))

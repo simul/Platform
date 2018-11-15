@@ -31,7 +31,7 @@ shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 	vec2 tc	=IN.texCoords;
 
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
-#ifndef SFX_GLSL
+#ifndef SFX_OPENGL
 	tc.y		=1.0-tc.y;
 #endif
 
@@ -39,7 +39,7 @@ shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 	lookup.a	=lookup.r;
 	lookup		*=colour;
 //lookup.rgb=vec3(1,0,1);
-	lookup.a=.5;
+lookup.a=.5;
 	//lookup.r=1;
     return lookup;
 }
@@ -60,7 +60,6 @@ BlendState AlphaBlendRGB
     BlendOpAlpha		= ADD;
     RenderTargetWriteMask[0] = 7;
 };
-
 BlendState AddBlendRGB
 {
 	BlendEnable[0]	=TRUE;
@@ -71,19 +70,6 @@ BlendState AddBlendRGB
 };
 
 VertexShader vs = CompileShader(vs_4_0, FontVertexShader());
-
-technique backg
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, BackgroundVertexShader()));
-		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));
-    }
-}
 
 technique text
 {

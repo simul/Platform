@@ -240,7 +240,7 @@ vec4 GetFrustumClipPos(uint3 idx)
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(uint3 idx,bool depth,bool reverseDepth,bool msaa) 
+void DownscaleStochastic(uint3 idx,bool depth,bool reverseDepth) 
 {
 	if(idx.x<targetRange[idx.z].x||idx.x>=targetRange[idx.z].z||idx.y<targetRange[idx.z].y||idx.y>=targetRange[idx.z].w)
 	{
@@ -273,25 +273,11 @@ void DownscaleStochastic(uint3 idx,bool depth,bool reverseDepth,bool msaa)
 	float oldDepthValid =u.b;
 	if (depth)
 	{
-	DepthInterpretationStruct ds;
-	ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
-	ds.reverseDepth				=reverseDepth;
-	vec4 res					=vec4(0,0,0,0);
-	bool any_result;
-	if(msaa)
-			any_result	=GetStochasticSamples_MSAA(sourceMSDepthTexture
-									,depthWindow[0]
-									,sourceTexCoords
-									,frustum_clip_pos.xy
-									,texelRange
-									,ds
-									,tanHalfFov
-									,nearThresholdDepth
-									,stochasticOffset
-									,scale
-									,0
-									,res);
-	else
+		DepthInterpretationStruct ds;
+		ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+		ds.reverseDepth				=reverseDepth;
+		vec4 res					=vec4(0,0,0,0);
+		bool any_result;
 			any_result	=GetStochasticSamples(sourceDepthTexture
 									,depthWindow[0]
 									,sourceTexCoords
@@ -305,18 +291,83 @@ void DownscaleStochastic(uint3 idx,bool depth,bool reverseDepth,bool msaa)
 									,0
 									,res);
 
-	targetTexture[idx]		=res;
-	vec4 oldAggregateDepth	=sourceTexture1[idx];
-	// If the far depth (x) has radically increased, we need to fill in behind:
-		oldDepthValid		=u.b*step((res.x-oldAggregateDepth.x),0.01)*step(oldAggregateDepth.y-res.y,0.01);//+saturate(res.y-oldAggregateDepth.y));
-	// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
-	if(u.b==0)
+		targetTexture[idx]		=res;
+		vec4 oldAggregateDepth	=sourceTexture1[idx];
+		// If the far depth (x) has radically increased, we need to fill in behind:
+			oldDepthValid		=u.b*step((res.x-oldAggregateDepth.x),0.01)*step(oldAggregateDepth.y-res.y,0.01);//+saturate(res.y-oldAggregateDepth.y));
+		// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
+		if(u.b==0)
+		{
+			targetTexture2[idx]		=res;
+			targetTexture3[idx]		=res;
+		}
+	}
+	nextUpdateTexture[idx]	=vec4(u.b,oldDepthValid,1.0,0.0);
+}
+
+void DownscaleStochastic_MSAA(uint3 idx,bool depth,bool reverseDepth) 
+{
+	if(idx.x<targetRange[idx.z].x||idx.x>=targetRange[idx.z].z||idx.y<targetRange[idx.z].y||idx.y>=targetRange[idx.z].w)
 	{
-		targetTexture2[idx]		=res;
-		targetTexture3[idx]		=res;
+		nextUpdateTexture[idx]	=vec4(0,0,0,0);
+		return;
 	}
+	// old update
+	vec4 u					=updateTexture[idx];
+	vec2 texCoords			=(vec2(idx.xy)+vec2(0.5,0.5))/vec2(target_dims);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=-normalize(mul(invViewProj[idx.z],clip_pos).xyz);
+	// Transform view into the proper frustum
+	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
+	frustum_clip_pos		/=frustum_clip_pos.w;
+	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
+	sourceTexCoords.y		=1.0-sourceTexCoords.y;
+	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
+	if(frustum_clip_pos.z<0.0)
+	{
+		nextUpdateTexture[idx]=vec4(0,0,0,0);
+		return;
 	}
-		nextUpdateTexture[idx]	=vec4(u.b,oldDepthValid,1.0,0.0);
+	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
+	{
+		nextUpdateTexture[idx]=vec4(0,0,0,0);
+		return;
+	}
+	float oldDepthValid =u.b;
+	if (depth)
+	{
+		DepthInterpretationStruct ds;
+		ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+		ds.reverseDepth				=reverseDepth;
+		vec4 res					=vec4(0,0,0,0);
+		bool any_result;
+		any_result	=GetStochasticSamples_MSAA(sourceMSDepthTexture
+									,depthWindow[0]
+									,sourceTexCoords
+									,frustum_clip_pos.xy
+									,texelRange
+									,ds
+									,tanHalfFov
+									,nearThresholdDepth
+									,stochasticOffset
+									,scale
+									,0
+									,res);
+
+		targetTexture[idx]		=res;
+		vec4 oldAggregateDepth	=sourceTexture1[idx];
+		// If the far depth (x) has radically increased, we need to fill in behind:
+			oldDepthValid		=u.b*step((res.x-oldAggregateDepth.x),0.01)*step(oldAggregateDepth.y-res.y,0.01);//+saturate(res.y-oldAggregateDepth.y));
+		// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
+		if(u.b==0)
+		{
+			targetTexture2[idx]		=res;
+			targetTexture3[idx]		=res;
+		}
+	}
+	nextUpdateTexture[idx]	=vec4(u.b,oldDepthValid,1.0,0.0);
 }
 
 void DownscaleStochastic_twoEyes(uint3 idx,bool depth,bool reverseDepth,bool msaa) 
@@ -481,7 +532,7 @@ shader void CS_DownscaleStochastic_ReverseDepth(uint3 g : SV_GroupID, uint3 t : 
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,true,true,false);
+	DownscaleStochastic(pos,true,true);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -490,7 +541,7 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,true,false,false);
+	DownscaleStochastic(pos,true,false);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -501,7 +552,7 @@ shader void CS_DownscaleStochastic_MSAA_ReverseDepth(uint3 g : SV_GroupID, uint3
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
 		
 	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
-	DownscaleStochastic(pos,true,true,true);
+	DownscaleStochastic_MSAA(pos,true,true);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -510,7 +561,7 @@ shader void CS_DownscaleStochastic_MSAA_ForwardDepth(uint3 g : SV_GroupID, uint3
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,true,false,true);
+	DownscaleStochastic_MSAA(pos,true,false);
 }
 
 CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
@@ -519,7 +570,7 @@ shader void CS_DownscaleStochastic_NoDepth(uint3 g : SV_GroupID, uint3 t : SV_Gr
 	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
 	uint Z = cubeIndex[g.z + t.z].x;
 	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
-	DownscaleStochastic(pos, false, false,  false);
+	DownscaleStochastic(pos, false, false);
 }
 
 

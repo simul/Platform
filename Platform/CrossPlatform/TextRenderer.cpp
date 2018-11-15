@@ -237,5 +237,4 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);
 	}
-//	renderPlatform->RestoreRenderState(deviceContext);
 }

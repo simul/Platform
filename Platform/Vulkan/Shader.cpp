@@ -62,6 +62,7 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	{
 		SIMUL_BREAK_ONCE("failed to create shader module!");
 	}
+	SetVulkanName(renderPlatform,&mShader,filename_utf8);
 	name=filename_utf8;
 }
 
@@ -73,4 +74,5 @@ void Shader::Release()
 		if(device)
 			device->destroyShaderModule(mShader, nullptr);
 	}
+	renderPlatform=nullptr;
 }

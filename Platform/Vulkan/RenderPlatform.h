@@ -20,6 +20,8 @@ namespace simul
 {
 	namespace vulkan
 	{
+		extern void SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name);
+		extern void SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name);
 		class Material;
         class Texture;
 
@@ -38,6 +40,7 @@ namespace simul
 			void        InvalidateDeviceObjects() override;
 			void        BeginFrame() override;
 			void        EndFrame() override;
+			float		GetDefaultOutputGamma() const override;
             void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
             void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
 			void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d) override;
@@ -71,15 +74,12 @@ namespace simul
 
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			void*                                   GetDevice();
-			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers,crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps = NULL) override;
 			
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0) override;
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth) override;
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &) override;
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
 
-			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer) override;
-			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options) override;
 
@@ -104,23 +104,34 @@ namespace simul
 			static                                  crossplatform::PixelFormat FromVulkanFormat(vk::Format p);
 			static vk::Format						ToVulkanExternalFormat(crossplatform::PixelFormat p);
 			//static                                  Vulkanenum DataType(crossplatform::PixelFormat p);
+			static int                              FormatTexelBytes(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);
 			bool									memory_type_from_properties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex);
             
             //! Makes the handle resident only if its not resident already
-           // void                                    MakeTextureResident(Vulkanuint64 handle);
+			vulkan::Texture*						GetDummyTextureCube();
             //! Returns 2D dummy texture 1 white texel
             vulkan::Texture*                        GetDummy2D();
             //! Returns 3D dummy texture 1 white texel
             vulkan::Texture*                        GetDummy3D();
+			//! Returns dummy texture chosen from resource type.
+			vulkan::Texture *						GetDummyTexture(crossplatform::ShaderResourceType);
 			
-			vk::Framebuffer *GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext);
+			vk::Framebuffer *						GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext);
+			crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::DeviceContext &deviceContext);
+			
+			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
+			void									CreatVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
+			void									CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false);
+			vk::RenderPass							*GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
         private:
-			vk::Instance		*vulkanInstance;
-			vk::PhysicalDevice	*vulkanGpu;
-			vk::Device			*vulkanDevice;
-            vulkan::Texture*    mDummy2D;
-            vulkan::Texture*    mDummy3D;
+			vk::Instance		*vulkanInstance=nullptr;
+			vk::PhysicalDevice	*vulkanGpu=nullptr;
+			vk::Device			*vulkanDevice=nullptr;
+            vulkan::Texture*    mDummy2D=nullptr;
+            vulkan::Texture*    mDummy3D=nullptr;
+            vulkan::Texture*    mDummyTextureCube=nullptr;
+            vulkan::Texture*    mDummyTextureCubeArray=nullptr;
 			vk::DescriptorPool mDescriptorPool;
 		};
 	}

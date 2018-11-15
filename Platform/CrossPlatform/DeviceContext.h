@@ -38,6 +38,7 @@ namespace simul
 		class EffectTechnique;
 		class Texture;
 		class SamplerState;
+		class Layout;
 		enum class ShaderResourceType;
 		struct TextureAssignment
 		{
@@ -168,6 +169,7 @@ namespace simul
 			ContextState& operator=(const ContextState& cs);
 			bool last_action_was_compute;
 			Viewport viewports[8];
+			Buffer *indexBuffer=nullptr;
 			std::unordered_map<int,Buffer*> applyVertexBuffers;
 			std::unordered_map<int,Buffer*> streamoutTargets;
 			ConstantBufferAssignmentMap applyBuffers;
@@ -176,9 +178,10 @@ namespace simul
 			SamplerStateAssignmentMap samplerStateOverrides;
 			TextureAssignmentMap textureAssignmentMap;
 			TextureAssignmentMap rwTextureAssignmentMap;
-			EffectPass *currentEffectPass;
-			EffectTechnique *currentTechnique;
-			Effect *currentEffect;
+			EffectPass *currentEffectPass=nullptr;
+			EffectTechnique *currentTechnique=nullptr;
+			Effect *currentEffect=nullptr;
+			Layout *currentLayout=nullptr;
 			void invalidate()
 			{
 				effectPassValid=false;

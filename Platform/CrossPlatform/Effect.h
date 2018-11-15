@@ -2,6 +2,7 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
@@ -261,6 +262,7 @@ namespace simul
 				{
 				}
 			virtual ~Shader(){}
+			virtual void Release(){}
 			virtual void load(crossplatform::RenderPlatform *r, const char *filename, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
@@ -278,6 +280,8 @@ namespace simul
 			std::string name;
 			std::string entryPoint;
 			crossplatform::ShaderType type;
+			// if it's a vertex shader...
+			crossplatform::Layout layout;
 			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
 			unsigned textureSlots;			//t
 			unsigned textureSlotsForSB;		//t
@@ -313,8 +317,15 @@ namespace simul
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
             std::string rtFormatState;
+			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);
-			virtual ~EffectPass(){}
+			virtual ~EffectPass();
+
+			void SetName(const char *n)
+			{
+				if(n)
+					name=n;
+			}
 
 			//! This updates the mapping from the pass's list of resources to the effect slot numbers (0-31)
 			void MakeResourceSlotMap();
@@ -328,7 +339,7 @@ namespace simul
 			unsigned char sbResourceSlots[32];
 			int numRwSbResourceSlots;
 			unsigned char rwSbResourceSlots[32];
-			int numSamplerResourcerSlots;
+			int numSamplerResourceSlots;
 			unsigned char samplerResourceSlots[32];
 			int numConstantBufferResourceSlots;
 			unsigned char constantBufferResourceSlots[32];
@@ -829,6 +840,7 @@ namespace simul
 			typedef std::unordered_map<std::string,ShaderResource*> TextureDetailsMap;
 			typedef std::unordered_map<const char *,ShaderResource*> TextureCharMap;
 			TextureDetailsMap textureDetailsMap;
+			ShaderResource *textureResources[32];
 			mutable TextureCharMap textureCharMap;
 			std::unordered_map<std::string,crossplatform::SamplerState *> samplerStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
@@ -884,6 +896,7 @@ namespace simul
 				return std::string("Unknown");
 
 			}
+			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s) ;
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;

@@ -38,7 +38,7 @@ namespace simul
 			///
 			void EndFrame();
 		protected:
-            static const PixelFormat                    kDisplayFormat = RGBA_8_UNORM;
+            static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;
             DisplaySurfaceMap                           surfaces;

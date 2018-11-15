@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/Vulkan/RenderPlatform.h"
+#include "Simul/Platform/Vulkan/Effect.h"
 
 #ifdef _MSC_VER
     #include <windows.h>
@@ -18,7 +19,8 @@ using namespace vulkan;
 Framebuffer::Framebuffer(const char* name):
     BaseFramebuffer(name)
 {
-    this->name = name;
+	if(name)
+	    this->name = name;
 }
 
 Framebuffer::~Framebuffer()
@@ -30,10 +32,12 @@ void Framebuffer::SetWidthAndHeight(int w, int h, int m)
 {
     if (Width != w || Height != h || mips != m)
     {
-        InvalidateDeviceObjects();
+        SAFE_DELETE(buffer_texture);
+		SAFE_DELETE(buffer_depth_texture);
         Width   = w;
         Height  = h;
         mips    = m;
+		InvalidateFramebuffers();
     }
 }
 
@@ -51,7 +55,9 @@ void Framebuffer::SetFormat(crossplatform::PixelFormat f)
         return;
     }
     target_format = f;
-    InvalidateDeviceObjects();
+    SAFE_DELETE(buffer_texture);
+	SAFE_DELETE(buffer_depth_texture);
+	InvalidateFramebuffers();
 }
 
 void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
@@ -61,7 +67,9 @@ void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
         return;
     }
     depth_format = f;
-    InvalidateDeviceObjects();
+    SAFE_DELETE(buffer_texture);
+	SAFE_DELETE(buffer_depth_texture);
+	InvalidateFramebuffers();
 }
 
 bool Framebuffer::IsValid() const
@@ -115,11 +123,6 @@ bool Framebuffer::CreateBuffers()
         std::string sn = "BaseFramebuffer_" + name;
         buffer_texture = renderPlatform->CreateTexture(sn.c_str());
     }
-    if (!buffer_depth_texture)
-    {
-        std::string sn = "BaseFramebufferDepth_" + name;
-        buffer_depth_texture = renderPlatform->CreateTexture(sn.c_str());
-    }
     static int quality = 0;
     if (!external_texture && target_format != crossplatform::UNKNOWN)
     {
@@ -134,14 +137,35 @@ bool Framebuffer::CreateBuffers()
     }
     if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)
     {
+        std::string sn = "BaseFramebufferDepth_" + name;
+        buffer_depth_texture = renderPlatform->CreateTexture(sn.c_str());
         buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality);
     }
     
     return true;
 }
 
+void Framebuffer::InvalidateFramebuffers()
+{
+	if(!renderPlatform)
+		return;
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	for(int i=0;i<8;i++)
+	{
+		for(auto f:mFramebuffers[i])
+			vulkanDevice->destroyFramebuffer(f);
+		vulkanDevice->destroyRenderPass(mDummyRenderPasses[i]);
+	}
+	initialized=false;
+}
+
 void Framebuffer::InvalidateDeviceObjects()
 {
+	if(renderPlatform)
+	{
+		InvalidateFramebuffers();
+		renderPlatform=nullptr;
+	}
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
@@ -150,11 +174,11 @@ void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
     colour_active   = true;
-    vulkan::Texture* glcol      = (vulkan::Texture*)buffer_texture;
-    vulkan::Texture* gldepth    = nullptr;
+    vulkan::Texture* col      = (vulkan::Texture*)buffer_texture;
+    vulkan::Texture* depth    = nullptr;
     if (buffer_depth_texture)
     {
-        gldepth         = (vulkan::Texture*)buffer_depth_texture;
+        depth         = (vulkan::Texture*)buffer_depth_texture;
         // Re-attach depth (we dont really to do this every time, only if we called deactivate depth)
         if (depth_active == false)
         {
@@ -169,7 +193,12 @@ void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
 
     // Construct targets and viewport:
     targetsAndViewport.num              = 1;
-    targetsAndViewport.m_rt[0]          = (void*)0;//id;
+	targetsAndViewport.textureTargets[0].texture=buffer_texture;
+	targetsAndViewport.textureTargets[0].layer	=targetsAndViewport.textureTargets[0].mip=0;
+	targetsAndViewport.depthTarget.texture		=buffer_depth_texture;
+	targetsAndViewport.depthTarget.layer=targetsAndViewport.depthTarget.mip=0;
+	// note the different interpretation of m_rt in the case that it's a Simul framebuffer not native:
+    targetsAndViewport.m_rt[0]          = (void*)this;
     targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;
@@ -180,6 +209,77 @@ void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
 
     // Cache it:
     deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
+}
+#include "Simul/Base/StringFunctions.h"
+void Framebuffer::InitVulkanFramebuffer(crossplatform::DeviceContext &deviceContext)
+{
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	if(buffer_texture)
+	{
+		vulkanRenderPlatform->CreateVulkanRenderpass(mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH],1,target_format,depth_format,false);
+		vulkanRenderPlatform->CreateVulkanRenderpass(mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH|RPType::CLEAR],1,target_format,depth_format,true);
+		vulkanRenderPlatform->CreateVulkanRenderpass(mDummyRenderPasses[RPType::COLOUR],1,target_format,crossplatform::PixelFormat::UNKNOWN,false);
+		vulkanRenderPlatform->CreateVulkanRenderpass(mDummyRenderPasses[RPType::COLOUR|RPType::CLEAR],1,target_format,crossplatform::PixelFormat::UNKNOWN,true);
+	}
+	if(buffer_depth_texture)
+		vulkanRenderPlatform->CreateVulkanRenderpass(mDummyRenderPasses[RPType::DEPTH],0,crossplatform::PixelFormat::UNKNOWN,depth_format);
+
+	vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
+	framebufferCreateInfo.width = Width;
+	framebufferCreateInfo.height = Height;
+	framebufferCreateInfo.layers = 1;
+	vk::ImageView attachments[2]={nullptr,nullptr};
+	framebufferCreateInfo.pAttachments = attachments;
+	if(buffer_depth_texture)
+		attachments[1]=*(buffer_depth_texture->AsVulkanImageView(crossplatform::ShaderResourceType::TEXTURE_2D,0,0));
+	int totalNum	= is_cubemap ? 6  : 1;
+	for(int i=1;i<8;i++)
+	{
+		if(i==4||(i&RPType::COLOUR)==0)
+			continue;
+		mFramebuffers[i].resize(totalNum);
+		for(int j=0;j<totalNum;j++)
+		{
+			framebufferCreateInfo.attachmentCount=1+((buffer_depth_texture!=nullptr&&(i&RPType::DEPTH)!=0&&(i&RPType::COLOUR)!=0)?1:0);
+			framebufferCreateInfo.renderPass = mDummyRenderPasses[i];
+			attachments[0]=*(buffer_texture->AsVulkanImageView(crossplatform::ShaderResourceType::TEXTURE_2D,j,0));
+			SIMUL_ASSERT(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j])==vk::Result::eSuccess);
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],base::QuickFormat(+"%s mFramebuffers %d %d",name.c_str(),i,j));
+		}
+	}
+	initialized=true;
+}
+
+vk::Framebuffer *Framebuffer::GetVulkanFramebuffer(crossplatform::DeviceContext &deviceContext,int cube_face)
+{
+	if(!initialized)
+		InitVulkanFramebuffer(deviceContext);
+	if(cube_face<0)
+		cube_face=0;
+	if(buffer_texture&&colour_active)
+		((vulkan::Texture*)buffer_texture)->SplitLayouts();//vk::ImageLayout::ePresentSrcKHR);
+	if(buffer_depth_texture&&depth_active)
+		((vulkan::Texture*)buffer_depth_texture)->SplitLayouts();//vk::ImageLayout::eDepthStencilReadOnlyOptimal);
+	if(depth_active)
+	{
+		if(colour_active)
+			return &(mFramebuffers[RPType::COLOUR|RPType::DEPTH][cube_face]);
+		else
+			return &(mFramebuffers[RPType::DEPTH][cube_face]);
+	}
+	else 
+		return &(mFramebuffers[RPType::COLOUR][cube_face]);
+}
+
+vk::RenderPass *Framebuffer::GetVulkanRenderPass(crossplatform::DeviceContext &deviceContext)
+{
+	if(!initialized)
+		InitVulkanFramebuffer(deviceContext);
+	if(depth_active)
+		return &mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH];
+	if(colour_active)
+		return &mDummyRenderPasses[RPType::COLOUR];
+	return nullptr;
 }
 
 void Framebuffer::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
@@ -196,9 +296,14 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext, float r, fl
         changed = true;
         Activate(deviceContext);
     }
-    if (buffer_depth_texture)
-    {
-    }
+    clear_next=true;
+	auto &cb=renderPlatform->GetDebugConstantBuffer();
+	cb.debugColour=vec4(r,g,b,a);
+	cb.debugDepth=d;
+	renderPlatform->GetDebugEffect()->SetConstantBuffer(deviceContext,&cb);
+	renderPlatform->GetDebugEffect()->Apply(deviceContext,"clear_both",0);
+	renderPlatform->DrawQuad(deviceContext);
+	renderPlatform->GetDebugEffect()->Unapply(deviceContext);
 
     // Leave it as it was:
     if (changed)

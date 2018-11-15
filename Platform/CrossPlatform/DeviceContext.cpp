@@ -5,9 +5,6 @@ using namespace crossplatform;
 
 ContextState::ContextState()
 				:last_action_was_compute(false)
-				,currentEffectPass(NULL)
-				,currentTechnique(NULL)
-				,currentEffect(NULL)
 				,effectPassValid(false)
 				,vertexBuffersValid(false)
 				,constantBuffersValid(false)

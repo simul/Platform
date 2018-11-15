@@ -116,7 +116,7 @@ posTexVertexOutput SimpleFullscreen(idOnly IN)
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
 	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
-#ifdef SFX_GLSL
+#ifdef SFX_OPENGL
 	OUT.texCoords.y =1.0 - OUT.texCoords.y;
 #endif
 	return OUT;
@@ -142,7 +142,7 @@ posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
 	OUT.texCoords	=pos;
-#ifdef SFX_GLSL
+#ifdef SFX_OPENGL
 	OUT.texCoords.y =1.0 - OUT.texCoords.y;
 #endif
 	return OUT;

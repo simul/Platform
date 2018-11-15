@@ -511,6 +511,22 @@ shader v2f Vec3InputSignatureVS(vec3input IN)
     return OUT;
 }
 
+shader posTexVertexOutput VS_DepthWrite(idOnly IN)
+{
+	posTexVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]=vec2( 1.0,-1.0);
+	poss[1]=vec2( 1.0, 1.0);
+	poss[2]=vec2(-1.0,-1.0);
+	poss[3]=vec2(-1.0, 1.0);
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	OUT.hPosition.z	=debugDepth; 
+	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+	return OUT;
+}
+
+
 VertexShader vs_quad_5_0=CompileShader(vs_5_0,VS_Quad());
 VertexShader debugvs_5_0=CompileShader(vs_5_0,DebugVS());
 PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
@@ -826,6 +842,7 @@ BlendState DontWriteColour
 	BlendEnable[0]	=FALSE;
 	RenderTargetWriteMask[0]=0;
 };
+
 technique clear_depth
 {
     pass p0
@@ -839,6 +856,18 @@ technique clear_depth
     }
 }
 
+technique clear_both
+{
+	pass p0
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( WriteDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DepthWrite()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+	}
+}
 
 BlendState AlphaBlendNoAlphaWrite
 {

@@ -1158,7 +1158,7 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 
 	// The handles for the required samplers:
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumSamplers> srcHandles;
-	for (int i = 0; i < numSamplerResourcerSlots; i++)
+	for (int i = 0; i < numSamplerResourceSlots; i++)
 	{
 		int slot	                        = samplerResourceSlots[i];
         crossplatform::SamplerState* samp   = nullptr;

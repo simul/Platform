@@ -798,6 +798,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case BGRA_8_UNORM:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
 	case RGBA_8_UNORM_SRGB:
 		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case RGBA_8_UNORM_COMPRESSED:
@@ -853,7 +855,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	case DXGI_FORMAT_R8G8B8A8_SNORM:
 		return RGBA_8_SNORM;
 	case DXGI_FORMAT_B8G8R8A8_UNORM:		// What possible reason is there for this to exist?
-		return RGBA_8_UNORM;
+		return BGRA_8_UNORM;
 	case DXGI_FORMAT_R32_UINT:
 		return R_32_UINT;
 	case DXGI_FORMAT_R32G32_UINT:

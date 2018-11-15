@@ -70,15 +70,15 @@ public:
 };
 
 DeviceManager::DeviceManager()
-	:renderPlatformVulkan(NULL)
-	,enabled_extension_count(0)
+	://renderPlatformVulkan(NULL)
+	enabled_extension_count(0)
 	,enabled_layer_count(0)
 	,device_initialized(false)
 {
 	deviceManager=this;
-	if (!renderPlatformVulkan)
-		renderPlatformVulkan = new vulkan::RenderPlatform;
-	renderPlatformVulkan->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED | crossplatform::TRY_AGAIN_ON_FAIL | crossplatform::BREAK_ON_FAIL);
+//	if (!renderPlatformVulkan)
+//		renderPlatformVulkan = new vulkan::RenderPlatform;
+//	renderPlatformVulkan->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED | crossplatform::TRY_AGAIN_ON_FAIL | crossplatform::BREAK_ON_FAIL);
 //	simul::crossplatform::Profiler::GetGlobalProfiler().Initialize(NULL);
 	deviceManagerInternal = new DeviceManagerInternal;
 }
@@ -88,13 +88,15 @@ void DeviceManager::InvalidateDeviceObjects()
 	int err = errno;
 	std::cout << "Errno " << err << std::endl;
 	errno = 0;
+//	delete renderPlatformVulkan;
+//	renderPlatformVulkan=nullptr;
 //	simul::vulkan::Profiler::GetGlobalProfiler().Uninitialize();
 }
 
 DeviceManager::~DeviceManager()
 {
 	InvalidateDeviceObjects();
-	delete renderPlatformVulkan;
+	//delete renderPlatformVulkan;
 	delete deviceManagerInternal;
 }
 
@@ -192,6 +194,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	/* Look for instance extensions */
 	vk::Bool32 surfaceExtFound = VK_FALSE;
 	vk::Bool32 platformSurfaceExtFound = VK_FALSE;
+	vk::Bool32 debugExtFound = VK_FALSE;
 
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
@@ -208,6 +211,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 		for (uint32_t i = 0; i < instance_extension_count; i++)
 		{
+			if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				debugExtFound = 1;
+				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+			}
 			if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				surfaceExtFound = 1;
@@ -436,8 +444,54 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	vk::PhysicalDeviceFeatures physDevFeatures;
 	deviceManagerInternal->gpu.getFeatures(&physDevFeatures);
 
-	InitDebugging();
+	if(use_debug)
+		InitDebugging();
 	CreateDevice();
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
+    VkDebugReportFlagsEXT       flags,
+    VkDebugReportObjectTypeEXT  objectType,
+    uint64_t                    object,
+    size_t                      location,
+    int32_t                     messageCode,
+    const char*                 pLayerPrefix,
+    const char*                 pMessage,
+    void*                       pUserData)
+{
+	if(pLayerPrefix)
+		std::cerr<<pLayerPrefix<<" layer: ";
+	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+		std::cerr<<" Error: ";
+	if(pMessage)
+		std::cerr << pMessage << std::endl;
+	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+		DebugBreak();
+    return VK_FALSE;
+}
+
+void DeviceManager::SetupDebugCallback()
+{
+	#ifdef _DEBUG
+/* Load VK_EXT_debug_report entry points in debug builds */
+		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>     (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
+		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>            (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
+		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>    (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
+
+		/* Setup callback creation information */
+		VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
+		callbackCreateInfo.sType       = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+		callbackCreateInfo.pNext       = nullptr;
+		callbackCreateInfo.flags       = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+										 VK_DEBUG_REPORT_WARNING_BIT_EXT |
+										 VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+		callbackCreateInfo.pfnCallback = &DebugReportCallback;
+		callbackCreateInfo.pUserData   = nullptr;
+
+		/* Register the callback */
+		VkDebugReportCallbackEXT callback;
+		VkResult result = vkCreateDebugReportCallbackEXT(deviceManagerInternal->instance, &callbackCreateInfo, nullptr, &callback);
+	#endif
 }
 
 void DeviceManager::CreateDevice()
@@ -453,6 +507,11 @@ void DeviceManager::CreateDevice()
 		queues[i].setQueueCount(1);
 		queues[i].setPQueuePriorities(priorities);
 	}
+	vk::PhysicalDeviceFeatures features;
+	features.setVertexPipelineStoresAndAtomics(1);
+	features.setDualSrcBlend(1);		// For compositing shaders.
+	features.setImageCubeArray(1);
+	features.setSamplerAnisotropy(1);
     auto deviceInfo = vk::DeviceCreateInfo()
                           .setQueueCreateInfoCount(1)
                           .setPQueueCreateInfos(queues.data())
@@ -460,7 +519,7 @@ void DeviceManager::CreateDevice()
                           .setPpEnabledLayerNames(nullptr)
                           .setEnabledExtensionCount(enabled_extension_count)
                           .setPpEnabledExtensionNames((const char *const *)extension_names.data())
-                          .setPEnabledFeatures(nullptr)
+                          .setPEnabledFeatures(&features)
 						.setQueueCreateInfoCount(queues.size());
 	/*
     if (separate_present_queue) {
@@ -518,7 +577,7 @@ vk::Instance *DeviceManager::GetVulkanInstance()
 
 void DeviceManager::InitDebugging()
 {
-
+	SetupDebugCallback();
 }
 
 void	DeviceManager::Shutdown()

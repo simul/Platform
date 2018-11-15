@@ -45,19 +45,26 @@ namespace simul
 			//! Number of ring buffers
 			static const int				kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);
 			int								mSlots;					//number of 256-byte chunks of memory...
-			int								mMaxDescriptors;
+			int								mMaxApplyCount;
+			int								mCountMultiplier=2;
 
-			int								mLastFrameIndex;
+			int64_t							mLastFrameIndex;
 			int								mCurApplyCount;
 
-			vk::Buffer 						mBuffers[kNumBuffers];
-			vk::BufferView 					mBufferViews[kNumBuffers];
-			vk::DeviceMemory				mMemory[kNumBuffers];
-			vk::DescriptorSet				mDescriptorSet[kNumBuffers];
-			vk::DescriptorPool				mDescriptorPool;
+			struct PerFrameBuffer
+			{
+				vk::Buffer 					mBuffer;
+				vk::BufferView 				mBufferView;
+				vk::DeviceMemory			mMemory;
+			};
+			std::list<PerFrameBuffer>		perFrameBuffers;
+			std::list<PerFrameBuffer>::iterator lastBuffer;
+			std::list<PerFrameBuffer>::iterator firstBuffer;
+			
+			vk::Buffer						mReadBuffers[kNumBuffers];
+			vk::DeviceMemory				mReadBufferMemory[kNumBuffers];
 			const int kBufferAlign			= 256;
 			size_t							last_offset;
-			vk::Buffer						*lastBuffer;
 
             void* mCurReadMap				= nullptr;
 			//! Total number of individual elements
@@ -66,9 +73,10 @@ namespace simul
 			int								mElementByteSize;
 			int								mUnitSize;
 			int								mTotalSize;
-            int                         mMaxApplyMod = 1;
-			unsigned char *buffer;
-			bool mCpuRead;
+            int								mMaxApplyMod = 1;
+			unsigned char *					buffer;
+			bool							mCpuRead;
+			void							AddPerFrameBuffer(const void *init_data);
 		};
 	}
 }

@@ -47,7 +47,7 @@ EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 	,numRwResourceSlots(0)
 	,numSbResourceSlots(0)
 	,numRwSbResourceSlots(0)
-	,numSamplerResourcerSlots(0)
+	,numSamplerResourceSlots(0)
 	,samplerSlots(0)
 	,constantBufferSlots(0)
 	,textureSlots(0)
@@ -97,7 +97,7 @@ void EffectPass::MakeResourceSlotMap()
 	numRwResourceSlots=w;
 	numSbResourceSlots=sb;
 	numRwSbResourceSlots=rwsb;
-	numSamplerResourcerSlots=sm;
+	numSamplerResourceSlots=sm;
 	numConstantBufferResourceSlots=cb;
 }
 
@@ -202,6 +202,18 @@ void EffectPass::SetUsesSamplerSlots(unsigned s)
 	samplerSlots|=s;
 }
 
+EffectPass::~EffectPass()
+{
+	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
+	{
+		shaders[i]=nullptr;
+	}
+	for(int i=0;i<crossplatform::OUTPUT_FORMAT_COUNT;i++)
+	{
+		if(pixelShaders[i])
+			pixelShaders[i]->Release();
+	}
+}
 EffectTechniqueGroup::~EffectTechniqueGroup()
 {
 	for (crossplatform::TechniqueMap::iterator i = techniques.begin(); i != techniques.end(); i++)
@@ -250,6 +262,11 @@ EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
 
 EffectTechnique::~EffectTechnique()
 {
+	for(auto p:passes_by_name)
+	{
+		delete p.second;
+	}
+	passes_by_name.clear();
 }
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
@@ -336,9 +353,9 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const Shader
 #ifdef _DEBUG
 	if(!tex)
 	{
-		return;
+		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
 	}
-	if(!tex->IsValid())
+	else if(!tex->IsValid())
 	{
 		SIMUL_BREAK_ONCE("Invalid texture applied");
 		return;
@@ -419,6 +436,11 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	cs->rwTextureAssignmentMapValid=false;
 }
 
+const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
+{
+	return textureResources[s];
+}
+
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
 	crossplatform::ShaderResource res;
@@ -428,9 +450,9 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	{
 		slot					=GetSlot(name);
 		res.valid				=true;
-		unsigned dim					=GetDimensions(name);
+		unsigned dim					=i->dimensions;//GetDimensions(name);
 		res.dimensions					=dim;
-		res.shaderResourceType			=GetResourceType(name);
+		res.shaderResourceType			=i->shaderResourceType;//(name);
 	}
 	else
 	{
@@ -820,11 +842,16 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,TOO_FAR=4
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,TOO_FAR=5
 	};
 	Level level				=OUTSIDE;
 	EffectTechnique *tech	=NULL;
 	EffectPass *p			=NULL;
+	crossplatform::LayoutDesc layoutDesc[32];
+	int layoutCount=0;
+	int layoutOffset=0;
+	int layoutSlot=0;
+	int passNum=0;
 	string group_name,tech_name,pass_name;
 	int shaderCount=0;
 	while(next>=0)
@@ -909,6 +936,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					rt=rt|crossplatform::ShaderResourceType::ARRAY;
 				res->shaderResourceType=rt;
 				textureDetailsMap[texture_name]=res;
+				if(!rw)
+					textureResources[slot]=res;
 			}
 			else if(is_equal(word, "BlendState"))
 			{
@@ -1059,6 +1088,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				tech_name = line.substr(sp + 1, line.length() - sp - 1);
 				tech = (EffectTechnique*)EnsureTechniqueExists(group_name, tech_name, "main");
 				p=nullptr;
+				passNum=0;
 			}
 		}
 		else if (level == TECHNIQUE)
@@ -1066,8 +1096,32 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"pass")==0)
 			{
 				pass_name=line.substr(sp+1,line.length()-sp-1);
-				p=(EffectPass*)tech->AddPass(pass_name.c_str(),0);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
+				//(((filenameUtf8+".")+tech_name+".")+pass_name).c_str(),0);
 				shaderCount=0;
+				layoutCount=0;
+				layoutOffset=0;
+				layoutSlot=0;
+				passNum++;
+			}
+		}
+		else if(level==LAYOUT)
+		{
+			std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
+			std::smatch sm;
+			if(std::regex_search(line, sm, element_re))
+			{
+				std::string type=sm.str(1);
+				std::string name=sm.str(2);
+				LayoutDesc &desc=layoutDesc[layoutCount];
+				desc.format				=TypeToFormat(type.c_str());
+				desc.alignedByteOffset	=layoutOffset;
+				desc.inputSlot			=layoutSlot;
+				desc.perInstance		=false;
+				desc.semanticName		="";
+				layoutCount++;
+				layoutOffset			+=GetByteSize(desc.format);
+				layoutSlot++;
 			}
 		}
 		else if(level==PASS)
@@ -1106,11 +1160,19 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						entry_point= sm.str(2);
 				}
 
-				const string &name=words[1];
+				string name;
+				if(words.size()>1)
+					name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
 				PixelOutputFormat fmt=FMT_UNKNOWN;
                 std::string passRtFormat = "";
-				if(_stricmp(type.c_str(),"blend")==0)
+				if(_stricmp(type.c_str(),"layout")==0)
+				{
+					layoutCount=0;
+					layoutOffset=0;
+					layoutSlot=0;
+				}
+				else if(_stricmp(type.c_str(),"blend")==0)
 				{
 					if(blendStates.find(name)!=blendStates.end())
 					{
@@ -1258,12 +1320,20 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 									else
 										rwTextureSlots|=m;
 								}
+								else if(type_char=='u')
+								{
+									rwTextureSlots|=m;
+								}
 								else if(type_char=='b')
 								{
 									if(u<1000)
 										textureSlotsForSB|=m;
 									else
 										rwTextureSlotsForSB|=m;
+								}
+								else if(type_char=='z')
+								{
+									rwTextureSlotsForSB|=m;
 								}
 								else
 								{
@@ -1316,6 +1386,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					}
 					p->MakeResourceSlotMap();
 					s->entryPoint=entry_point;
+					if(t==crossplatform::SHADERTYPE_VERTEX&&layoutCount)
+					{
+						s->layout.SetDesc(layoutDesc,layoutCount);
+						layoutCount=0;
+					}
 				}
 			}
 		}

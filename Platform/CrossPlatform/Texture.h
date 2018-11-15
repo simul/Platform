@@ -48,6 +48,7 @@ namespace simul
 	namespace crossplatform
 	{
 		class RenderPlatform;
+		class Texture;
 		struct DeviceContext;
 		struct SamplerStateDesc
 		{
@@ -74,6 +75,7 @@ namespace simul
 				y=i.y;
 				w=i.z;
 				h=i.w;
+				return *this;
 			}
 		};
 		typedef void ApiRenderTarget;
@@ -81,14 +83,30 @@ namespace simul
 		//! Stores information about the current render targets
 		struct SIMUL_CROSSPLATFORM_EXPORT TargetsAndViewport
 		{
+			struct TextureTarget
+			{
+				TextureTarget():texture(nullptr),layer(0),mip(0)
+				{
+				}
+				Texture *texture;
+				int layer;
+				int mip;
+			};
 			TargetsAndViewport():temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)
 			{
-                for (int i = 0; i < 8; i++) { m_rt[i] = nullptr; rtFormats[i] = UNKNOWN; }
+                for (int i = 0; i < 8; i++)
+				{
+					m_rt[i] = nullptr;
+					rtFormats[i] = UNKNOWN;
+				}
 			}
 			bool                        temp;
 			int                         num;
             //! API pointer to the target
 			const ApiRenderTarget*      m_rt[8];
+			//! If using Simul textures, the targets, including layer and mip specification.
+			TextureTarget				textureTargets[8];
+			TextureTarget				depthTarget;
             //! The pixel format of the target
             PixelFormat                 rtFormats[8];
             //! If any, the API pointer to the depth surface
@@ -121,6 +139,7 @@ namespace simul
 				return nullptr;
 			}
 			int default_slot;
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 		enum class ShaderResourceType;
 		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
@@ -134,6 +153,8 @@ namespace simul
 		{
 		protected:
 			bool cubemap;
+			bool computable;
+			bool renderTarget;
 			bool external_texture;
 			bool depthStencil;
 			std::string name;
@@ -224,7 +245,7 @@ namespace simul
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
 			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1,int mip_index=0);
 			//! Deactivate as a rendertarget.
-			virtual void deactivateRenderTarget(DeviceContext &deviceContext)=0;
+			virtual void deactivateRenderTarget(DeviceContext &deviceContext);
 			virtual int GetLength() const
 			{
 				return length;

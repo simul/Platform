@@ -333,4 +333,9 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="t.txt">
+      <Filter>GLSL</Filter>
+    </Text>
+  </ItemGroup>
 </Project>
