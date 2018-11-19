@@ -236,7 +236,6 @@ shader void CS_UpdateAmplitudeGrid(uint3 sub_pos : SV_DispatchThreadID)
 		return;
 	}
 
-
  //	float gamma = 0.06125;// *2.0 * 0.000001 * pow(g_GroupSpeeds[g_waveGroup], 2.0);
 	float gamma = g_dt * 2.0 * pow(g_GroupSpeeds[0], 2.0) * (1.0 / dims.z);
 
@@ -270,9 +269,9 @@ shader vec4 PS_PrecomputeProfileBuffer(posTexVertexOutput In) : SV_Target
 	float p = (In.texCoords.x * g_period);
 
 	float dx = (g_zetaMax - g_zetaMin) / g_integrationSteps;
-	float x = (g_zetaMin + (0.5 * dx));
+	float x = g_zetaMin;
 
-	float weight1 = p / g_period;
+	float weight1 = In.texCoords.x;
 	float weight2 = 1 - weight1;
 
 	float bump1 = cubic_bump(weight1);
@@ -345,6 +344,8 @@ shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 	float height = (displacement.z + g_surfaceHeight) - g_ProbePos[sub_pos.x].z;
 	g_ProbeOutputs[sub_pos.x] = vec4(height, displacement);
 }
+
+//---------------------------------------- Vertex Shaders -----------------------------------------
 
 //-----------------------------------------------------------------------------
 // Name: VS_BoundlessWaterSurf
@@ -848,33 +849,11 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 
 		if (shoreEffects)
 		{
-			fade = saturate(((length(pos_local.xy - cameraCenter) * g_UVScale) - 0.4) / 0.6);
+			//fade = saturate(((length(pos_local.xy - cameraCenter) * g_UVScale) - 0.4) / 0.6);
 
 			vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
 			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 5.0) / 5.0;
-			/*
-			if (lerpDisplacement)
-			{
-			vec3 detailDisplacement1 = g_texDisplacement.SampleLevel(wwcSamplerState, -detail_uv_local1, 0).xyz;
-			vec3 detailDisplacement2 = g_texDisplacement.SampleLevel(wwcSamplerState, -detail_uv_local2, 0).xyz;
-			detailDisplacement = lerp(detailDisplacement1, detailDisplacement2, 0.5) * g_WorldScale;
-			}
-			else
-			{
-			detailDisplacement = g_texDisplacement.SampleLevel(wwcSamplerState, -detail_uv_local, 0).xyz * g_WorldScale;//1.0 - g_texDetailMapDisplacement.SampleLevel(bbbSamplerState, detail_uv_local, 0).x;
-			}
 
-			//float zdisplacement = g_amplitude * ((sin((dot(2 * SIMUL_PI_F * g_windDir, pos_local) / (0.1 + ((2 * 0.5 * shoreDepth) / 0.1) - 0.5)) + (((2 * SIMUL_PI_F * g_windSpeed) / 0.1) * g_Time)) + 1) / 2.0);
-
-			//zdisplacement *= (1.0 - fade);
-
-			//pos_local.z += zdisplacement * 100.0;
-
-			//detailDisplacement *= (1.0 - fade);
-
-			//displacement *= fade;
-
-			//displacement += detailDisplacement.xyz;*/
 		}
 
 		//Horizontal movement in X component, Vertical movement in Y component
@@ -956,7 +935,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		pos_local.xyz += displacement.xyz;
 
 		Output.vecColour.w = max(shoreDepth, 0.001);
-		Output.vecColour.z = fade;
+		//Output.vecColour.z = fade;
 		//Output.vecColour.xy = -detail_uv_local;// detailDisplacement;	
 	}
 	//pos_local.z += perlinMovement * g_WorldScale;
@@ -1287,7 +1266,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		//if(enableFoam)
 		vec2 temp = saturate(normalize(vec3(-foamtemp.xy, 16.0)));
 		vec2 temp2 = saturate(normalize(vec3(-foamtempWaveGrid.xy, 16.0)));
-		surfaceFoamValue = max(pow(temp.x + temp.y, 2.0) - (0.5 - g_foamStrength), 0.0) + max(pow(temp2.x + temp2.y, 2.0) - 0.1, 0.0);
+		surfaceFoamValue = max(pow(temp.x + temp.y, 2.0) - (0.5 - g_foamStrength), 0.0) + max(pow(temp2.x + temp2.y, 2.0) - 0.05, 0.0);
 
 		// Calculate normal here.
 		normal = normalize(vec3(tx.xy + ty.xy, float(N / 2.0)));
@@ -1432,7 +1411,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
 		
-	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); // vec4(In.vecColour.w, 0.0, 0.0, 0.0);
+	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); // vec4(In.vecColour.w, 0.0, 0.0, 0.0); //
 
 	// Test for probe positions and values 
 	/*int x;
@@ -1449,11 +1428,8 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		}
 		else
 			refractColour = vec4(0.0, 0.0, 0.0, 0.0);
-	}*/
-	
-	Output.Scattering = vec4(g_scattering, enableFoam);
-	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
-	/*|
+	}
+
 	float ampResult = 0.0;
 	
 	int i;
@@ -1461,6 +1437,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	{
 		ampResult += texture_3d_wrap_lod(g_InputAmplitude,vec3(In.texCoords.x / 5.0, In.texCoords.y / 5.0, (i + 0.5) / 16.0), 0);
 	}*/
+
+	Output.Scattering = vec4(g_scattering, enableFoam);
+	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
 	Output.RefractColour = refractColour; // ampResult; //
 	Output.Normals = vec4(normal, backfaceOccluded);
 	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, fulldepth);
