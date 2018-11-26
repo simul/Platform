@@ -130,7 +130,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		// Now sample at the end point:
 		world_pos					+=d*view;
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
-		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
+		vec3 cloudTexCoords			=cloudWorldOffsetKm*inverseScalesKm;
 		c							+=c_step;
 		int3 intermediate			=abs(c&int3(1,1,1));
 		float is_inter				=dot(N,vec3(intermediate));

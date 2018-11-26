@@ -27,8 +27,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,vec3 cloudIrRadiance2
 											,int numSteps
 											,const int num_interp
-											,bool do_godrays=false
-											,bool consistent_steps=false)
+											,bool do_godrays
+											,bool consistent_steps)
 {
 	RaytracePixelOutput res;
 	vec4 insc[NUM_CLOUD_INTERP];
@@ -171,7 +171,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 			stepKm					*=step_ratio;
 
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
-		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
+		vec3 cloudTexCoords			=cloudWorldOffsetKm*inverseScalesKm;
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.

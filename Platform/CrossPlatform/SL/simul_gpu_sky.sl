@@ -63,7 +63,7 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 	return haze_opt_len;
 }
 
-vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight,float sunRadiusRadians=0.0)
+vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight,float sunRadiusRadians)
 {
 	vec4 mean_factor		=vec4(0,0,0,0);
 	for(int i=0;i<3;i++)
@@ -253,7 +253,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
+	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir,0.0);
 	light.rgb			*=RAYLEIGH_BETA_FACTOR;
 	vec4 insc			=light;
 	//insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
@@ -344,6 +344,6 @@ vec4 Skyl(Texture3D insc_texture
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
 	float lossw			=1.0;
-	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
+	skyl.w				=lossw*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	return skyl;
 }

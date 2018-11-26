@@ -643,8 +643,8 @@ void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& 
 {
 }
 
-EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r)
-	:crossplatform::EffectTechnique(r)
+EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r,crossplatform::Effect *e)
+	:crossplatform::EffectTechnique(r,e)
 {
 }
 
@@ -660,7 +660,7 @@ Effect::Effect():
 
 EffectTechnique* Effect::CreateTechnique()
 {
-	return new dx12::EffectTechnique(renderPlatform);
+	return new dx12::EffectTechnique(renderPlatform,this);
 }
 
 void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
@@ -1119,7 +1119,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 
 crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 {
-	crossplatform::EffectPass *p=new dx12::EffectPass(renderPlatform);
+	crossplatform::EffectPass *p=new dx12::EffectPass(renderPlatform,effect);
 	passes_by_name[name]=passes_by_index[i]=p;
 	return p;
 }
@@ -1158,7 +1158,7 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 
 	// The handles for the required samplers:
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumSamplers> srcHandles;
-	for (int i = 0; i < numSamplerResourcerSlots; i++)
+	for (int i = 0; i < numSamplerResourceSlots; i++)
 	{
 		int slot	                        = samplerResourceSlots[i];
         crossplatform::SamplerState* samp   = nullptr;
@@ -1652,8 +1652,8 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     return hash;
 }
 
-EffectPass::EffectPass(crossplatform::RenderPlatform *r):
-	crossplatform::EffectPass(r)
+EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
+	crossplatform::EffectPass(r,e)
     ,mInUseOverrideDepthState(nullptr)
     ,mInUseOverrideBlendState(nullptr)
 {

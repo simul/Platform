@@ -280,13 +280,13 @@ texc.xy+=cirrusWindVector.xy*pow(fall_amount,2.0);
 CS_LAYOUT(4,4,4)
 shader void CS_MixInit( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer((int3)idx,true);
+	MixInLayer(int3(idx),true);
 }
 
 CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 idx : SV_DispatchThreadID )
 {
-	MixInLayer((int3)idx,false);
+	MixInLayer(int3(idx),false);
 }
 
 CS_LAYOUT(4,4,4)
@@ -605,7 +605,69 @@ struct FarNearDepthPixelOutput
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
 };
 
-void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int numSteps,int num_interp,bool do_godrays,bool consistent_steps)
+void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,int numSteps,int num_interp,bool consistent_steps)
+{
+	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	float sineFactor		=1.0/length(clip_pos.xyz);
+	vec3 view				=normalize(mul(invViewProj[pos.z],clip_pos).xyz);
+	vec4 dlookup			=vec4(1.0,1.0,0.000001,1.0);
+	if (depth)
+	{
+		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
+	}
+	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
+	
+	RaytracePixelOutput f	=RaytraceCloudsStatic( 
+									cloudDensity
+									,cloudDensity2
+									,rainMapTexture
+									,noiseTexture3D
+									,lightTableTexture
+									,illuminationTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
+									,volumeInscatterTexture
+									,godraysTexture
+									,depth
+									,dlookup
+									,view
+									,clip_pos
+									,worldspaceVolumeTexCoordsXyC
+									,false		// noise? 
+									,include_rain
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2
+									,numSteps
+									,num_interp
+									,false
+									,consistent_steps);
+	vec4 t2d				=vec4(0,0,0,1.0);
+	// blend:
+
+	vec4 c					=t2d;
+	c.rgb					*=f.colour[num_interp-1].a;
+	c.rgb					+=f.colour[num_interp-1].rgb;
+	c.a						=t2d.a*f.colour[num_interp-1].a;
+	outputTexture1[pos+uint3(0,0,6*(num_interp-1))]		=c;
+	float n					=float(dlookup.y>=1.0);
+	for(int u=0;u<num_interp-1;u++)
+	{
+		vec4 cn					=t2d;
+		cn.rgb					*=f.colour[u].a*n;
+		cn.a					=1.0-n*(1.0-t2d.a);
+		cn.rgb					+=f.colour[u].rgb;
+		cn.a					*=f.colour[u].a;
+		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
+	}
+}
+
+void StaticRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int numSteps,int num_interp,bool do_godrays,bool consistent_steps)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -665,11 +727,9 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 		cn.a					*=f.colour[u].a;
 		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
-	//	outputTexture1[pos+uint3(0,0,6*2)]		=vec4(0,1,0,0);
 	if(background2d)
 		outputTexture3[pos]		=f.nearFarDepth;
 }
-
 void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godrays)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
@@ -773,7 +833,7 @@ void Lightpass(uint3 pos,bool depth)
 }
 
 #define BLOCK_SIZE 4
-void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
+void CS_Raytrace(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -840,7 +900,7 @@ void Interp(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
 	//outputTexture3[pos]		=f.nearFarDepth;
 }
 
-void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
+void CS_RaytraceStatic(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays,bool consistent_steps)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -855,10 +915,10 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 		return;
 	//outputTexture1[pos]		=vec4(1,1,0,1);
 	//outputTexture3[pos]		=vec4(1,1,0,1);
-	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
+	StaticRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
 }
 
-void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
+void CS_RaytraceStaticEdge(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays,bool consistent_steps)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -872,7 +932,7 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	{
 		//outputTexture1[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
-		SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
+		StaticRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
 	}
 }
 
@@ -961,7 +1021,7 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint Z					=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos				=uint3(targetRange[t.z].xy+idx*amortizationScale.xy+amortizationOffset.xy,Z);
 	
-	SimpleRaytrace(pos,false,false,false,128,1,false,false);
+	SimpleRaytrace(pos,false,false,128,1,false);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

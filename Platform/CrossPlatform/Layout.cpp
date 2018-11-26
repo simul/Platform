@@ -3,16 +3,11 @@
 #include <Windows.h>
 #endif
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 using namespace simul;
 using namespace crossplatform;
 
-/*
-static int sizeOf(const LayoutDesc *d)
-{
-	return d->format;
-}
-*/
 Layout::Layout()
 	:apply_count(0)
 	,struct_size(0)
@@ -41,4 +36,14 @@ void Layout::SetDesc(const LayoutDesc *d,int num)
 int Layout::GetStructSize() const
 {
 	return struct_size;
+}
+
+void Layout::Apply(DeviceContext &deviceContext)
+{
+	deviceContext.contextState.currentLayout=this;
+}
+
+void Layout::Unapply(DeviceContext &deviceContext)
+{
+	deviceContext.contextState.currentLayout=nullptr;
 }

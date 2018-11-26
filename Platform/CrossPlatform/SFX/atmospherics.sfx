@@ -70,7 +70,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	vec3 pos_w0				=mul(lightspaceToWorldMatrix,vec4(x,y,0.0,1.0)).xyz;
 	uint i					=0;
 	vec4 res				=vec4(0,0,0,1.0);
-#ifdef SFX_GLSL
+#ifdef GLSL
     vec3 wvec               =vec3(lightspaceToWorldMatrix[0][2],lightspaceToWorldMatrix[1][2],lightspaceToWorldMatrix[2][2]);
 #else
 	vec3 wvec				=lightspaceToWorldMatrix._m02_m12_m22;

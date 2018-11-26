@@ -38,6 +38,7 @@ namespace simul
 		class EffectTechnique;
 		class Texture;
 		class SamplerState;
+		class Layout;
 		enum class ShaderResourceType;
 		struct TextureAssignment
 		{
@@ -161,35 +162,14 @@ namespace simul
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
 		{
-			ContextState()
-				:last_action_was_compute(false)
-				,currentEffectPass(NULL)
-				,currentTechnique(NULL)
-				,currentEffect(NULL)
-				,effectPassValid(false)
-				,vertexBuffersValid(false)
-				,constantBuffersValid(false)
-				,structuredBuffersValid(false)
-				,rwStructuredBuffersValid(false)
-				,samplerStateOverridesValid(true)
-				,textureAssignmentMapValid(false)
-				,rwTextureAssignmentMapValid(false)
-				,streamoutTargetsValid(false)
-				,textureSlots(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,textureSlotsForSB(0)
-				,bufferSlots(0)
-			{
-
-			}
-
+			ContextState();
 			~ContextState()
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
 			bool last_action_was_compute;
-
+			Viewport viewports[8];
+			Buffer *indexBuffer=nullptr;
 			std::unordered_map<int,Buffer*> applyVertexBuffers;
 			std::unordered_map<int,Buffer*> streamoutTargets;
 			ConstantBufferAssignmentMap applyBuffers;
@@ -198,9 +178,10 @@ namespace simul
 			SamplerStateAssignmentMap samplerStateOverrides;
 			TextureAssignmentMap textureAssignmentMap;
 			TextureAssignmentMap rwTextureAssignmentMap;
-			EffectPass *currentEffectPass;
-			EffectTechnique *currentTechnique;
-			Effect *currentEffect;
+			EffectPass *currentEffectPass=nullptr;
+			EffectTechnique *currentTechnique=nullptr;
+			Effect *currentEffect=nullptr;
+			Layout *currentLayout=nullptr;
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -274,12 +255,15 @@ namespace simul
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
 			//! as 
-			void setDefaultRenderTargets(const ApiRenderTarget*,
-				const ApiDepthRenderTarget*,
-				uint32_t viewportLeft,
-				uint32_t viewportTop,
-				uint32_t viewportRight,
-				uint32_t viewportBottom
+			void setDefaultRenderTargets(const ApiRenderTarget*
+				,const ApiDepthRenderTarget*
+				,uint32_t viewportLeft
+				,uint32_t viewportTop
+				,uint32_t viewportRight
+				,uint32_t viewportBottom
+				,Texture **texture_targets=nullptr
+				,int num_targets=1
+				,Texture *depth_target=nullptr
 			);
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
 		};

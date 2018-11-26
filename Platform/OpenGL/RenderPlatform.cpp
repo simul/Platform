@@ -295,6 +295,7 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return GL_INTENSITY32F_ARB;
 	case RGBA_8_UNORM:
+	case BGRA_8_UNORM:
 		return GL_RGBA8;
 	case RGBA_8_UNORM_SRGB:
 		return GL_SRGB8_ALPHA8;
@@ -408,6 +409,8 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 		return GL_RGBA;
 	case RGBA_8_UNORM:
 		return GL_RGBA;
+	case BGRA_8_UNORM:
+		return GL_BGRA;
 	case RGBA_8_UNORM_SRGB:
 		return GL_SRGB8_ALPHA8;
 	case RGBA_8_SNORM:
@@ -453,6 +456,7 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return 1;
 	case RGBA_8_UNORM:
+	case BGRA_8_UNORM:
 	case RGBA_8_UNORM_SRGB:
 	case RGBA_8_SNORM:
 		return 4;
@@ -537,6 +541,7 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return GL_FLOAT;
 	case RGBA_8_UNORM_SRGB:
+	case BGRA_8_UNORM:
 	case RGBA_8_UNORM:
 		return GL_UNSIGNED_INT;
 	case RGBA_8_SNORM:
@@ -627,6 +632,8 @@ static GLenum toGlComparison(crossplatform::DepthComparison d)
 {
 	switch(d)
 	{
+	case crossplatform::DEPTH_ALWAYS:
+		return GL_ALWAYS;
 	case crossplatform::DEPTH_LESS:
 		return GL_LESS;
 	case crossplatform::DEPTH_EQUAL:

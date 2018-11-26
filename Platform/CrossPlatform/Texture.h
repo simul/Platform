@@ -19,7 +19,15 @@ namespace sce
 		class Sampler;
 	}
 }
-
+namespace vk
+{
+	class ImageView;
+	class Sampler;
+}
+namespace nvn
+{
+	class Texture;
+}
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
@@ -40,6 +48,7 @@ namespace simul
 	namespace crossplatform
 	{
 		class RenderPlatform;
+		class Texture;
 		struct DeviceContext;
 		struct SamplerStateDesc
 		{
@@ -60,20 +69,44 @@ namespace simul
 		{
 			int x,y;
 			int w,h;
+			inline const Viewport &operator=(const int4 &i)
+			{
+				x=i.x;
+				y=i.y;
+				w=i.z;
+				h=i.w;
+				return *this;
+			}
 		};
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;
 		//! Stores information about the current render targets
 		struct SIMUL_CROSSPLATFORM_EXPORT TargetsAndViewport
 		{
+			struct TextureTarget
+			{
+				TextureTarget():texture(nullptr),layer(0),mip(0)
+				{
+				}
+				Texture *texture;
+				int layer;
+				int mip;
+			};
 			TargetsAndViewport():temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)
 			{
-                for (int i = 0; i < 8; i++) { m_rt[i] = nullptr; rtFormats[i] = UNKNOWN; }
+                for (int i = 0; i < 8; i++)
+				{
+					m_rt[i] = nullptr;
+					rtFormats[i] = UNKNOWN;
+				}
 			}
 			bool                        temp;
 			int                         num;
             //! API pointer to the target
 			const ApiRenderTarget*      m_rt[8];
+			//! If using Simul textures, the targets, including layer and mip specification.
+			TextureTarget				textureTargets[8];
+			TextureTarget				depthTarget;
             //! The pixel format of the target
             PixelFormat                 rtFormats[8];
             //! If any, the API pointer to the depth surface
@@ -101,7 +134,12 @@ namespace simul
 			{
 				return 0;
 			}
+			virtual vk::Sampler *AsVulkanSampler()
+			{
+				return nullptr;
+			}
 			int default_slot;
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 		enum class ShaderResourceType;
 		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
@@ -115,6 +153,8 @@ namespace simul
 		{
 		protected:
 			bool cubemap;
+			bool computable;
+			bool renderTarget;
 			bool external_texture;
 			bool depthStencil;
 			std::string name;
@@ -152,6 +192,7 @@ namespace simul
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
+            virtual nvn::Texture* AsNXTexture() { return 0; };
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
 			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
@@ -178,13 +219,14 @@ namespace simul
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
+			virtual vk::ImageView *AsVulkanImageView(crossplatform::ShaderResourceType=crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1,bool=false){return nullptr;}
 			//! Get the crossplatform pixel format.
 			PixelFormat GetFormat() const
 			{
 				return pixelFormat;
 			}
 			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
-			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true)=0;
+			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true)=0;
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
@@ -203,7 +245,7 @@ namespace simul
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
 			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1,int mip_index=0);
 			//! Deactivate as a rendertarget.
-			virtual void deactivateRenderTarget(DeviceContext &deviceContext)=0;
+			virtual void deactivateRenderTarget(DeviceContext &deviceContext);
 			virtual int GetLength() const
 			{
 				return length;
@@ -228,6 +270,7 @@ namespace simul
 			{
 				return arraySize;
 			}
+			virtual void FinishLoading(DeviceContext &deviceContext) {}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
@@ -241,6 +284,7 @@ namespace simul
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
+			bool textureLoadComplete;
 		};
 	}
 }

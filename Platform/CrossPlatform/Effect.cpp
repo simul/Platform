@@ -37,7 +37,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
 }
 
-EffectPass::EffectPass(RenderPlatform *r)
+EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 	:blendState(NULL)
 	,depthStencilState(NULL)
 	,rasterizerState(NULL)
@@ -46,7 +46,7 @@ EffectPass::EffectPass(RenderPlatform *r)
 	,numRwResourceSlots(0)
 	,numSbResourceSlots(0)
 	,numRwSbResourceSlots(0)
-	,numSamplerResourcerSlots(0)
+	,numSamplerResourceSlots(0)
 	,samplerSlots(0)
 	,constantBufferSlots(0)
 	,textureSlots(0)
@@ -55,7 +55,7 @@ EffectPass::EffectPass(RenderPlatform *r)
 	,rwTextureSlotsForSB(0)
 	,should_fence_outputs(true)
 	,platform_pass(nullptr)
-	,renderPlatform(r)
+	,effect(parent)
 {
 	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
 		shaders[i]=NULL;
@@ -96,7 +96,7 @@ void EffectPass::MakeResourceSlotMap()
 	numRwResourceSlots=w;
 	numSbResourceSlots=sb;
 	numRwSbResourceSlots=rwsb;
-	numSamplerResourcerSlots=sm;
+	numSamplerResourceSlots=sm;
 	numConstantBufferResourceSlots=cb;
 }
 
@@ -201,6 +201,18 @@ void EffectPass::SetUsesSamplerSlots(unsigned s)
 	samplerSlots|=s;
 }
 
+EffectPass::~EffectPass()
+{
+	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
+	{
+		shaders[i]=nullptr;
+	}
+	for(int i=0;i<crossplatform::OUTPUT_FORMAT_COUNT;i++)
+	{
+		if(pixelShaders[i])
+			pixelShaders[i]->Release();
+	}
+}
 EffectTechniqueGroup::~EffectTechniqueGroup()
 {
 	for (crossplatform::TechniqueMap::iterator i = techniques.begin(); i != techniques.end(); i++)
@@ -239,8 +251,10 @@ void Effect::InvalidateDeviceObjects()
 	techniques.clear();
 }
 
-EffectTechnique::EffectTechnique(RenderPlatform *r)
-	:platform_technique(NULL)
+EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
+	:renderPlatform(r)
+	,effect(e)
+	,platform_technique(NULL)
 	,should_fence_outputs(true)
 	,renderPlatform(r)
 {
@@ -248,6 +262,11 @@ EffectTechnique::EffectTechnique(RenderPlatform *r)
 
 EffectTechnique::~EffectTechnique()
 {
+	for(auto p:passes_by_name)
+	{
+		delete p.second;
+	}
+	passes_by_name.clear();
 }
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
@@ -334,9 +353,9 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const Shader
 #ifdef _DEBUG
 	if(!tex)
 	{
-		return;
+		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
 	}
-	if(!tex->IsValid())
+	else if(!tex->IsValid())
 	{
 		SIMUL_BREAK_ONCE("Invalid texture applied");
 		return;
@@ -417,6 +436,11 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	cs->rwTextureAssignmentMapValid=false;
 }
 
+const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
+{
+	return textureResources[s];
+}
+
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
 	crossplatform::ShaderResource res;
@@ -426,9 +450,9 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	{
 		slot					=GetSlot(name);
 		res.valid				=true;
-		unsigned dim					=GetDimensions(name);
+		unsigned dim					=i->dimensions;//GetDimensions(name);
 		res.dimensions					=dim;
-		res.shaderResourceType			=GetResourceType(name);
+		res.shaderResourceType			=i->shaderResourceType;//(name);
 	}
 	else
 	{
@@ -713,6 +737,30 @@ static crossplatform::CullFaceMode toCullFadeMode(string s)
 	return crossplatform::CULL_FACE_NONE;
 }
 
+static crossplatform::Topology toTopology(string s)
+{
+	if(is_equal(s,"PointList"))
+		return crossplatform::Topology::POINTLIST;
+	else if(is_equal(s,"LineList"))
+		return crossplatform::Topology::LINELIST;
+	else if(is_equal(s,"LineStrip"))
+		return crossplatform::Topology::LINESTRIP;
+	else if(is_equal(s,"TriangleList"))
+		return crossplatform::Topology::TRIANGLELIST;
+	else if(is_equal(s,"TriangleStrip"))
+		return crossplatform::Topology::TRIANGLESTRIP;
+	else if(is_equal(s,"LineListAdjacency"))
+		return crossplatform::Topology::LINELIST_ADJ;
+	else if(is_equal(s,"LineStripAdjacency"))
+		return crossplatform::Topology::LINESTRIP_ADJ;
+	else if(is_equal(s,"TriangleListAdjacency"))
+		return crossplatform::Topology::TRIANGLELIST_ADJ;
+	else if(is_equal(s,"TriangleStripAdjacency"))
+		return crossplatform::Topology::TRIANGLESTRIP_ADJ;
+	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	return crossplatform::Topology::UNDEFINED;
+}
+
 static crossplatform::PolygonMode toPolygonMode(string s)
 {
 	if(is_equal(s,"FILL_SOLID"))
@@ -770,9 +818,14 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 		{
 			SIMUL_CERR<<"Shader effect file not found: "<<filenameUtf8.c_str()<<std::endl;
-			filenameUtf8=filename_utf8;
+			// We now attempt to build the shader from source.
+			Compile(filename_utf8);
+			if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+			{
+				filenameUtf8=filename_utf8;
 		// The sfxo does not exist, so we can't load this effect.
-			return;
+				return;
+			}
 		}
 	}
 	void *ptr;
@@ -789,12 +842,18 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,TOO_FAR=4
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,TOO_FAR=5
 	};
 	Level level				=OUTSIDE;
 	EffectTechnique *tech	=NULL;
 	EffectPass *p			=NULL;
+	crossplatform::LayoutDesc layoutDesc[32];
+	int layoutCount=0;
+	int layoutOffset=0;
+	int layoutSlot=0;
+	int passNum=0;
 	string group_name,tech_name,pass_name;
+	int shaderCount=0;
 	while(next>=0)
 	{
 		string line		=str.substr(pos,next-pos-1);
@@ -877,6 +936,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					rt=rt|crossplatform::ShaderResourceType::ARRAY;
 				res->shaderResourceType=rt;
 				textureDetailsMap[texture_name]=res;
+				if(!rw)
+					textureResources[slot]=res;
 			}
 			else if(is_equal(word, "BlendState"))
 			{
@@ -1027,6 +1088,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				tech_name = line.substr(sp + 1, line.length() - sp - 1);
 				tech = (EffectTechnique*)EnsureTechniqueExists(group_name, tech_name, "main");
 				p=nullptr;
+				passNum=0;
 			}
 		}
 		else if (level == TECHNIQUE)
@@ -1034,12 +1096,37 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"pass")==0)
 			{
 				pass_name=line.substr(sp+1,line.length()-sp-1);
-				p=(EffectPass*)tech->AddPass(pass_name.c_str(),0);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
+				//(((filenameUtf8+".")+tech_name+".")+pass_name).c_str(),0);
+				shaderCount=0;
+				layoutCount=0;
+				layoutOffset=0;
+				layoutSlot=0;
+				passNum++;
+			}
+		}
+		else if(level==LAYOUT)
+		{
+			std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
+			std::smatch sm;
+			if(std::regex_search(line, sm, element_re))
+			{
+				std::string type=sm.str(1);
+				std::string name=sm.str(2);
+				LayoutDesc &desc=layoutDesc[layoutCount];
+				desc.format				=TypeToFormat(type.c_str());
+				desc.alignedByteOffset	=layoutOffset;
+				desc.inputSlot			=layoutSlot;
+				desc.perInstance		=false;
+				desc.semanticName		="";
+				layoutCount++;
+				layoutOffset			+=GetByteSize(desc.format);
+				layoutSlot++;
 			}
 		}
 		else if(level==PASS)
 		{
-			// Find the shader definitions:
+			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
 
@@ -1050,18 +1137,42 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if(cl != std::string::npos && tech)
 			{
 				string type=line.substr(0,cl);
-				string filenamestr=line.substr(cl+1,cm-cl-1);
+				string filename_entry=line.substr(cl+1,cm-cl-1);
 				string uses;
 				if(cm<line.length())
 					uses=line.substr(cm+1,line.length()-cm-1);
 				base::ClipWhitespace(uses);
 				base::ClipWhitespace(type);
-				base::ClipWhitespace(filenamestr);
-				const string &name=words[1];
+				base::ClipWhitespace(filename_entry);
+
+				
+				std::regex re_file_entry("([a-z0-9A-Z_\\.]+)(?:\\((.*)\\))?");
+				std::smatch fe_smatch;
+				
+				std::smatch sm;
+				string filenamestr;
+
+				string entry_point="main";
+				if(std::regex_search(filename_entry, sm, re_file_entry))
+				{
+					filenamestr= sm.str(1);
+					if(sm.length()>2)
+						entry_point= sm.str(2);
+				}
+
+				string name;
+				if(words.size()>1)
+					name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
 				PixelOutputFormat fmt=FMT_UNKNOWN;
                 std::string passRtFormat = "";
-				if(_stricmp(type.c_str(),"blend")==0)
+				if(_stricmp(type.c_str(),"layout")==0)
+				{
+					layoutCount=0;
+					layoutOffset=0;
+					layoutSlot=0;
+				}
+				else if(_stricmp(type.c_str(),"blend")==0)
 				{
 					if(blendStates.find(name)!=blendStates.end())
 					{
@@ -1104,6 +1215,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					{
 						SIMUL_CERR<<"Depthstencil state not found: "<<name<<std::endl;
 					}
+				}
+				else if(_stricmp(type.c_str(),"topology")==0)
+				{
+					Topology t=toTopology(name);
+					p->SetTopology(t);
 				}
 				else
 				{
@@ -1157,7 +1273,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
                         {
                             p->rtFormatState = passRtFormat;
                         }
-                        
+                        shaderCount++;
+					}
+					else
+					{
+						SIMUL_BREAK_ONCE(base::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
 					}
 					// Set what the shader uses.
 
@@ -1200,12 +1320,20 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 									else
 										rwTextureSlots|=m;
 								}
+								else if(type_char=='u')
+								{
+									rwTextureSlots|=m;
+								}
 								else if(type_char=='b')
 								{
 									if(u<1000)
 										textureSlotsForSB|=m;
 									else
 										rwTextureSlotsForSB|=m;
+								}
+								else if(type_char=='z')
+								{
+									rwTextureSlotsForSB|=m;
 								}
 								else
 								{
@@ -1257,12 +1385,25 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							break;
 					}
 					p->MakeResourceSlotMap();
+					s->entryPoint=entry_point;
+					if(t==crossplatform::SHADERTYPE_VERTEX&&layoutCount)
+					{
+						s->layout.SetDesc(layoutDesc,layoutCount);
+						layoutCount=0;
+					}
 				}
 			}
 		}
 		size_t close_brace=line.find("}");
 		if (close_brace != std::string::npos)
 		{
+			if(level==PASS)
+			{
+				if(shaderCount==0)
+				{
+					SIMUL_BREAK_ONCE(base::QuickFormat("No shaders in pass %s of effect %s.",pass_name.c_str(),filename_utf8));
+				}
+			}
 			level = (Level)(level - 1);
 			if (level == OUTSIDE)
 				group_name = "";

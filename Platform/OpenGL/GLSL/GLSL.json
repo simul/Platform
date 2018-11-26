@@ -9,7 +9,8 @@
 	,"multiplePixelOutputFormats"	: false
 	,"define"						: {
 		"SFX_TYPED_UAV_LOADS"		:"1",
-		"SFX_GLSL"					:"1"
+		"SFX_GLSL"					:"1",
+		"SFX_OPENGL"				:"1"
 	}
     ,"generateSlots"                : true
 	,"lineDirectiveFilenames"		: true

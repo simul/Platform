@@ -27,7 +27,7 @@ vec4 BackgroundLatLongSphere(Texture2D backgroundTexture,vec2 texCoords)
 {
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
-#ifdef SFX_GLSL
+#ifdef SFX_OPENGL
 	clip_pos.y		    -=2.0*(1.0 - texCoords.y);
 #else
     clip_pos.y			-=2.0*texCoords.y;

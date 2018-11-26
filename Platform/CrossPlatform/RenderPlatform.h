@@ -85,8 +85,10 @@ namespace simul
 			D3D12				    = 18,   // Direct3D 12
 			Vulkan					= 21,	// Vulkan
 			Switch					= 22,	// Nintendo Switch NVN API
+			XboxOneD3D12			= 23,	//  XboxOne Direct3D 12
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
+
 		/// A vertex format for debugging.
 		struct PosColourVertex
 		{
@@ -131,6 +133,8 @@ namespace simul
 			{
 				return can_save_and_restore;
 			}
+			//! Returns the current idx (used in ring buffers)
+			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
 			//! Returns the DX12 graphics command list
@@ -249,7 +253,7 @@ namespace simul
 			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
 			virtual Layout					*CreateLayout					(int num_elements,const LayoutDesc *layoutDesc);
 			/// Create a platform-specific RenderState object - e.g. a Blend state, Depth state, etc.
-			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc)=0;
+			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc);
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.
 			virtual Query					*CreateQuery					(QueryType q)=0;
 			/// Get or create an API-specific shader object.
@@ -259,7 +263,7 @@ namespace simul
             virtual DisplaySurface*         CreateDisplaySurface();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
-			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;
+			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
 			virtual void					SetStreamOutTarget				(DeviceContext &,Buffer *,int =0){}
 
@@ -272,7 +276,7 @@ namespace simul
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index);
 			/// Activate the specified index buffer in preparation for rendering.
-			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
+			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
 			//! Set the layout for following draw calls - format of the vertex buffer.
@@ -343,6 +347,14 @@ namespace simul
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
 			bool can_save_and_restore;
+			//! Value used to determine the number of "x" that we will have, this is useful in dx12
+			//! as many times we can not reuse the same resource as in the last frame so we need to have 
+			//! a ring buffer.
+			static const int			kNumIdx = 3;
+			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
+			UCHAR						mCurIdx;
+			//! Last frame number
+			long long					mLastFrame;
 		public:
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.

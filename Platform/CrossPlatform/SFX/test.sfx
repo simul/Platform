@@ -1,40 +1,86 @@
+//  Copyright (c) 2015-2017 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
 #include "../SL/common.sl"
+#include "../SL/render_states.sl"
 #include "../SL/states.sl"
-
-uniform Texture3D volumeInscatterTexture SIMUL_TEXTURE_REGISTER(4);
-
-SamplerState cloudSamplerS SIMUL_SAMPLER_REGISTER(8);
-
-
-float Raytrace(Texture3D inscVol,SamplerState sampleCloud)
+#include "../SL/text_constants.sl"
+uniform StructuredBuffer<FontChar> fontChars;
+uniform Texture2D fontTexture;
+shader posTexVertexOutput BackgroundVertexShader(idOnly IN)
 {
-	float n = sample_3d_lod(inscVol,sampleCloud,vec3(1.0,1.0,1.0),0).x;
-	return n;
+	posTexVertexOutput OUT	=VS_ScreenQuad(IN,background_rect);
+	OUT.texCoords			=vec2(0,0);
+	return OUT;
 }
 
-float SimpleRaytrace(Texture3D inscVol,SamplerState sampleCloud)
+shader posTexVertexOutput FontVertexShader(idOnly IN)
 {
-	float s = Raytrace(inscVol,sampleCloud);
-	return s;
+	uint char_index=IN.vertex_id/6;
+	uint vert_index=IN.vertex_id-(6*char_index);
+	uint ids[]={0,1,2,2,3,1};
+	FontChar f=fontChars[char_index];
+	idOnly cIN;
+	cIN.vertex_id=ids[vert_index];
+    posTexVertexOutput OUT	=VS_ScreenQuad(cIN,f.text_rect);	
+	OUT.texCoords			=vec4(f.texc.xy+f.texc.zw*OUT.texCoords.xy,0.0,1.0).xy;
+    return OUT;
 }
 
-float StartRender(uint3 id)
+shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 {
-	float r = SimpleRaytrace(volumeInscatterTexture,cloudSamplerS);
-	return r;
+	vec2 tc	=IN.texCoords;
+
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+#ifndef SFX_OPENGL
+	tc.y		=1.0-tc.y;
+#endif
+
+	vec4 lookup	=texture_nearest_lod(fontTexture,tc,0);
+	lookup.a	=lookup.r;
+	lookup		*=colour;
+//lookup.rgb=vec3(1,0,1);
+lookup.a=.5;
+	//lookup.r=1;
+    return lookup;
 }
 
-CS_LAYOUT(8,1,1)
-shader void CS_TestShader(uint3 sub_pos: SV_DispatchThreadID )
+shader vec4 FontBackgroundShader(posTexVertexOutput IN) : SV_TARGET
 {
-	float col = StartRender(sub_pos);
+    return background;
 }
 
-technique testtech
+BlendState AlphaBlendRGB
+{
+	BlendEnable[0]		= TRUE;
+	SrcBlend			= SRC_ALPHA;
+	DestBlend			= INV_SRC_ALPHA;
+    BlendOp				= ADD;
+    SrcBlendAlpha		= ZERO;
+    DestBlendAlpha		= ZERO;
+    BlendOpAlpha		= ADD;
+    RenderTargetWriteMask[0] = 7;
+};
+BlendState AddBlendRGB
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
+    RenderTargetWriteMask[0] = 7;
+};
+
+VertexShader vs = CompileShader(vs_4_0, FontVertexShader());
+
+technique text
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_TestShader()));
+		SetRasterizerState( RenderNoCull );
+		SetTopology( TriangleList );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs);
+		SetPixelShader(CompileShader(ps_4_0,FontPixelShader()));
     }
 }

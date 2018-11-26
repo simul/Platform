@@ -42,6 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -105,6 +106,7 @@
       <IncludePaths>$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\Vulkan\GLSL\GLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions>-d %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,7 +137,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
@@ -194,8 +195,12 @@
     <ClCompile Include="DeviceManager.cpp" />
     <ClCompile Include="DisplaySurface.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="EffectPass.cpp" />
     <ClCompile Include="Framebuffer.cpp" />
+    <ClCompile Include="PlatformConstantBuffer.cpp" />
+    <ClCompile Include="PlatformStructuredBuffer.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -203,12 +208,13 @@
     <ClInclude Include="DeviceManager.h" />
     <ClInclude Include="DisplaySurface.h" />
     <ClInclude Include="Effect.h" />
+    <ClInclude Include="EffectPass.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Framebuffer.h" />
-    <ClInclude Include="glad\glad.h" />
-    <ClInclude Include="KHR\khrplatform.h" />
-    <ClInclude Include="VulkanCallbackInterface.h" />
+    <ClInclude Include="PlatformConstantBuffer.h" />
+    <ClInclude Include="PlatformStructuredBuffer.h" />
     <ClInclude Include="RenderPlatform.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -334,6 +340,7 @@
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-d %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
@@ -391,13 +398,16 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
-    <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\GLSL.json" />
     <None Include="GLSL\shader_platform.sl" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\test.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">
+      <Project>{21fda305-aeeb-418a-958e-5102cc5927bc}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Base\Base_x64_v140.vcxproj">
+      <Project>{9a8051a1-5c9f-4635-92cd-ad8da3f8ff41}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
       <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
       <Private>false</Private>
@@ -414,6 +424,9 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="t.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

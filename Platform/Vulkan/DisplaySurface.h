@@ -3,7 +3,6 @@
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 #include <vulkan/vulkan.hpp>
-#define SIMUL_VULKAN_FRAME_LAG 2
 
 typedef struct GLFWwindow GLFWwindow;
 namespace simul
@@ -16,10 +15,7 @@ namespace simul
 			vk::CommandBuffer cmd;
 			vk::CommandBuffer graphics_to_present_cmd;
 			vk::ImageView view;
-			vk::Buffer uniform_buffer;
-			vk::DeviceMemory uniform_memory;
 			vk::Framebuffer framebuffer;
-			vk::DescriptorSet descriptor_set;
 		} ;
         SIMUL_VULKAN_EXPORT_CLASS DisplaySurface : public crossplatform::DisplaySurface
         {
@@ -47,10 +43,10 @@ namespace simul
 			vk::CommandPool cmd_pool;
 			vk::CommandPool present_cmd_pool;
 			vk::CommandBuffer cmd;  
-			vk::Semaphore image_acquired_semaphores[SIMUL_VULKAN_FRAME_LAG];
-			vk::Semaphore draw_complete_semaphores[SIMUL_VULKAN_FRAME_LAG];
-			vk::Semaphore image_ownership_semaphores[SIMUL_VULKAN_FRAME_LAG];
-			vk::Fence fences[SIMUL_VULKAN_FRAME_LAG];
+			vk::Semaphore image_acquired_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
+			vk::Semaphore draw_complete_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
+			vk::Semaphore image_ownership_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
+			vk::Fence fences[SIMUL_VULKAN_FRAME_LAG+1];
 			vk::RenderPass render_pass;
 
 			vk::Pipeline default_pipeline;
@@ -58,7 +54,7 @@ namespace simul
 			vk::PipelineLayout pipeline_layout;
 			vk::DescriptorSetLayout desc_layout;
 
-			vk::SurfaceKHR surface;
+			vk::SurfaceKHR mSurface;
 			void InitSwapChain();
 			void GetQueues();
 			void CreateRenderPass();

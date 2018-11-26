@@ -66,7 +66,7 @@ namespace simul
 
 			//! Initializes this texture from an external (already created texture)
 			void							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false, bool setDepthStencil = false,bool need_srv=true);
-			void							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
+			void							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
 			void							InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
@@ -107,7 +107,7 @@ namespace simul
 
 			DXGI_FORMAT	dxgi_format;
 			// Need an active command list to finish loading a texture!
-			void FinishLoading(crossplatform::DeviceContext &deviceContext);
+			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
 		protected:
 			void											InitUAVTables(int l, int m);
@@ -156,7 +156,6 @@ namespace simul
             //! We need to store the old MSAA state
             DXGI_SAMPLE_DESC                mCachedMSAAState;
             int                             mNumSamples;
-			bool textureLoadComplete;
 			DirectX::TexMetadata	*metadata;
 			DirectX::ScratchImage	*scratchImage;
 			void *loadedData;

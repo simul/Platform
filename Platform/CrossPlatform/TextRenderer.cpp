@@ -216,24 +216,25 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		const FontIndex &f=fontIndices[idx];
 		if(idx>0)
 		{
-			FontChar &c=charList[n++];
-			c.text_rect=constantBuffer.background_rect;
+			FontChar &c		=charList[n++];
+			c.text_rect		=constantBuffer.background_rect;
 			c.text_rect.x	=2.0f*x/screen_width-1.f;
 			c.text_rect.z	=2.0f*(float)f.pixel_width*fontScale/screen_width;
-			static float u			=1024.f/598.f;
-			c.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
+			static float u	=1024.f/598.f;
+			c.texc			=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
 		}
 		x+=f.pixel_width*fontScale+1;
 	}
-
-	effect->SetTexture(deviceContext,textureResource,font_texture);
-	effect->Apply(deviceContext,textTech,0);
-	effect->SetConstantBuffer(deviceContext,&constantBuffer);
-	renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
-	fontChars.Apply(deviceContext,effect,_fontChars);
-	renderPlatform->SetTopology(deviceContext,TRIANGLELIST);
-	renderPlatform->Draw(deviceContext,6*n,0);
-	effect->UnbindTextures(deviceContext);
-	effect->Unapply(deviceContext);
-//	renderPlatform->RestoreRenderState(deviceContext);
+	if(n>0)
+	{
+		effect->SetTexture(deviceContext,textureResource,font_texture);
+		effect->Apply(deviceContext,textTech,0);
+		effect->SetConstantBuffer(deviceContext,&constantBuffer);
+		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
+		fontChars.Apply(deviceContext,effect,_fontChars);
+		renderPlatform->SetTopology(deviceContext,TRIANGLELIST);
+		renderPlatform->Draw(deviceContext,6*n,0);
+		effect->UnbindTextures(deviceContext);
+		effect->Unapply(deviceContext);
+	}
 }

@@ -35,9 +35,9 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,bool do_clouds
 													,vec3 fogColour
 													,vec3 fogAmbient
-													,bool do_height_fog=false
-													,float fogExtinction=0.0
-													,float fogHeightKm=0.0)
+													,bool do_height_fog
+													,float fogExtinction
+													,float fogHeightKm)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);

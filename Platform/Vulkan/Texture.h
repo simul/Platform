@@ -2,6 +2,7 @@
 
 #include "Simul/Platform/Vulkan/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -12,13 +13,19 @@ namespace simul
 {
 	namespace vulkan
 	{
+		// a temporary structure holding a loaded texture until it can be transferred to the main texture object.
         struct LoadedTexture
         {
+			LoadedTexture():x(0),y(0),z(0),n(0),data(nullptr){}
             int x;
             int y;
             int z;
             int n;
-            unsigned char* data;
+            const unsigned char* data;
+			vk::Buffer buffer;
+			vk::MemoryAllocateInfo mem_alloc;
+			vk::DeviceMemory mem;
+			crossplatform::PixelFormat pixelFormat;
         };
 
 		class SIMUL_VULKAN_EXPORT SamplerState:public crossplatform::SamplerState
@@ -26,9 +33,11 @@ namespace simul
 		public:
 			        SamplerState();
 			virtual ~SamplerState() override;
-            void    Init(crossplatform::SamplerStateDesc* desc);
+            void    Init(crossplatform::RenderPlatform*r,crossplatform::SamplerStateDesc* desc);
 			void    InvalidateDeviceObjects() override;
+            vk::Sampler *AsVulkanSampler() override;
         private:
+			vk::Sampler									mSampler;
 		};
 
 		class SIMUL_VULKAN_EXPORT Texture:public simul::crossplatform::Texture
@@ -43,7 +52,7 @@ namespace simul
 			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1) override;
 			bool            IsValid() const override;
 			void            InvalidateDeviceObjects() override;
-			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
+			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true) override;
 			bool            ensureTexture2DSizeAndFormat(   crossplatform::RenderPlatform *renderPlatform, int w, int l,
                                                             crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
 															vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
@@ -52,41 +61,69 @@ namespace simul
 			void            ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void            GenerateMips(crossplatform::DeviceContext& deviceContext) override;
 			void            setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
-			void            activateRenderTarget(crossplatform::DeviceContext& deviceContext,int array_index=-1,int mip_index=0) override;
-			void            deactivateRenderTarget(crossplatform::DeviceContext& deviceContext) override;
 			int             GetLength() const override;
 			int             GetWidth() const override;
 			int             GetDimension() const override;
 			int             GetSampleCount() const override;
 			bool            IsComputable() const override;
+			bool            HasRenderTargets() const override;
 			void            copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;
 
-            uint          AsVulkanView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
-         //   GLuint          GetGLMainView();
+            vk::ImageView	*AsVulkanImageView(crossplatform::ShaderResourceType type=crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
+			vk::Framebuffer *GetVulkanFramebuffer(int layer = -1, int mip = -1);
+		//	static vk::ImageView *GetDummyVulkanImageView(crossplatform::ShaderResourceType type);
+			
+			/// We need an active command list to finish loading a texture!
+			void			FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
+			/// We need a renderpass before we can create any framebuffers!
+			void			InitFramebuffers(crossplatform::DeviceContext &deviceContext);
+			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
+			void			SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLayout imageLayout,int layer,int mip);
+			/// Assume the texture will be in this layout due to internal Vulkan shenanigans.
+			void			AssumeLayout(vk::ImageLayout imageLayout);
+			/// Admit we have no idea what the layouts will end up as, so reset them when needed.
+			void			SplitLayouts();
         private:
-            LoadedTexture   LoadTextureData(const char* path);
-            bool            IsSame(int w, int h, int d,int arraySize, int m, int msaa);
+			void			SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask
+											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
+											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages,int m=0,int num_mips=0);
+			void			InvalidateDeviceObjectsExceptLoaded();
+			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, bool msaa,bool computable,bool rt,bool ds,bool need_srv);
+            
+			void			LoadTextureData(LoadedTexture &lt,const char* path);
+			void			SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f);
             //! Initializes the texture views
             void            InitViews(int mipCount, int layers, bool isRenderTarget);
             //! Creates the Framebuffers for this texture
             void            CreateFBOs(int sampleCount);
             //! Applies default sampling parameters to the texId texture
             void            SetDefaultSampling(GLuint texId);
-            //! Sets a debug label name to the provided texture _id_
-            void            SetGLName(const char* n, GLuint id);
 
-       //   GLenum                              mInternalGLFormat;
-          uint                              mTextureID;
-          uint                              mCubeArrayView;
+			void			InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget);
+			
 
-          std::vector<uint>                 mLayerViews;
-          std::vector<uint>                 mMainMipViews;
-          std::vector<std::vector<uint>>    mLayerMipViews;
+			vk::Image									mImage;
+			vk::Buffer									mBuffer;
+			vk::ImageLayout								currentImageLayout{ vk::ImageLayout::eUndefined };
+			std::vector<std::vector<vk::ImageLayout>>	mLayerMipLayouts;
+			vk::ImageView								mMainView;
+			vk::ImageView								mCubeArrayView;
+			vk::ImageView								mFaceArrayView;
+
+			std::vector<vk::ImageView>					mLayerViews;
+			std::vector<vk::ImageView>					mMainMipViews;
+			std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
+			
+            std::vector<std::vector<vk::Framebuffer>>    mFramebuffers;
 		
-          std::vector<std::vector<uint>>    mTextureFBOs;
+			vk::MemoryAllocateInfo mem_alloc;
+			vk::DeviceMemory mMem;
+			std::vector<LoadedTexture>					loadedTextures;
+			bool split_layouts;
         };
 	}
+
 }
 
 #ifdef _MSC_VER

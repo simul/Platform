@@ -12,7 +12,7 @@
 #define CLOUD_DEFS_ONLY
 #include "simul_clouds.sl"
 
-#ifdef SFX_GLSL
+#ifdef SFX_OPENGL
 struct TwoColourCompositeOutput
 {
 	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
@@ -59,9 +59,9 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,bool do_clouds
 				,vec3 fogColour
 				,vec3 fogAmbient
-				,bool do_height_fog=false
-				,float fogExtinction=0.0
-				,float fogHeightKm=0.0)
+				,bool do_height_fog
+				,float fogExtinction
+				,float fogHeightKm)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
@@ -109,8 +109,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	}	
 	if(do_godrays)
 	{
-		vec3 offsetKm					=view*(dist)*maxFadeDistanceKm;
-		vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetKm,1.0)).xyz);
+		vec3 offsetKm					=view*dist*maxFadeDistanceKm;
+		vec3 lightspaceOffset			=mul(worldToScatteringVolumeMatrix,vec4(offsetKm,1.0)).xyz;
 		float r							=length(lightspaceOffset);
 		vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*SIMUL_PI_F))
 													,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/SIMUL_PI_F

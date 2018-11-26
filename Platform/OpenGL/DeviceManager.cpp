@@ -164,13 +164,13 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 static bool glut_initialized=false;
 
 DeviceManager::DeviceManager()
-	:renderPlatformOpenGL(NULL)
-	,offscreen_context(nullptr)
+	://renderPlatformOpenGL(NULL)
+	offscreen_context(nullptr)
 	,hRC(nullptr)
 {
-	if(!renderPlatformOpenGL)
-		renderPlatformOpenGL		=new opengl::RenderPlatform;
-	renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL|crossplatform::BREAK_ON_FAIL);
+	//if(!renderPlatformOpenGL)
+		//renderPlatformOpenGL		=new opengl::RenderPlatform;
+	//renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL|crossplatform::BREAK_ON_FAIL);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 
 }
@@ -191,12 +191,14 @@ ERRNO_CHECK
     glfwDestroyWindow(offscreen_context);
 	offscreen_context=nullptr;
     glfwTerminate();
+	//delete renderPlatformOpenGL;
+	//renderPlatformOpenGL=nullptr;
 }
 
 DeviceManager::~DeviceManager()
 {
 	InvalidateDeviceObjects();
-	delete renderPlatformOpenGL;
+	//delete renderPlatformOpenGL;
 }
 
 static void GlfwErrorCallback(int errcode, const char* info)

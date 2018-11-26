@@ -116,7 +116,7 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT EffectPass :public simul::crossplatform::EffectPass
 		{
 		public:
-			            EffectPass(crossplatform::RenderPlatform *r);
+			            EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e);
                         ~EffectPass();
 			void        InvalidateDeviceObjects();
 
@@ -152,7 +152,7 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT EffectTechnique:public crossplatform::EffectTechnique
 		{
 		public:
-			EffectTechnique(crossplatform::RenderPlatform *r):crossplatform::EffectTechnique(r)
+			EffectTechnique(crossplatform::RenderPlatform *r,crossplatform::Effect *e):crossplatform::EffectTechnique(r,e)
 			{
 			}
 			crossplatform::EffectPass* AddPass(const char *name, int i) override;

@@ -52,7 +52,7 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	{
 		if(!external_texture)
 			buffer_texture=renderPlatform->CreateTexture("BaseFramebufferColour");
-		if(!external_depth_texture)
+		if(!external_depth_texture&&depth_format!=UNKNOWN)
 			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebufferDepth");
 	}
 	CreateBuffers();
@@ -66,6 +66,7 @@ void BaseFramebuffer::InvalidateDeviceObjects()
 		SAFE_DELETE(buffer_depth_texture);
 	buffer_texture=NULL;
 	buffer_depth_texture=NULL;
+	renderPlatform=nullptr;
 }
 
 void BaseFramebuffer::SetWidthAndHeight(int w,int h,int m)

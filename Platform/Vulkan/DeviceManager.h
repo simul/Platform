@@ -38,7 +38,7 @@ namespace simul
 			void ReloadTextures();
 			// called late to start debug output.
 			void InitDebugging();
-			simul::vulkan::RenderPlatform *renderPlatformVulkan;
+		//	simul::vulkan::RenderPlatform *renderPlatformVulkan;
 
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
@@ -55,6 +55,7 @@ namespace simul
 			}
 		protected:
 			void CreateDevice();
+			void SetupDebugCallback();
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			uint32_t enabled_extension_count;
 			uint32_t enabled_layer_count;

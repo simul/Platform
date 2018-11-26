@@ -9,7 +9,7 @@
 #include "../SL/cubemap_matrices.sl"
 #include "../SL/brdf.sl"
 
-#ifndef GLSL
+#ifndef OPENGL
 #ifndef SIMUL_PI_F
 #define SIMUL_PI_F (3.1415926536)
 #endif

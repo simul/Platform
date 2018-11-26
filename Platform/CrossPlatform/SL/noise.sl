@@ -71,7 +71,7 @@ vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)
     return result;
 }
 
-vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfilter=true)
+vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfilter)
 {
 	vec4 result		=vec4(0,0,0,0);
 	vec3 pos		=frac(texCoords)*gridsize;

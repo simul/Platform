@@ -33,6 +33,7 @@ namespace simul
 			,D_32_FLOAT// DXGI_FORMAT_D32_FLOAT or GL_DEPTH_COMPONENT32F
 			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
+			,BGRA_8_UNORM
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat
@@ -116,6 +117,7 @@ namespace simul
 			case D_24_UNORM_S_8_UINT:
 				return sizeof(unsigned int);
 			case RGBA_8_UNORM:
+			case BGRA_8_UNORM:
 			case RGBA_8_UNORM_SRGB:
 			case RGBA_8_SNORM:
 			case R_8_UNORM:
@@ -133,6 +135,7 @@ namespace simul
 			case RGBA_32_UINT:
 			case RGBA_16_FLOAT:
 			case RGBA_8_UNORM:
+			case BGRA_8_UNORM:
 			case RGBA_8_UNORM_SRGB:
 			case RGBA_8_SNORM:
 				return 4;
@@ -161,5 +164,6 @@ namespace simul
 		{
 			return GetElementSize(p)*GetElementCount(p);
 		}
+		extern PixelFormat TypeToFormat(const char *txt);
 	}
 }

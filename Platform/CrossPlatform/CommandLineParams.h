@@ -1,6 +1,7 @@
 #ifndef SIMUL_PLATFORM_COMMANDLINEPARAMS_H
 #define SIMUL_PLATFORM_COMMANDLINEPARAMS_H
 #include <string>
+#include <vector>
 #include "Simul/Base/StringToWString.h"
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;

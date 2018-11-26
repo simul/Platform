@@ -74,6 +74,8 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,can_save_and_restore(true)
 #endif
 	,textRenderer(nullptr)
+	,mCurIdx(0)
+	,mLastFrame(-1)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;
@@ -189,7 +191,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	{
 		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
 		mat->SetEffect(solidEffect);
-
 	}
 }
 
@@ -215,14 +216,22 @@ void RenderPlatform::InvalidateDeviceObjects()
 	showVolume=nullptr;
 	textureQueryResult.InvalidateDeviceObjects();
 	
-	
-
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
 	}
-	
+	for(auto s:shaders)
+	{
+		s.second->Release();
+		delete s.second;
+	}
+	shaders.clear();
+	for(auto s:sharedSamplerStates)
+	{
+		delete s.second;
+	}
+	sharedSamplerStates.clear();
 }
 
 void RenderPlatform::RecompileShaders()
@@ -403,7 +412,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					L=(l+8-1)/8;
 					D = d;
 					techname = "compute_clear_2d_array";
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB)
+					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
 					{
 						techname="compute_clear_2d_array_u8";
 						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i);
@@ -422,20 +431,20 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				}
 				else if(texture->dim==3)
 				{
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB)
+					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
 					{
 						techname = "compute_clear_3d_u8";
 						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);
 					}
 					else
 					{
-					techname="compute_clear_3d";
+						techname="compute_clear_3d";
 						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
 					}
 				}
 				else
 				{
-					SIMUL_CERR_ONCE<<("Can't clear texture dim.\n");
+					SIMUL_BREAK_ONCE("Can't clear texture dim.");
 				}
 				debugEffect->Apply(deviceContext,techname,0);
 				if(deviceContext.platform_context!=immediateContext.platform_context)
@@ -939,14 +948,13 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
-	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	if(mirrorY)
+		y1=(int)viewport.h-y1-dy;
 	vec4 r(2.f*(float)x1/(float)viewport.w-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.h
 		,2.f*(float)dx/(float)viewport.w
 		,2.f*(float)dy/(float)viewport.h);
-	if(mirrorY)
-		y1=(int)viewport.h-y1-dy;
 	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
 	effect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -1029,7 +1037,6 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 		colr=clr;
 	if(!bkg)
 		bkg=black;
-	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	int h=(int)viewport.h;
 	int pos=0;
@@ -1060,6 +1067,8 @@ crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::Devic
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
+	if(num>0&&vps!=nullptr)
+		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
 	if(deviceContext.GetFrameBufferStack().size())
 	{
 		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
@@ -1170,14 +1179,24 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	std::string fn(filename_utf8);
 	crossplatform::Effect *e=CreateEffect();
 	effects[fn] = e;
-	e->Load(this,filename_utf8,defines);
 	e->SetName(filename_utf8);
+	e->Load(this,filename_utf8,defines);
 	return e;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc)
 {
-	return new Layout();
+	auto l= new Layout();
+	l->SetDesc(layoutDesc,num_elements);
+	return l;
+}
+
+RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
+{
+	RenderState *rs=new RenderState;
+	rs->type=desc.type;
+	rs->desc=desc;
+	return rs;
 }
 
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
@@ -1202,6 +1221,23 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return nullptr;
+}
+
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers, crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps)
+{
+	if (!buffers)
+		return;
+	for(int i=0;i<num_buffers;i++)
+	{
+		deviceContext.contextState.applyVertexBuffers[slot+i]=(buffers[i]);
+	}
+}
+
+void RenderPlatform::SetIndexBuffer(DeviceContext &deviceContext,Buffer *buffer)
+{
+	if (!buffer)
+		return;
+	deviceContext.contextState.indexBuffer=buffer;
 }
 
 namespace simul

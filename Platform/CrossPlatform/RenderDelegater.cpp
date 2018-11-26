@@ -28,8 +28,6 @@ void RenderDelegater::OnLostDevice()
 {
 	for(auto d:shutdownDeviceDelegates)
 		d();
-	if(renderPlatform)
-		renderPlatform->InvalidateDeviceObjects();
 	renderPlatform = nullptr;
 	shutdownDeviceDelegates.clear();
 }
