@@ -862,8 +862,8 @@ void Interp(uint3 g, uint3 t,bool include_rain,bool depth,bool godrays)
 		return;
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
 		return;
-	vec4 u=updateTexture[pos];
-	if(u.b==0.0)
+	vec4 v=updateTexture[pos];
+	if(v.b==0.0)
 		return;
 	int xi,yi;
 	// Interpolate the corners.

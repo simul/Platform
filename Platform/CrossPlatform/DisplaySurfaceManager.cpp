@@ -35,7 +35,7 @@ void DisplaySurfaceManager::Render(cp_hwnd h)
 		renderPlatform->BeginFrame();
 		frame_started=true;
 	}
-    w->Render();
+    w->Render(delegatorReadWriteMutex);
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():
@@ -47,6 +47,8 @@ DisplaySurfaceManager::DisplaySurfaceManager():
 void DisplaySurfaceManager::Initialize(RenderPlatform *r)
 {
 	renderPlatform=r;
+	if (!delegatorReadWriteMutex)
+		delegatorReadWriteMutex = new simul::base::ReadWriteMutex;
 }
 
 DisplaySurfaceManager::~DisplaySurfaceManager()

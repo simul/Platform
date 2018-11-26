@@ -2,33 +2,7 @@
 #ifndef WATER_CONSTANTS_SL
 #define WATER_CONSTANTS_SL
 
-SIMUL_CONSTANT_BUFFER(FftConstants,11)
-	uint thread_count;
-	uint ostride;
-	uint istride;
-	uint pstride;
-	float phase_base;
-	float ahehsj;
-	float tdjtdjt;
-	float jttztjz;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(cbImmutable,1)
-	uniform uint g_ActualDim;
-	uniform uint g_InWidth;
-	uniform uint g_OutWidth;
-	uniform uint g_OutHeight;
-	uniform uint g_DxAddressOffset;
-	uniform uint g_DyAddressOffset;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(cbChangePerFrame,2)
-	uniform float g_Time;
-	uniform float g_ChoppyScale;
-	uniform vec2 bnvyduf9sabyv;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(cbShading,3)
+SIMUL_CONSTANT_BUFFER(cbShading,1)
 
 	// The strength, direction and color of sun streak
 	uniform vec3		g_SunDir;
@@ -66,21 +40,21 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
-SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
+SIMUL_CONSTANT_BUFFER(cbChangePerCall,2)
 	// Transform matrices
-	uniform mat4	g_matLocal;
-	uniform mat4	g_matWorldViewProj;
-	uniform mat4	g_matInvViewProj;
-	uniform mat4	g_matWorld;
+	uniform mat4		g_matLocal;
+	uniform mat4		g_matWorldViewProj;
+	uniform mat4		g_matInvViewProj;
+	uniform mat4		g_matWorld;
 
 	// Misc per draw call constants
 	uniform vec2		g_UVBase;
 	uniform vec2		g_PerlinMovement;
 	uniform vec3		g_LocalEye;
-	uniform float		g_windDirection3;
+	uniform float		g_windDirection;
 
 	uniform vec3		g_boundedDimension;
-	uniform float		g_windDependency3;
+	uniform float		g_windDependency;
 
 	uniform vec3		g_boundedLocation;
 	uniform float		g_boundedRotation;
@@ -88,70 +62,62 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	uniform vec3		g_absorption;
 	uniform uint		g_totalVertices;
 	uniform vec3		g_scattering;
-	uniform float		g_amplitude2;
+	uniform float		g_amplitude;
 
 	uniform float		g_minQuadSize;
 	uniform uint		g_verticiesPerLayer;
 	uniform uint		g_layerDensity;
 	uniform uint		g_noOfLayers;
 
-	uniform vec2		g_boundedDensity;
+	uniform uint2		g_boundedDensity;
 	uniform float		g_profileUVScale;
 	uniform float		g_foamStrength;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(OsdConstants,5)
-	uniform vec2 bufferGrid;
-	uniform float showMultiplier;
-	uniform float agaher;
+SIMUL_CONSTANT_BUFFER(OsdConstants,3)
+	uniform vec2		bufferGrid;
+	uniform float		showMultiplier;
+	uniform float		agaher;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbHeightmap, 6)
-	uniform vec2	g_windDir;
-	uniform float	g_amplitude;
-	uniform float	g_windSpeed;
+SIMUL_CONSTANT_BUFFER(cbWaterProbe, 4)
+	uniform float		g_probeUVScale;
+	uniform float		g_probeUVOffset;
+	uniform float		g_surfaceHeight;
+	uniform float		g_probeWaveAmplitude;
 
-	uniform float	g_windDependency;
-	uniform uint	g_gridSize;
-	uniform float	fgdsvcx;	
-	uniform float	hgfdjkslgh;
-SIMUL_CONSTANT_BUFFER_END
+	uniform vec2		g_center;
+	uniform float		g_probeWindDirection;
+	uniform float		g_probeWindDependancy;
 
-SIMUL_CONSTANT_BUFFER(cbWaterProbe, 8)
-	uniform float g_UVScale2;
-	uniform float g_UVOffset2;
-	uniform float g_surfaceHeight;
-	uniform float g_probeWaveAmplitude;
-
-	uniform vec2 g_center;
-	uniform float g_probeWindDirection;
-	uniform float g_probeWindDependancy;
-
-	uniform float g_probeProfileUVScale;
-	uniform vec3 cvbhdxiobacyi;
+	uniform float		g_probeProfileUVScale;
+	uniform float		g_waveGridScale;
+	uniform bool		g_enableWaveGrid;
+	uniform float		cvbhdxiobacyi;
 SIMUL_CONSTANT_BUFFER_END
 
 
-SIMUL_CONSTANT_BUFFER(cbWaterFoam, 9)
+SIMUL_CONSTANT_BUFFER(cbWaterFoam, 5)
 	//Beaufort scaling
 	uniform float		g_foamHeight;
 	uniform float		g_foamChurn;
 	uniform vec2		hvyidbs;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 10)
+SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 6)
 	uniform float		g_zetaMax;
 	uniform float		g_zetaMin;
 	uniform float		g_period;
 	uniform float		g_integrationSteps;
 
 	uniform float		g_time;
-	uniform float		g_windSpeed2;
+	uniform float		g_windSpeed;
 	uniform int			g_totalWaveNumbers;
 	uniform float		g_dt;
 
-	uniform vec2		g_windDirection2;
-	uniform float		g_windDependency2;
+	uniform uint2		g_waveGridBound;
 	uniform int			g_waveGroup;
+	uniform float		gnfudivn;
+
 SIMUL_CONSTANT_BUFFER_END
 #endif

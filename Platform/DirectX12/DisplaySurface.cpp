@@ -155,8 +155,10 @@ unsigned DisplaySurface::GetCurrentBackBufferIndex() const
 #endif
 	return curIdx;
 }
-void DisplaySurface::Render()
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
 {
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->lock_for_write();
     Resize();
     // First lets make sure is safe to start working on this frame:
    // StartFrame();
@@ -187,6 +189,8 @@ void DisplaySurface::Render()
     // Get ready to present
     mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
     EndFrame();
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->unlock_from_write();
 }
 
 void DisplaySurface::CreateRenderTargets(ID3D12Device* device)

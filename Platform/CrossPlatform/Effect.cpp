@@ -38,8 +38,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 }
 
 EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
-	:renderPlatform(r)
-	,blendState(NULL)
+	:blendState(NULL)
 	,depthStencilState(NULL)
 	,rasterizerState(NULL)
 	,renderTargetFormatState(NULL)
@@ -257,6 +256,7 @@ EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
 	,effect(e)
 	,platform_technique(NULL)
 	,should_fence_outputs(true)
+	,renderPlatform(r)
 {
 }
 

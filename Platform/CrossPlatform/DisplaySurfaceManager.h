@@ -1,4 +1,5 @@
 #pragma once
+#include "Simul/Base/ReadWriteMutex.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
@@ -35,6 +36,7 @@ namespace simul
 			int GetViewId(cp_hwnd hwnd);
             DisplaySurface *GetWindow(cp_hwnd hwnd);
 
+			simul::base::ReadWriteMutex *delegatorReadWriteMutex;
 			///
 			void EndFrame();
 		protected:

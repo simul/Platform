@@ -136,12 +136,16 @@ void DisplaySurface::InitSwapChain()
     SIMUL_ASSERT(result == S_OK);
 }
 
-void DisplaySurface::Render()
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
 {
 	if(mCommandList)
 		return;
 	if(!mDeferredContext)
 		return;
+
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->lock_for_write();
+
 	deferredContext.platform_context=mDeferredContext;
 	deferredContext.renderPlatform=renderPlatform;
 
@@ -157,6 +161,9 @@ void DisplaySurface::Render()
     mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
 	renderPlatform->RestoreRenderState(deferredContext);
 	mDeferredContext->FinishCommandList(true,&mCommandList);
+
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->unlock_from_write();
 }
 
 void DisplaySurface::EndFrame()
