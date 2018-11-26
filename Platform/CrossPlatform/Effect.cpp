@@ -256,7 +256,6 @@ EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
 	,effect(e)
 	,platform_technique(NULL)
 	,should_fence_outputs(true)
-	,renderPlatform(r)
 {
 }
 

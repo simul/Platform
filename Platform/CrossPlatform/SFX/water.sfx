@@ -776,13 +776,13 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		lerpSample2.x += layerX - (layerQuadSize * g_layerDensity * 2);
 		lerpSample2.y += layerY - (layerQuadSize * g_layerDensity * 2);
 
-		uv_local1 += ((lerpSample1)* g_UVScale + g_UVOffset);
-		uv_local2 += ((lerpSample2)* g_UVScale + g_UVOffset);
+		uv_local1 += (lerpSample1* g_UVScale + g_UVOffset);
+		uv_local2 += (lerpSample2* g_UVScale + g_UVOffset);
 		/*
 		if (shoreEffects)
 		{
-			detail_uv_local1 = ((lerpSample1)* g_UVScale);
-			detail_uv_local2 = ((lerpSample2)* g_UVScale);
+			detail_uv_local1 = (lerpSample1* g_UVScale);
+			detail_uv_local2 = (lerpSample2* g_UVScale);
 		}*/
 	}
 
@@ -1557,9 +1557,8 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 			{
 				pointDepth = eye_depth - abs(waterDepth * sin((PI / 2.f) - acos(dot(eye_dir, vec3(0.f, 0.f, 1.f)) / (length(eye_dir) * length(vec3(0.f, 0.f, 1.f))))));
 			}
-			if ((sun_dir.z >= 0.f))
+			if (sun_dir.z >= 0.f)
 			{
-				
 				scatterDepth = pointDepth / sunAngle;
 			}
 			else
@@ -1590,7 +1589,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 		}
 		*/
 		//Subsurface and light transportation calculations
-		vec3 incomingRadiance = exp(-extinction * (eye_depth) * fadeDistance) * g_SunColor;
+		vec3 incomingRadiance = exp(-extinction * eye_depth * fadeDistance) * g_SunColor;
 		vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance).xyz * refractColourInput.xyz, 1.f);
 		vec4 surfaceScattering = vec4(incomingRadiance * exp(-extinction) , 0.f);
 		vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c) * (fadeDistance * waterDepth))))), 0.f);
@@ -1656,7 +1655,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 	float eye_depth = abs(depthInput.z);
 
 	//Subsurface and light transportation calculations
-	vec3 incomingRadiance = exp(-extinction * (waterDepth)* fadeDistance) * g_SunColor;
+	vec3 incomingRadiance = exp(-extinction * waterDepth* fadeDistance) * g_SunColor;
 	vec4 mult = vec4(exp(-extinction * (waterDepth + scatterDepth) * fadeDistance).xyz * refractColourInput.xyz, 1.f);
 	vec4 surfaceScattering = vec4(g_SunColor * exp(-extinction), 0.f);
 	vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c)  * fadeDistance * absoluteDepth)))), 0.0f);
