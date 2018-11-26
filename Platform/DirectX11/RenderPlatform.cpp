@@ -1005,7 +1005,9 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
 
 	int w=targs[0]->width, h = targs[0]->length;
-	crossplatform::Viewport v[] = { { 0, 0, w, h }, { 0, 0, w, h }, { 0, 0, w, h } };
+	crossplatform::Viewport v[] = { { 0, 0, w, h },{ 0, 0, w, h },{ 0, 0, w, h },
+									{ 0, 0, w, h },{ 0, 0, w, h },{ 0, 0, w, h },
+									{ 0, 0, w, h },{ 0, 0, w, h }};
 
 	crossplatform::TargetsAndViewport *targetAndViewport=new crossplatform::TargetsAndViewport;
 	targetAndViewport->temp=true;
@@ -1379,7 +1381,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	{
 	//	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-		ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+		//ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 		//pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		debugEffect->Apply(deviceContext,tech,"noblend");

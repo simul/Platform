@@ -17,7 +17,7 @@ namespace simul
             ~DisplaySurface();
             void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;
             void InvalidateDeviceObjects()override;
-            void Render();
+            void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex);
             
         private:
 			unsigned GetCurrentBackBufferIndex() const;

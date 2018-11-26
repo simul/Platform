@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Export.h"
+#include "Simul/Base/ReadWriteMutex.h"
 #include "Simul/Platform/CrossPlatform/DisplaySurface.h"
 #include "SimulDirectXHeader.h"
 #include "MacrosDx1x.h"
@@ -16,7 +17,7 @@ namespace simul
             ~DisplaySurface();
             void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;
             void InvalidateDeviceObjects() override;
-            void Render();
+            void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex);
 			void EndFrame() override;
         private:
             //! Will resize the swap chain only if needed

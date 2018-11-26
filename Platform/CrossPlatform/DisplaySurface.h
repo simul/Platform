@@ -1,4 +1,5 @@
 #pragma once
+#include "Simul/Base/ReadWriteMutex.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
@@ -22,7 +23,7 @@ namespace simul
 			void            Release();
 			void            SetRenderer(PlatformRendererInterface *ci, int view_id);
 			void            ResizeSwapChain(DeviceContext &deviceContext);
-            virtual void    Render() {};
+            virtual void    Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex) {};
 			virtual void	StartFrame() {}
 			virtual void	EndFrame() {}
             cp_hwnd         GetHandle() { return mHwnd; }

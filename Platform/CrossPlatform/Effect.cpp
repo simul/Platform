@@ -38,8 +38,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 }
 
 EffectPass::EffectPass(RenderPlatform *r)
-	:renderPlatform(r)
-	,blendState(NULL)
+	:blendState(NULL)
 	,depthStencilState(NULL)
 	,rasterizerState(NULL)
 	,renderTargetFormatState(NULL)
@@ -56,6 +55,7 @@ EffectPass::EffectPass(RenderPlatform *r)
 	,rwTextureSlotsForSB(0)
 	,should_fence_outputs(true)
 	,platform_pass(nullptr)
+	,renderPlatform(r)
 {
 	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
 		shaders[i]=NULL;
@@ -240,9 +240,9 @@ void Effect::InvalidateDeviceObjects()
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r)
-	:renderPlatform(r)
-	,platform_technique(NULL)
+	:platform_technique(NULL)
 	,should_fence_outputs(true)
+	,renderPlatform(r)
 {
 }
 

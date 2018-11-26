@@ -47,8 +47,8 @@ namespace simul
 			{
 				return 0;
 			}
-			virtual void Apply(DeviceContext &deviceContext){}
-			virtual void Unapply(DeviceContext &deviceContext){}
+			virtual void Apply(DeviceContext &){}
+			virtual void Unapply(DeviceContext &){}
 			int GetStructSize() const;
 		};
 	}
