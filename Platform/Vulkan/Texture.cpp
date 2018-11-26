@@ -198,8 +198,11 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	mLayerViews.clear();
 	mMainMipViews.clear();
 	mLayerMipViews.clear();
-	vulkanDevice->destroyImage(mImage, nullptr);
-	vulkanDevice->freeMemory(mMem, nullptr);
+	if(!external_texture)
+	{
+		vulkanDevice->destroyImage(mImage, nullptr);
+		vulkanDevice->freeMemory(mMem, nullptr);
+	}
 	vulkanDevice->destroyBuffer(mBuffer, nullptr);
 	renderPlatform=nullptr;
 }
@@ -432,9 +435,53 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 }
 
 #include "Simul/Base/StringFunctions.h"
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool rendertarget /*= false*/, bool depthstencil /*= false*/,bool need_srv /*= true*/)
 {
+	if (IsSame(w, l, 1, 1, 1,f,false,computable,rendertarget,depthstencil, true))
+	{
+		if(t==(void*)mImage)
+			return ;
+	}
 	renderPlatform=r;
+	if(w==0)
+		return;
+	if(f==crossplatform::UNKNOWN)
+		return;
+	InvalidateDeviceObjectsExceptLoaded();
+	renderPlatform=r;
+	void **image=(void **)&mImage;
+	*image=t;
+	// include eTransferDst IN CASE this is for a texture file loaded.
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst ;
+	if(rendertarget)
+		usageFlags|=vk::ImageUsageFlagBits::eColorAttachment;
+	if(depthstencil)
+		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
+	if(computable)
+		usageFlags|=vk::ImageUsageFlagBits::eStorage;
+	
+	//vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
+	//vk::FormatProperties props;
+	//vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
+	//gpu->getFormatProperties(tex_format, &props);
+	//vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	
+	InitViewTables(2,f,w,l,1, 1, rendertarget,false,depthstencil);
+	SplitLayouts();
+
+	pixelFormat=f;
+	width=w;
+	length=l;
+	depth=1;
+	arraySize=1;
+	mips=1;
+	dim=2;
+	cubemap=false;
+	depthStencil=depthstencil;
+	this->computable=computable;
+	this->renderTarget=rendertarget;
+	external_texture=true;
+	SetVulkanName(renderPlatform,&mImage,name.c_str());
 }
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l,

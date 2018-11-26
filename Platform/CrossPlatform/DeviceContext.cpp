@@ -41,16 +41,31 @@ DeviceContext::DeviceContext():
 }
 
 
-void DeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt,
-	const ApiDepthRenderTarget* dt,
-	uint32_t viewportLeft,
-	uint32_t viewportTop,
-	uint32_t viewportRight,
-	uint32_t viewportBottom
+void DeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
+	,const ApiDepthRenderTarget* dt
+	,uint32_t viewportLeft
+	,uint32_t viewportTop
+	,uint32_t viewportRight
+	,uint32_t viewportBottom
+	,Texture **texture_targets
+	,int num_targets
+	,Texture *depth_target
 )
 {
 	memset(&defaultTargetsAndViewport, 0, sizeof(defaultTargetsAndViewport));
-	defaultTargetsAndViewport.num = 1;
+	defaultTargetsAndViewport.num = num_targets;
+	if(texture_targets)
+	{
+		for(int i=0;i<num_targets;i++)
+		{
+			defaultTargetsAndViewport.textureTargets[i].texture=texture_targets[i];
+			defaultTargetsAndViewport.textureTargets[i].layer=0;
+			defaultTargetsAndViewport.textureTargets[i].mip=0;
+		}
+		defaultTargetsAndViewport.depthTarget.texture=depth_target;
+		defaultTargetsAndViewport.depthTarget.layer=0;
+		defaultTargetsAndViewport.depthTarget.mip=0;
+	}
 	defaultTargetsAndViewport.m_rt[0] = rt;
 	defaultTargetsAndViewport.m_rt[1] = nullptr;
 	defaultTargetsAndViewport.m_rt[2] = nullptr;

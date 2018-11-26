@@ -278,7 +278,7 @@ void Texture::InvalidateDeviceObjects()
    mTextureID = 0;
 }
 #endif
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));

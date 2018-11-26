@@ -18,22 +18,24 @@ using namespace vulkan;
 
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
 {
-	//vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
+#if 0
+	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
+	vk::Device *device=renderPlatform->AsVulkanDevice();
+	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
+		.setObjectType(vk::DebugReportObjectTypeEXT::eImage)
+		.setObject((uint64_t)ds)
+		.setPObjectName(name);
+	auto inf=nameInfo.operator const VkDebugMarkerObjectNameInfoEXT &();
 	//* It would be nice if this worked:
-	/*PFN_vkDebugMarkerSetObjectNameEXT vkDebugMarkerSetObjectNameEXT	=reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT>     (instance->getProcAddr("vkDebugMarkerSetObjectNameEXT"));
+	PFN_vkDebugMarkerSetObjectNameEXT vkDebugMarkerSetObjectNameEXT	=reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT> (instance->getProcAddr("vkDebugMarkerSetObjectNameEXT"));
 	if(vkDebugMarkerSetObjectNameEXT)
 	{
 		if(ds!=0)
 		{
-			vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
-				.setObjectType(vk::DebugReportObjectTypeEXT::eImage)
-				.setObject((uint64_t)ds)
-				.setPObjectName(name);
-			vk::Device *device=renderPlatform->AsVulkanDevice();
-			auto inf=nameInfo.operator const VkDebugMarkerObjectNameInfoEXT &();
 			vkDebugMarkerSetObjectNameEXT(device->operator VkDevice(),&inf);
 		}
-	}*/
+	}
+#endif
 
 	// But it doesn't. So instead we just list the objects and names.
 #ifdef _DEBUG
@@ -291,9 +293,9 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::D
 		if(deviceContext.targetStack.size())
 		{
 			tv=deviceContext.targetStack.top();
-			if(tv->textureTargets[0].texture)
-				pixelFormat=tv->textureTargets[0].texture->pixelFormat;
 		}
+		if(tv&&tv->textureTargets[0].texture)
+			pixelFormat=tv->textureTargets[0].texture->pixelFormat;
 	}
 	return pixelFormat;
 }
