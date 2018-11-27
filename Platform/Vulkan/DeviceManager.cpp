@@ -431,7 +431,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	
 	uint32_t queue_family_count;
 	/* Call with nullptr data to get count */
-	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, nullptr);
+	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, (vk::QueueFamilyProperties* )nullptr);
 	assert(queue_family_count >= 1);
 
 	queue_props.resize(queue_family_count);
