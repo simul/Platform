@@ -352,7 +352,7 @@ namespace simul
 			//! a ring buffer.
 			static const int			kNumIdx = 3;
 			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
-			UCHAR						mCurIdx;
+			unsigned char				mCurIdx;
 			//! Last frame number
 			long long					mLastFrame;
 		public:

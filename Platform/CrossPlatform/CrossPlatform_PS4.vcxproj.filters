@@ -206,5 +206,6 @@
     <ClCompile Include="DisplaySurfaceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PixelFormat.cpp" />
   </ItemGroup>
 </Project>

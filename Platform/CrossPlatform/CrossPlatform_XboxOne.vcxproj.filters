@@ -92,6 +92,7 @@
     </ClCompile>
     <ClCompile Include="DisplaySurface.cpp" />
     <ClCompile Include="DisplaySurfaceManager.cpp" />
+    <ClCompile Include="PixelFormat.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Topology.h">

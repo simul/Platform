@@ -71,6 +71,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="MouseHandler.cpp" />
+    <ClCompile Include="PixelFormat.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
