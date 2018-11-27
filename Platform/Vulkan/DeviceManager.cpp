@@ -149,14 +149,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	vk::Bool32 validation_found = VK_FALSE;
 	if (use_debug)
 	{
-		auto result = vk::enumerateInstanceLayerProperties(&instance_layer_count, nullptr);
+		auto result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		instance_validation_layers = instance_validation_layers_alt1;
 		if (instance_layer_count > 0)
 		{
 			std::unique_ptr<vk::LayerProperties[]> instance_layers(new vk::LayerProperties[instance_layer_count]);
-			result = vk::enumerateInstanceLayerProperties(&instance_layer_count, instance_layers.get());
+			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.get());
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers,
@@ -199,14 +199,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
 
-	auto result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
+	auto result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	extension_names.resize(instance_extension_count);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	if (instance_extension_count > 0)
 	{
 		std::unique_ptr<vk::ExtensionProperties[]> instance_extensions(new vk::ExtensionProperties[instance_extension_count]);
-		result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count, instance_extensions.get());
+		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions.get());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		for (uint32_t i = 0; i < instance_extension_count; i++)
@@ -339,14 +339,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setPEngineName("Simul")
 		.setEngineVersion(0)
 		.setApiVersion(VK_API_VERSION_1_0);
-	auto const inst_info = vk::InstanceCreateInfo()
+	auto inst_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app)
 		.setEnabledLayerCount(enabled_layer_count)
 		.setPpEnabledLayerNames(instance_validation_layers)
 		.setEnabledExtensionCount(enabled_extension_count)
 		.setPpEnabledExtensionNames(extension_names.data());
 
-	result = vk::createInstance(&inst_info, nullptr, &deviceManagerInternal->instance);
+	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
 	if (result == vk::Result::eErrorIncompatibleDriver)
 	{
 		SIMUL_BREAK(
@@ -372,13 +372,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	/* Make initial call to query gpu_count, then second call for gpu info*/
 	uint32_t gpu_count;
-	result = deviceManagerInternal->instance.enumeratePhysicalDevices(&gpu_count, nullptr);
+	result = deviceManagerInternal->instance.enumeratePhysicalDevices((uint32_t*)&gpu_count, (vk::PhysicalDevice*)nullptr);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	if (gpu_count > 0)
 	{
 		std::unique_ptr<vk::PhysicalDevice[]> physical_devices(new vk::PhysicalDevice[gpu_count]);
-		result = deviceManagerInternal->instance.enumeratePhysicalDevices(&gpu_count, physical_devices.get());
+		result = deviceManagerInternal->instance.enumeratePhysicalDevices((uint32_t*)&gpu_count, physical_devices.get());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 		/* For cube demo we just grab the first physical device */
 		deviceManagerInternal->gpu = physical_devices[0];
@@ -398,13 +398,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	enabled_extension_count = 0;
 	memset(extension_names.data(), 0, sizeof(extension_names));
 
-	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, nullptr);
+	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	if (device_extension_count > 0)
 	{
 		std::unique_ptr<vk::ExtensionProperties[]> device_extensions(new vk::ExtensionProperties[device_extension_count]);
-		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, device_extensions.get());
+		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.get());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		for (uint32_t i = 0; i < device_extension_count; i++)
@@ -538,11 +538,11 @@ std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKH
 {
 	// Get the list of VkFormat's that are supported:
 	uint32_t formatCount;
-	auto result = deviceManagerInternal->gpu.getSurfaceFormatsKHR(*surface, &formatCount, nullptr);
+	auto result = deviceManagerInternal->gpu.getSurfaceFormatsKHR(*surface, (uint32_t*)&formatCount, (vk::SurfaceFormatKHR*)nullptr);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	std::vector<vk::SurfaceFormatKHR> surfFormats(formatCount);
-	result = deviceManagerInternal->gpu.getSurfaceFormatsKHR(*surface, &formatCount, surfFormats.data());
+	result = deviceManagerInternal->gpu.getSurfaceFormatsKHR(*surface, (uint32_t*)&formatCount, surfFormats.data());
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	
 	return surfFormats;
@@ -551,11 +551,11 @@ std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKH
 std::vector<vk::Image> DeviceManager::GetSwapchainImages(vk::SwapchainKHR *swapchain)
 {
 	uint32_t swapchainImageCount;
-	auto result = deviceManagerInternal->device.getSwapchainImagesKHR(*swapchain, &swapchainImageCount, nullptr);
+	auto result = deviceManagerInternal->device.getSwapchainImagesKHR(*swapchain, (uint32_t*)&swapchainImageCount, (vk::Image*)nullptr);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	std::vector<vk::Image> swapchainImages(swapchainImageCount);
-	result = deviceManagerInternal->device.getSwapchainImagesKHR(*swapchain, &swapchainImageCount, swapchainImages.data());
+	result = deviceManagerInternal->device.getSwapchainImagesKHR(*swapchain, (uint32_t*)&swapchainImageCount, swapchainImages.data());
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	return swapchainImages;
 }

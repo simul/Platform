@@ -256,8 +256,8 @@ void DisplaySurface::InitSwapChain()
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	uint32_t presentModeCount;
-	result = gpu->getSurfacePresentModesKHR(mSurface, &presentModeCount, nullptr);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	auto result2 = gpu->getSurfacePresentModesKHR(mSurface, &presentModeCount, (vk::PresentModeKHR*)nullptr);
+	SIMUL_ASSERT(result2 == vk::Result::eSuccess);
 
 	std::unique_ptr<vk::PresentModeKHR[]> presentModes(new vk::PresentModeKHR[presentModeCount]);
 	result = gpu->getSurfacePresentModesKHR(mSurface, &presentModeCount, presentModes.get());
