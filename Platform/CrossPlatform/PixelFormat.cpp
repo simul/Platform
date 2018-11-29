@@ -1,5 +1,9 @@
 #include "PixelFormat.h"
 #include <iostream>
+#ifndef _MSC_VER
+#include <stdio.h>
+#define _stricmp strcasecmp
+#endif
 using namespace simul;
 using namespace crossplatform;
 
