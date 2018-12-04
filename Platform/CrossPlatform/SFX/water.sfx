@@ -1274,7 +1274,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	}
 
 	//Caluclate refraction
-	float tempsample = g_texDepth.Sample(clampSamplerState,TexCoord*g_DepthScale).x;
+	float tempsample = g_texDepth.Sample(samplerStateNearest,TexCoord*g_DepthScale).x;
 	float fulldepth =  depthToFadeDistance(tempsample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
 	
 	//float fresnelFactor = 1.0;
@@ -1344,7 +1344,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 	if (enableRefraction)
 	{
-		subsurfaceSample = g_texDepth.Sample(clampSamplerState, TexCoord*g_DepthScale).x;
+		subsurfaceSample = g_texDepth.Sample(samplerStateNearest, TexCoord*g_DepthScale).x;
 		subsurfaceDepth = depthToFadeDistance(subsurfaceSample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
 		if (subsurfaceDepth < surfaceDepth)
 		{
@@ -1682,7 +1682,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 
 shader float4 PS_CopyDepthStencil(posTexVertexOutput In) : SV_Target
 {
-	float4 Output =  g_texDepth.SampleLevel(wwcSamplerState, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
+	float4 Output =  g_texDepth.SampleLevel(samplerStateNearest, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
 	return Output;
 }
 /*
