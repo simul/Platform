@@ -555,6 +555,43 @@ ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
 	return debugConstants;
 }
 
+bool crossplatform::RenderPlatform::IsDepthFormat(PixelFormat f)
+{
+	switch(f)
+	{
+	case D_32_FLOAT:
+	case D_24_UNORM_S_8_UINT:
+	case D_16_UNORM:
+		return true;
+	default:
+		return false;
+	};
+}
+
+
+PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
+{
+	switch(f)
+	{
+	case D_32_FLOAT:
+		return R_32_FLOAT;
+	//case D_24_UNORM_S_8_UINT:
+	case D_16_UNORM:
+		return R_16_FLOAT;
+	default:
+		return f;
+	};
+}
+bool crossplatform::RenderPlatform::IsStencilFormat(PixelFormat f)
+{
+	switch(f)
+	{
+	case D_24_UNORM_S_8_UINT:
+		return true;
+	default:
+		return false;
+	};
+}
 
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
 {

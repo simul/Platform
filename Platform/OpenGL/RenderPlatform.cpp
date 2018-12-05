@@ -484,6 +484,11 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	};
 }
 
+void RenderPlatform::ClearResidentTextures()
+{
+	mResidentTextures.clear();
+}
+
 void RenderPlatform::MakeTextureResident(GLuint64 handle)
 {
     if (mResidentTextures.find(handle) == mResidentTextures.end())

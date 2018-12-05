@@ -232,6 +232,8 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
     if (mGPUBuffer[0] != 0)
     {
         glDeleteBuffers(mNumBuffers, &mGPUBuffer[0]);
+		for(int i=0;i<mNumBuffers;i++)
+			mGPUBuffer[i]=0;
     }
 }
 
@@ -604,8 +606,8 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                         samplerState = effectSamp;
                     }
                 }
-                GLuint sview        = samplerState->asGLuint();
-                GLuint64 chandle    = glGetTextureSamplerHandleARB(tview, sview);
+                GLuint sview        =samplerState->asGLuint();
+                GLuint64 chandle    =glGetTextureSamplerHandleARB(tview, sview);
                 rPlat->MakeTextureResident(chandle);
 				for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
 				{
