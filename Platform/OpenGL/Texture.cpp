@@ -107,6 +107,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	{
 		SIMUL_BREAK("");
 	}
+		renderPlatform=r;
 
 	width		= tdata.x;
 	length		= tdata.y;
@@ -167,7 +168,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	depth		= 1;
 	cubemap	 = false;
 	mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(crossplatform::PixelFormat::RGBA_8_UNORM);
-
+	
+	renderPlatform=r;
 
 	glGenTextures(1, &mTextureID);
 	{
@@ -229,6 +231,11 @@ void Texture::InvalidateDeviceObjects()
 #else
 void Texture::InvalidateDeviceObjects()
 {
+	for(auto u:residentHandles)
+	{
+		glMakeTextureHandleNonResidentARB(u);
+	}
+	residentHandles.clear();
 	for(auto i:mTextureFBOs)
 	{
 		glDeleteFramebuffers(i.size(),i.data());
@@ -261,22 +268,38 @@ void Texture::InvalidateDeviceObjects()
     {
         toDeleteTextures.insert(mCubeArrayView);
     }
-	//toDeleteTextures.insert(mTextureID);
+	toDeleteTextures.insert(mTextureID);
 	for(auto t:toDeleteTextures)
 	{
-		if(!external_texture||t!=mTextureID)
-			glDeleteTextures(1, &t);
+		if(external_texture&&t==mTextureID)
+			toDeleteTextures.erase(t);
 	}
 	//renderPlatform->
 	auto *rp=(opengl::RenderPlatform*)renderPlatform;
 	if(rp)
-		rp->ClearResidentTextures();
-	//DeleteGLTextures(t);
+	{
+		//rp->ClearResidentTextures();
+	//	rp->DeleteGLTextures(toDeleteTextures);
+	}
+	for(auto t:toDeleteTextures)
+	{
+		glDeleteTextures(1,&t);
+	}
+
     mCubeArrayView = 0;
 	mTextureID = 0;
 }
 #endif
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
+void Texture::MakeHandleResident(GLuint64 thandle)
+{
+	if(!renderPlatform)
+		return;
+	if(residentHandles.find(thandle)!=residentHandles.end())
+		return;
+   glMakeTextureHandleResidentARB(thandle);
+	residentHandles.insert(thandle);
+}
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -285,6 +308,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPla
 
 	if (mTextureID == 0 || mTextureID != gt|| qw != width || qh != length)
 	{
+		renderPlatform=r;
 		InitViews(1, 1, false);
 
 		mTextureID				= gt;
@@ -301,13 +325,14 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPla
 	}
 }
 
-bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* renderPlatform, int w, int l,
+bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l,
 											crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
 											vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
 {
 	if (!IsSame(w, l, 1, 1, 1, num_samples))
 	{
 		InvalidateDeviceObjects();
+		renderPlatform=r;
 // TODO: SUpport higher mips.
 int m=1;
 		width		= w;
@@ -395,12 +420,13 @@ int m=1;
 	return false;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool ascubemap /*= false*/)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool ascubemap /*= false*/)
 {
 	int totalCnt = ascubemap ? 6 * num : num;
 	if (!IsSame(w, l, 1, totalCnt, nmips, 1))
 	{
 		InvalidateDeviceObjects();
+		renderPlatform=r;
 
 		width		= w;
 		length		= l;
@@ -518,11 +544,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 	return false;
 }
 
-bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable /*= false*/, int nmips /*= 1*/, bool rendertargets /*= false*/)
+bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable /*= false*/, int nmips /*= 1*/, bool rendertargets /*= false*/)
 {
 	if (!IsSame(w, l, d, 1, nmips, 1))
 	{
 		InvalidateDeviceObjects();
+		renderPlatform=r;
 
 		width		= w;
 		length		= l;

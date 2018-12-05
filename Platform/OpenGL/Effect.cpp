@@ -576,7 +576,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
         // We first bind the texture handle alone (for fetch and get size operations)
         GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
         GLuint64 thandle    = glGetTextureHandleARB(tview);
-        rPlat->MakeTextureResident(thandle);
+		tex->MakeHandleResident(thandle);
 		for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
 		{
 			const int &uboOffset=mTexturesUBOMapping[j][slot];
@@ -608,7 +608,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                 }
                 GLuint sview        =samplerState->asGLuint();
                 GLuint64 chandle    =glGetTextureSamplerHandleARB(tview, sview);
-                rPlat->MakeTextureResident(chandle);
+				tex->MakeHandleResident(chandle);
 				for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
 				{
 					const int &uboOffset=mTexturesUBOMapping[j][slot];
