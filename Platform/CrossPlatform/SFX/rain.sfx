@@ -232,7 +232,7 @@ ParticleGeometryOutput VS_SnowParticles(uint vertex_id,bool rainMaskEnabled)
 	if(rainMaskEnabled)
 	{
 		in_depth_space	= 0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0.0);
-		depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale;
+		depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale * 0.5;
 	}
 
 	int maxtype			=int(16.0*mapped_rain);
@@ -406,7 +406,7 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled)
 	if(rainMaskEnabled)
 	{
 		in_depth_space	= 0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0.0);
-		depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale;
+		depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale * 0.5;
 	}
 
 	int maxtype			=int(16.0*mapped_rain);
@@ -476,7 +476,7 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled)
 			//p.dir=in_depth_space.xyz;//saturate(in_depth_space.xyz);
 			//p.dir		=0*saturate(in_depth_space.z);//
 			//p.dir.g		=saturate((depth-0.4999)*1000.0);//saturate(1000.0*(depth-in_depth_space.z));//
-			if(depth<1.0&&in_depth_space.z<depth+0.01)
+			if(in_depth_space.z>depth)
 			{
 				p.type=44;
 			}
