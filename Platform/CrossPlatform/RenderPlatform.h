@@ -323,6 +323,10 @@ namespace simul
 			void SetMemoryInterface(simul::base::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
+			// Does the format use stencil?
+			static PixelFormat ToColourFormat(PixelFormat f);
+			static bool IsDepthFormat(PixelFormat f);
+			static bool IsStencilFormat(PixelFormat f);
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;

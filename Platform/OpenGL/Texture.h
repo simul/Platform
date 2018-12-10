@@ -3,6 +3,7 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "glad/glad.h"
+#include <set>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -67,6 +68,9 @@ namespace simul
             GLuint          AsOpenGLView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
             GLuint          GetGLMainView();
 
+			/// This is used to make a handle (created from the GL texture view, or from the view and a sampler state) resident, and also for the texture to keep track of its own
+			/// handles so they can be made unresident when it is deleted.
+			void			MakeHandleResident(GLuint64 h);
         private:
             LoadedTexture   LoadTextureData(const char* path);
             bool            IsSame(int w, int h, int d,int arraySize, int m, int msaa);
@@ -88,6 +92,7 @@ namespace simul
             std::vector<std::vector<GLuint>>    mLayerMipViews;
 		
             std::vector<std::vector<GLuint>>    mTextureFBOs;
+			std::set<GLuint64>					residentHandles;
         };
 	}
 }

@@ -138,10 +138,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		vk::ImageView *t;
 		vulkan::Texture *texture=(vulkan::Texture *)(ta.texture);
 		if(texture&&texture->IsValid())
+		{
 			t=texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip,true);
+			texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,ta.index,ta.mip);
+		}
 		else
 			t=nullptr;	// This WILL kill vulkan, so don't let it happen.
-		texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,ta.index,ta.mip);
 		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageImage);
@@ -750,6 +752,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		i_desc[mLastFrameIndex]=mDescriptorSets[mLastFrameIndex].end();
 		i_desc[mLastFrameIndex]--;
 		Initialize(*i_desc[mLastFrameIndex]);
+		SIMUL_ASSERT(((VkDescriptorSet)*(i_desc[mLastFrameIndex]))!=nullptr);
 	}
 	ApplyContextState(deviceContext,*i_desc[mLastFrameIndex]);
 	mCurApplyCount++;

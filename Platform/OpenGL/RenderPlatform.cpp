@@ -73,10 +73,25 @@ void RenderPlatform::RestoreDeviceObjects(void* hrc)
 void RenderPlatform::InvalidateDeviceObjects()
 {
     // glDeleteVertexArrays(1, &mNullVAO);
+	for(int i=0;i<3;i++)
+	{
+		for(auto t:texturesToDelete[i])
+		{
+			glDeleteTextures(1,&t);
+		}
+		texturesToDelete[i].clear();
+	}
 }
 
 void RenderPlatform::BeginFrame()
 {
+	for(auto t:texturesToDelete[mCurIdx])
+	{
+		glDeleteTextures(1,&t);
+	}
+	if(texturesToDelete[mCurIdx].size())
+		ClearResidentTextures();
+	texturesToDelete[mCurIdx].clear();
 }
 
 void RenderPlatform::EndFrame()
@@ -144,6 +159,14 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
 {
+	if (mLastFrame != deviceContext.frame_number)
+	{
+		mLastFrame = deviceContext.frame_number;
+		mCurIdx++;
+		mCurIdx = mCurIdx % kNumIdx;
+		BeginFrame();
+	}
+
     crossplatform::ContextState* cs = &deviceContext.contextState;
     opengl::EffectPass* pass    = (opengl::EffectPass*)cs->currentEffectPass;
     
@@ -482,6 +505,25 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	default:
 		return 0;
 	};
+}
+
+void RenderPlatform::ClearResidentTextures()
+{
+	for(auto t:mResidentTextures)
+	{
+		std::cout<<t<<std::endl;
+		glMakeTextureHandleNonResidentARB(t);
+	}
+	mResidentTextures.clear();
+}
+ std::set<GLuint>	RenderPlatform::texturesToDelete[3];
+
+void RenderPlatform::DeleteGLTextures(const std::set<GLuint> &t)
+{
+	for(auto c:t)
+	{
+		texturesToDelete[mCurIdx].insert(c);
+	}
 }
 
 void RenderPlatform::MakeTextureResident(GLuint64 handle)

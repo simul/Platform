@@ -116,8 +116,12 @@ namespace simul
 			static                                  GLenum DataType(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);
             
+			void									DeleteGLTextures(const std::set<GLuint> &t);
             //! Makes the handle resident only if its not resident already
             void                                    MakeTextureResident(GLuint64 handle);
+
+			//! If ANY texture is deleted, we should probably regard the resident textures list as invalid.
+			void									ClearResidentTextures();
             //! Returns 2D dummy texture 1 white texel
             opengl::Texture*                        GetDummy2D();
             //! Returns 3D dummy texture 1 white texel
@@ -137,6 +141,8 @@ namespace simul
             opengl::Texture*    mDummy3D;
 
             GLSnapState         mCachedState;
+
+			static std::set<GLuint>	texturesToDelete[3];
 		};
 	}
 }

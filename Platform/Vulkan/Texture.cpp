@@ -445,27 +445,15 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	renderPlatform=r;
 	if(w==0)
 		return;
+	if(t==0)
+		return;
 	if(f==crossplatform::UNKNOWN)
 		return;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 	void **image=(void **)&mImage;
 	*image=t;
-	// include eTransferDst IN CASE this is for a texture file loaded.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst ;
-	if(rendertarget)
-		usageFlags|=vk::ImageUsageFlagBits::eColorAttachment;
-	if(depthstencil)
-		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
-	if(computable)
-		usageFlags|=vk::ImageUsageFlagBits::eStorage;
-	
-	//vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
-	//vk::FormatProperties props;
-	//vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
-	//gpu->getFormatProperties(tex_format, &props);
-	//vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	
+	depthstencil&=(crossplatform::RenderPlatform::IsDepthFormat(f));
 	InitViewTables(2,f,w,l,1, 1, rendertarget,false,depthstencil);
 	SplitLayouts();
 
@@ -492,6 +480,8 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	{
 		return false;
 	}
+	if(w*l==0)
+		return false;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 	// include eTransferDst IN CASE this is for a texture file loaded.
@@ -575,9 +565,14 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	}
 	else if(layers>1)
 		viewType=vk::ImageViewType::e2DArray;
-	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	int totalNum = cubemap ? 6 * layers : layers;
-	vk::ImageAspectFlags imageAspectFlags=isDepthTarget?vk::ImageAspectFlagBits::eDepth:vk::ImageAspectFlagBits::eColor;
+	f=crossplatform::RenderPlatform::ToColourFormat(f);
+	vk::ImageAspectFlags imageAspectFlags=vk::ImageAspectFlagBits::eColor;
+	if(crossplatform::RenderPlatform::IsDepthFormat(f))
+		imageAspectFlags|=vk::ImageAspectFlagBits::eDepth;
+	if(isDepthTarget&&crossplatform::RenderPlatform::IsStencilFormat(f))
+		imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
+	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	vk::ImageViewCreateInfo viewCreateInfo = vk::ImageViewCreateInfo()
 		.setImage(mImage)
 		.setViewType(viewType)
@@ -900,6 +895,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	std::string filenameInUseUtf8=path;
 	if(index==-2||index>=(int)renderPlatform->GetTexturePathsUtf8().size())
 	{
+		errno=0;
 		SIMUL_CERR<<"Failed to find texture file "<<filenameInUseUtf8<<std::endl;
 		return;
 	}

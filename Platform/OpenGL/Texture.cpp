@@ -23,14 +23,6 @@ void DeleteTextures(size_t num,GLuint *t)
 	glDeleteTextures(num,t);
 }
 
-// TODO: This is ridiculous. But GL, at least in the current NVidia implementation, seems unable to write to a re-used texture id that it has generated after that id 
-// was previously freed. Bad bug.
-// Therefore we force the issue by making the tex id's go up sequentially, not standard GL behaviour:
-void glGenTextures_DONT_REUSE(int count,GLuint *tex)
-{
-	glGenTextures(count,tex);
-}
-
 SamplerState::SamplerState():
 	mSamplerID(0)
 {
@@ -115,6 +107,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	{
 		SIMUL_BREAK("");
 	}
+		renderPlatform=r;
 
 	width		= tdata.x;
 	length		= tdata.y;
@@ -128,7 +121,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	// per pixel, so thats why we just override all to RGBA_8_UNORM)
 	pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
 
-	glGenTextures_DONT_REUSE(1, &mTextureID);
+	glGenTextures(1, &mTextureID);
 	{
 		glBindTexture(GL_TEXTURE_2D, mTextureID);
 		glTexImage2D
@@ -175,9 +168,10 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	depth		= 1;
 	cubemap	 = false;
 	mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(crossplatform::PixelFormat::RGBA_8_UNORM);
+	
+	renderPlatform=r;
 
-
-	glGenTextures_DONT_REUSE(1, &mTextureID);
+	glGenTextures(1, &mTextureID);
 	{
 		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureID);
 		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 8, GL_RGBA8, width, length, loadedTextures.size());
@@ -209,46 +203,26 @@ bool Texture::IsValid()const
 {
 	return mTextureID != 0;
 }
-#if 0
+
 void Texture::InvalidateDeviceObjects()
 {
-	if ((!external_texture)&&mTextureID != 0)
+	for(auto u:residentHandles)
 	{
-		DeleteTextures(mLayerViews.size(), mLayerViews.data());
-		DeleteTextures(mMainMipViews.size(), mMainMipViews.data());
-		for(auto i:mLayerMipViews)
-		{
-			DeleteTextures(i.size(),i.data());
-		}
-		for(auto i:mTextureFBOs)
-		{
-			glDeleteFramebuffers(i.size(),i.data());
-		}
-		DeleteTextures(1, &mCubeArrayView);
-		DeleteTextures(1, &mTextureID);
-		mTextureID = 0;
-		mCubeArrayView=0;
+		glMakeTextureHandleNonResidentARB(u);
 	}
-	mLayerViews.clear();
-	mMainMipViews.clear();
-	mLayerMipViews.clear();
-	mTextureFBOs.clear();
-}
-#else
-void Texture::InvalidateDeviceObjects()
-{
+	residentHandles.clear();
 	for(auto i:mTextureFBOs)
 	{
 		glDeleteFramebuffers(i.size(),i.data());
 	}
 	mTextureFBOs.clear();
-    std::vector<GLuint> toDeleteTextures;
+    std::set<GLuint> toDeleteTextures;
     for (auto &texIdVector: mLayerMipViews)
     {
         for (GLuint texId : texIdVector)
         {
             if (texId && texId != mTextureID)
-                toDeleteTextures.push_back(texId);
+                toDeleteTextures.insert(texId);
         }
         texIdVector.clear();
     }
@@ -256,29 +230,52 @@ void Texture::InvalidateDeviceObjects()
     for (GLuint texId : mMainMipViews)
     {
         if (texId && texId != mTextureID)
-            toDeleteTextures.push_back(texId);
+            toDeleteTextures.insert(texId);
     }
     mMainMipViews.clear();
     for (GLuint texId : mLayerViews)
     {
         if (texId && texId != mTextureID)
-            toDeleteTextures.push_back(texId);
+            toDeleteTextures.insert(texId);
     }
     mLayerViews.clear();
     if (mCubeArrayView != 0 && mCubeArrayView != mTextureID)
     {
-        toDeleteTextures.push_back(mCubeArrayView);
+        toDeleteTextures.insert(mCubeArrayView);
     }
-   if (mTextureID != 0)
-   {
-        toDeleteTextures.push_back(mTextureID);
-   }
-    glDeleteTextures(toDeleteTextures.size(), toDeleteTextures.data());
+	toDeleteTextures.insert(mTextureID);
+	for(auto t:toDeleteTextures)
+	{
+		if(external_texture&&t==mTextureID)
+			toDeleteTextures.erase(t);
+	}
+	//renderPlatform->
+	auto *rp=(opengl::RenderPlatform*)renderPlatform;
+	if(rp)
+	{
+		//rp->ClearResidentTextures();
+		//rp->DeleteGLTextures(toDeleteTextures);
+	}
+	for(auto t:toDeleteTextures)
+	{
+		glDeleteTextures(1,&t);
+	}
+
     mCubeArrayView = 0;
-   mTextureID = 0;
+	mTextureID = 0;
 }
-#endif
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
+
+void Texture::MakeHandleResident(GLuint64 thandle)
+{
+	if(!renderPlatform)
+		return;
+	if(residentHandles.find(thandle)!=residentHandles.end())
+		return;
+	glMakeTextureHandleResidentARB(thandle);
+	residentHandles.insert(thandle);
+}
+
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -287,9 +284,11 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPla
 
 	if (mTextureID == 0 || mTextureID != gt|| qw != width || qh != length)
 	{
+		renderPlatform=r;
 		InitViews(1, 1, false);
 
 		mTextureID				= gt;
+		external_texture		=true;
 		mMainMipViews[0]		= mTextureID;
 		mLayerMipViews[0][0]	= mMainMipViews[0];	 
 
@@ -302,13 +301,14 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPla
 	}
 }
 
-bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* renderPlatform, int w, int l,
+bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l,
 											crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
 											vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
 {
 	if (!IsSame(w, l, 1, 1, 1, num_samples))
 	{
 		InvalidateDeviceObjects();
+		renderPlatform=r;
 // TODO: SUpport higher mips.
 int m=1;
 		width		= w;
@@ -321,7 +321,7 @@ int m=1;
 		cubemap	 = false;
 		mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(f);
 
-		glGenTextures_DONT_REUSE(1, &mTextureID);
+		glGenTextures(1, &mTextureID);
 		glBindTexture(num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, mTextureID);
 		if (num_samples == 1)
 		{
@@ -344,7 +344,7 @@ int m=1;
 		std::string viewName;
 		// Mip views:
 		{
-			glGenTextures_DONT_REUSE(m, mMainMipViews.data());
+			glGenTextures(m, mMainMipViews.data());
 			GLenum target = GL_TEXTURE_2D;
 			for (int mip = 0; mip < m; mip++)
 			{
@@ -359,7 +359,7 @@ int m=1;
 		{
 			for (int i = 0; i < arraySize; i++)
 			{
-				glGenTextures_DONT_REUSE(m, mLayerMipViews[i].data());
+				glGenTextures(m, mLayerMipViews[i].data());
 				for (int mip = 0; mip < m; mip++)
 				{
 					glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D, mTextureID, mInternalGLFormat, mip, 1, i, 1);
@@ -396,12 +396,13 @@ int m=1;
 	return false;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool ascubemap /*= false*/)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool ascubemap /*= false*/)
 {
 	int totalCnt = ascubemap ? 6 * num : num;
 	if (!IsSame(w, l, 1, totalCnt, nmips, 1))
 	{
 		InvalidateDeviceObjects();
+		renderPlatform=r;
 
 		width		= w;
 		length		= l;
@@ -414,7 +415,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 
 		mInternalGLFormat	= opengl::RenderPlatform::ToGLFormat(f);
 		
-		glGenTextures_DONT_REUSE(1, &mCubeArrayView);
+		glGenTextures(1, &mCubeArrayView);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, mCubeArrayView);
 		glTextureStorage3D(mCubeArrayView, mips, mInternalGLFormat, width, length, totalCnt);
 		SetDefaultSampling(mCubeArrayView);
@@ -428,7 +429,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 			// We need to set the proper target:
 			if (cubemap)
 			{
-				glGenTextures_DONT_REUSE(1, &mTextureID);
+				glGenTextures(1, &mTextureID);
 				glTextureView
 				(
 					mTextureID, 
@@ -450,7 +451,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 
 		// Layer view:
 		{
-			glGenTextures_DONT_REUSE(totalCnt, mLayerViews.data());
+			glGenTextures(totalCnt, mLayerViews.data());
 			for (int i = 0; i < totalCnt; i++)
 			{
 				glTextureView(mLayerViews[i], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, 0, nmips, i, 1);
@@ -465,7 +466,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 		{
 			if (cubemap)
 			{
-				glGenTextures_DONT_REUSE(nmips, mMainMipViews.data());
+				glGenTextures(nmips, mMainMipViews.data());
 				GLenum target = GL_TEXTURE_CUBE_MAP;
 				if (num > 1)
 				{
@@ -482,7 +483,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 			}
 			else
 			{
-				glGenTextures_DONT_REUSE(nmips, mMainMipViews.data());
+				glGenTextures(nmips, mMainMipViews.data());
 				GLenum target = GL_TEXTURE_2D_ARRAY;
 				for (int mip = 0; mip < nmips; mip++)
 				{
@@ -500,7 +501,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 		{
 			for (int i = 0; i < totalCnt; i++)
 			{
-				glGenTextures_DONT_REUSE(nmips, mLayerMipViews[i].data());
+				glGenTextures(nmips, mLayerMipViews[i].data());
 				for (int mip = 0; mip < nmips; mip++)
 				{
 					glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
@@ -519,11 +520,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* ren
 	return false;
 }
 
-bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable /*= false*/, int nmips /*= 1*/, bool rendertargets /*= false*/)
+bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable /*= false*/, int nmips /*= 1*/, bool rendertargets /*= false*/)
 {
 	if (!IsSame(w, l, d, 1, nmips, 1))
 	{
 		InvalidateDeviceObjects();
+		renderPlatform=r;
 
 		width		= w;
 		length		= l;
@@ -536,7 +538,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* render
 
 		mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(frmt);
 
-		glGenTextures_DONT_REUSE(1, &mTextureID);
+		glGenTextures(1, &mTextureID);
 		glBindTexture(GL_TEXTURE_3D, mTextureID);
 		glTextureStorage3D(mTextureID, mips, mInternalGLFormat, width, length, depth);
 		SetDefaultSampling(mTextureID);
@@ -554,7 +556,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* render
 
 		// Mip views:
 		{
-			glGenTextures_DONT_REUSE(nmips, mMainMipViews.data());
+			glGenTextures(nmips, mMainMipViews.data());
 			for (int mip = 0; mip < nmips; mip++)
 			{
 				glTextureView(mMainMipViews[mip], GL_TEXTURE_3D, mTextureID, mInternalGLFormat, mip, 1, 0, 1);

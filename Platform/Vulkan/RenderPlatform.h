@@ -124,6 +124,7 @@ namespace simul
 			void									CreatVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
 			void									CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false);
 			vk::RenderPass							*GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
+			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
         private:
 			vk::Instance		*vulkanInstance=nullptr;
 			vk::PhysicalDevice	*vulkanGpu=nullptr;
@@ -133,6 +134,7 @@ namespace simul
             vulkan::Texture*    mDummyTextureCube=nullptr;
             vulkan::Texture*    mDummyTextureCubeArray=nullptr;
 			vk::DescriptorPool mDescriptorPool;
+			static crossplatform::PixelFormat defaultColourFormat;
 		};
 	}
 }

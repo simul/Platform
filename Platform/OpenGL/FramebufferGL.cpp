@@ -31,7 +31,10 @@ void FramebufferGL::SetWidthAndHeight(int w, int h, int m)
 {
     if (Width != w || Height != h || mips != m)
     {
-        InvalidateDeviceObjects();
+        if(buffer_texture)
+			buffer_texture->InvalidateDeviceObjects();
+		if(buffer_depth_texture)
+			buffer_depth_texture->InvalidateDeviceObjects();
         Width   = w;
         Height  = h;
         mips    = m;
@@ -52,7 +55,8 @@ void FramebufferGL::SetFormat(crossplatform::PixelFormat f)
         return;
     }
     target_format = f;
-    InvalidateDeviceObjects();
+	if(buffer_texture&&!external_texture)
+		buffer_texture->InvalidateDeviceObjects();
 }
 
 void FramebufferGL::SetDepthFormat(crossplatform::PixelFormat f)
@@ -62,7 +66,8 @@ void FramebufferGL::SetDepthFormat(crossplatform::PixelFormat f)
         return;
     }
     depth_format = f;
-    InvalidateDeviceObjects();
+	if(buffer_depth_texture&&!external_depth_texture)
+		buffer_depth_texture->InvalidateDeviceObjects();
 }
 
 bool FramebufferGL::IsValid() const
@@ -138,18 +143,28 @@ bool FramebufferGL::CreateBuffers()
         buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality);
     }
 
+	glDeleteFramebuffers(mFBOId.size(),mFBOId.data());
+	
+	int faces=is_cubemap?6:1;
+	mFBOId.resize(mips*(faces));
     // Generate GL FBO:
-    glGenFramebuffers(1, &mFBOId);
-    glBindFramebuffer(GL_FRAMEBUFFER, mFBOId);
-    {
-        auto glcolour = (opengl::Texture*)buffer_texture;
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glcolour->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D), 0);
-        if (depth_format != crossplatform::UNKNOWN)
-        {
-            auto gldepth = (opengl::Texture*)buffer_depth_texture;
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gldepth->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D), 0);
-        }
-    }
+    glGenFramebuffers(mFBOId.size(), mFBOId.data());
+	auto &f=mFBOId.begin();
+	for(int i=0;i<mips;i++)
+	for(int j=0;j<faces;j++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER,*f);
+		{
+			auto glcolour = (opengl::Texture*)buffer_texture;
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glcolour->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D,j,i), 0);
+			if (depth_format != crossplatform::UNKNOWN)
+			{
+				auto gldepth = (opengl::Texture*)buffer_depth_texture;
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gldepth->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D,j,i), 0);
+			}
+		}
+		f++;
+	}
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     
     return true;
@@ -157,11 +172,8 @@ bool FramebufferGL::CreateBuffers()
 
 void FramebufferGL::InvalidateDeviceObjects()
 {
-    if (mFBOId != 0)
-    {
-        glDeleteFramebuffers(1, &mFBOId);
-        mFBOId = 0;
-    }
+	glDeleteFramebuffers(mFBOId.size(),mFBOId.data());
+    mFBOId.clear();
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
@@ -169,7 +181,10 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
-    glBindFramebuffer(GL_FRAMEBUFFER, mFBOId);
+	int fb=0;
+	if(is_cubemap)
+		fb=current_face;
+    glBindFramebuffer(GL_FRAMEBUFFER, mFBOId[fb]);
     colour_active   = true;
     opengl::Texture* glcol      = (opengl::Texture*)buffer_texture;
     opengl::Texture* gldepth    = nullptr;
@@ -187,12 +202,12 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
     // We need to attach the requested face:
     if (is_cubemap)
     {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glcol->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D, current_face), 0);
+       // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glcol->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D, current_face), 0);
     }
 
     // Construct targets and viewport:
     targetsAndViewport.num              = 1;
-    targetsAndViewport.m_rt[0]          = (void*)mFBOId;
+    targetsAndViewport.m_rt[0]          = (void*)mFBOId[fb];
     targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;
@@ -254,7 +269,7 @@ void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
     if (depth_active)
     {
         depth_active = false;
-		glBindFramebuffer(GL_FRAMEBUFFER, mFBOId);
+		glBindFramebuffer(GL_FRAMEBUFFER, mFBOId[is_cubemap?current_face:0]);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
     }
 }

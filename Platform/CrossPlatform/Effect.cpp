@@ -55,6 +55,7 @@ EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 	,rwTextureSlotsForSB(0)
 	,should_fence_outputs(true)
 	,platform_pass(nullptr)
+	,renderPlatform(r)
 	,effect(parent)
 {
 	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)

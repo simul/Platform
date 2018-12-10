@@ -159,7 +159,7 @@ void DisplaySurface::InitSwapChain()
 	// Initialize the swap chain description.
 }
 
-void DisplaySurface::Render()
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
 {
 	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 	deferredContext.platform_context=immediateContext.platform_context;

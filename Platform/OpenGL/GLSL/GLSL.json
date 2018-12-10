@@ -9,6 +9,7 @@
 	,"multiplePixelOutputFormats"	: false
 	,"define"						: {
 		"SFX_TYPED_UAV_LOADS"		:"1",
+		"GLSL"						:"1",
 		"SFX_GLSL"					:"1",
 		"SFX_OPENGL"				:"1"
 	}

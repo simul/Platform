@@ -41,7 +41,7 @@ namespace simul
             bool IsValid() const override;
 
         protected:
-            GLuint mFBOId;
+            std::vector<GLuint> mFBOId;// either one fb or six, depending if it's a cubemap. times the number of mips.
 		};
 	}
 }

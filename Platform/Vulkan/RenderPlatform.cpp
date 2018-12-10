@@ -288,7 +288,7 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::D
 {
 	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
 	{
-		pixelFormat=crossplatform::PixelFormat::BGRA_8_UNORM;
+		pixelFormat=defaultColourFormat;
 		crossplatform::TargetsAndViewport *tv=&deviceContext.defaultTargetsAndViewport;
 		if(deviceContext.targetStack.size())
 		{
@@ -361,9 +361,12 @@ crossplatform::Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8)
         if (str.find(".") < str.length())
         {
             tex->LoadFromFile(this, fileNameUtf8);
+	ERRNO_BREAK
         }
 	}
+	ERRNO_BREAK
     tex->SetName(fileNameUtf8);
+	ERRNO_BREAK
 	return tex;
 }
 
@@ -1160,6 +1163,12 @@ vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::DeviceC
 			return nullptr;
 	}
 	return nullptr;
+}
+
+ crossplatform::PixelFormat RenderPlatform::defaultColourFormat=crossplatform::PixelFormat::UNKNOWN;
+void RenderPlatform::SetDefaultColourFormat(crossplatform::PixelFormat p)
+{
+	defaultColourFormat=p;
 }
 
 vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext)
