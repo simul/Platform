@@ -67,9 +67,9 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.valid						=1;
 	vec3 cloudWorldOffsetKm			=res.pos_km-cornerPosKm;
 	vec3 cloudTexCoords				=cloudWorldOffsetKm*inverseScalesKm;
-	vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+	vec4 lookup						=sample_3d_lod(cloudDensity,wwcSamplerState,cloudTexCoords,0);
 	res.density						=lookup.z;
-	vec4 light_lookup				=sample_3d_lod(cloudDensity2,cloudSamplerState,cloudTexCoords,0);
+	vec4 light_lookup				=sample_3d_lod(cloudDensity2,wwcSamplerState,cloudTexCoords,0);
 	res.direct_light				=light_lookup.y;
 	res.indirect_light				=light_lookup.x;
 	res.ambient_light				=light_lookup.w;
@@ -130,7 +130,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 		{
 			vec3 pos						=lerp(start_pos,end_pos,float(i)/32.0);
 			vec3 cloudTexCoords				=(pos-cornerPosKm)*inverseScalesKm;
-			vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+			vec4 lookup						=sample_3d_lod(cloudDensity,wwcSamplerState,cloudTexCoords,0);
 			if(res.density==0.0&&lookup.z>0)
 				res.first_contact_km		=min(res.first_contact_km,length(pos-orig));
 			res.density						+=lookup.z/32.0;
@@ -589,7 +589,7 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 	{
 		float tex_z		=float(14.0-i)/20.0;
 		vec3 texc		=vec3(IN.texCoords.xy,tex_z);
-		vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
+		vec4 density	=sample_3d_lod(cloudDensity,wwcSamplerState,texc,0);
 		total_cloud		+=0.125*density.z;
 		thickness		+=1.0*density.z;		// effective cloud thickness in km.
 		max_tex_z		=max(max_tex_z,step(1.0, thickness)*tex_z);

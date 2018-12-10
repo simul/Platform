@@ -41,8 +41,8 @@ uniform StructuredBuffer<vec4> starsSB;
 #include "../SL/depth.sl"
 #include "../SL/debug_constants.sl"
 
-uniform RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
-uniform StructuredBuffer<vec3> lightingQueryInputs;
+uniform RWStructuredBuffer<LightingQueryResult> lightingQueryResults: register (u1);
+uniform StructuredBuffer<vec3> lightingQueryInputs: register (t2);
 
 CS_LAYOUT(1,1,1)
 shader void CS_InterpLightTable(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)

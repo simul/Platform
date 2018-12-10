@@ -15,7 +15,7 @@ uniform Texture2D skylTexture;
 
 uniform Texture3D cloudTexture;
 uniform Texture2D godraysTexture;
-SamplerState cloudSamplerState;
+//SamplerState cloudSamplerState;
 uniform TextureCube cubeDepthTexture;
 uniform TextureCube cubeUpdateTexture;
 uniform RWTexture3D<vec4> targetVolume SIMUL_RWTEXTURE_REGISTER(0);
@@ -106,7 +106,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		//if(viewposCloudspace.z>0.0&&viewposCloudspace.z<1.0)
 		{
 			// NOTE(NACHO): dealing with glsl here
-			illum = GetCloudIllum(cloudTexture,cloudSamplerState,posCloudspace,lightDirCloudspace,clampClouds,1.0-averageCoverage);
+			illum = GetCloudIllum(cloudTexture,wwcSamplerState,posCloudspace,lightDirCloudspace,clampClouds,1.0-averageCoverage);
 		}
 		total_illum				*=illum;
 		float t					=0.1;
