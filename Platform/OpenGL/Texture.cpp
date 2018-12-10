@@ -203,32 +203,7 @@ bool Texture::IsValid()const
 {
 	return mTextureID != 0;
 }
-#if 0
-void Texture::InvalidateDeviceObjects()
-{
-	if ((!external_texture)&&mTextureID != 0)
-	{
-		DeleteTextures(mLayerViews.size(), mLayerViews.data());
-		DeleteTextures(mMainMipViews.size(), mMainMipViews.data());
-		for(auto i:mLayerMipViews)
-		{
-			DeleteTextures(i.size(),i.data());
-		}
-		for(auto i:mTextureFBOs)
-		{
-			glDeleteFramebuffers(i.size(),i.data());
-		}
-		DeleteTextures(1, &mCubeArrayView);
-		DeleteTextures(1, &mTextureID);
-		mTextureID = 0;
-		mCubeArrayView=0;
-	}
-	mLayerViews.clear();
-	mMainMipViews.clear();
-	mLayerMipViews.clear();
-	mTextureFBOs.clear();
-}
-#else
+
 void Texture::InvalidateDeviceObjects()
 {
 	for(auto u:residentHandles)
@@ -279,7 +254,7 @@ void Texture::InvalidateDeviceObjects()
 	if(rp)
 	{
 		//rp->ClearResidentTextures();
-	//	rp->DeleteGLTextures(toDeleteTextures);
+		//rp->DeleteGLTextures(toDeleteTextures);
 	}
 	for(auto t:toDeleteTextures)
 	{
@@ -289,16 +264,17 @@ void Texture::InvalidateDeviceObjects()
     mCubeArrayView = 0;
 	mTextureID = 0;
 }
-#endif
+
 void Texture::MakeHandleResident(GLuint64 thandle)
 {
 	if(!renderPlatform)
 		return;
 	if(residentHandles.find(thandle)!=residentHandles.end())
 		return;
-   glMakeTextureHandleResidentARB(thandle);
+	glMakeTextureHandleResidentARB(thandle);
 	residentHandles.insert(thandle);
 }
+
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
 {
 	float qw, qh;
