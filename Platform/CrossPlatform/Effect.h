@@ -882,7 +882,7 @@ namespace simul
 				std::map<std::string,std::string> defines;
 				Load(r,filename_utf8,defines);
 			}
-			virtual void Compile(const char *filename_utf8){};
+			virtual void Compile(const char *){};
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{

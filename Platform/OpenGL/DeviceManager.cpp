@@ -21,7 +21,7 @@
 #include <stdint.h> // for uintptr_t
 #include <iomanip>
 #include "glad/glad.h"
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 #define GLFW_EXPOSE_NATIVE_WGL
 #include <GLFW/glfw3native.h>
 
@@ -37,7 +37,7 @@ using namespace opengl;
 using namespace std;
 
 #ifdef _DEBUG
-#pragma comment(lib, "glfw3")
+#pragma comment(lib, "glfw3d")
 #else
 #pragma comment(lib, "glfw3")
 #endif
