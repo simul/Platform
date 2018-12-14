@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
+file(GLOB CMAKE
+    "*.cmake"
+)
+
 file(GLOB SOURCES
 	"*.cpp" "glad.c"
 )
@@ -7,7 +11,7 @@ file(GLOB SOURCES
 file(GLOB HEADERS
     "*.h"
 )
-add_library(SimulDirectX11_MT ${SOURCES} ${HEADERS})
+add_library(SimulDirectX11_MT ${SOURCES} ${HEADERS} ${CMAKE})
 target_compile_definitions(SimulDirectX11_MT PRIVATE SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1)
 set_target_properties(SimulDirectX11_MT PROPERTIES FOLDER Static)
 target_include_directories(SimulDirectX11_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/Effects11_Win8SDK/inc" )
@@ -16,7 +20,7 @@ target_include_directories(SimulDirectX11_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platfo
 LibraryDefaults(SimulDirectX11_MT)
 
 link_directories( ${CMAKE_SOURCE_DIR}/lib//x64/v140/Debug)
-add_library(SimulDirectX11_MD SHARED ${SOURCES} ${HEADERS})
+add_library(SimulDirectX11_MD SHARED ${SOURCES} ${HEADERS} ${CMAKE})
 target_compile_definitions(SimulDirectX11_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1)
 set_target_properties(SimulDirectX11_MD PROPERTIES FOLDER Dynamic)
 target_include_directories(SimulDirectX11_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/Effects11_Win8SDK/inc" )

@@ -1,19 +1,18 @@
 #pragma once
-#include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/Vulkan/Export.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include <string>
 #include <map>
-#include "glad/glad.h"
 
 #pragma warning(disable:4251)
 
 typedef unsigned int GLuint;
 namespace simul
 {
-	namespace opengl
+	namespace vulkan
 	{
-		SIMUL_OPENGL_EXPORT_CLASS Profiler:public simul::crossplatform::GpuProfiler
+		SIMUL_VULKAN_EXPORT_CLASS Profiler:public simul::crossplatform::GpuProfiler
 		{
 		public:
 			static Profiler &GetGlobalProfiler();

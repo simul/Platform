@@ -1,11 +1,10 @@
 #pragma once
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/Layout.h"
-#include "glad/glad.h"
 
 namespace simul
 {
-	namespace opengl
+	namespace vulkan
 	{
         //! Holds current vertex buffer layout information:
 		class Layout:public crossplatform::Layout

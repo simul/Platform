@@ -2,7 +2,7 @@
 #include "RenderPlatform.h"
 
 using namespace simul;
-using namespace opengl;
+using namespace vulkan;
 
 Layout::Layout()
 {
