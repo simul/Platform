@@ -493,6 +493,9 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 	
+	vk::ImageCreateFlags imageCreateFlags;
+	if(depthstencil)
+		imageCreateFlags|=vk::ImageCreateFlagBits::eMutableFormat;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	vk::FormatProperties props;
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
@@ -508,6 +511,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		.setSamples(vk::SampleCountFlagBits::e1)
 		.setTiling(vk::ImageTiling::eOptimal)
 		.setUsage(usageFlags)
+		.setFlags(imageCreateFlags)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)

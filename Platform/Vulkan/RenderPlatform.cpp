@@ -355,6 +355,7 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 crossplatform::Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture* tex= new vulkan::Texture;
+	ERRNO_BREAK
     if (fileNameUtf8 && strlen(fileNameUtf8) > 0 && strcmp(fileNameUtf8, "ESRAM") != 0)
 	{
 		std::string str(fileNameUtf8);
