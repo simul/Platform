@@ -360,6 +360,7 @@ crossplatform::Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8)
 		std::string str(fileNameUtf8);
         if (str.find(".") < str.length())
         {
+			ERRNO_BREAK
             tex->LoadFromFile(this, fileNameUtf8);
 	ERRNO_BREAK
         }
