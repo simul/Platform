@@ -736,8 +736,11 @@ void DisplaySurface::CreateDefaultPipeline()
 }
 
 
-void DisplaySurface::Render()
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
 {
+
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->lock_for_write();
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 // Ensure no more than FRAME_LAG renderings are outstanding
 	vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
@@ -811,6 +814,8 @@ void DisplaySurface::Render()
 	current_buffer++;
 	current_buffer=current_buffer%(swapchain_image_resources.size());
 	Resize();
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->unlock_from_write();
 }
 
 void DisplaySurface::Present()
