@@ -296,6 +296,7 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::D
 		if(tv&&tv->textureTargets[0].texture)
 			pixelFormat=tv->textureTargets[0].texture->pixelFormat;
 	}
+	SIMUL_ASSERT_WARN_ONCE(pixelFormat != crossplatform::PixelFormat::UNKNOWN, "Unknown active pixel format!");
 	return pixelFormat;
 }
 
@@ -354,11 +355,13 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 crossplatform::Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture* tex= new vulkan::Texture;
+	ERRNO_BREAK
     if (fileNameUtf8 && strlen(fileNameUtf8) > 0 && strcmp(fileNameUtf8, "ESRAM") != 0)
 	{
 		std::string str(fileNameUtf8);
         if (str.find(".") < str.length())
         {
+			ERRNO_BREAK
             tex->LoadFromFile(this, fileNameUtf8);
 	ERRNO_BREAK
         }

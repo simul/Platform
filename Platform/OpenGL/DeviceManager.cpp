@@ -37,7 +37,7 @@ using namespace opengl;
 using namespace std;
 
 #ifdef _DEBUG
-#pragma comment(lib, "glfw3d")
+#pragma comment(lib, "glfw3")
 #else
 #pragma comment(lib, "glfw3")
 #endif

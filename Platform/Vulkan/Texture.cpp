@@ -493,6 +493,9 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 	
+	vk::ImageCreateFlags imageCreateFlags;
+	if(depthstencil)
+		imageCreateFlags|=vk::ImageCreateFlagBits::eMutableFormat;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	vk::FormatProperties props;
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
@@ -508,6 +511,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		.setSamples(vk::SampleCountFlagBits::e1)
 		.setTiling(vk::ImageTiling::eOptimal)
 		.setUsage(usageFlags)
+		.setFlags(imageCreateFlags)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
@@ -566,10 +570,12 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	else if(layers>1)
 		viewType=vk::ImageViewType::e2DArray;
 	int totalNum = cubemap ? 6 * layers : layers;
-	f=crossplatform::RenderPlatform::ToColourFormat(f);
-	vk::ImageAspectFlags imageAspectFlags=vk::ImageAspectFlagBits::eColor;
+	//f=crossplatform::RenderPlatform::ToColourFormat(f);
+	vk::ImageAspectFlags imageAspectFlags;
 	if(crossplatform::RenderPlatform::IsDepthFormat(f))
-		imageAspectFlags|=vk::ImageAspectFlagBits::eDepth;
+		imageAspectFlags=vk::ImageAspectFlagBits::eDepth;
+	else
+		imageAspectFlags=vk::ImageAspectFlagBits::eColor;
 	if(isDepthTarget&&crossplatform::RenderPlatform::IsStencilFormat(f))
 		imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
@@ -1054,6 +1060,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLay
 	if(layer>=0&&mip>=0)
 	{
 		vk::ImageLayout &l=mLayerMipLayouts[layer][mip];
+		if (split_layouts)
+		{
+			l = vk::ImageLayout::eUndefined;
+		}
 		barrier.setOldLayout(l);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask,mip,1,layer,1));
 		l=newLayout;

@@ -575,7 +575,6 @@ PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
 	{
 	case D_32_FLOAT:
 		return R_32_FLOAT;
-	//case D_24_UNORM_S_8_UINT:
 	case D_16_UNORM:
 		return R_16_FLOAT;
 	default:

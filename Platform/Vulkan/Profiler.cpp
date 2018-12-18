@@ -6,7 +6,7 @@ using std::string;
 using std::map;
 bool enabled=false;
 using namespace simul;
-using namespace opengl;
+using namespace vulkan;
 
 #ifndef _MSC_VER
 #include <cassert>
