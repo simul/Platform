@@ -297,6 +297,7 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::D
 		if(tv&&tv->textureTargets[0].texture)
 			pixelFormat=tv->textureTargets[0].texture->pixelFormat;
 	}
+	SIMUL_ASSERT_WARN_ONCE(pixelFormat != crossplatform::PixelFormat::UNKNOWN, "Unknown active pixel format!");
 	return pixelFormat;
 }
 

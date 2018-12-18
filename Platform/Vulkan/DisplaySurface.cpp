@@ -805,8 +805,12 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	
 	ERRNO_BREAK
 	if (renderer)
-		renderer->Render(mViewId, deferredContext.platform_context,&swapchain_image_resources[current_buffer].framebuffer
+	{
+		auto *rp = (vulkan::RenderPlatform*)renderPlatform;
+		rp->SetDefaultColourFormat(pixelFormat);
+		renderer->Render(mViewId, deferredContext.platform_context, &swapchain_image_resources[current_buffer].framebuffer
 			, viewport.w, viewport.h);
+	}
 
 	renderPlatform->RestoreRenderState(deferredContext);
 	commandBuffer.end();
