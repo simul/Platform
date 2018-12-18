@@ -47,14 +47,15 @@ void SphericalHarmonics::RecompileShaders()
 		return;
 	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect, "SphericalHarmonicsConstants");
-	
 	jitter							=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 	encode							=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	_samplesBuffer					=sphericalHarmonicsEffect->GetShaderResource("samplesBuffer");
 	_targetBuffer					=sphericalHarmonicsEffect->GetShaderResource("targetBuffer");
 	_samplesBufferRW				=sphericalHarmonicsEffect->GetShaderResource("samplesBufferRW");
 	_cubemapTexture					=sphericalHarmonicsEffect->GetShaderResource("cubemapTexture");
+	
 	lightProbesEffect				=renderPlatform->CreateEffect("light_probes");
+	lightProbeConstants.LinkToEffect(lightProbesEffect, "LightProbeConstants");
 	auto group						=lightProbesEffect->GetTechniqueGroupByName("mip_from_roughness");
 	mip_from_roughness_blend		=group->GetTechniqueByName("mip_from_roughness_blend");
 	mip_from_roughness_no_blend		=group->GetTechniqueByName("mip_from_roughness_no_blend");	
@@ -132,8 +133,8 @@ void SphericalHarmonics::CopyMip(crossplatform::DeviceContext &deviceContext,Tex
 		// The source is the i'th mip of the faceIndex face of the cubemap texture.
 		lightProbesEffect->SetTexture(deviceContext, "sourceCubemap", tex, -1, src_mip);
 		// The target is the (i+1)'th mip of the faceIndex face.
-		tex->activateRenderTarget(deviceContext, face, src_mip + 1);
-		lightProbesEffect->Apply(deviceContext, tech, passname);
+		tex->activateRenderTarget(deviceContext, face, src_mip + 1); //Something here -AJR
+		lightProbesEffect->Apply(deviceContext, tech, passname); 
 		renderPlatform->DrawQuad(deviceContext);
 		lightProbesEffect->UnbindTextures(deviceContext);
 		lightProbesEffect->Unapply(deviceContext);

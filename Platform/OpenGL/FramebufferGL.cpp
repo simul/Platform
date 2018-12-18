@@ -146,6 +146,7 @@ bool FramebufferGL::CreateBuffers()
 	glDeleteFramebuffers(mFBOId.size(),mFBOId.data());
 	
 	int faces=is_cubemap?6:1;
+	current_face = 0;
 	mFBOId.resize(mips*(faces));
     // Generate GL FBO:
     glGenFramebuffers(mFBOId.size(), mFBOId.data());
@@ -165,7 +166,7 @@ bool FramebufferGL::CreateBuffers()
 		}
 		f++;
 	}
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
     
     return true;
 }
@@ -185,7 +186,7 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
 	if(is_cubemap)
 		fb=current_face;
     glBindFramebuffer(GL_FRAMEBUFFER, mFBOId[fb]);
-    colour_active   = true;
+	colour_active   = true;
     opengl::Texture* glcol      = (opengl::Texture*)buffer_texture;
     opengl::Texture* gldepth    = nullptr;
     if (buffer_depth_texture)

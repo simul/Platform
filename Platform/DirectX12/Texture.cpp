@@ -823,7 +823,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			arraySize	= textureDesc.DepthOrArraySize;
 			mips		= textureDesc.MipLevels;
 		}
-		InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels); //Depth Texture was not having its InitStateTable updating, thus mSubResourcesStates.size() was 0. -AJR
+		//InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels); //Depth Texture was not having its InitStateTable updating, thus mSubResourcesStates.size() was 0. -AJR
 		depth       = textureDesc.DepthOrArraySize;
 
         // Create render target views for this external texture:
@@ -1802,6 +1802,11 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 	// Return a subresource state
 	int curMip		= (mip == -1) ? 0 : mip;
 	int curLayer	= (index == -1)? 0 : index;
+	if (mSubResourcesStates.empty()) //Temporary fixed - AJR
+	{
+		//SIMUL_CERR << "mSubResourcesStates.empty() = true. Returning mResourceState." << std::endl;
+		return mResourceState;
+	}
 	return mSubResourcesStates[curLayer][curMip];
 }
 
@@ -1830,6 +1835,12 @@ void Texture::SetCurrentState(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int
 	{
 		int curMip		= (mip == -1) ? 0 : mip;
 		int curLayer	= (index == -1) ? 0 : index;
+
+		if (mSubResourcesStates.empty()) //Temporary fixed - AJR
+		{
+			//SIMUL_CERR << "mSubResourcesStates.empty() = true. Setting state into mSubResourcesStates[0][0]." << std::endl;
+			mSubResourcesStates.push_back({ state });
+		}
 		mSubResourcesStates[curLayer][curMip] = state;
 		// Array Size == 1 && mips = 1 (it only has 1 sub resource)
 		// the asSRV code will return the mainSRV!

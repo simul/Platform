@@ -454,7 +454,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			glGenTextures(totalCnt, mLayerViews.data());
 			for (int i = 0; i < totalCnt; i++)
 			{
-				glTextureView(mLayerViews[i], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, 0, nmips, i, 1);
+				glTextureView(mLayerViews[i], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, 0, nmips, i, 1);
 				
 				// Debug name:
 				viewName = name + "_layer_" + std::to_string(i);
@@ -504,7 +504,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 				glGenTextures(nmips, mLayerMipViews[i].data());
 				for (int mip = 0; mip < nmips; mip++)
 				{
-					glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
+					glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
 
 
 					// Debug name:

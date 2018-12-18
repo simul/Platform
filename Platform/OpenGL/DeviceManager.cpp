@@ -297,7 +297,7 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 
 void DeviceManager::Activate()
 {
-    glfwMakeContextCurrent(offscreen_context);
+	glfwMakeContextCurrent(offscreen_context);
 }
 
 void DeviceManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)

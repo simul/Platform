@@ -251,14 +251,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		pass->Apply(deviceContext,false);
 		                                                                                                        
 		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(deviceContext);
-
 		vk::ClearValue const clearValues[2] = { vk::ClearColorValue(std::array<float, 4>({{0.0f, 0.0f, 0.0f, 0.0f}})),
 										   vk::ClearDepthStencilValue(0.0f, 0u) };
 		crossplatform::Viewport vp=GetViewport(deviceContext,0);
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 		
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo().setRenderPass(
-													pass->GetVulkanRenderPass(deviceContext,GetActivePixelFormat(deviceContext)))
+													pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext)))
 													.setFramebuffer(*framebuffer)
 													.setClearValueCount(2)
 													.setPClearValues(clearValues)

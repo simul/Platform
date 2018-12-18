@@ -468,7 +468,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             glAttachShader(mProgramId, c->ShaderId);
         }
         glLinkProgram(mProgramId);
-
+		
         // Check link status:
         GLint isLinked = 0;
         glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
