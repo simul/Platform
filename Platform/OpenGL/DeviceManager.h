@@ -32,7 +32,8 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 
-			void Activate() ;
+			void Activate();
+			void Deactivate();
 
 			void ReloadTextures();
 			// called late to start debug output.

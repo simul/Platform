@@ -122,6 +122,14 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 void DisplaySurface::InvalidateDeviceObjects()
 {
+#ifdef _MSC_VER
+	if (!wglGetCurrentContext())
+	{
+#ifdef _DEBUG
+		SIMUL_COUT<<"wglGetCurrentContext() returned NULL."<<std::endl; //glfwMakeCurrentContext(nullptr) or DeviceManager::Deactivate() would have been called - AJR
+#endif 
+		return;
+	}
 	if(!wglMakeCurrent(NULL,NULL))
 	{
 		SIMUL_CERR<<"wglMakeCurrent Failed."<<GetErr()<<std::endl;
@@ -138,6 +146,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 		hDC=NULL;                           // Set DC To NULL
 	}
 	hDC=nullptr;                           // Set DC To NULL
+#endif
 }
 
 void DisplaySurface::InitSwapChain()

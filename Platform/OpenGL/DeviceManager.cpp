@@ -300,6 +300,11 @@ void DeviceManager::Activate()
 	glfwMakeContextCurrent(offscreen_context);
 }
 
+void DeviceManager::Deactivate()
+{
+	glfwMakeContextCurrent(nullptr); //Need to called in SkySequencer, when closing the OpenGL view - AJR
+}
+
 void DeviceManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 }
