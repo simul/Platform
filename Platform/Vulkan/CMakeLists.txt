@@ -1,16 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
-file(GLOB CMAKE
-    "*.cmake"
-)
+file(GLOB CMAKE "*.cmake" )
+file(GLOB SOURCES "*.cpp" )
+file(GLOB HEADERS "*.h" )
 
-file(GLOB SOURCES
-	"*.cpp"
-)
-
-file(GLOB HEADERS
-    "*.h"
-)
 link_directories(${VULKAN_SDK_DIR}/Lib)
 add_library(SimulVulkan_MT ${SOURCES} ${HEADERS} ${CMAKE})
 target_compile_definitions(SimulVulkan_MT PRIVATE SIMUL_VULKAN_DLL=1 VK_USE_PLATFORM_WIN32_KHR VK_PROTOTYPES )

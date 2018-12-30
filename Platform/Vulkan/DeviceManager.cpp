@@ -351,14 +351,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	{
 		SIMUL_BREAK(
 			"Cannot find a compatible Vulkan installable client driver (ICD).\n\n"
-			"Please look at the Getting Started guide for additional information.\n",
+			"Please look at the Getting Started guide for additional information.\n"
 			"vkCreateInstance Failure");
 	}
 	else if (result == vk::Result::eErrorExtensionNotPresent)
 	{
 		SIMUL_BREAK(
 			"Cannot find a specified extension library.\n"
-			"Make sure your layers path is set appropriately.\n",
+			"Make sure your layers path is set appropriately.\n"
 			"vkCreateInstance Failure");
 	}
 	else if (result != vk::Result::eSuccess)
@@ -366,7 +366,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		SIMUL_BREAK(
 			"vkCreateInstance failed.\n\n"
 			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n",
+			"Please look at the Getting Started guide for additional information.\n"
 			"vkCreateInstance Failure");
 	}
 
