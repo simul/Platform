@@ -13,7 +13,6 @@
 #include "Simul/Platform/Vulkan/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
-#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/CrossPlatform/HdrRenderer.h"
 #include "Simul/Platform/Vulkan/DisplaySurface.h"
 #include "Simul/Sky/Float4.h"

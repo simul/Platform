@@ -17,7 +17,7 @@ target_include_directories(SimulDirectX12_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platfor
 target_include_directories(SimulDirectX12_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 LibraryDefaults(SimulDirectX12_MT)
 
-link_directories( ${CMAKE_SOURCE_DIR}/lib/x64/v140/Debug)
+link_directories( ${CMAKE_SOURCE_DIR}/lib/x64/v141/${CMAKE_BUILD_TYPE})
 add_library(SimulDirectX12_MD SHARED ${SOURCES} ${HEADERS} ${CMAKE} )
 target_compile_definitions(SimulDirectX12_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_DIRECTX12_DLL=1)
 set_target_properties(SimulDirectX12_MD PROPERTIES FOLDER Dynamic)

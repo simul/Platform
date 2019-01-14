@@ -14,7 +14,6 @@
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
-#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/CrossPlatform/HdrRenderer.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
