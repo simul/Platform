@@ -487,7 +487,7 @@ void DisplaySurface::InitSwapChain()
 	CreateFramebuffers();
 }
 
-void DisplaySurface::CreateRenderPass()
+void DisplaySurface::CreateRenderPass() 
 {
 	vulkanRenderPlatform->CreateVulkanRenderpass(render_pass,1,pixelFormat);
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
@@ -690,7 +690,7 @@ void DisplaySurface::CreateDefaultPipeline()
 		.setLineWidth(1.0f);
 
 	auto const multisampleInfo = vk::PipelineMultisampleStateCreateInfo();
-
+	
 	auto const stencilOp =
 		vk::StencilOpState().setFailOp(vk::StencilOp::eKeep).setPassOp(vk::StencilOp::eKeep).setCompareOp(vk::CompareOp::eAlways);
 

@@ -93,6 +93,8 @@ namespace simul
 		
             std::vector<std::vector<GLuint>>    mTextureFBOs;
 			std::set<GLuint64>					residentHandles;
+
+			int									mNumSamples = 1;
         };
 	}
 }
