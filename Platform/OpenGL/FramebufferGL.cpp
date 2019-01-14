@@ -156,12 +156,16 @@ bool FramebufferGL::CreateBuffers()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER,*f);
 		{
+			GLenum target = numAntialiasingSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
+			crossplatform::ShaderResourceType srt = numAntialiasingSamples == 1 ? crossplatform::ShaderResourceType::TEXTURE_2D : (crossplatform::ShaderResourceType::TEXTURE_2D|crossplatform::ShaderResourceType::MS);
+
 			auto glcolour = (opengl::Texture*)buffer_texture;
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glcolour->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D,j,i), 0);
+			auto gldepth = (opengl::Texture*)buffer_depth_texture;
+			
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, glcolour->AsOpenGLView(srt, j, i), 0);
 			if (depth_format != crossplatform::UNKNOWN)
 			{
-				auto gldepth = (opengl::Texture*)buffer_depth_texture;
-				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gldepth->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D,j,i), 0);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, gldepth->AsOpenGLView(srt, j, i), 0);
 			}
 		}
 		f++;
@@ -187,6 +191,7 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
 		fb=current_face;
     glBindFramebuffer(GL_FRAMEBUFFER, mFBOId[fb]);
 	colour_active   = true;
+	GLenum target = numAntialiasingSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
     opengl::Texture* glcol      = (opengl::Texture*)buffer_texture;
     opengl::Texture* gldepth    = nullptr;
     if (buffer_depth_texture)
@@ -195,7 +200,7 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
         // Re-attach depth (we dont really to do this every time, only if we called deactivate depth)
         if (depth_active == false)
         {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gldepth->GetGLMainView(), 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, gldepth->GetGLMainView(), 0);
         }
         depth_active    = true;
     }

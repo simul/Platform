@@ -255,9 +255,9 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 										   vk::ClearDepthStencilValue(0.0f, 0u) };
 		crossplatform::Viewport vp=GetViewport(deviceContext,0);
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
-		
-		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo().setRenderPass(
-													pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext)))
+
+		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
+													.setRenderPass(pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext)))
 													.setFramebuffer(*framebuffer)
 													.setClearValueCount(2)
 													.setPClearValues(clearValues)
@@ -984,8 +984,49 @@ void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& device
     SetRenderState(deviceContext, standardRenderStates[s]);
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
+	vulkan::Texture* src = (vulkan::Texture*)source;
+	vulkan::Texture* dst = (vulkan::Texture*)destination;
+	if (!src || !dst)
+	{
+		SIMUL_CERR << "Failed to Resolve.\n";
+		return;
+	}
+
+	//Both have valid pixel formats
+	vk::Format resolveFormat;
+	if (src->pixelFormat != crossplatform::PixelFormat::UNKNOWN  && dst->pixelFormat != crossplatform::PixelFormat::UNKNOWN)
+	{
+		resolveFormat = vulkan::RenderPlatform::ToVulkanFormat(src->pixelFormat);
+	}
+
+	//Resolve src image to dst image
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	
+	const vk::CommandBufferBeginInfo beginInfoOneTime = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	const vk::CommandBufferBeginInfo beginInfoSimultaneous = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+
+	vk::ImageResolve imageResolve;
+	imageResolve.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+	imageResolve.srcOffset = vk::Offset3D(0, 0, 0);
+	imageResolve.dstSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+	imageResolve.dstOffset = vk::Offset3D(0, 0 ,0);
+	imageResolve.extent = vk::Extent3D(deviceContext.defaultTargetsAndViewport.viewport.w, deviceContext.defaultTargetsAndViewport.viewport.h, 1);
+	
+	crossplatform::ContextState* cs = &deviceContext.contextState;
+	vulkan::EffectPass* pass = (vulkan::EffectPass*)cs->currentEffectPass;
+
+	if (commandBuffer)
+	{
+		commandBuffer->end();
+
+		commandBuffer->begin(beginInfoOneTime);
+		commandBuffer->resolveImage(src->GetImage(), vk::ImageLayout::eTransferSrcOptimal, dst->GetImage(), vk::ImageLayout::eSharedPresentKHR, imageResolve);
+		//commandBuffer->end();
+
+		//commandBuffer->begin(beginInfoSimultaneous);
+	}
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
@@ -1234,7 +1275,7 @@ void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_c
 														  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 		colour_reference[i].setAttachment(i).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	}
-	
+		
 	if(depth)
 	{
 		attachments[num_attachments-1]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(depthFormat))

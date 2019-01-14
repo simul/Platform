@@ -566,9 +566,8 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 		if(!rp)
 		{
-			auto  color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-					auto  depth_reference =
-				vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			auto color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+			auto depth_reference = vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 			auto subpass = vk::SubpassDescription()
 							.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);

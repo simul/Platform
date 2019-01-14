@@ -121,6 +121,10 @@ namespace simul
 			vk::DeviceMemory mMem;
 			std::vector<LoadedTexture>					loadedTextures;
 			bool split_layouts;
+			int	 mNumSamples = 1;
+
+		public:
+			vk::Image GetImage()const { return mImage; } //AJR
         };
 	}
 

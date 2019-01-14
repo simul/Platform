@@ -320,18 +320,19 @@ int m=1;
 		pixelFormat = f;
 		cubemap	 = false;
 		mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(f);
+		mNumSamples = num_samples;
 
 		glGenTextures(1, &mTextureID);
 		glBindTexture(num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, mTextureID);
 		if (num_samples == 1)
 		{
 			glTextureStorage2D(mTextureID, 1, mInternalGLFormat, w, l);
+			SetDefaultSampling(mTextureID);
 		}
 		else
 		{
 			glTextureStorage2DMultisample(mTextureID, num_samples, mInternalGLFormat, w, l, GL_TRUE);
 		}
-		SetDefaultSampling(mTextureID);
 		glBindTexture(num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, 0);
 		SetName(name.c_str());
 
@@ -345,7 +346,7 @@ int m=1;
 		// Mip views:
 		{
 			glGenTextures(m, mMainMipViews.data());
-			GLenum target = GL_TEXTURE_2D;
+			GLenum target = num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
 			for (int mip = 0; mip < m; mip++)
 			{
 				glTextureView(mMainMipViews[mip], target, mTextureID, mInternalGLFormat, mip, 1, 0, arraySize);
@@ -360,9 +361,10 @@ int m=1;
 			for (int i = 0; i < arraySize; i++)
 			{
 				glGenTextures(m, mLayerMipViews[i].data());
+				GLenum target = num_samples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
 				for (int mip = 0; mip < m; mip++)
 				{
-					glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D, mTextureID, mInternalGLFormat, mip, 1, i, 1);
+					glTextureView(mLayerMipViews[i][mip], target, mTextureID, mInternalGLFormat, mip, 1, i, 1);
 					viewName = name + "_layer_" + std::to_string(i) + "_mip_" + std::to_string(mip);
 					SetGLName(viewName.c_str(), mLayerMipViews[i][mip]);
 				}
@@ -620,7 +622,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
 
 	targetsAndViewport.num				= 1;
 	targetsAndViewport.m_rt[0]			= (void*)mTextureFBOs[array_index][mip_index];
-	targetsAndViewport.m_dt			 = nullptr;
+	targetsAndViewport.m_dt				= nullptr;
 	targetsAndViewport.viewport.x		= 0;
 	targetsAndViewport.viewport.y		= 0;
 	targetsAndViewport.viewport.w		= std::max(1, (width >> mip_index));
@@ -657,7 +659,7 @@ int Texture::GetDimension()const
 
 int Texture::GetSampleCount()const
 {
-	return 0;
+	return mNumSamples == 1 ? 0 : mNumSamples; //Updated for MSAA texture -AJR
 }
 
 bool Texture::IsComputable()const
@@ -770,7 +772,7 @@ void Texture::CreateFBOs(int sampleCount)
 		{
 			glGenFramebuffers(1, &mTextureFBOs[i][mip]);
 			glBindFramebuffer(GL_FRAMEBUFFER, mTextureFBOs[i][mip]);
-			if (GetSampleCount() == 0)
+			if (sampleCount == 1)
 			{
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mLayerMipViews[i][mip], 0);
 			}

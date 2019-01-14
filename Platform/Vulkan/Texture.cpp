@@ -508,7 +508,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		.setExtent({ (uint32_t)w, (uint32_t)l, (int32_t)1 })
 		.setMipLevels(1)
 		.setArrayLayers(1)
-		.setSamples(vk::SampleCountFlagBits::e1)
+		.setSamples((vk::SampleCountFlagBits)num_samples) //AJR
 		.setTiling(vk::ImageTiling::eOptimal)
 		.setUsage(usageFlags)
 		.setFlags(imageCreateFlags)
@@ -544,6 +544,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	mips=1;
 	dim=2;
 	cubemap=false;
+	mNumSamples=num_samples;
 	depthStencil=depthstencil;
 	this->computable=computable;
 	this->renderTarget=rendertarget;
@@ -877,7 +878,7 @@ int Texture::GetDimension() const
 
 int Texture::GetSampleCount() const
 {
-	return 0;
+	return mNumSamples == 1 ? 0 : mNumSamples; //Updated for MSAA texture -AJR
 }
 
 bool Texture::IsComputable() const

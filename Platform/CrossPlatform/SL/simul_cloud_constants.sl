@@ -166,6 +166,7 @@ struct VolumeQueryResult
 	float ambient_light;
 	float precipitation;
 	float rain_to_snow;
+	vec2 padding; //Never use. Used for Alignment in glsl std140
 };
 //! The result struct for a line query.
 struct LineQueryResult

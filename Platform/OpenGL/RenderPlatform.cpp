@@ -129,7 +129,10 @@ void RenderPlatform::RestoreGLState()
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
-    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
+	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str();
+	/*const char* computeShaderFile = deviceContext.contextState.currentEffectPass->shaders[5]->name.c_str();
+	std::cout << "COMPUTE SHADER: " << computeShaderFile << "					EffectPass: " << effectPass << std::endl;*/
+    BeginEvent(deviceContext, effectPass);
     ApplyCurrentPass(deviceContext);
     glDispatchCompute(w, l, d);
     InsertFences(deviceContext);
@@ -816,6 +819,33 @@ void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& device
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
+	auto dst = (opengl::Texture*)destination;
+	auto src = (opengl::Texture*)source;
+	GLuint srcFBO, dstFBO;
+	GLenum fboStatus;
+
+	glGenFramebuffers(1, &srcFBO);
+	glGenFramebuffers(1, &dstFBO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, srcFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, src->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D|crossplatform::ShaderResourceType::MS), 0);
+	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		SIMUL_CERR << "FBO is not complete!\n";
+
+	glBindFramebuffer(GL_FRAMEBUFFER, dstFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D), 0);
+	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		SIMUL_CERR << "FBO is not complete!\n";
+	
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, srcFBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFBO);
+	glBlitFramebuffer(0, 0, source->width, source->length, 0, 0, destination->width, destination->length, GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	glDeleteFramebuffers(1, &srcFBO);
+	glDeleteFramebuffers(1, &dstFBO);
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
