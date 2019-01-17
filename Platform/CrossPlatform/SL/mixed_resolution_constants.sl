@@ -29,6 +29,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform float padUNUSED;
 	uniform float nearThresholdDepth;
 	uniform float nearThresholdDist;
+	uniform vec2 padding;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

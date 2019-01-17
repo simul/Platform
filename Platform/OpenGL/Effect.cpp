@@ -573,6 +573,15 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
             }
         }
 
+		//Used for Debug with RenderDoc, as it don't load these extension/functions -AJR
+		if (!GLAD_GL_ARB_bindless_texture)
+		{
+			glGetTextureHandleARB = (PFNGLGETTEXTUREHANDLEARBPROC)wglGetProcAddress("glGetTextureHandleARB");
+			glGetTextureSamplerHandleARB = (PFNGLGETTEXTURESAMPLERHANDLEARBPROC)wglGetProcAddress("glGetTextureSamplerHandleARB");
+			glMakeTextureHandleResidentARB = (PFNGLMAKETEXTUREHANDLERESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleResidentARB");
+			glMakeTextureHandleNonResidentARB = (PFNGLMAKETEXTUREHANDLENONRESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleNonResidentARB");
+		}
+
         // We first bind the texture handle alone (for fetch and get size operations)
         GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
         GLuint64 thandle    = glGetTextureHandleARB(tview);

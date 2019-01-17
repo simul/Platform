@@ -74,6 +74,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	
 	uniform vec2 cirrusWindVector;
 
+	uniform vec2 padding;
+
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
@@ -153,6 +155,7 @@ SIMUL_CONSTANT_BUFFER(CloudLightpassConstants,10)
 	uniform float minCosine;
 	uniform float irradianceThreshold;
 	uniform float maxRadiusKm;
+	uniform vec2 padding2;
 SIMUL_CONSTANT_BUFFER_END
 
 //! The result struct for a point or volume query.

@@ -32,6 +32,8 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform float   vertical;
 	uniform uint    branchIndex;
     uniform uint    curLevel;
+	
+	uniform vec2 padding;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -49,6 +51,8 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform vec3 viewPosition;
 	uniform float maxFadeDistance;
 	uniform uint parent_point;
+	uniform float padding2;
+	uniform vec2 padding3;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightningVertex

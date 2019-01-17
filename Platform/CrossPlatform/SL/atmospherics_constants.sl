@@ -42,6 +42,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float averageCoverage;
 
 	uniform uint2 edge;
+	uniform vec2 padding;
 
 SIMUL_CONSTANT_BUFFER_END
 
