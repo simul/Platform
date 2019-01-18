@@ -54,6 +54,7 @@ uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries SIMUL_RWTEXTURE_REGI
 uniform StructuredBuffer<vec3> queryInputs SIMUL_TEXTURE_REGISTER(3);
 
 uniform RWStructuredBuffer<LineQueryResult> lineQueryResults SIMUL_RWTEXTURE_REGISTER(5);
+
 CS_LAYOUT(1,1,1)
 shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 {

@@ -571,6 +571,11 @@ void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext&
     UINT curOff     = mCurApplies * mUnitSize;
     const CD3DX12_RANGE readRange(0, 0);
     HRESULT res = mUploadBuffer->Map(0, &readRange, (void**)&pBuffer);
+	if (res != S_OK)
+	{
+		SIMUL_BREAK_ONCE("Failed to map buffer.");
+		return;
+	}
     memcpy(pBuffer + curOff, mTempBuffer, mUnitSize);
     mUploadBuffer->Unmap(0, nullptr);
     
