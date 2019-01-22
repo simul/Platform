@@ -76,7 +76,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.ambient_light				=light_lookup.w;
 	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 	res.rain_to_snow				=0.0;
-	res.padding						=vec2(0, 0);
+	res.padding						=vec2(0,0);
 	volumeQueries[sub_pos.x]		=res;
 }
 

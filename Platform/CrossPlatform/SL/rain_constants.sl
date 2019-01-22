@@ -16,6 +16,7 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform float phase1;
 	uniform float timeStepSeconds;
 	uniform float particleZoneSize;
+	uniform vec2 padding;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(MoisturePerViewConstants,9)
@@ -40,6 +41,7 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants, 8)
 	float rainDepthTextureScale;
 	float splashDelta;
 	float minDistanceM;
+	float padding2;
 SIMUL_CONSTANT_BUFFER_END
 
 struct PrecipitationVertex
