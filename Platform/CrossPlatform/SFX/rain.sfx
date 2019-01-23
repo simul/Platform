@@ -424,12 +424,8 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 
 	
 	vec3 map_texc		=mul(rainMapMatrix,vec4(viewPos[1].xyz,1.0)).xyz;
-	float mapped_rain	=texture_wrap_lod(rainMapTexture,map_texc.xy,0).x;
-	if(mapped_rain == 0)
-	{
-		mapped_rain = 0.5;
-	}
-
+	float mapped_rain	=max(texture_wrap_lod(rainMapTexture,map_texc.xy,0).x, 0.25);
+	
 	// discard if under surface.
 	vec3 in_depth_space		= vec3(1.0,1.0,1.0);
 	float depth 			= 1.0;
@@ -573,7 +569,7 @@ vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth,vec3 light)
 	float fresnel		=r;
 	vec4 result			=vec4(light,1.0-lerp(0.0,vis,fresnel));
 
-	if(mapped_rain<=0/*||rain_dist>solid_dist*/) //Issue here!
+	if(mapped_rain<=0||rain_dist>solid_dist)
 	{
 		discard;
 	}
