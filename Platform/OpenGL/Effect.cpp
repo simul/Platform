@@ -195,7 +195,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
     int idx = deviceContext.frame_number % mNumBuffers;
-    if (mBinding == -1)
+    if (mBinding != shaderResource.slot)
     {
         mBinding = shaderResource.slot;
     }

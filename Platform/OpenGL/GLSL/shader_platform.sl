@@ -18,6 +18,9 @@ vec4 saturate(vec4 vvalue)	{return clamp(vvalue,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1
 
 vec4 mul(mat4 mat, vec4 vec){return mat * vec;}
 vec3 mul(mat3 mat, vec3 vec){return mat * vec;}
+vec4 mul(vec4 vec, mat4 mat){return mat * vec;}
+vec3 mul(vec3 vec, mat3 mat){return mat * vec;}
+uint reversebits(uint value){return bitfieldReverse(value);}
 
 #define int2 ivec2
 #define int3 ivec3
