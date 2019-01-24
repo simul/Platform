@@ -392,7 +392,7 @@ shader ParticleGeometryOutput VS_SnowParticles_Mask_MSAA(uint vertex_id : SV_Ver
 ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool msaa)
  {    
 	uint particle_id = vertex_id / 6;
-	uint vertex_index = vertex_id - (particle_id * 6);
+	uint vertex_index = vertex_id - (particle_id * 6) + 1;
 	ParticleGeometryOutput p;
 #if 1
 	uint4 state = uint4(163 + particle_id % 71, 83117 + particle_id / 51, 195 + particle_id / 1001, 9019 + particle_id % 507);
@@ -503,7 +503,7 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	if(rainMaskEnabled)
 	{
 		//p.view		=normalize(pos);
-	//	p.dir		=depth;//saturate(in_depth_space);//dir;// g_texcoords[corner_id] * 2.0 - vec2(1.0, 1.0);
+		//p.dir			=depth;//saturate(in_depth_space);//dir;// g_texcoords[corner_id] * 2.0 - vec2(1.0, 1.0);
 		//p.view		=vel;
 		if(in_depth_space.x>0.0&&in_depth_space.y>0.0&&in_depth_space.x<1.0&&in_depth_space.y<1.0)
 		{
@@ -525,7 +525,7 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 		}
 	}
 	//p.dir=depth;
-    return p;
+	return p;
 }
 
 #define MAX_VIDX 4

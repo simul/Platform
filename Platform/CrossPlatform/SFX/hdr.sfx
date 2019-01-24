@@ -207,7 +207,7 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 
 shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 {
-	vec4 c	=imageTexture.Sample(samplerStateNearest,IN.texCoords); //Is this texture valid?
+	vec4 c	=imageTexture.Sample(samplerStateNearest,IN.texCoords);
 	c.rgb	*=exposure;
 	c.rgb	=pow(c.rgb,vec3(gamma,gamma,gamma));
     vec4 u	=vec4(c.rgb,1.0);
