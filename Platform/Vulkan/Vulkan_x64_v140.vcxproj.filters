@@ -15,6 +15,9 @@
     <Filter Include="SL">
       <UniqueIdentifier>{b743cb56-2447-4081-a691-64ea8fda1cf2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SFX">
+      <UniqueIdentifier>{0436365c-e042-4289-b0c4-4e91fdfeeab6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RenderPlatform.cpp">
@@ -269,5 +272,70 @@
     <Text Include="t.txt">
       <Filter>GLSL</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
   </ItemGroup>
 </Project>

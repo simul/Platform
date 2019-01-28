@@ -1002,10 +1002,8 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
 	}
 
 	//Resolve src image to dst image
-	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	
-	const vk::CommandBufferBeginInfo beginInfoOneTime = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	const vk::CommandBufferBeginInfo beginInfoSimultaneous = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	vk::CommandBuffer* commandBuffer =(vk::CommandBuffer*)deviceContext.platform_context;
 
 	vk::ImageResolve imageResolve;
 	imageResolve.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
@@ -1014,18 +1012,9 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
 	imageResolve.dstOffset = vk::Offset3D(0, 0 ,0);
 	imageResolve.extent = vk::Extent3D(deviceContext.defaultTargetsAndViewport.viewport.w, deviceContext.defaultTargetsAndViewport.viewport.h, 1);
 	
-	crossplatform::ContextState* cs = &deviceContext.contextState;
-	vulkan::EffectPass* pass = (vulkan::EffectPass*)cs->currentEffectPass;
-
 	if (commandBuffer)
 	{
-		commandBuffer->end();
-
-		commandBuffer->begin(beginInfoOneTime);
 		commandBuffer->resolveImage(src->GetImage(), vk::ImageLayout::eTransferSrcOptimal, dst->GetImage(), vk::ImageLayout::eSharedPresentKHR, imageResolve);
-		//commandBuffer->end();
-
-		//commandBuffer->begin(beginInfoSimultaneous);
 	}
 }
 
