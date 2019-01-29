@@ -703,28 +703,28 @@ group write_alpha
 			SetBlendState(AlphaBlendAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
 			SetDepthStencilState(DisableDepth, 0);
 		}
-	pass reverse_depth_msaa
-	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
-		SetDepthStencilState( DisableDepth, 0 );
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_ReverseDepth()));
+
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//DontBlend
+			SetDepthStencilState(DisableDepth, 0);
+		}
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_ForwardDepth()));
+
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
+			SetDepthStencilState(DisableDepth, 0);
+		}
 	}
-	pass forward_depth_msaa
+	technique rain_particles_nomask
 	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-		SetDepthStencilState( DisableDepth, 0 );
-	}
-}
-technique rain_particles_nomask
-{
-	pass reverse_depth
+		pass reverse_depth
 		{
 			SetRasterizerState(RenderNoCull);
 			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask()));
@@ -733,7 +733,7 @@ technique rain_particles_nomask
 			SetBlendState(AlphaBlendAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//DontBlend
 			SetDepthStencilState(DisableDepth, 0);
 		}
-	pass forward_depth
+		pass forward_depth
 		{
 			SetRasterizerState(RenderNoCull);
 			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask()));
@@ -742,27 +742,27 @@ technique rain_particles_nomask
 			SetBlendState(AlphaBlendAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
 			SetDepthStencilState(DisableDepth, 0);
 		}
-	pass reverse_depth_msaa
-	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
-		SetDepthStencilState( DisableDepth, 0 );
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_ReverseDepth()));
+
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//DontBlend
+			SetDepthStencilState(DisableDepth, 0);
+		}
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_ForwardDepth()));
+
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
+			SetDepthStencilState(DisableDepth, 0);
+		}
 	}
-	pass forward_depth_msaa
+	technique rain_particles_no_cubemap_mask
 	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-		SetDepthStencilState( DisableDepth, 0 );
-	}
-}
-technique rain_particles_no_cubemap_mask
-{
 		pass reverse_depth
 		{
 			SetRasterizerState(RenderNoCull);
@@ -781,23 +781,24 @@ technique rain_particles_no_cubemap_mask
 			SetBlendState(AlphaBlendAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
 			SetDepthStencilState(DisableDepth, 0);
 		}
-	pass reverse_depth_msaa
-	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-		SetDepthStencilState( DisableDepth, 0 );
-	}
-	pass forward_depth_msaa
-	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-		SetDepthStencilState( DisableDepth, 0 );
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
+
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
+			SetDepthStencilState(DisableDepth, 0);
+		}
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
+
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
+			SetDepthStencilState(DisableDepth, 0);
+		}
 	}
 }
 
@@ -823,42 +824,20 @@ group dont_write_alpha
 			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
 			SetDepthStencilState(DisableDepth, 0);
 		}
-	pass reverse_depth_msaa
-	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-		SetDepthStencilState( DisableDepth, 0 );
-	}
-	pass forward_depth_msaa
-	{
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
-	
-		SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-		SetDepthStencilState( DisableDepth, 0 );
-	}
-}
-        
-technique snow_particles_mask
-{
-		pass reverse_depth
+		pass reverse_depth_msaa
 		{
 			SetRasterizerState(RenderNoCull);
-			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask()));
-			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_ReverseDepth()));
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
 
-			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//DontBlend
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
 			SetDepthStencilState(DisableDepth, 0);
 		}
-		pass forward_depth
+		pass forward_depth_msaa
 		{
 			SetRasterizerState(RenderNoCull);
-			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask()));
-			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_ForwardDepth()));
+			SetVertexShader(CompileShader(vs_5_0,VS_RainParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
 
 			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
 			SetDepthStencilState(DisableDepth, 0);
@@ -926,33 +905,31 @@ technique snow_particles_mask
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-	pass reverse_depth_msaa 
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
 	}
-	pass forward_depth_msaa 
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-	}
-}
-technique snow_particles_nomask
-{
-	pass reverse_depth 
+	technique snow_particles_nomask
 	{
 		pass reverse_depth
 		{
 			SetRasterizerState(RenderNoCull);
 			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask()));
 			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
-	
+
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
@@ -965,29 +942,29 @@ technique snow_particles_nomask
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-	pass reverse_depth_msaa
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
-	
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
+
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
+
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
+
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
 	}
 
-	pass forward_depth_msaa
+	technique snow_particles_no_cubemap_mask
 	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
-
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-	}
-}
-
-technique snow_particles_no_cubemap_mask
-{
 		 pass reverse_depth
 		{
 			SetRasterizerState(RenderNoCull);
@@ -1006,28 +983,26 @@ technique snow_particles_no_cubemap_mask
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-	pass reverse_depth_msaa 
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-	}
-	pass forward_depth_msaa
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_Mask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
 	}
-}
-technique snow_particles_no_cubemap_nomask
-{
-	pass reverse_depth 
+	technique snow_particles_no_cubemap_nomask
 	{
 		pass reverse_depth
 		{
@@ -1046,21 +1021,22 @@ technique snow_particles_no_cubemap_nomask
 			SetDepthStencilState(DisableDepth,0);
 			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		}
-	pass reverse_depth_msaa 
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-	}
-	pass forward_depth_msaa 
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+		pass reverse_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
+		pass forward_depth_msaa
+		{
+			SetRasterizerState(RenderNoCull);
+			SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles_NoMask_MSAA()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+			SetDepthStencilState(DisableDepth,0);
+			SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		}
 	}
 }
