@@ -5,7 +5,7 @@ file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
 
 link_directories(${VULKAN_SDK_DIR}/Lib)
-add_library(SimulVulkan_MT ${SOURCES} ${HEADERS} ${CMAKE})
+add_static_library(SimulVulkan_MT ${SOURCES} ${HEADERS} ${CMAKE})
 target_compile_definitions(SimulVulkan_MT PRIVATE SIMUL_VULKAN_DLL=1 VK_USE_PLATFORM_WIN32_KHR VK_PROTOTYPES )
 set_target_properties(SimulVulkan_MT PROPERTIES FOLDER Static)
 target_include_directories(SimulVulkan_MT PRIVATE "${VULKAN_SDK_DIR}/Include")

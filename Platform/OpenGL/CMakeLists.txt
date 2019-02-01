@@ -11,7 +11,7 @@ file(GLOB SOURCES
 file(GLOB HEADERS
     "*.h"
 )
-add_library(SimulOpenGL_MT ${SOURCES} ${HEADERS} ${CMAKE})
+add_static_library(SimulOpenGL_MT ${SOURCES} ${HEADERS} ${CMAKE})
 set_target_properties(SimulOpenGL_MT PROPERTIES FOLDER Static)
 target_include_directories(SimulOpenGL_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")
 target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platform/OpenGL")

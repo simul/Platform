@@ -15,7 +15,7 @@ file(GLOB HEADERS
 )
 
 # Setup and build the static library.
-add_library(SimulCrossPlatform_MT ${SOURCES} ${HEADERS} ${CMAKE})
+add_static_library(SimulCrossPlatform_MT ${SOURCES} ${HEADERS} ${CMAKE})
 set_target_properties(SimulCrossPlatform_MT PROPERTIES PREFIX "" )
 set_target_properties(SimulCrossPlatform_MT PROPERTIES FOLDER Static)
 

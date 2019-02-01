@@ -408,7 +408,7 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 #if 1
 	float s				=max_dist_km/80.0;	// 1.2^24 ~ 80
 	int i				=0;
-	for( i=0;i<24;i++)
+	for( i=0;i<12;i++)
 	{
 		// we expect stepLength in km for this shader
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
@@ -416,7 +416,7 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 		float density	=lookup.z*step(tx.z,1.0);
 		density			=saturate(0.3+(1.0+1.0*lookup.w*2.0)*(density-0.3));
 		thicknessKm		+= density*s;
-		s				*=1.2;
+		s				*=1.44;
 	}
 #else
 	float dist_km		=rand*max_dist_km;
@@ -460,7 +460,9 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	// how many km from top.
 	float z_from_top_km=max_h_km*float(1+windowGrid.z-idx.z)/float(windowGrid.z);
 
-	float extinction_distance_km=max(5.0,min(5.5*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001)));//max(log(100)/extinctionPerKm,2.0/inverseScalesKm.x/float(windowGrid.x));
+	float extinction_distance_km=max(5.0,min(5.5*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001)));
+	// this means extinction distance is the distance to the top of the clouds
+	// clamped between 5km and 100km.
 	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir,randm,extinction_distance_km);
 
 	// find nearest direction to light for ambient lighting:
