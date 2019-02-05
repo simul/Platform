@@ -24,6 +24,7 @@ namespace simul
 			virtual ~DeviceManager();
 			// GDI:
 			void	Initialize(bool use_debug, bool instrument, bool default_driver) override;
+			bool	IsActive() const override;
 			void	Shutdown() override;
 			void*	GetDevice() override;
 			void*	GetDeviceContext() override;

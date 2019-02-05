@@ -19,6 +19,7 @@ namespace simul
 			Direct3D11Manager();
 			~Direct3D11Manager();
 			void Initialize(bool use_debug=false,bool instrument=false,bool default_driver=false);
+			bool IsActive() const;
 			void Shutdown();
 			void* GetDevice();
 			void* GetDeviceContext();

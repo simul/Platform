@@ -37,6 +37,7 @@ namespace simul
 										~Direct3D12Manager();
 			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void						Initialize(bool use_debug=false,bool instrument= false, bool default_driver = false);
+			bool						IsActive() const;
 			void						Shutdown();
 			void*						GetDevice();
 			void*						GetDeviceContext();

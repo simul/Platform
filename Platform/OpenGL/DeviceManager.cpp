@@ -204,6 +204,10 @@ static void GlfwErrorCallback(int errcode, const char* info)
 {
     SIMUL_CERR << " "<<errcode<<": " << info << std::endl;
 }
+bool	DeviceManager::IsActive() const
+{
+	return hRC != 0;
+}
 
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {

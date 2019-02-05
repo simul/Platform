@@ -128,6 +128,14 @@ static bool CheckLayers(uint32_t check_count, char const *const *const check_nam
 }
 
 
+bool DeviceManager::IsActive() const
+{
+	return device_initialized;
+}
+
+#define SIMUL_VK_ASSERT_RETURN(val) \
+	if(val!=vk::Result::eSuccess)\
+		return;
 
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {
@@ -149,14 +157,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	if (use_debug)
 	{
 		auto result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SIMUL_VK_ASSERT_RETURN(result);
 
 		instance_validation_layers = instance_validation_layers_alt1;
 		if (instance_layer_count > 0)
 		{
 			std::unique_ptr<vk::LayerProperties[]> instance_layers(new vk::LayerProperties[instance_layer_count]);
 			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.get());
-			SIMUL_ASSERT(result == vk::Result::eSuccess);
+			SIMUL_VK_ASSERT_RETURN(result);
 
 			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers,
 				instance_layer_count, instance_layers.get());
@@ -200,13 +208,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	auto result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	extension_names.resize(instance_extension_count);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
-
+	SIMUL_VK_ASSERT_RETURN(result);
+	if (result != vk::Result::eSuccess)
+		return;
 	if (instance_extension_count > 0)
 	{
 		std::unique_ptr<vk::ExtensionProperties[]> instance_extensions(new vk::ExtensionProperties[instance_extension_count]);
 		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions.get());
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SIMUL_VK_ASSERT_RETURN(result);
 
 		for (uint32_t i = 0; i < instance_extension_count; i++)
 		{
@@ -372,13 +381,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	/* Make initial call to query gpu_count, then second call for gpu info*/
 	uint32_t gpu_count;
 	result = deviceManagerInternal->instance.enumeratePhysicalDevices((uint32_t*)&gpu_count, (vk::PhysicalDevice*)nullptr);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	SIMUL_VK_ASSERT_RETURN(result);
 
 	if (gpu_count > 0)
 	{
 		std::unique_ptr<vk::PhysicalDevice[]> physical_devices(new vk::PhysicalDevice[gpu_count]);
 		result = deviceManagerInternal->instance.enumeratePhysicalDevices((uint32_t*)&gpu_count, physical_devices.get());
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SIMUL_VK_ASSERT_RETURN(result);
 		/* For cube demo we just grab the first physical device */
 		deviceManagerInternal->gpu = physical_devices[0];
 	}
@@ -398,13 +407,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	memset(extension_names.data(), 0, sizeof(extension_names));
 
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	SIMUL_VK_ASSERT_RETURN(result);
 
 	if (device_extension_count > 0)
 	{
 		std::unique_ptr<vk::ExtensionProperties[]> device_extensions(new vk::ExtensionProperties[device_extension_count]);
 		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.get());
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SIMUL_VK_ASSERT_RETURN(result);
 
 		for (uint32_t i = 0; i < device_extension_count; i++)
 		{

@@ -376,6 +376,11 @@ Direct3D11Manager::~Direct3D11Manager()
 	Shutdown();
 }
 
+bool Direct3D11Manager::IsActive() const
+{
+	return d3dDevice != nullptr;
+}
+
 void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_driver)
 {
 	HRESULT result;

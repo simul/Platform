@@ -57,6 +57,7 @@ namespace simul
 			virtual void*	GetDeviceContext()=0;
 			virtual int		GetNumOutputs()=0;
 			virtual Output	GetOutput(int i)=0;
+			virtual bool	IsActive() const = 0;
 		};
 		
 		class DisplaySurfaceManagerInterface
