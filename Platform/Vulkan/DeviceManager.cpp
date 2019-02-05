@@ -99,11 +99,6 @@ DeviceManager::~DeviceManager()
 	delete deviceManagerInternal;
 }
 
-static void GlfwErrorCallback(int errcode, const char* info)
-{
-	SIMUL_CERR << " " << errcode << ": " << info << std::endl;
-}
-
 static bool CheckLayers(uint32_t check_count, char const *const *const check_names, uint32_t layer_count,
 	vk::LayerProperties *layers)
 {
@@ -590,7 +585,7 @@ void DeviceManager::InitDebugging()
 
 void	DeviceManager::Shutdown()
 {
-
+	InvalidateDeviceObjects();
 }
 
 void*	DeviceManager::GetDevice()

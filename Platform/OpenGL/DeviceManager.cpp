@@ -179,17 +179,20 @@ void DeviceManager::InvalidateDeviceObjects()
 	int err=errno;
 	std::cout<<"Errno "<<err<<std::endl;
 	errno=0;
+/*	if(hRC)
+glfw owns hRC
 	if(!wglDeleteContext(hRC))
 	{
 		SIMUL_CERR<<"wglDeleteContext Failed."<<std::endl;
-		return;
-	}
+		r*eturn;
+	}*/
 	hRC=nullptr;                           // Set DC To NULL
 ERRNO_CHECK
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
-    glfwDestroyWindow(offscreen_context);
+	//glfwMakeContextCurrent(nullptr);
+   // glfwDestroyWindow(offscreen_context);
 	offscreen_context=nullptr;
-    glfwTerminate();
+    //glfwTerminate();
 	//delete renderPlatformOpenGL;
 	//renderPlatformOpenGL=nullptr;
 }
@@ -273,7 +276,7 @@ void DeviceManager::InitDebugging()
 
 void	DeviceManager::Shutdown() 
 {
-
+	InvalidateDeviceObjects();
 }
 
 void*	DeviceManager::GetDevice() 
