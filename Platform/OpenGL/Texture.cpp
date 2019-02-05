@@ -91,8 +91,18 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	InvalidateDeviceObjects();
 
 	// Load from file:
-	std::string mainPath = r->GetTexturePathsUtf8()[0] + "/" + std::string(pFilePathUtf8);
-	LoadedTexture tdata = LoadTextureData(mainPath.c_str());
+	LoadedTexture tdata;
+	for (auto& path : r->GetTexturePathsUtf8())
+	{
+		std::string mainPath = path + "/" + std::string(pFilePathUtf8);
+		tdata = LoadTextureData(mainPath.c_str());
+		if (tdata.data)
+			break;
+	}
+	if (!tdata.data)
+	{
+		SIMUL_CERR << "Failed to load the texture: " << pFilePathUtf8 << std::endl;
+	}
 
 	// Choose a format:
 	if (tdata.n == 4)
@@ -156,8 +166,13 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	std::vector<LoadedTexture> loadedTextures(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
 	{
-		std::string mainPath	= r->GetTexturePathsUtf8()[0] + "/" + texture_files[i];
-		loadedTextures[i]		= LoadTextureData(mainPath.c_str());
+		for (auto& path : r->GetTexturePathsUtf8())
+		{
+			std::string mainPath = path + "/" + texture_files[i];
+			loadedTextures[i] = LoadTextureData(mainPath.c_str());
+			if (loadedTextures[i].data)
+				break;
+		}
 	}
 	
 	width		= loadedTextures[0].x;
@@ -619,7 +634,11 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
 	{
 		mip_index = 0;
 	}
-
+	if (mTextureFBOs[array_index][mip_index] == 0)
+	{
+		arraySize = cubemap ? 6 : 1;
+		CreateFBOs(mNumSamples);
+	}
 	targetsAndViewport.num				= 1;
 	targetsAndViewport.m_rt[0]			= (void*)mTextureFBOs[array_index][mip_index];
 	targetsAndViewport.m_dt				= nullptr;
@@ -627,7 +646,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
 	targetsAndViewport.viewport.y		= 0;
 	targetsAndViewport.viewport.w		= std::max(1, (width >> mip_index));
 	targetsAndViewport.viewport.h		= std::max(1, (length >> mip_index));
-
+		
 	// Activate the render target and set the viewport:
 	GLuint id = GLuint(uintptr_t(targetsAndViewport.m_rt[0]));
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -719,10 +738,10 @@ LoadedTexture Texture::LoadTextureData(const char* path)
 {
 	LoadedTexture lt	= {0,0,0,0,nullptr};
 	lt.data			 = stbi_load(path, &lt.x, &lt.y, &lt.n, 4);
-	if (!lt.data)
+	/*if (!lt.data)
 	{
 		SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
-	}
+	}*/
 	return lt;
 }
 

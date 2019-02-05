@@ -10,6 +10,7 @@ SIMUL_CONSTANT_BUFFER(LightProbeConstants,9)
 	uniform int mipIndex;
 	uniform int numMips;
 	uniform float roughness;
+	uniform vec2 padding;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
