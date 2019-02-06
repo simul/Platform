@@ -73,8 +73,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int4 exclusionRange;
 	
 	uniform vec2 cirrusWindVector;
-
-	uniform vec2 padding;
+	uniform int thicknessSteps;
+	uniform int padding;
 
 SIMUL_CONSTANT_BUFFER_END
 

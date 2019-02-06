@@ -15,7 +15,7 @@ uniform Texture2D skylTexture;
 
 uniform Texture3D cloudTexture;
 uniform Texture2D godraysTexture;
-//SamplerState cloudSamplerState;
+SamplerState cloudSamplerState;
 uniform TextureCube cubeDepthTexture;
 uniform TextureCube cubeUpdateTexture;
 uniform RWTexture3D<vec4> targetVolume SIMUL_RWTEXTURE_REGISTER(0);

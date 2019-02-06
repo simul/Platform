@@ -790,14 +790,13 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault != NULL && mTextureDefault == t && mainShaderResourceView12.ptr != -1 && srv == NULL)
 		return;
 
-    SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	FreeSRVTables();
 	renderPlatform				= r;
 	mTextureDefault				= t;
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
-
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
 
@@ -887,6 +886,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
                     mTextureDsHeap.Offset();
 
                     depthStencil = true;
+
+					SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
             }
             else
             {
