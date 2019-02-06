@@ -448,7 +448,7 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews!=nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,int w,int l,crossplatform::PixelFormat f,bool make_rt, bool setDepthStencil,bool need_srv)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,int w,int l,crossplatform::PixelFormat f,bool make_rt, bool setDepthStencil,bool need_srv,int numOfSamples)
 {
 	ID3D11Texture2D *t=(ID3D11Texture2D *)T;
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView *)SRV;

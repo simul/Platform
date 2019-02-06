@@ -435,41 +435,42 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 }
 
 #include "Simul/Base/StringFunctions.h"
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool rendertarget /*= false*/, bool depthstencil /*= false*/,bool need_srv /*= true*/)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget /*= false*/, bool depthstencil /*= false*/, bool need_srv /*= true*/, int numOfSamples)
 {
-	if (IsSame(w, l, 1, 1, 1,f,false,computable,rendertarget,depthstencil, true))
+	if (IsSame(w, l, 1, 1, 1, f, false, computable, rendertarget, depthstencil, true))
 	{
-		if(t==(void*)mImage)
-			return ;
+		if (t == (void*)mImage)
+			return;
 	}
-	renderPlatform=r;
-	if(w==0)
+	renderPlatform = r;
+	if (w == 0)
 		return;
-	if(t==0)
+	if (t == 0)
 		return;
-	if(f==crossplatform::UNKNOWN)
+	if (f == crossplatform::UNKNOWN)
 		return;
 	InvalidateDeviceObjectsExceptLoaded();
-	renderPlatform=r;
-	void **image=(void **)&mImage;
-	*image=t;
-	depthstencil&=(crossplatform::RenderPlatform::IsDepthFormat(f));
-	InitViewTables(2,f,w,l,1, 1, rendertarget,false,depthstencil);
+	renderPlatform = r;
+	void **image = (void **)&mImage;
+	*image = t;
+	depthstencil &= (crossplatform::RenderPlatform::IsDepthFormat(f));
+	InitViewTables(2, f, w, l, 1, 1, rendertarget, false, depthstencil);
 	SplitLayouts();
 
-	pixelFormat=f;
-	width=w;
-	length=l;
-	depth=1;
-	arraySize=1;
-	mips=1;
-	dim=2;
-	cubemap=false;
-	depthStencil=depthstencil;
-	this->computable=computable;
-	this->renderTarget=rendertarget;
-	external_texture=true;
-	SetVulkanName(renderPlatform,&mImage,name.c_str());
+	pixelFormat = f;
+	width = w;
+	length = l;
+	depth = 1;
+	arraySize = 1;
+	mips = 1;
+	dim = 2;
+	mNumSamples = numOfSamples;
+	cubemap = false;
+	depthStencil = depthstencil;
+	this->computable = computable;
+	this->renderTarget = rendertarget;
+	external_texture = true;
+	SetVulkanName(renderPlatform, &mImage, name.c_str());
 }
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l,

@@ -272,10 +272,11 @@ void FramebufferGL::Deactivate(crossplatform::DeviceContext& deviceContext)
 void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
     // This call must be made inside Activate - Deactivate block!
+	GLenum target = numAntialiasingSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
     if (depth_active)
     {
         depth_active = false;
 		glBindFramebuffer(GL_FRAMEBUFFER, mFBOId[is_cubemap?current_face:0]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, 0, 0);
     }
 }
