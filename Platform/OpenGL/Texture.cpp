@@ -282,15 +282,22 @@ void Texture::InvalidateDeviceObjects()
 
 void Texture::MakeHandleResident(GLuint64 thandle)
 {
-	if(!renderPlatform)
+	/*if(!renderPlatform)
 		return;
 	if(residentHandles.find(thandle)!=residentHandles.end())
 		return;
 	glMakeTextureHandleResidentARB(thandle);
-	residentHandles.insert(thandle);
+	residentHandles.insert(thandle);*/
+
+	if(!renderPlatform)
+		return;
+	if(residentHandles.find(thandle)==residentHandles.end())
+		residentHandles.insert(thandle);
+	if(!glIsTextureHandleResidentARB(thandle))
+		glMakeTextureHandleResidentARB(thandle);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/,int numOfSamples)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -313,6 +320,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 		width		= int(qw);
 		length		= int(qh);
 		depth		= 1;
+		mNumSamples = numOfSamples;
 	}
 }
 
