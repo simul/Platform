@@ -7,8 +7,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture3D noiseTexture3D
 											,Texture2D lightTableTexture
 											,Texture2D illuminationTexture
-											,Texture2D rainbowLookupTexture
-											,Texture2D coronaLookupTexture
 											,Texture2D lossTexture
 											,Texture2D inscTexture
 											,Texture2D skylTexture
@@ -94,10 +92,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 
-	vec4 rainbowColour;
-	if(do_rainbow)
-		rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-												rainbowIntensity,view,lightDirection);
 	float moisture			=0.0;
 
 	vec3 world_pos			=viewPosKm;
@@ -326,10 +320,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			idx					++;
 		}
 	}
-#ifndef INFRARED
-	if(do_rainbow)
-		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
-#endif
 	//res.nearFarDepth.y	=	max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.zw	    =	vec2(meanFadeDistance,meanFadeDistance);

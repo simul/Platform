@@ -35,8 +35,18 @@ uniform Texture2D lossTexture				SIMUL_TEXTURE_REGISTER(5);
 uniform TextureCube depthTexture;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
-uniform Texture2D rainbowLookupTexture;
-uniform Texture2D coronaLookupTexture;
+//uniform Texture2D rainbowLookupTexture;
+//uniform Texture2D coronaLookupTexture;
+/*
+	vec4 rainbowColour;
+	if(do_rainbow)
+		rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+												rainbowIntensity,view,lightDirection);
+#ifndef INFRARED
+	if(do_rainbow)
+		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
+#endif
+*/
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
@@ -301,25 +311,6 @@ CS_LAYOUT(4,4,4)
 shader void CS_MixCirrus( uint3 idx : SV_DispatchThreadID )
 {
 	MixInCirrus(idx,false);
-}
-
-float WorleyFactor(vec3 worley_texcoord)
-{
-	float c			=0.5;
-	float p			=0.75;
-	float m			=1.0;
-	float w			=0.0;
-	worley_texcoord	*=2.3;
-	for(int j=0;j<2;j++)
-	{
-		vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
-		w						+=m*(worley.x-c);//+p*(worley.y-c)+p*p*(worley.z-c)+p*p*p*(worley.w-c))/(1.0+p+p*p+p*p*p);
-		m						*=p;
-		worley_texcoord			*=3.7;
-	}
-	//vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
-	//float w=worley.x-c;
-	return w;//2.0*w+0.5;
 }
 
 void MapToWindow(uint3 p,bool clears)
@@ -631,8 +622,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,int numSteps,int num_
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
-									,rainbowLookupTexture
-									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
 									,skylTexture
@@ -693,8 +682,6 @@ void StaticRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
-									,rainbowLookupTexture
-									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
 									,skylTexture
@@ -762,8 +749,6 @@ void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godr
 													,noiseTexture3D
 													,lightTableTexture
 													,illuminationTexture
-													,rainbowLookupTexture
-													,coronaLookupTexture
 													,lossTexture
 													,inscTexture
 													,skylTexture
