@@ -12,6 +12,7 @@ using namespace vulkan;
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
     crossplatform::EffectPass(r,e)
 	,mLastFrameIndex(0)
+	,mInternalFrameIndex(0)
 	,mCurApplyCount(0)
 {
 	for(int i=0;i<kNumBuffers;i++)
@@ -373,7 +374,7 @@ void EffectPass::Initialize()
 		return;
 	vk::DescriptorPoolSize *poolSizes= new vk::DescriptorPoolSize[num_descr];// won't actually use that many unless we have 1 of each type.
 	int p=0;
-	static int count_per_frame=128;
+	static int count_per_frame=256;
 	if(numResourceSlots)																		
 		poolSizes[p++].setType(vk::DescriptorType::eSampledImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
 	if(numSamplerResourceSlots)																	
@@ -536,6 +537,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 													.setDescriptorSetCount(1)
 													.setPSetLayouts(descLayout);
 	auto result = vulkanDevice->allocateDescriptorSets(&alloc_info,&descriptorSet);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
 }
 
@@ -736,27 +738,29 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
 	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrameIndex != curFrameIndex)
+	if (mLastFrameIndex != deviceContext.frame_number)
 	{
-		mLastFrameIndex = curFrameIndex;
 		mCurApplyCount = 0;
-		i_desc[mLastFrameIndex]=mDescriptorSets[mLastFrameIndex].begin();
+		mInternalFrameIndex++;
+		mInternalFrameIndex=mInternalFrameIndex%3;
+		i_desc[mInternalFrameIndex]=mDescriptorSets[mInternalFrameIndex].begin();
+		mLastFrameIndex = deviceContext.frame_number;
 	}
 	if(!initialized)
 		Initialize();
-	if(i_desc[mLastFrameIndex]==mDescriptorSets[mLastFrameIndex].end())
+	if(i_desc[mInternalFrameIndex]==mDescriptorSets[mInternalFrameIndex].end())
 	{
 		//must insert a new descriptor:
-		mDescriptorSets[mLastFrameIndex].push_back(vk::DescriptorSet());
-		i_desc[mLastFrameIndex]=mDescriptorSets[mLastFrameIndex].end();
-		i_desc[mLastFrameIndex]--;
-		Initialize(*i_desc[mLastFrameIndex]);
-		SIMUL_ASSERT(((VkDescriptorSet)*(i_desc[mLastFrameIndex]))!=nullptr);
+		mDescriptorSets[mInternalFrameIndex].push_back(vk::DescriptorSet());
+		i_desc[mInternalFrameIndex]=mDescriptorSets[mInternalFrameIndex].end();
+		i_desc[mInternalFrameIndex]--;
+		Initialize(*i_desc[mInternalFrameIndex]);
+		SIMUL_ASSERT(((VkDescriptorSet)*(i_desc[mInternalFrameIndex]))!=nullptr);
 	}
-	ApplyContextState(deviceContext,*i_desc[mLastFrameIndex]);
+	ApplyContextState(deviceContext,*i_desc[mInternalFrameIndex]);
 	mCurApplyCount++;
-	if(i_desc[mLastFrameIndex]!=mDescriptorSets[mLastFrameIndex].end())
-		i_desc[mLastFrameIndex]++;
+	if(i_desc[mInternalFrameIndex]!=mDescriptorSets[mInternalFrameIndex].end())
+		i_desc[mInternalFrameIndex]++;
 }
 
 void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)

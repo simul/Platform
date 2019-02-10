@@ -89,7 +89,7 @@ namespace simul
 											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
 											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages,int m=0,int num_mips=0);
 			void			InvalidateDeviceObjectsExceptLoaded();
-			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, bool msaa,bool computable,bool rt,bool ds,bool need_srv);
+			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, int msaa_samples,bool computable,bool rt,bool ds,bool need_srv);
             
 			void			LoadTextureData(LoadedTexture &lt,const char* path);
 			void			SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f);

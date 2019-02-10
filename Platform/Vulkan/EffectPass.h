@@ -43,7 +43,8 @@ namespace simul
 			std::map<crossplatform::PixelFormat,RenderPassPipeline> mRenderPasses;
 			vk::DescriptorPool			mDescriptorPool;
 			
-			UINT						mLastFrameIndex;
+			long long					mLastFrameIndex;
+			int							mInternalFrameIndex;	// incremented internally.
 			UINT						mCurApplyCount;
 			//! Number of ring buffers
 			static const UINT			kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);

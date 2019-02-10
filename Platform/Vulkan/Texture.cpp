@@ -422,11 +422,11 @@ vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
 	return &(mFramebuffers[layer][mip]);
 }
 
-bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,bool msaa,bool comp,bool rt,bool ds,bool need_srv)
+bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds,bool need_srv)
 {
 	// If we are not created yet...
 
-	if (w != width || h != length || d != depth || m != mips||pixelFormat!=f)
+	if (w != width || h != length || d != depth || m != mips||pixelFormat!=f||numSamples!=mNumSamples)
 	{
 		return false;
 	}
@@ -437,7 +437,7 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 #include "Simul/Base/StringFunctions.h"
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget /*= false*/, bool depthstencil /*= false*/, bool need_srv /*= true*/, int numOfSamples)
 {
-	if (IsSame(w, l, 1, 1, 1, f, false, computable, rendertarget, depthstencil, true))
+	if (IsSame(w, l, 1, 1,1, f, numOfSamples, computable, rendertarget, depthstencil, true))
 	{
 		if (t == (void*)mImage)
 			return;
@@ -477,7 +477,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 											crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
 											vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
 {
-	if (IsSame(w, l, 1, 1, 1,f,false,computable,rendertarget,depthstencil, true))
+	if (IsSame(w, l, 1, 1, 1,f,num_samples,computable,rendertarget,depthstencil, true))
 	{
 		return false;
 	}
@@ -690,7 +690,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable , bool rendertarget , bool ascubemap )
 {
-	if (IsSame(w, l, 1, num, m,f,false,computable,rendertarget,depthStencil, true))
+	if (IsSame(w, l, 1, num, m,f,1,computable,rendertarget,depthStencil, true))
 	{
 		return false;
 	}
@@ -768,7 +768,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int d, crossplatform::PixelFormat f, bool computable /*= false*/, int m /*= 1*/, bool rendertargets /*= false*/)
 {
-	if (IsSame(w, l, d, 1, m,f,false,computable,rendertargets,false, true))
+	if (IsSame(w, l, d, 1, m,f,1,computable,rendertargets,false, true))
 	{
 		return false;
 	}

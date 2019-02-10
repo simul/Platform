@@ -1048,18 +1048,12 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
     if (deviceContext.GetFrameBufferStack().empty())
     {
         auto defT = deviceContext.defaultTargetsAndViewport;
-		const uintptr_t ll= uintptr_t(defT.m_rt[0]);
-		GLuint id = GLuint(ll);
-      //  glBindFramebuffer(GL_FRAMEBUFFER, id);
         SetViewports(deviceContext, 1, &defT.viewport);
     }
     // Plugin FBO:
     else
     {
         auto topRt = deviceContext.GetFrameBufferStack().top();
-		uintptr_t ll=uintptr_t(topRt->m_rt[0]);
-		GLuint id = GLuint(ll);
-      //  glBindFramebuffer(GL_FRAMEBUFFER, id);
         SetViewports(deviceContext, 1, &topRt->viewport);
     }
 }
