@@ -437,9 +437,9 @@ namespace simul
 		{
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
-			bool changed;
+			long long validFrame;
 		public:
-			PlatformConstantBuffer():renderPlatform(nullptr),changed(true){}
+			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(0){}
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
@@ -452,7 +452,7 @@ namespace simul
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			void SetChanged()
 			{
-				changed=true;
+				validFrame =0;
 			}
 			/// For RenderPlatform's use only: do not call.
 			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *,int){}
