@@ -282,19 +282,12 @@ void Texture::InvalidateDeviceObjects()
 
 void Texture::MakeHandleResident(GLuint64 thandle)
 {
-	/*if(!renderPlatform)
+	if(!renderPlatform)
 		return;
 	if(residentHandles.find(thandle)!=residentHandles.end())
 		return;
 	glMakeTextureHandleResidentARB(thandle);
-	residentHandles.insert(thandle);*/
-
-	if(!renderPlatform)
-		return;
-	if(residentHandles.find(thandle)==residentHandles.end())
-		residentHandles.insert(thandle);
-	if(!glIsTextureHandleResidentARB(thandle))
-		glMakeTextureHandleResidentARB(thandle);
+	residentHandles.insert(thandle);
 }
 
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv,int w,int l,crossplatform::PixelFormat f, bool make_rt /*= false*/, bool setDepthStencil /*= false*/,bool need_srv /*= true*/,int numOfSamples)
