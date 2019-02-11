@@ -437,8 +437,7 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 		in_depth_space	= 0.5*mul(rainDepthTransform,vec4(position0.xyz+viewPos[1].xyz,1.0)).xyz+vec3(0.5,0.5,0.0);
 		if(msaa)
 		{
-			float temp_depth =  ms_depth(vec2(in_depth_space.x, in_depth_space.y));
-			depth = temp_depth*rainDepthTextureScale * 0.5;
+			depth = ms_depth(vec2(in_depth_space.x, in_depth_space.y))*rainDepthTextureScale * 0.5;
 		}
 		else
 		{
