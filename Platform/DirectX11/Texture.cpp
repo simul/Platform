@@ -485,6 +485,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		D3D11_TEXTURE2D_DESC textureDesc;
 		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
+				FreeRTVTables();
 			ppd->GetDesc(&textureDesc);
 			// Can this texture have SRV's? If not we must COPY the resource.
 			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)==D3D11_BIND_SHADER_RESOURCE)||!need_srv)
@@ -509,6 +510,8 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 				cubemap=(textureDesc.ArraySize==6);
 				textureDesc.ArraySize=1;
 			}
+			else
+				cubemap=false;
 			dxgi_format=textureDesc.Format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
@@ -524,7 +527,6 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 			depth=textureDesc.ArraySize;
 			if(make_rt&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET))
 			{
-				FreeRTVTables();
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 				renderTargetViewDesc.Format = TypelessToSrvFormat(textureDesc.Format);
