@@ -1062,7 +1062,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 #include <cstdint>
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& deviceContext)
 {
-    deviceContext.GetFrameBufferStack().pop();
+	deviceContext.GetFrameBufferStack().pop();
 
     // Default FBO:
     if (deviceContext.GetFrameBufferStack().empty())
@@ -1226,6 +1226,11 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Devi
 		tv=&(deviceContext.defaultTargetsAndViewport);
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
+		//Will return the passed-through native Vulkan framebuffer of an individual cubemap face.
+		if(tv->m_rt[1]!=nullptr) 
+		{
+			return (vk::Framebuffer*)tv->m_rt[1];
+		}
 		if(tv->m_rt[0]!=nullptr)
 		{
 			vulkan::Framebuffer *fb=(vulkan::Framebuffer *)tv->m_rt[0];

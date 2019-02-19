@@ -203,7 +203,7 @@ shader void CS_MakeRainTextureArray(uint3 idx : SV_DispatchThreadID)
 ParticleGeometryOutput VS_SnowParticles(uint vertex_id,bool rainMaskEnabled,bool msaa)
 {
 	uint particle_id = vertex_id / 6;
-	uint vertex_index = vertex_id - (particle_id * 6);
+	uint vertex_index = vertex_id - (particle_id * 6) + 1;
 	ParticleGeometryOutput p;
 #if 1
 	uint4 state = uint4(63 + particle_id % 71, 83117 + particle_id / 51, 195 + particle_id / 1001, 9019 + particle_id % 507);

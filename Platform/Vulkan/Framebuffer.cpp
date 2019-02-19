@@ -186,24 +186,29 @@ void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
         depth_active    = true;
     }
     
-    // We need to attach the requested face:
+    // We need to attach the requested face: 
+	// For cubemap faces, we also include the native Vulkan framebuffer pointer in m_rt[1], which the renderplatform will handle.
     if (is_cubemap)
     {
+		targetsAndViewport.m_rt[1] = (void*)GetVulkanFramebuffer(deviceContext, current_face);
     }
 
     // Construct targets and viewport:
-    targetsAndViewport.num              = 1;
-	targetsAndViewport.textureTargets[0].texture=buffer_texture;
-	targetsAndViewport.textureTargets[0].layer	=targetsAndViewport.textureTargets[0].mip=0;
-	targetsAndViewport.depthTarget.texture		=buffer_depth_texture;
-	targetsAndViewport.depthTarget.layer=targetsAndViewport.depthTarget.mip=0;
+    targetsAndViewport.num							= 1;
+	targetsAndViewport.textureTargets[0].texture	= buffer_texture;
+	targetsAndViewport.textureTargets[0].layer		= is_cubemap ? current_face : 0;
+	targetsAndViewport.textureTargets[0].mip		= 0;
+	targetsAndViewport.depthTarget.texture			= buffer_depth_texture;
+	targetsAndViewport.depthTarget.layer			= 0;
+	targetsAndViewport.depthTarget.mip				= 0;
 	// note the different interpretation of m_rt in the case that it's a Simul framebuffer not native:
     targetsAndViewport.m_rt[0]          = (void*)this;
-    targetsAndViewport.m_dt             = 0;
+	targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;
     targetsAndViewport.viewport.w       = Width;
     targetsAndViewport.viewport.h       = Height;
+
 
     deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
 

@@ -162,9 +162,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		//if(z<H_km)
 			float rt_s1		=sqrt(s1);
 			//insc.rgb		=texture_3d_wmc_lod(inscatterVolumeTexture,vec3(worldspaceVolumeTexCoords.xy,rt_s1),0);
-		//else
 		{
-			fogLoss			*=fog_in*lerp(cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(rt_s1,loss_texc.y), 0).rgb,vec3(1,1,1),transition);
+			fogLoss *=fog_in*lerp((1-(above_fog*(1-cloud.a)))*texture_clamp_mirror_lod(loss2dTexture, vec2(rt_s1,loss_texc.y), 0).rgb,vec3(1,1,1),transition);
 		}
 		insc.rgb		*=vec3(1.0,1.0,1.0)-fogLoss;///lerp(retain,1.0,saturate(z-H_km));
 		insc.rgb		+=(fogColour+fogAmbient)*fogLoss;
