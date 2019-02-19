@@ -102,7 +102,6 @@ namespace simul
 
 			void			InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget);
 			
-
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;
 			vk::ImageLayout								currentImageLayout{ vk::ImageLayout::eUndefined };

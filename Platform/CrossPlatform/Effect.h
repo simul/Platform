@@ -438,8 +438,9 @@ namespace simul
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
 			long long validFrame;
+			int internalFrameNumber;
 		public:
-			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(0){}
+			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(-1), internalFrameNumber(0){}
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;

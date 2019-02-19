@@ -1007,11 +1007,11 @@ void Texture::SetDefaultSampling(GLuint texId)
 {
 }
 
-void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLayout newLayout,int layer,int mip)
+void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLayout newLayout, int layer, int mip)
 {
-//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-//	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages)
-	auto *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
+	//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
+	//	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages)
+	auto *commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	auto DstAccessMask = [](vk::ImageLayout const &layout)
 	{
 		vk::AccessFlags flags;
@@ -1044,47 +1044,47 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLay
 
 		return flags;
 	};
-	vk::ImageAspectFlags aspectMask		=vk::ImageAspectFlagBits::eColor;
-	if(depthStencil)
-		aspectMask					=vk::ImageAspectFlagBits::eDepth;
-	vk::AccessFlags srcAccessMask		=vk::AccessFlagBits();
-	vk::AccessFlags dstAccessMask		=DstAccessMask(newLayout);
-	vk::PipelineStageFlags src_stages	=vk::PipelineStageFlagBits::eBottomOfPipe;
-	vk::PipelineStageFlags dest_stages	=vk::PipelineStageFlagBits::eAllGraphics;
-	
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	if (depthStencil)
+		aspectMask = vk::ImageAspectFlagBits::eDepth;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
+	vk::AccessFlags dstAccessMask = DstAccessMask(newLayout);
+	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllGraphics;
+
 	auto  barrier = vk::ImageMemoryBarrier()
-			.setSrcAccessMask(srcAccessMask)
-			.setDstAccessMask(dstAccessMask)
-			.setNewLayout(newLayout)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(mImage);
-	if(layer>=0&&mip>=0)
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setNewLayout(newLayout)
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(mImage);
+	if (layer >= 0 && mip >= 0)
 	{
-		vk::ImageLayout &l=mLayerMipLayouts[layer][mip];
+		vk::ImageLayout &l = mLayerMipLayouts[layer][mip];
 		if (split_layouts)
 		{
 			l = vk::ImageLayout::eUndefined;
 		}
 		barrier.setOldLayout(l);
-		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask,mip,1,layer,1));
-		l=newLayout;
-		split_layouts=true;
+		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, mip, 1, layer, 1));
+		l = newLayout;
+		split_layouts = true;
 		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
 	}
 	else
 	{
-		if(split_layouts)
+		if (split_layouts)
 		{
-			currentImageLayout=vk::ImageLayout::eUndefined;
+			currentImageLayout = vk::ImageLayout::eUndefined;
 		}
-		if(currentImageLayout==newLayout)
+		if (currentImageLayout == newLayout)
 			return;
 		int totalNum = cubemap ? 6 * arraySize : arraySize;
 		barrier.setOldLayout(currentImageLayout);
-		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask,0, mips, 0, totalNum));
+		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, mips, 0, totalNum));
 		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
 		AssumeLayout(newLayout);
-		split_layouts=false;
+		split_layouts = false;
 	}
 }

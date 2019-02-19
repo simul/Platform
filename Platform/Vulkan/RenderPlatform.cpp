@@ -986,7 +986,7 @@ void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& device
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
-	vulkan::Texture* src = (vulkan::Texture*)source;
+	/*vulkan::Texture* src = (vulkan::Texture*)source;
 	vulkan::Texture* dst = (vulkan::Texture*)destination;
 	if (!src || !dst)
 	{
@@ -1004,6 +1004,8 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
 	//Resolve src image to dst image
 	
 	vk::CommandBuffer* commandBuffer =(vk::CommandBuffer*)deviceContext.platform_context;
+	vk::CommandBufferBeginInfo beginInfo;
+	beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 
 	vk::ImageResolve imageResolve;
 	imageResolve.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
@@ -1012,10 +1014,28 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
 	imageResolve.dstOffset = vk::Offset3D(0, 0 ,0);
 	imageResolve.extent = vk::Extent3D(deviceContext.defaultTargetsAndViewport.viewport.w, deviceContext.defaultTargetsAndViewport.viewport.h, 1);
 	
+	vk::ImageMemoryBarrier barrier = {};
+	barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentRead;
+	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	barrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
+	barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = src->GetImage();
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	vk::PipelineStageFlags srcAccessMask = vk::PipelineStageFlags::Flags(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+	vk::PipelineStageFlags dstAccessMask = vk::PipelineStageFlags::Flags(vk::PipelineStageFlagBits::eBottomOfPipe);
+	vk::DependencyFlags flags = vk::DependencyFlags::Flags(vk::DependencyFlagBits::eDeviceGroup);
+
 	if (commandBuffer)
 	{
+		commandBuffer->pipelineBarrier(srcAccessMask, dstAccessMask, flags, 0, nullptr, 0, nullptr, 1, &barrier);
 		commandBuffer->resolveImage(src->GetImage(), vk::ImageLayout::eTransferSrcOptimal, dst->GetImage(), vk::ImageLayout::eSharedPresentKHR, imageResolve);
-	}
+	}*/
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
@@ -1042,7 +1062,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 #include <cstdint>
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& deviceContext)
 {
-    deviceContext.GetFrameBufferStack().pop();
+	deviceContext.GetFrameBufferStack().pop();
 
     // Default FBO:
     if (deviceContext.GetFrameBufferStack().empty())
@@ -1206,6 +1226,11 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Devi
 		tv=&(deviceContext.defaultTargetsAndViewport);
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
+		//Will return the passed-through native Vulkan framebuffer of an individual cubemap face.
+		if(tv->m_rt[1]!=nullptr) 
+		{
+			return (vk::Framebuffer*)tv->m_rt[1];
+		}
 		if(tv->m_rt[0]!=nullptr)
 		{
 			vulkan::Framebuffer *fb=(vulkan::Framebuffer *)tv->m_rt[0];
@@ -1229,7 +1254,7 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Devi
 	}
 }
 
-void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat,bool clear)
+void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat,bool clear,int numOfSamples)
 {
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
 // because at the start of the renderpass, we don't care about their contents.
@@ -1240,29 +1265,30 @@ void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_c
 // LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
 // the renderpass, no barriers are necessary.
 	bool depth=(depthFormat!=crossplatform::PixelFormat::UNKNOWN);
-	int num_attachments=num_colour+(depth?1:0);
+	bool msaa = numOfSamples > 1;
+	int num_attachments = num_colour + (depth ? 1 : 0);
 	vk::AttachmentDescription *attachments=new vk::AttachmentDescription[num_attachments];
 	vk::AttachmentReference *colour_reference = nullptr;
+	vk::AttachmentReference depth_reference;	
 	if(num_colour!=0)
 		colour_reference=new vk::AttachmentReference[num_colour];
-	vk::AttachmentReference depth_reference;	
 	for(int i=0;i<num_colour;i++)
 	{
 		attachments[i]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(pixelFormat))
-														  .setSamples(vk::SampleCountFlagBits::e1)
+														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
 														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
 														  .setStoreOp(vk::AttachmentStoreOp::eStore)
 														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 														  .setInitialLayout(vk::ImageLayout::eUndefined)
-														  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+														  .setFinalLayout(msaa ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::ePresentSrcKHR);
 		colour_reference[i].setAttachment(i).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	}
 		
 	if(depth)
 	{
 		attachments[num_attachments-1]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(depthFormat))
-														  .setSamples(vk::SampleCountFlagBits::e1)
+														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
 														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
 														  .setStoreOp(vk::AttachmentStoreOp::eStore)
 														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)

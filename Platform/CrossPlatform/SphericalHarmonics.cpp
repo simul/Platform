@@ -133,7 +133,7 @@ void SphericalHarmonics::CopyMip(crossplatform::DeviceContext &deviceContext,Tex
 		// The source is the i'th mip of the faceIndex face of the cubemap texture.
 		lightProbesEffect->SetTexture(deviceContext, "sourceCubemap", tex, -1, src_mip);
 		// The target is the (i+1)'th mip of the faceIndex face.
-		tex->activateRenderTarget(deviceContext, face, src_mip + 1); //Something here -AJR
+		tex->activateRenderTarget(deviceContext, face, src_mip + 1);
 		lightProbesEffect->Apply(deviceContext, tech, passname); 
 		renderPlatform->DrawQuad(deviceContext);
 		lightProbesEffect->UnbindTextures(deviceContext);

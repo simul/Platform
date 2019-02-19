@@ -197,7 +197,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 			// roughness=1, GGX is constant. Use cosine distribution instead
 			L		= CosineSampleHemisphere(E).xyz;
 			float NoL = L.z;
-		#ifdef SFX_OPENGL
+		#ifdef CPP_GLSL
 			result	+= sourceCubemap.SampleLevel(cubeSamplerState, vec3(-L.x, -L.y, L.z), 0) * NoL;
 		#else
 			result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
@@ -222,7 +222,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 
 				L = mul( L, TangentToWorld );
 				// Apply a limit to avoid numerical issues:
-				#ifdef SFX_OPENGL
+				#ifdef CPP_GLSL
 					vec4 lookup=100.0*saturate(0.01*sourceCubemap.SampleLevel(cubeSamplerState,vec3(-L.x, -L.y, L.z), 0));
 				#else
 					vec4 lookup=100.0*saturate(0.01*sourceCubemap.SampleLevel(cubeSamplerState, L, 0));
@@ -289,7 +289,7 @@ posTexVertexOutput SimpleFullscreenFlipTC(idOnly IN, bool flipHorizonal, bool fl
 
 shader posTexVertexOutput VS_SimpleFullscreenFlipTC(idOnly IN)
 {
-#ifdef SFX_OPENGL
+#ifdef CPP_GLSL
 	posTexVertexOutput pt=SimpleFullscreenFlipTC(IN, true, true);
 #else
 	posTexVertexOutput pt=SimpleFullscreenFlipTC(IN, false, false);
