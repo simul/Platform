@@ -40,10 +40,11 @@ SIMUL_CONSTANT_BUFFER_END
 
 struct LightingQueryResult
 {
-	vec3 pos;
-	int valid;
+	vec4 pos;
 	vec4 sunlight;		// we use vec4's here to avoid padding.
 	vec4 moonlight;
 	vec4 ambient;
+	vec3 padding;
+	int  valid;
 };
 #endif
