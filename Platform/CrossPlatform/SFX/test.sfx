@@ -35,8 +35,6 @@ uniform Texture2D lossTexture				SIMUL_TEXTURE_REGISTER(5);
 uniform TextureCube depthTexture;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
-uniform Texture2D rainbowLookupTexture;
-uniform Texture2D coronaLookupTexture;
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
