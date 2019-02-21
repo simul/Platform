@@ -11,22 +11,21 @@
 #include "../SL/depth.sl"
 #include "../SL/noise.sl"
 
-//uniform Texture2D	g_samplerDisplacementMap	SIMUL_TEXTURE_REGISTER(0);
-
 uniform Texture2D		showTexture					SIMUL_TEXTURE_REGISTER(0);
 
 //Deprecated textures
+//uniform Texture2D	g_samplerDisplacementMap	SIMUL_TEXTURE_REGISTER(0);
 //uniform Texture2D	g_foamTexture				SIMUL_TEXTURE_REGISTER(4);		// Foam colour
 //uniform Texture2D	g_foamAlpha					SIMUL_TEXTURE_REGISTER(5);		// Foam Alpha
 //uniform Texture2D	g_texDetailMapDisplacement	SIMUL_TEXTURE_REGISTER(8);		// Detail map displacement
 //uniform Texture2D	g_texPerlin					SIMUL_TEXTURE_REGISTER(9);		// Perlin map for tiling reduction
+//uniform Texture2D	g_surfaceFoamTexture		SIMUL_TEXTURE_REGISTER(2);		// Foam Surface colour
 
 //Shader input textures
 uniform Texture2D		g_texColour					SIMUL_TEXTURE_REGISTER(0);		// Colour of the render target, used for refraction
 uniform Texture2D		g_texDepth					SIMUL_TEXTURE_REGISTER(1);		// Depth of rendered scene up till now
-uniform Texture2D		g_surfaceFoamTexture		SIMUL_TEXTURE_REGISTER(2);		// Foam Surface colour
-uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(3);		// Shore depth for shallow water effects
-uniform Texture2DArray	g_ProfileBuffers			SIMUL_TEXTURE_REGISTER(4);		// Profile Buffer Texture
+uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(2);		// Shore depth for shallow water effects
+uniform Texture2DArray<vec4>	g_ProfileBuffers	: register(t3);					// Profile Buffer Texture
 
 //Render target textures to pass from initial pass to final composite
 uniform Texture2D		g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
@@ -36,6 +35,7 @@ uniform Texture2D		g_waterNormals				SIMUL_TEXTURE_REGISTER(3);		// Normals of t
 uniform Texture2D		g_waterRefractColour		SIMUL_TEXTURE_REGISTER(4);		// Colour of the refracted underwater surface
 uniform TextureCube		g_texReflectCube			: register(t5);					// A skybox cube texture for reflection
 
+uniform Texture2D		g_contourMap				SIMUL_TEXTURE_REGISTER(0);		// Depth and direction of shoreline, for use in calculating water flow
 
 uniform Texture3D					g_InputAmplitude;
 uniform RWTexture3D<float>			g_OutputAmplitude;
@@ -47,6 +47,12 @@ uniform StructuredBuffer<vec4>		g_ProbePos		SIMUL_TEXTURE_REGISTER(0);
 uniform StructuredBuffer<vec4>		g_ProbeVelocity	SIMUL_TEXTURE_REGISTER(1);
 //uniform StructuredBuffer<vec4>	g_ProbeValues	SIMUL_TEXTURE_REGISTER(0);
 uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
+
+uniform RWTexture2D<vec4>	g_LeftFlowRayBuffer: register (u4);
+uniform RWTexture2D<vec4>	g_RightFlowRayBuffer: register (u5);
+uniform RWTexture2D<vec4>	g_OutputFlowRayBuffer: register (u6);
+
+uniform Texture2D		g_FlowRayBuffer				SIMUL_TEXTURE_REGISTER(0);
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
 SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
@@ -90,7 +96,15 @@ SamplerState bbbSamplerState SIMUL_STATE_REGISTER(9)
 	AddressW = BORDER;
 };
 
-//---------------------------------------- Compute Shaders -----------------------------------------
+SamplerState g_samplerFlowRay SIMUL_STATE_REGISTER(10)
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+//---------------------------------------- Precompute Shaders -----------------------------------------
 
 //-----------------------------------------------------------------------------
 // Name: CS_PrecomputeGroupSpeeds
@@ -100,15 +114,13 @@ SamplerState bbbSamplerState SIMUL_STATE_REGISTER(9)
 [numthreads(1, 1, 1)]
 shader void CS_PrecomputeGroupSpeeds(uint3 sub_pos : SV_DispatchThreadID)
 {
-	float dx = (g_WaveSpectrum[sub_pos.x].x - g_WaveSpectrum[sub_pos.x].y) / g_totalWaveNumbers;
-	float pos = g_WaveSpectrum[sub_pos.x].x + (((float)sub_pos.x + 0.5f) * dx);
 
 	float zetaMin = g_WaveSpectrum[sub_pos.x].x;// pos - (0.5f * dx);
 	float zetaMax = g_WaveSpectrum[sub_pos.x].y;// pos + (0.5f * dx);
 
 	const float g = 9.81f;
 
-	dx = (zetaMax - zetaMin) / g_integrationSteps;
+	float dx = (zetaMax - zetaMin) / g_integrationSteps;
 	float x = (zetaMin + 0.5f * dx);
 
 	vec2 result = vec2(0.0f, 0.0f);
@@ -124,6 +136,275 @@ shader void CS_PrecomputeGroupSpeeds(uint3 sub_pos : SV_DispatchThreadID)
 	}
 
 	g_GroupSpeeds[sub_pos.x] =2.0 * result[0] / result[1];
+}
+
+//-----------------------------------------------------------------------------
+// Name: CS_TraceFlowRays
+// Type: Compute shader
+// Desc: Compute shader for tracing flow rays through the scene
+//-----------------------------------------------------------------------------
+void CS_TraceFlowRays(uint3 sub_pos, bool base)
+{
+	vec4 result = vec4(0.0, 0.0, 0.0, 0.0);
+	vec4 tag = vec4(0.0,0.0,0.0,0.0);
+	vec2 position = vec2((float)sub_pos.x / 256.f, 0.0);
+	vec2 direction = vec2(0.0, 1.0);
+	
+	int count = 1;
+	int arrayPosition = 2;
+	vec4 contourSample = vec4(0.0, 0.0, 0.0, 1000.0);
+
+	float waveNumber = TAU / 20.f;
+	float minDepth = tan(1.f) / waveNumber;
+	float stepSize = g_stepSize / 4.0;
+
+	float baseVelocity = tanh(waveNumber * minDepth);
+	float previousVelocity = baseVelocity;
+
+	float refracted = 0.0;
+
+	float modifier = 0.0;
+
+
+	if (base)
+	{
+		g_OutputFlowRayBuffer[uint2(sub_pos.x, 1)] = vec4(position.xy, previousVelocity, modifier);
+
+		while (count < 511 && position.y <= 1.0 && position.x <= 1.0 && position.y >= 0.0 && position.x >= 0.0 && contourSample.w >= 0.0)
+		{
+			contourSample = g_contourMap.SampleLevel(g_samplerAmpGrid, position, 0);
+			if (contourSample.w <= minDepth)
+			{
+				previousVelocity = baseVelocity * tanh(waveNumber * contourSample.w);
+				break;
+			}
+			position += stepSize * direction;
+			count++;
+		}
+
+		if (count == 511)
+		{
+			g_OutputFlowRayBuffer[uint2(sub_pos.x, 2)] = vec4(position.xy, previousVelocity, count);
+			tag.y = arrayPosition;
+			//	tag.x = 1.0;
+			g_OutputFlowRayBuffer[uint2(sub_pos.x, 0)] = tag;
+			return;
+		}
+
+		tag.x = count;
+	}
+	else
+	{
+		position += vec2(1.f / 512.f, 0.0);
+
+		g_OutputFlowRayBuffer[uint2(sub_pos.x, 1)] = vec4(position.xy, previousVelocity, 0.0);
+
+		int startPointLeft = g_RightFlowRayBuffer[uint2(sub_pos.x, 0)].x;
+		int startPointRight = g_RightFlowRayBuffer[uint2(sub_pos.x + 1, 0)].x;
+
+		if (startPointLeft == 511 && startPointRight == 511)
+		{
+			g_OutputFlowRayBuffer[uint2(sub_pos.x, 2)] = vec4(position.xy, previousVelocity, 511);
+			tag.y = arrayPosition;
+			g_OutputFlowRayBuffer[uint2(sub_pos.x, 0)] = tag;
+			return;
+		}
+
+		count = min(startPointLeft, startPointRight);
+
+		float difference = 1.f / 128.f;
+
+		bool foundBreak = false;
+		bool equalArrayLocation = false;
+
+		int leftArrayPosition = 2;
+		int rightArrayPosition = 2;
+
+		vec2 leftRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x, 1)].xy;;
+		vec2 rightRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x + 1, 1)].xy;;
+
+		if (startPointLeft > startPointRight)
+		{
+			while (!foundBreak && !equalArrayLocation)
+			{
+				modifier = 1.0;
+				//vec2 leftRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x, 1)].xy;
+				difference = length((leftRayPosition + (stepSize * direction * count)) - g_RightFlowRayBuffer[uint2(sub_pos.x + 1, rightArrayPosition)].xy);
+				foundBreak = difference > 1.f / 128.f;
+				if (!foundBreak)
+				{
+					equalArrayLocation = (count == startPointLeft);
+					rightArrayPosition++;
+					count++;
+				}
+				else
+				{
+					leftRayPosition += (stepSize * direction * count);
+					rightRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x + 1, rightArrayPosition)].xy;
+				}
+			}
+		}
+		else if (startPointLeft < startPointRight)
+		{
+			
+			while (!foundBreak && !equalArrayLocation)
+			{
+				modifier = 1.0;
+				//vec2 rightRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x + 1, 1)].xy;
+				difference = length(g_RightFlowRayBuffer[uint2(sub_pos.x, leftArrayPosition)].xy - (rightRayPosition + (stepSize * direction * count)));
+				foundBreak = difference > 1.f / 128.f;
+				if (!foundBreak)
+				{
+					equalArrayLocation = (count == startPointLeft);
+					leftArrayPosition++;
+					count++;
+				}
+				else
+				{
+					leftRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x, leftArrayPosition)].xy;
+					rightRayPosition += (stepSize * direction * count);
+				}
+			}
+		}
+
+		while (!foundBreak && (count != 511))
+		{
+			modifier = 0.0;
+			leftRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x, leftArrayPosition)].xy;
+			rightRayPosition = g_RightFlowRayBuffer[uint2(sub_pos.x + 1, rightArrayPosition)].xy;
+			difference = length(leftRayPosition - rightRayPosition);
+			foundBreak = difference > 1.f / 128.f;
+			if (!foundBreak)
+			{
+				rightArrayPosition++;
+				leftArrayPosition++;
+				count++;
+			}
+		}
+
+		if (count == 511)
+		{
+			tag.x = -1;
+			g_OutputFlowRayBuffer[uint2(sub_pos.x, 0)] = tag;
+			return;
+		}
+
+		position = (leftRayPosition + rightRayPosition) / 2.f;
+		direction = normalize(normalize(leftRayPosition - g_RightFlowRayBuffer[uint2(sub_pos.x, leftArrayPosition - 1)].xy) + normalize(rightRayPosition - g_RightFlowRayBuffer[uint2(sub_pos.x + 1, rightArrayPosition - 1)].xy));
+		previousVelocity = (g_RightFlowRayBuffer[uint2(sub_pos.x, leftArrayPosition)].z + g_RightFlowRayBuffer[uint2(sub_pos.x + 1, rightArrayPosition)].z) / 2.f;
+
+		tag.x = count;
+
+		g_OutputFlowRayBuffer[uint2(sub_pos.x, arrayPosition)] = vec4(position.xy, previousVelocity, modifier);
+
+		position += stepSize * direction;
+
+		count++;
+		arrayPosition++;
+
+		g_OutputFlowRayBuffer[uint2(sub_pos.x, arrayPosition)] = vec4(position.xy, previousVelocity, modifier);
+	}
+
+
+	while (arrayPosition < 511 && position.y <= 1.0 && position.x <= 1.0 && position.y >= 0.0 && position.x >= 0.0 && contourSample.w >= 0.0)
+	{
+		contourSample = g_contourMap.SampleLevel(g_samplerAmpGrid, position, 0);
+		g_OutputFlowRayBuffer[uint2(sub_pos.x, arrayPosition)] = vec4(position.xy, previousVelocity, modifier);
+
+		modifier = 0.0;
+
+		if (contourSample.w <= minDepth)
+		{
+			float newVelocity = baseVelocity * tanh(waveNumber * contourSample.w);
+
+			if (newVelocity != previousVelocity)
+			{
+				/*
+				if ((dot(direction, vec2(0.0, contourSample.y)) > 0) && (newVelocity > previousVelocity))
+				{
+					contourSample.y *= -1.0;
+					modifier += 1.0;
+				}
+
+				if ((dot(direction, vec2(contourSample.x, 0.0)) > 0) && (newVelocity > previousVelocity))
+				{
+					contourSample.x *= -1.0;
+					modifier += 1.0;
+				}
+				*/
+
+				if ((newVelocity > previousVelocity))
+				{
+					contourSample.xy *= -1.0;
+					modifier += 1.0;
+				}
+				previousVelocity = newVelocity;
+				
+				if (contourSample.x != 0 && contourSample.y != 0)
+				{/*
+					float tempVelocity;
+					float index;
+
+					vec2 k1 = direction;
+
+					tempVelocity = baseVelocity * tanh(waveNumber * g_contourMap.SampleLevel(g_samplerAmpGrid, position + (k1 * (stepSize / 2.0)), 0).w);
+					index = (tempVelocity < previousVelocity) ? tempVelocity / previousVelocity : previousVelocity / tempVelocity;
+
+					vec2 k2 = normalize(refract(k1, contourSample.xy, index));
+
+					tempVelocity = baseVelocity * tanh(waveNumber * g_contourMap.SampleLevel(g_samplerAmpGrid, position + (k2 * (stepSize / 2.0)), 0).w);
+					index = (tempVelocity < previousVelocity) ? tempVelocity / previousVelocity : previousVelocity / tempVelocity;
+
+					vec2 k3 = normalize(refract(k2, contourSample.xy, index));
+
+					tempVelocity = baseVelocity * tanh(waveNumber * g_contourMap.SampleLevel(g_samplerAmpGrid, position + (k3 * stepSize), 0).w);
+					index = (tempVelocity < previousVelocity) ? tempVelocity / previousVelocity : previousVelocity / tempVelocity;
+
+					vec2 tempContourSample = g_contourMap.SampleLevel(g_samplerAmpGrid, position + (k3 * stepSize), 0).xy * ((tempVelocity > previousVelocity) ? -1 : 1);
+					vec2 k4 = normalize(refract(k3, tempContourSample, index));
+
+					direction = normalize((k1 + (2 * k2) + (2 * k3) + k4) / 6.f);
+					*/
+					//index = (newVelocity < previousVelocity) ? newVelocity / previousVelocity : previousVelocity / newVelocity;
+
+					//direction = normalize(refract(direction, contourSample.xy, index));
+
+				}
+				
+				
+			}
+			//refracted = 0.5;
+		}
+		else
+		{
+			previousVelocity = baseVelocity;
+			modifier = 0.0;
+		}
+
+		position += stepSize * direction;
+		
+		count++;
+		arrayPosition++;
+	}
+
+	contourSample = g_contourMap.SampleLevel(clampSamplerState, position, 0);
+	g_OutputFlowRayBuffer[uint2(sub_pos.x, arrayPosition)] = vec4(position.x, position.y, 0.0, count);
+	tag.y = arrayPosition;
+//	tag.x = 1.0;
+	g_OutputFlowRayBuffer[uint2(sub_pos.x, 0)] = tag;// g_contourMap.SampleLevel(clampSamplerState, vec2((float)sub_pos.x / 256.f, (float)sub_pos.y / 512.f), 0);// vec4(1.0, 1.0, 0.0, 0.0);
+}
+
+
+[numthreads(8, 1, 1)]
+shader void CS_TraceFlowRaysBase(uint3 sub_pos : SV_DispatchThreadID)
+{
+	CS_TraceFlowRays(sub_pos, true);
+}
+
+[numthreads(8, 1, 1)]
+shader void CS_TraceFlowRaysSub(uint3 sub_pos : SV_DispatchThreadID)
+{
+	CS_TraceFlowRays(sub_pos, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -237,7 +518,7 @@ shader void CS_UpdateAmplitudeGrid(uint3 sub_pos : SV_DispatchThreadID)
 	}
 
  //	float gamma = 0.06125;// *2.0 * 0.000001 * pow(g_GroupSpeeds[g_waveGroup], 2.0);
-	float gamma = g_dt * 2.0 * pow(g_GroupSpeeds[0], 2.0) * (1.0 / dims.z);
+	float gamma = saturate(g_dt * 2.0 * pow(g_GroupSpeeds[0], 2.0) * (1.0 / dims.z));
 
 	vec3 texc = convertPosToTexc(pos, dims).xyz;
 	vec3 traceBackTexc = convertPosToTexc(pos, dims);
@@ -258,7 +539,7 @@ shader void CS_UpdateAmplitudeGrid(uint3 sub_pos : SV_DispatchThreadID)
 }
 
 //-----------------------------------------------------------------------------
-// Name: PrecomputeProfileBufferPS
+// Name: PS_PrecomputeProfileBuffer
 // Type: Pixel shader
 // Desc: Pixel shader for computing the values in the Profile buffers
 //-----------------------------------------------------------------------------
@@ -282,8 +563,8 @@ shader vec4 PS_PrecomputeProfileBuffer(posTexVertexOutput In) : SV_Target
 	{
 		float waveLength = pow(2, x);
 		float waveNumber = TAU / waveLength;
-		float phase1 = waveNumber * p - sqrt(waveNumber * g) * g_time; //*50.0;// 
-		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) * g_time; //* 50.0;//
+		float phase1 = waveNumber * p - sqrt(waveNumber * g)  * g_time + 50.0;// 
+		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) * g_time + 50.0;//
 
 		result += dx * waveLength * spectrum(x, g_windSpeed) * ((bump1 * gerstner_wave(phase1, waveNumber)) + (bump2 * gerstner_wave(phase2, waveNumber)));
 
@@ -293,6 +574,31 @@ shader vec4 PS_PrecomputeProfileBuffer(posTexVertexOutput In) : SV_Target
 	return result;
 }
 
+//-----------------------------------------------------------------------------
+// Name: PS_GenerateContourMap
+// Type: Pixel shader
+// Desc: Pixel shader for generating the values for the Contour map
+//-----------------------------------------------------------------------------
+shader vec4 PS_GenerateContourMap(posTexVertexOutput In) : SV_Target
+{
+	vec4 result = (0.0,0.0,0.0,0.0);
+	//g_resolution
+	float depth = clamp((g_shoreDepthTexture.Sample(clampSamplerState, In.texCoords, 0).x * 0.01) - g_waterHeight, -1.0, 40.0);
+	result.w = depth;
+
+	if (depth <= 0)
+		return vec4(0.0, 0.0, 0.0, -1.0);
+	float dzdx = (g_shoreDepthTexture.Sample(clampSamplerState, In.texCoords + vec2(g_offsets.x, 0.0), 0).x - g_shoreDepthTexture.SampleLevel(clampSamplerState, In.texCoords - vec2(g_offsets.x, 0.0), 0).x) / 2.0;
+	float dzdy = (g_shoreDepthTexture.Sample(clampSamplerState, In.texCoords + vec2(0.0, g_offsets.y), 0).x - g_shoreDepthTexture.SampleLevel(clampSamplerState, In.texCoords - vec2(0.0, g_offsets.y), 0).x) / 2.0;
+	//vec3 direction =
+	//float magnitude = length(direction);
+	if (dzdx + dzdy == 0)
+		return vec4(0.0, 0.0, 0.0, depth);
+
+	vec3 normal = normalize(vec3(dzdx, dzdy, 1.0)); //direction / magnitude;
+	
+	return vec4(normal, depth);
+}
 
 //-----------------------------------------------------------------------------
 // Name: CS_UpdateProbeValuesBoundless
@@ -335,8 +641,6 @@ shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 			displacementValue = dx * baseWaveAmp;
 		}
 
-		
-
 		displacement += vec3(displacementValue.x * texcDir.x, displacementValue.x * texcDir.y, displacementValue.y);
 	}
 
@@ -356,12 +660,12 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 {
 	VS_OUTPUT Output;
 	
-	vec3 vPos;
+	vec3 vPos = vec3(0.0, 0.0, 0.0);
 	vec2 cameraCenter;
 	cameraCenter.x = g_LocalEye.x;
 	cameraCenter.y = g_LocalEye.y;
-	Output.vecColour = vec4(0.0, 0.0, 0.0, 1.0);
-	vPos = vec3(0.0, 0.0, 0.0);
+	Output.vecColour = vec4(0.0, 1.0, 1.0, 1.0);
+
 	float layerQuadSize;
 	float layerX = 0.0;
 	float layerY = 0.0;
@@ -373,8 +677,8 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 	bool noGradient = false;
 	bool noWaveGrid = false;
 
-	if (g_verticiesPerLayer < 500)
-		noDisplacement = true;
+	//if (g_verticiesPerLayer < 250)
+	//	noDisplacement = true;
 
 	uint vertexNo = IN.vertex_id;
 
@@ -842,6 +1146,8 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 
 		//Calculate Shore damping
 		float shoreDepth = 1.0;
+		float shoreDepth1 = 1.0;
+		float shoreDepth2 = 1.0;
 		vec3 detailDisplacement = vec3(0.0, 0.0, 0.0);
 		float fade = 1.0;
 
@@ -850,10 +1156,18 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		if (shoreEffects)
 		{
 			//fade = saturate(((length(pos_local.xy - cameraCenter) * g_UVScale) - 0.4) / 0.6);
-
-			vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
-			shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) + 1.0 - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 5.0) / 5.0;
-
+			if (lerpDisplacement)
+			{
+				vec2 shoreCoords1 = (((vec2(lerpSample1.x, -lerpSample1.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
+				vec2 shoreCoords2 = (((vec2(lerpSample2.x, -lerpSample2.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
+				shoreDepth1 = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords1, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 1.0);
+				shoreDepth2 = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords2, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 1.0);
+			}
+			else
+			{
+				vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
+				shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 1.0);
+			}
 		}
 
 		//Horizontal movement in X component, Vertical movement in Y component
@@ -883,8 +1197,8 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 
 					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency))) / 2.0, 4.0);
 
-					vec2 baseWaveAmp1 = (g_amplitude * shoreDepth * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc1.x + texc1.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
-					vec2 baseWaveAmp2 = (g_amplitude * shoreDepth * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc2.x + texc2.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
+					vec2 baseWaveAmp1 = (g_amplitude * shoreDepth1 * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc1.x + texc1.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
+					vec2 baseWaveAmp2 = (g_amplitude * shoreDepth2 * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc2.x + texc2.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
 
 					if (waveGrid && !noWaveGrid)
 					{
@@ -913,9 +1227,10 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 					vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 					vec2 texc = texcDir * uv_local * g_profileUVScale;
 
+					vec2 displacementValue;
+
 					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency))) / 2.0, 4.0);
 
-					vec2 displacementValue;
 					vec2 baseWaveAmp = (g_amplitude * shoreDepth * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
 					
 					if (waveGrid && !noWaveGrid)
@@ -933,8 +1248,10 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		}
 		
 		pos_local.xyz += displacement.xyz;
-
-		Output.vecColour.w = max(shoreDepth, 0.001);
+		if (lerpDisplacement)
+			Output.vecColour.w = max(lerp(shoreDepth1, shoreDepth2, 0.5), 0.001);
+		else
+			Output.vecColour.w = max(shoreDepth, 0.001);
 		//Output.vecColour.z = fade;
 		//Output.vecColour.xy = -detail_uv_local;// detailDisplacement;	
 	}
@@ -1274,7 +1591,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	}
 
 	//Caluclate refraction
-	float tempsample = g_texDepth.Sample(samplerStateNearest,TexCoord*g_DepthScale).x;
+	float tempsample = g_texDepth.Sample(clampSamplerState,TexCoord*g_DepthScale).x;
 	float fulldepth =  depthToFadeDistance(tempsample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
 	
 	//float fresnelFactor = 1.0;
@@ -1344,7 +1661,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 	if (enableRefraction)
 	{
-		subsurfaceSample = g_texDepth.Sample(samplerStateNearest, TexCoord*g_DepthScale).x;
+		subsurfaceSample = g_texDepth.Sample(clampSamplerState, TexCoord*g_DepthScale).x;
 		subsurfaceDepth = depthToFadeDistance(subsurfaceSample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
 		if (subsurfaceDepth < surfaceDepth)
 		{
@@ -1528,7 +1845,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 	float sunAngle = dot(sun_dir, vec3(0.f, 0.f, 1.f)) / (length(sun_dir) * length(vec3(0.f, 0.f, 1.f)));
 
 	// Fournier-Forand phase function
-	const float u = 4.0f;
+	const float u = 4.25f;
 	float v = (3.f - u) / 2.f;
 	float b = (4.f / (3.f * pow(1.33f - 1.f, 2.f))) * (0.5f - 0.5f * (dot(eye_dir, sun_dir)));
 	float p = 1.f - ((1.f - pow(b, v + 1.f) - (0.5f * (1.f - pow(b, v)))) / ((1.f - b) * pow(b, v)));
@@ -1595,8 +1912,8 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 		vec4 SSS = vec4((albedo * (p / (1.f + c)) * (1.f - (exp(-extinction * (1.f + c) * (fadeDistance * waterDepth))))), 0.f);
 
 		//float sunScatter = saturate(dot(eye_dir, sun_dir));
-		//if (!sun_dir.z)
-			//sunScatter = 0.f;
+		///if (!sun_dir.z)
+		//	sunScatter = 0.f;
 
 		SSS = max(SSS, vec4(0.0, 0.0, 0.0, 0.0));
 		surfaceScattering = max(surfaceScattering, vec4(0.0, 0.0, 0.0, 0.0));
@@ -1627,7 +1944,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 
 	float sunEffect = (dot(normal, sun_dir) + 1.f) / 2.f;
 
-	//reflect_vec.z = max(reflect_vec.z, 0.f);
+	reflect_vec.z = max(reflect_vec.z, 0.f);
 	
 
 	// --------------- Sun spots
@@ -1680,11 +1997,6 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 	//return min(Output, vec4(1.0,1.0,1.0,1.0));
 }
 
-shader float4 PS_CopyDepthStencil(posTexVertexOutput In) : SV_Target
-{
-	float4 Output =  g_texDepth.SampleLevel(samplerStateNearest, In.texCoords, 0);//TEXTURE_LOAD_MSAA(g_texDepth, In.texCoords, 0).x;//
-	return Output;
-}
 /*
 shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
 {
@@ -1716,6 +2028,63 @@ shader float4 UpdateFoamAlphaPS(posTexVertexOutput In) : SV_Target
 	return float4(foam / 2.0, surfaceFoam, 0.0, alpha);
 }
 */
+
+//---------------------------------------- Debug Shaders -----------------------------------------
+
+//-----------------------------------------------------------------------------
+// Name: VS_FlowRaysWireframe
+// Type: Vertex shader
+// Desc: Visualiser for flow rays.
+//-----------------------------------------------------------------------------
+VS_OUTPUT VS_FlowRaysWireframe(idOnly IN)
+{
+	VS_OUTPUT Output;
+
+	vec3 vPos = vec3(0.0, 0.0, 0.0);
+	vec2 cameraCenter = g_LocalEye;
+
+	uint vertexID = IN.vertex_id;
+
+	uint pos = (vertexID % 512);
+	uint rayID = (vertexID - pos) / 512;
+
+	vec4 rayValue = g_FlowRayBuffer.SampleLevel(samplerStateNearest, vec2((float)(rayID ) / 256.f, (float)(pos / 512.f)), 0);
+
+	vPos = vec3(rayValue.x * 256 * (g_ShoreWidth / 256.f), -rayValue.y * 256 * (g_ShoreWidth / 256.f), g_oceanHeight);
+	vPos += vec3(g_ShoreDepthTextureLocation.y - (g_ShoreWidth / 2.0), g_ShoreDepthTextureLocation.x + (g_ShoreWidth / 2.0), 0.0);
+
+	if (pos == 0)
+		vPos.xy = g_ShoreDepthTextureLocation;
+
+	if (pos == 0 || pos == 1 || pos == 2 || pos == 512 || rayValue.z == 0.0)
+		Output.vecColour = vec4(0.0, 0.0, 0.0, 0.0);
+	else
+		Output.vecColour = vec4(rayValue.xy, rayValue.w, 1.0);
+
+	float4 pos_local = float4(vPos, 1);
+
+	Output.Position = mul(g_matWorldViewProj, pos_local);
+	Output.LocalPos = vPos;
+
+	Output.texCoords = vec2(0.0,0.0);
+	Output.SurePosition = Output.Position;
+
+	//g_OutputFlowRayBuffer
+
+	return Output;
+}
+
+//-----------------------------------------------------------------------------
+// Name: PS_CopyDepthStencil
+// Type: Pixel shader
+// Desc: Copy the depth from one texture to another
+//-----------------------------------------------------------------------------
+shader float4 PS_CopyDepthStencil(posTexVertexOutput In) : SV_Target
+{
+	float4 Output = g_texDepth.SampleLevel(clampSamplerState, In.texCoords, 0);
+	return Output;
+}
+
 shader float4 PS_Wireframe(VS_OUTPUT IN) : SV_Target
 {
 	return IN.vecColour;
@@ -1797,6 +2166,19 @@ technique wireframe_bounded
 		SetDepthStencilState(TestReverseDepth, 0);
 		SetBlendState(AddBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_BoundedWaterSurf()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_Wireframe()));
+	}
+}
+
+technique wireframe_flow_rays
+{
+	pass p0
+	{
+		SetRasterizerState(wireframeRasterizer);
+		SetDepthStencilState(TestReverseDepth, 0);
+		SetBlendState(AddBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_FlowRaysWireframe()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_Wireframe()));
 	}
@@ -1983,10 +2365,23 @@ technique render_bounded_depth
 }
 
 technique update_probes
-{
-	pass boundless
+	{
+		pass boundless
 	{
 		SetComputeShader(CompileShader(cs_5_0, CS_UpdateProbeValuesBoundless()));
+	}
+	}
+
+technique generate_contour_map
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_GenerateContourMap()));
 	}
 }
 
@@ -2008,6 +2403,19 @@ technique precompute_group_speeds
 	pass p0
 	{
 		SetComputeShader(CompileShader(cs_5_0, CS_PrecomputeGroupSpeeds()));
+	}
+}
+
+technique trace_flow_rays
+{
+	pass base
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_TraceFlowRaysBase()));
+	}
+
+	pass sub
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_TraceFlowRaysSub()));
 	}
 }
 

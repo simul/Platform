@@ -352,9 +352,6 @@
     <None Include="SL\noise_constants.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="SL\ocean_constants.sl">
-      <Filter>SL</Filter>
-    </None>
     <None Include="SL\optics_constants.sl">
       <Filter>SL</Filter>
     </None>
@@ -430,6 +427,12 @@
     <None Include="SL\brdf.sl" />
     <None Include="SFX\water.sfx">
       <Filter>SFX</Filter>
+    </None>
+    <None Include="SL\water.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\water_constants.sl">
+      <Filter>SL</Filter>
     </None>
   </ItemGroup>
 </Project>

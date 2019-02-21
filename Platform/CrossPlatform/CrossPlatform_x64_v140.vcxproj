@@ -279,7 +279,6 @@
     <None Include="SL\mixed_resolution_constants.sl" />
     <None Include="SL\noise.sl" />
     <None Include="SL\noise_constants.sl" />
-    <None Include="SL\ocean_constants.sl" />
     <None Include="SL\optics_constants.sl" />
     <None Include="SL\quaternion.sl" />
     <None Include="SL\rain.sl" />
@@ -302,6 +301,8 @@
     <None Include="SL\spherical_harmonics_constants.sl" />
     <None Include="SL\states.sl" />
     <None Include="SL\text_constants.sl" />
+    <None Include="SL\water.sl" />
+    <None Include="SL\water_constants.sl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Base\Base_x64_v140.vcxproj">
