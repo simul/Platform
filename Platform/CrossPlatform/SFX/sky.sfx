@@ -42,7 +42,7 @@ uniform StructuredBuffer<vec4> starsSB;
 #include "../SL/debug_constants.sl"
 
 uniform RWStructuredBuffer<LightingQueryResult> lightingQueryResults: register (u1);
-uniform StructuredBuffer<vec3> lightingQueryInputs: register (t2);
+uniform StructuredBuffer<vec4> lightingQueryInputs: register (t2);
 
 CS_LAYOUT(1,1,1)
 shader void CS_InterpLightTable(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
@@ -70,6 +70,12 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 	uint num				=0;
 	uint byteStride			=0;
 	LightingQueryResult res;
+	res.pos = vec4(0,0,0,0);
+	res.sunlight = vec4(0,0,0,0);	
+	res.moonlight = vec4(0,0,0,0);
+	res.ambient = vec4(0,0,0,0);
+	res.padding = vec3(0,0,0);
+	res.valid = 0;
 	res.pos					=lightingQueryInputs[sub_pos.x];
 	float alt_texc			=GetAltTexCoord(res.pos.z/1000.0,minSunlightAltitudeKm,maxFadeAltitudeKm);
 	//vec4 combined			=lightTable2DTexture.SampleLevel(clampSamplerState,vec2(alt_texc,3.5/4.0),0).rgba;
