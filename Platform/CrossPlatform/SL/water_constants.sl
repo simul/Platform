@@ -96,7 +96,6 @@ SIMUL_CONSTANT_BUFFER(cbWaterProbe, 4)
 	uniform float		cvbhdxiobacyi;
 SIMUL_CONSTANT_BUFFER_END
 
-
 SIMUL_CONSTANT_BUFFER(cbWaterFoam, 5)
 	//Beaufort scaling
 	uniform float		g_foamHeight;
@@ -118,6 +117,18 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 6)
 	uniform uint2		g_waveGridBound;
 	uniform int			g_waveGroup;
 	uniform float		gnfudivn;
+SIMUL_CONSTANT_BUFFER_END
 
+SIMUL_CONSTANT_BUFFER(cbContourBuffer, 8)
+	uniform vec2		g_offsets;
+	uniform float		g_waterHeight;
+	uniform float		jnvuid9fsp;
+	SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(cbFlowRayBuffer, 9)
+	uniform float		g_stepSize;
+	uniform float		g_maxDepth;
+	uniform float		g_baseDirection;
+	uniform float		g_baseWaveSpeed;
 SIMUL_CONSTANT_BUFFER_END
 #endif
