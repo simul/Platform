@@ -305,6 +305,8 @@ namespace simul
 			virtual void					SaveTexture(Texture *,const char *){}
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
+
+			virtual void					ClearFencedTextureList();
 			/// Fill in mipmaps from the zero level down.
 			virtual void					GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
 			// Get a blank (black) resource texture.
@@ -359,6 +361,7 @@ namespace simul
 			unsigned char				mCurIdx;
 			//! Last frame number
 			long long					mLastFrame;
+			std::set<crossplatform::Texture*> fencedTextures;
 		public:
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.

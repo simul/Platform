@@ -329,10 +329,12 @@ ShaderBuildMode RenderPlatform::GetShaderBuildMode() const
 {
 	return shaderBuildMode;
 }
+
 void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
+
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame			()
+void RenderPlatform::BeginFrame()
 {
 	if(gpuProfiler)
 	{
@@ -340,7 +342,7 @@ void RenderPlatform::BeginFrame			()
 	}
 }
 
-void RenderPlatform::EndFrame			()
+void RenderPlatform::EndFrame()
 {
 	if(gpuProfiler)
 	{
@@ -357,6 +359,15 @@ void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 	debugEffect->Apply(deviceContext,clearTechnique,0);
 	DrawQuad(deviceContext);
 	debugEffect->Unapply(deviceContext);
+}
+
+void RenderPlatform::ClearFencedTextureList()
+{
+	for (auto i : fencedTextures)
+	{
+		i->SetFence(0);
+	}
+	fencedTextures.clear();
 }
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)
