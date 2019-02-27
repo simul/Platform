@@ -822,7 +822,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	ID3DX11EffectVariable *var=effect->GetVariableByName(name);
 	if(!var->IsValid())
 	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
+		SIMUL_BREAK_ONCE((std::string("Invalid shader variable ")+name).c_str());
 		return res;
 	}
 	D3DX11_EFFECT_TYPE_DESC  desc;

@@ -462,7 +462,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 	if (texture!=NULL&&texture == t&&(!need_srv||(mainShaderResourceView != NULL&&srv == NULL))&&!setDepthStencil)
 		return;
 	renderPlatform=r;
-	if(external_copy_source==t)
+	if(external_copy_source==t&& external_copy_source)
 	{
 		r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
 		return;
