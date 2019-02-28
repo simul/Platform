@@ -23,7 +23,7 @@
     <ProjectGuid>{866CE181-E49D-4834-AB01-82F72FF1BB09}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
     <Keyword>x64Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="Configuration">
