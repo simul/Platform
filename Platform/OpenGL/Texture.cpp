@@ -179,7 +179,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	length		= loadedTextures[0].y;
 	arraySize	= loadedTextures.size();
 	mips		= std::min(m,1 + int(floor(log2(width >= length ? width : length))));
-	dim		 = 2;
+	dim			= 2;
 	depth		= 1;
 	cubemap	 = false;
 	mInternalGLFormat = opengl::RenderPlatform::ToGLFormat(crossplatform::PixelFormat::RGBA_8_UNORM);

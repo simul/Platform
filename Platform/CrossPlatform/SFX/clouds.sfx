@@ -61,7 +61,7 @@ uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries SIMUL_RWTEXTURE_REGISTER(4);
 
-uniform StructuredBuffer<vec3> queryInputs SIMUL_TEXTURE_REGISTER(3);
+uniform StructuredBuffer<vec4> queryInputs SIMUL_TEXTURE_REGISTER(3);
 
 uniform RWStructuredBuffer<LineQueryResult> lineQueryResults SIMUL_RWTEXTURE_REGISTER(5);
 
@@ -76,7 +76,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	VolumeQueryResult res;
 	res.pos_km						=queryInputs[sub_pos.x+firstInput];
 	res.valid						=1;
-	vec3 cloudWorldOffsetKm			=res.pos_km-cornerPosKm;
+	vec3 cloudWorldOffsetKm			=res.pos_km.xyz-cornerPosKm;
 	vec3 cloudTexCoords				=cloudWorldOffsetKm*inverseScalesKm;
 	vec4 lookup						=sample_3d_lod(cloudDensity,wwcSamplerState,cloudTexCoords,0);
 	res.density						=lookup.z;
@@ -84,18 +84,18 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.direct_light				=light_lookup.y;
 	res.indirect_light				=light_lookup.x;
 	res.ambient_light				=light_lookup.w;
-	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
+	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km.xyz, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 	res.rain_to_snow				=0.0;
-	res.padding						=vec2(0,0);
+	res.padding						=0.0;
 	volumeQueries[sub_pos.x]		=res;
 }
 
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
-	vec3 orig						=queryInputs[sub_pos.x*2+firstInput];
+	vec3 orig						=queryInputs[sub_pos.x*2+firstInput].xyz;
 	vec3 start_pos					=orig;
-	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
+	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput].xyz;
 	vec3 diff						=end_pos-start_pos;
 	float total_dist				=length(diff);
 	if(total_dist<=0.0000001)
@@ -107,6 +107,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.visibility					=1.0;
 	res.optical_thickness_km		=0.0;
 	res.first_contact_km			=max_dist;
+	res.padding2					=vec3(0, 0, 0);
 	vec3 dir						=diff/total_dist;
 	float dz_plus					=max(0.0001, dir.z);
 	float dz_minus					=max(0.0001,-dir.z);
@@ -130,8 +131,8 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	diff							=end_pos-start_pos;
 	total_dist						=length(diff);
 	
-	res.pos1_km						=start_pos;
-	res.pos2_km						=end_pos;
+	res.pos1_km						=vec4(start_pos, 1);
+	res.pos2_km						=vec4(end_pos, 1);
 
 	//if(total_dist>0&&dot(dir,res.pos2_km-res.pos1_km)>0.0)
 	if(start_dist<max_dist)

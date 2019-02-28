@@ -161,7 +161,7 @@ SIMUL_CONSTANT_BUFFER_END
 //! The result struct for a point or volume query.
 struct VolumeQueryResult
 {
-	vec3 pos_km;
+	vec4 pos_km;
 	int valid;
 	float density;
 	float direct_light;
@@ -169,14 +169,15 @@ struct VolumeQueryResult
 	float ambient_light;
 	float precipitation;
 	float rain_to_snow;
-	vec2 padding; //Never use. Used for Alignment in glsl std140
+	float padding; //Never use. Used for Alignment in glsl std140
 };
 //! The result struct for a line query.
 struct LineQueryResult
 {
-	vec3 pos1_km;
+	vec4 pos1_km;
+	vec4 pos2_km;
+	vec3 padding2;
 	int valid;
-	vec3 pos2_km;
 	float density;
 	float visibility;
 	float optical_thickness_km;
