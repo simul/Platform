@@ -186,7 +186,7 @@ float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 	float output;
 	//Schlick's apporixmation, 
 	float cos_incident = clamp(-1.0, 1.0, dot(incident, normal));
-	float R0 = pow(((sourceIndex - mediumIndex) / (sourceIndex + mediumIndex)), 2.0);
+	float R0 = pow(((mediumIndex - sourceIndex) / (mediumIndex + sourceIndex)), 2.0);
 	return R0 + (1 - R0) * pow(1 - cos_incident, 5.0);
 
 	/* Old more accurate but more expensive method

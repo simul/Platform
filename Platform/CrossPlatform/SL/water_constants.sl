@@ -119,6 +119,31 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 6)
 	uniform float		gnfudivn;
 SIMUL_CONSTANT_BUFFER_END
 
+SIMUL_CONSTANT_BUFFER(cbBuoyancyObjectBuffers, 10)
+	uniform float		g_buoyancyUVScale;
+	uniform float		g_buoyancyUVOffset;
+	uniform float		g_buoyancySurfaceHeight;
+	uniform float		g_buoyancyWaveAmplitude;
+
+	uniform vec2		g_buoyancyCenter;
+	uniform float		g_buoyancyWindDirection;
+	uniform float		g_buoyancyWindDependancy;
+
+	uniform float		g_buoyancyProfileUVScale;
+	uniform float		g_buoyancyWaveGridScale;
+	uniform bool		g_buoyancyEnableWaveGrid;
+	uniform float		gnuhjfidobn;
+
+	uniform vec3		g_location;
+	uniform float		gnjifdpaon;
+
+	uniform vec3		g_rotation;
+	uniform float		vnyrueioatgu;
+
+	uniform vec3		g_scale;
+	uniform float		vufiepadnu;
+SIMUL_CONSTANT_BUFFER_END
+
 SIMUL_CONSTANT_BUFFER(cbContourBuffer, 8)
 	uniform vec2		g_offsets;
 	uniform float		g_waterHeight;
