@@ -342,7 +342,7 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 					modifier += 1.0;
 				}
 				previousVelocity = newVelocity;
-				
+				/*
 				if (contourSample.x != 0 && contourSample.y != 0)
 				{
 					float tempVelocity;
@@ -372,7 +372,7 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 
 					//direction = normalize(refract(direction, contourSample.xy, index));
 
-				}
+				}*/
 				
 				
 			}
