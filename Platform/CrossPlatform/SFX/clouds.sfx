@@ -570,8 +570,25 @@ shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
 
 shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
 {
-	vec3 simple_texc = vec3((IN.texCoords.xy - vec2(0.5,0.5)) * (shadowRangeKm / 80.0), sampleHeight);
-	vec3 shadow = saturate(sample_3d_lod(cloudDensity, wwcSamplerState, simple_texc, 0).xyz);
+	//vec3 simple_texc = vec3((IN.texCoords.xy - vec2(0.5,0.5)) * (shadowRangeKm / 80.0), sampleHeight);
+	//vec3 shadow = saturate(sample_3d_lod(cloudDensity, wwcSamplerState, simple_texc, 0).xyz);
+	//return vec4(shadow.xy, 0, 1.0 - shadow.z);
+
+	float x = 0;
+	float y = 0;
+	/*
+	vec2 normalisedSunDir = normalize(directionToSun.xy);
+
+	float tempLength = sqrt(pow(directionToSun.x, 2) + pow(directionToSun.y, 2));
+	float angle = tempLength / directionToSun.z;
+	
+	float groundLength = sampleHeight * angle * (2.0 / shadowRangeKm);
+
+	x = groundLength * normalisedSunDir.x;
+	y = groundLength * normalisedSunDir.y;
+	*/
+	vec3 simple_texc = vec3((IN.texCoords.xy - vec2(0.5,0.5) + vec2(x, y)) * (shadowRangeKm / 80.0), sampleHeight);
+	vec3 shadow = saturate(sample_3d_lod(cloudDensity, wwcSamplerState , simple_texc, 0).xyz);
 	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
