@@ -271,14 +271,18 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
 {
     opengl::Texture* gTex = (opengl::Texture*)tex;
-	GLuint imageView;
 	if (gTex)
 	{
-		imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
-	}
-	if (glIsTexture(imageView))
-	{
-		glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLFormat(tex->GetFormat()));
+		GLuint imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
+		if (glIsTexture(imageView))
+		{
+			glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLFormat(tex->GetFormat()));
+		}
+		else
+		{
+			// Unbind it:
+			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+		}
 	}
     else
     {

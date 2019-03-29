@@ -378,9 +378,6 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth_Lightpass_
 	return PS_CompositeAtmospherics(IN,false,true,true,false);
 }
 
-
-
-
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_ReverseDepth_NearInterp(CompositeShaderInput IN) 
 {
 	return PS_CompositeAtmospherics(IN,true,false,false,true);
@@ -494,7 +491,17 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(Compo
 {
 	return PS_CompositeAtmospherics_MSAA(IN,false,false,true,true);
 }
- 
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_LightPass_ReverseDepth(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics_MSAA(IN,true,true,true,true);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_LightPass_ForwardDepth(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics_MSAA(IN,false,true,true,true);
+}
+
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap_ReverseDepth(CompositeShaderInput IN) 
 {
 	return PS_CompositeAtmospherics_Cubemap(IN,true);
@@ -767,6 +774,27 @@ fxgroup composite_atmospherics
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_ForwardDepth()));
 		}
 	}
+	technique msaa_with_lightpass
+	{
+		pass reverse_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_LightPass_ReverseDepth()));
+		}
+		pass forward_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_LightPass_ForwardDepth()));
+		}
+	}
 	technique cubemap
 	{
 		pass reverse_depth
@@ -896,6 +924,27 @@ fxgroup composite_atmospherics_near_interp
 			SetGeometryShader(NULL);
 			SetVertexShader(compositevs_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_ForwardDepth()));
+		}
+	}
+	technique msaa_with_lightpass
+	{
+		pass reverse_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_LightPass_ReverseDepth()));
+		}
+		pass forward_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_LightPass_ForwardDepth()));
 		}
 	}
 	technique cubemap
