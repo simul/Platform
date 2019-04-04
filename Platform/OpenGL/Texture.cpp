@@ -739,10 +739,13 @@ LoadedTexture Texture::LoadTextureData(const char* path)
 {
 	LoadedTexture lt	= {0,0,0,0,nullptr};
 	lt.data			 = stbi_load(path, &lt.x, &lt.y, &lt.n, 4);
-	/*if (!lt.data)
+	if (!lt.data)
 	{
-		SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
-	}*/
+		#if _DEBUG
+			SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
+		#endif
+		errno = 0; //ERRNO_CLEAR
+	}
 	return lt;
 }
 
