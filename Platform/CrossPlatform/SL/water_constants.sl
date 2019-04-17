@@ -11,12 +11,12 @@ SIMUL_CONSTANT_BUFFER(cbShading,1)
 	uniform float		g_ShoreExtent;
 
 	// Perlin noise for distant wave crest
-	uniform vec3		fnbhjdiosabh;
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		g_unityRender;
 	uniform vec3		g_PerlinOctave;
 	uniform float		g_oceanHeight;
+	uniform vec3		nvu8yfd9ahvy8;
 
 	uniform vec3		g_PerlinGradient;
 	uniform bool		g_enableFoam;
@@ -50,6 +50,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,2)
 	// Misc per draw call constants
 	uniform vec2		g_UVBase;
 	uniform vec2		g_PerlinMovement;
+
 	uniform vec3		g_LocalEye;
 	uniform float		g_windDirection;
 
@@ -61,6 +62,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,2)
 
 	uniform vec3		g_absorption;
 	uniform uint		g_totalVertices;
+
 	uniform vec3		g_scattering;
 	uniform float		g_amplitude;
 
@@ -97,7 +99,6 @@ SIMUL_CONSTANT_BUFFER(cbWaterProbe, 4)
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbWaterFoam, 5)
-	//Beaufort scaling
 	uniform float		g_foamHeight;
 	uniform float		g_foamChurn;
 	uniform vec2		hvyidbs;
@@ -134,11 +135,12 @@ SIMUL_CONSTANT_BUFFER(cbBuoyancyObjectBuffers, 10)
 	uniform bool		g_buoyancyEnableWaveGrid;
 	uniform float		gnuhjfidobn;
 
+	uniform mat4		g_buoyancyMat;
+
 	uniform vec3		g_location;
 	uniform float		gnjifdpaon;
 
-	uniform vec3		g_rotation;
-	uniform float		vnyrueioatgu;
+	uniform vec4		g_rotation;
 
 	uniform vec3		g_scale;
 	uniform float		vufiepadnu;

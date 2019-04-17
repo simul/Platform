@@ -19,8 +19,11 @@ namespace simul
 		public:
 			SphericalHarmonics();
 			~SphericalHarmonics();
+			//! Platform-dependent function called when initializing the Spherical Harmonics.
 			void RestoreDeviceObjects(RenderPlatform *r);
+			//! Platform-dependent function called when uninitializing the Spherical Harmonics.
 			void InvalidateDeviceObjects();
+			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void RecompileShaders();
 			int bands;
 			void SetBands(int b)

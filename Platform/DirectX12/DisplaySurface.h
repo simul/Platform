@@ -15,8 +15,11 @@ namespace simul
         public:
             DisplaySurface();
             ~DisplaySurface();
+			//! Platform-dependent function called when initializing the display surface.
             void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;
+			//! Platform-dependent function called when uninitializing the display surface.
             void InvalidateDeviceObjects()override;
+			//! Render to the display surface. Requires a reference to the mutex to make sure that this rendering doesn't take place at the same time as other render calls.
             void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex);
             
         private:

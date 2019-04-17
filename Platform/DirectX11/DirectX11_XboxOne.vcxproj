@@ -383,6 +383,9 @@
       <Project>{80aa401f-ea6b-4f6e-b50d-e9685cd02cd8}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\Users\micha\AppData\Local\Temp\3p2rnfcl.bmp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

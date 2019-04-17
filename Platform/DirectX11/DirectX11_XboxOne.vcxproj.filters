@@ -360,4 +360,7 @@
       <Filter>Shaders</Filter>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\Users\micha\AppData\Local\Temp\3p2rnfcl.bmp" />
+  </ItemGroup>
 </Project>

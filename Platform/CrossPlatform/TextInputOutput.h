@@ -22,6 +22,7 @@ namespace simul
 			DEFINE_NEW_DELETE_OVERRIDES;
 
 			virtual ~TextInput(){}
+			//! Returns true if the file is successfully loaded
 			virtual bool Good()=0;
 			//! Is the specified element in the list?
 			virtual bool Has(const char *name) const=0;

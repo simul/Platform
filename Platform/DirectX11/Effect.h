@@ -65,6 +65,7 @@ namespace simul
 			PlatformStructuredBuffer();
 			virtual ~PlatformStructuredBuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data);
+			void InvalidateDeviceObjects();
 			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
 			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
 			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
@@ -78,7 +79,6 @@ namespace simul
 			{
 				return unorderedAccessView;
 			}
-			void InvalidateDeviceObjects();
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
 			void Unbind(crossplatform::DeviceContext &deviceContext);

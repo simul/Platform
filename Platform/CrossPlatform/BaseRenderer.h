@@ -64,8 +64,8 @@ namespace simul
 			math::Matrix4x4 invViewProj;
 			math::Matrix4x4 invView;
 			math::Matrix4x4 viewProj;
-			////math::Matrix4x4 modelView;
-		//	math::Matrix4x4 modelViewProj; 
+			//math::Matrix4x4 modelView;
+			//math::Matrix4x4 modelViewProj; 
 			vec3 cam_pos,view_dir,up;
 			simul::crossplatform::Frustum frustum;	///< THe viewing frustum, calculated from the proj matrix and stored for convenience using simul::crossplatform::GetFrustumFromProjectionMatrix.
 			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
