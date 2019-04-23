@@ -460,7 +460,7 @@ void TextFileOutput::Save(const char *filename_utf8)
 #endif
 	if(!ofs.good())
 		SIMUL_THROW((std::string("Can't open file for saving: ")+filename_utf8).c_str());
-	Save(ofs);
+	Save(ofs,0,true);
 }
 
 std::string TextFileOutput::getText()
@@ -470,7 +470,7 @@ std::string TextFileOutput::getText()
 	return ofs.str();
 }
 
-void TextFileOutput::Save(std::ostream &ofs,int tab)
+void TextFileOutput::Save(std::ostream &ofs,int tab,bool bookEnd)
 {
 	std::string tabstr0,tabstr1;
 	for(int i=0;i<tab;i++)
@@ -478,7 +478,7 @@ void TextFileOutput::Save(std::ostream &ofs,int tab)
 	tabstr1=tabstr0+"\t";
 	const char *t0=tabstr0.c_str();
 	const char *t1=tabstr1.c_str();
-	if(properties.size()>1||arrays.size()>0)
+	if(properties.size()>1||arrays.size()>0||bookEnd)
 		write(ofs,base::stringFormat("%s{\n",t0));
 	for(std::map<std::string,std::string>::iterator i=properties.begin();i!=properties.end();i++)
 	{
@@ -501,7 +501,7 @@ void TextFileOutput::Save(std::ostream &ofs,int tab)
 		}
 		write(ofs,base::stringFormat("%s]\n",t1));
 	}
-	if(properties.size()>1||arrays.size()>0)
+	if(properties.size()>1||arrays.size()>0||bookEnd)
 		write(ofs,base::stringFormat("%s}\n",t0));
 }
 

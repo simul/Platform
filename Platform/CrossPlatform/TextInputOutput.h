@@ -134,7 +134,7 @@ namespace simul
 			TextFileOutput(simul::base::MemoryInterface *m=NULL);
 			virtual ~TextFileOutput();
 			void Save(const char *filename_utf8);
-			void Save(std::ostream &ofs,int tab=0);
+			void Save(std::ostream &ofs,int tab=0,bool bookEnd=false);
 			bool Good();
 			// Name of the specified element
 			void Set(const char *name,const char *value);
