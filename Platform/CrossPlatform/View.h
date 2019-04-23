@@ -50,9 +50,9 @@ namespace simul
 			{
 				return static_class_id;
 			}
-			/// Restore device objects.
+			//! Platform-dependent function called when initializing the view.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
-			/// Invalidate device objects.
+			//! Platform-dependent function called when uninitializing the view.
 			void InvalidateDeviceObjects();
 
 			/// Gets screen width.
@@ -85,7 +85,7 @@ namespace simul
 			/// Height of the screen.
 			int											ScreenHeight;
 			int											last_framenumber;
-			/// true to use external framebuffer.
+			/// True to use external framebuffer.
 			bool										useExternalFramebuffer;
 		};
 
@@ -99,9 +99,9 @@ namespace simul
 				,last_created_view_id(-1)
 			{}
 			typedef std::map<int,View*>	ViewMap;
-			/// Restore the device objects.
+			//! Platform-dependent function called when initializing the view manager.
 			void							RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
-			/// Invalidate device objects.
+			//! Platform-dependent function called when uninitializing the view manager.
 			void							InvalidateDeviceObjects	();
 			/// Gets a view.
 			/// \return	null if it fails, else the view.

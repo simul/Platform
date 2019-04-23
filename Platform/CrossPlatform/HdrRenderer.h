@@ -25,9 +25,9 @@ namespace simul
 				META_Property(bool,Glow,"Whether to apply a glow effect")
 			META_EndProperties
 			void SetBufferSize(int w,int h);
-			//! Call when we've got a fresh device - on startup or when the device has been restored.
+			//! Platform-dependent function called when initializing the HDR renderer.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			//! Call this when the device has been lost.
+			//! Platform-dependent function called when uninitializing the HDR renderer.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
 			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
@@ -36,6 +36,7 @@ namespace simul
 			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture);
+			//! Draw the debug textures
 			void RenderDebug(crossplatform::DeviceContext &deviceContext, int x0, int y0, int w, int h);
 			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			void RecompileShaders();

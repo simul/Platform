@@ -78,7 +78,7 @@ namespace simul
 			Unknown                 = -1,
 			OpenGL				    = 0,    // Desktop OpenGL
 			D3D11				    = 2,    // Direct3D 11
-			Null				    = 4,    // null means don't render, as opposed to Unknwon which means uninitialized.
+			Null				    = 4,    // null means don't render, as opposed to Unknown which means uninitialized.
 			PS4					    = 13,   // PlayStation 4
 			XboxOne				    = 14,   // Xbox One        
 			Metal				    = 16,   // iOS Metal
@@ -142,11 +142,11 @@ namespace simul
 			virtual ID3D12Device* AsD3D12Device();
 			virtual ID3D11Device *AsD3D11Device();
 			virtual vk::Device *AsVulkanDevice();
-			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
+			//! Platform-dependent function called when initializing the Render Platform.
 			virtual void RestoreDeviceObjects(void*);
-			//! Call this once, when the 3d graphics device object is being shut down.
+			//! Platform-dependent function called when uninitializing the Render Platform.
 			virtual void InvalidateDeviceObjects();
-			//! Optional - call this to recompile the standard shaders.
+			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			virtual void RecompileShaders	();
 			//! Implementations of RenderPlatform will cache the API state in order to reduce driver overhead.
 			//! But we can't always be sure that external render code hasn't modified the API state. So by calling SynchronizeCacheAndState()
@@ -182,6 +182,7 @@ namespace simul
 			virtual void EndFrame			();
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
+			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;

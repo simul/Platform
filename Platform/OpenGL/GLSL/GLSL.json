@@ -17,9 +17,10 @@
 	,"lineDirectiveFilenames"		: true
 	,"passThroughSamplers"			: false 
 	,"combineTexturesSamplers"		: true
+	,"maintainSamplerDeclaration"	: true
 	,"combineInShader"				: false
 	,"getSizeExpression"			: "ivec{return_size} iv{tmpName} = {type}({textureName}{args});\n"
-	,"textureDeclaration"			: "uniform {type} {name};"
+	,"textureDeclaration"			: "layout(binding = {slot}) uniform {type} {name};"
 	,"imageDeclaration"				: "layout({fqualifier},binding={slot}) uniform {type} {name};"
 	,"imageDeclarationWriteOnly"	: "writeonly layout(binding={slot}) uniform {type} {name};"
 	,"samplerDeclaration"			: "layout(binding = {slot}) uniform {type} {name};"

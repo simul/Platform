@@ -48,8 +48,9 @@ uniform StructuredBuffer<vec4>		g_ProbeVelocity	SIMUL_TEXTURE_REGISTER(1);
 //uniform StructuredBuffer<vec4>	g_ProbeValues	SIMUL_TEXTURE_REGISTER(0);
 uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
 
-uniform StructuredBuffer<vec3>		g_BuoyancyObjectPos		SIMUL_TEXTURE_REGISTER(0);
-uniform RWStructuredBuffer<float>	g_BuoyancyObjectOutputs: register(u1);
+uniform StructuredBuffer<vec3>		g_BuoyancyObjectPos				SIMUL_TEXTURE_REGISTER(0);
+uniform RWStructuredBuffer<float>	g_BuoyancyObjectOutputs:		register(u1);
+uniform StructuredBuffer<float>		g_BuoyancyObjectVisualOutputs	SIMUL_TEXTURE_REGISTER(1);
 
 uniform RWTexture2D<vec4>	g_LeftFlowRayBuffer: register (u4);
 uniform RWTexture2D<vec4>	g_RightFlowRayBuffer: register (u5);
@@ -150,8 +151,8 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 {
 	vec4 result = vec4(0.0, 0.0, 0.0, 0.0);
 	vec4 tag = vec4(0.0,0.0,0.0,0.0);
-	vec2 position = vec2((float)sub_pos.x / 256.f, 0.0);
-	vec2 direction = vec2(0.0, 1.0);
+	vec2 position = vec2((float)sub_pos.x / 256.f, 1.0);
+	vec2 direction = vec2(0.0, -1.0);
 	
 	int count = 1;
 	int arrayPosition = 2;
@@ -342,7 +343,7 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 					modifier += 1.0;
 				}
 				previousVelocity = newVelocity;
-				/*
+				
 				if (contourSample.x != 0 && contourSample.y != 0)
 				{
 					float tempVelocity;
@@ -371,10 +372,8 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 					//index = (newVelocity < previousVelocity) ? newVelocity / previousVelocity : previousVelocity / newVelocity;
 
 					//direction = normalize(refract(direction, contourSample.xy, index));
-
-				}*/
-				
-				
+					
+				}
 			}
 			//refracted = 0.5;
 		}
@@ -437,7 +436,7 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 		if ((position.z > g_surfaceHeight + (radius * 2.0)) || (position.z < g_surfaceHeight - (radius * 2.0)))
 			return;
 
-		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256);
+		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256) - (g_center.yx / 2);
 
 		int xOrigin = (uv_local.x - (int)radius);
 		int yOrigin = (uv_local.y - (int)radius);
@@ -566,8 +565,8 @@ shader vec4 PS_PrecomputeProfileBuffer(posTexVertexOutput In) : SV_Target
 	{
 		float waveLength = pow(2, x);
 		float waveNumber = TAU / waveLength;
-		float phase1 = waveNumber * p - sqrt(waveNumber * g) * g_time + 5000.0;//
-		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) * g_time + 5000.0;// 
+		float phase1 = waveNumber * p - sqrt(waveNumber * g) *(g_time + 5000.0);//
+		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) *(g_time + 5000.0);// 
 
 		result += dx * waveLength * spectrum(x, g_windSpeed) * ((bump1 * gerstner_wave(phase1, waveNumber)) + (bump2 * gerstner_wave(phase2, waveNumber)));
 
@@ -616,8 +615,7 @@ shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 	float dx = dirNum * TAU / N;
 
 	uint i;
-
-	vec2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_probeUVScale)) + g_probeUVOffset - g_center.yx * g_probeUVScale * 0.01;
+	vec2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_probeUVScale)) + g_probeUVOffset - g_center.yx * g_probeUVScale;
 	vec3 displacement = vec3(0.0, 0.0, 0.0);
 
 	vec2 windDirection = normalize(vec2(sin(g_probeWindDirection), cos(g_probeWindDirection)));
@@ -660,29 +658,24 @@ shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 [numthreads(64, 1, 1)]
 shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 {
-	uint dirNum = 16;
-	uint N = 2 * dirNum;
-	float dx = dirNum * TAU / N;
+	static uint dirNum = 16;
+	static uint N = 2 * dirNum;
+	static float dx = dirNum * TAU / N;
 	uint ID = sub_pos.x;
 
 	uint i;
 
-	vec3 vertexPos = g_BuoyancyObjectPos[ID];
+	vec3 vertexPos = g_BuoyancyObjectPos[ID].yxz;
 
-	vertexPos *= g_scale;
+	vertexPos *= g_scale.yxz * 0.01;
 
-	//Rotation
-	//float rotation = -(g_boundedRotation / 360.0) * PI * 2.0;
-	//vPos.xy = vec2(vPos.x*cos(rotation) - vPos.y*sin(rotation), vPos.y*cos(rotation) + vPos.x*sin(rotation));
+	float4 pos_local = float4(vertexPos, 1);
 
-	//Transform
-	vertexPos += g_location;
-
-	vec2 uv_local = ((vertexPos.yx * g_buoyancyUVScale)) + g_buoyancyUVOffset - g_buoyancyCenter.yx * g_buoyancyUVScale * 0.01;
+	pos_local = mul(g_buoyancyMat, pos_local);
+	vec2 uv_local = ((pos_local.yx * g_buoyancyUVScale)) + g_buoyancyUVOffset - g_buoyancyCenter.yx * g_buoyancyUVScale;
 	vec3 displacement = vec3(0.0, 0.0, 0.0);
 
 	vec2 windDirection = normalize(vec2(sin(g_buoyancyWindDirection), cos(g_buoyancyWindDirection)));
-
 	for (i = 0; i < N; i++)
 	{
 		float angle = ((float)i / (float)N) * TAU;
@@ -693,11 +686,11 @@ shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 
 		vec2 displacementValue = vec2(0.0, 0.0);
 
-		vec2 baseWaveAmp = (g_buoyancyWaveAmplitude * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
+		vec2 baseWaveAmp = (g_buoyancyWaveAmplitude * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 2).xy) / 2.0);
 
 		if (g_enableWaveGrid)
 		{
-			vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 0).xy * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
+			vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 2).xy * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
 			displacementValue = dx * (waveGridAmp + baseWaveAmp);
 		}
 		else
@@ -709,9 +702,9 @@ shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 	}
 
 	displacement *= 0.1; //g_WorldScale;
-	float height = (displacement.z + g_buoyancySurfaceHeight) - vertexPos.z;
+	float height = (displacement.z + g_buoyancySurfaceHeight) - pos_local.z;
 
-	g_BuoyancyObjectOutputs[ID] = g_location.z;// height;
+	g_BuoyancyObjectOutputs[ID] = height;//g_location.z + pos_local.z;// 
 }
 
 //---------------------------------------- Vertex Shaders -----------------------------------------
@@ -726,9 +719,9 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 	VS_OUTPUT Output;
 	
 	vec3 vPos = vec3(0.0, 0.0, 0.0);
-	vec2 cameraCenter;
-	cameraCenter.x = g_LocalEye.x;
-	cameraCenter.y = g_LocalEye.y;
+	vec2 cameraCenter = g_LocalEye;
+	//cameraCenter.x = g_LocalEye.x;
+	//cameraCenter.y = g_LocalEye.y;
 	Output.vecColour = vec4(0.0, 1.0, 1.0, 1.0);
 
 	float layerQuadSize;
@@ -1131,9 +1124,9 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		noWaveGrid = true;
 
 	// UV
-	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01);
-	vec2 uv_local1 = vec2(-g_boundedLocation.yx * g_UVScale * 0.01);
-	vec2 uv_local2 = vec2(-g_boundedLocation.yx * g_UVScale * 0.01);
+	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_center.yx * g_UVScale);
+	vec2 uv_local1 = vec2(-g_center.yx * g_UVScale );
+	vec2 uv_local2 = vec2(-g_center.yx * g_UVScale );
 
 	if (lerpDisplacement)
 	{
@@ -1225,13 +1218,13 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 			{
 				vec2 shoreCoords1 = (((vec2(lerpSample1.x, -lerpSample1.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
 				vec2 shoreCoords2 = (((vec2(lerpSample2.x, -lerpSample2.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
-				shoreDepth1 = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords1, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 1.0);
-				shoreDepth2 = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords2, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 1.0);
+				shoreDepth1 = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords1, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.05, 1.0);
+				shoreDepth2 = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords2, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.05, 1.0);
 			}
 			else
 			{
 				vec2 shoreCoords = (((vec2(pos_local.x, -pos_local.y) * (1.0 / g_ShoreWidth)) + vec2(0.5, 0.5))) - (vec2(g_ShoreDepthTextureLocation.y, -g_ShoreDepthTextureLocation.x) * (1.0 / g_ShoreWidth));
-				shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.0, 1.0);
+				shoreDepth = clamp((g_shoreDepthTexture.SampleLevel(clampSamplerState, shoreCoords, 0).x * 0.01) - (g_ShoreDepthTextureLocation.z - g_oceanHeight), 0.05, 1.0);
 			}
 		}
 
@@ -1300,7 +1293,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 					
 					if (waveGrid && !noWaveGrid)
 					{
-						vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 0).xy  * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
+						vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 0).xy  * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0 , (i + 0.5) / N), 0).x);
 						displacementValue = dx * (waveGridAmp + baseWaveAmp);//
 					} else
 					{
@@ -1485,7 +1478,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	float4 pos_local = float4(vPos, 1);
 
 	// UV
-	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_boundedLocation.yx * g_UVScale * 0.01;
+	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_center.yx * g_UVScale;
 	if (!noDisplacement)
 	{
 		// Blend displacement to avoid tiling artifact
@@ -1762,15 +1755,19 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	{
 		//vec2 foamSamples = g_foamAlpha.Sample(wwcSamplerState, In.texCoords.xy).xy;
 		//float bubbles = g_foamTexture.Sample(wwcSamplerState,In.texCoords.xy * 4.0f).x;
-		float surfaceFoamTextureSample = g_surfaceFoamTexture.Sample(wwcSamplerState, In.texCoords * 24.0f).x;
+		float surfaceFoamTextureSample = 1.0 - g_surfaceFoamTexture.Sample(wwcSamplerState, In.texCoords * 12.0f).x;
 		surfaceFoamValue *= surfaceFoamTextureSample;
+
+		surfaceFoamValue += pow(surfaceFoamTextureSample * saturate(1.3 - In.vecColour.w), 4.0);
+
+		if (surfaceFoamValue < 0.05)
+			surfaceFoamValue = 0.0;
 
 		//foamSamples = vec2(0.0, 0.0);
 		//bubbles = 0.0;
 		//surfaceFoamTextureSample = 0.0;
 
-		//foamValue = (1.0 - bubbles) * foamSamples.x;
-
+		
 		//surfaceFoamValue *= bubbles;
 		//surfaceFoamValue += foamSamples.y;
 
@@ -1788,9 +1785,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 		//clamp(surfaceFoamValue, 0.0, 1.0);
 		//clamp(foamValue, 0.0, 1.0);
-		
-	}*/
 	
+	}
+	*/
 	eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
 		
 	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); // vec4(In.vecColour.w, 0.0, 0.0, 0.0); //
@@ -2020,7 +2017,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 
 	// --------------- Sun spots
 	float cosangle = acos(dot(reflect_vec, sun_dir) / (length(reflect_vec) * length(sun_dir)));
-	if (cosangle / 2.0 < g_SunRadius * (PI / 180.0 / 60.0))
+	if (cosangle < g_SunRadius * (PI / 180.0 / 60.0))
 	{
 		float cos_spec = dot(reflect_vec, sun_dir);
 		vec4 sunSpec = vec4(((g_Shineness + 1.f) / (2.f * SIMUL_PI_F)) * pow(saturate(cos_spec), g_Shineness) * g_SunColor * 10.0, 0.f);
@@ -2029,7 +2026,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 	}
 
 	// --------------- Reflected colour
-	vec3 refl = g_texReflectCube.Sample(g_samplerPerlin, normalize(reflect_vec.yxz));//texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz)); //
+	vec3 refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0); //g_texReflectCube.Sample(g_samplerPerlin, normalize(reflect_vec.yxz));//
 	float reflectFresnel = fresnel(normalize(reflect_vec), normal, 1.f, 1.33f);
 	Output += vec4(refl * reflectFresnel, 0.f);
 	//return Output;
@@ -2146,6 +2143,40 @@ VS_OUTPUT VS_FlowRaysWireframe(idOnly IN)
 }
 
 //-----------------------------------------------------------------------------
+// Name: VS_BuoyancyObjectPoint
+// Type: Vertex shader
+// Desc: Visualiser for buoyancy objects.
+//-----------------------------------------------------------------------------
+VS_OUTPUT VS_BuoyancyObjectPoint(idOnly IN)
+{
+	VS_OUTPUT Output;
+
+	vec3 vPos = vec3(0.0, 0.0, 0.0);
+	vec2 cameraCenter = g_LocalEye;
+
+	uint vertexID = IN.vertex_id;
+
+	vPos = g_BuoyancyObjectPos[vertexID].yxz;
+
+	vPos *= g_scale.yxz * 0.01;
+
+	float4 pos_local = float4(vPos, 1);
+
+	pos_local = mul(g_buoyancyMat ,pos_local);
+
+	Output.Position = mul(g_matWorldViewProj, pos_local);
+	Output.LocalPos = vPos;
+	Output.vecColour = vec4(g_BuoyancyObjectVisualOutputs[vertexID],0.0,0.0, 1.0);
+
+	Output.texCoords = vec2(0.0,0.0);
+	Output.SurePosition = Output.Position;
+
+	//g_OutputFlowRayBuffer
+
+	return Output;
+}
+
+//-----------------------------------------------------------------------------
 // Name: PS_CopyDepthStencil
 // Type: Pixel shader
 // Desc: Copy the depth from one texture to another
@@ -2250,6 +2281,19 @@ technique wireframe_flow_rays
 		SetDepthStencilState(TestReverseDepth, 0);
 		SetBlendState(AddBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0, VS_FlowRaysWireframe()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_Wireframe()));
+	}
+}
+
+technique point_buoyancy_object
+{
+	pass p0
+	{
+		SetRasterizerState(wireframeRasterizer);
+		SetDepthStencilState(TestReverseDepth, 0);
+		SetBlendState(AddBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_BuoyancyObjectPoint()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_Wireframe()));
 	}

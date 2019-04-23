@@ -24,9 +24,9 @@ namespace simul
 		public:
 			BaseFramebuffer(const char *n);
 			virtual ~BaseFramebuffer();
-			//! Call this when the API-dependent device has been created.
+			//! Platform-dependent function called when initializing the framebuffer.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			//! Call this when the API-dependent device has been lost or is shutting down.
+			//! Platform-dependent function called when uninitializing the framebuffer.
 			virtual void InvalidateDeviceObjects();
 			/// Return true if the API-dependent objects have been updated to match the properties.
 			virtual bool IsValid() const;

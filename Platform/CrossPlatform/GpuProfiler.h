@@ -19,6 +19,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface:public base::BaseProfilingInterface
 		{
 		public:
+			//! Platform-dependent function called when uninitializing the profiler.
 			virtual void InvalidateDeviceObjects() =0;
 			//! Mark the start of a render profiling block. Some API's require a context pointer.
 			virtual void Begin(crossplatform::DeviceContext &deviceContext,const char *)=0;
@@ -85,9 +86,9 @@ namespace simul
 			{
 				return new ProfileData;
 			}
-			/// Call this when the profiler is to be initialized with a device pointer - must be done before use.
+			//! Platform-dependent function called when initializing the profiler.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
+			//! Platform-dependent function called when uninitializing the profiler.
 			virtual void InvalidateDeviceObjects() override;
 			virtual void Begin(crossplatform::DeviceContext &deviceContext,const char *) override;
 			virtual void End(crossplatform::DeviceContext &deviceContext) override;

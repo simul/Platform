@@ -14,7 +14,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		// Platform-specific data for constant buffer, managed by RenderPlatform.
+		//! Platform-specific data for constant buffer, managed by RenderPlatform.
 		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{
 			ID3D11Buffer *m_pD3D11Buffer;
@@ -33,13 +33,20 @@ namespace simul
 			void *last_placement;
 			bool resize;
 		public:
+			//! Constructor
 			PlatformConstantBuffer();
+			//! Destructor
 			~PlatformConstantBuffer();
 			ID3D11Buffer *asD3D11Buffer();
+			//! Platform-dependent function called when initializing the constant buffer.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t sz,void *addr);
+			//! Platform-dependent function called when uninitializing the constant buffer.
 			void InvalidateDeviceObjects();
+			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
+			//! Apply the current values within the constant buffer
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
+			//! Unbind the constant buffer
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 			
 			void CreateBuffers( crossplatform::RenderPlatform* r, void *addr);

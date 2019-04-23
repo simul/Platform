@@ -104,8 +104,11 @@ namespace simul
 			//! Returns the current applied primitive topology
 			D3D_PRIMITIVE_TOPOLOGY		    GetCurrentPrimitiveTopology() { return mStoredTopology; }
 
+			//! Platform-dependent function called when initializing the render platform.
 			void						    RestoreDeviceObjects(void* device);
+			//! Platform-dependent function called when uninitializing the render platform.
 			void						    InvalidateDeviceObjects();
+			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void						    RecompileShaders();
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
