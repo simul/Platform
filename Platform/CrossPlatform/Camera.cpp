@@ -930,7 +930,7 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	dir.Normalize();
 	cam->Rotate(del.Magnitude(),dir);
 
-	del=cam->GetOrientation().Tx()*y_rotate*(-1.f);
+	del	=cam->GetOrientation().Tx()*y_rotate*(-1.f);
 	dir	=del;
 	dir.Normalize();
 	cam->Rotate(del.Magnitude(),dir);
