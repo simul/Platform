@@ -103,9 +103,9 @@ namespace simul
 
         private:
             static const int    mNumBuffers =3;
-            GLuint      mGPUBuffer[mNumBuffers];
-            size_t      mTotalSize;
-            int         mBinding;
+            GLuint              mGPUBuffer[mNumBuffers];
+            size_t              mTotalSize;
+            int                 mBinding;
             bool                mGPUIsMapped;
 
             GLsync              mFences[mNumBuffers];
