@@ -368,7 +368,6 @@ shader vec4 PS_SnowParticles_NoCubemap(ParticleGeometryOutput IN) : SV_TARGET
 //	float spoke			=fract(angle/SIMUL_PI_F*3.0)-0.5;
 	float opacity = IN.strength*saturate(1.0 - radius1);//-spoke*spoke);
 
-	//return vec4(1,0,1,opacity);
 	//return vec4(result.rgb,opacity);
 
 	return PSSnowParticles(IN,true);
@@ -426,10 +425,9 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	vec3 position1 = position - viewPositionOffset.xyz + flurry*flurry_offset1;
 	position0 = WrapParticleZone(position0, particleZoneSize / 2);
 
-	
-	
 	vec3 map_texc = mul(rainMapMatrix, vec4(viewPos[1].xyz, 1.0)).xyz;
 	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+
 
 	// discard if under surface.
 	vec3 in_depth_space = vec3(1.0, 1.0, 1.0);

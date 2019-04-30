@@ -108,7 +108,9 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
 	vec4 rain_lookup	=rainMapTexture.SampleLevel(wwcSamplerState,rain_texc.xy*inverseScalesKm.xy,0);
-	return				rain_lookup.x*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)*saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0);
+	return				rain_lookup.x*saturate((rainRadiusKm-length(cloudWorldOffsetKm.xy-rainCentreKm.xy))*3.0)*saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
+	
+	//Beacuse PercipitationRegions are global and not an offset from the cloudkeyframe, the lenght() calculation now uses cloudWorldOffsetKm instead of world_pos_km - AJR
 }
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};

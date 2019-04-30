@@ -598,18 +598,50 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 	float total_cloud=0.0;
 	float max_tex_z=0.0;
 	float thickness = 0.0;
-	// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
-	for(int i=0;i<14;i++)
+	
+	vec2 rainCentreTC[4];
+	rainCentreTC[0] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 0);
+	rainCentreTC[1] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 1);
+	rainCentreTC[2] = rainCentreKm.xy * inverseScalesKm.xy + vec2(1, 0);
+	rainCentreTC[3] = rainCentreKm.xy * inverseScalesKm.xy + vec2(1, 1);
+
+	float rainRadiusTC = rainRadiusKm * inverseScalesKm.x;
+	bool outOfRange = true;
+	for (int i = 0; i < 4; i++)
 	{
-		float tex_z		=float(14.0-i)/20.0;
-		vec3 texc		=vec3(IN.texCoords.xy,tex_z);
-		vec4 density	=sample_3d_lod(cloudDensity,wwcSamplerState,texc,0);
-		total_cloud		+=0.125*density.z;
-		thickness		+=1.0*density.z;		// effective cloud thickness in km.
-		max_tex_z		=max(max_tex_z,step(1.0, thickness)*tex_z);
+		if (length(IN.texCoords.xy - rainCentreTC[i]) < rainRadiusTC)
+		{
+			outOfRange = false;
+			break;
+		}
 	}
-	total_cloud=saturate((total_cloud-0)/0.1);
-	return vec4(total_cloud*precipitation,max_tex_z,0,0);
+
+	if(outOfRange)
+	{
+		//discard;
+		return vec4(0, 0, 0, 0);
+	}
+	else
+	{
+		// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
+		for(int i=0;i<14;i++)
+		{
+			float tex_z		=float(14.0-i)/20.0;
+			vec3 texc		=vec3(IN.texCoords.xy,tex_z);
+			vec4 density	=sample_3d_lod(cloudDensity,wwcSamplerState,texc,0);
+			total_cloud		+=0.125*density.z;
+			thickness		+=1.0*density.z;		// effective cloud thickness in km.
+			max_tex_z		=max(max_tex_z,step(1.0, thickness)*tex_z);
+		}
+		total_cloud=saturate((total_cloud-0)/0.1);
+		
+		float height = 0.0;
+		if(total_cloud > 0.0)
+			height = min((rainCentreKm.z+1.0)/14.0, 1.0); //Maps ranges from -1km - 13km on to 0.0f - 1.0f
+		
+		return vec4(total_cloud*precipitation,max_tex_z,height,0);
+		//return vec4(0, max_tex_z, 0, 1);
+	}
 }
 
 struct FarNearDepthPixelOutput

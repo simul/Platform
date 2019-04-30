@@ -149,31 +149,37 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    if (deviceContext.frame_number >= mNumBuffers)
-    {
-        // We want to map from the oldest buffer:
-        int idx = (deviceContext.frame_number + 1) % mNumBuffers;
-        const GLuint64 maxTimeOut = 100000; // 0.1ms
-	if (!glIsSync(mFences[idx]))
+	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
+	{
+		// We want to map from the oldest buffer:
+		int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+		const GLuint64 maxTimeOut = 100000; // 0.1ms
+		if (!glIsSync(mFences[idx]))
 		{
+#if _DUBUG
 			SIMUL_COUT << "The sync object associated with the structured buffer at binding " << mBinding << " is invalid. Can not map the buffer.\n";
+			SIMUL_BREAK_ONCE("");
+#endif
 			mFences[idx] = nullptr;
 			return nullptr;
 		}
-
-        GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
-        if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
-        {
-            mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
-            return mCurReadMap;
-        }
-        else
-        {
+		
+		GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
+		if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
+		{
+			mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
+			return mCurReadMap;
+		}
+		else
+		{
+#if _DUBUG
 			SIMUL_COUT << "The structured buffer at binding " << mBinding << " is still in use. Can not map the buffer.\n";
+			SIMUL_BREAK_ONCE("");
+#endif
 			return nullptr;
-        }
-    }
-    return nullptr;
+		}
+	}
+	return nullptr;
 }
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
@@ -185,8 +191,11 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
 		if (!unmap_success)
 		{
+#if _DUBUG
 			SIMUL_COUT << "The structured buffer at binding " << mBinding << " , did not unmap successfully. Buffer assumed to be corrupt.\n";
-			
+			SIMUL_BREAK_ONCE("");
+#endif
+
 			glDeleteBuffers(1, &mGPUBuffer[idx]);
 			glGenBuffers(1, &mGPUBuffer[idx]);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[idx]);
