@@ -321,6 +321,7 @@ void MapToWindow(uint3 p,bool clears)
 		return;
 
 	vec3 texc1		=vec3(idx)/vec3(windowGrid);
+	texc1.z			+=1.0/float(windowGrid.z); //Needed to correctly offset the height of the clouds in the output 3D Texture to match with MixInLayer() - AJR
 	texc1.y			=1.0-texc1.y;
 	texc1.xy		-=vec2(0.5,0.5);
 	texc1			=texc1*mapScale+mapOffset;
