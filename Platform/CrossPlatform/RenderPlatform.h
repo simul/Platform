@@ -350,7 +350,7 @@ namespace simul
 			//
 
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
-			
+		
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
 			bool can_save_and_restore;

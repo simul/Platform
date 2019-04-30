@@ -118,7 +118,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpu_read,bool,void* init_data)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data)
 {
     InvalidateDeviceObjects();
 
@@ -149,32 +149,59 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    if (deviceContext.frame_number >= mNumBuffers)
-    {
-        // We want to map from the oldest buffer:
-        int idx = (deviceContext.frame_number + 1) % mNumBuffers;
-        const GLuint64 maxTimeOut = 100000; // 0.1ms
-        //GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
-        //if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
-        {
-            mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
-            return mCurReadMap;
-        }
-        //else
-        //{
-        //    std::cout << "[WARNING] We timeouted while waiting to it to be ready! \n";
-        //}
-    }
-    return nullptr;
+	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
+	{
+		// We want to map from the oldest buffer:
+		int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+		const GLuint64 maxTimeOut = 100000; // 0.1ms
+		if (!glIsSync(mFences[idx]))
+		{
+#if _DUBUG
+			SIMUL_COUT << "The sync object associated with the structured buffer at binding " << mBinding << " is invalid. Can not map the buffer.\n";
+			SIMUL_BREAK_ONCE("");
+#endif
+			mFences[idx] = nullptr;
+			return nullptr;
+		}
+		
+		GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
+		if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
+		{
+			mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
+			return mCurReadMap;
+		}
+		else
+		{
+#if _DUBUG
+			SIMUL_COUT << "The structured buffer at binding " << mBinding << " is still in use. Can not map the buffer.\n";
+			SIMUL_BREAK_ONCE("");
+#endif
+			return nullptr;
+		}
+	}
+	return nullptr;
 }
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
     if (mCurReadMap)
     {
-    int idx = (deviceContext.frame_number + 1) % mNumBuffers;
-        mCurReadMap = nullptr;
-        glUnmapNamedBuffer(mGPUBuffer[idx]);
+		int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+		mCurReadMap = nullptr;
+		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
+		if (!unmap_success)
+		{
+#if _DUBUG
+			SIMUL_COUT << "The structured buffer at binding " << mBinding << " , did not unmap successfully. Buffer assumed to be corrupt.\n";
+			SIMUL_BREAK_ONCE("");
+#endif
+
+			glDeleteBuffers(1, &mGPUBuffer[idx]);
+			glGenBuffers(1, &mGPUBuffer[idx]);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[idx]);
+			glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, nullptr, cpu_read ? GL_MAP_WRITE_BIT | GL_MAP_READ_BIT : GL_MAP_WRITE_BIT);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		}
     }
 }
 
@@ -219,6 +246,15 @@ void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceCont
     if (cpu_read)
     {
         int idx     = deviceContext.frame_number % mNumBuffers;
+		
+		if (glIsSync(mFences[idx]))
+		{
+			glDeleteSync(mFences[idx]);
+			mFences[idx] = nullptr;
+		}
+		else
+			mFences[idx] = nullptr;
+
         mFences[idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     }
 }
@@ -232,8 +268,18 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
     if (mGPUBuffer[0] != 0)
     {
         glDeleteBuffers(mNumBuffers, &mGPUBuffer[0]);
-		for(int i=0;i<mNumBuffers;i++)
-			mGPUBuffer[i]=0;
+		for (int i = 0; i < mNumBuffers; i++)
+		{
+			mGPUBuffer[i] = 0;
+
+			if (glIsSync(mFences[i]))
+			{
+				glDeleteSync(mFences[i]);
+				mFences[i] = nullptr;
+			}
+			else
+				mFences[i] = nullptr;
+		}
     }
 }
 

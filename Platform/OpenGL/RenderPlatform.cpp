@@ -180,18 +180,18 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 {
     auto pass = (opengl::EffectPass*)deviceContext.contextState.currentEffectPass;
 
-    //if (pass->usesRwSBs())
-    //{
-    //    for (int i = 0; i < pass->numRwSbResourceSlots; i++)
-    //    {
-    //        int slot    = pass->rwSbResourceSlots[i];
-    //        auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
-    //        if (rwsb && pass->usesRwTextureSlotForSB(slot))
-    //        {
-    //            rwsb->AddFence(deviceContext);
-    //        }
-    //    }
-    //}
+    if (pass->usesRwSBs())
+    {
+        for (int i = 0; i < pass->numRwSbResourceSlots; i++)
+        {
+            int slot    = pass->rwSbResourceSlots[i];
+            auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
+            if (rwsb && pass->usesRwTextureSlotForSB(slot))
+            {
+                rwsb->AddFence(deviceContext);
+            }
+        }
+    }
 }
 
 crossplatform::Mesh* RenderPlatform::CreateMesh()
