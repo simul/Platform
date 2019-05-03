@@ -45,7 +45,6 @@ uniform RWStructuredBuffer<float>	g_GroupSpeeds:	register (u3);
 
 uniform StructuredBuffer<vec4>		g_ProbePos		SIMUL_TEXTURE_REGISTER(0);
 uniform StructuredBuffer<vec4>		g_ProbeVelocity	SIMUL_TEXTURE_REGISTER(1);
-//uniform StructuredBuffer<vec4>	g_ProbeValues	SIMUL_TEXTURE_REGISTER(0);
 uniform RWStructuredBuffer<vec4>	g_ProbeOutputs: register(u7);
 
 uniform StructuredBuffer<vec3>		g_BuoyancyObjectPos				SIMUL_TEXTURE_REGISTER(0);
@@ -343,7 +342,7 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 					modifier += 1.0;
 				}
 				previousVelocity = newVelocity;
-				
+				/*
 				if (contourSample.x != 0 && contourSample.y != 0)
 				{
 					float tempVelocity;
@@ -373,7 +372,7 @@ void CS_TraceFlowRays(uint3 sub_pos, bool base)
 
 					//direction = normalize(refract(direction, contourSample.xy, index));
 					
-				}
+				}*/
 			}
 			//refracted = 0.5;
 		}
@@ -1250,8 +1249,8 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 					vec2 texc1 = texcDir * uv_local1 * g_profileUVScale;
 					vec2 texc2 = texcDir * uv_local2 * g_profileUVScale;
 
-					vec2 displacementValue1;
-					vec2 displacementValue2;
+					vec2 displacementValue1 = vec2(0.0, 0.0);
+					vec2 displacementValue2 = vec2(0.0, 0.0);
 
 					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency))) / 2.0, 4.0);
 
@@ -1285,7 +1284,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 					vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 					vec2 texc = texcDir * uv_local * g_profileUVScale;
 
-					vec2 displacementValue;
+					vec2 displacementValue = vec2(0.0, 0.0);
 
 					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency))) / 2.0, 4.0);
 
@@ -1535,7 +1534,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 
 //-----------------------------------------------------------------------------
 // Name: PS_WaterSurfDepth
-// Type: Vertex shader
+// Type: Pixel shader
 // Desc: Calculate the depth and colour data from a water object.
 //-----------------------------------------------------------------------------
 PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFoam, bool enableRefraction, bool waveGrid)
@@ -1562,7 +1561,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	DepthInterpretationStruct dis;
 	dis.reverseDepth = true;
 	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
-	vec2 TexCoord = (vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) +vec2(1.0, 1.0))/ 2.0;
+	vec2 TexCoord = ((vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + vec2(1.0, 1.0)) / 2.0);// *g_DepthScale+vec2(g_vrRightEye * 0.5, 0);
 	vec2 baseTexCoord = TexCoord;
 
 	float actualDepth = 0.0;
@@ -1618,7 +1617,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 			float angle = ((float)i / (float)N) * TAU;
 			vec2 texcDir = normalize(profile32Directons[i]);// vec2(cos(angle), sin(angle));
 			vec2 texc = texcDir * In.texCoords * g_profileUVScale;
-			vec2 gradientValue;
+			vec2 gradientValue = vec2(0.0, 0.0);
 			vec2 waveGridAmp = vec2(0.0,0.0);
 			float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency))) / 2.0, 4.0);
 			vec2 windWaves = g_amplitude * In.vecColour.w * (g_ProfileBuffers.Sample(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f)).zw) * (baseAmplitude / 2.0);
@@ -1649,7 +1648,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	}
 
 	//Caluclate refraction
-	float tempsample = g_texDepth.Sample(clampSamplerState,TexCoord*g_DepthScale).x;
+	float tempsample = g_texDepth.Sample(clampSamplerState,TexCoord * g_DepthScale + vec2(g_vrRightEye * 0.5, 0)).x;
 	float fulldepth =  depthToFadeDistance(tempsample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
 	
 	//float fresnelFactor = 1.0;
@@ -1719,7 +1718,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 	if (enableRefraction)
 	{
-		subsurfaceSample = g_texDepth.Sample(clampSamplerState, TexCoord*g_DepthScale).x;
+		subsurfaceSample = g_texDepth.Sample(clampSamplerState, TexCoord * g_DepthScale + vec2(g_vrRightEye * 0.5, 0)).x;
 		subsurfaceDepth = depthToFadeDistance(subsurfaceSample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
 		if (subsurfaceDepth < surfaceDepth)
 		{
@@ -1790,7 +1789,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	*/
 	eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
 		
-	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord*g_DepthScale); // vec4(In.vecColour.w, 0.0, 0.0, 0.0); //
+	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord * g_DepthScale + vec2(g_vrRightEye * 0.5, 0)); // vec4(In.vecColour.w, 0.0, 0.0, 0.0); //
 
 	// Test for probe positions and values 
 	/*int x;
@@ -1869,6 +1868,8 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 //-----------------------------------------------------------------------------
 shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 {
+	vec2 TexCoords = vec2(In.texCoords.x / 2.0, In.texCoords.y) + vec2(g_vrRightEye * 0.5, 0);
+
 	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
 	
 	//return depthInput;
