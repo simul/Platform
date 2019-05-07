@@ -16,7 +16,8 @@ SIMUL_CONSTANT_BUFFER(cbShading,1)
 	uniform float		g_unityRender;
 	uniform vec3		g_PerlinOctave;
 	uniform float		g_oceanHeight;
-	uniform vec3		nvu8yfd9ahvy8;
+	uniform float		g_vrRightEye;
+	uniform vec2		nvu8yfd9ahvy8;
 
 	uniform vec3		g_PerlinGradient;
 	uniform bool		g_enableFoam;
