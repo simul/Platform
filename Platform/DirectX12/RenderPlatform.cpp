@@ -43,7 +43,7 @@ RenderPlatform::RenderPlatform():
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
-	gpuProfiler = new crossplatform::GpuProfiler();
+	//gpuProfiler = new crossplatform::GpuProfiler();
 
     mCurBarriers    = 0;
     mTotalBarriers  = 16; 
@@ -137,8 +137,9 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dN
 
 void RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceContext)
 {
-	deviceContext.renderPlatform->AsD3D12CommandList()->IASetVertexBuffers(0, 1, nullptr); // Only 1? 
-	deviceContext.renderPlatform->AsD3D12CommandList()->IASetIndexBuffer(nullptr);
+	mCommandList = deviceContext.asD3D12Context();
+	mCommandList->IASetVertexBuffers(0, 1, nullptr); // Only 1? 
+	mCommandList->IASetIndexBuffer(nullptr);
 }
 
 void RenderPlatform::RestoreDeviceObjects(void* device)
@@ -467,6 +468,7 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 
 void RenderPlatform::BeginFrame()
 {
+	crossplatform::RenderPlatform::BeginFrame();
 	// Store a reference to the device context
 	auto &deviceContext=GetImmediateContext();
 	mCommandList                        = deviceContext.asD3D12Context();
@@ -511,6 +513,7 @@ void RenderPlatform::BeginFrame()
 
 void RenderPlatform::EndFrame()
 {
+	crossplatform::RenderPlatform::EndFrame();
 }
 
 void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
@@ -613,7 +616,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
-	deviceContext.renderPlatform->AsD3D12CommandList()->Dispatch(w, l, d);
+	mCommandList->Dispatch(w, l, d);
 }
 
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &,crossplatform::Effect *,crossplatform::EffectTechnique *,int)
@@ -627,7 +630,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 	immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
-	deviceContext.renderPlatform->AsD3D12CommandList()->DrawInstanced(num_verts,1,start_vert,0);
+	mCommandList->DrawInstanced(num_verts,1,start_vert,0);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
@@ -636,7 +639,7 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 	immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
-	deviceContext.renderPlatform->AsD3D12CommandList()->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
+	mCommandList->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
 }
 
 void RenderPlatform::ApplyDefaultMaterial()
@@ -1461,7 +1464,7 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 		SIMUL_BREAK("Nacho has to work to do here!!");
 	}
 	auto pBuffer = (dx12::Buffer*)buffers[0];
-	deviceContext.renderPlatform->AsD3D12CommandList()->IASetVertexBuffers
+	mCommandList->IASetVertexBuffers
 	(
 		0,
 		num_buffers,
@@ -1583,7 +1586,7 @@ void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,
 	mCommandList = deviceContext.asD3D12Context();
 	immediateContext.platform_context=deviceContext.platform_context;
 
-	deviceContext.renderPlatform->AsD3D12CommandList()->IASetIndexBuffer(buffer->GetIndexBufferView());
+	mCommandList->IASetIndexBuffer(buffer->GetIndexBufferView());
 }
 
 static D3D_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
@@ -1620,7 +1623,7 @@ void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,cro
 	immediateContext.platform_context=deviceContext.platform_context;
 
 	D3D_PRIMITIVE_TOPOLOGY T = toD3dTopology(t);
-	deviceContext.renderPlatform->AsD3D12CommandList()->IASetPrimitiveTopology(T);
+	mCommandList->IASetPrimitiveTopology(T);
 	mStoredTopology = T;
 }
 
@@ -1828,7 +1831,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 
 	SetTopology(deviceContext,simul::crossplatform::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
-	deviceContext.renderPlatform->AsD3D12CommandList()->DrawInstanced(4, 1, 0, 0);
+	mCommandList->DrawInstanced(4, 1, 0, 0);
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *,int ,bool ,bool ,bool)

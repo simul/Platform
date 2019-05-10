@@ -1222,13 +1222,13 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 	StoredState &s=storedStates[storedStateCursor];
 
     pContext->OMSetDepthStencilState(s.m_pDepthStencilStateStored11,s.m_StencilRefStored11 );
-    SAFE_RELEASE(s.m_pDepthStencilStateStored11);
+    SAFE_RELEASE_SILENT(s.m_pDepthStencilStateStored11);
 
 	pContext->RSSetState(s.m_pRasterizerStateStored11);
-    SAFE_RELEASE(s.m_pRasterizerStateStored11);
+    SAFE_RELEASE_SILENT(s.m_pRasterizerStateStored11);
 
     pContext->OMSetBlendState(s.m_pBlendStateStored11,s.m_BlendFactorStored11,s.m_SampleMaskStored11 );
-    SAFE_RELEASE(s.m_pBlendStateStored11);
+    SAFE_RELEASE_SILENT(s.m_pBlendStateStored11);
 	
     pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pSamplerStateStored11 );
     pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
@@ -1236,53 +1236,53 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     pContext->CSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pComputeSamplerStateStored11 );
 	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
 	{
-	    SAFE_RELEASE(s.m_pSamplerStateStored11[i]);
-	    SAFE_RELEASE(s.m_pVertexSamplerStateStored11[i]);
-	    SAFE_RELEASE(s.m_pComputeSamplerStateStored11[i]);
-	    SAFE_RELEASE(s.m_pGeometrySamplerStateStored11[i]);
+	    SAFE_RELEASE_SILENT(s.m_pSamplerStateStored11[i]);
+	    SAFE_RELEASE_SILENT(s.m_pVertexSamplerStateStored11[i]);
+	    SAFE_RELEASE_SILENT(s.m_pComputeSamplerStateStored11[i]);
+	    SAFE_RELEASE_SILENT(s.m_pGeometrySamplerStateStored11[i]);
 	}
 	
 	pContext->VSSetShader(s.pVertexShader,s.m_pVertexClassInstances,s.numVertexClassInstances);
-    SAFE_RELEASE(s.pVertexShader );
+    SAFE_RELEASE_SILENT(s.pVertexShader );
 	pContext->PSSetShader(s.pPixelShader,s.m_pPixelClassInstances,s.numPixelClassInstances);
-    SAFE_RELEASE(s.pPixelShader );
+    SAFE_RELEASE_SILENT(s.pPixelShader );
 	pContext->HSSetShader(s.pHullShader,s.m_pHullClassInstances,s.numHullClassInstances);
-	SAFE_RELEASE(s.pHullShader);
+	SAFE_RELEASE_SILENT(s.pHullShader);
 	pContext->DSSetShader(s.pDomainShader,s.m_pDomainClassInstances,s.numDomainClassInstances);
-	SAFE_RELEASE(s.pDomainShader);
+	SAFE_RELEASE_SILENT(s.pDomainShader);
 	pContext->GSSetShader(s.pGeometryShader,s.m_pGeometryClassInstances,s.numGeometryClassInstances);
-	SAFE_RELEASE(s.pGeometryShader);
+	SAFE_RELEASE_SILENT(s.pGeometryShader);
 	pContext->CSSetShader(s.pComputeShader,s.m_pPixelClassInstances,s.numPixelClassInstances);
-	SAFE_RELEASE(s.pComputeShader);
+	SAFE_RELEASE_SILENT(s.pComputeShader);
 	pContext->CSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pCSConstantBuffers);
 	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pCSConstantBuffers[i]);
+		SAFE_RELEASE_SILENT(s.m_pCSConstantBuffers[i]);
 	}
 	pContext->GSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pGSConstantBuffers);
 	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pGSConstantBuffers[i]);
+		SAFE_RELEASE_SILENT(s.m_pGSConstantBuffers[i]);
 	}
 	pContext->PSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pPSConstantBuffers);
 	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pPSConstantBuffers[i]);
+		SAFE_RELEASE_SILENT(s.m_pPSConstantBuffers[i]);
 	}
 	pContext->VSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pVSConstantBuffers);
 	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pVSConstantBuffers[i]);
+		SAFE_RELEASE_SILENT(s.m_pVSConstantBuffers[i]);
 	}
 	pContext->HSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pHSConstantBuffers);
 	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pHSConstantBuffers[i]);
+		SAFE_RELEASE_SILENT(s.m_pHSConstantBuffers[i]);
 	}
 	pContext->DSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pDSConstantBuffers);
 	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pDSConstantBuffers[i]);
+		SAFE_RELEASE_SILENT(s.m_pDSConstantBuffers[i]);
 	}
 	pContext->PSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pPSShaderResourceViews);
 	pContext->CSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pCSShaderResourceViews);
@@ -1295,23 +1295,23 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 
 	for (int i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pPSShaderResourceViews[i]);
-		SAFE_RELEASE(s.m_pCSShaderResourceViews[i]);
-		SAFE_RELEASE(s.m_pVSShaderResourceViews[i]);
-		SAFE_RELEASE(s.m_pHSShaderResourceViews[i]);
-		SAFE_RELEASE(s.m_pGSShaderResourceViews[i]);
-		SAFE_RELEASE(s.m_pDSShaderResourceViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pPSShaderResourceViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pCSShaderResourceViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pVSShaderResourceViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pHSShaderResourceViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pGSShaderResourceViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pDSShaderResourceViews[i]);
 	}
 	// TODO: handle produce-consume buffers below
 	pContext->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, s.m_pUnorderedAccessViews, NULL);
 	for (int i = 0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; i++)
 	{
-		SAFE_RELEASE(s.m_pUnorderedAccessViews[i]);
+		SAFE_RELEASE_SILENT(s.m_pUnorderedAccessViews[i]);
 	}
 
 	pContext->IASetPrimitiveTopology(s.m_previousTopology);
 	pContext->IASetInputLayout(s.m_previousInputLayout );
-	SAFE_RELEASE(s.m_previousInputLayout);
+	SAFE_RELEASE_SILENT(s.m_previousInputLayout);
 
 	pContext->IASetVertexBuffers(	0,
 									D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
@@ -1320,13 +1320,13 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 									s.m_VertexOffsets	);
 	for(int i=0;i<D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;i++)
 	{
-	    SAFE_RELEASE(s.m_pVertexBuffersStored11[i]);
+	    SAFE_RELEASE_SILENT(s.m_pVertexBuffersStored11[i]);
 	}
 
 	pContext->IASetIndexBuffer(s.pIndexBufferStored11,
 								s.m_indexFormatStored11,
 								s.m_indexOffset);
-	SAFE_RELEASE(s.pIndexBufferStored11);
+	SAFE_RELEASE_SILENT(s.pIndexBufferStored11);
 
 	//pContext->RSSetScissorRects(s.m_numRects,s.m_scissorRects);
 #ifndef _XBOX_ONE
@@ -1542,8 +1542,8 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 		pContext->Draw(vertex_count,0);
 		//pContext->IASetPrimitiveTopology(previousTopology);
 		//pContext->IASetInputLayout( previousInputLayout );
-		//SAFE_RELEASE(previousInputLayout);
-		SAFE_RELEASE(vertexBuffer);
+		//SAFE_RELEASE_SILENT(previousInputLayout);
+		SAFE_RELEASE_SILENT(vertexBuffer);
 	}
 }
 
@@ -1592,7 +1592,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		hr=pass->GetDesc(&PassDesc);
 
 		ID3D11InputLayout*				m_pVtxDecl=NULL;
-		SAFE_RELEASE(m_pVtxDecl);
+		SAFE_RELEASE_SILENT(m_pVtxDecl);
 		hr=AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 		pContext->IASetInputLayout(m_pVtxDecl);
@@ -1617,9 +1617,9 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		pContext->Draw(vertex_count,0);
 	//	pContext->IASetPrimitiveTopology(previousTopology);
 	//	pContext->IASetInputLayout( previousInputLayout );
-	//	SAFE_RELEASE(previousInputLayout);
-		SAFE_RELEASE(vertexBuffer);
-		SAFE_RELEASE(m_pVtxDecl);
+	//	SAFE_RELEASE_SILENT(previousInputLayout);
+		SAFE_RELEASE_SILENT(vertexBuffer);
+		SAFE_RELEASE_SILENT(m_pVtxDecl);
 	}
 }
 
@@ -1655,7 +1655,7 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
+	SAFE_RELEASE_SILENT(previousInputLayout);
 }
 
 void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)

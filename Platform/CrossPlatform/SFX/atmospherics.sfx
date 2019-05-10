@@ -23,8 +23,8 @@ uniform RWTexture2D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 
 #include "../SL/cloud_shadow.sl"
 #include "../SL/godrays.sl"
-	
 
+	
 #ifndef SIMUL_PI_F
 #define SIMUL_PI_F (3.1415926536)
 #endif

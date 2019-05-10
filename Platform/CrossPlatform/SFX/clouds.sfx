@@ -46,7 +46,7 @@ uniform Texture2D lightTableTexture;
 	if(do_rainbow)
 		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-*/
+*/ 
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;

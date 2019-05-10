@@ -64,14 +64,19 @@ void SphericalHarmonics::RecompileShaders()
 
 void SphericalHarmonics::InvalidateDeviceObjects()
 {
+	ResetBuffers();
 	lightProbeConstants.InvalidateDeviceObjects();
-	sphericalSamples.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	sphericalHarmonics.InvalidateDeviceObjects();
 	SAFE_DELETE(sphericalHarmonicsEffect);
-	probeResultsRW.InvalidateDeviceObjects();
 	SAFE_DELETE(lightProbesEffect);
 }
+void SphericalHarmonics::ResetBuffers()
+{
+	sphericalSamples.InvalidateDeviceObjects();
+	sphericalHarmonics.InvalidateDeviceObjects();
+	probeResultsRW.InvalidateDeviceObjects();
+}
+
 
 float RoughnessFromMip(float mip, float numMips)
 {

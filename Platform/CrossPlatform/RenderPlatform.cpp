@@ -126,7 +126,6 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
-	
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;

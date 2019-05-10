@@ -18,6 +18,14 @@
 // The following constants are defined via compiler command line
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
+#ifndef SCAN_SMEM_SIZE
+#define SCAN_SMEM_SIZE 1200
+#endif
+
+#ifndef THREADS_PER_GROUP
+#define THREADS_PER_GROUP 128
+#endif
+
 #define MAX_TEXELS_PER_THREAD (64)
 //static const uint imageSize.y = 1200;
 //static const uint imageSize.x = 1600;

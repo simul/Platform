@@ -66,7 +66,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	{
 		rtView = col12Texture->AsD3D12RenderTargetView();
 	}
-	if (buffer_depth_texture->IsValid())
+	if (buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
 		dsView = depth12Texture->AsD3D12DepthStencilView();
 	}
@@ -76,7 +76,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
     targetsAndViewport.m_rt[0]			= rtView;
     targetsAndViewport.rtFormats[0]     = col12Texture->pixelFormat;
     targetsAndViewport.m_dt				= dsView;
-    if (buffer_depth_texture->IsValid())
+    if (buffer_depth_texture&&buffer_depth_texture->IsValid())
     {
         targetsAndViewport.depthFormat = depth12Texture->pixelFormat;
     }
@@ -158,7 +158,7 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 
 void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
 {
-	if (buffer_depth_texture->AsD3D12DepthStencilView())
+	if (buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
 		context.asD3D12Context()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 	}

@@ -667,7 +667,7 @@ void Direct3D11Manager::Shutdown()
 			if(d3dDebug)
 			{
 				// Watch out - this will ALWAYS BREAK, but that doesn't mean there are live objects.
-				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL|D3D11_RLDO_IGNORE_INTERNAL);
+				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			}
 #endif
 		}

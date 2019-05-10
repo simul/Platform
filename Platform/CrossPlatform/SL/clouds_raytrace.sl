@@ -209,14 +209,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
 		vec3 cloudTexCoords			=cloudWorldOffsetKm*inverseScalesKm;
 		c							+=c_step;
-		int2 intermediate			=abs(c.xy&int2(1,1));
+		int2 intermediate			=abs(c.xy&int2(1,1)); 
 		float is_inter				=dot(N.xy,vec2(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
-		vec3 pw						=abs(p1-p0);//+start_c_offset
+		vec3 pw						=abs(p1-p0);
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(3.0-2.0*is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
-		float fade					=1.0-fade_inter;
+		float fade = (1.0 - fade_inter);// *(1.0 - exp(-.5*stepKm));
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
@@ -232,7 +232,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		{
 			// mip-mapping: we should move to higher mips only when the step size (or render pixel size) gets bigger than the texel size.
 			float mip=0.0;//texelSizeKm/stepKm;
-			vec4 density = sample_3d_lod(cloudDensity, wwcSamplerState, cloudTexCoords, mip);
+			vec4 density = sample_3d_lod(cloudDensity, wwcSamplerState, cloudTexCoords, 0.0);
 			/*if(!found)
 			{
 				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
@@ -247,6 +247,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(noise&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
+				float mip = 0.0*(1.0-cosine);
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,noiseval,fractalScale,mip,density,light);
 			
 				if(do_rain_effect)

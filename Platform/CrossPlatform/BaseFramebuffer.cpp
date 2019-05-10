@@ -187,7 +187,7 @@ bool BaseFramebuffer::CreateBuffers()
 		std::string cName = "BaseFramebufferColour" + name;
 		buffer_texture=renderPlatform->CreateTexture(cName.c_str());
 	}
-	if(!buffer_depth_texture)
+	if(!buffer_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{
 		std::string dName = "BaseFramebufferDepth" + name;
 		buffer_depth_texture=renderPlatform->CreateTexture(dName.c_str());

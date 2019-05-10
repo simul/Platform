@@ -228,7 +228,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float cos_el			=cos(elevation);
 		pos						=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
 		float b					=longitude_strip==0?1.0:0.2;
-		OUT.colour				=multiplier+vec4(0.0,1.0,0.0,latitude>0&&latitude<latitudes?b:0.0);
+		OUT.colour				=multiplier+vec4(0.0,0.5,0.0,latitude>0&&latitude<latitudes?b:0.0);
 	//	OUT.colour			*=saturate(elevation/1.7);
 	}
 	OUT.hPosition			=mul(debugWorldViewProj,vec4(pos.xyz,1.0));

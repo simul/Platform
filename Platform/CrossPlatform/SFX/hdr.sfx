@@ -10,7 +10,7 @@
 #include "../SL/composite_msaa.sl"
 #include "../SL/debug_constants.sl"
 #include "../SL/noise.sl"
-
+ 
 uniform Texture2D imageTexture					SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS		SIMUL_TEXTURE_REGISTER(0);
 uniform TextureCubeArray imageCubeArrayTex	    SIMUL_TEXTURE_REGISTER(2);

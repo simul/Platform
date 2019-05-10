@@ -695,7 +695,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			if(rendertargets!=((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==D3D11_BIND_RENDER_TARGET))
 				ok=false;
 		}
-		SAFE_RELEASE(ppd);
+		SAFE_RELEASE_SILENT(ppd);
 	}
 	else
 		ok=false;
@@ -847,7 +847,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			if(rendertarget!=((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==D3D11_BIND_RENDER_TARGET))
 				ok=false;
 		}
-		SAFE_RELEASE(ppd);
+		SAFE_RELEASE_SILENT(ppd);
 	}
 	else
 		ok=false; 
@@ -990,7 +990,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			if(rendertarget!=((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==D3D11_BIND_RENDER_TARGET))
 				ok=false;
 		}
-		SAFE_RELEASE(ppd);
+		SAFE_RELEASE_SILENT(ppd);
 	}
 	else
 		ok=false; 

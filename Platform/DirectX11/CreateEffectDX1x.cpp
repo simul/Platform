@@ -75,7 +75,7 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 #endif
 
 // winmm.lib comctl32.lib
-static bool pipe_compiler_output=false;
+static bool pipe_compiler_output=true;
 
 //static ID3D11Device		*pd3dDevice		=NULL;
 using namespace simul;

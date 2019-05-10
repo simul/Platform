@@ -4,6 +4,7 @@
 #include <tchar.h>
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Simul/Base/RuntimeError.h"
 typedef std::basic_string<TCHAR> tstring;
 #define ENABLE_PIX
 #ifdef UNICODE
@@ -31,8 +32,15 @@ extern const char *GetErrorText(HRESULT hr);
 	#define PIXEndNamedEvent()				// D3DPERF_EndEvent()
 	#define PIXWrapper(colour,name)
 #endif
+	#ifndef SAFE_RELEASE_SILENT
+		#define SAFE_RELEASE_SILENT(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
+	#endif
 	#ifndef SAFE_RELEASE
-		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
+		#ifdef _DEBUG
+			#define SAFE_RELEASE(p)		{ if(p) { int refct=(p)->Release();if(refct>0){SIMUL_COUT<<"Released resource, "<<refct<<" refs remain.\n";} (p)=NULL; } }
+		#else
+			#define SAFE_RELEASE(p)		SAFE_RELEASE_SILENT(p)
+		#endif
 	#endif
 	#ifndef SAFE_RELEASE_ARRAY
 		#define SAFE_RELEASE_ARRAY(p,n)		{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }

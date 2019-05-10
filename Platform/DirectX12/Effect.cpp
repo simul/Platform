@@ -4,6 +4,7 @@
 #include "Texture.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
+#include "Simul/Base/StringToWString.h"
 #include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
@@ -752,6 +753,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				// File to compile
 				cmdLine += " " + simulPath + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
 
+				//cmdLine += " -L";
+				//cmdLine += " -V";
 				// Includes
 				cmdLine += " -I\"" + simulPath + "\\Platform\\DirectX12\\HLSL;";
 				cmdLine += simulPath + "\\Platform\\CrossPlatform\\SL\"";
@@ -805,39 +808,77 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			CreatePipe(&cerrRead, &cerrWrite, &secAttrib, 100);
 
 			// Create the process
-			STARTUPINFO startInfo			= {};
+			STARTUPINFOW startInfo			= {};
+			startInfo.cb					=sizeof(startInfo);
+			startInfo.dwFlags				= STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+			startInfo.wShowWindow			= SW_HIDE;
 			startInfo.hStdOutput			= coutWrite;
 			startInfo.hStdError				= cerrWrite;
+			//startInfo.wShowWindow = SW_SHOW;;
 			PROCESS_INFORMATION processInfo = {};
-			bool success = CreateProcess
+			bool success = CreateProcessW
 			(
-				sfxPath.c_str(), wcstring,
-				NULL, NULL, false, CREATE_NO_WINDOW, NULL, NULL,
+				NULL, wcstring,
+				NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
 				&startInfo, &processInfo
 			);
+			if (processInfo.hProcess == nullptr)
+			{
+				std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
+				return;
+			}
 
 			// Wait until if finishes
 			if (success)
 			{
 				// Wait for the main handle and the output pipes
 				HANDLE hWaitHandles[]	= {processInfo.hProcess, coutRead, cerrRead };
-				DWORD ret				= WaitForMultipleObjects(3, hWaitHandles, TRUE, INFINITE);
 
 				// Print the pipes
 				const DWORD BUFSIZE = 4096;
 				BYTE buff[BUFSIZE];
-				DWORD dwBytesRead;
-				DWORD dwBytesAvailable;
-				while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				bool has_errors = false;
+				while (1)
 				{
-					ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-					SIMUL_COUT << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+					DWORD dwBytesRead;
+					DWORD dwBytesAvailable;
+					DWORD dwWaitResult = WaitForMultipleObjects( 3 , hWaitHandles, FALSE, 60000L);
+
+					while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+					{
+						ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+						std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+					}
+					while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+					{
+						ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+						std::cerr << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+					}
+					// Process is done, or we timed out:
+					if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
+						break;
+					if (dwWaitResult == WAIT_FAILED)
+					{
+						DWORD err = GetLastError();
+						char* msg;
+						// Ask Windows to prepare a standard message for a GetLastError() code:
+						if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
+							break;
+
+						SIMUL_CERR << "Error message: " << msg << std::endl;
+						{
+							break;
+						}
+					}
 				}
-				while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				DWORD ExitCode;
+				GetExitCodeProcess(processInfo.hProcess,&ExitCode);
+				if (ExitCode != 0)
 				{
-					ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-					SIMUL_COUT << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+					SIMUL_BREAK(base::QuickFormat("ExitCode: %d",ExitCode));
 				}
+				CloseHandle(processInfo.hProcess);
+				CloseHandle(processInfo.hThread);
 			}
 			else
 			{
