@@ -876,7 +876,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
                     dsv.MipSlice                            = 0;
                     D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc = {};
                     depthDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
-                    depthDesc.Format                        = DXGI_FORMAT_D24_UNORM_S8_UINT;
+                    depthDesc.Format                        = RenderPlatform::TypelessToDsvFormat(textureDesc.Format); //DXGI_FORMAT_D24_UNORM_S8_UINT;
                     depthDesc.Flags                         = D3D12_DSV_FLAG_NONE;
                     depthDesc.Texture2D                     = dsv;
 

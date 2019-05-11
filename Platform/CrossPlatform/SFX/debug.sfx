@@ -215,7 +215,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float cos_el		=cos(elevation);
 		pos					=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
 		float b				=latitude_strip==(uint)latitudes/2?1.0:0.2;
-		OUT.colour			=multiplier+vec4(1.0,0.5,0.5,longitude>0&&longitude<(uint)longitudes?b:0.0);
+		OUT.colour			=multiplier*vec4(1.0,1.0,1.0,longitude>0&&longitude<(uint)longitudes?b:0.0); //Latitude Colour
 		//OUT.colour		*=saturate(elevation/1.7);
 	}
 	else
@@ -228,7 +228,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float cos_el			=cos(elevation);
 		pos						=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
 		float b					=longitude_strip==0?1.0:0.2;
-		OUT.colour				=multiplier+vec4(0.0,0.5,0.0,latitude>0&&latitude<latitudes?b:0.0);
+		OUT.colour				=multiplier*vec4(1.0,1.0,1.0,latitude>0&&latitude<latitudes?b:0.0); //Longitude Colour
 	//	OUT.colour			*=saturate(elevation/1.7);
 	}
 	OUT.hPosition			=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
@@ -269,15 +269,15 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
         vec4 finalCol  = vec4(0.0,0.0,0.0,1.0);
         if(axis == 0)
         {
-            finalCol.xyz += vec3(1,0.5,0.5);
+            finalCol.xyz += vec3(0.5,0.0,0.0);
         }
         if(axis == 1)
         {
-            finalCol.xyz += vec3(0,1.0,0);
+            finalCol.xyz += 0.75*vec3(0.0,0.5,0.0);
         }
         if(axis == 2)
         {
-            finalCol.xyz += vec3(0.5,0.5,1.0);
+            finalCol.xyz += vec3(0.0,0.0,0.5);
         }
         OUT.colour = finalCol;
 		//OUT.colour=vec4((axis==0)*vec3(1,0.5,0.5)+(axis==1)*vec3(0,1.0,0)+(axis==2)*vec3(0.5,0.5,1.0),1.0);

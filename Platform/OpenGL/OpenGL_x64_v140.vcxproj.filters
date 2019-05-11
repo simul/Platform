@@ -326,9 +326,6 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>

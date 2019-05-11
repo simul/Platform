@@ -177,6 +177,7 @@ namespace simul
 			static int								ByteSizeOfFormatElement(DXGI_FORMAT format);
 			static bool								IsTypeless(DXGI_FORMAT fmt, bool partialTypeless);
 			static DXGI_FORMAT						TypelessToSrvFormat(DXGI_FORMAT fmt);
+			static DXGI_FORMAT						TypelessToDsvFormat(DXGI_FORMAT fmt);
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
 			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
 			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.

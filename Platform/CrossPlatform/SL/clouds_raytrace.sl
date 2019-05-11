@@ -214,9 +214,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		vec3 pw						=abs(p1-p0);
-		float fade_inter			=saturate((length(pw.xy)/(float(W)*(3.0-2.0*is_inter)-1.0)-start)/range);// /(2.0-is_inter)
+		float fade_inter			=saturate((length(pw.xy) / (float(W)*(3.0 - 2.0*is_inter) - 1.0) - start) / range);// /(2.0-is_inter)
 	
-		float fade = (1.0 - fade_inter);// *(1.0 - exp(-.5*stepKm));
+		float fade = (1.0 - fade_inter);// *(1.0 - exp(-2.5*stepKm));
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
