@@ -159,9 +159,6 @@
     <None Include="..\CrossPlatform\SL\CppSl.hs">
       <Filter>SL</Filter>
     </None>
-    <None Include="..\CrossPlatform\SL\simul_2d_clouds.hs">
-      <Filter>SL</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\atmospherics.sl">
       <Filter>SL</Filter>
     </None>
@@ -332,16 +329,10 @@
     <CustomBuild Include="..\CrossPlatform\SFX\rain.sfx">
       <Filter>Shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
-      <Filter>Shaders</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
       <Filter>Shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
-      <Filter>Shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
       <Filter>Shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
@@ -359,8 +350,5 @@
     <CustomBuild Include="..\CrossPlatform\SFX\terrain.sfx">
       <Filter>Shaders</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\..\..\Users\micha\AppData\Local\Temp\3p2rnfcl.bmp" />
   </ItemGroup>
 </Project>

@@ -170,7 +170,6 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
