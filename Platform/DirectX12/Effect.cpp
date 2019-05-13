@@ -731,7 +731,10 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	auto buildMode = r->GetShaderBuildMode();
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
 	{
-		std::string simulPath = std::getenv("SIMUL");
+		const char *p = std::getenv("SIMUL");
+		if (!p)
+			return;
+		std::string simulPath = p;
         
 		if (simulPath != "")
 		{
