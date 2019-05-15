@@ -136,7 +136,7 @@ void DisplaySurface::InitSwapChain()
     SIMUL_ASSERT(result == S_OK);
 }
 
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if(mCommandList)
 		return;
@@ -156,7 +156,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
     mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
     mDeferredContext->RSSetViewports(1, &mViewport);
 	if(renderer)
-	    renderer->Render(mViewId, mDeferredContext, mBackBufferRT, mViewport.Width, mViewport.Height);
+	    renderer->Render(mViewId, mDeferredContext, mBackBufferRT, mViewport.Width, mViewport.Height, frameNumber);
 #endif
     mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
 	renderPlatform->RestoreRenderState(deferredContext);

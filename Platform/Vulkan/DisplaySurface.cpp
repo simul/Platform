@@ -736,7 +736,7 @@ void DisplaySurface::CreateDefaultPipeline()
 }
 
 
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 
 	if (delegatorReadWriteMutex)
@@ -809,7 +809,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 		auto *rp = (vulkan::RenderPlatform*)renderPlatform;
 		rp->SetDefaultColourFormat(pixelFormat);
 		renderer->Render(mViewId, deferredContext.platform_context, &swapchain_image_resources[current_buffer].framebuffer
-			, viewport.w, viewport.h);
+			, viewport.w, viewport.h,  frameNumber);
 	}
 
 	renderPlatform->RestoreRenderState(deferredContext);

@@ -25,7 +25,7 @@ namespace simul
 			void            Release();
 			void            SetRenderer(PlatformRendererInterface *ci, int view_id);
 			void            ResizeSwapChain(DeviceContext &deviceContext);
-            virtual void    Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex) {};
+            virtual void    Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) {};
 			virtual void	StartFrame() {}
 			virtual void	EndFrame() {}
             cp_hwnd         GetHandle() { return mHwnd; }

@@ -168,7 +168,7 @@ void DisplaySurface::InitSwapChain()
 	// Initialize the swap chain description.
 }
 
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 	deferredContext.platform_context=immediateContext.platform_context;
@@ -188,7 +188,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
   //  mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
  //   mDeferredContext->RSSetViewports(1, &mViewport);
 	if(renderer)
-		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h);
+		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h,frameNumber);
 
 	//mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
 	renderPlatform->RestoreRenderState(deferredContext);

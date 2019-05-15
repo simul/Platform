@@ -32,10 +32,11 @@ void DisplaySurfaceManager::Render(cp_hwnd h)
 	w->StartFrame();
 	if(renderPlatform&&!frame_started)
 	{
+		frameNumber++;
 		renderPlatform->BeginFrame();
 		frame_started=true;
 	}
-    w->Render(delegatorReadWriteMutex);
+    w->Render(delegatorReadWriteMutex,frameNumber);
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():

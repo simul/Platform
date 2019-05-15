@@ -45,6 +45,7 @@ namespace simul
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;
             DisplaySurfaceMap                           surfaces;
 			bool frame_started;
+			long long frameNumber=0;
 		};
 	}
 }

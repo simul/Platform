@@ -155,7 +155,7 @@ unsigned DisplaySurface::GetCurrentBackBufferIndex() const
 #endif
 	return curIdx;
 }
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex)
+void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
@@ -183,7 +183,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
     if (renderer)
     {
-        renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom);
+        renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom,frameNumber);
     }
 
     // Get ready to present
