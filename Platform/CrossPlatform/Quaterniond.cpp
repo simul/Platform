@@ -345,13 +345,13 @@ namespace simul
 			const double &x0=v.x;
 			const double &y0=v.y;
 			const double &z0=v.z;
-			 double s1;
+			double s1;
 			s1=-q.x*x0-q.y*y0-q.z*z0;
-			 double x1;
+			double x1;
 			x1= q.s*x0-q.y*z0+q.z*y0;
-			 double y1;
+			double y1;
 			y1= q.s*y0-q.z*x0+q.x*z0;
-			 double z1;
+			double z1;
 			z1= q.s*z0-q.x*y0+q.y*x0;
 			ret.x=-s1*q.x+q.s*x1-q.y*z1+q.z*y1,
 			ret.y=-s1*q.y+q.s*y1-q.z*x1+q.x*z1,

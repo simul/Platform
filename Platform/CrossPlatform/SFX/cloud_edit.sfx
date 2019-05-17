@@ -15,8 +15,8 @@ shader posTexVertexOutput VS_DrawTextureOnSphere(idOnly IN)
 	vec3 poss[4];
 	poss[0]			=vec3( 1.0,-1.0,1.0);
 	poss[1]			=vec3( 1.0, 1.0,1.0);
-	poss[2]			=vec3(-1.0, 1.0,1.0);
-	poss[3]			=vec3(-1.0,-1.0,1.0);
+	poss[3]			=vec3(-1.0, 1.0,1.0);
+	poss[2]			=vec3(-1.0,-1.0,1.0);
 	vec3 pos;
 	uint vert=IN.vertex_id%4;
 	{
@@ -43,6 +43,16 @@ shader vec4 PS_DrawTextureOnSphere(posTexVertexOutput IN) : SV_TARGET
 	//res.rgb=IN.texCoords.xyy;
 	return res;
 }
+shader vec4 PS_DrawCrossSectionOnSphere(posTexVertexOutput IN) : SV_TARGET
+{
+	vec3 texc	=vec3(IN.texCoords.xy+texcOffset,0.15);
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	//texc.y		=1.0-texc.y;
+	vec4 lookup=texture_wwc_lod(cloudVolume,texc.xyz,0);
+	vec4 res=vec4(debugColour.rgb,.1*lookup.z*debugColour.a);
+	//res.rgb=IN.texCoords.xyy;
+	return res;
+}
 
 technique draw_texture_on_sphere
 {
@@ -57,4 +67,19 @@ technique draw_texture_on_sphere
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
+}
+
+technique draw_cross_section_on_sphere
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawTextureOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawCrossSectionOnSphere()));
+		//SetVertexShader(CompileShader(vs_5_0,VS_DrawQuadOnSphere()));
+		//SetPixelShader(debugps_5_0);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
 }

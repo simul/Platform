@@ -210,6 +210,8 @@ namespace simul
             crossplatform::PixelFormat              DefaultOutputFormat;
 
 		protected:
+			//D3D12-specific things
+			void BeginD3D12Frame();
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64                      mTimeStampFreq;
 			//! Reference to the DX12 device

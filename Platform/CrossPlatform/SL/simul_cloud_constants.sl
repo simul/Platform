@@ -27,7 +27,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 
 	uniform mat4 worldToScatteringVolumeMatrix;
-
+	uniform mat4 volumeToLayerMatrix;
+	
 	uniform vec4 depthToLinFadeDistParams;
 
 	uniform vec3 scaleOfGridCoordsKm;

@@ -151,15 +151,8 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 }
 
-void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
+void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
 {
-	if (mCurApplyCount >= mMaxDescriptors)
-	{
-		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
-		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
-		return;
-	}
-
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
@@ -167,6 +160,12 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	{
 		mLastFrameIndex = curFrameIndex;
 		mCurApplyCount = 0;
+	}
+	if (mCurApplyCount >= mMaxDescriptors)
+	{
+		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
+		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
+		return;
 	}
 
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer

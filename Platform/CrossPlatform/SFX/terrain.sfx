@@ -80,7 +80,7 @@ shader vec4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec3 lightning					=20*lightningColour.rgb*saturate(1.0/pow(from_lightning_centre_km+.0001,2.0));
 	
 	vec3 light	=ambientColour.rgb+dotp*sunlight.rgb+lightning.rgb;
-//	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
+	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
 	result.rgb	=(texel.rgb*light.rgb);
 	result.a	=1.0;
 	//result.rgb	=ambientColour.rgb;

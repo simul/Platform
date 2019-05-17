@@ -81,10 +81,10 @@ SamplerState samplerStateNearest SIMUL_STATE_REGISTER(11)
 	AddressW = Clamp;
 };
 
-SamplerState cwcNearestSamplerState SIMUL_STATE_REGISTER(12)
+SamplerState wwcNearestSamplerState SIMUL_STATE_REGISTER(12)
 {
 	Filter = MIN_MAG_MIP_POINT;
-	AddressU = Clamp;
+	AddressU = Wrap;
 	AddressV = Wrap;
 	AddressW = Clamp;
 };

@@ -192,20 +192,22 @@ uint PackVec4ToUint(vec4 i)
 }
 #endif
 
-
 // idx is the position relative to the grid centre texel.
 // we add gridCentreTexel and mod to get the true position in the texture.
-void MixInLayer( int3 p,bool clears)
+void MixInLayer(int3 p,bool clears)
 {
 	int3 idx	=p*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	idx.xy		+=gridCentreTexel;
-	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
-	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
-	idx.xy		=idx.xy%int2(windowGrid.xy);
-	vec4 res	=vec4(0.0,0.0,0.0,0.0);
+	idx.xy					+=gridCentreTexel;
+	vec3 gridf				=vec3(vec2(windowGrid.xy),0);
+	vec3 wind_texc			=vec3(int3((idx.xy-gridCentreTexel.xy)%windowGrid.xy - windowGrid.xy / 2,idx.z));
+	vec3 texc				=mul(volumeToLayerMatrix,vec4(wind_texc,1.0));
+	//texc					=texc*scale+offset;
+	idx.xy					+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy					=idx.xy%int2(windowGrid.xy);
+	vec4 res				=vec4(0.0,0.0,0.0,0.0);
 	float zPixel1			=1.0/float(windowGrid.z);
 	float layer_saturate	=saturate(texc.z / zPixel1+1.0)*saturate((1.0+zPixel1 - texc.z)/ zPixel1);
 	if((texc.z>=-2.0*zPixel1&&texc.z<=1.0+2.0*zPixel1))
@@ -229,9 +231,9 @@ void MixInLayer( int3 p,bool clears)
 		// stronger noise at the top:
 		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
 		// variation:
-		noise_factor *= (0.5 + rand3(idx).x);
-		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
-		res.y		=saturate(localCellNoiseStrength*noise_factor);
+		noise_factor	*= (0.5 + rand3(idx).x);
+		res.x			=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y			=saturate(localCellNoiseStrength*noise_factor);
 	}
 	vec4 current=res;
 	if(!clears)
@@ -239,9 +241,11 @@ void MixInLayer( int3 p,bool clears)
 		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	}
 	res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
-	res.z		=max(res.z*max_density_gm3,current.z);
+	res.z		=max(res.z*max_density_gm3, current.z);
+
+	//res.xy = saturate(-5*texc.xy);
+//	res.z		=saturate(texc.y);
 	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
-	
 }
 
 void MixInCirrus(uint3 ii,bool clears)
@@ -249,14 +253,16 @@ void MixInCirrus(uint3 ii,bool clears)
 	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
-	idx.xy		+=gridCentreTexel;
-	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
+	idx.xy					+=gridCentreTexel;
+	vec3 gridf				=vec3(vec2(windowGrid.xy),0);
+	vec3 wind_texc			=vec3(int3((idx.xy-gridCentreTexel.xy)%windowGrid.xy - windowGrid.xy / 2,idx.z));
+	vec3 texc				=mul(volumeToLayerMatrix,vec4(wind_texc,1.0));
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	
 	float fall_amount=saturate(1.0-texc.z);
-texc.xy+=cirrusWindVector.xy*pow(fall_amount,2.0);
+	texc.xy+=cirrusWindVector.xy*pow(fall_amount,2.0);
 	// fall streaks.
 	vec4 res = vec4(0.0,0.0,0.0,0.0);
 	for (int i = -2; i < 3; i++)
@@ -488,18 +494,19 @@ shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 	pos.xy		+= int2(gridCentreTexel);
 	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
 	pos.xy		= pos.xy%int2(windowGrid.xy);
-	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
 	uint3 pos2	=pos*2;
+	vec3 texc = vec3(pos) / vec3(targetTextureSize.xxy);
+	vec3 offset_texc = vec3(1.f, 1.f, 1.f) / vec3(targetTextureSize.xxy);
 	vec4 res;
 	{
-		vec4 c1 = cloudDensity.SampleLevel(wwcSamplerState,texc,0);
-		vec4 c2 = cloudDensity[pos2 + uint3(1, 0, 0)];
-		vec4 c3 = cloudDensity[pos2 + uint3(-1,0, 0)];
-		vec4 c4 = cloudDensity[pos2 + uint3(0, 1, 0)];
-		vec4 c5 = cloudDensity[pos2 + uint3(0,-1, 0)];
-		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 1)];
-		vec4 c7 = cloudDensity[pos2 + uint3(0, 0,-1)];
-		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 ) / 7.0;
+		vec4 c1 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc, 0);
+		vec4 c2 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3( offset_texc.x,0, 0), 0);
+		vec4 c3 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(-offset_texc.x,0, 0), 0);
+		vec4 c4 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, offset_texc.y, 0), 0);
+		vec4 c5 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0,-offset_texc.y, 0), 0);
+		vec4 c6 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, 0, offset_texc.z), 0);
+		vec4 c7 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, 0,-offset_texc.z), 0);
+		res = c1;// (c1 + c2 + c3 + c4 + c5 + c6 + c7) / 7.0;
 		//res.z=max(max(max(max(max(max(c1.z,c2.z),c3.z),c4.z),c5.z),.5*c6.z),.5*c7.z);
 	res.xyw*=0.5;
 	}
@@ -518,17 +525,18 @@ shader void CS_LightMip( uint3 p: SV_DispatchThreadID )
 	pos.xy		+= gridCentreTexel;
 	pos.xy		+= int2(windowGrid.xy + windowGrid.xy / 2);
 	pos.xy		= pos.xy%int2(windowGrid.xy);
-	vec3 texc	= (vec3(pos)+vec3(0.5,0.5,0.5)) / vec3(windowGrid.xyz);
 	uint3 pos2	=pos*2;
+	vec3 texc = vec3(pos) / vec3(targetTextureSize.xxy);
+	vec3 offset_texc = vec3(1.f, 1.f, 1.f) / vec3(targetTextureSize.xxy);
 	vec4 res;
 	{
-		vec4 c1 = cloudDensity.SampleLevel(wwcSamplerState,texc,0);
-		vec4 c2 = cloudDensity[pos2 + uint3(1, 0, 0)];
-		vec4 c3 = cloudDensity[pos2 + uint3(-1,0, 0)];
-		vec4 c4 = cloudDensity[pos2 + uint3(0, 1, 0)];
-		vec4 c5 = cloudDensity[pos2 + uint3(0,-1, 0)];
-		vec4 c6 = cloudDensity[pos2 + uint3(0, 0, 1)];
-		vec4 c7 = cloudDensity[pos2 + uint3(0, 0,-1)];
+		vec4 c1 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc, 0);
+		vec4 c2 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(offset_texc.x, 0, 0)	, 0);
+		vec4 c3 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(-offset_texc.x, 0, 0), 0);
+		vec4 c4 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, offset_texc.y, 0)	, 0);
+		vec4 c5 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, -offset_texc.y, 0), 0);
+		vec4 c6 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, 0, offset_texc.z)	, 0);
+		vec4 c7 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, 0, -offset_texc.z), 0);
 		res = (c1 + c2 + c3 + c4 + c5 + c6 + c7 ) / 7.0;
 	}
 	///else
@@ -1251,7 +1259,7 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 {
 	vec2 texCoords=IN.texCoords;
 	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
-texc.xy		+=vec2(gridCentreTexel+windowGrid.xy/2)/vec2(windowGrid.xy);
+texc.xy		+=vec2(gridCentreTexel)/vec2(windowGrid.xy)-vec2(0.5,0.5);
 	int i		=0;
 	vec3 accum	=vec3(0.0,0.5,1.0);
 	//texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
@@ -1264,6 +1272,7 @@ texc.xy		+=vec2(gridCentreTexel+windowGrid.xy/2)/vec2(windowGrid.xy);
 		vec4 light		=texture_wwc_lod(cloudDensity2,texc,0);
 		vec3 colour		=light.rgb;//(lightResponse.x*light.y+lightResponse.y*light.x);
 		colour.gb		+=vec2(.125,.25)*(lightResponse.z*light.w);
+	//	colour.rg = saturate(1.0*density.xy);
 		colour.b		+=density.w;
 		float opacity	=density.z;
 		colour			*=opacity;
