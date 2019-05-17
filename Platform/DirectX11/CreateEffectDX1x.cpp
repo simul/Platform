@@ -109,10 +109,10 @@ HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *fil
 }
 #endif
 
-ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
+ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	ERRNO_BREAK
-	ID3D11ShaderResourceView* tex=NULL;
+	ID3D11Texture2D* tex=NULL;
 	std::string str;
 	int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
 	if(idx<-1||idx>=(int)texturePathsUtf8.size())
@@ -132,7 +132,7 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	loadInfo.BindFlags	=D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format		=DXGI_FORMAT_FROM_FILE;
 	loadInfo.MipLevels=0;
-	HRESULT hr			=D3DX11CreateShaderResourceViewFromMemory(
+	HRESULT hr			= D3DX11CreateTextureFromMemory(
 									pd3dDevice
 									,ptr
 									,bytes
@@ -158,12 +158,18 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	const DirectX::Image *image=scratchImage.GetImage(0,0,0);
 	if(!image)
 		return NULL;
-    hr=CreateShaderResourceView(  pd3dDevice,image, 1, metadata,&tex );
+	ID3D11Resource *res = tex;
+    hr=CreateTexture(pd3dDevice,image, 1, metadata, &res );
+	if (res&&res->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&tex) == S_OK)
+	{
+		// SHould have one ref:
+		int numrefs=res->Release();
+		std::cout << numrefs << std::endl;
+	}
 #endif
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 	return tex;
 }
-
 
 ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {

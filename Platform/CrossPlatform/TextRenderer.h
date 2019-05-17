@@ -30,6 +30,12 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			void Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
+			struct FontIndex
+			{
+				float x;
+				float w;
+				int pixel_width;
+			};
 		private:
 			void Recompile();
 			crossplatform::Effect						*effect;
@@ -42,6 +48,8 @@ namespace simul
 			crossplatform::Texture*			font_texture;
 			crossplatform::RenderPlatform *renderPlatform;
 			bool recompile;
+			int fontWidth = 0;
+			FontIndex * fontIndices = nullptr;
 		};
 	}
 }
