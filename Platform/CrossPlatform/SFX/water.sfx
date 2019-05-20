@@ -1820,7 +1820,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
 	Output.RefractColour = refractColour; // ampResult; //
 	Output.Normals = vec4(normal, backfaceOccluded);
-	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, fulldepth);
+	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, fulldepth); // g_texDepth.Sample(clampSamplerState, TexCoord /* g_DepthScale + vec2(g_vrRightEye * 0.5, 0)*/);//
 
 	return Output;
 }
@@ -1868,9 +1868,11 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 //-----------------------------------------------------------------------------
 shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 {
-	vec2 TexCoords = vec2(In.texCoords.x / 2.0, In.texCoords.y) + vec2(g_vrRightEye * 0.5, 0);
+	vec2 TexCoords = In.texCoords;
+	if(g_vrRightEye)
+		TexCoords = g_vrRightEye * (vec2(In.texCoords.x / 2.0, In.texCoords.y) + vec2(0.5, 0));
 
-	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
+	float4 depthInput = g_waterDepth.Sample(clampSamplerState, TexCoords);
 	
 	//return depthInput;
 
@@ -1885,14 +1887,14 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 
 	float4 Output = vec4(0.0, 0.0, 0.0, 1.0);
 
-	float4 absorptionInput = g_waterAbsorption.Sample(clampSamplerState, In.texCoords);
+	float4 absorptionInput = g_waterAbsorption.Sample(clampSamplerState, TexCoords);
 	vec3 absorption = absorptionInput.xyz;
 
-	float4 scatteringInput = g_waterScattering.Sample(clampSamplerState, In.texCoords);
+	float4 scatteringInput = g_waterScattering.Sample(clampSamplerState, TexCoords);
 	vec3 scattering = scatteringInput.xyz;
 
-	float4 normalsInput = g_waterNormals.Sample(clampSamplerState, In.texCoords);
-	float4 refractColourInput = g_waterRefractColour.Sample(clampSamplerState, In.texCoords);
+	float4 normalsInput = g_waterNormals.Sample(clampSamplerState, TexCoords);
+	float4 refractColourInput = g_waterRefractColour.Sample(clampSamplerState, TexCoords);
 	vec3 normal = normalsInput.xyz;
 	
 	//return vec4(-normalsInput.xy, 0.0, 0.0);
