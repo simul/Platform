@@ -1,6 +1,6 @@
 
 
-vec4 quat_from_axis_angle(vec3 axis, float angle)
+vec4 quat_from_axis_angle_degrees(vec3 axis, float angle)
 { 
   vec4 qr;
   float half_angle = (angle * 0.5) * 3.14159 / 180.0;
@@ -9,6 +9,17 @@ vec4 quat_from_axis_angle(vec3 axis, float angle)
   qr.z = axis.z * sin(half_angle);
   qr.w = cos(half_angle);
   return qr;
+}
+
+vec4 quat_from_axis_angle_radians(vec3 axis, float angle)
+{
+	vec4 qr;
+	float half_angle = angle * 0.5;
+	qr.x = axis.x * sin(half_angle);
+	qr.y = axis.y * sin(half_angle);
+	qr.z = axis.z * sin(half_angle);
+	qr.w = cos(half_angle);
+	return qr;
 }
 
 vec4 quat_conj(vec4 q)

@@ -13,6 +13,7 @@
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/depth.sl"
 #include "../SL/noise.sl"
+#include "../SL/quaternion.sl"
 
 uniform Texture3D randomTexture3D;
 uniform Texture2D rainMapTexture;
@@ -203,7 +204,10 @@ shader void CS_MakeRainTextureArray(uint3 idx : SV_DispatchThreadID)
 ParticleGeometryOutput VS_SnowParticles(uint vertex_id,bool rainMaskEnabled,bool msaa)
 {
 	uint particle_id = vertex_id / 6;
-	uint vertex_index = vertex_id - (particle_id * 6) + 1;
+	uint vertex_index = vertex_id - (particle_id * 6);
+	#ifdef SFX_VULKAN
+	vertex_index += 1;
+	#endif
 	ParticleGeometryOutput p;
 #if 1
 	uint4 state = uint4(63 + particle_id % 71, 83117 + particle_id / 51, 195 + particle_id / 1001, 9019 + particle_id % 507);
@@ -233,7 +237,16 @@ ParticleGeometryOutput VS_SnowParticles(uint vertex_id,bool rainMaskEnabled,bool
 	vec3 position1 = position - viewPositionOffset.xyz + flurry*flurry_offset1;
 
 	vec3 map_texc = mul(rainMapMatrix, vec4(viewPos[1].xyz, 1.0)).xyz;
-	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+	float mapped_rain;
+#ifdef SFX_OPENGL
+	map_texc.y = 1.0 - map_texc.y;
+	mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+#else
+	mapped_rain = texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x;
+#endif
+	//CloudBaseAndDensity describes the probability of precipitaion;
+	float cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25);
+	mapped_rain *= 4 * cloudBaseAndDensity;
 
 	// discard if under surface.
 	vec3 in_depth_space = vec3(1.0, 1.0, 1.0);
@@ -346,7 +359,6 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN, bool reverseDepth)
 	float radius1 = pow(length(pos.xy), .5);
 	float opacity = IN.strength*saturate(1.0 - 2.0*radius1);
 
-	//return vec4(1, 0, 1, opacity);
 	return vec4(result.rgb, opacity);
 }
 
@@ -395,9 +407,12 @@ shader ParticleGeometryOutput VS_SnowParticles_Mask_MSAA(uint vertex_id : SV_Ver
 ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool msaa)
  {    
 	uint particle_id = vertex_id / 6;
-	uint vertex_index = vertex_id - (particle_id * 6) + 1;
+	uint vertex_index = vertex_id - (particle_id * 6);
+	#ifdef SFX_VULKAN
+	vertex_index += 1;
+	#endif
+
 	ParticleGeometryOutput p;
-#if 1
 	uint4 state = uint4(163 + particle_id % 71, 83117 + particle_id / 51, 195 + particle_id / 1001, 9019 + particle_id % 507);
 	RandomResult r1 = Random(state);
 	RandomResult r2 = Random(r1.state);
@@ -408,28 +423,36 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	vec3 p_pos = 2.0*vec3(r4.value, r2.value, r3.value);
 	p_pos -= vec3(1.0, 1.0, 1.0);
 	p.type = particle_id%uint(32);
-#else
-	vec3 p_pos = particlePos[particle_id].xyz;
-	p.type = int(particlePos[particle_id].w);
-#endif
+
 	vec3 x = vec3(r5.value - 0.5, r2.value - 0.5, r1.value - 0.5);
 	vec3 y = vec3(r4.value - 0.5, r6.value - 0.5, r3.value - 0.5);
-	float time0 = 3.14126536*70.0*(phase0 + r6.value);
-	float time1 = 3.14126536*70.0*(phase1 + r6.value);
+	float time0 = SIMUL_PI_F*70.0*(phase0 + r6.value);
+	float time1 = SIMUL_PI_F*70.0*(phase1 + r6.value);
 
 	vec3 flurry_offset0 = 0.5*(x*sin(time0) + y*cos(time0));
 	vec3 flurry_offset1 = 0.5*(x*sin(time1) + y*cos(time1));
 	vec3 position = vec3(p_pos)*particleZoneSize - offset[0].xyz;
 	position = WrapParticleZone(position, particleZoneSize / 2);
-	vec3 position0 = position + flurry*flurry_offset0;
-	vec3 position1 = position - viewPositionOffset.xyz + flurry*flurry_offset1;
+	vec3 position0 = position +flurry * flurry_offset0;
+	vec3 position1 = position - viewPositionOffset.xyz +flurry * flurry_offset1;
 	position0 = WrapParticleZone(position0, particleZoneSize / 2);
 
+	float mapped_rain; //Describes the strength of rain.
+	float cloudBaseAndDensity; //Describes the probability of precipitaion.
 	vec3 map_texc = mul(rainMapMatrix, vec4(viewPos[1].xyz, 1.0)).xyz;
-	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+	
+#ifdef SFX_OPENGL
+	map_texc.y = 1.0 - map_texc.y;
+	mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+	cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25);
+	#else
+	mapped_rain = texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x;
+	cloudBaseAndDensity = texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y;
+	#endif
+	
+	mapped_rain *= 4 * cloudBaseAndDensity;
 
-
-	// discard if under surface.
+	//Discard if under surface.
 	vec3 in_depth_space = vec3(1.0, 1.0, 1.0);
 	float depth = 1.0;
 	if (rainMaskEnabled)
@@ -443,91 +466,60 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 		else
 		{
 			depth			= texture_clamp_lod(rainDepthTexture,vec2(in_depth_space.x,in_depth_space.y),0).x*rainDepthTextureScale * 0.5;
-	}
+		}
 	}
 
 	int maxtype = int(16.0*mapped_rain);
-	p.type = p.type%maxtype;
-	p.strength = saturate(4.0*mapped_rain);
-	if (in_depth_space.x > 0 && in_depth_space.y > 0 && in_depth_space.x < 1.0&&in_depth_space.y<1.0&&depth>in_depth_space.z)
-	{
-	//	p.type=44;
-	}
-
-	vec4 clip_pos = mul(worldViewProj[1], vec4(position0.xyz, 1.0));
-	////if (p.type <= 0 || clip_pos.z < 0)
-	//	discard;
-
-	vec3 pos;
-
 	vec3 vel = (position1 - position0);
-	float fade = p.strength;
+	float fade = saturate(4.0*mapped_rain);
 	float w = particleWidth;
-//	if (p.type == 44)
-//		w *= 10.0;
-	vec3 dir;
 	uint corner_id = (vertex_index + uint(vertex_index == 2) - 1 * uint(vertex_index > 2)) % 4;
 
+	vec3 eyeVec = normalize(-position0.xyz);
+	vec3 v1 = cross(eyeVec, vec3(0, 0, 1));
+	vec3 v2 = cross(eyeVec, vec3(0, 1, 0));
+	//vel = vel + 0.001*max(v1, v2);
+	float width = w*fade;
+	float height = w + length(vel);	
+	float dist = length(position0.xyz);
+	fade *= max(.05, saturate(2.0 * width / height));
+
+	float pixelSize = width*500.0 / dist;
+	if (pixelSize < 1.0)
 	{
-		vec3 eyeVec = normalize(-position0.xyz);
-		float width = w*fade;
-		vec3 v1 = cross(eyeVec, vec3(0, 0, 1));
-		vec3 v2 = cross(eyeVec, vec3(0, 1, 0));
-		vel = vel + 0.001*max(v1, v2);
-		float height = w + length(vel);	// g_SpriteSize/2.0;
-		float dist = length(position0.xyz);
-		fade *= max(.05, saturate(2.0 * width / height));
-
-		float pixelSize = width*500.0 / dist;
-		if (pixelSize < 1.0)
-		{
-			width *= 1.0 / pixelSize;
-			fade *= pixelSize / 1.0;
-		}
-		vel = normalize(vel);
-		vec3 eyeOnVelVecPlane = -((dot(eyeVec, vel)) * vel);
-		vec3 projectedVelVec = normalize(vel - eyeOnVelVecPlane);// -position0.xyz;
-		vec3 sideVec = normalize(cross(projectedVelVec, eyeVec));
-
-		vec2 trans = 2.0*vec2((corner_id % 2), (corner_id / 2)) - vec2(1.0, 1.0);
-		p.texCoords = trans;
-		dir = normalize(normalize(eyeVec) + trans.x*sideVec + trans.y*vel);
-
-		pos = position0.xyz + trans.x*(sideVec *width) + trans.y*(vel * height);
+		width *= 1.0 / pixelSize;
+		fade *= pixelSize / 1.0;
 	}
-	p.strength = fade;
+
+	vec3 pos;
+	vec3 dir;
+	vel = normalize(vel);
+	
+	vec3 eyeOnVelVecPlane = -((dot(eyeVec, vel)) * vel);
+	vec3 projectedVelVec = normalize(vel - eyeOnVelVecPlane);
+	vec3 sideVec = normalize(cross(projectedVelVec, eyeVec));
+	vec2 trans = 2.0*vec2((corner_id % 2), (corner_id / 2))-vec2(1.0, 1.0);
+	
+	dir = normalize(normalize(eyeVec) + trans.x*sideVec + trans.y*vel);
+	pos = position0.xyz + trans.x*(sideVec *width) + trans.y*(vel * height);
 	float distM = length(position0.xyz);
-	p.strength *= saturate((distM - minDistanceM) / 0.05);
+
 	p.position = mul(worldViewProj[1], vec4(pos, 1.0));
 	p.clip_pos = p.position;
 	p.dir = dir;
+	p.strength = fade * saturate((distM - minDistanceM) / 0.05);
+	p.light = eyeVec;
 	p.betaMie = 0.0;
-	p.light = cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(-dir.xyz, 0)).xyz, 0).rgb;
-	if (rainMaskEnabled)
-	{
-		//p.view		=normalize(pos);
-		//p.dir			=depth;//saturate(in_depth_space);//dir;// g_texcoords[corner_id] * 2.0 - vec2(1.0, 1.0);
-		//p.view		=vel;
-		if (in_depth_space.x > 0.0&&in_depth_space.y > 0.0&&in_depth_space.x < 1.0&&in_depth_space.y < 1.0)
+	p.texCoords = trans;
+	p.type = p.type%maxtype;
+
+	if (rainMaskEnabled&&in_depth_space.x > 0.0&&in_depth_space.y > 0.0&&in_depth_space.x < 1.0&&in_depth_space.y < 1.0)
+	{	
+		if (in_depth_space.z > depth)
 		{
-			//p.dir=in_depth_space.xyz;//saturate(in_depth_space.xyz);
-			//p.dir		=0*saturate(in_depth_space.z);//
-			//p.dir.g		=saturate((depth-0.4999)*1000.0);//saturate(1000.0*(depth-in_depth_space.z));//
-			if (in_depth_space.z > depth)
-			{
-				p.type = 44;
-			}
-		}
-		else
-		{
-		/*	if(in_depth_space.z<0.0)
-				p.dir=0.0;
-			else if(in_depth_space.z>=1.0)
-				p.dir=1.0;*/
-		//	p.type=44;
+			p.type = 44;
 		}
 	}
-	//p.dir=depth;
 	return p;
 }
 
@@ -541,20 +533,93 @@ SamplerState samAniso
 	AddressV = Wrap;
 };
 
+//Probablity of Reflection
+float ReflectionFresnel(float incidentAngle, float riOld, float riNew)
+{
+	/*float riRatio = riOld / riNew;
+	float b = riNew * sqrt(1 - pow((riRatio * sin(incidentAngle)), 2));
+	float a = riOld * cos(incidentAngle);
+	return pow(abs((a - b) / (a + b)), 2);*/
+
+	float R0 = pow((-riOld + riNew) / (riOld + riNew), 2);
+	float oneTakeCos5 = pow(1 - cos(incidentAngle), 5);
+	return R0 + (1 - R0)*oneTakeCos5;
+}
+
+//Angle of Refraction
+float RefractionSnell(float incidentAngle, float riOld, float riNew)
+{
+	float riRatio = riOld / riNew;
+	float sinOfIncidentAngle = sin(incidentAngle);
+	float temp = riRatio * sinOfIncidentAngle;
+	if (temp > 1.0f)
+	{
+		return SIMUL_TAU_F - incidentAngle;
+	}
+	else
+	{
+		return asin(temp);
+	}
+}
+
 vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth, vec3 light)
 {
 	if (IN.type == 44)
 	{
 		discard;
 	}
-	//return vec4(IN.light.xyz,0.5);;//
-	vec4 clip_pos = IN.clip_pos / IN.clip_pos.w;
-	vec2 nxy = IN.dir.xy;
-	float r = length(IN.texCoords.xy);
-	vec3 n = vec3(nxy, sqrt(1.0 - r*r));
+	
+	vec2 texc = IN.texCoords;
+	float r = length(texc);
 	if (r > 1.0)
 		discard;
-	float vis = saturate(100.0*(1.0 - r));// *texel.a;//
+
+	float ri_Air = 1.00;
+	float ri_Water = 1.33;
+
+	float incident1 = 0.0; 
+	float incident2 = 0.0;
+	float loss1 = 0.0;
+	float loss2 = 0.0;
+	float refraction1 = 0.0;
+	float refraction2 = 0.0;
+
+	//First Interaction passing into the raindrop;
+	incident1 = asin(r);
+	loss1 = ReflectionFresnel(incident1, ri_Water, ri_Air);
+	refraction1 = RefractionSnell(incident1, ri_Water, ri_Air);
+	if (refraction1 < SIMUL_PI_F)
+	{
+		//Second Interaction passing out of the raindrop;
+		incident2 = refraction1;
+		loss2 = ReflectionFresnel(incident2, ri_Air, ri_Water);
+		refraction2 = RefractionSnell(incident2, ri_Air, ri_Water);
+		if (refraction2 > SIMUL_PI_F)
+			discard;
+	}
+
+	float totalAngleChange = incident1 - refraction1 - incident2 + refraction2;
+	float totalLossDueToReflection = loss1 + loss2;
+	
+	float phi = atan2(-texc.y, texc.x);
+	if (phi < 0.0)
+		phi += SIMUL_TAU_F;
+	vec3 view_dir = -normalize(IN.light.xyz);
+	vec3 globalUp = vec3(0, 0, 1);
+	vec3 right = cross(view_dir, globalUp);
+	vec3 up = cross(right, view_dir);
+
+	vec4 quat_1 = quat_from_axis_angle_radians(view_dir, phi);
+	vec3 rotatedNormal = rotate_by_quaternion(quat_1, up);
+	vec4 quat_2 = quat_from_axis_angle_radians(rotatedNormal, totalAngleChange);
+	vec3 finalLightLookUp = rotate_by_quaternion(quat_2, view_dir);
+
+	vec3 lightPS = cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(finalLightLookUp, 0)).xyz, 0).rgb;
+
+	vec4 clip_pos = IN.clip_pos / IN.clip_pos.w;
+	vec2 nxy = IN.dir.xy;
+	vec3 n = vec3(nxy, sqrt(1.0 - r * r));
+
 	vec2 screen_texc = vec2(0.5*(clip_pos.x + 1.0), 0.5*(1.0 - clip_pos.y));
 	vec2 depth_texc = viewportCoordToTexRegionCoord(screen_texc, viewportToTexRegionScaleBias);
 	float solid_depth = texture_clamp(depthTexture, depth_texc.xy).x;
@@ -567,15 +632,16 @@ vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth, vec3 light)
 	float rain_dist = depthToFadeDistance(render_depth, clip_pos.xy, depthInterpretationStruct, tanHalfFov);
 
 	float mapped_rain = IN.strength;
-	vis = mapped_rain;
-	vec3 normal = mul(worldView[1], vec4(n, 0.0)).xyz;
-	float fresnel = r;
-	vec4 result = vec4(light, lerp(0.0, vis, fresnel));
-
 	if (mapped_rain <= 0 || rain_dist > solid_dist)
 	{
 		discard;
 	}
+
+	float vis = mapped_rain;
+	vec3 normal = mul(worldView[1], vec4(n, 0.0)).xyz;
+	float fresnel = r;
+	vec4 result = vec4(lightPS, lerp(0.0, vis, totalLossDueToReflection));
+
 	return result;
 }
 

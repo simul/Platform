@@ -2,6 +2,8 @@
 #ifndef COMMON_SL
 #define COMMON_SL
 #define SIMUL_PI_F 3.1415926536
+#define SIMUL_HALF_PI_F SIMUL_PI_F * 0.5
+#define SIMUL_TAU_F SIMUL_PI_F * 2
 #define texture_clamp_mirror(tex,texc) tex.Sample(cmcSamplerState,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)

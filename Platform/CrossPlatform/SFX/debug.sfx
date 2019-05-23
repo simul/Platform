@@ -237,7 +237,6 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	float z					=OUT.hPosition.z/OUT.hPosition.w;
 	if(tz<z)
 		OUT.colour.a*=0;
-	OUT.colour = vec4(1, 1, 1, 1);
     return OUT;
 }
 

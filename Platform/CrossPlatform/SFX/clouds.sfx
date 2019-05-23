@@ -59,10 +59,8 @@ uniform RWTexture3D<uint> packedOutputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
-uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries SIMUL_RWTEXTURE_REGISTER(4);
-
 uniform StructuredBuffer<vec4> queryInputs SIMUL_TEXTURE_REGISTER(3);
-
+uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries SIMUL_RWTEXTURE_REGISTER(4);
 uniform RWStructuredBuffer<LineQueryResult> lineQueryResults SIMUL_RWTEXTURE_REGISTER(5);
 
 CS_LAYOUT(1,1,1)
@@ -85,7 +83,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.indirect_light				=light_lookup.x;
 	res.ambient_light				=light_lookup.w;
 	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km.xyz, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
-	res.rain_to_snow				=0.0;
+	res.rain_to_snow				=GetRainToSnowAtOffsetKm(rainMapTexture, cloudWorldOffsetKm, inverseScalesKm);
 	res.padding						=0.0;
 	volumeQueries[sub_pos.x]		=res;
 }
@@ -552,6 +550,11 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 //Get new texcoords by rotating and scaling the old texcoords so texture will be projected correctly over the scene
 shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
 {
+	//Pseudo Clear
+	if (sampleHeight == -1.0)
+		return vec4(0, 0, 0, 0);
+
+	
 	float tempLength = sqrt(pow(directionToSun.x, 2) + pow(directionToSun.y, 2));
 	float angle = sinh(directionToSun.x / tempLength);
 	float s = sin(angle);
@@ -566,6 +569,9 @@ shader vec4 PS_AltCloudShadow( posTexVertexOutput IN):SV_TARGET
 	float y = ((tempx * s) + (tempy * c)) + 0.5 - cloudOffset.y;
 	vec3 adjusted_texc = vec3(x, y, sampleHeight);
 	vec3 shadow = saturate(3.0*sample_3d_lod(cloudDensity, wwcSamplerState, adjusted_texc, 0.0).xyz - vec3(2.0,2.0,2.0));
+	if (shadow.x == 0.0 || shadow.y == 0.0)
+		discard;
+	
 	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
@@ -588,8 +594,12 @@ shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
 	x = groundLength * normalisedSunDir.x;
 	y = groundLength * normalisedSunDir.y;
 	*/
+	
 	vec3 simple_texc = vec3((IN.texCoords.xy - vec2(0.5,0.5) + vec2(x, y)) * (shadowRangeKm / 80.0), sampleHeight);
 	vec3 shadow = saturate(sample_3d_lod(cloudDensity, wwcSamplerState , simple_texc, 0).xyz);
+	if(shadow.x == 0.0 || shadow.y == 0.0)
+		discard;
+
 	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
@@ -598,9 +608,8 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 	float total_cloud=0.0;
 	float max_tex_z=0.0;
 	float thickness = 0.0;
-	
-	//Not needed - AJR
-	/*vec2 rainCentreTC[4];
+
+	vec2 rainCentreTC[4];
 	rainCentreTC[0] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 0);
 	rainCentreTC[1] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 1);
 	rainCentreTC[2] = rainCentreKm.xy * inverseScalesKm.xy + vec2(1, 0);
@@ -616,15 +625,9 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 			break;
 		}
 	}
-
-	if(outOfRange)
-	{
-		//discard;
-		return vec4(0, 0, 0, 0);
-	}
-	else
-	{}*/
-
+	if (outOfRange)
+		discard;
+	
 	// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
 	for(int i=0;i<14;i++)
 	{
@@ -637,11 +640,7 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 	}
 	total_cloud=saturate((total_cloud-0)/0.1);
 	
-	float height = 0.0;
-	if(total_cloud > 0.0)
-		height = min((rainCentreKm.z+1.0)/14.0, 1.0); //Maps ranges from -1km - 13km on to 0.0f - 1.0f
-	
-	return vec4(total_cloud*precipitation,max_tex_z,height,0);
+	return vec4(total_cloud*precipitation, max_tex_z, rainToSnow, 0);
 }
 
 struct FarNearDepthPixelOutput

@@ -156,10 +156,11 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 		const GLuint64 maxTimeOut = 100000; // 0.1ms
 		if (!glIsSync(mFences[idx]))
 		{
-#if _DUBUG
+			#if _DUBUG
 			SIMUL_COUT << "The sync object associated with the structured buffer at binding " << mBinding << " is invalid. Can not map the buffer.\n";
 			SIMUL_BREAK_ONCE("");
-#endif
+			#endif
+
 			mFences[idx] = nullptr;
 			return nullptr;
 		}
@@ -172,10 +173,11 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 		}
 		else
 		{
-#if _DUBUG
+			#if _DUBUG
 			SIMUL_COUT << "The structured buffer at binding " << mBinding << " is still in use. Can not map the buffer.\n";
 			SIMUL_BREAK_ONCE("");
-#endif
+			#endif
+
 			return nullptr;
 		}
 	}
@@ -191,10 +193,10 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
 		if (!unmap_success)
 		{
-#if _DUBUG
+			#if _DUBUG
 			SIMUL_COUT << "The structured buffer at binding " << mBinding << " , did not unmap successfully. Buffer assumed to be corrupt.\n";
 			SIMUL_BREAK_ONCE("");
-#endif
+			#endif
 
 			glDeleteBuffers(1, &mGPUBuffer[idx]);
 			glGenBuffers(1, &mGPUBuffer[idx]);
