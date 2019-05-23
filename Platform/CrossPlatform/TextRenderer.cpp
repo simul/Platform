@@ -6,14 +6,8 @@
 using namespace simul;
 using namespace crossplatform;
 
-struct FontIndex
-{
-	float x;
-	float w;
-	int pixel_width;
-};
 
-FontIndex fontIndices[]={
+TextRenderer::FontIndex defaultFontIndices[]={
 {0.0f		,0.0f			,5},
 {0.0f		,0.000976563f	,1},
 {0.00195313f,0.00488281f	,3},
@@ -111,8 +105,12 @@ FontIndex fontIndices[]={
 {0.577148f	,0.583984f		,7},
 };
 
+
 TextRenderer::TextRenderer()
-	:effect(NULL), font_texture(NULL), renderPlatform(NULL), recompile(false)
+	:effect(NULL)
+	, font_texture(NULL)
+	, renderPlatform(NULL)
+	, recompile(false)
 {
 }
 
@@ -129,7 +127,30 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	fontChars.RestoreDeviceObjects(renderPlatform,70,false,false);
 	RecompileShaders();
 	SAFE_DELETE(font_texture);
-	font_texture=renderPlatform->CreateTexture("Font16.png");
+	font_texture = renderPlatform->CreateTexture("Font16-11.png");
+	fontWidth = 11;
+	if (font_texture)
+	{
+		fontIndices = new FontIndex[128];
+		for (int i = 0; i < 128; i++)
+		{
+			FontIndex &f = fontIndices[i];
+			f.pixel_width = 9;
+			if (i)
+			{
+				f.x = float((i - 1) * 11) / float(font_texture->width);
+				f.w = f.x+float(f.pixel_width) / float(font_texture->width);
+			}
+			else
+				f.x = f.w = 0.f;
+		}
+	}
+	else
+	{
+		fontIndices = defaultFontIndices;
+		font_texture = renderPlatform->CreateTexture("Font16.png");
+		fontWidth = 0;
+	}
 }
 
 void TextRenderer::InvalidateDeviceObjects()
@@ -139,6 +160,10 @@ void TextRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE(effect);
 	SAFE_DELETE(font_texture);
 	renderPlatform=NULL;
+	if (fontWidth)
+		delete[] fontIndices;
+	fontIndices = nullptr;
+	fontWidth = 0;
 }
 
 void TextRenderer::RecompileShaders()
@@ -185,8 +210,8 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		int idx=(int)txt[i]-32;
 		if(idx<0||idx>100)
 			continue;
-		const FontIndex &f=fontIndices[idx];
-		w+=f.pixel_width*int(fontScale)+1;
+		const FontIndex &f = fontIndices[idx];
+		w += f.pixel_width*int(fontScale) + 1;
 	}
 	float ht=fontScale*20.0f;
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
@@ -203,7 +228,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		renderPlatform->DrawQuad(deviceContext);
 		effect->Unapply(deviceContext);
 	}
+	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + fontScale* 18.F) / screen_height, 0, 2.0f*16 * fontScale / screen_height);
 	int n=0;
+	static float u = 1024.f / font_texture->width;
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
 	if(charList)
 	for(int i=0;i<70;i++)
@@ -220,7 +247,6 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 			c.text_rect		=constantBuffer.background_rect;
 			c.text_rect.x	=2.0f*x/screen_width-1.f;
 			c.text_rect.z	=2.0f*(float)f.pixel_width*fontScale/screen_width;
-			static float u	=1024.f/598.f;
 			c.texc			=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
 		}
 		x+=f.pixel_width*fontScale+1;

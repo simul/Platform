@@ -163,7 +163,10 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
-	mainShaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
+	ID3D11Texture2D *t	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
+	InitFromExternalTexture2D(renderPlatform, t, nullptr, 0, 0, crossplatform::PixelFormat::UNKNOWN);
+	SAFE_RELEASE(t);
+	external_texture = false;
 	SetDebugObjectName(texture,pFilePathUtf8);
 }
 int Texture::GetMemorySize() const
@@ -480,12 +483,13 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		mainShaderResourceView->AddRef();
 	if(t)
 	{
-		t->AddRef();
+		int refct=t->AddRef();
+		std::cout << refct << std::endl;
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;
 		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
-				FreeRTVTables();
+			FreeRTVTables();
 			ppd->GetDesc(&textureDesc);
 			// Can this texture have SRV's? If not we must COPY the resource.
 			if(((textureDesc.BindFlags&D3D11_BIND_SHADER_RESOURCE)==D3D11_BIND_SHADER_RESOURCE)||!need_srv)

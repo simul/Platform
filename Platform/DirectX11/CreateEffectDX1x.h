@@ -34,7 +34,7 @@ namespace simul
 	{
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
-		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		// These functions encapsulate getting an effect variable of the given name if it exists, and
 		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time

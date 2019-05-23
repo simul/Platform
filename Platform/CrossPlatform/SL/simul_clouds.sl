@@ -214,6 +214,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 
 	clr[NUM_CLOUD_INTERP - 1].a *= cosine *cosine;
 
+	//clr[NUM_CLOUD_INTERP - 1].rg = saturate(10.0*cloudTexCoords.xy);
 //clr[NUM_CLOUD_INTERP - 1].rgb*=0.5*(1.0+colours[idx%7]);
 
 	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));

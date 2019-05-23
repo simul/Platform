@@ -711,7 +711,7 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	debugEffect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
+void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour, vec4 fill_colour)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -733,17 +733,24 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	debugConstants.radius			=sph_rad;
 	debugConstants.sideview			=qsize*0.5f;
 	debugConstants.debugColour		=colour;
+	debugConstants.multiplier		 = fill_colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-
-	debugEffect->Apply(deviceContext,tech,0);
-
-	SetTopology(deviceContext,LINELIST);
-	Draw(deviceContext,16, 0);
-
-	debugEffect->Unapply(deviceContext);
+	if(fill_colour.w>0.0f)
+	{
+		debugEffect->Apply(deviceContext, tech, "fill");
+		SetTopology(deviceContext, TRIANGLESTRIP);
+		Draw(deviceContext, 4, 0);
+		debugEffect->Unapply(deviceContext);
+	}
+	if (colour.w > 0.0f)
+	{
+		debugEffect->Apply(deviceContext, tech,"outline");
+		SetTopology(deviceContext, LINELIST);
+		Draw(deviceContext, 16, 0);
+		debugEffect->Unapply(deviceContext);
+	}
 }
-
 
 void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
@@ -772,13 +779,11 @@ void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatf
 
 	SetTopology(deviceContext,TRIANGLESTRIP);
 	debugEffect->Apply(deviceContext,tech,0);
-
 	Draw(deviceContext,16, 0);
-
 	debugEffect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour)
+void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour, vec4 fill_colour)
 {
 	//Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
@@ -800,15 +805,21 @@ void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origi
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=sph_rad;
 	debugConstants.sideview			=rad;
-	debugConstants.debugColour		=colour;
-	debugConstants.debugViewDir		=view_dir;
+	debugConstants.debugColour		=colour; 
+	debugConstants.multiplier		= fill_colour;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 
-	debugEffect->Apply(deviceContext,tech,0);
+	if (fill_colour.w > 0.0f)
+	{
+		debugEffect->Apply(deviceContext, tech, "fill");
+		SetTopology(deviceContext, TRIANGLESTRIP);
+		Draw(deviceContext, 64, 0);
+		debugEffect->Unapply(deviceContext);
+	}
 
+	debugEffect->Apply(deviceContext,tech,"outline");
 	SetTopology(deviceContext, LINESTRIP);
 	Draw(deviceContext,32, 0);
-
 	debugEffect->Unapply(deviceContext);
 }
 void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)

@@ -306,6 +306,26 @@
 		r.z=a.x*b.y-b.x*a.y;
 		return r;
 	}
+	struct mat3
+	{
+		union
+		{
+			float m[16];
+			struct
+			{
+				float        _11, _12, _13;
+				float        _21, _22, _23;
+				float        _31, _32, _33;
+			};
+			struct
+			{
+				float        _m00, _m01, _m02;
+				float        _m10, _m11, _m12;
+				float        _m20, _m21, _m22;
+			};
+			float M[3][3];
+		};
+	};
 	struct mat4
 	{
 		union

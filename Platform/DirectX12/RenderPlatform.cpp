@@ -469,6 +469,11 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 void RenderPlatform::BeginFrame()
 {
 	crossplatform::RenderPlatform::BeginFrame();
+	BeginD3D12Frame();
+}
+
+void RenderPlatform::BeginD3D12Frame()
+{
 	// Store a reference to the device context
 	auto &deviceContext=GetImmediateContext();
 	mCommandList                        = deviceContext.asD3D12Context();
@@ -1754,7 +1759,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
-		BeginFrame();
+		BeginD3D12Frame();
 
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;
