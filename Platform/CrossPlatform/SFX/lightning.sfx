@@ -12,6 +12,8 @@
 uniform TextureCube cloudDepthTexture 					SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D randomTexture 						SIMUL_TEXTURE_REGISTER(1);	
 uniform Texture2D depthTexture 							SIMUL_TEXTURE_REGISTER(2);
+uniform Texture2DMS<vec4> depthTextureMS;
+
 uniform StructuredBuffer<LightningVertex> 	vertices;
 uniform RWStructuredBuffer<LightningVertex> verticesRW;
  
@@ -360,7 +362,16 @@ shader transformedVertex VS_Thick(idOnly id)
 	return OUT;
 }
 
-vec4 PS_Main(transformedVertex IN,bool reverseDepth)
+vec4 ms_depth(vec2 depth_texc)
+{
+	uint2 texsize;
+	uint numberOfSamples;
+	depthTextureMS.GetDimensions(texsize.x, texsize.y, numberOfSamples);
+	int2 pos = int2(depth_texc*vec2(texsize));
+	return depthTextureMS.Load(pos, 0);
+}
+
+vec4 PS_Main(transformedVertex IN,bool reverseDepth,bool msaa)
 {
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -369,7 +380,11 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec2 screen_texc		=vec2(0.5*(IN.clipPos.x/IN.clipPos.w+1.0),0.5*(1.0-IN.clipPos.y/IN.clipPos.w));
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
-	vec4 dlookup 			=texture_clamp(depthTexture,depth_texc.xy);
+	vec4 dlookup; 
+	if(msaa)
+		dlookup = ms_depth(depth_texc.xy);
+	else
+		dlookup = texture_clamp(depthTexture, depth_texc.xy);
 	vec3 view				=normalize(IN.view);
 	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
 	vec4 clip_pos			=vec4(IN.screenPos,1.0,1.0);
@@ -414,18 +429,31 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 
 shader vec4 PS_Main_ReverseDepth(transformedVertex IN): SV_TARGET
 {
-	return PS_Main(IN,true);
+	return PS_Main(IN,true,false);
 }
-
 shader vec4 PS_Main_ForwardDepth(transformedVertex IN): SV_TARGET
 {
-	return PS_Main(IN,false);
+	return PS_Main(IN,false,false);
 }
 
-vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
+shader vec4 PS_Main_ReverseDepth_MSAA(transformedVertex IN) : SV_TARGET
+{
+	return PS_Main(IN,true,true);
+}
+shader vec4 PS_Main_ForwardDepth_MSAA(transformedVertex IN) : SV_TARGET
+{
+	return PS_Main(IN,false,true);
+}
+
+vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth,bool msaa)
 {
 	vec2 texc 				=vec2(IN.texc.x,1.0-IN.texc.y);
-	vec4 dlookup 			=texture_clamp(depthTexture,texc.xy);
+	vec4 dlookup;
+	if (msaa)
+		dlookup = ms_depth(texc.xy);
+	else
+		dlookup = texture_clamp(depthTexture, texc.xy);
+	
 	vec3 view				=normalize(IN.view);
 	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
 
@@ -445,12 +473,20 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 
 shader vec4 PS_Thin_ReverseDepth(transformedThinVertex IN): SV_TARGET
 {
-	return PS_Thin(IN,true);
+	return PS_Thin(IN,true,false);
 }
-
 shader vec4 PS_Thin_ForwardDepth(transformedThinVertex IN): SV_TARGET
 {
-	return PS_Thin(IN,false);
+	return PS_Thin(IN,false,false);
+}
+
+shader vec4 PS_Thin_ReverseDepth_MSAA(transformedThinVertex IN) : SV_TARGET
+{
+	return PS_Thin(IN,true,true);
+}
+shader vec4 PS_Thin_ForwardDepth_MSAA(transformedThinVertex IN) : SV_TARGET
+{
+	return PS_Thin(IN,false,true);
 }
 
 BlendState MaxBlend
@@ -484,6 +520,24 @@ technique lightning_thick
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ForwardDepth()));
     }
+	pass reverse_depth_msaa
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(RenderNoCull);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_ReverseDepth_MSAA()));
+	}
+	pass forward_depth_msaa
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(RenderNoCull);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_ForwardDepth_MSAA()));
+	}
 }
 RasterizerState lightningLineRasterizer
 {
@@ -519,6 +573,24 @@ technique lightning_thin
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));
     }
+	pass reverse_depth_msaa
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(lightningLineRasterizer);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ReverseDepth_MSAA()));
+	}
+	pass forward_depth_msaa
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(lightningLineRasterizer);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth_MSAA()));
+	}
 }
 
 technique random
