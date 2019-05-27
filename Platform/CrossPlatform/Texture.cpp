@@ -42,6 +42,12 @@ Texture::~Texture()
 {
 }
 
+void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate)
+{
+	InitFromExternalTexture2D(renderPlatform, textureCreate->external_texture, textureCreate->srv, textureCreate->w, textureCreate->l, textureCreate->f, textureCreate->make_rt, textureCreate->setDepthStencil, textureCreate->need_srv
+		, textureCreate->numOfSamples);
+}
+
 void Texture::activateRenderTarget(DeviceContext &deviceContext,int array_index,int mip_index )
 {
 	if (array_index == -1)

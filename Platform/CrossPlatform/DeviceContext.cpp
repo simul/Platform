@@ -61,10 +61,14 @@ void DeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 			defaultTargetsAndViewport.textureTargets[i].texture=texture_targets[i];
 			defaultTargetsAndViewport.textureTargets[i].layer=0;
 			defaultTargetsAndViewport.textureTargets[i].mip=0;
+			if (texture_targets[i])
+				defaultTargetsAndViewport.rtFormats[i] = texture_targets[i]->GetFormat();
 		}
 		defaultTargetsAndViewport.depthTarget.texture=depth_target;
 		defaultTargetsAndViewport.depthTarget.layer=0;
 		defaultTargetsAndViewport.depthTarget.mip=0;
+		if (depth_target)
+			defaultTargetsAndViewport.depthFormat = depth_target->GetFormat();
 	}
 	defaultTargetsAndViewport.m_rt[0] = rt;
 	defaultTargetsAndViewport.m_rt[1] = nullptr;

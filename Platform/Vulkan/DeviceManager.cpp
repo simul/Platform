@@ -197,7 +197,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	vk::Bool32 surfaceExtFound = VK_FALSE;
 	vk::Bool32 platformSurfaceExtFound = VK_FALSE;
 	vk::Bool32 debugExtFound = VK_FALSE;
-
+	vk::Bool32 debugUtilsExtFound = VK_FALSE;
+	
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
 
@@ -208,8 +209,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		return;
 	if (instance_extension_count > 0)
 	{
-		std::unique_ptr<vk::ExtensionProperties[]> instance_extensions(new vk::ExtensionProperties[instance_extension_count]);
-		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions.get());
+		vk::ExtensionProperties * instance_extensions=new vk::ExtensionProperties[instance_extension_count];
+		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions);
 		SIMUL_VK_ASSERT_RETURN(result);
 
 		for (uint32_t i = 0; i < instance_extension_count; i++)
@@ -223,6 +224,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			{
 				surfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
+			}
+			if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				debugUtilsExtFound = 1;
+				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 			}
 			if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
@@ -276,6 +282,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #endif
 			assert(enabled_extension_count < 64);
 		}
+		delete[] instance_extensions;
 	}
 
 	if (!surfaceExtFound)

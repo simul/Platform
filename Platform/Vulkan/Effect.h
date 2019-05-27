@@ -75,6 +75,7 @@ namespace simul
 		public:
 			                                Effect();
 			                                ~Effect();
+			void							Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines) override;
 			void							Compile(const char *filename_utf8) override;
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		

@@ -170,7 +170,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		else
 		{
 			vulkan::PlatformStructuredBuffer *psb=(vulkan::PlatformStructuredBuffer*)sb;
-			psb->ActualApply(deviceContext,this,0);
+			psb->ActualApply(deviceContext,this,slot,false);
 			vk::Buffer *bf=psb->GetLastBuffer();
 			write.setDescriptorCount(1);
 			write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
@@ -191,7 +191,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		crossplatform::PlatformStructuredBuffer *sb =cs->applyRwStructuredBuffers[slot];
 		vulkan::PlatformStructuredBuffer *psb=(vulkan::PlatformStructuredBuffer*)sb;
-		psb->ActualApply(deviceContext,this,0);
+		psb->ActualApply(deviceContext,this, slot,true);
 		vk::Buffer *bf=psb->GetLastBuffer();
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
@@ -257,10 +257,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 
 	vulkanDevice->updateDescriptorSets(num_descr, writes, 0,nullptr);
 
-
 	static bool error_checking=true;
-
-
 	// Now verify that ALL resource are set:
 	if(error_checking)
 	{
@@ -356,7 +353,6 @@ int EffectPass::GenerateConstantBufferSlot(int s,bool offset)
 {
 	return s;
 }
-
 
 void EffectPass::Initialize()
 {
@@ -541,6 +537,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 	SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
 }
 
+
 void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
@@ -618,12 +615,24 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		
 		vk::PipelineViewportStateCreateInfo viewportInfo			= vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
 		
+		vk::PolygonMode polygonMode				= vk::PolygonMode::eFill;
+		vk::CullModeFlags cullModeFlags	= vk::CullModeFlagBits::eNone;
+		vk::FrontFace frontFace					= vk::FrontFace::eCounterClockwise;
+		if (rasterizerState)
+		{
+			polygonMode = vulkan::RenderPlatform::toVulkanPolygonMode(rasterizerState->desc.rasterizer.polygonMode);
+			cullModeFlags = vulkan::RenderPlatform::toVulkanCullFace(rasterizerState->desc.rasterizer.cullFaceMode);
+			if(rasterizerState->desc.rasterizer.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE)
+				frontFace = vk::FrontFace::eClockwise;
+
+		}
+
 		vk::PipelineRasterizationStateCreateInfo rasterizationInfo	= vk::PipelineRasterizationStateCreateInfo()
 																		.setDepthClampEnable(VK_FALSE)
 																		.setRasterizerDiscardEnable(VK_FALSE)
-																		.setPolygonMode(vk::PolygonMode::eFill)
-																		.setCullMode(vk::CullModeFlagBits::eNone)
-																		.setFrontFace(vk::FrontFace::eCounterClockwise)
+																		.setPolygonMode(polygonMode)
+																		.setCullMode(cullModeFlags)
+																		.setFrontFace(frontFace)
 																		.setDepthBiasEnable(VK_FALSE)
 																		.setLineWidth(1.0f);
 		vk::PipelineMultisampleStateCreateInfo multisampleInfo		= vk::PipelineMultisampleStateCreateInfo();

@@ -181,6 +181,7 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 			vulkanDevice->destroyFramebuffer(j);
 		}
 	}
+	mFramebuffers.clear();
 	for(auto i:mMainMipViews)
 	{
 		vulkanDevice->destroyImageView(i);
@@ -195,6 +196,8 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	vulkanDevice->destroyImageView(mFaceArrayView);
 	vulkanDevice->destroyImageView(mCubeArrayView);
 	vulkanDevice->destroyImageView(mMainView);
+	vulkanDevice->destroyRenderPass(mRenderPass);
+	mRenderPass = nullptr;
 	mLayerViews.clear();
 	mMainMipViews.clear();
 	mLayerMipViews.clear();
@@ -422,11 +425,12 @@ vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
 	return &(mFramebuffers[layer][mip]);
 }
 
-bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds,bool need_srv)
+bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds,bool need_srv
+	, bool cubemap)
 {
 	// If we are not created yet...
 
-	if (w != width || h != length || d != depth || m != mips||pixelFormat!=f||numSamples!=mNumSamples)
+	if (w != width || h != length || d != depth || m != mips||pixelFormat!=f||numSamples!=mNumSamples||this->cubemap!= cubemap)
 	{
 		return false;
 	}
@@ -435,40 +439,71 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 }
 
 #include "Simul/Base/StringFunctions.h"
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget /*= false*/, bool depthstencil /*= false*/, bool need_srv /*= true*/, int numOfSamples)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
 {
-	if (IsSame(w, l, 1, 1,1, f, numOfSamples, computable, rendertarget, depthstencil, true))
+	crossplatform::TextureCreate textureCreate;
+	textureCreate.arraysize = 1;
+	textureCreate.external_texture = t;
+	textureCreate.srv = srv;
+	textureCreate.w = w;
+	textureCreate.l = l;
+	textureCreate.d = 1;
+	textureCreate.arraysize = 1;
+	textureCreate.cubemap = false;
+	textureCreate.f = f;
+	textureCreate.make_rt = rendertarget;
+	textureCreate.setDepthStencil = depthstencil;
+	textureCreate.need_srv = need_srv;
+	textureCreate.numOfSamples = numOfSamples;
+	InitFromExternalTexture(r,&textureCreate);
+}
+
+void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const crossplatform::TextureCreate *textureCreate)
+{
+		//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
+	if (IsSame(textureCreate->w, textureCreate->l, textureCreate->d, textureCreate->arraysize, textureCreate->mips, textureCreate->f
+		, textureCreate->numOfSamples, textureCreate->computable, textureCreate->make_rt, textureCreate->setDepthStencil
+		, textureCreate->need_srv
+		, textureCreate->cubemap))
 	{
-		if (t == (void*)mImage)
+		if (textureCreate->external_texture == (void*)mImage)
 			return;
 	}
 	renderPlatform = r;
-	if (w == 0)
+	depth =1;
+	if (textureCreate->w == 0)
 		return;
-	if (t == 0)
+	if (textureCreate->external_texture == 0)
 		return;
-	if (f == crossplatform::UNKNOWN)
+	if (textureCreate->f == crossplatform::UNKNOWN)
 		return;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform = r;
 	void **image = (void **)&mImage;
-	*image = t;
-	depthstencil &= (crossplatform::RenderPlatform::IsDepthFormat(f));
-	InitViewTables(2, f, w, l, 1, 1, rendertarget, false, depthstencil);
+	*image = textureCreate->external_texture;
+	bool depthstencil = textureCreate->setDepthStencil;
+	depthstencil &= (crossplatform::RenderPlatform::IsDepthFormat(textureCreate->f));
+	
+	int dimen = (textureCreate->d <= 1) ? 2 : 3;
+	InitViewTables(dimen, textureCreate->f, textureCreate->w, textureCreate->l, textureCreate->mips, textureCreate->arraysize, textureCreate->make_rt,textureCreate->cubemap, depthstencil);
 	SplitLayouts();
 
-	pixelFormat = f;
-	width = w;
-	length = l;
-	depth = 1;
-	arraySize = 1;
-	mips = 1;
-	dim = 2;
-	mNumSamples = numOfSamples;
-	cubemap = false;
+	pixelFormat = textureCreate->f;
+	width = textureCreate->w;
+	length = textureCreate->l;
+	depth = textureCreate->d;
+	arraySize = textureCreate->arraysize;
+	mips = textureCreate->mips;
+	dim = dimen;
+	mNumSamples = textureCreate->numOfSamples;
+	cubemap = textureCreate->cubemap;
 	depthStencil = depthstencil;
 	this->computable = computable;
-	this->renderTarget = rendertarget;
+	this->renderTarget = textureCreate->make_rt;
+	if (textureCreate->make_rt)
+	{
+	//	InitFramebuffers(deviceContext);
+	}
 	external_texture = true;
 	SetVulkanName(renderPlatform, &mImage, name.c_str());
 }
@@ -651,12 +686,22 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		mLayerMipLayouts[i].resize(mipCount);
 }
 
+vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceContext)
+{
+	if (!mRenderPass)
+	{
+		auto *v = (vulkan::RenderPlatform*)renderPlatform;
+		v->CreateVulkanRenderpass(mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
+	}
+	return mRenderPass;
+}
+
 void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 {
 	if(mFramebuffers.size())
 		return;
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass=effectPass->GetVulkanRenderPass(deviceContext,pixelFormat);
+	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);// effectPass->GetVulkanRenderPass(deviceContext, pixelFormat);
 	
 	vk::ImageView attachments[1]={nullptr};
 
@@ -690,7 +735,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable , bool rendertarget , bool ascubemap )
 {
-	if (IsSame(w, l, 1, num, m,f,1,computable,rendertarget,depthStencil, true))
+	if (IsSame(w, l, 1, num, m,f,1,computable,rendertarget,depthStencil, true, ascubemap))
 	{
 		return false;
 	}
@@ -966,7 +1011,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	//memcpy(data, lt.data, lt.x * lt.y*4);
 	uint8_t *rgba_data	=(uint8_t*)mapped_data;
 	uint8_t *cPtr		=(uint8_t*)lt.data;
-	for (int y = 0; y < lt.y; y++)
+	for (int i = 0; i < lt.y;i++)
 	{
 		memcpy(rgba_data, cPtr, texelBytes*lt.x);
 		cPtr += texelBytes*lt.x;
@@ -1005,6 +1050,13 @@ void Texture::CreateFBOs(int sampleCount)
 
 void Texture::SetDefaultSampling(GLuint texId)
 {
+}
+
+vk::ImageLayout Texture::GetLayout(int layer, int mip) const
+{
+	if(layer>=0&&mip>=0)
+		return mLayerMipLayouts[layer][mip];
+	return currentImageLayout;
 }
 
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLayout newLayout, int layer, int mip)

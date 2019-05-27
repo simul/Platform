@@ -91,7 +91,13 @@ void Effect::Compile(const char *filename_utf8)
 Effect::~Effect()
 {
 	platform_effect=0;
-}   
+}
+
+void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
+{
+	EnsureEffect(r, filename_utf8);
+	crossplatform::Effect::Load(r, filename_utf8, defines);
+}
 
 EffectTechnique* Effect::CreateTechnique()
 {

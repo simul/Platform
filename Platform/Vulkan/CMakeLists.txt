@@ -4,6 +4,13 @@ file(GLOB CMAKE "*.cmake" )
 file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
 
+file(GLOB SHADERS
+	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SFX/*.sfx" 
+)
+file(GLOB SHADER_INCLUDES
+	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
+)
+
 link_directories(${VULKAN_SDK_DIR}/Lib)
 add_static_library(SimulVulkan_MT ${SOURCES} ${HEADERS} ${CMAKE})
 target_compile_definitions(SimulVulkan_MT PRIVATE SIMUL_VULKAN_DLL=1 VK_USE_PLATFORM_WIN32_KHR VK_PROTOTYPES )
@@ -18,6 +25,11 @@ set_target_properties(SimulVulkan_MD PROPERTIES FOLDER Dynamic)
 target_include_directories(SimulVulkan_MD PRIVATE "${VULKAN_SDK_DIR}/Include")
 target_include_directories(SimulVulkan_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")
 target_include_directories(SimulVulkan_MD PUBLIC "${CMAKE_SOURCE_DIR}/Platform/Vulkan")
+
+add_sfx_shader_project( VulkanShaders "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/GLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} )
+
+add_dependencies(SimulVulkan_MT VulkanShaders)
+add_dependencies(SimulVulkan_MD VulkanShaders)
 
 target_link_libraries(SimulVulkan_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD)
 

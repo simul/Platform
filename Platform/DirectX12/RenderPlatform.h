@@ -62,10 +62,14 @@ namespace simul
 		public:
 										    RenderPlatform();
 			virtual						    ~RenderPlatform();
-			virtual float                   GetDefaultOutputGamma() const;
-			const char*					    GetName() const                 {return "DirectX 12";}
+			virtual float                   GetDefaultOutputGamma() const override;
+			const char*					    GetName() const override {return "DirectX 12";}
+			virtual const char *			GetSfxConfigFilename() const override
+			{
+				return "HLSL/HLSL12.json";
+			}
 			//! Returns the time stamp freq value
-			UINT64                          GetTimeStampFreq()const         { return mTimeStampFreq; }
+			UINT64                          GetTimeStampFreq() const         { return mTimeStampFreq; }
 			//! Sets the reference of a command list. This is usually not needed as we will cache
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)

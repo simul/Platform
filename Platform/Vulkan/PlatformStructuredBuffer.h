@@ -13,33 +13,33 @@ namespace simul
 {
 	namespace vulkan
 	{
-        //! Vulkan Structured Buffer implementation (SSBO)
+		//! Vulkan Structured Buffer implementation (SSBO)
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{
 		public:
-			            PlatformStructuredBuffer();
-            virtual     ~PlatformStructuredBuffer();
+						PlatformStructuredBuffer();
+			virtual		~PlatformStructuredBuffer();
 
-			void        RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
-			void*       GetBuffer(crossplatform::DeviceContext &deviceContext);
+			void		RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
+			void*		GetBuffer(crossplatform::DeviceContext &deviceContext);
 			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void        CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void        CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void        SetData(crossplatform::DeviceContext &deviceContext,void *data);
-			void        InvalidateDeviceObjects();
+			void		CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void		CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void		SetData(crossplatform::DeviceContext &deviceContext,void *data);
+			void		InvalidateDeviceObjects();
 
-			void        Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
-			void        ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
-            void        AddFence(crossplatform::DeviceContext& deviceContext);
+			void		Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
+			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
+			void		AddFence(crossplatform::DeviceContext& deviceContext);
 
-            void        Unbind(crossplatform::DeviceContext &deviceContext);
+			void		Unbind(crossplatform::DeviceContext &deviceContext);
 			
-			void ActualApply(crossplatform::DeviceContext &,crossplatform::EffectPass *,int) override;
+			void		ActualApply(crossplatform::DeviceContext &,crossplatform::EffectPass *,int,bool) override;
 
 			size_t GetLastOffset();
 			vk::Buffer *GetLastBuffer();
 			size_t GetSize();
-        private:
+		private:
 			//! Total allocated size for each buffer
 			static const int				mBufferSize = 1024 * 64 * 8;
 			//! Number of ring buffers
@@ -48,7 +48,6 @@ namespace simul
 			int								mMaxApplyCount;
 			int								mCountMultiplier=2;
 
-			int64_t							mLastFrameIndex;
 			int								mCurApplyCount;
 
 			struct PerFrameBuffer
@@ -66,17 +65,19 @@ namespace simul
 			const int kBufferAlign			= 256;
 			size_t							last_offset;
 
-            void* mCurReadMap				= nullptr;
+			void* mCurReadMap				= nullptr;
 			//! Total number of individual elements
 			int								mNumElements;
 			//! Size of each element
 			int								mElementByteSize;
 			int								mUnitSize;
 			int								mTotalSize;
-            int								mMaxApplyMod = 1;
+			int								mMaxApplyMod = 1;
 			unsigned char *					buffer;
 			bool							mCpuRead;
 			void							AddPerFrameBuffer(const void *init_data);
+			uint64_t						mLastFrame;
+			int	mFrameIndex;
 		};
 	}
 }

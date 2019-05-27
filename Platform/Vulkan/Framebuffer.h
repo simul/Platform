@@ -21,7 +21,7 @@ namespace simul
 		public:
             Framebuffer(const char *name = nullptr);
             virtual ~Framebuffer();
-            void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform) override;
+            void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
             void ActivateDepth(crossplatform::DeviceContext &) override;
             void SetAntialiasing(int s) override;
 

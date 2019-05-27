@@ -37,7 +37,7 @@ extern const char *GetErrorText(HRESULT hr);
 	#endif
 	#ifndef SAFE_RELEASE
 		#ifdef _DEBUG
-			#define SAFE_RELEASE(p)		{ if(p) { int refct=(p)->Release();if(refct>0){SIMUL_COUT<<"Released resource, "<<refct<<" refs remain.\n";} (p)=NULL; } }
+			#define SAFE_RELEASE(p)		{ if(p) { int refct=(p)->Release();if(refct>0&&simul::base::SimulInternalChecks){SIMUL_COUT<<"Released resource, "<<refct<<" refs remain.\n";} (p)=NULL; } }
 		#else
 			#define SAFE_RELEASE(p)		SAFE_RELEASE_SILENT(p)
 		#endif

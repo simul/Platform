@@ -610,7 +610,7 @@ namespace simul
 				numCopies=0;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext & /*deviceContext*/,EffectPass * /*currentEffectPass*/,int /*slot*/){}
+			virtual void ActualApply(simul::crossplatform::DeviceContext & /*deviceContext*/,EffectPass * /*currentEffectPass*/,int /*slot*/, bool /*as uav*/){}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
 		{
@@ -939,6 +939,8 @@ namespace simul
 
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
+			/// Ensure it's built and up-to-date.
+			void EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
 		};
 	}
 }

@@ -9,6 +9,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Base/StringFunctions.h"
+#include "Simul/Base/StringToWString.h"
 #include <iostream>
 #include <algorithm>
 #include <regex>		// for file loading
@@ -786,6 +787,186 @@ static bool toBool(string s)
 	return false;
 }
 
+
+void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
+{
+#if defined(WIN32) &&!defined(_XBOX_ONE)
+	// We will only recompile if we are in windows
+	// SFX will handle the "if changed"
+	auto buildMode = r->GetShaderBuildMode();
+	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
+	{
+		const char *p = std::getenv("SIMUL");
+		if (!p)
+			return;
+		std::string simulPath = p;
+
+		if (simulPath != "")
+		{
+			std::string platformName = r->GetName();
+
+			base::find_and_replace(platformName, " ", "");
+			std::string platformPath = (simulPath + "\\Platform\\") + platformName;
+			// Sfx path
+			std::string exe = simulPath;
+			exe += "\\Tools\\bin\\Sfx.exe";
+			std::wstring sfxPath(exe.begin(), exe.end());
+
+			/*
+			Command line:
+				argv[0] we need to pass the module name
+				<input.sfx>
+				-I <include path; include path>
+				-O <output>
+				-P <config.json>
+			*/
+			std::string cmdLine = exe;
+			{
+				// File to compile
+				cmdLine += " " + simulPath + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
+
+				//cmdLine += " -L";
+				//cmdLine += " -V";
+				// Includes
+				cmdLine += " -I\"" + platformPath + "\\HLSL;" + platformPath + "\\GLSL;";
+				cmdLine += simulPath + "\\Platform\\CrossPlatform\\SL\"";
+
+				// Platform file
+				cmdLine += (string(" -P\"") + (platformPath +"\\")+r->GetSfxConfigFilename())+"\"";
+
+				// Ouput file
+				std::string outDir = r->GetShaderBinaryPath();
+				for (unsigned int i = 0; i < outDir.size(); i++)
+				{
+					if (outDir[i] == '/')
+					{
+						outDir[i] = '\\';
+					}
+				}
+				if (outDir[outDir.size() - 1] == '\\')
+				{
+					outDir.erase(outDir.size() - 1);
+				}
+
+				cmdLine += " -O\"" + outDir + "\"";
+				// Intermediate folder
+				cmdLine += " -M\"";
+				cmdLine += platformPath + "\\sfx_intermediate\"";
+				// Force
+				if ((buildMode & crossplatform::ShaderBuildMode::ALWAYS_BUILD) != 0)
+				{
+					cmdLine += " -F";
+				}
+			}
+
+			// Convert the command line to a wide string
+			size_t newsize = cmdLine.size() + 1;
+			wchar_t* wcstring = new wchar_t[newsize];
+			size_t convertedChars = 0;
+			mbstowcs_s(&convertedChars, wcstring, newsize, cmdLine.c_str(), _TRUNCATE);
+
+			// Setup pipes to get cout/cerr
+			SECURITY_ATTRIBUTES secAttrib = {};
+			secAttrib.nLength = sizeof(SECURITY_ATTRIBUTES);
+			secAttrib.bInheritHandle = TRUE;
+			secAttrib.lpSecurityDescriptor = NULL;
+
+			HANDLE coutWrite = 0;
+			HANDLE coutRead = 0;
+			HANDLE cerrWrite = 0;
+			HANDLE cerrRead = 0;
+
+			CreatePipe(&coutRead, &coutWrite, &secAttrib, 100);
+			CreatePipe(&cerrRead, &cerrWrite, &secAttrib, 100);
+
+			// Create the process
+			STARTUPINFOW startInfo = {};
+			startInfo.cb = sizeof(startInfo);
+			startInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+			startInfo.wShowWindow = SW_HIDE;
+			startInfo.hStdOutput = coutWrite;
+			startInfo.hStdError = cerrWrite;
+			//startInfo.wShowWindow = SW_SHOW;;
+			PROCESS_INFORMATION processInfo = {};
+			bool success = CreateProcessW
+			(
+				NULL, wcstring,
+				NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
+				&startInfo, &processInfo
+			);
+			if (processInfo.hProcess == nullptr)
+			{
+				std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
+				return;
+			}
+
+			// Wait until if finishes
+			if (success)
+			{
+				// Wait for the main handle and the output pipes
+				HANDLE hWaitHandles[] = { processInfo.hProcess, coutRead, cerrRead };
+
+				// Print the pipes
+				const DWORD BUFSIZE = 4096;
+				BYTE buff[BUFSIZE];
+				bool has_errors = false;
+				while (1)
+				{
+					DWORD dwBytesRead;
+					DWORD dwBytesAvailable;
+					DWORD dwWaitResult = WaitForMultipleObjects(3, hWaitHandles, FALSE, 60000L);
+
+					while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+					{
+						ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+						std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+					}
+					while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+					{
+						ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+						std::cerr << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+					}
+					// Process is done, or we timed out:
+					if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
+						break;
+					if (dwWaitResult == WAIT_FAILED)
+					{
+						DWORD err = GetLastError();
+						char* msg;
+						// Ask Windows to prepare a standard message for a GetLastError() code:
+						if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
+							break;
+
+						SIMUL_CERR << "Error message: " << msg << std::endl;
+						{
+							break;
+						}
+					}
+				}
+				DWORD ExitCode;
+				GetExitCodeProcess(processInfo.hProcess, &ExitCode);
+				if (ExitCode != 0)
+				{
+					SIMUL_BREAK(base::QuickFormat("ExitCode: %d", ExitCode));
+				}
+				CloseHandle(processInfo.hProcess);
+				CloseHandle(processInfo.hThread);
+			}
+			else
+			{
+				DWORD error = GetLastError();
+				SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
+				return;
+			}
+		}
+		else
+		{
+			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
+			return;
+		}
+	}
+#endif
+}
 void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
 {
 	renderPlatform=r;
@@ -834,8 +1015,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	const char *txt=(const char *)ptr;
 	std::string str;
 	str.reserve(num_bytes);
-	str=txt;
 	str.resize((size_t)num_bytes, 0);
+	memcpy(const_cast<char*>(str.data()),txt,num_bytes);
 	// Load all the .sb's
 	int pos					=0;
 	int next				=(int)str.find('\n',pos+1);

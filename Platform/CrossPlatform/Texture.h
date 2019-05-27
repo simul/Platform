@@ -64,6 +64,24 @@ namespace simul
 			Filtering filtering;
 			int slot;			// register slot
 		};
+		/// A structure for creating or initializing textures.
+		struct TextureCreate
+		{
+			void *external_texture=nullptr;
+			void *srv = nullptr;
+			int w=0;
+			int l=0;
+			int d=1;
+			int arraysize=1;
+			int mips = 1;
+			bool cubemap=false;
+			PixelFormat f=PixelFormat::UNKNOWN;
+			bool make_rt=false;
+			bool setDepthStencil=false;
+			bool need_srv=true;
+			bool computable = true;
+			int numOfSamples=1;
+		};
 		//! A crossplatform viewport structure.
 		struct Viewport
 		{
@@ -227,6 +245,7 @@ namespace simul
 			}
 			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
 			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
+			virtual void InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l

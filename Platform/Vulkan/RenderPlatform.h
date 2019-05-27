@@ -36,10 +36,15 @@ namespace simul
 			vk::Instance *AsVulkanInstance();
 			vk::PhysicalDevice *GetVulkanGPU();
 			const char* GetName() const override;
+			virtual const char *GetSfxConfigFilename() const override
+			{
+				return "GLSL/GLSL.json";
+			}
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
 			void        BeginFrame() override;
 			void        EndFrame() override;
+			void		CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *);
 			float		GetDefaultOutputGamma() const override;
             void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
             void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
@@ -93,6 +98,7 @@ namespace simul
 			
             static vk::PrimitiveTopology			toVulkanTopology(crossplatform::Topology t);
 			static vk::CullModeFlags				toVulkanCullFace(crossplatform::CullFaceMode c);
+			static vk::PolygonMode					toVulkanPolygonMode(crossplatform::PolygonMode p);
 			static vk::CompareOp					toVulkanComparison(crossplatform::DepthComparison d);
 			static vk::BlendFactor					toVulkanBlendFactor(crossplatform::BlendOption o);
 			static vk::BlendOp						toVulkanBlendOperation(crossplatform::BlendOperation o);

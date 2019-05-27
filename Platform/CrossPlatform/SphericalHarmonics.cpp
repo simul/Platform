@@ -41,10 +41,10 @@ void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void SphericalHarmonics::RecompileShaders()
 {
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	SAFE_DELETE(lightProbesEffect);
 	if (!renderPlatform)
 		return;
+	SAFE_DESTROY(renderPlatform, sphericalHarmonicsEffect);
+	SAFE_DESTROY(renderPlatform, lightProbesEffect);
 	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect, "SphericalHarmonicsConstants");
 	jitter							=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
@@ -53,7 +53,7 @@ void SphericalHarmonics::RecompileShaders()
 	_targetBuffer					=sphericalHarmonicsEffect->GetShaderResource("targetBuffer");
 	_samplesBufferRW				=sphericalHarmonicsEffect->GetShaderResource("samplesBufferRW");
 	_cubemapTexture					=sphericalHarmonicsEffect->GetShaderResource("cubemapTexture");
-	
+
 	lightProbesEffect				=renderPlatform->CreateEffect("light_probes");
 	lightProbeConstants.LinkToEffect(lightProbesEffect, "LightProbeConstants");
 	auto group						=lightProbesEffect->GetTechniqueGroupByName("mip_from_roughness");
@@ -67,16 +67,16 @@ void SphericalHarmonics::InvalidateDeviceObjects()
 	ResetBuffers();
 	lightProbeConstants.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	SAFE_DELETE(lightProbesEffect);
+	SAFE_DESTROY(renderPlatform,sphericalHarmonicsEffect);
+	SAFE_DESTROY(renderPlatform, lightProbesEffect);
 }
+
 void SphericalHarmonics::ResetBuffers()
 {
 	sphericalSamples.InvalidateDeviceObjects();
 	sphericalHarmonics.InvalidateDeviceObjects();
 	probeResultsRW.InvalidateDeviceObjects();
 }
-
 
 float RoughnessFromMip(float mip, float numMips)
 {
@@ -254,16 +254,16 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
-	sphericalHarmonicsEffect->SetTexture(deviceContext,_cubemapTexture	,buffer_texture);
+	sphericalHarmonicsEffect->SetTexture(deviceContext,_cubemapTexture,buffer_texture);
 	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, _samplesBuffer);
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, _targetBuffer);
+	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect,_targetBuffer);
 
 	static bool sh_by_samples=false;
 	sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
 	sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
-	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
-	//static int ENCODE_BLOCK_SIZE=2;
-	//int U = ((n) + ENCODE_BLOCK_SIZE - 1) / ENCODE_BLOCK_SIZE;
+	int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
+	
+
 	renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
 	sphericalHarmonicsConstants.Unbind(deviceContext);
 	sphericalHarmonicsEffect->Unapply(deviceContext);

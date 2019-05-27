@@ -7,11 +7,12 @@ using namespace vulkan;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 	:mSlots(0)
 	,mMaxApplyCount(2)
-	,mLastFrameIndex(0)
 	,mCurApplyCount(0)
 	,last_offset(0)
 	,mCpuRead(false)
 	,buffer(nullptr)
+	,mLastFrame(0)
+	,mFrameIndex(0)
 {
 }
 
@@ -32,7 +33,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     mUnitSize           = mNumElements * mElementByteSize;
     mTotalSize			= mUnitSize * mMaxApplyMod;
 	delete [] buffer;
-	buffer				=new unsigned char [mTotalSize];
+	buffer = nullptr;
 	mCpuRead            =cpur;
 	mSlots = ((mTotalSize + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
 	
@@ -89,6 +90,8 @@ void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
+	if (!buffer)
+		buffer = new unsigned char[mTotalSize];
 	return buffer;
 }
 
@@ -96,9 +99,8 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 {
     if (deviceContext.frame_number >= kNumBuffers)
     {
-		int read_index=(mLastFrameIndex+1)%kNumBuffers;
 		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-		mCurReadMap = vulkanDevice->mapMemory(mReadBufferMemory[read_index], 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
+		mCurReadMap = vulkanDevice->mapMemory(mReadBufferMemory[mFrameIndex], 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
 		return mCurReadMap;
     }
     return nullptr;
@@ -109,8 +111,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     if (mCurReadMap)
     {
 		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-		int read_index=(mLastFrameIndex+1)%kNumBuffers;
-		vulkanDevice->unmapMemory(mReadBufferMemory[read_index]);
+		vulkanDevice->unmapMemory(mReadBufferMemory[mFrameIndex]);
     }
 }
 
@@ -118,14 +119,16 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 {
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
 	vk::BufferCopy region=vk::BufferCopy().setDstOffset(0).setSize(mTotalSize).setSrcOffset(last_offset);
-	commandBuffer->copyBuffer(lastBuffer->mBuffer,mReadBuffers[mLastFrameIndex],region);
+	commandBuffer->copyBuffer(lastBuffer->mBuffer,mReadBuffers[mFrameIndex],region);
 }
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
 {
     if (data)
     {
-       memcpy(buffer,data,mTotalSize);
+		if(!buffer)
+			buffer = new unsigned char[mTotalSize];
+		memcpy(buffer,data,mTotalSize);
     }
 }
 
@@ -135,7 +138,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     int idx = deviceContext.frame_number % kNumBuffers;
 }
 
-void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectPass *,int) 
+void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectPass *,int slot,bool as_uav) 
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if (mCurApplyCount >= mMaxApplyCount)
@@ -154,13 +157,13 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 		//SIMUL_BREAK_ONCE("This PlatformStructuredBuffer reached its maximum apply count");
 		mCountMultiplier*=2;
 		// Force restart of the frame:
-		mLastFrameIndex=(int64_t)-1;
+		mLastFrame=(int64_t)-1;
 	}
 
 	auto rPlat = (vulkan::RenderPlatform*)deviceContext.renderPlatform;
-	auto curFrameIndex = rPlat->GetIdx();
+
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrameIndex != curFrameIndex||lastBuffer==perFrameBuffers.end())
+	if (mLastFrame != deviceContext.frame_number || lastBuffer == perFrameBuffers.end())
 	{
 		if(lastBuffer!=perFrameBuffers.end())
 			lastBuffer++;
@@ -168,8 +171,9 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 			lastBuffer=firstBuffer;
 		if(lastBuffer==perFrameBuffers.end())
 			SIMUL_BREAK("bad buffer iterator");
-		mLastFrameIndex = curFrameIndex;
+		mLastFrame = deviceContext.frame_number;
 		mCurApplyCount = 0;
+		mFrameIndex = (mFrameIndex + 1) % kNumBuffers;
 	}
 	if(lastBuffer==perFrameBuffers.end())
 		SIMUL_BREAK("bad buffer iterator");
@@ -178,15 +182,17 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	UINT8* pDest	=nullptr;
 	last_offset		=(kBufferAlign * mSlots) * mCurApplyCount;	
 
-	auto pData		=vulkanDevice->mapMemory(lastBuffer->mMemory,last_offset, (kBufferAlign * mSlots),  vk::MemoryMapFlags());
-	
-	if(pData&&buffer)
+	if (!as_uav&&buffer)
 	{
-		memcpy(pData,buffer, mTotalSize);
-		vulkanDevice->unmapMemory(lastBuffer->mMemory);
+		auto pData = vulkanDevice->mapMemory(lastBuffer->mMemory, last_offset, (kBufferAlign * mSlots), vk::MemoryMapFlags());
+
+		if (pData)
+		{
+			memcpy(pData, buffer, mTotalSize);
+			vulkanDevice->unmapMemory(lastBuffer->mMemory);
+		}
+		mCurApplyCount++;
 	}
-	
-	mCurApplyCount++;
 }
 
 

@@ -16,27 +16,36 @@ void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 
 void DisplaySurfaceManager::Render(cp_hwnd h)
 {
-    if (surfaces.find(h) == surfaces.end())
-        return;
-    DisplaySurface *w = surfaces[h];
-    if (!w)
-    {
-        SIMUL_CERR << "No window exists for cp_hwnd " << std::hex << h << std::endl;
-        return;
-    }
-    if (h != w->GetHandle())
-    {
-        SIMUL_CERR << "Window for cp_hwnd " << std::hex << h << " has hwnd " << w->GetHandle() << std::endl;
-        return;
-    }
-	w->StartFrame();
-	if(renderPlatform&&!frame_started)
+	toRender.insert(h);
+}
+
+void DisplaySurfaceManager::RenderAll()
+{
+	for (cp_hwnd h : toRender)
 	{
-		frameNumber++;
-		renderPlatform->BeginFrame();
-		frame_started=true;
+		if (surfaces.find(h) == surfaces.end())
+			return;
+		DisplaySurface *w = surfaces[h];
+		if (!w)
+		{
+			SIMUL_CERR << "No window exists for cp_hwnd " << std::hex << h << std::endl;
+			return;
+		}
+		if (h != w->GetHandle())
+		{
+			SIMUL_CERR << "Window for cp_hwnd " << std::hex << h << " has hwnd " << w->GetHandle() << std::endl;
+			return;
+		}
+		w->StartFrame();
+		if (renderPlatform && !frame_started)
+		{
+			frameNumber++;
+			renderPlatform->BeginFrame();
+			frame_started = true;
+		}
+		w->Render(delegatorReadWriteMutex, frameNumber);
 	}
-    w->Render(delegatorReadWriteMutex,frameNumber);
+	toRender.clear();
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():
@@ -133,4 +142,5 @@ void DisplaySurfaceManager::EndFrame()
 	}
 	renderPlatform->EndFrame();
 	frame_started=false;
+	RenderAll();
 }

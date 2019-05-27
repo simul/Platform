@@ -36,7 +36,7 @@ target_include_directories(SimulDirectX12_MD PUBLIC "${CMAKE_SOURCE_DIR}/Platfor
 target_include_directories(SimulDirectX12_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 LibraryDefaults(SimulDirectX12_MD)
 
-add_sfx_shader_project( DirectX12Shaders "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} )
+add_sfx_shader_project( DirectX12Shaders "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} )
 
 add_dependencies(SimulDirectX12_MT DirectX12Shaders)
 add_dependencies(SimulDirectX12_MD DirectX12Shaders)

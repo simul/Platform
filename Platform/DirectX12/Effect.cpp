@@ -725,7 +725,8 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 
 void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
-#ifndef _XBOX_ONE
+	crossplatform::Effect::EnsureEffect(r,filename_utf8);
+#if 0
 	// We will only recompile if we are in windows
 	// SFX will handle the "if changed"
 	auto buildMode = r->GetShaderBuildMode();
@@ -901,6 +902,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 
 void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
 {	
+	renderPlatform = r;
 	EnsureEffect(r, filename_utf8);
 #ifndef _XBOX_ONE
 //    SIMUL_COUT << "Loading effect:" << filename_utf8 << std::endl;

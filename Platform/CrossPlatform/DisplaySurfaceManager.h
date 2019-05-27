@@ -24,6 +24,8 @@ namespace simul
 			~DisplaySurfaceManager();
 			void Initialize(RenderPlatform *r);
 			void Shutdown();
+			//! Call from rendering thread.
+			void RenderAll();		
 			// Implementing Window Manager, which associates Hwnd's with renderers and view ids:
 			//! Add a window. Creates a new Swap Chain.
 			void AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN);
@@ -46,6 +48,7 @@ namespace simul
             DisplaySurfaceMap                           surfaces;
 			bool frame_started;
 			long long frameNumber=0;
+			std::set<cp_hwnd> toRender;
 		};
 	}
 }

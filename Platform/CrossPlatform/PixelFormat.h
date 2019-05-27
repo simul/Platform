@@ -34,6 +34,8 @@ namespace simul
 			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
 			,BGRA_8_UNORM
+			,D_32_FLOAT_S_8_UINT
+			,R_32_FLOAT_X_8
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

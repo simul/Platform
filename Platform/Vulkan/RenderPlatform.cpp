@@ -75,8 +75,8 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 	vulkanInstance=(vk::Instance*)ptr[1];
 	vulkanGpu=(vk::PhysicalDevice*)ptr[2];
 	immediateContext.platform_context=nullptr;
-    crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-    RecompileShaders();
+	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
+	RecompileShaders();
 
 	int swapchainImageCount=SIMUL_VULKAN_FRAME_LAG+1;
 	vk::DescriptorPoolSize const poolSizes[] = {
@@ -132,6 +132,71 @@ void RenderPlatform::EndFrame()
 {
 }
 
+void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *dest, crossplatform::Texture *source)
+{
+	auto *commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	immediateContext.platform_context = deviceContext.platform_context;
+
+	auto src = (vulkan::Texture*)source;
+	auto dst = (vulkan::Texture*)dest;
+	if (!src || !dst)
+	{
+		SIMUL_CERR << "Passed a null texture to CopyTexture(), ignoring call.\n";
+		return;
+	}
+
+	// Ensure textures are compatible
+	if ((source->width != dest->width) ||
+		(source->length != dest->length) ||
+		(source->arraySize != dest->arraySize) ||
+		(source->mips != dest->mips))
+	{
+		SIMUL_CERR << "Passed incompatible textures to CopyTexture(), both textures should have same width,height,depth and mip level, ignoring call.\n";
+		return;
+	}
+
+	// Ensure source state
+	bool changedSrc = false;
+	std::vector<vk::ImageCopy> copyRegions;
+	uint32_t offset = 0;
+
+	{
+		int w = dest->width;
+		int l = dest->length;
+		int d = dest->depth;
+		for (uint32_t j = 0; j < dest->mips; j++)
+		{
+			vk::ImageCopy copyRegion = {};
+			copyRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+			copyRegion.srcSubresource.mipLevel = j;
+			copyRegion.srcSubresource.baseArrayLayer = 0;
+			copyRegion.srcSubresource.layerCount = dest->arraySize*(dest->IsCubemap()?6:1);
+			copyRegion.srcOffset = { 0, 0, 0 };
+
+			copyRegion.dstSubresource = copyRegion.srcSubresource;
+
+			copyRegion.extent.width = w;
+			copyRegion.extent.height = l;
+			copyRegion.extent.depth = d;
+
+			copyRegions.push_back(copyRegion);
+			w = (w + 1) / 2;
+			l = (l + 1) / 2;
+			d = (d + 1) / 2;
+		}
+	}
+	vk::ImageLayout srcLayout = src->GetLayout();
+	vk::ImageLayout dstLayout = dst->GetLayout();
+
+	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
+	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal);
+	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
+	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
+													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
+	src->SetLayout(deviceContext, srcLayout);
+	dst->SetLayout(deviceContext, dstLayout);
+}
+
 float RenderPlatform::GetDefaultOutputGamma() const 
 {
 	static float g=1.0f;
@@ -140,10 +205,38 @@ float RenderPlatform::GetDefaultOutputGamma() const
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
 {
+#if 0
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::DebugUtilsLabelEXT labelInfo;
+	labelInfo.pNext = nullptr;
+	labelInfo.pLabelName = name;
+	labelInfo.color[0]= labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
+	
+	commandBuffer->beginDebugUtilsLabelEXT(&labelInfo);
+#endif
+
+#if 0
+	VkDebugMarkerMarkerInfoEXT markerInfo = {};
+	markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
+	// Color to display this region with (if supported by debugger)
+	float color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+	memcpy(markerInfo.color, &color[0], sizeof(float) * 4);
+	// Name of the region displayed by the debugging application
+	markerInfo.pMarkerName = name;
+	commandBuffer->debugMarkerBegin(markerInfo);
+#endif
 }
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 {
+#if 0
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	commandBuffer->endDebugUtilsLabelEXT();
+#endif
+#if 0
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	commandBuffer->debugMarkerEnd();
+#endif
 }
 
 
@@ -185,7 +278,6 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)
 		commandBuffer->draw(4,1,0,0);
 		commandBuffer->endRenderPass();
 	}
-//    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     EndEvent(deviceContext);
 }
 
@@ -615,22 +707,6 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	};
 }*/
 
-vk::CullModeFlags RenderPlatform::toVulkanCullFace(crossplatform::CullFaceMode c)
-{
-    switch (c)
-    {
-    case simul::crossplatform::CULL_FACE_FRONT:
-        return vk::CullModeFlagBits::eFront;
-    case simul::crossplatform::CULL_FACE_BACK:
-        return vk::CullModeFlagBits::eBack;
-    case simul::crossplatform::CULL_FACE_FRONTANDBACK:
-        return vk::CullModeFlagBits::eFrontAndBack;
-    default:
-        break;
-    }
-    return vk::CullModeFlagBits::eFront;
-}
-
 vk::BlendOp RenderPlatform::toVulkanBlendOperation(crossplatform::BlendOperation o)
 {
     switch (o)
@@ -764,6 +840,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 		return vk::Format::eR32G32B32Uint;
 	case D_32_FLOAT:
 		return vk::Format::eD32Sfloat;
+	case D_32_FLOAT_S_8_UINT:
+		return vk::Format::eD32SfloatS8Uint;
 	case D_24_UNORM_S_8_UINT:
 		return vk::Format::eD24UnormS8Uint;
 	case D_16_UNORM:
@@ -818,6 +896,8 @@ crossplatform::PixelFormat RenderPlatform::FromVulkanFormat(vk::Format p)
 			return D_24_UNORM_S_8_UINT;
 		case vk::Format::eD16UnormS8Uint:
 			return D_16_UNORM;
+		case vk::Format::eD32SfloatS8Uint:
+			return D_32_FLOAT_S_8_UINT;
 	default:
 		return UNKNOWN;
 	};
@@ -928,6 +1008,36 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	};
 }
 
+vk::PolygonMode RenderPlatform::toVulkanPolygonMode(crossplatform::PolygonMode p)
+{
+	switch (p)
+	{
+	case crossplatform::POLYGON_MODE_FILL:
+		return vk::PolygonMode::eFill;
+	case crossplatform::POLYGON_MODE_LINE:
+		return vk::PolygonMode::eLine;
+	case crossplatform::POLYGON_MODE_POINT:
+		return vk::PolygonMode::ePoint;
+	default:
+		SIMUL_BREAK("Undefined polygon mode");
+		return vk::PolygonMode::eFill;
+	}
+}
+
+vk::CullModeFlags RenderPlatform::toVulkanCullFace(crossplatform::CullFaceMode c)
+{
+	switch (c)
+	{
+	case simul::crossplatform::CULL_FACE_FRONT:
+		return vk::CullModeFlagBits::eFront;
+	case simul::crossplatform::CULL_FACE_BACK:
+		return vk::CullModeFlagBits::eBack;
+	case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+		return vk::CullModeFlagBits::eFrontAndBack;
+	default:
+		return vk::CullModeFlagBits::eNone;
+	}
+}
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
@@ -1201,9 +1311,9 @@ vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::DeviceC
 	{
 		if(tv->m_rt[0]!=nullptr)
 		{
-			vulkan::Framebuffer *fb=(vulkan::Framebuffer *)tv->m_rt[0];
-			vk::RenderPass *r=fb->GetVulkanRenderPass(deviceContext);
-			return r;
+			vulkan::Texture *t=(vulkan::Texture *)tv->textureTargets[0].texture;
+			vk::RenderPass &vkRenderPass= t->GetRenderPass(deviceContext);
+			return&vkRenderPass;
 		}
 		else
 			return nullptr;
@@ -1227,17 +1337,17 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Devi
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
 		//Will return the passed-through native Vulkan framebuffer of an individual cubemap face.
-		if(tv->m_rt[1]!=nullptr) 
+		/*if(tv->m_rt[1]!=nullptr) 
 		{
 			return (vk::Framebuffer*)tv->m_rt[1];
 		}
-		if(tv->m_rt[0]!=nullptr)
+		*i*f(tv->m_rt[0]!=nullptr)
 		{
 			vulkan::Framebuffer *fb=(vulkan::Framebuffer *)tv->m_rt[0];
 			vk::Framebuffer *vfb=fb->GetVulkanFramebuffer(deviceContext);
 			return vfb;
 		}
-		else
+		else*/
 		{
 			auto &tt=tv->textureTargets[0];
 			auto vt=(vulkan::Texture*)tt.texture;

@@ -35,7 +35,8 @@ shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 	tc.y		=1.0-tc.y;
 #endif
 
-	vec4 lookup	=texture_nearest_lod(fontTexture,tc,0);
+	vec4 lookup	= colour*texture_nearest_lod(fontTexture,tc,0);
+//	lookup.b = 0;
     return lookup;
 }
 

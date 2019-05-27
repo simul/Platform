@@ -169,6 +169,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	external_texture = false;
 	SetDebugObjectName(texture,pFilePathUtf8);
 }
+
 int Texture::GetMemorySize() const
 {
 	int w=width,l=length,d=depth;

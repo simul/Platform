@@ -131,10 +131,10 @@ void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
 }
 void HdrRenderer::RecompileShaders()
 {
-	SAFE_DELETE(hdr_effect);
-	SAFE_DELETE(m_pGaussianEffect);
 	if(!renderPlatform)
 		return;
+	renderPlatform->Destroy(hdr_effect);
+	renderPlatform->Destroy(m_pGaussianEffect);
 	std::map<std::string,std::string> defs;
 	hdr_effect					=renderPlatform->CreateEffect("hdr",defs);
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
@@ -168,8 +168,11 @@ void HdrRenderer::InvalidateDeviceObjects()
 		SAFE_DELETE(glowTextures[i]);
 	}
 	SAFE_DELETE(blurTexture);
-	SAFE_DELETE(hdr_effect);
-	SAFE_DELETE(m_pGaussianEffect);
+	if (renderPlatform)
+	{
+		renderPlatform->Destroy(hdr_effect);
+		renderPlatform->Destroy(m_pGaussianEffect);
+	}
 	renderPlatform=NULL;
 }
 void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma)

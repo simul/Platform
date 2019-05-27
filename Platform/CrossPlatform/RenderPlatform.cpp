@@ -196,7 +196,11 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	gpuProfiler->InvalidateDeviceObjects();
-	
+	for (auto e : destroyEffects)
+	{
+		SAFE_DELETE(e);
+	}
+	destroyEffects.clear();
 	if(textRenderer)
 		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
@@ -235,17 +239,23 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::RecompileShaders()
 {
+	for (auto s : shaders)
+	{
+		s.second->Release();
+		delete s.second;
+	}
+	shaders.clear();
 	AsD3D11Device();
-	SAFE_DELETE(debugEffect);
+	Destroy(debugEffect);
 	AsD3D11Device();
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
 	AsD3D11Device();
-	SAFE_DELETE(solidEffect);
+	Destroy(solidEffect);
 	AsD3D11Device();
 	solidEffect=CreateEffect("solid",defines);
 	AsD3D11Device();
-	SAFE_DELETE(copyEffect);
+	Destroy(copyEffect);
 	AsD3D11Device();
 	copyEffect=CreateEffect("copy",defines);
 	AsD3D11Device();
@@ -572,6 +582,7 @@ bool crossplatform::RenderPlatform::IsDepthFormat(PixelFormat f)
 	case D_32_FLOAT:
 	case D_24_UNORM_S_8_UINT:
 	case D_16_UNORM:
+	case D_32_FLOAT_S_8_UINT:
 		return true;
 	default:
 		return false;
@@ -587,6 +598,8 @@ PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
 		return R_32_FLOAT;
 	case D_16_UNORM:
 		return R_16_FLOAT;
+	case D_32_FLOAT_S_8_UINT:
+		return R_32_FLOAT;
 	default:
 		return f;
 	};
@@ -984,22 +997,22 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	debugEffect->UnbindTextures(deviceContext);
 	if(debug)
 	{
-	vec4 white(1.0, 1.0, 1.0, 1.0);
-	vec4 semiblack(0, 0, 0, 0.5);
-	char txt[]="0";
-	if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
-	{
-		txt[0]='0'+lod;
-		Print(deviceContext,x1,y1,txt,white,semiblack);
+		vec4 white(1.0, 1.0, 1.0, 1.0);
+		vec4 semiblack(0, 0, 0, 0.5);
+		char txt[]="0";
+		if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
+		{
+			txt[0]='0'+lod;
+			Print(deviceContext,x1,y1,txt,white,semiblack);
+		}
+		if(tex&&tex->arraySize>1)
+		{
+			int l=level%tex->arraySize;
+			if(l<10)
+				txt[0]='0'+(l);
+			Print(deviceContext,x1,y1,txt,white,semiblack);
+		}
 	}
-	if(tex&&tex->arraySize>1)
-	{
-		int l=level%tex->arraySize;
-		if(l<10)
-			txt[0]='0'+(l);
-		Print(deviceContext,x1,y1,txt,white,semiblack);
-	}
-}
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
@@ -1229,6 +1242,14 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	std::map<std::string,std::string> defines;
 	Effect *e=CreateEffect(filename_utf8,defines);
 	return e;
+}
+void RenderPlatform::Destroy(Effect *&e)
+{
+	if (e)
+	{
+		destroyEffects.insert(e);
+		e = nullptr;
+	}
 }
 
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)

@@ -17,7 +17,7 @@ BaseFramebuffer::BaseFramebuffer(const char *n)
 	,numAntialiasingSamples(1)	// no AA by default
 	,depth_active(false)
 	,colour_active(false)
-	,renderPlatform(0)
+	,renderPlatform(nullptr)
 	,DefaultClearColour(1.0f, 1.0f, 1.0f, 1.0f)
 	,DefaultClearDepth(1.0f)
 	,DefaultClearStencil(1)

@@ -137,6 +137,10 @@ namespace simul
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
+			virtual const char *GetSfxConfigFilename() const 
+			{
+				return "";
+			}
 			//! Returns the DX12 graphics command list
 			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
 			virtual ID3D12Device* AsD3D12Device();
@@ -238,6 +242,8 @@ namespace simul
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
 			/// Create a platform-specific effect instance.
 			Effect							*CreateEffect					(const char *filename_utf8);
+			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
+			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
@@ -365,6 +371,7 @@ namespace simul
 			long long					mLastFrame;
 			std::set<crossplatform::Texture*> fencedTextures;
 		public:
+			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.
 			std::map<std::string, Shader*> shaders;
