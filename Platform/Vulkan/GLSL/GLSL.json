@@ -16,10 +16,11 @@
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
 	"debugOption": "-g",
 	"multiplePixelOutputFormats": false,
-	"define": {
-		"SFX_TYPED_UAV_LOADS": "1",
-		"GLSL": "1"
-	},
+  "define": {
+    "SFX_TYPED_UAV_LOADS": "1",
+    "GLSL": "1",
+    "SFX_VULKAN": "1"
+  },
 	"generateSlots": true,
 	"sharedSlots": false,
 	"lineDirectiveFilenames": true,

@@ -185,9 +185,15 @@ shader v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 	vertex_id			-=longitude*2;
 	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
 	float elevation		=.99*(float(latitude_strip+vertex_id)/float(latitudes+1)-0.5)*3.1415926536;
+	#ifdef SFX_OPENGL
+	elevation *= -1;
+	#endif
 	float cos_el		=cos(elevation);
 	vec3 pos			=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
     OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	#ifdef SFX_OPENGL
+	OUT.hPosition.y *= -1;
+	#endif
     OUT.wDirection		=normalize(pos.xyz);
     return OUT;
 }

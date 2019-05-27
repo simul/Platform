@@ -21,7 +21,12 @@ shader posTexVertexOutput FontVertexShader(idOnly IN)
 	FontChar f=fontChars[char_index];
 	idOnly cIN;
 	cIN.vertex_id=ids[vert_index];
-    posTexVertexOutput OUT	=VS_ScreenQuad(cIN,f.text_rect);	
+	#ifdef  SFX_OPENGL
+	f.text_rect.y *= -1;
+	f.text_rect.y -= f.text_rect.w;
+	#endif
+
+    posTexVertexOutput OUT	=VS_ScreenQuad(cIN,f.text_rect);
 	OUT.texCoords			=vec4(f.texc.xy+f.texc.zw*OUT.texCoords.xy,0.0,1.0).xy;
     return OUT;
 }
@@ -29,11 +34,7 @@ shader posTexVertexOutput FontVertexShader(idOnly IN)
 shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 tc	=IN.texCoords;
-
-	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
-#ifndef SFX_OPENGL
 	tc.y		=1.0-tc.y;
-#endif
 
 	vec4 lookup	= colour*texture_nearest_lod(fontTexture,tc,0);
 //	lookup.b = 0;

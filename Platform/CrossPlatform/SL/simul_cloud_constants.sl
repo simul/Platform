@@ -109,7 +109,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 mieRayleighRatio;
 	uniform float alphaSharpness;
 
-	uniform float rain;
+	uniform float rainToSnow;
 	uniform float maxFadeDistanceKm;
 	uniform float extinctionPerKm;
 	uniform float minSunlightAltitudeKm;
@@ -170,7 +170,7 @@ struct VolumeQueryResult
 	float ambient_light;
 	float precipitation;
 	float rain_to_snow;
-	float padding; //Never use. Used for Alignment in glsl std140
+	float padding;
 };
 //! The result struct for a line query.
 struct LineQueryResult
