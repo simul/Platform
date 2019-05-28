@@ -1473,7 +1473,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					}
 					else
 					{
-						renderPlatform->EnsureShader(filenamestr.c_str(), t);
+						s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
 					}
 					if(s)
 					{
