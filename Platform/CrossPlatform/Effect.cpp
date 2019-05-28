@@ -1359,6 +1359,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							if (!bin_ptr)
 							{
 								simul::base::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, binFilenameUtf8.c_str(), true);
+								if (!bin_ptr)
+								{
+									SIMUL_BREAK(base::QuickFormat("Failed to load combined shader binary: %s\n", binFilenameUtf8.c_str()));
+								}
 							}
 						}
 					}
@@ -1624,6 +1628,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	SIMUL_ASSERT(level==OUTSIDE);
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
+	if (!bin_ptr)
+		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(bin_ptr);
 	PostLoad();
 }
 

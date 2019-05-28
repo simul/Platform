@@ -64,6 +64,7 @@
       <IncludePaths>$(SIMUL)\Platform\XboxOne\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\XboxOne\HLSL\HLSL12X.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\XboxOne\shaderbin</OutputPath>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemGroup>

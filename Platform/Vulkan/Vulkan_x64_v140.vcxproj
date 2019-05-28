@@ -188,6 +188,7 @@
       <IncludePaths>$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\Vulkan\GLSL\GLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemGroup>

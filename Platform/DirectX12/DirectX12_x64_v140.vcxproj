@@ -163,6 +163,7 @@
       <IncludePaths>$(SIMUL)\Platform\DirectX12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\DirectX12\HLSL\HLSL12.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX12\shaderbin</OutputPath>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
@@ -327,26 +328,66 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx" />
-    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSL\GFX.hlsl">
