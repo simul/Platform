@@ -18,7 +18,6 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
-#pragma optimize ("",off)
 
 ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(NULL)
 {
@@ -63,12 +62,12 @@ EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 		shaders[i]=NULL;
 	for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
 		pixelShaders[i]=NULL;
-    memset(resourceSlots, 0, sizeof(resourceSlots));
-    memset(rwResourceSlots, 0, sizeof(rwResourceSlots));
-    memset(sbResourceSlots, 0, sizeof(sbResourceSlots));
-    memset(rwSbResourceSlots, 0, sizeof(rwSbResourceSlots));
-    memset(samplerResourceSlots, 0, sizeof(samplerResourceSlots));
-    memset(constantBufferResourceSlots, 0, sizeof(constantBufferResourceSlots));
+	memset(resourceSlots, 0, sizeof(resourceSlots));
+	memset(rwResourceSlots, 0, sizeof(rwResourceSlots));
+	memset(sbResourceSlots, 0, sizeof(sbResourceSlots));
+	memset(rwSbResourceSlots, 0, sizeof(rwSbResourceSlots));
+	memset(samplerResourceSlots, 0, sizeof(samplerResourceSlots));
+	memset(constantBufferResourceSlots, 0, sizeof(constantBufferResourceSlots));
 }
 
 void EffectPass::MakeResourceSlotMap()
@@ -255,8 +254,8 @@ void Effect::InvalidateDeviceObjects()
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
 	:renderPlatform(r)
-	,effect(e)
 	,platform_technique(NULL)
+	, effect(e)
 	,should_fence_outputs(true)
 {
 }
@@ -461,11 +460,11 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		if(s<0)
 		{
 
-		    res.valid = false;
-		    SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
-		    //SIMUL_BREAK_ONCE("Invalid Shader resource")
-		    return res;
-	    }
+			res.valid = false;
+			SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
+			//SIMUL_BREAK_ONCE("Invalid Shader resource")
+			return res;
+		}
 		slot=s;
 		res.shaderResourceType		=ShaderResourceType::SAMPLER;
 	}
@@ -636,7 +635,7 @@ const ShaderResource *Effect::GetTextureDetails(const char *name)
 	{
 		if(strcmp(i.first.c_str(),name)==0)
 		{
-            textureCharMap.insert({ i.first.c_str(),i.second });
+			textureCharMap.insert({ i.first.c_str(),i.second });
 			return i.second;
 		}
 	}
@@ -686,7 +685,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	cs->applyBuffers.clear();  //Because we might otherwise have invalid data
 	cs->applyVertexBuffers.clear();
 	cs->invalidate();
-    // Clean up the TextureAssignments (used in some platforms a.k.a. Switch and Opengl)
+	// Clean up the TextureAssignments (used in some platforms a.k.a. Switch and Opengl)
 }
 
 static bool is_equal(std::string str,const char *tst)
@@ -989,6 +988,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	if (filenameUtf8.find(".sfxo") == std::string::npos)
 		filenameUtf8 += ".sfxo";
 	filenameUtf8=filepathUtf8+filenameUtf8;
+	std::string binFilenameUtf8 = filenameUtf8;
+	base::find_and_replace(binFilenameUtf8, ".sfxo",".sfxb");
 #ifdef __ORBIS__
 	base::find_and_replace(filenameUtf8,"\\","/");
 #endif
@@ -1012,6 +1013,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	void *ptr;
 	unsigned int num_bytes;
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes,filenameUtf8.c_str(),true);
+
+
+	void *bin_ptr=nullptr;
+	unsigned int bin_num_bytes=0;
+
 	const char *txt=(const char *)ptr;
 	std::string str;
 	str.reserve(num_bytes);
@@ -1174,34 +1180,34 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				crossplatform::RenderState *bs=renderPlatform->CreateRenderState(desc);
 				blendStates[name]=bs;
 			}
-            else if (is_equal(word, "RenderTargetFormatState"))
-            {
-                crossplatform::RenderStateDesc desc;
-                string name         = words[1];
-                desc.type           = crossplatform::RTFORMAT;
-                /*
-                    OceanConfig(3,3,3,3,0,0,0,0) *PixelOutputFormat*
-                */
-                vector<string> props = simul::base::split(words[2], ',');
-                if (props.size() != 8)
-                {
-                    SIMUL_CERR << "Invalid number of formats for: " << name << std::endl;
-                }
-                props[0].erase(0,1);
-                props[7].erase(1,1);
-                for (int i = 0; i < 8; i++)
-                {
-                    desc.rtFormat.formats[i] = (PixelOutputFormat)toInt(props[i]);
-                }
-                rtFormatStates[name]            = renderPlatform->CreateRenderState(desc);
-            }
+			else if (is_equal(word, "RenderTargetFormatState"))
+			{
+				crossplatform::RenderStateDesc desc;
+				string name		 = words[1];
+				desc.type		   = crossplatform::RTFORMAT;
+				/*
+					OceanConfig(3,3,3,3,0,0,0,0) *PixelOutputFormat*
+				*/
+				vector<string> props = simul::base::split(words[2], ',');
+				if (props.size() != 8)
+				{
+					SIMUL_CERR << "Invalid number of formats for: " << name << std::endl;
+				}
+				props[0].erase(0,1);
+				props[7].erase(1,1);
+				for (int i = 0; i < 8; i++)
+				{
+					desc.rtFormat.formats[i] = (PixelOutputFormat)toInt(props[i]);
+				}
+				rtFormatStates[name]			= renderPlatform->CreateRenderState(desc);
+			}
 			else if(is_equal(word, "RasterizerState"))
 			{
 				string name		=words[1];
 				crossplatform::RenderStateDesc desc;
 				desc.type=crossplatform::RASTERIZER;
 				/*
-				    RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
+					RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
 					0 AntialiasedLineEnable
 					1 cullMode
 					2 DepthBias
@@ -1212,17 +1218,17 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					7 MultisampleEnable
 					8 ScissorEnable
 					9 SlopeScaledDepthBias
-			    */
+				*/
 				vector<string> props=simul::base::split(words[2],',');
-				//desc.rasterizer.antialias         =toInt(props[0]);
-				desc.rasterizer.cullFaceMode        =toCullFadeMode(props[1]);
-				desc.rasterizer.frontFace           =toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
-				desc.rasterizer.polygonMode         =toPolygonMode(props[5]);
+				//desc.rasterizer.antialias		 =toInt(props[0]);
+				desc.rasterizer.cullFaceMode		=toCullFadeMode(props[1]);
+				desc.rasterizer.frontFace		   =toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
+				desc.rasterizer.polygonMode		 =toPolygonMode(props[5]);
 				desc.rasterizer.polygonOffsetMode   =crossplatform::POLYGON_OFFSET_DISABLE;
-				desc.rasterizer.viewportScissor     =toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
+				desc.rasterizer.viewportScissor	 =toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
 				
-                crossplatform::RenderState *bs      =renderPlatform->CreateRenderState(desc);
-				rasterizerStates[name]              =bs;
+				crossplatform::RenderState *bs	  =renderPlatform->CreateRenderState(desc);
+				rasterizerStates[name]			  =bs;
 			}
 			else if(is_equal(word, "DepthStencilState"))
 			{
@@ -1318,27 +1324,44 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if(cl != std::string::npos && tech)
 			{
 				string type=line.substr(0,cl);
-				string filename_entry=line.substr(cl+1,cm-cl-1);
+				//string filename_entry=line.substr(cl+1,cm-cl-1);
 				string uses;
 				if(cm<line.length())
 					uses=line.substr(cm+1,line.length()-cm-1);
 				base::ClipWhitespace(uses);
 				base::ClipWhitespace(type);
-				base::ClipWhitespace(filename_entry);
+				//base::ClipWhitespace(filename_entry);
 
-				
-				std::regex re_file_entry("([a-z0-9A-Z_\\.]+)(?:\\((.*)\\))?");
+				std::regex re_file_entry("([a-z0-9A-Z_]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
 				std::smatch fe_smatch;
 				
 				std::smatch sm;
 				string filenamestr;
 
 				string entry_point="main";
-				if(std::regex_search(filename_entry, sm, re_file_entry))
+				size_t inline_offset =0;
+				size_t inline_length =0;
+
+				if(std::regex_search(line, sm, re_file_entry))
 				{
 					filenamestr= sm.str(1);
 					if(sm.length()>2)
 						entry_point= sm.str(2);
+					entry_point = sm.str(2);
+					if (entry_point.length()>0&&sm.length() > 4)
+					{
+						if (sm.length(3) && sm.length(4))
+						{
+							string inline_offset_str = sm.str(3);
+							string inline_length_str = sm.str(4);
+							inline_offset = std::stoul(inline_offset_str, nullptr, 16);
+							inline_length = std::stoul(inline_length_str, nullptr, 16);
+							if (!bin_ptr)
+							{
+								simul::base::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, binFilenameUtf8.c_str(), true);
+							}
+						}
+					}
 				}
 
 				string name;
@@ -1346,7 +1369,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
 				PixelOutputFormat fmt=FMT_UNKNOWN;
-                std::string passRtFormat = "";
+				std::string passRtFormat = "";
 				if(_stricmp(type.c_str(),"layout")==0)
 				{
 					layoutCount=0;
@@ -1375,17 +1398,17 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						SIMUL_CERR<<"Rasterizer state not found: "<<name<<std::endl;
 					}
 				}
-                else if (_stricmp(type.c_str(), "targetformat") == 0)
-                {
-                    if (rtFormatStates.find(name) != rtFormatStates.end())
-                    {
-                        p->renderTargetFormatState = rtFormatStates[name];
-                    }
-                    else
-                    {
-                        SIMUL_CERR << "Render Target Format state not found: " << name << std::endl;
-                    }
-                }
+				else if (_stricmp(type.c_str(), "targetformat") == 0)
+				{
+					if (rtFormatStates.find(name) != rtFormatStates.end())
+					{
+						p->renderTargetFormatState = rtFormatStates[name];
+					}
+					else
+					{
+						SIMUL_CERR << "Render Target Format state not found: " << name << std::endl;
+					}
+				}
 				else if(_stricmp(type.c_str(),"depthstencil")==0)
 				{
 					if(depthStencilStates.find(name)!=depthStencilStates.end())
@@ -1424,16 +1447,16 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 								fmt=FMT_SNORM16_ABGR;
 							else if(_stricmp(out_fmt.c_str(),"unorm16abgr")==0)
 								fmt=FMT_UNORM16_ABGR;
-                            else
-                            {
-                                // Handle rt format state
-                                size_t pb = type.find("(");
-                                size_t pe = type.find(")");
-                                if (pe - pb > 1)
-                                {
-                                    passRtFormat = std::string(type.begin() + pb, type.begin() + pe);
-                                }
-                            }
+							else
+							{
+								// Handle rt format state
+								size_t pb = type.find("(");
+								size_t pe = type.find(")");
+								if (pe - pb > 1)
+								{
+									passRtFormat = std::string(type.begin() + pb, type.begin() + pe);
+								}
+							}
 						}
 					}
 					else if(_stricmp(type.c_str(),"compute")==0)
@@ -1443,18 +1466,26 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
 						continue;
 					}
-					Shader *s=renderPlatform->EnsureShader(filenamestr.c_str(),t);
+					Shader *s = nullptr;
+					if (bin_ptr)
+					{
+						s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+					}
+					else
+					{
+						renderPlatform->EnsureShader(filenamestr.c_str(), t);
+					}
 					if(s)
 					{
 						if(t==crossplatform::SHADERTYPE_PIXEL&&fmt!=FMT_UNKNOWN)
 							p->pixelShaders[fmt]=s;
 						else
 							p->shaders[t]=s;
-                        if (!passRtFormat.empty())
-                        {
-                            p->rtFormatState = passRtFormat;
-                        }
-                        shaderCount++;
+						if (!passRtFormat.empty())
+						{
+							p->rtFormatState = passRtFormat;
+						}
+						shaderCount++;
 					}
 					else
 					{

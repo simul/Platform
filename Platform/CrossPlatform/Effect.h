@@ -263,7 +263,7 @@ namespace simul
 				}
 			virtual ~Shader(){}
 			virtual void Release(){}
-			virtual void load(crossplatform::RenderPlatform *r, const char *filename, crossplatform::ShaderType t) = 0;
+			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesConstantBufferSlot(int s);

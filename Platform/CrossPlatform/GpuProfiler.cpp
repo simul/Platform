@@ -17,7 +17,6 @@ using namespace std;
 static std::unordered_map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int BOOL;
-#pragma optimize("",off)
 
 ProfileData::ProfileData()
 				:DisjointQuery(NULL)

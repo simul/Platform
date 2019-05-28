@@ -424,7 +424,6 @@
     <None Include="SL\composite_msaa.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="SL\brdf.sl" />
     <None Include="SFX\water.sfx">
       <Filter>SFX</Filter>
     </None>
@@ -432,6 +431,9 @@
       <Filter>SL</Filter>
     </None>
     <None Include="SL\water_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\brdf.sl">
       <Filter>SL</Filter>
     </None>
   </ItemGroup>

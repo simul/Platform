@@ -17,26 +17,12 @@ Shader::~Shader()
     Release();
 }
 
-void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, crossplatform::ShaderType t)
+void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,const void *fileData, size_t fileSize, crossplatform::ShaderType t)
 {
     Release();
 	renderPlatform=r;
 
     type = t;
-
-    simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
-    std::string shaderSourcePath        = renderPlatform->GetShaderBinaryPath() + std::string("/") + filename_utf8;
-
-    // Load the shader source:
-    unsigned int fileSize   = 0;
-    void* fileData          = nullptr;
-	// load spirv file as binary data.
-    fileLoader->AcquireFileContents(fileData,fileSize, shaderSourcePath.c_str(), false);
-    if (!fileData)
-    {
-        SIMUL_CERR << "Failed to load the shader:" << filename_utf8;
-		return;
-    }
 	auto createInfo = vk::ShaderModuleCreateInfo()
 		.setCodeSize(fileSize)
 		.setPCode(reinterpret_cast<const uint32_t*>(fileData));

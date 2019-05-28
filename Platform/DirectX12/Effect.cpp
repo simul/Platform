@@ -669,58 +669,34 @@ EffectTechnique* Effect::CreateTechnique()
 	return new dx12::EffectTechnique(renderPlatform,this);
 }
 
-void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
+void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t DataSize, crossplatform::ShaderType t)
 {
-	//simul::base::MemoryInterface* allocator = renderPlatform->GetMemoryInterface();
-	simul::base::FileLoader* fileLoader		= simul::base::FileLoader::GetFileLoader();
-
 	struct FileBlob
 	{
 		void*		pData;
 		uint32_t	DataSize;
 	};
-
-	// Load the shader binary
-	FileBlob shaderBlob;
-	std::string filenameUtf8	= renderPlatform->GetShaderBinaryPath();
-	filenameUtf8				+= "/";
-	filenameUtf8				+= filename_utf8;
-	fileLoader->AcquireFileContents(shaderBlob.pData, shaderBlob.DataSize, filenameUtf8.c_str(), false);
-	if (!shaderBlob.pData)
-	{
-		// Some engines force filenames to lower case because reasons:
-		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
-		fileLoader->AcquireFileContents(shaderBlob.pData, shaderBlob.DataSize, filenameUtf8.c_str(), false);
-		if (!shaderBlob.pData)
-		{
-			return;
-		}
-	}
-
 	// Copy shader
 	type = t;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
 	{
-		D3DCreateBlob(shaderBlob.DataSize, &pixelShader12);
-		memcpy(pixelShader12->GetBufferPointer(), shaderBlob.pData, pixelShader12->GetBufferSize());
+		D3DCreateBlob(DataSize, &pixelShader12);
+		memcpy(pixelShader12->GetBufferPointer(), data, pixelShader12->GetBufferSize());
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
-		D3DCreateBlob(shaderBlob.DataSize, &vertexShader12);
-		memcpy(vertexShader12->GetBufferPointer(), shaderBlob.pData, vertexShader12->GetBufferSize());
+		D3DCreateBlob(DataSize, &vertexShader12);
+		memcpy(vertexShader12->GetBufferPointer(), data, vertexShader12->GetBufferSize());
 	}
 	else if (t == crossplatform::SHADERTYPE_COMPUTE)
 	{
-		D3DCreateBlob(shaderBlob.DataSize, &computeShader12);
-		memcpy(computeShader12->GetBufferPointer(), shaderBlob.pData, computeShader12->GetBufferSize());
+		D3DCreateBlob(DataSize, &computeShader12);
+		memcpy(computeShader12->GetBufferPointer(), data, computeShader12->GetBufferSize());
 	}
 	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
 	{
 		SIMUL_CERR << "Geometry shaders are not implemented in Dx12" << std::endl;
 	}
-
-	// Free the loaded memory
-	fileLoader->ReleaseFileContents(shaderBlob.pData);
 }
 
 void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)

@@ -266,6 +266,7 @@ namespace simul
 			virtual Query					*CreateQuery					(QueryType q)=0;
 			/// Get or create an API-specific shader object.
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
+			virtual Shader					*EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
 			/// Create a shader.
 			virtual Shader					*CreateShader()=0;
             virtual DisplaySurface*         CreateDisplaySurface();

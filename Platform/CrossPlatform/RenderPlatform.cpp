@@ -2,6 +2,7 @@
 #include "RenderPlatform.h"
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/TextRenderer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
@@ -1279,12 +1280,40 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
+	simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
+	std::string shaderSourcePath = GetShaderBinaryPath() + std::string("/") + filenameUtf8;
+
+	// Load the shader source:
+	unsigned int fileSize = 0;
+	void* fileData = nullptr;
+	// load spirv file as binary data.
+	fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
+	if (!fileData)
+	{
+		// Some engines force filenames to lower case because reasons:
+		std::transform(shaderSourcePath.begin(), shaderSourcePath.end(), shaderSourcePath.begin(), ::tolower);
+		fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
+		if (!fileData)
+		{
+			SIMUL_CERR << "Failed to load the shader:" << filenameUtf8;
+			return nullptr;
+		}
+	}
+	Shader *s = EnsureShader(filenameUtf8,fileData, 0, fileSize, t);
+
+	// Free the loaded memory
+	fileLoader->ReleaseFileContents(fileData);
+	return s;
+}
+
+crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
+{
 	std::string name(filenameUtf8);
 	if (shaders.find(name) != shaders.end())
 		return shaders[name];
 	Shader *s = CreateShader();
+	s->load(this,filenameUtf8, (unsigned char*)sfxb_ptr+inline_offset, inline_length, t);
 	shaders[name] = s;
-	s->load(this, filenameUtf8, t);
 	return s;
 }
 

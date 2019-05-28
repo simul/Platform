@@ -86,7 +86,7 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT Shader :public simul::crossplatform::Shader
 		{
 		public:
-			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) {}
+			void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t) override {}
 		};
 		class SIMUL_DIRECTX11_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{

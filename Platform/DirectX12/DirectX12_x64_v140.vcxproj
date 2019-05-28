@@ -208,6 +208,7 @@
       <IncludePaths>$(SIMUL)\Platform\DirectX12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\DirectX12\HLSL\HLSL12.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX12\shaderbin</OutputPath>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemGroup>

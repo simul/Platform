@@ -392,24 +392,11 @@ Shader::~Shader()
     Release();
 }
 
-void Shader::load(crossplatform::RenderPlatform* renderPlatform, const char* filename_utf8, crossplatform::ShaderType t)
+void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t)
 {
     Release();
 
     type = t;
-
-    simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
-    std::string shaderSourcePath        = renderPlatform->GetShaderBinaryPath() + std::string("/") + filename_utf8;
-
-    // Load the shader source:
-    unsigned int fileSize   = 0;
-    void* fileData          = nullptr;
-    fileLoader->AcquireFileContents(fileData,fileSize, shaderSourcePath.c_str(), true);
-    if (!fileData)
-    {
-        SIMUL_CERR << "Failed to load the shader:" << filename_utf8;
-    }
-
     // Start creating the gl shader:
     GLenum type = GL_NONE;
     switch (t)
@@ -436,7 +423,8 @@ void Shader::load(crossplatform::RenderPlatform* renderPlatform, const char* fil
 //	SIMUL_COUT<<(int)hglrc<<std::endl;
     const GLchar* glData    = (const GLchar*)fileData;
     ShaderId                = glCreateShader(type);
-    glShaderSource(ShaderId, 1, &glData, 0);
+	GLint sz= (GLint)DataSize;
+    glShaderSource(ShaderId, 1, &glData, &sz);
     glCompileShader(ShaderId);
 	src=glData;
 	name=filename_utf8;
