@@ -10,6 +10,9 @@ file(GLOB SHADERS
 file(GLOB SHADER_INCLUDES
 	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
 )
+file(GLOB SHADER_DEFS
+	"${CMAKE_SOURCE_DIR}/Platform/Vulkan/GLSL/*.*" 
+)
 
 link_directories(${VULKAN_SDK_DIR}/Lib)
 add_static_library(SimulVulkan_MT ${SOURCES} ${HEADERS} ${CMAKE})
@@ -26,7 +29,7 @@ target_include_directories(SimulVulkan_MD PRIVATE "${VULKAN_SDK_DIR}/Include")
 target_include_directories(SimulVulkan_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")
 target_include_directories(SimulVulkan_MD PUBLIC "${CMAKE_SOURCE_DIR}/Platform/Vulkan")
 
-add_sfx_shader_project( VulkanShaders "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/GLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} )
+add_sfx_shader_project( VulkanShaders "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/GLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} ${SHADER_DEFS} OPTIONS -w)
 
 add_dependencies(SimulVulkan_MT VulkanShaders)
 add_dependencies(SimulVulkan_MD VulkanShaders)

@@ -417,6 +417,7 @@
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
     <None Include="GLSL\GLSL.json" />
     <None Include="GLSL\shader_platform.sl" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">

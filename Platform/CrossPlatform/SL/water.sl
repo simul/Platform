@@ -183,7 +183,7 @@ float cubic_bump(float x) {
 //Calculate fresnel term
 float fresnel(vec3 incident, vec3 normal, float sourceIndex, float mediumIndex)
 {
-	float output;
+	//float output; reserved wod, do not use
 	//Schlick's apporixmation, 
 	float cos_incident = clamp(-1.0, 1.0, dot(incident, normal));
 	float R0 = pow(((mediumIndex - sourceIndex) / (mediumIndex + sourceIndex)), 2.0);

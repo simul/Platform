@@ -16,11 +16,11 @@
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
 	"debugOption": "-g",
 	"multiplePixelOutputFormats": false,
-  "define": {
-    "SFX_TYPED_UAV_LOADS": "1",
-    "GLSL": "1",
-    "SFX_VULKAN": "1"
-  },
+	"define": {
+		"SFX_TYPED_UAV_LOADS": "1",
+		"GLSL": "1",
+		"SFX_VULKAN": "1"
+	},
 	"generateSlots": true,
 	"sharedSlots": false,
 	"lineDirectiveFilenames": true,
@@ -29,6 +29,7 @@
 	"combineInShader": true,
 	"reverseTexCoordY": false,
 	"reverseVertexOutputY": true,
+	"failOnCerr": true,
 	"getSizeExpression": "ivec{return_size} iv{tmpName} = {type}({textureName}{args});\n",
 	"textureDeclaration": "layout(binding = {slot}) uniform {type} {name};",
 	"imageDeclaration": "layout({fqualifier},binding={slot}) uniform {type} {name};",
@@ -153,6 +154,7 @@
 		"lerp": "mix",
 		"atan2": "atan",
 		"frac": "fract",
-		"flat": ""
+		"flat": "",
+		"fmod": "modf"
 	}
 }

@@ -334,5 +334,8 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\water.sfx">
+      <Filter>SFX</Filter>
+    </Sfx_Rule>
   </ItemGroup>
 </Project>
