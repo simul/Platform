@@ -532,6 +532,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 			depth=textureDesc.ArraySize;
 			if(make_rt&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET))
 			{
+				renderTarget = true;
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 				renderTargetViewDesc.Format = TypelessToSrvFormat(textureDesc.Format);

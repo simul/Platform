@@ -20,7 +20,7 @@ file(GLOB SHADER_INCLUDES
 	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
 )
 
-add_static_library(SimulDirectX12_MT ${SOURCES} ${HEADERS} ${CMAKE} )
+add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} )
 target_compile_definitions(SimulDirectX12_MT PRIVATE SIMUL_DIRECTX12_DLL=1)
 set_target_properties(SimulDirectX12_MT PROPERTIES FOLDER Static)
 target_include_directories(SimulDirectX12_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platform/DirectX12")
@@ -28,7 +28,7 @@ target_include_directories(SimulDirectX12_MT PRIVATE "${CMAKE_SOURCE_DIR}/Extern
 LibraryDefaults(SimulDirectX12_MT)
 
 link_directories( ${CMAKE_SOURCE_DIR}/lib/x64/v141/${CMAKE_BUILD_TYPE})
-add_library(SimulDirectX12_MD SHARED ${SOURCES} ${HEADERS} ${CMAKE} )
+add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} )
 target_compile_definitions(SimulDirectX12_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_DIRECTX12_DLL=1)
 set_target_properties(SimulDirectX12_MD PROPERTIES FOLDER Dynamic
 							LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
