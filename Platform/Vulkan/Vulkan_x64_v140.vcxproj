@@ -164,6 +164,7 @@
       <IncludePaths>$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\Vulkan\GLSL\GLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
@@ -224,19 +225,24 @@
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\cloud_edit.sfx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
+    </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -244,18 +250,21 @@
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-l %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -263,72 +272,84 @@
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-l %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -336,6 +357,7 @@
       <IncludePaths Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\GLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <OutputPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Platform\Vulkan\shaderbin</OutputPath>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-d %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">-w %(AdditionalOptions)</AdditionalOptions>
     </Sfx_Rule>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
