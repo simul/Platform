@@ -836,7 +836,7 @@ namespace simul
 			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
 			const char *GetTechniqueName(const EffectTechnique *t) const;
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
-			std::map<const char *,crossplatform::ShaderResource> shaderResources;
+			std::map<std::string,crossplatform::ShaderResource> shaderResources;
 			GroupCharMap groupCharMap;
 			typedef std::unordered_map<std::string,ShaderResource*> TextureDetailsMap;
 			typedef std::unordered_map<const char *,ShaderResource*> TextureCharMap;

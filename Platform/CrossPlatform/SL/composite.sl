@@ -69,7 +69,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 nearFarCloud				=vec4(1.0,0.0,1,1);
 	if(do_interp)
 		nearFarCloud				=texture_cube_lod(nearFarTexture	,view		,0);
-	
+
 	float dist_rt					=sqrt(dist);
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(sine)/SIMUL_PI_F),dist_rt);
 
@@ -172,6 +172,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	//if(do_clouds)
 	//	res.multiply				*=cloud.a;
 	res.add							=insc;
+
     return res;
 }
 
