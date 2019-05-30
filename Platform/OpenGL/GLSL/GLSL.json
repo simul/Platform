@@ -13,7 +13,8 @@
 		"SFX_GLSL"					:"1",
 		"SFX_OPENGL"				:"1"
 	}
-    ,"generateSlots"                : true
+  ,"generateSlots"            : true
+  ,"identicalIOBlocks"        : true
 	,"lineDirectiveFilenames"		: true
 	,"passThroughSamplers"			: false 
 	,"combineTexturesSamplers"		: true

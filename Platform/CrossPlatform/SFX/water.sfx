@@ -22,10 +22,10 @@ uniform Texture2D		showTexture					SIMUL_TEXTURE_REGISTER(0);
 //uniform Texture2D	g_surfaceFoamTexture		SIMUL_TEXTURE_REGISTER(2);		// Foam Surface colour
 
 //Shader input textures
-uniform Texture2D		g_texColour					SIMUL_TEXTURE_REGISTER(0);		// Colour of the render target, used for refraction
-uniform Texture2D		g_texDepth					SIMUL_TEXTURE_REGISTER(1);		// Depth of rendered scene up till now
-uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(2);		// Shore depth for shallow water effects
-uniform Texture2DArray<vec4>	g_ProfileBuffers	: register(t3);					// Profile Buffer Texture
+uniform Texture2D		g_texColour					SIMUL_TEXTURE_REGISTER(6);		// Colour of the render target, used for refraction
+uniform Texture2D		g_texDepth					SIMUL_TEXTURE_REGISTER(7);		// Depth of rendered scene up till now
+uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(8);		// Shore depth for shallow water effects
+uniform Texture2DArray<float4>	g_ProfileBuffers	: register(t3);					// Profile Buffer Texture
 
 //Render target textures to pass from initial pass to final composite
 uniform Texture2D		g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
@@ -33,6 +33,7 @@ uniform Texture2D		g_waterAbsorption			SIMUL_TEXTURE_REGISTER(1);		// Absorption
 uniform Texture2D		g_waterScattering			SIMUL_TEXTURE_REGISTER(2);		// Scattering of the water, 4th value Foam enabled
 uniform Texture2D		g_waterNormals				SIMUL_TEXTURE_REGISTER(3);		// Normals of the water held in seperate texture to allow for multiple instances, 4th value states if there is an underwater surface
 uniform Texture2D		g_waterRefractColour		SIMUL_TEXTURE_REGISTER(4);		// Colour of the refracted underwater surface
+uniform Texture2D		g_waterReflectColour		SIMUL_TEXTURE_REGISTER(5);		// Colour of the reflection on the water surface
 uniform TextureCube		g_texReflectCube			: register(t5);					// A skybox cube texture for reflection
 
 uniform Texture2D		g_contourMap				SIMUL_TEXTURE_REGISTER(0);		// Depth and direction of shoreline, for use in calculating water flow
@@ -416,6 +417,28 @@ shader void CS_TraceFlowRaysSub(uint3 sub_pos : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadID)
 {
+	vec2 profile16Directons[16] =
+	{
+		vec2(1.0f,   0.0f),
+		vec2(0.92f,  0.38f),
+		vec2(0.707f, 0.707f),
+		vec2(0.38f,  0.92f),
+
+		vec2(0.0f,   1.0f),
+		vec2(-0.38f, 0.92f),
+		vec2(-0.707f,0.707f),
+		vec2(-0.92f, 0.38f),
+
+		vec2(-1.0f,  0.0f),
+		vec2(-0.92f,-0.38f),
+		vec2(-0.707f,-0.707f),
+		vec2(-0.38f,-0.92f),
+
+		vec2(0.0f,  -1.0f),
+		vec2(0.38f, -0.92f),
+		vec2(0.707f,-0.707f),
+		vec2(0.92f, -0.38f)
+	};
 	vec3 velocity = g_ProbeVelocity[sub_pos.x].xyz;
 	vec3 position = g_ProbePos[sub_pos.x].yxz;
 	float radius = g_ProbePos[sub_pos.x].w / 2.0;
@@ -610,6 +633,66 @@ shader vec4 PS_GenerateContourMap(posTexVertexOutput In) : SV_Target
 [numthreads(64, 1, 1)]
 shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 {
+
+	float profileOffsets[16] =
+	{
+		0.54f,
+		0.18f,
+		0.61f,
+		0.28f,
+		0.09f,
+		0.71f,
+		0.99f,
+		0.43f,
+		0.11f,
+		0.85f,
+		0.24f,
+		0.67f,
+		0.31f,
+		0.86f,
+		0.13f,
+		0.01f
+	};
+
+	vec2 profile32Directons[32] =
+	{
+		vec2(1.0f,    0.0f),
+		vec2(0.98f,   0.19f),
+		vec2(0.92f,   0.38f),
+		vec2(0.83f,   0.55f),
+		vec2(0.707f,  0.707f),
+		vec2(0.55f,   0.83f),
+		vec2(0.38f,   0.92f),
+		vec2(0.19f,   0.98f),
+
+		vec2(0.0f,    1.0f),
+		vec2(-0.19f,  0.98f),
+		vec2(-0.38f,  0.92f),
+		vec2(-0.55f,  0.83f),
+		vec2(-0.707f, 0.707f),
+		vec2(-0.83f,  0.55f),
+		vec2(-0.92f,  0.38f),
+		vec2(-0.98f,  0.19f),
+
+		vec2(-1.0f,  -0.0f),
+		vec2(-0.98f, -0.19f),
+		vec2(-0.92f, -0.38f),
+		vec2(-0.83f, -0.55f),
+		vec2(-0.707f,-0.707f),
+		vec2(-0.55f, -0.83f),
+		vec2(-0.38f, -0.92f),
+		vec2(-0.19f, -0.98f),
+
+		vec2(0.0f,   -1.0f),
+		vec2(0.19f,  -0.98f),
+		vec2(0.38f,  -0.92f),
+		vec2(0.55f,  -0.83f),
+		vec2(0.707f, -0.707f),
+		vec2(0.83f,  -0.55f),
+		vec2(0.92f,  -0.38f),
+		vec2(0.98f,  -0.19f),
+	};
+
 	uint dirNum = 16;
 	uint N = 2 * dirNum;
 	float dx = dirNum * TAU / N;
@@ -658,6 +741,64 @@ shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 [numthreads(64, 1, 1)]
 shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 {
+	float profileOffsets[16] =
+	{
+		0.54f,
+		0.18f,
+		0.61f,
+		0.28f,
+		0.09f,
+		0.71f,
+		0.99f,
+		0.43f,
+		0.11f,
+		0.85f,
+		0.24f,
+		0.67f,
+		0.31f,
+		0.86f,
+		0.13f,
+		0.01f
+	};
+
+	vec2 profile32Directons[32] =
+	{
+		vec2(1.0f,    0.0f),
+		vec2(0.98f,   0.19f),
+		vec2(0.92f,   0.38f),
+		vec2(0.83f,   0.55f),
+		vec2(0.707f,  0.707f),
+		vec2(0.55f,   0.83f),
+		vec2(0.38f,   0.92f),
+		vec2(0.19f,   0.98f),
+
+		vec2(0.0f,    1.0f),
+		vec2(-0.19f,  0.98f),
+		vec2(-0.38f,  0.92f),
+		vec2(-0.55f,  0.83f),
+		vec2(-0.707f, 0.707f),
+		vec2(-0.83f,  0.55f),
+		vec2(-0.92f,  0.38f),
+		vec2(-0.98f,  0.19f),
+
+		vec2(-1.0f,  -0.0f),
+		vec2(-0.98f, -0.19f),
+		vec2(-0.92f, -0.38f),
+		vec2(-0.83f, -0.55f),
+		vec2(-0.707f,-0.707f),
+		vec2(-0.55f, -0.83f),
+		vec2(-0.38f, -0.92f),
+		vec2(-0.19f, -0.98f),
+
+		vec2(0.0f,   -1.0f),
+		vec2(0.19f,  -0.98f),
+		vec2(0.38f,  -0.92f),
+		vec2(0.55f,  -0.83f),
+		vec2(0.707f, -0.707f),
+		vec2(0.83f,  -0.55f),
+		vec2(0.92f,  -0.38f),
+		vec2(0.98f,  -0.19f),
+	};
 	static uint dirNum = 16;
 	static uint N = 2 * dirNum;
 	static float dx = dirNum * TAU / N;
@@ -672,7 +813,7 @@ shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 	float4 pos_local = float4(vertexPos, 1);
 
 	pos_local = mul(g_buoyancyMat, pos_local);
-	vec2 uv_local = ((pos_local.yx * g_buoyancyUVScale)) + g_buoyancyUVOffset - g_buoyancyCenter.yx * g_buoyancyUVScale;
+	vec2 uv_local = ((pos_local.xy * g_buoyancyUVScale)) + g_buoyancyUVOffset - g_buoyancyCenter.yx * g_buoyancyUVScale;
 	vec3 displacement = vec3(0.0, 0.0, 0.0);
 
 	vec2 windDirection = normalize(vec2(sin(g_buoyancyWindDirection), cos(g_buoyancyWindDirection)));
@@ -686,11 +827,11 @@ shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 
 		vec2 displacementValue = vec2(0.0, 0.0);
 
-		vec2 baseWaveAmp = (g_buoyancyWaveAmplitude * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 2).xy) / 2.0);
+		vec2 baseWaveAmp = (g_buoyancyWaveAmplitude * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0), 2).xy) / 2.0);
 
 		if (g_enableWaveGrid)
 		{
-			vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 2).xy * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
+			vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0), 2).xy * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
 			displacementValue = dx * (waveGridAmp + baseWaveAmp);
 		}
 		else
@@ -717,11 +858,68 @@ shader void  CS_UpdateBuoyancyDepthValues(uint3 sub_pos : SV_DispatchThreadID)
 VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 {
 	VS_OUTPUT Output;
-	
+
+	float profileOffsets[16] =
+	{
+		0.54f,
+		0.18f,
+		0.61f,
+		0.28f,
+		0.09f,
+		0.71f,
+		0.99f,
+		0.43f,
+		0.11f,
+		0.85f,
+		0.24f,
+		0.67f,
+		0.31f,
+		0.86f,
+		0.13f,
+		0.01f
+	};
+
+	vec2 profile32Directons[32] =
+	{
+		vec2(1.0f,    0.0f),
+		vec2(0.98f,   0.19f),
+		vec2(0.92f,   0.38f),
+		vec2(0.83f,   0.55f),
+		vec2(0.707f,  0.707f),
+		vec2(0.55f,   0.83f),
+		vec2(0.38f,   0.92f),
+		vec2(0.19f,   0.98f),
+
+		vec2(0.0f,    1.0f),
+		vec2(-0.19f,  0.98f),
+		vec2(-0.38f,  0.92f),
+		vec2(-0.55f,  0.83f),
+		vec2(-0.707f, 0.707f),
+		vec2(-0.83f,  0.55f),
+		vec2(-0.92f,  0.38f),
+		vec2(-0.98f,  0.19f),
+
+		vec2(-1.0f,  -0.0f),
+		vec2(-0.98f, -0.19f),
+		vec2(-0.92f, -0.38f),
+		vec2(-0.83f, -0.55f),
+		vec2(-0.707f,-0.707f),
+		vec2(-0.55f, -0.83f),
+		vec2(-0.38f, -0.92f),
+		vec2(-0.19f, -0.98f),
+
+		vec2(0.0f,   -1.0f),
+		vec2(0.19f,  -0.98f),
+		vec2(0.38f,  -0.92f),
+		vec2(0.55f,  -0.83f),
+		vec2(0.707f, -0.707f),
+		vec2(0.83f,  -0.55f),
+		vec2(0.92f,  -0.38f),
+		vec2(0.98f,  -0.19f),
+	};
+
 	vec3 vPos = vec3(0.0, 0.0, 0.0);
 	vec2 cameraCenter = g_LocalEye.xy;
-	//cameraCenter.x = g_LocalEye.x;
-	//cameraCenter.y = g_LocalEye.y;
 	Output.vecColour = vec4(0.0, 1.0, 1.0, 1.0);
 
 	float layerQuadSize;
@@ -1353,6 +1551,64 @@ shader VS_OUTPUT VS_BoundlessWaterSurfNoShoreWaveGrid(idOnly IN)
 //-----------------------------------------------------------------------------
 shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 {
+	float profileOffsets[16] =
+	{
+		0.54f,
+		0.18f,
+		0.61f,
+		0.28f,
+		0.09f,
+		0.71f,
+		0.99f,
+		0.43f,
+		0.11f,
+		0.85f,
+		0.24f,
+		0.67f,
+		0.31f,
+		0.86f,
+		0.13f,
+		0.01f
+	};
+
+	vec2 profile32Directons[32] =
+	{
+		vec2(1.0f,    0.0f),
+		vec2(0.98f,   0.19f),
+		vec2(0.92f,   0.38f),
+		vec2(0.83f,   0.55f),
+		vec2(0.707f,  0.707f),
+		vec2(0.55f,   0.83f),
+		vec2(0.38f,   0.92f),
+		vec2(0.19f,   0.98f),
+
+		vec2(0.0f,    1.0f),
+		vec2(-0.19f,  0.98f),
+		vec2(-0.38f,  0.92f),
+		vec2(-0.55f,  0.83f),
+		vec2(-0.707f, 0.707f),
+		vec2(-0.83f,  0.55f),
+		vec2(-0.92f,  0.38f),
+		vec2(-0.98f,  0.19f),
+
+		vec2(-1.0f,  -0.0f),
+		vec2(-0.98f, -0.19f),
+		vec2(-0.92f, -0.38f),
+		vec2(-0.83f, -0.55f),
+		vec2(-0.707f,-0.707f),
+		vec2(-0.55f, -0.83f),
+		vec2(-0.38f, -0.92f),
+		vec2(-0.19f, -0.98f),
+
+		vec2(0.0f,   -1.0f),
+		vec2(0.19f,  -0.98f),
+		vec2(0.38f,  -0.92f),
+		vec2(0.55f,  -0.83f),
+		vec2(0.707f, -0.707f),
+		vec2(0.83f,  -0.55f),
+		vec2(0.92f,  -0.38f),
+		vec2(0.98f,  -0.19f),
+	};
 	VS_OUTPUT Output;
 
 	uint vertexNo = IN.vertex_id;
@@ -1540,6 +1796,65 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 //-----------------------------------------------------------------------------
 PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFoam, bool enableRefraction, bool waveGrid)
 {
+	float profileOffsets[16] =
+	{
+		0.54f,
+		0.18f,
+		0.61f,
+		0.28f,
+		0.09f,
+		0.71f,
+		0.99f,
+		0.43f,
+		0.11f,
+		0.85f,
+		0.24f,
+		0.67f,
+		0.31f,
+		0.86f,
+		0.13f,
+		0.01f
+	};
+
+	vec2 profile32Directons[32] =
+	{
+		vec2(1.0f,    0.0f),
+		vec2(0.98f,   0.19f),
+		vec2(0.92f,   0.38f),
+		vec2(0.83f,   0.55f),
+		vec2(0.707f,  0.707f),
+		vec2(0.55f,   0.83f),
+		vec2(0.38f,   0.92f),
+		vec2(0.19f,   0.98f),
+
+		vec2(0.0f,    1.0f),
+		vec2(-0.19f,  0.98f),
+		vec2(-0.38f,  0.92f),
+		vec2(-0.55f,  0.83f),
+		vec2(-0.707f, 0.707f),
+		vec2(-0.83f,  0.55f),
+		vec2(-0.92f,  0.38f),
+		vec2(-0.98f,  0.19f),
+
+		vec2(-1.0f,  -0.0f),
+		vec2(-0.98f, -0.19f),
+		vec2(-0.92f, -0.38f),
+		vec2(-0.83f, -0.55f),
+		vec2(-0.707f,-0.707f),
+		vec2(-0.55f, -0.83f),
+		vec2(-0.38f, -0.92f),
+		vec2(-0.19f, -0.98f),
+
+		vec2(0.0f,   -1.0f),
+		vec2(0.19f,  -0.98f),
+		vec2(0.38f,  -0.92f),
+		vec2(0.55f,  -0.83f),
+		vec2(0.707f, -0.707f),
+		vec2(0.83f,  -0.55f),
+		vec2(0.92f,  -0.38f),
+		vec2(0.98f,  -0.19f),
+	};
+
 	PS_WATER_OUTPUTS Output;
 	//Calculate depth
 	vec3 eye_vec = g_LocalEye - In.LocalPos;
@@ -1863,6 +2178,58 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 }
 
 //-----------------------------------------------------------------------------
+// Name: PS_WaterSSR
+// Type: Pixel shader
+// Desc: Calculate the reflections on the surface of the water.
+//-----------------------------------------------------------------------------
+shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
+{
+	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
+
+	float4 Output;
+
+	static int stepNo = 10;
+	static float stepLength = 1.f;
+
+	//if (depthInput.y <= 0.0f || depthInput.x < 0.0f)
+		//discard;
+
+	float4 normalsInput = g_waterNormals.Sample(clampSamplerState, In.texCoords);
+
+	vec4 clip = vec4((In.texCoords.x * 2.f) - 1.f, ((1.f - In.texCoords.y) * 2.f) - 1.f, 1.f, 1.f);
+	vec4 view = mul(g_matInvViewProj, clip);
+	vec3 eye_dir = normalize(view.xyz / view.w);
+
+	vec3 surfacePos = g_LocalEye + (eye_dir * depthInput.w);
+	vec4 rayPos = vec4(surfacePos, 0);
+	vec4 samplePos;
+
+	vec3 reflectVec = normalize(reflect(eye_dir, normalsInput.xyz)) * stepLength;
+	vec2 TexCoord;
+
+	for (int i = 0; i < stepNo; i++)
+	{
+		rayPos += vec4(reflectVec, 0.0);
+		samplePos = mul(g_matWorldViewProj, rayPos);
+		TexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0);
+		float depthSample = g_waterDepth.Sample(clampSamplerState, TexCoord).x;
+		if (samplePos.z - depthSample < 0)
+		{
+			Output = g_texColour.Sample(clampSamplerState, TexCoord) / 50.0;
+			break;
+		}
+	}
+
+	//vec3 refl = texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0); //g_texReflectCube.Sample(g_samplerPerlin, normalize(reflect_vec.yxz));//
+	float reflectFresnel = fresnel(normalize(reflectVec), normalsInput.xyz, 1.f, 1.33f);
+	Output *= reflectFresnel;
+	
+	Output = float4(In.texCoords,0.0, 1.0);// g_texColour.Sample(clampSamplerState, In.texCoords) / 50.0;
+	
+	return Output;
+}
+
+//-----------------------------------------------------------------------------
 // Name: PS_WaterSurfFinal
 // Type: Pixel shader
 // Desc: Composite final water output.
@@ -1870,11 +2237,10 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 {
 	vec2 TexCoords = In.texCoords;
-	TexCoords = lerp(In.texCoords,vec2(In.texCoords.x / 2.0, In.texCoords.y) + vec2(0.5, 0), g_vrRightEye);
+	if(g_vrRightEye != 0.0)
+		TexCoords = g_vrRightEye * (vec2(In.texCoords.x / 2.0, In.texCoords.y) + vec2(0.5, 0));
 
 	float4 depthInput = g_waterDepth.Sample(clampSamplerState, TexCoords);
-	
-	//return depthInput;
 
 	//Discard occluded fragments
 	if (depthInput.y <= 0.0)
@@ -2038,7 +2404,7 @@ shader float4 PS_WaterSurfFinal(posTexVertexOutput In) : SV_Target
 
 	float sunScatter = saturate(dot(refract_vec, sun_dir));
 
-	if (sun_dir.z == 0)
+	if (sun_dir.z <= 0)
 		sunScatter = 0.0;
 
 	float eye_depth = abs(depthInput.z);
@@ -2222,6 +2588,19 @@ technique water_final_pass
 		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_WaterSurfFinal()));
+	}
+}
+
+technique water_reflection_pass
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_WaterSSR()));
 	}
 }
 

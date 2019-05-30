@@ -38,6 +38,7 @@
 #endif
 
 //Random offset values for profile buffers to remove tiling and aliasing
+/*
 float profileOffsets[16] =
 {
 	0.54f,
@@ -57,8 +58,8 @@ float profileOffsets[16] =
 	0.13f,
 	0.01f
 };
-
-
+*/
+/*
 vec2 profile16Directons[16] = 
 {
 	vec2(1.0f,   0.0f),
@@ -81,7 +82,8 @@ vec2 profile16Directons[16] =
 	vec2(0.707f,-0.707f),
 	vec2(0.92f, -0.38f)
 };
-
+*/
+/*
 vec2 profile32Directons[32] =
 {
 	vec2(1.0f,    0.0f),
@@ -120,7 +122,7 @@ vec2 profile32Directons[32] =
 	vec2(0.92f,  -0.38f),
 	vec2(0.98f,  -0.19f),
 };
-
+*/
 struct TwoColourCompositeOutput
 {
 	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
@@ -132,7 +134,7 @@ struct VS_OUTPUT
 	vec4 Position : SV_POSITION;
 	vec2 texCoords : TEXCOORD0;
 	vec3 LocalPos : TEXCOORD1;
-	vec4 vecColour : TEXCOORD2;
+	vec4 vecColour : COLOR0;
 	vec4 SurePosition : TEXCOORD3;
 };
 
