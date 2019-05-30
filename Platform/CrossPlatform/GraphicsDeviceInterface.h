@@ -14,8 +14,7 @@ typedef void* cp_hwnd;
 #else
 typedef void* cp_hwnd;
 #endif
-
-#include "DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderDelegate.h"
 
 namespace simul
 {
