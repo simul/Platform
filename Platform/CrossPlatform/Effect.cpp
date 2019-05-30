@@ -211,7 +211,7 @@ EffectPass::~EffectPass()
 	for(int i=0;i<crossplatform::OUTPUT_FORMAT_COUNT;i++)
 	{
 		if(pixelShaders[i])
-			pixelShaders[i]->Release();
+			pixelShaders[i]=nullptr;
 	}
 }
 EffectTechniqueGroup::~EffectTechniqueGroup()
@@ -253,10 +253,10 @@ void Effect::InvalidateDeviceObjects()
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
-	:renderPlatform(r)
-	,platform_technique(NULL)
-	, effect(e)
+	:platform_technique(NULL)
 	,should_fence_outputs(true)
+	, renderPlatform(r)
+	, effect(e)
 {
 }
 
@@ -1628,7 +1628,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	SIMUL_ASSERT(level==OUTSIDE);
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
-	if (!bin_ptr)
+	if (bin_ptr)
 		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(bin_ptr);
 	PostLoad();
 }
