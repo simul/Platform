@@ -14,7 +14,7 @@ typedef void* cp_hwnd;
 #else
 typedef void* cp_hwnd;
 #endif
-
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/RenderDelegate.h"
 
 namespace simul

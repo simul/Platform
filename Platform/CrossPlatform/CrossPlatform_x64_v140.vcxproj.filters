@@ -109,6 +109,9 @@
     <ClInclude Include="DisplaySurfaceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RenderDelegate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

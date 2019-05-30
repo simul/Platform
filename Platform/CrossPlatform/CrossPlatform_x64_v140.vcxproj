@@ -183,6 +183,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="MouseHandler.h" />
+    <ClInclude Include="RenderDelegate.h" />
     <ClInclude Include="RenderDelegater.h" />
     <ClInclude Include="SphericalHarmonics.h" />
     <ClInclude Include="View.h" />

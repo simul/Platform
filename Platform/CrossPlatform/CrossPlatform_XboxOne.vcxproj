@@ -65,6 +65,7 @@
     <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
+    <ClInclude Include="RenderDelegate.h" />
     <ClInclude Include="RenderDelegater.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />

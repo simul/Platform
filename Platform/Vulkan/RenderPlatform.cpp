@@ -164,7 +164,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 		int w = dest->width;
 		int l = dest->length;
 		int d = dest->depth;
-		for (uint32_t j = 0; j < dest->mips; j++)
+		for (int j = 0; j < dest->mips; j++)
 		{
 			vk::ImageCopy copyRegion = {};
 			copyRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;

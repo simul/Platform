@@ -131,7 +131,7 @@ void DisplaySurface::GetQueues()
 {
 	auto vkGpu=deviceManager->GetGPU();
 	const std::vector<vk::QueueFamilyProperties> &queue_props=deviceManager->GetQueueProperties();
-	int queue_family_count=queue_props.size();
+	uint32_t queue_family_count=queue_props.size();
 	// Iterate over each queue to learn whether it supports presenting:
 	std::vector<vk::Bool32> supportsPresent(queue_family_count);
 	for (uint32_t i = 0; i < queue_family_count; i++)

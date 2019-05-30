@@ -199,5 +199,8 @@
     </ClInclude>
     <ClInclude Include="DisplaySurface.h" />
     <ClInclude Include="DisplaySurfaceManager.h" />
+    <ClInclude Include="RenderDelegate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
