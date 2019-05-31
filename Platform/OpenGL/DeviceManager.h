@@ -11,6 +11,10 @@ typedef struct GLFWwindow GLFWwindow;
 
 namespace simul
 {
+	namespace crossplatform
+	{
+		class RenderPlatform;
+	}
 	namespace opengl
 	{
 		class RenderPlatform;

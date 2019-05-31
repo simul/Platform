@@ -275,7 +275,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 	if (mTotalSize <= 0)
 	{
-        SIMUL_CERR << "The size of a Structured Buffer can not be 0 \n";
+        SIMUL_INTERNAL_CERR << "The size of a Structured Buffer can not be 0 \n";
         return;
 	}
 
@@ -461,7 +461,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
     HRESULT hr=mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
 	if(hr!=S_OK)
 	{
-		SIMUL_CERR<<"Failed to map PlatformStructuredBuffer for reading. "<<std::endl;
+		SIMUL_INTERNAL_CERR<<"Failed to map PlatformStructuredBuffer for reading. "<<std::endl;
 		SIMUL_BREAK_ONCE("Failed here");
 		return nullptr;
 	}
@@ -606,7 +606,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView
     {
         if (mCurApplies >= mMaxApplyMod)
         {
-            SIMUL_CERR << "Reached the maximum apply for this SB! \n";
+            SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
         }
         else
         {
@@ -634,7 +634,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessVie
     {
         if (mCurApplies >= mMaxApplyMod)
         {
-            SIMUL_CERR << "Reached the maximum apply for this SB! \n";
+            SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
         }
         else
         {
@@ -695,7 +695,7 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
 	{
-		SIMUL_CERR << "Geometry shaders are not implemented in Dx12" << std::endl;
+		SIMUL_INTERNAL_CERR << "Geometry shaders are not implemented in Dx12" << std::endl;
 	}
 }
 
@@ -845,7 +845,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 						if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
 							break;
 
-						SIMUL_CERR << "Error message: " << msg << std::endl;
+						SIMUL_INTERNAL_CERR << "Error message: " << msg << std::endl;
 						{
 							break;
 						}
@@ -1204,7 +1204,7 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
         }
 		if (!samp)
 		{
-			SIMUL_CERR << "Resource binding error at: " << mTechName << ". Sampler slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Sampler slot " << slot << " is invalid." << std::endl;
             srcHandles[slot] = nullSampler;
             continue;
 		}
@@ -1251,7 +1251,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 		auto cb	 = cBuffers[slot];
 		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
 		{
-			SIMUL_CERR << "Resource binding error at: " << mTechName << ". Constant buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Constant buffer slot " << slot << " is invalid." << std::endl;
             mCbSrcHandles[slot] = nullCbv;
             continue;
 		}
@@ -1325,12 +1325,12 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		int slot = sbResourceSlots[i];
 		if (mSrvUsedSlotsArray[slot])
 		{
-			SIMUL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a texture. \n";
+			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a texture. \n";
 		}
 		auto sb = (dx12::PlatformStructuredBuffer*)sBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_CERR << "Resource binding error at: " << mTechName << ". Structured buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Structured buffer slot " << slot << " is invalid." << std::endl;
             mSrvSrcHandles[slot] = nullSrv;
             continue;
 		}
@@ -1403,12 +1403,12 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
 		int slot = rwSbResourceSlots[i];
 		if (mUavUsedSlotsArray[slot])
 		{
-			SIMUL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a RWTexture. \n";
+			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a RWTexture. \n";
 		}
 		auto sb = (dx12::PlatformStructuredBuffer*)sBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_CERR << "Resource binding error at: " << mTechName << ". RWStructured buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". RWStructured buffer slot " << slot << " is invalid." << std::endl;
             mUavSrcHandles[slot] = nullUav;
             continue;
 		}
@@ -1450,7 +1450,7 @@ void EffectPass::CheckSlots(int requiredSlots, int usedSlots, int numSlots, cons
             unsigned int testSlot = 1 << i;
             if (testSlot & missingSlots)
             {
-                SIMUL_CERR << "Resource binding error at: " << mTechName << ". " << type << " for slot:" << i << " was not set!\n";
+                SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". " << type << " for slot:" << i << " was not set!\n";
             }
         }
     }
@@ -1469,7 +1469,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
     dx12::Shader *c     = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
     if (!c)
     {
-        SIMUL_CERR << "The pass " << mTechName <<  " does not have valid shaders!!! \n";
+        SIMUL_INTERNAL_CERR << "The pass " << mTechName <<  " does not have valid shaders!!! \n";
         return;
     }
 
@@ -1497,7 +1497,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     dx12::Shader* p     = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
     if (!v && !p)
     {
-        SIMUL_CERR << "The pass " << mTechName << " does not have valid shaders!!! \n";
+        SIMUL_INTERNAL_CERR << "The pass " << mTechName << " does not have valid shaders!!! \n";
         return (size_t)-1;
     }
 
@@ -1561,7 +1561,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
         {
             if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i]))
             {
-                SIMUL_CERR << "Current applied render target idx(" << i << ")" <<  " does not match the format specified by the effect (" << mTechName << "). \n";
+                SIMUL_INTERNAL_CERR << "Current applied render target idx(" << i << ")" <<  " does not match the format specified by the effect (" << mTechName << "). \n";
             }
         }
         rthash = finalRt->GetHash();
