@@ -235,6 +235,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	{
 		int slot=constantBufferResourceSlots[i];
 		crossplatform::ConstantBufferBase *cb=cs->applyBuffers[slot];
+		if (!cb)
+			continue;
 		vulkan::PlatformConstantBuffer *pcb=(vulkan::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		vk::WriteDescriptorSet &write=writes[b];
 		write.setDstSet(descriptorSet);
