@@ -274,7 +274,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		return;
 	SIMUL_ASSERT(loadedTextures.size()!=0)
 
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	//vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
 	SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor,currentImageLayout,
@@ -354,7 +354,7 @@ void Texture::SplitLayouts()
 
 void Texture::AssumeLayout(vk::ImageLayout layout)
 {
-	int totalNum = cubemap ? 6 * arraySize : arraySize;
+//	int totalNum = cubemap ? 6 * arraySize : arraySize;
 	for(auto &i:mLayerMipLayouts)
 	{
 		for(auto &j:i)
