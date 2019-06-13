@@ -69,6 +69,9 @@ namespace simul
 			vk::ShaderModule prepare_shader_module(const uint32_t *, size_t);
 			vk::ShaderModule prepare_vs();
 			vk::ShaderModule prepare_fs();
+			vk::Instance *GetVulkanInstance();
+			vk::Device *GetVulkanDevice();
+			vk::PhysicalDevice* GetGPU();
         };
     }
 }

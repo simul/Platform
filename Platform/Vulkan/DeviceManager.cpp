@@ -69,8 +69,7 @@ public:
 };
 
 DeviceManager::DeviceManager()
-	://renderPlatformVulkan(NULL)
-	enabled_extension_count(0)
+	:enabled_extension_count(0)
 	,enabled_layer_count(0)
 	,device_initialized(false)
 {
@@ -398,7 +397,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		SIMUL_BREAK(
 			"vkEnumeratePhysicalDevices reported zero accessible devices.\n\n"
 			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n",
+			"Please look at the Getting Started guide for additional information.\n"
 			"vkEnumeratePhysicalDevices Failure");
 	}
 

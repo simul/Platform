@@ -137,6 +137,9 @@ namespace simul
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
+			virtual RenderPlatformType GetType() const {
+				return RenderPlatformType::Unknown;
+			}
 			virtual const char *GetSfxConfigFilename() const 
 			{
 				return "";

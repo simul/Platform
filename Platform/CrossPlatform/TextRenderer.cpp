@@ -1,8 +1,9 @@
+#define NOMINMAX
 #include "TextRenderer.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
-
+#include <algorithm>
 using namespace simul;
 using namespace crossplatform;
 
@@ -186,7 +187,7 @@ void TextRenderer::Recompile()
 	_fontChars		=effect->GetShaderResource("fontChars");
 }
 
-void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
+void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
 	if (recompile)
 		Recompile();
@@ -203,19 +204,28 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	constantBuffer.background	=vec4(bck);
 	// Calc width and draw background:
 	int w=0;
+	int maxw = 0;
+	int lines = 1;
 	for(int i=0;i<70;i++)
 	{
-		if(txt[i]==0||txt[i]=='\n')
+		if(txt[i]==0)
 			break;
+		if (txt[i] == '\n')
+		{
+			w = 0;
+			lines++;
+			continue;
+		}
 		int idx=(int)txt[i]-32;
 		if(idx<0||idx>100)
 			continue;
 		const FontIndex &f = fontIndices[idx];
 		w += f.pixel_width*int(fontScale) + 1;
+		maxw = std::max(w, maxw);
 	}
 	float ht=fontScale*20.0f;
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
-	constantBuffer.background_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht/screen_height);
+	constantBuffer.background_rect		=vec4(2.0f*x0/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht*lines/screen_height);
 	if(mirrorY)
 	{
 		constantBuffer.background_rect.y=-constantBuffer.background_rect.y;
@@ -232,11 +242,18 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	int n=0;
 	static float u = 1024.f / font_texture->width;
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
+	float x = x0;
 	if(charList)
 	for(int i=0;i<70;i++)
 	{
-		if(txt[i]==0||txt[i]=='\n')
+		if(txt[i]==0)
 			break;
+		if (txt[i] == '\n')
+		{
+			x = x0;
+			constantBuffer.background_rect.y += ht;
+			continue;
+		}
 		int idx=(int)txt[i]-32;
 		if(idx<0||idx>94)
 			continue;

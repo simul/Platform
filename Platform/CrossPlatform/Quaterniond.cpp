@@ -32,9 +32,9 @@ Quaterniond::Quaterniond(const Quaterniond &q)
 	z=q.z;
 }
 
-Quaterniond::Quaterniond(double ss,const vec3d &vv)
+Quaterniond::Quaterniond(double angle,const vec3d &vv)
 {
-	Define(ss,vv);
+	Define(angle,vv);
 }
 
 Quaterniond::Quaterniond(const double *q)
@@ -182,10 +182,10 @@ void Quaterniond::Define(const double ss,const double xx,const double yy,const d
 Quaterniond Quaterniond::operator*(const Quaterniond &q) const
 {
 	Quaterniond r;
-    r.s= s * q.s - x * q.x - y * q.y - z * q.z;
-    r.x= s * q.x + x * q.s + y * q.z - z * q.y;
-    r.y= s * q.y + y * q.s + z * q.x - x * q.z;
-    r.z= s * q.z + z * q.s + x * q.y - y * q.x;
+    r.s= s*q.s - x*q.x - y*q.y - z*q.z;
+    r.x= s*q.x + x*q.s + y*q.z - z*q.y;
+    r.y= s*q.y + y*q.s + z*q.x - x*q.z;
+    r.z= s*q.z + z*q.s + x*q.y - y*q.x;
 	return r;
 }
 
@@ -196,7 +196,8 @@ Quaterniond Quaterniond::operator/(const Quaterniond &q) const
 	iq.y*=-1.f;
 	iq.z*=-1.f;
 	return (*this)*iq;
-}          
+}
+
 Quaterniond& Quaterniond::operator/=(const Quaterniond &q)
 {
 #ifndef SIMD

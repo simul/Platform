@@ -36,6 +36,10 @@ namespace simul
 			vk::Instance *AsVulkanInstance();
 			vk::PhysicalDevice *GetVulkanGPU();
 			const char* GetName() const override;
+			crossplatform::RenderPlatformType GetType() const override
+			{
+				return crossplatform::RenderPlatformType::Vulkan;
+			}
 			virtual const char *GetSfxConfigFilename() const override
 			{
 				return "GLSL/GLSL.json";
