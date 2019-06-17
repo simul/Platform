@@ -351,8 +351,10 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN, bool reverseDepth)
 		discard;
 	}
 
+	float environmentBrightness = (IN.light.x + IN.light.y + IN.light.z)/3;
 	vec2 pos = IN.texCoords.xy;
-	vec3 result = IN.betaMie*lightColour.rgb + IN.light;
+	vec3 result = IN.betaMie*lightColour.rgb + environmentBrightness * vec3(1, 1, 1);
+	//vec3 result = IN.betaMie*lightColour.rgb + IN.light;
 	float radius1 = pow(length(pos.xy), .5);
 	float opacity = IN.strength*saturate(1.0 - 2.0*radius1);
 
@@ -605,8 +607,8 @@ vec4 PSRainParticles(ParticleGeometryOutput IN, bool reverseDepth, vec3 light)
 
 	float refractFactor = 1.0 - totalLossDueToReflection;
 	float reflectFactor = totalLossDueToReflection;
-	vec3 refractLight = refractFactor * cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(finalLightLookUp, 0)).xyz,1).rgb;
-	vec3 reflectLight = reflectFactor * cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(IN.dir.xyz	 , 0)).xyz, 1).rgb;
+	vec3 refractLight = refractFactor * cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(finalLightLookUp, 0)).xyz, 0).rgb;
+	vec3 reflectLight = reflectFactor * cubeTexture.SampleLevel(wrapSamplerState, mul(cubemapTransform, vec4(IN.dir.xyz, 0)).xyz, 0).rgb;
 
 	vec3 lightPS = reflectLight + refractLight;
 
