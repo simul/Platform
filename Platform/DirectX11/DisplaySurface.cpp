@@ -133,6 +133,13 @@ void DisplaySurface::InitSwapChain()
     SAFE_RELEASE(mBackBufferRT);
 	if(mDeviceRef)
 	    result = mDeviceRef->CreateRenderTargetView(mBackBuffer, NULL, &mBackBufferRT);
+
+	viewport.w = swapChainDesc.BufferDesc.Width;
+	viewport.h = swapChainDesc.BufferDesc.Height;
+	viewport.x = 0;
+	viewport.y = 0;
+	if(renderer)
+		renderer->ResizeView(mViewId, viewport.w, viewport.h);
     SIMUL_ASSERT(result == S_OK);
 }
 

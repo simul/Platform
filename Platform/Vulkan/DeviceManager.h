@@ -12,6 +12,10 @@
 
 namespace simul
 {
+	namespace crossplatform
+	{
+		class RenderPlatform;
+	}
 	namespace vulkan
 	{
 		class RenderPlatform;

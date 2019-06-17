@@ -3,7 +3,6 @@
 #include "BaseRenderer.h"
 #include "Texture.h"
 #include "Export.h"
-#include <functional>
 #include <set>
 #include <stack>
 #include <unordered_map>
@@ -267,13 +266,6 @@ namespace simul
 			);
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
 		};
-
-		struct DeviceContext;
-	
-		// A simple render delegate, it will usually be a function partially bound with std::bind.
-		typedef std::function<void(crossplatform::DeviceContext&)> RenderDelegate;
-		typedef std::function<void(void*)> StartupDeviceDelegate;
-		typedef std::function<void()> ShutdownDeviceDelegate;
 	}
 }
 

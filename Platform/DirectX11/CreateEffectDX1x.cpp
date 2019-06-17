@@ -164,7 +164,7 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 	{
 		// SHould have one ref:
 		int numrefs=res->Release();
-		std::cout << numrefs << std::endl;
+	//	std::cout << numrefs << std::endl;
 	}
 #endif
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);

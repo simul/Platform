@@ -48,6 +48,51 @@ DisplaySurface::~DisplaySurface()
 {
 	InvalidateDeviceObjects();
 }
+vk::Instance * DisplaySurface::GetVulkanInstance()
+{
+	auto rv = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Instance *inst = nullptr;
+	if (deviceManager)
+	{
+		inst = deviceManager->GetVulkanInstance();
+	}
+	else if (rv)
+	{
+		inst = rv->AsVulkanInstance();
+	}
+	return inst;
+}
+
+vk::Device *DisplaySurface::GetVulkanDevice()
+{
+	auto rv = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Device *dev = nullptr;
+	if (deviceManager)
+	{
+		dev = deviceManager->GetVulkanDevice();
+	}
+	else if (rv)
+	{
+		dev = rv->AsVulkanDevice();
+	}
+	return dev;
+}
+
+vk::PhysicalDevice* DisplaySurface::GetGPU()
+{
+	auto rv = (vulkan::RenderPlatform *)renderPlatform;
+	vk::PhysicalDevice *gpu = nullptr;
+	if (deviceManager)
+	{
+		gpu = deviceManager->GetGPU();
+	}
+	else if (rv)
+	{
+		gpu = rv->GetVulkanGPU();
+	}
+	return gpu;
+}
+
 
 void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* r, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)
 {
@@ -72,9 +117,12 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		.setHinstance(hInstance)
 		.setHwnd(mHwnd);
 	auto rv = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Instance *inst = deviceManager->GetVulkanInstance();
-	auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	vk::Instance *inst = GetVulkanInstance();
+	if (inst)
+	{
+		auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
 
 #endif
 	Resize();
@@ -85,7 +133,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 {
 	if(!hDC)
 		return;
-	vk::Device *vulkanDevice=deviceManager->GetVulkanDevice();
+	vk::Device *vulkanDevice=GetVulkanDevice();
 	if(vulkanDevice)
 	{
 		vulkanDevice->waitIdle();
@@ -129,9 +177,11 @@ void DisplaySurface::InvalidateDeviceObjects()
 
 void DisplaySurface::GetQueues()
 {
-	auto vkGpu=deviceManager->GetGPU();
+	auto vkGpu=GetGPU();
+	if (!deviceManager)
+		return;
 	const std::vector<vk::QueueFamilyProperties> &queue_props=deviceManager->GetQueueProperties();
-	int queue_family_count=queue_props.size();
+	uint32_t queue_family_count=queue_props.size();
 	// Iterate over each queue to learn whether it supports presenting:
 	std::vector<vk::Bool32> supportsPresent(queue_family_count);
 	for (uint32_t i = 0; i < queue_family_count; i++)
@@ -185,7 +235,7 @@ void DisplaySurface::GetQueues()
 
     bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
 	
-	vk::Device *vulkanDevice=deviceManager->GetVulkanDevice();
+	vk::Device *vulkanDevice=GetVulkanDevice();
 	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
     if (!separate_present_queue) {
         present_queue = graphics_queue;
@@ -229,7 +279,7 @@ void DisplaySurface::InitSwapChain()
 
 	// Initialize the swap chain description.
 
-	std::vector<vk::SurfaceFormatKHR> surfFormats = simul::vulkan::deviceManager->GetSurfaceFormats(&mSurface);
+	std::vector<vk::SurfaceFormatKHR> surfFormats = deviceManager->GetSurfaceFormats(&mSurface);
 
 	// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
 	// the mSurface has no preferred format.  Otherwise, at least one
@@ -251,7 +301,7 @@ void DisplaySurface::InitSwapChain()
 
 	// Check the mSurface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
-	vk::PhysicalDevice *gpu=simul::vulkan::deviceManager->GetGPU();
+	vk::PhysicalDevice *gpu=GetGPU();
 	auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
@@ -516,7 +566,7 @@ void DisplaySurface::CreateFramebuffers()
 	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
 	{
 		attachments[0] = swapchain_image_resources[i].view;
-		auto const result = deviceManager->GetVulkanDevice()->createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
+		auto const result = GetVulkanDevice()->createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 }
@@ -532,12 +582,12 @@ void DisplaySurface::CreateDefaultLayout()
 
 	auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(1).setPBindings(layout_bindings);
 
-	auto result = deviceManager->GetVulkanDevice()->createDescriptorSetLayout(&descriptor_layout, nullptr, &desc_layout);
+	auto result = GetVulkanDevice()->createDescriptorSetLayout(&descriptor_layout, nullptr, &desc_layout);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(&desc_layout);
 
-	result = deviceManager->GetVulkanDevice()->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipeline_layout);
+	result = GetVulkanDevice()->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipeline_layout);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 }
 
@@ -547,7 +597,7 @@ vk::ShaderModule DisplaySurface::prepare_shader_module(const uint32_t *code, siz
 	const auto moduleCreateInfo = vk::ShaderModuleCreateInfo().setCodeSize(size).setPCode(code);
 
 	vk::ShaderModule module;
-	auto result = deviceManager->GetVulkanDevice()->createShaderModule(&moduleCreateInfo, nullptr, &module);
+	auto result = GetVulkanDevice()->createShaderModule(&moduleCreateInfo, nullptr, &module);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	return module;
@@ -666,7 +716,7 @@ void DisplaySurface::CreateDefaultPipeline()
 {
 	CreateDefaultLayout();
 	vk::PipelineCacheCreateInfo const pipelineCacheInfo;
-	auto result = deviceManager->GetVulkanDevice()->createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
+	auto result = GetVulkanDevice()->createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	vk::PipelineShaderStageCreateInfo const shaderStageInfo[2] = {
@@ -728,11 +778,6 @@ void DisplaySurface::CreateDefaultPipeline()
 		.setLayout(pipeline_layout)
 		.setRenderPass(render_pass);
 
-	//result = deviceManager->GetVulkanDevice()->createGraphicsPipelines(pipelineCache, 1, &pipelineInfo, nullptr, &default_pipeline);
-	//SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-	//device.destroyShaderModule(frag_shader_module, nullptr);
-	//device.destroyShaderModule(vert_shader_module, nullptr);
 }
 
 

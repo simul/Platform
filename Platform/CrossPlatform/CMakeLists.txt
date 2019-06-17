@@ -16,13 +16,9 @@ file(GLOB HEADERS
 
 # Setup and build the static library.
 add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
-set_target_properties(SimulCrossPlatform_MT PROPERTIES PREFIX "" )
-set_target_properties(SimulCrossPlatform_MT PROPERTIES FOLDER Static)
 
 # Setup and build the dynamic library.
-add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
-target_compile_definitions(SimulCrossPlatform_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_CROSSPLATFORM_DLL=1)
-set_target_properties(SimulCrossPlatform_MD PROPERTIES PREFIX "" )
-set_target_properties(SimulCrossPlatform_MD PROPERTIES FOLDER Dynamic)
-target_link_libraries(SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD)
+add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${CMAKE}
+	DEFINITIONS SIMUL_DYNAMIC_LINK=1 SIMUL_CROSSPLATFORM_DLL=1
+	LINK SimulGeometry_MD SimulMath_MD SimulBase_MD)
 

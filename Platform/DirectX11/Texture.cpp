@@ -485,7 +485,10 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 	if(t)
 	{
 		int refct=t->AddRef();
-		std::cout << refct << std::endl;
+		if (simul::base::SimulInternalChecks)
+		{
+			SIMUL_COUT << refct << std::endl;
+		}
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;
 		if(t->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)

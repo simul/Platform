@@ -133,7 +133,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	}
 	int w= loadedTextures[0].x;
 	int l= loadedTextures[0].y;
-	int num= loadedTextures.size();
+	size_t num= loadedTextures.size();
 	m=std::min(16,std::max(1,std::min(m,1 + int(floor(log2(w >= l ? w : l))))));
 	if(num<=1)
 		ensureTexture2DSizeAndFormat(r,w,l,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
@@ -274,7 +274,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		return;
 	SIMUL_ASSERT(loadedTextures.size()!=0)
 
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	//vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
 	SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor,currentImageLayout,
@@ -354,7 +354,7 @@ void Texture::SplitLayouts()
 
 void Texture::AssumeLayout(vk::ImageLayout layout)
 {
-	int totalNum = cubemap ? 6 * arraySize : arraySize;
+//	int totalNum = cubemap ? 6 * arraySize : arraySize;
 	for(auto &i:mLayerMipLayouts)
 	{
 		for(auto &j:i)
