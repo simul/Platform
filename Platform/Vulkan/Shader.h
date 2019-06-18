@@ -21,7 +21,7 @@ namespace simul
 			void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
             vk::ShaderModule mShader;
         private: 
-            void    Release();
+            void    Release() override;
 			//temp:
 			std::string src;
 		};

@@ -92,7 +92,6 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 {
     InvalidateDeviceObjects();
 	renderPlatform=r;
-	HRESULT res = S_FALSE;
 
 	stride = layout->GetStructSize();
 	bufferLoad.size= num_vertices * layout->GetStructSize();

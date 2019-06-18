@@ -2,6 +2,7 @@
 #include <iostream>
 #ifndef _MSC_VER
 #include <stdio.h>
+#include <strings.h>
 #define _stricmp strcasecmp
 #endif
 using namespace simul;

@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/Vulkan/Shader.h"
 #include <vulkan/vulkan.hpp>
+#include <list>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -45,9 +46,9 @@ namespace simul
 			
 			long long					mLastFrameIndex;
 			int							mInternalFrameIndex;	// incremented internally.
-			UINT						mCurApplyCount;
+			unsigned					mCurApplyCount;
 			//! Number of ring buffers
-			static const UINT			kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);
+			static const unsigned		kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);
 			// each frame in the 3-frame loop carries a variable-size list of descriptors: one for each submit.
 			std::list<vk::DescriptorSet> mDescriptorSets[kNumBuffers];
 			std::list<vk::DescriptorSet>::iterator i_desc[kNumBuffers];

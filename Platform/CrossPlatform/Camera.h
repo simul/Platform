@@ -168,8 +168,7 @@ namespace simul
 			CameraViewStruct cameraViewStruct;
 		public:
 			Camera();
-			~Camera();
-			
+			virtual ~Camera();
 			
 			META_BeginProperties
 				META_RangeProperty(float,HorizontalFieldOfViewInRadians,3.1416f*90.f	,0,3.1416f*179.f,"Horizontal Field Of View In Radians")

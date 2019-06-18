@@ -74,9 +74,9 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 #else
 	,can_save_and_restore(true)
 #endif
-	,textRenderer(nullptr)
 	,mCurIdx(0)
 	,mLastFrame(-1)
+	,textRenderer(nullptr)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;

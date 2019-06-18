@@ -9,7 +9,6 @@ using namespace crossplatform;
 
 RenderDelegater::RenderDelegater(crossplatform::RenderPlatform *r)
 	:last_view_id(0)
-	,frame(0)
 	,renderPlatform(r)
 {
 }

@@ -19,7 +19,7 @@ namespace simul
 		{
 		public:
 
-			DEFINE_NEW_DELETE_OVERRIDES;
+			DEFINE_NEW_DELETE_OVERRIDES
 
 			virtual ~TextInput(){}
 			//! Returns true if the file is successfully loaded
@@ -59,7 +59,7 @@ namespace simul
 		{
 		public:
 
-			DEFINE_NEW_DELETE_OVERRIDES;
+			DEFINE_NEW_DELETE_OVERRIDES
 
 			virtual ~TextOutput(){}
 			virtual bool Good()=0;

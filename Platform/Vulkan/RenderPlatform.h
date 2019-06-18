@@ -48,14 +48,13 @@ namespace simul
 			void        InvalidateDeviceObjects() override;
 			void        BeginFrame() override;
 			void        EndFrame() override;
-			void		CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *);
+			void		CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *) override;
 			float		GetDefaultOutputGamma() const override;
             void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
             void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
 			void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d) override;
 			void        Draw(crossplatform::DeviceContext& deviceContext, int num_verts, int start_vert) override;
 			void        DrawIndexed(crossplatform::DeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
-			void        DrawLine(crossplatform::DeviceContext& deviceContext, const double *pGlobalBasePosition, const double *pGlobalEndPosition, const float *colour, float width);
 			void        DrawLineLoop(crossplatform::DeviceContext& deviceContext, const double *mat, int num, const double *vertexArray, const float colr[4]) override;
 			void        DrawTexture(crossplatform::DeviceContext& deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false) override;
 			void        DrawQuad(crossplatform::DeviceContext& deviceContext) override;

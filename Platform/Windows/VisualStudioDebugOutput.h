@@ -16,6 +16,9 @@
 #include <time.h>
 #include <cerrno>
 
+#ifndef _MSC_VER
+#define __stdcall
+#endif
 typedef void (__stdcall *DebugOutputCallback)(const char *);
 
 class vsBufferedStringStreamBuf : public std::streambuf
@@ -104,7 +107,7 @@ public:
 	}
 	void setLogFile(const char *logfilename)
 	{
-	ERRNO_CHECK
+	
 		std::string fn=logfilename;
 		if(fn.find(":")>=fn.length())
 		{

@@ -16,6 +16,14 @@
 using namespace simul;
 using namespace vulkan;
 
+#ifdef UNIX
+template <typename T, std::size_t N>
+constexpr std::size_t _countof(T const (&)[N]) noexcept
+{
+return N;
+}
+#endif
+
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
 {
 #if 0
@@ -171,7 +179,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 			copyRegion.srcSubresource.mipLevel = j;
 			copyRegion.srcSubresource.baseArrayLayer = 0;
 			copyRegion.srcSubresource.layerCount = dest->arraySize*(dest->IsCubemap()?6:1);
-			copyRegion.srcOffset = { 0, 0, 0 };
+			copyRegion.srcOffset = vk::Offset3D(0,0,0);
 
 			copyRegion.dstSubresource = copyRegion.srcSubresource;
 
@@ -254,9 +262,6 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
     EndEvent(deviceContext);
 }
 
-void RenderPlatform::DrawLine(crossplatform::DeviceContext &,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
-{
-}
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {

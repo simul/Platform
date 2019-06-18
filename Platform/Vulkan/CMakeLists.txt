@@ -14,16 +14,23 @@ file(GLOB SHADER_DEFS
 	"${CMAKE_SOURCE_DIR}/Platform/Vulkan/GLSL/*.*" 
 )
 
-link_directories(${VULKAN_SDK_DIR}/Lib)
-add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
-target_compile_definitions(SimulVulkan_MT PRIVATE SIMUL_VULKAN_DLL=1 VK_USE_PLATFORM_WIN32_KHR VK_PROTOTYPES )
-set_target_properties(SimulVulkan_MT PROPERTIES FOLDER Static)
+add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS SIMUL_VULKAN_DLL=1  VK_PROTOTYPES )
+
+if(${MSVC})
+	target_compile_definitions(SimulVulkan_MT PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
+endif()
+
 target_include_directories(SimulVulkan_MT PRIVATE "${VULKAN_SDK_DIR}/Include")
 target_include_directories(SimulVulkan_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")
 target_include_directories(SimulVulkan_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platform/Vulkan")
 
 add_dynamic_library(SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
-target_compile_definitions(SimulVulkan_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_VULKAN_DLL=1 VK_USE_PLATFORM_WIN32_KHR VK_PROTOTYPES )
+target_compile_definitions(SimulVulkan_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_VULKAN_DLL=1  VK_PROTOTYPES )
+
+if(${MSVC})
+	target_compile_definitions(SimulVulkan_MD PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
+endif()
+
 set_target_properties(SimulVulkan_MD PROPERTIES FOLDER Dynamic)
 target_include_directories(SimulVulkan_MD PRIVATE "${VULKAN_SDK_DIR}/Include")
 target_include_directories(SimulVulkan_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")

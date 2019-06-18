@@ -3,6 +3,7 @@
 #include "Simul/Platform/Vulkan/Export.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include <vulkan/vulkan.hpp>
+#include <list>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -20,19 +21,19 @@ namespace simul
 						PlatformStructuredBuffer();
 			virtual		~PlatformStructuredBuffer();
 
-			void		RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
-			void*		GetBuffer(crossplatform::DeviceContext &deviceContext);
-			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void		CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void		CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void		SetData(crossplatform::DeviceContext &deviceContext,void *data);
-			void		InvalidateDeviceObjects();
+			void		RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data) override;
+			void*		GetBuffer(crossplatform::DeviceContext &deviceContext) override;
+			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext) override;
+			void		CloseReadBuffer(crossplatform::DeviceContext &deviceContext) override;
+			void		CopyToReadBuffer(crossplatform::DeviceContext &deviceContext) override;
+			void		SetData(crossplatform::DeviceContext &deviceContext,void *data) override;
+			void		InvalidateDeviceObjects() override;
 
-			void		Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
-			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
-			void		AddFence(crossplatform::DeviceContext& deviceContext);
+			void		Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource) override;
+			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource) override;
+			void		AddFence(crossplatform::DeviceContext& deviceContext) ;
 
-			void		Unbind(crossplatform::DeviceContext &deviceContext);
+			void		Unbind(crossplatform::DeviceContext &deviceContext) override;
 			
 			void		ActualApply(crossplatform::DeviceContext &,crossplatform::EffectPass *,int,bool) override;
 

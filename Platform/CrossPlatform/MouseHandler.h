@@ -24,7 +24,7 @@ namespace simul
 		{
 		public:
 			MouseHandler();
-			~MouseHandler();
+			virtual ~MouseHandler();
 			void	setSpeed(float s);
 			void	setCentre(const float *c);
 			void	setCameraMode(CameraMode c);

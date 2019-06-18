@@ -28,7 +28,6 @@ namespace simul
 			std::vector<crossplatform::StartupDeviceDelegate> startupDeviceDelegates;
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			int last_view_id;
-			unsigned long long frame;
 			simul::crossplatform::RenderPlatform *renderPlatform;
 		public:
 			RenderDelegater(crossplatform::RenderPlatform *r=nullptr);
