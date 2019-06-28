@@ -61,7 +61,7 @@ void Profiler::Begin(crossplatform::DeviceContext &,const char *name)
     */
 }
 
-void Profiler::End()
+void Profiler::End(crossplatform::DeviceContext &)
 {
     /*
     if(!enabled)
@@ -136,14 +136,14 @@ void Profiler::EndFrame(crossplatform::DeviceContext &)
 
 // == ProfileBlock ================================================================================
 
-ProfileBlock::ProfileBlock(crossplatform::DeviceContext &de,const char *name) : name(name)
+ProfileBlock::ProfileBlock(crossplatform::DeviceContext &de,const char *name) : name(name), deviceContext(de)
 {
     Profiler::GetGlobalProfiler().Begin(de,name);
 }
 
 ProfileBlock::~ProfileBlock()
 {
-    Profiler::GetGlobalProfiler().End();
+    Profiler::GetGlobalProfiler().End(deviceContext);
 }
 
 float ProfileBlock::GetTime() const

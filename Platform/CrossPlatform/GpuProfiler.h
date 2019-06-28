@@ -111,7 +111,7 @@ namespace simul
 			simul::base::Timer timer;
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
-bool enabled;
+			bool enabled;
 		};
 		class ProfileBlock
 		{
