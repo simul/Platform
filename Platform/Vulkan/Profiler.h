@@ -19,7 +19,7 @@ namespace simul
 			void Initialize(void*);
 			void Uninitialize();
 			void Begin(crossplatform::DeviceContext &deviceContext,const char *name) override;
-			virtual void End(crossplatform::DeviceContext &deviceContext) override;
+			virtual void End();
 			
 			void StartFrame(crossplatform::DeviceContext &deviceContext);
 			void EndFrame(crossplatform::DeviceContext &deviceContext);

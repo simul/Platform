@@ -143,7 +143,7 @@ ProfileBlock::ProfileBlock(crossplatform::DeviceContext &de,const char *name) : 
 
 ProfileBlock::~ProfileBlock()
 {
-    Profiler::GetGlobalProfiler().End();
+	Profiler::GetGlobalProfiler().End();
 }
 
 float ProfileBlock::GetTime() const
