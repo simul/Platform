@@ -16,14 +16,6 @@
 using namespace simul;
 using namespace vulkan;
 
-#ifdef UNIX
-template <typename T, std::size_t N>
-constexpr std::size_t _countof(T const (&)[N]) noexcept
-{
-return N;
-}
-#endif
-
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
 {
 #if 0
@@ -78,6 +70,7 @@ const char* RenderPlatform::GetName()const
 
 void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 {
+	ERRNO_BREAK
 	void **ptr=(void**)vkDevice_vkInstance_gpu;
 	vulkanDevice=(vk::Device*)ptr[0];
 	vulkanInstance=(vk::Instance*)ptr[1];

@@ -5,8 +5,9 @@
 #include <string>
 #include <map>
 
+#ifdef _MSC_VER
 #pragma warning(disable:4251)
-
+#endif
 typedef unsigned int GLuint;
 namespace simul
 {
@@ -21,8 +22,8 @@ namespace simul
 			void Begin(crossplatform::DeviceContext &deviceContext,const char *name) override;
 			virtual void End();
 			
-			void StartFrame(crossplatform::DeviceContext &deviceContext);
-			void EndFrame(crossplatform::DeviceContext &deviceContext);
+			void StartFrame(crossplatform::DeviceContext &deviceContext) override;
+			void EndFrame(crossplatform::DeviceContext &deviceContext) override;
 			
 		protected:
 			std::vector<unsigned> query_stack;
@@ -66,6 +67,7 @@ namespace simul
 			float GetTime() const;
 		protected:
 			std::string name;
+			crossplatform::DeviceContext &deviceContext;
 		};
 
 	}

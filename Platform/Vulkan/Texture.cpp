@@ -304,11 +304,11 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	{
 		int srcWidth=width,srcLength=length;
 		vk::ImageBlit blit = vk::ImageBlit();
-		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[0]=vk::Offset3D( 0, 0, 0 );
 		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 		blit.srcSubresource.baseArrayLayer = 0;
 		blit.srcSubresource.layerCount = arraySize;
-		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[0] = vk::Offset3D( 0, 0, 0 );
 		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 		blit.dstSubresource.baseArrayLayer = 0;
 		blit.dstSubresource.layerCount = arraySize;
@@ -318,8 +318,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 			blit.dstSubresource.mipLevel = i+1;
 			int dstWidth=srcWidth > 1 ? srcWidth / 2 : 1;
 			int dstLength=srcLength > 1 ? srcLength / 2 : 1;
-			blit.srcOffsets[1] = { srcWidth, srcLength, 1 };
-			blit.dstOffsets[1] = { dstWidth, dstLength, 1 };
+			blit.srcOffsets[1] =vk::Offset3D(  srcWidth, srcLength, 1 );
+			blit.dstOffsets[1] = vk::Offset3D(  dstWidth, dstLength, 1 );
 			SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor,vk::ImageLayout::eTransferDstOptimal,
 					vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
 					vk::PipelineStageFlagBits::eTransfer,i,1);
@@ -724,7 +724,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 		{
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
-			SIMUL_ASSERT(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j])==vk::Result::eSuccess);
+			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
 	SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
 	
 		framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
@@ -972,7 +972,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	lt.y=y;
 	lt.z=z;
 	lt.n=n;
-	lt.pixelFormat=pixelFormat;
+	lt.pixelFormat=f;
 	int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
@@ -1000,7 +1000,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform,&(lt.mem),name+" texture lt.mem");
 
-	 vulkanDevice->bindBufferMemory(lt.buffer, lt.mem, 0);
+	vulkanDevice->bindBufferMemory(lt.buffer, lt.mem, 0);
 
 	vk::SubresourceLayout layout;
 	memset(&layout, 0, sizeof(layout));

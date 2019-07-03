@@ -9,8 +9,8 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 	,mMaxApplyCount(2)
 	,mCurApplyCount(0)
 	,last_offset(0)
-	,mCpuRead(false)
 	,buffer(nullptr)
+	,mCpuRead(false)
 	,mLastFrame(0)
 	,mFrameIndex(0)
 {
@@ -179,7 +179,7 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 		SIMUL_BREAK("bad buffer iterator");
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
-	UINT8* pDest	=nullptr;
+	uint8_t* pDest	=nullptr;
 	last_offset		=(kBufferAlign * mSlots) * mCurApplyCount;	
 
 	if (!as_uav&&buffer)

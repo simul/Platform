@@ -312,7 +312,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
 	if(!c)
 		pixelFormat=vulkanRenderPlatform->GetActivePixelFormat(deviceContext);
-	auto &p=mRenderPasses.find(pixelFormat);
+	const auto &p=mRenderPasses.find(pixelFormat);
 	RenderPassPipeline *renderPassPipeline=nullptr;
 	if(p==mRenderPasses.end())
 	{
@@ -783,7 +783,7 @@ vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::DeviceContext & d
 	auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 	if(rp)
 		return *rp;
-	auto &p=mRenderPasses.find(pixelFormat);
+	const auto &p=mRenderPasses.find(pixelFormat);
 	if(p==mRenderPasses.end())
 	{
 		InitializePipeline(deviceContext,&mRenderPasses[pixelFormat],pixelFormat);

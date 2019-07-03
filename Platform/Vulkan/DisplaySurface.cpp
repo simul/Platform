@@ -37,8 +37,10 @@ static const char *GetErr()
 
 DisplaySurface::DisplaySurface()
 	:pixelFormat(crossplatform::UNKNOWN)
+#ifdef _MSC_VER
 	,hDC(nullptr)
 	,hRC(nullptr)
+	#endif
 	,frame_index(0)
 	,current_buffer(0)
 {
@@ -131,8 +133,10 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 void DisplaySurface::InvalidateDeviceObjects()
 {
+#ifdef _MSC_VER
 	if(!hDC)
 		return;
+#endif
 	vk::Device *vulkanDevice=GetVulkanDevice();
 	if(vulkanDevice)
 	{
@@ -166,12 +170,14 @@ void DisplaySurface::InvalidateDeviceObjects()
 	}
 			//vulkanDevice->destroysurface(mSurface,nullptr);
 
+#ifdef _MSC_VER
 	if (hDC && !ReleaseDC(mHwnd, hDC))                    // Are We Able To Release The DC
 	{
 		SIMUL_CERR << "Release Device Context Failed." << GetErr() << std::endl;
 		hDC = NULL;                           // Set DC To NULL
 	}
 	hDC = nullptr;                           // Set DC To NULL
+#endif
 }
 
 
@@ -261,17 +267,17 @@ void DisplaySurface::GetQueues()
 
 void DisplaySurface::InitSwapChain()
 {
+#if defined(WINVER) 
 	RECT rect;
 
-#if defined(WINVER) 
 	GetWindowRect((HWND)mHwnd, &rect);
-#endif
 
 	int screenWidth = abs(rect.right - rect.left);
 	int screenHeight = abs(rect.bottom - rect.top);
 
 	viewport.h = screenHeight;
 	viewport.w = screenWidth;
+#endif
 	viewport.x = 0;
 	viewport.y = 0;
 
@@ -950,6 +956,7 @@ void DisplaySurface::EndFrame()
 
 void DisplaySurface::Resize()
 {
+#ifdef _MSC_VER
 	RECT rect;
 	if (!GetWindowRect((HWND)mHwnd, &rect))
 		return;
@@ -965,4 +972,5 @@ void DisplaySurface::Resize()
 	viewport.y = 0;
 	if(renderer)
 		renderer->ResizeView(mViewId, W, H);
+#endif
 }

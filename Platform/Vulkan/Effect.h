@@ -27,9 +27,9 @@ namespace simul
 		private:
 			void	Release();
 
-			int	 mSlot;
+			//int	 mSlot;
 
-			int size;
+			//int size;
 		};
 
 		// Vulkan Query implementation

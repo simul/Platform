@@ -127,6 +127,7 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
+	ERRNO_BREAK
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -148,7 +149,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	RenderState *alpha=CreateRenderState(desc);
 	standardRenderStates[STANDARD_ALPHA_BLENDING]=alpha;
 	
-	
+	ERRNO_BREAK
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::DEPTH;
 	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
