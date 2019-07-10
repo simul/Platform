@@ -65,7 +65,7 @@ namespace simul
 			uint32_t enabled_extension_count;
 			uint32_t enabled_layer_count;
 			bool device_initialized;
-			std::vector<char *> extension_names;
+			std::vector<const char *> extension_names;
 			char const *enabled_layers[64];
 			DeviceManagerInternal *deviceManagerInternal;
 			bool separate_present_queue;

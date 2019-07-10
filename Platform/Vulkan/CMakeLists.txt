@@ -5,10 +5,10 @@ file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
 
 file(GLOB SHADERS
-	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SFX/*.sfx" 
+	"${CMAKE_SOURCE_DIR}/Platform/CrossPlatform/SFX/*.sfx" 
 )
 file(GLOB SHADER_INCLUDES
-	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
+	"${CMAKE_SOURCE_DIR}/Platform/CrossPlatform/SL/*.sl"
 )
 file(GLOB SHADER_DEFS
 	"${CMAKE_SOURCE_DIR}/Platform/Vulkan/GLSL/*.*" 

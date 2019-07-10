@@ -122,11 +122,14 @@ TextRenderer::~TextRenderer()
 
 void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	ERRNO_BREAK
 	renderPlatform=r;
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
+	ERRNO_BREAK
 	fontChars.RestoreDeviceObjects(renderPlatform,70,false,false);
 	RecompileShaders();
+	ERRNO_BREAK
 	SAFE_DELETE(font_texture);
 	font_texture = renderPlatform->CreateTexture("Font16-11.png");
 	fontWidth = 11;

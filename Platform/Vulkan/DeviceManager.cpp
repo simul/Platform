@@ -475,7 +475,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	if(pMessage)
 		std::cerr << pMessage << std::endl;
 	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
-		DebugBreak();
+		SIMUL_BREAK("Missing VK_DEBUG_REPORT_ERROR_BIT_EXT");
     return VK_FALSE;
 }
 

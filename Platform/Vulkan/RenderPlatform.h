@@ -12,6 +12,15 @@
     #pragma warning(disable:4251)
 #endif
 
+
+#ifdef UNIX
+template <typename T, std::size_t N>
+constexpr std::size_t _countof(T const (&)[N]) noexcept
+{
+return N;
+}
+#endif
+
 namespace vk
 {
 	class Instance;

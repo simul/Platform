@@ -995,8 +995,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 #endif
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 	{
+		#ifdef __ORBIS__
 		// Some engines force filenames to lower case because reasons:
 		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
+		#endif
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 		{
 			SIMUL_CERR<<"Shader effect file not found: "<<filenameUtf8.c_str()<<std::endl;
@@ -1043,7 +1045,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	int shaderCount=0;
 	while(next>=0)
 	{
+		#ifdef UNIX
+		string line		=str.substr(pos,next-pos);
+		#else
 		string line		=str.substr(pos,next-pos-1);
+		#endif
 		base::ClipWhitespace(line);
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;

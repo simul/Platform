@@ -12,8 +12,8 @@ PlatformConstantBuffer::PlatformConstantBuffer():
 			,mCurApplyCount(0)
 			,src(0)
 			,size(0)
-	,lastBuffer(nullptr)
 	,last_offset(0)
+	,lastBuffer(nullptr)
 {
 }
 
@@ -142,7 +142,7 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
-	UINT8* pDest = nullptr;
+	uint8_t* pDest = nullptr;
 	last_offset = (kBufferAlign * mSlots) * mCurApplyCount;	
 	lastBuffer=&mBuffers[curFrameIndex];
 

@@ -8,8 +8,6 @@
 
 #ifdef _MSC_VER
     #include <windows.h>
-#else
-    #define BREAK_IF_DEBUGGING 
 #endif
 
 using namespace simul;

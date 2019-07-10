@@ -144,6 +144,8 @@ namespace simul
 		{
 		//protected:
 		//	virtual scene::RenderPlatform *GetRenderPlatform()=0;
+		public:
+			virtual ~BaseRenderer(){}
 		};
 	}
 }
