@@ -32,7 +32,6 @@
 	#pragma comment(lib,"d3d12_x")
 #else
 	#pragma comment(lib,"d3d12.lib")
-	#pragma comment(lib,"DirectXTex.lib")
 	#pragma comment(lib,"D3dcompiler.lib")
 	#pragma comment(lib,"DXGI.lib")
 #endif 

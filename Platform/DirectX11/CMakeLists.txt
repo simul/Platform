@@ -34,7 +34,7 @@ target_include_directories(SimulDirectX11_MT PRIVATE "${CMAKE_SOURCE_DIR}/Extern
 target_include_directories(SimulDirectX11_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 target_include_directories(SimulDirectX11_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11" )
 LibraryDefaults(SimulDirectX11_MT)
-add_dependencies(SimulDirectX11_MT DirectX11Shaders effects11)
+add_dependencies(SimulDirectX11_MT DirectX11Shaders effects11_MT directxtex_MT )
 
 
 link_directories( ${CMAKE_SOURCE_DIR}/lib//x64/v141/${CMAKE_BUILD_TYPE})
@@ -47,5 +47,5 @@ target_include_directories(SimulDirectX11_MD PRIVATE "${CMAKE_SOURCE_DIR}/Extern
 target_include_directories(SimulDirectX11_MD PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
 LibraryDefaults(SimulDirectX11_MD)
 
-target_link_libraries(SimulDirectX11_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD)
-add_dependencies(SimulDirectX11_MD DirectX11Shaders effects11)
+target_link_libraries(SimulDirectX11_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD effects11_MD directxtex_MD )
+add_dependencies(SimulDirectX11_MD DirectX11Shaders )

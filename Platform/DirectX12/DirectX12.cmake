@@ -38,8 +38,8 @@ LibraryDefaults(SimulDirectX12_MD)
 
 add_sfx_shader_project( DirectX12Shaders "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} OPTIONS -w)
 
-add_dependencies(SimulDirectX12_MT DirectX12Shaders directxtex)
-add_dependencies(SimulDirectX12_MD DirectX12Shaders directxtex)
+add_dependencies(SimulDirectX12_MT DirectX12Shaders )
+add_dependencies(SimulDirectX12_MD DirectX12Shaders )
 
-target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD)
+target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD directxtex_MD)
 
