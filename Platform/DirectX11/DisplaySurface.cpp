@@ -25,6 +25,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     {
         return;
     }
+	mIsVSYNC = vsync;
 	renderPlatform=r;
 	pixelFormat=outFmt;
     mDeviceRef                          = renderPlatform->AsD3D11Device();
@@ -86,8 +87,16 @@ void DisplaySurface::InitSwapChain()
     swapChainDesc.BufferDesc.Height                     = screenHeight;
     // Set regular 32-bit surface for the back buffer.
     swapChainDesc.BufferDesc.Format                     = dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
-    swapChainDesc.BufferDesc.RefreshRate.Numerator      = 0;
-    swapChainDesc.BufferDesc.RefreshRate.Denominator    = 1;
+	if (mIsVSYNC)
+	{
+		//swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
+		//swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+	}
+	else
+	{
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	}
     // Set the usage of the back buffer.
     swapChainDesc.BufferUsage                           = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     // Set the handle for the window to render to.

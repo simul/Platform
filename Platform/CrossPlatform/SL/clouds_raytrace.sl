@@ -244,7 +244,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				float cosine			=dot(N,abs(view));//viewGridspace would cause a visible break at detail transitions.
-				if(noise&&12.0*fadeDistance<4.0)
+				if(noise)//&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
 				float mip = 0.0*(1.0-cosine);
