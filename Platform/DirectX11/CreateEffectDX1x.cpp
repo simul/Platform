@@ -52,12 +52,6 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 	#pragma comment(lib,"Effects11_DXSDK.lib")
 	#pragma comment(lib,"dxerr.lib")
 	#pragma comment(lib,"d3dx11.lib")
-#else
-	#ifdef _DEBUG
-		#pragma comment(lib,"Effects11_Win8SDKd.lib")
-	#else
-		#pragma comment(lib,"Effects11_Win8SDK.lib")
-	#endif
 #endif
 #ifdef _XBOX_ONE
 	#pragma comment(lib,"d3d11_x.lib")
