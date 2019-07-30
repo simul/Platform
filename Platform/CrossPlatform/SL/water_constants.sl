@@ -121,7 +121,7 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 6)
 	uniform float		gnfudivn;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbBuoyancyObjectBuffers, 10)
+SIMUL_CONSTANT_BUFFER(cbMeshObjectBuffers, 10)
 	uniform float		g_buoyancyUVScale;
 	uniform float		g_buoyancyUVOffset;
 	uniform float		g_buoyancySurfaceHeight;
@@ -139,7 +139,7 @@ SIMUL_CONSTANT_BUFFER(cbBuoyancyObjectBuffers, 10)
 	uniform mat4		g_buoyancyMat;
 
 	uniform vec3		g_location;
-	uniform float		gnjifdpaon;
+	uniform float		g_ID;
 
 	uniform vec4		g_rotation;
 

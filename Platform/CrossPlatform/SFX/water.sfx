@@ -25,6 +25,8 @@ uniform Texture2D		showTexture					SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D		g_texColour					SIMUL_TEXTURE_REGISTER(6);		// Colour of the render target, used for refraction
 uniform Texture2D		g_texDepth					SIMUL_TEXTURE_REGISTER(7);		// Depth of rendered scene up till now
 uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(8);		// Shore depth for shallow water effects
+uniform texture2D		g_maskFrontfaceTexture		SIMUL_TEXTURE_REGISTER(9);		// Temp Mask texture for blocking objects
+uniform texture2D		g_maskTexture				SIMUL_TEXTURE_REGISTER(10);		// Mask texture for blocking objects
 uniform Texture2DArray<float4>	g_ProfileBuffers	: register(t3);					// Profile Buffer Texture
 
 //Render target textures to pass from initial pass to final composite
@@ -57,6 +59,17 @@ uniform RWTexture2D<vec4>	g_RightFlowRayBuffer: register (u5);
 uniform RWTexture2D<vec4>	g_OutputFlowRayBuffer: register (u6);
 
 uniform Texture2D		g_FlowRayBuffer				SIMUL_TEXTURE_REGISTER(0);
+
+struct vertexOnlyInput
+{
+	vec3 position : POSITION;
+};
+
+struct vertexNormalsInput
+{
+	vec3 position : POSITION;
+	vec3 normal : NORMAL;
+};
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
 SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
@@ -457,13 +470,18 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 
 		if ((position.z > g_surfaceHeight + (radius * 2.0)) || (position.z < g_surfaceHeight - (radius * 2.0)))
 			return;
+		//int2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_probeUVScale)) + g_probeUVOffset - g_center.yx * g_probeUVScale;
+		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256) - int2(g_center.yx * 0.512f);
 
-		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256) - int2(g_center.yx / 2);
+		int xOrigin = uv_local.x;
+		int yOrigin = uv_local.y;
 
-		int xOrigin = (uv_local.x - (int)radius);
-		int yOrigin = (uv_local.y - (int)radius);
+		if (radius > 0.5)
+		{
+			xOrigin -= (int)radius;
+			yOrigin -= (int)radius;
+		}
 
-		//dEnergy *= 1 / radius;
 
 		float downwardAmp = max(normalize(-velocity).z, 0.0);
 		float energy = sqrt((2.0 / (9.81 * 1000.0)) * (dEnergy / (16.0 * radius * radius * PI))); // Convert incoming energy to wave amplitude
@@ -472,7 +490,7 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 		{
 			for (int y = yOrigin; y <= uv_local.y + (int)radius; y++)
 			{
-				vec3 positionDirection = vec3(position.xy * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0);
+				vec3 positionDirection = vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0);
 				float distance = length(positionDirection);
 				if ((distance > radius && !((uv_local.x == x) && (uv_local.y == y))) || (radius - distance > 4.0))
 					continue;
@@ -491,23 +509,29 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 	}
 	else
 	{
-		radius *= -1.0;
+		radius *= -1.0;// abs(radius);
 
 		if ((position.z > g_surfaceHeight + (radius * 2.0)) || (position.z < g_surfaceHeight - (radius * 2.0)))
 			return;
 
 		float dampen = abs(((radius* 2.0) - abs(position.z - g_surfaceHeight)) / (radius * 2.0));
 
-		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256);
+		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256) - int2(g_center.yx * 0.512f);
 
-		int xOrigin = (uv_local.x - (int)radius);
-		int yOrigin = (uv_local.y - (int)radius);
+		int xOrigin = uv_local.x;
+		int yOrigin = uv_local.y;
+
+		if (radius > 0.5)
+		{
+			xOrigin -= (int)radius;
+			yOrigin -= (int)radius;
+		}
 
 		for (int x = xOrigin; x <= uv_local.x + (int)radius; x++)
 		{
 			for (int y = yOrigin; y <= uv_local.y + (int)radius; y++)
 			{
-				float distance = length(vec3(position.xy * 0.512f, ( g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0));
+				float distance = length(vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0));
 				if ((distance > radius && !((uv_local.x == x) && (uv_local.y == y))))
 					continue;
 				for (int i = 0; i < 16; i++)
@@ -560,7 +584,7 @@ shader void CS_UpdateAmplitudeGrid(uint3 sub_pos : SV_DispatchThreadID)
 	float result = (sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, traceBackTexc, 0).x * (1 - gamma)) + (gamma * 0.45 * (sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, vec3(traceBackTexc.x, traceBackTexc.y, traceBackTexc.z - (1.0 / dims.z)), 0).x + sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, vec3(traceBackTexc.x, traceBackTexc.y, traceBackTexc.z + (1.0 / dims.z)), 0).x));
 	//result = 0.0;
 
-	g_OutputAmplitude[sub_pos] = min(result, 1.5f);//baseAmplitude / 2.0;//
+	g_OutputAmplitude[sub_pos] =  min(result, 1.5f);//baseAmplitude / 2.0;//sample_3d_lod(g_InputAmplitude, g_samplerAmpGrid, texc, 0).x;//
 }
 
 //-----------------------------------------------------------------------------
@@ -588,8 +612,8 @@ shader vec4 PS_PrecomputeProfileBuffer(posTexVertexOutput In) : SV_Target
 	{
 		float waveLength = pow(2, x);
 		float waveNumber = TAU / waveLength;
-		float phase1 = waveNumber * p - sqrt(waveNumber * g) *(g_time + 5000.0);//
-		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) *(g_time + 5000.0);// 
+		float phase1 = waveNumber * p - sqrt(waveNumber * g)*(g_time + 5000.0);//
+		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g)*(g_time + 5000.0);// 
 
 		result += dx * waveLength * spectrum(x, g_windSpeed) * ((bump1 * gerstner_wave(phase1, waveNumber)) + (bump2 * gerstner_wave(phase2, waveNumber)));
 
@@ -623,6 +647,90 @@ shader vec4 PS_GenerateContourMap(posTexVertexOutput In) : SV_Target
 	vec3 normal = normalize(vec3(dzdx, dzdy, 1.0)); //direction / magnitude;
 	
 	return vec4(normal, depth);
+}
+
+//-----------------------------------------------------------------------------
+// Name: VS_MaskObject
+// Type: Vertex shader
+// Desc: Vertex shader for rendering a 3D object for masking water
+//-----------------------------------------------------------------------------
+shader VS_OUTPUT VS_MaskObject(vertexOnlyInput IN)
+{
+	VS_OUTPUT Output;
+
+	float4 pos_local = float4(IN.position.yxz * vec3(-g_scale.y, g_scale.x, g_scale.z) * 0.01, 1);
+
+	pos_local = mul(g_buoyancyMat, pos_local);
+
+	Output.Position = mul(g_matWorldViewProj, pos_local);
+	Output.texCoords = vec2(0.0, 0.0);
+	Output.LocalPos = pos_local.xyz;
+	Output.vecColour = vec4(0.0, 0.0, 0.0, 0.0);
+	Output.SurePosition = Output.Position;
+	return Output;
+}
+
+//-----------------------------------------------------------------------------
+// Name: PS_MaskObjectFrontface
+// Type: Pixel shader
+// Desc: Pixel shader for rendering the frontface of a 3D object for masking water
+//-----------------------------------------------------------------------------
+shader float4 PS_MaskObjectFrontface(VS_OUTPUT IN, bool frontFacing : SV_IsFrontFace) : SV_TARGET
+{
+	vec2 TexCoord = ((vec2(IN.SurePosition.x / IN.SurePosition.w, IN.SurePosition.y / -IN.SurePosition.w) + vec2(1.0, 1.0)) / 2.0);
+	vec2 existingDepth = g_maskTexture.Sample(clampSamplerState, TexCoord).xy;
+
+	float depth = length(g_LocalEye - IN.LocalPos);
+
+	if (existingDepth.x < depth && existingDepth.x != 0.0)
+		depth = 0.0;
+
+	if(frontFacing)
+		return float4(depth, 0.0, g_ID, 1.0);
+	else
+		return float4(depth, 1.0, g_ID, 1.0);
+}
+
+//-----------------------------------------------------------------------------
+// Name: PS_MaskObjectBackface
+// Type: Pixel shader
+// Desc: Pixel shader for rendering the backface of a 3D object for masking water
+//-----------------------------------------------------------------------------
+shader float4 PS_MaskObjectBackface(VS_OUTPUT IN, bool frontFacing : SV_IsFrontFace) : SV_TARGET
+{
+	vec2 TexCoord = ((vec2(IN.SurePosition.x / IN.SurePosition.w, IN.SurePosition.y / -IN.SurePosition.w) + vec2(1.0, 1.0)) / 2.0);
+
+	float objectDepth = length(g_LocalEye - IN.LocalPos);
+	vec3 depth = g_maskFrontfaceTexture.Sample(clampSamplerState, TexCoord).xyz;
+
+	if (depth.z != g_ID)
+		discard;
+
+	if (depth.x > objectDepth || depth.y == 1.0)
+	{
+		depth.x = 0.0;
+	}
+
+	if(depth.x > 0.0)
+		objectDepth -= depth.x;
+
+	return float4(depth.x, objectDepth, 0.0, 1.0);
+}
+
+
+//-----------------------------------------------------------------------------
+// Name: PS_MaskObjectPlane
+// Type: Pixel shader
+// Desc: Pixel shader for rendering a Plane for masking water
+//-----------------------------------------------------------------------------
+shader float4 PS_MaskObjectPlane(VS_OUTPUT IN, bool frontFacing : SV_IsFrontFace) : SV_TARGET
+{
+	vec2 TexCoord = ((vec2(IN.SurePosition.x / IN.SurePosition.w, IN.SurePosition.y / -IN.SurePosition.w) + vec2(1.0, 1.0)) / 2.0);
+
+	float objectDepth = length(g_LocalEye - IN.LocalPos);
+	vec3 depth = g_maskFrontfaceTexture.Sample(clampSamplerState, TexCoord).xyz;
+
+	return float4(0.0, -objectDepth, 0.0, 1.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -1861,6 +1969,9 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	float surfaceDepth = length(eye_vec) / 300000.0;
 
 	bool noWaveGrid = false;
+	bool maskInvert = false;
+	bool noSurfaceScattering = false;
+	float maskedDepth = 0;
 
 	//Disable refraction if camera is far enough away
 	if(enableRefraction)
@@ -1969,47 +2080,98 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	
 	//float fresnelFactor = 1.0;
 
+	vec4 maskValue = g_maskTexture.Sample(clampSamplerState, TexCoord) / 300000.0;
+
 	if (frontFacing)
-	{			
-		actualDepth = saturate(fulldepth - surfaceDepth);
+	{		
 
-		if (actualDepth > 0.0)
-		{
-			if (enableRefraction)
-			{
-				viewNormal = mul(vec4(normal, 0.0), g_matWorldViewProj).xyz;
-				refract_vec = refract(eyeViewVec, viewNormal, 1.0 / 1.33);
-
-				float cosangle = acos(dot(eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
-				offset = tan(cosangle) * (actualDepth / fulldepth) * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z -  35.0) / 5.0));
-				TexCoord += offset * (normalize(refract_vec.xy) * g_screenScale);
-
-				TexCoord = abs(TexCoord);
-			}
-			if (TexCoord.y >= 1.0)
-				TexCoord.y = 2.0 - TexCoord.y;
-
-			if (TexCoord.x >= 1.0)
-				TexCoord.x = 2.0 - TexCoord.x;
-		}
-		else 
+		if ((maskValue.x + maskValue.y > fulldepth && maskValue.x < surfaceDepth) || (maskValue.y < 0.0))
 		{
 			Output.Scattering = vec4(g_scattering, 0.0);
 			Output.Absorption = vec4(g_absorption, 0.0);
-			Output.RefractColour = vec4(0.0, 0.0, 0.0, 0.0);
+			Output.RefractColour = vec4(maskValue.y, 0.0, 0.0, 0.0);
 			Output.Normals = vec4(0.001, 0.001, 1.0, 0.0);
 			Output.Depth = vec4(0.0, 0.0, 0.0, 0.0);
-			actualDepth = 0.0;
 			return Output;
 		}
+		
+		if (maskValue.x + maskValue.y > surfaceDepth && maskValue.x < fulldepth)
+		{
+			if (maskValue.x < surfaceDepth)
+			{
+				maskInvert = true;
+				noSurfaceScattering = true;
+				maskedDepth = (maskValue.x + maskValue.y) - surfaceDepth;
+			}
+			else
+			{
+				maskedDepth = maskValue.y - max(maskValue.x + maskValue.y - fulldepth, 0.0);
+			}
+		}
+
+		actualDepth = saturate(fulldepth - surfaceDepth - maskedDepth);
+
+		if(!maskInvert)
+			if (actualDepth > 0.0)
+			{
+				if (enableRefraction)
+				{
+					viewNormal = mul(vec4(normal, 0.0), g_matWorldViewProj).xyz;
+					refract_vec = refract(eyeViewVec, viewNormal, 1.0 / 1.33);
+
+					float cosangle = acos(dot(eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
+					offset = tan(cosangle) * (actualDepth / (fulldepth - maskedDepth)) * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z -  35.0) / 5.0));
+					TexCoord += offset * (normalize(refract_vec.xy) * g_screenScale);
+
+					TexCoord = abs(TexCoord);
+				}
+				if (TexCoord.y >= 1.0)
+					TexCoord.y = 2.0 - TexCoord.y;
+
+				if (TexCoord.x >= 1.0)
+					TexCoord.x = 2.0 - TexCoord.x;
+			}
+			else 
+			{
+				Output.Scattering = vec4(g_scattering, 0.0);
+				Output.Absorption = vec4(g_absorption, 0.0);
+				Output.RefractColour = vec4(0.0, 0.0, 0.0, 0.0);
+				Output.Normals = vec4(0.001, 0.001, 1.0, 0.0);
+				Output.Depth = vec4(0.0, 0.0, 0.0, 0.0);
+				actualDepth = 0.0;
+				return Output;
+			}
 	}
 	else
 	{
-		actualDepth = min(fulldepth, surfaceDepth);
+		if (((maskValue.y > fulldepth || maskValue.y > surfaceDepth) && maskValue.x == 0.0) || (maskValue.y < 0.0 && abs(maskValue.y) < fulldepth))
+		{
+			Output.Scattering = vec4(g_scattering, 0.0);
+			Output.Absorption = vec4(g_absorption, 0.0);
+			Output.RefractColour = vec4(maskValue.y, 0.0, 0.0, 0.0);
+			Output.Normals = vec4(0.001, 0.001, 1.0, 0.0);
+			Output.Depth = vec4(0.0, 0.0, 0.0, 0.0);
+			return Output;
+		}
+
+		if (maskValue.y > 0.0 && maskValue.x < fulldepth && maskValue.x < surfaceDepth)
+		{
+			maskedDepth = maskValue.y - max((maskValue.x + maskValue.y) - min(surfaceDepth, fulldepth), 0.0);
+			if (maskValue.x == 0.0)
+			{
+				noSurfaceScattering = true;
+			}
+			if(maskValue.x != 0.0 && maskValue.x + maskValue.y > fulldepth)
+			{
+				//noSurfaceScattering = true;
+			}
+		}
+
+		actualDepth = min(fulldepth, surfaceDepth) - maskedDepth;
 
 		if (enableRefraction)
 		{
-			if (actualDepth == surfaceDepth)
+			if (actualDepth == surfaceDepth - maskedDepth)
 			{
 				viewNormal = mul(vec4(-normal, 0.0), g_matWorldViewProj).xyz;
 				refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
@@ -2030,8 +2192,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 				TexCoord.x = 2.0 - TexCoord.x;
 		}
 	}
-		
-
+	
 	if (enableRefraction)
 	{
 		subsurfaceSample = g_texDepth.Sample(clampSamplerState, TexCoord * g_DepthScale + vec2(g_vrRightEye * 0.5, 0)).x;
@@ -2051,7 +2212,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	{
 		if (subsurfaceDepth > surfaceDepth)
 		{
-			finalDepth = subsurfaceDepth - surfaceDepth;
+			finalDepth = (subsurfaceDepth - surfaceDepth - maskedDepth) * (maskInvert ? -1 : 1);
 		}
 		else
 		{
@@ -2061,49 +2222,12 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	else 
 	{
 		finalDepth = -min(actualDepth, surfaceDepth);
-		if (subsurfaceDepth > actualDepth) {
+		if (subsurfaceDepth - maskedDepth > actualDepth) {
 			backfaceOccluded = 1.0;
 		}
 	}
-	/*
-	if (enableFoam) //Make sure foam only generated for the ocean.
-	{
-		//vec2 foamSamples = g_foamAlpha.Sample(wwcSamplerState, In.texCoords.xy).xy;
-		//float bubbles = g_foamTexture.Sample(wwcSamplerState,In.texCoords.xy * 4.0f).x;
-		float surfaceFoamTextureSample = 1.0 - g_surfaceFoamTexture.Sample(wwcSamplerState, In.texCoords * 12.0f).x;
-		surfaceFoamValue *= surfaceFoamTextureSample;
 
-		surfaceFoamValue += pow(surfaceFoamTextureSample * saturate(1.3 - In.vecColour.w), 4.0);
-
-		if (surfaceFoamValue < 0.05)
-			surfaceFoamValue = 0.0;
-
-		//foamSamples = vec2(0.0, 0.0);
-		//bubbles = 0.0;
-		//surfaceFoamTextureSample = 0.0;
-
-		
-		//surfaceFoamValue *= bubbles;
-		//surfaceFoamValue += foamSamples.y;
-
-		//if (foamSamples.y / 8.0 > 0.95)
-		//	surfaceFoamValue += ((foamSamples.y / 8.0) - 0.95) / 10.0;
-
-		//if ((bubbles * bubbles) > foamValue)
-		//	foamValue = 0.0;
-
-		//if (surfaceFoamValue < 0.1)
-		//	surfaceFoamValue = 0.0;
-
-		//surfaceFoamValue /= 2.0;
-		//surfaceFoamValue = foamSamples.y;
-	
-		//clamp(surfaceFoamValue, 0.0, 1.0);
-		//clamp(foamValue, 0.0, 1.0);
-	
-	}
-	*/
-	eyeDepth = (g_LocalEye.z - g_boundedLocation.z) / 300000.0;
+	eyeDepth = min(((g_LocalEye.z - g_boundedLocation.z) / 300000.0) - ((maskInvert || noSurfaceScattering ? 1 : 0) * (normalize(eye_vec) * (maskValue.x + maskValue.y)).z), 0.0);
 		
 	float4 refractColour = g_texColour.Sample(clampSamplerState, TexCoord * g_DepthScale + vec2(g_vrRightEye * 0.5, 0)); // vec4(In.vecColour.w, 0.0, 0.0, 0.0); //
 
@@ -2122,21 +2246,21 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		}
 		else
 			refractColour = vec4(0.0, 0.0, 0.0, 0.0);
-	}
-
+	}*/
+	/*
 	float ampResult = 0.0;
 	
 	int i;
 	for (i = 0; i < 16; i++)
 	{
-		ampResult += texture_3d_wrap_lod(g_InputAmplitude,vec3(In.texCoords.x / 5.0, In.texCoords.y / 5.0, (i + 0.5) / 16.0), 0);
-	}*/
-
+		ampResult += texture_3d_wrap_lod(g_InputAmplitude,vec3(In.texCoords.x / 5.0, In.texCoords.y / 5.0, (i + 0.5) / 16.0), 0).x;
+	}
+	*/
 	Output.Scattering = vec4(g_scattering, enableFoam);
 	Output.Absorption = vec4(g_absorption, surfaceFoamValue);
-	Output.RefractColour = refractColour; // ampResult; //
-	Output.Normals = vec4(normal, backfaceOccluded);
-	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, surfaceDepth); // g_texDepth.Sample(clampSamplerState, TexCoord /* g_DepthScale + vec2(g_vrRightEye * 0.5, 0)*/);//
+	Output.RefractColour =   refractColour; // vec4(ampResult, 0.0, 0.0, 1.0); //
+	Output.Normals = vec4((maskInvert ? vec3(0.01,0.01,0.01) : normal), backfaceOccluded);
+	Output.Depth = vec4(finalDepth, actualDepth, eyeDepth, surfaceDepth * (noSurfaceScattering ? -1 : 1)); // g_texDepth.Sample(clampSamplerState, TexCoord /* g_DepthScale + vec2(g_vrRightEye * 0.5, 0)*/);//
 
 	return Output;
 }
@@ -2184,23 +2308,23 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 //-----------------------------------------------------------------------------
 shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 {
-	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords);
+	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords * (g_vrRightEye == 1.0 ? g_DepthScale : vec2(1.0, 1.0)) + vec2(g_vrRightEye * 0.5, 0));
 
 	float4 Output = float4(-1.0, -1.0, -1.0, -1.0);// g_texColour.Sample(wrapSamplerState, In.texCoords) / 50.0;
 		
 	static int stepNo = 100;
-	float stepLength = min(max(depthInput.w * 300000.0 / 100.0, 0.125),0.5);
+	float stepLength = min(max(abs(depthInput.w) * 300000.0 / 100.0, 0.125),0.5);
 
 	if (depthInput.y <= 0.0f || depthInput.x < 0.0f)
 		discard;
 
-	float4 normalsInput = g_waterNormals.Sample(g_samplerPerlin, In.texCoords);
+	float4 normalsInput = g_waterNormals.Sample(g_samplerPerlin, In.texCoords * (g_vrRightEye == 1.0 ? g_DepthScale : vec2(1.0, 1.0)) + vec2(g_vrRightEye * 0.5, 0));
 
-	vec4 clip = vec4((In.texCoords.x * 2.0) - 1.0, ((1.0 - In.texCoords.y) * 2.0) - 1.0, 1.0, 1.0);
+	vec4 clip = vec4(((In.texCoords.x * 2.0) - 1.0), ((1.0 - In.texCoords.y) * 2.0) - 1.0, 1.0, 1.0);
 	vec4 view = mul(g_matInvViewProj, clip);
 	vec3 eye_dir = normalize(view.xyz / view.w);
 
-	vec4 surfacePos = vec4(g_LocalEye + (eye_dir * depthInput.w * 300000.0), 1.0);
+	vec4 surfacePos = vec4(g_LocalEye + (eye_dir * abs(depthInput.w) * 300000.0), 1.0);
 	vec4 rayPos = surfacePos;
 	vec4 samplePos;
 
@@ -2219,8 +2343,8 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	if (length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * 2.0)
 		stepLength *= (length(g_viewportPixelScale) * 2.0) / length(TexCoord - OldTexCoord);
 
-	if (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale) * 4.0)
-		stepLength *= (length(g_viewportPixelScale) * 4.0) / length(TexCoord - OldTexCoord);
+	if (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale) * 2.0)
+		stepLength *= (length(g_viewportPixelScale) * 2.0) / length(TexCoord - OldTexCoord);
 
 	DepthInterpretationStruct dis;
 	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
@@ -2234,12 +2358,12 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 		rayPos += vec4(reflectVec * stepLength, 0.0);
 		samplePos = mul(g_matWorldViewProj, rayPos);
-		TexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0) * g_DepthScale;//In.texCoords - vec2(0.0, 0.1);// 
+		TexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0) * g_DepthScale; //In.texCoords - vec2(0.0, 0.1);// 
 
 		if (TexCoord.y > 1.0 || TexCoord.y < 0.0 || TexCoord.x >= 1.0 || TexCoord.x <= 0.0)
 			break;
 
-		depthSample = g_texDepth.Sample(g_samplerPerlin, TexCoord).x;
+		depthSample = g_texDepth.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0)).x;
 
 		depthSample = depthToFadeDistance(depthSample, vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w), dis, g_HalfTan) * 300000.0;
 
@@ -2250,7 +2374,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 		if(temp <= stepLength)
 		{
 			hit = true;
-			Output = g_texColour.Sample(g_samplerPerlin, TexCoord);
+			Output = g_texColour.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0));
 			Output.w = -1.0;
 			break;
 		}
@@ -2271,7 +2395,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	}
 
 	//	Output = vec4(1.0,0.0,0.0,0.0);
-	return Output;
+	return Output;//vec4(reflectVec,0.0);//clip;//  
 }
 
 //-----------------------------------------------------------------------------
@@ -2309,7 +2433,11 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 	vec3 normal = normalsInput.xyz;
 	
 	//return vec4(-normalsInput.xy, 0.0, 0.0);
-	//return refractColourInput; // Debug line
+	//if(waterDepth == -0.01)
+		//return refractColourInput; // Debug line
+
+	//return vec4(depthInput.z, depthInput.z, depthInput.z, 1.0);
+
 
 	float scatterDepth = 0.0;
 	float fadeDistance = 300000.0;
@@ -2323,7 +2451,7 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 	float sunAngle = dot(sun_dir, vec3(0.0, 0.0, 1.0)) / (length(sun_dir) * length(vec3(0.0, 0.0, 1.0)));
 
 	// Fournier-Forand phase function
-	const float u = 4.0f;
+	const float u = 4.25f;
 	float v = (3.0 - u) / 2.0;
 	float b = (4.0 / (3.0 * pow(1.33f - 1.0, 2.0))) * (0.5f - 0.5f * (dot(eye_dir, sun_dir)));
 	float p = 1.0 - ((1.0 - pow(b, v + 1.0) - (0.5f * (1.0 - pow(b, v)))) / ((1.0 - b) * pow(b, v)));
@@ -2375,6 +2503,11 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 
 		if (sun_dir.z <= 0.0)
 			sunEffect = 0.0;
+
+		if (depthInput.w <= 0.0)
+		{
+			scatterDepth = 0.0;
+		}
 		/*
 		if (normalsInput.w)
 		{
@@ -2398,6 +2531,7 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 
 		Output += mult;
 
+		//if(depthInput.w >= 0.0)
 		Output += SSS * surfaceScattering;
 		//Output += SSS * sunScatter * -exp(fadeDistance * eye_depth);
 
@@ -2433,7 +2567,7 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 	//vec3 refl = lookup.xyz; //g_texReflectCube.Sample(g_samplerPerlin, normalize(reflect_vec.yxz));//
 	vec4 refl;
 	if(reflections)
-		refl = g_waterReflectColour.Sample(g_samplerPerlin, TexCoords);
+		refl = g_waterReflectColour.Sample(g_samplerPerlin, In.texCoords);
 	else
 		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0);
 	//return refl;
@@ -2672,6 +2806,40 @@ technique water_reflection_pass
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0, PS_WaterSSR()));
 	}
+}
+
+technique write_mask
+{
+	pass plane
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(ReverseDepth, 0);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_MaskObject()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_MaskObjectPlane()));
+	}
+
+	pass frontface
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(ReverseDepth, 0);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_MaskObject()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_MaskObjectFrontface()));
+	}
+
+	pass backface
+	{
+		SetRasterizerState(RenderFrontfaceCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_MaskObject()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS_MaskObjectBackface()));
+	}
+
 }
 
 technique copy_stencil
