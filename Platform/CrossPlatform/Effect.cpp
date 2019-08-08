@@ -795,17 +795,21 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	auto buildMode = r->GetShaderBuildMode();
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
 	{
-		const char *p = std::getenv("SIMUL");
-		if (!p)
+		const char *SIMUL = std::getenv("SIMUL_BUILD");
+		if (!SIMUL)
 			return;
-		std::string simulPath = p;
+		const char* b = std::getenv("SIMUL_BUILD");
+		std::string SIMUL_BUILD = b?b:SIMUL;
+		if (SIMUL_BUILD.length()==0)
+			return;
+		std::string simulPath = SIMUL;
 
-		if (simulPath != "")
+		if (SIMUL_BUILD != "")
 		{
 			std::string platformName = r->GetName();
 
 			base::find_and_replace(platformName, " ", "");
-			std::string platformPath = (simulPath + "\\Platform\\") + platformName;
+			std::string platformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
 			// Sfx path
 			std::string exe = simulPath;
 			exe += "\\Tools\\bin\\Sfx.exe";
@@ -822,13 +826,13 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			std::string cmdLine = exe;
 			{
 				// File to compile
-				cmdLine += " " + simulPath + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
+				cmdLine += " " + SIMUL_BUILD + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
 
 				//cmdLine += " -L";
 				//cmdLine += " -V";
 				// Includes
 				cmdLine += " -I\"" + platformPath + "\\HLSL;" + platformPath + "\\GLSL;";
-				cmdLine += simulPath + "\\Platform\\CrossPlatform\\SL\"";
+				cmdLine += SIMUL_BUILD + "\\Platform\\CrossPlatform\\SL\"";
 
 				// Platform file
 				cmdLine += (string(" -P\"") + (platformPath +"\\")+r->GetSfxConfigFilename())+"\"";
