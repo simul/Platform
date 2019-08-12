@@ -80,7 +80,7 @@ void Effect::Compile(const char *filename_utf8)
 	#ifdef _MSC_VER
 	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";
 	if (SIMUL == "")
-		SIMUL="d:/jarvis/releases/simulversion/4.2/simul/" //Find a better way of fixing this, this is a temp fix
+		SIMUL = "d:/jarvis/releases/simulversion/4.2/simul/"; //Find a better way of fixing this, this is a temp fix
 	#else
 	std::string sfxcmd="{SIMUL}/build/bin/Sfx";
 	if(SIMUL=="")
