@@ -795,7 +795,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	auto buildMode = r->GetShaderBuildMode();
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
 	{
-		const char *SIMUL = std::getenv("SIMUL_BUILD");
+		const char *SIMUL = std::getenv("SIMUL");
 		if (!SIMUL)
 			return;
 		const char* b = std::getenv("SIMUL_BUILD");
@@ -809,7 +809,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			std::string platformName = r->GetName();
 
 			base::find_and_replace(platformName, " ", "");
-			std::string platformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
+			std::string sourcePlatformPath = (std::string(SIMUL) + "\\Platform\\") + platformName;
+			std::string buildPlatformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
 			// Sfx path
 			std::string exe = simulPath;
 			exe += "\\Tools\\bin\\Sfx.exe";
@@ -826,16 +827,17 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			std::string cmdLine = exe;
 			{
 				// File to compile
-				cmdLine += " " + SIMUL_BUILD + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
+				cmdLine += " ";
+				cmdLine += (std::string(SIMUL) + "\\Platform\\CrossPlatform\\SFX\\") + filename_utf8 + ".sfx";
 
 				//cmdLine += " -L";
 				//cmdLine += " -V";
 				// Includes
-				cmdLine += " -I\"" + platformPath + "\\HLSL;" + platformPath + "\\GLSL;";
+				cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
 				cmdLine += SIMUL_BUILD + "\\Platform\\CrossPlatform\\SL\"";
 
 				// Platform file
-				cmdLine += (string(" -P\"") + (platformPath +"\\")+r->GetSfxConfigFilename())+"\"";
+				cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
 
 				// Ouput file
 				std::string outDir = r->GetShaderBinaryPath();
@@ -854,7 +856,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				cmdLine += " -O\"" + outDir + "\"";
 				// Intermediate folder
 				cmdLine += " -M\"";
-				cmdLine += platformPath + "\\sfx_intermediate\"";
+				cmdLine += buildPlatformPath + "\\sfx_intermediate\"";
 				// Force
 				if ((buildMode & crossplatform::ShaderBuildMode::ALWAYS_BUILD) != 0)
 				{
@@ -891,7 +893,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			startInfo.hStdError = cerrWrite;
 			//startInfo.wShowWindow = SW_SHOW;;
 			PROCESS_INFORMATION processInfo = {};
-			bool success = CreateProcessW
+			bool success = (bool)CreateProcessW
 			(
 				NULL, wcstring,
 				NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
