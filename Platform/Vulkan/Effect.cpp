@@ -77,15 +77,15 @@ void Effect::Compile(const char *filename_utf8)
 	//_wgetcwd(wd,1000);
 	std::string shaderbin = renderPlatform->GetShaderBinaryPath();
 	std::string SIMUL=base::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";
 	if (SIMUL == "")
 		SIMUL = "d:/jarvis/releases/simulversion/4.2/simul/"; //Find a better way of fixing this, this is a temp fix
-	#else
+#else
 	std::string sfxcmd="{SIMUL}/build/bin/Sfx";
 	if(SIMUL=="")
 		SIMUL="/home/roderick/Documents/Simul/4.2/Simul";
-	#endif
+#endif
 	std::string command=sfxcmd+" -I\"{SIMUL}/Platform/Vulkan/GLSL;{SIMUL}/Platform/CrossPlatform/SL\""
 											" -O\""+shaderbin+"\""
 												" -P\"{SIMUL}/Platform/Vulkan/GLSL/GLSL.json\""
