@@ -37,7 +37,6 @@ LibraryDefaults(SimulDirectX11_MT)
 add_dependencies(SimulDirectX11_MT DirectX11Shaders effects11_MT directxtex_MT )
 
 
-link_directories( ${CMAKE_SOURCE_DIR}/lib//x64/v141/${CMAKE_BUILD_TYPE})
 add_dynamic_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${CMAKE})
 target_compile_definitions(SimulDirectX11_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1)
 set_target_properties(SimulDirectX11_MD PROPERTIES FOLDER Dynamic
