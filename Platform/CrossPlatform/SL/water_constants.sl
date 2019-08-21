@@ -139,7 +139,7 @@ SIMUL_CONSTANT_BUFFER(cbMeshObjectBuffers, 10)
 	uniform mat4		g_buoyancyMat;
 
 	uniform vec3		g_location;
-	uniform float		g_ID;
+	uniform int			g_ID;
 
 	uniform vec4		g_rotation;
 
