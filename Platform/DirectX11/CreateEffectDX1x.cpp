@@ -521,7 +521,8 @@ ERRNO_CHECK
 	}
 	if(hr!=S_OK&&(shaderBuildMode&crossplatform::TRY_AGAIN_ON_FAIL)!=crossplatform::TRY_AGAIN_ON_FAIL&&binary_date_jdn!=0.0)
 	{
-		std::cout<<"Compile failed, loading binary as fallback: "<<binary_filename_utf8<<std::endl;
+		SIMUL_CERR<<"Compile failed, loading binary as fallback: "<<binary_filename_utf8<<std::endl;
+		SIMUL_BREAK_ONCE("Shader compile failure!");
 		// if we're not planning to rebuild, load the binary.
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
