@@ -529,7 +529,7 @@ void DeviceManager::CreateDevice()
                           .setEnabledExtensionCount(enabled_extension_count)
                           .setPpEnabledExtensionNames((const char *const *)extension_names.data())
                           .setPEnabledFeatures(&features)
-						.setQueueCreateInfoCount(queues.size());
+						.setQueueCreateInfoCount((uint32_t)queues.size());
 	/*
     if (separate_present_queue) {
         queues[1].setQueueFamilyIndex(present_queue_family_index);

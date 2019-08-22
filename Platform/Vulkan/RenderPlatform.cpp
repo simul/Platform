@@ -359,7 +359,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		for(int i=0;i<1;i++)
 		{
 			crossplatform::Viewport &vp=cs->viewports[i];
-			vkViewports[0].setHeight(vp.h).setWidth(vp.w).setX(vp.x).setY(vp.y)
+			vkViewports[0].setHeight((float)vp.h).setWidth((float)vp.w).setX((float)vp.x).setY((float)vp.y)
 				.setMaxDepth(1.0f).setMinDepth(0.0f);
 			vkScissors[0].setExtent(vk::Extent2D(vp.w,vp.h)).setOffset(vk::Offset2D(vp.x,vp.y));
 		}
