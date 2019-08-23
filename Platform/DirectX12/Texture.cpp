@@ -422,7 +422,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Clean resources
 	SAFE_RELEASE(mTextureDefault);
 	SAFE_RELEASE(mTextureUpload);
-	ensureTextureArraySizeAndFormat(r,wicContents[0].metadata.width,wicContents[0].metadata.height,arraySize,m,format,false,true);
+	ensureTextureArraySizeAndFormat(r,(int)wicContents[0].metadata.width,(int)wicContents[0].metadata.height,arraySize,m,format,false,true);
 	
 	// Make the texture description
 	D3D12_RESOURCE_DESC textureDesc = {};

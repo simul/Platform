@@ -63,7 +63,11 @@ namespace simul
 										    RenderPlatform();
 			virtual						    ~RenderPlatform();
 			virtual float                   GetDefaultOutputGamma() const override;
-			const char*					    GetName() const override {return "DirectX 12";}
+#ifdef _XBOX_ONE
+			const char* GetName() const override { return "DirectX 12 Xbox One"; }
+#else
+			const char*	GetName() const override {return "DirectX 12";}
+#endif
 			virtual const char *			GetSfxConfigFilename() const override
 			{
 				return "HLSL/HLSL12.json";

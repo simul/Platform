@@ -1,5 +1,6 @@
 {
      "compiler"						: ""
+	"api": "OpenGL",
 	,"defaultOptions"				: ""
 	,"outputExtension"				: "glsl"
 	,"sourceExtension"				: "glsl"

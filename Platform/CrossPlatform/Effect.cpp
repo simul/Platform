@@ -1049,6 +1049,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	int passNum=0;
 	string group_name,tech_name,pass_name;
 	int shaderCount=0;
+	bool platformChecked = false;
 	while(next>=0)
 	{
 		#ifdef UNIX
@@ -1057,6 +1058,25 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		string line		=str.substr(pos,next-pos-1);
 		#endif
 		base::ClipWhitespace(line);
+		if (!platformChecked)
+		{
+			if (line.substr(0, 3) != std::string("SFX"))
+			{
+				SIMUL_BREAK_ONCE("No SFX init string in effect file ");
+				return;
+			}
+			else
+			{
+				string platformString = line.substr(4, line.length() - 4);
+				if (platformString != string(renderPlatform->GetName()))
+				{
+					SIMUL_CERR << "Platform " << platformString.c_str() << " from file " << filenameUtf8.c_str() << " does not match platform " << renderPlatform->GetName() << "\n";
+					SIMUL_BREAK_ONCE("Invalid platform");
+					return;
+				}
+			}
+			platformChecked = true;
+		}
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;
 		int sp=(int)line.find(" ");
