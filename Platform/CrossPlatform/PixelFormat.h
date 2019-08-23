@@ -7,35 +7,55 @@ namespace simul
 		enum PixelFormat
 		{
 			UNKNOWN
-			,R_16_FLOAT
-			,RGBA_16_FLOAT
 			,RGBA_32_FLOAT
-			,RGB_32_FLOAT
-			,RGB_11_11_10_FLOAT
-			,RG_32_FLOAT
-			,RG_16_FLOAT
-			,R_32_FLOAT
-			,LUM_32_FLOAT
-			,INT_32_FLOAT
+			,RGBA_32_UINT
+			,RGBA_32_INT
+			,RGBA_16_FLOAT
+			,RGBA_16_UINT
+			,RGBA_16_INT
+			,RGBA_16_SNORM
+			,RGBA_16_UNORM
+			,RGBA_8_UINT
+			,RGBA_8_INT
+			,RGBA_8_SNORM
 			,RGBA_8_UNORM
 			,RGBA_8_UNORM_COMPRESSED
 			,RGBA_8_UNORM_SRGB
-			,RGBA_8_SNORM
+			,BGRA_8_UNORM
+
+
+			,RGB_32_FLOAT
+			,RGB_32_UINT
+			,RGB_10_A2_UINT
+			,RGB_10_A2_INT
+			,RGB_11_11_10_FLOAT
 			,RGB_8_UNORM
 			,RGB_8_SNORM
-			,R_8_UNORM
-			,R_8_SNORM
-			,R_32_UINT
+
+			,RG_32_FLOAT
 			,RG_32_UINT
-			,RGB_32_UINT
-			,RGBA_32_UINT
+			,RG_16_FLOAT
+			,RG_16_UINT
+			,RG_16_INT
+			,RG_8_UNORM
+			,RG_8_SNORM
+
+			,R_32_FLOAT
+			,R_32_FLOAT_X_8
+			,LUM_32_FLOAT
+			,INT_32_FLOAT
+			,R_32_UINT
+			,R_32_INT
 			// depth formats:
 			,D_32_FLOAT// DXGI_FORMAT_D32_FLOAT or GL_DEPTH_COMPONENT32F
+			, D_32_UINT
+			,D_32_FLOAT_S_8_UINT
 			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
-			,BGRA_8_UNORM
-			,D_32_FLOAT_S_8_UINT
-			,R_32_FLOAT_X_8
+
+			, R_16_FLOAT
+			, R_8_UNORM
+			, R_8_SNORM
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

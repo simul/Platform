@@ -25,6 +25,7 @@ file(GLOB SHADERS
 file(GLOB SHADER_INCLUDES
 	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
 )
+set(in_rs "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/GFX.hlsl")
 
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS SIMUL_DIRECTX12_DLL=1 PROPERTIES FOLDER Static
 	INCLUDES "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${CMAKE_SOURCE_DIR}/Platform/DirectX12" )
@@ -44,7 +45,17 @@ else()
 set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" )
 endif()
 message(STATUS JSON_FILE ${JSON_FILE} )
-add_sfx_shader_project( DirectX12Shaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w -ESIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} )
+add_sfx_shader_project( DirectX12Shaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} ${in_rs} OPTIONS -w -ESIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} )
+
+# ROOT SIG BLOB!
+set(out_rs "${CMAKE_CURRENT_BINARY_DIR}/shaderbin/GFX.cso")
+add_custom_command(OUTPUT ${out_rs}
+				COMMAND ${FX_EXECUTABLE} /T rootsig_1_0 /E"GFXRS" /I"HLSL" /Fo"${out_rs}" /nologo ${in_rs}
+				MAIN_DEPENDENCY ${in_rs}
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+				COMMENT "${FX_EXECUTABLE} /E\"GFXRS\" /I\"HLSL\" /Fo\"${out_rs}\" /nologo ${in_rs}"
+				)
+
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 add_dependencies(SimulDirectX12_MT DirectX12Shaders )
