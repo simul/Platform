@@ -1430,9 +1430,9 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		noWaveGrid = true;
 
 	// UV
-	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_center.yx * g_UVScale);
-	vec2 uv_local1 = vec2(-g_center.yx * g_UVScale );
-	vec2 uv_local2 = vec2(-g_center.yx * g_UVScale );
+	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_objectCenter.yx * g_UVScale);
+	vec2 uv_local1 = vec2(-g_objectCenter.yx * g_UVScale );
+	vec2 uv_local2 = vec2(-g_objectCenter.yx * g_UVScale );
 
 	if (lerpDisplacement)
 	{
@@ -1842,7 +1842,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	float4 pos_local = float4(vPos, 1);
 
 	// UV
-	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_center.yx * g_UVScale;
+	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_objectCenter.yx * g_UVScale;
 	if (!noDisplacement)
 	{
 		// Blend displacement to avoid tiling artifact
@@ -2776,7 +2776,7 @@ shader posTexVertexOutput VS_ShowTexture(idOnly id)
 shader vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
 {
 	vec4 lookup=showTexture.Sample(wwcSamplerState,IN.texCoords.xy);
-	return vec4(showMultiplier*lookup.rgb,1.0);
+	return vec4(lookup.rgb,1.0);
 }
 
 shader vec4 PS_ClearTexture(posTexVertexOutput IN) :SV_TARGET
