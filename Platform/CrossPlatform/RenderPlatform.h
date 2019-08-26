@@ -275,7 +275,7 @@ namespace simul
             virtual DisplaySurface*         CreateDisplaySurface();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
-			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
+			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,const Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
 			virtual void					SetStreamOutTarget				(DeviceContext &,Buffer *,int =0){}
 
@@ -288,7 +288,7 @@ namespace simul
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index);
 			/// Activate the specified index buffer in preparation for rendering.
-			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer);
+			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
 			//! Set the layout for following draw calls - format of the vertex buffer.

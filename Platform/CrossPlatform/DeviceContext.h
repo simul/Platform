@@ -168,8 +168,8 @@ namespace simul
 			ContextState& operator=(const ContextState& cs);
 			bool last_action_was_compute;
 			Viewport viewports[8];
-			Buffer *indexBuffer=nullptr;
-			std::unordered_map<int,Buffer*> applyVertexBuffers;
+			const Buffer *indexBuffer=nullptr;
+			std::unordered_map<int,const Buffer*> applyVertexBuffers;
 			std::unordered_map<int,Buffer*> streamoutTargets;
 			ConstantBufferAssignmentMap applyBuffers;
 			StructuredBufferAssignmentMap applyStructuredBuffers;
