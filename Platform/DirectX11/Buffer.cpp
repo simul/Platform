@@ -22,6 +22,11 @@ ID3D11Buffer *Buffer::AsD3D11Buffer()
 	return d3d11Buffer;
 }
 
+ ID3D11Buffer *const Buffer::AsD3D11Buffer() const
+{
+	return d3d11Buffer;
+}
+
 GLuint Buffer::AsGLuint()
 {
 	return 0;
@@ -45,8 +50,8 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 	{
 		(unsigned)(num_vertices*layout->GetStructSize())
 		,cpu_access?usage:D3D11_USAGE_DEFAULT
-		,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT:0)
-		,(cpu_access?D3D11_CPU_ACCESS_WRITE:0),0
+		,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT: (unsigned)0)
+		,(cpu_access?D3D11_CPU_ACCESS_WRITE: (unsigned)0),(unsigned)0
 	};
 	SAFE_RELEASE(d3d11Buffer);
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&desc,data?&InitData:NULL,&d3d11Buffer));

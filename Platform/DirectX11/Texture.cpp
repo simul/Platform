@@ -420,7 +420,8 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		if(end_columns>0)
 			memcpy(target,source,end_columns*byteSize);
 	}
-	if(texel_index+num_texels>=width*length)
+	// Wow. We don't want to do this, right?
+	//if(texel_index+num_texels>=width*length)
 	{
 		last_context->Unmap(texture,0);
 		memset(&mapped,0,sizeof(mapped));
