@@ -942,10 +942,10 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	{
 		if (buffers)
 		{
-		strides[i]=buffers[i]->stride;
-		if(vertexSteps&&vertexSteps[i]>=1)
-			strides[i]*=vertexSteps[i];
-		buf[i]=buffers[i]->AsD3D11Buffer();
+			strides[i]=buffers[i]->stride;
+			if(vertexSteps&&vertexSteps[i]>=1)
+				strides[i]*=vertexSteps[i];
+			buf[i]=buffers[i]->AsD3D11Buffer();
 		}
 		else
 		{
@@ -1406,6 +1406,32 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 //		DrawTexture(deviceContext,x1,y1,dx,dy,(ID3D11ShaderResourceView*)NULL,mult,blend);
 	//else
 		//DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
+}
+
+bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/) 
+{
+	/*for (int i = 0; i < 16; i++)
+	{
+		int vertexSteps;
+		if (deviceContext.contextState.applyVertexBuffers[i])
+			SetVertexBuffers(deviceContext, i, 1
+				, &(deviceContext.contextState.applyVertexBuffers[i])
+				, deviceContext.contextState.currentLayout
+				, &vertexSteps);
+	}
+
+	if (deviceContext.contextState.indexBuffer)
+	{
+		auto *ib = static_cast<const dx11::Buffer *>(deviceContext.contextState.indexBuffer);
+		SetIndexBuffer(deviceContext, deviceContext.contextState.indexBuffer);
+
+	}*/
+	if (deviceContext.contextState.currentLayout)
+	{
+		auto *l = static_cast<const dx11::Layout *>(deviceContext.contextState.currentLayout);
+		deviceContext.asD3D11DeviceContext()->IASetInputLayout(l->AsD3D11InputLayout());
+	}
+	return true;
 }
 
 void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &deviceContext)

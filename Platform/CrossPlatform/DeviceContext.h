@@ -192,6 +192,7 @@ namespace simul
 				textureAssignmentMapValid=false;
 				rwTextureAssignmentMapValid=false;
 				streamoutTargetsValid=false;
+				currentLayout = nullptr;
 				textureSlots=0;
 				rwTextureSlots=0;
 				rwTextureSlotsForSB=0;

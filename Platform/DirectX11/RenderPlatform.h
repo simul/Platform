@@ -114,6 +114,7 @@ namespace simul
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 		protected:
+			bool ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/ = true) override;
 			void WaitForFencedResources(crossplatform::DeviceContext &deviceContext);
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
