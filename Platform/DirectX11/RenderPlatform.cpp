@@ -526,7 +526,7 @@ crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
     return new dx11::DisplaySurface();
 }
 
-DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
+DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -535,12 +535,28 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R16_FLOAT;
 	case RGBA_16_FLOAT:
 		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case RGB_16_FLOAT:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC6H:
+			return DXGI_FORMAT_BC6H_UF16;
+		case crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY:
+			return DXGI_FORMAT_BC7_UNORM;
+		default:
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		};
 	case RGB_11_11_10_FLOAT:
 		return DXGI_FORMAT_R11G11B10_FLOAT;
 	case RGBA_32_FLOAT:
 		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case RGB_32_FLOAT:
-		return DXGI_FORMAT_R32G32B32_FLOAT;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY:
+			return DXGI_FORMAT_BC7_UNORM;
+		default:
+			return DXGI_FORMAT_R32G32B32_FLOAT;
+		};
 	case RG_16_FLOAT:
 		return DXGI_FORMAT_R16G16_FLOAT;
 	case RG_32_FLOAT:
@@ -552,19 +568,71 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
-		return DXGI_FORMAT_R8G8B8A8_UNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM;
+		default:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		};
 	case BGRA_8_UNORM:
-		return DXGI_FORMAT_B8G8R8A8_UNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM;
+		default:
+			return DXGI_FORMAT_B8G8R8A8_UNORM;
+		};
 	case RGBA_8_UNORM_SRGB:
-		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM_SRGB;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM_SRGB;
+		default:
+			return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		};
 	case RGBA_8_UNORM_COMPRESSED:
 		return DXGI_FORMAT_BC7_UNORM;
 	case RGBA_8_SNORM:
 		return DXGI_FORMAT_R8G8B8A8_SNORM;
 	case R_8_UNORM:
-		return DXGI_FORMAT_R8_UNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC4_UNORM;
+		default:
+			return DXGI_FORMAT_R8_UNORM;
+		};
 	case R_8_SNORM:
-		return DXGI_FORMAT_R8_SNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC4_SNORM;
+		default:
+			return DXGI_FORMAT_R8_SNORM;
+		};
+	case RG_8_SNORM:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC5_SNORM;
+		default:
+			return DXGI_FORMAT_R8G8_SNORM;
+		};
+	case RG_8_UNORM:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC5_UNORM;
+		default:
+			return DXGI_FORMAT_R8G8_UNORM;
+		};
 	case R_32_UINT:
 		return DXGI_FORMAT_R32_UINT;
 	case RG_32_UINT:

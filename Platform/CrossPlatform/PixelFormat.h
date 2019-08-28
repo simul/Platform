@@ -26,6 +26,7 @@ namespace simul
 
 			,RGB_32_FLOAT
 			,RGB_32_UINT
+			,RGB_16_FLOAT
 			,RGB_10_A2_UINT
 			,RGB_10_A2_INT
 			,RGB_11_11_10_FLOAT

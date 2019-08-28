@@ -50,6 +50,19 @@ namespace simul
 		class RenderPlatform;
 		class Texture;
 		struct DeviceContext;
+		enum class CompressionFormat : uint32_t
+		{
+			UNCOMPRESSED,
+			BC1,
+			BC3,
+			BC4,
+			BC5,
+			ETC1,
+			ETC2,
+			PVRTC1_4_OPAQUE_ONLY,
+			BC7_M6_OPAQUE_ONLY,
+			BC6H
+		};
 		struct SamplerStateDesc
 		{
 			enum Wrapping
@@ -81,6 +94,12 @@ namespace simul
 			bool need_srv=true;
 			bool computable = true;
 			int numOfSamples=1;
+			int aa_quality = 0;
+			vec4 clear;
+			float clearDepth=0.0f;
+			uint clearStencil = 0;
+			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
+			const void* initialData = nullptr;
 		};
 		//! A crossplatform viewport structure.
 		struct Viewport
@@ -247,6 +266,7 @@ namespace simul
 			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
 			virtual void InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
+			virtual bool EnsureTexture(RenderPlatform *r, TextureCreate*) { return false; }
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
