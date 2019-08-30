@@ -95,7 +95,7 @@ SIMUL_CONSTANT_BUFFER(cbWaterProbe, 3)
 	uniform float		cvbhdxiobacyi;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 1)
+SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 4)
 	uniform float		g_zetaMax;
 	uniform float		g_zetaMin;
 	uniform float		g_period;

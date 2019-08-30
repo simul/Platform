@@ -1474,7 +1474,7 @@ crossplatform::Query *RenderPlatform::CreateQuery(crossplatform::QueryType type)
 }
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers
-	,crossplatform::Buffer *const*buffers
+	,const crossplatform::Buffer *const*buffers
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
