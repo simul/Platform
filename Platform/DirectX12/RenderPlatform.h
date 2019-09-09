@@ -68,6 +68,14 @@ namespace simul
 #else
 			const char*	GetName() const override {return "DirectX 12";}
 #endif
+			crossplatform::RenderPlatformType GetType() const override
+			{
+#ifdef _XBOX_ONE
+				return crossplatform::RenderPlatformType::XboxOneD3D12;
+#else
+				return crossplatform::RenderPlatformType::D3D12;
+#endif
+			}
 			virtual const char *			GetSfxConfigFilename() const override
 			{
 				return "HLSL/HLSL12.json";

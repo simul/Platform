@@ -43,6 +43,7 @@ namespace simul
 			{
 				return "DirectX 11";
 			}
+			crossplatform::RenderPlatformType GetType() const override;
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
@@ -176,7 +177,8 @@ namespace simul
 			int storedStateCursor;
 			std::vector<StoredState> storedStates;
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,vec4 mult,bool blend=false);
-		};
+
+};
 	}
 }
 #ifdef _MSC_VER

@@ -133,8 +133,10 @@ namespace simul
 			case RGB_32_UINT:
 			case RGBA_32_UINT:
 				return sizeof(unsigned int);
-			case R_16_FLOAT:
 			case RGBA_16_FLOAT:
+			case RGB_16_FLOAT:
+			case RG_16_FLOAT:
+			case R_16_FLOAT:
 			case D_16_UNORM:
 				return sizeof(short);
 			case D_24_UNORM_S_8_UINT:
@@ -164,9 +166,11 @@ namespace simul
 				return 4;
 			case RGB_32_FLOAT:
 			case RGB_32_UINT:
+			case RGB_16_FLOAT:
 				return 3;
 			case RG_32_FLOAT:
 			case RG_32_UINT:
+			case RG_16_FLOAT:
 				return 2;
 			case R_32_FLOAT:
 			case LUM_32_FLOAT:

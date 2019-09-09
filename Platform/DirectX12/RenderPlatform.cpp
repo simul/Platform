@@ -292,8 +292,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		ID3DBlob* rblob				= nullptr;
 		void* fileContents			= nullptr;
 		unsigned int loadedBytes	= 0;
-		std::string rsFile			= std::string(GetShaderBinaryPath()) + "//GFX.cso";
-		fileLoader->AcquireFileContents(fileContents, loadedBytes, rsFile.c_str(), false);
+		fileLoader->AcquireFileContents(fileContents, loadedBytes, "//GFX.cso",GetShaderBinaryPathsUtf8(), false);
 		if (!fileContents || loadedBytes <= 0)
 		{
 			SIMUL_CERR << "Could not load the RootSignature blob.\n";

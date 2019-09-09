@@ -312,6 +312,15 @@ void RenderPlatform::PushShaderPath(const char *path_utf8)
 {
 	shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
 }
+void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
+{
+	std::string str = std::string(path_utf8) ;
+	char c = str.back();
+	if (c != '\\' && c != '/')
+		str += '/';
+	shaderBinaryPathsUtf8.push_back(str);
+}
+
 std::vector<std::string> RenderPlatform::GetShaderPathsUtf8()
 {
 	return shaderPathsUtf8;
@@ -321,14 +330,20 @@ void RenderPlatform::SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf
 	shaderPathsUtf8.clear();
 	shaderPathsUtf8=pathsUtf8;
 }
+
 void RenderPlatform::PopShaderPath()
 {
 	shaderPathsUtf8.pop_back();
 }
 
-const char *RenderPlatform::GetShaderBinaryPath()
+void RenderPlatform::PopShaderBinaryPath()
 {
-	return shaderBinaryPathUtf8.c_str();
+	shaderBinaryPathsUtf8.pop_back();
+}
+
+std::vector<std::string> RenderPlatform::GetShaderBinaryPathsUtf8()
+{
+	return shaderBinaryPathsUtf8;
 }
 
 void RenderPlatform::SetShaderBuildMode			(ShaderBuildMode s)
@@ -559,17 +574,6 @@ void RenderPlatform::SetMemoryInterface(simul::base::MemoryInterface *m)
 crossplatform::Effect *RenderPlatform::GetDebugEffect()
 {
 	return debugEffect;
-}
-
-void RenderPlatform::SetShaderBinaryPath(const char *path_utf8)
-{
-	shaderBinaryPathUtf8 = path_utf8;
-	if(shaderBinaryPathUtf8.size())
-	{
-		char c=shaderBinaryPathUtf8.back();
-		if(c!='\\'&&c!='/')
-			shaderBinaryPathUtf8+='/';
-	}
 }
 
 ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
@@ -1282,7 +1286,7 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
 	simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
-	std::string shaderSourcePath = GetShaderBinaryPath() + std::string("/") + filenameUtf8;
+	std::string shaderSourcePath = GetShaderBinaryPathsUtf8().back() + std::string("/") + filenameUtf8;
 
 	// Load the shader source:
 	unsigned int fileSize = 0;

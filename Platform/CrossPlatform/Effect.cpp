@@ -840,7 +840,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
 
 				// Ouput file
-				std::string outDir = r->GetShaderBinaryPath();
+				std::string outDir = r->GetShaderBinaryPathsUtf8().back();
 				for (unsigned int i = 0; i < outDir.size(); i++)
 				{
 					if (outDir[i] == '/')
@@ -986,33 +986,37 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	textureDetailsMap.clear();
 	textureCharMap.clear();
 	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
-	std::string filepathUtf8=renderPlatform->GetShaderBinaryPath();
-	if (filepathUtf8.length()&&filepathUtf8[filepathUtf8.length() - 1] != '/')
-		filepathUtf8+="/";
+	std::vector<std::string> filepathsUtf8=renderPlatform->GetShaderBinaryPathsUtf8();
 	std::string filenameUtf8=filename_utf8;
-	// if (filenameUtf8.find(".") >= filenameUtf8.length())
-	if (filenameUtf8.find(".sfxo") == std::string::npos)
-		filenameUtf8 += ".sfxo";
-	filenameUtf8=filepathUtf8+filenameUtf8;
 	std::string binFilenameUtf8 = filenameUtf8;
-	base::find_and_replace(binFilenameUtf8, ".sfxo",".sfxb");
+
+	if (binFilenameUtf8.find(".sfxo") == std::string::npos)
+		binFilenameUtf8 += ".sfxo";
+	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(binFilenameUtf8.c_str(), filepathsUtf8);
+	std::string filepathUtf8;
+	if (index < 0 || index >= renderPlatform->GetShaderPathsUtf8().size())
+		filepathUtf8 = "";
+	else if (index < renderPlatform->GetShaderPathsUtf8().size())
+		filepathUtf8 = filepathsUtf8[index];
+
+	binFilenameUtf8 = (filepathUtf8 +"/") + binFilenameUtf8;
 #ifdef __ORBIS__
-	base::find_and_replace(filenameUtf8,"\\","/");
+	base::find_and_replace(binFilenameUtf8,"\\","/");
 #endif
-	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{
 		#ifdef __ORBIS__
 		// Some engines force filenames to lower case because reasons:
-		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
+		std::transform(binFilenameUtf8.begin(), binFilenameUtf8.end(), binFilenameUtf8.begin(), ::tolower);
 		#endif
-		if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
-			SIMUL_CERR<<"Shader effect file not found: "<<filenameUtf8.c_str()<<std::endl;
+			SIMUL_CERR<<"Shader effect file not found: "<< binFilenameUtf8.c_str()<<std::endl;
 			// We now attempt to build the shader from source.
 			Compile(filename_utf8);
-			if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+			if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 			{
-				filenameUtf8=filename_utf8;
+				binFilenameUtf8 =filename_utf8;
 		// The sfxo does not exist, so we can't load this effect.
 				return;
 			}
@@ -1020,8 +1024,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	void *ptr;
 	unsigned int num_bytes;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes,filenameUtf8.c_str(),true);
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
 
+	std::string sfxbFilenameUtf8 = binFilenameUtf8;
+	base::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
 	void *bin_ptr=nullptr;
 	unsigned int bin_num_bytes=0;
@@ -1390,10 +1396,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							inline_length = std::stoul(inline_length_str, nullptr, 16);
 							if (!bin_ptr)
 							{
-								simul::base::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, binFilenameUtf8.c_str(), true);
+								simul::base::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, sfxbFilenameUtf8.c_str(), true);
 								if (!bin_ptr)
 								{
-									SIMUL_BREAK(base::QuickFormat("Failed to load combined shader binary: %s\n", binFilenameUtf8.c_str()));
+									SIMUL_BREAK(base::QuickFormat("Failed to load combined shader binary: %s\n", sfxbFilenameUtf8.c_str()));
 								}
 							}
 						}

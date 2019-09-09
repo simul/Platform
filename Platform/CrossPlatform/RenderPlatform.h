@@ -137,9 +137,7 @@ namespace simul
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
-			virtual RenderPlatformType GetType() const {
-				return RenderPlatformType::Unknown;
-			}
+			virtual RenderPlatformType GetType() const = 0;
 			virtual const char *GetSfxConfigFilename() const 
 			{
 				return "";
@@ -174,9 +172,12 @@ namespace simul
 			//! Remove a path from the top of the shader source path stack.
 			void PopShaderPath();
 			//! Set the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
-			void SetShaderBinaryPath(const char *path_utf8);
+			//! Push the given file path onto the shader path stack.
+			void PushShaderBinaryPath(const char* path_utf8);
+			//! Remove a path from the top of the shader source path stack.
+			void PopShaderBinaryPath();
 			//! Returns the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
-			const char *GetShaderBinaryPath();
+			std::vector<std::string> RenderPlatform::GetShaderBinaryPathsUtf8();
 			//! When shaders should be built, or loaded if available.
 			void SetShaderBuildMode			(ShaderBuildMode s);
 			//! When shaders should be built, or loaded if available.
@@ -345,7 +346,7 @@ namespace simul
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
 			std::vector<std::string> texturePathsUtf8;
-			std::string shaderBinaryPathUtf8;
+			std::vector<std::string> shaderBinaryPathsUtf8;
 			std::map<std::string,SamplerState*> sharedSamplerStates;
 
 			ShaderBuildMode					shaderBuildMode;

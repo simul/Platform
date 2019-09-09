@@ -784,6 +784,15 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 		std::string format;
 		switch(dec.Format)
 		{
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			format = "half4";
+			break;
+		case DXGI_FORMAT_R16G16_FLOAT:
+			format = "half2";
+			break;
+		case DXGI_FORMAT_R16_FLOAT:
+			format = "half";
+			break;
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:
 			format="float4";
 			break;
@@ -1465,6 +1474,11 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		debugEffect->Unapply(deviceContext);
 	}
 	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",NULL);
+}
+
+crossplatform::RenderPlatformType RenderPlatform::GetType() const
+{
+	return crossplatform::RenderPlatformType::D3D11;
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend)

@@ -41,6 +41,10 @@ namespace simul
 			            RenderPlatform();
 			virtual~    RenderPlatform() override;
 			const char* GetName() const override;
+			crossplatform::RenderPlatformType GetType() const override
+			{
+				return crossplatform::RenderPlatformType::OpenGL;
+			}
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
 			void        BeginFrame() override;

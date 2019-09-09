@@ -505,7 +505,7 @@ void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,con
 		flags=D3DCOMPILE_SKIP_OPTIMIZATION;
 
 	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines,flags, renderPlatform->GetShaderBuildMode()
-		,renderPlatform->GetShaderPathsUtf8(),renderPlatform->GetShaderBinaryPath());//);D3DCOMPILE_DEBUG
+		,renderPlatform->GetShaderPathsUtf8(),renderPlatform->GetShaderBinaryPathsUtf8());//);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();
 	if(e)
