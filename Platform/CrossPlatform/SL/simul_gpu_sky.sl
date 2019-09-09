@@ -253,7 +253,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor3(optical_depth_texture, density_texture, maxDensityAltKm, alt_km,lightDir, planetRadiusKm,0.0);
+	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor3(optical_depth_texture, density_texture, maxDensityAltKm, alt_km,lightDir, planetRadiusKm,0.001);
 	light.rgb			*=RAYLEIGH_BETA_FACTOR;
 	vec4 insc			=light;
 	//insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);

@@ -11,7 +11,7 @@
 namespace DirectX
 {
 	struct TexMetadata;
-	struct ScratchImage;
+	class ScratchImage;
 }
 namespace simul
 {
