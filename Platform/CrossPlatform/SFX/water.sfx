@@ -2312,7 +2312,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 	float4 Output = float4(-1.0, -1.0, -1.0, -1.0);// g_texColour.Sample(wrapSamplerState, In.texCoords) / 50.0;
 		
-	static int stepNo = 200;
+	const int stepNo = 200;
 	float stepLength = min(max(abs(depthInput.w) * 300000.0 / 100.0, 0.125),0.5);
 
 	if (depthInput.y <= 0.0f || depthInput.x < 0.0f)
