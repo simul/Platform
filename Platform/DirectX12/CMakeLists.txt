@@ -32,7 +32,7 @@ add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINI
 
 add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} )
 
-target_compile_definitions(SimulDirectX12_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_DIRECTX12_DLL=1)
+target_compile_definitions(SimulDirectX12_MD PRIVATE SIMUL_DIRECTX12_DLL=1)
 set_target_properties(SimulDirectX12_MD PROPERTIES FOLDER Dynamic
 							LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
 target_include_directories(SimulDirectX12_MD PUBLIC "${CMAKE_SOURCE_DIR}/Platform/DirectX12")
@@ -59,6 +59,7 @@ add_custom_command(OUTPUT ${out_rs}
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 add_dependencies(SimulDirectX12_MT DirectX12Shaders )
+add_dependencies(DirectX12Shaders Sfx )
 endif()
 add_dependencies(SimulDirectX12_MD DirectX12Shaders )
 
