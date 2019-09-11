@@ -177,7 +177,7 @@ namespace simul
 			//! Remove a path from the top of the shader source path stack.
 			void PopShaderBinaryPath();
 			//! Returns the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
-			std::vector<std::string> RenderPlatform::GetShaderBinaryPathsUtf8();
+			std::vector<std::string> GetShaderBinaryPathsUtf8();
 			//! When shaders should be built, or loaded if available.
 			void SetShaderBuildMode			(ShaderBuildMode s);
 			//! When shaders should be built, or loaded if available.
