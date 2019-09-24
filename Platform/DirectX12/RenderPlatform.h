@@ -63,7 +63,19 @@ namespace simul
 										    RenderPlatform();
 			virtual						    ~RenderPlatform();
 			virtual float                   GetDefaultOutputGamma() const override;
-			const char*					    GetName() const override {return "DirectX 12";}
+#ifdef _XBOX_ONE
+			const char* GetName() const override { return "DirectX 12 Xbox One"; }
+#else
+			const char*	GetName() const override {return "DirectX 12";}
+#endif
+			crossplatform::RenderPlatformType GetType() const override
+			{
+#ifdef _XBOX_ONE
+				return crossplatform::RenderPlatformType::XboxOneD3D12;
+#else
+				return crossplatform::RenderPlatformType::D3D12;
+#endif
+			}
 			virtual const char *			GetSfxConfigFilename() const override
 			{
 				return "HLSL/HLSL12.json";
@@ -151,7 +163,7 @@ namespace simul
             void									PresentSwapChain(crossplatform::DeviceContext &, crossplatform::Window *s) {};
 
 			void									*GetDevice();
-			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
+			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers, const crossplatform::Buffer* const* buffers, const crossplatform::Layout* layout, const int* vertexSteps = NULL)override;
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
 
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);

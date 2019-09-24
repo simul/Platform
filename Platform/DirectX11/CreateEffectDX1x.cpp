@@ -386,7 +386,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 }
 
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect,
-crossplatform::ShaderBuildMode shaderBuildMode,std::string shaderbinPathUtf8,const std::vector<std::string> &shaderPathsUtf8)
+crossplatform::ShaderBuildMode shaderBuildMode, const std::vector<std::string>& shaderPathsUtf8,const std::vector<std::string> &shadeBinPathsUtf8)
 {
 ERRNO_CHECK
 	HRESULT hr=S_OK;
@@ -399,7 +399,7 @@ ERRNO_CHECK
 	if(dot<0)
 		dot=(int)text_filename_utf8.length();
 	std::string name_utf8=text_filename_utf8.substr(pos+1,dot-pos-1);
-	std::string binary_filename_utf8=(shaderbinPathUtf8)+name_utf8;
+	std::string binary_filename_utf8=name_utf8;
 	// Modify the binary file with the macros so the output is unique to the specified values.
 	int def=0;
 	while(macros&&macros[def].Name!=0)
@@ -419,11 +419,20 @@ ERRNO_CHECK
 	bool changes_detected=(shaderBuildMode&crossplatform::ALWAYS_BUILD)!=0;
 	double binary_date_jdn=0.0;
 	double newest_included_file=0.0;
+	std::string binaryPathUtf8;
 	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
 	if((shaderBuildMode&crossplatform::BUILD_IF_CHANGED)!=0)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
-		binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
+		for (const auto& binPath : shadeBinPathsUtf8)
+		{
+			double bin_date = simul::base::FileLoader::GetFileLoader()->GetFileDate(((binPath+"/")+binary_filename_utf8).c_str());
+			if (bin_date > binary_date_jdn)
+			{
+				binary_date_jdn = bin_date;
+				binaryPathUtf8 = binPath;
+			}
+		}
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
@@ -449,16 +458,18 @@ ERRNO_CHECK
 	crossplatform::ShaderBuildMode anyBuild=crossplatform::ALWAYS_BUILD|crossplatform::BUILD_IF_CHANGED;
 	if((shaderBuildMode&anyBuild)==0||(!changes_detected&&binary_date_jdn>0))
 	{
-		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(((binaryPathUtf8 + "/") + binary_filename_utf8).c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
-		std::cout<<"Shader binary path is "<<shaderbinPathUtf8<<std::endl;
+		std::cout<<"Shader binary path is "<< binaryPathUtf8 <<std::endl;
 		if((shaderBuildMode&anyBuild)==0)
 			return S_FALSE;
 	}
 	ID3DBlob *binaryBlob	=NULL;
 	ID3DBlob *errorMsgs		=NULL;
-ERRNO_CHECK
+	ERRNO_CHECK
+	binaryPathUtf8 = shadeBinPathsUtf8.back();
+	std::string fullBinaryFilename=(binaryPathUtf8 + "/") + binary_filename_utf8;
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"",shaderPathsUtf8);
 	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<" to target "<<binary_filename_utf8.c_str()<<std::endl;
 	hr=D3DCompile(		textData
@@ -481,9 +492,9 @@ ERRNO_CHECK
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 		{
-			if(simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false))
+			if(simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(), fullBinaryFilename.c_str(),false))
 			{
-				double new_binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
+				double new_binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(fullBinaryFilename.c_str());
 				if(new_binary_date_jdn<newest_included_file)
 				{
 					SIMUL_CERR<<"Newly created file "<<binary_filename_utf8.c_str()<<" is older than newest include file."<<std::endl;
@@ -524,7 +535,7 @@ ERRNO_CHECK
 		SIMUL_CERR<<"Compile failed, loading binary as fallback: "<<binary_filename_utf8<<std::endl;
 		SIMUL_BREAK_ONCE("Shader compile failure!");
 		// if we're not planning to rebuild, load the binary.
-		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(fullBinaryFilename.c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
 	}
@@ -535,14 +546,14 @@ ERRNO_CHECK
 	return hr;
 }
 
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8,const std::string &shaderBinPathUtf8)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8, const std::vector<std::string> &shaderBinPathsUtf8)
 {
 	std::map<std::string,std::string> defines;
-	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,0,shaderBuildMode,shaderPathsUtf8,shaderBinPathUtf8);
+	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,0,shaderBuildMode,shaderPathsUtf8, shaderBinPathsUtf8);
 }
 
 HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines
-	,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8,const std::string &shaderBinPathUtf8)
+	,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8, const std::vector<std::string>& shaderBinPathsUtf8)
 {
 	SIMUL_ASSERT_WARN(d3dDevice!=NULL,"Null device");
 	HRESULT hr=S_OK;
@@ -554,11 +565,6 @@ HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect
 		filename_utf8=(shaderPathsUtf8[index]+"/")+filenameUtf8;
 	else
 	{
-		/*SIMUL_CERR<<"File not found in paths: "<<filenameUtf8<<std::endl<<"Paths are:"<<std::endl;
-		for(int i=0;i<shaderPathsUtf8.size();i++)
-		{
-			SIMUL_CERR<<"\t"<<shaderPathsUtf8[i]<<std::endl;
-		}*/
 		filename_utf8=filenameUtf8;
 	}
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
@@ -594,7 +600,7 @@ static const DWORD default_effect_flags=0;
 											shader_flags,
 											flags,
 											d3dDevice,
-											effect,shaderBuildMode,shaderBinPathUtf8,shaderPathsUtf8);
+											effect,shaderBuildMode,shaderPathsUtf8, shaderBinPathsUtf8);
 		if(hr==S_OK)
 			break;
 		// Turn off optimization in case of D3D optimization bugs, e.g. for groupshared "race condition"

@@ -111,8 +111,8 @@ public:
 		std::string fn=logfilename;
 		if(fn.find(":")>=fn.length())
 		{
-			char buffer[_MAX_PATH];
 #ifndef _XBOX_ONE
+			char buffer[_MAX_PATH];
 			if(_getcwd(buffer,_MAX_PATH))
 			{
 				fn=buffer;

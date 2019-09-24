@@ -64,9 +64,9 @@ void DisplaySurface::InitSwapChain()
     }
     SAFE_RELEASE(mSwapChain);
    
-    mViewport.Width      = screenWidth;
-    mViewport.Height     = screenHeight;
-    mViewport.TopLeftX   = mViewport.TopLeftY = 0;
+    mViewport.Width      = (float)screenWidth;
+    mViewport.Height     = (float)screenHeight;
+    mViewport.TopLeftX   = (float)mViewport.TopLeftY = 0;
     mViewport.MinDepth   = 0.0f;
     mViewport.MaxDepth   = 1.0f;
 
@@ -172,7 +172,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
     mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
     mDeferredContext->RSSetViewports(1, &mViewport);
 	if(renderer)
-	    renderer->Render(mViewId, mDeferredContext, mBackBufferRT, mViewport.Width, mViewport.Height, frameNumber);
+	    renderer->Render(mViewId, mDeferredContext, mBackBufferRT, (int)mViewport.Width, (int)mViewport.Height, frameNumber);
 #endif
     mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
 	renderPlatform->RestoreRenderState(deferredContext);
@@ -234,8 +234,8 @@ void DisplaySurface::Resize()
     viewport.x          = 0;
     viewport.y          = 0;
 
-    mViewport.Width      = W;
-    mViewport.Height     = H;
+    mViewport.Width      = (float)W;
+    mViewport.Height     = (float)H;
 
     renderer->ResizeView(mViewId,W,H);
 }

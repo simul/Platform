@@ -43,6 +43,7 @@ namespace simul
 			{
 				return "DirectX 11";
 			}
+			crossplatform::RenderPlatformType GetType() const override;
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
@@ -89,7 +90,7 @@ namespace simul
             crossplatform::DisplaySurface*          CreateDisplaySurface();
 
 			void									*GetDevice();
-			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
+			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,const crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL) override;
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
 
 			void									ApplyDefaultRenderTargets(crossplatform::DeviceContext &deviceContext);
@@ -98,7 +99,7 @@ namespace simul
 		
 		//	crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
-			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
+			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext, const crossplatform::Buffer *buffer) override;
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
@@ -110,10 +111,11 @@ namespace simul
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			// DX11-specific stuff:
-			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
+			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p, crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 		protected:
+			bool ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/ = true) override;
 			void WaitForFencedResources(crossplatform::DeviceContext &deviceContext);
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
@@ -175,7 +177,8 @@ namespace simul
 			int storedStateCursor;
 			std::vector<StoredState> storedStates;
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,vec4 mult,bool blend=false);
-		};
+
+};
 	}
 }
 #ifdef _MSC_VER

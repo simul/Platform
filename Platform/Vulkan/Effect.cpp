@@ -75,7 +75,7 @@ void Effect::Compile(const char *filename_utf8)
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
 	//wchar_t wd[1000];
 	//_wgetcwd(wd,1000);
-	std::string shaderbin = renderPlatform->GetShaderBinaryPath();
+	std::string shaderbin = renderPlatform->GetShaderBinaryPathsUtf8().back();
 	std::string SIMUL=base::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
 #ifdef _MSC_VER
 	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";

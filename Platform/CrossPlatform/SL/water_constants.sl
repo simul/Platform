@@ -11,15 +11,17 @@ SIMUL_CONSTANT_BUFFER(cbShading,1)
 	uniform float		g_ShoreExtent;
 
 	// Perlin noise for distant wave crest
-	uniform float		g_PerlinSize;
-	uniform vec3		g_PerlinAmplitude;
-	uniform float		g_unityRender;
-	uniform vec3		g_PerlinOctave;
+	//uniform float		g_PerlinSize;
+	//uniform vec3		g_PerlinAmplitude;
+	//uniform vec3		g_PerlinOctave;
+	//uniform vec3		g_PerlinGradient;	
+
 	uniform float		g_oceanHeight;
 	uniform float		g_vrRightEye;
 	uniform vec2		g_viewportPixelScale;
 
-	uniform vec3		g_PerlinGradient;
+	uniform vec2		hfdisuvi;
+	uniform float		g_unityRender;
 	uniform bool		g_enableFoam;
 
 	// Constants for calculating texcoord from position
@@ -50,7 +52,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,2)
 
 	// Misc per draw call constants
 	uniform vec2		g_UVBase;
-	uniform vec2		g_PerlinMovement;
+	uniform vec2		g_objectCenter;
 
 	uniform vec3		g_LocalEye;
 	uniform float		g_windDirection;
@@ -77,13 +79,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,2)
 	uniform float		g_foamStrength;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(OsdConstants,3)
-	uniform vec2		bufferGrid;
-	uniform float		showMultiplier;
-	uniform float		agaher;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(cbWaterProbe, 4)
+SIMUL_CONSTANT_BUFFER(cbWaterProbe, 3)
 	uniform float		g_probeUVScale;
 	uniform float		g_probeUVOffset;
 	uniform float		g_surfaceHeight;
@@ -99,13 +95,7 @@ SIMUL_CONSTANT_BUFFER(cbWaterProbe, 4)
 	uniform float		cvbhdxiobacyi;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbWaterFoam, 5)
-	uniform float		g_foamHeight;
-	uniform float		g_foamChurn;
-	uniform vec2		hvyidbs;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 6)
+SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 4)
 	uniform float		g_zetaMax;
 	uniform float		g_zetaMin;
 	uniform float		g_period;
@@ -121,7 +111,7 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 6)
 	uniform float		gnfudivn;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbMeshObjectBuffers, 10)
+SIMUL_CONSTANT_BUFFER(cbMeshObjectBuffers, 5)
 	uniform float		g_buoyancyUVScale;
 	uniform float		g_buoyancyUVOffset;
 	uniform float		g_buoyancySurfaceHeight;
@@ -147,13 +137,13 @@ SIMUL_CONSTANT_BUFFER(cbMeshObjectBuffers, 10)
 	uniform float		vufiepadnu;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbContourBuffer, 8)
+SIMUL_CONSTANT_BUFFER(cbContourBuffer, 6)
 	uniform vec2		g_offsets;
 	uniform float		g_waterHeight;
 	uniform float		jnvuid9fsp;
 	SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbFlowRayBuffer, 9)
+SIMUL_CONSTANT_BUFFER(cbFlowRayBuffer, 7)
 	uniform float		g_stepSize;
 	uniform float		g_maxDepth;
 	uniform float		g_baseDirection;

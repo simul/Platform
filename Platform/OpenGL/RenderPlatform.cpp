@@ -857,7 +857,7 @@ void* RenderPlatform::GetDevice()
 	return nullptr;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext& deviceContext, int slot, int num_buffers, crossplatform::Buffer* const* buffers, const crossplatform::Layout* layout, const int* vertexSteps)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext& deviceContext, int slot, int num_buffers, const crossplatform::Buffer* const* buffers, const crossplatform::Layout* layout, const int* vertexSteps)
 {
     if (!buffers)
     {
@@ -924,7 +924,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,in
     }
 }
 
-void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &, const crossplatform::Buffer *buffer)
 {
 }
 

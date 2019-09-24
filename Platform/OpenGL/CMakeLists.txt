@@ -11,6 +11,16 @@ file(GLOB SOURCES
 file(GLOB HEADERS
     "*.h"
 )
+
+file(GLOB SHADERS
+	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/Sfx/*.sfx" 
+)
+
+
+file(GLOB SHADER_INCLUDES
+	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
+)
+
 add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
 target_link_directories( SimulOpenGL_MT PUBLIC ${CMAKE_SOURCE_DIR}/External/glfw/build_mt/lib/${CMAKE_BUILD_TYPE})
 set_target_properties(SimulOpenGL_MT PROPERTIES FOLDER Static)
@@ -19,6 +29,11 @@ target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platform/O
 target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_SOURCE_DIR}/External/glfw/include")
 
 add_dynamic_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
+set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.json" )
+
+add_sfx_shader_project( OpenGLShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/GLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} ${in_rs} OPTIONS -w INTERMEDIATE "${CMAKE_CURRENT_BINARY_DIR}/sfx_intermediate" )
+ 
+
 target_link_directories( SimulOpenGL_MD PUBLIC ${CMAKE_SOURCE_DIR}/External/glfw/build_md/lib/${CMAKE_BUILD_TYPE})
 target_compile_definitions(SimulOpenGL_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_OPENGL_DLL=1)
 set_target_properties(SimulOpenGL_MD PROPERTIES FOLDER Dynamic)

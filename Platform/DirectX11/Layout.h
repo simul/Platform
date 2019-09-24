@@ -15,9 +15,13 @@ namespace simul
 		public:
 			ID3D11InputLayout *d3d11InputLayout;
 			Layout();
-			~Layout();
+			virtual ~Layout();
 			void InvalidateDeviceObjects();
-			ID3D11InputLayout *AsD3D11InputLayout()
+			ID3D11InputLayout *AsD3D11InputLayout() override
+			{
+				return d3d11InputLayout;
+			}
+			ID3D11InputLayout * const AsD3D11InputLayout() const override
 			{
 				return d3d11InputLayout;
 			}

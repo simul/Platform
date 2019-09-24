@@ -137,9 +137,7 @@ namespace simul
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
-			virtual RenderPlatformType GetType() const {
-				return RenderPlatformType::Unknown;
-			}
+			virtual RenderPlatformType GetType() const = 0;
 			virtual const char *GetSfxConfigFilename() const 
 			{
 				return "";
@@ -174,9 +172,12 @@ namespace simul
 			//! Remove a path from the top of the shader source path stack.
 			void PopShaderPath();
 			//! Set the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
-			void SetShaderBinaryPath(const char *path_utf8);
+			//! Push the given file path onto the shader path stack.
+			void PushShaderBinaryPath(const char* path_utf8);
+			//! Remove a path from the top of the shader source path stack.
+			void PopShaderBinaryPath();
 			//! Returns the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
-			const char *GetShaderBinaryPath();
+			std::vector<std::string> GetShaderBinaryPathsUtf8();
 			//! When shaders should be built, or loaded if available.
 			void SetShaderBuildMode			(ShaderBuildMode s);
 			//! When shaders should be built, or loaded if available.
@@ -275,7 +276,7 @@ namespace simul
             virtual DisplaySurface*         CreateDisplaySurface();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
-			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
+			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,const Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
 			virtual void					SetStreamOutTarget				(DeviceContext &,Buffer *,int =0){}
 
@@ -288,7 +289,7 @@ namespace simul
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index);
 			/// Activate the specified index buffer in preparation for rendering.
-			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer);
+			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
 			//! Set the layout for following draw calls - format of the vertex buffer.
@@ -345,7 +346,7 @@ namespace simul
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
 			std::vector<std::string> texturePathsUtf8;
-			std::string shaderBinaryPathUtf8;
+			std::vector<std::string> shaderBinaryPathsUtf8;
 			std::map<std::string,SamplerState*> sharedSamplerStates;
 
 			ShaderBuildMode					shaderBuildMode;

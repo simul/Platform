@@ -47,6 +47,10 @@ namespace simul
 			{
 				return 0;
 			}
+			virtual ID3D11InputLayout *const AsD3D11InputLayout() const
+			{
+				return 0;
+			}
 			virtual void Apply(DeviceContext &deviceContext);
 			virtual void Unapply(DeviceContext &deviceContext);
 			int GetStructSize() const;

@@ -22,6 +22,10 @@ namespace simul
 			{
 				return NULL;
 			}
+			virtual ID3D11Buffer * const AsD3D11Buffer() const
+			{
+				return NULL;
+			}
 			virtual GLuint AsGLuint()
 			{
 				return 0;

@@ -80,6 +80,7 @@ namespace simul
 			DXGI_FORMAT					dxgi_format;
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
+			bool EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate*) override;
 			bool ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1,bool rendertargets=false);
 			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
@@ -110,6 +111,11 @@ namespace simul
 			}
 			int GetSampleCount() const;
 		protected:
+			bool EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l
+				, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil
+				, int num_samples, int aa_quality, bool wrap,
+				vec4 clear, float clearDepth, uint clearStencil
+				, crossplatform::CompressionFormat compressionFormat,const void *initData=nullptr);
 			int GetMemorySize() const;
 			ID3D11DeviceContext *last_context;
 			ID3D11Resource*				texture;

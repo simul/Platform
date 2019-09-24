@@ -612,8 +612,8 @@ shader vec4 PS_PrecomputeProfileBuffer(posTexVertexOutput In) : SV_Target
 	{
 		float waveLength = pow(2, x);
 		float waveNumber = TAU / waveLength;
-		float phase1 = waveNumber * p - sqrt(waveNumber * g) * (g_time + 5000.0);// 
-		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) * (g_time + 5000.0);// 
+		float phase1 = waveNumber * p - sqrt(waveNumber * g) * (g_time + 5000.0);// g_time + 
+		float phase2 = waveNumber * (p - g_period) - sqrt(waveNumber * g) * (g_time + 5000.0);// g_time + 
 
 		result += dx * waveLength * spectrum(x, g_windSpeed) * ((bump1 * gerstner_wave(phase1, waveNumber)) + (bump2 * gerstner_wave(phase2, waveNumber)));
 
@@ -1430,9 +1430,9 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		noWaveGrid = true;
 
 	// UV
-	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_center.yx * g_UVScale);
-	vec2 uv_local1 = vec2(-g_center.yx * g_UVScale );
-	vec2 uv_local2 = vec2(-g_center.yx * g_UVScale );
+	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_objectCenter.yx * g_UVScale);
+	vec2 uv_local1 = vec2(-g_objectCenter.yx * g_UVScale );
+	vec2 uv_local2 = vec2(-g_objectCenter.yx * g_UVScale );
 
 	if (lerpDisplacement)
 	{
@@ -1842,7 +1842,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 	float4 pos_local = float4(vPos, 1);
 
 	// UV
-	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_center.yx * g_UVScale;
+	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset - g_objectCenter.yx * g_UVScale;
 	if (!noDisplacement)
 	{
 		// Blend displacement to avoid tiling artifact
@@ -1971,7 +1971,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 	bool noWaveGrid = false;
 	bool maskInvert = false;
 	bool noSurfaceScattering = false;
-	float maskedDepth = 0;
+	float maskedDepth = 0.0;
 
 	//Disable refraction if camera is far enough away
 	if(enableRefraction)
@@ -2084,7 +2084,6 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 	if (frontFacing)
 	{		
-
 		if ((maskValue.x + maskValue.y > fulldepth && maskValue.x < surfaceDepth) || (maskValue.y < 0.0))
 		{
 			Output.Scattering = vec4(g_scattering, 0.0);
@@ -2117,7 +2116,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 				if (enableRefraction)
 				{
 					viewNormal = mul(vec4(normal, 0.0), g_matWorldViewProj).xyz;
-					refract_vec = refract(eyeViewVec, viewNormal, 1.0 / 1.33);
+					refract_vec = normalize(refract(eyeViewVec, viewNormal, 1.0 / 1.33));
 
 					float cosangle = acos(dot(eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
 					offset = tan(cosangle) * (actualDepth / (fulldepth - maskedDepth)) * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z -  35.0) / 5.0));
@@ -2180,6 +2179,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 
 				float cosangle = acos(dot(-eyeViewVec, refract_vec) / (length(eyeViewVec) * length(refract_vec)));
 				offset = tan(cosangle) *((fulldepth - surfaceDepth) / fulldepth) * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z - 35.0) / 5.0));
+				//offset = tan(cosangle)*(actualDepth / fulldepth)				 * (1.0 - saturate((g_LocalEye.z - In.LocalPos.z - 35.0) / 5.0));
 				TexCoord += offset *(normalize(refract_vec.xy) * g_screenScale);
 
 				TexCoord = abs(TexCoord);
@@ -2312,7 +2312,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 	float4 Output = float4(-1.0, -1.0, -1.0, -1.0);// g_texColour.Sample(wrapSamplerState, In.texCoords) / 50.0;
 		
-	static int stepNo = 100;
+	const int stepNo = 200;
 	float stepLength = min(max(abs(depthInput.w) * 300000.0 / 100.0, 0.125),0.5);
 
 	if (depthInput.y <= 0.0f || depthInput.x < 0.0f)
@@ -2371,7 +2371,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 		if (TexCoord.y > 1.0 || TexCoord.y < 0.0 || TexCoord.x >= 1.0 || TexCoord.x <= 0.0)
 			break;
 
-		depthSample = g_texDepth.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0)).x;
+		depthSample = g_texDepth.Sample(clampSamplerState, TexCoord + vec2(g_vrRightEye * 0.5, 0)).x;
 
 		depthSample = depthToFadeDistance(depthSample, vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w), dis, g_HalfTan) * 300000.0;
 
@@ -2776,7 +2776,7 @@ shader posTexVertexOutput VS_ShowTexture(idOnly id)
 shader vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
 {
 	vec4 lookup=showTexture.Sample(wwcSamplerState,IN.texCoords.xy);
-	return vec4(showMultiplier*lookup.rgb,1.0);
+	return vec4(lookup.rgb,1.0);
 }
 
 shader vec4 PS_ClearTexture(posTexVertexOutput IN) :SV_TARGET
