@@ -10,7 +10,6 @@
     <ProjectName>SimulDirectX12</ProjectName>
     <ProjectGuid>{92D088AE-05A6-4A0A-845C-682AC0F71BC2}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
-    <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
     <PlatformToolset>v141</PlatformToolset>
     <TargetRuntime>Native</TargetRuntime>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
