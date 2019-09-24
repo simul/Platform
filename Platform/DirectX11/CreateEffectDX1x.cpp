@@ -421,18 +421,18 @@ ERRNO_CHECK
 	double newest_included_file=0.0;
 	std::string binaryPathUtf8;
 	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
-	if((shaderBuildMode&crossplatform::BUILD_IF_CHANGED)!=0)
+	for (const auto& binPath : shadeBinPathsUtf8)
 	{
-		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
-		for (const auto& binPath : shadeBinPathsUtf8)
+		double bin_date = simul::base::FileLoader::GetFileLoader()->GetFileDate(((binPath+"/")+binary_filename_utf8).c_str());
+		if (bin_date > binary_date_jdn)
 		{
-			double bin_date = simul::base::FileLoader::GetFileLoader()->GetFileDate(((binPath+"/")+binary_filename_utf8).c_str());
-			if (bin_date > binary_date_jdn)
-			{
-				binary_date_jdn = bin_date;
-				binaryPathUtf8 = binPath;
-			}
+			binary_date_jdn = bin_date;
+			binaryPathUtf8 = binPath;
 		}
+	}
+	if ((shaderBuildMode&crossplatform::BUILD_IF_CHANGED) != 0)
+	{
+		double text_date_jdn = simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
