@@ -756,7 +756,7 @@ crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_
 	}
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc,bool interleaved)
 {
 	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
 	for(int i=0;i<num_elements;i++)
@@ -772,7 +772,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 		D.InstanceDataStepRate=d.instanceDataStepRate;
 	};
 	dx11::Layout *l=new dx11::Layout();
-	l->SetDesc(desc,num_elements);
+	l->SetDesc(desc,num_elements, interleaved);
 	ID3DBlob *VS;
 	ID3DBlob *errorMsgs=NULL;
 	std::string dummy_shader;
@@ -848,7 +848,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 		std::cerr<<e<<std::endl;
 	}
 	SAFE_RELEASE(l->d3d11InputLayout);
-	AsD3D11Device()->CreateInputLayout(decl, num_elements, VS->GetBufferPointer(), VS->GetBufferSize(), &l->d3d11InputLayout);
+	V_CHECK(AsD3D11Device()->CreateInputLayout(decl, num_elements, VS->GetBufferPointer(), VS->GetBufferSize(), &l->d3d11InputLayout));
 	
 	if(VS)
 		VS->Release();

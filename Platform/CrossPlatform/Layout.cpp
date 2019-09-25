@@ -20,8 +20,9 @@ Layout::~Layout()
 	SIMUL_ASSERT(apply_count==0);
 }
 
-void Layout::SetDesc(const LayoutDesc *d,int num)
+void Layout::SetDesc(const LayoutDesc *d,int num,bool i)
 {
+	interleaved = i;
 	parts.clear();
 	struct_size=0;
 	for(int i=0;i<num;i++)
@@ -32,6 +33,12 @@ void Layout::SetDesc(const LayoutDesc *d,int num)
 		d++;
 	}
 }
+
+int Layout::GetPitch() const
+{
+	return interleaved?struct_size:0;
+}
+
 
 int Layout::GetStructSize() const
 {

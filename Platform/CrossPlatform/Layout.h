@@ -34,10 +34,12 @@ namespace simul
 			int struct_size;
 			std::vector<LayoutDesc> parts;
 			Topology topology;
+			bool interleaved;
 		public:
 			Layout();
 			virtual ~Layout();
-			void SetDesc(const LayoutDesc *d,int num);
+			void SetDesc(const LayoutDesc *d,int num,bool interleaved=true);
+			int GetPitch() const;
 			const std::vector<LayoutDesc> &GetDesc() const
 			{
 				return parts;
