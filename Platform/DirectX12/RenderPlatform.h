@@ -147,14 +147,14 @@ namespace simul
 			void									DrawCube		(crossplatform::DeviceContext &deviceContext);
 			void									ApplyDefaultMaterial();
 
-			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr);
+			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr) override;
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
-			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d);
-			crossplatform::Effect					*CreateEffect();
-			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
-			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer();
-			crossplatform::Buffer					*CreateBuffer();
-			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *);			
+			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d) override;
+			crossplatform::Effect					*CreateEffect() override;
+			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer() override;
+			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer() override;
+			crossplatform::Buffer					*CreateBuffer() override;
+			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;			
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Shader					*CreateShader() override;
