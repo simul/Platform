@@ -18,22 +18,22 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform uint    numLevels;
     //! This is the number of branches requested by the lighting props
 	uniform uint    numBranches;
+
     //! pow(numBranches,curLevel - 1) = this is the number of branches
     //! generated in the previous level
     uniform uint    numBranchesPrevious;
-
 	uniform float   branchLengthMetres;
 	uniform uint    branchInterval;
 	uniform float   phaseTime;
+	
 	uniform int     randomSeed;
-
 	uniform float   brightness;
 	uniform float   progress;
 	uniform float   vertical;
+
 	uniform uint    branchIndex;
-    uniform uint    curLevel;
-	
-	uniform vec2 padding;
+	uniform uint    curLevel;
+	uniform vec2 	padding;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)

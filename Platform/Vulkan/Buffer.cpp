@@ -96,7 +96,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	stride = layout->GetStructSize();
 	bufferLoad.size= num_vertices * layout->GetStructSize();
 	
-	vulkanRenderPlatform->CreatVulkanBuffer(bufferLoad.size
+	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 					,vk::BufferUsageFlagBits::eTransferSrc
 					,vk::MemoryPropertyFlagBits::eHostVisible  | vk::MemoryPropertyFlagBits::eHostCoherent
 					,bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory,"vertex buffer upload");
@@ -113,7 +113,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 		}
 	}
 
-	vulkanRenderPlatform->CreatVulkanBuffer(bufferLoad.size
+	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 				, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer
 				, vk::MemoryPropertyFlagBits::eDeviceLocal
 				, mBuffer, mBufferMemory,"vertex buffer");

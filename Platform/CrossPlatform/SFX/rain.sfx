@@ -57,7 +57,7 @@ RandomResult Random(uint4 state)
 	state.x = TausStep(state.x, 13, 19, 12, 0xfffffffe);
 	state.y = TausStep(state.y, 2, 25, 4, 0xfffffff8);
 	state.z = TausStep(state.z, 3, 11, 17, 0xfffffff0);
-	state.w = LCGStep(state.w, 1664525, (uint)1013904223);
+	state.w = LCGStep(state.w, 1664525, uint(1013904223));
 
 	RandomResult result;
 	result.state = state;
@@ -437,10 +437,6 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	position0 = WrapParticleZone(position0, particleZoneSize / 2);
 
 	vec3 map_texc = mul(rainMapMatrix, vec4(viewPos[1].xyz, 1.0)).xyz;
-	#ifdef SFX_OPENGL
-	map_texc.y = 1.0 - map_texc.y;
-	#endif
-
 	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);	//Describes the strength of rain.
 	float cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25); //Describes the probability of precipitaion.
 	mapped_rain *= 4 * cloudBaseAndDensity;
@@ -492,11 +488,12 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	vec3 projectedVelVec = normalize(vel - eyeOnVelVecPlane);
 	vec3 sideVec = normalize(cross(projectedVelVec, eyeVec));
 	vec2 trans = 2.0*vec2((corner_id % 2), (corner_id / 2))-vec2(1.0, 1.0);
-	
+
 	dir = normalize(normalize(eyeVec) + trans.x*sideVec + trans.y*vel);
+
 	pos = position0.xyz + trans.x*(sideVec *width) + trans.y*(vel * height);
 	float distM = length(position0.xyz);
-
+	
 	p.position = mul(worldViewProj[1], vec4(pos, 1.0));
 	p.clip_pos = p.position;
 	p.dir = dir;
@@ -507,7 +504,7 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	p.type = p.type%maxtype;
 
 	if (rainMaskEnabled&&in_depth_space.x > 0.0&&in_depth_space.y > 0.0&&in_depth_space.x < 1.0&&in_depth_space.y < 1.0)
-	{	
+	{
 		if (in_depth_space.z > depth)
 		{
 			p.type = 44;

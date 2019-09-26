@@ -53,7 +53,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		vk::BufferUsageFlags usageFlags=vk::BufferUsageFlagBits::eStorageBuffer|vk::BufferUsageFlagBits::eTransferDst;
         for (unsigned int i = 0; i < kNumBuffers; i++)
         {
-			vulkanRenderPlatform->CreatVulkanBuffer(buffer_aligned_size, usageFlags
+			vulkanRenderPlatform->CreateVulkanBuffer(buffer_aligned_size, usageFlags
 				, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 				, mReadBuffers[i], mReadBufferMemory[i],"psb read");
         }
@@ -75,7 +75,7 @@ void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	perFrameBuffers.push_back(PerFrameBuffer());
 	PerFrameBuffer &perFrameBuffer=perFrameBuffers.back();
-	vulkanRenderPlatform->CreatVulkanBuffer(alloc_size
+	vulkanRenderPlatform->CreateVulkanBuffer(alloc_size
 		, usageFlags
 		, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 		, perFrameBuffer.mBuffer, perFrameBuffer.mMemory,"psb");
