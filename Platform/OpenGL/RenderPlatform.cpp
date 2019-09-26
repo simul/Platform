@@ -618,10 +618,10 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	};
 }
 
-crossplatform::Layout* RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
+crossplatform::Layout* RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc,bool in)
 {
     opengl::Layout* l = new opengl::Layout();
-    l->SetDesc(desc, num_elements);
+    l->SetDesc(desc, num_elements, in);
 	return l;
 }
 

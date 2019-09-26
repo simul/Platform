@@ -83,7 +83,7 @@ namespace simul
 			crossplatform::PlatformConstantBuffer*  CreatePlatformConstantBuffer() override;
 			crossplatform::PlatformStructuredBuffer*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*                  CreateBuffer() override;
-			crossplatform::Layout*                  CreateLayout(int num_elements,const crossplatform::LayoutDesc *) override;
+			crossplatform::Layout*                  CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool interleaved) override;
 			crossplatform::RenderState*             CreateRenderState(const crossplatform::RenderStateDesc &desc) override;
 			crossplatform::Query*                   CreateQuery(crossplatform::QueryType type) override;
 			crossplatform::Shader*                  CreateShader() override;

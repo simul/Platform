@@ -971,7 +971,13 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			default:
 				break;
 			};
-			V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc, initData? &data:nullptr,(ID3D11Texture2D**)(&texture)));
+			HRESULT hr=pd3dDevice->CreateTexture2D(&textureDesc, initData? &data:nullptr,(ID3D11Texture2D**)(&texture));
+			if (hr != S_OK)
+			{
+				data.SysMemPitch = width * ByteSizeOfFormatElement(dxgi_format);
+				textureDesc.Format= (DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(simul::crossplatform::PixelFormat::RGBA_8_UNORM, compressionFormat);
+				V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,  nullptr, (ID3D11Texture2D * *)(&texture)));
+			}
 			external_texture=false;
 			if(renderPlatform->GetMemoryInterface())
 				renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());

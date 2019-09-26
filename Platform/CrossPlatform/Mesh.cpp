@@ -60,7 +60,7 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 		{ "TEXCOORD", 1, crossplatform::RGB_32_FLOAT, 0, 20, false, 0 },
 	};
 	SAFE_DELETE(layout);
-	layout = renderPlatform->CreateLayout(3, layoutDesc);
+	layout = renderPlatform->CreateLayout(3, layoutDesc,true);
 	
 	
 	// Put positions, texcoords and normals in an array of structs:

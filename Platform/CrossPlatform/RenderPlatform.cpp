@@ -1269,10 +1269,10 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	return e;
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)
 {
 	auto l= new Layout();
-	l->SetDesc(layoutDesc,num_elements);
+	l->SetDesc(layoutDesc,num_elements,interleaved);
 	return l;
 }
 

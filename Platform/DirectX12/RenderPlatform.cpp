@@ -1236,7 +1236,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullSampler() const
 	return mNullSampler;
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc,bool interleaved)
 {
 	dx12::Layout *l = new dx12::Layout();
 
