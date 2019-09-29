@@ -22,7 +22,7 @@ ID3D11Buffer *Buffer::AsD3D11Buffer()
 	return d3d11Buffer;
 }
 
- ID3D11Buffer *const Buffer::AsD3D11Buffer() const
+ID3D11Buffer *const Buffer::AsD3D11Buffer() const
 {
 	return d3d11Buffer;
 }

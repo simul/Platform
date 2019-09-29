@@ -263,7 +263,7 @@ namespace simul
 				}
 			virtual ~Shader(){}
 			virtual void Release(){}
-			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) = 0;
+			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesConstantBufferSlot(int s);
@@ -672,7 +672,7 @@ namespace simul
 				if(!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
-					return ;
+					return;
 				}
 				platformStructuredBuffer->CloseReadBuffer(deviceContext);
 			}
@@ -681,7 +681,7 @@ namespace simul
 				if(!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
-					return ;
+					return;
 				}
 				platformStructuredBuffer->CopyToReadBuffer(deviceContext);
 			}
@@ -773,7 +773,6 @@ namespace simul
 			{
 				return (GLuint)0;
 			}
-
 			inline int GetPassIndex(const char *n)
 			{
 				std::string str(n);

@@ -36,24 +36,46 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	CD3DX12_RESOURCE_DESC b=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
+		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
 		nullptr,
 		SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mUploadHeap->SetName(L"VertexUpload");
 
-	// LOL! \O_O/
+	ID3D12Resource* mIntermediateHeap = nullptr;
+
 	if (data)
 	{
+		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			SIMUL_PPV_ARGS(&mIntermediateHeap)
+		);
+		SIMUL_ASSERT(res == S_OK);
+		mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+		/*
 		crossplatform::DeviceContext tmpCrap;
 		Map(tmpCrap);
 		memcpy(mGpuMappedPtr, data, mBufferSize);
-		Unmap(tmpCrap);
+		Unmap(tmpCrap);*/
 	}
+
+	D3D12_SUBRESOURCE_DATA subresourceData = {};
+	subresourceData.pData = data;
+	subresourceData.RowPitch = mBufferSize;
+	subresourceData.SlicePitch = subresourceData.RowPitch;
+
+	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mUploadHeap, mIntermediateHeap,
+		0, 0, 1, &subresourceData);
+
 	
 	// Make a vertex buffer view
 	mVertexBufferView.SizeInBytes		= mBufferSize;
@@ -68,23 +90,37 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
+		D3D12_RESOURCE_STATE_INDEX_BUFFER,
 		nullptr,
         SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mUploadHeap->SetName(L"IndexUpload");
 
-	// LOL! \O_O/
+	ID3D12Resource* mIntermediateHeap = nullptr;
+
 	if (data)
 	{
+		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			SIMUL_PPV_ARGS(&mIntermediateHeap)
+		);
+		SIMUL_ASSERT(res == S_OK);
+		mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
+		/*
 		crossplatform::DeviceContext tmpCrap;
 		Map(tmpCrap);
 		memcpy(mGpuMappedPtr, data, mBufferSize);
 		Unmap(tmpCrap);
+		*/
 	}
 
 	DXGI_FORMAT indexFormat;
@@ -101,6 +137,14 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 		indexFormat = DXGI_FORMAT_UNKNOWN;
 		SIMUL_BREAK("Improve this!");
 	}
+
+	D3D12_SUBRESOURCE_DATA subresourceData = {};
+	subresourceData.pData = data;
+	subresourceData.RowPitch = mBufferSize;
+	subresourceData.SlicePitch = subresourceData.RowPitch;
+
+	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mUploadHeap, mIntermediateHeap,
+		0, 0, 1, &subresourceData);
 
 	mIndexBufferView.Format			= indexFormat;
 	mIndexBufferView.SizeInBytes	= mBufferSize;

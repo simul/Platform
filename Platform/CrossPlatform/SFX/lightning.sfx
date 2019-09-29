@@ -6,7 +6,6 @@
 #include "../SL/render_states.sl"
 #include "../SL/lightning_constants.sl"
 #include "../SL/depth.sl"
-#include "../SL/render_states.sl"
 #include "../SL/noise.sl"
 
 uniform TextureCube cloudDepthTexture 					SIMUL_TEXTURE_REGISTER(0);
@@ -506,24 +505,24 @@ BlendState MaxBlend
 
 technique lightning_thick
 {
-    pass reverse_depth 
-    {
+	pass reverse_depth
+	{
 		SetDepthStencilState(DisableDepth, 0);
-        SetRasterizerState(RenderNoCull);
+		SetRasterizerState(RenderNoCull);
 		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ReverseDepth()));
-    }
-    pass forward_depth 
-    {
+	}
+	pass forward_depth
+	{
 		SetDepthStencilState(DisableDepth, 0);
-        SetRasterizerState(RenderNoCull);
+		SetRasterizerState(RenderNoCull);
 		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ForwardDepth()));
-    }
+	}
 	pass reverse_depth_msaa
 	{
 		SetDepthStencilState(DisableDepth, 0);
@@ -559,24 +558,24 @@ RasterizerState lightningLineRasterizer
 
 technique lightning_thin
 {
-    pass reverse_depth 
-    {
-    	SetDepthStencilState(DisableDepth, 0);
-        SetRasterizerState(lightningLineRasterizer);
+	pass reverse_depth
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(lightningLineRasterizer);
 		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ReverseDepth()));
-    }
-    pass forward_depth 
-    {
-    	SetDepthStencilState(DisableDepth, 0);
-        SetRasterizerState(lightningLineRasterizer);
+	}
+	pass forward_depth
+	{
+		SetDepthStencilState(DisableDepth, 0);
+		SetRasterizerState(lightningLineRasterizer);
 		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));
-    }
+	}
 	pass reverse_depth_msaa
 	{
 		SetDepthStencilState(DisableDepth, 0);

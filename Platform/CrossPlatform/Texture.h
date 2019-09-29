@@ -28,6 +28,7 @@ namespace nvn
 {
 	class Texture;
 }
+
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
@@ -38,7 +39,7 @@ struct ID3D11SamplerState;
 typedef unsigned GLuint;
 extern "C"
 {
-struct ID3D12Resource;
+    struct ID3D12Resource;
 }
 
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
