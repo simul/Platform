@@ -7,6 +7,9 @@ SIMUL_CONSTANT_BUFFER(CameraConstants,1)
 	uniform mat4 world;
 	uniform mat4 invWorldViewProj;
 	uniform mat4 modelView;
+	uniform mat4 view;
+	uniform mat4 proj;
+	uniform mat4 viewProj;
 	uniform vec3 viewPosition;
 SIMUL_CONSTANT_BUFFER_END
 
