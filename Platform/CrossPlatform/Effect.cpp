@@ -994,9 +994,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		binFilenameUtf8 += ".sfxo";
 	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(binFilenameUtf8.c_str(), filepathsUtf8);
 	std::string filepathUtf8;
-	if (index < 0 || index >= renderPlatform->GetShaderPathsUtf8().size())
+	if (index < 0 || index >= filepathsUtf8.size())
 		filepathUtf8 = "";
-	else if (index < renderPlatform->GetShaderPathsUtf8().size())
+	else if (index < filepathsUtf8.size())
 		filepathUtf8 = filepathsUtf8[index];
 
 	binFilenameUtf8 = filepathUtf8 + binFilenameUtf8;

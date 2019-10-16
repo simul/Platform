@@ -427,7 +427,7 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &)
 }
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
-	if(lastContext&&mapped.pData)
+	if(lastContext&&mapped.pData && buffer)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
 	SAFE_RELEASE(unorderedAccessView);

@@ -130,8 +130,6 @@ void RenderPlatform::RestoreGLState()
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str();
-	/*const char* computeShaderFile = deviceContext.contextState.currentEffectPass->shaders[5]->name.c_str();
-	std::cout << "COMPUTE SHADER: " << computeShaderFile << "					EffectPass: " << effectPass << std::endl;*/
     BeginEvent(deviceContext, effectPass);
     ApplyCurrentPass(deviceContext);
     glDispatchCompute(w, l, d);
