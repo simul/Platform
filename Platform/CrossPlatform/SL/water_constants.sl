@@ -20,7 +20,8 @@ SIMUL_CONSTANT_BUFFER(cbShading,1)
 	uniform float		g_vrRightEye;
 	uniform vec2		g_viewportPixelScale;
 
-	uniform vec2		hfdisuvi;
+	uniform int			g_noOfReflectionSteps;
+	uniform int			g_pixelStep;
 	uniform float		g_unityRender;
 	uniform bool		g_enableFoam;
 

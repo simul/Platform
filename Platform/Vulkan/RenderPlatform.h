@@ -2,9 +2,9 @@
 
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
 #include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER
@@ -140,7 +140,7 @@ namespace simul
 			crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::DeviceContext &deviceContext);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
-			void									CreatVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
+			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
 			void									CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
 			vk::RenderPass							*GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);

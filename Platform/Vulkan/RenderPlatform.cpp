@@ -408,7 +408,7 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
 	 return 0;
  }
 #include "Simul/Base/StringFunctions.h"
-void RenderPlatform::CreatVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
+void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
 {
     vk::BufferCreateInfo bufferInfo = {};
     bufferInfo.size = size;
@@ -1197,7 +1197,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,in
 
 void RenderPlatform::SetTopology(crossplatform::DeviceContext &,crossplatform::Topology t)
 {
-  //  mCurTopology = toGLTopology(t);
+  //  mCurTopology = toVulkanTopology(t);
 }
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)

@@ -28,6 +28,7 @@ namespace nvn
 {
 	class Texture;
 }
+
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
@@ -38,7 +39,7 @@ struct ID3D11SamplerState;
 typedef unsigned GLuint;
 extern "C"
 {
-struct ID3D12Resource;
+    struct ID3D12Resource;
 }
 
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
@@ -266,7 +267,7 @@ namespace simul
 			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
 			virtual void InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
-			virtual bool EnsureTexture(RenderPlatform *r, TextureCreate*) { return false; }
+			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*) { return false; }
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,

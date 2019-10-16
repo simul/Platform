@@ -263,7 +263,7 @@ namespace simul
 				}
 			virtual ~Shader(){}
 			virtual void Release(){}
-			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) = 0;
+			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesConstantBufferSlot(int s);
@@ -458,127 +458,7 @@ namespace simul
 			/// For RenderPlatform's use only: do not call.
 			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *,int){}
 		};
-		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
-		{
-		protected:
-			PlatformConstantBuffer *platformConstantBuffer;
-			std::string defaultName;
-		public:
-			ConstantBufferBase(const char *name);
-			~ConstantBufferBase()
-			{
-				delete platformConstantBuffer;
-			}
-			const char *GetDefaultName() const
-			{
-				return defaultName.c_str();
-			}
 		
-			PlatformConstantBuffer *GetPlatformConstantBuffer()
-			{
-				return platformConstantBuffer;
-			}
-			virtual int GetIndex() const=0;
-			virtual size_t GetSize() const=0;
-			virtual void * GetAddr() const=0;
-		};
-		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
-		{
-			std::set<Effect*> linkedEffects;
-		public:
-			ConstantBuffer():ConstantBufferBase(nullptr)
-			{
-				// Clear out the part of memory that corresponds to the base class.
-				// We should ONLY inherit from simple structs.
-				memset(((T*)this),0,sizeof(T));
-			}
-			~ConstantBuffer()
-			{
-				InvalidateDeviceObjects();
-			}
-			void copyTo(void *pData)
-			{
-				*(T*)pData = *this;
-			}
-			/// For Effect's use only, do not call.
-			size_t GetSize() const override
-			{
-				return sizeof(T);
-			}
-			/// For Effect's use only, do not call.
-			void * GetAddr() const override
-			{
-				return (void*)((T*)this);
-			}
-			/// Get the binding index in shaders.
-			int GetIndex() const override
-			{
-				return T::bindingIndex;
-			}
-			//! Create the buffer object.
-#ifdef _MSC_VER
-			void RestoreDeviceObjects(RenderPlatform *p)
-			{
-				InvalidateDeviceObjects();
-				if (p)
-				{
-					SIMUL_ASSERT(platformConstantBuffer==nullptr);
-					if(platformConstantBuffer)
-						delete platformConstantBuffer;
-					platformConstantBuffer = p->CreatePlatformConstantBuffer();
-					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
-				}
-			}
-			void LinkToEffect(Effect *effect, const char *name)
-			{
-				if (!effect)
-					return;
-				if (IsLinkedToEffect(effect))
-					return;
-				defaultName=name;
-				SIMUL_ASSERT(platformConstantBuffer!=nullptr);
-				SIMUL_ASSERT(effect!=nullptr);
-				defaultName=name;
-				if (effect&&platformConstantBuffer)
-				{
-					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
-					linkedEffects.insert(effect);
-					effect->StoreConstantBufferLink(this);
-				}
-			}
-			bool IsLinkedToEffect(crossplatform::Effect *effect)
-			{
-				if (!effect)
-					return false;
-				if (linkedEffects.find(effect) != linkedEffects.end())
-				{
-					if (effect->IsLinkedToConstantBuffer(this))
-						return true;
-				}
-				return false;
-			}
-#else
-			void RestoreDeviceObjects(RenderPlatform *p);
-			//! Find the constant buffer in the given effect, and link to it.
-			void LinkToEffect(Effect *effect, const char *name);
-			bool IsLinkedToEffect(crossplatform::Effect *effect);
-#endif
-			//! Free the allocated buffer.
-			void InvalidateDeviceObjects()
-			{
-				linkedEffects.clear();
-				if(platformConstantBuffer)
-					platformConstantBuffer->InvalidateDeviceObjects();
-				delete platformConstantBuffer;
-				platformConstantBuffer=NULL;
-			}
-			//! Unbind from the effect.
-			void Unbind(DeviceContext &deviceContext)
-			{
-				if(platformConstantBuffer)
-					platformConstantBuffer->Unbind(deviceContext);
-			}
-		};
 		/// A base class for structured buffers, used by StructuredBuffer internally.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
@@ -635,7 +515,8 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 			}
-#ifdef _MSC_VER
+#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
+
 			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, bool cpu_read=true, T *data = NULL)
 			{
 				if(!p)
@@ -672,7 +553,7 @@ namespace simul
 				if(!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
-					return ;
+					return;
 				}
 				platformStructuredBuffer->CloseReadBuffer(deviceContext);
 			}
@@ -681,7 +562,7 @@ namespace simul
 				if(!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
-					return ;
+					return;
 				}
 				platformStructuredBuffer->CopyToReadBuffer(deviceContext);
 			}
@@ -773,7 +654,6 @@ namespace simul
 			{
 				return (GLuint)0;
 			}
-
 			inline int GetPassIndex(const char *n)
 			{
 				std::string str(n);
@@ -941,6 +821,127 @@ namespace simul
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
 			/// Ensure it's built and up-to-date.
 			void EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
+		};
+		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
+		{
+		protected:
+			PlatformConstantBuffer* platformConstantBuffer;
+			std::string defaultName;
+		public:
+			ConstantBufferBase(const char* name);
+			~ConstantBufferBase()
+			{
+				delete platformConstantBuffer;
+			}
+			const char* GetDefaultName() const
+			{
+				return defaultName.c_str();
+			}
+
+			PlatformConstantBuffer* GetPlatformConstantBuffer()
+			{
+				return platformConstantBuffer;
+			}
+			virtual int GetIndex() const = 0;
+			virtual size_t GetSize() const = 0;
+			virtual void* GetAddr() const = 0;
+		};
+		template<class T> class ConstantBuffer :public ConstantBufferBase, public T
+		{
+			std::set<Effect*> linkedEffects;
+		public:
+			ConstantBuffer() :ConstantBufferBase(nullptr)
+			{
+				// Clear out the part of memory that corresponds to the base class.
+				// We should ONLY inherit from simple structs.
+				memset(((T*)this), 0, sizeof(T));
+			}
+			~ConstantBuffer()
+			{
+				InvalidateDeviceObjects();
+			}
+			void copyTo(void* pData)
+			{
+				*(T*)pData = *this;
+			}
+			/// For Effect's use only, do not call.
+			size_t GetSize() const override
+			{
+				return sizeof(T);
+			}
+			/// For Effect's use only, do not call.
+			void* GetAddr() const override
+			{
+				return (void*)((T*)this);
+			}
+			/// Get the binding index in shaders.
+			int GetIndex() const override
+			{
+				return T::bindingIndex;
+			}
+			//! Create the buffer object.
+#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
+			void RestoreDeviceObjects(RenderPlatform* p)
+			{
+				InvalidateDeviceObjects();
+				if (p)
+				{
+					SIMUL_ASSERT(platformConstantBuffer == nullptr);
+					if (platformConstantBuffer)
+						delete platformConstantBuffer;
+					platformConstantBuffer = p->CreatePlatformConstantBuffer();
+					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
+				}
+			}
+			void LinkToEffect(Effect* effect, const char* name)
+			{
+				if (!effect)
+					return;
+				if (IsLinkedToEffect(effect))
+					return;
+				defaultName = name;
+				SIMUL_ASSERT(platformConstantBuffer != nullptr);
+				SIMUL_ASSERT(effect != nullptr);
+				defaultName = name;
+				if (effect && platformConstantBuffer)
+				{
+					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
+					linkedEffects.insert(effect);
+					effect->StoreConstantBufferLink(this);
+				}
+			}
+			bool IsLinkedToEffect(crossplatform::Effect* effect)
+			{
+				if (!effect)
+					return false;
+				if (linkedEffects.find(effect) != linkedEffects.end())
+				{
+					if (effect->IsLinkedToConstantBuffer(this))
+						return true;
+				}
+				return false;
+			}
+#else
+			void RestoreDeviceObjects(RenderPlatform* p);
+			//! Find the constant buffer in the given effect, and link to it.
+			void LinkToEffect(Effect* effect, const char* name);
+			bool IsLinkedToEffect(crossplatform::Effect* effect);
+#endif
+			//! Free the allocated buffer.
+			void InvalidateDeviceObjects()
+			{
+				linkedEffects.clear();
+				if (platformConstantBuffer)
+					platformConstantBuffer->InvalidateDeviceObjects();
+				delete platformConstantBuffer;
+				platformConstantBuffer = NULL;
+			}
+			//! Unbind from the effect.
+			void Unbind(DeviceContext& deviceContext)
+			{
+				if (platformConstantBuffer)
+					platformConstantBuffer->Unbind(deviceContext);
+			}
 		};
 	}
 }

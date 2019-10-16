@@ -2308,17 +2308,19 @@ shader PS_WATER_OUTPUTS PS_BoundedWaterSurfDepthRefraction(VS_OUTPUT In, bool fr
 //-----------------------------------------------------------------------------
 shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 {
-	float4 depthInput = g_waterDepth.Sample(clampSamplerState, In.texCoords * (g_vrRightEye == 1.0 ? g_DepthScale : vec2(1.0, 1.0)) + vec2(g_vrRightEye * 0.5, 0));
+	vec2 BaseTexCoords = In.texCoords * (g_vrRightEye == 1.0 ? g_DepthScale : vec2(1.0, 1.0)) + vec2(g_vrRightEye * 0.5, 0);
+
+	float4 depthInput = g_waterDepth.Sample(clampSamplerState, BaseTexCoords);
+
+	if (depthInput.y < 0.0f || depthInput.x < 0.0f || depthInput.w > 20000.0f)
+		return float4(-1.0, -1.0, -1.0, -1.0);
 
 	float4 Output = float4(-1.0, -1.0, -1.0, -1.0);// g_texColour.Sample(wrapSamplerState, In.texCoords) / 50.0;
-		
-	const int stepNo = 200;
-	float stepLength = min(max(abs(depthInput.w) * 300000.0 / 100.0, 0.125),0.5);
+	
+	int noSteps = min(g_noOfReflectionSteps, 100);
+	float stepLength = min(max(abs(depthInput.w) * 3000.0, 0.125), 0.5);
 
-	if (depthInput.y <= 0.0f || depthInput.x < 0.0f)
-		discard;
-
-	float4 normalsInput = g_waterNormals.Sample(g_samplerPerlin, In.texCoords * (g_vrRightEye == 1.0 ? g_DepthScale : vec2(1.0, 1.0)) + vec2(g_vrRightEye * 0.5, 0));
+	float4 normalsInput = g_waterNormals.Sample(g_samplerPerlin, BaseTexCoords);
 
 	vec4 clip = vec4(((In.texCoords.x * 2.0) - 1.0), ((1.0 - In.texCoords.y) * 2.0) - 1.0, 1.0, 1.0);
 	vec4 view = mul(g_matInvViewProj, clip);
@@ -2330,10 +2332,16 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 	vec3 reflectVec = normalize(reflect(eye_dir, normalsInput.xyz));
 
+	//if (abs(depthInput.w) * 300000.0 > 20000.0)
+		//return vec4(1.0, 0.0, 0.0, 1.0);
+	//	return texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0);//float4(-1.0,-1.0,-1.0,-1.0);//
+
 	vec2 TexCoord;
 	vec2 OldTexCoord;
 	bool hit = false;
+	bool doublerefl = false;
 	float depthSample;
+	float fullDepth;
 
 	samplePos = mul(g_matWorldViewProj, rayPos);
 	OldTexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0) * g_DepthScale;
@@ -2341,18 +2349,22 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	samplePos = mul(g_matWorldViewProj, rayPos + vec4(reflectVec * stepLength, 0.0));
 	TexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0) * g_DepthScale;
 
-	if (length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * 2.0)
-		stepLength *= (length(g_viewportPixelScale) * 2.0) / length(TexCoord - OldTexCoord);
+	if (TexCoord.y > 1.0 || TexCoord.y < 0.0 || TexCoord.x >= 1.0 || TexCoord.x <= 0.0)
+		return float4(-1.0, -1.0, -1.0, -1.0);
 
-	if (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale) * 2.0)
-		stepLength *= (length(g_viewportPixelScale) * 2.0) / length(TexCoord - OldTexCoord);
+	if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep))
+		|| (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale)* float(g_pixelStep)))
+		stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
 
 	if (reflectVec.z < 0.0)
 	{
-		reflectVec.z = 0.0;// max(reflectVec.z, 0.0);
+		reflectVec.z = max(reflectVec.z, 0.0);//*= -1.0;//
 		reflectVec = normalize(reflectVec);
-		//return float4(-1.0, -1.0, -1.0, -1.0);
-	}
+		//doublerefl = true;
+		//Output = texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0);//float4(-1.0,-1.0,-1.0,-1.0);//
+		//Output *= 0.5;
+		//return Output;
+	}	
 
 	DepthInterpretationStruct dis;
 	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
@@ -2360,11 +2372,9 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	
 	int i;
 	
-	for (i = 1; i < stepNo; i++)
+	for (i = 1; i < noSteps; i++)
 	{
-		//stepLength = max(length(g_LocalEye - rayPos.xyz) / 50.0, 0.0625);// (i * 2.0) / (float)stepNo;
-
-		rayPos += vec4(reflectVec * stepLength, 0.0);
+		//stepLength = max(length(g_LocalEye - rayPos.xyz) / 50.0, 0.0625);// (i * 2.0) / (float)noSteps;
 		samplePos = mul(g_matWorldViewProj, rayPos);
 		TexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0) * g_DepthScale; //In.texCoords - vec2(0.0, 0.1);// 
 
@@ -2373,36 +2383,39 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 		depthSample = g_texDepth.Sample(clampSamplerState, TexCoord + vec2(g_vrRightEye * 0.5, 0)).x;
 
-		depthSample = depthToFadeDistance(depthSample, vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w), dis, g_HalfTan) * 300000.0;
+		fullDepth = depthToFadeDistance(depthSample, vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w), dis, g_HalfTan) * 300000.0;
 
-		//if (depthSample > 300000.0)
+		//if (length(g_LocalEye - rayPos.xyz) > 20000.0)
 			//break;
 
-		float temp = abs(depthSample - length(g_LocalEye - rayPos.xyz));
-		if (temp <= stepLength )// && depthSample > length(g_LocalEye - surfacePos.xyz)
+		float temp = abs(fullDepth - length(g_LocalEye - rayPos.xyz));
+		if (temp <= stepLength )// && fullDepth > length(g_LocalEye - surfacePos.xyz)
 		{
 			hit = true;
-			Output = g_texColour.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0));
+			Output = g_texColour.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0)) * (doublerefl?0.5:1.0);
 			Output.w = -1.0;
 			break;
 		}
 
-		if (length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * 2.0)
-			stepLength *= (length(g_viewportPixelScale) * 2.0) / length(TexCoord - OldTexCoord);
-
-		if (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale) * 4.0)
-			stepLength *= (length(g_viewportPixelScale) * 4.0) / length(TexCoord - OldTexCoord);
-
+		//if (length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)
+			//|| length(TexCoord - OldTexCoord) > length(g_viewportPixelScale)* float(g_pixelStep))
+			//stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
+			
+		rayPos += vec4(reflectVec * stepLength, 0.0);
 		OldTexCoord = TexCoord;
 	}
 	if (!hit)
 	{
-		//if(!(depthSample < 300000 && depthSample > length(g_LocalEye - samplePos.xyz)))
+		//if(!(fullDepth < 300000 && fullDepth > length(g_LocalEye - samplePos.xyz)))
 		//reflectVec.z = max(reflectVec.z, 0.0);
-		Output = float4(-1.0,-1.0,-1.0,-1.0);//texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0);//
+		Output = texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0);// float4(-1.0, -1.0, -1.0, -1.0);//
+		//Output *= float(doublerefl ? 0.5 : 1.0);
 	}
 
 	//	Output = vec4(1.0,0.0,0.0,0.0);
+	//if (doublerefl)
+		//return vec4(1.0, 0.0, 0.0, 1.0);
+
 	return Output;//vec4(reflectVec,0.0);//clip;//  
 }
 

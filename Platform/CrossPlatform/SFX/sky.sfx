@@ -80,9 +80,9 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 	float alt_texc			=GetAltTexCoord(res.pos.z/1000.0,minSunlightAltitudeKm,maxFadeAltitudeKm);
 
 	res.sunlight			=lightTable2DTexture.SampleLevel(clampSamplerState,vec2(alt_texc,0.5/4.0),0).rgba;
-
 	res.moonlight			=lightTable2DTexture.SampleLevel(clampSamplerState,vec2(alt_texc,1.5/4.0),0).rgba;
 	res.ambient				=lightTable2DTexture.SampleLevel(clampSamplerState,vec2(alt_texc,2.5/4.0),0).rgba;
+
 	res.valid				=1;
 	lightingQueryResults[sub_pos.x]=res;
 }
@@ -393,8 +393,8 @@ vec4 PS_StarsDepthTex(starsVertexOutput IN,bool reverseDepth)
 {
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
-	vec2 depth_texc	= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
-	float depth		= texture_clamp_lod(depthTexture, depth_texc.xy, 0).x;
+	vec2 depth_texc			= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
+	float depth				= texture_clamp_lod(depthTexture, depth_texc.xy, 0).x;
 	return PS_StarsDepth(IN,reverseDepth,depth);
 }
 

@@ -214,6 +214,7 @@ EffectPass::~EffectPass()
 			pixelShaders[i]=nullptr;
 	}
 }
+
 EffectTechniqueGroup::~EffectTechniqueGroup()
 {
 	for (crossplatform::TechniqueMap::iterator i = techniques.begin(); i != techniques.end(); i++)
@@ -459,7 +460,6 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		int s=GetSamplerStateSlot(name);
 		if(s<0)
 		{
-
 			res.valid = false;
 			SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
 			//SIMUL_BREAK_ONCE("Invalid Shader resource")
@@ -952,7 +952,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				GetExitCodeProcess(processInfo.hProcess, &ExitCode);
 				if (ExitCode != 0)
 				{
-					SIMUL_BREAK(base::QuickFormat("ExitCode: %d", ExitCode));
+					SIMUL_BREAK_ONCE(base::QuickFormat("ExitCode: %d", ExitCode));
 				}
 				CloseHandle(processInfo.hProcess);
 				CloseHandle(processInfo.hThread);
@@ -999,7 +999,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	else if (index < filepathsUtf8.size())
 		filepathUtf8 = filepathsUtf8[index];
 
-	binFilenameUtf8 = (filepathUtf8 +"/") + binFilenameUtf8;
+	binFilenameUtf8 = filepathUtf8 + binFilenameUtf8;
 #ifdef __ORBIS__
 	base::find_and_replace(binFilenameUtf8,"\\","/");
 #endif
@@ -1024,11 +1024,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	void *ptr;
 	unsigned int num_bytes;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
 
 	std::string sfxbFilenameUtf8 = binFilenameUtf8;
 	base::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
+	
 	void *bin_ptr=nullptr;
 	unsigned int bin_num_bytes=0;
 
@@ -1223,9 +1224,6 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				crossplatform::RenderStateDesc desc;
 				string name		 = words[1];
 				desc.type		   = crossplatform::RTFORMAT;
-				/*
-					OceanConfig(3,3,3,3,0,0,0,0) *PixelOutputFormat*
-				*/
 				vector<string> props = simul::base::split(words[2], ',');
 				if (props.size() != 8)
 				{
@@ -1258,12 +1256,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					9 SlopeScaledDepthBias
 				*/
 				vector<string> props=simul::base::split(words[2],',');
-				//desc.rasterizer.antialias		 =toInt(props[0]);
+				//desc.rasterizer.antialias		 	=toInt(props[0]);
 				desc.rasterizer.cullFaceMode		=toCullFadeMode(props[1]);
-				desc.rasterizer.frontFace		   =toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
-				desc.rasterizer.polygonMode		 =toPolygonMode(props[5]);
+				desc.rasterizer.frontFace		   	=toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
+				desc.rasterizer.polygonMode		 	=toPolygonMode(props[5]);
 				desc.rasterizer.polygonOffsetMode   =crossplatform::POLYGON_OFFSET_DISABLE;
-				desc.rasterizer.viewportScissor	 =toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
+				desc.rasterizer.viewportScissor	 	=toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
 				
 				crossplatform::RenderState *bs	  =renderPlatform->CreateRenderState(desc);
 				rasterizerStates[name]			  =bs;
@@ -1617,7 +1615,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					p->SetUsesSamplerSlots(s->samplerSlots);
 
 					// set the actual sampler states for each shader based on the slots it uses:
-	// Which sampler states are needed?
+					// Which sampler states are needed?
 					unsigned slots=s->samplerSlots;
 					for(int slot=0;slot<64;slot++)
 					{

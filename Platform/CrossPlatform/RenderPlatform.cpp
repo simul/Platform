@@ -58,12 +58,12 @@ ContextState& ContextState::operator=(const ContextState& cs)
 }
 
 RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
-	:mirrorY(false)
+	:memoryInterface(m)
+	,mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
 	,solidEffect(nullptr)
 	,copyEffect(nullptr)
-	,memoryInterface(m)
 	,shaderBuildMode(BUILD_IF_CHANGED)
 	,debugEffect(nullptr)
 	,textured(nullptr)
@@ -972,17 +972,17 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
 			if(debug)
 			{
-			static char c=0;
-			static char cc=20;
-			c--;
-			if(!c)
-			{
-				level++;
-				c=cc;
-			}
+				static char c=0;
+				static char cc=20;
+				c--;
+				if(!c)
+				{
+					level++;
+					c=cc;
+				}
 			
-			debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
-		}
+				debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
+			}
 		}
 		else
 		{
@@ -1181,10 +1181,11 @@ void RenderPlatform::SetLayout(DeviceContext &deviceContext,Layout *l)
 		l->Apply(deviceContext);
 }
 
-crossplatform::GpuProfiler		*RenderPlatform::GetGpuProfiler()
+crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()
 {
 	return gpuProfiler;
 }
+
 void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)
 {
 	if(options.size())
@@ -1268,10 +1269,10 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	return e;
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)
 {
 	auto l= new Layout();
-	l->SetDesc(layoutDesc,num_elements);
+	l->SetDesc(layoutDesc,num_elements,interleaved);
 	return l;
 }
 
@@ -1286,7 +1287,7 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
 	simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
-	std::string shaderSourcePath = GetShaderBinaryPathsUtf8().back() + std::string("/") + filenameUtf8;
+	std::string shaderSourcePath = GetShaderBinaryPathsUtf8().back() + filenameUtf8;
 
 	// Load the shader source:
 	unsigned int fileSize = 0;
@@ -1314,7 +1315,7 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, cr
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
 {
 	std::string name(filenameUtf8);
-	if (shaders.find(name) != shaders.end())
+	if(shaders.find(name) != shaders.end())
 		return shaders[name];
 	Shader *s = CreateShader();
 	s->load(this,filenameUtf8, (unsigned char*)sfxb_ptr+inline_offset, inline_length, t);
