@@ -47,7 +47,8 @@ uniform Texture2D lightTableTexture;
 		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
 */ 
-uniform Texture2D rainMapTexture;
+uniform Texture2DArray rainMapTextureLayered; //One per cloudlayer, max = 8;
+uniform Texture2D rainMapTexture; //Final lookup texture
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> outputTexture3d			SIMUL_RWTEXTURE_REGISTER(0);
@@ -606,12 +607,9 @@ shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
 	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
-shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_RainMapLayered(posTexVertexOutput IN) : SV_TARGET
 {
-	float total_cloud=0.0;
-	float max_tex_z=0.0;
-	float thickness = 0.0;
-
+	//Calculate precipitation region mask
 	vec2 rainCentreTC[4];
 	rainCentreTC[0] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 0);
 	rainCentreTC[1] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 1);
@@ -632,6 +630,10 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 		discard;
 	
 	// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
+	float total_cloud=0.0;
+	float max_tex_z=0.0;
+	float thickness = 0.0;
+
 	for(int j=0;j<14;j++)
 	{
 		float tex_z		=float(14.0-j)/20.0;
@@ -643,7 +645,21 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 	}
 	total_cloud=saturate((total_cloud-0)/0.1);
 	
+	//Write to rainMapTextureLayered
 	return vec4(total_cloud*precipitation, max_tex_z, rainToSnow, 0);
+}
+
+shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 finalColour;
+	for (int i = 0; i < 8; i++)
+	{
+		vec3 tc = vec3(IN.texCoords.xy, i);
+		finalColour += sample_3d_lod(rainMapTextureLayered, wwcSamplerState, tc, 0);
+	}
+
+	//Write to rainMapTexture
+	return normalize(finalColour);
 }
 
 struct FarNearDepthPixelOutput
@@ -1471,7 +1487,7 @@ technique cloud_shadow
     }
 }
 
-technique rain_map
+technique rain_map_layered
 {
     pass p0 
     {
@@ -1480,9 +1496,22 @@ technique rain_map
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(vs_fullscreen_5_0);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_RainMap()));
+		SetPixelShader(CompileShader(ps_5_0,PS_RainMapLayered()));
     }
 }
+
+technique rain_map
+	{
+		pass p0
+		{
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState(RenderNoCull);
+			SetBlendState(NoBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetVertexShader(vs_fullscreen_5_0);
+			SetGeometryShader(NULL);
+			SetPixelShader(CompileShader(ps_5_0,PS_RainMap()));
+		}
+	}
 
 technique mix_clouds
 {
