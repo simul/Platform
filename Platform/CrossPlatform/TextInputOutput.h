@@ -128,11 +128,14 @@ namespace simul
 			simul::base::FileLoader *fileLoader;
 			simul::base::MemoryInterface *memoryInterface;
 		};
+		
+		//NOTE: Copy constructor is unimplemented, and the default is shallow.
 		class SIMUL_CROSSPLATFORM_EXPORT TextFileOutput:public TextOutput
 		{
 		public:
 			TextFileOutput(simul::base::MemoryInterface *m=NULL);
 			virtual ~TextFileOutput();
+
 			void Save(const char *filename_utf8);
 			void Save(std::ostream &ofs,int tab=0,bool bookEnd=false);
 			bool Good();
