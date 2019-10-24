@@ -103,32 +103,65 @@ void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4
 }
 
 
-float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
+float GetRainAtOffsetKm(Texture2DArray cloudLayerPrecipitation,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
+	rain_texc.xy		*=inverseScalesKm.xy;
 	#ifdef SFX_OPENGL
 	rain_texc.y = 1.0 - rain_texc.y;
 	#endif
-	vec4 rain_lookup	=rainMapTexture.SampleLevel(wwcSamplerState,rain_texc.xy*inverseScalesKm.xy,0);
-	/*vec3 cloudWorldCentreOffsetKm;
-	vec2 scalesKm = 1.0 / inverseScalesKm.xy;
-	cloudWorldCentreOffsetKm.x = cloudWorldOffsetKm.x > (scalesKm.x/2.0) ? (cloudWorldOffsetKm.x - scalesKm.x) : cloudWorldOffsetKm.x;
-	cloudWorldCentreOffsetKm.y = cloudWorldOffsetKm.y > (scalesKm.y/2.0) ? (cloudWorldOffsetKm.y - scalesKm.y) : cloudWorldOffsetKm.y;*/
+	rain_texc.xy		-=vec2(0.5, 0.5);
+	if(rain_texc.x < 0) {rain_texc.x += 1.0;}
+	if(rain_texc.y < 0) {rain_texc.y += 1.0;}
 
-	//return rain_lookup.x *saturate((rainRadiusKm-length(cloudWorldCentreOffsetKm.xy-rainCentreKm.xy))*3.0) *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
-	return rain_lookup.x *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
+	float precipitation = 0.0;
+	for(int i = 0; i < 8; i++)
+	{
+		vec4 rain_lookup	=cloudLayerPrecipitation.SampleLevel(wwcSamplerState,vec3(rain_texc.xy, i),0);
+		if(rain_lookup.x == 0)
+			continue;
+
+		float topOfLayer = rain_lookup.y * 20.0; 
+		if(topOfLayer > world_pos_km.z)
+		{
+			//Scale by height different, layers close to the viewer should have a greater effect.
+			precipitation = rain_lookup.x * saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
+		}
+	}
+	return saturate(precipitation);
 	
 }
-float GetRainToSnowAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm)
+float GetRainToSnowAtOffsetKm(Texture2DArray cloudLayerPrecipitation,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km)
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
+	rain_texc.xy		*=inverseScalesKm.xy;
 	#ifdef SFX_OPENGL
 	rain_texc.y = 1.0 - rain_texc.y;
 	#endif
-	vec4 rain_lookup	=rainMapTexture.SampleLevel(wwcSamplerState,rain_texc.xy*inverseScalesKm.xy,0);
-	return				rain_lookup.z;
+	rain_texc.xy		-=vec2(0.5, 0.5);
+	if(rain_texc.x < 0) {rain_texc.x += 1.0;}
+	if(rain_texc.y < 0) {rain_texc.y += 1.0;}
+
+	float rainToSnow = 0.0;
+	for(int i = 0; i < 8; i++)
+	{
+		vec4 rain_lookup	=cloudLayerPrecipitation.SampleLevel(wwcSamplerState,vec3(rain_texc.xy,i), 0);
+		if(rain_lookup.x == 0)
+			continue;
+
+		float topOfLayer = rain_lookup.y * 20.0; 
+		if(topOfLayer > world_pos_km.z)
+		{
+			float heightDiff = rain_lookup.a * 20.0 - world_pos_km.z;
+
+			//Translate rainToSnow range to (-0.5 -> 0.5), so that rain can subtrate from the overall value.
+			//Scale by height different, layers close to the viewer should have a greater effect.
+			rainToSnow += (rain_lookup.z - 0.5) * ((20.0 - heightDiff)/10.0); 
+		}
+	}
+	return saturate(rainToSnow);
 }
 
 

@@ -3,7 +3,7 @@
 #define CLOUDS_RAYTRACE_SL
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture3D cloudLight
-											,Texture2D rainMapTexture
+											,Texture2DArray cloudLayerPrecipitation
 											,Texture3D noiseTexture3D
 											,Texture2D lightTableTexture
 											,Texture2D illuminationTexture
@@ -253,7 +253,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
-					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
+					float dm			=rainEffect*fade*GetRainAtOffsetKm(cloudLayerPrecipitation,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 					dm 					*= saturate(0.6+texture_wrap_lod(noiseTexture3D,rainNoiseInvScale*world_pos+vec3(0,0,rainVerticalTexcoord*100.0),0.0).z);
 					moisture			+=0.01*dm*light.x;
 					density.z 			=max(density.z,dm);
