@@ -403,6 +403,16 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
+shader vec4 PS_ShowTextureArray(posTexVertexOutput IN) : SV_TARGET
+{
+	vec3 texc = vec3(IN.texCoords.xy, displayLevel);
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y = 1.0 - texc.y;
+	vec4 res = multiplier * texture_nearest_lod(imageTextureArray,texc.xyz,0);
+	res.rgb += res.aaa;
+	return res;
+}
+
 shader vec4 PS_ShowTextureRadial(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 offs	=IN.texCoords.xy-vec2(.5,.5);
@@ -983,6 +993,28 @@ technique show_texture
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
     }
 }
+
+technique show_texture_array
+	{
+		pass noblend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureArray()));
+		}
+		pass blend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0, PS_ShowTextureArray()));
+		}
+	}
 
 technique show_cubemap
 {

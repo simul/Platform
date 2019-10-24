@@ -991,6 +991,23 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 			debugConstants.displayLevel=0;
 		}
 	}
+	else if(tex&&tex->arraySize>1)
+	{
+		tech = debugEffect->GetTechniqueByName("show_texture_array");
+		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex);
+		{
+			static char c = 0;
+			static char cc = 20;
+			c--;
+			if (!c)
+			{
+				level++;
+				c = cc;
+			}
+
+			debugConstants.displayLevel = (float)(level%std::max(1, tex->arraySize));
+		}
+	}
 	else if(tex)
 	{
 		debugEffect->SetTexture(deviceContext,imageTexture,tex);
@@ -1005,18 +1022,19 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	{
 		vec4 white(1.0, 1.0, 1.0, 1.0);
 		vec4 semiblack(0, 0, 0, 0.5);
-		char txt[]="0";
+		char mip_txt[]="MIP: 0";
+		char lvl_txt[]="LVL: 0";
 		if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
 		{
-			txt[0]='0'+lod;
-			Print(deviceContext,x1,y1,txt,white,semiblack);
+			mip_txt[5]='0'+lod;
+			Print(deviceContext,x1,y1+20,mip_txt,white,semiblack);
 		}
 		if(tex&&tex->arraySize>1)
 		{
 			int l=level%tex->arraySize;
 			if(l<10)
-				txt[0]='0'+(l);
-			Print(deviceContext,x1,y1,txt,white,semiblack);
+				lvl_txt[5]='0'+(l);
+			Print(deviceContext,x1+60,y1+20,lvl_txt,white,semiblack);
 		}
 	}
 }
@@ -1039,9 +1057,9 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	effect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma)
+void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug);
 }
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
