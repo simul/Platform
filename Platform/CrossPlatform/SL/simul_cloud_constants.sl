@@ -222,6 +222,7 @@ struct CloudShadowStruct
 	simul::crossplatform::SamplerState *samplerState;
 	vec3 originKm;
 	vec3 scaleKm;
+	unsigned checksum = 0;
 };
 #else
 #endif

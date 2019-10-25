@@ -14,8 +14,9 @@ struct DepthInterpretationStruct
 
 float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitudeRangeKm)
 {
-	float sun_alt_texc			=0.5+0.5*saturate((alt_km-minSunlightAltitudeKm)/fadeAltitudeRangeKm);
-	sun_alt_texc				-=0.5*saturate((minSunlightAltitudeKm-alt_km)/(minSunlightAltitudeKm+1.0));
+	float diff_km				= alt_km - minSunlightAltitudeKm;
+	float sun_alt_texc			=0.5+0.5*saturate(diff_km /fadeAltitudeRangeKm);
+	sun_alt_texc				-=0.5*saturate(-diff_km /(minSunlightAltitudeKm+1.0));
 	return sun_alt_texc;
 }
 

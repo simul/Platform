@@ -48,7 +48,7 @@ endif()
 add_sfx_shader_project( DirectX12Shaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} ${in_rs} OPTIONS -w -ESIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} )
 
 # ROOT SIG BLOB!
-set(out_rs "${CMAKE_CURRENT_BINARY_DIR}/shaderbin/GFX.cso")
+set(out_rs "${CMAKE_CURRENT_BINARY_DIR}/../XboxOne/shaderbin/GFX.cso")
 add_custom_command(OUTPUT ${out_rs}
 				COMMAND ${SIMUL_FX_EXECUTABLE} /T rootsig_1_0 /E"GFXRS" /I"HLSL" /Fo"${out_rs}" /nologo ${in_rs}
 				MAIN_DEPENDENCY ${in_rs}
