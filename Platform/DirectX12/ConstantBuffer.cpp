@@ -177,7 +177,7 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 	if(hResult==S_OK)
 	{
 		memcpy(pDest + offset, addr, size);
-		const CD3DX12_RANGE unMapRange(0, 1);
+		const CD3DX12_RANGE unMapRange(offset, offset+size);
 		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
 	

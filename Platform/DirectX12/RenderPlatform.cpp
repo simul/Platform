@@ -827,6 +827,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32G32B32A32_UINT;
 	case D_32_FLOAT:
 		return DXGI_FORMAT_D32_FLOAT;
+	case D_32_FLOAT_S_8_UINT:
+		return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 	case D_16_UNORM:
 		return DXGI_FORMAT_D16_UNORM;
 	case D_24_UNORM_S_8_UINT:
@@ -873,6 +875,9 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_32_UINT;
 	case DXGI_FORMAT_D32_FLOAT:
 		return D_32_FLOAT;
+	case DXGI_FORMAT_R32G8X24_TYPELESS:
+		return D_32_FLOAT_S_8_UINT;
+	case DXGI_FORMAT_R24G8_TYPELESS:
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		return D_24_UNORM_S_8_UINT;
 	case DXGI_FORMAT_D16_UNORM:

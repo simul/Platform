@@ -905,7 +905,7 @@ void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,con
         }
         else
         {
-            if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
+            // if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
             {
                 rPlat->AsD3D12Device()->CopyDescriptorsSimple(1, mSamplersHeap->CpuHandle(), nullSampler, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
             }
@@ -1217,7 +1217,7 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
         // All Samplers must have valid descriptors for hardware tier 1:
 		if (!usesSamplerSlot(s))
 		{
-            if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
+            // if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
             {
 			    device->CopyDescriptorsSimple(1, samplerHeap->CpuHandle(), nullSampler, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
             }
@@ -1265,7 +1265,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
         // All CB must have valid descriptors for hardware tier 2 and bellow:
 		if (!usesConstantBufferSlot(s))
 		{
-            if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
+            // if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
             {
 			    device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
             }
@@ -1344,7 +1344,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		// All SRV must have valid descriptors for hardware tier 1:
 		if (!usesTextureSlot(s) && !usesTextureSlotForSB(s))
 		{
-            if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
+            // if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_1)
             {
 			    device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
             }
@@ -1422,7 +1422,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
         // All UAV must have valid descriptors for hardware tier 2 and bellow:
 		if (!usesRwTextureSlot(s) && !usesRwTextureSlotForSB(s))
 		{
-            if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
+            // if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
             {
 			    device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullUav, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
             }
@@ -1507,9 +1507,12 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     {
         finalBlend = &((dx12::RenderState*)blendState)->BlendDesc;
     }
-    if (curRenderPlat->BlendStateOverride)
+    else
     {
-        finalBlend = curRenderPlat->BlendStateOverride;
+        if (curRenderPlat->BlendStateOverride)
+        {
+            finalBlend = curRenderPlat->BlendStateOverride;
+        }
     }
 
     // Get current depth state:
@@ -1518,9 +1521,12 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     {
         finalDepth = &((dx12::RenderState*)depthStencilState)->DepthStencilDesc;
     }
-    if (curRenderPlat->DepthStateOverride)
+    else
     {
-        finalDepth = curRenderPlat->DepthStateOverride;
+        if (curRenderPlat->DepthStateOverride)
+        {
+            finalDepth = curRenderPlat->DepthStateOverride;
+        }
     }
 
     // Get current raster:
@@ -1529,9 +1535,12 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     {
         finalRaster = &((dx12::RenderState*)rasterizerState)->RasterDesc;
     }
-    if (curRenderPlat->RasterStateOverride)
+    else
     {
-        finalRaster = curRenderPlat->RasterStateOverride;
+        if (curRenderPlat->RasterStateOverride)
+        {
+            finalRaster = curRenderPlat->RasterStateOverride;
+        }
     }
 
     // Get current MSAA:

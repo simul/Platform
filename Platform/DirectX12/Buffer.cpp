@@ -1,6 +1,6 @@
 #include "SimulDirectXHeader.h"
 #include "Buffer.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "RenderPlatform.h"
 
 using namespace simul;
 using namespace dx12;
@@ -18,7 +18,8 @@ Buffer::~Buffer()
 
 void Buffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(mUploadHeap);
+	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+	rPlat->PushToReleaseManager(mUploadHeap, "Buffer");
 }
 
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
@@ -83,9 +84,10 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	mVertexBufferView.BufferLocation	= mUploadHeap->GetGPUVirtualAddress();
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,int index_size_bytes,const void *data)
 {
 	HRESULT res = S_FALSE;
+	renderPlatform = r;
 	mBufferSize = index_size_bytes * num_indices;
 
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
