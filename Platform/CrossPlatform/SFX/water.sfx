@@ -27,7 +27,7 @@ uniform Texture2D		g_texDepth					SIMUL_TEXTURE_REGISTER(7);		// Depth of render
 uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(8);		// Shore depth for shallow water effects
 uniform texture2D		g_maskFrontfaceTexture		SIMUL_TEXTURE_REGISTER(9);		// Temp Mask texture for blocking objects
 uniform texture2D		g_maskTexture				SIMUL_TEXTURE_REGISTER(10);		// Mask texture for blocking objects
-uniform Texture2DArray<float4>	g_ProfileBuffers	: register(t3);					// Profile Buffer Texture
+uniform Texture2DArray<float4>	g_ProfileBuffers	: register(t12);				// Profile Buffer Texture
 
 //Render target textures to pass from initial pass to final composite
 uniform Texture2D		g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
