@@ -288,6 +288,28 @@ int TextFileInput::Get(const char *name,int dflt)
 	return atoi(properties[name].c_str());
 }
 
+long long TextFileInput::Get(const char* name, long long dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	if (_stricmp(properties[name].c_str(), "true") == 0)
+		return (long long)1;
+	if (_stricmp(properties[name].c_str(), "false") == 0)
+		return (long long)0;
+	return atoll(properties[name].c_str());
+}
+
+unsigned long long TextFileInput::Get(const char* name, unsigned long long dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	if (_stricmp(properties[name].c_str(), "true") == 0)
+		return (unsigned long long)1;
+	if (_stricmp(properties[name].c_str(), "false") == 0)
+		return (unsigned long long)0;
+	return strtoull(properties[name].c_str(),nullptr,0);
+}
+
 double TextFileInput::Get(const char *name,double dflt)
 {
 	if(properties.find(name)==properties.end())
@@ -523,6 +545,16 @@ void TextFileOutput::Set(const char *name,bool value)
 void TextFileOutput::Set(const char *name,int value)
 {
 	properties[name]=base::stringFormat("%d",value);
+}
+
+void TextFileOutput::Set(const char* name, long long value)
+{
+	properties[name] = base::stringFormat("%lld", value);
+}
+
+void TextFileOutput::Set(const char* name, unsigned long long value)
+{
+	properties[name] = base::stringFormat("%llu", value);
 }
 
 void TextFileOutput::Set(const char *name,double value)
