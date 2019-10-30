@@ -103,7 +103,7 @@ void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4
 }
 
 
-float GetRainAtOffsetKm(Texture2DArray cloudLayerPrecipitation,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
+float GetRainAtOffsetKm(Texture2D precipitationMap,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
@@ -115,24 +115,11 @@ float GetRainAtOffsetKm(Texture2DArray cloudLayerPrecipitation,vec3 cloudWorldOf
 	if(rain_texc.x < 0) {rain_texc.x += 1.0;}
 	if(rain_texc.y < 0) {rain_texc.y += 1.0;}
 
-	float precipitation = 0.0;
-	for(int i = 0; i < 8; i++)
-	{
-		vec4 rain_lookup	=cloudLayerPrecipitation.SampleLevel(wwcSamplerState,vec3(rain_texc.xy, i),0);
-		if(rain_lookup.x == 0)
-			continue;
-
-		float topOfLayer = rain_lookup.y * 20.0; 
-		if(topOfLayer > world_pos_km.z)
-		{
-			//Scale by height different, layers close to the viewer should have a greater effect.
-			precipitation = rain_lookup.x * saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
-		}
-	}
-	return saturate(precipitation);
+	vec4 rain_lookup	= precipitationMap.SampleLevel(wwcSamplerState,rain_texc.xy,0);
+	return rain_lookup.x;
 	
 }
-float GetRainToSnowAtOffsetKm(Texture2DArray cloudLayerPrecipitation,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km)
+float GetRainToSnowAtOffsetKm(Texture2D precipitationMap,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km)
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
@@ -144,24 +131,8 @@ float GetRainToSnowAtOffsetKm(Texture2DArray cloudLayerPrecipitation,vec3 cloudW
 	if(rain_texc.x < 0) {rain_texc.x += 1.0;}
 	if(rain_texc.y < 0) {rain_texc.y += 1.0;}
 
-	float rainToSnow = 0.0;
-	for(int i = 0; i < 8; i++)
-	{
-		vec4 rain_lookup	=cloudLayerPrecipitation.SampleLevel(wwcSamplerState,vec3(rain_texc.xy,i), 0);
-		if(rain_lookup.x == 0)
-			continue;
-
-		float topOfLayer = rain_lookup.y * 20.0; 
-		if(topOfLayer > world_pos_km.z)
-		{
-			float heightDiff = rain_lookup.a * 20.0 - world_pos_km.z;
-
-			//Translate rainToSnow range to (-0.5 -> 0.5), so that rain can subtrate from the overall value.
-			//Scale by height different, layers close to the viewer should have a greater effect.
-			rainToSnow += (rain_lookup.z - 0.5) * ((20.0 - heightDiff)/10.0); 
-		}
-	}
-	return saturate(rainToSnow);
+	vec4 rain_lookup	= precipitationMap.SampleLevel(wwcSamplerState,rain_texc.xy, 0);
+	return rain_lookup.z;
 }
 
 
