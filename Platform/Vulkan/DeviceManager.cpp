@@ -438,14 +438,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
 	
-	uint32_t queue_family_count;
-	/* Call with nullptr data to get count */
-	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, (vk::QueueFamilyProperties* )nullptr);
-	assert(queue_family_count >= 1);
-
-	queue_props.resize(queue_family_count);
-	deviceManagerInternal->gpu.getQueueFamilyProperties(&queue_family_count, queue_props.data());
-
+	InitQueueProperties(deviceManagerInternal->gpu,queue_props);
 
 	// Query fine-grained feature support for this device.
 	//  If app has specific feature requirements it should check supported
@@ -456,6 +449,18 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	if(use_debug)
 		InitDebugging();
 	CreateDevice();
+}
+
+
+void simul::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vector<vk::QueueFamilyProperties>& queue_props)
+{
+	uint32_t queue_family_count;
+	/* Call with nullptr data to get count */
+	gpu.getQueueFamilyProperties(&queue_family_count, (vk::QueueFamilyProperties*)nullptr);
+	assert(queue_family_count >= 1);
+
+	queue_props.resize(queue_family_count);
+	gpu.getQueueFamilyProperties(&queue_family_count, queue_props.data());
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(

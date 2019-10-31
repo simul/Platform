@@ -291,7 +291,7 @@ namespace simul
 			/// Activate the specified index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
-			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
+			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.

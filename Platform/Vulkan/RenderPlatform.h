@@ -98,7 +98,6 @@ namespace simul
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &) override;
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
 
-			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;

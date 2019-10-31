@@ -50,15 +50,12 @@ DisplaySurface::~DisplaySurface()
 {
 	InvalidateDeviceObjects();
 }
+
 vk::Instance * DisplaySurface::GetVulkanInstance()
 {
 	auto rv = (vulkan::RenderPlatform *)renderPlatform;
 	vk::Instance *inst = nullptr;
-	if (deviceManager)
-	{
-		inst = deviceManager->GetVulkanInstance();
-	}
-	else if (rv)
+	if (rv)
 	{
 		inst = rv->AsVulkanInstance();
 	}
@@ -69,11 +66,7 @@ vk::Device *DisplaySurface::GetVulkanDevice()
 {
 	auto rv = (vulkan::RenderPlatform *)renderPlatform;
 	vk::Device *dev = nullptr;
-	if (deviceManager)
-	{
-		dev = deviceManager->GetVulkanDevice();
-	}
-	else if (rv)
+	if (rv)
 	{
 		dev = rv->AsVulkanDevice();
 	}
@@ -84,11 +77,7 @@ vk::PhysicalDevice* DisplaySurface::GetGPU()
 {
 	auto rv = (vulkan::RenderPlatform *)renderPlatform;
 	vk::PhysicalDevice *gpu = nullptr;
-	if (deviceManager)
-	{
-		gpu = deviceManager->GetGPU();
-	}
-	else if (rv)
+	if (rv)
 	{
 		gpu = rv->GetVulkanGPU();
 	}
@@ -127,8 +116,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	}
 
 #endif
-	Resize();
-
 }
 
 void DisplaySurface::InvalidateDeviceObjects()
@@ -184,9 +171,11 @@ void DisplaySurface::InvalidateDeviceObjects()
 void DisplaySurface::GetQueues()
 {
 	auto vkGpu=GetGPU();
-	if (!deviceManager)
-		return;
-	const std::vector<vk::QueueFamilyProperties> &queue_props=deviceManager->GetQueueProperties();
+	std::vector<vk::QueueFamilyProperties> queue_props;
+	
+	{
+		InitQueueProperties(*vulkanRenderPlatform->GetVulkanGPU(), queue_props);
+	}
 	uint32_t queue_family_count=(uint32_t)queue_props.size();
 	// Iterate over each queue to learn whether it supports presenting:
 	std::vector<vk::Bool32> supportsPresent(queue_family_count);
@@ -282,10 +271,13 @@ void DisplaySurface::InitSwapChain()
 	viewport.y = 0;
 
 
-
 	// Initialize the swap chain description.
 
-	std::vector<vk::SurfaceFormatKHR> surfFormats = deviceManager->GetSurfaceFormats(&mSurface);
+	std::vector<vk::SurfaceFormatKHR> surfFormats;
+	
+	{
+		surfFormats.push_back(vk::SurfaceFormatKHR());
+	}
 
 	// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
 	// the mSurface has no preferred format.  Otherwise, at least one
@@ -385,7 +377,11 @@ void DisplaySurface::InitSwapChain()
 		}
 	}
 //	gpu->GetPhysicalDeviceSurfaceSupportKHR(mSurface);
-
+	uint32_t surfaceformats = 0;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
+	std::vector<VkSurfaceFormatKHR> vkSurfaceFormats;
+	vkSurfaceFormats.resize(surfaceformats);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, vkSurfaceFormats.data());
 	auto const swapchain_ci = vk::SwapchainCreateInfoKHR()
 		.setSurface(mSurface)
 		.setMinImageCount(desiredNumOfSwapchainImages)
@@ -403,13 +399,15 @@ void DisplaySurface::InitSwapChain()
 		.setClipped(true)
 		.setOldSwapchain(oldSwapchain);
 	bool supported=false;
-	//vkGetPhysicalDeviceSurfaceSupportKHR(&gpu,0,mSurface,&supported);
+	vkGetPhysicalDeviceSurfaceSupportKHR(*vulkanRenderPlatform->GetVulkanGPU(),0,mSurface, (vk::Bool32*) & supported);
+	SIMUL_ASSERT(supported );
 	
 	// MUST do GetQueues before creating the swapchain, because getSurfaceSupportKHR is treated as a PREREQUISITE
 	// to create the device, even though it's defined as a TEST. This is bad API design.
 	GetQueues();
- // result = gpu->getSurfaceSupportKHR( 0,  mSurface,(vk::Bool32*)&supported) ;
-	//SIMUL_ASSERT(result == vk::Result::eSuccess);
+	result = gpu->getSurfaceSupportKHR( 0,  mSurface,(vk::Bool32*)&supported) ;
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	SIMUL_ASSERT(supported);
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -425,7 +423,17 @@ void DisplaySurface::InitSwapChain()
 		vulkanDevice->destroySwapchainKHR(oldSwapchain, nullptr);
 	}
 	
-	std::vector<vk::Image> swapchainImages=deviceManager->GetSwapchainImages(&swapchain);
+	std::vector<vk::Image> swapchainImages;
+
+	{
+		uint32_t swapchainImageCount;
+		auto result = vulkanRenderPlatform->AsVulkanDevice()->getSwapchainImagesKHR(swapchain, (uint32_t*)&swapchainImageCount, (vk::Image*)nullptr);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		swapchainImages.resize(swapchainImageCount);
+		result = vulkanRenderPlatform->AsVulkanDevice()->getSwapchainImagesKHR(swapchain, (uint32_t*)&swapchainImageCount, swapchainImages.data());
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
 	swapchain_image_resources.resize(swapchainImages.size());
 
 	for (uint32_t i = 0; i < swapchainImages.size(); ++i)
@@ -512,7 +520,6 @@ void DisplaySurface::InitSwapChain()
 				SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 				{
-//void build_image_ownership_cmd(uint32_t const &i)
 					auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 					auto result = swapchain_image_resources[i].graphics_to_present_cmd.begin(&cmd_buf_info);
 					SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -789,7 +796,6 @@ void DisplaySurface::CreateDefaultPipeline()
 
 void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
-
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
@@ -949,6 +955,7 @@ void DisplaySurface::Present()
 
 void DisplaySurface::EndFrame()
 {
+	RestoreDeviceObjects(mHwnd,renderPlatform,false,0,1,pixelFormat);
 	// We check for resize here, because we must manage the SwapChain from the main thread.
 	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
 	Resize();
