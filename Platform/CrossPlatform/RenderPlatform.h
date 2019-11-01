@@ -16,6 +16,13 @@
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
+#define SIMUL_GPU_TRACK_MEMORY(mem,size) \
+	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(mem,size, __FILE__);
+#define SIMUL_GPU_UNTRACK_MEMORY(mem) \
+	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(mem);
+
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4251)

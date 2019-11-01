@@ -45,6 +45,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 		SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mUploadHeap, mBufferSize)
 	mUploadHeap->SetName(L"VertexUpload");
 
 	ID3D12Resource* mIntermediateHeap = nullptr;
@@ -61,6 +62,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 			SIMUL_PPV_ARGS(&mIntermediateHeap)
 		);
 		SIMUL_ASSERT(res == S_OK);
+		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
 		mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
 		/*
 		crossplatform::DeviceContext tmpCrap;
@@ -100,6 +102,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
         SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mUploadHeap, mBufferSize)
 	mUploadHeap->SetName(L"IndexUpload");
 
 	ID3D12Resource* mIntermediateHeap = nullptr;
@@ -116,6 +119,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
 			SIMUL_PPV_ARGS(&mIntermediateHeap)
 		);
 		SIMUL_ASSERT(res == S_OK);
+		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
 		mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
 		/*
 		crossplatform::DeviceContext tmpCrap;

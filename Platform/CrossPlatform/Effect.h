@@ -84,6 +84,7 @@ namespace simul
 		/// Crossplatform GPU query class.
 		struct SIMUL_CROSSPLATFORM_EXPORT Query
 		{
+			crossplatform::RenderPlatform* renderPlatform;
 			static const int QueryLatency = 6;
 			bool QueryStarted;
 			bool QueryFinished;
@@ -91,11 +92,12 @@ namespace simul
 			QueryType type;
 			bool gotResults[QueryLatency];
 			bool doneQuery[QueryLatency];
-			Query(QueryType t)
+			Query(QueryType t, crossplatform::RenderPlatform*r=nullptr)
 				:QueryStarted(false)
 				,QueryFinished(false)
 				,currFrame(0)
 				,type(t)
+				, renderPlatform(r)
 			{
 				for(int i=0;i<QueryLatency;i++)
 				{

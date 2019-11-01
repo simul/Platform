@@ -37,13 +37,24 @@
 #endif 
 
 #ifndef SAFE_RELEASE
-	#define SAFE_RELEASE(p)			{ if(p) { (p)->Release(); (p)=NULL; } }
+	#define SAFE_RELEASE(p)			{ if(p) { (p)->Release(); (p)=nullptr; } }
+#endif
+
+#ifndef SAFE_RELEASE_LATER
+#define SAFE_RELEASE_LATER(p)			{ if(p) {\
+		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
+		if(renderPlatformDx12)\
+			renderPlatformDx12->PushToReleaseManager(p, #p);\
+		else\
+			p->Release();\
+		p = nullptr;\
+		 } }
 #endif
 #ifndef SAFE_RELEASE_ARRAY
-	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }
+	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=nullptr; } }
 #endif
 #ifndef SAFE_DELETE
-    #define SAFE_DELETE(p)          { if(p) { delete p; p=NULL;} }
+    #define SAFE_DELETE(p)          { if(p) { delete p; p=nullptr;} }
 #endif
 
 #ifdef _XBOX_ONE

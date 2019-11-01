@@ -112,7 +112,8 @@ void Query::SetName(const char *name)
 void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
 	InvalidateDeviceObjects();
-	auto rPlat = (dx12::RenderPlatform*)r;
+	renderPlatform = r;
+	auto renderPlatformDx12 = (dx12::RenderPlatform*)r;
 
 	// Create a query heap
 	HRESULT res					= S_FALSE;
@@ -125,28 +126,30 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	SIMUL_ASSERT(res == S_OK);
 
 	// Create a redback buffer to get data
-	res = rPlat->AsD3D12Device()->CreateCommittedResource
+	size_t sz = QueryLatency * sizeof(UINT64);
+	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(QueryLatency * sizeof(UINT64)),
+		&CD3DX12_RESOURCE_DESC::Buffer(sz),
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
         SIMUL_PPV_ARGS(&mReadBuffer)
 	);
 	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mReadBuffer, sz)
 	mReadBuffer->SetName(L"QueryReadBuffer");
 }
 
 void Query::InvalidateDeviceObjects() 
 {
-	SAFE_RELEASE(mQueryHeap);
+	SAFE_RELEASE_LATER(mQueryHeap);
 	for (int i = 0; i < QueryLatency; i++)
 	{
 		gotResults[i]= true;	// ?????????
 		doneQuery[i] = false;
 	}
-	SAFE_RELEASE(mReadBuffer);
+	SAFE_RELEASE_LATER(mReadBuffer);
 	mQueryData = nullptr;
 }
 
@@ -298,6 +301,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         SIMUL_PPV_ARGS(&mGPUBuffer)
     );
     SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mGPUBuffer, mTotalSize)
     mGPUBuffer->SetName(L"GPU_SB");
 
     // Upload heap:
@@ -311,6 +315,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         SIMUL_PPV_ARGS(&mUploadBuffer)
     );
     SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mUploadBuffer, mTotalSize)
     mUploadBuffer->SetName(L"CPU_SB");
 
     // If provided data, init the GPU buffer with it:
@@ -348,6 +353,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
             );
             SIMUL_ASSERT(res == S_OK);
             mReadBuffers[i]->SetName(L"READ_SB");
+			SIMUL_GPU_TRACK_MEMORY(mReadBuffers[i], mTotalSize)
         }
     }
 
@@ -1481,6 +1487,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
     cpsoDesc.NodeMask                           = 0;
     HRESULT res                                 = curRenderPlat->AsD3D12Device()->CreateComputePipelineState(&cpsoDesc,SIMUL_PPV_ARGS(&mComputePso));
     SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mComputePso,100)	// TODO: not the real size!
     if (res == S_OK)
     {
         std::wstring name   = L"ComputePSO_";
@@ -1699,7 +1706,7 @@ EffectPass::~EffectPass()
 {
 	for (auto& ele : mGraphicsPsoMap)
 	{
-		SAFE_RELEASE(ele.second);
+		SAFE_RELEASE_LATER(ele.second);
 	}
 	mGraphicsPsoMap.clear();
 }

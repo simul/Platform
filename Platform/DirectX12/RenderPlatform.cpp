@@ -423,13 +423,16 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	for (int i =0;i<mResourceBin.size();i++)
 	{
-        if (mResourceBin[i].second.second)
+		auto ptr = mResourceBin[i].second.second;
+        if (ptr)
         {
-            int remainRefs =mResourceBin[i].second.second->Release();
+            int remainRefs = ptr->Release();
 			if(remainRefs)
 			{
-				SIMUL_COUT<<"Resource "<<" has "<<remainRefs<<" refs remaining."<<std::endl;
+				SIMUL_COUT<<"Resource "<< ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
 			}
+			if (GetMemoryInterface()) 
+				GetMemoryInterface()->UntrackVideoMemory(ptr);
         }
 	}
 	mResourceBin.clear();
@@ -501,14 +504,17 @@ void RenderPlatform::BeginD3D12Frame()
 			if ((unsigned int)mResourceBin[i].first >= kMaxAge)
 			{
 				int remainRefs = 0;
-                if (mResourceBin[i].second.second)
+				ID3D12DeviceChild* ptr = mResourceBin[i].second.second;
+                if (ptr)
                 {
-                    remainRefs = mResourceBin[i].second.second->Release();
+                    remainRefs = ptr->Release();
                 }
 				/*
 				if (remainRefs)
 					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " )" << std::endl;
 				*/
+				if (GetMemoryInterface())
+					GetMemoryInterface()->UntrackVideoMemory(ptr);
 				mResourceBin.erase(mResourceBin.begin() + i);
 			}
 		}
