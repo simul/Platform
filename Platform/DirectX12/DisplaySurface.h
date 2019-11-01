@@ -38,7 +38,7 @@ namespace simul
             ID3D12Device*                               mDeviceRef;
             ID3D12CommandQueue*                         mQueue;
             //! The swap chain used to present the rendered scene
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) |  defined(_GAMING_XBOX)
             IDXGISwapChain1*							mSwapChain;
 #else
             IDXGISwapChain3*							mSwapChain;

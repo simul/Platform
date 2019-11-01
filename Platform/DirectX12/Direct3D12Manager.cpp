@@ -5,7 +5,9 @@
 
 #include <iomanip>
 #ifndef _XBOX_ONE
+#ifndef _GAMING_XBOX
 #include <dxgidebug.h>
+#endif
 #endif
 using namespace simul;
 using namespace dx12;
@@ -38,7 +40,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	HRESULT res	= S_FALSE;
 
 #ifndef _XBOX_ONE
-
+#ifndef _GAMING_XBOX
 	// Debug layer
     UINT dxgiFactoryFlags = 0;
 	if (use_debug)
@@ -188,6 +190,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	SIMUL_ASSERT(res == S_OK);
     mCommandQueue->SetName(L"Main CommandQueue");
 #endif
+#endif
 }
 
 int Direct3D12Manager::GetNumOutputs()
@@ -200,6 +203,7 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 	crossplatform::Output o;
 	
 #ifndef _XBOX_ONE
+#ifndef _GAMING_XBOX
 	unsigned numModes;
 	IDXGIOutput *output = mOutputs[i];
 
@@ -214,7 +218,7 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 
 	// Now get extended information about what monitor this is:
 	
-#if defined(WINVER) &&!defined(_XBOX_ONE)
+#if defined(WINVER) &&!defined(_XBOX_ONE) &&!defined(_GAMING_XBOX)
 	MONITORINFOEX monitor;
     monitor.cbSize = sizeof(monitor);
     if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
@@ -267,6 +271,7 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 	delete [] displayModeList;
 	displayModeList = 0;
 #endif
+#endif
 	return o;
 }
 void Direct3D12Manager::Shutdown()
@@ -287,12 +292,14 @@ void Direct3D12Manager::Shutdown()
 	
 	SAFE_RELEASE(mDevice);
 #ifndef _XBOX_ONE
+#ifndef _GAMING_XBOX
 	IDXGIDebug1 *dxgiDebug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
     {
         dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_DETAIL| DXGI_DEBUG_RLO_IGNORE_INTERNAL));
     }
 	dxgiDebug->Release();
+#endif
 #endif
 }
 

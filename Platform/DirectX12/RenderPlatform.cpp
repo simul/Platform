@@ -270,7 +270,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 
 	HRESULT res						= S_FALSE;
 
-#ifdef _XBOX_ONE
+#if defined( _XBOX_ONE) ||  defined(_GAMING_XBOX)
 	// Refer to UE4:(XboxOneD3D12Device.cpp) FXboxOneD3D12DynamicRHI::GetHardwareGPUFrameTime() 
 	mTimeStampFreq					= D3D11X_XBOX_GPU_TIMESTAMP_FREQUENCY;
 #else
