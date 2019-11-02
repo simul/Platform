@@ -160,7 +160,10 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
 void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
-	mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
+	mGpuMappedPtr = nullptr;
+	HRESULT hr=mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
+	if (hr != S_OK)
+		return nullptr;
 	return (void*)mGpuMappedPtr;
 }
 

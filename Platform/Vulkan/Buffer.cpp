@@ -129,8 +129,10 @@ void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 {
 	loadingComplete=false;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	void* target_data;
-	vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
+	void* target_data= nullptr;
+	vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
+	if (result != vk::Result::eSuccess)
+		return nullptr;
 	return target_data;
 }
 

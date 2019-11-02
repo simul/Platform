@@ -96,8 +96,8 @@ namespace simul
 				:QueryStarted(false)
 				,QueryFinished(false)
 				,currFrame(0)
+				,renderPlatform(r)
 				,type(t)
-				, renderPlatform(r)
 			{
 				for(int i=0;i<QueryLatency;i++)
 				{
