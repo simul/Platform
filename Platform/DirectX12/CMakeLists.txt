@@ -41,6 +41,8 @@ LibraryDefaults(SimulDirectX12_MD)
 
 if(XBOXONE)
 set( JSON_FILE "${CMAKE_SOURCE_DIR}/Platform/XboxOne/HLSL/HLSL12X.json" )
+elseif(GDK)
+set( JSON_FILE "${CMAKE_SOURCE_DIR}/Platform/XboxOne/HLSL/HLSL12X.json" )
 else()
 set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" )
 endif()

@@ -4,8 +4,10 @@
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include <iomanip>
-#ifndef _XBOX_ONE
+#ifndef _XBOX_ONE 
+#ifndef _GAMING_XBOX
 #include <dxgi.h>
+#endif
 #endif
 using namespace simul;
 using namespace dx11;

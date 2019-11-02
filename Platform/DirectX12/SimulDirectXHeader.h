@@ -5,15 +5,23 @@
 #define D3DCOMPILE_NO_DEBUG 1 
 
 #ifndef _XBOX_ONE
+#ifndef _GAMING_XBOX
 	#define SIMUL_DX12_SLOTS_CHECK
+#endif
 #endif
 
 #include <DirectXMath.h>
 
-#if defined(_XBOX_ONE)
+#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+#ifndef _GAMING_XBOX //Deprecated from the GDK
+	#include <D3Dcompiler_x.h>
+#else
+	#include <D3Dcompiler.h>
+#endif
 	#include <d3d12_x.h>		//! core 12.x header
 	#include <d3dx12_x.h>		//! utility 12.x header
-	#include <D3Dcompiler_x.h>
+
+//	#include <dxgi1_6.h>
 	#define MONOLITHIC 1
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 1 
 	#define SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK 1 
@@ -27,9 +35,9 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
-#if defined(_XBOX_ONE)
-	#pragma comment(lib,"d3dcompiler")
+#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
 	#pragma comment(lib,"d3d12_x")
+	#pragma comment(lib,"d3dcompiler")
 #else
 	#pragma comment(lib,"d3d12.lib")
 	#pragma comment(lib,"D3dcompiler.lib")
@@ -57,7 +65,7 @@
     #define SAFE_DELETE(p)          { if(p) { delete p; p=nullptr;} }
 #endif
 
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
     #define  SIMUL_PPV_ARGS IID_GRAPHICS_PPV_ARGS
 #else
     #define  SIMUL_PPV_ARGS IID_PPV_ARGS

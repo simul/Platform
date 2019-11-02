@@ -403,7 +403,7 @@ namespace simul
 		/// \param [in]	numLines	Number of gridlines to draw.
 		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
 		// Clang works differently to VC++:
-#ifndef _MSC_VER
+#if !defined( _MSC_VER ) || defined(_GAMING_XBOX)
 		template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)
 		{
 			InvalidateDeviceObjects();
