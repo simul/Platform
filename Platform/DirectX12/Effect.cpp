@@ -1174,7 +1174,8 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
     if (c)
     {
         CreateComputePso(deviceContext);
-        cmdList->SetPipelineState(mComputePso);
+		if(mComputePso)
+	        cmdList->SetPipelineState(mComputePso);
     }
     else
     {
@@ -1494,6 +1495,11 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
         name                += std::wstring(mTechName.begin(), mTechName.end());
         mComputePso->SetName(name.c_str());
     }
+	else
+	{
+		SIMUL_INTERNAL_CERR << "Failed to create compute PSO.\n";
+		SIMUL_BREAK_ONCE("Failed to create compute PSO")
+	}
 }
 
 size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext)

@@ -296,6 +296,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		if (!fileContents || loadedBytes <= 0)
 		{
 			SIMUL_CERR << "Could not load the RootSignature blob.\n";
+			SIMUL_BREAK_ONCE("Could not load the RootSignature blob.");
 		}
 		res                         = D3DCreateBlob(loadedBytes, &rblob);
         SIMUL_ASSERT(res == S_OK);
