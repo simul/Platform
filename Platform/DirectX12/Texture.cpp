@@ -1126,7 +1126,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	if (mTextureDefault)
 	{
 		auto desc = mTextureDefault->GetDesc();
-        if (desc.Width != w || desc.Height != l || desc.MipLevels != m || desc.Format != dxgi_format)
+        if (desc.Width != w || desc.Height != l || desc.MipLevels != m || desc.Format != texture2dFormat)
         {
 			ok = false;
         }

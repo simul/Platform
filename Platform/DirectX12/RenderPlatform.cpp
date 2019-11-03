@@ -485,13 +485,13 @@ void RenderPlatform::BeginD3D12Frame()
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
 	// Create dummy textures
-	static bool creteDummy = true;
-	if (creteDummy)
+	static bool createDummy = true;
+	if (createDummy)
 	{
 		const uint_fast8_t dummyData[4] = { 1,1,1,1 };
 		mDummy2D->setTexels(deviceContext, &dummyData[0], 0, 1);
 		mDummy3D->setTexels(deviceContext, &dummyData[0], 0, 1);
-		creteDummy = false;
+		createDummy = false;
 	}
 
 	// Age and delete old objects
@@ -755,8 +755,6 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 
 DXGI_FORMAT simul::dx12::RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
 {
-    // We are forced to use this formats as thats what PS4 needs,
-    // but there is not a perfect match btween the formats
     switch (p)
     {
     case simul::crossplatform::FMT_UNKNOWN:
@@ -795,6 +793,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 	case RGB_11_11_10_FLOAT:
 		return DXGI_FORMAT_R11G11B10_FLOAT;
+	case RGB10_A2_UNORM:
+		return DXGI_FORMAT_R10G10B10A2_UNORM; 
 	case RGBA_32_FLOAT:
 		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case RGB_32_FLOAT:
@@ -853,6 +853,10 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return R_16_FLOAT;
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
+	case DXGI_FORMAT_R11G11B10_FLOAT:
+		return RGB_11_11_10_FLOAT;
+	case DXGI_FORMAT_R10G10B10A2_UNORM:
+		return RGB10_A2_UNORM;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
 		return RGBA_32_FLOAT;
 	case DXGI_FORMAT_R32G32B32_FLOAT:
@@ -1551,18 +1555,24 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
     deviceContext.GetFrameBufferStack().pop();
-
+	CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
     // Stack is empty so apply default targets:
     if (deviceContext.GetFrameBufferStack().empty())
     {
 		if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
+		{
+			for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
+			{
+				h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[i]);
+			}
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
             (UINT)deviceContext.defaultTargetsAndViewport.num,
-            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0],
+				h,
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
         );
+		}
 		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
 	        SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
     }
@@ -1570,10 +1580,15 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
     else
     {
         auto curTargets = deviceContext.GetFrameBufferStack().top();
+		CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
+		for (int i = 0; i < curTargets->num; i++)
+		{
+			h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[i]);
+		}
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
             (UINT)curTargets->num,
-            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[0],
+            h,
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_dt
         );

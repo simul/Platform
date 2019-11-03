@@ -405,8 +405,10 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 #if 1
 	float s				=max_dist_km/80.0;	// 1.2^24 ~ 80
 	int i				=0;
-	for( i=0;i<thicknessSteps;i++)
+	for( i=0;i<12;i++)
 	{
+		if (i >= thicknessSteps)
+			break;
 		// we expect stepLength in km for this shader
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
 		vec4 lookup		=texture_3d_wwc_lod(cloudDensity, vec3(tx), 0);
