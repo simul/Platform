@@ -1660,7 +1660,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if (level == OUTSIDE)
 				group_name = "";
 		}
-		next			=(int)str.find('\n',pos+1);
+		next	=(int)str.find('\n',pos+1);
 	}
 	SIMUL_ASSERT(level==OUTSIDE);
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
@@ -1678,6 +1678,7 @@ void Shader::setUsesTextureSlot(int s)
 	}
 	textureSlots=textureSlots|m;
 }
+
 void Shader::setUsesTextureSlotForSB(int s)
 {
 	unsigned m=((unsigned)1<<(unsigned)s);

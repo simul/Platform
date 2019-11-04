@@ -184,7 +184,7 @@ struct LineQueryResult
 	float optical_thickness_km;
 	float first_contact_km;
 };
-										  
+
 #ifdef __cplusplus
 namespace simul
 {

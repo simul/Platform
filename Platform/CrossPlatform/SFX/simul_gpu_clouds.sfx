@@ -21,7 +21,6 @@ uniform RWTexture3D<vec4>	outputTexture;
 SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
 SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
 uniform StructuredBuffer<CloudAffector> cloudAffectors;
-uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
 
 #define q	(10000.0)
 

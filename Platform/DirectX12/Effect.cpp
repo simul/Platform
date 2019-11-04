@@ -886,9 +886,8 @@ void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,con
 {	
 	renderPlatform = r;
 	EnsureEffect(r, filename_utf8);
-#ifndef _XBOX_ONE
-//    SIMUL_COUT << "Loading effect:" << filename_utf8 << std::endl;
-#endif
+
+
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 
     // Init the samplers heap:
@@ -1062,13 +1061,14 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	res = shader->mShaderReflection->GetDesc(&shaderDesc);
 	SIMUL_ASSERT(res == S_OK);
 
+	Shader temp_shader;
 	// Reset the slot counter
-	shader->textureSlots		= 0;
-	shader->textureSlotsForSB	= 0;
-	shader->rwTextureSlots		= 0;
-	shader->rwTextureSlotsForSB = 0;
-	shader->constantBufferSlots = 0;
-	shader->samplerSlots		= 0;
+	temp_shader.textureSlots		= 0;
+	temp_shader.textureSlotsForSB	= 0;
+	temp_shader.rwTextureSlots		= 0;
+	temp_shader.rwTextureSlotsForSB = 0;
+	temp_shader.constantBufferSlots = 0;
+	temp_shader.samplerSlots		= 0;
 
 	// Check the shader bound resources
 	for (unsigned int i = 0; i < shaderDesc.BoundResources; i++)
@@ -1086,7 +1086,7 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 			// It looks like the only way to know if it is the global is by name or empty flag (0)
 			if (slotDesc.uFlags)
 			{
-				shader->setUsesConstantBufferSlot(slot);
+				temp_shader.setUsesConstantBufferSlot(slot);
 			}
 		}
 		else if (type == D3D_SIT_TBUFFER)
@@ -1095,23 +1095,23 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 		}
 		else if (type == D3D_SIT_TEXTURE)
 		{
-			shader->setUsesTextureSlot(slot);
+			temp_shader.setUsesTextureSlot(slot);
 		}
 		else if (type == D3D_SIT_SAMPLER)
 		{
-			shader->setUsesSamplerSlot(slot);
+			temp_shader.setUsesSamplerSlot(slot);
 		}
 		else if (type == D3D_SIT_UAV_RWTYPED)
 		{
-			shader->setUsesRwTextureSlot(slot);
+			temp_shader.setUsesRwTextureSlot(slot);
 		}
 		else if (type == D3D_SIT_STRUCTURED)
 		{
-			shader->setUsesTextureSlotForSB(slot);
+			temp_shader.setUsesTextureSlotForSB(slot);
 		}
 		else if (type == D3D_SIT_UAV_RWSTRUCTURED)
 		{
-			shader->setUsesRwTextureSlotForSB(slot);
+			temp_shader.setUsesRwTextureSlotForSB(slot);
 		}
 		else if (type == D3D_SIT_BYTEADDRESS)
 		{
@@ -1137,6 +1137,36 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 		{
 			SIMUL_BREAK("Unknown slot type.");
 		}
+	}
+	if (temp_shader.textureSlots != shader->textureSlots)
+	{
+		SIMUL_CERR << shader->name.c_str() << ": failed textureSlots check." << std::endl;
+		shader->textureSlots = temp_shader.textureSlots;
+	}
+	if (temp_shader.textureSlotsForSB != shader->textureSlotsForSB)
+	{
+		SIMUL_CERR << shader->name.c_str() << ": failed textureSlotsForSB check." << std::endl;
+		shader->textureSlotsForSB = temp_shader.textureSlotsForSB;
+	}
+	if (temp_shader.rwTextureSlots != shader->rwTextureSlots)
+	{
+		SIMUL_CERR << shader->name.c_str() << ": failed rwTextureSlots check." << std::endl;
+		shader->rwTextureSlots = temp_shader.rwTextureSlots;
+	}
+	if (temp_shader.rwTextureSlotsForSB != shader->rwTextureSlotsForSB)
+	{
+		SIMUL_CERR << shader->name.c_str() << ": failed rwTextureSlotsForSB check." << std::endl;
+		shader->rwTextureSlotsForSB = temp_shader.rwTextureSlotsForSB;
+	}
+	if (temp_shader.constantBufferSlots != shader->constantBufferSlots)
+	{
+		SIMUL_CERR << shader->name.c_str() << ": failed constantBufferSlots check." << std::endl;
+		shader->constantBufferSlots = temp_shader.constantBufferSlots;
+	}
+	if (temp_shader.samplerSlots != shader->samplerSlots)
+	{
+		SIMUL_CERR << shader->name.c_str() << ": failed samplerSlots check." << std::endl;
+		shader->samplerSlots = temp_shader.samplerSlots;
 	}
 }
 
