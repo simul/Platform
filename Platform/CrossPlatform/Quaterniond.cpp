@@ -65,8 +65,8 @@ vec3d Quaterniond::operator*(const vec3d &vec) const
 	double y1=s*y0+z*x0-x*z0;
 	double z1=s*z0+x*y0-y*x0;
 	return vec3d(s1*x+s*x1+y*z1-z*y1,
-				s1*y+s*y1+z*x1-x*z1,
-				s1*z+s*z1+x*y1-y*x1);
+				 s1*y+s*y1+z*x1-x*z1,
+				 s1*z+s*z1+x*y1-y*x1);
 }
 vec3d Quaterniond::operator/(const vec3d &vec) const
 {
@@ -78,8 +78,8 @@ vec3d Quaterniond::operator/(const vec3d &vec) const
 	double y1= s*y0-z*x0+x*z0;
 	double z1= s*z0-x*y0+y*x0;
 	return vec3d(-s1*x+s*x1-y*z1+z*y1,
-				-s1*y+s*y1-z*x1+x*z1,
-				-s1*z+s*z1-x*y1+y*x1);
+				 -s1*y+s*y1-z*x1+x*z1,
+				 -s1*z+s*z1-x*y1+y*x1);
 }
 void Quaterniond::Reset()
 {
