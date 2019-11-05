@@ -6,10 +6,11 @@
 using namespace simul;
 using namespace crossplatform;
 
-	 double length(vec3d v)
-	{
-		return sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
-	}
+ double length(vec3d v)
+{
+	return sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+}
+
 Quaterniond::Quaterniond()
 {
 	Reset();
@@ -366,18 +367,18 @@ namespace simul
 
 			// Compute the cosine of the angle between the two vectors.
 			Quaterniond Q2=q2;
-			double dot = q1.x*q2.x+q1.y*q2.y+q1.z*q2.z;
+			double dot = q1.x*q2.x+q1.y*q2.y+q1.z*q2.z + q1.s * q2.s;
 			if(dot<0)
 			{
 				dot=-dot;
-				Q2.x*=-1.f;
-				Q2.y*=-1.f;
-				Q2.z*=-1.f;
-				Q2.s*=-1.f;
+				Q2.x*=-1.0;
+				Q2.y*=-1.0;
+				Q2.z*=-1.0;
+				Q2.s*=-1.0;
 			}
-			dot+=q1.s*Q2.s;
+			//dot+=q1.s*Q2.s;
 			
-			const double DOT_THRESHOLD = 0.9995f;
+			const double DOT_THRESHOLD = 0.9995;
 			if (dot > DOT_THRESHOLD)
 			{
 				// If the inputs are too close for comfort, linearly interpolate
@@ -389,12 +390,12 @@ namespace simul
 				ret.MakeUnit();
 				return;
 			}
-			if(dot<-1.f)
-				dot=-1.f;
-			if(dot>1.f)
-				dot=1.f;
+			if(dot<-1.0)
+				dot=-1.0;
+			if(dot>1.0)
+				dot=1.0;
 			double theta_0 = acos(dot);  // theta_0 = half angle between input vectors
-			double theta1 = theta_0*(1.f-l);    // theta = angle between v0 and result 
+			double theta1 = theta_0*(1.0-l);    // theta = angle between v0 and result 
 			double theta2 = theta_0*l;    // theta = angle between v0 and result 
 
 			double s1=sin(theta1);
