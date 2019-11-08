@@ -3,12 +3,14 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Platform/CrossPlatform/Export.h"
 
 
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
+
 namespace simul
 {
 	namespace crossplatform
@@ -140,7 +142,7 @@ namespace simul
 			}
 		};
 		//! The base class for renderers. Placeholder for now.
-		class BaseRenderer
+		class SIMUL_CROSSPLATFORM_EXPORT BaseRenderer
 		{
 		//protected:
 		//	virtual scene::RenderPlatform *GetRenderPlatform()=0;

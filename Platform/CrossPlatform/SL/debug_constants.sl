@@ -24,11 +24,6 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 	uniform uint2 queryPos;	// for texture queries.
 	uniform float debugGamma;
 	uniform float debugDepth;
-	
-	uniform vec3 debugViewDir;
-	uniform float padwiobg;
-
-	uniform vec2 texcOffset;
 
 	uniform float displayLod;
 	uniform float displayLevel;

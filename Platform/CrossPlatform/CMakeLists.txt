@@ -21,4 +21,3 @@ add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
 add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${CMAKE}
 	DEFINITIONS SIMUL_CROSSPLATFORM_DLL=1
 	LINK SimulGeometry_MD SimulMath_MD SimulBase_MD)
-

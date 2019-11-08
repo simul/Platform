@@ -93,10 +93,10 @@ namespace simul
 			bool gotResults[QueryLatency];
 			bool doneQuery[QueryLatency];
 			Query(QueryType t, crossplatform::RenderPlatform*r=nullptr)
-				:QueryStarted(false)
+				:renderPlatform(r)
+				,QueryStarted(false)
 				,QueryFinished(false)
-				,currFrame(0)
-				,renderPlatform(r)
+				, currFrame(0)
 				,type(t)
 			{
 				for(int i=0;i<QueryLatency;i++)

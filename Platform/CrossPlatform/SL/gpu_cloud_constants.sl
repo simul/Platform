@@ -91,9 +91,13 @@ struct CloudAffector
 struct CloudVolume_densityspace
 {
 	mat4 transformMatrix;	// transform density space to volume space.
-	vec3 extents;
-	int cloudVolumeType;
+
+	vec4 lower;	//x = radius_km, y=edge, z=noise.
+	vec4 upper;
+
 	vec2 rake;
-	vec2 cvdspad;
+
+	float padcvds;
+	int cloudVolumeType;
 };
 #endif
