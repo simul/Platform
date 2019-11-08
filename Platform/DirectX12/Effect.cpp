@@ -1140,32 +1140,32 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	}
 	if (temp_shader.textureSlots != shader->textureSlots)
 	{
-		SIMUL_CERR << shader->name.c_str() << ": failed textureSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed textureSlots check." << std::endl;
 		shader->textureSlots = temp_shader.textureSlots;
 	}
 	if (temp_shader.textureSlotsForSB != shader->textureSlotsForSB)
 	{
-		SIMUL_CERR << shader->name.c_str() << ": failed textureSlotsForSB check." << std::endl;
+		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed textureSlotsForSB check." << std::endl;
 		shader->textureSlotsForSB = temp_shader.textureSlotsForSB;
 	}
 	if (temp_shader.rwTextureSlots != shader->rwTextureSlots)
 	{
-		SIMUL_CERR << shader->name.c_str() << ": failed rwTextureSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed rwTextureSlots check." << std::endl;
 		shader->rwTextureSlots = temp_shader.rwTextureSlots;
 	}
 	if (temp_shader.rwTextureSlotsForSB != shader->rwTextureSlotsForSB)
 	{
-		SIMUL_CERR << shader->name.c_str() << ": failed rwTextureSlotsForSB check." << std::endl;
+		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed rwTextureSlotsForSB check." << std::endl;
 		shader->rwTextureSlotsForSB = temp_shader.rwTextureSlotsForSB;
 	}
 	if (temp_shader.constantBufferSlots != shader->constantBufferSlots)
 	{
-		SIMUL_CERR << shader->name.c_str() << ": failed constantBufferSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed constantBufferSlots check." << std::endl;
 		shader->constantBufferSlots = temp_shader.constantBufferSlots;
 	}
 	if (temp_shader.samplerSlots != shader->samplerSlots)
 	{
-		SIMUL_CERR << shader->name.c_str() << ": failed samplerSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed samplerSlots check." << std::endl;
 		shader->samplerSlots = temp_shader.samplerSlots;
 	}
 }
