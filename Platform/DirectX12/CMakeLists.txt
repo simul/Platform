@@ -21,7 +21,6 @@ file(GLOB SHADERS
 	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/Sfx/*.sfx" 
 )
 
-
 file(GLOB SHADER_INCLUDES
 	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
 )

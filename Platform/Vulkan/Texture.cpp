@@ -485,7 +485,9 @@ void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	depthstencil &= (crossplatform::RenderPlatform::IsDepthFormat(textureCreate->f));
 	
 	int dimen = (textureCreate->d <= 1) ? 2 : 3;
-	InitViewTables(dimen, textureCreate->f, textureCreate->w, textureCreate->l, textureCreate->mips, textureCreate->arraysize, textureCreate->make_rt,textureCreate->cubemap, depthstencil);
+	InitViewTables(dimen, textureCreate->f, textureCreate->w, textureCreate->l, textureCreate->mips, textureCreate->arraysize, textureCreate->make_rt
+		,textureCreate->cubemap
+		, depthstencil);
 	SplitLayouts();
 
 	pixelFormat = textureCreate->f;
@@ -608,11 +610,9 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		viewType=vk::ImageViewType::e2DArray;
 	int totalNum = cubemap ? 6 * layers : layers;
 	//f=crossplatform::RenderPlatform::ToColourFormat(f);
-	vk::ImageAspectFlags imageAspectFlags;
+	vk::ImageAspectFlags imageAspectFlags=vk::ImageAspectFlagBits::eColor;
 	if(crossplatform::RenderPlatform::IsDepthFormat(f))
-		imageAspectFlags=vk::ImageAspectFlagBits::eDepth;
-	else
-		imageAspectFlags=vk::ImageAspectFlagBits::eColor;
+		imageAspectFlags|=vk::ImageAspectFlagBits::eDepth;
 	if(isDepthTarget&&crossplatform::RenderPlatform::IsStencilFormat(f))
 		imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);

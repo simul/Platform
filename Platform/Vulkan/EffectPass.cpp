@@ -236,7 +236,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		int slot=constantBufferResourceSlots[i];
 		crossplatform::ConstantBufferBase *cb=cs->applyBuffers[slot];
 		if (!cb)
+		{
+			num_descr--;
+			b--;
+			SIMUL_BREAK_ONCE("Possibly missing constant buffer");
 			continue;
+		}
 		vulkan::PlatformConstantBuffer *pcb=(vulkan::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		vk::WriteDescriptorSet &write=writes[b];
 		write.setDstSet(descriptorSet);

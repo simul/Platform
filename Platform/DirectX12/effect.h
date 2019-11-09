@@ -152,6 +152,7 @@ namespace simul
             int								mMaxApplyMod = 1;
             int								mCurApplies;
             uint64_t						mLastFrame;
+			int								mFrameCycle=0;
 		};
 
         //! DirectX12 Effect Pass implementation, this will hold several PSOs, its also in charge of 
