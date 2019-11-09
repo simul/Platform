@@ -28,7 +28,7 @@ void SphereRenderer::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 	effect.reset();
 }
-void SphereRenderer::DrawCrossSectionOnSphere(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
+void SphereRenderer::DrawCrossSectionOnSphere(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
 {
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -76,6 +76,7 @@ void SphereRenderer::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	world._43=origin.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	sphereConstants.debugWorldViewProj=wvp;
+	sphereConstants.multiplier		 = colour;
 	vec3 view_dir;
 	math::Vector3 cam_pos;
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
@@ -84,6 +85,7 @@ void SphereRenderer::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	sphereConstants.latitudes		=lat;
 	sphereConstants.longitudes		=longt;
 	sphereConstants.radius			=radius;
+	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,0);
 
 	renderPlatform->SetTopology(deviceContext,LINESTRIP);

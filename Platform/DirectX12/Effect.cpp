@@ -418,11 +418,16 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     if (mLastFrame != deviceContext.frame_number)
     {
         mLastFrame = deviceContext.frame_number;
-        mCurApplies = 0;
+		mFrameCycle++;
+		if(mFrameCycle>2)
+		{
+			mFrameCycle=0;
+			mCurApplies = 0;
+		}
     }
 
 	// If it changed (GetBuffer() was called) we will upload the data in the temp buffer to the GPU
-	if (mChanged)
+	if (mChanged||mCurApplies >= mMaxApplyMod)
 	{
         UpdateBuffer(deviceContext);
 	}
@@ -436,11 +441,16 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
     if (mLastFrame != deviceContext.frame_number)
     {
         mLastFrame = deviceContext.frame_number;
-        mCurApplies = 0;
+		mFrameCycle++;
+		if(mFrameCycle>2)
+		{
+			mFrameCycle=0;
+			mCurApplies = 0;
+		}
     }
 
     // If it changed (GetBuffer() was called) we will upload the data in the temp buffer to the GPU
-    if (mChanged)
+    if (mChanged||mCurApplies >= mMaxApplyMod)
     {
         UpdateBuffer(deviceContext);
     }
@@ -467,7 +477,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
     HRESULT hr=mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
 	if(hr!=S_OK)
 	{
-		SIMUL_INTERNAL_CERR<<"Failed to map PlatformStructuredBuffer for reading. "<<std::endl;
+		SIMUL_INTERNAL_CERR<<"Failed to map PlatformStructuredBuffer for reading."<<std::endl;
 		SIMUL_BREAK_ONCE("Failed here");
 		return nullptr;
 	}
@@ -591,7 +601,7 @@ void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext&
     r->AsD3D12CommandList()->CopyBufferRegion(mGPUBuffer, curOff, mUploadBuffer, curOff, mUnitSize);
     r->ResourceTransitionSimple(mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState, true);
     
-    //... we won't increse the apply count until we get the view
+    //... we won't increase the apply count until we get the view
     //... we will set mChange to false when we get the view
 }
 
@@ -605,22 +615,24 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView
 		mRenderPlatform->ResourceTransitionSimple(mGPUBuffer, mCurrentState, mShaderResourceState);
         mCurrentState = mShaderResourceState;
 	}
-
-    // Return the current view
-    D3D12_CPU_DESCRIPTOR_HANDLE* view = &mSrvViews[0];
-    if (mChanged)
+	
+    if (mCurApplies < mMaxApplyMod)
     {
-        if (mCurApplies >= mMaxApplyMod)
-        {
-            SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
-        }
-        else
-        {
-            view = &mSrvViews[mCurApplies++];
-        }
-        mChanged = false;
+		// Return the current view
+		D3D12_CPU_DESCRIPTOR_HANDLE* view = &mSrvViews[mCurApplies];
+		if (mChanged)
+		{
+			mCurApplies++;
+			mChanged = false;
+		}
+		return view;
+	}
+	else
+	{
+		SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
     }
-    return view;
+	// TODO: this is wrong.
+	return &mSrvViews[0];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessView(crossplatform::DeviceContext& ,int mip /*= 0*/)
@@ -636,16 +648,17 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessVie
 
     // Return the current view
     D3D12_CPU_DESCRIPTOR_HANDLE* view = &mUavViews[0];
+    if (mCurApplies >= mMaxApplyMod)
+    {
+        SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
+    }
+    else
+    {
+        view = &mUavViews[mCurApplies];
+    }
     if (mChanged)
     {
-        if (mCurApplies >= mMaxApplyMod)
-        {
-            SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
-        }
-        else
-        {
-            view = &mUavViews[mCurApplies++];
-        }
+		mCurApplies++;
         mChanged = false;
     }
     return view;

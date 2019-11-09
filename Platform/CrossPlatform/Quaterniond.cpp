@@ -1,7 +1,9 @@
+#define NOMINMAX
 #define SIM_MATH
 #include "Quaterniond.h"
 
 #include <math.h>
+#include <algorithm>
 
 using namespace simul;
 using namespace crossplatform;
@@ -84,10 +86,10 @@ vec3d Quaterniond::operator/(const vec3d &vec) const
 }
 void Quaterniond::Reset()
 {
-	x=0.f;
-	y=0.f;
-	z=0.f;
-	s=1.f;
+	x=0.0;
+	y=0.0;
+	z=0.0;
+	s=1.0;
 }
 
 void Quaterniond::MakeUnit()
@@ -96,7 +98,7 @@ void Quaterniond::MakeUnit()
 	magnitude=sqrt((x*x+y*y+z*z+s*s));
 	if(magnitude==0)
 	{
-		s=1.0f;
+		s=1.0;
 		return;
 	}
 	x/=magnitude;
@@ -107,11 +109,11 @@ void Quaterniond::MakeUnit()
 
 void Quaterniond::DefineSmall(double ss,const vec3d &vv)
 {
-	ss*=0.5f;
+	ss*=0.5;
 	x=ss*vv.x;
 	y=ss*vv.y;
 	z=ss*vv.z;
-	s=1.f;
+	s=1.0;
 	double magnitude;
 	magnitude=sqrt((x*x+y*y+z*z+s*s));
 	if(magnitude==0)
@@ -133,12 +135,12 @@ double Quaterniond::AngleInDirection(const vec3d &vv) const
 }
 double Quaterniond::Angle() const
 {
-	double halfangle=acos(s);
+	double halfangle=acos(std::min(1.0,std::max(-1.0,s)));
 	return halfangle*2.f;
 }
 void Quaterniond::Define(double angle,const vec3d &vv)
 {
-	angle/=2.f;
+	angle/=2.0;
 	s=cos(angle);
 	double ss=sin(angle);
 	x=ss*vv.x;
@@ -164,9 +166,9 @@ void Quaterniond::Define(const vec3d &dir_sin)
 	//	=V sin(a)/(2 cos(a/2))
 	//	=dir_sin / (2 cos(a/2))
 
-	double a2=asin(mag)/2.f;
+	double a2=asin(mag)/2.0;
 	s=cos(a2);
-	double div=1.f/(2.f*cos(a2));
+	double div=1.0/(2.0*cos(a2));
 	x=dir_sin.x*div;
 	y=dir_sin.y*div;
 	z=dir_sin.z*div;
@@ -193,15 +195,14 @@ Quaterniond Quaterniond::operator*(const Quaterniond &q) const
 Quaterniond Quaterniond::operator/(const Quaterniond &q) const
 {
 	Quaterniond iq=q;
-	iq.x*=-1.f;
-	iq.y*=-1.f;
-	iq.z*=-1.f;
+	iq.x*=-1.0;
+	iq.y*=-1.0;
+	iq.z*=-1.0;
 	return (*this)*iq;
 }
 
 Quaterniond& Quaterniond::operator/=(const Quaterniond &q)
 {
-#ifndef SIMD
 	double X,Y,Z;
 	X=s*q.x+q.s*x+q.y*z-q.z*y;
 	Y=s*q.y+q.s*y+q.z*x-q.x*z;
@@ -211,81 +212,6 @@ Quaterniond& Quaterniond::operator/=(const Quaterniond &q)
 	x=X;
 	y=Y;
 	z=Z;
-#else               
-	/*register double X,Y,Z;
-
-	X=s*q.x+q.s*x+q.y*z-q.z*y;
-	Y=s*q.y+q.s*y+q.z*x-q.x*z;
-	Z=s*q.z+q.s*z+q.x*y-q.y*x;
-	s=q.s*s-q.x*x-q.y*y-q.z*z;
-
-	x=X;
-	y=Y;
-	z=Z;   */
-// (X,Y,Z,s) => s*q + q.s*this
-//			 +  (z,x,y,0)*q.(y,z,x,0) - (y,z,x,0)*q.(z,x,y,0)
-//			s -= this*q
-// Alternatively:    
-// (X,Y,Z,s) => (s,s,s,s)*q + q.(s,s,s,0)*this
-//			 +  (z,x,y,0)*q.(y,z,x,0) - (y,z,x,0)*q.(z,x,y,0)
-//			s -= (x,y,z).q(x,y,z)
-	//static double temp[4];
-	//static int mask[]={0,0,0,0xFFFFFFFF};
-	//int *mmm=mask;
-	//double *tt=temp;
-	_asm
-	{
-	mov eax,this
-	mov ebx,q
-//	mov edx,mmm
-//mov ecx,tt
-	movups xmm1,[eax]
-	movups xmm2,[ebx]
-	movaps xmm3,xmm1
-	movaps xmm4,xmm2
-	shufps xmm3,xmm3,255	// xmm3 -> s,s,s,s
-//movups [ecx],xmm3
-	shufps xmm4,xmm4,255			// xmm4 -> q.s,q.s,q.s,q.s
-//movups [ecx],xmm4
-	mulps xmm3,xmm2       
-//movups [ecx],xmm3
-	mulps xmm4,xmm1      
-//movups [ecx],xmm4
-	addps xmm3,xmm4			// xmm3 = total so far, includes scalar multiplied terms.
-//movups [ecx],xmm3
-	movaps xmm5,xmm1
-	movaps xmm6,xmm2   
-	movaps xmm7,xmm1
-	mulps xmm7,xmm2	  
-//movups [ecx],xmm7
-	shufps xmm1,xmm1,18		// 2,0,1
-	shufps xmm2,xmm2,9		// 1,2,0
-	shufps xmm5,xmm5,9		// 1,2,0
-	shufps xmm6,xmm6,18		// 2,0,1
-	mulps xmm1,xmm2
-	mulps xmm5,xmm6
-	addps xmm3,xmm1
-	subps xmm3,xmm5			// xmm3 contains all terms except the dot product terms.
-//movups [ecx],xmm3
-	movaps xmm6,xmm7
-	shufps xmm6,xmm6,9
-//movups [ecx],xmm6
-	addps xmm7,xmm6
-//movups [ecx],xmm7
-	shufps xmm6,xmm6,1
-//movups [ecx],xmm6
-	addps xmm7,xmm6
-//movups [ecx],xmm7
-	movss xmm0,[eax+12]
-//movups [ecx],xmm0
-	mulss xmm0,[ebx+12]
-//movups [ecx],xmm0
-	subss xmm0,xmm7
-//movups [ecx],xmm0
-	movups [eax],xmm3		// store 1st 3
-	movss [eax+12],xmm0
-	};
-#endif
 	return *this;
 }
 namespace simul

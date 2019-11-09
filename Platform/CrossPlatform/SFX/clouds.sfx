@@ -213,7 +213,7 @@ void MixInLayer(int3 p,bool clears)
 	float layer_saturate	=saturate(texc.z / zPixel1+1.0)*saturate((1.0+zPixel1 - texc.z)/ zPixel1);
 
 	// cloud volumes.
-	float volume_multiplier = 0.0;
+	float volume_multiplier = initialVolumeMultiplier;
 	for (int i = 0; i < 10; i++)
 	{
 		if (i >= numVolumes)
@@ -498,6 +498,66 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 
+
+CS_LAYOUT(4,4,4)
+shader void CS_InrementalLighting(uint3 p : SV_DispatchThreadID)
+{
+	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+	vec3 texc_o	=vec3(idx)/vec3(windowGrid);
+
+	// we know the direction that the light is coming from.
+	// We look at the three texels that light is coming from based on that direction.
+	int3 offsets=int3(lightDir.x>0,lightDir.y>0,lightDir.z>0);
+
+
+
+	vec3 wpos = texc / inverseScalesKm;
+	float thicknessKm		=0.0;
+	int i				=0;
+	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float s				=0.5*stepLengthKm;
+	float max_h_km		=1.0/inverseScalesKm.z;
+	// We will blend with the existing value, to temporally amortize the calculation effort:
+	vec4 current = vec4(0, 0, 0, 0);
+	{
+		current = UnpackUintToVec4(packedOutputTexture3d[idx]);
+	}
+	// a random number between 0 and 1.0:
+	float randm=rand3(vec3(idx+uint3(stepCycle,stepCycle,stepCycle)));
+
+	// how many km from top.
+	float z_from_top_km=max_h_km*float(1+windowGrid.z-idx.z)/float(windowGrid.z);
+
+	float extinction_distance_km=max(5.0,min(5.5*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001)));
+	// this means extinction distance is the distance to the top of the clouds
+	// clamped between 5km and 100km.
+	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir,randm,extinction_distance_km);
+
+	// find nearest direction to light for ambient lighting:
+	float nearest=10000.0;
+	vec3 nearest_dir=vec3(0,0,0);
+	float total=0.0;
+
+	vec4 illum;
+	float t			=saturate(thicknessKm/extinction_distance_km);
+	t				=t*0.5+current.z*0.5;
+	thicknessKm		=t*extinction_distance_km;
+	illum.x			=max(.01,exp(-extinctionPerKm*thicknessKm/12.0));
+	illum.y			=exp(-extinctionPerKm*thicknessKm);
+	illum.zw        =vec2(t,1.0);
+
+	const float v=127.0/255.0;
+	illum.xyw= lerp(current.xyw,illum.xyw,v);
+
+	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
+}
 
 CS_LAYOUT(4,4,1)
 shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )

@@ -26,7 +26,7 @@ namespace simul
 			void DrawQuadOnSphere			(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,float sph_radius,vec4, vec4 fill_colour = vec4(0.f, 0.f, 0.f, 0.f));
 			void DrawTextureOnSphere		(DeviceContext &deviceContext,crossplatform::Texture *t, vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour=vec4(1.f,1.f,1.f,1.f));
 			void DrawCircleOnSphere			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float crc_rad,float sph_rad,vec4 line_colour,vec4 fill_colour = vec4(0.f, 0.f, 0.f, 0.f));
-			void DrawCrossSectionOnSphere	(DeviceContext &deviceContext, crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour);
+			void DrawCrossSectionOnSphere	(DeviceContext &deviceContext, crossplatform::Effect *effect,crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour);
 
 		protected:
 			crossplatform::ConstantBuffer<SphereConstants> sphereConstants;
