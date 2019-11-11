@@ -92,7 +92,7 @@ struct CloudVolume_densityspace
 {
 	mat4 transformMatrix;	// transform density space to volume space.
 
-	vec4 lower;	//x = radius_km, y=edge, z=noise.
+	vec4 lower;				//x = radius_km, y=edge, z=noise.
 	vec4 upper;
 
 	vec2 rake;
