@@ -183,6 +183,18 @@ shader v2f VS_DrawCircleOnSphere(idOnly IN)
 	return OUT;
 }
 
+shader v2f VS_DrawArcOnSphere(idOnly IN) 
+{
+    v2f OUT;
+	float interp		=float(IN.vertex_id)/float(latitudes);
+	vec3 pos			=vec3(0,0,1.0);
+	OUT.colour			=lerp(debugColour,multiplier,interp);
+	vec4 q				=slerp(quaternion,quaternion2,interp);
+	pos					=radius*rotate_by_quaternion(q,pos);
+	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	return OUT;
+}
+
 shader v2f VS_DrawFilledCircleOnSphere(idOnly IN)
 {
 	v2f OUT;
@@ -346,3 +358,17 @@ technique draw_circle_on_sphere
 	}
 }
 
+
+
+technique draw_arc_on_sphere
+{
+	pass outline
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawArcOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
+}

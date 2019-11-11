@@ -221,7 +221,9 @@ void MixInLayer(int3 p,bool clears)
 		CloudVolume_densityspace v=cloudVolumes[i];
 		vec3 texc				= mul(v.transformMatrix, vec4(wind_texc, 1.0)).xyz;
 		float rad				= length(texc.xy);
-		float m					= saturate((v.lower.x- rad)/ v.lower.y);
+		float h					= saturate(texc.z);
+		vec2 boundary			= lerp(v.lower.xy,v.upper.xy,h);
+		float m					= saturate((boundary.x- rad)/ boundary.y);
 		volume_multiplier		= max(volume_multiplier, float(m));
 	}
 

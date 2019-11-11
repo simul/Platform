@@ -390,9 +390,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView
 	}
 	else
 	{
-		SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB! \n";
+		SIMUL_INTERNAL_CERR << "Reached the maximum apply for this SB!\n";
     }
-	// TODO: this is wrong.
+	// TODO: this is wrong. Can it ever happen?
 	return &mSrvViews[0];
 }
 
