@@ -48,9 +48,8 @@ uniform Texture2D lightTableTexture;
 #endif
 */ 
 uniform Texture2D cloudMaskTexture;
-uniform Texture2D precipitationMap;
-uniform RWTexture2D<vec4> rw_PrecipitationMap;
-uniform Texture2DArray cloudLayerPrecipitation; //One per cloudlayer, max = 8;
+uniform Texture3D precipitationVolume;
+uniform RWTexture3D<vec4> precipitationVolumeRW;
 
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
@@ -86,8 +85,8 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.direct_light				=light_lookup.y;
 	res.indirect_light				=light_lookup.x;
 	res.ambient_light				=light_lookup.w;
-	res.precipitation				=GetRainAtOffsetKm(precipitationMap, cloudWorldOffsetKm, inverseScalesKm, res.pos_km.xyz, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
-	res.rain_to_snow				=GetRainToSnowAtOffsetKm(precipitationMap, cloudWorldOffsetKm, inverseScalesKm, res.pos_km.xyz);
+	res.precipitation				=GetRainAtOffsetKm(precipitationVolume, cloudWorldOffsetKm, inverseScalesKm, res.pos_km.xyz, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
+	res.rain_to_snow				=GetRainToSnowAtOffsetKm(precipitationVolume, cloudWorldOffsetKm, inverseScalesKm, res.pos_km.xyz);
 	res.padding						=0.0;
 	volumeQueries[sub_pos.x]		=res;
 }
@@ -610,116 +609,120 @@ shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
 	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
-vec4 CloudLayerPrecipitation(posTexVertexOutput IN, bool map)
+void PrecipiationVolume(uint3 p, bool map, bool init)
 {
-	//Calculate precipitation region mask
-	vec2 rainCentreTC = rainCentreKm.xy * inverseScalesKm.xy * vec2(1.0, -1.0) + vec2(0.5, 0.5);
+	int3 idx = int3(p) * int3(amortizationScale) + int3(amortizationOffset.xyz);
+	if (idx.x >= exclusionRange.x && idx.y >= exclusionRange.y && idx.x < exclusionRange.z && idx.y < exclusionRange.w)
+		return;
 
-	float rainRadiusTC = rainRadiusKm * inverseScalesKm.x;
-	bool outOfRange = true;
-	if (length(IN.texCoords.xy - rainCentreTC) < rainRadiusTC)
+	idx.xy += gridCentreTexel;
+	idx.xy += int2(windowGrid.xy + windowGrid.xy / 2);
+	idx.xy = idx.xy%int2(windowGrid.xy);
+
+	vec3 texc = vec3(idx) / vec3(windowGrid);
+
+	float zPixel1 = 1.0 / float(windowGrid.z);
+	float layer_saturate = saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
+
+	//Write new total_cloud and max_tex_z
+	if (init)
 	{
-		outOfRange = false;
+		// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
+		float total_cloud = 0.0;
+		float max_tex_z = 0.0;
+		float thickness = 0.0;
+		for (int i = texc.z*20.0; i < 14; i++)
+		{
+			float tex_z		= float(14 - i) / 20.0;
+			vec3 texc1		= vec3(texc.xy, tex_z);
+			vec4 density	= sample_3d_lod(cloudDensity, wwcSamplerState, texc1, 0);
+			total_cloud		+= 0.125*density.z;
+			thickness		+= 1.0*density.z;		// effective cloud thickness in km.
+			max_tex_z		= max(max_tex_z, step(1.0, thickness)*tex_z);
+		}
+		total_cloud = saturate((total_cloud - 0) / 0.1);
+
+		//vec4 current = precipitationVolumeRW[idx];
+		precipitationVolumeRW[idx] = vec4(0.0, max_tex_z, 0.0, total_cloud);
+		return;
 	}
-	if (outOfRange)
-		return vec4(0, 0, 0, 0);
+
+	//Calculate precipitation region mask
+	float precipitationMask = 0.0;
+	
+	vec2 rainCentreTC[4];
+	rainCentreTC[0] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 0);
+	rainCentreTC[1] = rainCentreKm.xy * inverseScalesKm.xy + vec2(0, 1);
+	rainCentreTC[2] = rainCentreKm.xy * inverseScalesKm.xy + vec2(1, 0);
+	rainCentreTC[3] = rainCentreKm.xy * inverseScalesKm.xy + vec2(1, 1);
+	
+	float rainRadiusTC = rainRadiusKm * inverseScalesKm.x;
+	for (int i = 0; i < 4; i++)
+	{
+		if (length(texc.xy - rainCentreTC[i]) < rainRadiusTC)
+		{
+			precipitationMask = 1.0;
+			break;
+		}
+	}
 
 	//Apply the mask from the cloud mask texture, if available.
 	float map_lookup = 0.0;
 	if (map)
 	{
-		vec2 texc = IN.texCoords.xy;
-		vec2 map_texc = texc * mapScale + mapOffset;
+		vec2 map_texc = vec3(idx).xy / vec3(windowGrid).xy;
+		map_texc.y = 1.0 - map_texc.y;
+		map_texc.xy += vec2(0.5, 0.5);
+		if (map_texc.x > 1.0) { map_texc.x -= 1.0; }
+		if (map_texc.y > 1.0) { map_texc.y -= 1.0; }
+		map_texc.xy -= vec2(0.5, 0.5);
+		map_texc = map_texc * mapScale + mapOffset;
 		float sine = sin(azimuth);
 		float cosine = cos(azimuth);
 		map_texc.xy = vec2(map_texc.x*cosine - map_texc.y*sine, map_texc.y*cosine + map_texc.x*sine);
-		map_texc.xy -= vec2(4.0 - mapScale.x, 4.0 - mapScale.y);
+		map_texc.xy += vec2(0.5, 0.5);
 
 		if (map_texc.x >= 0.0&&map_texc.y >= 0.0&&map_texc.x <= 1.0&&map_texc.y <= 1.0)
 		{
-			map_lookup = texture_clamp_lod(cloudMaskTexture, map_texc.xy, 0).z;
+			map_lookup = texture_clamp_lod(cloudMaskTexture, map_texc.xy, 0).x;
 		}
 	}
 	else
 		map_lookup = 1.0;
-
-	// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
-	float total_cloud = 0.0;
-	float max_tex_z = 0.0;
-	float thickness = 0.0;
-
-	float cloudHeightKm = cloudBaseKm + cloudLayerThicknessKm;
-	for (int i = cloudBaseKm; i < cloudHeightKm; i++)
-	{
-		float tex_z		= float(cloudHeightKm - i) / 20.0;
-		vec3 texc		= vec3(IN.texCoords.xy, tex_z);
-		texc.y			= 1.0 - texc.y;
-		texc.xy			+= vec2(0.5, 0.5);
-		vec4 density	= sample_3d_lod(cloudDensity, wwcSamplerState, texc, 0);
-		total_cloud		+= 0.125*density.z;
-		thickness		+= 1.0*density.z;		// effective cloud thickness in km.
-		max_tex_z		= max(max_tex_z, step(1.0, thickness)*tex_z);
-	}
-	total_cloud = saturate((total_cloud - 0) / 0.1);
 	
-	//Write to precipitation_map
-	return vec4(total_cloud*precipitation, max_tex_z, rainToSnow, cloudBaseKm / 20.0) * map_lookup;
-}
-
-shader vec4 PS_CloudLayerPrecipitation(posTexVertexOutput IN) : SV_TARGET
-{
-	return CloudLayerPrecipitation(IN, false);
-}
-shader vec4 PS_CloudLayerPrecipitationWithMap(posTexVertexOutput IN) : SV_TARGET
-{
-	return CloudLayerPrecipitation(IN, true);
-}
-
-groupshared vec3 gs_CombineRainMap[8][8][8]; //.x = precipitation, .y = max_tex_z, .z = rainToSnow
-CS_LAYOUT(8, 8, 8)
-shader void CS_CombineRainMap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	//Initalise thread and memory.
-	uint3 pos = g * uint3(8, 8, 8) + t; //pos = pixel location. Output texc: vec4(vec3(g)/64.0 + vec3(t)/512.0, 1);
-	gs_CombineRainMap[t.x][t.y][t.z] = vec3(0.0, 0.0, 0.0);
-
-	//Update precipitation and rainToSnow in groupshared for later assembly;
-	vec4 cloudLayer = TEXTURE_LOAD_3D(cloudLayerPrecipitation, uint3(pos.xy, pos.z));
+	float base = (cloudBaseKm / 20.0) * float(windowGrid.z);
+	//float top = ((cloudBaseKm + cloudLayerThicknessKm) / 20.0) * float(windowGrid.z);
 	
-	float topOfLayer = cloudLayer.y * 20.0;
-	float baseOfLayer = cloudLayer.a * 20.0;
-	float verticalDistanceToTop = cloudLayer.y * 20.0 - viewPosKm.z;
-	float verticalDistanceToBase = cloudLayer.a * 20.0 - viewPosKm.z;
-	if (topOfLayer > viewPosKm.z)
-	{
-		//Scale by height different, layers close to the viewer should have a greater effect.
-		//Translate rainToSnow range to (-0.5 -> 0.5), so that rain can subtrate from the overall value.
-		gs_CombineRainMap[t.x][t.y][t.z].x = cloudLayer.x * saturate(verticalDistanceToTop / 2.0);
-		gs_CombineRainMap[t.x][t.y][t.z].y = cloudLayer.y;
-		gs_CombineRainMap[t.x][t.y][t.z].z = (cloudLayer.z - 0.5) * ((20.0 - verticalDistanceToBase) / 2.0);
-	}
-	GroupMemoryBarrierWithGroupSync(); //Ensure this write operation is complete.
-
-	//Only one of the eight threads is now need to write to the output Texture2D.
-	if (pos.z != 0)
+	if (!map_lookup || !precipitationMask || idx.z > base)
 		return;
 
-	float finalPrecipitation = 0.0;
-	float finalMaxTexcZ = 0.0;
-	float finalRainToSnow = 0.0;
-	for (int i = 0; i < 8; i++)
-	{
-		finalPrecipitation	+= gs_CombineRainMap[t.x][t.y][i].x;
-		finalMaxTexcZ		= max(gs_CombineRainMap[t.x][t.y][i].y, finalMaxTexcZ);
-		finalRainToSnow		+= gs_CombineRainMap[t.x][t.y][i].z;
-	}
-	finalPrecipitation	= saturate(finalPrecipitation);
-	finalMaxTexcZ		= saturate(finalMaxTexcZ);
-	finalRainToSnow		= saturate(finalRainToSnow);
+	//Create old and new values
+	vec4 current = precipitationVolumeRW[idx];
+	vec4 res = vec4(precipitation, current.g, rainToSnow, current.a) * map_lookup * precipitationMask;
 
-	//We will use the combined the precipitation_map Texture Array values in the final output
-	vec4 res = vec4(finalPrecipitation, finalMaxTexcZ, finalRainToSnow, 0.0);
-	IMAGE_STORE(rw_PrecipitationMap, pos.xy, res);
+	if (current.r != 0.0)
+		res.rb = lerp(res.rb, current.rb, 0.5);
+
+	res.ga = current.ga;
+
+	//Write to precipitation_volume
+	IMAGE_STORE(precipitationVolumeRW, idx, res);
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_PrecipitationVolume(uint3 p : SV_DispatchThreadID)
+{ 
+	PrecipiationVolume(p, false, false);
+}
+CS_LAYOUT(4,4,4)
+shader void CS_PrecipitationVolumeWithMap(uint3 p : SV_DispatchThreadID)
+{ 
+	PrecipiationVolume(p, true, false);
+}
+CS_LAYOUT(4, 4, 4)
+shader void CS_PrecipitationVolumeInit(uint3 p : SV_DispatchThreadID)
+{
+	PrecipiationVolume(p, false, true);
 }
 
 struct FarNearDepthPixelOutput
@@ -747,6 +750,7 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,int numSteps,int num_
 	RaytracePixelOutput f	=RaytraceCloudsStatic( 
 									cloudDensity
 									,cloudDensity2
+									,precipitationVolume
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
@@ -755,7 +759,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,int numSteps,int num_
 									,skylTexture
 									,volumeInscatterTexture
 									,godraysTexture
-									,precipitation
 									,depth
 									,dlookup
 									,view
@@ -807,6 +810,7 @@ void StaticRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 	RaytracePixelOutput f	=RaytraceCloudsStatic( 
 									cloudDensity
 									,cloudDensity2
+									,precipitationVolume
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
@@ -815,7 +819,6 @@ void StaticRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 									,skylTexture
 									,volumeInscatterTexture
 									,godraysTexture
-									,precipitation
 									,depth
 									,dlookup
 									,view
@@ -874,6 +877,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godr
 
 	RaytracePixelOutput f	=RaytraceCloudsForward(cloudDensity
 													,cloudDensity2
+													,precipitationVolume
 													,noiseTexture3D
 													,lightTableTexture
 													,illuminationTexture
@@ -882,7 +886,6 @@ void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godr
 													,skylTexture
 													,volumeInscatterTexture
 													,godraysTexture
-													,precipitation
 													,true
 													,dlookup
 													,view
@@ -1547,37 +1550,19 @@ technique cloud_shadow
     }
 }
 
-technique cloud_layer_precipitation
+technique precipitation_volume
 {
-    pass p0 
+    pass main
     {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_fullscreen_5_0);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_CloudLayerPrecipitation()));
+		SetComputeShader(CompileShader(cs_5_0, CS_PrecipitationVolume()));
     }
-}
-
-technique cloud_layer_precipitation_with_map
-{
-	pass p0
+	pass map
 	{
-		SetDepthStencilState(DisableDepth,0);
-		SetRasterizerState(RenderNoCull);
-		SetBlendState(NoBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetVertexShader(vs_fullscreen_5_0);
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS_CloudLayerPrecipitationWithMap()));
+		SetComputeShader(CompileShader(cs_5_0, CS_PrecipitationVolumeWithMap()));
 	}
-}
-
-technique combined_precipitation_map
-{
-	pass p0
+	pass init
 	{
-		SetComputeShader(CompileShader(cs_5_0,CS_CombineRainMap()));
+		SetComputeShader(CompileShader(cs_5_0, CS_PrecipitationVolumeInit()));
 	}
 }
 

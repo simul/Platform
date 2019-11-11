@@ -4,6 +4,7 @@
 
 RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,Texture3D cloudLight
+											,Texture3D precipitationVolume
 											,Texture3D noiseTexture3D
 											,Texture2D lightTableTexture
 											,Texture2D illuminationTexture
@@ -12,7 +13,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
 											,Texture3D godraysVolumeTexture
-											,float precipitation
                                             ,bool do_depth_mix
 											,vec4 dlookup
 											,vec3 view
@@ -191,7 +191,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
-					float dm			=rainEffect*fade*precipitation; //GetRainAtOffsetKm(precipitationMap,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
+					float dm			=rainEffect*fade*GetRainAtOffsetKm(precipitationVolume,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 					moisture			+=0.01*dm*light.x;
 					density.z			=saturate(density.z+dm);
 				}

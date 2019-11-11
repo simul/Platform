@@ -103,40 +103,32 @@ void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4
 }
 
 
-float GetRainAtOffsetKm(Texture2D precipitationMap,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
+float GetRainAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
 {
-	vec3 rain_texc		=cloudWorldOffsetKm;
-	rain_texc.xy		+=rain_texc.z*rainTangent;
-	rain_texc.xy		*=inverseScalesKm.xy;
+	vec3 rain_texc = cloudWorldOffsetKm;
+	rain_texc.xy += rain_texc.z*rainTangent;
 	#ifdef SFX_OPENGL
 	rain_texc.y = 1.0 - rain_texc.y;
 	#endif
-	rain_texc.xy		-=vec2(0.5, 0.5);
-	if(rain_texc.x < 0) {rain_texc.x += 1.0;}
-	if(rain_texc.y < 0) {rain_texc.y += 1.0;}
+	vec4 rain_lookup = precipitationVolume.SampleLevel(wwcSamplerState, rain_texc*inverseScalesKm, 0);
 
-	vec4 rain_lookup	= precipitationMap.SampleLevel(wwcSamplerState,rain_texc.xy,0);
-	return rain_lookup.x;
+	//return rain_lookup.x *saturate((rainRadiusKm-length(cloudWorldOffsetKm.xy-rainCentreKm.xy))*3.0) *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
+	return rain_lookup.x * rain_lookup.a * saturate((20.0*rain_lookup.y - cloudWorldOffsetKm.z) / 2.0);
 	
 }
-float GetRainToSnowAtOffsetKm(Texture2D precipitationMap,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km)
+float GetRainToSnowAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km)
 {
-	vec3 rain_texc		=cloudWorldOffsetKm;
-	rain_texc.xy		+=rain_texc.z*rainTangent;
-	rain_texc.xy		*=inverseScalesKm.xy;
+	vec3 rain_texc = cloudWorldOffsetKm;
+	rain_texc.xy += rain_texc.z*rainTangent;
 	#ifdef SFX_OPENGL
 	rain_texc.y = 1.0 - rain_texc.y;
 	#endif
-	rain_texc.xy		-=vec2(0.5, 0.5);
-	if(rain_texc.x < 0) {rain_texc.x += 1.0;}
-	if(rain_texc.y < 0) {rain_texc.y += 1.0;}
-
-	vec4 rain_lookup	= precipitationMap.SampleLevel(wwcSamplerState,rain_texc.xy, 0);
+	
+	vec4 rain_lookup = precipitationVolume.SampleLevel(wwcSamplerState, rain_texc*inverseScalesKm, 0);
 	return rain_lookup.z;
 }
 
-
-	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
+vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
 
 void DebugStep(inout vec4 colour[NUM_CLOUD_INTERP]
 	,vec4 rgba,inout float brightness_factor)

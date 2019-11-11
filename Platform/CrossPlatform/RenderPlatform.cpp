@@ -961,7 +961,23 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	crossplatform::EffectTechnique *tech=textured;
 	if(tex&&tex->GetDimension()==3)
 	{
-		tech=showVolume;
+		if (debug)
+		{
+			tech = debugEffect->GetTechniqueByName("trace_volume");
+			
+			static char c = 0;
+			static char cc = 20;
+			c--;
+			if (!c)
+			{
+				level++;
+				c = cc;
+			}
+			debugConstants.displayLevel = (float)(level%std::max(1, tex->depth)) / tex->depth;
+		}
+		else
+			tech=showVolume;
+
 		debugEffect->SetTexture(deviceContext,volumeTexture,tex);
 	}
 	else if(tex&&tex->IsCubemap())
@@ -980,7 +996,6 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 					level++;
 					c=cc;
 				}
-			
 				debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
 			}
 		}
@@ -1035,6 +1050,11 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 			if(l<10)
 				lvl_txt[5]='0'+(l);
 			Print(deviceContext,x1+60,y1+20,lvl_txt,white,semiblack);
+		}
+		if (tex&&tex->GetDimension() == 3)
+		{
+			int l=level%tex->depth;
+			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(l)).c_str(), white, semiblack);
 		}
 	}
 }
