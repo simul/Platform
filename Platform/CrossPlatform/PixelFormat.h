@@ -22,7 +22,7 @@ namespace simul
 			,RGBA_8_UNORM_COMPRESSED
 			,RGBA_8_UNORM_SRGB
 			,BGRA_8_UNORM
-
+			,RGB10_A2_UNORM
 
 			,RGB_32_FLOAT
 			,RGB_32_UINT

@@ -27,7 +27,7 @@ uniform Texture2D		g_texDepth					SIMUL_TEXTURE_REGISTER(7);		// Depth of render
 uniform Texture2D		g_shoreDepthTexture			SIMUL_TEXTURE_REGISTER(8);		// Shore depth for shallow water effects
 uniform texture2D		g_maskFrontfaceTexture		SIMUL_TEXTURE_REGISTER(9);		// Temp Mask texture for blocking objects
 uniform texture2D		g_maskTexture				SIMUL_TEXTURE_REGISTER(10);		// Mask texture for blocking objects
-uniform Texture2DArray<float4>	g_ProfileBuffers	: register(t3);					// Profile Buffer Texture
+uniform Texture2DArray<float4>	g_ProfileBuffers	: register(t12);				// Profile Buffer Texture
 
 //Render target textures to pass from initial pass to final composite
 uniform Texture2D		g_waterDepth				SIMUL_TEXTURE_REGISTER(0);		// Depth of the water
@@ -1560,7 +1560,6 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 					vec2 displacementValue2 = vec2(0.0, 0.0);
 
 					float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_windDependency))) / 2.0, 4.0);
-
 					vec2 baseWaveAmp1 = (g_amplitude * shoreDepth1 * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc1.x + texc1.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
 					vec2 baseWaveAmp2 = (g_amplitude * shoreDepth2 * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc2.x + texc2.y + profileOffsets[i % 16], 0.0, 0.0f), 0).xy) / 2.0);
 
@@ -2070,7 +2069,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 		surfaceFoamValue = max(pow(temp.x + temp.y, 2.0) - (0.5 - g_foamStrength), 0.0) + max(pow(temp2.x + temp2.y, 2.0) - 0.05, 0.0);
 
 		// Calculate normal here.
-		normal = normalize(vec3(tx.xy + ty.xy, float(N / 2.0)));
+		normal = normalize(vec3(tx.xy + ty.xy, float(N / 4.0)));
 
 	}
 
@@ -2317,7 +2316,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 	float4 Output = float4(-1.0, -1.0, -1.0, -1.0);// g_texColour.Sample(wrapSamplerState, In.texCoords) / 50.0;
 	
-	int noSteps = min(g_noOfReflectionSteps, 100);
+	int noSteps = min(g_noOfReflectionSteps, 50);
 	float stepLength = min(max(abs(depthInput.w) * 3000.0, 0.125), 0.5);
 
 	float4 normalsInput = g_waterNormals.Sample(g_samplerPerlin, BaseTexCoords);
@@ -2408,7 +2407,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	{
 		//if(!(fullDepth < 300000 && fullDepth > length(g_LocalEye - samplePos.xyz)))
 		//reflectVec.z = max(reflectVec.z, 0.0);
-		Output = texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0);// float4(-1.0, -1.0, -1.0, -1.0);//
+		Output = texture_cube_lod(g_texReflectCube, normalize(reflectVec.xyz), 0);// float4(-1.0, -1.0, -1.0, -1.0);//
 		//Output *= float(doublerefl ? 0.5 : 1.0);
 	}
 
@@ -2590,10 +2589,10 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 	if(reflections)
 		refl = g_waterReflectColour.Sample(g_samplerPerlin, In.texCoords);
 	else
-		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0);
+		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.xyz), 0);
 
 	if(refl.x < 0.0)
-		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0);
+		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.xyz), 0);
 
 	//return refl;
 	float reflectFresnel = fresnel(normalize(reflect_vec), normal, 1.0, 1.33f);

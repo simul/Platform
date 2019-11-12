@@ -210,7 +210,6 @@
 			y=v[1];
 			z=v[2];
 		}
-		void operator=(const vec3d &v);
 		void operator*=(float m)
 		{
 			x*=m;
@@ -1039,6 +1038,10 @@
 			return ret;
 		}
 	};
+	inline void vec3d_to_vec3(vec3&v3,const vec3d& v)
+	{
+		v3= vec3(float(v.x), float(v.y), float(v.z));
+	}
 	inline vec3d cross(const vec3d &a,const vec3d &b)
 	{
 		vec3d r;

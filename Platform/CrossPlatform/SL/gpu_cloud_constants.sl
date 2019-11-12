@@ -87,11 +87,12 @@ struct CloudAffector
 	float size;
 };
 
+//! The input struct for a cloud control volume.
 struct CloudVolume_densityspace
 {
 	mat4 transformMatrix;	// transform density space to volume space.
 	vec3 extents;
-	int type;
+	int cloudVolumeType;
 	vec2 rake;
 	vec2 cvdspad;
 };

@@ -312,15 +312,21 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
 	if(!c)
 		pixelFormat=vulkanRenderPlatform->GetActivePixelFormat(deviceContext);
-	const auto &p=mRenderPasses.find(pixelFormat);
+	crossplatform::Topology appliedTopology = topology;
+	if (cs->topology != crossplatform::Topology::UNDEFINED)
+		appliedTopology = cs->topology;
+	if (topology == crossplatform::Topology::UNDEFINED)
+		topology = crossplatform::Topology::TRIANGLESTRIP;
+	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat, appliedTopology);
+	const auto &p=mRenderPasses.find(hashval);
 	RenderPassPipeline *renderPassPipeline=nullptr;
 	if(p==mRenderPasses.end())
 	{
-		renderPassPipeline=&mRenderPasses[pixelFormat];
-		InitializePipeline(deviceContext,renderPassPipeline,pixelFormat);
+		renderPassPipeline=&mRenderPasses[hashval];
+		InitializePipeline(deviceContext,renderPassPipeline,pixelFormat, appliedTopology);
 	}
 	else
-		renderPassPipeline=&(mRenderPasses[pixelFormat]);
+		renderPassPipeline=&(mRenderPasses[hashval]);
 	if(c)
 	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute,renderPassPipeline->mPipeline);
@@ -540,7 +546,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 }
 
 
-void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat)
+void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
@@ -662,7 +668,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		vk::DynamicState dynamicStates[2]							= { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 		auto dynamicStateInfo										= vk::PipelineDynamicStateCreateInfo().setPDynamicStates(dynamicStates).setDynamicStateCount(2);
 	
-		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo	= vk::PipelineInputAssemblyStateCreateInfo().setTopology(vk::PrimitiveTopology::eTriangleStrip);
+		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo	= vk::PipelineInputAssemblyStateCreateInfo().setTopology(simul::vulkan::RenderPlatform::toVulkanTopology(topology));
 		if(topology!=crossplatform::Topology::UNDEFINED)
 		{
 			inputAssemblyInfo.setTopology(vulkan::RenderPlatform::toVulkanTopology(topology));
@@ -778,18 +784,19 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 {
 }
 
-vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::DeviceContext & deviceContext,crossplatform::PixelFormat pixelFormat)
+vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::DeviceContext & deviceContext,crossplatform::PixelFormat pixelFormat,crossplatform::Topology topology)
 {
 	auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 	if(rp)
 		return *rp;
-	const auto &p=mRenderPasses.find(pixelFormat);
+	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology);
+	const auto &p=mRenderPasses.find(hashval);
 	if(p==mRenderPasses.end())
 	{
-		InitializePipeline(deviceContext,&mRenderPasses[pixelFormat],pixelFormat);
+		InitializePipeline(deviceContext,&mRenderPasses[hashval],pixelFormat,topology);
 	}
 
-	return mRenderPasses[pixelFormat].mRenderPass;
+	return mRenderPasses[hashval].mRenderPass;
 }
 
 void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)

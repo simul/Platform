@@ -77,6 +77,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 			SIMUL_PPV_ARGS(&mUploadHeap[i])
 		);
 		SIMUL_ASSERT(res == S_OK);
+		SIMUL_GPU_TRACK_MEMORY(mUploadHeap[i], mBufferSize)
 
 		// Just debug memory usage
 		megas += (float)(mBufferSize) / 1048576.0f;
@@ -139,12 +140,12 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect, const c
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
-	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mHeaps[i].Release();
-		SAFE_RELEASE(mUploadHeap[i]);
-//		rPlat->PushToReleaseManager(mUploadHeap[i], "ConstantBufferUpload");
+		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i], "mUploadHeap");
+		mUploadHeap[i]=nullptr;
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=nullptr;
 	}
@@ -177,7 +178,7 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 	if(hResult==S_OK)
 	{
 		memcpy(pDest + offset, addr, size);
-		const CD3DX12_RANGE unMapRange(0, 1);
+		const CD3DX12_RANGE unMapRange(offset, offset+size);
 		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
 	

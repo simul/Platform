@@ -74,7 +74,7 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.sunlight = vec4(0,0,0,0);	
 	res.moonlight = vec4(0,0,0,0);
 	res.ambient = vec4(0,0,0,0);
-	res.padding = vec3(0,0,0);
+	res.sunlight_in_space = vec3(0,0,0);
 	res.valid = 0;
 	res.pos					=lightingQueryInputs[sub_pos.x];
 	float alt_texc			=GetAltTexCoord(res.pos.z/1000.0,minSunlightAltitudeKm,maxFadeAltitudeKm);

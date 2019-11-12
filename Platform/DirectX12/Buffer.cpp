@@ -1,6 +1,6 @@
 #include "SimulDirectXHeader.h"
 #include "Buffer.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "RenderPlatform.h"
 
 using namespace simul;
 using namespace dx12;
@@ -18,7 +18,8 @@ Buffer::~Buffer()
 
 void Buffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(mUploadHeap);
+	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+	rPlat->PushToReleaseManager(mUploadHeap, "Buffer");
 }
 
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
@@ -44,6 +45,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 		SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mUploadHeap, mBufferSize)
 	mUploadHeap->SetName(L"VertexUpload");
 
 	ID3D12Resource* mIntermediateHeap = nullptr;
@@ -60,6 +62,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 			SIMUL_PPV_ARGS(&mIntermediateHeap)
 		);
 		SIMUL_ASSERT(res == S_OK);
+		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
 		mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
 		/*
 		crossplatform::DeviceContext tmpCrap;
@@ -83,9 +86,10 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	mVertexBufferView.BufferLocation	= mUploadHeap->GetGPUVirtualAddress();
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,int index_size_bytes,const void *data)
 {
 	HRESULT res = S_FALSE;
+	renderPlatform = r;
 	mBufferSize = index_size_bytes * num_indices;
 
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
@@ -98,6 +102,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
         SIMUL_PPV_ARGS(&mUploadHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mUploadHeap, mBufferSize)
 	mUploadHeap->SetName(L"IndexUpload");
 
 	ID3D12Resource* mIntermediateHeap = nullptr;
@@ -114,6 +119,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 			SIMUL_PPV_ARGS(&mIntermediateHeap)
 		);
 		SIMUL_ASSERT(res == S_OK);
+		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
 		mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
 		/*
 		crossplatform::DeviceContext tmpCrap;
@@ -154,7 +160,10 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
-	mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
+	mGpuMappedPtr = nullptr;
+	HRESULT hr=mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
+	if (hr != S_OK)
+		return nullptr;
 	return (void*)mGpuMappedPtr;
 }
 

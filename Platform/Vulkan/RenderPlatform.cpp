@@ -11,6 +11,7 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/Vulkan/Texture.h"
 #include "Simul/Platform/Vulkan/DisplaySurface.h"
+#include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
 
 using namespace simul;
@@ -347,7 +348,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
-													.setRenderPass(pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext)))
+													.setRenderPass(pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext),cs->topology))
 													.setFramebuffer(*framebuffer)
 													.setClearValueCount(2)
 													.setPClearValues(clearValues)
@@ -1195,11 +1196,6 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,in
 	}
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext &,crossplatform::Topology t)
-{
-  //  mCurTopology = toVulkanTopology(t);
-}
-
 void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
 {
 }
@@ -1272,7 +1268,6 @@ crossplatform::Shader* RenderPlatform::CreateShader()
 	Shader* S = new Shader();
 	return S;
 }
-#include "DeviceManager.h"
 
 bool RenderPlatform::memory_type_from_properties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex)
 {

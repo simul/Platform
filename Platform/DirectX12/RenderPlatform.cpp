@@ -270,7 +270,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 
 	HRESULT res						= S_FALSE;
 
-#ifdef _XBOX_ONE
+#if defined( _XBOX_ONE) ||  defined(_GAMING_XBOX)
 	// Refer to UE4:(XboxOneD3D12Device.cpp) FXboxOneD3D12DynamicRHI::GetHardwareGPUFrameTime() 
 	mTimeStampFreq					= D3D11X_XBOX_GPU_TIMESTAMP_FREQUENCY;
 #else
@@ -296,6 +296,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		if (!fileContents || loadedBytes <= 0)
 		{
 			SIMUL_CERR << "Could not load the RootSignature blob.\n";
+			SIMUL_BREAK_ONCE("Could not load the RootSignature blob.");
 		}
 		res                         = D3DCreateBlob(loadedBytes, &rblob);
         SIMUL_ASSERT(res == S_OK);
@@ -423,13 +424,16 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	for (int i =0;i<mResourceBin.size();i++)
 	{
-        if (mResourceBin[i].second.second)
+		auto ptr = mResourceBin[i].second.second;
+        if (ptr)
         {
-            int remainRefs =mResourceBin[i].second.second->Release();
+            int remainRefs = ptr->Release();
 			if(remainRefs)
 			{
-				SIMUL_COUT<<"Resource "<<" has "<<remainRefs<<" refs remaining."<<std::endl;
+				SIMUL_COUT<<"Resource "<< ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
 			}
+			if (GetMemoryInterface()) 
+				GetMemoryInterface()->UntrackVideoMemory(ptr);
         }
 	}
 	mResourceBin.clear();
@@ -482,13 +486,13 @@ void RenderPlatform::BeginD3D12Frame()
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
 	// Create dummy textures
-	static bool creteDummy = true;
-	if (creteDummy)
+	static bool createDummy = true;
+	if (createDummy)
 	{
 		const uint_fast8_t dummyData[4] = { 1,1,1,1 };
 		mDummy2D->setTexels(deviceContext, &dummyData[0], 0, 1);
 		mDummy3D->setTexels(deviceContext, &dummyData[0], 0, 1);
-		creteDummy = false;
+		createDummy = false;
 	}
 
 	// Age and delete old objects
@@ -501,14 +505,17 @@ void RenderPlatform::BeginD3D12Frame()
 			if ((unsigned int)mResourceBin[i].first >= kMaxAge)
 			{
 				int remainRefs = 0;
-                if (mResourceBin[i].second.second)
+				ID3D12DeviceChild* ptr = mResourceBin[i].second.second;
+                if (ptr)
                 {
-                    remainRefs = mResourceBin[i].second.second->Release();
+                    remainRefs = ptr->Release();
                 }
 				/*
 				if (remainRefs)
 					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " )" << std::endl;
 				*/
+				if (GetMemoryInterface())
+					GetMemoryInterface()->UntrackVideoMemory(ptr);
 				mResourceBin.erase(mResourceBin.begin() + i);
 			}
 		}
@@ -749,8 +756,6 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 
 DXGI_FORMAT simul::dx12::RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
 {
-    // We are forced to use this formats as thats what PS4 needs,
-    // but there is not a perfect match btween the formats
     switch (p)
     {
     case simul::crossplatform::FMT_UNKNOWN:
@@ -789,6 +794,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 	case RGB_11_11_10_FLOAT:
 		return DXGI_FORMAT_R11G11B10_FLOAT;
+	case RGB10_A2_UNORM:
+		return DXGI_FORMAT_R10G10B10A2_UNORM; 
 	case RGBA_32_FLOAT:
 		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case RGB_32_FLOAT:
@@ -827,6 +834,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32G32B32A32_UINT;
 	case D_32_FLOAT:
 		return DXGI_FORMAT_D32_FLOAT;
+	case D_32_FLOAT_S_8_UINT:
+		return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 	case D_16_UNORM:
 		return DXGI_FORMAT_D16_UNORM;
 	case D_24_UNORM_S_8_UINT:
@@ -845,6 +854,10 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return R_16_FLOAT;
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
+	case DXGI_FORMAT_R11G11B10_FLOAT:
+		return RGB_11_11_10_FLOAT;
+	case DXGI_FORMAT_R10G10B10A2_UNORM:
+		return RGB10_A2_UNORM;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
 		return RGBA_32_FLOAT;
 	case DXGI_FORMAT_R32G32B32_FLOAT:
@@ -873,6 +886,9 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_32_UINT;
 	case DXGI_FORMAT_D32_FLOAT:
 		return D_32_FLOAT;
+	case DXGI_FORMAT_R32G8X24_TYPELESS:
+		return D_32_FLOAT_S_8_UINT;
+	case DXGI_FORMAT_R24G8_TYPELESS:
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		return D_24_UNORM_S_8_UINT;
 	case DXGI_FORMAT_D16_UNORM:
@@ -1540,18 +1556,24 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
     deviceContext.GetFrameBufferStack().pop();
-
+	CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
     // Stack is empty so apply default targets:
     if (deviceContext.GetFrameBufferStack().empty())
     {
 		if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
+		{
+			for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
+			{
+				h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[i]);
+			}
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
             (UINT)deviceContext.defaultTargetsAndViewport.num,
-            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0],
+				h,
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
         );
+		}
 		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
 	        SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
     }
@@ -1559,10 +1581,15 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
     else
     {
         auto curTargets = deviceContext.GetFrameBufferStack().top();
+		CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
+		for (int i = 0; i < curTargets->num; i++)
+		{
+			h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[i]);
+		}
         deviceContext.asD3D12Context()->OMSetRenderTargets
         (
             (UINT)curTargets->num,
-            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[0],
+            h,
             false,
             (CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_dt
         );

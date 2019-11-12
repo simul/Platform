@@ -3,6 +3,7 @@
 #include "BaseRenderer.h"
 #include "Texture.h"
 #include "Export.h"
+#include "Topology.h"
 #include <set>
 #include <stack>
 #include <unordered_map>
@@ -181,6 +182,7 @@ namespace simul
 			EffectTechnique *currentTechnique=nullptr;
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
+			Topology topology;
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -198,6 +200,7 @@ namespace simul
 				rwTextureSlotsForSB=0;
 				textureSlotsForSB=0;
 				bufferSlots=0;
+				topology = Topology::UNDEFINED;
 			}
 			bool effectPassValid;
 			bool vertexBuffersValid;

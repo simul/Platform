@@ -55,6 +55,7 @@ namespace simul
 				return (const double *)(&x);
 			}
 			vec3d operator*(const vec3d &vec) const;
+			/// Equivalent to (!this)* vec
 			vec3d operator/(const vec3d &vec) const;
 			Quaterniond operator*(double d)
 			{
@@ -62,7 +63,7 @@ namespace simul
 			}
 			/// The inverse, or opposite of the Quaterniond, representing an equal rotation
 			/// in the opposite direction.
-			Quaterniond operator!()
+			Quaterniond operator!() const
 			{
 				Quaterniond r;
 				r.s=s;

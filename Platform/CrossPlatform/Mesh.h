@@ -112,7 +112,7 @@ namespace simul
 				vertexBuffer	=renderPlatform->CreateBuffer();
 				vertexBuffer->EnsureVertexBuffer(renderPlatform, num_vertices, layout, vertices, true);
 				indexBuffer		=renderPlatform->CreateBuffer();
-				indexBuffer->EnsureIndexBuffer(renderPlatform, num_indices, sizeof(U), indices);
+				indexBuffer->EnsureIndexBuffer(renderPlatform, num_indices, indexSize, indices);
 			}
 			Buffer		*vertexBuffer;
 			Buffer		*indexBuffer;

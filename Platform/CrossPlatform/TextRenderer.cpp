@@ -246,7 +246,6 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	static float u = 1024.f / font_texture->width;
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
 	float x = x0;
-	if(charList)
 	for(int i=0;i<70;i++)
 	{
 		if(txt[i]==0)
@@ -263,11 +262,15 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 		const FontIndex &f=fontIndices[idx];
 		if(idx>0)
 		{
-			FontChar &c		=charList[n++];
-			c.text_rect		=constantBuffer.background_rect;
-			c.text_rect.x	=2.0f*x/screen_width-1.f;
-			c.text_rect.z	=2.0f*(float)f.pixel_width*fontScale/screen_width;
-			c.texc			=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
+			if (charList != nullptr)
+			{
+				FontChar& c = charList[n];
+				c.text_rect = constantBuffer.background_rect;
+				c.text_rect.x = 2.0f * x / screen_width - 1.f;
+				c.text_rect.z = 2.0f * (float)f.pixel_width * fontScale / screen_width;
+				c.texc = vec4(f.x * u, 0.0f, (f.w - f.x) * u, 1.0f);
+			}
+			n++;
 		}
 		x+=f.pixel_width*fontScale+1;
 	}

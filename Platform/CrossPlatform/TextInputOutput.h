@@ -32,6 +32,10 @@ namespace simul
 			virtual bool Get(const char *name,bool default_)=0;
 			//! Integer value of the specified element.
 			virtual int Get(const char *name,int default_)=0;
+			//! 64-bit integer value of the specified element.
+			virtual long long Get(const char* name, long long default_) = 0;
+			//! 64-bit integer value of the specified element.
+			virtual unsigned long long Get(const char* name, unsigned long long default_) = 0;
 			//! Floating-point value of the specified element.
 			virtual double Get(const char *name,double default_)=0;
 			//! Floating-point value of the specified element.
@@ -67,6 +71,8 @@ namespace simul
 			virtual void Set(const char *name,const char *value)=0;
 			virtual void Set(const char *name,bool value)=0;
 			virtual void Set(const char *name,int value)=0;
+			virtual void Set(const char* name,long long value) = 0;
+			virtual void Set(const char* name,unsigned long long value) = 0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
 			// Integer value of the specified element.
@@ -101,6 +107,10 @@ namespace simul
 			bool Get(const char *name,bool default_);
 			// Integer value of the specified element.
 			int Get(const char *name,int default_);
+			// Integer value of the specified element.
+			long long Get(const char* name, long long default_);
+			// Integer value of the specified element.
+			unsigned long long Get(const char* name, unsigned long long default_);
 			// Floating-point value of the specified element.
 			double Get(const char *name,double default_);
 			// Floating-point value of the specified element.
@@ -128,11 +138,14 @@ namespace simul
 			simul::base::FileLoader *fileLoader;
 			simul::base::MemoryInterface *memoryInterface;
 		};
+		
+		//NOTE: Copy constructor is unimplemented, and the default is shallow.
 		class SIMUL_CROSSPLATFORM_EXPORT TextFileOutput:public TextOutput
 		{
 		public:
 			TextFileOutput(simul::base::MemoryInterface *m=NULL);
 			virtual ~TextFileOutput();
+
 			void Save(const char *filename_utf8);
 			void Save(std::ostream &ofs,int tab=0,bool bookEnd=false);
 			bool Good();
@@ -140,6 +153,8 @@ namespace simul
 			void Set(const char *name,const char *value);
 			void Set(const char *name,bool value);
 			void Set(const char *name,int value);
+			void Set(const char* name, long long value);
+			void Set(const char* name, unsigned long long value);
 			void Set(const char *name,double value);
 			void Set(const char *name,float value);
 			void Set(const char *name,int3 value);

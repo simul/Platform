@@ -1391,6 +1391,11 @@ void RenderPlatform::SetIndexBuffer(DeviceContext &deviceContext,const Buffer *b
 	deviceContext.contextState.indexBuffer=buffer;
 }
 
+void RenderPlatform::SetTopology(crossplatform::DeviceContext& deviceContext, crossplatform::Topology t)
+{
+	deviceContext.contextState.topology = t;
+}
+
 namespace simul
 {
 	namespace crossplatform

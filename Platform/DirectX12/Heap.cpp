@@ -29,13 +29,13 @@ namespace simul
 			desc.NodeMask					= 0;
 			desc.Type						= type;
 			desc.Flags						= shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
 			res								= device->CreateDescriptorHeap(&desc, IID_GRAPHICS_PPV_ARGS(&mHeap));
 #else
 			res								= device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
 #endif
-
 			SIMUL_ASSERT(res == S_OK);
+			SIMUL_GPU_TRACK_MEMORY(mHeap, totalCnt) // Of course, not the actual memory size. But what is? D3D doesn't want us to know...
 
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);
 			mCpuHandle						= mHeap->GetCPUDescriptorHandleForHeapStart();

@@ -63,14 +63,14 @@ namespace simul
 										    RenderPlatform();
 			virtual						    ~RenderPlatform();
 			virtual float                   GetDefaultOutputGamma() const override;
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE)  || defined(_GAMING_XBOX)
 			const char* GetName() const override { return "DirectX 12 Xbox One"; }
 #else
 			const char*	GetName() const override {return "DirectX 12";}
 #endif
 			crossplatform::RenderPlatformType GetType() const override
 			{
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
 				return crossplatform::RenderPlatformType::XboxOneD3D12;
 #else
 				return crossplatform::RenderPlatformType::D3D12;

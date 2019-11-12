@@ -18,6 +18,7 @@ namespace simul
 	}
 	namespace vulkan
 	{
+		extern void InitQueueProperties(const vk::PhysicalDevice& gpu, std::vector<vk::QueueFamilyProperties>& queue_props);
 		class RenderPlatform;
 		class DeviceManagerInternal;
 		SIMUL_VULKAN_EXPORT_CLASS DeviceManager

@@ -29,12 +29,15 @@ uniform Texture3D cloudDensity2				SIMUL_TEXTURE_REGISTER(1);
 uniform Texture3D noiseTexture3D			SIMUL_TEXTURE_REGISTER(2);
 uniform Texture3D godraysTexture			SIMUL_TEXTURE_REGISTER(3);
 uniform Texture3D volumeInscatterTexture	SIMUL_TEXTURE_REGISTER(4);
-uniform Texture2D skylTexture				SIMUL_TEXTURE_REGISTER(3);
-uniform Texture2D inscTexture				SIMUL_TEXTURE_REGISTER(4);
-uniform Texture2D lossTexture				SIMUL_TEXTURE_REGISTER(5);
+uniform Texture2D skylTexture				SIMUL_TEXTURE_REGISTER(5);
+uniform Texture2D inscTexture				SIMUL_TEXTURE_REGISTER(6);
+uniform Texture2D lossTexture				SIMUL_TEXTURE_REGISTER(7);
 uniform TextureCube depthTexture;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
+
+uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
+
 //uniform Texture2D rainbowLookupTexture;
 //uniform Texture2D coronaLookupTexture;
 /*
@@ -205,12 +208,23 @@ void MixInLayer(int3 p,bool clears)
 	vec3 gridf				=vec3(vec2(windowGrid.xy),0);
 	vec3 wind_texc			=vec3(int3((idx.xy-gridCentreTexel.xy)%windowGrid.xy - windowGrid.xy / 2,idx.z));
 	vec3 texc				=mul(volumeToLayerMatrix,vec4(wind_texc,1.0)).xyz;
-	//texc					=texc*scale+offset;
+
 	idx.xy					+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy					=idx.xy%int2(windowGrid.xy);
 	vec4 res				=vec4(0.0,0.0,0.0,0.0);
 	float zPixel1			=1.0/float(windowGrid.z);
 	float layer_saturate	=saturate(texc.z / zPixel1+1.0)*saturate((1.0+zPixel1 - texc.z)/ zPixel1);
+
+	// cloud volumes.
+	float volume_multiplier = 0.0;
+	for (int i = 0; i < 1; i++)
+	{
+		CloudVolume_densityspace v=cloudVolumes[i];
+		vec3 texc				= mul(v.transformMatrix, vec4(wind_texc, 1.0)).xyz;
+		float radius			= length(texc.xy);
+		volume_multiplier		= max(volume_multiplier, float(radius < 40.5));
+	}
+
 	if((texc.z>=-2.0*zPixel1&&texc.z<=1.0+2.0*zPixel1))
 	//if(clears)
 	{
@@ -224,7 +238,7 @@ void MixInLayer(int3 p,bool clears)
 			res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
 		}
 	
-		res.z			=saturate(2.0*layer_saturate*((res.z-0.15)/diffusivity+0.15));
+		res.z			=saturate(2.0*volume_multiplier*layer_saturate*((res.z-0.15)/diffusivity+0.15));
 
 		// x= edge noise, y= worley edge noise, z=density, w=sharpness.
 		res.w=edgeSharpness;
@@ -244,8 +258,6 @@ void MixInLayer(int3 p,bool clears)
 	res.xyw		=lerp(current.xyw,res.xyw,layer_saturate);
 	res.z		=max(res.z*max_density_gm3, current.z);
 
-	//res.xy = saturate(-5*texc.xy);
-//	res.z		=saturate(texc.y);
 	IMAGE_STORE_3D(packedOutputTexture3d,idx,PackVec4ToUint(res));
 }
 
@@ -408,8 +420,10 @@ float ThicknessKmInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir,float rand,
 #if 1
 	float s				=max_dist_km/80.0;	// 1.2^24 ~ 80
 	int i				=0;
-	for( i=0;i<thicknessSteps;i++)
+	for( i=0;i<12;i++)
 	{
+		if (i >= thicknessSteps)
+			break;
 		// we expect stepLength in km for this shader
 		tx				+=dir_texc*s;	// we expect stepLength in km for this shader
 		vec4 lookup		=texture_3d_wwc_lod(cloudDensity, vec3(tx), 0);

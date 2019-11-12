@@ -16,6 +16,13 @@
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
+#define SIMUL_GPU_TRACK_MEMORY(mem,size) \
+	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(mem,size, __FILE__);
+#define SIMUL_GPU_UNTRACK_MEMORY(mem) \
+	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(mem);
+
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4251)
@@ -291,7 +298,7 @@ namespace simul
 			/// Activate the specified index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
-			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
+			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
@@ -396,7 +403,7 @@ namespace simul
 		/// \param [in]	numLines	Number of gridlines to draw.
 		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
 		// Clang works differently to VC++:
-#ifndef _MSC_VER
+#if !defined( _MSC_VER ) || defined(_GAMING_XBOX)
 		template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)
 		{
 			InvalidateDeviceObjects();

@@ -136,6 +136,7 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 
 void DisplaySurfaceManager::EndFrame()
 {
+	ERRNO_BREAK
 	for(auto s:surfaces)
 	{
 		s.second->EndFrame();
