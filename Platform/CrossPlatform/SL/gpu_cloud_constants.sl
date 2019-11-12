@@ -68,8 +68,8 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float padd;
 
 	int3 idxOffset;
-	uniform float padi;
 
+	uniform float cloudLayerThicknessKm;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus

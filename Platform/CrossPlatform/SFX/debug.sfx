@@ -403,6 +403,16 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
+shader vec4 PS_ShowTextureArray(posTexVertexOutput IN) : SV_TARGET
+{
+	vec3 texc = vec3(IN.texCoords.xy, displayLevel);
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y = 1.0 - texc.y;
+	vec4 res = multiplier * texture_nearest_lod(imageTextureArray,texc.xyz,0);
+	res.rgb += res.aaa;
+	return res;
+}
+
 shader vec4 PS_ShowTextureRadial(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 offs	=IN.texCoords.xy-vec2(.5,.5);
@@ -444,6 +454,14 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	colour.rgb		=abs(colour.rgb);
 	//colour.rgb		*=colour.a;
 	colour.rgb		=lerp(colour.rgb,tc,0.1);
+	return colour;
+}
+
+shader vec4 PS_TraceVolume(posTexVertexOutput IN) : SV_Target
+{
+	vec3 texc = vec3(IN.texCoords.xy, displayLevel);
+	vec4 colour = texture_3d_wrap_lod(volumeTexture, texc, 0);
+	colour *= multiplier;
 	return colour;
 }
 
@@ -984,6 +1002,28 @@ technique show_texture
     }
 }
 
+technique show_texture_array
+	{
+		pass noblend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureArray()));
+		}
+		pass blend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0, PS_ShowTextureArray()));
+		}
+	}
+
 technique show_cubemap
 {
     pass noblend
@@ -1093,6 +1133,28 @@ technique show_volume
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
     }
 }
+
+technique trace_volume
+	{
+		pass noblend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(NoBlendNoAlphaWrite,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_TraceVolume()));
+		}
+		pass blend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(AlphaBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_TraceVolume()));
+		}
+	}
 
 technique texturedMS
 {
