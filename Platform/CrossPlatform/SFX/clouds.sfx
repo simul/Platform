@@ -500,13 +500,13 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 
-
+// Incremental lighting: look at the surrounding three texels in the direction towards the light.
 CS_LAYOUT(4,4,4)
-shader void CS_InrementalLighting(uint3 p : SV_DispatchThreadID)
+shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 {
 	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
-		return;
+	//if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+	//	return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	idx.xy		+=gridCentreTexel;
 	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
@@ -514,50 +514,48 @@ shader void CS_InrementalLighting(uint3 p : SV_DispatchThreadID)
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	vec3 texc_o	=vec3(idx)/vec3(windowGrid);
 
-	// we know the direction that the light is coming from.
-	// We look at the three texels that light is coming from based on that direction.
-	int3 offsets=int3(lightDir.x>0,lightDir.y>0,lightDir.z>0);
-
-
-
 	vec3 wpos = texc / inverseScalesKm;
-	float thicknessKm		=0.0;
 	int i				=0;
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	float s				=0.5*stepLengthKm;
 	float max_h_km		=1.0/inverseScalesKm.z;
 	// We will blend with the existing value, to temporally amortize the calculation effort:
-	vec4 current = vec4(0, 0, 0, 0);
+	vec4 current		=vec4(0, 0, 0, 0);
 	{
 		current = UnpackUintToVec4(packedOutputTexture3d[idx]);
 	}
-	// a random number between 0 and 1.0:
-	float randm=rand3(vec3(idx+uint3(stepCycle,stepCycle,stepCycle)));
-
-	// how many km from top.
-	float z_from_top_km=max_h_km*float(1+windowGrid.z-idx.z)/float(windowGrid.z);
-
-	float extinction_distance_km=max(5.0,min(5.5*max_h_km,z_from_top_km/(abs(lightDir.z)+0.0001)));
 	// this means extinction distance is the distance to the top of the clouds
 	// clamped between 5km and 100km.
-	thicknessKm = ThicknessKmInDirection(texc_o,inverseScalesKm,lightDir,randm,extinction_distance_km);
+	float thicknessKm		=stepLengthKm;
+	vec4 illum_prev			=vec4(1.0,1.0,1.0,1.0);
+	float density			=0;
 
-	// find nearest direction to light for ambient lighting:
-	float nearest=10000.0;
-	vec3 nearest_dir=vec3(0,0,0);
-	float total=0.0;
+	if(idx.z!=gridEdge.z)
+	{
+		int3 idx_x				=int3((idx.x+idxOffset.x+windowGrid.x)%windowGrid.x,idx.yz);
+		int3 idx_y				=int3(idx.x,(idx.y+idxOffset.y+windowGrid.y)%windowGrid.y,idx.z);
+		int3 idx_z				=idx+int3(0,0,idxOffset.z);
+
+		vec4 illum_x			=UnpackUintToVec4(packedOutputTexture3d[idx_x]);
+		vec4 illum_y			=UnpackUintToVec4(packedOutputTexture3d[idx_y]);
+		vec4 illum_z			=UnpackUintToVec4(packedOutputTexture3d[idx_z]);
+
+		float dens_x			=cloudDensity[idx_x].z;
+		float dens_y			=cloudDensity[idx_y].z;
+		float dens_z			=cloudDensity[idx_z].z;
+
+		illum_prev				=illum_x*lightDot.x+illum_y*lightDot.y+illum_z*lightDot.z;
+
+		density					=dens_x*lightDot.x+dens_y*lightDot.y+dens_z*lightDot.z;
+	}
+	thicknessKm		*=density;
 
 	vec4 illum;
-	float t			=saturate(thicknessKm/extinction_distance_km);
-	t				=t*0.5+current.z*0.5;
-	thicknessKm		=t*extinction_distance_km;
-	illum.x			=max(.01,exp(-extinctionPerKm*thicknessKm/12.0));
-	illum.y			=exp(-extinctionPerKm*thicknessKm);
-	illum.zw        =vec2(t,1.0);
-
-	const float v=127.0/255.0;
-	illum.xyw= lerp(current.xyw,illum.xyw,v);
-
+	illum			=illum_prev;
+	illum.x			*=max(.01,exp(-extinctionPerKm*thicknessKm/12.0));
+	illum.y			*=exp(-extinctionPerKm*thicknessKm);
+	const float v	=127.0/255.0;
+	//illum.xyw		=lerp(current.xyw,illum.xyw,v);
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 
@@ -1601,9 +1599,13 @@ technique mix_map
 
 technique window_lighting
 {
-    pass p0
+    pass standard
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_WindowLighting()));
+    }
+    pass incremental
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_IncrementalLighting()));
     }
 }
 
