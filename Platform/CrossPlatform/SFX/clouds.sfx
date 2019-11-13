@@ -708,7 +708,7 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 		float total_cloud = 0.0;
 		float max_tex_z = 0.0;
 		float thickness = 0.0;
-		for (int i = texc.z*20.0; i < 14; i++)
+		for (int i = int(texc.z*20.0); i < 14; i++)
 		{
 			float tex_z		= float(14 - i) / 20.0;
 			vec3 texc1		= vec3(texc.xy, tex_z);
@@ -753,7 +753,7 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 		if (map_texc.x > 1.0) { map_texc.x -= 1.0; }
 		if (map_texc.y > 1.0) { map_texc.y -= 1.0; }
 		map_texc.xy -= vec2(0.5, 0.5);
-		map_texc = map_texc * mapScale + mapOffset;
+		map_texc = map_texc * mapScale.xy + mapOffset.xy;
 		float sine = sin(azimuth);
 		float cosine = cos(azimuth);
 		map_texc.xy = vec2(map_texc.x*cosine - map_texc.y*sine, map_texc.y*cosine + map_texc.x*sine);
@@ -770,7 +770,7 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 	float base = (cloudBaseKm / 20.0) * float(windowGrid.z);
 	//float top = ((cloudBaseKm + cloudLayerThicknessKm) / 20.0) * float(windowGrid.z);
 	
-	if (!map_lookup || !precipitationMask || idx.z > base)
+	if (map_lookup==0.0 || precipitationMask==0.0 || idx.z > base)
 		return;
 
 	//Create old and new values

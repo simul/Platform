@@ -566,9 +566,9 @@ float CSDensity(uint3 pos)
 	float zratio	=4.0*noiseScale.z / noiseScale.x;
 	for(int j=0;j<2;j++)
 	{
-		float w1 = RestrictedWorley(wtexc, (int)grid1, (int)grid1, zratio);
-		float w2 = RestrictedWorley(wtexc, (int)grid2, (int)grid2, zratio);
-		float w	=pow(lerp(w1,w2,ff),0.7);
+		float w1 = RestrictedWorley(wtexc, int(grid1), int(grid1), zratio);
+		float w2 = RestrictedWorley(wtexc, int(grid2), int(grid2), zratio);
+		float w	=pow(lerp(w1,w2,ff),0.7);	  
 		w							=m*(w-0.52);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
 
 		dens						=(dens+worleyNoiseStrength*w);
@@ -668,8 +668,8 @@ shader void CS_Density_Clear(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//SV_D
 	float zratio	=4.0*noiseScale.z / noiseScale.x;
 	for(int j=0;j<2;j++)
 	{
-		float w1 = RestrictedWorley(wtexc, (int)grid1, (int)grid1, zratio);
-		float w2 = RestrictedWorley(wtexc, (int)grid2, (int)grid2, zratio);
+		float w1 = RestrictedWorley(wtexc, int(grid1), int(grid1), zratio);
+		float w2 = RestrictedWorley(wtexc, int(grid2), int(grid2), zratio);
 		float w	=pow(lerp(w1,w2,ff),0.7);
 		w							=m*(w-0.52);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
 

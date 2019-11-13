@@ -415,6 +415,9 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	{
 		res = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&shader->mShaderReflection));
 		SIMUL_ASSERT(res == S_OK);
+		// unavailable:
+		if(res!=S_OK)
+			return;
 	}
 
 	// Get shader description
@@ -879,9 +882,9 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
     cpsoDesc.NodeMask                           = 0;
     HRESULT res                                 = curRenderPlat->AsD3D12Device()->CreateComputePipelineState(&cpsoDesc,SIMUL_PPV_ARGS(&mComputePso));
     SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mComputePso,100)	// TODO: not the real size!
     if (res == S_OK)
     {
+		SIMUL_GPU_TRACK_MEMORY(mComputePso,100)	// TODO: not the real size!
         std::wstring name   = L"ComputePSO_";
         name                += std::wstring(mTechName.begin(), mTechName.end());
         mComputePso->SetName(name.c_str());
