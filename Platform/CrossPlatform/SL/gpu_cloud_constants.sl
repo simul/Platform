@@ -59,7 +59,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float max_density_gm3;
 
 	uniform float edgeSharpness;
-	uniform float padding4;
+	uniform float cloudLayerThicknessKm;
 	uniform vec2 padding5;
 SIMUL_CONSTANT_BUFFER_END
 

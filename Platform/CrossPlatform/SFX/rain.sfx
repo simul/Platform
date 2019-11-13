@@ -241,9 +241,11 @@ ParticleGeometryOutput VS_SnowParticles(uint vertex_id,bool rainMaskEnabled,bool
 	map_texc.y = 1.0 - map_texc.y;
 	#endif
 
-	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);	//Describes the strength of rain.
-	float cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25); //Describes the probability of precipitaion.
-	mapped_rain *= 4 * cloudBaseAndDensity;
+	//Describes the strength of rain.
+	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+	//Describes the probability of precipitaion.
+	float cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25);
+	mapped_rain = (mapped_rain * 4 * cloudBaseAndDensity);
 
 	// discard if under surface.
 	vec3 in_depth_space = vec3(1.0, 1.0, 1.0);
@@ -437,9 +439,15 @@ ParticleGeometryOutput VS_RainParticles(uint vertex_id,bool rainMaskEnabled,bool
 	position0 = WrapParticleZone(position0, particleZoneSize / 2);
 
 	vec3 map_texc = mul(rainMapMatrix, vec4(viewPos[1].xyz, 1.0)).xyz;
-	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);	//Describes the strength of rain.
-	float cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25); //Describes the probability of precipitaion.
-	mapped_rain *= 4 * cloudBaseAndDensity;
+	#ifdef SFX_OPENGL
+	map_texc.y = 1.0 - map_texc.y;
+	#endif
+
+	//Describes the strength of rain.
+	float mapped_rain = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).x, 0.25);
+	//Describes the probability of precipitaion.
+	float cloudBaseAndDensity = max(texture_wrap_lod(rainMapTexture, map_texc.xy, 0).y, 0.25);
+	mapped_rain = (mapped_rain * 4 * cloudBaseAndDensity);
 
 	//Discard if under surface.
 	vec3 in_depth_space = vec3(1.0, 1.0, 1.0);
