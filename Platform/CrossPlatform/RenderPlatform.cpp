@@ -585,10 +585,11 @@ bool crossplatform::RenderPlatform::IsDepthFormat(PixelFormat f)
 {
 	switch(f)
 	{
-	case D_32_FLOAT:
+	case D_32_FLOAT: 
 	case D_24_UNORM_S_8_UINT:
 	case D_16_UNORM:
 	case D_32_FLOAT_S_8_UINT:
+	case D_32_UINT:
 		return true;
 	default:
 		return false;
@@ -615,6 +616,7 @@ bool crossplatform::RenderPlatform::IsStencilFormat(PixelFormat f)
 	switch(f)
 	{
 	case D_24_UNORM_S_8_UINT:
+	case D_32_FLOAT_S_8_UINT:
 		return true;
 	default:
 		return false;
@@ -694,153 +696,6 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 	return new Mesh;
 }
 
-void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
-{
-	//viewport=GetViewport(deviceContext,0);
-	math::Matrix4x4 &view=deviceContext.viewStruct.view;
-	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
-	math::Matrix4x4 wvp,world;
-	world.ResetToUnitMatrix();
-	//float tan_x=1.0f/proj(0, 0);
-	//float tan_y=1.0f/proj(1, 1);
-	world._41=origin.x;
-	world._42=origin.y;
-	world._43=origin.z;
-	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
-	debugConstants.debugWorldViewProj=wvp;
-	vec3 view_dir;
-	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_lat_long_sphere");
-	
-	debugConstants.latitudes		=lat;
-	debugConstants.longitudes		=longt;
-	debugConstants.radius			=radius;
-	debugConstants.multiplier		=colour;
-	debugConstants.debugViewDir		=view_dir;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->Apply(deviceContext,tech,0);
-
-	SetTopology(deviceContext,LINESTRIP);
-	// first draw the latitudes:
-	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
-	// first draw the longitudes:
-	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
-
-	debugEffect->Unapply(deviceContext);
-}
-
-void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour, vec4 fill_colour)
-{
-	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
-
-	math::Matrix4x4 wvp,world;
-	world.ResetToUnitMatrix();
-
-	world._41=origin.x;
-	world._42=origin.y;
-	world._43=origin.z;
-	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
-	debugConstants.debugWorldViewProj=wvp;
-	vec3 view_dir;
-	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_quad_on_sphere");
-
-	debugConstants.quaternion		=orient_quat;
-	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=qsize*0.5f;
-	debugConstants.debugColour		=colour;
-	debugConstants.multiplier		 = fill_colour;
-	debugConstants.debugViewDir		=view_dir;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	if(fill_colour.w>0.0f)
-	{
-		debugEffect->Apply(deviceContext, tech, "fill");
-		SetTopology(deviceContext, TRIANGLESTRIP);
-		Draw(deviceContext, 4, 0);
-		debugEffect->Unapply(deviceContext);
-	}
-	if (colour.w > 0.0f)
-	{
-		debugEffect->Apply(deviceContext, tech,"outline");
-		SetTopology(deviceContext, LINELIST);
-		Draw(deviceContext, 16, 0);
-		debugEffect->Unapply(deviceContext);
-	}
-}
-
-void RenderPlatform::DrawTextureOnSphere(DeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
-{
-	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
-
-	math::Matrix4x4 wvp,world;
-	world.ResetToUnitMatrix();
-
-	world._41=origin.x;
-	world._42=origin.y;
-	world._43=origin.z;
-	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
-	debugConstants.debugWorldViewProj=wvp;
-	vec3 view_dir;
-	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_texture_on_sphere");
-	debugEffect->SetTexture(deviceContext,imageTexture,t);
-	debugConstants.quaternion		=orient_quat;
-	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=qsize*0.5f;
-	debugConstants.debugColour		=colour;
-	debugConstants.debugViewDir		=view_dir;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-
-	SetTopology(deviceContext,TRIANGLESTRIP);
-	debugEffect->Apply(deviceContext,tech,0);
-	Draw(deviceContext,16, 0);
-	debugEffect->Unapply(deviceContext);
-}
-
-void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour, vec4 fill_colour)
-{
-	//Viewport viewport=GetViewport(deviceContext,0);
-	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
-
-	math::Matrix4x4 wvp,world;
-	world.ResetToUnitMatrix();
-
-	world._41=origin.x;
-	world._42=origin.y;
-	world._43=origin.z;
-	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
-	debugConstants.debugWorldViewProj=wvp;
-	vec3 view_dir;
-	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_circle_on_sphere");
-
-	debugConstants.quaternion		=orient_quat;
-	debugConstants.radius			=sph_rad;
-	debugConstants.sideview			=rad;
-	debugConstants.debugColour		=colour; 
-	debugConstants.multiplier		= fill_colour;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-
-	if (fill_colour.w > 0.0f)
-	{
-		debugEffect->Apply(deviceContext, tech, "fill");
-		SetTopology(deviceContext, TRIANGLESTRIP);
-		Draw(deviceContext, 64, 0);
-		debugEffect->Unapply(deviceContext);
-	}
-
-	debugEffect->Apply(deviceContext,tech,"outline");
-	SetTopology(deviceContext, LINESTRIP);
-	Draw(deviceContext,32, 0);
-	debugEffect->Unapply(deviceContext);
-}
 void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
 	//unsigned int num_v=0;

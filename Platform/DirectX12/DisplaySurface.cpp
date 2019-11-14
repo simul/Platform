@@ -1,5 +1,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
+#include "Simul/Base/StringToWString.h"
+#include "Simul/Base/StringFunctions.h"
 
 using namespace simul;
 using namespace dx12;
@@ -90,7 +92,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     queueDesc.Flags                     = D3D12_COMMAND_QUEUE_FLAG_NONE;
     res = mDeviceRef->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mQueue));
     SIMUL_ASSERT(res == S_OK);
-    mQueue->SetName(L"WindowQueue");
+	std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",handle,screenWidth,screenHeight);
+    mQueue->SetName(simul::base::StringToWString(str).c_str());
 
 	// Create it
 	IDXGISwapChain1* swapChain	= nullptr;

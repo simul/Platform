@@ -8,6 +8,7 @@ void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;
+	toRender.erase(hwnd);
     DisplaySurface *w=surfaces[hwnd];
 	SetFullScreen(hwnd,false,0);
 	delete w;

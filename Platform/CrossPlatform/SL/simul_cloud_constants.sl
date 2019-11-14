@@ -75,7 +75,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	
 	uniform vec2 cirrusWindVector;
 	uniform int thicknessSteps;
-	uniform int padding;
+	uniform float initialVolumeMultiplier;
 
 SIMUL_CONSTANT_BUFFER_END
 
@@ -206,7 +206,7 @@ struct CloudShadowStruct
 	/// The 2D cloud shadow texture.
 	simul::crossplatform::Texture *cloudShadowTexture;	
 	/// The rain map texture.
-	simul::crossplatform::Texture *precipitation_map;			/// Texture represents where in the horizontal plane of the cloud rain can fall.
+	simul::crossplatform::Texture * precipitation_volume;			/// Texture represents where in the horizontal plane of the cloud rain can fall.
 	/// Transform a position from shadow space to world space
 	mat4 shadowMatrix;
 	mat4 simpleOffsetMatrix;

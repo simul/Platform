@@ -3,7 +3,7 @@
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/states.sl"
-#include "../SL/debug_constants.sl"
+#include "../SL/sphere_constants.sl"
 #include "../SL/quaternion.sl"
 
 Texture3D cloudVolume;

@@ -37,10 +37,10 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	CD3DX12_RESOURCE_DESC b=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		SIMUL_PPV_ARGS(&mUploadHeap)
 	);
@@ -54,10 +54,10 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	{
 		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
 			nullptr,
 			SIMUL_PPV_ARGS(&mIntermediateHeap)
 		);
@@ -161,7 +161,7 @@ void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
 	mGpuMappedPtr = nullptr;
-	HRESULT hr=mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
+	HRESULT hr=mUploadHeap->Map(0, nullptr, reinterpret_cast<void**>(&mGpuMappedPtr));
 	if (hr != S_OK)
 		return nullptr;
 	return (void*)mGpuMappedPtr;
@@ -170,7 +170,7 @@ void *Buffer::Map(crossplatform::DeviceContext &)
 void Buffer::Unmap(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
-	mUploadHeap->Unmap(0, &range);
+	mUploadHeap->Unmap(0, nullptr);// &range);
 }
 
 D3D12_VERTEX_BUFFER_VIEW* Buffer::GetVertexBufferView()

@@ -51,10 +51,40 @@ vec3 rotate_by_quaternion(vec4 quat, vec3 position)
 { 
 //	quat.xyz*=-1.0;
   vec4 qr_conj		= quat_conj(quat);
- // vec4 q_pos		= vec4(position, 0);
   
   vec4 q_tmp		= quat_vec(quat,position);
   vec4 qr			= quat_mult(q_tmp,qr_conj);
   
   return qr.xyz;
+}
+
+vec4 slerp(vec4 q1,vec4 q2,float interp)
+{
+	vec4 Q2=q2;
+	float d =dot(q1,q2);// q1.x*q2.x+q1.y*q2.y+q1.z*q2.z + q1.s*q2.s;
+	if(d<0)
+	{
+		d=-d;
+		Q2*=-1.0;
+	}
+	const float DOT_THRESHOLD = 0.9995;
+	if (d > DOT_THRESHOLD)
+	{
+		// If the inputs are too close for comfort, linearly interpolate
+		// and normalize the result.
+		vec4 ret=lerp(q1,q2,interp);
+		ret		=normalize(ret);
+		return ret;
+	}
+	d				=max(-1.0,min(d,1.0));
+	float theta_0	=acos(d);					// theta_0 = half angle between input vectors
+	float theta1	=theta_0*(1.0-interp);		// theta = angle between v0 and result 
+	float theta2	=theta_0*interp;			// theta = angle between v0 and result 
+	
+	float ss=sin(theta_0);
+	float s1=sin(theta1);
+	float s2=sin(theta2);
+	
+	vec4 ret=normalize((q1*s1+Q2*s2)/ss);
+	return ret;
 }

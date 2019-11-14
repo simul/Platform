@@ -169,7 +169,7 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 		return;
 	}
 
-	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
+	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constant buffer
 	// has a minimum size of kBufferAlign)
 	UINT8* pDest = nullptr;
 	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
@@ -181,11 +181,10 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 		const CD3DX12_RANGE unMapRange(offset, offset+size);
 		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
-	
 	mCurApplyCount++;
 }
 
-void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext& , crossplatform::EffectPass* , int )
+void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext&, crossplatform::EffectPass* , int )
 {
 }
 
