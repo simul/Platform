@@ -238,7 +238,7 @@ void SphereRenderer::DrawArc(DeviceContext &deviceContext, vec3 origin, vec4 q1,
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,"outline");
 	renderPlatform->SetTopology(deviceContext, LINESTRIP);
-	renderPlatform->Draw(deviceContext,12, 0);
+	renderPlatform->Draw(deviceContext,13, 0);
 	effect->Unapply(deviceContext);
 }
 #endif

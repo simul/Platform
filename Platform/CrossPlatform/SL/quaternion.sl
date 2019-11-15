@@ -60,31 +60,49 @@ vec3 rotate_by_quaternion(vec4 quat, vec3 position)
 
 vec4 slerp(vec4 q1,vec4 q2,float interp)
 {
-	vec4 Q2=q2;
-	float d =dot(q1,q2);// q1.x*q2.x+q1.y*q2.y+q1.z*q2.z + q1.s*q2.s;
-	if(d<0)
+	vec4 Q1 = normalize(q1);
+	vec4 Q2 = normalize(q2);
+
+	float dot = Q1.x*Q2.x + Q1.y*Q2.y + Q1.z*Q2.z + Q1.w*Q2.w;
+	if(dot < 0.0)
 	{
-		d=-d;
-		Q2*=-1.0;
+		dot=-dot;
+		Q2.x *= -1.0;
+		Q2.y *= -1.0;
+		Q2.z *= -1.0;
+		Q2.w *= -1.0;
 	}
 	const float DOT_THRESHOLD = 0.9995;
-	if (d > DOT_THRESHOLD)
+	if (dot > DOT_THRESHOLD)
 	{
 		// If the inputs are too close for comfort, linearly interpolate
 		// and normalize the result.
-		vec4 ret=lerp(q1,q2,interp);
+		vec4 ret;
+		ret.x = Q1.x + interp * (Q2.x - Q1.x);
+		ret.y = Q1.y + interp * (Q2.y - Q1.y);
+		ret.z = Q1.z + interp * (Q2.z - Q1.z);
+		ret.w = Q1.w + interp * (Q2.w - Q1.w);
 		ret		=normalize(ret);
 		return ret;
 	}
-	d				=max(-1.0,min(d,1.0));
-	float theta_0	=acos(d);					// theta_0 = half angle between input vectors
-	float theta1	=theta_0*(1.0-interp);		// theta = angle between v0 and result 
-	float theta2	=theta_0*interp;			// theta = angle between v0 and result 
-	
-	float ss=sin(theta_0);
-	float s1=sin(theta1);
-	float s2=sin(theta2);
-	
-	vec4 ret=normalize((q1*s1+Q2*s2)/ss);
+	if (dot < -1.0)
+		dot = -1.0;
+	if (dot > 1.0)
+		dot = 1.0;
+
+	double theta_0 = acos(dot);  // theta_0 = half angle between input vectors
+	double theta1 = theta_0 * (1.0 - interp);    // theta = angle between v0 and result 
+	double theta2 = theta_0 * interp;    // theta = angle between v0 and result 
+
+	double s1 = sin(theta1);
+	double s2 = sin(theta2);
+	double ss = sin(theta_0);
+
+	vec4 ret;
+	ret.x = (Q1.x * s1 + Q2.x * s2) / ss;
+	ret.y = (Q1.y * s1 + Q2.y * s2) / ss;
+	ret.z = (Q1.z * s1 + Q2.z * s2) / ss;
+	ret.w = (Q1.w * s1 + Q2.w * s2) / ss;
+	ret = normalize(ret);
 	return ret;
 }
