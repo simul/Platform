@@ -1194,7 +1194,7 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, cr
 		fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
 		if (!fileData)
 		{
-			SIMUL_CERR << "Failed to load the shader:" << filenameUtf8;
+			SIMUL_CERR << "Failed to load the shader:" << filenameUtf8<<std::endl;
 			return nullptr;
 		}
 	}

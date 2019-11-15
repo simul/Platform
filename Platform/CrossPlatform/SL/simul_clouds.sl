@@ -43,6 +43,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
 	vec3 ambient				=amb_lookup.rgb*light.w;
 	vec4 c;
+	
 	float l						=lerp(0.75, 1.2, density.z);
 	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z*fade;
@@ -98,6 +99,7 @@ void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4
 	density				=sample_3d_lod(cloudDensity,wwcSamplerState,pos,mip);
 	// NOTE: VERY VERY IMPORTANT to use the original, not noise-modified, texture-coordinates for light.
 	light				=sample_3d_lod(cloudLight,wwcSamplerState,texCoords,mip);
+
 //	float tz			=texCoords.z*32.0;
 //	density.z			*=saturate(tz+1.0)*saturate(32.0-tz);
 }

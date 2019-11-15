@@ -243,183 +243,6 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 }
 
-void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
-{
-	crossplatform::Effect::EnsureEffect(r,filename_utf8);
-#if 0
-	// We will only recompile if we are in windows
-	// SFX will handle the "if changed"
-	auto buildMode = r->GetShaderBuildMode();
-	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
-	{
-		const char *p = std::getenv("SIMUL");
-		if (!p)
-			return;
-		std::string simulPath = p;
-        
-		if (simulPath != "")
-		{
-			// Sfx path
-			std::string exe = simulPath;
-			exe += "\\Tools\\bin\\Sfx.exe";
-			std::wstring sfxPath(exe.begin(), exe.end());
-
-			/*
-			Command line:
-				argv[0] we need to pass the module name
-				<input.sfx>
-				-I <include path; include path>
-				-O <output>
-				-P <config.json>
-			*/
-			std::string cmdLine = exe;
-			{
-				// File to compile
-				cmdLine += " " + simulPath + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
-
-				//cmdLine += " -L";
-				//cmdLine += " -V";
-				// Includes
-				cmdLine += " -I\"" + simulPath + "\\Platform\\DirectX12\\HLSL;";
-				cmdLine += simulPath + "\\Platform\\CrossPlatform\\SL\"";
-
-				// Platform file
-				cmdLine += " -P\"" + simulPath + "\\Platform\\DirectX12\\HLSL\\HLSL12.json\"";
-				
-				// Ouput file
-				std::string outDir = r->GetShaderBinaryPath();
-				for (unsigned int i = 0; i < outDir.size(); i++)
-				{
-					if (outDir[i] == '/')
-					{
-						outDir[i] = '\\';
-					}
-				}
-				if (outDir[outDir.size() - 1] == '\\')
-				{
-					outDir.erase(outDir.size() - 1);
-				}
-
-				cmdLine += " -O\"" + outDir + "\"";
-				// Intermediate folder
-				cmdLine += " -M\"";				
-				cmdLine +=simulPath + "\\Platform\\DirectX12\\sfx_intermediate\"";
-				// Force
-				if ((buildMode & crossplatform::ShaderBuildMode::ALWAYS_BUILD) != 0)
-				{
-					cmdLine += " -F";
-				}
-			}
-
-			// Convert the command line to a wide string
-			size_t newsize = cmdLine.size() + 1;
-			wchar_t* wcstring = new wchar_t[newsize];
-			size_t convertedChars = 0;
-			mbstowcs_s(&convertedChars, wcstring, newsize, cmdLine.c_str(), _TRUNCATE);
-
-			// Setup pipes to get cout/cerr
-			SECURITY_ATTRIBUTES secAttrib	= {};
-			secAttrib.nLength				= sizeof(SECURITY_ATTRIBUTES);
-			secAttrib.bInheritHandle		= TRUE;
-			secAttrib.lpSecurityDescriptor	= NULL;
-
-			HANDLE coutWrite				= 0;
-			HANDLE coutRead					= 0;
-			HANDLE cerrWrite				= 0;
-			HANDLE cerrRead					= 0;
-
-			CreatePipe(&coutRead, &coutWrite, &secAttrib, 100);
-			CreatePipe(&cerrRead, &cerrWrite, &secAttrib, 100);
-
-			// Create the process
-			STARTUPINFOW startInfo			= {};
-			startInfo.cb					=sizeof(startInfo);
-			startInfo.dwFlags				= STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-			startInfo.wShowWindow			= SW_HIDE;
-			startInfo.hStdOutput			= coutWrite;
-			startInfo.hStdError				= cerrWrite;
-			//startInfo.wShowWindow = SW_SHOW;;
-			PROCESS_INFORMATION processInfo = {};
-			bool success = CreateProcessW
-			(
-				NULL, wcstring,
-				NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
-				&startInfo, &processInfo
-			);
-			if (processInfo.hProcess == nullptr)
-			{
-				std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
-				return;
-			}
-
-			// Wait until if finishes
-			if (success)
-			{
-				// Wait for the main handle and the output pipes
-				HANDLE hWaitHandles[]	= {processInfo.hProcess, coutRead, cerrRead };
-
-				// Print the pipes
-				const DWORD BUFSIZE = 4096;
-				BYTE buff[BUFSIZE];
-				bool has_errors = false;
-				while (1)
-				{
-					DWORD dwBytesRead;
-					DWORD dwBytesAvailable;
-					DWORD dwWaitResult = WaitForMultipleObjects( 3 , hWaitHandles, FALSE, 60000L);
-
-					while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
-					{
-						ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-						std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
-					}
-					while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
-					{
-						ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-						std::cerr << std::string((char*)buff, (size_t)dwBytesRead).c_str();
-					}
-					// Process is done, or we timed out:
-					if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
-						break;
-					if (dwWaitResult == WAIT_FAILED)
-					{
-						DWORD err = GetLastError();
-						char* msg;
-						// Ask Windows to prepare a standard message for a GetLastError() code:
-						if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
-							break;
-
-						SIMUL_INTERNAL_CERR << "Error message: " << msg << std::endl;
-						{
-							break;
-						}
-					}
-				}
-				DWORD ExitCode;
-				GetExitCodeProcess(processInfo.hProcess,&ExitCode);
-				if (ExitCode != 0)
-				{
-					SIMUL_BREAK(base::QuickFormat("ExitCode: %d",ExitCode));
-				}
-				CloseHandle(processInfo.hProcess);
-				CloseHandle(processInfo.hThread);
-			}
-			else
-			{
-				DWORD error = GetLastError();
-				SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
-				return;
-			}
-		}
-		else
-		{
-			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
-			return;
-		}
-	}
-#endif
-}
-
 void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
 {	
 	renderPlatform = r;
@@ -592,6 +415,9 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	{
 		res = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&shader->mShaderReflection));
 		SIMUL_ASSERT(res == S_OK);
+		// unavailable:
+		if(res!=S_OK)
+			return;
 	}
 
 	// Get shader description
@@ -1056,9 +882,9 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
     cpsoDesc.NodeMask                           = 0;
     HRESULT res                                 = curRenderPlat->AsD3D12Device()->CreateComputePipelineState(&cpsoDesc,SIMUL_PPV_ARGS(&mComputePso));
     SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mComputePso,100)	// TODO: not the real size!
     if (res == S_OK)
     {
+		SIMUL_GPU_TRACK_MEMORY(mComputePso,100)	// TODO: not the real size!
         std::wstring name   = L"ComputePSO_";
         name                += std::wstring(mTechName.begin(), mTechName.end());
         mComputePso->SetName(name.c_str());

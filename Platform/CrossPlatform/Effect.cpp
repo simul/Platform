@@ -904,7 +904,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
 				return;
 			}
-
+			string output_str;
 			// Wait until if finishes
 			if (success)
 			{
@@ -915,6 +915,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				const DWORD BUFSIZE = 4096;
 				BYTE buff[BUFSIZE];
 				bool has_errors = false;
+				bool any_output=false;
 				while (1)
 				{
 					DWORD dwBytesRead;
@@ -924,12 +925,14 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 					while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
 					{
 						ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-						std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+						output_str+=std::string((char*)buff, (size_t)dwBytesRead);
+						any_output=true;
 					}
 					while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
 					{
 						ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-						std::cerr << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+						output_str+=std::string((char*)buff, (size_t)dwBytesRead);
+						any_output=true;
 					}
 					// Process is done, or we timed out:
 					if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
@@ -950,9 +953,14 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				}
 				DWORD ExitCode;
 				GetExitCodeProcess(processInfo.hProcess, &ExitCode);
+				if(any_output)
+				{
+					std::cerr << output_str.c_str();
+					std::cout<<std::endl;
+				}
 				if (ExitCode != 0)
 				{
-					SIMUL_BREAK_ONCE(base::QuickFormat("ExitCode: %d", ExitCode));
+					SIMUL_BREAK(base::QuickFormat("ExitCode: %d", ExitCode));
 				}
 				CloseHandle(processInfo.hProcess);
 				CloseHandle(processInfo.hThread);

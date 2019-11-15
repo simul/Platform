@@ -268,6 +268,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
 {
+	if(!deviceContext.contextState.currentEffectPass)
+		return;
     BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
     ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;

@@ -457,6 +457,7 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 	float radius = g_ProbePos[sub_pos.x].w / 2.0;
 	float dEnergy = abs(g_ProbeVelocity[sub_pos.x].w);
 	vec2 direction = normalize(velocity.yx);
+	int radius_i=int(radius);
 
 	if (radius == 0)
 		return;
@@ -478,26 +479,26 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 
 		if (radius > 0.5)
 		{
-			xOrigin -= (int)radius;
-			yOrigin -= (int)radius;
+			xOrigin -= radius_i;
+			yOrigin -= radius_i;
 		}
 
 
 		float downwardAmp = max(normalize(-velocity).z, 0.0);
 		float energy = sqrt((2.0 / (9.81 * 1000.0)) * (dEnergy / (16.0 * radius * radius * PI))); // Convert incoming energy to wave amplitude
 
-		for (int x = xOrigin; x <= uv_local.x + (int)radius; x++)
+		for (int x = xOrigin; x <= uv_local.x + radius_i; x++)
 		{
-			for (int y = yOrigin; y <= uv_local.y + (int)radius; y++)
+			for (int y = yOrigin; y <= uv_local.y + radius_i; y++)
 			{
-				vec3 positionDirection = vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0);
+				vec3 positionDirection = vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3(float(x),float(y), 0);
 				float distance = length(positionDirection);
 				if ((distance > radius && !((uv_local.x == x) && (uv_local.y == y))) || (radius - distance > 4.0))
 					continue;
 
 				for (int i = 0; i < 16; i++)
 				{
-					float angle = ((float)i / 16.0) * TAU;
+					float angle = (float(i) / 16.0) * TAU;
 					vec2 angleVec = normalize(profile16Directons[i]); //vec2(cos(angle), sin(angle));
 					vec4 currentAmplitude4 = g_OutputAmplitude[int3(x % 256, y % 256, i)];
 					float currentAmplitude = currentAmplitude4.x;
@@ -523,20 +524,20 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 
 		if (radius > 0.5)
 		{
-			xOrigin -= (int)radius;
-			yOrigin -= (int)radius;
+			xOrigin -= radius_i;
+			yOrigin -= radius_i;
 		}
 
-		for (int x = xOrigin; x <= uv_local.x + (int)radius; x++)
+		for (int x = xOrigin; x <= uv_local.x + radius_i; x++)
 		{
-			for (int y = yOrigin; y <= uv_local.y + (int)radius; y++)
+			for (int y = yOrigin; y <= uv_local.y + radius_i; y++)
 			{
 				float distance = length(vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0));
 				if ((distance > radius && !((uv_local.x == x) && (uv_local.y == y))))
 					continue;
 				for (int i = 0; i < 16; i++)
 				{
-					float angle = ((float)i / 16.0) * TAU;
+					float angle = (float(i) / 16.0) * TAU;
 					vec2 angleVec = normalize(profile16Directons[i]); //vec2(cos(angle), sin(angle));
 					g_OutputAmplitude[int3(x % 256, y % 256, i)] = dampen * (abs(velocity.z) + (saturate(dot(direction, normalize(angleVec)) + 1.0) * length(velocity.yx)));
 				}
