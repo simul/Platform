@@ -28,8 +28,8 @@ target_include_directories(SimulOpenGL_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/
 target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platform/OpenGL")
 target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_SOURCE_DIR}/External/glfw/include")
 
-add_dynamic_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
 set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.json" )
+add_dynamic_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${JSON_FILE})
 
 add_sfx_shader_project( OpenGLShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/GLSL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} ${in_rs} OPTIONS -w INTERMEDIATE "${CMAKE_CURRENT_BINARY_DIR}/sfx_intermediate" )
  

@@ -110,7 +110,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 	// Assign and query
 	factory->MakeWindowAssociation(mHwnd, DXGI_MWA_NO_ALT_ENTER);
-	swapChain->QueryInterface(__uuidof(IDXGISwapChain4), (void **)&mSwapChain);
+	if(swapChain)
+		swapChain->QueryInterface(__uuidof(IDXGISwapChain4), (void **)&mSwapChain);
 
 #endif
 #endif
