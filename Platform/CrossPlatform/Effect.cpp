@@ -831,7 +831,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				cmdLine += (std::string(SIMUL) + "\\Platform\\CrossPlatform\\SFX\\") + filename_utf8 + ".sfx";
 
 				//cmdLine += " -L";
-				//cmdLine += " -V";
+				if(simul::base::SimulInternalChecks)
+					cmdLine += " -V";
 				// Includes
 				cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
 				cmdLine += SIMUL_BUILD + "\\Platform\\CrossPlatform\\SL\"";

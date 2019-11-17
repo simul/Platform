@@ -217,6 +217,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 	UINT rtHandleSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTHeap->GetCPUDescriptorHandleForHeapStart());
+	if(mSwapChain)
 	for (UINT n = 0; n < FrameCount; n++)
 	{
 		// Store a DX12 Cpu handle for the render targets
