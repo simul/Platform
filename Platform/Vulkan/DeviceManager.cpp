@@ -361,6 +361,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setPpEnabledExtensionNames(extension_names.data());
  	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
+	// Vulkan sets errno without warning or error.
+	errno=0;
  	ERRNO_BREAK
 	if (result == vk::Result::eErrorIncompatibleDriver)
 	{

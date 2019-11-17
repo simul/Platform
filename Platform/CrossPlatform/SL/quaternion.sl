@@ -90,13 +90,13 @@ vec4 slerp(vec4 q1,vec4 q2,float interp)
 	if (dot > 1.0)
 		dot = 1.0;
 
-	double theta_0 = acos(dot);  // theta_0 = half angle between input vectors
-	double theta1 = theta_0 * (1.0 - interp);    // theta = angle between v0 and result 
-	double theta2 = theta_0 * interp;    // theta = angle between v0 and result 
+	float theta_0 = acos(dot);  // theta_0 = half angle between input vectors
+	float theta1 = theta_0 * (1.0 - interp);    // theta = angle between v0 and result 
+	float theta2 = theta_0 * interp;    // theta = angle between v0 and result 
 
-	double s1 = sin(theta1);
-	double s2 = sin(theta2);
-	double ss = sin(theta_0);
+	float s1 = sin(theta1);
+	float s2 = sin(theta2);
+	float ss = sin(theta_0);
 
 	vec4 ret;
 	ret.x = (Q1.x * s1 + Q2.x * s2) / ss;
