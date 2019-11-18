@@ -1381,7 +1381,7 @@ void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_c
 	{
 		attachments[i]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(pixelFormat))
 														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
+														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eDontCare)
 														  .setStoreOp(vk::AttachmentStoreOp::eStore)
 														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

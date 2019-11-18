@@ -1,96 +1,1393 @@
-//  Copyright (c) 2015-2017 Simul Software Ltd. All rights reserved.
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
+#include "../SL/depth.sl"
+#include "../SL/colour_packing.sl"
+#include "../SL/debug_constants.sl"
 #include "../SL/states.sl"
-#include "../SL/text_constants.sl"
-uniform StructuredBuffer<FontChar> fontChars;
-uniform Texture2D fontTexture;
-shader posTexVertexOutput BackgroundVertexShader(idOnly IN)
+#include "../SL/quaternion.sl"
+#include "../SL/cubemap_matrices.sl"
+
+uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
+uniform Texture2DArray imageTextureArray SIMUL_TEXTURE_REGISTER(0);
+uniform Texture2DMS<vec4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
+uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
+uniform TextureCubeArray cubeTextureArray;
+uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
+uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
+uniform RWTexture2D<vec4> FastClearTarget SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2DArray<vec4> FastClearTarget2DArray SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2DArray<uchar4> FastClearTarget2DArrayU8 SIMUL_RWTEXTURE_REGISTER(0);
+
+uniform RWTexture3D<vec4> FastClearTarget3D SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<uchar4> FastClearTarget3DU8 SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWStructuredBuffer<vec4> textureQueryResults SIMUL_RWTEXTURE_REGISTER(0);
+
+uniform Texture3D volumeTexture;
+
+struct a2v
 {
-	posTexVertexOutput OUT = VS_ScreenQuad(IN, background_rect);
-	OUT.texCoords = vec2(0, 0);
+    vec3 position	: POSITION;
+    vec4 colour		: TEXCOORD0;
+};
+
+struct v2f
+{
+    vec4 hPosition	: SV_POSITION;
+    vec4 colour		: TEXCOORD0;
+};
+
+shader posTexVertexOutput VS_Quad(idOnly id)
+{
+    return VS_ScreenQuad(id,rect);
+}
+
+shader v2f DebugVS(positionColourVertexInput IN)
+{
+	v2f OUT;
+	vec3 pos		=IN.position.xyz;
+    OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	OUT.colour		=IN.colour;
+    return OUT;
+}
+
+shader v2f Debug2dVS(a2v IN)
+{
+	v2f OUT;
+    OUT.hPosition	=vec4(rect.xy+rect.zw*IN.position.xy,0.0,1.0);
+	OUT.colour		=IN.colour;
+    return OUT;
+}
+
+shader v2f CircleVS(idOnly IN)
+{
+	v2f OUT;
+	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
+	vec4 pos		=vec4(100.0*vec3(radius*vec2(cos(angle),sin(angle)),1.0),1.0);
+    OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	OUT.colour		=debugColour;
+    return OUT;
+}
+
+shader v2f FilledCircleVS(idOnly IN)
+{
+	v2f OUT;
+//	int i=int(IN.vertex_id/2);
+	int j=int(IN.vertex_id%uint(2));
+	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
+	vec4 pos		=vec4(100.0*vec3(radius*j*vec2(cos(angle),sin(angle)),1.0),1.0);
+    OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	OUT.colour		=debugColour;
+    return OUT;
+}
+
+shader vec4 DebugPS(v2f IN) : SV_TARGET
+{
+    vec4 c		=IN.colour;
+	return c;
+}
+
+vec4 ShowDepthCube(posTexVertexOutput IN,bool reverseDepth) 
+{
+	vec2 texc		=IN.texCoords.xy;
+	float se		=texc.y*2.0-1.0;
+	float ce		=cos(asin(se));
+	float az		=texc.x*3.1415926536*2.0;
+	float cs		=cos(az);
+	float ss		=sin(az);
+	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
+	vec4 depth		=texture_cube(cubeTexture,view);
+
+	DepthInterpretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+	vec4 dist		=depthToLinearDistance(depth,depthInterpretationStruct);
+	if(texc.x+texc.y>1.0)
+		dist.xy		=dist.zw;
+	dist.z			=0;
+    vec4 result		=vec4(pow(dist.xyz,vec3(0.44,0.44,0.44)),1.0);
+
+	return result;
+}
+
+shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc		=IN.texCoords.xy;
+	float se		=texc.y*2.0-1.0;
+	float ce		=cos(asin(se));
+	float az		=texc.x*3.1415926536*2.0;
+	float cs		=cos(az);
+	float ss		=sin(az);
+	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
+	vec4 res		=texture_cube_lod(cubeTexture,view,displayLod);
+	//res.xyz=IN.texCoords.xyy;
+	vec3 v = abs(view);
+	float e = max(max(v.x, v.y), v.z);
+	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+	vec3 N = step( vec3(e, e, e), v);
+	if(dot(N,view)<0)
+		N=vec3(1.0,1.0,1.0)-N;
+	N*=0.001;
+	res				=vec4(pow(res.xyz+N,vec3(debugGamma,debugGamma,debugGamma)),1.0);
+	return res;
+}
+
+shader vec4 PS_ShowCubemapArray(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc		=IN.texCoords.xy;
+	float se		=texc.y*2.0-1.0;
+	float ce		=cos(asin(se));
+	float az		=texc.x*3.1415926536*2.0;
+	float cs		=cos(az);
+	float ss		=sin(az);
+	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
+	vec4 res		=texture_cube_lod(cubeTextureArray,vec4(view,displayLevel),displayLod);
+	//res.xyz=IN.texCoords.xyy;
+	vec3 v	= abs(view);
+	float e	= max(max(v.x, v.y), v.z);
+	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+	vec3 N = step( vec3(e, e, e), v);
+	if(dot(N,view)<0)
+		N=vec3(1.0,1.0,1.0)-N;
+	N*=0.03;
+	res		=vec4(pow(res.xyz,vec3(0.44,0.44,0.44))+N,1.0);
+	return res;
+}
+
+struct vec3input
+{
+    vec3 position	: POSITION;
+};
+
+struct v2f_cubemap
+{
+    vec4 hPosition	: SV_POSITION;
+    vec3 wDirection	: TEXCOORD0;
+};
+
+shader v2f_cubemap VS_DrawCubemap(vec3input IN) 
+{
+    v2f_cubemap OUT;
+    OUT.hPosition	=mul(debugWorldViewProj,vec4(IN.position.xyz,1.0));
+    OUT.wDirection	=normalize(IN.position.xyz);
+    return OUT;
+}
+
+shader v2f_cubemap VS_DrawCubemapSphere(idOnly IN) 
+{
+    v2f_cubemap OUT;
+	// we have (latitudes+1)*(longitudes+1)*2 id's
+	uint vertex_id		=IN.vertex_id;
+	uint latitude_strip	=vertex_id/(longitudes+1)/2;
+	vertex_id			-=latitude_strip*(longitudes+1)*2;
+	uint longitude		=vertex_id/2;
+	vertex_id			-=longitude*2;
+	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
+	float elevation		=.99*(float(latitude_strip+vertex_id)/float(latitudes+1)-0.5)*3.1415926536;
+	#ifdef SFX_OPENGL
+	elevation *= -1;
+	#endif
+	float cos_el		=cos(elevation);
+	vec3 pos			=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
+    OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	#ifdef SFX_OPENGL
+	OUT.hPosition.y *= -1;
+	#endif
+    OUT.wDirection		=normalize(pos.xyz);
+    return OUT;
+}
+
+shader vec4 PS_DrawSphere(v2f_cubemap IN): SV_TARGET
+{
+	vec3 view		=IN.wDirection.xyz;
+	vec4 u			=vec4(view.rgb,1.0);
+	return u;
+}
+
+shader v2f VS_DrawLatLongSphere(idOnly IN) 
+{
+    v2f OUT;
+	// we have (latitudes+1)*(longitudes+1)*2 id's
+	uint vertex_id		=IN.vertex_id;
+	vec3 pos;
+	if(vertex_id<((uint)latitudes+1)*((uint)longitudes+1))
+	{
+		uint latitude_strip	=vertex_id/(longitudes+1);
+		vertex_id			-=latitude_strip*(longitudes+1);
+		uint longitude		=vertex_id;
+		float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
+		float elevation		=.999*(float(latitude_strip)/float(latitudes)-0.5)*3.1415926536;
+		float cos_el		=cos(elevation);
+		pos					=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
+		float b				=latitude_strip==(uint)latitudes/2?1.0:0.2;
+		OUT.colour			=multiplier*vec4(1.0,1.0,1.0,longitude>0&&longitude<(uint)longitudes?b:0.0); //Latitude Colour
+		//OUT.colour		*=saturate(elevation/1.7);
+	}
+	else
+	{
+		vertex_id				-=(latitudes+1)*(longitudes+1);
+		uint longitude_strip	=vertex_id/(latitudes+1);
+		int latitude			=int(vertex_id-longitude_strip*(latitudes+1));
+		float azimuth			=2.0*3.1415926536*float(longitude_strip)/float(longitudes);
+		float elevation			=.999*(float(latitude)/float(latitudes)-0.5)*3.1415926536;
+		float cos_el			=cos(elevation);
+		pos						=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
+		float b					=longitude_strip==0?1.0:0.2;
+		OUT.colour				=multiplier*vec4(1.0,1.0,1.0,latitude>0&&latitude<latitudes?b:0.0); //Longitude Colour
+	//	OUT.colour			*=saturate(elevation/1.7);
+	}
+	OUT.hPosition			=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour.a*=0;
+    return OUT;
+}
+
+shader v2f VS_DrawQuadOnSphere(idOnly IN) 
+{
+    v2f OUT;
+	vec3 poss[4];
+	poss[0]			=vec3( 1.0,-1.0,1.0);
+	poss[1]			=vec3( 1.0, 1.0,1.0);
+	poss[2]			=vec3(-1.0, 1.0,1.0);
+	poss[3]			=vec3(-1.0,-1.0,1.0);
+	vec3 pos;
+	if(IN.vertex_id<8)
+	{
+		uint vert		=(IN.vertex_id+1)/2;
+		pos				=poss[vert%4];
+		pos.xy			*=sideview;
+		pos.z			=1.0;
+		pos				=normalize(pos);
+		OUT.colour		=debugColour;
+	}
+	else
+	{
+		uint vert		=IN.vertex_id-8;
+		int axis		=int(vert/3);
+		vec3 ax			=vec3(axis==0,axis==1,axis==2);
+		pos				=vec3(0,0,1.0);
+		if(bool(vert%2))
+			pos			+=ax*sideview;
+        vec4 finalCol  = vec4(0.0,0.0,0.0,1.0);
+        if(axis == 0)
+        {
+            finalCol.xyz += vec3(0.5,0.0,0.0);
+        }
+        if(axis == 1)
+        {
+            finalCol.xyz += 0.75*vec3(0.0,0.5,0.0);
+        }
+        if(axis == 2)
+        {
+            finalCol.xyz += vec3(0.0,0.0,0.5);
+        }
+        OUT.colour = finalCol;
+		//OUT.colour=vec4((axis==0)*vec3(1,0.5,0.5)+(axis==1)*vec3(0,1.0,0)+(axis==2)*vec3(0.5,0.5,1.0),1.0);
+	}
+	pos					=radius*rotate_by_quaternion(quaternion,pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
 	return OUT;
 }
 
-shader posTexVertexOutput FontVertexShader(idOnly IN)
+
+shader v2f VS_DrawFilledQuadOnSphere(idOnly IN)
 {
-	uint char_index = IN.vertex_id / 6;
-	uint vert_index = IN.vertex_id - (6 * char_index);
-	uint ids[] = { 0,1,2,2,3,1 };
-	FontChar f = fontChars[char_index];
-	idOnly cIN;
-	cIN.vertex_id = ids[vert_index];
-#ifdef  SFX_OPENGL
-	f.text_rect.y *= -1;
-	f.text_rect.y -= f.text_rect.w;
+	v2f OUT;
+	vec3 poss[4];
+	poss[1] = vec3(1.0, -1.0, 1.0);
+	poss[0] = vec3(1.0, 1.0, 1.0);
+	poss[2] = vec3(-1.0, 1.0, 1.0);
+	poss[3] = vec3(-1.0, -1.0, 1.0);
+	vec3 pos;
+	uint vert = (IN.vertex_id ) ;
+	pos = poss[vert % 4];
+	pos.xy *= sideview;
+	pos.z = 1.0;
+	pos = normalize(pos);
+	OUT.colour = multiplier;
+	pos = radius * rotate_by_quaternion(quaternion, pos);
+	OUT.hPosition = mul(debugWorldViewProj, vec4(pos.xyz, 1.0));
+	return OUT;
+}
+
+shader v2f VS_DrawCircleOnSphere(idOnly IN) 
+{
+    v2f OUT;
+	float angle			=float(IN.vertex_id)/31.0*3.1415926536*2.0;
+	vec3 pos			=vec3(sideview*cos(angle), sideview*sin(angle),1.0);
+	pos					=normalize(pos);
+	OUT.colour			=debugColour;
+	
+	pos					=radius*rotate_by_quaternion(quaternion,pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	return OUT;
+}
+
+shader v2f VS_DrawFilledCircleOnSphere(idOnly IN)
+{
+	v2f OUT;
+	float angle = float(IN.vertex_id/2) / 31.0*3.1415926536*2.0;
+	float mult = float(IN.vertex_id % 2);
+	vec3 pos = vec3(mult*sideview*cos(angle),mult*sideview*sin(angle), 1.0);
+	pos = normalize(pos);
+	OUT.colour = multiplier;
+
+	pos = radius * rotate_by_quaternion(quaternion, pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition = mul(debugWorldViewProj, vec4(pos.xyz, 1.0));
+	return OUT;
+}
+
+shader posTexVertexOutput VS_DrawTextureOnSphere(idOnly IN) 
+{
+    posTexVertexOutput OUT;
+	vec3 poss[4];
+	poss[0]			=vec3( 1.0,-1.0,1.0);
+	poss[1]			=vec3( 1.0, 1.0,1.0);
+	poss[2]			=vec3(-1.0, 1.0,1.0);
+	poss[3]			=vec3(-1.0,-1.0,1.0);
+	vec3 pos;
+	uint vert=IN.vertex_id%4;
+	{
+		pos				=poss[vert];
+		OUT.texCoords	=pos.xy*0.5+vec2(0.5,0.5);
+		pos.xy			*=sideview;
+		pos.z			=1.0;
+		pos				=normalize(pos);
+	}
+	pos					=radius*rotate_by_quaternion(quaternion,pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	return OUT;
+}
+
+shader vec4 PS_DrawTextureOnSphere(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=IN.texCoords.xy;
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y		=1.0-texc.y;
+	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
+	//res.rgb=IN.texCoords.xyy;
+	return res;
+}
+
+
+shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
+{
+	vec3 view		=IN.wDirection.xyz;
+	//vec4 result		=texture_cube_lod(cubeTexture,view,displayLod);
+	vec4 result		=cubeTexture.SampleLevel(cubeSamplerState,view,displayLod);
+	result.rgb		*=multiplier.rgb;
+	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
+	vec4 u			=vec4(saturate(result.rgb),1.0);
+	return u;
+}
+
+shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=IN.texCoords.xy;
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y		=1.0-texc.y;
+	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
+	res.rgb		+=res.aaa;
+	return res;
+}
+
+shader vec4 PS_ShowTextureArray(posTexVertexOutput IN) : SV_TARGET
+{
+	vec3 texc = vec3(IN.texCoords.xy, displayLevel);
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y = 1.0 - texc.y;
+	vec4 res = multiplier * texture_nearest_lod(imageTextureArray,texc.xyz,0);
+	res.rgb += res.aaa;
+	return res;
+}
+
+shader vec4 PS_ShowTextureRadial(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 offs	=IN.texCoords.xy-vec2(.5,.5);
+	float rad	=length(offs)/0.5;
+	float azim	=frac(atan2(offs.x,offs.y)/(2.0*3.1415926536));
+	vec2 texc	=vec2(azim,rad);
+	vec4 res	=texture_nearest_lod(imageTexture,texc.xy,0);
+	res			*=step(rad,1.0);
+	//res.rgb=IN.texCoords.xyy;
+	return res;
+}
+
+shader vec4 PS_Untextured(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res	=multiplier;
+	return res;
+}
+
+shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
+{
+	vec2 texc		=IN.texCoords.xy;
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y			=1.0-texc.y;
+	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
+	if(texc.y>.5)
+	{
+		z			=1.0;
+		texc.y		=2.0*(texc.y-.5);
+	}
+	else
+	{
+		texc.y		*=2.0;
+		texc.x		=frac(8.0f*IN.texCoords.x);
+	}
+	vec3 tc			=vec3(texc.x,lerp(texc.y,z,sideview),lerp(z,texc.y,sideview));
+///tc = vec3(IN.texCoords.x, 0.5, IN.texCoords.y);
+	vec4 colour		=texture_3d_wrap_lod(volumeTexture,tc,0);
+	colour.rgb		*=multiplier.rgb;
+	colour.rgb		=abs(colour.rgb);
+	//colour.rgb		*=colour.a;
+	colour.rgb		=lerp(colour.rgb,tc,0.1);
+	return colour;
+}
+
+shader vec4 PS_TraceVolume(posTexVertexOutput IN) : SV_Target
+{
+	vec3 texc = vec3(IN.texCoords.xy, displayLevel);
+	vec4 colour = texture_3d_wrap_lod(volumeTexture, texc, 0);
+	colour *= multiplier;
+	return colour;
+}
+
+#ifndef GLSL
+shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
+{
+	return texture_int(imageTextureUint,IN.texCoords.xy);
+}
 #endif
 
-	posTexVertexOutput OUT = VS_ScreenQuad(cIN, f.text_rect);
-	OUT.texCoords = vec4(f.texc.xy + f.texc.zw*OUT.texCoords.xy, 0.0, 1.0).xy;
+shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
+{
+	uint2 dims;
+	uint numSamples;
+	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
+	int2 pos	=int2(IN.texCoords.xy*vec2(dims.xy));
+	vec4 res	=multiplier*imageTextureMS.Load(pos,0);
+	return res;
+}
+
+vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth) 
+{
+	vec2 texc=IN.texCoords.xy;
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y			=1.0-texc.y;
+	vec4 depth		=texture_nearest_lod(imageTexture,texc,0);
+
+	DepthInterpretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+	vec4 dist		=depthToFadeDistance(depth,2.0*(IN.texCoords-0.5),depthInterpretationStruct,debugTanHalfFov);
+	if(texc.x>.5)
+		dist.xy		=dist.zw;
+	dist.z			=0;
+    vec4 result		=vec4(pow(dist.xyz,vec3(0.44,0.44,0.44)),1.0);
+	if (depth.x <= 0)
+		return vec4(1, 0, 0, 0);
+	if (depth.x== 1.0)
+		return vec4(0, 0, 1, 0);
+	return result;
+}
+
+shader vec4 PS_ShowDepth_Forward(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthPS(IN,false);
+	return res;
+}
+
+shader vec4 PS_ShowDepth_Reverse(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthPS(IN,true);
+	return res;
+}
+
+shader vec4 PS_ShowDepthCube_Forward(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthCube(IN,false);
+	return res;
+}
+
+shader vec4 PS_ShowDepthCube_Reverse(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthCube(IN,true);
+	return res;
+}
+
+vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth) 
+{
+	vec2 texc=IN.texCoords.xy;
+
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y		=1.0-texc.y;
+
+	uint2 dims;
+	uint numSamples;
+	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
+	int2 pos		=int2(texc.xy*vec2(dims.xy));
+	vec4 depth		=TEXTURE_LOAD_MSAA(imageTextureMS,pos,0);
+	DepthInterpretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(texc-0.5),depthInterpretationStruct,debugTanHalfFov);
+	vec4 result=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
+	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
+		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
+		result*=0.25;
+	result.b+=1;
+	return result;
+}
+
+shader vec4 PS_ShowDepthMS_Forward(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthMS_PS(IN,false);
+	return res;
+}
+
+shader vec4 PS_ShowDepthMS_Reverse(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthMS_PS(IN,true);
+	return res;
+}
+
+shader v2f Vec3InputSignatureVS(vec3input IN)
+{
+	v2f OUT;
+    OUT.hPosition=mul(debugWorldViewProj,vec4(IN.position.xyz,1.0));
+	OUT.colour = vec4(1.0,1.0,1.0,1.0);
+    return OUT;
+}
+
+shader posTexVertexOutput VS_DepthWrite(idOnly IN)
+{
+	posTexVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]=vec2( 1.0,-1.0);
+	poss[1]=vec2( 1.0, 1.0);
+	poss[2]=vec2(-1.0,-1.0);
+	poss[3]=vec2(-1.0, 1.0);
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	OUT.hPosition.z	=debugDepth; 
+	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 	return OUT;
 }
 
-shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
-{
-	vec2 tc = IN.texCoords;
-	tc.y = 1.0 - tc.y;
 
-	vec4 lookup = colour * texture_nearest_lod(fontTexture,tc,0);
-	//	lookup.b = 0;
-		return lookup;
+VertexShader vs_quad_5_0=CompileShader(vs_5_0,VS_Quad());
+VertexShader debugvs_5_0=CompileShader(vs_5_0,DebugVS());
+PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
+VertexShader vs_simplefullscreen_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
+
+group lines_3d_depth
+{
+	technique depth_forward
+    {
+		pass lines3d
+		{
+			SetRasterizerState(wireframeRasterizer);
+			SetDepthStencilState(TestForwardDepth,0);
+			SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(debugvs_5_0);
+			SetPixelShader(debugps_5_0);
+		}
+    }
+    technique depth_reverse
+    {
+		pass lines3d
+		{
+			SetRasterizerState( wireframeRasterizer );
+			SetDepthStencilState( TestReverseDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(debugvs_5_0);
+			SetPixelShader(debugps_5_0);
+		}
+    }
 }
-
-shader vec4 FontBackgroundShader(posTexVertexOutput IN) : SV_TARGET
+fxgroup lines_3d
 {
-	return background;
-}
-
-BlendState AlphaBlendRGB
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
-	BlendOp = ADD;
-	SrcBlendAlpha = ZERO;
-	DestBlendAlpha = ZERO;
-	BlendOpAlpha = ADD;
-	RenderTargetWriteMask[0] = 7;
-};
-BlendState AddBlendRGB
-{
-	BlendEnable[0] = TRUE;
-	BlendEnable[1] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = ONE;
-	RenderTargetWriteMask[0] = 7;
-};
-
-VertexShader vs = CompileShader(vs_4_0, FontVertexShader());
-technique backg
-{
-	pass p0
+	technique lines_3d
 	{
-		SetRasterizerState(RenderNoCull);
-		SetTopology(TriangleStrip);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(AlphaBlendRGB,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, BackgroundVertexShader()));
-		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));
+		pass lines3d
+		{
+			SetRasterizerState( wireframeRasterizer );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(debugvs_5_0);
+			SetPixelShader(debugps_5_0);
+		}
 	}
 }
-
-technique text
+technique lines_2d
+{
+    pass p0
+    {
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,Debug2dVS()));
+		SetPixelShader(debugps_5_0);
+    }
+}
+fxgroup circle
+{
+	technique outline
 	{
 		pass p0
 		{
-			SetRasterizerState(RenderNoCull);
-			SetTopology(TriangleList);
-			SetDepthStencilState(DisableDepth, 0);
-			SetBlendState(AddBlendRGB,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetRasterizerState( wireframeRasterizer );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
-			SetVertexShader(vs);
-			SetPixelShader(CompileShader(ps_4_0,FontPixelShader()));
+			SetVertexShader(CompileShader(vs_5_0,CircleVS()));
+			SetPixelShader(debugps_5_0);
 		}
 	}
+	technique filled
+	{
+		pass p0
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_5_0,FilledCircleVS()));
+			SetPixelShader(debugps_5_0);
+		}
+	}
+}
+
+
+shader vec4 PS_Copy2D(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=IN.texCoords.xy;
+	vec4 res	=texture_clamp_lod(imageTexture,texc.xy,0);
+	return res;
+}
+
+shader vec4 PS_Copy2DWrap(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=IN.texCoords.xy;
+	vec4 res	=texture_wrap_lod(imageTexture,texc.xy,0);
+//	res.r+=.3;
+	return res;
+}
+
+shader vec4 PS_Copy2DOffset(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=frac((IN.texCoords.xy+rect.xy)*rect.zw);
+	vec4 res	=texture_clamp_lod(imageTexture,texc.xy,0);
+	return res;
+}
+
+shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
+{
+	return debugColour;
+}
+
+[numthreads(4,4,1)]
+shader void CS_LatLongToCubemap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 idx = g.xyz*uint3(4,4,1)+ t.xyz;
+	// convert xyz to a direction.
+	uint3 dims;
+	FastClearTarget2DArray.GetDimensions(dims.x,dims.y,dims.z);
+
+
+	vec2 texCoords = (vec2(idx.xy) + vec2(0.5, 0.5)) / vec2(dims.xy);
+	vec4 clip_pos = vec4(-1.0, 1.0, 1.0, 1.0);
+	clip_pos.x += 2.0*texCoords.x;
+	clip_pos.y -= 2.0*texCoords.y;
+	mat4 cubeInvViewProj[6] = {
+	{ {0,0,-1,0}	,{0,-1,0,0}	,{1,0,0,0}	,{0,0,0,1}	}
+	, { {0,0,1,0}	,{0,-1,0,0}	,{-1,0,0,0}	,{0,0,0,1} }
+	,{ {-1,0,0,0}	,{0,0,-1,0}	,{0,1,0,0}	,{0,0,0,1}	}
+	,{ {-1,0,0,0}	,{0,0,1,0}	,{0,-1,0,0},{0,0,0,1}	}
+	,{ {-1,0,0,0}	,{0,-1,0,0}	,{0,0,-1,0}	,{0,0,0,1}	}
+	,{ {1,0,0,0}	,{0,-1,0,0}	,{0,0,1,0}	,{0,0,0,1}	}
+};
+	vec3 view = normalize(mul(cubeInvViewProj[idx.z], clip_pos).xyz);
+
+
+//	vec3 view=CubeFaceIndexToView(idx,dims.xx);
+	// convert direction to lat long
+	float lat=asin(view.z);
+	float lon=atan2(view.x,view.y);
+	vec2 texc = vec2(lon / (2.0*SIMUL_PI_F), lat*2.0 / SIMUL_PI_F*0.5 + 0.5);
+	vec4 lookup=imageTexture.SampleLevel(wmcSamplerState,texc,0);
+	// lookup in source texture
+	// write to position in target.
+	FastClearTarget2DArray[idx]= vec4(saturate(lookup.xyz),0.5);
+}
+
+[numthreads(8,8,1)]
+shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 sub_pos = g.xy * 8 + t.xy;
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
+	{
+		FastClearTarget[sub_pos] = debugColour;
+	}
+}
+
+[numthreads(8,8,1)]
+shader void CS_Clear2DArray(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos =uint3(g.xy * 8 + t.xy,t.z);
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
+		FastClearTarget2DArray[sub_pos] = debugColour;
+}
+[numthreads(8,8,1)]
+shader void CS_Clear2DArray_U8(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos =uint3(g.xy * 8 + t.xy,t.z);
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
+		FastClearTarget2DArrayU8[sub_pos] = debugColour;
+}
+
+[numthreads(4,4,4)]
+shader void CS_Clear3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g * 4 + t;
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y&&sub_pos.z<texSize.z)
+	{
+		FastClearTarget3D[sub_pos] = debugColour;
+	}
+}
+[numthreads(4, 4, 4)]
+shader void CS_Clear3D_U8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g * 4 + t;
+	if (sub_pos.x<texSize.x&&sub_pos.y<texSize.y&&sub_pos.z<texSize.z)
+	{
+		FastClearTarget3DU8[sub_pos] = debugColour;
+	}
+}
+
+[numthreads(1,1,1)]
+shader void CS_TexelQuery(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g + t;
+	textureQueryResults[sub_pos.x]=imageTexture[queryPos];
+}
+
+technique copy_2d
+{
+    pass replace
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Copy2D()));
+    }
+    pass add
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Copy2D()));
+    }
+    pass offset
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Copy2DOffset()));
+    }
+    pass wrap
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Copy2DWrap()));
+    }
+}
+
+technique lat_long_to_cubemap
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LatLongToCubemap()));
+    }
+}
+
+technique compute_clear
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear()));
+    }
+}
+
+technique compute_clear_2d_array
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear2DArray()));
+    }
+}
+
+technique compute_clear_2d_array_u8
+	{
+		pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear2DArray_U8()));
+	}
+}
+
+technique compute_clear_3d
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear3D()));
+    }
+}
+
+technique compute_clear_3d_u8
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear3D_U8()));
+	}
+}
+
+technique texel_query
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_TexelQuery()));
+    }
+}
+
+technique clear
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+    }
+}
+
+BlendState DontWriteColour
+{
+	BlendEnable[0]	=FALSE;
+	RenderTargetWriteMask[0]=0;
+};
+
+technique clear_depth
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontWriteColour, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+    }
+}
+
+technique clear_both
+{
+	pass p0
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( WriteDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DepthWrite()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+	}
+}
+
+BlendState AlphaBlendNoAlphaWrite
+{
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=SRC_ALPHA;
+	DestBlend		=INV_SRC_ALPHA;
+	RenderTargetWriteMask[0]=7;
+};
+
+BlendState NoBlendNoAlphaWrite
+{
+	BlendEnable[0] = FALSE;
+	RenderTargetWriteMask[0]=7;
+	SrcBlend			= ONE;
+	DestBlend			= ZERO;
+};
+
+BlendState NoBlendSetAlpha
+{
+	BlendEnable[0] = FALSE;
+	RenderTargetWriteMask[0]=7;
+	SrcBlend			= ONE;
+	DestBlend			= ZERO;
+    BlendOp				= ADD;
+    SrcBlendAlpha		= ZERO;
+    DestBlendAlpha		= ZERO;
+    BlendOpAlpha		= ADD;
+};
+
+technique show_cubemap_array
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemapArray()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemapArray()));
+    }
+}
+
+technique show_texture
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
+    }
+}
+
+technique show_texture_array
+	{
+		pass noblend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureArray()));
+		}
+		pass blend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0, PS_ShowTextureArray()));
+		}
+	}
+
+technique show_cubemap
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemap()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemap()));
+    }
+}
+
+technique radial
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendSetAlpha, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureRadial()));
+    }
+	pass blend
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureRadial()));
+	}
+}
+
+technique textured
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendSetAlpha, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
+    }
+}
+
+technique untextured
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Untextured()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Untextured()));
+    }
+}
+
+technique show_volume
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
+    }
+}
+
+technique trace_volume
+	{
+		pass noblend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(NoBlendNoAlphaWrite,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_TraceVolume()));
+		}
+		pass blend
+		{
+			SetRasterizerState(RenderNoCull);
+			SetDepthStencilState(DisableDepth, 0);
+			SetBlendState(AlphaBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetGeometryShader(NULL);
+			SetVertexShader(vs_quad_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_TraceVolume()));
+		}
+	}
+
+technique texturedMS
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureMS()));
+    }
+}
+
+
+technique vec3_input_signature
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,Vec3InputSignatureVS()));
+		SetPixelShader(debugps_5_0);
+    }
+}
+
+technique draw_cubemap
+{
+    pass noblend 
+    {		
+		SetRasterizerState( RenderFrontfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemap()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+    pass blend  
+    {		
+		SetRasterizerState( RenderFrontfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemap()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique draw_cubemap_sphere
+{
+    pass noblend
+    {		
+		SetRasterizerState( RenderBackfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemapSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique draw_lat_long_sphere
+{
+    pass noblend
+    {		
+		SetRasterizerState( RenderBackfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawLatLongSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique draw_quad_on_sphere
+{
+	pass fill
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawFilledQuadOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
+    pass outline
+    {		
+		SetRasterizerState(RenderNoCull);
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawQuadOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique draw_texture_on_sphere
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawTextureOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawTextureOnSphere()));
+		//SetVertexShader(CompileShader(vs_5_0,VS_DrawQuadOnSphere()));
+		//SetPixelShader(debugps_5_0);
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique draw_circle_on_sphere
+{
+    pass fill 
+    {		
+		SetRasterizerState(RenderNoCull);
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawFilledCircleOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+	pass outline
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCircleOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
+}
+
+
+technique draw_sphere
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderBackfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemapSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawSphere()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique show_depth
+{
+    pass reverse_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepth_Reverse()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepth_Forward()));
+    }
+}
+technique show_depth_cube
+{
+    pass reverse_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthCube_Reverse()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthCube_Forward()));
+    }
+}
+
+technique show_depth_ms
+{
+    pass reverse_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Reverse()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Forward()));
+    }
+}
+#ifndef GLSL
+technique compacted_texture
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
+    }
+}
+#endif

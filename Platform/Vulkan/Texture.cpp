@@ -612,7 +612,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	//f=crossplatform::RenderPlatform::ToColourFormat(f);
 	vk::ImageAspectFlags imageAspectFlags=vk::ImageAspectFlagBits::eColor;
 	if(crossplatform::RenderPlatform::IsDepthFormat(f))
-		imageAspectFlags|=vk::ImageAspectFlagBits::eDepth;
+		imageAspectFlags=vk::ImageAspectFlagBits::eDepth;
 	if(isDepthTarget&&crossplatform::RenderPlatform::IsStencilFormat(f))
 		imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
