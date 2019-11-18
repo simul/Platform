@@ -118,7 +118,7 @@ float GetRainAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffsetKm,ve
 	vec3 pvSize;
 	GET_DIMENSIONS_3D(precipitationVolume, pvSize.x, pvSize.y, pvSize.z);
 	uint z_texel = uint(rain_texc.z * pvSize.z);
-	rain_texc.z = float(z_texel + 0.5)/pvSize.z;
+	rain_texc.z = (float(z_texel) + 0.5)/pvSize.z;
 
 	vec4 rain_lookup = precipitationVolume.SampleLevel(wwcSamplerState, rain_texc, 0);
 	//return rain_lookup.x *saturate((rainRadiusKm-length(cloudWorldOffsetKm.xy-rainCentreKm.xy))*3.0) *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
@@ -138,7 +138,7 @@ float GetRainToSnowAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffse
 	vec3 pvSize;
 	GET_DIMENSIONS_3D(precipitationVolume, pvSize.x, pvSize.y, pvSize.z);
 	uint z_texel = uint(rain_texc.z * pvSize.z);
-	rain_texc.z = float(z_texel + 0.5)/pvSize.z;
+	rain_texc.z = (float(z_texel) + 0.5)/pvSize.z;
 
 	vec4 rain_lookup = precipitationVolume.SampleLevel(wwcSamplerState, rain_texc, 0);
 	return rain_lookup.z;

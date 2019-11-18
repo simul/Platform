@@ -204,8 +204,8 @@ float RestrictedWorley(vec3 texc, int grid, int seed, float zmax)
 				int3 I		=int3(i, j, k);
 				vec3 c		= vec3(I);
 				int3 u		= (ip + I);
-				int3 v		= (u + int3(grid, grid, grid)) % int3(grid, grid, grid);
-				vec3 random = SphericalRandom(vec3(v)*seed);
+				int3 v		= int3((u + int3(grid, grid, grid)) % int3(grid, grid, grid));
+				vec3 random = SphericalRandom(vec3(v)*float(seed));
 				c			+= .5*random.xyz;
 				vec3 diff	= loc - c;
 				float dist	= length(diff);

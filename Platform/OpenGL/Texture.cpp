@@ -767,6 +767,10 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, int msaa)
 
 void Texture::InitViews(int mipCount, int layers, bool isRenderTarget)
 {
+	if(computable&&pixelFormat==crossplatform::RGBA_16_FLOAT)
+	{
+		SIMUL_BREAK("OpenGL nVidia driver cannot cope with compute writing/reading 16 bit float textures.");
+	}
 	mLayerViews.resize(layers);
 
 	mMainMipViews.resize(mipCount);

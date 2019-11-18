@@ -829,7 +829,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				// File to compile
 				cmdLine += " ";
 				cmdLine += (std::string(SIMUL) + "\\Platform\\CrossPlatform\\SFX\\") + filename_utf8 + ".sfx";
-
+				
+				cmdLine += " -w";
 				//cmdLine += " -L";
 				if(simul::base::SimulInternalChecks)
 					cmdLine += " -V";

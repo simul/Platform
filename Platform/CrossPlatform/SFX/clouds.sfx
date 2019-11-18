@@ -508,13 +508,15 @@ CS_LAYOUT(4,4,4)
 shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 {
 	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	//if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
-	//	return;
+	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
+		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	idx.xy		+=gridCentreTexel;
+	//idx.xy		+=gridCentreTexel;
 	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
-	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
-	idx.xy		=idx.xy%int2(windowGrid.xy);
+	//idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	//idx.xy		=idx.xy%int2(windowGrid.xy);
+//	if(idx.x>=5||idx.y>=5||idx.x<0||idx.y<0)
+	//	return;
 	vec3 texc_o	=vec3(idx)/vec3(windowGrid);
 
 	vec3 wpos = texc / inverseScalesKm;
@@ -535,9 +537,9 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 
 	if(idx.z!=gridEdge.z)
 	{
-		int3 idx_x				=int3((idx.x+idxOffset.x+windowGrid.x)%windowGrid.x,idx.yz);
-		int3 idx_y				=int3(idx.x,(idx.y+idxOffset.y+windowGrid.y)%windowGrid.y,idx.z);
-		int3 idx_z				=idx+int3(0,0,idxOffset.z);
+		int3 idx_x				=int3(((idx.x+idxOffset.x+windowGrid.x)%windowGrid.x),idx.yz);
+		int3 idx_y				=int3(idx.x,((idx.y+idxOffset.y+windowGrid.y)%windowGrid.y),idx.z);
+		int3 idx_z				=int3(idx.xy,idx.z+idxOffset.z);
 
 		vec4 illum_x			=UnpackUintToVec4(packedOutputTexture3d[idx_x]);
 		vec4 illum_y			=UnpackUintToVec4(packedOutputTexture3d[idx_y]);
@@ -547,7 +549,7 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 		float dens_y			=cloudDensity[idx_y].z;
 		float dens_z			=cloudDensity[idx_z].z;
 
-		illum_prev				=illum_x*lightDot.x+illum_y*lightDot.y+illum_z*lightDot.z;
+		illum_prev				=illum_z*lightDot.x+illum_y*lightDot.y+illum_z*lightDot.z;
 
 		density					=dens_x*lightDot.x+dens_y*lightDot.y+dens_z*lightDot.z;
 	}
@@ -558,7 +560,7 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 	illum.x			*=max(.01,exp(-extinctionPerKm*thicknessKm/12.0));
 	illum.y			*=exp(-extinctionPerKm*thicknessKm);
 	const float v	=127.0/255.0;
-	//illum.xyw		=lerp(current.xyw,illum.xyw,v);
+	illum.xyw		=lerp(current.xyw,illum.xyw,v);
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 

@@ -89,6 +89,8 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const ch
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext& deviceContext,size_t size,void* addr)
 {
+	if(mBindingSlot<0)
+		return;
     // Update the UBO data:
     glBindBuffer(GL_UNIFORM_BUFFER, mUBOId);
     glBufferSubData(GL_UNIFORM_BUFFER,0,size,addr);
@@ -289,10 +291,10 @@ Effect::Effect()
 {
 }
 
-void Effect::Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines)
+void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
 {
-   // SIMUL_COUT << "Loading OpenGL effect:" << filename_utf8 << std::endl;
-	crossplatform::Effect::Load(renderPlatform, filename_utf8,defines);
+	EnsureEffect(r, filename_utf8);
+	crossplatform::Effect::Load(r, filename_utf8,defines);
 }
 
 Effect::~Effect()
