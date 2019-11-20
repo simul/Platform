@@ -40,8 +40,11 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 	// But it doesn't. So instead we just list the objects and names.
 #ifdef _DEBUG
-	uint64_t *u=(uint64_t*)ds;
-	std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
+	if(simul::base::SimulInternalChecks)
+	{
+		uint64_t *u=(uint64_t*)ds;
+		std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
+	}
 #endif
 }
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
@@ -121,6 +124,34 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy2D);
 	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
 	vulkanDevice=nullptr;
+	
+	for(auto i:releaseBuffers)
+	{
+		vulkanDevice->destroyBuffer 		(i);
+	}
+	releaseBuffers.clear();
+	for(auto i:releaseBufferViews)
+	{
+		vulkanDevice->destroyBufferView 	(i);
+	}
+	releaseBufferViews.clear();
+	for(auto i:releaseMemories)
+	{
+		vulkanDevice->freeMemory 	(i);
+	}
+	releaseMemories.clear();
+}
+void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
+{
+	releaseBuffers.insert(b);
+}
+void RenderPlatform::PushToReleaseManager(vk::BufferView &v)
+{
+	releaseBufferViews.insert(v);
+}
+void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
+{
+	releaseMemories.insert(m);
 }
 
 void RenderPlatform::BeginFrame()

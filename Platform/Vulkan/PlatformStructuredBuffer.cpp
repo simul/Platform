@@ -222,17 +222,19 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
+	vulkan::RenderPlatform *rPlat=(vulkan::RenderPlatform *)renderPlatform;
 	for(auto i:perFrameBuffers)
     {
-		vulkanDevice->destroyBuffer 		(i.mBuffer);
-		vulkanDevice->destroyBufferView		(i.mBufferView);
-		vulkanDevice->freeMemory			(i.mMemory);
+		rPlat->PushToReleaseManager(i.mBuffer);
+		rPlat->PushToReleaseManager(i.mBufferView);
+		rPlat->PushToReleaseManager(i.mMemory);
 	}
+	perFrameBuffers.clear();
 	firstBuffer=lastBuffer=perFrameBuffers.end();
 	for(int i=0;i<kNumBuffers;i++)
     {
-		vulkanDevice->destroyBuffer 		(mReadBuffers[i]);
-		vulkanDevice->freeMemory			(mReadBufferMemory[i]);
+		rPlat->PushToReleaseManager(mReadBuffers[i]);
+		rPlat->PushToReleaseManager(mReadBufferMemory[i]);
     }
 	renderPlatform=nullptr;
 	delete [] buffer;

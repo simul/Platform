@@ -45,6 +45,9 @@ namespace simul
 			vk::Device *AsVulkanDevice() override;
 			vk::Instance *AsVulkanInstance();
 			vk::PhysicalDevice *GetVulkanGPU();
+			void PushToReleaseManager(vk::Buffer &);
+			void PushToReleaseManager(vk::BufferView &);
+			void PushToReleaseManager(vk::DeviceMemory &);
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
 			{
@@ -147,6 +150,9 @@ namespace simul
 			vk::Instance		*vulkanInstance=nullptr;
 			vk::PhysicalDevice	*vulkanGpu=nullptr;
 			vk::Device			*vulkanDevice=nullptr;
+			std::set<vk::Buffer> releaseBuffers;
+			std::set<vk::BufferView> releaseBufferViews;
+			std::set<vk::DeviceMemory> releaseMemories;
             vulkan::Texture*    mDummy2D=nullptr;
             vulkan::Texture*    mDummy3D=nullptr;
             vulkan::Texture*    mDummyTextureCube=nullptr;

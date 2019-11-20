@@ -20,7 +20,7 @@ void DeleteTextures(size_t num,GLuint *t)
 			SIMUL_BREAK_ONCE("Not a texture");
 		}
 	}
-	glDeleteTextures(num,t);
+	glDeleteTextures((GLsizei)num,t);
 }
 
 SamplerState::SamplerState():
@@ -189,7 +189,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	glGenTextures(1, &mTextureID);
 	{
 		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureID);
-		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 8, GL_RGBA8, width, length, loadedTextures.size());
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 8, GL_RGBA8, width, length,(GLsizei) loadedTextures.size());
 		for (unsigned int i = 0; i < loadedTextures.size(); i++)
 		{
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, width, length, 1, GL_RGBA, GL_UNSIGNED_BYTE, loadedTextures[i].data);
@@ -228,7 +228,7 @@ void Texture::InvalidateDeviceObjects()
 	residentHandles.clear();
 	for(auto i:mTextureFBOs)
 	{
-		glDeleteFramebuffers(i.size(),i.data());
+		glDeleteFramebuffers((GLsizei)i.size(),i.data());
 	}
 	mTextureFBOs.clear();
     std::set<GLuint> toDeleteTextures;

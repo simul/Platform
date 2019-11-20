@@ -173,7 +173,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext& deviceContext)
 crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 {
 	crossplatform::EffectPass* p    = new vulkan::EffectPass(renderPlatform,effect);
-	p->SetName(name);
+	p->SetName(((this->name+" ")+name).c_str());
 	passes_by_name[name]            = passes_by_index[i] = p;
 	return p;
 }

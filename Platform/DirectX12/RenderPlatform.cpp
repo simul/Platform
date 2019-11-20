@@ -1553,6 +1553,19 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
     SetViewports(deviceContext, 1, &targets->viewport);
 }
 
+void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& deviceContext)
+{
+	if(deviceContext.defaultTargetsAndViewport.num)
+	{
+		for(int i=0;i<deviceContext.defaultTargetsAndViewport.num;i++)
+		{
+			dx12::Texture *t=(dx12::Texture*)deviceContext.defaultTargetsAndViewport.textureTargets[i].texture;
+			if(t)
+				t->SetLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
+		}
+	}
+}
+
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
     deviceContext.GetFrameBufferStack().pop();

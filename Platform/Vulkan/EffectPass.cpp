@@ -522,6 +522,7 @@ void EffectPass::Initialize()
 	auto descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(b).setPBindings(layout_bindings);
 
 	result = vulkanDevice->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
+	SetVulkanName(renderPlatform,&mDescLayout,this->name+" descriptor set Layout");
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform,&mDescLayout,base::QuickFormat("%s Descriptor layout",name.c_str()));
 

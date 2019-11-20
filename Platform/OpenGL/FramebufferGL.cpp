@@ -141,13 +141,13 @@ bool FramebufferGL::CreateBuffers()
         buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality);
     }
 
-	glDeleteFramebuffers(mFBOId.size(),mFBOId.data());
+	glDeleteFramebuffers((GLsizei)mFBOId.size(),mFBOId.data());
 	
 	int faces=is_cubemap?6:1;
 	current_face = 0;
 	mFBOId.resize(mips*(faces));
     // Generate GL FBO:
-    glGenFramebuffers(mFBOId.size(), mFBOId.data());
+    glGenFramebuffers((GLsizei)mFBOId.size(), mFBOId.data());
 	auto &f=mFBOId.begin();
 	for(int i=0;i<mips;i++)
 	for(int j=0;j<faces;j++)
@@ -175,7 +175,7 @@ bool FramebufferGL::CreateBuffers()
 
 void FramebufferGL::InvalidateDeviceObjects()
 {
-	glDeleteFramebuffers(mFBOId.size(),mFBOId.data());
+	glDeleteFramebuffers((GLsizei)mFBOId.size(),mFBOId.data());
     mFBOId.clear();
 	BaseFramebuffer::InvalidateDeviceObjects();
 }

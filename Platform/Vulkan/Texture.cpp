@@ -209,12 +209,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	vulkanDevice->destroyBuffer(mBuffer, nullptr);
 	renderPlatform=nullptr;
 }
-/*
-vk::ImageView *Texture::GetDummyVulkanImageView(crossplatform::ShaderResourceType type)
-{
-    if(type==crossplatform::ShaderResourceType)
-	return nullptr;
-}*/
 
 void Texture::SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages,int startm,int num_mips)
@@ -441,6 +435,11 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 #include "Simul/Base/StringFunctions.h"
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
 {
+	mExternalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	if (rendertarget)
+		mExternalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	if (crossplatform::RenderPlatform::IsDepthFormat(f))
+		mExternalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 	crossplatform::TextureCreate textureCreate;
 	textureCreate.arraysize = 1;
 	textureCreate.external_texture = t;
@@ -613,8 +612,8 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	vk::ImageAspectFlags imageAspectFlags=vk::ImageAspectFlagBits::eColor;
 	if(crossplatform::RenderPlatform::IsDepthFormat(f))
 		imageAspectFlags=vk::ImageAspectFlagBits::eDepth;
-	if(isDepthTarget&&crossplatform::RenderPlatform::IsStencilFormat(f))
-		imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
+	//if(crossplatform::RenderPlatform::IsStencilFormat(f))
+	//	imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	vk::ImageViewCreateInfo viewCreateInfo = vk::ImageViewCreateInfo()
 		.setImage(mImage)
@@ -1059,6 +1058,11 @@ vk::ImageLayout Texture::GetLayout(int layer, int mip) const
 	return currentImageLayout;
 }
 
+void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
+{
+	SetLayout(deviceContext, mExternalLayout);
+}
+
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLayout newLayout, int layer, int mip)
 {
 	//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
@@ -1096,9 +1100,11 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 
 		return flags;
 	};
-	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
-	if (depthStencil)
-		aspectMask = vk::ImageAspectFlagBits::eDepth;
+	vk::ImageAspectFlags aspectMask=vk::ImageAspectFlagBits::eColor;
+	if(crossplatform::RenderPlatform::IsDepthFormat(pixelFormat))
+		aspectMask=vk::ImageAspectFlagBits::eDepth;
+	if(crossplatform::RenderPlatform::IsStencilFormat(pixelFormat))
+		aspectMask|=vk::ImageAspectFlagBits::eStencil;
 	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
 	vk::AccessFlags dstAccessMask = DstAccessMask(newLayout);
 	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
