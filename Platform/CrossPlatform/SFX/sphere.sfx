@@ -251,7 +251,15 @@ shader vec4 DebugPS(v2f IN) : SV_TARGET
 	return c;
 }
 
+shader vec4 FillPS(v2f IN) : SV_TARGET
+{
+    vec4 c		=IN.colour;
+	c.rgb*=IN.colour.a;
+	return c;
+}
+
 PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
+PixelShader fillps_5_0=CompileShader(ps_5_0,FillPS());
 
 BlendState DontWriteColour
 {
@@ -343,9 +351,9 @@ technique draw_circle_on_sphere
 		SetRasterizerState(RenderNoCull);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_DrawFilledCircleOnSphere()));
-		SetPixelShader(debugps_5_0);
+		SetPixelShader(fillps_5_0);
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(StencilBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 	pass outline
 	{
@@ -357,7 +365,6 @@ technique draw_circle_on_sphere
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
 }
-
 
 
 technique draw_arc_on_sphere

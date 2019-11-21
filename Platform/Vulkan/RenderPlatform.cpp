@@ -123,7 +123,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy3D);
 	SAFE_DELETE(mDummy2D);
 	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
-	vulkanDevice=nullptr;
 	
 	for(auto i:releaseBuffers)
 	{
@@ -139,6 +138,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	{
 		vulkanDevice->freeMemory 	(i);
 	}
+	vulkanDevice=nullptr;
 	releaseMemories.clear();
 }
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)

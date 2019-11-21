@@ -26,6 +26,7 @@ namespace simul
 
 		private:
 			ID3D12Resource*				mGpuHeap;
+			ID3D12Resource*				mIntermediateHeap;
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;
 			D3D12_VERTEX_BUFFER_VIEW	mVertexBufferView;

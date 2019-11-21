@@ -30,11 +30,11 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Layout
 		{
 		protected:
-			int apply_count;
-			int struct_size;
+			int apply_count=0;
+			int struct_size=0;
 			std::vector<LayoutDesc> parts;
-			Topology topology;
-			bool interleaved;
+			Topology topology=Topology::UNDEFINED;
+			bool interleaved=false;
 		public:
 			Layout();
 			virtual ~Layout();
