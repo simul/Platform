@@ -996,18 +996,18 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	textureDetailsMap.clear();
 	textureCharMap.clear();
 	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
-	std::vector<std::string> filepathsUtf8=renderPlatform->GetShaderBinaryPathsUtf8();
+	std::vector<std::string> binaryPaths=renderPlatform->GetShaderBinaryPathsUtf8();
 	std::string filenameUtf8=filename_utf8;
 	std::string binFilenameUtf8 = filenameUtf8;
 
 	if (binFilenameUtf8.find(".sfxo") == std::string::npos)
 		binFilenameUtf8 += ".sfxo";
-	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(binFilenameUtf8.c_str(), filepathsUtf8);
+	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(binFilenameUtf8.c_str(), binaryPaths);
 	std::string filepathUtf8;
-	if (index < 0 || index >= filepathsUtf8.size())
+	if (index < 0 || index >= binaryPaths.size())
 		filepathUtf8 = "";
-	else if (index < filepathsUtf8.size())
-		filepathUtf8 = filepathsUtf8[index];
+	else if (index < binaryPaths.size())
+		filepathUtf8 = binaryPaths[index];
 
 	binFilenameUtf8 = filepathUtf8 + binFilenameUtf8;
 #ifdef __ORBIS__
@@ -1022,6 +1022,16 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
 			SIMUL_CERR<<"Shader effect file not found: "<< binFilenameUtf8.c_str()<<std::endl;
+			static bool already = false;
+			if (!already)
+			{
+				std::cerr << "Binary paths searched: "<< std::endl;
+				for (auto p : binaryPaths)
+				{
+					std::cerr << "\t"<<p.c_str() << std::endl;
+				}
+				already = true;
+			}
 			// We now attempt to build the shader from source.
 			Compile(filename_utf8);
 			if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
