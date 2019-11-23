@@ -378,7 +378,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth,bool msaa)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	
-	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
+	//vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec2 screen_texc		=vec2(0.5*(IN.clipPos.x/IN.clipPos.w+1.0),0.5*(1.0-IN.clipPos.y/IN.clipPos.w));
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
 	vec4 dlookup; 
@@ -448,7 +448,7 @@ shader vec4 PS_Main_ForwardDepth_MSAA(transformedVertex IN) : SV_TARGET
 
 vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth,bool msaa)
 {
-	vec2 texc 				=vec2(IN.texc.x,1.0-IN.texc.y);
+	//vec2 texc 				=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec2 screen_texc = vec2(0.5*(IN.clipPos.x / IN.clipPos.w + 1.0), 0.5*(1.0 - IN.clipPos.y / IN.clipPos.w));
 	vec2 depth_texc = viewportCoordToTexRegionCoord(screen_texc, viewportToTexRegionScaleBias);
 	vec4 dlookup;

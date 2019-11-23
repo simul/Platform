@@ -105,7 +105,7 @@ TextRenderer::FontIndex defaultFontIndices[]={
 {0.573242f	,0.576172f		,3},
 {0.577148f	,0.583984f		,7},
 };
-
+static int max_chars=500;
 
 TextRenderer::TextRenderer()
 	:effect(NULL)
@@ -127,7 +127,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
-	fontChars.RestoreDeviceObjects(renderPlatform,70,false,false);
+	fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false);
 	RecompileShaders();
 	ERRNO_BREAK
 	SAFE_DELETE(font_texture);
@@ -209,7 +209,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	int w=0;
 	int maxw = 0;
 	int lines = 1;
-	for(int i=0;i<70;i++)
+	for(int i=0;i<max_chars;i++)
 	{
 		if(txt[i]==0)
 			break;
@@ -241,12 +241,12 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 		renderPlatform->DrawQuad(deviceContext);
 		effect->Unapply(deviceContext);
 	}
-	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + fontScale* 18.F) / screen_height, 0, 2.0f*16 * fontScale / screen_height);
+	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + ht)/screen_height, 0, 2.0f*ht / screen_height);
 	int n=0;
 	static float u = 1024.f / font_texture->width;
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
 	float x = x0;
-	for(int i=0;i<70;i++)
+	for(int i=0;i<max_chars;i++)
 	{
 		if(txt[i]==0)
 			break;

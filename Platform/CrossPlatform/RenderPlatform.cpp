@@ -1010,19 +1010,9 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	int h=(int)viewport.h;
 	int pos=0;
 
-	while(*text!=0)
+	if(*text!=0)
 	{
 		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);
-		while(*text!='\n'&&*text!=0)
-		{
-			text++;
-			pos++;
-		}
-		if(!(*text))
-			break;
-		text++;
-		pos++;
-		y+=16;
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
