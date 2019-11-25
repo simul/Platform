@@ -190,6 +190,10 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
             }
         }
     }
+	if (pass->usesRwTextures())
+	{
+		//glMemoryBarrier(GL_ALL_BARRIER_BITS);
+	}
 }
 
 crossplatform::Mesh* RenderPlatform::CreateMesh()

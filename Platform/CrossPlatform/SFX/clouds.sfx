@@ -52,7 +52,11 @@ uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
 */ 
 uniform Texture2D cloudMaskTexture;
 uniform Texture3D precipitationVolume;
-uniform RWTexture3D<vec4> precipitationVolumeRW;
+#ifdef SFX_TYPED_UAV_LOADS
+uniform RWTexture3D<uchar4> precipitationVolumeRW;
+#else
+uniform RWTexture3D<uint> precipitationVolumeRW;
+#endif
 
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
@@ -721,7 +725,6 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 		}
 		total_cloud = saturate((total_cloud - 0) / 0.1);
 
-		//vec4 current = precipitationVolumeRW[idx];
 		precipitationVolumeRW[idx] = vec4(0.0, max_tex_z, 0.0, total_cloud);
 		return;
 	}
@@ -776,7 +779,7 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 		return;
 
 	//Create old and new values
-	vec4 current = precipitationVolumeRW[idx];
+	vec4 current = UnpackUintToVec4(precipitationVolumeRW[idx]);
 	vec4 res = vec4(precipitation, current.g, rainToSnow, current.a) * map_lookup * precipitationMask;
 
 	if (current.r != 0.0)
@@ -785,7 +788,7 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 	res.ga = current.ga;
 
 	//Write to precipitation_volume
-	IMAGE_STORE(precipitationVolumeRW, idx, res);
+	IMAGE_STORE(precipitationVolumeRW, idx, PackVec4ToUint(res));
 }
 
 CS_LAYOUT(4,4,4)
