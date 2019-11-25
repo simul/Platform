@@ -161,6 +161,16 @@
 			r.y=y/v.y;
 			return r;
 		}
+		void operator*=(float m)
+		{
+			x*=m;
+			y*=m;
+		}
+		void operator/=(float m)
+		{
+			x/=m;
+			y/=m;
+		}
 		friend vec2 operator*(float m,vec2 v)
 		{
 			vec2 r;

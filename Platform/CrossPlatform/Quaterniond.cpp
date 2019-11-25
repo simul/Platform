@@ -1,6 +1,7 @@
 #define NOMINMAX
 #define SIM_MATH
 #include "Quaterniond.h"
+#include "Simul/Base/RuntimeError.h"
 
 #include <math.h>
 #include <algorithm>
@@ -131,12 +132,14 @@ double Quaterniond::AngleInDirection(const vec3d &vv) const
 {
 	double dp=dot(vv,vec3d(x,y,z));
 	double halfangle=asin(dp);
-	return halfangle*2.f;
+	ERRNO_BREAK
+	return halfangle*2.0;
 }
 double Quaterniond::Angle() const
 {
 	double halfangle=acos(std::min(1.0,std::max(-1.0,s)));
-	return halfangle*2.f;
+	ERRNO_BREAK
+	return halfangle*2.0;
 }
 void Quaterniond::Define(double angle,const vec3d &vv)
 {
@@ -370,3 +373,89 @@ void Quaterniond::Rotate(const vec3d &d)
 	}
 }
 
+
+
+double angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
+{
+	crossplatform::Quaterniond Q1 = q1;
+	crossplatform::Quaterniond Q2 = q2;
+	Q1.MakeUnit();
+	Q2.MakeUnit();
+
+	double dot = Q1.x*Q2.x + Q1.y*Q2.y + Q1.z*Q2.z + Q1.s*Q2.s;
+
+	if (dot < 0.0)
+		dot = 0.0;
+	if (dot > 1.0)
+		dot = 1.0;
+
+	return 2 * acos(dot);  //Angle between input quaternions
+}
+
+
+
+Quaterniond simul::crossplatform::rotateByOffsetCartesian(const Quaterniond& input, const vec2& offset, float sph_radius)
+{
+	//Check there's an offset;
+	if (offset.x == 0 || offset.y == 0)
+		return input;
+
+	//Check's if the sph_radius is valid
+	if (sph_radius <= 0)
+		return input;
+
+	float x_rad = offset.x / sph_radius;
+	float y_rad = offset.y / sph_radius;
+	crossplatform::Quaterniond x_rot(x_rad, vec3(0.0, 1.0, 0.0));
+	crossplatform::Quaterniond y_rot(-y_rad, vec3(1.0, 0.0, 0.0));
+
+	return x_rot * y_rot * input;
+}
+
+Quaterniond simul::crossplatform::rotateByOffsetPolar(const Quaterniond& input, float polar_radius, float polar_angle, float sph_radius)
+{	
+	//Check there's an offset;
+	if (polar_radius == 0 || polar_angle == 0)
+		return input;
+
+	//Check's if the sph_radius is valid
+	if (sph_radius <= 0)
+		return input;
+
+	//Calculate angle offset from equatorial plane				
+	double phi = polar_angle;							//double phi = atan2(offset.y, offset.x);
+	//Calculate angle of the arclength from the offset 
+	double theta = polar_radius / sph_radius;			//double theta = (double)(length(offset) / sph_radius);
+	
+	const crossplatform::Quaterniond identity(0, 0, 0, 1);
+	const vec3d z(0.0, 0.0, 1.0);
+	//The input quaternion can be thought as a rotation of the identity quaternion about its axis.
+	//The global position of the transformed identity quaternion z1 = q * z *q^-1;
+	vec3d z1 = input * z;
+
+	crossplatform::Quaterniond r = input;
+	r.Rotate(theta, z);
+
+	crossplatform::Quaterniond r1 = identity;
+	r1.Rotate(phi, z1);
+
+	return r1 * r; //Applies 'z-axis/north pole' rotation, then 'angle offset from equatorial plane' rotation.
+}
+
+
+crossplatform::Quaterniond simul::crossplatform::LocalToGlobalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& local)
+{
+	// rel is a rotation in local space. Convert it first to global space:
+	crossplatform::Quaterniond new_relative = (origin * (local / origin));
+	// And now we rotate to the new origin:
+	crossplatform::Quaterniond new_quat = new_relative * origin;
+	return new_quat;
+}
+crossplatform::Quaterniond simul::crossplatform::GlobalToLocalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& global)
+{
+	// abso is an orientation in global space. First get the global rotation between the keyframe's origin and abso:
+	crossplatform::Quaterniond dq = global/ origin;
+	// Then convert this into the space of the keyframe:
+	crossplatform::Quaterniond rel = ((!origin) * dq) * origin;
+	return rel;
+}

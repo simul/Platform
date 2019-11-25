@@ -599,7 +599,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                                                         we just set it for every applied texture
                     cloudVolume[samplerSlot + 1] --->   this is the texture + sampling state from 'samplerSlot'
     */
-    for (unsigned int i = 0; i < numResourceSlots; i++)
+    for (unsigned int i = 0; i < (unsigned)numResourceSlots; i++)
     {
         // Find the texture in the texture assignment:
         int slot                = resourceSlots[i];
@@ -785,7 +785,7 @@ void TexHandlesUBO::Init(size_t count, GLuint program, int index, int slot)
     // Generate the UBO:
     glGenBuffers(1, &mId);
     glBindBuffer(GL_UNIFORM_BUFFER, mId);
-	size=count;
+	size=(int)count;
     glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
