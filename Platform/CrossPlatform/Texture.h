@@ -210,6 +210,10 @@ namespace simul
 			unsigned long long GetFence() const;
 			/// Clear the fence: this texture is ok to use now.
 			void ClearFence();
+			/// For API's that care about Resource State, aka Layout, tell the Simul API what state it was in to begin with.
+			virtual void StoreExternalState(bool make_rt, bool setDepthStencil,bool need_srv){}
+			/// For API's that care about Resource State, aka Layout, restore the state internally.
+			virtual void RestoreExternalTextureState(DeviceContext &) {}
 			/// Is the texture "unfenceable": if so, it need never be checked for fences, either because it is constant,
 			/// or because we don't care if it's not been updated.
 			bool IsUnfenceable() const

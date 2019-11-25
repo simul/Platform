@@ -149,4 +149,5 @@ posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 #endif
 	return OUT;
 }
+
 #endif

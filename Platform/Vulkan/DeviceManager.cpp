@@ -133,6 +133,7 @@ bool DeviceManager::IsActive() const
 
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {
+ 	ERRNO_BREAK
 	uint32_t instance_extension_count = 0;
 	uint32_t instance_layer_count = 0;
 	uint32_t validation_layer_count = 0;
@@ -145,7 +146,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	char const *const instance_validation_layers_alt2[] = { "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation",
 														   "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",
 														   "VK_LAYER_GOOGLE_unique_objects" };
-
+	
+ 	ERRNO_BREAK
 	// Look for validation layers
 	vk::Bool32 validation_found = VK_FALSE;
 	if (use_debug)
@@ -191,6 +193,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				"vkCreateInstance Failure");
 		}
 	}
+ 	ERRNO_BREAK
 
 	/* Look for instance extensions */
 	vk::Bool32 surfaceExtFound = VK_FALSE;
@@ -283,6 +286,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		}
 		delete[] instance_extensions;
 	}
+ 	ERRNO_BREAK
 
 	if (!surfaceExtFound)
 	{
@@ -342,6 +346,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"vkCreateInstance Failure");
 #endif
 	}
+ 	ERRNO_BREAK
 	auto const app = vk::ApplicationInfo()
 		.setPApplicationName("Simul")
 		.setApplicationVersion(0)
@@ -354,8 +359,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setPpEnabledLayerNames(instance_validation_layers)
 		.setEnabledExtensionCount(enabled_extension_count)
 		.setPpEnabledExtensionNames(extension_names.data());
-
+ 	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
+	// Vulkan sets errno without warning or error.
+	errno=0;
+ 	ERRNO_BREAK
 	if (result == vk::Result::eErrorIncompatibleDriver)
 	{
 		SIMUL_BREAK(
@@ -378,11 +386,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"Please look at the Getting Started guide for additional information.\n"
 			"vkCreateInstance Failure");
 	}
+ 	ERRNO_BREAK
 
 	/* Make initial call to query gpu_count, then second call for gpu info*/
 	uint32_t gpu_count;
 	result = deviceManagerInternal->instance.enumeratePhysicalDevices((uint32_t*)&gpu_count, (vk::PhysicalDevice*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
+ 	ERRNO_BREAK
 
 	if (gpu_count > 0)
 	{
@@ -400,7 +410,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"Please look at the Getting Started guide for additional information.\n"
 			"vkEnumeratePhysicalDevices Failure");
 	}
-
+ 	ERRNO_BREAK
 	/* Look for device extensions */
 	uint32_t device_extension_count = 0;
 	vk::Bool32 swapchainExtFound = VK_FALSE;
@@ -409,7 +419,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
-
+ 	ERRNO_BREAK
 	if (device_extension_count > 0)
 	{
 		std::unique_ptr<vk::ExtensionProperties[]> device_extensions(new vk::ExtensionProperties[device_extension_count]);
@@ -435,6 +445,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"Please look at the Getting Started guide for additional information.\n"
 			"vkCreateInstance Failure");
 	}
+ 	ERRNO_BREAK
 
 	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
 	
@@ -445,10 +456,12 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	//  features based on this query
 	vk::PhysicalDeviceFeatures physDevFeatures;
 	deviceManagerInternal->gpu.getFeatures(&physDevFeatures);
+ 	ERRNO_BREAK
 
 	if(use_debug)
 		InitDebugging();
 	CreateDevice();
+ 	ERRNO_BREAK
 }
 
 
@@ -486,7 +499,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 
 void DeviceManager::SetupDebugCallback()
 {
-	#ifdef _DEBUG
+	#if 1//def _DEBUG
 /* Load VK_EXT_debug_report entry points in debug builds */
 		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>     (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
 		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>            (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));

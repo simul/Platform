@@ -21,6 +21,7 @@ namespace simul
 			virtual ~SphereRenderer();
 			void RestoreDeviceObjects(RenderPlatform *r);
 			void InvalidateDeviceObjects();
+			void RecompileShaders();
 
 			void DrawLatLongSphere	(DeviceContext &deviceContext,int lat,int longi,vec3 origin,float sph_radius,vec4 colour);
 			void DrawQuad			(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,float sph_radius,vec4, vec4 fill_colour = vec4(0.f, 0.f, 0.f, 0.f));
@@ -31,7 +32,7 @@ namespace simul
 
 		protected:
 			crossplatform::ConstantBuffer<SphereConstants> sphereConstants;
-			std::unique_ptr<crossplatform::Effect> effect;
+			crossplatform::Effect  *effect=nullptr;
 		};
 	}
 }

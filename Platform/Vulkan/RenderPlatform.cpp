@@ -40,8 +40,11 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 	// But it doesn't. So instead we just list the objects and names.
 #ifdef _DEBUG
-	uint64_t *u=(uint64_t*)ds;
-	std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
+	if(simul::base::SimulInternalChecks)
+	{
+		uint64_t *u=(uint64_t*)ds;
+		std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
+	}
 #endif
 }
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
@@ -120,7 +123,35 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy3D);
 	SAFE_DELETE(mDummy2D);
 	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
+	
+	for(auto i:releaseBuffers)
+	{
+		vulkanDevice->destroyBuffer 		(i);
+	}
+	releaseBuffers.clear();
+	for(auto i:releaseBufferViews)
+	{
+		vulkanDevice->destroyBufferView 	(i);
+	}
+	releaseBufferViews.clear();
+	for(auto i:releaseMemories)
+	{
+		vulkanDevice->freeMemory 	(i);
+	}
 	vulkanDevice=nullptr;
+	releaseMemories.clear();
+}
+void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
+{
+	releaseBuffers.insert(b);
+}
+void RenderPlatform::PushToReleaseManager(vk::BufferView &v)
+{
+	releaseBufferViews.insert(v);
+}
+void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
+{
+	releaseMemories.insert(m);
 }
 
 void RenderPlatform::BeginFrame()
@@ -268,6 +299,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
 {
+	if(!deviceContext.contextState.currentEffectPass)
+		return;
     BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
     ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
@@ -1379,7 +1412,7 @@ void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_c
 	{
 		attachments[i]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(pixelFormat))
 														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
+														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eDontCare)
 														  .setStoreOp(vk::AttachmentStoreOp::eStore)
 														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

@@ -21,7 +21,9 @@
 	,"combineTexturesSamplers"		: true
 	,"maintainSamplerDeclaration"	: true
 	,"combineInShader"				: false
-	,"getSizeExpression"			: "ivec{return_size} iv{tmpName} = {type}({textureName}{args});\n"
+	,"supportsPercentOperator"		: false
+	,"getSizeExpression"			: "ivec{dim:{textureName}} {tempName} = textureSize({textureName}{args});\n"
+	,"getRWSizeExpression"			: "ivec{return_size} {tempName} = imageSize({textureName}{args});\n"
 	,"textureDeclaration"			: "layout(binding = {slot}) uniform {type} {name};"
 	,"imageDeclaration"				: "layout({fqualifier},binding={slot}) uniform {type} {name};"
 	,"imageDeclarationWriteOnly"	: "writeonly layout(binding={slot}) uniform {type} {name};"

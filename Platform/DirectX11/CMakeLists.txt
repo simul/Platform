@@ -13,7 +13,7 @@ file(GLOB HEADERS
 )
 
 file(GLOB SHADERS
-	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SFX/*.sfx" 
+	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SFX/*.sfx" # "HLSL/*.*"
 )
 
 

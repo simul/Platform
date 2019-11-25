@@ -398,16 +398,16 @@ void DisplaySurface::InitSwapChain()
 		.setPresentMode(swapchainPresentMode)
 		.setClipped(true)
 		.setOldSwapchain(oldSwapchain);
-	bool supported=false;
+	int supported=0;
 	vkGetPhysicalDeviceSurfaceSupportKHR(*vulkanRenderPlatform->GetVulkanGPU(),0,mSurface, (vk::Bool32*) & supported);
-	SIMUL_ASSERT(supported );
+	SIMUL_ASSERT(supported!=0 );
 	
 	// MUST do GetQueues before creating the swapchain, because getSurfaceSupportKHR is treated as a PREREQUISITE
 	// to create the device, even though it's defined as a TEST. This is bad API design.
 	GetQueues();
 	result = gpu->getSurfaceSupportKHR( 0,  mSurface,(vk::Bool32*)&supported) ;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SIMUL_ASSERT(supported);
+	SIMUL_ASSERT(supported!=0);
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);

@@ -58,9 +58,18 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float baseNoiseFactor;
 	uniform float max_density_gm3;
 
+	uniform int3 gridEdge;	// the effective edge of the grid, farthest from the origin.
 	uniform float edgeSharpness;
-	uniform float padding4;
-	uniform vec2 padding5;
+
+	vec3 lightAbs;
+	uniform float pada;
+
+	vec3 lightDot;
+	uniform float padd;
+
+	int3 idxOffset;
+
+	uniform float cloudLayerThicknessKm;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus

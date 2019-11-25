@@ -85,6 +85,7 @@ namespace simul
 
 			/// We need a renderpass before we can create any framebuffers!
 			void			InitFramebuffers(crossplatform::DeviceContext &deviceContext);
+			void			RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext);
 			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
 			void			SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLayout imageLayout,int layer=-1,int mip=-1);
 			/// Assume the texture will be in this layout due to internal Vulkan shenanigans.
@@ -131,7 +132,7 @@ namespace simul
 			std::vector<LoadedTexture>					loadedTextures;
 			bool split_layouts;
 			int	 mNumSamples = 1;
-
+			vk::ImageLayout mExternalLayout;
 		public:
 			vk::Image GetImage()const { return mImage; } //AJR
         };

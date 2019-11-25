@@ -25,7 +25,8 @@ namespace simul
 			D3D12_INDEX_BUFFER_VIEW*	GetIndexBufferView() override;
 
 		private:
-			ID3D12Resource*				mUploadHeap;
+			ID3D12Resource*				mGpuHeap;
+			ID3D12Resource*				mIntermediateHeap;
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;
 			D3D12_VERTEX_BUFFER_VIEW	mVertexBufferView;

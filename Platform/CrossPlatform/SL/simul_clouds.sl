@@ -43,6 +43,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
 	vec3 ambient				=amb_lookup.rgb*light.w;
 	vec4 c;
+	
 	float l						=lerp(0.75, 1.2, density.z);
 	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z*fade;
@@ -98,41 +99,52 @@ void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,vec4
 	density				=sample_3d_lod(cloudDensity,wwcSamplerState,pos,mip);
 	// NOTE: VERY VERY IMPORTANT to use the original, not noise-modified, texture-coordinates for light.
 	light				=sample_3d_lod(cloudLight,wwcSamplerState,texCoords,mip);
+
 //	float tz			=texCoords.z*32.0;
 //	density.z			*=saturate(tz+1.0)*saturate(32.0-tz);
 }
 
 
-float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
+float GetRainAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm,float rainEdgeKm)
 {
-	vec3 rain_texc		=cloudWorldOffsetKm;
-	rain_texc.xy		+=rain_texc.z*rainTangent;
+	vec3 rain_texc = cloudWorldOffsetKm;
+	rain_texc.xy += rain_texc.z*rainTangent;
 	#ifdef SFX_OPENGL
 	rain_texc.y = 1.0 - rain_texc.y;
 	#endif
-	vec4 rain_lookup	=rainMapTexture.SampleLevel(wwcSamplerState,rain_texc.xy*inverseScalesKm.xy,0);
-	/*vec3 cloudWorldCentreOffsetKm;
-	vec2 scalesKm = 1.0 / inverseScalesKm.xy;
-	cloudWorldCentreOffsetKm.x = cloudWorldOffsetKm.x > (scalesKm.x/2.0) ? (cloudWorldOffsetKm.x - scalesKm.x) : cloudWorldOffsetKm.x;
-	cloudWorldCentreOffsetKm.y = cloudWorldOffsetKm.y > (scalesKm.y/2.0) ? (cloudWorldOffsetKm.y - scalesKm.y) : cloudWorldOffsetKm.y;*/
+	rain_texc *= inverseScalesKm;
 
-	//return rain_lookup.x *saturate((rainRadiusKm-length(cloudWorldCentreOffsetKm.xy-rainCentreKm.xy))*3.0) *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
-	return rain_lookup.x *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
+	//Force nearest filtering on z-axis
+	vec3 pvSize;
+	GET_DIMENSIONS_3D(precipitationVolume, pvSize.x, pvSize.y, pvSize.z);
+	uint z_texel = uint(rain_texc.z * pvSize.z);
+	rain_texc.z = (float(z_texel) + 0.5)/pvSize.z;
+
+	vec4 rain_lookup = precipitationVolume.SampleLevel(wwcSamplerState, rain_texc, 0);
+	//return rain_lookup.x *saturate((rainRadiusKm-length(cloudWorldOffsetKm.xy-rainCentreKm.xy))*3.0) *saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/2.0); 
+	return rain_lookup.x * rain_lookup.a * saturate((20.0*rain_lookup.y - cloudWorldOffsetKm.z) / 2.0);
 	
 }
-float GetRainToSnowAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm)
+float GetRainToSnowAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km)
 {
-	vec3 rain_texc		=cloudWorldOffsetKm;
-	rain_texc.xy		+=rain_texc.z*rainTangent;
+	vec3 rain_texc = cloudWorldOffsetKm;
+	rain_texc.xy += rain_texc.z*rainTangent;
 	#ifdef SFX_OPENGL
 	rain_texc.y = 1.0 - rain_texc.y;
 	#endif
-	vec4 rain_lookup	=rainMapTexture.SampleLevel(wwcSamplerState,rain_texc.xy*inverseScalesKm.xy,0);
-	return				rain_lookup.z;
+	rain_texc *= inverseScalesKm;
+
+	//Force nearest filtering on z-axis
+	vec3 pvSize;
+	GET_DIMENSIONS_3D(precipitationVolume, pvSize.x, pvSize.y, pvSize.z);
+	uint z_texel = uint(rain_texc.z * pvSize.z);
+	rain_texc.z = (float(z_texel) + 0.5)/pvSize.z;
+
+	vec4 rain_lookup = precipitationVolume.SampleLevel(wwcSamplerState, rain_texc, 0);
+	return rain_lookup.z;
 }
 
-
-	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
+vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
 
 void DebugStep(inout vec4 colour[NUM_CLOUD_INTERP]
 	,vec4 rgba,inout float brightness_factor)

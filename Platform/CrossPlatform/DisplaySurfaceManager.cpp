@@ -79,6 +79,8 @@ void DisplaySurfaceManager::Shutdown()
 
 void DisplaySurfaceManager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
+	if(!ci)
+		return;
 	AddWindow(hwnd);
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;

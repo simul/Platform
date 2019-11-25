@@ -29,5 +29,39 @@ uint reversebits(uint value){return bitfieldReverse(value);}
 #define uint3 uvec3
 #define uint4 uvec4
 
+
+// Functions to FORCE mod (or % operator) to return the correct type, for poorly-implemented GLSL compilers:
+int typed_mod(int a,int b)
+{
+	return int(mod(a,b));
+}
+int2 typed_mod(int2 a,int2 b)
+{
+	return int2(mod(a,b));
+}
+int3 typed_mod(int3 a,int3 b)
+{
+	return int3(mod(a,b));
+}
+int4 typed_mod(int4 a,int4 b)
+{
+	return int4(mod(a,b));
+}
+uint typed_mod(uint a,uint b)
+{
+	return uint(mod(a,b));
+}
+uint2 typed_mod(uint2 a,uint2 b)
+{
+	return uint2(mod(a,b));
+}
+uint3 typed_mod(uint3 a,uint3 b)
+{
+	return uint3(mod(a,b));
+}
+uint4 typed_mod(uint4 a,uint4 b)
+{
+	return uint4(mod(a,b));
+}
 #endif
 #endif

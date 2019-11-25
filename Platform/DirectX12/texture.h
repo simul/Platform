@@ -55,6 +55,9 @@ namespace simul
 			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
 			bool							IsValid() const;
 			
+			void StoreExternalState(bool make_rt, bool setDepthStencil,bool need_srv);
+			void RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
+
 			ID3D12Resource*					AsD3D12Resource() override;
 			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1);
 			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(int index = -1, int mip = -1);
@@ -71,6 +74,7 @@ namespace simul
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void							setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
+			bool							EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *create) override;	
 			bool							ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1,bool rendertargets=false);
 			bool							ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, 
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
@@ -103,13 +107,17 @@ namespace simul
 			//! Returns the current state of the resource or subresource if provided.
 			D3D12_RESOURCE_STATES GetCurrentState(int mip = -1, int index = -1);
 			//! Sets the state of the resource or subresource if provided.
-			void SetCurrentState(D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
+			void SetLayout(D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
 
 			DXGI_FORMAT	dxgi_format;
 			// Need an active command list to finish loading a texture!
 			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
 		protected:
+			bool							EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, 
+																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
+																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0,crossplatform::CompressionFormat																		cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
 			void											InitUAVTables(int l, int m);
 			void											FreeUAVTables();
 
@@ -130,6 +138,8 @@ namespace simul
 			std::vector<std::vector<D3D12_RESOURCE_STATES>>	mSubResourcesStates;
 			//! Full resource state
 			D3D12_RESOURCE_STATES							mResourceState;
+			D3D12_RESOURCE_STATES			mExternalLayout;
+			bool split_layouts=true;
 
 			dx12::Heap						mTextureSrvHeap;
 			dx12::Heap						mTextureUavHeap;
@@ -155,10 +165,13 @@ namespace simul
 
             //! We need to store the old MSAA state
             DXGI_SAMPLE_DESC                mCachedMSAAState;
+
             int                             mNumSamples;
 			DirectX::TexMetadata	*metadata;
 			DirectX::ScratchImage	*scratchImage;
 			void *loadedData;
+			void SplitLayouts();
+			void AssumeLayout(D3D12_RESOURCE_STATES state);
 		};
 	}
 }

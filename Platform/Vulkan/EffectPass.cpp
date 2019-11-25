@@ -522,6 +522,7 @@ void EffectPass::Initialize()
 	auto descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(b).setPBindings(layout_bindings);
 
 	result = vulkanDevice->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
+	SetVulkanName(renderPlatform,&mDescLayout,this->name+" descriptor set Layout");
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform,&mDescLayout,base::QuickFormat("%s Descriptor layout",name.c_str()));
 
@@ -706,32 +707,37 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		colorBlendInfo.setAttachmentCount(1).setPAttachments(colorBlendAttachments);
 		
 		// from the vertex shader's layout:
-		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-		vk::VertexInputBindingDescription bindingDescription ;
-		bindingDescription.setBinding (0);
-		bindingDescription.setStride( v->layout.GetStructSize());
-		bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
-
-		const auto &layoutDesc=v->layout.GetDesc();
-		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
-		if(layoutDesc.size())
-			vertexInputs=new vk::VertexInputAttributeDescription[layoutDesc.size()];
-		int slot=0;
-		for(auto desc:layoutDesc)
-		{
-			vertexInputs[slot].binding = 0;
-			vertexInputs[slot].location = slot;
-			vertexInputs[slot].format = RenderPlatform::ToVulkanFormat(desc.format);
-			vertexInputs[slot].offset = desc.alignedByteOffset;
-			slot++;
-		}
 		
+		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
+		const auto &layoutDesc=v->layout.GetDesc();
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
 		if(layoutDesc.size())
 		{
+			vk::VertexInputBindingDescription bindingDescription ;
+			bindingDescription.setBinding (0);
+			bindingDescription.setStride( v->layout.GetStructSize());
+			bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
+
+			if(layoutDesc.size())
+				vertexInputs=new vk::VertexInputAttributeDescription[layoutDesc.size()];
+			int slot=0;
+			for(auto desc:layoutDesc)
+			{
+				vertexInputs[slot].binding = 0;
+				vertexInputs[slot].location = slot;
+				vertexInputs[slot].format = RenderPlatform::ToVulkanFormat(desc.format);
+				vertexInputs[slot].offset = desc.alignedByteOffset;
+				slot++;
+			}
 			vertexInputInfo.vertexBindingDescriptionCount = 1;
 			vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)layoutDesc.size();
 			vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 			vertexInputInfo.pVertexAttributeDescriptions = vertexInputs;
+		}
+		else
+		{
+			vertexInputInfo.vertexBindingDescriptionCount = 0;
+			vertexInputInfo.vertexAttributeDescriptionCount =0;
 		}
 
 	

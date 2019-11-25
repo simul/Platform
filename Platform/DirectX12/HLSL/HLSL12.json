@@ -1,10 +1,11 @@
 {
-	"compiler": "fxc.exe",
+	"compiler": "$SIMUL/External/DirectX/DXCompiler/dxc.exe",
 	"api": "DirectX 12",
 	"defaultOptions": "/T {shader_model} /nologo /Zi",
 	"sourceExtension": "hlsl",
 	"outputExtension": "cso",
 	"outputOption": "/Fo",
+	"debugOutputFileOption": "-Fd\"{filename_root}.pdb\"",
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,
 	"generateSlots": true,

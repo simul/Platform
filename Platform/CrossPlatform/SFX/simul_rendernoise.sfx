@@ -113,7 +113,7 @@ vec4 Worley(vec3 texc,int grid,int seed)
 			{
 				vec3 c		=vec3(i,j,k);
 				int3 u		=(ip+int3(i,j,k));
-				int3 v		=(u+int3(grid,grid,grid))%int3(grid,grid,grid);
+				int3 v		=int3((u+int3(grid,grid,grid))%int3(grid,grid,grid));
 				vec3 random	=SphericalRandom(vec3(v)*seed);
 				c			+=random.xyz;
 				vec3 diff	=loc - c;

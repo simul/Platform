@@ -22,7 +22,6 @@ namespace simul
 			,RGBA_8_UNORM_COMPRESSED
 			,RGBA_8_UNORM_SRGB
 			,BGRA_8_UNORM
-			,RGB10_A2_UNORM
 
 			,RGB_32_FLOAT
 			,RGB_32_UINT
@@ -57,6 +56,8 @@ namespace simul
 			, R_16_FLOAT
 			, R_8_UNORM
 			, R_8_SNORM
+			
+			,RGB10_A2_UNORM
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

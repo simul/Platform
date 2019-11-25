@@ -48,6 +48,14 @@ namespace simul
 			virtual void SetFormat(PixelFormat);
 			//! Set the API-dependent colour depth format for this framebuffer. Across all API's, setting 0 means no rendering to depth.
 			virtual void SetDepthFormat(PixelFormat);
+			PixelFormat GetFormat() const
+			{
+				return target_format;
+			}
+			PixelFormat GetDepthFormat() const
+			{
+				return depth_format;
+			}
 			virtual void SetGenerateMips(bool);
 			//! Clear the colour and depth buffers if present.
 			virtual void Clear(crossplatform::DeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
