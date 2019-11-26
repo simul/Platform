@@ -18,11 +18,13 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/clouds_lightpass.sl"
 #include "../SL/clouds_simple.sl"
 #include "../SL/clouds_raytrace.sl"
+#include "../SL/clouds_precise.sl"
 #include "../SL/states.sl"
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/gpu_cloud_constants.sl"
 #include "../SL/simul_gpu_clouds.sl"
 #include "../SL/noise.sl"
+#include "../SL/colour_packing.sl"
 
 uniform Texture3D cloudDensity				SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D cloudDensity2				SIMUL_TEXTURE_REGISTER(1);
@@ -35,6 +37,7 @@ uniform Texture2D lossTexture				SIMUL_TEXTURE_REGISTER(7);
 uniform TextureCube depthTexture;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
+uniform Texture2D cloudIndex;
 
 uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
 
@@ -59,6 +62,7 @@ uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> outputTexture3d			SIMUL_RWTEXTURE_REGISTER(0);
 #ifdef SFX_TYPED_UAV_LOADS
 uniform RWTexture3D<uchar4> packedOutputTexture3d	SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<uint> lightValid;
 #else
 uniform RWTexture3D<uint> packedOutputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
 #endif
@@ -162,39 +166,6 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-#ifdef SFX_TYPED_UAV_LOADS
-vec4 UnpackUintToVec4(vec4 a)
-{
-	return a;
-}
-vec4 PackVec4ToUint(vec4 a)
-{
-	return a;
-}
-#else
-
-vec4 UnpackUintToVec4(uint i)
-{
-	vec4 o;
-	o.r=((i&0x000000FFu)		)/255.0;
-	o.g=((i&0x0000FF00u)>>8u	)/255.0;
-	o.b=((i&0x00FF0000u)>>16u	)/255.0;
-	o.a=((i&0xFF000000u)>>24u	)/255.0;
-	return o;
-}
-
-uint PackVec4ToUint(vec4 i)
-{
-	uint o=0u;
-	i=saturate(i);
-	o|=(uint(i.x*255.0));
-	o|=(uint(i.y*255.0)<<8u);
-	o|=(uint(i.z*255.0)<<16u);
-	o|=(uint(i.w*255.0)<<24u);
-	//uint(i.w*255.0)|(uint(i.z*255.0)<<16u)|(uint(i.y*255.0)<<32u)|;
-	return o;
-}
-#endif
 
 // idx is the position relative to the grid centre texel.
 // we add gridCentreTexel and mod to get the true position in the texture.
@@ -503,6 +474,27 @@ shader void CS_WindowLighting(uint3 p : SV_DispatchThreadID)
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 
+#ifdef LIGHT_VALID_TEXTURE
+bool IsLightValid(int3 idx)
+{
+	uint bit=uint(idx.z)%uint(32);
+	uint valid_32=lightValid[int3(idx.xy,idx.z/32)].x;
+
+	uint valid=(valid_32>>bit)&uint(1);
+	
+	return valid==1;
+}
+
+void SetLightValid(int3 idx)
+{
+	uint bit=uint(idx.z)%uint(32);
+	int3 idx_32=int3(idx.xy,idx.z/32);
+	uint valid_32=lightValid[idx_32].x;
+	valid_32|=uint(1)<<bit;
+	lightValid[idx_32]=uint4(valid_32,0,0,0);
+}
+#endif
+
 // Incremental lighting: look at the surrounding three texels in the direction towards the light.
 CS_LAYOUT(4,4,4)
 shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
@@ -511,10 +503,10 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	//idx.xy		+=gridCentreTexel;
+	idx.xy		+=gridCentreTexel;
 	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
-	//idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
-	//idx.xy		=idx.xy%int2(windowGrid.xy);
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
 //	if(idx.x>=5||idx.y>=5||idx.x<0||idx.y<0)
 	//	return;
 	vec3 texc_o	=vec3(idx)/vec3(windowGrid);
@@ -532,15 +524,19 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 	// this means extinction distance is the distance to the top of the clouds
 	// clamped between 5km and 100km.
 	float thicknessKm		=stepLengthKm;
-	vec4 illum_prev			=vec4(1.0,1.0,1.0,1.0);
+	vec4 illum_prev			=vec4(1.0,1.0,0.0,0.0);
 	float density			=0;
 
-	if(idx.z!=gridEdge.z)
+	if(idx.z!=gridEdge.z&&idx.y!=gridEdge.y&&idx.x!=gridEdge.x)
 	{
 		int3 idx_x				=int3(((idx.x+idxOffset.x+windowGrid.x)%windowGrid.x),idx.yz);
 		int3 idx_y				=int3(idx.x,((idx.y+idxOffset.y+windowGrid.y)%windowGrid.y),idx.z);
 		int3 idx_z				=int3(idx.xy,idx.z+idxOffset.z);
-
+#ifdef LIGHT_VALID_TEXTURE
+		bool ok=IsLightValid(idx_x)&&IsLightValid(idx_y)&&IsLightValid(idx_z);
+#endif
+	//	if(!ok)
+	//		return;
 		vec4 illum_x			=UnpackUintToVec4(packedOutputTexture3d[idx_x]);
 		vec4 illum_y			=UnpackUintToVec4(packedOutputTexture3d[idx_y]);
 		vec4 illum_z			=UnpackUintToVec4(packedOutputTexture3d[idx_z]);
@@ -549,9 +545,9 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 		float dens_y			=cloudDensity[idx_y].z;
 		float dens_z			=cloudDensity[idx_z].z;
 
-		illum_prev				=illum_z*lightDot.x+illum_y*lightDot.y+illum_z*lightDot.z;
-
+		illum_prev				=illum_x*lightDot.x+illum_y*lightDot.y+illum_z*lightDot.z;
 		density					=dens_x*lightDot.x+dens_y*lightDot.y+dens_z*lightDot.z;
+		illum_prev.x			=max(max(illum_x.x,illum_y.x),illum_z.x);
 	}
 	thicknessKm		*=density;
 
@@ -561,6 +557,9 @@ shader void CS_IncrementalLighting(uint3 p : SV_DispatchThreadID)
 	illum.y			*=exp(-extinctionPerKm*thicknessKm);
 	const float v	=127.0/255.0;
 	illum.xyw		=lerp(current.xyw,illum.xyw,v);
+#ifdef LIGHT_VALID_TEXTURE
+	SetLightValid(idx);
+#endif
 	IMAGE_STORE_3D(packedOutputTexture3d, idx, PackVec4ToUint(illum));
 }
 
@@ -578,6 +577,11 @@ shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 	vec3 texc = vec3(pos) / vec3(targetTextureSize.xxy);
 	vec3 offset_texc = vec3(1.f, 1.f, 1.f) / vec3(targetTextureSize.xxy);
 	vec4 res;
+	if(pos.z==targetTextureSize.y-1)
+	{
+		res=vec4(0,0,0,0);
+	}
+	else
 	{
 		vec4 c1 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc, 0);
 		vec4 c2 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3( offset_texc.x,0, 0), 0);
@@ -588,7 +592,7 @@ shader void CS_CloudMip( uint3 p: SV_DispatchThreadID )
 		vec4 c7 = cloudDensity.SampleLevel(wwcNearestSamplerState, texc + vec3(0, 0,-offset_texc.z), 0);
 		res = c1;// (c1 + c2 + c3 + c4 + c5 + c6 + c7) / 7.0;
 		//res.z=max(max(max(max(max(max(c1.z,c2.z),c3.z),c4.z),c5.z),.5*c6.z),.5*c7.z);
-	res.xyw*=0.5;
+		res.xyw*=0.5;
 	}
 	///else
 	//	res = vec4(1, 0, 1, 1);
@@ -954,7 +958,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp,bool do_godr
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
 
-	RaytracePixelOutput f	=RaytraceCloudsForward(cloudDensity
+	RaytracePixelOutput f	=RaytraceCloudsPrecise(cloudDensity
 													,cloudDensity2
 													,precipitationVolume
 													,noiseTexture3D
@@ -1436,7 +1440,8 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 		texc.z			+=yz/float(CROSS_SECTION_STEPS);
 		//accum=density;
 	}
-	//accum=texture_wwc_lod(cloudDensity,vec3(texc.xy,0.5),0).rgb;
+	vec3 index_vals	=texture_wwc_lod(cloudIndex, texc.xy, 0).xyz;
+	accum = index_vals;/// lerp(accum, index_vals, 0.8);
     return vec4(accum,1);
 }
 

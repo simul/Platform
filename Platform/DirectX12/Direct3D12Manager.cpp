@@ -106,6 +106,13 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 				adapterFound = true;
 				break;
 			}
+			featureLevel=D3D_FEATURE_LEVEL_12_0;
+			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
+			if (SUCCEEDED(res))
+			{
+				adapterFound = true;
+				break;
+			}
 			featureLevel=D3D_FEATURE_LEVEL_11_1;
 			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
 			if (SUCCEEDED(res))

@@ -1,7 +1,7 @@
 //  Copyright (c) 2007-2016 Simul Software Ltd. All rights reserved.
-#ifndef CLOUDS_RAYTRACE_SL
-#define CLOUDS_RAYTRACE_SL
-RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
+#ifndef CLOUDS_PRECISE_SL
+#define CLOUDS_PRECISE_SL
+RaytracePixelOutput RaytraceCloudsPrecise(Texture3D cloudDensity
 											,Texture3D cloudLight
 											,Texture3D precipitationVolume
 											,Texture3D noiseTexture3D
@@ -145,7 +145,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 	vec3 amb_dir=view;
 	
-	for(int j=0;j<8;j++)
+	/*for(int j=0;j<8;j++)
 	{
 		if(max(max(b.x,b.y),0)>=W)
 		{
@@ -171,12 +171,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			b = abs(c.xy - C0.xy * 2);
 		}
 		else break;
-	}
+	}*/
 	//float blinn_phong=0.0;
 	//bool found=false;
 	float distScale =  0.6 / maxFadeDistanceKm;
 
-	for(int i=0;i<768;i++)
+	for(int i=0;i<5768;i++)
 	{
 		world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
@@ -216,7 +216,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 pw						=abs(p1-p0);
 		float fade_inter			=saturate((length(pw.xy) / (float(W)*(3.0 - 2.0*is_inter) - 1.0) - start) / range);// /(2.0-is_inter)
 	
-		float fade = (1.0 - fade_inter);// *(1.0 - exp(-2.5*stepKm));
+		float fade = 1.0;//(1.0 - fade_inter);// *(1.0 - exp(-2.5*stepKm));
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
@@ -297,7 +297,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			}
 		}
 		
-		if(max(max(b.x,b.y),0)>=W)
+	/*	if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
 			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
@@ -319,7 +319,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			unitStepKm			=viewGridspace*gridScale;
 			unitStepLengthKm	= length(unitStepKm);
 			idx					++;
-		}
+		}*/
 	}
 	//res.nearFarDepth.y	=	max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);

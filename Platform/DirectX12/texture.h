@@ -74,6 +74,7 @@ namespace simul
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void							setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
+			bool							EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *create) override;	
 			bool							ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1,bool rendertargets=false);
 			bool							ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, 
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
@@ -113,6 +114,10 @@ namespace simul
 			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
 		protected:
+			bool							EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, 
+																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
+																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0,crossplatform::CompressionFormat																		cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
 			void											InitUAVTables(int l, int m);
 			void											FreeUAVTables();
 

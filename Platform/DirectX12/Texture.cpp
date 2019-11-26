@@ -1081,12 +1081,30 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	return changed;
 }
 
+bool Texture::EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *create)
+{
+	return EnsureTexture2DSizeAndFormat(r, create->w, create->l, create->f, create->computable, create->make_rt
+		, create->setDepthStencil, create->numOfSamples, create->aa_quality, false
+		, create->clear, create->clearDepth, create->clearStencil, create->compressionFormat,create->initialData);
+}
+
 bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											int w,int l,
 											crossplatform::PixelFormat f,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
 											vec4 clear, float clearDepth, uint clearStencil)
+{
+	return EnsureTexture2DSizeAndFormat(r,w,l,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil);
+}
+
+bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
+											int w,int l,
+											crossplatform::PixelFormat f,
+											bool computable,bool rendertarget,bool depthstencil,
+											int num_samples,int aa_quality,bool wrap,
+											vec4 clear, float clearDepth, uint clearStencil
+												,crossplatform::CompressionFormat cf,const void *data)
 {
 	// Define pixel formats of this texture
 	int m			= 1;
@@ -1179,7 +1197,8 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			(rendertarget	? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET		: 0) |
 			(depthstencil	? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL		: 0)
 		);
-
+		if (computable&&!rendertarget && !depthstencil)
+			textureFlags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
 		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
 		(
 			texture2dFormat,
@@ -1924,7 +1943,7 @@ void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
 	auto rPlat		= (dx12::RenderPlatform*)(renderPlatform);
-	SetLayout( mExternalLayout);
+	SetLayout(mExternalLayout);
 }
 
 
