@@ -427,19 +427,10 @@ Quaterniond simul::crossplatform::rotateByOffsetPolar(const Quaterniond& input, 
 	//Calculate angle of the arclength from the offset 
 	double theta = polar_radius / sph_radius;			//double theta = (double)(length(offset) / sph_radius);
 	
-	const crossplatform::Quaterniond identity(0, 0, 0, 1);
-	const vec3d z(0.0, 0.0, 1.0);
-	//The input quaternion can be thought as a rotation of the identity quaternion about its axis.
-	//The global position of the transformed identity quaternion z1 = q * z *q^-1;
-	vec3d z1 = input * z;
+	crossplatform::Quaterniond x_rot(theta, vec3(0.0, 1.0, 0.0));
+	crossplatform::Quaterniond z_rot(phi, vec3(0.0, 0.0, 1.0));
 
-	crossplatform::Quaterniond r = input;
-	r.Rotate(theta, z);
-
-	crossplatform::Quaterniond r1 = identity;
-	r1.Rotate(phi, z1);
-
-	return r1 * r; //Applies 'z-axis/north pole' rotation, then 'angle offset from equatorial plane' rotation.
+	return z_rot * x_rot * input;
 }
 
 
