@@ -17,13 +17,13 @@ uniform RWTexture2D<vec4> cloudIndex;
 uniform RWTexture2D<uint> cloudIndex		SIMUL_RWTEXTURE_REGISTER(0);
 #endif
 
-groupshared vec4 contribution[16];
+groupshared vec4 contribution[64];
 
-CS_LAYOUT(4,4,1)
-shader void CS_UpdateIndex(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+CS_LAYOUT(8,8,1)
+shader void CS_UpdateIndex(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	/*vec4 min_max=vec4(1000.0,-1000.0,0,0);
-	uint3 pos=g*4+t;
+	vec4 min_max=vec4(1000.0,-1000.0,0,0);
+	uint3 pos=g*8+t;
 	for(int i=0;i<128;i++)
 	{
 		if(i==windowGrid.z)
@@ -35,23 +35,26 @@ shader void CS_UpdateIndex(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 			float h1=float(i)/float(windowGrid.z);
 			float h2=float(i+1)/float(windowGrid.z);
 			min_max.x=min(min_max.x,h1);
-			min_max.y=max(min_max.y,1);
+			min_max.y=max(min_max.y,h2);
 		}
 	}
-	contribution[t.x+t.y*4]=min_max;
+	contribution[t.x+t.y*8]=min_max;
 	GroupMemoryBarrierWithGroupSync();
 	if(t.x*t.y==0)
 	{
-		min_max=vec4(1000.0,-1000.0,0,0);
-		for(int i=0;i<16;i++)
+		min_max=vec4(1000.0, -1000.0, 0, 0);
+		for(int i=0;i<64;i++)
 		{
 			vec4 h=contribution[i];
 			min_max.x=min(min_max.x,h.x);
 			min_max.y=max(min_max.y,h.y);
 		}
 		cloudIndex[g.xy]=PackVec4ToUint(saturate(min_max));
+	}
+/*	if ((t.x * t.y) == 0)
+	{
+		IMAGE_STORE_3D(cloudIndex, g.xy, PackVec4ToUint(vec4(1, 1, 0, 0)));
 	}*/
-	cloudIndex[g.xy]=PackVec4ToUint(saturate(vec4(g.xy/256.0,0,0)));
 }
 
 technique update_index
