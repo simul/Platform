@@ -20,7 +20,7 @@ void DisplaySurfaceManager::Render(cp_hwnd h)
 	toRender.insert(h);
 }
 
-void DisplaySurfaceManager::RenderAll()
+void DisplaySurfaceManager::RenderAll(bool clear)
 {
 	for (cp_hwnd h : toRender)
 	{
@@ -46,7 +46,8 @@ void DisplaySurfaceManager::RenderAll()
 		}
 		w->Render(delegatorReadWriteMutex, frameNumber);
 	}
-	toRender.clear();
+	if(clear)
+		toRender.clear();
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():
@@ -137,7 +138,7 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,fmt);
 }
 
-void DisplaySurfaceManager::EndFrame()
+void DisplaySurfaceManager::EndFrame(bool clear)
 {
 	ERRNO_BREAK
 	for(auto s:surfaces)
@@ -146,5 +147,5 @@ void DisplaySurfaceManager::EndFrame()
 	}
 	renderPlatform->EndFrame();
 	frame_started=false;
-	RenderAll();
+	RenderAll(clear);
 }

@@ -25,7 +25,7 @@ namespace simul
 			void Initialize(RenderPlatform *r);
 			void Shutdown();
 			//! Call from rendering thread.
-			void RenderAll();		
+			void RenderAll(bool clear_list=true);		
 			// Implementing Window Manager, which associates Hwnd's with renderers and view ids:
 			//! Add a window. Creates a new Swap Chain.
 			void AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN);
@@ -40,7 +40,7 @@ namespace simul
 
 			simul::base::ReadWriteMutex *delegatorReadWriteMutex;
 			///
-			void EndFrame();
+			void EndFrame(bool clear=true);
 		protected:
             static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
