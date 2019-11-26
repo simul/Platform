@@ -1443,8 +1443,8 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 		texc.z			+=yz/float(CROSS_SECTION_STEPS);
 		//accum=density;
 	}
-	vec3 index_vals	=texture_wwc_lod(cloudIndex,texc.xy,0).xyz;
-	accum=index_vals;//lerp(accum,index_vals,0.5);
+	vec3 index_vals	=texture_wwc_lod(cloudIndex, texc.xy, 0).xyz;
+	accum = index_vals;/// lerp(accum, index_vals, 0.8);
     return vec4(accum,1);
 }
 
