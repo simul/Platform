@@ -1,5 +1,5 @@
 {
-	"compiler": "$SIMUL/External/DirectX/DXCompiler/dxc.exe",
+	"compiler": "fxc.exe",
 	"api": "DirectX 12",
 	"defaultOptions": "/T {shader_model} /nologo /Zi",
 	"sourceExtension": "hlsl",

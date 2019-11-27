@@ -24,7 +24,7 @@ namespace simul
 
         struct ImmediateContext
         {
-            ID3D12GraphicsCommandList4*  ICommandList;
+            ID3D12GraphicsCommandList*  ICommandList;
             ID3D12CommandAllocator*     IAllocator;
             bool                        IRecording;
         };
@@ -55,7 +55,7 @@ namespace simul
 			//! Map of displays
 			OutputMap					mOutputs;
 			//! The D3D device
-			ID3D12Device5*				mDevice;
+			ID3D12Device*				mDevice;
 			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mCommandQueue;
 		};
