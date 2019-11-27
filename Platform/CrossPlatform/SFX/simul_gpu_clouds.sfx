@@ -526,7 +526,7 @@ float CSDensity(uint3 pos)
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	uint3 noise_dims;
 	GET_DIMENSIONS_3D(volumeNoiseTexture, noise_dims.x, noise_dims.y, noise_dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z-1)
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return 0.0;
 	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 //	densityspace_texcoord.x	+=0.05*densityspace_texcoord.z;
@@ -564,7 +564,7 @@ float CSDensity(uint3 pos)
 	vec3 wtexc		=densityspace_texcoord*noiseScale / noiseScale.x;
 	//wtexc.z*=0.5;
 	float zratio	=4.0*noiseScale.z / noiseScale.x;
-	for(int j=0;j<3;j++)
+	for(int j=0;j<2;j++)
 	{
 		float w1 = RestrictedWorley(wtexc, int(grid1), int(grid1), zratio);
 		float w2 = RestrictedWorley(wtexc, int(grid2), int(grid2), zratio);
@@ -572,15 +572,15 @@ float CSDensity(uint3 pos)
 		w							=m*(w-0.52);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
 
 		dens						=(dens+worleyNoiseStrength*w);
-		m							*=.33;
-		grid1*= 4.0;
-		grid2*= 4.0;
+		m							*=.53;
+		grid1*= 2.0;
+		grid2*= 2.0;
 		grid1 += 1.0;
 		grid2 += 1.0;
 	}
 	vec3 wPos						=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	//dens=sin(densityspace_texcoord.x*3.14159);
-	dens  *=saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
+	//dens  *= saturate(densityspace_texcoord.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
 	return dens;
 }
 

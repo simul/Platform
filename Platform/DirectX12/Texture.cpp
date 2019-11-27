@@ -549,9 +549,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
 	if (setState)
 	{
 		auto curState = GetCurrentState(mip,index);
-		if	((curState & D3D12_RESOURCE_STATE_GENERIC_READ) != D3D12_RESOURCE_STATE_GENERIC_READ )
+		if	((curState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE )
 		{
-			SetLayout(D3D12_RESOURCE_STATE_GENERIC_READ,mip,index);
+			SetLayout(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,mip,index);
 		}
 	}
 
@@ -772,17 +772,12 @@ void Texture::SetName(const char *n)
 	mTextureDefault->SetName(ws.c_str());
 }
 
-void Texture::StoreExternalState(bool make_rt, bool setDepthStencil,bool need_srv)
+void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 {
-	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
-	if (make_rt)
-		mExternalLayout = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	else if (setDepthStencil)
-		mExternalLayout = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-	else if (need_srv)
-		mExternalLayout = D3D12_RESOURCE_STATE_GENERIC_READ;
+	mExternalLayout=(D3D12_RESOURCE_STATES)resourceState;
+	if(resourceState==crossplatform::ResourceState::UNKNOWN)
+		return;
 	AssumeLayout(mExternalLayout);
-	SetLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
@@ -1197,8 +1192,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			(rendertarget	? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET		: 0) |
 			(depthstencil	? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL		: 0)
 		);
-		if (computable&&!rendertarget && !depthstencil)
-			textureFlags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
+
 		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
 		(
 			texture2dFormat,
@@ -1873,6 +1867,11 @@ void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index /*= -1*/)
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+	int curArray = arraySize;
+	if (cubemap)
+	{
+		curArray *= 6;
+	}
 	// Set the resource state
 	if (mip == -1 && index == -1)
 	{
@@ -1888,11 +1887,12 @@ void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index
 		    		for (int m = 0; m < mips; m++)
 		    		{
 						if(mSubResourcesStates[l][m]!=state)
-							rPlat->ResourceTransitionSimple(mTextureDefault, mSubResourcesStates[l][m], state,true, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+							rPlat->ResourceTransitionSimple(mTextureDefault, mSubResourcesStates[l][m], state,true, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 		    			mSubResourcesStates[l][m] = state;
 		    		}
 				}
 			}
+			//rPlat->ResourceTransitionSimple(mTextureDefault, mResourceState, state, true, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 		}
 		else if(mResourceState!=state)
 		{
@@ -1919,11 +1919,6 @@ void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index
 			//SIMUL_CERR << "mSubResourcesStates.empty() = true. Setting state into mSubResourcesStates[0][0]." << std::endl;
 			mSubResourcesStates.push_back({ state });
 		}
-		int curArray = arraySize;
-		if (cubemap)
-		{
-			curArray *= 6;
-		}
 		if(state!=mSubResourcesStates[curLayer][curMip])
 			rPlat->ResourceTransitionSimple(mTextureDefault, mSubResourcesStates[curLayer][curMip], state, true, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 
@@ -1931,7 +1926,7 @@ void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index
 		// Array Size == 1 && mips = 1 (it only has 1 sub resource)
 		// the asSRV code will return the mainSRV!
 		bool no_array = !cubemap && (arraySize <= 1);
-		if (mips <= 1 && no_array)
+		if (mip==-1 && curLayer==-1)
 		{
 			mResourceState = state;
 		}
@@ -1942,10 +1937,11 @@ void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index
 
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
+	if((crossplatform::ResourceState)mExternalLayout==crossplatform::ResourceState::UNKNOWN)
+		return;
 	auto rPlat		= (dx12::RenderPlatform*)(renderPlatform);
-	SetLayout(mExternalLayout);
+	SetLayout( mExternalLayout);
 }
-
 
 void Texture::InitSRVTables(int l,int m)
 {
