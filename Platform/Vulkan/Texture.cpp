@@ -1058,6 +1058,14 @@ vk::ImageLayout Texture::GetLayout(int layer, int mip) const
 	return currentImageLayout;
 }
 
+void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
+{
+	mExternalLayout=vulkan::RenderPlatform::ToVulkanImageLayout(resourceState);
+	if(resourceState==crossplatform::ResourceState::UNKNOWN)
+		return;
+	AssumeLayout(mExternalLayout);
+}
+
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
 	SetLayout(deviceContext, mExternalLayout);
@@ -1065,6 +1073,8 @@ void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceCo
 
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLayout newLayout, int layer, int mip)
 {
+	if(newLayout==vk::ImageLayout::eUndefined)
+		return;
 	//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	//	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages)
 	auto *commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
@@ -1126,9 +1136,9 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		}
 		barrier.setOldLayout(l);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, mip, 1, layer, 1));
-		l = newLayout;
 		split_layouts = true;
 		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
+		l = newLayout;
 	}
 	else
 	{

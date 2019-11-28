@@ -882,6 +882,39 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 		return vk::Format::eR8G8B8Unorm;
 	};
 }
+ vk::ImageLayout RenderPlatform::ToVulkanImageLayout(crossplatform::ResourceState r)
+ {
+	using namespace crossplatform;
+	switch(r)
+	{
+	case ResourceState::VERTEX_AND_CONSTANT_BUFFER:
+	case ResourceState::INDEX_BUFFER:
+	case ResourceState::RENDER_TARGET:
+		return vk::ImageLayout::eColorAttachmentOptimal;
+	case ResourceState::UNORDERED_ACCESS:
+		return vk::ImageLayout::eGeneral;
+	case ResourceState::DEPTH_WRITE:
+		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	case ResourceState::DEPTH_READ:
+	case ResourceState::NON_PIXEL_SHADER_RESOURCE:
+	case ResourceState::PIXEL_SHADER_RESOURCE:
+	case ResourceState::SHADER_RESOURCE:
+		return vk::ImageLayout::eShaderReadOnlyOptimal;
+	case ResourceState::STREAM_OUT:
+	case ResourceState::INDIRECT_ARGUMENT:
+	case ResourceState::COPY_DEST:
+	case ResourceState::COPY_SOURCE:
+	case ResourceState::RESOLVE_DEST:
+	case ResourceState::RESOLVE_SOURCE:
+	case ResourceState::GENERAL_READ:	
+		return vk::ImageLayout::eShaderReadOnlyOptimal;
+	case ResourceState::UNKNOWN:
+	case ResourceState::COMMON:
+	default:
+		return vk::ImageLayout::eUndefined;
+	};
+
+ }
 
 crossplatform::PixelFormat RenderPlatform::FromVulkanFormat(vk::Format p)
 {

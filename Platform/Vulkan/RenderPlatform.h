@@ -124,6 +124,7 @@ namespace simul
 			static vk::Format						ToVulkanFormat(crossplatform::PixelFormat p);
 			static                                  crossplatform::PixelFormat FromVulkanFormat(vk::Format p);
 			static vk::Format						ToVulkanExternalFormat(crossplatform::PixelFormat p);
+			static vk::ImageLayout					ToVulkanImageLayout(crossplatform::ResourceState r);
 			//static                                  Vulkanenum DataType(crossplatform::PixelFormat p);
 			static int                              FormatTexelBytes(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);

@@ -20,6 +20,7 @@ namespace simul
 			COPY_SOURCE	= 0x800,
 			RESOLVE_DEST	= 0x1000,
 			RESOLVE_SOURCE	= 0x2000,
+			SHADER_RESOURCE	= ( 0x80 | 0x40 )  ,
 			GENERAL_READ	= ( ( ( ( ( 0x1 | 0x2 )  | 0x40 )  | 0x80 )  | 0x200 )  | 0x800 ) ,
 			UNKNOWN=0xFFFF
 		};
