@@ -51,15 +51,29 @@ uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
 		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
 */ 
+
+/// The previous texture area:
 uniform Texture2D cloudMaskTexture;
 uniform Texture3D precipitationVolume;
 #ifdef SFX_TYPED_UAV_LOADS
-uniform RWTexture3D<uchar4> precipitationVolumeRW;
+uniform RWTexture3D<uchar4> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
 #else
-uniform RWTexture3D<uint> precipitationVolumeRW;
+
+//D3D11 effects library not setting the SFX_TYPED_UAV_LOADS? - AJR
+#ifdef SFX_D3D12 
+uniform RWTexture3D<uint> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
+#endif
+#ifdef SFX_VULKAN
+uniform RWTexture3D<uint> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
+#endif
+#ifdef SFX_OPENGL
+uniform RWTexture3D<uint> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
+#endif
+//ifdef SFX_D3D11
+uniform RWTexture3D<uchar4> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
 #endif
 
-/// The previous texture area:
+
 uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> outputTexture3d			SIMUL_RWTEXTURE_REGISTER(0);
 #ifdef SFX_TYPED_UAV_LOADS
@@ -660,7 +674,7 @@ shader vec4 PS_CloudShadow(posTexVertexOutput IN) :SV_TARGET
 	return vec4(shadow.xy, 0, 1.0 - shadow.z);
 }
 
-void PrecipiationVolume(uint3 p, bool map, bool init)
+void PrecipitationVolume(uint3 p, bool map, bool init)
 {
 	int3 idx = int3(p) * int3(amortizationScale) + int3(amortizationOffset.xyz);
 	if (idx.x >= exclusionRange.x && idx.y >= exclusionRange.y && idx.x < exclusionRange.z && idx.y < exclusionRange.w)
@@ -671,6 +685,10 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 	idx.xy = idx.xy%int2(windowGrid.xy);
 
 	vec3 texc = vec3(idx) / vec3(windowGrid);
+
+	//vec4 _res = vec4(texc, 1.0);
+	//IMAGE_STORE(precipitationVolumeRW, idx, _res);
+	//return;
 
 	float zPixel1 = 1.0 / float(windowGrid.z);
 	float layer_saturate = saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
@@ -693,7 +711,8 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 		}
 		total_cloud = saturate((total_cloud - 0) / 0.1);
 
-		precipitationVolumeRW[idx] = vec4(0.0, max_tex_z, 0.0, total_cloud);
+		vec4 res = vec4(0.0, max_tex_z, 0.0, total_cloud);
+		IMAGE_STORE(precipitationVolumeRW, idx, res);
 		return;
 	}
 
@@ -747,7 +766,7 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 		return;
 
 	//Create old and new values
-	vec4 current = UnpackUintToVec4(precipitationVolumeRW[idx]);
+	vec4 current = precipitationVolumeRW[idx];
 	vec4 res = vec4(precipitation, current.g, rainToSnow, current.a) * map_lookup * precipitationMask;
 
 	if (current.r != 0.0)
@@ -756,23 +775,23 @@ void PrecipiationVolume(uint3 p, bool map, bool init)
 	res.ga = current.ga;
 
 	//Write to precipitation_volume
-	IMAGE_STORE(precipitationVolumeRW, idx, PackVec4ToUint(res));
+	IMAGE_STORE(precipitationVolumeRW, idx, res);
 }
 
 CS_LAYOUT(4,4,4)
 shader void CS_PrecipitationVolume(uint3 p : SV_DispatchThreadID)
 { 
-	PrecipiationVolume(p, false, false);
+	PrecipitationVolume(p, false, false);
 }
 CS_LAYOUT(4,4,4)
 shader void CS_PrecipitationVolumeWithMap(uint3 p : SV_DispatchThreadID)
 { 
-	PrecipiationVolume(p, true, false);
+	PrecipitationVolume(p, true, false);
 }
 CS_LAYOUT(4, 4, 4)
 shader void CS_PrecipitationVolumeInit(uint3 p : SV_DispatchThreadID)
 {
-	PrecipiationVolume(p, false, true);
+	PrecipitationVolume(p, false, true);
 }
 
 struct FarNearDepthPixelOutput
