@@ -57,10 +57,20 @@ uniform Texture2D cloudMaskTexture;
 uniform Texture3D precipitationVolume;
 #ifdef SFX_TYPED_UAV_LOADS
 uniform RWTexture3D<uchar4> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
-#elif !SFX_D3D12 && !SFX_VULKAN && !SFX_OPENGL //D3D11 effects library not setting the SFX_TYPED_UAV_LOADS? - AJR
-uniform RWTexture3D<uchar4> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
 #else
+
+//D3D11 effects library not setting the SFX_TYPED_UAV_LOADS? - AJR
+#ifdef SFX_D3D12 
 uniform RWTexture3D<uint> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
+#endif
+#ifdef SFX_VULKAN
+uniform RWTexture3D<uint> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
+#endif
+#ifdef SFX_OPENGL
+uniform RWTexture3D<uint> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
+#endif
+//ifdef SFX_D3D11
+uniform RWTexture3D<uchar4> precipitationVolumeRW	SIMUL_RWTEXTURE_REGISTER(1);
 #endif
 
 
