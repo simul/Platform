@@ -358,7 +358,7 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN, bool reverseDepth)
 	vec3 result = IN.betaMie*lightColour.rgb + environmentBrightness * vec3(1, 1, 1);
 	//vec3 result = IN.betaMie*lightColour.rgb + IN.light;
 	float radius1 = pow(length(pos.xy), .5);
-	float opacity = IN.strength*saturate(1.0 - 2.0*radius1);
+	float opacity = IN.strength*saturate(1.0 - radius1);
 
 	return vec4(result.rgb, opacity);
 }
