@@ -70,7 +70,7 @@ namespace simul
 			virtual void	SetFullScreen(cp_hwnd h,bool fullscreen,int which_output)=0;
 			virtual void	ResizeSwapChain(cp_hwnd h)=0;
 			virtual int		GetViewId(cp_hwnd h)=0;
-			virtual void	RenderAll(bool)=0;
+			virtual void	RenderAll(bool=true)=0;
 		};
 	}
 }

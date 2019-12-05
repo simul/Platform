@@ -55,7 +55,7 @@ namespace simul
 			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
 			bool							IsValid() const;
 			
-			void StoreExternalState(bool make_rt, bool setDepthStencil,bool need_srv);
+			void StoreExternalState(crossplatform::ResourceState);
 			void RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
 
 			ID3D12Resource*					AsD3D12Resource() override;

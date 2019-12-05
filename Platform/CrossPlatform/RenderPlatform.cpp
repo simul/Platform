@@ -1013,7 +1013,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	if(*text!=0)
 	{
 		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);
-	}
+		}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 		

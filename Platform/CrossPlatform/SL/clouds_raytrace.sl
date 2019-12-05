@@ -231,8 +231,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		//if(abs(N.z)>0.0)
 		{
 			// mip-mapping: we should move to higher mips only when the step size (or render pixel size) gets bigger than the texel size.
-			float mip=unitStepLengthKm/1.0;
-			vec4 density = sample_3d_lod(cloudDensity, wwcSamplerState, cloudTexCoords, 0);
+			float mip=0.0;//texelSizeKm/stepKm;
+			vec4 density = sample_3d_lod(cloudDensity, wwcSamplerState, cloudTexCoords, 0.0);
 			/*if(!found)
 			{
 				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
@@ -247,7 +247,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(noise)//&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
-				//float mip = 0.0*(1.0-cosine);
+				float mip = 0.0*(1.0-cosine);
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,noiseval,fractalScale,mip,density,light);
 			
 				if(do_rain_effect)

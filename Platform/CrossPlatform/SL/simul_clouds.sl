@@ -110,7 +110,7 @@ float GetRainAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffsetKm,ve
 	vec3 rain_texc = cloudWorldOffsetKm;
 	rain_texc.xy += rain_texc.z*rainTangent;
 	#ifdef SFX_OPENGL
-	rain_texc.y = 1.0 - rain_texc.y;
+	//rain_texc.y = 1.0 - rain_texc.y;
 	#endif
 	rain_texc *= inverseScalesKm;
 
@@ -130,7 +130,7 @@ float GetRainToSnowAtOffsetKm(Texture3D precipitationVolume,vec3 cloudWorldOffse
 	vec3 rain_texc = cloudWorldOffsetKm;
 	rain_texc.xy += rain_texc.z*rainTangent;
 	#ifdef SFX_OPENGL
-	rain_texc.y = 1.0 - rain_texc.y;
+	//rain_texc.y = 1.0 - rain_texc.y;
 	#endif
 	rain_texc *= inverseScalesKm;
 

@@ -1,5 +1,5 @@
 {
-	"compiler": "$SIMUL/External/DirectX/DXCompiler/dxc.exe",
+	"compiler": "fxc.exe",
 	"api": "DirectX 12",
 	"defaultOptions": "/T {shader_model} /nologo /Zi",
 	"sourceExtension": "hlsl",
@@ -9,7 +9,8 @@
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,
 	"generateSlots": true,
-	"define": {
-		"SFX_TYPED_UAV_LOADS": "1"
-	}
+  "define": {
+    "SFX_TYPED_UAV_LOADS": "1",
+    "SFX_D3D12": "1"
+  }
 }

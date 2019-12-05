@@ -47,7 +47,7 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		w->Render(delegatorReadWriteMutex, frameNumber);
 	}
 	if(clear)
-		toRender.clear();
+	toRender.clear();
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():
