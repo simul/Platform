@@ -541,6 +541,8 @@ crossplatform::Buffer* RenderPlatform::CreateBuffer()
 const float whiteTexel[4] = { 1.0f,1.0f,1.0f,1.0f};
 vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceType t)
 {
+	if ((t & crossplatform::ShaderResourceType::TEXTURE_2DMS) == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+		return GetDummy2DMS();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_3D)==crossplatform::ShaderResourceType::TEXTURE_3D)
 		return GetDummy3D();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_2D)==crossplatform::ShaderResourceType::TEXTURE_2D)
@@ -586,6 +588,18 @@ vulkan::Texture* RenderPlatform::GetDummy2D()
         mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
     }
     return mDummy2D;
+}
+
+vulkan::Texture* RenderPlatform::GetDummy2DMS()
+{
+	if (!mDummy2DMS)
+	{
+		mDummy2DMS = (vulkan::Texture*)CreateTexture("dummy2dms");
+		mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, false, false, 2);
+		mDummy2DMS->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+
+	}
+	return mDummy2DMS;
 }
 
 vulkan::Texture* RenderPlatform::GetDummy3D()

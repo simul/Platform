@@ -267,75 +267,84 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	if(textureLoadComplete)
 		return;
 	SIMUL_ASSERT(loadedTextures.size()!=0)
-
-	//vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
-	SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor,currentImageLayout,
-			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eTransfer);
-	for(int i=0;i<loadedTextures.size();i++)
+	if (GetSampleCount() > 1)
 	{
-		LoadedTexture &lt=loadedTextures[i];
-		auto const subresource = vk::ImageSubresourceLayers()
-			.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			.setMipLevel(0)
-			.setBaseArrayLayer(i)
-			.setLayerCount(1);
-
-		auto const copy_region =
-			vk::BufferImageCopy()
-			.setBufferOffset(0)
-			.setBufferRowLength(lt.x)
-			.setBufferImageHeight(lt.y)
-			.setImageSubresource(subresource)
-			.setImageOffset({ 0, 0, 0 })
-			.setImageExtent({ (uint32_t)lt.x, (uint32_t)lt.y, 1 });
-
-		commandBuffer->copyBufferToImage(lt.buffer, mImage, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
-	}
-	if(mips>1)
-	{
-		int srcWidth=width,srcLength=length;
-		vk::ImageBlit blit = vk::ImageBlit();
-		blit.srcOffsets[0]=vk::Offset3D( 0, 0, 0 );
-		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		blit.srcSubresource.baseArrayLayer = 0;
-		blit.srcSubresource.layerCount = arraySize;
-		blit.dstOffsets[0] = vk::Offset3D( 0, 0, 0 );
-		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		blit.dstSubresource.baseArrayLayer = 0;
-		blit.dstSubresource.layerCount = arraySize;
-		for(int i=0;i<mips;i++)
-		{
-			blit.srcSubresource.mipLevel = i;
-			blit.dstSubresource.mipLevel = i+1;
-			int dstWidth=srcWidth > 1 ? srcWidth / 2 : 1;
-			int dstLength=srcLength > 1 ? srcLength / 2 : 1;
-			blit.srcOffsets[1] =vk::Offset3D(  srcWidth, srcLength, 1 );
-			blit.dstOffsets[1] = vk::Offset3D(  dstWidth, dstLength, 1 );
-			SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor,vk::ImageLayout::eTransferDstOptimal,
-					vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
-					vk::PipelineStageFlagBits::eTransfer,i,1);
-			if(i<mips-1)
-				commandBuffer->blitImage(mImage, vk::ImageLayout::eTransferSrcOptimal,
-											mImage, vk::ImageLayout::eTransferDstOptimal,
-											1, &blit,
-											vk::Filter::eLinear);
-			srcWidth=dstWidth;
-			srcLength=dstLength;
-		}
 		AssumeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-		SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferSrcOptimal,
+		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
 			currentImageLayout, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer,
 			vk::PipelineStageFlagBits::eFragmentShader);
 	}
 	else
 	{
-		AssumeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-		SetImageLayout(commandBuffer,mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferDstOptimal,
-			currentImageLayout, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eFragmentShader);
+		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, currentImageLayout,
+			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eTransfer);
+		for (int i = 0; i < loadedTextures.size(); i++)
+		{
+			LoadedTexture& lt = loadedTextures[i];
+			auto const subresource = vk::ImageSubresourceLayers()
+				.setAspectMask(vk::ImageAspectFlagBits::eColor)
+				.setMipLevel(0)
+				.setBaseArrayLayer(i)
+				.setLayerCount(1);
+
+			auto const copy_region =
+				vk::BufferImageCopy()
+				.setBufferOffset(0)
+				.setBufferRowLength(lt.x)
+				.setBufferImageHeight(lt.y)
+				.setImageSubresource(subresource)
+				.setImageOffset({ 0, 0, 0 })
+				.setImageExtent({ (uint32_t)lt.x, (uint32_t)lt.y, 1 });
+
+			commandBuffer->copyBufferToImage(lt.buffer, mImage, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+		}
+		if (mips > 1)
+		{
+			int srcWidth = width, srcLength = length;
+			vk::ImageBlit blit = vk::ImageBlit();
+			blit.srcOffsets[0] = vk::Offset3D(0, 0, 0);
+			blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+			blit.srcSubresource.baseArrayLayer = 0;
+			blit.srcSubresource.layerCount = arraySize;
+			blit.dstOffsets[0] = vk::Offset3D(0, 0, 0);
+			blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+			blit.dstSubresource.baseArrayLayer = 0;
+			blit.dstSubresource.layerCount = arraySize;
+			for (int i = 0; i < mips; i++)
+			{
+				blit.srcSubresource.mipLevel = i;
+				blit.dstSubresource.mipLevel = i + 1;
+				int dstWidth = srcWidth > 1 ? srcWidth / 2 : 1;
+				int dstLength = srcLength > 1 ? srcLength / 2 : 1;
+				blit.srcOffsets[1] = vk::Offset3D(srcWidth, srcLength, 1);
+				blit.dstOffsets[1] = vk::Offset3D(dstWidth, dstLength, 1);
+				SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferDstOptimal,
+					vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
+					vk::PipelineStageFlagBits::eTransfer, i, 1);
+				if (i < mips - 1)
+					commandBuffer->blitImage(mImage, vk::ImageLayout::eTransferSrcOptimal,
+						mImage, vk::ImageLayout::eTransferDstOptimal,
+						1, &blit,
+						vk::Filter::eLinear);
+				srcWidth = dstWidth;
+				srcLength = dstLength;
+			}
+			AssumeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+			SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferSrcOptimal,
+				currentImageLayout, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer,
+				vk::PipelineStageFlagBits::eFragmentShader);
+		}
+		else
+		{
+			AssumeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+			SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferDstOptimal,
+				currentImageLayout, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer,
+				vk::PipelineStageFlagBits::eFragmentShader);
+		}
 	}
 	
 	textureLoadComplete=true;
