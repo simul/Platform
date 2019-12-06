@@ -1181,7 +1181,7 @@ D3D12_QUERY_HEAP_TYPE simul::dx12::RenderPlatform::ToD3D12QueryHeapType(crosspla
 {
 	switch (t)
 	{
-	case simul::crossplatform::QUERY_UNKNWON:
+	case simul::crossplatform::QUERY_UNKNOWN:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
 	case simul::crossplatform::QUERY_OCCLUSION:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;

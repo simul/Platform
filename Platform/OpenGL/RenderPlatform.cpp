@@ -83,7 +83,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	}
 }
 
-void RenderPlatform::BeginFrame()
+void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 {
 	for(auto t:texturesToDelete[mCurIdx])
 	{
@@ -94,7 +94,7 @@ void RenderPlatform::BeginFrame()
 	texturesToDelete[mCurIdx].clear();
 }
 
-void RenderPlatform::EndFrame()
+void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
 {
 }
 
@@ -165,7 +165,7 @@ void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceConte
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;
 		mCurIdx = mCurIdx % kNumIdx;
-		BeginFrame();
+		BeginFrame(deviceContext);
 	}
 
     crossplatform::ContextState* cs = &deviceContext.contextState;

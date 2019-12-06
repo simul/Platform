@@ -29,7 +29,7 @@ namespace simul
 		};
 		enum QueryType
 		{
-			QUERY_UNKNWON
+			QUERY_UNKNOWN
 			,QUERY_OCCLUSION		// Like GL_SAMPLES_PASSED
 			,QUERY_TIMESTAMP		// like GL_TIMESTAMP
 			,QUERY_TIMESTAMP_DISJOINT
