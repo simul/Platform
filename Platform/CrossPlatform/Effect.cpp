@@ -1129,8 +1129,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				const string &register_num	=words[4];
 				string is_array				=words.size()>5?words[5]:"single";
 				int slot=atoi(register_num.c_str());
-				int dim=is_equal(texture_dim,"3d")?3:2;
-				bool is_cubemap=is_equal(texture_dim,"cubemap");
+				int dim=is_equal(texture_dim,"3d")||is_equal(texture_dim,"3dms")?3:2;
+				bool is_cubemap=is_equal(texture_dim,"cubemap")||is_equal(texture_dim,"cubemapms");
+				bool is_msaa=texture_dim.find("ms")!=string::npos;
 				bool rw=is_equal(read_write,"read_write");
 				bool ar=is_equal(is_array,"array");
 				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
@@ -1180,6 +1181,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				}
 				if(ar)
 					rt=rt|crossplatform::ShaderResourceType::ARRAY;
+				if (is_msaa)
+					rt=rt|crossplatform::ShaderResourceType::MS;
 				res->shaderResourceType=rt;
 				textureDetailsMap[texture_name]=res;
 				if(!rw)

@@ -93,9 +93,13 @@ void GpuProfiler::InvalidateDeviceObjects()
 
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
+	if (!enabled||!renderPlatform||!root)
+		return;
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-    if(!enabled||!renderPlatform||!context||!root)
-        return;
+	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
+	if (!is_opengl && !context)
+		return;
+
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
 	level++;
@@ -168,9 +172,13 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 
 void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-    if(!enabled||!renderPlatform||!context||!root)
-        return;
+	if (!enabled||!renderPlatform||!root)
+		return;
+	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
+	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
+	if (!is_opengl && !context)
+		return;
+
 	renderPlatform->EndEvent(deviceContext);
 	level--;
 	if(level>=max_level)
@@ -277,6 +285,14 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 		{
 			float frequency = static_cast<float>(disjointData.Frequency);
 			time = (delta / frequency) * 1000.0f;
+		}
+	}
+	if (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
+	{
+		UINT64 delta = endTime - startTime;
+		if (endTime > startTime)
+		{
+			time = delta;
 		}
 	}
 	profile->time*=(1.f-mix);

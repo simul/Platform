@@ -6,7 +6,7 @@
 
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
-#include "Simul/Platform/OpenGL/Profiler.h"
+//#include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Scene/Scene.h"
 #include "Simul/Scene/Object.h"
 #include "Simul/Scene/BaseObjectRenderer.h"
@@ -166,7 +166,7 @@ DeviceManager::DeviceManager()
 	//if(!renderPlatformOpenGL)
 		//renderPlatformOpenGL		=new opengl::RenderPlatform;
 	//renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL|crossplatform::BREAK_ON_FAIL);
-	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
+	//simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 
 }
 
@@ -184,7 +184,7 @@ glfw owns hRC
 	}*/
 	hRC=nullptr;                           // Set DC To NULL
 ERRNO_CHECK
-	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
+	//simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 	//glfwMakeContextCurrent(nullptr);
    // glfwDestroyWindow(offscreen_context);
 	offscreen_context=nullptr;
@@ -217,7 +217,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
     }
     glfwSetErrorCallback(GlfwErrorCallback);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	// It is profoundly stupid, but glad cannot be initialized without an existing context, i.e. a WINDOW must be created,
 	// before we can initialize the FUNCTIONS that gl runs on.

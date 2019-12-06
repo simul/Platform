@@ -40,8 +40,12 @@ namespace simul
 			GLuint glQuery[crossplatform::Query::QueryLatency];
 			Query(crossplatform::QueryType t):crossplatform::Query(t)
 			{
-				for(int i=0;i<QueryLatency;i++)
-					glQuery[i]		=0;
+				for (int i = 0; i < QueryLatency; i++)
+				{
+					glQuery[i] = 0; 
+				}
+
+				glGenQueries(crossplatform::Query::QueryLatency, glQuery);
 			}
 			~Query()
 			{
