@@ -173,7 +173,7 @@ namespace simul
 			void									ApplyDefaultRenderTargets(crossplatform::DeviceContext& deviceContext) override;
 		
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
-			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
+			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext, const crossplatform::Buffer *buffer);
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;

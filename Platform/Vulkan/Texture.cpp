@@ -589,7 +589,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	return true;
 }
 
-void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget)
+void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget, bool isArray)
 {
 	if(!renderPlatform)
 		return;
@@ -605,7 +605,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 			viewType=vk::ImageViewType::eCube;
 
 	}
-	else if(layers>1)
+	else if(layers>1 || isArray)
 		viewType=vk::ImageViewType::e2DArray;
 	int totalNum = cubemap ? 6 * layers : layers;
 	//f=crossplatform::RenderPlatform::ToColourFormat(f);
@@ -789,7 +789,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
-	InitViewTables(2,f,w,l,m,num, rendertarget,ascubemap,false);
+	InitViewTables(2,f,w,l,m,num, rendertarget,ascubemap,false, true);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
 
 	pixelFormat=f;

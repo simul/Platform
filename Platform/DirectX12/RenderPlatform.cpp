@@ -1645,12 +1645,14 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
-void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,const crossplatform::Buffer *buffer)
 {
 	mCommandList = deviceContext.asD3D12Context();
 	immediateContext.platform_context=deviceContext.platform_context;
 
-	mCommandList->IASetIndexBuffer(buffer->GetIndexBufferView());
+	auto pBuffer = (dx12::Buffer*)buffer;
+
+	mCommandList->IASetIndexBuffer(pBuffer->GetIndexBufferView());
 }
 
 static D3D_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
