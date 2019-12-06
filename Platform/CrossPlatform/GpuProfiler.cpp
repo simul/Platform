@@ -97,7 +97,8 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		return;
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
 	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	if (!is_opengl && !context)
+	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
+	if (!is_opengl && !is_vulkan && !context)
 		return;
 
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
@@ -176,7 +177,8 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 		return;
 	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
 	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	if (!is_opengl && !context)
+	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
+	if (!is_opengl && !is_vulkan && !context)
 		return;
 
 	renderPlatform->EndEvent(deviceContext);
@@ -287,12 +289,13 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			time = (delta / frequency) * 1000.0f;
 		}
 	}
-	if (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
+	if ((strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
+		|| (deviceContext.renderPlatform->AsVulkanDevice() != nullptr))
 	{
 		UINT64 delta = endTime - startTime;
 		if (endTime > startTime)
 		{
-			time = delta;
+			time = static_cast<float>(delta);
 		}
 	}
 	profile->time*=(1.f-mix);

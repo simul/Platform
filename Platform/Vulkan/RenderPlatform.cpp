@@ -154,14 +154,14 @@ void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
 	releaseMemories.insert(m);
 }
 
-void RenderPlatform::BeginFrame()
+void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 {
 	auto *vulkanDevice=AsVulkanDevice();
 	//vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frame_index], VK_TRUE, UINT64_MAX);
 	//vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frame_index]);
 }
 
-void RenderPlatform::EndFrame()
+void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
 {
 }
 
@@ -341,7 +341,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
-		BeginFrame();
+		BeginFrame(deviceContext);
 
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;

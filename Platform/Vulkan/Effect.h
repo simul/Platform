@@ -2,6 +2,7 @@
 
 #include "Simul/Platform/Vulkan/Export.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/Vulkan/PlatformConstantBuffer.h"
 #include "Simul/Platform/Vulkan/PlatformStructuredBuffer.h"
 #include "Simul/Platform/Vulkan/Shader.h"
@@ -35,11 +36,14 @@ namespace simul
 		// Vulkan Query implementation
 		struct SIMUL_VULKAN_EXPORT Query:public crossplatform::Query
 		{
-			//GLuint glQuery[crossplatform::Query::QueryLatency];
+			
 			Query(crossplatform::QueryType t):crossplatform::Query(t)
 			{
-		//		for(int i=0;i<QueryLatency;i++)
-		//			glQuery[i]		=0;
+				queryPoolCI.pNext = nullptr;
+				queryPoolCI.flags = (vk::QueryPoolCreateFlags)0;
+				queryPoolCI.queryType = toVkQueryType(t);
+				queryPoolCI.queryCount = crossplatform::Query::QueryLatency;
+				queryPoolCI.pipelineStatistics = (vk::QueryPipelineStatisticFlags)0;
 			}
 			~Query()
 			{
@@ -51,6 +55,13 @@ namespace simul
 			void End(crossplatform::DeviceContext &deviceContext) override;
 			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
 			void SetName(const char*) override{}
+
+		private:
+			vk::Device* mDevice = nullptr;
+			vk::QueryPool mQueryPool = nullptr;
+			vk::QueryPoolCreateInfo queryPoolCI;
+
+			vk::QueryType toVkQueryType(crossplatform::QueryType t);
 		};
 
 		//! Vulkan render state holder

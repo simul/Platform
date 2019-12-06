@@ -27,25 +27,86 @@ bool RewriteOutput(std::string str)
 }
 
 
-void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *)
+void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
+	InvalidateDeviceObjects();
+
+	renderPlatform = r;
+	if (renderPlatform)
+	{
+		mDevice = renderPlatform->AsVulkanDevice();
+	}
+	if (!mDevice)
+	{
+		SIMUL_BREAK_ONCE("No valid Vulkan device available to create QueryPool.");
+		return;
+	}
+	mQueryPool = mDevice->createQueryPool(queryPoolCI);
+
+	for (int i = 0; i < QueryLatency; i++)
+	{
+		gotResults[i] = true;
+		doneQuery[i] = false;
+	}
 }
 
 void Query::InvalidateDeviceObjects() 
 {
+	if (mDevice && mQueryPool)
+		mDevice->destroyQueryPool(mQueryPool);
+
+	for (int i = 0; i < QueryLatency; i++)
+	{
+		gotResults[i] = true;
+		doneQuery[i] = false;
+	}
 }
 
-void Query::Begin(crossplatform::DeviceContext &)
+vk::QueryType Query::toVkQueryType(crossplatform::QueryType t)
 {
+	switch (t)
+	{
+		case crossplatform::QUERY_OCCLUSION:
+			return vk::QueryType::eOcclusion;
+		case crossplatform::QUERY_TIMESTAMP_DISJOINT:
+		case crossplatform::QUERY_TIMESTAMP:
+			return vk::QueryType::eTimestamp;
+		case crossplatform::QUERY_UNKNOWN:
+		default:
+			return (vk::QueryType)0;
+	};
 }
 
-void Query::End(crossplatform::DeviceContext &)
+void Query::Begin(crossplatform::DeviceContext& deviceContext)
 {
+	if(!mQueryPool)
+		RestoreDeviceObjects(deviceContext.renderPlatform);
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
 }
 
-bool Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
+void Query::End(crossplatform::DeviceContext& deviceContext)
 {
-    return false;
+	if (!mQueryPool)
+		RestoreDeviceObjects(deviceContext.renderPlatform); (deviceContext.renderPlatform);
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
+
+	gotResults[currFrame] = false;
+	doneQuery[currFrame] = true;
+}
+
+bool Query::GetData(crossplatform::DeviceContext &,void *data, size_t sz)
+{
+	gotResults[currFrame] = true;
+	if (!doneQuery[currFrame])
+		return false;
+	
+	SIMUL_ASSERT(sizeof(sz) >= sizeof(uint64_t));
+	vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, currFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+	*(uint64_t*)data /= 1000000; //convert ns to ms
+	currFrame = (currFrame + 1) % QueryLatency;
+	return (ok == vk::Result::eSuccess) && (data != nullptr);
 }
 
 Effect::Effect()
