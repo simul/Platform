@@ -53,7 +53,10 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 void Query::InvalidateDeviceObjects() 
 {
 	if (mDevice && mQueryPool)
+	{
 		mDevice->destroyQueryPool(mQueryPool);
+		*(VkQueryPool*)&mQueryPool = VK_NULL_HANDLE;
+	}
 
 	for (int i = 0; i < QueryLatency; i++)
 	{
