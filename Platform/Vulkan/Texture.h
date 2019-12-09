@@ -111,7 +111,7 @@ namespace simul
             //! Applies default sampling parameters to the texId texture
             void            SetDefaultSampling(GLuint texId);
 
-			void			InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget);
+			void			InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget, bool isArray = false);
 			
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;
