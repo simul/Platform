@@ -28,7 +28,7 @@
 #define RAND_MAX 0x7fff
 
 #define PATCH_BLEND_BEGIN		200
-#define PATCH_BLEND_END			10000
+#define PATCH_BLEND_END			1000
 
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
