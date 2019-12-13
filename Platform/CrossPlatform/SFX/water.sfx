@@ -472,7 +472,7 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 		if ((position.z > g_surfaceHeight + (radius * 2.0)) || (position.z < g_surfaceHeight - (radius * 2.0)))
 			return;
 		//int2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_probeUVScale)) + g_probeUVOffset - g_center.yx * g_probeUVScale;
-		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256) - int2(g_center.yx * 0.512f);
+		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(g_waveGridDimension, g_waveGridDimension) - int2(g_center.yx * 0.512f);
 
 		int xOrigin = uv_local.x;
 		int yOrigin = uv_local.y;
@@ -491,7 +491,7 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 		{
 			for (int y = yOrigin; y <= uv_local.y + radius_i; y++)
 			{
-				vec3 positionDirection = vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3(float(x),float(y), 0);
+				vec3 positionDirection = vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(g_waveGridDimension, g_waveGridDimension, 0) - vec3(float(x),float(y), 0);
 				float distance = length(positionDirection);
 				if ((distance > radius && !((uv_local.x == x) && (uv_local.y == y))) || (radius - distance > 4.0))
 					continue;
@@ -500,10 +500,10 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 				{
 					float angle = (float(i) / 16.0) * TAU;
 					vec2 angleVec = normalize(profile16Directons[i]); //vec2(cos(angle), sin(angle));
-					vec4 currentAmplitude4 = g_OutputAmplitude[int3(x % 256, y % 256, i)];
+					vec4 currentAmplitude4 = g_OutputAmplitude[int3(x % g_waveGridDimension, y % g_waveGridDimension, i)];
 					float currentAmplitude = currentAmplitude4.x;
 					//(0.5 * 1000.0 * 9.81 *pow(currentAmplitude, 2.0)) - 
-					g_OutputAmplitude[int3(x % 256, y % 256, i)] = currentAmplitude + ((downwardAmp + (saturate(dot(normalize(velocity).yx, normalize(angleVec))))) * energy);
+					g_OutputAmplitude[int3(x % g_waveGridDimension, y % g_waveGridDimension, i)] = currentAmplitude + ((downwardAmp + (saturate(dot(normalize(velocity).yx, normalize(angleVec))))) * energy);
 				}
 			}
 		}
@@ -517,7 +517,7 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 
 		float dampen = abs(((radius* 2.0) - abs(position.z - g_surfaceHeight)) / (radius * 2.0));
 
-		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(256, 256) - int2(g_center.yx * 0.512f);
+		int2 uv_local = int2(position.xy * g_waveGridScale) + int2(g_waveGridDimension, g_waveGridDimension) - int2(g_center.yx * 0.50f);
 
 		int xOrigin = uv_local.x;
 		int yOrigin = uv_local.y;
@@ -532,14 +532,14 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 		{
 			for (int y = yOrigin; y <= uv_local.y + radius_i; y++)
 			{
-				float distance = length(vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(256, 256, 0) - vec3((float)x, (float)y, 0));
+				float distance = length(vec3((position.xy - g_center.yx) * 0.512f, (g_surfaceHeight - position.z) / 2.0) + vec3(g_waveGridDimension, g_waveGridDimension, 0) - vec3((float)x, (float)y, 0));
 				if ((distance > radius && !((uv_local.x == x) && (uv_local.y == y))))
 					continue;
 				for (int i = 0; i < 16; i++)
 				{
 					float angle = (float(i) / 16.0) * TAU;
 					vec2 angleVec = normalize(profile16Directons[i]); //vec2(cos(angle), sin(angle));
-					g_OutputAmplitude[int3(x % 256, y % 256, i)] = dampen * (abs(velocity.z) + (saturate(dot(direction, normalize(angleVec)) + 1.0) * length(velocity.yx)));
+					g_OutputAmplitude[int3(x % 128, y % 128, i)] = dampen * (abs(velocity.z) + (saturate(dot(direction, normalize(angleVec)) + 1.0) * length(velocity.yx)));
 				}
 			}
 		}
@@ -1028,7 +1028,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 	};
 
 	vec3 vPos = vec3(0.0, 0.0, 0.0);
-	vec2 cameraCenter =  g_LocalEye.xy;//vec2(0.0,0.0);//
+	vec2 cameraCenter = g_LocalEye.xy;// vec2(0.0, 0.0);//
 	Output.vecColour = vec4(0.0, 1.0, 1.0, 1.0);
 
 	float layerQuadSize;
@@ -1112,57 +1112,33 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		{
 			edgeNo += 2;
 			vertexNo -= boundingEdgeVerticies * 2;
-			Output.vecColour += vec4(1.0, 0.0, 0.0, 0.0);
+			//Output.vecColour += vec4(1.0, 0.0, 0.0, 0.0);
 		}
 		if (vertexNo >= boundingEdgeVerticies)
 		{
 			edgeNo++;
 			vertexNo -= boundingEdgeVerticies;
-			Output.vecColour += vec4(0.0, 1.0, 0.0, 0.0);
+			//Output.vecColour += vec4(0.0, 1.0, 0.0, 0.0);
 		}
 
-		if (vertexNo == 0) vertexNo++;
-		if (vertexNo == (boundingEdgeVerticies - 1)) vertexNo--;
+		vertexNo = clamp(vertexNo, 1, boundingEdgeVerticies - 2);
 
+		noDisplacement = (vertexNo % 2 == 1);
+		noGradient = (vertexNo % 2 == 1);
+
+		vPos.z = -100 * (float)(vertexNo % 2);
+		
 		if (edgeNo % 2 == 0)
 		{
-			if (vertexNo % 2 == 0)
-			{
-				vPos.x = (vertexNo - 2) / 2;
-			}
-			else
-			{
-				vPos.x = (vertexNo - 1) / 2;
-				vPos.z = -100;
-				noDisplacement = true;
-				noGradient = true;
-			}
-			if (edgeNo != 0)
-			{
-				vPos.x = (g_layerDensity * 4) - vPos.x;
-				vPos.y = g_layerDensity * 4;
-			}
+			vPos.x = (vertexNo - (2 - (vertexNo % 2))) / 2;
+			vPos.x = abs((g_layerDensity * 4 * (edgeNo / 2)) - vPos.x);
+			vPos.y = g_layerDensity * 4 * (edgeNo / 2);
 		}
 		else
 		{
-			edgeNo--;
-			vPos.x = (g_layerDensity * 4);
-			if (vertexNo % 2 == 0)
-			{
-				vPos.y = (vertexNo - 2) / 2;
-			}
-			else
-			{
-				vPos.y = (vertexNo - 1) / 2;
-				vPos.z = -100;
-				noDisplacement = true;
-				noGradient = true;
-			}
-			if (edgeNo != 0)
-			{
-				vPos.x = 0;
-				vPos.y = (g_layerDensity * 4) - vPos.y;
-			}
+			vPos.x = (g_layerDensity * 4) * (float)(edgeNo % 3);// ;
+			vPos.y = (vertexNo - (2 - (vertexNo % 2))) / 2;
+			vPos.y = abs((g_layerDensity * 4 * ((edgeNo - 1) / 2)) - vPos.y);
 		}
 	}
 	//Surface Verticies
@@ -1192,19 +1168,11 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 			uint rowNo = (vertexNo - vertexRowNo) / rowVerticies;
 
 			//Assign local position
-			if (vertexRowNo == (rowVerticies - 1)) vertexRowNo--;
-			if (vertexRowNo == 0) vertexRowNo++;
-			if (vertexRowNo % 2 == 0)
-			{
-				vPos.x = (vertexRowNo - 2) / 2;
-				vPos.y = 1;
-			}
-			else
-			{
-				vPos.x = (vertexRowNo - 1) / 2;
-				vPos.y = 0;
-			}
-			vPos.y += rowNo;
+			vertexRowNo = clamp(vertexRowNo, 1, rowVerticies - 2);
+
+			vPos.x = (vertexRowNo - (2 - vertexRowNo % 2)) / 2;
+			vPos.y = rowNo + ((vertexRowNo + 1) % 2);
+			
 			//Output.vecColour = vec4(((float)vPos.y / (float)(g_layerDensity * 2)), 1.0 - (float)((float)vPos.y / (float)(g_layerDensity * 2)), 0.0, 1.0);
 			//Output.vecColour = vec4( ((float)vertexBlockNo / (float)blockVerticies), 1.0 - (float)((float)vertexBlockNo / (float)blockVerticies), 0.0, 1.0);
 
@@ -1214,10 +1182,12 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 			vertexNo = vertexNo - centerVerticies;
 			vertexNo = vertexNo % (g_verticiesPerLayer + 1);
 			if (vertexNo > 0) vertexNo--;
+
 			uint layerNo = (((IN.vertex_id) - centerVerticies) - vertexNo) / g_verticiesPerLayer;
 			layerQuadSize = (1<<layerNo) * g_minQuadSize;
 			float externalLayerQuadSize = (1 << (layerNo + 1)) * g_minQuadSize;
 			float internalLayerQuadSize = (1 << (layerNo - 1)) * g_minQuadSize;
+
 			if (layerNo==0)
 				internalLayerQuadSize = layerQuadSize / 2.0;
 
@@ -1252,35 +1222,34 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 			int xQuadOffset = 0;
 			int yQuadOffset = 0;
 
-			if (layerX != internalLayerX)
+			if ((internalLayerX - layerX) < 0.01* g_minQuadSize)
 			{
-				if ((internalLayerX - layerX) < 0.01* g_minQuadSize)
-				{
-					xQuadOffset++;
-				}
-				if ((layerX - internalLayerX) < 0.01* g_minQuadSize)
-				{
-					xQuadOffset--;
-				}
+				xQuadOffset++;
 			}
-			if ((layerY != internalLayerY))
+
+			if ((layerX - internalLayerX) < 0.01* g_minQuadSize)
 			{
-				if ((internalLayerY - layerY) < 0.01* g_minQuadSize)
-				{
-					yQuadOffset++;
-				}
-				if ((layerY - internalLayerY) < 0.01* g_minQuadSize)
-				{
-					yQuadOffset--;
-				}
+				xQuadOffset--;
 			}
+
+			if ((internalLayerY - layerY) < 0.01* g_minQuadSize)
+			{
+				yQuadOffset++;
+			}
+
+			if ((layerY - internalLayerY) < 0.01* g_minQuadSize)
+			{
+				yQuadOffset--;
+			}
+			
 			//More elegant, but precision issues result in layers flickering between correct and incorrect positions (kept for reference)
 			//xQuadOffset = (int)(layerX / layerQuadSize) - (int)(internalLayerX / layerQuadSize);
 			//yQuadOffset = (int)(layerY / layerQuadSize) - (int)(internalLayerY / layerQuadSize);
 
 			uint totalColumnVerticies = (8 * g_layerDensity + 4) * g_layerDensity * 2;
 			uint columnWidth = g_layerDensity - xQuadOffset;
-			if ((layerNo % 2) == 1) totalColumnVerticies++;
+			totalColumnVerticies += layerNo % 2;
+
 			if (vertexNo >= g_verticiesPerLayer - totalColumnVerticies)//Is the vertex in a column
 			{
 				//Output.vecColour = vec4(1.0, 0.0, 0.0, 0.0);
@@ -1291,27 +1260,14 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 				uint columnNo = (vertexNo - vertexColumnNo) / sideColumnVerticies;
 
 				//Assign local position
-				if (vertexColumnNo == 0) vertexColumnNo++;
-				if (vertexColumnNo == sideColumnVerticies - 1) vertexColumnNo--;
-				if (vertexColumnNo % 2 == 0)
-				{
-					vPos.x = 1;
-					vPos.y = (vertexColumnNo / 2) - 1;
-				}
-				else
-				{
-					vPos.x = 0;
-					vPos.y = ((vertexColumnNo + 1) / 2) - 1;
-				}
+				vertexColumnNo = clamp(vertexColumnNo, 1, sideColumnVerticies - 2);
+
+				vPos.y = ((vertexColumnNo + (vertexColumnNo % 2)) / 2) - 1;
+				vPos.x = columnNo + ((vertexColumnNo + 1) % 2);
 
 				if (columnNo >= g_layerDensity - xQuadOffset)
 				{
-					vPos.x += columnNo;
 					vPos.x += 2 * (int)g_layerDensity;
-				}
-				else
-				{
-					vPos.x += columnNo;
 				}
 				//Output.vecColour = vec4((float)vertexNo / ((float)totalColumnVerticies), 1.0 - ((float)vertexNo / ((float)totalColumnVerticies)), 0.0, 1.0);
 			}
@@ -1325,28 +1281,15 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 				uint rowNo = (vertexNo - vertexRowNo) / sideRowVerticies;
 
 				//Assign local position
-				if (vertexRowNo == 0) vertexRowNo++;
-				if (vertexRowNo == sideRowVerticies - 1) vertexRowNo--;
-				if (vertexRowNo % 2 == 0)
-				{
-					vPos.x = (vertexRowNo - 2) / 2;
-					vPos.y = 1;
-				}
-				else
-				{
-					vPos.x = (vertexRowNo - 1) / 2;
-					vPos.y = 0;
-				}
+				vertexRowNo = clamp(vertexRowNo, 1, sideRowVerticies - 2);
+
+				vPos.x = (vertexRowNo - (2 - vertexRowNo % 2)) / 2;
 				vPos.x += columnWidth;
+				vPos.y = rowNo + ((vertexRowNo + 1) % 2);
 
 				if (rowNo >= g_layerDensity - yQuadOffset)
 				{
-					vPos.y += rowNo;
 					vPos.y += 2 * g_layerDensity;
-				}
-				else
-				{
-					vPos.y += rowNo;
 				}
 				//Output.vecColour = vec4((float)rowNo/(float)(2 *g_layerDensity),1 - ((float)rowNo / (float)(2 * g_layerDensity)), 0.0, 1.0);
 			}
@@ -1355,7 +1298,6 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 	}
 
 	//Deal with boundary verticies
-
 	bool lerpDisplacement = false;
 	vec2 lerpSample1 = vec2(0.0, 0.0);
 	vec2 lerpSample2 = vec2(0.0, 0.0);
@@ -1387,12 +1329,6 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 	//vec2 detail_uv_local1 = vec2(0.0, 0.0);
 	//vec2 detail_uv_local2 = vec2(0.0, 0.0);
 
-	if (length(pos_local.xy - cameraCenter) > 30000)
-		noDisplacement = true;
-
-	if (length(pos_local.xy - cameraCenter.xy) > 256)
-		noWaveGrid = true;
-
 	// UV
 	vec2 uv_local = ((pos_local.xy) * g_UVScale + g_UVOffset - g_objectCenter.yx * g_UVScale);
 	vec2 uv_local1 = vec2(-g_objectCenter.yx * g_UVScale );
@@ -1418,6 +1354,11 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		}*/
 	}
 
+	if (length(pos_local.xy - cameraCenter) > 30000)
+		noDisplacement = true;
+
+	if (length(pos_local.xy - cameraCenter.xy) > 256)
+		noWaveGrid = true;
 
 	//If there is displacement to be calculated, do it
 	if (!noDisplacement)
@@ -1516,7 +1457,6 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 				vec2 waveGridAmp1 = vec2(0.0, 0.0);
 				vec2 waveGridAmp2 = vec2(0.0, 0.0);
 
-
 				for (i = 0; i < N; i++)
 				{
 					float angle = ((float)i / (float)N) * TAU;
@@ -1548,6 +1488,8 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 			}
 			else
 			{
+				vec2 waveGridAmp = vec2(0.0, 0.0);
+
 				for (i = 0; i < N; i++)
 				{
 					float angle = ((float)i / (float)N) * TAU;
@@ -1562,12 +1504,11 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 					
 					if (waveGrid && !noWaveGrid)
 					{
-						vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 0).xy  * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0 , (i + 0.5) / N), 0).x);
-						displacementValue = dx * (waveGridAmp + baseWaveAmp);//
-					} else
-					{
-						displacementValue = dx * baseWaveAmp;//
-					}
+						waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 0).xy  * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0 , (i + 0.5) / N), 0).x);
+					} 
+
+					displacementValue = dx * (waveGridAmp + baseWaveAmp);
+
 					displacement += vec3(displacementValue.x * texcDir.x, displacementValue.x * texcDir.y, displacementValue.y);
 				}
 				displacement *= g_WorldScale;
@@ -1575,10 +1516,14 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		}
 		
 		pos_local.xyz += displacement.xyz;
-		if (lerpDisplacement)
-			Output.vecColour.w = max(lerp(shoreDepth1, shoreDepth2, 0.5), 0.001);
-		else
-			Output.vecColour.w = max(shoreDepth, 0.001);
+
+		if (shoreEffects)
+		{
+			if (lerpDisplacement)
+				Output.vecColour.w = max(lerp(shoreDepth1, shoreDepth2, 0.5), 0.001);
+			else
+				Output.vecColour.w = max(shoreDepth, 0.001);
+		}
 		//Output.vecColour.z = fade;
 		//Output.vecColour.xy = -detail_uv_local;// detailDisplacement;	
 	}
@@ -1701,16 +1646,26 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 		noDisplacement = true;
 		noGradient = true;
 		vPos.z = -g_boundedDimension.z;
-		if (vertexNo !=0) vertexNo--;
-		if (vertexNo > 3) vertexNo--;
-		if (vertexNo % 2 != 0) vPos.y = g_boundedDensity.y;
-		if (vertexNo < 2) vPos.x = g_boundedDensity.x;
+
+		vec2 vertexPositions[6] =
+		{
+			vec2(0.0f,					0.0f),
+			vec2(0.0f,					0.0f),
+			vec2(g_boundedDensity.x,	0.0f),
+			vec2(0.0f,					g_boundedDensity.y),
+			vec2(g_boundedDensity.x,	g_boundedDensity.y),
+			vec2(g_boundedDensity.x,	g_boundedDensity.y)
+		};
+
+		vPos.x = vertexPositions[vertexNo].x;
+		vPos.y = vertexPositions[vertexNo].y;
 	}
 	else
 	{
 		vertexNo -= 6;
 		//Bounding faces
-		if (vertexNo < boundingVerticies) {
+		if (vertexNo < boundingVerticies) 
+		{
 			uint edgeNo = 0;
 			noGradient = true;
 			if (vertexNo >= boundingVerticies / 2)
@@ -1723,46 +1678,27 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 				edgeNo++;
 				vertexNo -= xBoundingVerticies;
 			}
-			if (vertexNo == 0) vertexNo++;
+
 			if (edgeNo % 2 == 0)
 			{
-				if (vertexNo == (xBoundingVerticies - 1)) vertexNo--;
-				if (vertexNo % 2 == 0)
-				{
-					vPos.x = (vertexNo - 2) / 2;
-				}
-				else
-				{
-					vPos.x = (vertexNo - 1) / 2;
-					vPos.z = -g_boundedDimension.z;
-					noDisplacement = true;
-				}
-				if (edgeNo!=0)
-				{
-					vPos.x = g_boundedDensity.x - vPos.x;
-					vPos.y = g_boundedDensity.y;
-				}
+				vertexNo = clamp(vertexNo, 1, xBoundingVerticies - 2);
+
+				vPos.z = -g_boundedDimension.z * (float)(vertexNo % 2);
+				noDisplacement = ((vertexNo % 2) == 1);
+
+				vPos.x = (vertexNo - (2 - (vertexNo % 2))) / 2;
+				vPos.x = abs((g_boundedDensity.x * (edgeNo / 2)) - vPos.x);
+				vPos.y = g_boundedDensity.y * (edgeNo / 2);
 			}
 			else
 			{
-				edgeNo--;
-				if (vertexNo == (yBoundingVerticies - 1)) vertexNo--;
-				vPos.x = g_boundedDensity.x;
-				if (vertexNo % 2 == 0)
-				{
-					vPos.y = (vertexNo - 2) / 2;
-				}
-				else
-				{
-					vPos.y = (vertexNo - 1) / 2;
-					vPos.z = -g_boundedDimension.z;
-					noDisplacement = true;
-				}
-				if (edgeNo!=0)
-				{
-					vPos.x = 0;
-					vPos.y = g_boundedDensity.y - vPos.y;
-				}
+				vertexNo = clamp(vertexNo, 1, yBoundingVerticies - 2);
+				
+				vPos.z = -g_boundedDimension.z * (float)(vertexNo % 2);
+				noDisplacement = ((vertexNo % 2) == 1);
+				
+				vPos.x = g_boundedDensity.x * ((edgeNo - 1) / 2);
+				vPos.y = abs((g_boundedDensity.y * (float)(edgeNo % 3)) - ((vertexNo - (2 - (vertexNo % 2))) / 2));
 			}
 		}
 		//Surface
@@ -1772,20 +1708,13 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 			uint rowVerticies = ((g_boundedDensity.x * 2) + 4);
 			uint vertexRowNo = vertexNo % rowVerticies;
 			uint rowNo = (vertexNo - vertexRowNo) / rowVerticies;
+
 			//Assign local position
-			if (vertexRowNo == (rowVerticies - 1)) vertexRowNo--;
-			if (vertexRowNo == 0) vertexRowNo++;
-			if (vertexRowNo % 2 == 0)
-			{
-				vPos.x = (vertexRowNo - 2) / 2;
-				vPos.y = 1;
-			}
-			else
-			{
-				vPos.x = (vertexRowNo - 1) / 2;
-				vPos.y = 0;
-			}
-			vPos.y += rowNo;
+			vertexRowNo = clamp(vertexRowNo, 1, rowVerticies - 2);
+			
+			vPos.x = (vertexRowNo - (2 - (vertexRowNo % 2))) / 2;
+			vPos.y = ((vertexRowNo + 1) % 2) + rowNo;
+			
 			//Output.vecColour = vec4(vPos.y / (g_layerDensity * 2), 1.0 - (vPos.y / (g_layerDensity * 2)), 0.0, 1.0);
 		}
 	}
@@ -1943,7 +1872,7 @@ PS_WATER_OUTPUTS PS_WaterSurfDepth(VS_OUTPUT In, bool frontFacing, bool enableFo
 			enableRefraction = false;
 		}
 
-	if (length(eye_vec.xy) > 256.0)
+	if (length(eye_vec.xy) > 128.0)
 	{
 		noWaveGrid = true;
 	}
@@ -2313,19 +2242,22 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	if (TexCoord.y > 1.0 || TexCoord.y < 0.0 || TexCoord.x >= 1.0 || TexCoord.x <= 0.0)
 		return float4(-1.0, -1.0, -1.0, -1.0);
 
-	if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)))
+	//if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)))
 		//|| (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale)* float(g_pixelStep)))
 		stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
 
-	if (reflectVec.z < 0.0)
-	{
-		reflectVec.z = max(reflectVec.z, 0.0);//*= -1.0;//
-		reflectVec = normalize(reflectVec);
+	reflectVec.z = max(reflectVec.z, 0.0);//*= -1.0;//
+	reflectVec = normalize(reflectVec);
+	
+	//rayPos += vec4(reflectVec * stepLength, 0.0);
+
+	//if (reflectVec.z < 0.0)
+	//{
 		//doublerefl = true;
 		//Output = texture_cube_lod(g_texReflectCube, normalize(reflectVec.yxz), 0);//float4(-1.0,-1.0,-1.0,-1.0);//
 		//Output *= 0.5;
 		//return Output;
-	}	
+	//}	
 
 	DepthInterpretationStruct dis;
 	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
@@ -2335,10 +2267,8 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	
 	for (i = 1; i < noSteps; i++)
 	{
-		//stepLength = max(length(g_LocalEye - rayPos.xyz) / 50.0, 0.0625);// (i * 2.0) / (float)noSteps;
 		samplePos = mul(g_matWorldViewProj, rayPos);
 		TexCoord = ((vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w) + vec2(1.0, 1.0)) / 2.0) * g_DepthScale; //In.texCoords - vec2(0.0, 0.1);// 
-
 		if (TexCoord.y > 1.0 || TexCoord.y < 0.0 || TexCoord.x >= 1.0 || TexCoord.x <= 0.0)
 			break;
 
@@ -2346,16 +2276,11 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 
 		fullDepth = depthToFadeDistance(depthSample, vec2(samplePos.x / samplePos.w, samplePos.y / -samplePos.w), dis, g_HalfTan) * 300000.0;
 
-		//if (length(g_LocalEye - rayPos.xyz) > 20000.0)
-			//break;
-
 		float temp = abs(fullDepth - length(g_LocalEye - rayPos.xyz));
-		if (temp <= stepLength )// && fullDepth > length(g_LocalEye - surfacePos.xyz)
+		if (temp <= stepLength)// && fullDepth > length(g_LocalEye - surfacePos.xyz)
 		{
 			hit = true;
-			Output = g_texColour.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0)) * (doublerefl?0.5:1.0);
-			Output.w = -1.0;
-			return Output;
+			break;
 		}
 
 		//if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)))
@@ -2363,17 +2288,31 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 		//	stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
 			
 		rayPos += vec4(reflectVec * stepLength, 0.0);
+
+		if (length(g_LocalEye - rayPos.xyz) > 2000.0)
+			break;
+
 		OldTexCoord = TexCoord;
+
+		//stepLength = max(length(g_LocalEye - rayPos.xyz) / 50.0, 0.0625);// (i * 2.0) / (float)noSteps;
+
 	}
-	if (!hit)
+
+	if(hit)
 	{
+		Output = g_texColour.Sample(g_samplerPerlin, TexCoord + vec2(g_vrRightEye * 0.5, 0)) * (doublerefl ? 0.5 : 1.0);
+		Output.w = -1.0;
+	}
+
+	//if (!hit)
+	//{
 		//if(!(fullDepth < 300000 && fullDepth > length(g_LocalEye - samplePos.xyz)))
 		//reflectVec.z = max(reflectVec.z, 0.0);
 		//Output = texture_cube_lod(g_texReflectCube, normalize(reflectVec.xyz), 0);
 		//Output *= 0.75;
 		// float4(-1.0, -1.0, -1.0, -1.0);//
 		//Output *= float(doublerefl ? 0.5 : 1.0);
-	}
+	//}
 
 	//	Output = vec4(1.0,0.0,0.0,0.0);
 	//if (doublerefl)
@@ -2557,13 +2496,13 @@ float4 PS_WaterSurfFinal(posTexVertexOutput In, bool reflections)
 		refl = g_waterReflectColour.Sample(g_samplerPerlin, In.texCoords);
 	else
 	{
-		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.xyz), 0);
+		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0);
 		refl *= 0.75;
 	}
 
 	if(refl.x < 0.0)
 	{
-		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.xyz), 0);
+		refl = texture_cube_lod(g_texReflectCube, normalize(reflect_vec.yxz), 0);
 		refl *= 0.75;
 	}
 

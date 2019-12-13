@@ -70,6 +70,9 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,2)
 	uniform vec3		g_scattering;
 	uniform float		g_amplitude;
 
+	uniform vec3		gfkjdanolv;
+	uniform int			g_waveGridLimit;
+
 	uniform float		g_minQuadSize;
 	uniform uint		g_verticiesPerLayer;
 	uniform uint		g_layerDensity;
@@ -109,7 +112,7 @@ SIMUL_CONSTANT_BUFFER(cbProfileBuffers, 4)
 
 	uniform uint2		g_waveGridBound;
 	uniform int			g_waveGroup;
-	uniform float		gnfudivn;
+	uniform int			g_waveGridDimension;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbMeshObjectBuffers, 5)
