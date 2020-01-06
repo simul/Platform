@@ -193,8 +193,8 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void BeginFrame			();
-			virtual void EndFrame			();
+			virtual void BeginFrame			(DeviceContext &);
+			virtual void EndFrame			(DeviceContext &);
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Copy a given texture to another.
@@ -365,6 +365,7 @@ namespace simul
 		
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
+			bool							gpuProfileFrameStarted = false;
 			bool can_save_and_restore;
 			//! Value used to determine the number of "x" that we will have, this is useful in dx12
 			//! as many times we can not reuse the same resource as in the last frame so we need to have 

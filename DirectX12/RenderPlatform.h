@@ -129,8 +129,8 @@ namespace simul
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
-			void									BeginFrame();
-			void									EndFrame();
+			void									BeginFrame(crossplatform::DeviceContext& deviceContext);
+			void									EndFrame(crossplatform::DeviceContext& deviceContext);
 			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
             void                                    ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);

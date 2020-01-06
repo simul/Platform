@@ -59,8 +59,8 @@ namespace simul
 			}
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
-			void        BeginFrame(crossplatform::DeviceContext& deviceContext);
-			void        EndFrame(crossplatform::DeviceContext& deviceContext);
+			void        BeginFrame(crossplatform::DeviceContext& deviceContext) override;
+			void        EndFrame(crossplatform::DeviceContext& deviceContext) override;
 			void		CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *) override;
 			float		GetDefaultOutputGamma() const override;
             void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;

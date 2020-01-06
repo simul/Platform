@@ -58,12 +58,12 @@ ContextState& ContextState::operator=(const ContextState& cs)
 }
 
 RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
-	:memoryInterface(m)
-	,mirrorY(false)
+	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
 	,solidEffect(nullptr)
 	,copyEffect(nullptr)
+	,memoryInterface(m)
 	,shaderBuildMode(BUILD_IF_CHANGED)
 	,debugEffect(nullptr)
 	,textured(nullptr)
@@ -319,6 +319,7 @@ void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
 	if (c != '\\' && c != '/')
 		str += '/';
 	shaderBinaryPathsUtf8.push_back(str);
+	SIMUL_COUT << "Shader binary path: " << str.c_str() << std::endl;
 }
 
 std::vector<std::string> RenderPlatform::GetShaderPathsUtf8()
@@ -360,19 +361,21 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame()
+void RenderPlatform::BeginFrame(DeviceContext &dev)
 {
-	if(gpuProfiler)
+	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
-		gpuProfiler->StartFrame(GetImmediateContext());
+		gpuProfiler->StartFrame(dev);
+		gpuProfileFrameStarted = true;
 	}
 }
 
-void RenderPlatform::EndFrame()
+void RenderPlatform::EndFrame(DeviceContext &dev)
 {
-	if(gpuProfiler)
+	if(gpuProfiler && gpuProfileFrameStarted)
 	{
-		gpuProfiler->EndFrame(GetImmediateContext());
+		gpuProfiler->EndFrame(dev);
+		gpuProfileFrameStarted = false;
 	}
 }
 

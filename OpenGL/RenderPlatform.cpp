@@ -85,6 +85,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 {
+	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	for(auto t:texturesToDelete[mCurIdx])
 	{
 		glDeleteTextures(1,&t);
@@ -96,6 +97,7 @@ void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 
 void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
 {
+	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)

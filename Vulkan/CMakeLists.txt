@@ -43,5 +43,5 @@ add_sfx_shader_project( VulkanShaders "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.jso
 add_dependencies(SimulVulkan_MT VulkanShaders)
 add_dependencies(SimulVulkan_MD VulkanShaders)
 
-target_link_libraries(SimulVulkan_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD)
+target_link_libraries(SimulVulkan_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD vulkan-1)
 

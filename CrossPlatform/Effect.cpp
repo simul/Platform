@@ -795,188 +795,192 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	auto buildMode = r->GetShaderBuildMode();
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
 	{
-		const char *SIMUL = std::getenv("SIMUL");
+		char* SIMUL = nullptr;
+		char* b = nullptr;
+	#if defined (_CRT_SECURE_NO_WARNINGS)
+		SIMUL = std::getenv("SIMUL");
+		b = std::getenv("SIMUL_BUILD");
+	#else
+		size_t SIMUL_size;
+		size_t b_size;
+		_dupenv_s(&SIMUL, &SIMUL_size, "SIMUL");
+		_dupenv_s(&b, &b_size, "SIMUL_BUILD");
+	#endif
 		if (!SIMUL)
 			return;
-		const char* b = std::getenv("SIMUL_BUILD");
-		std::string SIMUL_BUILD = b?b:SIMUL;
-		if (SIMUL_BUILD.length()==0)
-			return;
 		std::string simulPath = SIMUL;
-
-		if (SIMUL_BUILD != "")
+		std::string SIMUL_BUILD = b?b:SIMUL;
+		if (SIMUL_BUILD.empty())
 		{
-			std::string platformName = r->GetName();
+			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
+			return;
+		}
 
-			base::find_and_replace(platformName, " ", "");
-			std::string sourcePlatformPath = (std::string(SIMUL) + "\\Platform\\") + platformName;
-			std::string buildPlatformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
-			// Sfx path
-			std::string exe = simulPath;
-			exe += "\\Tools\\bin\\Sfx.exe";
-			std::wstring sfxPath(exe.begin(), exe.end());
+		std::string platformName = r->GetName();
 
-			/*
-			Command line:
-				argv[0] we need to pass the module name
-				<input.sfx>
-				-I <include path; include path>
-				-O <output>
-				-P <config.json>
-			*/
-			std::string cmdLine = exe;
+		base::find_and_replace(platformName, " ", "");
+		std::string sourcePlatformPath = (std::string(SIMUL) + "\\Platform\\") + platformName;
+		std::string buildPlatformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
+		// Sfx path
+		std::string exe = simulPath;
+		exe += "\\Tools\\bin\\Sfx.exe";
+		std::wstring sfxPath(exe.begin(), exe.end());
+
+		/*
+		Command line:
+			argv[0] we need to pass the module name
+			<input.sfx>
+			-I <include path; include path>
+			-O <output>
+			-P <config.json>
+		*/
+		std::string cmdLine = exe;
+		{
+			// File to compile
+			cmdLine += " ";
+			cmdLine += (std::string(SIMUL) + "\\Platform\\CrossPlatform\\SFX\\") + filename_utf8 + ".sfx";
+			
+			cmdLine += " -w";
+			//cmdLine += " -L";
+			if(simul::base::SimulInternalChecks)
+				cmdLine += " -V";
+			// Includes
+			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
+			cmdLine += SIMUL_BUILD + "\\Platform\\CrossPlatform\\SL\"";
+
+			// Platform file
+			cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
+
+			// Ouput file
+			std::string outDir = r->GetShaderBinaryPathsUtf8().back();
+			for (unsigned int i = 0; i < outDir.size(); i++)
 			{
-				// File to compile
-				cmdLine += " ";
-				cmdLine += (std::string(SIMUL) + "\\Platform\\CrossPlatform\\SFX\\") + filename_utf8 + ".sfx";
-				
-				cmdLine += " -w";
-				//cmdLine += " -L";
-				if(simul::base::SimulInternalChecks)
-					cmdLine += " -V";
-				// Includes
-				cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
-				cmdLine += SIMUL_BUILD + "\\Platform\\CrossPlatform\\SL\"";
-
-				// Platform file
-				cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
-
-				// Ouput file
-				std::string outDir = r->GetShaderBinaryPathsUtf8().back();
-				for (unsigned int i = 0; i < outDir.size(); i++)
+				if (outDir[i] == '/')
 				{
-					if (outDir[i] == '/')
-					{
-						outDir[i] = '\\';
-					}
-				}
-				if (outDir[outDir.size() - 1] == '\\')
-				{
-					outDir.erase(outDir.size() - 1);
-				}
-
-				cmdLine += " -O\"" + outDir + "\"";
-				// Intermediate folder
-				cmdLine += " -M\"";
-				cmdLine += buildPlatformPath + "\\sfx_intermediate\"";
-				// Force
-				if ((buildMode & crossplatform::ShaderBuildMode::ALWAYS_BUILD) != 0)
-				{
-					cmdLine += " -F";
+					outDir[i] = '\\';
 				}
 			}
-
-			// Convert the command line to a wide string
-			size_t newsize = cmdLine.size() + 1;
-			wchar_t* wcstring = new wchar_t[newsize];
-			size_t convertedChars = 0;
-			mbstowcs_s(&convertedChars, wcstring, newsize, cmdLine.c_str(), _TRUNCATE);
-
-			// Setup pipes to get cout/cerr
-			SECURITY_ATTRIBUTES secAttrib = {};
-			secAttrib.nLength = sizeof(SECURITY_ATTRIBUTES);
-			secAttrib.bInheritHandle = TRUE;
-			secAttrib.lpSecurityDescriptor = NULL;
-
-			HANDLE coutWrite = 0;
-			HANDLE coutRead = 0;
-			HANDLE cerrWrite = 0;
-			HANDLE cerrRead = 0;
-
-			CreatePipe(&coutRead, &coutWrite, &secAttrib, 100);
-			CreatePipe(&cerrRead, &cerrWrite, &secAttrib, 100);
-
-			// Create the process
-			STARTUPINFOW startInfo = {};
-			startInfo.cb = sizeof(startInfo);
-			startInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-			startInfo.wShowWindow = SW_HIDE;
-			startInfo.hStdOutput = coutWrite;
-			startInfo.hStdError = cerrWrite;
-			//startInfo.wShowWindow = SW_SHOW;;
-			PROCESS_INFORMATION processInfo = {};
-			bool success = (bool)CreateProcessW
-			(
-				NULL, wcstring,
-				NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
-				&startInfo, &processInfo
-			);
-			if (processInfo.hProcess == nullptr)
+			if (outDir[outDir.size() - 1] == '\\')
 			{
-				std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
-				return;
+				outDir.erase(outDir.size() - 1);
 			}
-			string output_str;
-			// Wait until if finishes
-			if (success)
+
+			cmdLine += " -O\"" + outDir + "\"";
+			// Intermediate folder
+			cmdLine += " -M\"";
+			cmdLine += buildPlatformPath + "\\sfx_intermediate\"";
+			// Force
+			if ((buildMode & crossplatform::ShaderBuildMode::ALWAYS_BUILD) != 0)
 			{
-				// Wait for the main handle and the output pipes
-				HANDLE hWaitHandles[] = { processInfo.hProcess, coutRead, cerrRead };
+				cmdLine += " -F";
+			}
+		}
 
-				// Print the pipes
-				const DWORD BUFSIZE = 4096;
-				BYTE buff[BUFSIZE];
-				bool has_errors = false;
-				bool any_output=false;
-				while (1)
+		// Convert the command line to a wide string
+		size_t newsize = cmdLine.size() + 1;
+		wchar_t* wcstring = new wchar_t[newsize];
+		size_t convertedChars = 0;
+		mbstowcs_s(&convertedChars, wcstring, newsize, cmdLine.c_str(), _TRUNCATE);
+
+		// Setup pipes to get cout/cerr
+		SECURITY_ATTRIBUTES secAttrib = {};
+		secAttrib.nLength = sizeof(SECURITY_ATTRIBUTES);
+		secAttrib.bInheritHandle = TRUE;
+		secAttrib.lpSecurityDescriptor = NULL;
+
+		HANDLE coutWrite = 0;
+		HANDLE coutRead = 0;
+		HANDLE cerrWrite = 0;
+		HANDLE cerrRead = 0;
+
+		CreatePipe(&coutRead, &coutWrite, &secAttrib, 100);
+		CreatePipe(&cerrRead, &cerrWrite, &secAttrib, 100);
+
+		// Create the process
+		STARTUPINFOW startInfo = {};
+		startInfo.cb = sizeof(startInfo);
+		startInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		startInfo.wShowWindow = SW_HIDE;
+		startInfo.hStdOutput = coutWrite;
+		startInfo.hStdError = cerrWrite;
+		//startInfo.wShowWindow = SW_SHOW;;
+		PROCESS_INFORMATION processInfo = {};
+		bool success = (bool)CreateProcessW
+		(
+			NULL, wcstring,
+			NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
+			&startInfo, &processInfo
+		);
+		if (processInfo.hProcess == nullptr)
+		{
+			std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
+			return;
+		}
+		string output_str;
+		// Wait until if finishes
+		if (success)
+		{
+			// Wait for the main handle and the output pipes
+			HANDLE hWaitHandles[] = { processInfo.hProcess, coutRead, cerrRead };
+
+			// Print the pipes
+			const DWORD BUFSIZE = 4096;
+			BYTE buff[BUFSIZE];
+			bool has_errors = false;
+			bool any_output=false;
+			while (1)
+			{
+				DWORD dwBytesRead;
+				DWORD dwBytesAvailable;
+				DWORD dwWaitResult = WaitForMultipleObjects(3, hWaitHandles, FALSE, 60000L);
+
+				while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
 				{
-					DWORD dwBytesRead;
-					DWORD dwBytesAvailable;
-					DWORD dwWaitResult = WaitForMultipleObjects(3, hWaitHandles, FALSE, 60000L);
-
-					while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
-					{
-						ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-						output_str+=std::string((char*)buff, (size_t)dwBytesRead);
-						any_output=true;
-					}
-					while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
-					{
-						ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
-						output_str+=std::string((char*)buff, (size_t)dwBytesRead);
-						any_output=true;
-					}
-					// Process is done, or we timed out:
-					if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
+					ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+					output_str+=std::string((char*)buff, (size_t)dwBytesRead);
+					any_output=true;
+				}
+				while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				{
+					ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+					output_str+=std::string((char*)buff, (size_t)dwBytesRead);
+					any_output=true;
+				}
+				// Process is done, or we timed out:
+				if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
+					break;
+				if (dwWaitResult == WAIT_FAILED)
+				{
+					DWORD err = GetLastError();
+					char* msg;
+					// Ask Windows to prepare a standard message for a GetLastError() code:
+					if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
 						break;
-					if (dwWaitResult == WAIT_FAILED)
-					{
-						DWORD err = GetLastError();
-						char* msg;
-						// Ask Windows to prepare a standard message for a GetLastError() code:
-						if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
-							break;
 
-						SIMUL_CERR << "Error message: " << msg << std::endl;
-						{
-							break;
-						}
+					SIMUL_CERR << "Error message: " << msg << std::endl;
+					{
+						break;
 					}
 				}
-				DWORD ExitCode;
-				GetExitCodeProcess(processInfo.hProcess, &ExitCode);
-				if(any_output)
-				{
-					std::cerr << output_str.c_str();
-					std::cout<<std::endl;
-				}
-				if (ExitCode != 0)
-				{
-					SIMUL_BREAK(base::QuickFormat("ExitCode: %d", ExitCode));
-				}
-				CloseHandle(processInfo.hProcess);
-				CloseHandle(processInfo.hThread);
 			}
-			else
+			DWORD ExitCode;
+			GetExitCodeProcess(processInfo.hProcess, &ExitCode);
+			if(any_output)
 			{
-				DWORD error = GetLastError();
-				SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
-				return;
+				std::cerr << output_str.c_str();
+				std::cout<<std::endl;
 			}
+			if (ExitCode != 0)
+			{
+				SIMUL_BREAK(base::QuickFormat("ExitCode: %d", ExitCode));
+			}
+			CloseHandle(processInfo.hProcess);
+			CloseHandle(processInfo.hThread);
 		}
 		else
 		{
-			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
+			DWORD error = GetLastError();
+			SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
 			return;
 		}
 	}

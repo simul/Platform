@@ -156,6 +156,7 @@ void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
 
 void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 {
+	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	auto *vulkanDevice=AsVulkanDevice();
 	//vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frame_index], VK_TRUE, UINT64_MAX);
 	//vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frame_index]);
@@ -163,6 +164,7 @@ void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 
 void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
 {
+	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *dest, crossplatform::Texture *source)

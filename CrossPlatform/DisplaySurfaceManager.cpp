@@ -41,7 +41,7 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		if (renderPlatform && !frame_started)
 		{
 			frameNumber++;
-			renderPlatform->BeginFrame();
+			renderPlatform->BeginFrame(renderPlatform->GetImmediateContext());
 			frame_started = true;
 		}
 		w->Render(delegatorReadWriteMutex, frameNumber);
@@ -145,7 +145,7 @@ void DisplaySurfaceManager::EndFrame(bool clear)
 	{
 		s.second->EndFrame();
 	}
-	renderPlatform->EndFrame();
+	renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 	frame_started=false;
 	RenderAll(clear);
 }

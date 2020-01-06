@@ -469,9 +469,9 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 #endif
 }
 
-void RenderPlatform::BeginFrame()
+void RenderPlatform::BeginFrame(crossplatform::DeviceContext &deviceContext)
 {
-	crossplatform::RenderPlatform::BeginFrame();
+	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	BeginD3D12Frame();
 }
 
@@ -522,9 +522,9 @@ void RenderPlatform::BeginD3D12Frame()
 	}
 }
 
-void RenderPlatform::EndFrame()
+void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
 {
-	crossplatform::RenderPlatform::EndFrame();
+	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
 
 void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
