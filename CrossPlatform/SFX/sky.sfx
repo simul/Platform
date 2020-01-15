@@ -151,7 +151,7 @@ vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 		if(depth<1.0)
 			discard;
 	}
-	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy.xy);
+	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy);
 	return ret;
 }
 
@@ -195,7 +195,7 @@ vec4 PS_BackgroundLatLongSphere_MSAA(posTexVertexOutput IN,bool reverseDepth)
 		if(depth<1.0)
 			discard;
 	}
-	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy.xy);
+	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy);
 	return ret;
 }
 

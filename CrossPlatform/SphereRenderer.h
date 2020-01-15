@@ -28,6 +28,7 @@ namespace simul
 			void DrawTexture		(DeviceContext &deviceContext, Texture *t, vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour=vec4(1.f,1.f,1.f,1.f));
 			void DrawCircle			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float crc_rad,float sph_rad,vec4 line_colour,vec4 fill_colour = vec4(0.f, 0.f, 0.f, 0.f));
 			void DrawCrossSection	(DeviceContext &deviceContext, Effect *effect,Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour);
+			void DrawMultipleCrossSections	(DeviceContext& deviceContext, Effect* effect, Texture* t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices = 4);
 			void DrawArc			(DeviceContext &deviceContext, vec3 origin, vec4 q1, vec4 q2, float sph_rad, vec4 colour);
 
 		protected:

@@ -1,6 +1,5 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
-#pragma warning(disable:4505)	// Fix GLUT warnings
 #endif
 #include "DeviceManager.h"
 
@@ -156,7 +155,6 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 }
 
 
-static bool glut_initialized=false;
 
 DeviceManager::DeviceManager()
 	://renderPlatformOpenGL(NULL)

@@ -53,6 +53,20 @@ shader vec4 PS_DrawCrossSectionOnSphere(posTexVertexOutput IN) : SV_TARGET
 	
 	return res;
 }
+shader vec4 PS_DrawMultipleCrossSectionsOnSphere(posTexVertexOutput IN) : SV_TARGET
+{
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	//texc.y		=1.0-texc.y;
+	vec4 res = vec4(0,0,0,0);
+	for (int i = 0; i <= slices; i++)
+	{
+		vec3 texc = vec3(IN.texCoords.xy + texcOffset,float(i) / float(slices));
+		vec4 lookup = texture_wwc_lod(cloudVolume, texc.xyz, 0);
+		res += vec4(debugColour.rgb, lookup.z * debugColour.a);
+	}
+
+	return res * (4.0/float(slices));
+}
 
 technique draw_texture_on_sphere
 {
@@ -79,6 +93,19 @@ technique draw_cross_section_on_sphere
 		SetPixelShader(CompileShader(ps_5_0,PS_DrawCrossSectionOnSphere()));
 		//SetVertexShader(CompileShader(vs_5_0,VS_DrawQuadOnSphere()));
 		//SetPixelShader(debugps_5_0);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
+}
+
+technique draw_multiple_cross_sections_on_sphere
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawTextureOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0, PS_DrawMultipleCrossSectionsOnSphere()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}

@@ -467,8 +467,6 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 		if (dEnergy == 0.0)
 			return;
 
-		float dampen = abs(((radius * 2.0) - abs(position.z - g_surfaceHeight)) / (radius * 2.0));
-
 		if ((position.z > g_surfaceHeight + (radius * 2.0)) || (position.z < g_surfaceHeight - (radius * 2.0)))
 			return;
 		//int2 uv_local = ((g_ProbePos[sub_pos.x].yx * g_probeUVScale)) + g_probeUVOffset - g_center.yx * g_probeUVScale;
@@ -500,8 +498,8 @@ shader void CS_UpdateAmplitudeGridProbeEffect(uint3 sub_pos : SV_DispatchThreadI
 				{
 					float angle = (float(i) / 16.0) * TAU;
 					vec2 angleVec = normalize(profile16Directons[i]); //vec2(cos(angle), sin(angle));
-					vec4 currentAmplitude4 = g_OutputAmplitude[int3(x % g_waveGridDimension, y % g_waveGridDimension, i)];
-					float currentAmplitude = currentAmplitude4.x;
+					//vec4 currentAmplitude4 = g_OutputAmplitude[int3(x % g_waveGridDimension, y % g_waveGridDimension, i)];
+					float currentAmplitude = g_OutputAmplitude[int3(x % g_waveGridDimension, y % g_waveGridDimension, i)].x;
 					//(0.5 * 1000.0 * 9.81 *pow(currentAmplitude, 2.0)) - 
 					g_OutputAmplitude[int3(x % g_waveGridDimension, y % g_waveGridDimension, i)] = currentAmplitude + ((downwardAmp + (saturate(dot(normalize(velocity).yx, normalize(angleVec))))) * energy);
 				}
@@ -821,18 +819,16 @@ shader void CS_UpdateProbeValuesBoundless(uint3 sub_pos : SV_DispatchThreadID)
 		float baseAmplitude = pow(((dot(windDirection, texcDir) + 1.0) + ((dot(-windDirection, texcDir) + 1.0) * (1.0 - g_probeWindDependancy))) / 2.0, 4.0);
 		
 		vec2 displacementValue = vec2(0.0, 0.0);
+		vec2 waveGridAmp = vec2(0.0, 0.0);
 
 		vec2 baseWaveAmp = (g_probeWaveAmplitude * baseAmplitude * (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 0.0f), 2).xy) / 2.0);
 
 		if(g_enableWaveGrid)
 		{
-			vec2 waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 2).xy * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
+			waveGridAmp = (g_ProfileBuffers.SampleLevel(g_samplerProfileBuffer, vec3(texc.x + texc.y + profileOffsets[i % 16], 0.0, 1.0f), 2).xy * texture_3d_wrap_lod(g_InputAmplitude, vec3(uv_local.x / 5.0, uv_local.y / 5.0, (i + 0.5) / N), 0).x);
+		}
+
 			displacementValue = dx * (waveGridAmp + baseWaveAmp);
-		}
-		else
-		{
-			displacementValue = dx * baseWaveAmp;
-		}
 
 		displacement += vec3(displacementValue.x * texcDir.x, displacementValue.x * texcDir.y, displacementValue.y);
 	}
@@ -1126,7 +1122,7 @@ VS_OUTPUT VS_BoundlessWaterSurf(idOnly IN, bool shoreEffects, bool waveGrid)
 		noDisplacement = (vertexNo % 2 == 1);
 		noGradient = (vertexNo % 2 == 1);
 
-		vPos.z = -100 * (float)(vertexNo % 2);
+		vPos.z = -1.0 * ((vertexNo % 2) * 100);
 		
 		if (edgeNo % 2 == 0)
 		{
@@ -1687,7 +1683,7 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 				noDisplacement = ((vertexNo % 2) == 1);
 
 				vPos.x = (vertexNo - (2 - (vertexNo % 2))) / 2;
-				vPos.x = abs((g_boundedDensity.x * (edgeNo / 2)) - vPos.x);
+				vPos.x = abs((g_boundedDensity.x * (edgeNo / 2)) - vPos.x);// ((vertexNo - (2 - (vertexNo % 2))) / 2));
 				vPos.y = g_boundedDensity.y * (edgeNo / 2);
 			}
 			else
@@ -1698,7 +1694,8 @@ shader VS_OUTPUT VS_BoundedWaterSurf(idOnly IN)
 				noDisplacement = ((vertexNo % 2) == 1);
 				
 				vPos.x = g_boundedDensity.x * ((edgeNo - 1) / 2);
-				vPos.y = abs((g_boundedDensity.y * (float)(edgeNo % 3)) - ((vertexNo - (2 - (vertexNo % 2))) / 2));
+				vPos.y = (vertexNo - (2 - (vertexNo % 2))) / 2;
+				vPos.y = abs((g_boundedDensity.y * (edgeNo % 3)) - vPos.y);// ((vertexNo - (2 - (vertexNo % 2))) / 2));
 			}
 		}
 		//Surface
@@ -2208,7 +2205,7 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	float4 Output = float4(-1.0, -1.0, -1.0, -1.0);// g_texColour.Sample(wrapSamplerState, In.texCoords) / 50.0;
 	
 	int noSteps = min(g_noOfReflectionSteps, 100);
-	float stepLength = min(max(abs(depthInput.w) * 3000.0, 0.125), 0.5);
+	float stepLength = clamp(abs(depthInput.w) * 3000.0, 0.06125, 0.5);
 
 	float4 normalsInput = g_waterNormals.Sample(g_samplerPerlin, BaseTexCoords);
 
@@ -2242,14 +2239,14 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 	if (TexCoord.y > 1.0 || TexCoord.y < 0.0 || TexCoord.x >= 1.0 || TexCoord.x <= 0.0)
 		return float4(-1.0, -1.0, -1.0, -1.0);
 
-	//if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)))
+	if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)))
 		//|| (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale)* float(g_pixelStep)))
 		stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
 
-	reflectVec.z = max(reflectVec.z, 0.0);//*= -1.0;//
+	reflectVec.z = max(reflectVec.z, 0.1);//*= -1.0;//
 	reflectVec = normalize(reflectVec);
 	
-	//rayPos += vec4(reflectVec * stepLength, 0.0);
+	rayPos += vec4(reflectVec * stepLength, 0.0);
 
 	//if (reflectVec.z < 0.0)
 	//{
@@ -2283,9 +2280,9 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 			break;
 		}
 
-		//if ((length(TexCoord - OldTexCoord) < length(g_viewportPixelScale) * float(g_pixelStep)))
+		if ((length(TexCoord - OldTexCoord) > length(g_viewportPixelScale) * float(g_pixelStep)))
 			//|| (length(TexCoord - OldTexCoord) > length(g_viewportPixelScale)* float(g_pixelStep)))
-		//	stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
+			stepLength *= (length(g_viewportPixelScale) * float(g_pixelStep)) / length(TexCoord - OldTexCoord);
 			
 		rayPos += vec4(reflectVec * stepLength, 0.0);
 
@@ -2313,10 +2310,6 @@ shader float4 PS_WaterSSR(posTexVertexOutput In) : SV_Target
 		// float4(-1.0, -1.0, -1.0, -1.0);//
 		//Output *= float(doublerefl ? 0.5 : 1.0);
 	//}
-
-	//	Output = vec4(1.0,0.0,0.0,0.0);
-	//if (doublerefl)
-		//return vec4(1.0, 0.0, 0.0, 1.0);
 
 	return Output;//vec4(reflectVec,0.0);//clip;//  
 }
