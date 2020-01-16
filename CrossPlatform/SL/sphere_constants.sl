@@ -17,7 +17,7 @@ SIMUL_CONSTANT_BUFFER(SphereConstants,7)
 	uniform vec4 debugColour;
 	
 	uniform vec3 debugViewDir;
-	uniform float padwiobg;
+	uniform int slices;
 
 	uniform vec2 texcOffset;
 SIMUL_CONSTANT_BUFFER_END

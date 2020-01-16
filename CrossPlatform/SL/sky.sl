@@ -23,26 +23,30 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 	return diffuse;
 }
 
-vec4 BackgroundLatLongSphere(Texture2D backgroundTexture,vec2 texCoords)
+vec4 BackgroundLatLongSphere(Texture2D backgroundTexture, vec2 texCoords)
 {
-	vec2 clip_pos		=vec2(-1.0,1.0);
-	clip_pos.x			+=2.0*texCoords.x;
+	vec2 clip_pos = vec2(-1.0, 1.0);
+	clip_pos.x += 2.0 * texCoords.x;
 #ifdef SFX_OPENGL
-	clip_pos.y		    -=2.0*(1.0 - texCoords.y);
+	clip_pos.y -= 2.0 * (1.0 - texCoords.y);
 #else
-    clip_pos.y			-=2.0*texCoords.y;
+	clip_pos.y -= 2.0 * texCoords.y;
 #endif
-	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
+	vec3 view = normalize(mul(invViewProj, vec4(clip_pos, 1.0, 1.0)).xyz);
 	// Plate-carree projection:
-	float ang			=atan2(view.y,-view.x);
-	float t				=ang/(SIMUL_PI_F*2.0);
-	float t1			=frac(t);
-	vec2 lat_long_texc	=vec2(t1,0.5-asin(view.z)/SIMUL_PI_F);
-	float t2			=0.5+frac(t-0.5);
-	lat_long_texc.x		=t1;
-	vec4 result1		=texture_wrap_lod(backgroundTexture,lat_long_texc,0);
-	
-	return starBrightness*result1;
-}
+	float ang = atan2(view.y, -view.x);
+	float t = ang / (SIMUL_PI_F * 2.0);
+	float t1 = frac(t) + (3.0 * SIMUL_PI_F / 180.0);
+	vec2 lat_long_texc = vec2(t1, (0.5 - asin(view.z) / SIMUL_PI_F) + (0.0 * SIMUL_PI_F / 180.0));
+	float t2 = 0.5 + frac(t - 0.5);
+	lat_long_texc.x = t1;
+	lat_long_texc.x = 1.0 - lat_long_texc.x;
+	vec4 result1 = texture_wrap_lod(backgroundTexture, lat_long_texc.xy, 0);
 
+	/*if (result1.x > 0.5)
+		return vec4(1, 1, 1, 1);
+	else*/
+
+	return starBrightness * result1;
+}
 #endif

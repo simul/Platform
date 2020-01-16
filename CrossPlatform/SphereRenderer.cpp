@@ -69,7 +69,38 @@ void SphereRenderer::DrawCrossSection(crossplatform::DeviceContext &deviceContex
 	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
 	effect->Unapply(deviceContext);
 }
+void SphereRenderer::DrawMultipleCrossSections(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, crossplatform::Texture* t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices)
+{
+	math::Matrix4x4 view = deviceContext.viewStruct.view;
+	const math::Matrix4x4& proj = deviceContext.viewStruct.proj;
 
+	math::Matrix4x4 wvp, world;
+	world.ResetToUnitMatrix();
+
+	world._41 = origin.x;
+	world._42 = origin.y;
+	world._43 = origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp, world, view, proj);
+	sphereConstants.debugWorldViewProj = wvp;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float*)&cam_pos, (float*)&view_dir);
+	crossplatform::EffectTechnique* tech = effect->GetTechniqueByName("draw_multiple_cross_sections_on_sphere");
+	effect->SetTexture(deviceContext, "cloudVolume", t);
+	sphereConstants.quaternion = orient_quat;
+	sphereConstants.radius = sph_rad;
+	sphereConstants.sideview = qsize * 0.5f;
+	sphereConstants.debugColour = colour;
+	sphereConstants.debugViewDir = view_dir;
+	sphereConstants.texcOffset = texcOffset;
+	sphereConstants.slices = slices;
+	effect->SetConstantBuffer(deviceContext, &sphereConstants);
+
+	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::TRIANGLESTRIP);
+	effect->Apply(deviceContext, tech, 0);
+	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
+	effect->Unapply(deviceContext);
+}
 
 void SphereRenderer::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
 {
@@ -169,6 +200,7 @@ void SphereRenderer::DrawTexture(DeviceContext &deviceContext,crossplatform::Tex
 	sphereConstants.sideview		=qsize*0.5f;
 	sphereConstants.debugColour		=colour;
 	sphereConstants.debugViewDir	=view_dir;
+	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 
 	renderPlatform->SetTopology(deviceContext,TRIANGLESTRIP);
