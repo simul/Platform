@@ -277,6 +277,7 @@ void DisplaySurface::InitSwapChain()
 	
 	{
 		surfFormats.push_back(vk::SurfaceFormatKHR());
+		surfFormats[0].format = vk::Format::eUndefined;
 	}
 
 	// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
