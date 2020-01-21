@@ -1,9 +1,9 @@
 #ifndef SIMUL_CROSSPLATFORM_HDRRENDERER_H
 #define SIMUL_CROSSPLATFORM_HDRRENDERER_H
 #include "Simul/Base/PropertyMacros.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
-#include "Simul/Platform/CrossPlatform/SL/image_constants.sl"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Simul/Shaders/SL/hdr_constants.sl"
+#include "Simul/Shaders/SL/image_constants.sl"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"

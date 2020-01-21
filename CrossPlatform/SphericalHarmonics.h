@@ -2,9 +2,9 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
-#include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Simul/Platform/Shaders/SL/spherical_harmonics_constants.sl"
+#include "Simul/Platform/Shaders/SL/light_probe_constants.sl"
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)

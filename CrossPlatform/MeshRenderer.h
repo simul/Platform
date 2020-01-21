@@ -1,6 +1,6 @@
 #pragma once
 #include "RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/SL/camera_constants.sl"
+#include "Simul/Platform/Shaders/SL/camera_constants.sl"
 #include "Export.h"
 
 #ifdef _MSC_VER

@@ -168,7 +168,7 @@ Effect::~Effect()
 
 void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
 {
-	EnsureEffect(r, filename_utf8);
+	//EnsureEffect(r, filename_utf8);
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 }
 

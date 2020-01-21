@@ -2,7 +2,7 @@
 
 #include <map>
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
 #ifdef _MSC_VER

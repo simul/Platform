@@ -8,8 +8,8 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Buffer.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Simul/Platform/Shaders/SL/solid_constants.sl"
 #include "Simul/Geometry/Orientation.h"
 
 #ifdef _MSC_VER

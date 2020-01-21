@@ -1,7 +1,7 @@
 #pragma once
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/Sl/CppSl.hs"
+#include "Simul/Platform/Shaders/Sl/CppSl.sl"
 #include <string>
 #include <map>
 #include "SimulDirectXHeader.h"

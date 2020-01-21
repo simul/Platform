@@ -11,9 +11,9 @@
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
-#include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Simul/Platform/Shaders/SL/solid_constants.sl"
+#include "Simul/Platform/Shaders/SL/debug_constants.sl"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \

@@ -1,7 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef RENDER_STATES_SL
 #define RENDER_STATES_SL
-#include "states.sl"
+#include "sampler_states.sl"
 
 #ifdef SFX
 	RenderTargetFormatState WaterTargetFormats

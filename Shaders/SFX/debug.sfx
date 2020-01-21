@@ -1,13 +1,13 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../SL/common.sl"
-#include "../SL/render_states.sl"
-#include "../SL/depth.sl"
-#include "../SL/colour_packing.sl"
-#include "../SL/debug_constants.sl"
-#include "../SL/states.sl"
-#include "../SL/quaternion.sl"
-#include "../SL/cubemap_matrices.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "depth.sl"
+#include "colour_packing.sl"
+#include "debug_constants.sl"
+#include "sampler_states.sl"
+#include "quaternion.sl"
+#include "cubemap_matrices.sl"
 
 uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2DArray imageTextureArray SIMUL_TEXTURE_REGISTER(0);

@@ -5,8 +5,8 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/SL/text_constants.sl"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Simul/Platform/Shaders/SL/text_constants.sl"
 
 #ifdef _MSC_VER
 	#pragma warning(push)  

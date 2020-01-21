@@ -2,7 +2,7 @@
 
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/Mesh.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "glad/glad.h"
 
 #ifdef _MSC_VER

@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "Simul/Base/FileLoader.h"
 #include "Simul/Math/Matrix4x4.h"
 struct ID3DX11EffectConstantBuffer;

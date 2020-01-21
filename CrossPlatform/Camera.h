@@ -4,7 +4,7 @@
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Platform/CrossPlatform/CameraInterface.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/Shaders/SL/CppSl.sl"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

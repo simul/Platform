@@ -1,10 +1,10 @@
 // Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../SL/common.sl"
-#include "../SL/render_states.sl"
-#include "../SL/solid_constants.sl"
-#include "../SL/camera_constants.sl"
-#include "../SL/depth.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "solid_constants.sl"
+#include "camera_constants.sl"
+#include "depth.sl"
 
 uniform Texture2D diffuseTexture;
 uniform TextureCube diffuseCubemap;

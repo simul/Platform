@@ -1,9 +1,9 @@
 //  Copyright (c) 2015-2017 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../SL/common.sl"
-#include "../SL/render_states.sl"
-#include "../SL/states.sl"
-#include "../SL/text_constants.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "sampler_states.sl"
+#include "text_constants.sl"
 uniform StructuredBuffer<FontChar> fontChars;
 uniform Texture2D fontTexture;
 shader posTexVertexOutput BackgroundVertexShader(idOnly IN)

@@ -1,7 +1,7 @@
 #ifndef CPP_GLSL
 #define CPP_GLSL
 
-#include "../../CrossPlatform/SL/CppSl.hs"
+#include "../../Shaders/SL/CppSl.sl"
 
 #ifndef __cplusplus
 

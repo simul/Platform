@@ -1,6 +1,6 @@
 #ifndef CPP_HLSL
 #define CPP_HLSL
-#include "../../CrossPlatform/SL/CppSl.hs"
+#include "../../Shaders/SL/CppSl.sl"
 
 #ifndef __cplusplus
 // Disable the warning "pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values..."

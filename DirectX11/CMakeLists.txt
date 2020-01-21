@@ -13,21 +13,18 @@ file(GLOB HEADERS
 )
 
 file(GLOB SHADERS
-	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SFX/*.sfx"
-	"${CMAKE_SOURCE_DIR}/Shaders/Crossplatform/SFX/*.sfx"
+	"${CMAKE_SOURCE_DIR}/Platform/Shaders/SFX/*.sfx"
 )
 
-
 file(GLOB SHADER_INCLUDES
-	"${CMAKE_SOURCE_DIR}/Platform/Crossplatform/SL/*.sl"
-	"${CMAKE_SOURCE_DIR}/Shaders/Crossplatform/SL/*.sl"
+	"${CMAKE_SOURCE_DIR}/Platform/Shaders/SL/*.sl"
 )
 
 source_group("Shaders" FILES  ${SHADERS} )
 source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 #add_custom_target(SimulDirectX11_Shaders DEPENDS ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE})
 #add_fx_shaders(${SHADERS})
-#add_fx_shader_project( DirectX11Shaders ${SHADERS} ${SHADER_INCLUDES} )
+add_fx_shader_project( DirectX11CoreShaders INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${CMAKE_SOURCE_DIR}/Platform/Shaders/SL" "${CMAKE_SOURCE_DIR}/Platform/CrossPlatform/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} OUTPUT "${CMAKE_BINARY_DIR}/Platform/DirectX11/shaderbin")
 
 add_static_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${CMAKE})
 if(SIMUL_SOURCE_BUILD)
@@ -39,7 +36,7 @@ if(SIMUL_SOURCE_BUILD)
 	LibraryDefaults(SimulDirectX11_MT)
 	add_dependencies(SimulDirectX11_MT effects11_MT directxtex_MT )
 	if(SIMUL_BUILD_SHADERS)
-		#add_dependencies( DirectX11Shaders )
+		#add_dependencies( SimulDirectX11_MT DirectX11Shaders )
 	endif()
 endif()
 

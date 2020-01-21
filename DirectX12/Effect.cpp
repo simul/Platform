@@ -246,7 +246,7 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
 {	
 	renderPlatform = r;
-	EnsureEffect(r, filename_utf8);
+	//EnsureEffect(r, filename_utf8);
 
 
 	crossplatform::Effect::Load(r, filename_utf8, defines);

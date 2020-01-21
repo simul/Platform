@@ -7,7 +7,7 @@
 #pragma warning(disable:4251)
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/SL/sphere_constants.sl"
+#include "Simul/Platform/Shaders/SL/sphere_constants.sl"
 
 namespace simul
 {

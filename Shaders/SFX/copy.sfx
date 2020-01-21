@@ -3,7 +3,7 @@
 RWTexture1D<int4> abc : register(u0);
 
 #include "shader_platform.sl"
-#include "../SL/common.sl"
+#include "common.sl"
 
 uniform RWTexture1D<int4> DestTex1i : register(u0);
 uniform Texture1D<int4> SourceTex1i : register(t0);

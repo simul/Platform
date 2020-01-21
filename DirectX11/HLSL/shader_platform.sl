@@ -1,6 +1,6 @@
 #ifndef SHADERPLATFORM_SL
 #define SHADERPLATFORM_SL
-#include "../../CrossPlatform/SL/CppSl.hs"
+#include "../../Shaders/SL/CppSl.sl"
 
 #pragma warning( disable : 4717)
 #pragma warning( disable : 3550)
