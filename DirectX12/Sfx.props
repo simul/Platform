@@ -1,0 +1,16 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<PropertyGroup Condition="'$(Sfx_RuleBeforeTargets)' == '' and '$(Sfx_RuleAfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+<Sfx_RuleBeforeTargets>Midl</Sfx_RuleBeforeTargets>
+<Sfx_RuleAfterTargets>CustomBuild</Sfx_RuleAfterTargets>
+</PropertyGroup>
+<PropertyGroup>
+<Sfx_RuleDependsOn Condition="'$(ConfigurationType)' != 'Makefile'">_SelectedFiles;$(Sfx_RuleDependsOn)</Sfx_RuleDependsOn>
+</PropertyGroup>
+<ItemDefinitionGroup>
+<Sfx_Rule>
+<CommandLineTemplate>$(SIMUL)/Tools/bin/Sfx.exe [inputs] [IncludePaths] [OutputPath] [SfxConfig] [AdditionalOptions]</CommandLineTemplate>
+<Outputs>%(Filename).sfxo</Outputs>
+<ExecutionDescription>Sfx.exe %(Filename)</ExecutionDescription>
+</Sfx_Rule>
+</ItemDefinitionGroup>
+</Project>

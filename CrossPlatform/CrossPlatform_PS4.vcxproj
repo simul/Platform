@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ORBIS">
+      <Configuration>Debug</Configuration>
+      <Platform>ORBIS</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ORBIS">
+      <Configuration>Release</Configuration>
+      <Platform>ORBIS</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2AE4F994-2857-4E92-930A-B3AAE8409FB4}</ProjectGuid>
+    <ProjectName>SimulCrossPlatform</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ORBIS'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ORBIS'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PS4\SimulPS4.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PS4\SimulPS4.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ORBIS'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ORBIS'">
+    <ClCompile>
+      <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'">
+    <ClCompile>
+      <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <OptimizationLevel>Level0</OptimizationLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="AmortizationStruct.cpp" />
+    <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="BaseOpticsRenderer.cpp" />
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraInterface.cpp" />
+    <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="DeviceContext.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
+    <ClCompile Include="DisplaySurfaceManager.cpp" />
+    <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
+    <ClCompile Include="HdrRenderer.cpp" />
+    <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="LensFlare.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
+    <ClCompile Include="PixelFormat.cpp" />
+    <ClCompile Include="Quaterniond.cpp" />
+    <ClCompile Include="RenderDelegater.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="SphericalHarmonics.cpp" />
+    <ClCompile Include="TextInputOutput.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="View.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AmortizationStruct.h" />
+    <ClInclude Include="BaseFramebuffer.h" />
+    <ClInclude Include="BaseOpticsRenderer.h" />
+    <ClInclude Include="BaseRenderer.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraInterface.h" />
+    <ClInclude Include="CommandLineParams.h" />
+    <ClInclude Include="DemoOverlay.h" />
+    <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="DisplaySurface.h" />
+    <ClInclude Include="DisplaySurfaceManager.h" />
+    <ClInclude Include="Effect.h" />
+    <ClInclude Include="Export.h" />
+    <ClInclude Include="GpuProfiler.h" />
+    <ClInclude Include="GraphicsDeviceInterface.h" />
+    <ClInclude Include="HdrRenderer.h" />
+    <ClInclude Include="Layout.h" />
+    <ClInclude Include="LensFlare.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Macros.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshRenderer.h" />
+    <ClInclude Include="MouseHandler.h" />
+    <ClInclude Include="PixelFormat.h" />
+    <ClInclude Include="Quaterniond.h" />
+    <ClInclude Include="RenderDelegate.h" />
+    <ClInclude Include="RenderDelegater.h" />
+    <ClInclude Include="RenderPlatform.h" />
+    <ClInclude Include="ShaderMode.h" />
+    <ClInclude Include="SphericalHarmonics.h" />
+    <ClInclude Include="TextInputOutput.h" />
+    <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Topology.h" />
+    <ClInclude Include="View.h" />
+  </ItemGroup>
+  <Import Condition="'$(ConfigurationType)' == 'Makefile' and Exists('$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets')" Project="$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

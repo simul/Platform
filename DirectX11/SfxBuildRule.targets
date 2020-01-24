@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema
+      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName
+      Include="Sfx">
+      <Targets>_Sfx</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+  <UsingTask
+    TaskName="Sfx"
+    TaskFactory="XamlTaskFactory"
+    AssemblyName="Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+  <Target
+    Name="_Sfx"
+    BeforeTargets="$(SfxBeforeTargets)"
+    AfterTargets="$(SfxAfterTargets)"
+    Condition="'@(Sfx)' != ''"
+    DependsOnTargets="$(SfxDependsOn);ComputeSfxOutput"
+    Outputs="%(Sfx.Outputs)"
+    Inputs="%(Sfx.Identity);%(Sfx.AdditionalDependencies);$(MSBuildProjectFile)">
+    <ItemGroup
+      Condition="'@(SelectedFiles)' != ''">
+      <Sfx
+        Remove="@(Sfx)"
+        Condition="'%(Identity)' != '@(SelectedFiles)'" />
+    </ItemGroup>
+    <ItemGroup>
+      <Sfx_tlog
+        Include="%(Sfx.Outputs)"
+        Condition="'%(Sfx.Outputs)' != '' and '%(Sfx.ExcludedFromBuild)' != 'true'">
+        <Source>@(Sfx, '|')</Source>
+      </Sfx_tlog>
+    </ItemGroup>
+    <Message
+      Importance="High"
+      Text="%(Sfx.ExecutionDescription)" />
+    <WriteLinesToFile
+      Condition="'@(Sfx_tlog)' != '' and '%(Sfx_tlog.ExcludedFromBuild)' != 'true'"
+      File="$(TLogLocation)$(ProjectName).write.1u.tlog"
+      Lines="^%(Sfx_tlog.Source);@(Sfx_tlog-&gt;'%(Fullpath)')"
+      Encoding="Unicode" />
+    <Sfx
+      Condition="'@(Sfx)' != '' and '%(Sfx.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(Sfx.CommandLineTemplate)"
+      IncludePaths="%(Sfx.IncludePaths)"
+      OutputPath="%(Sfx.OutputPath)"
+      AdditionalOptions="%(Sfx.AdditionalOptions)"
+      Inputs="%(Sfx.Identity)" />
+  </Target>
+  <PropertyGroup>
+    <ComputeLinkInputsTargets>
+            $(ComputeLinkInputsTargets);
+            ComputeSfxOutput;
+          </ComputeLinkInputsTargets>
+    <ComputeLibInputsTargets>
+            $(ComputeLibInputsTargets);
+            ComputeSfxOutput;
+          </ComputeLibInputsTargets>
+  </PropertyGroup>
+  <Target
+    Name="ComputeSfxOutput"
+    Condition="'@(Sfx)' != ''">
+    <ItemGroup>
+      <SfxDirsToMake
+        Condition="'@(Sfx)' != '' and '%(Sfx.ExcludedFromBuild)' != 'true'"
+        Include="%(Sfx.Outputs)" />
+      <Link
+        Include="%(SfxDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <Lib
+        Include="%(SfxDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <ImpLib
+        Include="%(SfxDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+    </ItemGroup>
+    <MakeDir
+      Directories="@(SfxDirsToMake-&gt;'%(RootDir)%(Directory)')" />
+  </Target>
+</Project>

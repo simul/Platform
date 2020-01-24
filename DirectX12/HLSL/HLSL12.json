@@ -1,0 +1,16 @@
+{
+	"compiler": "fxc.exe",
+	"api": "DirectX 12",
+	"defaultOptions": "/T {shader_model} /nologo /Zi",
+	"sourceExtension": "hlsl",
+	"outputExtension": "cso",
+	"outputOption": "/Fo",
+	"debugOutputFileOption": "-Fd\"{filename_root}.pdb\"",
+	"entryPointOption": "/E{name}",
+	"multiplePixelOutputFormats": false,
+	"generateSlots": true,
+  "define": {
+    "SFX_TYPED_UAV_LOADS": "1",
+    "SFX_D3D12": "1"
+  }
+}

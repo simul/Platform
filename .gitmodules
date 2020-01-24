@@ -1,0 +1,9 @@
+[submodule "PS4"]
+	path = PS4
+	url = git@github.com:simul/PS4.git
+[submodule "XboxOne"]
+	path = XboxOne
+	url = git@github.com:simul/XboxOne.git
+[submodule "Switch"]
+	path = Switch
+	url = git@github.com:simul/Switch.git

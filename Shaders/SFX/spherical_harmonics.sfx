@@ -1,0 +1,145 @@
+// Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "spherical_harmonics_constants.sl"
+#include "noise.sl"
+#include "spherical_harmonics.sl"
+// The cubemap input we are creating coefficients for.
+uniform TextureCube cubemapTexture;
+uniform Texture2DArray cubemapAsTexture2DArray;
+// A texture (l_max+1)^2 of coefficients.
+uniform RWStructuredBuffer<vec4> targetBuffer;
+// A buffer of nxn random sample positions. The higher res, the more accurate.
+uniform RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW;
+uniform StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
+
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 16
+#endif
+
+CS_LAYOUT(BLOCK_SIZE,1,1)
+shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g * BLOCK_SIZE + t;
+	if(sub_pos.x>=(uint)numCoefficients)
+		return;
+	targetBuffer[sub_pos.x]	=vec4(0,1,0,0);
+}
+
+CS_LAYOUT(BLOCK_SIZE,1,1)
+shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 pos	= g * BLOCK_SIZE + t;
+	int i		=int(pos.x); // array index 
+	if (i>= numJitterSamples)
+		return;
+	int r		=i+randomSeed;
+	// generate unbiased distribution of spherical coords 
+	float x					=(rand(vec2(r,23.2*r))); // do not reuse results 
+	float y					=(rand(vec2(2.45*r,11.1*r))); // each sample must be random 
+	float theta				=asin(2.0*x-1.0)+PI/2.0;	// go from 0 to PI, not from - to + PI/2.
+	float phi				=2.0 * PI * y;
+	// convert spherical coords to unit vector 
+	vec3 dir				=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	samplesBufferRW[i].dir	=dir;
+	int2 lm[]={{0,0}
+				,{1,-1},{1,0},{1,1}
+				,{2,-2},{2,-1},{2,0},{2,1},{2,2}
+				,{3,-3},{3,-2},{3,-1},{3,0},{3,1},{3,2},{3,3}
+	};
+	// precompute all SH coefficients for this sample 
+	int n = 0;
+	for (int j = 0; j<MAX_SH_COEFFICIENTS; j++)
+	{
+		if (j >= numCoefficients)
+			break;
+		int2 p		=lm[j];
+		float co	=SH(p.x,p.y,theta,phi);
+		samplesBufferRW[i].coeff[j] =co;
+	}
+	samplesBufferRW[i].lookup=texture_cube_lod(cubemapTexture,dir,0);
+}
+
+groupshared vec4 contribution[MAX_SH_SAMPLES];
+
+// Each group is all the samples for a given coefficient.
+
+CS_LAYOUT(1,MAX_SH_SAMPLES,1)
+shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos						=uint3(g.x,t.y,0);
+	sub_pos.x							=min(8,sub_pos.x);
+	// The sub_pos gives the co-ordinate in the table of samples
+	const float weight					=4.0*PI; 
+	// divide the result by weight and number of samples 
+	float factor						=weight*invNumJitterSamples; 
+
+	vec4 contrib=vec4(0,0,0,0);
+	if (sub_pos.y<MAX_SH_SAMPLES)
+	{
+		SphericalHarmonicsSample shs	=samplesBuffer[sub_pos.y];
+		vec4 colour						=texture_cube_lod(cubemapTexture,shs.dir,0);
+		contrib							=factor*shs.coeff[sub_pos.x]*colour;
+	}
+	
+	contribution[sub_pos.y]=contrib;
+	GroupMemoryBarrierWithGroupSync();
+	//	targetBuffer[sub_pos.x]=vec4(1,0,0,0);
+	if(sub_pos.x>= (uint)numCoefficients)
+		return;
+	if(sub_pos.x>8)
+		return;
+	if(sub_pos.y==0)
+	{
+		vec4 total=vec4(0,0,0,0);
+		for(int i=0;i<MAX_SH_SAMPLES;i++)
+		{
+			total+=contribution[i];
+		}
+		total.w=35.0;
+		targetBuffer[sub_pos.x]=total;
+	}
+}
+
+CS_LAYOUT(1,1,1)
+shader void CS_ProbeQuery(uint3 sub_pos: SV_DispatchThreadID )
+{
+	int4 index		=int4(sub_pos.xyz+lookupOffset,0);
+	vec4 result		=cubemapAsTexture2DArray.Load(index);
+	targetBuffer[sub_pos.y*lookupSize.x+sub_pos.x]=result;
+}
+
+technique probe_query
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_ProbeQuery()));
+	}
+}
+
+
+technique clear
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear()));
+    }
+}
+
+technique jitter
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Jitter()));
+    }
+}
+
+technique encode
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Encode()));
+    }
+}
+

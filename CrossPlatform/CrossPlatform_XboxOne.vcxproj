@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Durango">
+      <Configuration>Release</Configuration>
+      <Platform>Durango</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AmortizationStruct.cpp" />
+    <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="BaseOpticsRenderer.cpp" />
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraInterface.cpp" />
+    <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="DeviceContext.cpp" />
+    <ClCompile Include="DisplaySurface.cpp" />
+    <ClCompile Include="DisplaySurfaceManager.cpp" />
+    <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
+    <ClCompile Include="HdrRenderer.cpp" />
+    <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="LensFlare.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
+    <ClCompile Include="PixelFormat.cpp" />
+    <ClCompile Include="Quaterniond.cpp" />
+    <ClCompile Include="RenderDelegater.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="SphericalHarmonics.cpp" />
+    <ClCompile Include="TextInputOutput.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="View.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AmortizationStruct.h" />
+    <ClInclude Include="BaseFramebuffer.h" />
+    <ClInclude Include="BaseOpticsRenderer.h" />
+    <ClInclude Include="BaseRenderer.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraInterface.h" />
+    <ClInclude Include="CommandLineParams.h" />
+    <ClInclude Include="DemoOverlay.h" />
+    <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="DisplaySurface.h" />
+    <ClInclude Include="DisplaySurfaceManager.h" />
+    <ClInclude Include="Effect.h" />
+    <ClInclude Include="Export.h" />
+    <ClInclude Include="GpuProfiler.h" />
+    <ClInclude Include="GraphicsDeviceInterface.h" />
+    <ClInclude Include="HdrRenderer.h" />
+    <ClInclude Include="Layout.h" />
+    <ClInclude Include="LensFlare.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Macros.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshRenderer.h" />
+    <ClInclude Include="MouseHandler.h" />
+    <ClInclude Include="PixelFormat.h" />
+    <ClInclude Include="Quaterniond.h" />
+    <ClInclude Include="RenderDelegate.h" />
+    <ClInclude Include="RenderDelegater.h" />
+    <ClInclude Include="RenderPlatform.h" />
+    <ClInclude Include="ShaderMode.h" />
+    <ClInclude Include="SphericalHarmonics.h" />
+    <ClInclude Include="TextInputOutput.h" />
+    <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Topology.h" />
+    <ClInclude Include="View.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <RootNamespace>Base</RootNamespace>
+    <ProjectGuid>{6E68EE14-F0D0-4E1D-8D59-7288E3942CC6}</ProjectGuid>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <Keyword>Win32Proj</Keyword>
+    <ApplicationEnvironment>title</ApplicationEnvironment>
+    <PlatformToolset>v141</PlatformToolset>
+    <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
+    <TargetRuntime>Native</TargetRuntime>
+    <ProjectName>SimulCrossPlatform</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <EmbedManifest>false</EmbedManifest>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\XboxOne\SimulXboxOne.props" />
+    <Import Project="..\..\SimulReleaseMD.props" />
+    <Import Project="..\..\SimulLib.props" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
+    <ExecutablePath>$(Console_SdkRoot)bin;$(VCInstallDir)bin\x86_amd64;$(VCInstallDir)bin;$(WindowsSDK_ExecutablePath_x86);$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(MSBuildToolsPath32);$(FxCopDir);$(PATH);</ExecutablePath>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
+    <Link>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+    <ClCompile>
+      <AdditionalUsingDirectories>$(Console_SdkPackagesRoot);$(Console_SdkWindowsMetadataPath);%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;SIMUL_DLL;NDEBUG;__WRL_NO_DEFAULT_LIB__;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalIncludeDirectories>$(SIMUL)/..</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
