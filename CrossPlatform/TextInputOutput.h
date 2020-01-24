@@ -1,5 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
+#include "Simul/Platform/CrossPlatform/Quaterniond.h"
 #include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "Simul/Base/FileLoader.h"
 #include "Simul/Base/MemoryInterface.h"
@@ -48,6 +49,8 @@ namespace simul
 			virtual vec3 Get(const char *name,vec3 default_)=0;
 			//! Floating-point value of the specified element.
 			virtual vec4 Get(const char *name,vec4 default_)=0;
+			//! Floating-point value of the specified element.
+			virtual Quaterniond Get(const char *name,Quaterniond default_)=0;
 			//! The property at the given index. type should be Variant::UNKNOWN at the end of the list.
 			virtual const char *Get(int propertyIndex)=0;
 			//! Sub-element with the given name. If null, the Value() should be non-null.
@@ -83,6 +86,8 @@ namespace simul
 			virtual void Set(const char *name,vec3 value)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec4 value)=0;
+			// Floating-point value of the specified element.
+			virtual void Set(const char *name,Quaterniond value)=0;
 			// Make a sub-element with the given name.
 			virtual TextOutput *CreateSubElement(const char *name)=0;
 			typedef std::vector<TextOutput*> Array;
@@ -122,6 +127,8 @@ namespace simul
 			vec3 Get(const char *name,vec3 default_);
 			// Floating-point value of the specified element.
 			vec4 Get(const char *name,vec4 default_);
+			// Floating-point value of the specified element.
+			Quaterniond Get(const char *name,Quaterniond default_);
 			virtual const char *Get(int propertyIndex);
 			// Sub-element with the given name. If null, the Value() should be non-null.
 			TextInput *GetSubElement(const char *name);
@@ -164,6 +171,8 @@ namespace simul
 			void Set(const char *name,vec3 value);
 			// Floating-point value of the specified element.
 			void Set(const char *name,vec4 value);
+			// Floating-point value of the specified element.
+			void Set(const char *name,Quaterniond value);
 			// Make a sub-element with the given name.
 			TextOutput *CreateSubElement(const char *name);
 			Array &GetArray(const char *name);
