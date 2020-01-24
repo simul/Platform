@@ -412,9 +412,6 @@ ERRNO_CHECK
 	void *textData=NULL;
 	unsigned textSize=0;
 ERRNO_CHECK
-	if(shaderBuildMode!=crossplatform::NEVER_BUILD)
-		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
-ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
 	bool changes_detected=(shaderBuildMode&crossplatform::ALWAYS_BUILD)!=0;
 	double binary_date_jdn=0.0;
@@ -432,27 +429,38 @@ ERRNO_CHECK
 	}
 	if ((shaderBuildMode&crossplatform::BUILD_IF_CHANGED) != 0)
 	{
-		double text_date_jdn = simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
-		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
-			changes_detected=true;
-		else if(text_date_jdn>0)	// maybe some of the includes have changed?
+		if(shaderBuildMode!=crossplatform::NEVER_BUILD)
+			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	ERRNO_CHECK
+		if(!textData)
 		{
-			if(base::GetFeatureLevel()>=FeatureLevel::EXPERIMENTAL)
-			{
-				// Xbox One shader build:
-				//	/*
-				//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
-				//	*/
-			}
-			bool missing=false;
-			newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,shaderPathsUtf8,textData,textSize,macros,binary_date_jdn,missing);
-			if(missing)
-			{
-				changes_detected=false;
-				SIMUL_CERR<<"Can't tell if source is out of date for "<<text_filename_utf8<<" as not all includes are present."<<std::endl;
-			}
-			else if(hr!=S_OK||newest_included_file>binary_date_jdn)
+			SIMUL_COUT<<"No source file "<<text_filename_utf8.c_str()<<", defaulting to binary.\n";
+			changes_detected=false;
+		}
+		else
+		{
+			double text_date_jdn = simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
+			if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 				changes_detected=true;
+			else if(text_date_jdn>0)	// maybe some of the includes have changed?
+			{
+				if(base::GetFeatureLevel()>=FeatureLevel::EXPERIMENTAL)
+				{
+					// Xbox One shader build:
+					//	/*
+					//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
+					//	*/
+				}
+				bool missing=false;
+				newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,shaderPathsUtf8,textData,textSize,macros,binary_date_jdn,missing);
+				if(missing)
+				{
+					changes_detected=false;
+					SIMUL_CERR<<"Can't tell if source is out of date for "<<text_filename_utf8<<" as not all includes are present."<<std::endl;
+				}
+				else if(hr!=S_OK||newest_included_file>binary_date_jdn)
+					changes_detected=true;
+			}
 		}
 	}
 	crossplatform::ShaderBuildMode anyBuild=crossplatform::ALWAYS_BUILD|crossplatform::BUILD_IF_CHANGED;

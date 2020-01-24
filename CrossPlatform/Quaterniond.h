@@ -125,6 +125,11 @@ namespace simul
 
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN LocalToGlobalOrientation(const Quaterniond& origin,const Quaterniond& local) ;
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN GlobalToLocalOrientation(const Quaterniond& origin,const Quaterniond& global) ;
+		
+		//! Transform a position in a previous frame of reference into a new frame. Assumes Earth radius 6378km, origin at sea level.
+		extern vec3 SIMUL_CROSSPLATFORM_EXPORT_FN TransformPosition(Quaterniond old_origin,Quaterniond new_origin,vec3 old_pos, double radius= 6378000.0);
+		//! Rotate an orientation by a specified offset in its local x and y axes.
+		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN TransformOrientationByOffsetXY(const Quaterniond &origin,vec2 local_offset_radians);
 	}
 }
 #endif

@@ -815,7 +815,13 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
 			return;
 		}
-
+		std::string filenameUtf8=std::string(filename_utf8)+ ".sfx";
+		const auto &paths=r->GetShaderPathsUtf8();
+		int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filenameUtf8.c_str(), paths);
+		if(index<0)
+			return;
+		if (index < paths.size())
+			filenameUtf8 = paths[index]  + filenameUtf8;
 		std::string platformName = r->GetName();
 
 		base::find_and_replace(platformName, " ", "");
@@ -838,7 +844,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		{
 			// File to compile
 			cmdLine += " ";
-			cmdLine += (std::string(SIMUL) + "\\Platform\\CrossPlatform\\SFX\\") + filename_utf8 + ".sfx";
+			cmdLine += filenameUtf8;
 			
 			cmdLine += " -w";
 			//cmdLine += " -L";
@@ -846,7 +852,9 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				cmdLine += " -V";
 			// Includes
 			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
-			cmdLine += SIMUL_BUILD + "\\Platform\\CrossPlatform\\SL\"";
+			cmdLine += std::string(SIMUL)+ "\\Shaders\\SL;";
+			cmdLine += std::string(SIMUL) + "\\Platform\\Shaders\\SL";
+			cmdLine += "\"";
 
 			// Platform file
 			cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";

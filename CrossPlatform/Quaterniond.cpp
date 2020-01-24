@@ -450,3 +450,28 @@ crossplatform::Quaterniond simul::crossplatform::GlobalToLocalOrientation(const 
 	crossplatform::Quaterniond rel = ((!origin) * dq) * origin;
 	return rel;
 }
+
+crossplatform::Quaterniond simul::crossplatform::TransformOrientationByOffsetXY(const crossplatform::Quaterniond &origin,vec2 local_offset_radians)
+{
+		// Now the new quaternion is 
+		crossplatform::Quaterniond local_offset;
+		local_offset.Rotate(local_offset_radians.x,vec3d(0,1.0,0));
+		local_offset.Rotate(local_offset_radians.y,vec3d(-1.0,0,0));
+		// local_offset must now be transformed to a global rotation.
+		crossplatform::Quaterniond new_relative=(origin*(local_offset/origin));
+		// And now we rotate to the new origin:
+		crossplatform::Quaterniond new_quat=new_relative*origin;
+		return new_quat;
+}
+
+vec3 simul::crossplatform::TransformPosition(Quaterniond old_origin,Quaterniond new_origin,vec3 old_pos,double radius)
+{
+	vec3d posd(old_pos.x,old_pos.y,radius+old_pos.z);
+	vec3d globalposd;
+	Multiply(globalposd,old_origin,posd);
+	vec3d new_posd;
+	Divide(new_posd,new_origin,globalposd);
+
+	vec3 newpos((float)new_posd.x,(float)new_posd.y,(float)(new_posd.z-radius));
+	return newpos;
+}
