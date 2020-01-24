@@ -396,6 +396,25 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	return ret;
 }
 
+Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
+{
+	if(properties.find(name)==properties.end())
+		return dflt;
+	double val[4];
+	size_t pos=0;
+	std::string str=properties[name];
+	for(int i=0;i<4;i++)
+	{
+		size_t comma_pos=str.find(",",pos+1);
+		string s=str.substr(pos,comma_pos-pos);
+		val[i]=(double)atof(s.c_str());
+		pos=comma_pos+1;
+	}
+	Quaterniond ret=val;
+	return ret;
+}
+
+
 const char *TextFileInput::Get(int propertyIndex)
 {
 	std::map<std::string,std::string>::iterator i=properties.begin();
@@ -586,6 +605,12 @@ void TextFileOutput::Set(const char *name,vec4 value)
 {
 	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.w);
 }
+
+void TextFileOutput::Set(const char *name,Quaterniond value)
+{
+	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.s);
+}
+
 
 TextOutput *TextFileOutput::CreateSubElement(const char *name)
 {
