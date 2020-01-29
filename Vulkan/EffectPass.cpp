@@ -190,6 +190,13 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		crossplatform::PlatformStructuredBuffer *sb =cs->applyRwStructuredBuffers[slot];
+		if(!sb)
+		{
+			// probably not actually used in the shader.
+			num_descr--;
+			b--;
+			continue;
+		}
 		vulkan::PlatformStructuredBuffer *psb=(vulkan::PlatformStructuredBuffer*)sb;
 		psb->ActualApply(deviceContext,this, slot,true);
 		vk::Buffer *bf=psb->GetLastBuffer();
