@@ -327,8 +327,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	crossplatform::Topology appliedTopology = topology;
 	if (cs->topology != crossplatform::Topology::UNDEFINED)
 		appliedTopology = cs->topology;
-	if (topology == crossplatform::Topology::UNDEFINED)
-		topology = crossplatform::Topology::TRIANGLESTRIP;
+	if (appliedTopology == crossplatform::Topology::UNDEFINED)
+		appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
 	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat, appliedTopology);
 	const auto &p=mRenderPasses.find(hashval);
 	RenderPassPipeline *renderPassPipeline=nullptr;
@@ -342,11 +342,13 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	if(c)
 	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute,renderPassPipeline->mPipeline);
+		if(descriptorSet)
 		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else
 	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics,renderPassPipeline->mPipeline);
+		if(descriptorSet)
 		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 }
@@ -542,6 +544,10 @@ void EffectPass::Initialize()
 
 void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 {
+	// Of course, only need to do this if there are ANY inputs.
+	if(mDescLayout.operator VkDescriptorSetLayout()==nullptr)
+		return;
+		
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::DescriptorSetLayout		descLayout[3];
 	for(int i=0;i<kNumBuffers;i++)
@@ -790,7 +796,8 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		i_desc[mInternalFrameIndex]=mDescriptorSets[mInternalFrameIndex].end();
 		i_desc[mInternalFrameIndex]--;
 		Initialize(*i_desc[mInternalFrameIndex]);
-		SIMUL_ASSERT(((VkDescriptorSet)*(i_desc[mInternalFrameIndex]))!=nullptr);
+		// Could Totally be null if no inputs to the shader.
+		//SIMUL_ASSERT(((VkDescriptorSet)*(i_desc[mInternalFrameIndex]))!=nullptr);
 	}
 	ApplyContextState(deviceContext,*i_desc[mInternalFrameIndex]);
 	mCurApplyCount++;
