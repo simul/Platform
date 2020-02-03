@@ -66,7 +66,7 @@ void DisplaySurface::InitSwapChain()
    
     mViewport.Width      = (float)screenWidth;
     mViewport.Height     = (float)screenHeight;
-    mViewport.TopLeftX   = (float)mViewport.TopLeftY = 0;
+    mViewport.TopLeftX   = mViewport.TopLeftY = 0.f;
     mViewport.MinDepth   = 0.0f;
     mViewport.MaxDepth   = 1.0f;
 

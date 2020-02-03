@@ -1607,7 +1607,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 		// Create the vertex buffer:
 		D3D11_BUFFER_DESC desc=
 		{
-			vertex_count*sizeof(crossplatform::PosColourVertex),
+			(UINT)vertex_count*(UINT)sizeof(crossplatform::PosColourVertex),
 			usage,
 			D3D11_BIND_VERTEX_BUFFER,
 			D3D11_CPU_ACCESS_WRITE,
@@ -1681,7 +1681,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		// Create the vertex buffer:
 		D3D11_BUFFER_DESC desc=
 		{
-			vertex_count*sizeof(VertexXyzRgba),
+			(UINT)vertex_count* (UINT)sizeof(VertexXyzRgba),
 			usage,
 			D3D11_BIND_VERTEX_BUFFER,
 			D3D11_CPU_ACCESS_WRITE,
