@@ -26,7 +26,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 target_include_directories(SimulVulkan_MT PRIVATE "${VULKAN_SDK_DIR}/Include")
-target_include_directories(SimulVulkan_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")
+target_include_directories(SimulVulkan_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/External/stb")
 target_include_directories(SimulVulkan_MT PUBLIC "${CMAKE_SOURCE_DIR}/Platform/Vulkan")
 endif()
 
@@ -42,7 +42,7 @@ endif()
 
 set_target_properties(SimulVulkan_MD PROPERTIES FOLDER Dynamic)
 target_include_directories(SimulVulkan_MD PRIVATE "${VULKAN_SDK_DIR}/Include")
-target_include_directories(SimulVulkan_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/stb")
+target_include_directories(SimulVulkan_MD PRIVATE "${CMAKE_SOURCE_DIR}/Platform/External/stb")
 target_include_directories(SimulVulkan_MD PUBLIC "${CMAKE_SOURCE_DIR}/Platform/Vulkan")
 
 add_sfx_shader_project( VulkanCoreShaders "${CMAKE_CURRENT_SOURCE_DIR}/GLSL/GLSL.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/GLSL" "${CMAKE_SOURCE_DIR}/Platform/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${CMAKE} ${SHADER_DEFS} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/Platform/Vulkan/shaderbin")
