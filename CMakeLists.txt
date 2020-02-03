@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.14)
+add_subdirectory(CrossPlatform)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(SIMUL_SUPPORT_VULKAN ON PARENT_SCOPE)
+	add_subdirectory(Vulkan)
+else()
+	set(SIMUL_SUPPORT_VULKAN OFF PARENT_SCOPE)
+endif()
+ 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	set(SIMUL_SUPPORT_OPENGL ON PARENT_SCOPE)
+	set(SIMUL_SUPPORT_D3D11 ON PARENT_SCOPE)
+	add_subdirectory(OpenGL)
+	add_subdirectory(DirectX11)
+else()
+	set(SIMUL_SUPPORT_D3D11 OFF PARENT_SCOPE)
+	set(SIMUL_SUPPORT_OPENGL OFF PARENT_SCOPE)
+endif()
+
+
+set(SIMUL_SUPPORT_D3D12 OFF PARENT_SCOPE)
+if(XBOXONE)
+	set(SIMUL_SUPPORT_D3D12 ON PARENT_SCOPE)
+	add_subdirectory(DirectX12)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
+	set(SIMUL_SUPPORT_D3D12 ON PARENT_SCOPE)
+	add_subdirectory(DirectX12)
+endif()
