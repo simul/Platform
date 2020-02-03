@@ -1,31 +1,58 @@
 cmake_minimum_required(VERSION 3.14)
+project(Platform)
+
+include("CMake/Variables.cmake")
+include("CMake/Include.cmake")
+include("CMake/Shader.cmake")
+
 add_subdirectory(CrossPlatform)
+add_subdirectory(Applications/Sfx)
+
+
+if(SIMUL_BUILD_SAMPLES)
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
+		add_subdirectory(External/glfw)
+	endif()
+endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(SIMUL_SUPPORT_VULKAN ON PARENT_SCOPE)
 	add_subdirectory(Vulkan)
-else()
-	set(SIMUL_SUPPORT_VULKAN OFF PARENT_SCOPE)
 endif()
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(SIMUL_SUPPORT_OPENGL ON PARENT_SCOPE)
-	set(SIMUL_SUPPORT_D3D11 ON PARENT_SCOPE)
 	add_subdirectory(OpenGL)
 	add_subdirectory(DirectX11)
-else()
-	set(SIMUL_SUPPORT_D3D11 OFF PARENT_SCOPE)
-	set(SIMUL_SUPPORT_OPENGL OFF PARENT_SCOPE)
 endif()
 
-
-set(SIMUL_SUPPORT_D3D12 OFF PARENT_SCOPE)
 if(XBOXONE)
-	set(SIMUL_SUPPORT_D3D12 ON PARENT_SCOPE)
 	add_subdirectory(DirectX12)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
-	set(SIMUL_SUPPORT_D3D12 ON PARENT_SCOPE)
 	add_subdirectory(DirectX12)
+endif()
+
+if(XBOXONE)
+	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
+	set( ENV{SIMUL_XDK_VERSION}  ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+endif()
+
+if(GDK)
+	set(SIMUL_SUPPORT_D3D12 ON)
+	add_subdirectory(Platform/DirectX12)
+	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
+	add_subdirectory(External/DirectX/DirectXTK12)
+	set( ENV{SIMUL_XDK_VERSION}  ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
+	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
+	add_subdirectory(External/DirectX/Effects11_Win8SDK)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "PS4")
+	set(SIMUL_SUPPORT_PS4 ON)
+	add_subdirectory(Platform/PS4/Render)
+else()
+	set(SIMUL_SUPPORT_PS4 OFF)
 endif()
