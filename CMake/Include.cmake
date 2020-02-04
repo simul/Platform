@@ -193,7 +193,6 @@ endfunction()
 
 function(add_dll libname)
 	set(target "${libname}${DYNAMIC_LINK_SUFFIX}")
-	message("DYNAMIC_LINK_SUFFIX ${DYNAMIC_LINK_SUFFIX}")
 	cmake_parse_arguments(add_dynamic_library "" "RUNTIME" "SOURCES;DEFINITIONS;LINK;PROPERTIES;INCLUDES;PUBLICINCLUDES" ${ARGN} )
 	if(NOT SIMUL_SOURCE_BUILD)
 		set(IMP_LIB IMPORTED GLOBAL)

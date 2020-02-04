@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
+if(SIMUL_DIR)
+else()
 project(Platform)
+endif()
 
 include("CMake/Variables.cmake")
 include("CMake/Include.cmake")
