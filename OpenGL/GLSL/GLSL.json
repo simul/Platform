@@ -59,12 +59,13 @@
 	}
 	,"toImageFormat":{
 		 "vec4"   	: "rgba32f"
-		,"char4"	: "rgba8_snorm"
+		,"char4"  	: "rgba8_snorm"
 		,"uchar4" 	: "rgba8"
 		,"ivec4"  	: "rgba32i"
 		,"uint"   	: "r32ui"
 		,"float"  	: "r32f"
 		,"float4"   : "rgba32f"
+		,"half4"    : "rgba16f"
 	}
 	,"toImageType":{
 	 	"vec4"   	: "image"
@@ -74,6 +75,7 @@
 		,"uint"   	: "uimage"
 		,"float"  	: "image" 
 		,"float4"	: "image"	
+		,"half4"	: "image"	
 	}
 	,"toTextureType":{
 	 	"default"	: "sampler"
@@ -84,6 +86,7 @@
 		,"uint"   	: "usampler"
 		,"float"  	: "sampler" 	
 		,"float4"	: "sampler"
+		,"half4"	: "sampler"
 	}
 	,"computeLayout" : "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;"
 	,"structuredBufferDeclaration" : "layout(std430,binding={slot})buffer {name}\n{\n\t{content} \n};"

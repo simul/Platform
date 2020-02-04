@@ -1382,10 +1382,10 @@ assignment_exp: conditional_exp
                     {
                         find_and_replace(s,"{cast}","vec4");
                     }
-					else if(toStoreDec->second->structureType == "half4")
-					{
-						find_and_replace(s,"{cast}","vec4");
-					}
+                    else if(toStoreDec->second->structureType == "half4")
+                    {
+                        find_and_replace(s,"{cast}","vec4");
+                    }
                     else
                     {
                         find_and_replace(s,"{cast}","nullcast");
