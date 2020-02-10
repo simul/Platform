@@ -1,6 +1,8 @@
 include_guard()
 
 option( SIMUL_SOURCE_BUILD "Build Simul libraries from source? If false, only samples are built." ON )
+option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
+option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
