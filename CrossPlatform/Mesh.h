@@ -10,7 +10,7 @@
 #include "Simul/Platform/CrossPlatform/Topology.h"
 #include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "Simul/Platform/Shaders/SL/solid_constants.sl"
-#include "Simul/Geometry/Orientation.h"
+#include "Simul/Platform/Math/Orientation.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

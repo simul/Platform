@@ -35,9 +35,9 @@ else()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set( BISON_EXECUTABLE "${CMAKE_SOURCE_DIR}/Platform/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
-	set( FLEX_EXECUTABLE "${CMAKE_SOURCE_DIR}/Platform/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
-	set( FLEX_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Platform/External/win_flex_bison/" CACHE STRING "" )
+	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
+	set( FLEX_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
+	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" CACHE STRING "" )
 endif()
 
 set( SIMUL_FX_EXECUTABLE "C:/Program Files (x86)/Windows Kits/10/bin/x64/fxc.exe" CACHE STRING "" )

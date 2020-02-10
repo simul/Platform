@@ -18,7 +18,7 @@
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Math/Matrix4x4.h"
+#include "Simul/Platform/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "D3dx11effect.h"
 #include "DisplaySurface.h"

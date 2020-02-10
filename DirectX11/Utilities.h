@@ -12,7 +12,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "Simul/Base/FileLoader.h"
-#include "Simul/Math/Matrix4x4.h"
+#include "Simul/Platform/Math/Matrix4x4.h"
 struct ID3DX11EffectConstantBuffer;
 #pragma warning(disable:4251)
 namespace simul

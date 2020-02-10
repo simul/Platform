@@ -5,7 +5,7 @@
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Math/RandomNumberGenerator.h"
+#include "Simul/Platform/Math/RandomNumberGenerator.h"
 using namespace simul;
 using namespace crossplatform;
 

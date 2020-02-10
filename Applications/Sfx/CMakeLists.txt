@@ -38,9 +38,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	#set_target_properties(Sfx PROPERTIES CMAKE_VS_PLATFORM_TOOLSET v142 )
 	#set_target_properties(Sfx PROPERTIES CMAKE_GENERATOR_TOOLSET v142 )
 	deploy_to_directory(Sfx ${CMAKE_SOURCE_DIR}\\Tools\\bin)
-	set_target_properties(Sfx PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/Platform/DirectX12/shaderbin"
+	set(SFX_TEST_PLATFORM PS4/Render)
+	set(SFX_TEST_PLATFORM PS4/Render)
+	set_target_properties(Sfx PROPERTIES
+	#VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../Platform/DirectX12/shaderbin"
+	#VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../Platform/PS4/shaderbin"
 		VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}"											  
-		VS_DEBUGGER_COMMAND_ARGUMENTS "${CMAKE_SOURCE_DIR}/Shaders/Sfx/cloud_edit.sfx -I\"${CMAKE_SOURCE_DIR}/Platform/DirectX12/HLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${CMAKE_SOURCE_DIR}/Platform/Shaders/SL\" -O\"${CMAKE_BINARY_DIR}/Platform/DirectX12/shaderbin\" -P\"${CMAKE_SOURCE_DIR}/Platform/DirectX12/HLSL/HLSL12.json\" -M\"${CMAKE_BINARY_DIR}/Platform/DirectX12/sfx_intermediate\" -w -f"
+		#VS_DEBUGGER_COMMAND_ARGUMENTS "${CMAKE_CURRENT_SOURCE_DIR}/../Shaders/Sfx/test.sfx -I\"${CMAKE_CURRENT_SOURCE_DIR}/../DirectX12/HLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/../Platform/Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../DirectX12/shaderbin\" -P\"${CMAKE_CURRENT_SOURCE_DIR}/../Platform/DirectX12/HLSL/HLSL12.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../DirectX12/sfx_intermediate\" -w -f"
+		
+		VS_DEBUGGER_COMMAND_ARGUMENTS "${CMAKE_CURRENT_SOURCE_DIR}/../../Shaders/Sfx/test.sfx -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/PSSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../PS4/shaderbin\" -P\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/PSSL/PSSL.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v"
 	)
 
 endif()

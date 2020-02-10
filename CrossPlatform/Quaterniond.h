@@ -1,7 +1,7 @@
 #ifndef QuaterniondH
 #define QuaterniondH
 
-#include "Simul/Math/Matrix.h"    
+#include "Simul/Platform/Math/Matrix.h"    
 #include "Simul/Platform/Shaders/SL/CppSl.sl"
 #include "Export.h"
 

@@ -22,7 +22,7 @@
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
 #include "Utilities.h"
-#include "Simul/Math/Pi.h"
+#include "Simul/Platform/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #pragma optimize("",off)
