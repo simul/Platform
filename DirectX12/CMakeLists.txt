@@ -14,21 +14,21 @@ file(GLOB HEADERS
 
 file(GLOB JSON
     "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/*.json"
-    "${CMAKE_SOURCE_DIR}/Platform/XboxOne/HLSL/*.json"
+    "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/*.json"
 )
 
 file(GLOB SHADERS
-	"${CMAKE_SOURCE_DIR}/Platform/Shaders/Sfx/*.sfx" 
+	"${SIMUL_PLATFORM_DIR}/Shaders/Sfx/*.sfx" 
 )
 
 file(GLOB SHADER_INCLUDES
-	"${CMAKE_SOURCE_DIR}/Platform/Shaders/SL/*.sl"
+	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
 )
 
 set(in_RootSignature "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/GFX.hlsl")
 
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS SIMUL_DIRECTX12_DLL=1 PROPERTIES FOLDER Static
-	INCLUDES "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${CMAKE_SOURCE_DIR}/Platform/DirectX12" )
+	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" )
 
 add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} )
 
@@ -36,19 +36,19 @@ if(SIMUL_SOURCE_BUILD)
 	target_compile_definitions(SimulDirectX12_MD PRIVATE SIMUL_DIRECTX12_DLL=1)
 	set_target_properties(SimulDirectX12_MD PROPERTIES FOLDER Dynamic
 								LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
-	target_include_directories(SimulDirectX12_MD PUBLIC "${CMAKE_SOURCE_DIR}/Platform/DirectX12")
-	target_include_directories(SimulDirectX12_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
+	target_include_directories(SimulDirectX12_MD PUBLIC "${SIMUL_PLATFORM_DIR}/DirectX12")
+	target_include_directories(SimulDirectX12_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 	LibraryDefaults(SimulDirectX12_MD)
 
 	if(XBOXONE)
-		set( JSON_FILE "${CMAKE_SOURCE_DIR}/Platform/XboxOne/HLSL/HLSL12X.json" )
+		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12X.json" )
 	elseif(GDK)
-		set( JSON_FILE "${CMAKE_SOURCE_DIR}/Platform/XboxOne/HLSL/HLSL12X.json" )
+		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/Platfm/XboxOne/HLSL/HLSL12X.json" )
 	else()
 		set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" )
 	endif()
 	#message(STATUS JSON_FILE ${JSON_FILE} )
-	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${CMAKE_SOURCE_DIR}/Platform/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/Platform/DirectX12/shaderbin" -ESIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} )
+	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" -ESIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} )
 	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
 
 	# ROOT SIG BLOB!

@@ -3,7 +3,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/FileLoader.h"
-#include "Simul/Math/Matrix4x4.h"
+#include "Simul/Platform/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"

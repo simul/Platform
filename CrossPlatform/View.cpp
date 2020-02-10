@@ -3,7 +3,7 @@
 #define NOMINMAX
 #endif
 #include "View.h"
-#include "Simul/Math/Vector3.h"
+#include "Simul/Platform/Math/Vector3.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"

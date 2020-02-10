@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Math/Quaternion.h"
-#include "Simul/Math/Matrix4x4.h"
-#include "Simul/Math/MatrixVector3.h"
+#include "Simul/Platform/Math/Quaternion.h"
+#include "Simul/Platform/Math/Matrix4x4.h"
+#include "Simul/Platform/Math/MatrixVector3.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
-#include "Simul/Math/Pi.h"
+#include "Simul/Platform/Math/Pi.h"
 #include <memory.h>
 #include <algorithm>
 using namespace simul;

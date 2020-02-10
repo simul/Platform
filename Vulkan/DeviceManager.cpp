@@ -4,17 +4,10 @@
 #include "DeviceManager.h"
 
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Sky/BaseSkyRenderer.h"
-#include "Simul/Scene/Scene.h"
-#include "Simul/Scene/Object.h"
-#include "Simul/Scene/BaseObjectRenderer.h"
-#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/Vulkan/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/CrossPlatform/HdrRenderer.h"
 #include "Simul/Platform/Vulkan/DisplaySurface.h"
-#include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
 #include <iomanip>

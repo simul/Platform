@@ -55,6 +55,41 @@ else()
 	set(MSVC 0)
 endif()
 
+function (deploy_target_assets target targetDir )
+	cmake_parse_arguments(deploy_target_assets "" "" "ASSETS" ${ARGN} )
+	set(asset_list)
+	foreach(a ${deploy_target_assets_ASSETS})
+		list(APPEND asset_list \"${a}\")
+	endforeach()
+	add_custom_command(TARGET ${target} BYPRODUCTS none.txt 
+			POST_BUILD 
+			COMMAND set TARG_DIR=${targetDir}\n
+			set ASSETS=${asset_list}\n
+			for %%I in (%ASSETS:/=\\%) do copy %%I \"%TARG_DIR:/=\\%\"\n )
+endfunction()
+
+function( deploy_to_directory targetName destDir )
+	message( STATUS "deploy_to_directory ${targetName} ${destDir}" )
+	get_target_property(target_type ${targetName} TYPE)
+	if (target_type STREQUAL "SHARED_LIBRARY")
+		set( LIBFILE $<TARGET_LINKER_FILE:${targetName}>)
+	else()
+		set(LIBFILE "")
+	endif ()	
+	add_custom_command(TARGET ${targetName} BYPRODUCTS none.txt 
+		POST_BUILD 
+		COMMAND set TARG_DLL=$<TARGET_FILE:${targetName}>\n
+		set TARG_DLL=%TARG_DLL:/=\\%\n
+		set TARG_DIR=${destDir}\n
+		set TARG_DIR=%TARG_DIR:/=\\%\n
+		copy \"%TARG_DLL%\" \"%TARG_DIR%\"\n
+		set TARG_LIB=${LIBFILE}\n
+		if not \"%TARG_LIB%\"==\"\" (\n
+			copy \"%TARG_LIB:/=\\%\" \"%TARG_DIR%\"\n
+		)
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endfunction()
+
 function(set_target_runtime targname rt)
 	# Default to statically-linked runtime.
 	if("${rt}" STREQUAL "")
@@ -202,7 +237,7 @@ function(add_dll libname)
 	add_library(${target} SHARED ${IMP_LIB})
 	if(XBOXONE)
 		set_target_runtime(${target} dynamic)
-		set_target_properties(${target} PROPERTIES VS_USER_PROPS "${CMAKE_SOURCE_DIR}/Platform/XboxOne/SimulXboxOne.props")
+		set_target_properties(${target} PROPERTIES VS_USER_PROPS "${SIMUL_PLATFORM_DIR}/XboxOne/SimulXboxOne.props")
 		set_target_properties( ${target} PROPERTIES SUFFIX ".dll" )
 		set_property(TARGET ${target} PROPERTY PROJECT_LABEL ${libname}_XboxOne )
 		set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_NAME "${target}arch" )

@@ -5,11 +5,11 @@
 #include <stdarg.h>
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Math/RandomNumberGenerator.h"
+#include "Simul/Platform/Math/RandomNumberGenerator.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Math/Pi.h"
+#include "Simul/Platform/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 using namespace simul;
 using namespace crossplatform;
