@@ -172,7 +172,6 @@ namespace simul
 		extern void SIMUL_MATH_EXPORT_FN AddFloatTimesMatrix4x4(Matrix4x4 &result,const float f,const Matrix4x4 &m);
 		extern void SIMUL_MATH_EXPORT_FN Precross(Matrix4x4 &M,const Vector3 &v);
 		extern void SIMUL_MATH_EXPORT_FN Multiply4x4(Matrix4x4 &M,const Matrix4x4 &A,const Matrix4x4 &B);
-		extern void SIMUL_MATH_EXPORT_FN QuaternionToMatrix(Matrix4x4 &m,const Quaternion &q); 
 	}
 }
 
