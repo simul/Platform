@@ -52,7 +52,7 @@ if(SIMUL_BUILD_SHADERS)
 	#add_dependencies(SimulVulkan_MD VulkanShaders)
 endif()
 
-target_link_libraries(SimulVulkan_MD SimulCrossPlatform_MD SimulGeometry_MD SimulMath_MD SimulBase_MD )
+target_link_libraries(SimulVulkan_MD SimulCrossPlatform_MD SimulMath_MD SimulBase_MD )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 target_link_libraries(SimulVulkan_MD  vulkan-1)
