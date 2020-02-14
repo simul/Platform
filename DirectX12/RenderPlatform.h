@@ -133,6 +133,7 @@ namespace simul
 			void									EndFrame(crossplatform::DeviceContext& deviceContext);
 			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
             void                                    ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
+			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			void									ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
