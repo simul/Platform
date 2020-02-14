@@ -1,6 +1,6 @@
 #include "Simul/Platform/CrossPlatform/LensFlare.h"
-#include "Simul/Math/Vector3.h"
-#include "Simul/Math/Pi.h"
+#include "Simul/Platform/Math/Vector3.h"
+#include "Simul/Platform/Math/Pi.h"
 #include <math.h>
 using namespace simul;
 using namespace math;

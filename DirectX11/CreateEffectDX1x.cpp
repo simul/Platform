@@ -13,7 +13,7 @@
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Math/Matrix4x4.h"
+#include "Simul/Platform/Math/Matrix4x4.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Effect.h"

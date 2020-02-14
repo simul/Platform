@@ -7,7 +7,7 @@
 #include "Simul/Platform/CrossPlatform/Topology.h"
 
 #include "Simul/Shaders/SL/mixed_resolution_constants.sl"
-#include "Simul/Geometry/Orientation.h"
+#include "Simul/Platform/Math/Orientation.h"
 #include <set>
 #ifdef _MSC_VER
 	#pragma warning(push)

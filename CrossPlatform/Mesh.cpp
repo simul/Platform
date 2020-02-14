@@ -237,7 +237,7 @@ static const unsigned int box_indices[36] =
 	MMP,
 	MMM,
 };
-#include "Simul/Math/Pi.h"
+#include "Simul/Platform/Math/Pi.h"
 void Mesh::Initialize(crossplatform::RenderPlatform *r,crossplatform::MeshType m)
 {
 	renderPlatform = r;

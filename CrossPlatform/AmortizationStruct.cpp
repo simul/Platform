@@ -1,5 +1,5 @@
 #include "AmortizationStruct.h"
-#include "Simul/Math/RandomNumberGenerator.h"
+#include "Simul/Platform/Math/RandomNumberGenerator.h"
 #include <vector>
 using namespace simul;
 using namespace crossplatform;

@@ -692,13 +692,14 @@ bool sfxParseEffectFromMemory( int effect, const char* src,const char *filename,
 	}
 	catch(...)
 	{
-		gEffect->Log()<<"Unknown error occurred during parsing of source"<<endl;
+		std::cerr<<"Unknown error occurred during parsing of source"<<endl;
 		gEffect->Active()=false;
 		retVal=false;
 	}
 
 	sfxpop_buffer_state();
-	
+	if(!retVal)
+		std::cerr<<"Failed in parsing"<<std::endl;
 	if(retVal)
 	{
 		retVal&=gEffect->Save(filename,output_filename);

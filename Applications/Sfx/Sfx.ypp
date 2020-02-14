@@ -194,6 +194,12 @@
                 auto td         = (DeclaredTexture*)dec->second;
                 string searchT  = td->structureType.empty() ? "default" : td->structureType;
                 auto stype      = config->toTextureType.find(searchT);
+				if(stype==config->toTextureType.end())
+				{
+					string errstr="Unknown type: ";
+					errstr+=searchT;
+					errSyn(errstr.c_str());
+				}
                 name            = stype->second;
             }
             if((t & ShaderResourceType::TEXTURE_1D)==ShaderResourceType::TEXTURE_1D)
