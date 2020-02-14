@@ -7,7 +7,7 @@
 #include "Simul/Platform/DirectX11/DX11Exception.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Math/Vector3.h"
+#include "Simul/Platform/Math/Vector3.h"
 #if WINVER<0x602
 #include <d3dx11.h>
 #endif

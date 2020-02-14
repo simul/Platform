@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
+if(SIMUL_DIR)
+else()
 project(Platform)
+set(SIMUL_PLATFORM_DIR ${CMAKE_SOURCE_DIR})
+endif()
 
 include("CMake/Variables.cmake")
 include("CMake/Include.cmake")
 include("CMake/Shader.cmake")
 
+add_subdirectory(Math)
 add_subdirectory(CrossPlatform)
 add_subdirectory(Applications/Sfx)
 

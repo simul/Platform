@@ -1,7 +1,7 @@
 #ifndef SIMUL_GRAPH_CAMERA_CAMERA_H
 #define SIMUL_GRAPH_CAMERA_CAMERA_H
-#include "Simul/Geometry/OrientationInterface.h"
-#include "Simul/Geometry/Orientation.h"
+#include "Simul/Platform/Math/OrientationInterface.h"
+#include "Simul/Platform/Math/Orientation.h"
 #include "Simul/Platform/CrossPlatform/CameraInterface.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/Shaders/SL/CppSl.sl"

@@ -1,6 +1,8 @@
 include_guard()
 
 option( SIMUL_SOURCE_BUILD "Build Simul libraries from source? If false, only samples are built." ON )
+option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
+option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -35,9 +37,9 @@ else()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set( BISON_EXECUTABLE "${CMAKE_SOURCE_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
-	set( FLEX_EXECUTABLE "${CMAKE_SOURCE_DIR}/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
-	set( FLEX_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/External/win_flex_bison/" CACHE STRING "" )
+	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
+	set( FLEX_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
+	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" CACHE STRING "" )
 endif()
 
 set( SIMUL_FX_EXECUTABLE "C:/Program Files (x86)/Windows Kits/10/bin/x64/fxc.exe" CACHE STRING "" )
