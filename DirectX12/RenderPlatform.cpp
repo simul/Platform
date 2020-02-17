@@ -100,6 +100,36 @@ void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource* res, D3D12_RESOUR
     }
 }
 
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
+{
+	mCommandList = deviceContext.asD3D12Context();
+	immediateContext.platform_context = deviceContext.platform_context;
+	dx12::Texture* t12 = (dx12::Texture*)tex;
+
+	ID3D12Resource* res = t12->AsD3D12Resource();
+	if (!res || !t12->AsD3D12UnorderedAccessView())
+	{
+		SIMUL_CERR_ONCE << "No valid UAV resource for this barrier. No barrier was insert into the command list.";
+		return;
+	}
+
+	auto& barrier = mPendingBarriers[mCurBarriers++];
+	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
+
+	if (true)
+	{
+		FlushBarriers();
+	}
+	// Check if we need more space:
+	if (mCurBarriers >= mTotalBarriers)
+	{
+		FlushBarriers();
+		mTotalBarriers += 16;
+		mPendingBarriers.resize(mTotalBarriers);
+		SIMUL_COUT << "[PERF] Resizing barrier holder to: " << mTotalBarriers << std::endl;
+	}
+}
+
 void RenderPlatform::FlushBarriers()
 {
     if (mCurBarriers <= 0) 
