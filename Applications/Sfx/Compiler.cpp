@@ -166,7 +166,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	{
 		DWORD dwBytesRead, dwBytesAvailable=100000;
 		DWORD numObjects = pipe_compiler_output ? 3 : 1;
-		DWORD dwWaitResult = WaitForMultipleObjects(numObjects, WaitHandles, FALSE, 2000000L);
+		DWORD dwWaitResult = WaitForMultipleObjects(numObjects, WaitHandles, FALSE, 20000L);
 
 		// Read from the pipes...
 		if(pipe_compiler_output)

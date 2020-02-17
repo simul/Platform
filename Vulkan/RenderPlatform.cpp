@@ -39,7 +39,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 #endif
 
 	// But it doesn't. So instead we just list the objects and names.
-#ifdef _DEBUG
+#if 1//def _DEBUG
 	if(simul::base::SimulInternalChecks)
 	{
 		uint64_t *u=(uint64_t*)ds;
