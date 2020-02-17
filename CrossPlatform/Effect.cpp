@@ -793,7 +793,9 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	// We will only recompile if we are in windows
 	// SFX will handle the "if changed"
 	auto buildMode = r->GetShaderBuildMode();
+	bool result=false;
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
+		while(!result)
 	{
 		char* SIMUL = nullptr;
 		char* b = nullptr;
@@ -980,16 +982,23 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			}
 			if (ExitCode != 0)
 			{
-				SIMUL_BREAK(base::QuickFormat("ExitCode: %d", ExitCode));
+				SIMUL_CERR<<"ExitCode: %d"<< ExitCode<<std::endl;
+				result=false;
 			}
+			else
+				result=true;
 			CloseHandle(processInfo.hProcess);
 			CloseHandle(processInfo.hThread);
 		}
 		else
 		{
 			DWORD error = GetLastError();
-			SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
-			return;
+			SIMUL_CERR << "Could not create the sfx process. Error:" << error << std::endl;
+			result=false;
+		}
+		if(!result)
+		{
+			SIMUL_BREAK("Failed to build effect.");
 		}
 	}
 #endif
@@ -1008,9 +1017,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	textureDetailsMap.clear();
 	textureCharMap.clear();
 	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
-	std::vector<std::string> binaryPaths=renderPlatform->GetShaderBinaryPathsUtf8();
-	std::string filenameUtf8=filename_utf8;
-	std::string binFilenameUtf8 = filenameUtf8;
+	std::vector<std::string> binaryPaths	=renderPlatform->GetShaderBinaryPathsUtf8();
+	std::string filenameUtf8				=filename_utf8;
+	std::string binFilenameUtf8				=filenameUtf8;
 
 	if (binFilenameUtf8.find(".sfxo") == std::string::npos)
 		binFilenameUtf8 += ".sfxo";

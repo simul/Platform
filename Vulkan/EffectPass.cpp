@@ -268,8 +268,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		}
 		cs->bufferSlots|=(1<<slot);
 	}
-
-	vulkanDevice->updateDescriptorSets(num_descr, writes, 0,nullptr);
+	if(num_descr)
+		vulkanDevice->updateDescriptorSets(num_descr, writes, 0,nullptr);
 
 	static bool error_checking=true;
 	// Now verify that ALL resource are set:
@@ -387,148 +387,155 @@ void EffectPass::Initialize()
 					+numRwSbResourceSlots
 					+numSamplerResourceSlots
 					+numConstantBufferResourceSlots;
-	// Create the "Descriptor Pool":
-	if(!num_descr)
-		return;
-	vk::DescriptorPoolSize *poolSizes= new vk::DescriptorPoolSize[num_descr];// won't actually use that many unless we have 1 of each type.
-	int p=0;
-	static int count_per_frame=256;
-	if(numResourceSlots)																		
-		poolSizes[p++].setType(vk::DescriptorType::eSampledImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
-	if(numSamplerResourceSlots)																	
-		poolSizes[p++].setType(vk::DescriptorType::eSampler)				.setDescriptorCount(count_per_frame*swapchainImageCount * numSamplerResourceSlots);
-	if(numSbResourceSlots+numRwSbResourceSlots)																		
-		poolSizes[p++].setType(vk::DescriptorType::eStorageBuffer)			.setDescriptorCount(count_per_frame*swapchainImageCount * (numSbResourceSlots+numRwSbResourceSlots));
-	//if(numRwSbResourceSlots)																	
-	//	poolSizes[p++].setType(vk::DescriptorType::eStorageBufferDynamic)	.setDescriptorCount(count_per_frame*swapchainImageCount * numRwSbResourceSlots);
-	if(numRwResourceSlots)																		
-		poolSizes[p++].setType(vk::DescriptorType::eStorageImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numRwResourceSlots);
-	if(numConstantBufferResourceSlots)															
-		poolSizes[p++].setType(vk::DescriptorType::eUniformBuffer)			.setDescriptorCount(count_per_frame*swapchainImageCount * numConstantBufferResourceSlots);
-	//if(numResourceSlots)
-	//	poolSizes[p++].setType(vk::DescriptorType::eCombinedImageSampler)	.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
-
-	auto const descriptor_pool =
-		vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount*count_per_frame).setPoolSizeCount(p).setPPoolSizes(poolSizes);
-
-	auto result = vulkanDevice->createDescriptorPool(&descriptor_pool, nullptr, &mDescriptorPool);
-	SetVulkanName(renderPlatform,&mDescriptorPool,base::QuickFormat("%s Descriptor pool",name.c_str()));
-	delete [] poolSizes;
-    vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
-    vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
-    vulkan::Shader* c   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
-
-// Create the "Descriptor Set Layout":
-
-	layout_bindings =new vk::DescriptorSetLayoutBinding[num_descr];
+	vk::Result result;
 	int b=0;
-	for(int i=0;i<numResourceSlots;i++,b++)
+	// Create the "Descriptor Pool":
+	if(num_descr)
 	{
-		int slot=resourceSlots[i];
-		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
-		vk::ShaderStageFlags stageFlags;
-		if(f&&f->usesTextureSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eFragment;
-		if(v&&v->usesTextureSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eVertex;
-		if(c&&c->usesTextureSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eCompute;
+		vk::DescriptorPoolSize *poolSizes= new vk::DescriptorPoolSize[num_descr];// won't actually use that many unless we have 1 of each type.
+		int p=0;
+		static int count_per_frame=256;
+		if(numResourceSlots)																		
+			poolSizes[p++].setType(vk::DescriptorType::eSampledImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
+		if(numSamplerResourceSlots)																	
+			poolSizes[p++].setType(vk::DescriptorType::eSampler)				.setDescriptorCount(count_per_frame*swapchainImageCount * numSamplerResourceSlots);
+		if(numSbResourceSlots+numRwSbResourceSlots)																		
+			poolSizes[p++].setType(vk::DescriptorType::eStorageBuffer)			.setDescriptorCount(count_per_frame*swapchainImageCount * (numSbResourceSlots+numRwSbResourceSlots));
+		//if(numRwSbResourceSlots)																	
+		//	poolSizes[p++].setType(vk::DescriptorType::eStorageBufferDynamic)	.setDescriptorCount(count_per_frame*swapchainImageCount * numRwSbResourceSlots);
+		if(numRwResourceSlots)																		
+			poolSizes[p++].setType(vk::DescriptorType::eStorageImage)			.setDescriptorCount(count_per_frame*swapchainImageCount * numRwResourceSlots);
+		if(numConstantBufferResourceSlots)															
+			poolSizes[p++].setType(vk::DescriptorType::eUniformBuffer)			.setDescriptorCount(count_per_frame*swapchainImageCount * numConstantBufferResourceSlots);
+		//if(numResourceSlots)
+		//	poolSizes[p++].setType(vk::DescriptorType::eCombinedImageSampler)	.setDescriptorCount(count_per_frame*swapchainImageCount * numResourceSlots);
 
-		binding.setBinding(GenerateTextureSlot(slot))
-				.setDescriptorType(vk::DescriptorType::eSampledImage)
-				.setDescriptorCount(1)
-				.setStageFlags(stageFlags)
-				.setPImmutableSamplers(nullptr);
-	}
-	for(int i=0;i<numRwResourceSlots;i++,b++)
-	{
-		int slot=rwResourceSlots[i];
-		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
-		vk::ShaderStageFlags stageFlags;
-		if(f&&f->usesRwTextureSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eFragment;
-		if(v&&v->usesRwTextureSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eVertex;
-		if(c&&c->usesRwTextureSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eCompute;
+		auto const descriptor_pool =
+			vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount*count_per_frame).setPoolSizeCount(p).setPPoolSizes(poolSizes);
 
-		binding.setBinding(GenerateTextureWriteSlot(slot))
-				.setDescriptorType(vk::DescriptorType::eStorageImage)
-				.setDescriptorCount(1)
-				.setStageFlags(stageFlags)
-				.setPImmutableSamplers(nullptr);
-	}
-	for(int i=0;i<numSbResourceSlots;i++,b++)
-	{
-		int slot=sbResourceSlots[i];
-		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
-		vk::ShaderStageFlags stageFlags;
-		if(f&&f->usesTextureSlotForSB(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eFragment;
-		if(v&&v->usesTextureSlotForSB(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eVertex;
-		if(c&&c->usesTextureSlotForSB(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eCompute;
+		result = vulkanDevice->createDescriptorPool(&descriptor_pool, nullptr, &mDescriptorPool);
+		SetVulkanName(renderPlatform,&mDescriptorPool,base::QuickFormat("%s Descriptor pool",name.c_str()));
+		delete [] poolSizes;
+		vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
+		vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
+		vulkan::Shader* c   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 
-		binding.setBinding(GenerateTextureSlot(slot))
-				.setDescriptorType(vk::DescriptorType::eStorageBuffer)
-				.setDescriptorCount(1)
-				.setStageFlags(stageFlags)
-				.setPImmutableSamplers(nullptr);
-	}
-	for(int i=0;i<numRwSbResourceSlots;i++,b++)
-	{
-		int slot=rwSbResourceSlots[i];
-		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
-		vk::ShaderStageFlags stageFlags;
-		if(f&&f->usesRwTextureSlotForSB(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eFragment;
-		if(v&&v->usesRwTextureSlotForSB(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eVertex;
-		if(c&&c->usesRwTextureSlotForSB(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eCompute;
-		binding.setBinding(GenerateTextureWriteSlot(slot))
-				.setDescriptorType(vk::DescriptorType::eStorageBuffer)
-				.setDescriptorCount(1)
-				.setStageFlags(stageFlags)
-				.setPImmutableSamplers(nullptr);
-	}
-	for(int i=0;i<numSamplerResourceSlots;i++,b++)
-	{
-		int slot=samplerResourceSlots[i];
-		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
-		vk::ShaderStageFlags stageFlags;
-		if(f&&f->usesSamplerSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eFragment;
-		if(v&&v->usesSamplerSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eVertex;
-		if(c&&c->usesSamplerSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eCompute;
-		binding.setBinding(GenerateSamplerSlot(slot))
-				.setDescriptorType(vk::DescriptorType::eSampler)
-				.setDescriptorCount(1)
-				.setStageFlags(stageFlags)
-				.setPImmutableSamplers(nullptr);
-	}
-	for(int i=0;i<numConstantBufferResourceSlots;i++,b++)
-	{
-		int slot=constantBufferResourceSlots[i];
-		vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
-		vk::ShaderStageFlags stageFlags;
-		if(f&&f->usesConstantBufferSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eFragment;
-		if(v&&v->usesConstantBufferSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eVertex;
-		if(c&&c->usesConstantBufferSlot(slot))
-			stageFlags|=vk::ShaderStageFlagBits::eCompute;
-		binding.setBinding(GenerateConstantBufferSlot(slot))
-				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-				.setDescriptorCount(1)
-				.setStageFlags(stageFlags)
-				.setPImmutableSamplers(nullptr);
-	}
+	// Create the "Descriptor Set Layout":
 
-	auto descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(b).setPBindings(layout_bindings);
+		layout_bindings =new vk::DescriptorSetLayoutBinding[num_descr];
+		for(int i=0;i<numResourceSlots;i++,b++)
+		{
+			int slot=resourceSlots[i];
+			vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
+			vk::ShaderStageFlags stageFlags;
+			if(f&&f->usesTextureSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eFragment;
+			if(v&&v->usesTextureSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eVertex;
+			if(c&&c->usesTextureSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eCompute;
+
+			binding.setBinding(GenerateTextureSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eSampledImage)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+		}
+		for(int i=0;i<numRwResourceSlots;i++,b++)
+		{
+			int slot=rwResourceSlots[i];
+			vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
+			vk::ShaderStageFlags stageFlags;
+			if(f&&f->usesRwTextureSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eFragment;
+			if(v&&v->usesRwTextureSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eVertex;
+			if(c&&c->usesRwTextureSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eCompute;
+
+			binding.setBinding(GenerateTextureWriteSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eStorageImage)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+		}
+		for(int i=0;i<numSbResourceSlots;i++,b++)
+		{
+			int slot=sbResourceSlots[i];
+			vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
+			vk::ShaderStageFlags stageFlags;
+			if(f&&f->usesTextureSlotForSB(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eFragment;
+			if(v&&v->usesTextureSlotForSB(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eVertex;
+			if(c&&c->usesTextureSlotForSB(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eCompute;
+
+			binding.setBinding(GenerateTextureSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eStorageBuffer)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+		}
+		for(int i=0;i<numRwSbResourceSlots;i++,b++)
+		{
+			int slot=rwSbResourceSlots[i];
+			vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
+			vk::ShaderStageFlags stageFlags;
+			if(f&&f->usesRwTextureSlotForSB(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eFragment;
+			if(v&&v->usesRwTextureSlotForSB(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eVertex;
+			if(c&&c->usesRwTextureSlotForSB(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eCompute;
+			binding.setBinding(GenerateTextureWriteSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eStorageBuffer)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+		}
+		for(int i=0;i<numSamplerResourceSlots;i++,b++)
+		{
+			int slot=samplerResourceSlots[i];
+			vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
+			vk::ShaderStageFlags stageFlags;
+			if(f&&f->usesSamplerSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eFragment;
+			if(v&&v->usesSamplerSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eVertex;
+			if(c&&c->usesSamplerSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eCompute;
+			binding.setBinding(GenerateSamplerSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eSampler)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+		}
+		for(int i=0;i<numConstantBufferResourceSlots;i++,b++)
+		{
+			int slot=constantBufferResourceSlots[i];
+			vk::DescriptorSetLayoutBinding &binding=layout_bindings[b];
+			vk::ShaderStageFlags stageFlags;
+			if(f&&f->usesConstantBufferSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eFragment;
+			if(v&&v->usesConstantBufferSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eVertex;
+			if(c&&c->usesConstantBufferSlot(slot))
+				stageFlags|=vk::ShaderStageFlagBits::eCompute;
+			binding.setBinding(GenerateConstantBufferSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+		}
+	}
+	else
+	{
+		SIMUL_COUT<<"No inputs to shader"<<std::endl;
+	}
+	auto descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(b);
+	if(layout_bindings)
+		descriptor_layout=descriptor_layout.setPBindings(layout_bindings);
 
 	result = vulkanDevice->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
 	SetVulkanName(renderPlatform,&mDescLayout,this->name+" descriptor set Layout");
@@ -556,12 +563,19 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 	}
 	
 	vk::DescriptorSetAllocateInfo alloc_info =	vk::DescriptorSetAllocateInfo()
-													.setDescriptorPool(mDescriptorPool)
 													.setDescriptorSetCount(1)
 													.setPSetLayouts(descLayout);
-	auto result = vulkanDevice->allocateDescriptorSets(&alloc_info,&descriptorSet);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
+	if(mDescriptorPool)
+	{
+		alloc_info=alloc_info.setDescriptorPool(mDescriptorPool);
+		auto result = vulkanDevice->allocateDescriptorSets(&alloc_info,&descriptorSet);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
+	}
+	else
+	{
+//		SIMUL_COUT<<"No descriptor pool because no inputs."<<std::endl;
+	}
 }
 
 
@@ -709,7 +723,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 				b.setColorBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperation));
 				b.setColorWriteMask(vk::ColorComponentFlagBits::eR
 									| vk::ColorComponentFlagBits::eG
-									|vk::ColorComponentFlagBits::eB
+									| vk::ColorComponentFlagBits::eB
 									| vk::ColorComponentFlagBits::eA);
 				b.setDstAlphaBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.DestBlendAlpha));
 				b.setDstColorBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.DestBlend));
@@ -770,7 +784,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		vulkanDevice->createGraphicsPipelines(renderPassPipeline->mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline);
 		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
 		if(vertexInputs)
-			delete []vertexInputs;
+			delete [] vertexInputs;
 	}
 }
 

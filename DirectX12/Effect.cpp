@@ -248,7 +248,6 @@ void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,con
 	renderPlatform = r;
 	EnsureEffect(r, filename_utf8);
 
-
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 
     // Init the samplers heap:

@@ -532,6 +532,7 @@ void DeviceManager::CreateDevice()
 	features.setDualSrcBlend(1);		// For compositing shaders.
 	features.setImageCubeArray(1);
 	features.setSamplerAnisotropy(1);
+	features.setFillModeNonSolid(1);	// For line-drawing.
     auto deviceInfo = vk::DeviceCreateInfo()
                           .setQueueCreateInfoCount(1)
                           .setPQueueCreateInfos(queues.data())

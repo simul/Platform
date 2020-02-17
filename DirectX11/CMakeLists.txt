@@ -26,7 +26,7 @@ source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 #add_fx_shaders(${SHADERS})
 add_fx_shader_project( DirectX11CoreShaders INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${SIMUL_PLATFORM_DIR}/Shaders/SL" "${SIMUL_PLATFORM_DIR}/CrossPlatform/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin")
 
-add_static_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${CMAKE})
+add_static_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
 if(SIMUL_SOURCE_BUILD)
 	target_compile_definitions(SimulDirectX11_MT PRIVATE SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1)
 	set_target_properties(SimulDirectX11_MT PROPERTIES FOLDER Static)
@@ -40,7 +40,7 @@ if(SIMUL_SOURCE_BUILD)
 	endif()
 endif()
 
-add_dynamic_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${CMAKE})
+add_dynamic_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${CMAKE})
 
 if(SIMUL_SOURCE_BUILD)
 	target_compile_definitions(SimulDirectX11_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1)
