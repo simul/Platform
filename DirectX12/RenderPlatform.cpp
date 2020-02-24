@@ -109,7 +109,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	ID3D12Resource* res = t12->AsD3D12Resource();
 	if (!res || !t12->AsD3D12UnorderedAccessView())
 	{
-		SIMUL_CERR_ONCE << "No valid UAV resource for this barrier. No barrier was insert into the command list.";
+		SIMUL_CERR_ONCE << "No valid UAV resource for this barrier. No barrier was inserted into this command list.";
 		return;
 	}
 
