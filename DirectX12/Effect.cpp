@@ -827,7 +827,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
         // All UAV must have valid descriptors for hardware tier 2 and bellow:
 		if (!usesRwTextureSlot(s) && !usesRwTextureSlotForSB(s))
 		{
-            // if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
+			if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
             {
 			    device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullUav, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
             }
