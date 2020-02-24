@@ -289,6 +289,9 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
     EndEvent(deviceContext);
 }
 
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
+{
+}
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {

@@ -420,6 +420,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12UnorderedAccessVie
     return view;
 }
 
+ID3D12Resource *PlatformStructuredBuffer::AsD3D12Resource(crossplatform::DeviceContext &deviceContext)
+{
+    return mGPUBuffer;
+}
+
 void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& , EffectPass* , int )
 {
 }

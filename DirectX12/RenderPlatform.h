@@ -134,6 +134,7 @@ namespace simul
 			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
             void                                    ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
+			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			void									ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
@@ -228,6 +229,7 @@ namespace simul
             crossplatform::PixelFormat              DefaultOutputFormat;
 
 		protected:
+			void							CheckBarriersForResize();
 			//D3D12-specific things
 			void BeginD3D12Frame();
 			//! The GPU timestamp counter frequency (in ticks/second)

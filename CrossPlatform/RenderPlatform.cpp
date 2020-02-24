@@ -95,6 +95,14 @@ RenderPlatform::~RenderPlatform()
 	materials.clear();
 }
 
+std::string RenderPlatform::GetPathName() const
+{
+	static std::string pathname;
+	pathname=GetName();
+	pathname.erase(remove_if(pathname.begin(), pathname.end(), isspace), pathname.end());
+	return pathname.c_str();
+}
+
 crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::DeviceContext &deviceContext)
 {
 	return &deviceContext.contextState;

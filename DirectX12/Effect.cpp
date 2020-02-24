@@ -815,6 +815,11 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
 		mUavSrcHandles[slot]		= *sb->AsD3D12UnorderedAccessView(deviceContext);
 		mUavUsedSlotsArray[slot]	= true;
 		usedRwSBSlots			|= (1 << slot);
+
+
+		// Temp:
+		
+		renderPlatform->ResourceBarrierUAV(deviceContext,sb);
 	}
 	// Iterate over all the slots and fill them:
 	for (int s = 0; s < ResourceBindingLimits::NumSRV; s++)

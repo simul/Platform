@@ -38,6 +38,7 @@ namespace simul
 			void							Unbind(crossplatform::DeviceContext &deviceContext);
 			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
 			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
+			ID3D12Resource*					AsD3D12Resource(crossplatform::DeviceContext &deviceContext);
 			void							ActualApply(simul::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot);
 
 		private:
