@@ -59,6 +59,7 @@ public:
 	vk::Device device;
 	vk::PhysicalDeviceProperties gpu_props;
 	vk::PhysicalDeviceMemoryProperties memory_properties;
+	vk::PhysicalDeviceFeatures gpu_features;
 };
 
 DeviceManager::DeviceManager()
@@ -447,8 +448,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// Query fine-grained feature support for this device.
 	//  If app has specific feature requirements it should check supported
 	//  features based on this query
-	vk::PhysicalDeviceFeatures physDevFeatures;
-	deviceManagerInternal->gpu.getFeatures(&physDevFeatures);
+	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
  	ERRNO_BREAK
 
 	if(use_debug)
@@ -527,12 +527,22 @@ void DeviceManager::CreateDevice()
 		queues[i].setQueueCount(1);
 		queues[i].setPQueuePriorities(priorities);
 	}
-	vk::PhysicalDeviceFeatures features;
-	features.setVertexPipelineStoresAndAtomics(1);
-	features.setDualSrcBlend(1);		// For compositing shaders.
-	features.setImageCubeArray(1);
-	features.setSamplerAnisotropy(1);
-	features.setFillModeNonSolid(1);	// For line-drawing.
+	
+	//Query Physical Device Features for compatibility
+	{
+		if(!deviceManagerInternal->gpu_features.vertexPipelineStoresAndAtomics)
+			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"vertexPipelineStoresAndAtomics\". Unable to proceed.\n");
+		if(!deviceManagerInternal->gpu_features.imageCubeArray)
+			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"imageCubeArray\". Unable to proceed.\n");
+		if(!deviceManagerInternal->gpu_features.dualSrcBlend)
+			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"dualSrcBlend\". Unable to proceed.\n");
+		if(!deviceManagerInternal->gpu_features.samplerAnisotropy)
+			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"samplerAnisotropy\". Unable to proceed.\n");
+		if(!deviceManagerInternal->gpu_features.shaderFloat64)
+			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
+		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
+			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
+	}
     auto deviceInfo = vk::DeviceCreateInfo()
                           .setQueueCreateInfoCount(1)
                           .setPQueueCreateInfos(queues.data())
@@ -540,7 +550,7 @@ void DeviceManager::CreateDevice()
                           .setPpEnabledLayerNames(nullptr)
                           .setEnabledExtensionCount(enabled_extension_count)
                           .setPpEnabledExtensionNames((const char *const *)extension_names.data())
-                          .setPEnabledFeatures(&features)
+                          .setPEnabledFeatures(&deviceManagerInternal->gpu_features)
 						.setQueueCreateInfoCount((uint32_t)queues.size());
 	/*
     if (separate_present_queue) {
