@@ -46,8 +46,10 @@ set( SIMUL_FX_EXECUTABLE "C:/Program Files (x86)/Windows Kits/10/bin/x64/fxc.exe
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set(SIMUL_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Sfx" CACHE STRING "" )
-else()
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(SIMUL_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Release/Sfx.exe" CACHE STRING "" )
+else()
+	set(SIMUL_SFX_EXECUTABLE "${CMAKE_SOURCE_DIR}/build/bin/Release/Sfx.exe" CACHE STRING "" )
 endif()
 
 

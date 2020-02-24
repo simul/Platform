@@ -1014,8 +1014,15 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	if(*text!=0)
 	{
 		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);
-		}
+	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
+}
+
+void RenderPlatform::LinePrint(DeviceContext &deviceContext,const char *text,const float* colr,const float* bkg)
+{
+	static int X=6;
+	Print(deviceContext,X,deviceContext.framePrintY,text,colr,bkg);
+	deviceContext.framePrintY+=textRenderer->GetDefaultTextHeight();
 }
 		
 crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &,int)

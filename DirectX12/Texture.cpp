@@ -1820,7 +1820,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 					if (curState != mResourceState)
 					{
 						rPlat->ResourceTransitionSimple(mTextureDefault, curState, mResourceState, true,
-														RenderPlatform::GetResourceIndex(m,l,mips, numLayers));
+														RenderPlatform::GetResourceIndex(m,l,mips, (int)numLayers));
 						mSubResourcesStates[l][m] = mResourceState;
 					}
 				}
@@ -1875,7 +1875,7 @@ void Texture::SetLayout(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index
 	// Set the resource state
 	if (mip == -1 && index == -1)
 	{
-		int numLayers       = mSubResourcesStates.size();
+		int numLayers       = (int)mSubResourcesStates.size();
 		if (split_layouts)
 		{
 		// And set all the subresources to that state

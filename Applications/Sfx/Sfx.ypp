@@ -10,6 +10,7 @@
     #include <vector>
     #include <sstream>
     #include <algorithm>
+    #include <regex>
     
     #include "Sfx.h"
     #include "SfxClasses.h"
@@ -232,115 +233,6 @@
         return name;
     }
 
-	void FinalizeFunction(Function& f)
-	{
-		f.min_parameters = 0;
-		for (auto j : f.parameters)
-		{
-			if (!j.has_default)
-			{
-				f.min_parameters++;
-			}
-		}
-		// Any resource that is not a parameter is therefore a global.
-		for(auto i:f.resources)
-		{
-			string res_name=i;
-			bool found=false;
-			for(auto j:f.parameters)
-			{
-				if(j.identifier==res_name)
-				{
-					found=true;
-					break;
-				}
-			}
-			if(!found)
-			{
-				f.globals.insert(i);
-			}
-		}
-        // Check and fix texture sampler constructors
-        auto config	= gEffect->GetConfig();
-        if(!config->toTextureType.empty())
-        {
-            for(auto j : f.parameters)
-            {
-                ShaderResourceType type = j.shaderResourceType;
-                // At this point we must know the type!
-                bool isTex = (type & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE;
-                if(!isTex)
-                {
-                    continue;
-                }
-                string toFind = "{sampCons" + j.identifier + "}";
-                find_and_replace(f.content,toFind,GetSamplerConstructor(type,j.identifier,&f));
-
-                // Also iterate over params (for MSAA)
-                if((type & ShaderResourceType::MS) == ShaderResourceType::MS)
-                {
-                    string mssaToFind = "{args" + j.identifier + "}";
-                    // TO-DO: In glsl, if we want to retrieve the sample of a mstexture
-                    // we need to call textureSamples(ms)
-                    find_and_replace(f.content,mssaToFind,"");
-                }
-                else
-                {
-                    string mssaToFind = "{args" + j.identifier + "}";
-                    find_and_replace(f.content,mssaToFind,",0");
-                }
-                string dimToFind = "{dim:" + j.identifier + "}";
-                find_and_replace(f.content,dimToFind,ToString(GetTextureDimension(j.shaderResourceType)));
-
-				string dimCheckToFind = "{dim_check:" + j.identifier;
-				size_t startPos = f.content.find(dimCheckToFind);
-				size_t endPos = f.content.find_first_of("}", startPos);
-				
-				if (startPos != string::npos && endPos != string::npos)
-				{
-					auto findNextComma = [&](const size_t& currentPos)
-					{
-						size_t commaPos = f.content.find_first_of(",", currentPos);
-						return commaPos > endPos ? endPos : commaPos;
-					};
-
-					size_t currentPos = startPos + dimCheckToFind.size() + 1;
-					string x = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
-					string y = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
-					string z = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
-					string tempTextureName = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
-
-					string dimCheckReplace = "";
-					int dim = GetTextureDimension(j.shaderResourceType);
-					if (dim > 0 && x.size())
-						dimCheckReplace += (x + " = " + tempTextureName + ".x;");
-					if (dim > 1 && y.size())
-						dimCheckReplace += (y + " = " + tempTextureName + ".y;");
-					if (dim > 2 && z.size())
-						dimCheckReplace += (z + " = " + tempTextureName + ".z;");
-
-					f.content.replace(startPos, (endPos + 1) - startPos, dimCheckReplace);
-				}
-            }
-            // We should check the globals too
-            for(auto g : f.globals)
-            {
-                Declaration* d=gEffect->GetDeclaration(g);
-                if(d&&d->declarationType == DeclarationType::TEXTURE)
-                {
-                    DeclaredTexture* t = (DeclaredTexture*)d;
-                    if(t->type == "StructuredBuffer" || t->type == "RWStructuredBuffer")
-                    {
-                        // We dont want to mess with SB
-                        continue;
-                    }
-                    string toFind = "{sampCons" + t->name + "}";
-                    find_and_replace(f.content,toFind,GetSamplerConstructor(t->shaderResourceType,t->name,&f));
-                }
-            }
-        }
-	}
-
 	void GetInputs(std::ostringstream &inputs,vector<YYSTYPE::variable> *vars)
 	{
 		if(vars)
@@ -514,6 +406,143 @@
         }
 		find_and_replace(newExpr,"{params}",newParams);
 		return newExpr;
+	}
+
+	void FinalizeFunction(Function& f)
+	{
+		f.min_parameters = 0;
+		for (auto j : f.parameters)
+		{
+			if (!j.has_default)
+			{
+				f.min_parameters++;
+			}
+		}
+		// Any resource that is not a parameter is therefore a global.
+		for(auto i:f.resources)
+		{
+			string res_name=i;
+			bool found=false;
+			for(auto j:f.parameters)
+			{
+				if(j.identifier==res_name)
+				{
+					found=true;
+					break;
+				}
+			}
+			if(!found)
+			{
+				f.globals.insert(i);
+			}
+		}
+		// texture load functions
+		
+		std::regex re("\\{load_expr ([a-z0-9_]+) ([a-z0-9_]+) (.+) (.+)? (.+)?}", std::regex_constants::icase | std::regex::extended);
+		std::smatch base_match;
+		while (std::regex_search(f.content, base_match, re))
+		{
+			string result_expression;
+			string textureName=base_match.str(1);
+			string command=base_match.str(2);
+			string params=base_match.str(3);
+			string pos=base_match.str(4);
+			string msaa_index=base_match.str(5);
+			bool msaa=(msaa_index.length()>0);
+			ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
+			if(resourceType!=ShaderResourceType::UNKNOWN)
+			{
+				if(msaa)
+				{
+					result_expression+= GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+				}
+				else
+				{
+					result_expression+= GetLoadExpr(textureName,command,params,resourceType);
+				}
+			}
+			f.content = std::regex_replace(f.content, re, result_expression);
+			base_match = std::smatch();
+		}
+        // Check and fix texture sampler constructors
+        auto config	= gEffect->GetConfig();
+        if(!config->toTextureType.empty())
+        {
+            for(auto j : f.parameters)
+            {
+                ShaderResourceType type = j.shaderResourceType;
+                // At this point we must know the type!
+                bool isTex = (type & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE;
+                if(!isTex)
+                {
+                    continue;
+                }
+                string toFind = "{sampCons" + j.identifier + "}";
+                find_and_replace(f.content,toFind,GetSamplerConstructor(type,j.identifier,&f));
+
+                // Also iterate over params (for MSAA)
+                if((type & ShaderResourceType::MS) == ShaderResourceType::MS)
+                {
+                    string mssaToFind = "{args" + j.identifier + "}";
+                    // TO-DO: In glsl, if we want to retrieve the sample of a mstexture
+                    // we need to call textureSamples(ms)
+                    find_and_replace(f.content,mssaToFind,"");
+                }
+                else
+                {
+                    string mssaToFind = "{args" + j.identifier + "}";
+                    find_and_replace(f.content,mssaToFind,",0");
+                }
+                string dimToFind = "{dim:" + j.identifier + "}";
+                find_and_replace(f.content,dimToFind,ToString(GetTextureDimension(j.shaderResourceType)));
+
+				string dimCheckToFind = "{dim_check:" + j.identifier;
+				size_t startPos = f.content.find(dimCheckToFind);
+				size_t endPos = f.content.find_first_of("}", startPos);
+				
+				if (startPos != string::npos && endPos != string::npos)
+				{
+					auto findNextComma = [&](const size_t& currentPos)
+					{
+						size_t commaPos = f.content.find_first_of(",", currentPos);
+						return commaPos > endPos ? endPos : commaPos;
+					};
+
+					size_t currentPos = startPos + dimCheckToFind.size() + 1;
+					string x = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
+					string y = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
+					string z = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
+					string tempTextureName = string(f.content, currentPos, findNextComma(currentPos) - currentPos); currentPos = findNextComma(currentPos) + 1;
+
+					string dimCheckReplace = "";
+					int dim = GetTextureDimension(j.shaderResourceType);
+					if (dim > 0 && x.size())
+						dimCheckReplace += (x + " = " + tempTextureName + ".x;");
+					if (dim > 1 && y.size())
+						dimCheckReplace += (y + " = " + tempTextureName + ".y;");
+					if (dim > 2 && z.size())
+						dimCheckReplace += (z + " = " + tempTextureName + ".z;");
+
+					f.content.replace(startPos, (endPos + 1) - startPos, dimCheckReplace);
+				}
+            }
+            // We should check the globals too
+            for(auto g : f.globals)
+            {
+                Declaration* d=gEffect->GetDeclaration(g);
+                if(d&&d->declarationType == DeclarationType::TEXTURE)
+                {
+                    DeclaredTexture* t = (DeclaredTexture*)d;
+                    if(t->type == "StructuredBuffer" || t->type == "RWStructuredBuffer")
+                    {
+                        // We dont want to mess with SB
+                        continue;
+                    }
+                    string toFind = "{sampCons" + t->name + "}";
+                    find_and_replace(f.content,toFind,GetSamplerConstructor(t->shaderResourceType,t->name,&f));
+                }
+            }
+        }
 	}
 %}
 
@@ -1698,18 +1727,25 @@ postfix_exp: primary_exp
 						if(config->loadSyntax.size() > 0)
 						{
 							ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
-							if(pos.size() > 0 && msaa_index.size() > 0)
+							if(resourceType!=ShaderResourceType::UNKNOWN)
 							{
-								full_expr << GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+								if(pos.size() > 0 && msaa_index.size() > 0)
+								{
+									full_expr << GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+								}
+								else
+								{
+									full_expr << GetLoadExpr(textureName,command,params,resourceType);
+								}
 							}
 							else
 							{
-								full_expr << GetLoadExpr(textureName,command,params,resourceType);
+								full_expr<<"{load_expr "<<textureName<<" "<<command<<" "<<params<<" "<<pos<<" "<<msaa_index<<"}";
 							}
 						}
 						else
 						{
-							full_expr << textureName << "." << command << "(" << params << ")";
+							full_expr << textureName << "." << command << "(" << params <<")";
 						}
 						$$.strs[0] = full_expr.str();
                         buildFunction.rwTexturesLoaded.insert(textureName);
@@ -3034,7 +3070,7 @@ ShaderResourceType ToShaderResourceType(int t)
 	  case RW_REGULARBUFFER:
 		  return ShaderResourceType::RW_STRUCTURED_BUFFER;
 	  default:
-		  errSem("Unknwon Shader resource type!");
+		  errSem("Unknown Shader resource type!");
 		  return ShaderResourceType::UNKNOWN;
 	  };
 }
@@ -3181,7 +3217,9 @@ ShaderResourceType GetShaderResourceType(const Function &function, const string 
 	  for (vector<sfxstype::variable>::const_iterator i = function.parameters.begin(); i != function.parameters.end(); i++)
 	  {
 		  if (textureName == i->identifier)
-			  return (ShaderResourceType)i->type_enum;
+		  {
+			  return (ShaderResourceType)i->shaderResourceType;
+		  }
 	  }
 	  auto j = gEffect->GetDeclarations().find(textureName);
 	  if (j != gEffect->GetDeclarations().end())

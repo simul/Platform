@@ -26,11 +26,9 @@ bool RewriteOutput(std::string str)
 	return true;
 }
 
-
 void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
 	InvalidateDeviceObjects();
-
 	renderPlatform = r;
 	if (renderPlatform)
 	{
@@ -42,7 +40,6 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 		return;
 	}
 	mQueryPool = mDevice->createQueryPool(queryPoolCI);
-
 	for (int i = 0; i < QueryLatency; i++)
 	{
 		gotResults[i] = true;

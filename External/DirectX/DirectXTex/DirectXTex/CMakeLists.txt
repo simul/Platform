@@ -45,9 +45,9 @@ set(DIRECTX_TEX_SRC
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
-	add_static_library (directxtex SOURCES ${DIRECTX_TEX_SRC} )
+	add_static_library (directxtex SOURCES ${DIRECTX_TEX_SRC} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 endif()
-add_static_library (directxtex SOURCES ${DIRECTX_TEX_SRC} RUNTIME MD )
+add_static_library (directxtex SOURCES ${DIRECTX_TEX_SRC} RUNTIME MD FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 
 #target_compile_options( directxtex PRIVATE /fp:fast )
 
