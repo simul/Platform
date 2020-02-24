@@ -289,9 +289,28 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
     EndEvent(deviceContext);
 }
 
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
+{
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (commandBuffer)
+	{
+		vk::MemoryBarrier barrier(vk::AccessFlagBits::eMemoryWrite, vk::AccessFlagBits::eMemoryRead);
+		commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eBottomOfPipe, vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::DependencyFlags(0), { barrier }, {}, {});
+	}
+}
+
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (commandBuffer)
+	{
+		vk::MemoryBarrier barrier(vk::AccessFlagBits::eMemoryWrite, vk::AccessFlagBits::eMemoryRead);
+		commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eBottomOfPipe, vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::DependencyFlags(0), { barrier }, {}, {});
+	}
 }
+//Intra-commandbuffer synchronisatons https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
