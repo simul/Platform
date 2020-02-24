@@ -199,9 +199,9 @@ namespace simul
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
-			virtual void ResourceBarrierUAV (DeviceContext&, crossplatform::Texture*) {};
+			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, crossplatform::Texture* texture) {};
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
-			virtual void ResourceBarrierUAV(DeviceContext& deviceContext,PlatformStructuredBuffer* sb){}
+			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {}
 			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
