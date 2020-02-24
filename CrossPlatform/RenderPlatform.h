@@ -144,6 +144,7 @@ namespace simul
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
+			virtual std::string GetPathName() const;
 			virtual RenderPlatformType GetType() const = 0;
 			virtual const char *GetSfxConfigFilename() const 
 			{
@@ -199,6 +200,8 @@ namespace simul
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
 			virtual void ResourceBarrierUAV (DeviceContext&, crossplatform::Texture*) {};
+			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
+			virtual void ResourceBarrierUAV(DeviceContext& deviceContext,PlatformStructuredBuffer* sb){}
 			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
