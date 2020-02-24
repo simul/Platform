@@ -5,7 +5,7 @@
 	"sourceExtension": "hlsl",
 	"outputExtension": "cso",
 	"outputOption": "/Fo",
-	"debugOutputFileOption": "/Od -Fd\"{filename_root}.pdb\"",
+	"debugOutputFileOption": "/Od /O0 -Fd\"{filename_root}.pdb\"",
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,
 	"generateSlots": true,

@@ -221,6 +221,8 @@ namespace simul
 			virtual void DrawQuad			(DeviceContext &){}
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
+			//! Print diagnostics, starting from the top, and going down the screen one line each time as the frame progresses, then restarting next frame.
+			void LinePrint					(DeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			virtual void DrawLines			(DeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
 			void Draw2dLine					(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
 			virtual void Draw2dLines		(DeviceContext &/*deviceContext*/,PosColourVertex * /*lines*/,int /*vertex_count*/,bool /*strip*/){}

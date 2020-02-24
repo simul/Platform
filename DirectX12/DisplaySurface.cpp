@@ -224,14 +224,16 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 		mRTHandles[n] = rtvHandle;
 
 		result = mSwapChain->GetBuffer(n, __uuidof(ID3D12Resource), (LPVOID*)&mBackBuffers[n]);
-		SIMUL_ASSERT(result == S_OK);
-		mBackBuffers[n]->SetName(L"WindowBackBuffer");
+		if(result == S_OK)
+        {
+		    mBackBuffers[n]->SetName(L"WindowBackBuffer");
 
-		device->CreateRenderTargetView(mBackBuffers[n], nullptr, rtvHandle);
-		rtvHandle.Offset(1, rtHandleSize);
+		    device->CreateRenderTargetView(mBackBuffers[n], nullptr, rtvHandle);
+		    rtvHandle.Offset(1, rtHandleSize);
 
-		result = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mCommandAllocators[n]));
-		SIMUL_ASSERT(result == S_OK);
+		    result = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mCommandAllocators[n]));
+		    SIMUL_ASSERT(result == S_OK);
+        }
 	}
 }
 
@@ -322,6 +324,10 @@ void DisplaySurface::Resize()
     int screenWidth = abs(rect.right - rect.left);
     int screenHeight = abs(rect.bottom - rect.top);
     if (screenWidth == mCurViewport.Width && screenHeight == mCurViewport.Height)
+    {
+        return;
+    }
+    if (screenWidth == 0 || screenHeight == 0)
     {
         return;
     }

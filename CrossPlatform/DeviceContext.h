@@ -230,6 +230,7 @@ namespace simul
 			crossplatform::ContextState contextState;
 			long long frame_number;
 			bool initialized;
+			int framePrintY=0;
 			DeviceContext();
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
 			{
@@ -253,7 +254,6 @@ namespace simul
 			}
 			ViewStruct viewStruct;
 			uint cur_backbuffer;
-		public:
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,

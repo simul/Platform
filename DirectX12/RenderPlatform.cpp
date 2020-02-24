@@ -19,7 +19,7 @@
 #include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
-    #include "pix.h"
+    #include "pix3.h"
 #endif
 
 using namespace simul;
@@ -480,20 +480,13 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
 {
-#ifdef SIMUL_WIN8_SDK
-
-#endif
 #ifdef SIMUL_ENABLE_PIX
-	if(last_name==string(name))
-		PIXBeginEvent( 0, name, name );
+	PIXBeginEvent( 0, name, name );
 #endif
 }
 
 void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 {
-#ifdef SIMUL_WIN8_SDK
-
-#endif
 #ifdef SIMUL_ENABLE_PIX
 	PIXEndEvent();
 #endif

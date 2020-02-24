@@ -189,6 +189,10 @@ void TextRenderer::Recompile()
 	textureResource	=effect->GetShaderResource("fontTexture");
 	_fontChars		=effect->GetShaderResource("fontChars");
 }
+int TextRenderer::GetDefaultTextHeight() const
+{
+	return 20;
+}
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
@@ -226,7 +230,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 		w += f.pixel_width*int(fontScale) + 1;
 		maxw = std::max(w, maxw);
 	}
-	float ht=fontScale*20.0f;
+	float ht=fontScale*float(GetDefaultTextHeight());
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
 	constantBuffer.background_rect		=vec4(2.0f*x0/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht*lines/screen_height);
 	if(mirrorY)
