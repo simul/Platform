@@ -93,6 +93,7 @@ void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource* res, D3D12_RESOUR
 	}
 	CheckBarriersForResize();
 }
+
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
 	ID3D12Resource* res = sb->AsD3D12Resource(deviceContext);
