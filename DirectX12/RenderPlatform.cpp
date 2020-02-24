@@ -1604,31 +1604,32 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& dev
 				t->SetLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 	}
+	if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
+		for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
+		{
+			h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[i]);
+		}
+		deviceContext.asD3D12Context()->OMSetRenderTargets
+		(
+			(UINT)deviceContext.defaultTargetsAndViewport.num,
+				h,
+			false,
+			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
+		);
+	}
+	if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
+	    SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
 }
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
     deviceContext.GetFrameBufferStack().pop();
-	CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
     // Stack is empty so apply default targets:
     if (deviceContext.GetFrameBufferStack().empty())
     {
-		if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
-		{
-			for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
-			{
-				h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[i]);
-			}
-        deviceContext.asD3D12Context()->OMSetRenderTargets
-        (
-            (UINT)deviceContext.defaultTargetsAndViewport.num,
-				h,
-            false,
-            (CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
-        );
-		}
-		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
-	        SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
+		ApplyDefaultRenderTargets(deviceContext);
     }
     // Apply top target:
     else
