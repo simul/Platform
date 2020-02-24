@@ -67,6 +67,7 @@ namespace simul
             void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
 			void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d) override;
 			
+			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 
 			void        Draw(crossplatform::DeviceContext& deviceContext, int num_verts, int start_vert) override;
