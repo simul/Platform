@@ -284,6 +284,7 @@ namespace simul
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,const Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
+			virtual void					ClearVertexBuffers				(DeviceContext& deviceContext);
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
 			virtual void					SetStreamOutTarget				(DeviceContext &,Buffer *,int =0){}
 
