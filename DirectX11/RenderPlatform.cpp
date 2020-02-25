@@ -1049,6 +1049,11 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 									offsets );						// array of offset values, one for each buffer
 };
 
+void RenderPlatform::ClearVertexBuffers(crossplatform::DeviceContext& deviceContext)
+{
+
+}
+
 void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer,int start_index)
 {
 	ID3D11Buffer *b=NULL;
