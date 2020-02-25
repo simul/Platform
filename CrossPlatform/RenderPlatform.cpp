@@ -534,7 +534,7 @@ void RenderPlatform::GenerateMips(DeviceContext &deviceContext,Texture *t,bool w
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m0=i,m1=i+1;
-		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,m0);
+		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,0);
 		debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("copy_2d"),"wrap");
 		t->activateRenderTarget(deviceContext,array_idx,m1);
 		DrawQuad(deviceContext);
@@ -1243,6 +1243,11 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	{
 		deviceContext.contextState.applyVertexBuffers[slot+i]=(buffers[i]);
 	}
+}
+
+void RenderPlatform::ClearVertexBuffers(crossplatform::DeviceContext& deviceContext)
+{
+
 }
 
 void RenderPlatform::SetIndexBuffer(DeviceContext &deviceContext,const Buffer *buffer)

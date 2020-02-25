@@ -91,6 +91,7 @@ namespace simul
 
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,const crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL) override;
+			void									ClearVertexBuffers(crossplatform::DeviceContext& deviceContext) override;
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
 
 			void									ApplyDefaultRenderTargets(crossplatform::DeviceContext &deviceContext);

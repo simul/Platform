@@ -1553,6 +1553,11 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	);
 };
 
+void RenderPlatform::ClearVertexBuffers(crossplatform::DeviceContext& deviceContext)
+{
+
+}
+
 void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *,int )
 {
 
