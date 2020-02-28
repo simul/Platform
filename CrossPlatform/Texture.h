@@ -233,7 +233,7 @@ namespace simul
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;
 			virtual bool IsValid() const=0;
-			virtual void InvalidateDeviceObjects()=0;
+			virtual void InvalidateDeviceObjects();
             virtual nvn::Texture* AsNXTexture() { return 0; };
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
 			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}

@@ -1018,10 +1018,9 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	if(!bkg)
 		bkg=black;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
-	int h=(int)viewport.h;
 	if(*text!=0)
 	{
-		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);
+		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)viewport.h,text,colr,bkg,mirrorYText);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }

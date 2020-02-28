@@ -158,12 +158,13 @@ void RenderPlatform::FlushBarriers()
     mCurBarriers = 0;
 }
 
-void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dName)
+void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 {
     if (!res)
     {
 		return;
     }
+	std::string dName=n;
 	// Don't add duplicates, this operation can be potentially slow if we have tons of resources
 	for (unsigned int i = 0; i < mResourceBin.size(); i++)
 	{

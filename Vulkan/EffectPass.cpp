@@ -208,6 +208,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			rwSbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*bf);
 			write.setPBufferInfo(&rwSbInfo[i]);
 		}
+		// TODO: this is overkill, synchronizing all uav's
+		renderPlatform->ResourceBarrierUAV(deviceContext,sb);
 	}
 	vk::DescriptorImageInfo samplerInfo[16];
 	for(int i=0;i<numSamplerResourceSlots;i++,b++)
@@ -343,13 +345,13 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute,renderPassPipeline->mPipeline);
 		if(descriptorSet)
-		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else
 	{
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics,renderPassPipeline->mPipeline);
 		if(descriptorSet)
-		commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 }
 
@@ -598,7 +600,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																		.setLayout(mPipelineLayout)
 																		.setStage(shaderStageInfo);
 		//computePipelineCreateInfo	.setFlags(vk::PipelineCreateFlagBits::eDispatchBase);
-		vulkanDevice->createComputePipelines(renderPassPipeline->mPipelineCache,1,&computePipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline);
+		SIMUL_VK_CHECK(vulkanDevice->createComputePipelines(renderPassPipeline->mPipelineCache,1,&computePipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline));
 		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass compute mPipeline",name.c_str()));
 	}
 	else
@@ -721,10 +723,11 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 				b.setBlendEnable(c.blendOperationAlpha!=crossplatform::BLEND_OP_NONE||c.blendOperation!=crossplatform::BLEND_OP_NONE);
 				b.setAlphaBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperationAlpha));
 				b.setColorBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperation));
-				b.setColorWriteMask(vk::ColorComponentFlagBits::eR
+				b.setColorWriteMask((vk::ColorComponentFlagBits)c.RenderTargetWriteMask
+								/*ColorComponentFlagBits::eR
 									| vk::ColorComponentFlagBits::eG
 									| vk::ColorComponentFlagBits::eB
-									| vk::ColorComponentFlagBits::eA);
+									| vk::ColorComponentFlagBits::eA*/);
 				b.setDstAlphaBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.DestBlendAlpha));
 				b.setDstColorBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.DestBlend));
 				b.setSrcAlphaBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.SrcBlendAlpha));

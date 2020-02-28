@@ -37,7 +37,7 @@ shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 	tc.y		=1.0-tc.y;
 
 	vec4 lookup	= colour*texture_nearest_lod(fontTexture,tc,0);
-//	lookup.b = 0;
+	lookup.a = 0;
     return lookup;
 }
 
@@ -45,6 +45,8 @@ shader vec4 FontBackgroundShader(posTexVertexOutput IN) : SV_TARGET
 {
     return background;
 }
+
+
 
 BlendState AlphaBlendRGB
 {
@@ -57,6 +59,7 @@ BlendState AlphaBlendRGB
     BlendOpAlpha		= ADD;
     RenderTargetWriteMask[0] = 7;
 };
+
 BlendState AddBlendRGB
 {
 	BlendEnable[0]	=TRUE;
@@ -74,7 +77,7 @@ technique backg
 		SetRasterizerState( RenderNoCull );
 		SetTopology( TriangleStrip );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlendInvAlpha,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0, BackgroundVertexShader()));
 		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));

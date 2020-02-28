@@ -211,11 +211,18 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
     profileData->QueryFinished = true;
 }
 
-void GpuProfiler::StartFrame(crossplatform::DeviceContext &)
+void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
-	SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")
+	if(current_framenumber==deviceContext.frame_number)
+		return;
+	current_framenumber=deviceContext.frame_number;
 	if(level!=0)
-        return;
+	{
+		SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")
+		//level=0;
+		//profileStack.clear();
+		return;
+	}
 	base::BaseProfilingInterface::StartFrame();
 }
 
@@ -225,8 +232,8 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 	{
 		WalkEndFrame(deviceContext,(crossplatform::ProfileData*)i.second);
 	}
-		if(profile->updatedThisFrame)
-			profile->age=0;
+	if(profile->updatedThisFrame)
+		profile->age=0;
 	if(profile!=root)
 	{
 		for(auto u:profile->children)

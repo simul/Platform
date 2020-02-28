@@ -158,9 +158,9 @@ void Texture::InvalidateDeviceObjects()
 		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
 		// release manager
 		if(mTextureDefault)
-			rPlat->PushToReleaseManager(mTextureDefault, name + "_Default");
+			rPlat->PushToReleaseManager(mTextureDefault, (name + "_Default").c_str());
 		if(mTextureUpload)
-			rPlat->PushToReleaseManager(mTextureUpload, name + "_Upload");
+			rPlat->PushToReleaseManager(mTextureUpload, (name + "_Upload").c_str());
 	}
 
 	mTextureDefault=nullptr;
@@ -1099,7 +1099,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
 											vec4 clear, float clearDepth, uint clearStencil
-												,crossplatform::CompressionFormat cf,const void *data)
+											,crossplatform::CompressionFormat cf,const void *data)
 {
 	// Define pixel formats of this texture
 	int m			= 1;
@@ -1847,7 +1847,7 @@ void Texture::SplitLayouts()
 
 void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 {
-    int numLayers       = mSubResourcesStates.size();
+    int numLayers       = (int)mSubResourcesStates.size();
 	mResourceState      = state;
 	// And set all the subresources to that state
 	// We understand that we transitioned ALL the resources
