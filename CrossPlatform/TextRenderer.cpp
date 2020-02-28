@@ -105,7 +105,7 @@ TextRenderer::FontIndex defaultFontIndices[]={
 {0.573242f	,0.576172f		,3},
 {0.577148f	,0.583984f		,7},
 };
-static int max_chars=500;
+static int max_chars=1500;
 
 TextRenderer::TextRenderer()
 	:effect(NULL)
@@ -205,8 +205,6 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	if(!bck)
 		bck=transp;
 	static float fontScale=1.0f;
-	//renderPlatform->DrawQuad(deviceContext,20,20,50,50,effect,effect->GetTechniqueByName("textured"),"noblend");
-	//renderPlatform->StoreRenderState(deviceContext);
 	constantBuffer.colour		=vec4(clr);
 	constantBuffer.background	=vec4(bck);
 	// Calc width and draw background:
@@ -232,9 +230,11 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	}
 	float ht=fontScale*float(GetDefaultTextHeight());
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
-	constantBuffer.background_rect		=vec4(2.0f*x0/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht*lines/screen_height);
+	constantBuffer.background_rect		=vec4(2.0f*x0/screen_width-1.f,1.f-2.0f*(y+ht*lines)/screen_height,2.0f*(float)maxw/screen_width,2.0f*ht*lines/screen_height);
+	float y_offset=-2.0f*ht/screen_height;
 	if(mirrorY)
 	{
+		y_offset*=-1.0f;
 		constantBuffer.background_rect.y=-constantBuffer.background_rect.y;
 		constantBuffer.background_rect.w*=-1.0f;
 	}
@@ -247,17 +247,19 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	}
 	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + ht)/screen_height, 0, 2.0f*ht / screen_height);
 	int n=0;
-	static float u = 1024.f / font_texture->width;
+	float u = 1024.f / font_texture->width;
+	if(max_chars>fontChars.count)
+		fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false);
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
 	float x = x0;
-	for(int i=0;i<max_chars;i++)
+	for(int i=0;i<fontChars.count;i++)
 	{
 		if(txt[i]==0)
 			break;
 		if (txt[i] == '\n')
 		{
 			x = x0;
-			constantBuffer.background_rect.y += ht;
+			constantBuffer.background_rect.y += y_offset;
 			continue;
 		}
 		int idx=(int)txt[i]-32;

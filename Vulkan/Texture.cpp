@@ -83,6 +83,7 @@ void SamplerState::InvalidateDeviceObjects()
 	if(!vulkanDevice)
 		return;
 	vulkanDevice->destroySampler(mSampler);
+	renderPlatform=nullptr;
 }
 
 Texture::Texture()
@@ -152,15 +153,17 @@ void Texture::InvalidateDeviceObjects()
 	if(!renderPlatform)
 		return;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	if(!vulkanDevice)
-		return;
-	InvalidateDeviceObjectsExceptLoaded();
-	for(auto i:loadedTextures)
+	if(vulkanDevice)
 	{
-		vulkanDevice->destroyBuffer(i.buffer);
-		vulkanDevice->freeMemory(i.mem, nullptr);
+		InvalidateDeviceObjectsExceptLoaded();
+		for(auto i:loadedTextures)
+		{
+			vulkanDevice->destroyBuffer(i.buffer);
+			vulkanDevice->freeMemory(i.mem, nullptr);
+		}
+		loadedTextures.clear();
 	}
-	loadedTextures.clear();
+	crossplatform::Texture::InvalidateDeviceObjects();
 }
 
 void Texture::InvalidateDeviceObjectsExceptLoaded()
@@ -168,45 +171,46 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	if(!renderPlatform)
 		return;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	if(!vulkanDevice)
-		return;
-	for(auto i:mLayerViews)
+	if(vulkanDevice)
 	{
-		vulkanDevice->destroyImageView(i);
-	}
-	for(auto i:mFramebuffers)
-	{
-		for(auto j:i)
+		for(auto i:mLayerViews)
 		{
-			vulkanDevice->destroyFramebuffer(j);
+			vulkanDevice->destroyImageView(i);
 		}
-	}
-	mFramebuffers.clear();
-	for(auto i:mMainMipViews)
-	{
-		vulkanDevice->destroyImageView(i);
-	}
-	for(auto i:mLayerMipViews)
-	{
-		for(auto j:i)
+		for(auto i:mFramebuffers)
 		{
-			vulkanDevice->destroyImageView(j);
+			for(auto j:i)
+			{
+				vulkanDevice->destroyFramebuffer(j);
+			}
 		}
+		mFramebuffers.clear();
+		for(auto i:mMainMipViews)
+		{
+			vulkanDevice->destroyImageView(i);
+		}
+		for(auto i:mLayerMipViews)
+		{
+			for(auto j:i)
+			{
+				vulkanDevice->destroyImageView(j);
+			}
+		}
+		vulkanDevice->destroyImageView(mFaceArrayView);
+		vulkanDevice->destroyImageView(mCubeArrayView);
+		vulkanDevice->destroyImageView(mMainView);
+		vulkanDevice->destroyRenderPass(mRenderPass);
+		mRenderPass = nullptr;
+		mLayerViews.clear();
+		mMainMipViews.clear();
+		mLayerMipViews.clear();
+		if(!external_texture)
+		{
+			vulkanDevice->destroyImage(mImage, nullptr);
+			vulkanDevice->freeMemory(mMem, nullptr);
+		}
+		vulkanDevice->destroyBuffer(mBuffer, nullptr);
 	}
-	vulkanDevice->destroyImageView(mFaceArrayView);
-	vulkanDevice->destroyImageView(mCubeArrayView);
-	vulkanDevice->destroyImageView(mMainView);
-	vulkanDevice->destroyRenderPass(mRenderPass);
-	mRenderPass = nullptr;
-	mLayerViews.clear();
-	mMainMipViews.clear();
-	mLayerMipViews.clear();
-	if(!external_texture)
-	{
-		vulkanDevice->destroyImage(mImage, nullptr);
-		vulkanDevice->freeMemory(mMem, nullptr);
-	}
-	vulkanDevice->destroyBuffer(mBuffer, nullptr);
 	renderPlatform=nullptr;
 }
 

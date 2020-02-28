@@ -103,7 +103,7 @@ void EffectPass::MakeResourceSlotMap()
 
 bool EffectPass::usesTextureSlot(int s) const
 {
-	if(s>=1000)
+ 	if(s>=1000)
 		return usesRwTextureSlot(s-1000);
 	unsigned m=((unsigned)1<<(unsigned)s);
 	return (textureSlots&m)!=0;

@@ -112,6 +112,7 @@ namespace simul
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
 			bool enabled;
+			long long current_framenumber=-1;
 		};
 		class ProfileBlock
 		{

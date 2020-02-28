@@ -129,7 +129,7 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	if(dot(N,view)<0)
 		N=vec3(1.0,1.0,1.0)-N;
 	N*=0.001;
-	res				=vec4(pow(res.xyz+N,vec3(debugGamma,debugGamma,debugGamma)),1.0);
+	res				=vec4(pow(res.xyz+N,vec3(debugGamma,debugGamma,debugGamma)),0.0);
 	return res;
 }
 
@@ -151,7 +151,7 @@ shader vec4 PS_ShowCubemapArray(posTexVertexOutput IN) : SV_TARGET
 	if(dot(N,view)<0)
 		N=vec3(1.0,1.0,1.0)-N;
 	N*=0.03;
-	res		=vec4(pow(res.xyz,vec3(0.44,0.44,0.44))+N,1.0);
+	res		=vec4(pow(res.xyz,vec3(0.44,0.44,0.44))+N,0.0);
 	return res;
 }
 
@@ -949,7 +949,7 @@ BlendState NoBlendNoAlphaWrite
 BlendState NoBlendSetAlpha
 {
 	BlendEnable[0] = FALSE;
-	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[0]=15;
 	SrcBlend			= ONE;
 	DestBlend			= ZERO;
     BlendOp				= ADD;
@@ -964,7 +964,7 @@ technique show_cubemap_array
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendSetAlpha, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemapArray()));
@@ -973,7 +973,7 @@ technique show_cubemap_array
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemapArray()));
@@ -1030,7 +1030,7 @@ technique show_cubemap
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendSetAlpha, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemap()));
@@ -1039,7 +1039,7 @@ technique show_cubemap
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemap()));

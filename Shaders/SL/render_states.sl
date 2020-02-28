@@ -120,26 +120,15 @@ BlendState AlphaToCoverageBlend
 	DestBlend				=INV_SRC_ALPHA;
 };
 
-BlendState CloudBlend
+BlendState AlphaBlendInvAlpha
 {
-	BlendEnable[0]		= TRUE;
-	BlendEnable[1]		= TRUE;
-	SrcBlend			= SRC_ALPHA;
-	DestBlend			= INV_SRC_ALPHA;
-    BlendOp				= ADD;
-    SrcBlendAlpha		= ZERO;
-    DestBlendAlpha		= INV_SRC_ALPHA;
-    BlendOpAlpha		= ADD;
-    //RenderTargetWriteMask[0] = 0x0F;
-};
-
-BlendState FoamBlend
-{
-	BlendEnable[0]	= TRUE;
-	BlendEnable[1]	= TRUE;
-	SrcBlend		= ONE;
-	DestBlend		= SRC_ALPHA;
-	BlendOp			= ADD;
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=SRC_ALPHA;
+	DestBlend		=INV_SRC_ALPHA;
+	SrcBlendAlpha	=ZERO;
+	DestBlendAlpha	=INV_SRC_ALPHA;
+    BlendOp			=ADD;
 };
 
 BlendState AddDestInvAlphaBlend

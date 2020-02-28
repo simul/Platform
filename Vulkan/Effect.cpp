@@ -103,7 +103,8 @@ bool Query::GetData(crossplatform::DeviceContext &,void *data, size_t sz)
 		return false;
 	
 	SIMUL_ASSERT(sizeof(sz) >= sizeof(uint64_t));
-	vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, currFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+	vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, currFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64 );
+				//| vk::QueryResultFlagBits::eWait);
 	*(uint64_t*)data /= 1000000; //convert ns to ms
 	currFrame = (currFrame + 1) % QueryLatency;
 	return (ok == vk::Result::eSuccess) && (data != nullptr);
