@@ -737,10 +737,10 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-	SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
 	
-		framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
-		framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
+			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
+			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
 		}
 	}
 }
@@ -1131,7 +1131,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
 	vk::AccessFlags dstAccessMask = DstAccessMask(newLayout);
 	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
-	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllGraphics;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllCommands;	// very general..
 
 	auto  barrier = vk::ImageMemoryBarrier()
 		.setSrcAccessMask(srcAccessMask)
@@ -1150,7 +1150,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		barrier.setOldLayout(l);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, mip, 1, layer, 1));
 		split_layouts = true;
-		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
+		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 		l = newLayout;
 	}
 	else
@@ -1164,7 +1164,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		int totalNum = cubemap ? 6 * arraySize : arraySize;
 		barrier.setOldLayout(currentImageLayout);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, mips, 0, totalNum));
-		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
+		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 		AssumeLayout(newLayout);
 		split_layouts = false;
 	}

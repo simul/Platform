@@ -930,6 +930,19 @@ technique clear_both
 	}
 }
 
+technique clear_colour
+{
+	pass p0
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+	}
+}
+
 BlendState AlphaBlendNoAlphaWrite
 {
 	BlendEnable[0]	=TRUE;
