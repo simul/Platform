@@ -320,7 +320,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 		vk::MemoryBarrier barrier = {};
 		barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
 		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		vk::DependencyFlags flags = vk::DependencyFlags::Flags(vk::DependencyFlagBits::eDeviceGroup);
+		vk::DependencyFlags flags = vk::DependencyFlagBits::eDeviceGroup;
 
 		commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader,
 			flags, { barrier }, {}, {});
