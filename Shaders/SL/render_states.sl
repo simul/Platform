@@ -3,6 +3,7 @@
 #define RENDER_STATES_SL
 #include "sampler_states.sl"
 
+//Water Specific DepthStencil and Blend States
 #ifdef SFX
 	RenderTargetFormatState WaterTargetFormats
 	{
@@ -30,6 +31,8 @@ BlendState WaterNoBlend
 	RenderTargetWriteMask[4]=15;
 };
 
+
+//DepthStencil States
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;
@@ -87,6 +90,7 @@ DepthStencilState EnableDepth
 	DepthWriteMask = ALL;
 };
 
+//Blend States
 BlendState MixBlend
 {
 	BlendEnable[0]	=TRUE;
@@ -216,6 +220,18 @@ BlendState CompositeBlend
 	RenderTargetWriteMask[1]=7;
 };
 
+BlendState DontBlend
+{
+	BlendEnable[0] = FALSE;
+	BlendEnable[1] = FALSE;
+};
+
+BlendState NoBlend
+{
+	BlendEnable[0] = FALSE;
+};
+
+//Rasterizer States
 RasterizerState RenderNoCull
 {
 	FillMode					= SOLID;
@@ -247,17 +263,5 @@ RasterizerState wireframeRasterizer
 	MultisampleEnable			= false;
 	AntialiasedLineEnable		= true;
 };
-
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-	BlendEnable[1]	=FALSE;
-};
-
-BlendState NoBlend
-{
-	BlendEnable[0] = FALSE;
-};
-
 
 #endif
