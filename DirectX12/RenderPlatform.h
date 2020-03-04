@@ -100,7 +100,7 @@ namespace simul
 			void						    FlushBarriers();
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
-			void						    PushToReleaseManager(ID3D12DeviceChild* res, std::string dName);
+			void						    PushToReleaseManager(ID3D12DeviceChild* res, const char *name);
 			//! Clears the input assembler state (index and vertex buffers)
 			void						    ClearIA(crossplatform::DeviceContext &deviceContext);
 

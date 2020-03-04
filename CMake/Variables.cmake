@@ -1,5 +1,7 @@
 include_guard()
 
+option( SIMUL_INTERNAL_CHECKS "Enable Simul internal debugging checks?" OFF )
+
 option( SIMUL_SOURCE_BUILD "Build Simul libraries from source? If false, only samples are built." ON )
 option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
 option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
@@ -52,6 +54,7 @@ else()
 	set(SIMUL_SFX_EXECUTABLE "${CMAKE_SOURCE_DIR}/build/bin/Release/Sfx.exe" CACHE STRING "" )
 endif()
 
+mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS)
 
 # Defaults for glfw
 set(GLFW_BUILD_TESTS OFF )

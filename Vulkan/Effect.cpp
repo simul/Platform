@@ -47,6 +47,11 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	}
 }
 
+void Query::SetName(const char*name)
+{
+	simul::vulkan::SetVulkanName(renderPlatform,&mQueryPool,name);
+}
+
 void Query::InvalidateDeviceObjects() 
 {
 	if (mDevice && mQueryPool)
@@ -79,9 +84,15 @@ vk::QueryType Query::toVkQueryType(crossplatform::QueryType t)
 
 void Query::Begin(crossplatform::DeviceContext& deviceContext)
 {
-	if(!mQueryPool)
-		RestoreDeviceObjects(deviceContext.renderPlatform);
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if(!mQueryPool)
+	{
+		RestoreDeviceObjects(deviceContext.renderPlatform);
+		commandBuffer->resetQueryPool(mQueryPool,0,crossplatform::Query::QueryLatency);
+	}
+	else
+		commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
+	
 	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
 }
 
@@ -90,20 +101,24 @@ void Query::End(crossplatform::DeviceContext& deviceContext)
 	if (!mQueryPool)
 		RestoreDeviceObjects(deviceContext.renderPlatform); (deviceContext.renderPlatform);
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
 	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
 
 	gotResults[currFrame] = false;
 	doneQuery[currFrame] = true;
 }
 
-bool Query::GetData(crossplatform::DeviceContext &,void *data, size_t sz)
+bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data, size_t sz)
 {
 	gotResults[currFrame] = true;
 	if (!doneQuery[currFrame])
 		return false;
 	
 	SIMUL_ASSERT(sizeof(sz) >= sizeof(uint64_t));
-	vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, currFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+	vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, currFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64 );
+				//| vk::QueryResultFlagBits::eWait);
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	//commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
 	*(uint64_t*)data /= 1000000; //convert ns to ms
 	currFrame = (currFrame + 1) % QueryLatency;
 	return (ok == vk::Result::eSuccess) && (data != nullptr);

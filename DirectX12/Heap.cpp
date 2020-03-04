@@ -54,6 +54,7 @@ namespace simul
 			if (mCnt > mTotalCnt)
 			{
 				SIMUL_BREAK_ONCE("This heap reached the maximum capacity!");
+				Reset();
 			}
 		}
 
@@ -88,7 +89,7 @@ namespace simul
 		{
 			if (mHeap)
 			{
-				renderPlatform->PushToReleaseManager(mHeap,mName);
+				renderPlatform->PushToReleaseManager(mHeap,mName.c_str());
 			}
 			mHeap		= nullptr;
 			mCnt		= 0;

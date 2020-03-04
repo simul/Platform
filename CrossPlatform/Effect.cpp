@@ -103,7 +103,7 @@ void EffectPass::MakeResourceSlotMap()
 
 bool EffectPass::usesTextureSlot(int s) const
 {
-	if(s>=1000)
+ 	if(s>=1000)
 		return usesRwTextureSlot(s-1000);
 	unsigned m=((unsigned)1<<(unsigned)s);
 	return (textureSlots&m)!=0;
@@ -1042,7 +1042,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		#endif
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
-			SIMUL_CERR<<"Shader effect file not found: "<< binFilenameUtf8.c_str()<<std::endl;
+			string err=base::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
+			SIMUL_BREAK_ONCE(err.c_str());
 			static bool already = false;
 			if (!already)
 			{

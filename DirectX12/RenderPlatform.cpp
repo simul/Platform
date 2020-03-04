@@ -158,12 +158,13 @@ void RenderPlatform::FlushBarriers()
     mCurBarriers = 0;
 }
 
-void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, std::string dName)
+void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 {
     if (!res)
     {
 		return;
     }
+	std::string dName=n;
 	// Don't add duplicates, this operation can be potentially slow if we have tons of resources
 	for (unsigned int i = 0; i < mResourceBin.size(); i++)
 	{
@@ -1480,7 +1481,7 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 		s->RasterDesc							= D3D12_RASTERIZER_DESC();
 		s->RasterDesc.FillMode					= toD3d12FillMode(desc.rasterizer.polygonMode);
 		s->RasterDesc.CullMode					= toD3d12CullMode(desc.rasterizer.cullFaceMode);
-		s->RasterDesc.FrontCounterClockwise		= desc.rasterizer.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE;
+		s->RasterDesc.FrontCounterClockwise		= desc.rasterizer.frontFace != crossplatform::FrontFace::FRONTFACE_CLOCKWISE;
 		s->RasterDesc.DepthBias					= 0;
 		s->RasterDesc.DepthBiasClamp			= 0.0f;
 		s->RasterDesc.SlopeScaledDepthBias		= 0.0f;

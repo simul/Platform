@@ -83,6 +83,7 @@ void SamplerState::InvalidateDeviceObjects()
 	if(!vulkanDevice)
 		return;
 	vulkanDevice->destroySampler(mSampler);
+	renderPlatform=nullptr;
 }
 
 Texture::Texture()
@@ -152,15 +153,17 @@ void Texture::InvalidateDeviceObjects()
 	if(!renderPlatform)
 		return;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	if(!vulkanDevice)
-		return;
-	InvalidateDeviceObjectsExceptLoaded();
-	for(auto i:loadedTextures)
+	if(vulkanDevice)
 	{
-		vulkanDevice->destroyBuffer(i.buffer);
-		vulkanDevice->freeMemory(i.mem, nullptr);
+		InvalidateDeviceObjectsExceptLoaded();
+		for(auto i:loadedTextures)
+		{
+			vulkanDevice->destroyBuffer(i.buffer);
+			vulkanDevice->freeMemory(i.mem, nullptr);
+		}
+		loadedTextures.clear();
 	}
-	loadedTextures.clear();
+	crossplatform::Texture::InvalidateDeviceObjects();
 }
 
 void Texture::InvalidateDeviceObjectsExceptLoaded()
@@ -168,45 +171,46 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	if(!renderPlatform)
 		return;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	if(!vulkanDevice)
-		return;
-	for(auto i:mLayerViews)
+	if(vulkanDevice)
 	{
-		vulkanDevice->destroyImageView(i);
-	}
-	for(auto i:mFramebuffers)
-	{
-		for(auto j:i)
+		for(auto i:mLayerViews)
 		{
-			vulkanDevice->destroyFramebuffer(j);
+			vulkanDevice->destroyImageView(i);
 		}
-	}
-	mFramebuffers.clear();
-	for(auto i:mMainMipViews)
-	{
-		vulkanDevice->destroyImageView(i);
-	}
-	for(auto i:mLayerMipViews)
-	{
-		for(auto j:i)
+		for(auto i:mFramebuffers)
 		{
-			vulkanDevice->destroyImageView(j);
+			for(auto j:i)
+			{
+				vulkanDevice->destroyFramebuffer(j);
+			}
 		}
+		mFramebuffers.clear();
+		for(auto i:mMainMipViews)
+		{
+			vulkanDevice->destroyImageView(i);
+		}
+		for(auto i:mLayerMipViews)
+		{
+			for(auto j:i)
+			{
+				vulkanDevice->destroyImageView(j);
+			}
+		}
+		vulkanDevice->destroyImageView(mFaceArrayView);
+		vulkanDevice->destroyImageView(mCubeArrayView);
+		vulkanDevice->destroyImageView(mMainView);
+		vulkanDevice->destroyRenderPass(mRenderPass);
+		mRenderPass = nullptr;
+		mLayerViews.clear();
+		mMainMipViews.clear();
+		mLayerMipViews.clear();
+		if(!external_texture)
+		{
+			vulkanDevice->destroyImage(mImage, nullptr);
+			vulkanDevice->freeMemory(mMem, nullptr);
+		}
+		vulkanDevice->destroyBuffer(mBuffer, nullptr);
 	}
-	vulkanDevice->destroyImageView(mFaceArrayView);
-	vulkanDevice->destroyImageView(mCubeArrayView);
-	vulkanDevice->destroyImageView(mMainView);
-	vulkanDevice->destroyRenderPass(mRenderPass);
-	mRenderPass = nullptr;
-	mLayerViews.clear();
-	mMainMipViews.clear();
-	mLayerMipViews.clear();
-	if(!external_texture)
-	{
-		vulkanDevice->destroyImage(mImage, nullptr);
-		vulkanDevice->freeMemory(mMem, nullptr);
-	}
-	vulkanDevice->destroyBuffer(mBuffer, nullptr);
 	renderPlatform=nullptr;
 }
 
@@ -733,10 +737,10 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-	SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
 	
-		framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
-		framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
+			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
+			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
 		}
 	}
 }
@@ -1127,7 +1131,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
 	vk::AccessFlags dstAccessMask = DstAccessMask(newLayout);
 	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
-	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllGraphics;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllCommands;	// very general..
 
 	auto  barrier = vk::ImageMemoryBarrier()
 		.setSrcAccessMask(srcAccessMask)
@@ -1146,7 +1150,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		barrier.setOldLayout(l);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, mip, 1, layer, 1));
 		split_layouts = true;
-		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
+		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 		l = newLayout;
 	}
 	else
@@ -1160,7 +1164,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		int totalNum = cubemap ? 6 * arraySize : arraySize;
 		barrier.setOldLayout(currentImageLayout);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, mips, 0, totalNum));
-		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &barrier);
+		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 		AssumeLayout(newLayout);
 		split_layouts = false;
 	}

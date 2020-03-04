@@ -70,7 +70,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	vps[0].w = w;
 	vps[0].h = h;
 	renderPlatform->SetViewports(deviceContext, 1, vps);
-	int2 vs								= viewSize[view_id];
+	int2 vs	= viewSize[view_id];
 
 	std::string pn(renderPlatform->GetName());
 	deviceContext.setDefaultRenderTargets

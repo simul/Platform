@@ -303,10 +303,11 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext, float r, fl
 	auto &cb=renderPlatform->GetDebugConstantBuffer();
 	cb.debugColour=vec4(r,g,b,a);
 	cb.debugDepth=d;
-	renderPlatform->GetDebugEffect()->SetConstantBuffer(deviceContext,&cb);
-	renderPlatform->GetDebugEffect()->Apply(deviceContext,"clear_both",0);
+    auto *effect=renderPlatform->GetDebugEffect();
+	effect->SetConstantBuffer(deviceContext,&cb);
+	effect->Apply(deviceContext,buffer_depth_texture?"clear_both":"clear_colour",0);
 	renderPlatform->DrawQuad(deviceContext);
-	renderPlatform->GetDebugEffect()->Unapply(deviceContext);
+	effect->Unapply(deviceContext);
 
     // Leave it as it was:
     if (changed)
@@ -333,5 +334,8 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
     if (depth_active)
     {
         depth_active = false;
+        auto &tv=deviceContext.GetFrameBufferStack().top();
+        SIMUL_ASSERT(tv->textureTargets[0].texture==this->buffer_texture);
+        tv->depthTarget.texture=nullptr;
     }
 }

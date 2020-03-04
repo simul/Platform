@@ -36,7 +36,6 @@ namespace simul
 		// Vulkan Query implementation
 		struct SIMUL_VULKAN_EXPORT Query:public crossplatform::Query
 		{
-			
 			Query(crossplatform::QueryType t):crossplatform::Query(t)
 			{
 				queryPoolCI.pNext = nullptr;
@@ -54,7 +53,7 @@ namespace simul
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
 			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
-			void SetName(const char*) override{}
+			void SetName(const char*) override;
 
 		private:
 			vk::Device* mDevice = nullptr;
