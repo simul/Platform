@@ -108,3 +108,11 @@ void Texture::ClearFence()
 {
 	fence=0;
 }
+
+void Texture::InvalidateDeviceObjects()
+{
+	width=length=depth=arraySize=dim=mips=0;
+	pixelFormat=PixelFormat::UNKNOWN;
+	renderPlatform=nullptr;
+	textureLoadComplete=true;
+}

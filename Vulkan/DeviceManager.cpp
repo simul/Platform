@@ -11,6 +11,8 @@
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
 #include <iomanip>
+#include <sstream>
+#include <regex>
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
@@ -457,7 +459,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 }
 
-
 void simul::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vector<vk::QueueFamilyProperties>& queue_props)
 {
 	uint32_t queue_family_count;
@@ -467,6 +468,36 @@ void simul::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vect
 
 	queue_props.resize(queue_family_count);
 	gpu.getQueueFamilyProperties(&queue_family_count, queue_props.data());
+}
+#ifdef _MSC_VER
+#pragma optimize("",off)
+#endif
+void RewriteVulkanMessage( std::string &str)
+{
+	// If we have a number followed by a bracket at the start
+	std::smatch m;
+	std::regex re("0x([0-9a-f]+)");// e.g. 0x1c4e6c00000002c7
+	std::string out;
+	while(std::regex_search(str,m,re))
+	{
+		string hex_addr=m[1].str();
+		std::stringstream sstr;
+		unsigned long long num;
+		sstr << std::hex << hex_addr.c_str();
+		sstr >> num;
+
+		out += m.prefix();
+		out +=m.str();
+		auto f=RenderPlatform::ResourceMap.find(num);
+		if(f!=RenderPlatform::ResourceMap.end())
+		{
+			out+="(";
+			out+=f->second+")";
+		}
+		str=m.suffix();
+	}
+	out+=str;
+	str=out;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
@@ -484,9 +515,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
 		std::cerr<<" Error: ";
 	if(pMessage)
-		std::cerr << pMessage << std::endl;
+	{
+		std::string str=pMessage;
+		RewriteVulkanMessage(str);
+		std::cerr << str.c_str()<< std::endl;
+	}
 	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
-		SIMUL_BREAK("Missing VK_DEBUG_REPORT_ERROR_BIT_EXT");
+		SIMUL_BREAK("Vulkan Error");
     return VK_FALSE;
 }
 

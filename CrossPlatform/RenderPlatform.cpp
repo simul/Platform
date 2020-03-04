@@ -495,16 +495,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					SIMUL_BREAK_ONCE("Can't clear texture dim.");
 				}
 				debugEffect->Apply(deviceContext,techname,0);
-				if(deviceContext.platform_context!=immediateContext.platform_context)
-				{
-					DispatchCompute(deviceContext,W,L,D);
-				}
-				else
-				{
-#if 1//ndef __ORBIS__
-					DispatchCompute(deviceContext,W,L,D);
-#endif
-				}
+				DispatchCompute(deviceContext,W,L,D);
 				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",nullptr);
 				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",nullptr);
 				w/=2;
@@ -1018,10 +1009,9 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	if(!bkg)
 		bkg=black;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
-	int h=(int)viewport.h;
 	if(*text!=0)
 	{
-		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);
+		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)viewport.h,text,colr,bkg,mirrorYText);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
