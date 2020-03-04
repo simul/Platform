@@ -153,6 +153,8 @@ namespace simul
 			void									CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
 			vk::RenderPass							*GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
+			// Track resources for debugging:
+			static std::map<unsigned long long,std::string> ResourceMap;
         private:
 			vk::Instance		*vulkanInstance=nullptr;
 			vk::PhysicalDevice	*vulkanGpu=nullptr;
@@ -167,6 +169,9 @@ namespace simul
             vulkan::Texture*    mDummyTextureCubeArray=nullptr;
 			vk::DescriptorPool mDescriptorPool;
 			static crossplatform::PixelFormat defaultColourFormat;
+			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
+			std::map<unsigned long long,vk::Framebuffer>    mFramebuffers;
+			std::map<unsigned long long,vk::RenderPass>    mFramebufferRenderPasses;
 		};
 	}
 }

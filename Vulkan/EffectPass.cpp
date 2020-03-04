@@ -144,7 +144,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,ta.index,ta.mip);
 		}
 		else
-			t=nullptr;	// This WILL kill vulkan, so don't let it happen.
+		{
+			// probably not actually used in the shader.
+			num_descr--;
+			b--;
+			continue;
+		}
 		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageImage);
@@ -307,7 +312,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			count--;
 			if(count>0)
 			{
-				SIMUL_BREAK_ONCE("Not all rw texture slots are assigned.");
+				//SIMUL_BREAK_ONCE("Not all rw texture slots are assigned.");
 				required_rw_slots=required_rw_slots&(~cs->rwTextureSlots);
 				for(unsigned i=0;i<32;i++)
 				{
@@ -352,6 +357,25 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics,renderPassPipeline->mPipeline);
 		if(descriptorSet)
 			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
+		// Now figure out the layout business for the rendertargets:
+		crossplatform::TargetsAndViewport *tv;
+		if(deviceContext.targetStack.size())
+			tv=deviceContext.targetStack.top();
+		else
+			tv=&(deviceContext.defaultTargetsAndViewport);
+		for(int i=0;i<tv->num;i++)
+		{
+			if(tv->textureTargets[i].texture)
+				((vulkan::Texture*)tv->textureTargets[i].texture)->AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
+		}
+		if(tv->depthTarget.texture)
+		{
+			if(depthStencilState->desc.depth.write)
+				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			else if(depthStencilState->desc.depth.test)
+				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilReadOnlyOptimal);
+		}
 	}
 }
 
@@ -659,7 +683,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		vk::PipelineViewportStateCreateInfo viewportInfo			= vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
 		
 		vk::PolygonMode polygonMode				= vk::PolygonMode::eFill;
-		vk::CullModeFlags cullModeFlags	= vk::CullModeFlagBits::eNone;
+		vk::CullModeFlags cullModeFlags			= vk::CullModeFlagBits::eNone;
 		vk::FrontFace frontFace					= vk::FrontFace::eCounterClockwise;
 		if (rasterizerState)
 		{
@@ -783,7 +807,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																		.setPColorBlendState(&colorBlendInfo)
 																		.setPDynamicState(&dynamicStateInfo)
 																		.setLayout(mPipelineLayout)
-																		.setRenderPass(rp?*rp:renderPassPipeline->mRenderPass);
+																		.setRenderPass((rp&&(*rp))?*rp:renderPassPipeline->mRenderPass);
 		vulkanDevice->createGraphicsPipelines(renderPassPipeline->mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline);
 		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
 		if(vertexInputs)
