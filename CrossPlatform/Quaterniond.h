@@ -120,6 +120,7 @@ namespace simul
 			void Rotate(const vec3d &d);
 		};
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Slerp(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2,double l);  
+		extern double SIMUL_CROSSPLATFORM_EXPORT_FN angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2);
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN rotateByOffsetCartesian(const Quaterniond& input, const vec2& offset, float sph_radius);
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN rotateByOffsetPolar(const Quaterniond& input, float polar_radius, float polar_angle, float sph_radius);
 
