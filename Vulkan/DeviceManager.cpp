@@ -521,7 +521,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 		std::cerr << str.c_str()<< std::endl;
 	}
 	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
-		SIMUL_BREAK("Vulkan Error");
+		//SIMUL_BREAK("Vulkan Error");
     return VK_FALSE;
 }
 
