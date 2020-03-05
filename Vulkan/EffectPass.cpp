@@ -629,8 +629,21 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 	}
 	else
 	{
-		auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
-		if(!rp)
+		crossplatform::TargetsAndViewport* tv;
+		if (deviceContext.targetStack.size())
+			tv = deviceContext.targetStack.top();
+		else
+			tv = &(deviceContext.defaultTargetsAndViewport);
+		int num_RT = tv->num;
+
+		vk::RenderPass* rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
+		bool rebuildRenderPass = false; //Check for valid pointer and underlying VkHandle.
+		if (rp)
+			rebuildRenderPass = !(*rp);
+		else
+			rebuildRenderPass = true;
+
+		if(rebuildRenderPass)
 		{
 			auto color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 			auto depth_reference = vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
@@ -737,13 +750,13 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
         colorBlendInfo.setLogicOpEnable(false);
         colorBlendInfo.setLogicOp (vk::LogicOp::eCopy);
 		colorBlendInfo.setBlendConstants({ 1.0f,1.0f,1.0f,1.0f});
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {	vk::PipelineColorBlendAttachmentState()};
+		std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(num_RT);
 		if(blendState)
 		{
-			for(int i=0;i<1;i++)
+			for(int i=0;i<num_RT;i++)
 			{
 				auto &b=colorBlendAttachments[i];
-				auto &c=blendState->desc.blend.RenderTarget[i];
+				auto &c=blendState->desc.blend.RenderTarget[0];
 				b.setBlendEnable(c.blendOperationAlpha!=crossplatform::BLEND_OP_NONE||c.blendOperation!=crossplatform::BLEND_OP_NONE);
 				b.setAlphaBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperationAlpha));
 				b.setColorBlendOp(vulkan::RenderPlatform::toVulkanBlendOperation(c.blendOperation));
@@ -758,7 +771,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 				b.setSrcColorBlendFactor(vulkan::RenderPlatform::toVulkanBlendFactor(c.SrcBlend));
 			}
 		}
-		colorBlendInfo.setAttachmentCount(1).setPAttachments(colorBlendAttachments);
+		colorBlendInfo.setAttachmentCount(num_RT).setPAttachments(colorBlendAttachments.data());
 		
 		// from the vertex shader's layout:
 		
