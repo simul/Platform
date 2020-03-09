@@ -373,8 +373,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		{
 			if(depthStencilState->desc.depth.write)
 				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-			else if(depthStencilState->desc.depth.test)
-				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilReadOnlyOptimal);
+			/*else if(depthStencilState->desc.depth.test)
+				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilReadOnlyOptimal);*/
 		}
 	}
 }

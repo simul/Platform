@@ -514,13 +514,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 		std::cerr<<pLayerPrefix<<" layer: ";
 	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
 		std::cerr<<" Error: ";
+	if ((flags& VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0)
+		std::cerr<<" Warning: ";
 	if(pMessage)
 	{
 		std::string str=pMessage;
 		RewriteVulkanMessage(str);
 		std::cerr << str.c_str()<< std::endl;
 	}
-	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+	//if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
 		//SIMUL_BREAK("Vulkan Error");
     return VK_FALSE;
 }
