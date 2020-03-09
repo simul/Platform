@@ -2,8 +2,8 @@
 
 #include <map>
 #include "Export.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Effect.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

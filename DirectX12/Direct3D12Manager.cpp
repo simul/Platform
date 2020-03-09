@@ -1,7 +1,7 @@
-#include "Simul/Platform/DirectX12/Direct3D12Manager.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Platform/DirectX12/SimulDirectXHeader.h"
+#include "Platform/DirectX12/Direct3D12Manager.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/DirectX12/SimulDirectXHeader.h"
 
 #include <iomanip>
 #ifndef _XBOX_ONE
@@ -50,16 +50,24 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		{
 			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 			debugController->EnableDebugLayer();
-
-			// Enable GPU validation (it will report a list of errors if ocurred after ExecuteCommandList())
-			bool doGPUValidation = false;
+			
+			// Enable GPU validation (it will report a list of errors if occurred after ExecuteCommandList())
+			static bool doGPUValidation = false;
 			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{
-				ID3D12Debug1* debugController1 = nullptr;
+				ID3D12Debug3* debugController1 = nullptr;
 				debugController->QueryInterface(SIMUL_PPV_ARGS(&debugController1));
 				debugController1->SetEnableGPUBasedValidation(true);
+				debugController1->SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS_DISABLE_STATE_TRACKING);
 			}
+		}
+		ID3D12DeviceRemovedExtendedDataSettings *pDredSettings=nullptr;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))
+		{
+			// Turn on AutoBreadcrumbs and Page Fault reporting
+			pDredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			pDredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 		}
 		SAFE_RELEASE(debugController);
 	}
@@ -121,7 +129,12 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			if(infoQueue)
 			{
 				// Set break on_x settings
+#if SIMUL_D3D12_ENABLE_PIX
 				static bool breakOnWarning = false;
+#else
+				static bool breakOnWarning = true;
+#endif // SIMUL_D3D12_ENABLE_PIX
+
 				SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 				if (breakOnWarning)
 				{

@@ -1,9 +1,9 @@
 #pragma once
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/Shaders/Sl/CppSl.sl"
-#include "SimulDirectXHeader.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Shaders/Sl/CppSl.sl"
+#include "DirectXHeader.h"
+#include "Platform/Core/RuntimeError.h"
 #include "Heap.h"
 #include <string>
 

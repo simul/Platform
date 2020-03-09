@@ -1,9 +1,9 @@
 #pragma once
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 #include <map>
 #include <string>
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/DirectX11/Export.h"
+#include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
+#include "Platform/DirectX11/Export.h"
 struct ID3D11Debug;
 #pragma warning(push)
 #pragma warning(disable:4251)

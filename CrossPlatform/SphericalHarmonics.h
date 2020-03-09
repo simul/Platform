@@ -1,10 +1,10 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/Shaders/SL/spherical_harmonics_constants.sl"
-#include "Simul/Platform/Shaders/SL/light_probe_constants.sl"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Shaders/SL/spherical_harmonics_constants.sl"
+#include "Platform/Shaders/SL/light_probe_constants.sl"
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)

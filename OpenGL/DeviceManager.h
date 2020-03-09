@@ -1,7 +1,7 @@
 #pragma once
-#include "Simul/Platform/OpenGL/OpenGLCallbackInterface.h"
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/OpenGL/Export.h"
+#include "Platform/OpenGL/OpenGLCallbackInterface.h"
+#include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
+#include "Platform/OpenGL/Export.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

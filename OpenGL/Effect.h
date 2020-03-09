@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Simul/Platform/OpenGL/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/OpenGL/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
 #include "glad/glad.h"
 
 #ifdef _MSC_VER

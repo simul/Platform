@@ -1,5 +1,5 @@
-#include "Simul/Platform/CrossPlatform/Material.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Material.h"
+#include "Platform/CrossPlatform/Effect.h"
 
 using namespace simul;
 using namespace crossplatform;

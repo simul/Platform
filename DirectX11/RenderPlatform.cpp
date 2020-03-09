@@ -1,30 +1,30 @@
 #define NOMINMAX
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/Material.h"
-#include "Simul/Platform/DirectX11/Mesh.h"
-#include "Simul/Platform/DirectX11/Texture.h"
-#include "Simul/Platform/DirectX11/ESRAMTexture.h"
-#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX11/Light.h"
-#include "Simul/Platform/DirectX11/Effect.h"
-#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/DirectX11/Buffer.h"
-#include "Simul/Platform/DirectX11/Layout.h"
-#include "Simul/Platform/DirectX11/MacrosDX1x.h"
-#include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/DirectX11/RenderPlatform.h"
+#include "Platform/DirectX11/Material.h"
+#include "Platform/DirectX11/Mesh.h"
+#include "Platform/DirectX11/Texture.h"
+#include "Platform/DirectX11/ESRAMTexture.h"
+#include "Platform/DirectX11/FramebufferDX1x.h"
+#include "Platform/DirectX11/Light.h"
+#include "Platform/DirectX11/Effect.h"
+#include "Platform/DirectX11/CreateEffectDX1x.h"
+#include "Platform/DirectX11/Buffer.h"
+#include "Platform/DirectX11/Layout.h"
+#include "Platform/DirectX11/MacrosDX1x.h"
+#include "Platform/DirectX11/SaveTextureDX1x.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/DirectX11/CompileShaderDX1x.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/CrossPlatform/Camera.h"
 #include "D3dx11effect.h"
 #include "DisplaySurface.h"
 
 #ifdef _XBOX_ONE
-#include "Simul/Platform/DirectX11/ESRAMManager.h"
+#include "Platform/DirectX11/ESRAMManager.h"
 #include <D3Dcompiler_x.h>
 #include <d3d11_x.h>
 #else
@@ -36,7 +36,7 @@
 #include <pix.h>
 #endif
 
-#include "Simul/Platform/DirectX11/Utilities.h"
+#include "Platform/DirectX11/Utilities.h"
 #pragma optimize("",off)
 
 using namespace simul;

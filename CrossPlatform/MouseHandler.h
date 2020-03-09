@@ -1,9 +1,8 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Export.h"
 
-#include "Simul/Base/SmartPtr.h"
-#include "Simul/Base/BaseMouseHandler.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Platform/Core/BaseMouseHandler.h"
+#include "Platform/CrossPlatform/Camera.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)  

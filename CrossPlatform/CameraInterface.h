@@ -1,6 +1,6 @@
 #ifndef SIMUL_GRAPH_CAMERA_CAMERAINTERFACE_H
 #define SIMUL_GRAPH_CAMERA_CAMERAINTERFACE_H
-#include "Simul/Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Export.h"
 
 namespace simul
 {

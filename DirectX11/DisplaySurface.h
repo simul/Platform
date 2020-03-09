@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Export.h"
-#include "Simul/Base/ReadWriteMutex.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/Core/ReadWriteMutex.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
+#include "DirectXHeader.h"
 #include "MacrosDx1x.h"
 
 namespace simul

@@ -6,14 +6,14 @@
 #include <windows.h>
 #endif
 
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/OpenGL/Effect.h"
-#include "Simul/Platform/OpenGL/RenderPlatform.h"
-#include "Simul/Platform/OpenGL/FramebufferGL.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/Timer.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/OpenGL/Effect.h"
+#include "Platform/OpenGL/RenderPlatform.h"
+#include "Platform/OpenGL/FramebufferGL.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Core/DefaultFileLoader.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/Timer.h"
 
 using namespace simul;
 using namespace opengl;

@@ -1,11 +1,11 @@
 #pragma once
-#include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/Shaders/Sl/CppSl.sl"
+#include "Platform/DirectX11/Export.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Shaders/Sl/CppSl.sl"
 #include <string>
 #include <map>
-#include "SimulDirectXHeader.h"
-#include "Simul/Base/RuntimeError.h"
+#include "DirectXHeader.h"
+#include "Platform/Core/RuntimeError.h"
 
 #pragma warning(disable:4251)
 

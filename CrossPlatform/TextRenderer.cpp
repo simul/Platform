@@ -1,8 +1,8 @@
 #define NOMINMAX
 #include "TextRenderer.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Macros.h"
 #include <algorithm>
 using namespace simul;
 using namespace crossplatform;

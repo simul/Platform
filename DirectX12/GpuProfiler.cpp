@@ -1,6 +1,6 @@
 #include "GpuProfiler.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
 #include <stdint.h>
 
 using namespace simul;

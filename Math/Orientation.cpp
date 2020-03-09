@@ -1,7 +1,7 @@
-#include "Simul/Platform/Math/MatrixVector3.h"
-#include "Simul/Platform/Math/Orientation.h"
-#include "Simul/Platform/Math/Vector3.h"
-#include "Simul/Platform/Math/Quaternion.h"
+#include "Platform/Math/MatrixVector3.h"
+#include "Platform/Math/Orientation.h"
+#include "Platform/Math/Vector3.h"
+#include "Platform/Math/Quaternion.h"
 #include <math.h>
 #include <iostream>
 #include <algorithm>

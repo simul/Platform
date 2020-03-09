@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
+#include "DirectXHeader.h"
 #include "Export.h"
 
 static const UINT FrameCount = 3;

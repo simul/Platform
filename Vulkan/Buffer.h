@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Simul/Platform/Vulkan/Export.h"
-#include "Simul/Platform/CrossPlatform/Buffer.h"
+#include "Platform/Vulkan/Export.h"
+#include "Platform/CrossPlatform/Buffer.h"
 #include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER

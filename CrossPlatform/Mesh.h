@@ -2,15 +2,15 @@
 #define VBOMESH_H
 
 #include <vector>
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/ShaderMode.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/Buffer.h"
-#include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/Shaders/SL/solid_constants.sl"
-#include "Simul/Platform/Math/Orientation.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/ShaderMode.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Buffer.h"
+#include "Platform/CrossPlatform/Topology.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Shaders/SL/solid_constants.sl"
+#include "Platform/Math/Orientation.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

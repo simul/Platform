@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "GpuProfiler.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
 #include <sstream>
 #include <iostream>
 #include <map>

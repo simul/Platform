@@ -1,6 +1,6 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/Vulkan/Export.h"
+#include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
+#include "Platform/Vulkan/Export.h"
 #include <vector>
 #include <vulkan/vulkan.hpp>
 

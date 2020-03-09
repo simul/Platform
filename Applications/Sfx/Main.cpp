@@ -400,12 +400,6 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		//std::cout<<("Compiled successfully\n");
-		if (sfxOptions.verbose)
-		{
-			std::cout<< outputfile.c_str()<<"(0): info: output file."<< std::endl;
-			printf("%s",outputfile.c_str());
-		}
 		ret = 0;
 	}
 	sfxDeleteEffect(effect);

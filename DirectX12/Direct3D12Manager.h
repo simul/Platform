@@ -1,8 +1,8 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
+#include "Platform/DirectX12/Export.h"
 
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 
 #include <string>
 #include <map>

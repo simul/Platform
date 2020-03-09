@@ -10,6 +10,7 @@ include("CMake/Variables.cmake")
 include("CMake/Include.cmake")
 include("CMake/Shader.cmake")
 
+add_subdirectory(Core)
 add_subdirectory(Math)
 add_subdirectory(CrossPlatform)
 add_subdirectory(Applications/Sfx)

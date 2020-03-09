@@ -3,14 +3,14 @@
 #define NOMINMAX
 #endif
 #include "View.h"
-#include "Simul/Platform/Math/Vector3.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Base/ProfilingInterface.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Math/Vector3.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Core/ProfilingInterface.h"
+#include "Platform/Core/RuntimeError.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #endif

@@ -41,5 +41,5 @@ if(SIMUL_SOURCE_BUILD)
 	target_include_directories(SimulOpenGL_MD PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
 	target_include_directories(SimulOpenGL_MD PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/include")
 
-	target_link_libraries(SimulOpenGL_MD SimulCrossPlatform_MD SimulMath_MD SimulBase_MD glfw3)
+	target_link_libraries(SimulOpenGL_MD SimulCrossPlatform_MD SimulMath_MD Core_MD glfw3)
 endif()

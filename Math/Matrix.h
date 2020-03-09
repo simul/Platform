@@ -3,7 +3,7 @@
 
 #include "Align.h"
 #include <float.h>
-#include "Simul/Platform/Math/Export.h"
+#include "Platform/Math/Export.h"
 
 #if defined(_DEBUG) && defined(_MSC_VER)
 #define CHECK_MATRIX_BOUNDS

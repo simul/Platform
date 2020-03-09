@@ -2,11 +2,11 @@
 #define TEXTRENDERER_H
 
 #include <fstream>
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/Shaders/SL/text_constants.sl"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Shaders/SL/text_constants.sl"
 
 #ifdef _MSC_VER
 	#pragma warning(push)  

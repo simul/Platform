@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "FramebufferDX1x.h"
 
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/Timer.h"
-#include "Simul/Platform/Math/Pi.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/Timer.h"
+#include "Platform/Math/Pi.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 #include <tchar.h>
 #include <string>

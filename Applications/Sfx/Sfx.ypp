@@ -305,7 +305,7 @@
 		return newExpr;
 	}
 
-	string GetLoadExpr(string textureName,string command,string params,ShaderResourceType resourceType)
+	string GetLoadExpr(string textureName,string command,string params,ShaderResourceType resourceType,bool with_mip=true)
 	{
 		auto config		= gEffect->GetConfig();
 		int return_size = 2;
@@ -337,7 +337,7 @@
 			find_and_replace(newExpr,"{command}","texelFetch");
             samplerConstructor = GetSamplerConstructor(resourceType,textureName,&buildFunction);
 		}
-
+		std::string mip;
 		// Check the params
 		if(return_size == 1)
 		{
@@ -347,14 +347,22 @@
 		}
 		else if(return_size == 2)
 		{
+			mip="int("+params+".y)";
 			// gvec4 imageLoad(	gimage2D image,ivec2 P);
             if(rw)
 				newParams = "ivec2(" + newParams + ").xy";
             else
-				newParams = "ivec2(" + newParams + ").xy,0";
+			{
+				newParams = ("ivec2(" + newParams + ").xy");
+				if(with_mip)
+					newParams=(newParams+",")+mip;
+				else
+					newParams=(newParams+",0");
+			}
 		}
 		else if(return_size == 3)
 		{
+			mip="int("+params+".z)";
             if(rw)
             {
 			// gvec4 imageLoad(	gimage2DArray image,ivec3 P);
@@ -363,11 +371,16 @@
             else
             {
 			// gvec4 texelFetch( gsampler2DArray sampler,ivec3 P,int lod);
-			    newParams = "ivec3(" + newParams + ").xyz,0";
+			    newParams = ("ivec3(" + newParams + ").xyz");
+				if(with_mip)
+					newParams=(newParams+",")+mip;
+				else
+					newParams=(newParams+",0");
             }
 		}
 		else if(return_size == 4)
 		{
+			mip="int("+params+".w)";
 			// gvec4 imageLoad(	gimage3D image,ivec3 P);
             if(rw)
             {
@@ -376,7 +389,11 @@
             // gvec4 texelFetch(gsampler3D sampler,ivec3 P,int lod);
             else
             {
-			    newParams = "ivec3(" + newParams + ").xyz,0";
+			    newParams = ("ivec3(" + newParams + ").xyz");
+				if(with_mip)
+					newParams=(newParams+",")+mip;
+				else
+					newParams=(newParams+",0");
             }
 		}
 		else
@@ -454,11 +471,11 @@
 			{
 				if(msaa)
 				{
-					result_expression+= GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+					result_expression+=GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
 				}
 				else
 				{
-					result_expression+= GetLoadExpr(textureName,command,params,resourceType);
+					result_expression+=GetLoadExpr(textureName,command,params,resourceType);
 				}
 			}
 			f.content = std::regex_replace(f.content, re, result_expression);
@@ -1657,7 +1674,7 @@ postfix_indexed: postfix_exp '[' expression ']'
 			// And here we LOAD from something else ? Its probably a texture!
 			else
 			{
-				str << GetLoadExpr(varName,"0",index,resourceType);
+				str << GetLoadExpr(varName,"0",index,resourceType,false);
                 // If and only its a RW texture (load operation), we insert it into the list
                 if(str.str().find("imageLoad") != std::string::npos)
                 {

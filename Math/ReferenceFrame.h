@@ -1,8 +1,8 @@
 #ifndef ReferenceFrameH
 #define ReferenceFrameH
                          
-#include "Simul/Platform/Math/Vector3.h"
-#include "Simul/Platform/Math/Orientation.h"
+#include "Platform/Math/Vector3.h"
+#include "Platform/Math/Orientation.h"
 
 namespace simul
 {
@@ -18,10 +18,8 @@ namespace simul
 		public:
 			SimulReferenceFrame();
 			void Clear();
-			META_BeginProperties
-				META_Property(simul::math::Vector3,Ve		,"Velocity vector of this reference-frame.")
-				META_Property(simul::math::Vector3,Omega	,"Angular velocity vector of the reference-frame.")
-			META_EndProperties
+			simul::math::Vector3 Ve;
+			simul::math::Vector3 Omega;
 		/// \name General
 		///
 			void operator=(const SimulOrientation &o);

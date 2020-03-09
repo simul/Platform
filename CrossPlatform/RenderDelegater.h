@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
 #include <functional>
 #include <unordered_map>
 

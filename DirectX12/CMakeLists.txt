@@ -76,6 +76,6 @@ if(SIMUL_SOURCE_BUILD)
 	endif()
 	#add_dependencies(SimulDirectX12_MD DirectX12Shaders )
 
-	target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD SimulBase_MD directxtex_MD)
+	target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
 
 endif()

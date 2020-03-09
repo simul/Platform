@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "DirectXHeader.h"
 #include "Heap.h"
 
 #pragma warning(disable:4251)

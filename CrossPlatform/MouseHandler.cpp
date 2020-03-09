@@ -146,7 +146,7 @@ void MouseHandler::Update(float time_step)
 		simul::math::Vector3 pos=camera->GetPosition();
 		simul::math::Vector3 dir=pos;
 		dir-=centre;
-		camera->GetOrientation().GlobalToLocalDirection(offset_camspace,dir);
+		camera->Orientation.GlobalToLocalDirection(offset_camspace,dir);
 	}
 	{
 		float cam_spd=speed_factor*(shift_down?100.f:1.f);
@@ -178,10 +178,10 @@ void MouseHandler::Update(float time_step)
 		}
 
 		if(y_vertical)
-			pos+=forward_back_spd*time_step*camera->GetOrientation().Tz();
+			pos+=forward_back_spd*time_step*camera->Orientation.Tz();
 		else
-			pos-=forward_back_spd*time_step*camera->GetOrientation().Tz();
-		pos+=right_left_spd*time_step*camera->GetOrientation().Tx();
+			pos-=forward_back_spd*time_step*camera->Orientation.Tz();
+		pos+=right_left_spd*time_step*camera->Orientation.Tx();
 		if(y_vertical)
 			pos.y+=up_down_spd*time_step;
 		else
@@ -202,9 +202,9 @@ void MouseHandler::Update(float time_step)
 		z_rotate*=retain;
 		float tilt=0;
 		if(y_vertical)
-			tilt=asin(camera->GetOrientation().Tx().y);
+			tilt=asin(camera->Orientation.Tx().y);
 		else
-			tilt=asin(camera->GetOrientation().Tx().z);
+			tilt=asin(camera->Orientation.Tx().z);
 		if(mouseButtons==base::RightButton)
 		{
 			if(!alt_down)
@@ -245,7 +245,7 @@ void MouseHandler::Update(float time_step)
 		dir.Normalize();
 		camera->Rotate(del.Magnitude(),dir);
 
-		del=camera->GetOrientation().Tx()*(y_rotate+sr*step_rotate_y)*(-1.f);
+		del=camera->Orientation.Tx()*(y_rotate+sr*step_rotate_y)*(-1.f);
 		step_rotate_y=0;
 		dir=del;
 		dir.Normalize();
@@ -255,7 +255,7 @@ void MouseHandler::Update(float time_step)
 		camera->LocalRotate(del);
 
 		static float correct_tilt=0.005f;
-		dir=camera->GetOrientation().Tz();
+		dir=camera->Orientation.Tz();
 		dir.Normalize();
 		if(!alt_down)
 			camera->Rotate(-correct_tilt*tilt,dir);
@@ -265,7 +265,7 @@ void MouseHandler::Update(float time_step)
 	{
 		simul::math::Vector3 pos=camera->GetPosition();
 		simul::math::Vector3 dir;
-		camera->GetOrientation().LocalToGlobalDirection(dir,offset_camspace);
+		camera->Orientation.LocalToGlobalDirection(dir,offset_camspace);
 		pos=centre;
 		pos+=dir;
 		camera->SetPosition(pos);

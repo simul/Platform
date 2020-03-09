@@ -3,14 +3,14 @@
 #include <algorithm>			// for std::min / max
 #include <assert.h>
 #include <stdarg.h>
-#include "Simul/Base/Timer.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/Math/RandomNumberGenerator.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/Math/Pi.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Core/Timer.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/Math/RandomNumberGenerator.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/Math/Pi.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
 using namespace simul;
 using namespace crossplatform;
 

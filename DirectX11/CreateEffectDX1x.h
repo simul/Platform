@@ -9,7 +9,7 @@
 // CreateEffect.h Create a DirectX .fx effect and report errors.
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 
 #include <map>
 #include <vector>

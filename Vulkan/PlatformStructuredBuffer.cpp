@@ -1,5 +1,5 @@
-#include "Simul/Platform/Vulkan/PlatformStructuredBuffer.h"
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/PlatformStructuredBuffer.h"
+#include "Platform/Vulkan/RenderPlatform.h"
 using namespace simul;
 using namespace vulkan;
 

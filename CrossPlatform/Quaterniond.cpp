@@ -1,7 +1,7 @@
 #define NOMINMAX
 #define SIM_MATH
 #include "Quaterniond.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Core/RuntimeError.h"
 
 #include <math.h>
 #include <algorithm>

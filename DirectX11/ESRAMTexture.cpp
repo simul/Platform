@@ -4,10 +4,10 @@
 #include <algorithm>
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX11/ESRAMManager.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/DirectX11/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/DirectX11/ESRAMManager.h"
 
 #include <string>
 

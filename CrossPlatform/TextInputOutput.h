@@ -1,9 +1,9 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/Quaterniond.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Base/MemoryInterface.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Quaterniond.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Core/MemoryInterface.h"
 #include <map>
 #include <string>
 #include <vector>
