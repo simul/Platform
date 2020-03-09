@@ -375,21 +375,22 @@ void Quaterniond::Rotate(const vec3d &d)
 
 
 
-double angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
+double simul::crossplatform::angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
 {
 	crossplatform::Quaterniond Q1 = q1;
 	crossplatform::Quaterniond Q2 = q2;
 	Q1.MakeUnit();
 	Q2.MakeUnit();
+	crossplatform::Quaterniond z = Q1 * !Q2;
 
-	double dot = Q1.x*Q2.x + Q1.y*Q2.y + Q1.z*Q2.z + Q1.s*Q2.s;
+	/*double dot = Q1.x*Q2.x + Q1.y*Q2.y + Q1.z*Q2.z + Q1.s*Q2.s;
 
 	if (dot < 0.0)
 		dot = 0.0;
 	if (dot > 1.0)
-		dot = 1.0;
+		dot = 1.0;*/
 
-	return 2 * acos(dot);  //Angle between input quaternions
+	return 2 * acos(z.s);  //Angle between input quaternions
 }
 
 
