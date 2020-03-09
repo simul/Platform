@@ -41,7 +41,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 	// But it doesn't. So instead we just list the objects and names.
 #if 1//def _DEBUG
-	if(simul::base::SimulInternalChecks)
+	//if(simul::base::SimulInternalChecks)
 	{
 		uint64_t *u=(uint64_t*)ds;
 		RenderPlatform::ResourceMap[*u]=name;
@@ -595,7 +595,7 @@ crossplatform::Buffer* RenderPlatform::CreateBuffer()
 const float whiteTexel[4] = { 1.0f,1.0f,1.0f,1.0f};
 vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceType t)
 {
-	if ((t & crossplatform::ShaderResourceType::TEXTURE_2DMS) == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+	if((t&crossplatform::ShaderResourceType::TEXTURE_2DMS)==crossplatform::ShaderResourceType::TEXTURE_2DMS)
 		return GetDummy2DMS();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_3D)==crossplatform::ShaderResourceType::TEXTURE_3D)
 		return GetDummy3D();
@@ -1284,6 +1284,12 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
 }
+void RenderPlatform::RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
+{
+	vulkan::Texture* t = (vulkan::Texture*)tex;
+	t->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+}
+
 
 void* RenderPlatform::GetDevice()
 {
@@ -1463,7 +1469,7 @@ vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::DeviceC
 	{
 		if (!dTaV)
 		{
-			if (tv->num == 1) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
+			if (tv->num == 1 && !tv->depthTarget.texture) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
 			{
 				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
 				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
@@ -1499,13 +1505,31 @@ void RenderPlatform::SetDefaultColourFormat(crossplatform::PixelFormat p)
 	defaultColourFormat=p;
 }
 
+void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
+{
+	vk::Device* vulkanDevice = AsVulkanDevice();
+	if (!vulkanDevice)
+		return;
 
+	for (auto& fb : mFramebuffers)
+		vulkanDevice->destroyFramebuffer(fb.second);
+	for (auto& rp : mFramebufferRenderPasses)
+		vulkanDevice->destroyRenderPass(rp.second);
+
+	mFramebuffers.clear();
+	mFramebufferRenderPasses.clear();
+	SIMUL_ASSERT(mFramebuffers.empty() && mFramebufferRenderPasses.empty());
+}
 
 unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
 {
 	unsigned long long hashval=0;
-	if(tv->textureTargets[0].texture)
-		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
+	if (tv->textureTargets[0].texture)
+	{
+		hashval += (unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
+		hashval += (unsigned long long)tv->textureTargets[0].texture->width;	//Deal with resizing the framebuffer!
+		hashval += (unsigned long long)tv->textureTargets[0].texture->length;
+	}
 	if(tv->depthTarget.texture)
 		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
 	hashval+=tv->num;
@@ -1514,6 +1538,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 
 	int count=tv->num+(tv->depthTarget.texture!=nullptr);
 	vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
+
 	int width=0,length=0;
 	crossplatform::PixelFormat colourPF = crossplatform::PixelFormat::UNKNOWN;
 	crossplatform::PixelFormat depthPF = crossplatform::PixelFormat::UNKNOWN;
@@ -1525,13 +1550,11 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	{
 		width=tv->textureTargets[0].texture->width;
 		length=tv->textureTargets[0].texture->length;
-		//vkRenderPass = ((vulkan::Texture*)(tv->textureTargets[0].texture))->GetRenderPass(deviceContext);
 	}
 	else if(tv->depthTarget.texture)
 	{
 		width=tv->depthTarget.texture->width;
 		length=tv->depthTarget.texture->length;
-		//vkRenderPass = ((vulkan::Texture*)(tv->depthTarget.texture))->GetRenderPass(deviceContext);
 	}
 	else
 	{
@@ -1576,7 +1599,7 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Devi
 	{
 		if (!dTaV)
 		{
-			if (tv->num == 1) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
+			if (tv->num == 1 && !tv->depthTarget.texture) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
 			{
 				auto& tt = tv->textureTargets[0];
 				auto vt = (vulkan::Texture*)tt.texture;
