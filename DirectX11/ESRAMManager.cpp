@@ -2,7 +2,7 @@
 #include "ESRAMManager.h"
 #include "MacrosDX1x.h"
 #include "Utilities.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Core/RuntimeError.h"
 #include <xg.h>
 using namespace simul;
 using namespace dx11;

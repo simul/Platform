@@ -1,11 +1,11 @@
 #include "BaseFramebuffer.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/Math/RandomNumberGenerator.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/Math/RandomNumberGenerator.h"
 using namespace simul;
 using namespace crossplatform;
 

@@ -2,9 +2,9 @@
 
 #include <stack>
 #include "stdint.h"
-#include "Simul/Platform/Vulkan/Export.h"
-#include "Simul/Platform/Vulkan/Texture.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/Vulkan/Export.h"
+#include "Platform/Vulkan/Texture.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

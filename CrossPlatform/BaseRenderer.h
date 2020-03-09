@@ -1,9 +1,9 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/CrossPlatform/Export.h"
 
 
 #ifdef _MSC_VER

@@ -1,8 +1,8 @@
 #ifndef QuaterniondH
 #define QuaterniondH
 
-#include "Simul/Platform/Math/Matrix.h"    
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Math/Matrix.h"    
+#include "Platform/Shaders/SL/CppSl.sl"
 #include "Export.h"
 
 namespace simul

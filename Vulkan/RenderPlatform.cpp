@@ -1,16 +1,16 @@
 ﻿
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
-#include "Simul/Platform/Vulkan/Texture.h"
-#include "Simul/Platform/Vulkan/Effect.h"
-#include "Simul/Platform/Vulkan/Buffer.h"
-#include "Simul/Platform/Vulkan/Framebuffer.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/Vulkan/Texture.h"
-#include "Simul/Platform/Vulkan/DisplaySurface.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/Texture.h"
+#include "Platform/Vulkan/Effect.h"
+#include "Platform/Vulkan/Buffer.h"
+#include "Platform/Vulkan/Framebuffer.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Core/DefaultFileLoader.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Vulkan/Texture.h"
+#include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
 
@@ -481,7 +481,7 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
      SIMUL_BREAK("failed to find suitable memory type!");
 	 return 0;
  }
-#include "Simul/Base/StringFunctions.h"
+#include "Platform/Core/StringFunctions.h"
 void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
 {
     vk::BufferCreateInfo bufferInfo = {};
@@ -1448,16 +1448,6 @@ void RenderPlatform::SetDefaultColourFormat(crossplatform::PixelFormat p)
 
 unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
 {
-	unsigned long long hashval=0;
-	if(tv->textureTargets[0].texture)
-		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
-	if(tv->depthTarget.texture)
-		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
-	hashval+=tv->num;
-	if(mFramebuffers.find(hashval)->second)
-		return hashval;
-	int count=tv->num+(tv->depthTarget.texture!=nullptr);
-	vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
 	int width=0,length=0;
 	if(tv->textureTargets[0].texture)
 	{
@@ -1475,6 +1465,17 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	{
 		SIMUL_BREAK("");
 	}
+	unsigned long long hashval=0;
+	if(tv->textureTargets[0].texture)
+		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
+	if(tv->depthTarget.texture)
+		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
+	hashval+=tv->num+width*length;
+	auto &h=mFramebuffers.find(hashval);
+	if(h!=mFramebuffers.end()&&h->second)
+		return hashval;
+	int count=tv->num+(tv->depthTarget.texture!=nullptr);
+	vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
 	CreateVulkanRenderpass(vkRenderPass,tv->num, tv->textureTargets[0].texture->pixelFormat, tv->depthTarget.texture->pixelFormat,false, tv->textureTargets[0].texture->GetSampleCount());
 	
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;

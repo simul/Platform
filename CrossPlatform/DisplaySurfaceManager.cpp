@@ -1,5 +1,5 @@
-#include "Simul/Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/CrossPlatform/DisplaySurfaceManager.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
 
 using namespace simul;
 using namespace crossplatform;

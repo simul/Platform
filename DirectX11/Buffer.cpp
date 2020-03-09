@@ -1,8 +1,8 @@
 #include "Buffer.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/MacrosDX1x.h"
-#include "Simul/Platform/DirectX11/SimulDirectXHeader.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/DirectX11/RenderPlatform.h"
+#include "Platform/DirectX11/MacrosDX1x.h"
+#include "Platform/DirectX11/DirectXHeader.h"
 using namespace simul;
 using namespace dx11;
 

@@ -1,10 +1,10 @@
-#include "Simul/Platform/DirectX12/ConstantBuffer.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/DirectX12/ConstantBuffer.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/DirectX12/RenderPlatform.h"
+#include "DirectXHeader.h"
 #include <string>
 
 using namespace simul;

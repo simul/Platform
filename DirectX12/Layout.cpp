@@ -1,8 +1,8 @@
 #include "Layout.h"
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "DirectXHeader.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 using namespace simul;
 using namespace dx12;

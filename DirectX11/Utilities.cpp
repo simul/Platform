@@ -1,13 +1,13 @@
 #define NOMINMAX
 #include "Utilities.h"
 #include "MacrosDX1x.h"
-#include "Simul\Base\StringToWString.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/DirectX11/Effect.h"
-#include "Simul/Platform/DirectX11/DX11Exception.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/Math/Vector3.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/DirectX11/Effect.h"
+#include "Platform/DirectX11/DX11Exception.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/Math/Vector3.h"
 #if WINVER<0x602
 #include <d3dx11.h>
 #endif

@@ -1,9 +1,9 @@
 #pragma once
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/DirectX12/ConstantBuffer.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "DirectXHeader.h"
+#include "Platform/DirectX12/ConstantBuffer.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 #include "Heap.h"
 

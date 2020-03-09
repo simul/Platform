@@ -1,6 +1,6 @@
 #ifndef COMPILE_SHADER_DX11_H
 #define COMPILE_SHADER_DX11_H
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 #ifdef _XBOX_ONE
 #include <D3Dcompiler_x.h>
 #else

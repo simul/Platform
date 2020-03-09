@@ -1,7 +1,7 @@
 #ifndef SIMULMATH_RANDOMNUMBERGENERATOR_H
 #define SIMULMATH_RANDOMNUMBERGENERATOR_H
-#include "Simul/Platform/Math/Export.h"
-#include "Simul/Base/MemoryInterface.h"
+#include "Platform/Math/Export.h"
+#include "Platform/Core/MemoryInterface.h"
 namespace simul
 {
 	namespace math

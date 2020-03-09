@@ -1,8 +1,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include "./Noise2D.h"
-#include "Simul/Platform/Math/RandomNumberGenerator.h"
-#include "Simul/Base/MemoryInterface.h"
+#include "Platform/Math/RandomNumberGenerator.h"
+#include "Platform/Core/MemoryInterface.h"
 
 using namespace simul::math;
 
@@ -128,7 +128,7 @@ float simul::math::Noise2D::PerlinNoise2D(int x,int y) const
 	// after each loop scale gets bigger.
 	// we want the final scale to be 0.5
 	// this scale is reached after (numOctaves-1) loop steps
-	float scale = pow(persistence,(float)numOctaves);
+	float scale = (float)pow(persistence,(float)numOctaves);
 	pos[0] = x;
 	pos[1] = y;
 	for (i=0;i<numOctaves;i++)

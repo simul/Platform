@@ -112,8 +112,8 @@ function(LibraryDefaults targname)
 	endif()
 	target_include_directories(${targname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 	target_include_directories(${targname} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}")
 	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}/..")
-	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}/../..")
 
 	# The prebuilt libraries live here if not a source build:
 	if(NOT SIMUL_SOURCE_BUILD)

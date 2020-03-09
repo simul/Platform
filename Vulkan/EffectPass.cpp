@@ -1,10 +1,10 @@
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Platform/Vulkan/EffectPass.h"
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
-#include "Simul/Platform/Vulkan/PlatformConstantBuffer.h"
-#include "Simul/Platform/Vulkan/PlatformStructuredBuffer.h"
-#include "Simul/Platform/Vulkan/Texture.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Vulkan/EffectPass.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/PlatformConstantBuffer.h"
+#include "Platform/Vulkan/PlatformStructuredBuffer.h"
+#include "Platform/Vulkan/Texture.h"
 
 using namespace simul;
 using namespace vulkan;

@@ -1,7 +1,7 @@
 #pragma once
  
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/Layout.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Layout.h"
 struct ID3D11Buffer;
 struct D3D12_VERTEX_BUFFER_VIEW;
 struct D3D12_INDEX_BUFFER_VIEW;

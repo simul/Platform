@@ -1,5 +1,5 @@
 #include "PlatformStructuredBuffer.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 using namespace simul;
 using namespace dx12;
 

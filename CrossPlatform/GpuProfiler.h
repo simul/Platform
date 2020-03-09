@@ -1,7 +1,7 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_GPUPROFILER_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_GPUPROFILER_H
-#include "Simul/Base/ProfilingInterface.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
+#include "Platform/Core/ProfilingInterface.h"
+#include "Platform/CrossPlatform/Export.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -108,7 +108,7 @@ namespace simul
 			void WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *p);
 			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 			__int64 currFrame;
-			simul::base::Timer timer;
+			simul::core::Timer timer;
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
 			bool enabled;

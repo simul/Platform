@@ -1,10 +1,11 @@
 #ifndef SIMUL_GRAPH_CAMERA_CAMERA_H
 #define SIMUL_GRAPH_CAMERA_CAMERA_H
-#include "Simul/Platform/Math/OrientationInterface.h"
-#include "Simul/Platform/Math/Orientation.h"
-#include "Simul/Platform/CrossPlatform/CameraInterface.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Math/OrientationInterface.h"
+#include "Platform/Math/Orientation.h"
+#include "Platform/CrossPlatform/CameraInterface.h"
+#include "Platform/Math/OrientationInterface.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -170,11 +171,9 @@ namespace simul
 			Camera();
 			virtual ~Camera();
 			
-			META_BeginProperties
-				META_RangeProperty(float,HorizontalFieldOfViewInRadians,3.1416f*90.f	,0,3.1416f*179.f,"Horizontal Field Of View In Radians")
-				META_RangeProperty(float,VerticalFieldOfViewInRadians	,0				,0,3.1416f*179.f,"Vertical Field Of View In Radians")
-				META_Property(simul::geometry::SimulOrientation	,Orientation	,"Orientation")
-			META_EndProperties
+			float HorizontalFieldOfViewInRadians;
+			float VerticalFieldOfViewInRadians;
+			simul::geometry::SimulOrientation	Orientation;
 	
 			void SetCameraViewStruct(const CameraViewStruct &c);
 			const CameraViewStruct &GetCameraViewStruct() const;

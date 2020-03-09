@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
 
 typedef struct GLFWwindow GLFWwindow;
 namespace simul

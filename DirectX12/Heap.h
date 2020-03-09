@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Export.h"
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 
 #include <string>
 

@@ -1,8 +1,8 @@
 #pragma once
-#include "Simul/Base/MemoryInterface.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Core/MemoryInterface.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 #include <vector>
 #include <string>
 #ifdef _MSC_VER

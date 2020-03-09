@@ -1,7 +1,7 @@
 #pragma once
-#include "Simul/Platform/OpenGL/Export.h"
-#include "Simul/Base/Timer.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/OpenGL/Export.h"
+#include "Platform/Core/Timer.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
 
 #pragma warning(disable:4251)
 

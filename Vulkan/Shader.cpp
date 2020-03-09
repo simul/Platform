@@ -1,8 +1,8 @@
 #include "Shader.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/Vulkan/EffectPass.h"
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Vulkan/EffectPass.h"
+#include "Platform/Vulkan/RenderPlatform.h"
 
 using namespace simul;
 using namespace vulkan;

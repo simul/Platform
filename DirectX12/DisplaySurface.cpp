@@ -1,7 +1,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/StringFunctions.h"
 
 using namespace simul;
 using namespace dx12;

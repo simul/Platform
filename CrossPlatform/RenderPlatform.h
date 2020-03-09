@@ -5,16 +5,15 @@
 #include <string>
 #include <vector>
 #include "Export.h"
-#include "Simul/Base/PropertyMacros.h"
-#include "Simul/Base/MemoryInterface.h"
-#include "Simul/Platform/CrossPlatform/BaseRenderer.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/Shaders/SL/solid_constants.sl"
-#include "Simul/Platform/Shaders/SL/debug_constants.sl"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/Core/MemoryInterface.h"
+#include "Platform/CrossPlatform/BaseRenderer.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Topology.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Shaders/SL/solid_constants.sl"
+#include "Platform/Shaders/SL/debug_constants.sl"
+#include "Platform/CrossPlatform/Effect.h"
 
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \

@@ -1,6 +1,6 @@
 #include "Heap.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 namespace simul
 {

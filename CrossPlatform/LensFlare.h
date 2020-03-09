@@ -1,8 +1,8 @@
 #ifndef SIMUL_GRAPH_CAMERA_LENSFLARE_H
 #define SIMUL_GRAPH_CAMERA_LENSFLARE_H
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/Math/Vector3.h"
-#include "Simul/Base/PropertyMacros.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/Math/Vector3.h"
+#include "Platform/Core/PropertyMacros.h"
 #include <vector>
 #include <string>
 #ifdef _MSC_VER

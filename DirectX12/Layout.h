@@ -1,7 +1,7 @@
 #pragma once
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/Layout.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/CrossPlatform/Layout.h"
+#include "DirectXHeader.h"
 
 //! Forward declaration for this, means we needn't include the dx11 headers yet.
 enum D3D_PRIMITIVE_TOPOLOGY;

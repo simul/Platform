@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Simul/Platform/Vulkan/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/Vulkan/PlatformConstantBuffer.h"
-#include "Simul/Platform/Vulkan/PlatformStructuredBuffer.h"
-#include "Simul/Platform/Vulkan/Shader.h"
-#include "Simul/Platform/Vulkan/EffectPass.h"
+#include "Platform/Vulkan/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Vulkan/PlatformConstantBuffer.h"
+#include "Platform/Vulkan/PlatformStructuredBuffer.h"
+#include "Platform/Vulkan/Shader.h"
+#include "Platform/Vulkan/EffectPass.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

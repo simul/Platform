@@ -2,10 +2,10 @@
 #include "Texture.h"
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/DirectX11/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include <string>
 #include <algorithm>
 

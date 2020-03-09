@@ -13,7 +13,7 @@
 #include "Vector3.h"
 #include "SimVector.h"
 
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Core/RuntimeError.h"
 
 
 using namespace simul;

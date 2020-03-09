@@ -1,8 +1,8 @@
 
 #include "CompileShaderDX1x.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/FileLoader.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/FileLoader.h"
 #include <vector>
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)

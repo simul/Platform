@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #else
@@ -18,7 +18,7 @@ typedef enum D3DX11_IMAGE_FILE_FORMAT
 
 } D3DX11_IMAGE_FILE_FORMAT;
 #endif
-#include "Simul/Platform/DirectX11/Export.h"
+#include "Platform/DirectX11/Export.h"
 
 namespace simul
 {

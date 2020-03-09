@@ -1,9 +1,9 @@
 #ifndef QuaternionH
 #define QuaternionH
 
-#include "Simul/Platform/Math/Matrix.h"    
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/Math/Vector3.h"
+#include "Platform/Math/Matrix.h"    
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/Math/Vector3.h"
 #include "Export.h"
 
 namespace simul

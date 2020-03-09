@@ -1,10 +1,10 @@
 #pragma once
-#include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/DirectX11/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
 #include <string>
 #include <map>
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/DirectX11/ConstantBuffer.h"
+#include "DirectXHeader.h"
+#include "Platform/DirectX11/ConstantBuffer.h"
 
 #pragma warning(disable:4251)
 

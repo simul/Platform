@@ -1,18 +1,17 @@
 #define NOMINMAX
 #include "RenderPlatform.h"
-#include "Simul/Base/EnvironmentVariables.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/CrossPlatform/TextRenderer.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Layout.h"
-#include "Simul/Platform/CrossPlatform/Material.h"
-#include "Simul/Platform/CrossPlatform/Mesh.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/CrossPlatform/TextRenderer.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Layout.h"
+#include "Platform/CrossPlatform/Material.h"
+#include "Platform/CrossPlatform/Mesh.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -1216,8 +1215,7 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 {
 	const std::map<std::string,std::string> defines;
 	static bool enabled=true;
-	if(enabled&&simul::base::GetFeatureLevel()>=base::EXPERIMENTAL)
-		EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
 
 DisplaySurface* RenderPlatform::CreateDisplaySurface()

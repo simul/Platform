@@ -3,8 +3,8 @@
 #endif
 #include "Buffer.h"
 #include "RenderPlatform.h"
-#include "Simul/Platform/Vulkan/DeviceManager.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Vulkan/DeviceManager.h"
+#include "Platform/Core/RuntimeError.h"
 
 using namespace simul;
 using namespace vulkan;

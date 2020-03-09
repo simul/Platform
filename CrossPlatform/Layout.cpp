@@ -2,8 +2,8 @@
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
 
 using namespace simul;
 using namespace crossplatform;

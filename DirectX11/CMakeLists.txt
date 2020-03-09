@@ -51,7 +51,7 @@ if(SIMUL_SOURCE_BUILD)
 	target_include_directories(SimulDirectX11_MD PRIVATE "${SIMUL_PLATFORM_DIR}/DirectX11")
 	LibraryDefaults(SimulDirectX11_MD)
 
-	target_link_libraries(SimulDirectX11_MD SimulCrossPlatform_MD SimulMath_MD SimulBase_MD effects11_MD directxtex_MD )
+	target_link_libraries(SimulDirectX11_MD SimulCrossPlatform_MD SimulMath_MD Core_MD effects11_MD directxtex_MD )
 	if(SIMUL_BUILD_SHADERS)
 	#add_dependencies(SimulDirectX11_MD DirectX11Shaders )
 	endif()

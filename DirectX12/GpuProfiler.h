@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "Simul/Base/Timer.h"
-#include "Simul/Base/MemoryInterface.h"
-#include "Simul/Base/ProfilingInterface.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/Core/Timer.h"
+#include "Platform/Core/MemoryInterface.h"
+#include "Platform/Core/ProfilingInterface.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
 
 #include <string>
 #include <map>
