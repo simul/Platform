@@ -2,6 +2,7 @@
 #define PLATFORM_RUNTIMEERROR_H
 
 #include "Export.h"
+
 #include <string>
 #include <string.h>
 #include <iostream>

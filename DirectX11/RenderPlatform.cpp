@@ -1474,7 +1474,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		//pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		debugEffect->Apply(deviceContext,tech,"noblend");
-	ApplyContextState(deviceContext);
+		ApplyContextState(deviceContext);
 		pContext->Draw(4,0);
 		//pContext->IASetPrimitiveTopology(previousTopology);
 		debugEffect->UnbindTextures(deviceContext);

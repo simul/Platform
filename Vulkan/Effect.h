@@ -1,4 +1,5 @@
 #pragma once
+#include <vulkan/vulkan.hpp>
 
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Effect.h"

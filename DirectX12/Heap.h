@@ -27,7 +27,7 @@ namespace simul
 		{
 		public:
 			Heap();
-			~Heap() {}
+			~Heap();
 			//! Recreates the API DescriporHeap with the provided settings
 			void							Restore(dx12::RenderPlatform* r, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name = "Heap", bool shaderVisible = true);
 			//! Offsets both CPU and GPU handles

@@ -64,7 +64,7 @@ namespace simul
 		public:
 			PlatformStructuredBuffer();
 			virtual ~PlatformStructuredBuffer();
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name);
 			void InvalidateDeviceObjects();
 			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
 			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);

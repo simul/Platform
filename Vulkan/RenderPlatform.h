@@ -1,11 +1,11 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include "Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/PixelFormat.h"
-#include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER
     #pragma warning(push)

@@ -7,6 +7,7 @@ option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already 
 option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 
+set( PLATFORM_DEBUG_DISABLE 0 CACHE STRING "Set disable-level for debugging. Zero for full functionality." )
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(SIMUL_SUPPORT_VULKAN "" ON )
 else()

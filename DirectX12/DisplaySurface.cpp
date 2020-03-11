@@ -128,13 +128,14 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     CreateSyncObjects();
 
     // Create this window command list
+    SAFE_RELEASE(mCommandList);
     mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
     mCommandList->SetName(L"WindowCommandList 2");
     mRecordingCommands = true;
 
     // Provide a cmd list so we can start recording commands
     auto dx12plat = (dx12::RenderPlatform*)renderPlatform;
-    dx12plat->SetCommandList(mCommandList);
+    //dx12plat->SetCommandList(mCommandList);
     dx12plat->DefaultOutputFormat = outFmt;
 }
 
@@ -151,6 +152,7 @@ void DisplaySurface::InvalidateDeviceObjects()
     SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
     SAFE_RELEASE(mQueue);
     SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
+    SAFE_RELEASE(mCommandList);
 }
 
 unsigned DisplaySurface::GetCurrentBackBufferIndex() const
@@ -382,6 +384,11 @@ void DisplaySurface::Resize()
     CreateRenderTargets(mDeviceRef);
 
     renderer->ResizeView(mViewId, screenWidth, screenHeight);
+    if(mQueue)
+    {
+	    std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",mHwnd,screenWidth,screenHeight);
+        mQueue->SetName(simul::base::StringToWString(str).c_str());
+    }
 	StartFrame();
 }
 

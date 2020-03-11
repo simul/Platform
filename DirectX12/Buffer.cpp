@@ -32,7 +32,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	renderPlatform = r;
 	stride = layout->GetStructSize();
 	mBufferSize = num_vertices * layout->GetStructSize();
-
+	SAFE_DELETE(mGpuHeap);
 	// Just debug memory usage
 	//float megas = (float)mBufferSize / 1048576.0f;
 	//SIMUL_COUT << "Allocating: " << std::to_string(mBufferSize) << ".bytes in the GPU, (" << std::to_string(megas) << ".MB)\n";
@@ -101,7 +101,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
 	mGpuHeap->SetName(L"IndexUpload");
 
-	ID3D12Resource* mIntermediateHeap = nullptr;
+	SAFE_DELETE(mIntermediateHeap );
 
 	if (data)
 	{

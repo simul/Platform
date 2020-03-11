@@ -21,12 +21,13 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n)
 {
     renderPlatform                          = r;
 	mNumElements		= ct;
 	mElementByteSize	= unit_size;
-	
+	if(n)
+		name=n;
 	// Really, if it's cpu-readable, we must have only one copy per-frame.
     if (mCpuRead)
 		mMaxApplyCount=1;
@@ -55,7 +56,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         {
 			vulkanRenderPlatform->CreateVulkanBuffer(buffer_aligned_size, usageFlags
 				, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-				, mReadBuffers[i], mReadBufferMemory[i],"psb read");
+				, mReadBuffers[i], mReadBufferMemory[i],(name+"psb read").c_str());
         }
     }
 

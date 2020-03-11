@@ -1,8 +1,8 @@
 #pragma once
+#include <vulkan/vulkan.hpp>
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/Vulkan/Shader.h"
-#include <vulkan/vulkan.hpp>
 #include <list>
 
 #ifdef _MSC_VER

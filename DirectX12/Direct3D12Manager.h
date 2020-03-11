@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Platform/DirectX12/Export.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 #include "DirectXHeader.h"
 
@@ -20,15 +21,6 @@ namespace simul
 	{
 		struct Window;
 		typedef std::map<int, IDXGIOutput*> OutputMap;
-
-
-        struct ImmediateContext
-        {
-            ID3D12GraphicsCommandList*  ICommandList;
-            ID3D12CommandAllocator*     IAllocator;
-            bool                        IRecording;
-        };
-
 		//! Manages the rendering device
 		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
 		{
@@ -42,7 +34,7 @@ namespace simul
 			void*						GetDevice();
 			void*						GetDeviceContext();
 
-            void*                       GetImmediateCommandList();
+            void*                       GetImmediateContext();
             void                        FlushImmediateCommandList();
 
 			void*						GetCommandQueue();

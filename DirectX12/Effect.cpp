@@ -72,13 +72,13 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	HRESULT res					= S_FALSE;
 	mD3DType					= dx12::RenderPlatform::ToD3dQueryType(type);
 	D3D12_QUERY_HEAP_DESC hDesc = {};
-	hDesc.Count					= QueryLatency;
+	hDesc.Count					= 12*QueryLatency;
 	hDesc.NodeMask				= 0;
 	hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(type);
 	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc, SIMUL_PPV_ARGS(&mQueryHeap));
 	SIMUL_ASSERT(res == S_OK);
 
-	// Create a redback buffer to get data
+	// Create a readback buffer to get data
 	size_t sz = QueryLatency * sizeof(UINT64);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
@@ -121,15 +121,15 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 	{
 		return;
 	}
-
-	deviceContext.asD3D12Context()->EndQuery
+	ID3D12GraphicsCommandList* commandList=deviceContext.asD3D12Context();
+	commandList->EndQuery
 	(
 		mQueryHeap,
 		mD3DType,
 		currFrame
 	);
 
-	deviceContext.asD3D12Context()->ResolveQueryData
+	commandList->ResolveQueryData
 	(
 		mQueryHeap, mD3DType,
 		currFrame, 1,
@@ -555,6 +555,10 @@ void EffectPass::InvalidateDeviceObjects()
 	// TO-DO: nice memory leaks here
 	auto pl=(dx12::RenderPlatform*)renderPlatform;
 	pl->PushToReleaseManager(mComputePso,"PSO");
+	for(auto &p:mGraphicsPsoMap)
+	{
+		p.second->Release();
+	}
 	mGraphicsPsoMap.clear();
 }
 
@@ -715,7 +719,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			}
 		}
 		((dx12::Texture*)ta.texture)->FinishLoading(deviceContext);
-		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(true, ta.resourceType, ta.index, ta.mip);
+		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext,true, ta.resourceType, ta.index, ta.mip);
 		mSrvUsedSlotsArray[slot]= true;
 		usedTextureSlots |= (1 << slot);
 	}
@@ -793,7 +797,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
 				ta.texture = rPlat->GetDummy2D();
 			}
 		}
-		mUavSrcHandles[slot]	= *ta.texture->AsD3D12UnorderedAccessView(ta.index, ta.mip);
+		mUavSrcHandles[slot]	= *ta.texture->AsD3D12UnorderedAccessView(deviceContext,ta.index, ta.mip);
 		mUavUsedSlotsArray[slot]= true;
 		usedRwTextureSlots |= (1 << slot);
 	}

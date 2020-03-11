@@ -85,7 +85,7 @@ namespace simul
 		struct SIMUL_CROSSPLATFORM_EXPORT Query
 		{
 			crossplatform::RenderPlatform* renderPlatform;
-			static const int QueryLatency = 6;
+			static const int QueryLatency = 10;
 			bool QueryStarted;
 			bool QueryFinished;
 			int currFrame;
@@ -441,6 +441,7 @@ namespace simul
 			crossplatform::RenderPlatform *renderPlatform;
 			long long validFrame;
 			int internalFrameNumber;
+			std::string name;
 		public:
 			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(-1), internalFrameNumber(0){}
 			virtual ~PlatformConstantBuffer(){}
@@ -457,6 +458,10 @@ namespace simul
 			{
 				validFrame =0;
 			}
+			void SetName(const char *n)
+			{
+				name=n;
+			}
 			/// For RenderPlatform's use only: do not call.
 			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *,int){}
 		};
@@ -464,16 +469,16 @@ namespace simul
 		/// A base class for structured buffers, used by StructuredBuffer internally.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
-		protected:
 		public:
 			simul::crossplatform::RenderPlatform *renderPlatform;
 		protected:
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
+			std::string name;
 		public:
 			PlatformStructuredBuffer():renderPlatform(nullptr),numCopies(0),cpu_read(false){}
 			virtual ~PlatformStructuredBuffer(){}
-			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,bool cpu_read,void *init_data)=0;
+			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void Apply(DeviceContext &deviceContext,Effect *effect, const ShaderResource &shaderResource);
 			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect, const ShaderResource &shaderResource);
@@ -520,7 +525,7 @@ namespace simul
 			}
 #if defined( _MSC_VER) && !defined( _GAMING_XBOX )
 
-			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, bool cpu_read=true, T *data = NULL)
+			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable=false, bool cpu_read=true, T *data =nullptr,const char *n=nullptr)
 			{
 				if(!p)
 					return;
@@ -528,10 +533,10 @@ namespace simul
 				delete platformStructuredBuffer;
 				platformStructuredBuffer = NULL;
 				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
-				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data);
+				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n);
 			}
 #else
-			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, bool cpu_read=true, T *data = NULL);
+			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable=false, bool cpu_read=true, T *data =nullptr,const char *n=nullptr);
 #endif
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
@@ -893,6 +898,7 @@ namespace simul
 					if (platformConstantBuffer)
 						delete platformConstantBuffer;
 					platformConstantBuffer = p->CreatePlatformConstantBuffer();
+					platformConstantBuffer->SetName(typeid(T).name());
 					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
 				}
 			}
@@ -903,9 +909,9 @@ namespace simul
 				if (IsLinkedToEffect(effect))
 					return;
 				defaultName = name;
+				platformConstantBuffer->SetName(defaultName.c_str());
 				SIMUL_ASSERT(platformConstantBuffer != nullptr);
 				SIMUL_ASSERT(effect != nullptr);
-				defaultName = name;
 				if (effect && platformConstantBuffer)
 				{
 					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);

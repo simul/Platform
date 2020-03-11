@@ -1,3 +1,4 @@
+#include <vulkan/vulkan.hpp>
 #include "Layout.h"
 #include "RenderPlatform.h"
 

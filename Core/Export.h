@@ -1,6 +1,8 @@
 #ifndef PLATFORM_CORE_EXPORT_H
 #define PLATFORM_CORE_EXPORT_H
 
+#include "Platform/Core/DebugMemory.h"
+
 #if defined(_MSC_VER)
     //  Microsoft
     #define SIMUL_EXPORT __declspec(dllexport)

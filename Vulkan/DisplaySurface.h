@@ -1,8 +1,8 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include "Export.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
-#include <vulkan/vulkan.hpp>
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
