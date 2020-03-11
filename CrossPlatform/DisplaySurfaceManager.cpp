@@ -41,13 +41,15 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		if (renderPlatform && !frame_started)
 		{
 			frameNumber++;
-			renderPlatform->BeginFrame(renderPlatform->GetImmediateContext());
+			//renderPlatform->BeginFrame(renderPlatform->GetImmediateContext());
 			frame_started = true;
 		}
 		w->Render(delegatorReadWriteMutex, frameNumber);
 	}
 	if(clear)
-	toRender.clear();
+		toRender.clear();
+//	if(renderPlatform&&frame_started)
+//		renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():
@@ -145,7 +147,7 @@ void DisplaySurfaceManager::EndFrame(bool clear)
 	{
 		s.second->EndFrame();
 	}
-	renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 	frame_started=false;
 	RenderAll(clear);
+	renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 }

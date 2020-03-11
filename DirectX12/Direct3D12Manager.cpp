@@ -330,7 +330,7 @@ void* Direct3D12Manager::GetDeviceContext()
 	return 0; 
 }
 
-void* Direct3D12Manager::GetImmediateCommandList()
+void* Direct3D12Manager::GetImmediateContext()
 {
     if (!mIContext.ICommandList)
     {
@@ -349,7 +349,7 @@ void* Direct3D12Manager::GetImmediateCommandList()
     mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
     mIContext.IRecording = true;
 
-    return mIContext.ICommandList;
+    return &mIContext;
 }
 
 void Direct3D12Manager::FlushImmediateCommandList()

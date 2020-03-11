@@ -113,7 +113,7 @@ namespace simul
 			BaseProfilingInterface():max_level(0)
 									,max_level_this_frame(0)
 									,level(0)
-				,level_in_use(0)
+									,level_in_use(0)
 									,root(NULL)
 			{
 			}

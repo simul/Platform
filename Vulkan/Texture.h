@@ -1,8 +1,8 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Texture.h"
-#include <vulkan/vulkan.hpp>
 
 #ifdef _MSC_VER
     #pragma warning(push)

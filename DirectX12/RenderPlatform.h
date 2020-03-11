@@ -53,6 +53,13 @@ namespace simul
 	}
 	namespace dx12
 	{
+        struct ImmediateContext
+        {
+            ID3D12GraphicsCommandList*  ICommandList=nullptr;
+            ID3D12CommandAllocator*     IAllocator=nullptr;
+            bool                        IRecording=false;
+            bool                        bActive=false;
+        };
 		class Heap;
 		class Fence;
 		class Material;
@@ -85,7 +92,7 @@ namespace simul
 			//! Sets the reference of a command list. This is usually not needed as we will cache
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
-			void                            SetCommandList(ID3D12GraphicsCommandList* cmdList);
+			void                            SetImmediateContext(ImmediateContext* ctx);
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
@@ -95,9 +102,9 @@ namespace simul
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
-			void						    ResourceTransitionSimple(ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool flush = false, UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+			void						    ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool flush = false, UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			//! Pushes the pending barriers.
-			void						    FlushBarriers();
+			void						    FlushBarriers(crossplatform::DeviceContext& deviceContext);
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
 			void						    PushToReleaseManager(ID3D12DeviceChild* res, const char *name);
@@ -230,7 +237,7 @@ namespace simul
             crossplatform::PixelFormat              DefaultOutputFormat;
 
 		protected:
-			void							CheckBarriersForResize();
+			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
 			void BeginD3D12Frame();
 			//! The GPU timestamp counter frequency (in ticks/second)
@@ -240,7 +247,7 @@ namespace simul
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
 			//! Reference to a command list
-			ID3D12GraphicsCommandList*	mCommandList;
+			ID3D12GraphicsCommandList*	mImmediateCommandList;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
@@ -282,6 +289,10 @@ namespace simul
             D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
             crossplatform::TargetsAndViewport mTargets;
+			ID3D12CommandAllocator*     mImmediateAllocator=nullptr;
+			bool bImmediateContextActive=false;
+			bool bExternalImmediate=false;
+			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 		};
 	}
 }

@@ -193,7 +193,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	
 	gpuProfiler->RestoreDeviceObjects(this);
 	textureQueryResult.InvalidateDeviceObjects();
-	textureQueryResult.RestoreDeviceObjects(this,1,true);
+	textureQueryResult.RestoreDeviceObjects(this,1,true,true,nullptr,"texture query");
 
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
@@ -521,6 +521,7 @@ void RenderPlatform::GenerateMips(DeviceContext &deviceContext,Texture *t,bool w
 {
 	if(!t||!t->IsValid())
 		return;
+
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m0=i,m1=i+1;
@@ -538,7 +539,7 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	if((int)query_id>=textureQueryResult.count)
 	{
 		textureQueryResult.InvalidateDeviceObjects();
-		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true);
+		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true,true,nullptr,"texel query");
 	}
 	debugConstants.queryPos=pos;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);

@@ -12,6 +12,10 @@ namespace simul
 		{
 			
 		}
+		Heap::~Heap()
+		{
+			Release();
+		}
 
 		void Heap::Restore(dx12::RenderPlatform* r, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name /*= Heap*/, bool shaderVisible /*=true*/)
 		{

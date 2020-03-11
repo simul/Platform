@@ -1,3 +1,4 @@
+#include <vulkan/vulkan.hpp>
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Vulkan/EffectPass.h"
