@@ -470,10 +470,10 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         }
 #endif
 	}
-	
+#ifndef _XBOX_ONE	
 #if SIMUL_INTERNAL_CHECKS
 	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
-
+#endif
 #endif
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
