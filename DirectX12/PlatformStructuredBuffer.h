@@ -79,7 +79,7 @@ namespace simul
 
             //! How many times we can Apply this SB with different data
             //! During runtime we will check the current applies and recreate if needed
-            int								mMaxApplyMod = 1;
+            int								mMaxApplyMod = 6;
             int								mCurApplies;
             uint64_t						mLastFrame;
 			int								mFrameCycle=0;

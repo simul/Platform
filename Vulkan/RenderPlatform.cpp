@@ -1471,7 +1471,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	if(tv->depthTarget.texture)
 		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
 	hashval+=tv->num+width*length;
-	auto &h=mFramebuffers.find(hashval);
+	std::map<unsigned long long,vk::Framebuffer>::iterator h=mFramebuffers.find(hashval);
 	if(h!=mFramebuffers.end()&&h->second)
 		return hashval;
 	int count=tv->num+(tv->depthTarget.texture!=nullptr);

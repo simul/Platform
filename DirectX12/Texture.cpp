@@ -961,7 +961,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	dim			= 2;
 	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 	auto &deviceContext=renderPlatform->GetImmediateContext();
-	rPlat->FlushBarriers(deviceContext);
+	//rPlat->FlushBarriers(deviceContext);
 }
 
 void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
@@ -1404,7 +1404,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
             depthStencil = true;
 		}
 		auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
-		rPlat->FlushBarriers(deviceContext);
+		//rPlat->FlushBarriers(deviceContext);
 	}
 
 	mips		= m;
@@ -1573,7 +1573,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	}
 
 	auto rPlat		= (dx12::RenderPlatform*)renderPlatform;
-	rPlat->FlushBarriers(deviceContext);
+	//rPlat->FlushBarriers(deviceContext);
 
 	return true;
 }
@@ -1862,7 +1862,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 					auto curState = mSubResourcesStates[l][m];
 					if (curState != mResourceState)
 					{
-						rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, curState, mResourceState, true,
+						rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, curState, mResourceState, false,
 														RenderPlatform::GetResourceIndex(m,l,mips, (int)numLayers));
 						mSubResourcesStates[l][m] = mResourceState;
 					}
@@ -1930,7 +1930,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		    		for (int m = 0; m < mips; m++)
 		    		{
 						if(mSubResourcesStates[l][m]!=state)
-							rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mSubResourcesStates[l][m], state,true, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
+							rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mSubResourcesStates[l][m], state,false, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 		    			mSubResourcesStates[l][m] = state;
 		    		}
 				}
@@ -1939,7 +1939,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		}
 		else if(mResourceState!=state)
 		{
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state, true, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state, false, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			for (int l = 0; l < numLayers; l++)
 			{
 		    	for (int m = 0; m < mips; m++)
@@ -1966,7 +1966,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		if(split_layouts)
 			oldState=mSubResourcesStates[curLayer][curMip];
 		if(state!=oldState)
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, oldState, state, true, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
+			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, oldState, state, false, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 
 		mSubResourcesStates[curLayer][curMip] = state;
 		// Array Size == 1 && mips = 1 (it only has 1 sub resource)

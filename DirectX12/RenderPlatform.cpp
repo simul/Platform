@@ -91,6 +91,7 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
+#ifndef DISABLE_BARRIERS
     auto& barrier = mPendingBarriers[mCurBarriers++];
     barrier = CD3DX12_RESOURCE_BARRIER::Transition
     (
@@ -101,10 +102,12 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 		FlushBarriers(deviceContext);
 	}
 	CheckBarriersForResize(deviceContext);
+#endif
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
+#ifndef DISABLE_BARRIERS
 	ID3D12Resource* res = sb->AsD3D12Resource(deviceContext);
 	if (!res )
 	{
@@ -115,15 +118,17 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 
-	if (true)
+/*	if (true)
 	{
 		FlushBarriers(deviceContext);
-	}
+	}*/
 	CheckBarriersForResize(deviceContext);
+#endif
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {
+#ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
 	//immediateContext.platform_context = deviceContext.platform_context;
 	dx12::Texture* t12 = (dx12::Texture*)tex;
@@ -140,9 +145,10 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 	if (true)
 	{
-		FlushBarriers(deviceContext);
+//		FlushBarriers(deviceContext);
 	}
 	CheckBarriersForResize(deviceContext);
+#endif
 }
 
 void RenderPlatform::CheckBarriersForResize(crossplatform::DeviceContext &deviceContext)
@@ -163,9 +169,16 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
     {
         return; 
     }
+#ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
     commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+#endif
     mCurBarriers = 0;
+}
+
+void RenderPlatform::SynchronizeCacheAndState(crossplatform::DeviceContext &deviceContext) 
+{
+	FlushBarriers(deviceContext);
 }
 
 void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
@@ -279,9 +292,9 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// These heaps will be shader visible as they will be the ones bound to the command list
 	mFrameHeap			        = new dx12::Heap[3];
     mFrameOverrideSamplerHeap   = new dx12::Heap[3];
+	UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 1;
 	for (unsigned int i = 0; i < 3; i++)
 	{
-        UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 10;
 		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,base::QuickFormat("FrameHeap %d",i));
         mFrameOverrideSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "FrameOverrideSamplerHeap");
 	}
@@ -649,7 +662,7 @@ void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceCont
         }
     }
 
-    FlushBarriers(deviceContext);
+   // FlushBarriers(deviceContext);
 }
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)

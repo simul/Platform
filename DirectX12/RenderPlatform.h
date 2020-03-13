@@ -133,6 +133,7 @@ namespace simul
 			void						    InvalidateDeviceObjects();
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void						    RecompileShaders();
+			void							SynchronizeCacheAndState(crossplatform::DeviceContext &) override;
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
