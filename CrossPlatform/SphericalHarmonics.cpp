@@ -200,8 +200,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	static int sqrt_jitter_samples					=4;
 	if(!sphericalHarmonics.count)
 	{
-		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true,false,nullptr,"spherical Harmonics");
-		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true,false,nullptr,"sphericalSamples");
+		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true,true,nullptr,"spherical Harmonics");
+		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true,true,nullptr,"sphericalSamples");
 	}
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
