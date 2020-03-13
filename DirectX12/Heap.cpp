@@ -40,7 +40,8 @@ namespace simul
 #endif
 			SIMUL_ASSERT(res == S_OK);
 			SIMUL_GPU_TRACK_MEMORY(mHeap, totalCnt) // Of course, not the actual memory size. But what is? D3D doesn't want us to know...
-
+			if(!mHeap)
+				return;
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);
 			mCpuHandle						= mHeap->GetCPUDescriptorHandleForHeapStart();
 			mGpuHandle						= mHeap->GetGPUDescriptorHandleForHeapStart();
