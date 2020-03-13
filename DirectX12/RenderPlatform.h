@@ -293,7 +293,9 @@ namespace simul
 			ID3D12CommandAllocator*     mImmediateAllocator=nullptr;
 			bool bImmediateContextActive=false;
 			bool bExternalImmediate=false;
+			#ifndef _XBOX_ONE
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
+			#endif
 		};
 	}
 }
