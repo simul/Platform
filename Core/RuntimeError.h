@@ -22,13 +22,15 @@
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #endif
 
-#ifdef __ORBIS__
+#if defined(__ORBIS__) || defined(__COMMODORE__)
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
 #ifdef UNIX
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
+#ifndef __COMMODORE__
 #include <signal.h>
+#endif
 #include <cstring>
 #endif
 #include <stdexcept> // for runtime_error
@@ -218,7 +220,7 @@ namespace simul
 		{\
 			char buffer[256];\
 			int err=errno;\
-			char * errorMsg = strerror_r( errno, buffer, 256 ); \
+			char * errorMsg = (char*)strerror_r( errno, buffer, 256 ); \
 			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<(errorMsg?errorMsg:"")<<std::endl; \
 			errno=0;\
 		}
