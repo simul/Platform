@@ -9,27 +9,20 @@
 #include <stack>
 #include <vector>
 #include "Platform/Core/Timer.h"
+#include "ThisPlatform/Threads.h"
 
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4251)
-#endif
-#ifdef _MSC_VER
-	typedef unsigned int THREAD_TYPE;
-#else
-	#ifdef NN_NINTENDO_SDK
-		#include <nn/os/os_ThreadApi.h>
-		typedef nn::os::ThreadId THREAD_TYPE;
-	#elif __ORBIS__
-		#include <kernel.h>
-		typedef  ScePthread THREAD_TYPE;
-	#else
-		#ifdef __APPLE__
-		#include <pthread.h>
-		#endif
-
-		#define THREAD_TYPE pthread_t
-	#endif
+#elif defined(NN_NINTENDO_SDK)
+	#include <nn/os/os_ThreadApi.h>
+	typedef nn::os::ThreadId THREAD_TYPE;
+#elif defined(__ORBIS__)
+	#include <kernel.h>
+	typedef  ScePthread THREAD_TYPE;
+#elif defined(__APPLE__)
+	#include <pthread.h>
+	#define THREAD_TYPE pthread_t
 #endif
 namespace simul
 {
