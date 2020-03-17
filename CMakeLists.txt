@@ -58,3 +58,7 @@ endif()
 if(SIMUL_SUPPORT_PS4)
 	add_subdirectory(PS4/Render)
 endif()
+
+if(PLATFORM_COMMODORE)
+	add_subdirectory(Commodore)
+endif()

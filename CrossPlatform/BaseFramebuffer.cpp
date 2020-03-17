@@ -51,9 +51,9 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(renderPlatform)
 	{
 		if(!external_texture)
-			buffer_texture=renderPlatform->CreateTexture("BaseFramebufferColour");
+			buffer_texture=renderPlatform->CreateTexture((name+"_Colour").c_str());
 		if(!external_depth_texture&&depth_format!=UNKNOWN)
-			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebufferDepth");
+			buffer_depth_texture=renderPlatform->CreateTexture((name+"_Depth").c_str());
 	}
 	CreateBuffers();
 }
@@ -184,12 +184,12 @@ bool BaseFramebuffer::CreateBuffers()
 		buffer_depth_texture->InvalidateDeviceObjects();
 	if(!buffer_texture)
 	{
-		std::string cName = "BaseFramebufferColour" + name;
+		std::string cName = name+"_Colour";
 		buffer_texture=renderPlatform->CreateTexture(cName.c_str());
 	}
 	if(!buffer_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{
-		std::string dName = "BaseFramebufferDepth" + name;
+		std::string dName = name+"_Depth";
 		buffer_depth_texture=renderPlatform->CreateTexture(dName.c_str());
 	}
 	static int quality=0;

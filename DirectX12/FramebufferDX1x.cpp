@@ -88,8 +88,8 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
     deviceContext.renderPlatform->ActivateRenderTargets(deviceContext, &targetsAndViewport);
     
     // Inform current samples
-    mCachedMSAAState = rPlat->GetMSAAInfo();
-    int colSamples = col12Texture->GetSampleCount();
+    mCachedMSAAState	= rPlat->GetMSAAInfo();
+    int colSamples		= col12Texture->GetSampleCount();
     rPlat->SetCurrentSamples(colSamples == 0 ? 1 : colSamples);
 
     // Cache current state
@@ -121,7 +121,7 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
 	if (!buffer_depth_texture->IsValid() || !depth_active)
 	{
-        SIMUL_CERR << "This FBO wasn't creted with depth or depth is not active.\n";
+        SIMUL_CERR << "This FBO wasn't created with depth or depth is not active.\n";
 		return;
 	}
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);

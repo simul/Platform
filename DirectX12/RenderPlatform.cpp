@@ -87,12 +87,47 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
+std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
+{
+	std::string str;
+
+	if(states&D3D12_RESOURCE_STATE_COMMON)								str+=" D3D12_RESOURCE_STATE_COMMON";
+	if(states&D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str+=" D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER";
+	if(states&D3D12_RESOURCE_STATE_INDEX_BUFFER)						str+=" D3D12_RESOURCE_STATE_INDEX_BUFFER";
+	if(states&D3D12_RESOURCE_STATE_RENDER_TARGET)						str+=" D3D12_RESOURCE_STATE_RENDER_TARGET";
+	if(states&D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str+=" D3D12_RESOURCE_STATE_UNORDERED_ACCESS";
+	if(states&D3D12_RESOURCE_STATE_DEPTH_WRITE)							str+=" D3D12_RESOURCE_STATE_DEPTH_WRITE";
+	if(states&D3D12_RESOURCE_STATE_DEPTH_READ)							str+=" D3D12_RESOURCE_STATE_DEPTH_READ";
+	if(states&D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str+=" D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE";
+	if(states&D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)				str+=" D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE";
+	if(states&D3D12_RESOURCE_STATE_STREAM_OUT)							str+=" D3D12_RESOURCE_STATE_STREAM_OUT";
+	if(states&D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str+=" D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT";
+	if(states&D3D12_RESOURCE_STATE_COPY_DEST)							str+=" D3D12_RESOURCE_STATE_COPY_DEST";
+	if(states&D3D12_RESOURCE_STATE_COPY_SOURCE)							str+=" D3D12_RESOURCE_STATE_COPY_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_RESOLVE_DEST)						str+=" D3D12_RESOURCE_STATE_RESOLVE_DEST";
+	if(states&D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str+=" D3D12_RESOURCE_STATE_RESOLVE_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str+=" D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE";
+	if(states&D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)					str+=" D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_PRESENT)								str+=" D3D12_RESOURCE_STATE_PRESENT";
+	if(states&D3D12_RESOURCE_STATE_PREDICATION)							str+=" D3D12_RESOURCE_STATE_PREDICATION";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str+=" D3D12_RESOURCE_STATE_VIDEO_DECODE_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE)					str+=" D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ)					str+=" D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE)					str+=" D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ)					str+=" D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)					str+=" D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE";
+	if(D3D12_RESOURCE_STATE_GENERIC_READ==(states&D3D12_RESOURCE_STATE_GENERIC_READ))						str=" D3D12_RESOURCE_STATE_GENERIC_READ";
+
+	return str;
+}
+
 
 void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
 #ifndef DISABLE_BARRIERS
     auto& barrier = mPendingBarriers[mCurBarriers++];
+	SIMUL_COUT<<"Barrier : 0x"<<std::hex<<(unsigned long long)res<<" from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
     barrier = CD3DX12_RESOURCE_BARRIER::Transition
     (
         res, before, after, subRes
@@ -611,7 +646,7 @@ void RenderPlatform::BeginD3D12Frame()
                 }
 #if SIMUL_INTERNAL_CHECKS
 				if (remainRefs)
-					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " )" << std::endl;
+					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " "; << std::endl;
 #endif
 				if (GetMemoryInterface())
 					GetMemoryInterface()->UntrackVideoMemory(ptr); 
@@ -1648,6 +1683,8 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport* targets)
 {
+	// We have to flush because otherwise the barrier will occur after the switch.
+	FlushBarriers(deviceContext);
     SIMUL_ASSERT(targets->num <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
     //immediateContext.platform_context                                               = deviceContext.platform_context;
@@ -1665,6 +1702,8 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 
 void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& deviceContext)
 {
+	// We have to flush because otherwise the barrier will occur after the switch.
+	FlushBarriers(deviceContext);
 	if(deviceContext.defaultTargetsAndViewport.num)
 	{
 		for(int i=0;i<deviceContext.defaultTargetsAndViewport.num;i++)
@@ -1695,6 +1734,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& dev
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
+	// We have to flush because otherwise the barrier will occur after the switch.
+	FlushBarriers(deviceContext);
     deviceContext.GetFrameBufferStack().pop();
     // Stack is empty so apply default targets:
     if (deviceContext.GetFrameBufferStack().empty())
