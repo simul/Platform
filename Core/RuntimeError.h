@@ -36,10 +36,10 @@
 #include <stdexcept> // for runtime_error
 
 #define SIMUL_COUT\
-	std::cout<<__FILE__<<"("<<__LINE__<<"): info: "
+	std::cout<<__FILE__<<"("<<std::dec<<__LINE__<<"): info: "
 
 #define SIMUL_CERR\
-	std::cerr<<__FILE__<<"("<<__LINE__<<"): warning: "
+	std::cerr<<__FILE__<<"("<<std::dec<<__LINE__<<"): warning: "
 
 namespace simul
 {

@@ -254,20 +254,20 @@ void RenderPlatform::RecompileShaders()
 		delete s.second;
 	}
 	shaders.clear();
-	AsD3D11Device();
+	
 	Destroy(debugEffect);
-	AsD3D11Device();
+	
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
-	AsD3D11Device();
+	
 	Destroy(solidEffect);
-	AsD3D11Device();
+	
 	solidEffect=CreateEffect("solid",defines);
-	AsD3D11Device();
+	
 	Destroy(copyEffect);
-	AsD3D11Device();
+	
 	copyEffect=CreateEffect("copy",defines);
-	AsD3D11Device();
+	
 	
 	textRenderer->RecompileShaders();
 	
@@ -280,7 +280,7 @@ void RenderPlatform::RecompileShaders()
 		imageTexture=debugEffect->GetShaderResource("imageTexture");
 	}		
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
-	AsD3D11Device();
+	
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)

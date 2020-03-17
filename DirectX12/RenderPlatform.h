@@ -208,6 +208,7 @@ namespace simul
 			static DXGI_FORMAT						TypelessToDsvFormat(DXGI_FORMAT fmt);
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
 			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
+			static std::string						D3D12ResourceStateToString(D3D12_RESOURCE_STATES states);
 			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);

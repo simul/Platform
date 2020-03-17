@@ -717,6 +717,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::Dev
 	if ((curState & D3D12_RESOURCE_STATE_RENDER_TARGET) != D3D12_RESOURCE_STATE_RENDER_TARGET)
 	{
 		SetLayout(deviceContext,D3D12_RESOURCE_STATE_RENDER_TARGET,mip,index);
+		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
 	}
 	
     if (!renderTargetViews12)
@@ -1291,21 +1292,6 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			}
 		}
 
-		// Find the initial texture state
-		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-        if (rendertarget)
-        {
-			AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-        if (depthstencil)
-        {
-			AssumeLayout(D3D12_RESOURCE_STATE_DEPTH_READ);
-        }
-        if (computable)
-        {
-			AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-        }
-
 		// Clean resources
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
@@ -1318,7 +1304,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
-			GetCurrentState(deviceContext),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
 			(rendertarget || depthstencil) ? &clearValues : nullptr,
             SIMUL_PPV_ARGS(&mTextureDefault)
 		);
@@ -1328,7 +1314,25 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
+		
 
+		// Find the initial texture state
+      /*  if (rendertarget)
+        {
+			AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        else if (depthstencil)
+        {
+			AssumeLayout(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        }
+		else if (computable)
+        {
+			AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        }
+		else*/
+		{
+			AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
+		}
 		// Create the main SRV
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -1807,9 +1811,11 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		return;
     }
 	
+	SetLayout(deviceContext,D3D12_RESOURCE_STATE_RENDER_TARGET,mip,array_index);
 	if (renderTargetViews12)
 	{
 		auto rp		= (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		rp->FlushBarriers(deviceContext);
 		auto rtView = AsD3D12RenderTargetView(deviceContext,array_index, mip);
 
         targetsAndViewport.num				= 1;
@@ -1827,7 +1833,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
         mCachedMSAAState = rp->GetMSAAInfo();
         rp->SetCurrentSamples(mNumSamples);
 	}
-	SetLayout(deviceContext,D3D12_RESOURCE_STATE_RENDER_TARGET,mip,array_index);
 }
 
 void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
@@ -1890,6 +1895,7 @@ void Texture::SplitLayouts()
 
 void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 {
+	SIMUL_COUT<<name.c_str()<<" 0x"<<std::hex<<(unsigned long long)mTextureDefault<<" assumed as layout "<<dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str()<<std::endl;
     int numLayers       = (int)mSubResourcesStates.size();
 	mResourceState      = state;
 	// And set all the subresources to that state
@@ -1979,6 +1985,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		else if(mResourceState!=state)
 			split_layouts=true;
 	}
+	//rPlat->FlushBarriers(deviceContext);
 }
 
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
