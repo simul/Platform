@@ -121,7 +121,7 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
 	if (!buffer_depth_texture->IsValid() || !depth_active)
 	{
-        SIMUL_CERR << "This FBO wasn't created with depth or depth is not active.\n";
+        SIMUL_CERR << "This FBO wasn't created with depth, or depth is not active.\n";
 		return;
 	}
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
