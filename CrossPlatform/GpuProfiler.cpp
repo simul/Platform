@@ -73,7 +73,6 @@ GpuProfiler::~GpuProfiler()
 	InvalidateDeviceObjects();
 }
 
-
 void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform = r;

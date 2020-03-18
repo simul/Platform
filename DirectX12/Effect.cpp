@@ -145,7 +145,7 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 	// We provide frequency information
 	if (mIsDisjoint)
 	{
-		auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
 		crossplatform::DisjointQueryStruct disjointData;
 		disjointData.Disjoint	= false;
 		disjointData.Frequency	= rPlat->GetTimeStampFreq();
