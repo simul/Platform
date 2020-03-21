@@ -143,11 +143,11 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 void DisplaySurfaceManager::EndFrame(bool clear)
 {
 	ERRNO_BREAK
+	RenderAll(clear);
+	ERRNO_BREAK
 	for(auto s:surfaces)
 	{
 		s.second->EndFrame();
 	}
 	frame_started=false;
-	RenderAll(clear);
-	renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 }

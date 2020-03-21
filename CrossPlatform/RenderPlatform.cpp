@@ -379,11 +379,6 @@ void RenderPlatform::BeginFrame(DeviceContext &dev)
 
 void RenderPlatform::EndFrame(DeviceContext &dev)
 {
-	if(gpuProfiler && gpuProfileFrameStarted)
-	{
-		gpuProfiler->EndFrame(dev);
-		gpuProfileFrameStarted = false;
-	}
 }
 
 

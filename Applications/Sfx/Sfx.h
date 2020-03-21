@@ -62,6 +62,7 @@ struct SfxConfig
 	std::string includeOption;
 	std::string entryPointOption;
 	std::string debugOption;
+	std::string releaseOptions;
 	std::string debugOutputFileOption;
 	std::string compilerMessageRegex;
 	std::string compilerMessageReplace;

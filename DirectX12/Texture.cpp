@@ -1407,7 +1407,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
             depthStencil = true;
 		}
-		auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
+		//auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 		//rPlat->FlushBarriers(deviceContext);
 	}
 
@@ -1850,6 +1850,8 @@ int Texture::GetSampleCount()const
 
 D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &deviceContext,int mip /*= -1*/, int index /*= -1*/)
 {
+	if(!split_layouts)
+		return mResourceState;
 	// Return the resource state
 	if (mip == -1 && index == -1)
 	{
@@ -1873,6 +1875,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 					}
 				}
 			}
+			rPlat->FlushBarriers(deviceContext);
 		}
 		split_layouts=false;
 		return mResourceState;

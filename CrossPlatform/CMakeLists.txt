@@ -11,4 +11,3 @@ add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} FOLDER ${SI
 add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} 
 	DEFINITIONS SIMUL_CROSSPLATFORM_DLL=1
 	LINK SimulMath_MD Core_MD FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-	  

@@ -95,10 +95,11 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	if (!enabled||!renderPlatform||!root)
 		return;
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
-	if (!is_opengl && !is_vulkan && !context)
-		return;
+	// Seriously? We're doing strcmp in perf-measurement?
+	//bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
+	//bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
+	//if (!is_opengl && !is_vulkan && !context)
+//		return;
 
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
@@ -175,10 +176,10 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 	if (!enabled||!renderPlatform||!root)
 		return;
 	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
-	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
+/*	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
 	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
 	if (!is_opengl && !is_vulkan && !context)
-		return;
+		return;*/
 
 	renderPlatform->EndEvent(deviceContext);
 	level--;
@@ -293,6 +294,10 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 		{
 			float frequency = static_cast<float>(disjointData.Frequency);
 			time = (delta / frequency) * 1000.0f;
+		}
+		else
+		{
+			time=0.0f;
 		}
 	}
 	if ((strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
