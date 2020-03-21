@@ -6,7 +6,7 @@
 #include "Platform/Math/Matrix4x4.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/DirectX12/GpuProfiler.h"
 #include "Platform/DirectX12/ConstantBuffer.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
@@ -21,7 +21,7 @@
 #ifdef SIMUL_ENABLE_PIX
     #include "pix3.h"
 #endif
-
+//#define SIMUL_DEBUG_BARRIERS 1
 using namespace simul;
 using namespace dx12;
 
@@ -49,7 +49,6 @@ RenderPlatform::RenderPlatform():
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
-	//gpuProfiler = new crossplatform::GpuProfiler();
 
     mCurBarriers    = 0;
     mTotalBarriers  = 16; 
@@ -91,51 +90,96 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 {
 	std::string str;
 
-	if(states&D3D12_RESOURCE_STATE_COMMON)								str+=" D3D12_RESOURCE_STATE_COMMON";
-	if(states&D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str+=" D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER";
-	if(states&D3D12_RESOURCE_STATE_INDEX_BUFFER)						str+=" D3D12_RESOURCE_STATE_INDEX_BUFFER";
-	if(states&D3D12_RESOURCE_STATE_RENDER_TARGET)						str+=" D3D12_RESOURCE_STATE_RENDER_TARGET";
-	if(states&D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str+=" D3D12_RESOURCE_STATE_UNORDERED_ACCESS";
-	if(states&D3D12_RESOURCE_STATE_DEPTH_WRITE)							str+=" D3D12_RESOURCE_STATE_DEPTH_WRITE";
-	if(states&D3D12_RESOURCE_STATE_DEPTH_READ)							str+=" D3D12_RESOURCE_STATE_DEPTH_READ";
-	if(states&D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str+=" D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE";
-	if(states&D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)				str+=" D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE";
-	if(states&D3D12_RESOURCE_STATE_STREAM_OUT)							str+=" D3D12_RESOURCE_STATE_STREAM_OUT";
-	if(states&D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str+=" D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT";
-	if(states&D3D12_RESOURCE_STATE_COPY_DEST)							str+=" D3D12_RESOURCE_STATE_COPY_DEST";
-	if(states&D3D12_RESOURCE_STATE_COPY_SOURCE)							str+=" D3D12_RESOURCE_STATE_COPY_SOURCE";
-	if(states&D3D12_RESOURCE_STATE_RESOLVE_DEST)						str+=" D3D12_RESOURCE_STATE_RESOLVE_DEST";
-	if(states&D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str+=" D3D12_RESOURCE_STATE_RESOLVE_SOURCE";
-	if(states&D3D12_RESOURCE_STATE_PRESENT)								str+=" D3D12_RESOURCE_STATE_PRESENT";
-	if(states&D3D12_RESOURCE_STATE_PREDICATION)							str+=" D3D12_RESOURCE_STATE_PREDICATION";
+	if(states&D3D12_RESOURCE_STATE_COMMON)								str+=" COMMON";
+	if(states&D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str+=" VERTEX_AND_CONSTANT_BUFFER";
+	if(states&D3D12_RESOURCE_STATE_INDEX_BUFFER)						str+=" INDEX_BUFFER";
+	if(states&D3D12_RESOURCE_STATE_RENDER_TARGET)						str+=" RENDER_TARGET";
+	if(states&D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str+=" UNORDERED_ACCESS";
+	if(states&D3D12_RESOURCE_STATE_DEPTH_WRITE)							str+=" DEPTH_WRITE";
+	if(states&D3D12_RESOURCE_STATE_DEPTH_READ)							str+=" DEPTH_READ";
+	if(states&D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str+=" NON_PIXEL_SHADER_RESOURCE";
+	if(states&D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)				str+=" PIXEL_SHADER_RESOURCE";
+	if(states&D3D12_RESOURCE_STATE_STREAM_OUT)							str+=" STREAM_OUT";
+	if(states&D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str+=" INDIRECT_ARGUMENT";
+	if(states&D3D12_RESOURCE_STATE_COPY_DEST)							str+=" COPY_DEST";
+	if(states&D3D12_RESOURCE_STATE_COPY_SOURCE)							str+=" COPY_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_RESOLVE_DEST)						str+=" RESOLVE_DEST";
+	if(states&D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str+=" RESOLVE_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_PRESENT)								str+=" PRESENT";
+	if(states&D3D12_RESOURCE_STATE_PREDICATION)							str+=" PREDICATION";
 #ifndef _XBOX_ONE
-	if (states&D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str += " D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE";
-	if (states&D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)					str += " D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str+=" D3D12_RESOURCE_STATE_VIDEO_DECODE_READ";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE)					str+=" D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ)					str+=" D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE)					str+=" D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ)					str+=" D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)					str+=" D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE";
+	if (states&D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str += " RAYTRACING_ACCELERATION_STRUCTURE";
+	if (states&D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)				str += " SHADING_RATE_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str+=" VIDEO_DECODE_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE)					str+=" VIDEO_DECODE_WRITE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ)					str+=" VIDEO_PROCESS_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE)					str+=" VIDEO_PROCESS_WRITE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ)					str+=" VIDEO_ENCODE_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)					str+=" VIDEO_ENCODE_WRITE";
 #endif
-	if(D3D12_RESOURCE_STATE_GENERIC_READ==(states&D3D12_RESOURCE_STATE_GENERIC_READ))						str=" D3D12_RESOURCE_STATE_GENERIC_READ";
+	if(D3D12_RESOURCE_STATE_GENERIC_READ==states)						str=" GENERIC_READ";
+	if((D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)==states)						str=" SHADER_RESOURCE";
 
 	return str;
 }
-
+#include <iomanip>
 
 void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
 #ifndef DISABLE_BARRIERS
-    auto& barrier = mPendingBarriers[mCurBarriers++];
+	// merge barriers??
+	bool found=false;
+	for(int i=0;i<mCurBarriers;i++)
+	{
+		auto& b = mPendingBarriers[i];
+		if(b.Transition.pResource==res&&b.Transition.Subresource==subRes)
+		{
+			SIMUL_ASSERT(before==b.Transition.StateAfter);
+			if(before!=b.Transition.StateAfter)
+			{
 #ifdef SIMUL_DEBUG_BARRIERS
-	SIMUL_COUT<<"Barrier : 0x"<<std::hex<<(unsigned long long)res<<" from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+				SIMUL_CERR<<"Barrier error : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") - "<<D3D12ResourceStateToString(before)<<" IS NOT "<<D3D12ResourceStateToString(b.Transition.StateBefore)<<std::endl;
 #endif
-    barrier = CD3DX12_RESOURCE_BARRIER::Transition
-    (
-        res, before, after, subRes
-    );
+			}
+			if(after==b.Transition.StateBefore)
+			{
+				if(mCurBarriers>1)
+				{
+					std::swap(b,mPendingBarriers[mCurBarriers-1]);
+#ifdef SIMUL_DEBUG_BARRIERS
+					SIMUL_COUT<<"Barrier swapped: 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+				}
+				else
+				{
+#ifdef SIMUL_DEBUG_BARRIERS
+					SIMUL_COUT<<"Barrier removed : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+				}
+				mCurBarriers--;
+			}
+			else
+			{
+#ifdef SIMUL_DEBUG_BARRIERS
+				SIMUL_COUT<<"Barrier combined : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+				b.Transition.StateAfter=after;
+			}
+			found=true;
+		}
+	}
+	if(!found)
+	{
+		auto& barrier = mPendingBarriers[mCurBarriers++];
+#ifdef SIMUL_DEBUG_BARRIERS
+		SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+		barrier = CD3DX12_RESOURCE_BARRIER::Transition
+		(
+			res, before, after, subRes
+		);
+	}
 	if (flush)
 	{
 		FlushBarriers(deviceContext);
@@ -156,7 +200,10 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
-
+	
+#ifdef SIMUL_DEBUG_BARRIERS
+	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
+#endif
 /*	if (true)
 	{
 		FlushBarriers(deviceContext);
@@ -181,13 +228,27 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
-
+	
+#ifdef SIMUL_DEBUG_BARRIERS
+	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
+#endif
 	if (true)
 	{
 //		FlushBarriers(deviceContext);
 	}
 	CheckBarriersForResize(deviceContext);
 #endif
+}
+
+unsigned long long RenderPlatform::GetTimestampQueryData(crossplatform::DeviceContext& deviceContext,int offset)
+{
+	ID3D12GraphicsCommandList* commandList=deviceContext.asD3D12Context();
+	return timestampQueryManager.GetTimestampQueryData(deviceContext,offset);
+}
+
+void RenderPlatform::GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset)
+{
+	 timestampQueryManager.GetTimestampQueryHeap(deviceContext,heap,offset);
 }
 
 void RenderPlatform::CheckBarriersForResize(crossplatform::DeviceContext &deviceContext)
@@ -208,6 +269,9 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
     {
         return; 
     }
+#ifdef SIMUL_DEBUG_BARRIERS
+	SIMUL_COUT<<"\t\tFlush "<<mCurBarriers<<" barriers."<<std::endl;
+#endif
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
     commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
@@ -527,18 +591,21 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
 #endif
 #endif
-
+	timestampQueryManager.RestoreDeviceObjects(this);
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	timestampQueryManager.InvalidateDeviceObjects();
+	if(gpuProfiler)
+		gpuProfiler->InvalidateDeviceObjects();
 	if(mFrameHeap)
-	for(int i=0;i<3;i++)
-	{
-		mFrameHeap[i].Release();
-	}
+		for(int i=0;i<3;i++)
+		{
+			mFrameHeap[i].Release();
+		}
 	if(mFrameOverrideSamplerHeap)
 	for(int i=0;i<3;i++)
 	{
@@ -606,6 +673,7 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 
 void RenderPlatform::BeginFrame(crossplatform::DeviceContext &deviceContext)
 {
+	timestampQueryManager.StartFrame(deviceContext);
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	BeginD3D12Frame();
 }
@@ -966,6 +1034,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R8_UNORM;
 	case R_8_SNORM:
 		return DXGI_FORMAT_R8_SNORM;
+	case RGBA_8_UINT:
+		return DXGI_FORMAT_R8G8B8A8_UINT;
 	case R_32_UINT:
 		return DXGI_FORMAT_R32_UINT;
 	case RG_32_UINT:
@@ -1341,7 +1411,7 @@ D3D12_QUERY_HEAP_TYPE simul::dx12::RenderPlatform::ToD3D12QueryHeapType(crosspla
 UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
 {
 	// Requested the whole resource
-	if (mip == -1 && layer == -1)
+	if ((mip == -1 && layer == -1)||(mips==1&&layers==1))
 	{
 		return D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	}
@@ -1982,10 +2052,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
     }
 	cmdList->SetDescriptorHeaps(2, currentHeaps);
 
-	// Apply the common root signature
-	cmdList->SetGraphicsRootSignature(mGRootSignature);
-	cmdList->SetComputeRootSignature(mGRootSignature);
-
 	// Apply the RootDescriptor tables:
 	// NOTE: we define our RootSignature on HLSl and then, using SFX we attatch it to
 	//       the shader binary, refer to Simul/Platform/<target>/HLSL/GFX.hls
@@ -1993,11 +2059,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	const UINT samplerTableId	= 1;
 	if (pass->IsCompute())
 	{
+		cmdList->SetComputeRootSignature(mGRootSignature);
 		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
         cmdList->SetComputeRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}
 	else
 	{
+		// Apply the common root signature
+		cmdList->SetGraphicsRootSignature(mGRootSignature);
 		cmdList->SetGraphicsRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
         cmdList->SetGraphicsRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}

@@ -4,6 +4,7 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
 #include "Platform/CrossPlatform/Effect.h"
+#include "Platform/DirectX12/GpuProfiler.h"
 #include "Platform/Shaders/SL/solid_constants.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 #include "DirectXHeader.h"
@@ -111,7 +112,7 @@ namespace simul
 			//! Clears the input assembler state (index and vertex buffers)
 			void						    ClearIA(crossplatform::DeviceContext &deviceContext);
 
-			dx12::Heap*					    SamplerHeap()		        {return mSamplerHeap;}
+			dx12::Heap*					    SamplerHeap()		        { return mSamplerHeap;}
 			dx12::Heap*					    RenderTargetHeap()	        { return mRenderTargetHeap; }
 			dx12::Heap*					    DepthStencilHeap()	        { return mDepthStencilHeap; }
 
@@ -237,7 +238,9 @@ namespace simul
             D3D12_RASTERIZER_DESC                   DefaultRasterState;
 
             crossplatform::PixelFormat              DefaultOutputFormat;
-
+			
+			void GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap**,int *offset);
+			unsigned long long GetTimestampQueryData(crossplatform::DeviceContext& deviceContext,int offset);
 		protected:
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
@@ -259,6 +262,7 @@ namespace simul
 			dx12::Heap*					mRenderTargetHeap;
 			dx12::Heap*					mDepthStencilHeap;
 			dx12::Heap*					mNullHeap;
+			dx12::TimestampQueryManager		timestampQueryManager;
 			//! Shared root signature for graphics
 			ID3D12RootSignature*		mGRootSignature;
 			//! Shared root signature for compute

@@ -199,7 +199,6 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
     // Get ready to present
     mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-    EndFrame();
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }
@@ -283,9 +282,9 @@ void DisplaySurface::EndFrame()
     HRESULT res = S_FALSE;
     res = mCommandList->Close();
     SIMUL_ASSERT(res == S_OK);
+//SIMUL_CERR<<"End Frame"<<std::endl;
     ID3D12CommandList* ppCommandLists[] = { mCommandList };
     mQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
     // Cache the current idx:
     int idx = GetCurrentBackBufferIndex();
 

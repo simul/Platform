@@ -225,6 +225,8 @@ int main(int argc, char** argv)
 		sfxConfig.entryPointOption							=j["entryPointOption"];
 		if(j.count("debugOption")>0)
 			sfxConfig.debugOption							=j["debugOption"]; 
+		if(j.count("releaseOptions")>0)
+			sfxConfig.releaseOptions						=j["releaseOptions"]; 
 		if(j.count("debugOutputFileOption")>0)
 			sfxConfig.debugOutputFileOption					=j["debugOutputFileOption"]; 
 		if(j.count("multiplePixelOutputFormats")>0)

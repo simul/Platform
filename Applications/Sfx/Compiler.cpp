@@ -459,6 +459,13 @@ wstring BuildCompileCommand(CompiledShader *shader,const SfxConfig &sfxConfig,co
 		if (sfxConfig.debugOutputFileOption.length())
 			command += Utf8ToWString(std::regex_replace(sfxConfig.debugOutputFileOption, std::regex("\\{filename_root\\}"), filename_root)) + L" ";
 	}
+	else
+	{
+		if(sfxConfig.releaseOptions.length())
+		{
+			command+=Utf8ToWString(sfxConfig.releaseOptions)+L" ";
+		}
+	}
 	if(sfxConfig.optimizationLevelOption.length()&&sfxOptions.optimizationLevel>=0)
 	{
 		command += Utf8ToWString(sfxConfig.optimizationLevelOption);
