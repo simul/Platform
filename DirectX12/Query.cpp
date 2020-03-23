@@ -35,6 +35,11 @@ Query::~Query()
 	InvalidateDeviceObjects();
 }
 
+void Query::SetTimestampQueryManager(TimestampQueryManager *m)
+{
+	timestampQueryManager=m;
+}
+
 void Query::SetName(const char *name)
 {
 	std::string n (name);
@@ -50,27 +55,6 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	// Create a query heap
 	HRESULT res					= S_FALSE;
 	mD3DType					= dx12::RenderPlatform::ToD3dQueryType(type);
-/*	D3D12_QUERY_HEAP_DESC hDesc = {};
-	hDesc.Count					= QueryLatency;
-	hDesc.NodeMask				= 0;
-	hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(type);
-	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc, SIMUL_PPV_ARGS(&mQueryHeap));
-	SIMUL_ASSERT(res == S_OK);
-
-	// Create a readback buffer to get data
-	size_t sz = QueryLatency * sizeof(UINT64);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sz),
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-        SIMUL_PPV_ARGS(&mReadBuffer)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mReadBuffer, sz)
-	mReadBuffer->SetName(L"QueryReadBuffer");*/
 }
 
 void Query::InvalidateDeviceObjects() 
@@ -101,8 +85,7 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 		return;
 	}
 	ID3D12GraphicsCommandList* commandList=deviceContext.asD3D12Context();
-	auto *rp=(dx12::RenderPlatform*)renderPlatform;
-	rp->GetTimestampQueryHeap(deviceContext,&heapPtr[currFrame],&(offset[currFrame]));
+	timestampQueryManager->GetTimestampQueryHeap(deviceContext,&heapPtr[currFrame],&(offset[currFrame]));
 	commandList->EndQuery
 	(
 		heapPtr[currFrame],
@@ -137,16 +120,7 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 	{
 		return false;
 	}
-	auto *rp=(dx12::RenderPlatform*)renderPlatform;
-	unsigned mTime=rp->GetTimestampQueryData(deviceContext,offset[currFrame]);
-	// Get the values from the buffer
-	/*HRESULT res				= S_FALSE;
-	res						= mReadBuffer->Map(0, &CD3DX12_RANGE(0, 1), reinterpret_cast<void**>(&mQueryData));
-	SIMUL_ASSERT(res == S_OK);
-	
-	UINT64* d			= (UINT64*)mQueryData;
-	UINT64 time			= d[offset[currFrame]];
-	mTime				= time;*/
+	unsigned mTime=timestampQueryManager->GetTimestampQueryData(deviceContext,offset[currFrame]);
 	memcpy(data, &mTime, sz);
 	
 	//mReadBuffer->Unmap(0, &CD3DX12_RANGE(0, 0));
