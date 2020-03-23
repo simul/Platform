@@ -240,16 +240,6 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 #endif
 }
 
-unsigned long long RenderPlatform::GetTimestampQueryData(crossplatform::DeviceContext& deviceContext,int offset)
-{
-	ID3D12GraphicsCommandList* commandList=deviceContext.asD3D12Context();
-	return timestampQueryManager.GetTimestampQueryData(deviceContext,offset);
-}
-
-void RenderPlatform::GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset)
-{
-	 timestampQueryManager.GetTimestampQueryHeap(deviceContext,heap,offset);
-}
 
 void RenderPlatform::CheckBarriersForResize(crossplatform::DeviceContext &deviceContext)
 {
@@ -591,14 +581,12 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
 #endif
 #endif
-	timestampQueryManager.RestoreDeviceObjects(this);
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
-	timestampQueryManager.InvalidateDeviceObjects();
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
 	if(mFrameHeap)
@@ -673,7 +661,6 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 
 void RenderPlatform::BeginFrame(crossplatform::DeviceContext &deviceContext)
 {
-	timestampQueryManager.StartFrame(deviceContext);
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	BeginD3D12Frame();
 }
@@ -2157,4 +2144,10 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return new dx12::DisplaySurface();
+}
+
+
+crossplatform::GpuProfiler* RenderPlatform::CreateGpuProfiler()
+{
+	return new dx12::GpuProfiler();
 }

@@ -76,9 +76,9 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,mCurIdx(0)
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
+	,gpuProfiler(nullptr)
 {
 	immediateContext.renderPlatform=this;
-	gpuProfiler=new GpuProfiler;
 }
 
 RenderPlatform::~RenderPlatform()
@@ -135,6 +135,8 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
 	ERRNO_BREAK
+	if(!gpuProfiler)
+		gpuProfiler=CreateGpuProfiler();
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -204,7 +206,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
-	gpuProfiler->InvalidateDeviceObjects();
+	if(gpuProfiler)
+		gpuProfiler->InvalidateDeviceObjects();
 	for (auto e : destroyEffects)
 	{
 		SAFE_DELETE(e);
@@ -1217,6 +1220,11 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return nullptr;
+}
+
+GpuProfiler* RenderPlatform::CreateGpuProfiler()
+{
+	return new GpuProfiler();
 }
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers,const crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps)

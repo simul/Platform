@@ -169,7 +169,8 @@ namespace simul
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Shader					*CreateShader() override;
-            crossplatform::DisplaySurface*          CreateDisplaySurface()override;
+            crossplatform::DisplaySurface*          CreateDisplaySurface() override;
+			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
 
             void									PresentSwapChain(crossplatform::DeviceContext &, crossplatform::Window *s) {};
 
@@ -239,8 +240,6 @@ namespace simul
 
             crossplatform::PixelFormat              DefaultOutputFormat;
 			
-			void GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap**,int *offset);
-			unsigned long long GetTimestampQueryData(crossplatform::DeviceContext& deviceContext,int offset);
 		protected:
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
@@ -262,7 +261,6 @@ namespace simul
 			dx12::Heap*					mRenderTargetHeap;
 			dx12::Heap*					mDepthStencilHeap;
 			dx12::Heap*					mNullHeap;
-			dx12::TimestampQueryManager		timestampQueryManager;
 			//! Shared root signature for graphics
 			ID3D12RootSignature*		mGRootSignature;
 			//! Shared root signature for compute

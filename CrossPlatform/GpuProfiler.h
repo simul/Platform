@@ -94,8 +94,7 @@ namespace simul
 			virtual void End(crossplatform::DeviceContext &deviceContext) override;
 			/// Call this before any timeable events in a frame.
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext) override;
-			/// Call this after all timeable events in a frame have completed. It is acceptable
-			/// to call EndFrame() without having first called StartFrame() - this has no effect.
+			/// Call this after all timeable events in a frame have completed.
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext) override;
 			virtual const char *GetDebugText(simul::base::TextStyle st = simul::base::PLAINTEXT) const override;
 		
@@ -105,6 +104,7 @@ namespace simul
 			float GetTime(const std::string &name) const;
 
 		protected:
+			virtual void InitQuery(Query *);
 			void WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *p);
 			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 			__int64 currFrame;

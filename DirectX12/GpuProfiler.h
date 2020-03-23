@@ -45,5 +45,19 @@ namespace simul
 			unsigned long long*					mTimestampQueryData=nullptr;
 			unsigned long long last_frame_number=0;
 		};
+
+		
+		class GpuProfiler:public crossplatform::GpuProfiler
+		{
+		public:
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
+			void InvalidateDeviceObjects() override;
+
+			void				StartFrame(crossplatform::DeviceContext &deviceContext) override;
+			void				EndFrame(crossplatform::DeviceContext &deviceContext) override;
+			dx12::TimestampQueryManager		timestampQueryManager;
+		protected:
+			void InitQuery(crossplatform::Query *q) override;
+		};
 	}
 }

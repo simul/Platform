@@ -2,6 +2,7 @@
 #include "GpuProfiler.h"
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/Query.h"
 #include <stdint.h>
 #include <algorithm>
 
@@ -75,7 +76,7 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 	{
 		StartFrame(deviceContext);
 	}*/
-	if(mTimestampQueryHeapOffset>=mTimestampQueryHeapSize[mTimestampQueryCurrFrame])
+		if(mTimestampQueryHeapOffset>=mTimestampQueryHeapSize[mTimestampQueryCurrFrame])
 	{
 		if(mTimestampQueryData)
 		{
@@ -157,4 +158,33 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 	{
 		return mTimestampQueryData[offset];
 	}
+}
+
+void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+{
+	crossplatform::GpuProfiler::RestoreDeviceObjects(r);
+	timestampQueryManager.RestoreDeviceObjects(r);
+}
+
+void GpuProfiler::InvalidateDeviceObjects() 
+{
+	timestampQueryManager.InvalidateDeviceObjects();
+	crossplatform::GpuProfiler::InvalidateDeviceObjects();
+}
+
+void	GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
+{
+	crossplatform::GpuProfiler::StartFrame(deviceContext);
+	timestampQueryManager.StartFrame(deviceContext);
+}
+
+void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
+{
+	timestampQueryManager.EndFrame(deviceContext);
+	crossplatform::GpuProfiler::EndFrame(deviceContext);
+}
+
+void GpuProfiler::InitQuery(crossplatform::Query *q)
+{
+	((dx12::Query*)q)->SetTimestampQueryManager(&timestampQueryManager);
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Platform/DirectX12/Export.h"
+#include "Platform/DirectX12/GpuProfiler.h"
 #include "Platform/CrossPlatform/Query.h"
 #include "DirectXHeader.h"
 
@@ -24,6 +25,8 @@ namespace simul
 		{
 					Query(crossplatform::QueryType t);
 			virtual ~Query() override;
+			/// For D3D12 we use a query manager to store GPU objects for the queries.
+			void	SetTimestampQueryManager(TimestampQueryManager *m);
 			void	RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void	InvalidateDeviceObjects() override;
 			void	Begin(crossplatform::DeviceContext &deviceContext) override;
@@ -44,6 +47,7 @@ namespace simul
 			//! We hold a pointer to the mapped data
 			unsigned				mQueryData;
 			UINT64					mTime;
+			TimestampQueryManager *timestampQueryManager=nullptr;
 		};
 
 	}
