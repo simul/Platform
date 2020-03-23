@@ -101,7 +101,8 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 		hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(crossplatform::QueryType::QUERY_TIMESTAMP);
 		res							= renderPlatform->AsD3D12Device()->CreateQueryHeap(&hDesc, SIMUL_PPV_ARGS(&mTimestampQueryHeap[mTimestampQueryCurrFrame]));
 		SIMUL_ASSERT(res == S_OK);
-
+		
+		SIMUL_GPU_UNTRACK_MEMORY(mTimestampQueryReadBuffer[mTimestampQueryCurrFrame])
 		SAFE_RELEASE_LATER(mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]);
 		// Create a readback buffer to get data
 		size_t sz = mTimestampQueryHeapSize[mTimestampQueryCurrFrame] * sizeof(UINT64);
@@ -115,7 +116,7 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 			SIMUL_PPV_ARGS(&mTimestampQueryReadBuffer[mTimestampQueryCurrFrame])
 		);
 		SIMUL_ASSERT(res == S_OK);
-		SIMUL_GPU_TRACK_MEMORY(mTimestampQueryReadBuffer, sz)
+		SIMUL_GPU_TRACK_MEMORY(mTimestampQueryReadBuffer[mTimestampQueryCurrFrame], sz)
 		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(L"mTimestampQueryReadBuffer");
 
 		mTimestampQueryHeapOffset=0;

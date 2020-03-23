@@ -144,6 +144,7 @@ namespace simul
 			int max_level_this_frame;
 			int level;
 			int level_in_use;
+			bool frame_active=false;
 			ProfileData *root;
 		};
 		//! simul::base::DefaultProfiler inherits from ProfilingInterface to measure CPU performance.
