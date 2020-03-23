@@ -68,6 +68,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,textured(nullptr)
 	,untextured(nullptr)
 	,showVolume(nullptr)
+	,gpuProfiler(nullptr)
 #ifdef _XBOX_ONE
 	,can_save_and_restore(false)
 #else
@@ -76,7 +77,6 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,mCurIdx(0)
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
-	,gpuProfiler(nullptr)
 {
 	immediateContext.renderPlatform=this;
 }

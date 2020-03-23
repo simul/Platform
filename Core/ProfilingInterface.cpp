@@ -169,6 +169,7 @@ void simul::base::BaseProfilingInterface::StartFrame()
 	}
 	root->last_child_updated=0;
 	WalkReset(root);
+	frame_active=true;
 	level=0;
 	level_in_use = 0;
 	max_level_this_frame=0;
@@ -274,6 +275,7 @@ float DefaultProfiler::WalkOverhead(simul::base::DefaultProfiler::Timing *p,int 
 
 void simul::base::DefaultProfiler::EndFrame()
 {
+	frame_active=false;
 	if(!root)
 		return;
 	if(!(root)->updatedThisFrame)

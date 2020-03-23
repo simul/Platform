@@ -92,7 +92,7 @@ void GpuProfiler::InvalidateDeviceObjects()
 
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
-	if (!enabled||!renderPlatform||!root)
+	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
 	// Seriously? We're doing strcmp in perf-measurement?
@@ -180,7 +180,7 @@ void GpuProfiler::InitQuery(Query *)
 
 void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
-	if (!enabled||!renderPlatform||!root)
+	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
 	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
 /*	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
@@ -334,7 +334,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 		Clear();
         return;
 	}
-    if(!root||!enabled||!renderPlatform)
+    if(!root||!enabled||!renderPlatform||!frame_active)
         return;
 
     currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
@@ -353,6 +353,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
  			root->time+=i->second->time;
  		}
 	}
+	frame_active=false;
 }
 
 template<typename T> inline std::string ToString(const T& val)
