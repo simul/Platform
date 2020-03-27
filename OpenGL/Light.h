@@ -4,7 +4,7 @@
 #define OPENGL_LIGHT_H
 
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/Light.h"
+#include "Platform/CrossPlatform/Light.h"
 #include "glad/glad.h"
 
 namespace simul

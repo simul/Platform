@@ -1,6 +1,6 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 #include <math.h>
 namespace simul
 {

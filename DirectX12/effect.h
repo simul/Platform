@@ -1,9 +1,10 @@
 #pragma once
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/DirectX12/ConstantBuffer.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "DirectXHeader.h"
+#include "Platform/DirectX12/ConstantBuffer.h"
+#include "Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/Query.h"
 
 #include "Heap.h"
 
@@ -24,31 +25,6 @@ namespace simul
 	}
 	namespace dx12
 	{
-		//! DirectX12 Query implementation
-		struct SIMUL_DIRECTX12_EXPORT Query:public crossplatform::Query
-		{
-					Query(crossplatform::QueryType t);
-			virtual ~Query() override;
-			void	RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
-			void	InvalidateDeviceObjects() override;
-			void	Begin(crossplatform::DeviceContext &deviceContext) override;
-			void	End(crossplatform::DeviceContext &deviceContext) override;
-			bool	GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
-			void	SetName(const char *n) override;
-
-		protected:
-			//! Holds the queries
-			ID3D12QueryHeap*		mQueryHeap;
-			//! We cache the query type
-			D3D12_QUERY_TYPE		mD3DType;
-			bool mIsDisjoint;
-			//! Readback buffer to read data from the query
-			ID3D12Resource*			mReadBuffer;
-			//! We hold a pointer to the mapped data
-			void*					mQueryData;
-			UINT64					mTime;
-		};
-
         struct D3D12_RENDER_TARGET_FORMAT_DESC
         {
             //! Returns an unique number that represents this rt desc

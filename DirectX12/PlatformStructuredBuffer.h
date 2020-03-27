@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "DirectXHeader.h"
 #include "Heap.h"
 
 #pragma warning(disable:4251)
@@ -20,7 +20,7 @@ namespace simul
 		public:
 											PlatformStructuredBuffer();
 			virtual							~PlatformStructuredBuffer();
-			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data);
+			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name);
 			void							Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource &shaderResource);
             void                            ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource &shaderResource);
 			//! Returns an initialized pointer with the size of this structured buffer that can be used to set data. After
@@ -79,7 +79,7 @@ namespace simul
 
             //! How many times we can Apply this SB with different data
             //! During runtime we will check the current applies and recreate if needed
-            int								mMaxApplyMod = 1;
+            int								mMaxApplyMod = 6;
             int								mCurApplies;
             uint64_t						mLastFrame;
 			int								mFrameCycle=0;

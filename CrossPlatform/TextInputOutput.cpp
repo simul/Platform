@@ -1,8 +1,8 @@
 #define NOMINMAX
-#include "Simul/Platform/CrossPlatform/TextInputOutput.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/StringToWString.h"
+#include "Platform/CrossPlatform/TextInputOutput.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <fstream>

@@ -1,7 +1,7 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/CrossPlatform/Topology.h"
 #include <vector>
 #ifdef _MSC_VER
     #pragma warning(push)

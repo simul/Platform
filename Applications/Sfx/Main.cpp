@@ -225,6 +225,8 @@ int main(int argc, char** argv)
 		sfxConfig.entryPointOption							=j["entryPointOption"];
 		if(j.count("debugOption")>0)
 			sfxConfig.debugOption							=j["debugOption"]; 
+		if(j.count("releaseOptions")>0)
+			sfxConfig.releaseOptions						=j["releaseOptions"]; 
 		if(j.count("debugOutputFileOption")>0)
 			sfxConfig.debugOutputFileOption					=j["debugOutputFileOption"]; 
 		if(j.count("multiplePixelOutputFormats")>0)
@@ -400,12 +402,6 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		//std::cout<<("Compiled successfully\n");
-		if (sfxOptions.verbose)
-		{
-			std::cout<< outputfile.c_str()<<"(0): info: output file."<< std::endl;
-			printf("%s",outputfile.c_str());
-		}
 		ret = 0;
 	}
 	sfxDeleteEffect(effect);

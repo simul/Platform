@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Simul/Platform/OpenGL/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/OpenGL/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
 #include "glad/glad.h"
 
 #ifdef _MSC_VER
@@ -91,7 +91,7 @@ namespace simul
 			            PlatformStructuredBuffer();
             virtual     ~PlatformStructuredBuffer();
 
-			void        RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data);
+			void        RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data,const char *name);
 			void*       GetBuffer(crossplatform::DeviceContext &deviceContext);
 			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
 			void        CloseReadBuffer(crossplatform::DeviceContext &deviceContext);

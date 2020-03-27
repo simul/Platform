@@ -17,14 +17,14 @@
 #include <string>
 #include <assert.h>
 
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/Timer.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
 #include "Utilities.h"
-#include "Simul/Platform/Math/Pi.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Platform/Math/Pi.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/DirectX11/RenderPlatform.h"
 #pragma optimize("",off)
 using namespace simul;
 using namespace dx11;

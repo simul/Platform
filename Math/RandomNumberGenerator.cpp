@@ -1,8 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
-#include "Simul/Platform/Math/RandomNumberGenerator.h"
-#include "Simul/Platform/Math/mmxrand.h"
-#include "Simul/Base/ConvertPreprocessorMacros.h"
+#include "Platform/Math/RandomNumberGenerator.h"
+#include "Platform/Math/mmxrand.h"
 
 #ifdef _MSC_VER
 	// C4512 - "assignment operator could not be generated". Boost classes cause this warning.

@@ -1,5 +1,5 @@
-#include "Simul/Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/CrossPlatform/DisplaySurfaceManager.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
 
 using namespace simul;
 using namespace crossplatform;
@@ -41,13 +41,15 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		if (renderPlatform && !frame_started)
 		{
 			frameNumber++;
-			renderPlatform->BeginFrame(renderPlatform->GetImmediateContext());
+			//renderPlatform->BeginFrame(renderPlatform->GetImmediateContext());
 			frame_started = true;
 		}
 		w->Render(delegatorReadWriteMutex, frameNumber);
 	}
 	if(clear)
-	toRender.clear();
+		toRender.clear();
+//	if(renderPlatform&&frame_started)
+//		renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():
@@ -141,11 +143,11 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 void DisplaySurfaceManager::EndFrame(bool clear)
 {
 	ERRNO_BREAK
+	RenderAll(clear);
+	ERRNO_BREAK
 	for(auto s:surfaces)
 	{
 		s.second->EndFrame();
 	}
-	renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 	frame_started=false;
-	RenderAll(clear);
 }

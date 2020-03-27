@@ -1,9 +1,9 @@
 #pragma once
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/DirectX11/MacrosDx1x.h"
-#include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/DirectX11/Texture.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "DirectXHeader.h"
+#include "Platform/DirectX11/MacrosDx1x.h"
+#include "Platform/DirectX11/Export.h"
+#include "Platform/DirectX11/Texture.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
 
 namespace simul
 {

@@ -1,16 +1,16 @@
 ﻿
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
-#include "Simul/Platform/Vulkan/Texture.h"
-#include "Simul/Platform/Vulkan/Effect.h"
-#include "Simul/Platform/Vulkan/Buffer.h"
-#include "Simul/Platform/Vulkan/Framebuffer.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/Vulkan/Texture.h"
-#include "Simul/Platform/Vulkan/DisplaySurface.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/Texture.h"
+#include "Platform/Vulkan/Effect.h"
+#include "Platform/Vulkan/Buffer.h"
+#include "Platform/Vulkan/Framebuffer.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Core/DefaultFileLoader.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Vulkan/Texture.h"
+#include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
 
@@ -41,7 +41,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 	// But it doesn't. So instead we just list the objects and names.
 #if 1//def _DEBUG
-	//if(simul::base::SimulInternalChecks)
+	if(simul::base::SimulInternalChecks)
 	{
 		uint64_t *u=(uint64_t*)ds;
 		RenderPlatform::ResourceMap[*u]=name;
@@ -326,7 +326,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 			flags, { barrier }, {}, {});
 	}
 }
-//Intra-commandbuffer synchronisations https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
+//Intra-commandbuffer synchronisatons https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
@@ -415,30 +415,16 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		pass->Apply(deviceContext,false);
 		                                                                                                        
 		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(deviceContext);
-		size_t clearColoursCount = (size_t)mTargets.num + (mTargets.m_dt ? 1 : 0);
-		std::vector<vk::ClearValue>clearValues(clearColoursCount);
-		for (size_t i = 0; i < clearColoursCount; i++)
-		{
-			if(i == clearColoursCount - 1 && mTargets.m_dt)
-				clearValues[i] = vk::ClearDepthStencilValue(0.0f, 0u);
-			else
-				clearValues[i] = vk::ClearColorValue(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
-		}
-		if (clearColoursCount == 0)
-		{
-			clearColoursCount = 2;
-			clearValues.resize(clearColoursCount);
-			clearValues[0] = vk::ClearColorValue(std::array<float, 4>({{0.0f, 0.0f, 0.0f, 0.0f}}));
-			clearValues[1] = vk::ClearDepthStencilValue(0.0f, 0u);
-		}
+		vk::ClearValue const clearValues[2] = { vk::ClearColorValue(std::array<float, 4>({{0.0f, 0.0f, 0.0f, 0.0f}})),
+										   vk::ClearDepthStencilValue(0.0f, 0u) };
 		crossplatform::Viewport vp=GetViewport(deviceContext,0);
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
 													.setRenderPass(pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext),cs->topology))
 													.setFramebuffer(*framebuffer)
-													.setClearValueCount(clearColoursCount)
-													.setPClearValues(clearValues.data())
+													.setClearValueCount(2)
+													.setPClearValues(clearValues)
 													.setRenderArea(renderArea);
 		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
 
@@ -495,7 +481,7 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
      SIMUL_BREAK("failed to find suitable memory type!");
 	 return 0;
  }
-#include "Simul/Base/StringFunctions.h"
+#include "Platform/Core/StringFunctions.h"
 void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
 {
     vk::BufferCreateInfo bufferInfo = {};
@@ -595,7 +581,7 @@ crossplatform::Buffer* RenderPlatform::CreateBuffer()
 const float whiteTexel[4] = { 1.0f,1.0f,1.0f,1.0f};
 vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceType t)
 {
-	if((t&crossplatform::ShaderResourceType::TEXTURE_2DMS)==crossplatform::ShaderResourceType::TEXTURE_2DMS)
+	if ((t & crossplatform::ShaderResourceType::TEXTURE_2DMS) == crossplatform::ShaderResourceType::TEXTURE_2DMS)
 		return GetDummy2DMS();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_3D)==crossplatform::ShaderResourceType::TEXTURE_3D)
 		return GetDummy3D();
@@ -1284,12 +1270,6 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
 }
-void RenderPlatform::RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
-{
-	vulkan::Texture* t = (vulkan::Texture*)tex;
-	t->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-}
-
 
 void* RenderPlatform::GetDevice()
 {
@@ -1302,40 +1282,16 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext&,crossplatf
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
-	if (num > 8)
-	{
-		SIMUL_CERR << "Too many targets \n";
-		return;
-	}
-
-	mTargets = {};
-	mTargets.num = num;
-	for (int i = 0; i < num; i++)
-	{
-		mTargets.m_rt[i] = targs[i]->AsVulkanImageView();
-		mTargets.rtFormats[i] = targs[i]->GetFormat();
-		mTargets.textureTargets[i].texture = targs[i];
-		mTargets.textureTargets[i].layer = 0;
-		mTargets.textureTargets[i].mip= 0;
-	}
-	if (depth)
-	{
-		mTargets.m_dt = depth->AsVulkanImageView();
-		mTargets.depthFormat = depth->pixelFormat;
-		mTargets.depthTarget.texture = depth;
-		mTargets.depthTarget.layer = 0;
-		mTargets.depthTarget.mip = 0;
-	}
-	mTargets.viewport = { 0, 0, targs[0]->width, targs[0]->length };
-
-	deviceContext.targetStack.push(&mTargets);
-	SetViewports(deviceContext, 1, &mTargets.viewport);
+  //  if (num >= mMaxColorAttatch)
+    {
+        SIMUL_CERR << "Too many targets \n";
+        return;
+    }
 }
 #include <cstdint>
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& deviceContext)
 {
 	deviceContext.GetFrameBufferStack().pop();
-	mTargets = {};
 
     // Default FBO:
     if (deviceContext.GetFrameBufferStack().empty())
@@ -1353,7 +1309,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
-	//vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(num>0&&vps!=nullptr)
 	{
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(crossplatform::Viewport));
@@ -1459,41 +1415,24 @@ bool RenderPlatform::memory_type_from_properties(uint32_t typeBits, vk::MemoryPr
 
 vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext)
 {
-	bool dTaV = false;
 	crossplatform::TargetsAndViewport *tv;
 	if(deviceContext.targetStack.size())
 		tv=deviceContext.targetStack.top();
 	else
-		{tv = &(deviceContext.defaultTargetsAndViewport); dTaV = true;}
+		tv=&(deviceContext.defaultTargetsAndViewport);
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
-		if (!dTaV)
+		if(tv->depthTarget.texture)
 		{
-			if (tv->num == 1 && !tv->depthTarget.texture) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
-			{
-				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
-				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
-				return &vkRenderPass;
-			}
-			else //ActivateRenderTargets(..., num, ...);
-			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebufferRenderPasses[combo]);
-			}
+			unsigned long long combo=
+				InitFramebuffer(deviceContext,tv);
+			return &(mFramebufferRenderPasses[combo]);
 		}
-		else //No activateRenderTarget() called
+		else
 		{
-			if (!tv->depthTarget.texture)
-			{
-				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
-				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
-				return &vkRenderPass;
-			}
-			else
-			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebufferRenderPasses[combo]);
-			}
+			vulkan::Texture *t=(vulkan::Texture *)tv->textureTargets[0].texture;
+			vk::RenderPass &vkRenderPass= t->GetRenderPass(deviceContext);
+			return &vkRenderPass;
 		}
 	}
 	return nullptr;
@@ -1505,62 +1444,39 @@ void RenderPlatform::SetDefaultColourFormat(crossplatform::PixelFormat p)
 	defaultColourFormat=p;
 }
 
-void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
-{
-	vk::Device* vulkanDevice = AsVulkanDevice();
-	if (!vulkanDevice)
-		return;
 
-	for (auto& fb : mFramebuffers)
-		vulkanDevice->destroyFramebuffer(fb.second);
-	for (auto& rp : mFramebufferRenderPasses)
-		vulkanDevice->destroyRenderPass(rp.second);
-
-	mFramebuffers.clear();
-	mFramebufferRenderPasses.clear();
-	SIMUL_ASSERT(mFramebuffers.empty() && mFramebufferRenderPasses.empty());
-}
 
 unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
 {
-	unsigned long long hashval=0;
-	if (tv->textureTargets[0].texture)
-	{
-		hashval += (unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
-		hashval += (unsigned long long)tv->textureTargets[0].texture->width;	//Deal with resizing the framebuffer!
-		hashval += (unsigned long long)tv->textureTargets[0].texture->length;
-	}
-	if(tv->depthTarget.texture)
-		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
-	hashval+=tv->num;
-	if(mFramebuffers.find(hashval)->second && !mFramebuffers.empty())
-		return hashval;
-
-	int count=tv->num+(tv->depthTarget.texture!=nullptr);
-	vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
-
 	int width=0,length=0;
-	crossplatform::PixelFormat colourPF = crossplatform::PixelFormat::UNKNOWN;
-	crossplatform::PixelFormat depthPF = crossplatform::PixelFormat::UNKNOWN;
-	if (tv->textureTargets[0].texture)
-		colourPF = tv->textureTargets[0].texture->pixelFormat;
-	if (tv->depthTarget.texture)
-		depthPF = tv->depthTarget.texture->pixelFormat;
 	if(tv->textureTargets[0].texture)
 	{
 		width=tv->textureTargets[0].texture->width;
 		length=tv->textureTargets[0].texture->length;
+		//vkRenderPass = ((vulkan::Texture*)(tv->textureTargets[0].texture))->GetRenderPass(deviceContext);
 	}
 	else if(tv->depthTarget.texture)
 	{
 		width=tv->depthTarget.texture->width;
 		length=tv->depthTarget.texture->length;
+		//vkRenderPass = ((vulkan::Texture*)(tv->depthTarget.texture))->GetRenderPass(deviceContext);
 	}
 	else
 	{
 		SIMUL_BREAK("");
 	}
-	CreateVulkanRenderpass(vkRenderPass, tv->num, colourPF, depthPF, false, tv->textureTargets[0].texture->GetSampleCount());
+	unsigned long long hashval=0;
+	if(tv->textureTargets[0].texture)
+		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
+	if(tv->depthTarget.texture)
+		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
+	hashval+=tv->num+width*length;
+	std::map<unsigned long long,vk::Framebuffer>::iterator h=mFramebuffers.find(hashval);
+	if(h!=mFramebuffers.end()&&h->second)
+		return hashval;
+	int count=tv->num+(tv->depthTarget.texture!=nullptr);
+	vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
+	CreateVulkanRenderpass(vkRenderPass,tv->num, tv->textureTargets[0].texture->pixelFormat, tv->depthTarget.texture->pixelFormat,false, tv->textureTargets[0].texture->GetSampleCount());
 	
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
 	
@@ -1574,6 +1490,8 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	framebufferCreateInfo.layers = 1;
 	
 	vk::Device *vulkanDevice=AsVulkanDevice();
+	framebufferCreateInfo.width = width;
+	framebufferCreateInfo.height = length;
 	for (int j= 0; j < tv->num; j++)
 	{
 		attachments[j]=*(tv->textureTargets[j].texture->AsVulkanImageView());
@@ -1589,45 +1507,39 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 
 vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext)
 {
-	bool dTaV = false;
 	crossplatform::TargetsAndViewport *tv;
 	if(deviceContext.targetStack.size())
 		tv=deviceContext.targetStack.top();
 	else
-		{tv=&(deviceContext.defaultTargetsAndViewport); dTaV = true;}
+		tv=&(deviceContext.defaultTargetsAndViewport);
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
-		if (!dTaV)
+		//Will return the passed-through native Vulkan framebuffer of an individual cubemap face.
+		/*if(tv->m_rt[1]!=nullptr) 
 		{
-			if (tv->num == 1 && !tv->depthTarget.texture) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
-			{
-				auto& tt = tv->textureTargets[0];
-				auto vt = (vulkan::Texture*)tt.texture;
-				vt->InitFramebuffers(deviceContext);
-				vk::Framebuffer* vfb = vt->GetVulkanFramebuffer(tt.layer, tt.mip);
-				SIMUL_ASSERT(vfb != nullptr);
-				return vfb;
-			}
-			else //ActivateRenderTargets(..., num, ...);
-			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebuffers[combo]);
-			}
+			return (vk::Framebuffer*)tv->m_rt[1];
 		}
-		else //No activateRenderTarget() called
+		*i*f(tv->m_rt[0]!=nullptr)
 		{
-			if (!tv->depthTarget.texture)
+			vulkan::Framebuffer *fb=(vulkan::Framebuffer *)tv->m_rt[0];
+			vk::Framebuffer *vfb=fb->GetVulkanFramebuffer(deviceContext);
+			return vfb;
+		}
+		else*/
+		{
+			auto &tt=tv->textureTargets[0];
+			auto vt=(vulkan::Texture*)tt.texture;
+			if(!tv->depthTarget.texture)
 			{
-				auto& tt = tv->textureTargets[0];
-				auto vt = (vulkan::Texture*)tt.texture;
 				vt->InitFramebuffers(deviceContext);
-				vk::Framebuffer* vfb = vt->GetVulkanFramebuffer(tt.layer, tt.mip);
-				SIMUL_ASSERT(vfb != nullptr);
+				vk::Framebuffer *vfb=vt->GetVulkanFramebuffer(tt.layer,tt.mip);
+				SIMUL_ASSERT(vfb!=nullptr);
 				return vfb;
 			}
 			else
 			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
+				unsigned long long combo=
+					InitFramebuffer(deviceContext,tv);
 				return &(mFramebuffers[combo]);
 			}
 		}
@@ -1674,7 +1586,7 @@ void RenderPlatform::CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_c
 	{
 		attachments[num_attachments-1]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(depthFormat))
 														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eDontCare)
+														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
 														  .setStoreOp(vk::AttachmentStoreOp::eStore)
 														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

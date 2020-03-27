@@ -1,8 +1,8 @@
 #ifndef SIMUL_MATH_NOISE3D_H
 #define SIMUL_MATH_NOISE3D_H
-#include "Simul/Platform/Math/Export.h"
-#include "Simul/Base/MemoryInterface.h"
-#include "Simul/Base/MemoryUsageInterface.h"
+#include "Platform/Math/Export.h"
+#include "Platform/Core/MemoryInterface.h"
+#include "Platform/Core/MemoryUsageInterface.h"
 
 namespace simul
 {

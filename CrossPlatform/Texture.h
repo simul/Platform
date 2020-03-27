@@ -1,8 +1,8 @@
 #pragma once
-#include "Simul/Base/MemoryInterface.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Core/MemoryInterface.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 #include <vector>
 #include <string>
 #ifdef _MSC_VER
@@ -243,15 +243,15 @@ namespace simul
 			//! Returns the SRV specified by layer,mip. The type t ensures that the assigned resource is compatible (UNKNWON matches anything).
 			//! Layer -1 means all layers at the given mip, while mip -1 defaults to the whole texture/layer.
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(bool = true,crossplatform::ShaderResourceType = crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1) { return 0; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool = true,crossplatform::ShaderResourceType = crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1) { return 0; }
 			//! Returns the UAV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1,int=-1){return 0;}
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12UnorderedAccessView(int = -1, int = -1) { return 0; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = -1, int = -1) { return 0; }
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12DepthStencilView() { return 0; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext) { return 0; }
 			//! Returns the RTV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int=-1,int=-1){return 0;}
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12RenderTargetView(int = -1, int = -1) { return 0; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext,int = -1, int = -1) { return 0; }
 			virtual bool HasRenderTargets() const {return 0;}
 			virtual bool IsComputable() const=0;
 			/// Asynchronously move this texture to fast RAM.

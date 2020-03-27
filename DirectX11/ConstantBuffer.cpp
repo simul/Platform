@@ -1,10 +1,10 @@
-#include "Simul/Platform/DirectX11/ConstantBuffer.h"
+#include "Platform/DirectX11/ConstantBuffer.h"
 #include "Utilities.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/DirectX11/RenderPlatform.h"
 #include "D3dx11effect.h"
 
 #include <string>

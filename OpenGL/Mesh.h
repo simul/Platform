@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/Mesh.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Mesh.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 #include "glad/glad.h"
 
 #ifdef _MSC_VER

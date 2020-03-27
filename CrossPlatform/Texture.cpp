@@ -1,8 +1,8 @@
 #define NOMINMAX
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/Core/RuntimeError.h"
 #include <iostream>
 #include <algorithm>
 

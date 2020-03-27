@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Simul/Platform/OpenGL/Export.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Platform/OpenGL/Export.h"
+#include "Platform/CrossPlatform/Texture.h"
 #include "glad/glad.h"
 #include <set>
 

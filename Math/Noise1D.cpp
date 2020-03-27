@@ -1,15 +1,15 @@
 #include <math.h>
 #include <stdlib.h>
 #include "./Noise1D.h"
-#include "Simul/Platform/Math/RandomNumberGenerator.h"
-#include "Simul/Base/MemoryInterface.h"
+#include "Platform/Math/RandomNumberGenerator.h"
+#include "Platform/Core/MemoryInterface.h"
 
 using namespace simul::math;
 
 static float cos_interp(float x, float a, float b)
 {
 	float ft = x * 3.1415927f;
-	float f = (1.f - cos(ft)) * .5f;
+	float f = (1.f - (float)cos(ft)) * .5f;
 	return  a*(1.f-f) + b*f;
 }
 

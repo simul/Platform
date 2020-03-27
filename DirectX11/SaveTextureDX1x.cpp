@@ -2,9 +2,9 @@
 
 #include "SaveTextureDX1x.h"
 #include "MacrosDX1x.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Core/RuntimeError.h"
 #include <string>
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>

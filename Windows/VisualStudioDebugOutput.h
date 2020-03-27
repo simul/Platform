@@ -1,5 +1,5 @@
 #pragma once
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/Core/RuntimeError.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #include <direct.h>

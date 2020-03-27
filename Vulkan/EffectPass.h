@@ -1,8 +1,8 @@
 #pragma once
-#include "Simul/Platform/Vulkan/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/Vulkan/Shader.h"
 #include <vulkan/vulkan.hpp>
+#include "Platform/Vulkan/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Vulkan/Shader.h"
 #include <list>
 
 #ifdef _MSC_VER

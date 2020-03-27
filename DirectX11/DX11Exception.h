@@ -1,6 +1,6 @@
 #pragma once
 #include <exception>
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>

@@ -1,6 +1,6 @@
 #pragma once
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/Layout.h"
+#include "Platform/CrossPlatform/Layout.h"
 
 namespace simul
 {

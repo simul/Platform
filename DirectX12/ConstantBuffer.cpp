@@ -1,10 +1,10 @@
-#include "Simul/Platform/DirectX12/ConstantBuffer.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/DirectX12/ConstantBuffer.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/DirectX12/RenderPlatform.h"
+#include "DirectXHeader.h"
 #include <string>
 
 using namespace simul;
@@ -129,22 +129,23 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	SetNumBuffers( r,1, 64, 2 );
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect, const char *name, int bindingIndex)
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect, const char *n, int bindingIndex)
 {
-	std::string mName=name;
+	name=n;
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		mHeaps[i].GetHeap()->SetName(std::wstring(mName.begin(), mName.end()).c_str());
+		mHeaps[i].GetHeap()->SetName(std::wstring(name.begin(), name.end()).c_str());
 	}
 }
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
 	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-	for (unsigned int i = 0; i < 3; i++)
+	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mHeaps[i].Release();
-		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i], "mUploadHeap");
+		std::string str= base::QuickFormat("%s mUploadHeap %d",name.c_str(),i);
+		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i],str.c_str());
 		mUploadHeap[i]=nullptr;
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=nullptr;

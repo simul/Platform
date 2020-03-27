@@ -1,18 +1,17 @@
 #define NOMINMAX
 #include "RenderPlatform.h"
-#include "Simul/Base/EnvironmentVariables.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/CrossPlatform/TextRenderer.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Layout.h"
-#include "Simul/Platform/CrossPlatform/Material.h"
-#include "Simul/Platform/CrossPlatform/Mesh.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/CrossPlatform/TextRenderer.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Layout.h"
+#include "Platform/CrossPlatform/Material.h"
+#include "Platform/CrossPlatform/Mesh.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/DisplaySurface.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -69,6 +68,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,textured(nullptr)
 	,untextured(nullptr)
 	,showVolume(nullptr)
+	,gpuProfiler(nullptr)
 #ifdef _XBOX_ONE
 	,can_save_and_restore(false)
 #else
@@ -79,7 +79,6 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,textRenderer(nullptr)
 {
 	immediateContext.renderPlatform=this;
-	gpuProfiler=new GpuProfiler;
 }
 
 RenderPlatform::~RenderPlatform()
@@ -136,6 +135,8 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
 	ERRNO_BREAK
+	if(!gpuProfiler)
+		gpuProfiler=CreateGpuProfiler();
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -194,7 +195,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	
 	gpuProfiler->RestoreDeviceObjects(this);
 	textureQueryResult.InvalidateDeviceObjects();
-	textureQueryResult.RestoreDeviceObjects(this,1,true);
+	textureQueryResult.RestoreDeviceObjects(this,1,true,true,nullptr,"texture query");
 
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
@@ -205,7 +206,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
-	gpuProfiler->InvalidateDeviceObjects();
+	if(gpuProfiler)
+		gpuProfiler->InvalidateDeviceObjects();
 	for (auto e : destroyEffects)
 	{
 		SAFE_DELETE(e);
@@ -255,20 +257,20 @@ void RenderPlatform::RecompileShaders()
 		delete s.second;
 	}
 	shaders.clear();
-	AsD3D11Device();
+	
 	Destroy(debugEffect);
-	AsD3D11Device();
+	
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
-	AsD3D11Device();
+	
 	Destroy(solidEffect);
-	AsD3D11Device();
+	
 	solidEffect=CreateEffect("solid",defines);
-	AsD3D11Device();
+	
 	Destroy(copyEffect);
-	AsD3D11Device();
+	
 	copyEffect=CreateEffect("copy",defines);
-	AsD3D11Device();
+	
 	
 	textRenderer->RecompileShaders();
 	
@@ -281,7 +283,7 @@ void RenderPlatform::RecompileShaders()
 		imageTexture=debugEffect->GetShaderResource("imageTexture");
 	}		
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
-	AsD3D11Device();
+	
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
@@ -380,11 +382,6 @@ void RenderPlatform::BeginFrame(DeviceContext &dev)
 
 void RenderPlatform::EndFrame(DeviceContext &dev)
 {
-	if(gpuProfiler && gpuProfileFrameStarted)
-	{
-		gpuProfiler->EndFrame(dev);
-		gpuProfileFrameStarted = false;
-	}
 }
 
 
@@ -522,6 +519,7 @@ void RenderPlatform::GenerateMips(DeviceContext &deviceContext,Texture *t,bool w
 {
 	if(!t||!t->IsValid())
 		return;
+
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m0=i,m1=i+1;
@@ -539,7 +537,7 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	if((int)query_id>=textureQueryResult.count)
 	{
 		textureQueryResult.InvalidateDeviceObjects();
-		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true);
+		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true,true,nullptr,"texel query");
 	}
 	debugConstants.queryPos=pos;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -1216,13 +1214,17 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 {
 	const std::map<std::string,std::string> defines;
 	static bool enabled=true;
-	if(enabled&&simul::base::GetFeatureLevel()>=base::EXPERIMENTAL)
-		EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
 
 DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return nullptr;
+}
+
+GpuProfiler* RenderPlatform::CreateGpuProfiler()
+{
+	return new GpuProfiler();
 }
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext, int slot, int num_buffers,const crossplatform::Buffer *const*buffers, const crossplatform::Layout *layout, const int *vertexSteps)

@@ -1,12 +1,12 @@
 #pragma once
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/BaseRenderer.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/Shaders/SL/solid_constants.sl"
-#include "Simul/Platform/Shaders/SL/debug_constants.sl"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/BaseRenderer.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Shaders/SL/solid_constants.sl"
+#include "Platform/Shaders/SL/debug_constants.sl"
 
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 #include <vector>
 
 #ifdef _MSC_VER

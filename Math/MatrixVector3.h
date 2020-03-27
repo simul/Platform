@@ -2,10 +2,10 @@
 #define SIMUL_MATH_MATRIXVECTOR3_H
 
 
-#include "Simul/Platform/Math/Matrix.h"  
-#include "Simul/Platform/Math/Matrix4x4.h"  
-#include "Simul/Platform/Math/Vector3.h"
-#include "Simul/Platform/Math/Export.h"
+#include "Platform/Math/Matrix.h"  
+#include "Platform/Math/Matrix4x4.h"  
+#include "Platform/Math/Vector3.h"
+#include "Platform/Math/Export.h"
 
 
 #if defined(_DEBUG) && defined(_MSC_VER)

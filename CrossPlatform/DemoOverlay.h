@@ -1,5 +1,5 @@
 #pragma once
-#include "Simul/Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Export.h"
 namespace simul
 {
 	namespace crossplatform

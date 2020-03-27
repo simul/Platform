@@ -1,12 +1,11 @@
 #ifndef OrientationH
 #define OrientationH
 #include <assert.h>
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/Math/Quaternion.h" 
-#include "Simul/Platform/Math/VirtualVector.h"
-#include "Simul/Platform/Math/MatrixVector3.inl"
-#include "Simul/Platform/Math/Export.h"
-#include "Simul/Base/PropertyMacros.h"
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/Math/Quaternion.h" 
+#include "Platform/Math/VirtualVector.h"
+#include "Platform/Math/MatrixVector3.inl"
+#include "Platform/Math/Export.h"
 
 namespace simul
 {

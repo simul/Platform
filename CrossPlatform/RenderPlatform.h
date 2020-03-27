@@ -5,16 +5,15 @@
 #include <string>
 #include <vector>
 #include "Export.h"
-#include "Simul/Base/PropertyMacros.h"
-#include "Simul/Base/MemoryInterface.h"
-#include "Simul/Platform/CrossPlatform/BaseRenderer.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/Shaders/SL/solid_constants.sl"
-#include "Simul/Platform/Shaders/SL/debug_constants.sl"
-#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Platform/Core/MemoryInterface.h"
+#include "Platform/CrossPlatform/BaseRenderer.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Topology.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Shaders/SL/solid_constants.sl"
+#include "Platform/Shaders/SL/debug_constants.sl"
+#include "Platform/CrossPlatform/Effect.h"
 
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
@@ -281,6 +280,8 @@ namespace simul
 			/// Create a shader.
 			virtual Shader					*CreateShader()=0;
             virtual DisplaySurface*         CreateDisplaySurface();
+
+			virtual GpuProfiler*			CreateGpuProfiler();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,const Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
@@ -442,14 +443,14 @@ namespace simul
 			}
 			return false;
 		}
-		template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable, bool cpu_read, T *data)
+		template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable, bool cpu_read, T *data,const char *n)
 		{
 			count = ct;
 			if(!platformStructuredBuffer)
 				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
 			else
 				platformStructuredBuffer->InvalidateDeviceObjects();
-			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data);
+			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n);
 		}
 #endif
 	}

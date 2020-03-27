@@ -740,6 +740,11 @@ bool sfxParseEffectFromMemory( int effect, const char* src,const char *filename,
 	}
 	gEffects[effect]->Log().str("");
 	gEffects[effect]->Log()<<newlog;
+	if(retVal&&sfxOptions->verbose)
+	{
+		std::cout<< output_filename<<"(0): info: output file."<< std::endl;
+		//printf("%s",output_filename);
+	}
 	return retVal;
 }
 

@@ -29,9 +29,11 @@ file(GLOB SHADER_INCLUDES
 set(in_RootSignature "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/GFX.hlsl")
 
 set(DX11_DEFS SIMUL_DIRECTX12_DLL=1 )
+
 if(${SIMUL_D3D12_ENABLE_PIX})
 	set(DX11_DEFS ${DX11_DEFS} SIMUL_ENABLE_PIX=1 USE_PIX)
 endif()
+
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS ${DX11_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
 	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" )
 
@@ -39,8 +41,7 @@ add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINI
 
 if(SIMUL_SOURCE_BUILD)
 	target_compile_definitions(SimulDirectX12_MD PRIVATE ${DX11_DEFS})
-	set_target_properties(SimulDirectX12_MD PROPERTIES 
-								LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
+	set_target_properties(SimulDirectX12_MD PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
 	target_include_directories(SimulDirectX12_MD PUBLIC "${SIMUL_PLATFORM_DIR}/DirectX12")
 	target_include_directories(SimulDirectX12_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 	LibraryDefaults(SimulDirectX12_MD)
@@ -76,6 +77,6 @@ if(SIMUL_SOURCE_BUILD)
 	endif()
 	#add_dependencies(SimulDirectX12_MD DirectX12Shaders )
 
-	target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD SimulBase_MD directxtex_MD)
+	target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
 
 endif()

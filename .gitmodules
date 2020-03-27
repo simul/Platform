@@ -13,3 +13,6 @@
 [submodule "External/stb"]
 	path = External/stb
 	url = https://github.com/nothings/stb.git
+[submodule "Commodore"]
+	path = Commodore
+	url = git@github.com:simul/Commodore.git

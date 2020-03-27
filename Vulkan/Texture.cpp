@@ -1,6 +1,6 @@
 #define NOMINMAX
 
-#include "Simul/Base/FileLoader.h"
+#include "Platform/Core/FileLoader.h"
 #include "Texture.h"
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
@@ -371,6 +371,9 @@ void Texture::AssumeLayout(vk::ImageLayout layout)
 	}
 	currentImageLayout=layout;
 	split_layouts=false;
+#ifdef _DEBUG
+	SIMUL_COUT<<"Assume layout for "<<name.c_str()<<": "<<to_string( layout )<<std::endl;
+#endif
 }
 
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
@@ -445,7 +448,7 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 	return true;
 }
 
-#include "Simul/Base/StringFunctions.h"
+#include "Platform/Core/StringFunctions.h"
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
 {
 	mExternalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -1168,4 +1171,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		AssumeLayout(newLayout);
 		split_layouts = false;
 	}
+#ifdef _DEBUG
+	SIMUL_COUT<<"Set layout for "<<name.c_str()<<": "<<to_string( newLayout )<<std::endl;
+#endif
 }
