@@ -3,12 +3,12 @@
 #endif
 #include "DeviceManager.h"
 
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/HdrRenderer.h"
-#include "Simul/Platform/Vulkan/DisplaySurface.h"
-#include "Simul/Base/Timer.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/HdrRenderer.h"
+#include "Platform/Vulkan/DisplaySurface.h"
+#include "Platform/Core/Timer.h"
 #include <stdint.h> // for uintptr_t
 #include <iomanip>
 #include <sstream>
@@ -520,7 +520,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	{
 		std::string str=pMessage;
 		RewriteVulkanMessage(str);
-		std::cerr << str.c_str()<< std::endl;
+		std::cerr << str.c_str() << std::endl;
 	}
 	//if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
 		//SIMUL_BREAK("Vulkan Error");

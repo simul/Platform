@@ -1,8 +1,8 @@
 #include "Layout.h"
 #include "MacrosDX1x.h"
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Base/RuntimeError.h"
+#include "DirectXHeader.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/Core/RuntimeError.h"
 using namespace simul;
 using namespace dx11;
 

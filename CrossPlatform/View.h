@@ -1,13 +1,12 @@
 #pragma once
 #include "Export.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Topology.h"
 
-#include "Simul/Shaders/SL/mixed_resolution_constants.sl"
-#include "Simul/Platform/Math/Orientation.h"
+#include "Platform/Math/Orientation.h"
 #include <set>
 #ifdef _MSC_VER
 	#pragma warning(push)

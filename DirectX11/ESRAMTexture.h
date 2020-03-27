@@ -1,6 +1,6 @@
 #pragma once
 #ifdef _XBOX_ONE
-#include "Simul\Platform\DirectX11\Texture.h"
+#include "Platform/DirectX11/Texture.h"
 #pragma warning(disable:4251)
 
 namespace simul

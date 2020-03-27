@@ -10,10 +10,10 @@
 	#define ALIGN16
 #endif
 
-#include "Simul/Platform/Math/Export.h"     
-#include "Simul/Platform/Math/Matrix.h"      
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/Math/MathFunctions.h"
+#include "Platform/Math/Export.h"     
+#include "Platform/Math/Matrix.h"      
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/Math/MathFunctions.h"
 #include <iostream>
 
 namespace simul

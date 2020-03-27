@@ -109,6 +109,26 @@ vec3 decodeNormalFromVec2(vec2 enc)
 	return n;
 }
 
+uint4 UnpackUintToUint4(uint i)
+{
+	uint4 o;
+	o.r=((i&0x000000FFu)		);
+	o.g=((i&0x0000FF00u)>>8u	);
+	o.b=((i&0x00FF0000u)>>16u	);
+	o.a=((i&0xFF000000u)>>24u	);
+	return o;
+}
+
+uint PackUint4ToUint(uint4 i)
+{
+	uint o=0u;
+	o|=(uint(i.x));
+	o|=(uint(i.y)<<8u);
+	o|=(uint(i.z)<<16u);
+	o|=(uint(i.w)<<24u);
+	return o;
+}
+
 #ifdef SFX_TYPED_UAV_LOADS
 vec4 UnpackUintToVec4(vec4 a)
 {

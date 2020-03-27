@@ -1,49 +1,54 @@
 #define NOMINMAX
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/DirectX12/ConstantBuffer.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
-#include "Simul/Platform/DirectX12/PlatformStructuredBuffer.h"
-#include "Simul/Platform/DirectX12/Texture.h"
-#include "Simul/Platform/DirectX12/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX12/Effect.h"
-#include "Simul/Platform/DirectX12/Buffer.h"
-#include "Simul/Platform/DirectX12/Layout.h"
-#include "Simul/Platform/DirectX12/Heap.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/DirectX12/GpuProfiler.h"
+#include "Platform/DirectX12/ConstantBuffer.h"
+#include "Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/PlatformStructuredBuffer.h"
+#include "Platform/DirectX12/Texture.h"
+#include "Platform/DirectX12/FramebufferDX1x.h"
+#include "Platform/DirectX12/Effect.h"
+#include "Platform/DirectX12/Buffer.h"
+#include "Platform/DirectX12/Layout.h"
+#include "Platform/DirectX12/Heap.h"
 #include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
     #include "pix3.h"
 #endif
-
+//#define SIMUL_DEBUG_BARRIERS 1
 using namespace simul;
 using namespace dx12;
 
 RenderPlatform::RenderPlatform():
-	mCommandList(nullptr),
-	m12Device(nullptr),
-	mTimeStampFreq(0),
-	mSamplerHeap(nullptr),
-	mRenderTargetHeap(nullptr),
-	mDepthStencilHeap(nullptr),
-	mFrameHeap(nullptr),
-    mFrameOverrideSamplerHeap(nullptr),
-	mGRootSignature(nullptr),
-	mCRootSignature(nullptr),
-	mIsMsaaEnabled(false),
-    DepthStateOverride(nullptr),
-    BlendStateOverride(nullptr),
-    RasterStateOverride(nullptr)
+	mTimeStampFreq(0)
+	,m12Device(nullptr)
+	,m12Queue(nullptr)
+	,mImmediateCommandList(nullptr)
+	,mFrameHeap(nullptr)
+    ,mFrameOverrideSamplerHeap(nullptr)
+	,mSamplerHeap(nullptr)
+	,mRenderTargetHeap(nullptr)
+	,mDepthStencilHeap(nullptr)
+	,mNullHeap(nullptr)
+	,mGRootSignature(nullptr)
+	,mCRootSignature(nullptr)
+	,mDummy2D(nullptr)
+	,mDummy3D(nullptr)
+	,mCurInputLayout(nullptr)
+
+	,mIsMsaaEnabled(false)
+    ,DepthStateOverride(nullptr)
+    ,BlendStateOverride(nullptr)
+    ,RasterStateOverride(nullptr)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
-	//gpuProfiler = new crossplatform::GpuProfiler();
 
     mCurBarriers    = 0;
     mTotalBarriers  = 16; 
@@ -61,16 +66,19 @@ float RenderPlatform::GetDefaultOutputGamma() const
 	return g;
 }
 
-void RenderPlatform::SetCommandList(ID3D12GraphicsCommandList * cmdList)
+void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 {
-	mCommandList						= cmdList;
-	immediateContext.platform_context	= cmdList;
+	mImmediateCommandList				= ctx->ICommandList;
+	mImmediateAllocator					= ctx->IAllocator;
+	immediateContext.platform_context	= mImmediateCommandList;
 	immediateContext.renderPlatform		= this;
+	bImmediateContextActive=ctx->bActive;
+	bExternalImmediate=ctx->bActive;
 }
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
 {
-	return mCommandList;
+	return mImmediateCommandList;
 }
 
 ID3D12Device* RenderPlatform::AsD3D12Device()
@@ -78,24 +86,111 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
+std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
+{
+	std::string str;
 
-void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
+	if(states&D3D12_RESOURCE_STATE_COMMON)								str+=" COMMON";
+	if(states&D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str+=" VERTEX_AND_CONSTANT_BUFFER";
+	if(states&D3D12_RESOURCE_STATE_INDEX_BUFFER)						str+=" INDEX_BUFFER";
+	if(states&D3D12_RESOURCE_STATE_RENDER_TARGET)						str+=" RENDER_TARGET";
+	if(states&D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str+=" UNORDERED_ACCESS";
+	if(states&D3D12_RESOURCE_STATE_DEPTH_WRITE)							str+=" DEPTH_WRITE";
+	if(states&D3D12_RESOURCE_STATE_DEPTH_READ)							str+=" DEPTH_READ";
+	if(states&D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str+=" NON_PIXEL_SHADER_RESOURCE";
+	if(states&D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)				str+=" PIXEL_SHADER_RESOURCE";
+	if(states&D3D12_RESOURCE_STATE_STREAM_OUT)							str+=" STREAM_OUT";
+	if(states&D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str+=" INDIRECT_ARGUMENT";
+	if(states&D3D12_RESOURCE_STATE_COPY_DEST)							str+=" COPY_DEST";
+	if(states&D3D12_RESOURCE_STATE_COPY_SOURCE)							str+=" COPY_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_RESOLVE_DEST)						str+=" RESOLVE_DEST";
+	if(states&D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str+=" RESOLVE_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_PRESENT)								str+=" PRESENT";
+	if(states&D3D12_RESOURCE_STATE_PREDICATION)							str+=" PREDICATION";
+#ifndef _XBOX_ONE
+	if (states&D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str += " RAYTRACING_ACCELERATION_STRUCTURE";
+	if (states&D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)				str += " SHADING_RATE_SOURCE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str+=" VIDEO_DECODE_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE)					str+=" VIDEO_DECODE_WRITE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ)					str+=" VIDEO_PROCESS_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE)					str+=" VIDEO_PROCESS_WRITE";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ)					str+=" VIDEO_ENCODE_READ";
+	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)					str+=" VIDEO_ENCODE_WRITE";
+#endif
+	if(D3D12_RESOURCE_STATE_GENERIC_READ==states)						str=" GENERIC_READ";
+	if((D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)==states)						str=" SHADER_RESOURCE";
+
+	return str;
+}
+#include <iomanip>
+
+void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
-    auto& barrier = mPendingBarriers[mCurBarriers++];
-    barrier = CD3DX12_RESOURCE_BARRIER::Transition
-    (
-        res, before, after, subRes
-    );
+#ifndef DISABLE_BARRIERS
+	// merge barriers??
+	bool found=false;
+	for(int i=0;i<mCurBarriers;i++)
+	{
+		auto& b = mPendingBarriers[i];
+		if(b.Transition.pResource==res&&b.Transition.Subresource==subRes)
+		{
+			SIMUL_ASSERT(before==b.Transition.StateAfter);
+			if(before!=b.Transition.StateAfter)
+			{
+#ifdef SIMUL_DEBUG_BARRIERS
+				SIMUL_CERR<<"Barrier error : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") - "<<D3D12ResourceStateToString(before)<<" IS NOT "<<D3D12ResourceStateToString(b.Transition.StateBefore)<<std::endl;
+#endif
+			}
+			if(after==b.Transition.StateBefore)
+			{
+				if(mCurBarriers>1)
+				{
+					std::swap(b,mPendingBarriers[mCurBarriers-1]);
+#ifdef SIMUL_DEBUG_BARRIERS
+					SIMUL_COUT<<"Barrier swapped: 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+				}
+				else
+				{
+#ifdef SIMUL_DEBUG_BARRIERS
+					SIMUL_COUT<<"Barrier removed : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+				}
+				mCurBarriers--;
+			}
+			else
+			{
+#ifdef SIMUL_DEBUG_BARRIERS
+				SIMUL_COUT<<"Barrier combined : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+				b.Transition.StateAfter=after;
+			}
+			found=true;
+		}
+	}
+	if(!found)
+	{
+		auto& barrier = mPendingBarriers[mCurBarriers++];
+#ifdef SIMUL_DEBUG_BARRIERS
+		SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+#endif
+		barrier = CD3DX12_RESOURCE_BARRIER::Transition
+		(
+			res, before, after, subRes
+		);
+	}
 	if (flush)
 	{
-		FlushBarriers();
+		FlushBarriers(deviceContext);
 	}
-	CheckBarriersForResize();
+	CheckBarriersForResize(deviceContext);
+#endif
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
+#ifndef DISABLE_BARRIERS
 	ID3D12Resource* res = sb->AsD3D12Resource(deviceContext);
 	if (!res )
 	{
@@ -105,22 +200,27 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
-
-	if (true)
+	
+#ifdef SIMUL_DEBUG_BARRIERS
+	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
+#endif
+/*	if (true)
 	{
-		FlushBarriers();
-	}
-	CheckBarriersForResize();
+		FlushBarriers(deviceContext);
+	}*/
+	CheckBarriersForResize(deviceContext);
+#endif
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context = deviceContext.platform_context;
+#ifndef DISABLE_BARRIERS
+	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+	//immediateContext.platform_context = deviceContext.platform_context;
 	dx12::Texture* t12 = (dx12::Texture*)tex;
 
 	ID3D12Resource* res = t12->AsD3D12Resource();
-	if (!res || !t12->AsD3D12UnorderedAccessView())
+	if (!res || !t12->AsD3D12UnorderedAccessView(deviceContext))
 	{
 		SIMUL_CERR_ONCE << "No valid UAV resource for this barrier. No barrier was inserted into this command list.";
 		return;
@@ -128,34 +228,50 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
-
+	
+#ifdef SIMUL_DEBUG_BARRIERS
+	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
+#endif
 	if (true)
 	{
-		FlushBarriers();
+//		FlushBarriers(deviceContext);
 	}
-	CheckBarriersForResize();
+	CheckBarriersForResize(deviceContext);
+#endif
 }
 
-void RenderPlatform::CheckBarriersForResize()
+
+void RenderPlatform::CheckBarriersForResize(crossplatform::DeviceContext &deviceContext)
 {
 	// Check if we need more space:
 	if (mCurBarriers >= mTotalBarriers)
 	{
-		FlushBarriers();
+		FlushBarriers(deviceContext);
 		mTotalBarriers += 16;
 		mPendingBarriers.resize(mTotalBarriers);
 		//SIMUL_COUT << "[PERF] Resizing barrier holder to: " << mTotalBarriers << std::endl;
 	}
 }
 
-void RenderPlatform::FlushBarriers()
+void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 {
     if (mCurBarriers <= 0) 
     {
         return; 
     }
-    mCommandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+#ifdef SIMUL_DEBUG_BARRIERS
+	SIMUL_COUT<<"\t\tFlush "<<mCurBarriers<<" barriers."<<std::endl;
+#endif
+#ifndef DISABLE_BARRIERS
+	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+    commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+#endif
     mCurBarriers = 0;
+}
+
+void RenderPlatform::SynchronizeCacheAndState(crossplatform::DeviceContext &deviceContext) 
+{
+	FlushBarriers(deviceContext);
 }
 
 void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
@@ -165,14 +281,22 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 		return;
     }
 	std::string dName=n;
+#if SIMUL_INTERNAL_CHECKS
 	// Don't add duplicates, this operation can be potentially slow if we have tons of resources
 	for (unsigned int i = 0; i < mResourceBin.size(); i++)
 	{
-        if (res == mResourceBin[i].second.second)
+        if (res == mResourceBin[i].second.second)  
         {
+			SIMUL_CERR<<(n?n:"")<<" "<<(unsigned long long)res<<" Pushed to release manager twice."<<std::endl;
 			return;
         }
 	}
+#endif
+#if 0//SIMUL_INTERNAL_CHECKS
+	res->AddRef();
+	int count=res->Release();
+	SIMUL_COUT<<(n?n:"")<<" "<<(unsigned long long)res<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
+#endif
 	mResourceBin.push_back(std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>
 	(
 		0,
@@ -186,9 +310,9 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 
 void RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceContext)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	mCommandList->IASetVertexBuffers(0, 1, nullptr); // Only 1? 
-	mCommandList->IASetIndexBuffer(nullptr);
+	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+	commandList->IASetVertexBuffers(0, 1, nullptr); // Only 1? 
+	commandList->IASetIndexBuffer(nullptr);
 }
 
 void RenderPlatform::RestoreDeviceObjects(void* device)
@@ -204,7 +328,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	{
 		m12Device = (ID3D12Device*)device;
 	}
-	immediateContext.platform_context = mCommandList;
+	//immediateContext.platform_context = commandList;
 
     DefaultBlendState   = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     DefaultRasterState  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -242,17 +366,36 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mResourceBindingLimits.MaxUAVPerStage				= 1000000;
 		mResourceBindingLimits.MaxSaplerPerStage			= 1000000;
 	}
+	if(mFrameHeap)
+	for(int i=0;i<3;i++)
+	{
+		mFrameHeap[i].Release();
+	}
+	if(mFrameOverrideSamplerHeap)
+	for(int i=0;i<3;i++)
+	{
+		mFrameOverrideSamplerHeap[i].Release();
+	}
+	delete [] mFrameHeap;
+	mFrameHeap=nullptr;
+	delete [] mFrameOverrideSamplerHeap;
+	mFrameOverrideSamplerHeap=nullptr;
 
 	// Create the frame heaps
 	// These heaps will be shader visible as they will be the ones bound to the command list
 	mFrameHeap			        = new dx12::Heap[3];
     mFrameOverrideSamplerHeap   = new dx12::Heap[3];
+	UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 1;
 	for (unsigned int i = 0; i < 3; i++)
 	{
-        UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 10;
 		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,base::QuickFormat("FrameHeap %d",i));
         mFrameOverrideSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "FrameOverrideSamplerHeap");
 	}
+	
+	SAFE_DELETE(mSamplerHeap);
+	SAFE_DELETE(mRenderTargetHeap);
+	SAFE_DELETE(mDepthStencilHeap);
+	SAFE_DELETE(mNullHeap);
 	// Create storage heaps
 	// These heaps wont be shader visible as they will be the source of the copy operation
 	// we use these as storage
@@ -433,24 +576,29 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         }
 #endif
 	}
-
+#ifndef _XBOX_ONE	
+#if SIMUL_INTERNAL_CHECKS
+	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
+#endif
+#endif
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	if(gpuProfiler)
+		gpuProfiler->InvalidateDeviceObjects();
 	if(mFrameHeap)
-	for(int i=0;i<3;i++)
-	{
-		mFrameHeap[i].Release();
-	}
+		for(int i=0;i<3;i++)
+		{
+			mFrameHeap[i].Release();
+		}
 	if(mFrameOverrideSamplerHeap)
 	for(int i=0;i<3;i++)
 	{
 		mFrameOverrideSamplerHeap[i].Release();
 	}
-
 	delete [] mFrameHeap;
 	mFrameHeap=nullptr;
 	delete [] mFrameOverrideSamplerHeap;
@@ -461,16 +609,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDepthStencilHeap);
 	SAFE_DELETE(mNullHeap);
 
-
-
-	SAFE_RELEASE(mSamplerHeap);
-	SAFE_RELEASE(mRenderTargetHeap);
-	SAFE_RELEASE(mDepthStencilHeap);
-	SAFE_RELEASE(mNullHeap);
 	SAFE_DELETE(mDummy2D);
 	SAFE_DELETE(mDummy3D);
 	SAFE_RELEASE(mGRootSignature);
 	
+	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	for (int i =0;i<mResourceBin.size();i++)
 	{
 		auto ptr = mResourceBin[i].second.second;
@@ -479,14 +622,19 @@ void RenderPlatform::InvalidateDeviceObjects()
             int remainRefs = ptr->Release();
 			if(remainRefs)
 			{
-				SIMUL_COUT<<"Resource "<< ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
+				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
 			}
+#if 0//SIMUL_INTERNAL_CHECKS
+			else
+			{
+				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" freed."<<std::endl;
+			}
+#endif
 			if (GetMemoryInterface()) 
 				GetMemoryInterface()->UntrackVideoMemory(ptr);
         }
 	}
 	mResourceBin.clear();
-	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 }
 
 void RenderPlatform::RecompileShaders()
@@ -521,12 +669,15 @@ void RenderPlatform::BeginD3D12Frame()
 {
 	// Store a reference to the device context
 	auto &deviceContext=GetImmediateContext();
-	mCommandList                        = deviceContext.asD3D12Context();
-	immediateContext.platform_context   = deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
+	//immediateContext.platform_context   = deviceContext.platform_context;
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
+	if(!bImmediateContextActive&&!bExternalImmediate)
+		commandList->Reset(mImmediateAllocator, nullptr);
+	bImmediateContextActive=true;
 	// Create dummy textures
 	static bool createDummy = true;
 	if (createDummy)
@@ -552,12 +703,12 @@ void RenderPlatform::BeginD3D12Frame()
                 {
                     remainRefs = ptr->Release();
                 }
-				/*
+#if SIMUL_INTERNAL_CHECKS
 				if (remainRefs)
-					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " )" << std::endl;
-				*/
+					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " "; << std::endl;
+#endif
 				if (GetMemoryInterface())
-					GetMemoryInterface()->UntrackVideoMemory(ptr);
+					GetMemoryInterface()->UntrackVideoMemory(ptr); 
 				mResourceBin.erase(mResourceBin.begin() + i);
 			}
 		}
@@ -567,47 +718,51 @@ void RenderPlatform::BeginD3D12Frame()
 void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	if(commandList&&bImmediateContextActive&&!bExternalImmediate)
+		commandList->Close();
+	bImmediateContextActive=false;
 }
 
 void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
 {
-    mCommandList                        = deviceContext.asD3D12Context();
-    immediateContext.platform_context   = deviceContext.platform_context;
+    //commandList                        = deviceContext.asD3D12Context();
+   //immediateContext.platform_context   = deviceContext.platform_context;
     dx12::Texture* t12                  = (dx12::Texture*)t;
 
     switch (transition)
     {
         case simul::crossplatform::Readable: 
         {
-            t12->AsD3D12ShaderResourceView(true, crossplatform::ShaderResourceType::TEXTURE_2D); 
+            t12->AsD3D12ShaderResourceView(deviceContext,true, crossplatform::ShaderResourceType::TEXTURE_2D); 
             break;
         }
         case simul::crossplatform::Writeable:
         {
             if (t12->HasRenderTargets())
             {
-                t12->AsD3D12RenderTargetView();
+                t12->AsD3D12RenderTargetView(deviceContext);
             }
             else if (t12->IsDepthStencil())
             {
-                t12->AsD3D12DepthStencilView();
+                t12->AsD3D12DepthStencilView(deviceContext);
             }
             break;
         }
         case simul::crossplatform::UnorderedAccess:
         {
-            t12->AsD3D12UnorderedAccessView();
+            t12->AsD3D12UnorderedAccessView(deviceContext);
             break;
         }
     }
 
-    FlushBarriers();
+   // FlushBarriers(deviceContext);
 }
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context	= deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context	= deviceContext.platform_context;
 
 	auto src			= (dx12::Texture*)s;
 	auto dst			= (dx12::Texture*)t;
@@ -633,43 +788,43 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext,cro
 	
 	// Ensure source state
 	bool changedSrc = false;
-	auto srcState	= src->GetCurrentState();
+	auto srcState	= src->GetCurrentState(deviceContext);
 	if ((srcState & D3D12_RESOURCE_STATE_COPY_SOURCE) != D3D12_RESOURCE_STATE_COPY_SOURCE)
 	{
 		changedSrc = true;
-		ResourceTransitionSimple(src->AsD3D12Resource(), srcState, D3D12_RESOURCE_STATE_COPY_SOURCE,true);
+		ResourceTransitionSimple(deviceContext,src->AsD3D12Resource(), srcState, D3D12_RESOURCE_STATE_COPY_SOURCE,true);
 	}
 	
 	// Ensure dst state
 	bool changedDst = false;
-	auto dstState	= dst->GetCurrentState();
+	auto dstState	= dst->GetCurrentState(deviceContext);
 	if ((dstState & D3D12_RESOURCE_STATE_COPY_DEST) != D3D12_RESOURCE_STATE_COPY_DEST)
 	{
 		changedDst = true;
-		ResourceTransitionSimple(dst->AsD3D12Resource(), dstState, D3D12_RESOURCE_STATE_COPY_DEST,true);
+		ResourceTransitionSimple(deviceContext,dst->AsD3D12Resource(), dstState, D3D12_RESOURCE_STATE_COPY_DEST,true);
 	}
 	
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
-	mCommandList->CopyResource(dst->AsD3D12Resource(), src->AsD3D12Resource());
+	commandList->CopyResource(dst->AsD3D12Resource(), src->AsD3D12Resource());
 	
 	// Reset to the original states
 	if (changedSrc)
 	{
-		ResourceTransitionSimple(src->AsD3D12Resource(), D3D12_RESOURCE_STATE_COPY_SOURCE, srcState,true);
+		ResourceTransitionSimple(deviceContext,src->AsD3D12Resource(), D3D12_RESOURCE_STATE_COPY_SOURCE, srcState,true);
 	}
 	if (changedDst)
 	{
-		ResourceTransitionSimple(dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_COPY_DEST, dstState,true);
+		ResourceTransitionSimple(deviceContext,dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_COPY_DEST, dstState,true);
 	}
 }
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
-	mCommandList->Dispatch(w, l, d);
+	commandList->Dispatch(w, l, d);
 }
 
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &,crossplatform::Effect *,crossplatform::EffectTechnique *,int)
@@ -679,20 +834,20 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &,crossplatfor
 
 void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
-	mCommandList->DrawInstanced(num_verts,1,start_vert,0);
+	commandList->DrawInstanced(num_verts,1,start_vert,0);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
-	mCommandList->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
+	commandList->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
 }
 
 void RenderPlatform::ApplyDefaultMaterial()
@@ -866,6 +1021,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R8_UNORM;
 	case R_8_SNORM:
 		return DXGI_FORMAT_R8_SNORM;
+	case RGBA_8_UINT:
+		return DXGI_FORMAT_R8G8B8A8_UINT;
 	case R_32_UINT:
 		return DXGI_FORMAT_R32_UINT;
 	case RG_32_UINT:
@@ -1214,6 +1371,8 @@ D3D12_QUERY_TYPE simul::dx12::RenderPlatform::ToD3dQueryType(crossplatform::Quer
 		return D3D12_QUERY_TYPE_OCCLUSION;
 	case crossplatform::QUERY_TIMESTAMP:
 		return D3D12_QUERY_TYPE_TIMESTAMP;
+	case crossplatform::QUERY_TIMESTAMP_DISJOINT:
+		return D3D12_QUERY_TYPE_TIMESTAMP;
 	default:
 		return  D3D12_QUERY_TYPE_OCCLUSION;
 	};
@@ -1230,7 +1389,7 @@ D3D12_QUERY_HEAP_TYPE simul::dx12::RenderPlatform::ToD3D12QueryHeapType(crosspla
 	case simul::crossplatform::QUERY_TIMESTAMP:
 		return D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 	case simul::crossplatform::QUERY_TIMESTAMP_DISJOINT:
-		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;	
+		return D3D12_QUERY_HEAP_TYPE_TIMESTAMP;	
 	default:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
 	}
@@ -1239,7 +1398,7 @@ D3D12_QUERY_HEAP_TYPE simul::dx12::RenderPlatform::ToD3D12QueryHeapType(crosspla
 UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
 {
 	// Requested the whole resource
-	if (mip == -1 && layer == -1)
+	if ((mip == -1 && layer == -1)||(mips==1&&layers==1))
 	{
 		return D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	}
@@ -1535,8 +1694,8 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	if (buffers == nullptr)
 		return;
@@ -1546,7 +1705,7 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 		SIMUL_BREAK("Nacho has to work to do here!!");
 	}
 	auto pBuffer = (dx12::Buffer*)buffers[0];
-	mCommandList->IASetVertexBuffers
+	commandList->IASetVertexBuffers
 	(
 		0,
 		num_buffers,
@@ -1570,12 +1729,12 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
     mTargets.num    = num;
     for (int i = 0; i < num; i++)
     {
-        mTargets.m_rt[i]        = targs[i]->AsD3D12RenderTargetView(0, 0);
+        mTargets.m_rt[i]        = targs[i]->AsD3D12RenderTargetView(deviceContext,0, 0);
         mTargets.rtFormats[i]   = targs[i]->pixelFormat;
     }
     if (depth)
     {
-        mTargets.m_dt           = depth->AsD3D12DepthStencilView();
+        mTargets.m_dt           = depth->AsD3D12DepthStencilView(deviceContext);
         mTargets.depthFormat    = depth->pixelFormat;
     }
     mTargets.viewport           = { 0,0,targs[0]->GetWidth(),targs[0]->GetLength() };
@@ -1585,16 +1744,18 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport* targets)
 {
+	// We have to flush because otherwise the barrier will occur after the switch.
+	FlushBarriers(deviceContext);
     SIMUL_ASSERT(targets->num <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
-    mCommandList                                                                    = deviceContext.asD3D12Context();
-    immediateContext.platform_context                                               = deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+    //immediateContext.platform_context                                               = deviceContext.platform_context;
     D3D12_CPU_DESCRIPTOR_HANDLE tHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT]   = {};
     for (int i = 0; i < targets->num; i++)
     {
         SIMUL_ASSERT(targets->m_rt[i] != nullptr);
         tHandles[i] = *(D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_rt[i];
     }
-    mCommandList->OMSetRenderTargets((UINT)targets->num, tHandles, FALSE, (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt);
+    commandList->OMSetRenderTargets((UINT)targets->num, tHandles, FALSE, (D3D12_CPU_DESCRIPTOR_HANDLE*)targets->m_dt);
     deviceContext.targetStack.push(targets);
 
     SetViewports(deviceContext, 1, &targets->viewport);
@@ -1602,13 +1763,15 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 
 void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& deviceContext)
 {
+	// We have to flush because otherwise the barrier will occur after the switch.
+	FlushBarriers(deviceContext);
 	if(deviceContext.defaultTargetsAndViewport.num)
 	{
 		for(int i=0;i<deviceContext.defaultTargetsAndViewport.num;i++)
 		{
 			dx12::Texture *t=(dx12::Texture*)deviceContext.defaultTargetsAndViewport.textureTargets[i].texture;
 			if(t)
-				t->SetLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
+				t->SetLayout(deviceContext,D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 	}
 	if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
@@ -1632,6 +1795,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& dev
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
+	// We have to flush because otherwise the barrier will occur after the switch.
+	FlushBarriers(deviceContext);
     deviceContext.GetFrameBufferStack().pop();
     // Stack is empty so apply default targets:
     if (deviceContext.GetFrameBufferStack().empty())
@@ -1660,8 +1825,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	SIMUL_ASSERT(num <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
 
@@ -1685,8 +1850,8 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		scissors[i].bottom		= (LONG)viewports[i].TopLeftY+(LONG)viewports[i].Height;
 	}
 
-	mCommandList->RSSetViewports(num, viewports);
-	mCommandList->RSSetScissorRects(num, scissors);
+	commandList->RSSetViewports(num, viewports);
+	commandList->RSSetScissorRects(num, scissors);
 
     // This call will ensure that we cache the viewport change inside 
     // the target stack:
@@ -1695,12 +1860,12 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,const crossplatform::Buffer *buffer)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	auto pBuffer = (dx12::Buffer*)buffer;
 
-	mCommandList->IASetIndexBuffer(pBuffer->GetIndexBufferView());
+	commandList->IASetIndexBuffer(pBuffer->GetIndexBufferView());
 }
 
 static D3D_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
@@ -1733,18 +1898,18 @@ static D3D_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
 
 void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	D3D_PRIMITIVE_TOPOLOGY T = toD3dTopology(t);
-	mCommandList->IASetPrimitiveTopology(T);
+	commandList->IASetPrimitiveTopology(T);
 	mStoredTopology = T;
 }
 
 void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	if (l)
 	{
@@ -1754,8 +1919,8 @@ void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,cross
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
-	mCommandList		                = deviceContext.asD3D12Context();
-	immediateContext.platform_context   = deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context   = deviceContext.platform_context;
     dx12::RenderState* state            = (dx12::RenderState*)s;
     // We cache the description, during EffectPass::Aply() we will check if the PSO
     // needs to be recreated
@@ -1779,8 +1944,8 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
 
 void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture* destination,crossplatform::Texture* source)
 {
-    mCommandList                        = deviceContext.asD3D12Context();
-    immediateContext.platform_context   = mCommandList;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+    //immediateContext.platform_context   = commandList;
     dx12::Texture* src                  = (dx12::Texture*)source;
     dx12::Texture* dst                  = (dx12::Texture*)destination;
     if (!src || !dst)
@@ -1799,16 +1964,16 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crosspl
     
     // NOTE: we resolve from/to mip = 0 & index = 0
     // Transition the resources:
-    auto srcInitState = src->GetCurrentState(0,0);
-    ResourceTransitionSimple(src->AsD3D12Resource(), srcInitState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, true);
-    auto dstInitState = dst->GetCurrentState(0,0);
-    ResourceTransitionSimple(dst->AsD3D12Resource(), dstInitState, D3D12_RESOURCE_STATE_RESOLVE_DEST, true);
+    auto srcInitState = src->GetCurrentState(deviceContext,0,0);
+    ResourceTransitionSimple(deviceContext,src->AsD3D12Resource(), srcInitState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, true);
+    auto dstInitState = dst->GetCurrentState(deviceContext,0,0);
+    ResourceTransitionSimple(deviceContext,dst->AsD3D12Resource(), dstInitState, D3D12_RESOURCE_STATE_RESOLVE_DEST, true);
     {
-        mCommandList->ResolveSubresource(dst->AsD3D12Resource(),0,src->AsD3D12Resource(),0,src->dxgi_format);
+        commandList->ResolveSubresource(dst->AsD3D12Resource(),0,src->AsD3D12Resource(),0,src->dxgi_format);
     }
     // Revert states:
-    ResourceTransitionSimple(src->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, srcInitState);
-    ResourceTransitionSimple(dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_DEST, dstInitState);
+    ResourceTransitionSimple(deviceContext,src->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, srcInitState);
+    ResourceTransitionSimple(deviceContext,dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_DEST, dstInitState);
 }
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
@@ -1818,8 +1983,8 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool error_checking)
 {
-	mCommandList					= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 	crossplatform::ContextState *cs = GetContextState(deviceContext);
 	if (!cs || !cs->currentEffectPass)
 	{
@@ -1874,10 +2039,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
     }
 	cmdList->SetDescriptorHeaps(2, currentHeaps);
 
-	// Apply the common root signature
-	cmdList->SetGraphicsRootSignature(mGRootSignature);
-	cmdList->SetComputeRootSignature(mGRootSignature);
-
 	// Apply the RootDescriptor tables:
 	// NOTE: we define our RootSignature on HLSl and then, using SFX we attatch it to
 	//       the shader binary, refer to Simul/Platform/<target>/HLSL/GFX.hls
@@ -1885,11 +2046,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	const UINT samplerTableId	= 1;
 	if (pass->IsCompute())
 	{
+		cmdList->SetComputeRootSignature(mGRootSignature);
 		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
         cmdList->SetComputeRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}
 	else
 	{
+		// Apply the common root signature
+		cmdList->SetGraphicsRootSignature(mGRootSignature);
 		cmdList->SetGraphicsRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
         cmdList->SetGraphicsRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}
@@ -1910,7 +2074,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	pass->SetUAVs(cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers, &mFrameHeap[mCurIdx], m12Device, deviceContext);
 
 	// We are ready to draw/dispatch, so now flush the barriers!
-	FlushBarriers();
+	FlushBarriers(deviceContext);
 
     // We are now done with this states
     DepthStateOverride  = nullptr;
@@ -1922,8 +2086,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	//commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 }
 
 void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext & )
@@ -1932,20 +2096,20 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext & )
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend/*=false*/,float gamma, bool debug)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	//ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
-	mCommandList		= deviceContext.asD3D12Context();
-	immediateContext.platform_context=deviceContext.platform_context;
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//immediateContext.platform_context=deviceContext.platform_context;
 
 	SetTopology(deviceContext,simul::crossplatform::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
-	mCommandList->DrawInstanced(4, 1, 0, 0);
+	commandList->DrawInstanced(4, 1, 0, 0);
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *,int ,bool ,bool ,bool)
@@ -1980,4 +2144,10 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return new dx12::DisplaySurface();
+}
+
+
+crossplatform::GpuProfiler* RenderPlatform::CreateGpuProfiler()
+{
+	return new dx12::GpuProfiler();
 }

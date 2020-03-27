@@ -1,11 +1,11 @@
 #include "Framebuffer.h"
 #include <iostream>
 #include <string>
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
-#include "Simul/Platform/Vulkan/Effect.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/Effect.h"
 
 #ifdef _MSC_VER
     #include <windows.h>
@@ -152,6 +152,7 @@ void Framebuffer::InvalidateFramebuffers()
 	{
 		for(auto f:mFramebuffers[i])
 			vulkanDevice->destroyFramebuffer(f);
+        mFramebuffers[i].clear();
 		vulkanDevice->destroyRenderPass(mDummyRenderPasses[i]);
 	}
 	initialized=false;
@@ -213,7 +214,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
     // Cache it:
     deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
-#include "Simul/Base/StringFunctions.h"
+#include "Platform/Core/StringFunctions.h"
 void Framebuffer::InitVulkanFramebuffer(crossplatform::DeviceContext &deviceContext)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();

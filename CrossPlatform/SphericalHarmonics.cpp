@@ -36,7 +36,7 @@ void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	seed = seed % 1001;
 	shSeed=seed++;
 	probeResultsRW.InvalidateDeviceObjects();
-	probeResultsRW.RestoreDeviceObjects(renderPlatform,256,true);
+	probeResultsRW.RestoreDeviceObjects(renderPlatform,256,true,false,nullptr,"probeResultsRW");
 }
 
 void SphericalHarmonics::RecompileShaders()
@@ -160,7 +160,7 @@ bool SphericalHarmonics::Probe(crossplatform::DeviceContext &deviceContext
 	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapAsTexture2DArray",buffer_texture);
 	if(size.x*size.y>(unsigned)probeResultsRW.count)
 	{
-		probeResultsRW.RestoreDeviceObjects(renderPlatform,size.x*size.y*2,true);
+		probeResultsRW.RestoreDeviceObjects(renderPlatform,size.x*size.y*2,true,false,nullptr,"probeResultsRW");
 	}
 	probeResultsRW.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect,sphericalHarmonicsEffect->GetShaderResource("targetBuffer"));
 
@@ -200,8 +200,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	static int sqrt_jitter_samples					=4;
 	if(!sphericalHarmonics.count)
 	{
-		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true);
-		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true);
+		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true,true,nullptr,"spherical Harmonics");
+		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true,true,nullptr,"sphericalSamples");
 	}
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();

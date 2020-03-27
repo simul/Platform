@@ -1,7 +1,7 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_GPUPROFILER_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_GPUPROFILER_H
-#include "Simul/Base/ProfilingInterface.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
+#include "Platform/Core/ProfilingInterface.h"
+#include "Platform/CrossPlatform/Export.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -94,8 +94,7 @@ namespace simul
 			virtual void End(crossplatform::DeviceContext &deviceContext) override;
 			/// Call this before any timeable events in a frame.
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext) override;
-			/// Call this after all timeable events in a frame have completed. It is acceptable
-			/// to call EndFrame() without having first called StartFrame() - this has no effect.
+			/// Call this after all timeable events in a frame have completed.
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext) override;
 			virtual const char *GetDebugText(simul::base::TextStyle st = simul::base::PLAINTEXT) const override;
 		
@@ -105,10 +104,11 @@ namespace simul
 			float GetTime(const std::string &name) const;
 
 		protected:
+			virtual void InitQuery(Query *);
 			void WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *p);
 			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 			__int64 currFrame;
-			simul::base::Timer timer;
+			simul::core::Timer timer;
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
 			bool enabled;

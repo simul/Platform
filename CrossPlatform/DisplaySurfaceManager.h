@@ -1,9 +1,9 @@
 #pragma once
-#include "Simul/Base/ReadWriteMutex.h"
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
+#include "Platform/Core/ReadWriteMutex.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)  

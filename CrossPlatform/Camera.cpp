@@ -1,11 +1,11 @@
 #define NOMINMAX
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/Math/Quaternion.h"
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/Math/MatrixVector3.h"
-#include "Simul/Platform/CrossPlatform/BaseRenderer.h"
-#include "Simul/Platform/Math/Pi.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/Math/Quaternion.h"
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/Math/MatrixVector3.h"
+#include "Platform/CrossPlatform/BaseRenderer.h"
+#include "Platform/Math/Pi.h"
 #include <memory.h>
 #include <algorithm>
 using namespace simul;
@@ -515,9 +515,8 @@ math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
 
 Camera::Camera():Orientation()
 {
-	InitializeProperties();
 	VerticalFieldOfViewInRadians=60.f*SIMUL_PI_F/180.f;
-	HorizontalFieldOfViewInRadians=0;
+	HorizontalFieldOfViewInRadians=0.f;
 	Orientation.Rotate(3.14f/2.f,simul::math::Vector3(1,0,0));
 }
 
@@ -892,8 +891,8 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	state.right_left_spd	+=input.right_left_input*cam_spd*introduce;
 	state.up_down_spd		+=input.up_down_input*cam_spd*introduce;
 
-	pos						-=state.forward_back_spd*time_step*cam->GetOrientation().Tz();
-	pos						+=state.right_left_spd*time_step*cam->GetOrientation().Tx();
+	pos						-=state.forward_back_spd*time_step*cam->Orientation.Tz();
+	pos						+=state.right_left_spd*time_step*cam->Orientation.Tx();
 	pos.z					+=state.up_down_spd*time_step;
 
 	if(pos.z>max_height)
@@ -927,14 +926,14 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	dir.Normalize();
 	cam->Rotate(del.Magnitude(),dir);
 
-	del	=cam->GetOrientation().Tx()*y_rotate*(-1.f);
+	del	=cam->Orientation.Tx()*y_rotate*(-1.f);
 	dir	=del;
 	dir.Normalize();
 	cam->Rotate(del.Magnitude(),dir);
 
 	float tilt	=0;
-	tilt		=asin(cam->GetOrientation().Tx().z);
-	dir			=cam->GetOrientation().Tz();
+	tilt		=asin(cam->Orientation.Tx().z);
+	dir			=cam->Orientation.Tz();
 	dir.Normalize();
 	cam->Rotate(-0.5f*tilt,dir);
 }

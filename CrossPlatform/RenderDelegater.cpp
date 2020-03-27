@@ -1,9 +1,9 @@
 #define NOMINMAX
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/RenderDelegater.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/Math/Pi.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/GpuProfiler.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/Math/Pi.h"
 using namespace simul;
 using namespace crossplatform;
 

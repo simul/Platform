@@ -1,6 +1,6 @@
 #include "Heap.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 namespace simul
 {
@@ -11,6 +11,10 @@ namespace simul
 			,mHeap(nullptr)
 		{
 			
+		}
+		Heap::~Heap()
+		{
+			Release();
 		}
 
 		void Heap::Restore(dx12::RenderPlatform* r, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name /*= Heap*/, bool shaderVisible /*=true*/)
@@ -36,7 +40,8 @@ namespace simul
 #endif
 			SIMUL_ASSERT(res == S_OK);
 			SIMUL_GPU_TRACK_MEMORY(mHeap, totalCnt) // Of course, not the actual memory size. But what is? D3D doesn't want us to know...
-
+			if(!mHeap)
+				return;
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);
 			mCpuHandle						= mHeap->GetCPUDescriptorHandleForHeapStart();
 			mGpuHandle						= mHeap->GetGPUDescriptorHandleForHeapStart();

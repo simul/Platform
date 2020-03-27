@@ -1,8 +1,8 @@
-#include "Simul/Platform/DirectX11/Direct3D11Manager.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Platform/DirectX11/MacrosDx1x.h"
-#include "Simul/Platform/DirectX11/Utilities.h"
+#include "Platform/DirectX11/Direct3D11Manager.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/DirectX11/MacrosDx1x.h"
+#include "Platform/DirectX11/Utilities.h"
 #include <iomanip>
 #ifndef _XBOX_ONE 
 #ifndef _GAMING_XBOX

@@ -1,7 +1,7 @@
 #ifndef SIMUL_MATH_NOISE2D_H
 #define SIMUL_MATH_NOISE2D_H
-#include "Simul/Platform/Math/Export.h"
-#include "Simul/Platform/Math/Noise3D.h"
+#include "Platform/Math/Export.h"
+#include "Platform/Math/Noise3D.h"
 
 namespace simul
 {

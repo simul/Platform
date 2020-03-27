@@ -6,16 +6,16 @@
 #include <windows.h>
 #endif
 
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/Vulkan/Effect.h"
-#include "Simul/Platform/Vulkan/RenderPlatform.h"
-#include "Simul/Platform/Vulkan/Framebuffer.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/Timer.h"
-#include "Simul/Base/CommandLine.h"
-#include "Simul/Base/EnvironmentVariables.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Vulkan/Effect.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/Framebuffer.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Core/DefaultFileLoader.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/Timer.h"
+#include "Platform/Core/CommandLine.h"
+#include "Platform/Core/EnvironmentVariables.h"
 
 using namespace simul;
 using namespace vulkan;
@@ -180,7 +180,7 @@ Effect::~Effect()
 
 void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
 {
-	//EnsureEffect(r, filename_utf8);
+	EnsureEffect(r, filename_utf8);
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 }
 

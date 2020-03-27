@@ -2,15 +2,15 @@
 
 #include "Effect.h"
 #include "Texture.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
-#include "Simul/Platform/DirectX12/PlatformStructuredBuffer.h"
-#include "SimulDirectXHeader.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX12/PlatformStructuredBuffer.h"
+#include "DirectXHeader.h"
 
 #include <algorithm>
 #include <string>
@@ -35,151 +35,6 @@ UINT64 BytePtrToUint64( _In_ T* ptr )
 {
     return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
 }
-
-Query::Query(crossplatform::QueryType t):
-	crossplatform::Query(t),
-	mQueryHeap(nullptr),
-	mReadBuffer(nullptr),
-	mQueryData(nullptr),
-	mTime(0),
-	mIsDisjoint(false)
-{
-	mD3DType = dx12::RenderPlatform::ToD3dQueryType(t);
-	if (t == crossplatform::QueryType::QUERY_TIMESTAMP_DISJOINT)
-	{
-		mIsDisjoint = true;
-	}
-}
-
-Query::~Query()
-{
-	InvalidateDeviceObjects();
-}
-
-void Query::SetName(const char *name)
-{
-	std::string n (name);
-	mQueryHeap->SetName(std::wstring(n.begin(),n.end()).c_str());
-}
-
-void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
-{
-	InvalidateDeviceObjects();
-	renderPlatform = r;
-	auto renderPlatformDx12 = (dx12::RenderPlatform*)r;
-
-	// Create a query heap
-	HRESULT res					= S_FALSE;
-	mD3DType					= dx12::RenderPlatform::ToD3dQueryType(type);
-	D3D12_QUERY_HEAP_DESC hDesc = {};
-	hDesc.Count					= QueryLatency;
-	hDesc.NodeMask				= 0;
-	hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(type);
-	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc, SIMUL_PPV_ARGS(&mQueryHeap));
-	SIMUL_ASSERT(res == S_OK);
-
-	// Create a redback buffer to get data
-	size_t sz = QueryLatency * sizeof(UINT64);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sz),
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-        SIMUL_PPV_ARGS(&mReadBuffer)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mReadBuffer, sz)
-	mReadBuffer->SetName(L"QueryReadBuffer");
-}
-
-void Query::InvalidateDeviceObjects() 
-{
-	SAFE_RELEASE_LATER(mQueryHeap);
-	for (int i = 0; i < QueryLatency; i++)
-	{
-		gotResults[i]= true;	// ?????????
-		doneQuery[i] = false;
-	}
-	SAFE_RELEASE_LATER(mReadBuffer);
-	mQueryData = nullptr;
-}
-
-void Query::Begin(crossplatform::DeviceContext &)
-{
-
-}
-
-void Query::End(crossplatform::DeviceContext &deviceContext)
-{
-	gotResults[currFrame] = false;
-	doneQuery[currFrame]  = true;
-
-	// For now, only take into account time stamp queries
-	if (mD3DType != D3D12_QUERY_TYPE_TIMESTAMP)
-	{
-		return;
-	}
-
-	deviceContext.asD3D12Context()->EndQuery
-	(
-		mQueryHeap,
-		mD3DType,
-		currFrame
-	);
-
-	deviceContext.asD3D12Context()->ResolveQueryData
-	(
-		mQueryHeap, mD3DType,
-		currFrame, 1,
-		mReadBuffer, currFrame * sizeof(UINT64)
-	);
-}
-
-bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_t sz)
-{
-	gotResults[currFrame]	= true;
-	currFrame				= (currFrame + 1) % QueryLatency;
-
-	// We provide frequency information
-	if (mIsDisjoint)
-	{
-		auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-		crossplatform::DisjointQueryStruct disjointData;
-		disjointData.Disjoint	= false;
-		disjointData.Frequency	= rPlat->GetTimeStampFreq();
-		memcpy(data, &disjointData, sz);
-		return true;
-	}
-
-	// For now, only take into account time stamp queries
-	if (mD3DType != D3D12_QUERY_TYPE_TIMESTAMP)
-	{
-		const UINT64 invalid = 0;
-		data = (void*)invalid;
-		return true;
-	}
-
-	if (!doneQuery[currFrame])
-	{
-		return false;
-	}
-	
-	// Get the values from the buffer
-	HRESULT res				= S_FALSE;
-	res						= mReadBuffer->Map(0, &CD3DX12_RANGE(0, 1), reinterpret_cast<void**>(&mQueryData));
-	SIMUL_ASSERT(res == S_OK);
-	{
-		UINT64* d			= (UINT64*)mQueryData;
-		UINT64 time			= d[currFrame];
-		mTime				= time;
-		memcpy(data, &mTime, sz);
-	}
-	mReadBuffer->Unmap(0, &CD3DX12_RANGE(0, 0));
-
-	return true;
-} 
 
 RenderState::RenderState()
 {
@@ -503,32 +358,32 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	}
 	if (temp_shader.textureSlots != shader->textureSlots)
 	{
-		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed textureSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed textureSlots check." << std::endl;
 		shader->textureSlots = temp_shader.textureSlots;
 	}
 	if (temp_shader.textureSlotsForSB != shader->textureSlotsForSB)
 	{
-		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed textureSlotsForSB check." << std::endl;
+		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed textureSlotsForSB check." << std::endl;
 		shader->textureSlotsForSB = temp_shader.textureSlotsForSB;
 	}
 	if (temp_shader.rwTextureSlots != shader->rwTextureSlots)
 	{
-		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed rwTextureSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed rwTextureSlots check." << std::endl;
 		shader->rwTextureSlots = temp_shader.rwTextureSlots;
 	}
 	if (temp_shader.rwTextureSlotsForSB != shader->rwTextureSlotsForSB)
 	{
-		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed rwTextureSlotsForSB check." << std::endl;
+		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed rwTextureSlotsForSB check." << std::endl;
 		shader->rwTextureSlotsForSB = temp_shader.rwTextureSlotsForSB;
 	}
 	if (temp_shader.constantBufferSlots != shader->constantBufferSlots)
 	{
-		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed constantBufferSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed constantBufferSlots check." << std::endl;
 		shader->constantBufferSlots = temp_shader.constantBufferSlots;
 	}
 	if (temp_shader.samplerSlots != shader->samplerSlots)
 	{
-		SIMUL_INTERNAL_CERR << shader->name.c_str() << ": failed samplerSlots check." << std::endl;
+		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed samplerSlots check." << std::endl;
 		shader->samplerSlots = temp_shader.samplerSlots;
 	}
 }
@@ -555,6 +410,10 @@ void EffectPass::InvalidateDeviceObjects()
 	// TO-DO: nice memory leaks here
 	auto pl=(dx12::RenderPlatform*)renderPlatform;
 	pl->PushToReleaseManager(mComputePso,"PSO");
+	for(auto &p:mGraphicsPsoMap)
+	{
+		p.second->Release();
+	}
 	mGraphicsPsoMap.clear();
 }
 
@@ -715,7 +574,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			}
 		}
 		((dx12::Texture*)ta.texture)->FinishLoading(deviceContext);
-		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(true, ta.resourceType, ta.index, ta.mip);
+		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext,true, ta.resourceType, ta.index, ta.mip);
 		mSrvUsedSlotsArray[slot]= true;
 		usedTextureSlots |= (1 << slot);
 	}
@@ -793,7 +652,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap & rwTextures, cross
 				ta.texture = rPlat->GetDummy2D();
 			}
 		}
-		mUavSrcHandles[slot]	= *ta.texture->AsD3D12UnorderedAccessView(ta.index, ta.mip);
+		mUavSrcHandles[slot]	= *ta.texture->AsD3D12UnorderedAccessView(deviceContext,ta.index, ta.mip);
 		mUavUsedSlotsArray[slot]= true;
 		usedRwTextureSlots |= (1 << slot);
 	}

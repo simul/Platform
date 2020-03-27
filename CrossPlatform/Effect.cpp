@@ -2,14 +2,14 @@
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/StringToWString.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
 #include <iostream>
 #include <algorithm>
 #include <regex>		// for file loading
@@ -998,6 +998,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		}
 		if(!result)
 		{
+
 			SIMUL_BREAK("Failed to build effect.");
 		}
 	}

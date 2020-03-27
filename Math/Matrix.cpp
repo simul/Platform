@@ -3,7 +3,6 @@
 #include "Matrix.h"    
 #include "Matrix4x4.h"
 #include "SimVector.h"
-#include "Simul/Base/ConvertPreprocessorMacros.h"
 
 namespace simul
 {

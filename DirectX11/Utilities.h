@@ -5,14 +5,14 @@
 #ifdef _XBOX_ONE
 #include <d3d11_x.h>
 #else
-#include "SimulDirectXHeader.h"
+#include "DirectXHeader.h"
 #endif
 #include <utility>
 #include <vector>
-#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
-#include "Simul/Base/FileLoader.h"
-#include "Simul/Platform/Math/Matrix4x4.h"
+#include "Platform/DirectX11/CreateEffectDX1x.h"
+#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Math/Matrix4x4.h"
 struct ID3DX11EffectConstantBuffer;
 #pragma warning(disable:4251)
 namespace simul

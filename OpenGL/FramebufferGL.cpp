@@ -1,10 +1,10 @@
 #include "FramebufferGL.h"
 #include <iostream>
 #include <string>
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Platform/OpenGL/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/OpenGL/RenderPlatform.h"
 
 #ifdef _MSC_VER
     #include <windows.h>

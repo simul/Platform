@@ -5,7 +5,7 @@
 
 #include "Export.h"
 #include "Material.h"
-#include "Simul/Platform/CrossPlatform/Light.h"
+#include "Platform/CrossPlatform/Light.h"
 
 namespace simul
 {

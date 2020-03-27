@@ -1,7 +1,7 @@
 #ifndef Vector3H
 #define Vector3H
-#include "Simul/Platform/Math/Align.h"
-#include "Simul/Platform/Math/Export.h"
+#include "Platform/Math/Align.h"
+#include "Platform/Math/Export.h"
 #include <iostream>
 
 #ifdef _MSC_VER

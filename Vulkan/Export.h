@@ -1,6 +1,8 @@
 #ifndef SIMUL_VULKAN_EXPORT_H
 #define SIMUL_VULKAN_EXPORT_H
 
+#include "Platform/Core/DebugMemory.h"
+
 #define SIMUL_VULKAN_FRAME_LAG 2
 
 #if defined(_MSC_VER)

@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "GpuProfiler.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Base/StringFunctions.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
 #include <sstream>
 #include <iostream>
 #include <map>
@@ -73,7 +73,6 @@ GpuProfiler::~GpuProfiler()
 	InvalidateDeviceObjects();
 }
 
-
 void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform = r;
@@ -93,13 +92,14 @@ void GpuProfiler::InvalidateDeviceObjects()
 
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
-	if (!enabled||!renderPlatform||!root)
+	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
-	if (!is_opengl && !is_vulkan && !context)
-		return;
+	// Seriously? We're doing strcmp in perf-measurement?
+	//bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
+	//bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
+	//if (!is_opengl && !is_vulkan && !context)
+//		return;
 
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
@@ -148,10 +148,13 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 			// Create the queries
 			std::string n=name;
 			profileData->DisjointQuery			=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP_DISJOINT);
+			InitQuery(profileData->DisjointQuery);
 			profileData->DisjointQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
 			profileData->TimestampStartQuery	=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
+			InitQuery(profileData->TimestampStartQuery);
 			profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
 			profileData->TimestampEndQuery		=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
+			InitQuery(profileData->TimestampEndQuery);
 			profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
 
 			profileData->DisjointQuery->SetName((n+" disjoint").c_str());
@@ -171,15 +174,19 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	}
 }
 
+void GpuProfiler::InitQuery(Query *)
+{
+}
+
 void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
-	if (!enabled||!renderPlatform||!root)
+	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
 	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
-	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
+/*	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
 	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
 	if (!is_opengl && !is_vulkan && !context)
-		return;
+		return;*/
 
 	renderPlatform->EndEvent(deviceContext);
 	level--;
@@ -295,6 +302,10 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			float frequency = static_cast<float>(disjointData.Frequency);
 			time = (delta / frequency) * 1000.0f;
 		}
+		else
+		{
+			time=0.0f;
+		}
 	}
 	if ((strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
 		|| (deviceContext.renderPlatform->AsVulkanDevice() != nullptr))
@@ -323,7 +334,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 		Clear();
         return;
 	}
-    if(!root||!enabled||!renderPlatform)
+    if(!root||!enabled||!renderPlatform||!frame_active)
         return;
 
     currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
@@ -342,6 +353,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
  			root->time+=i->second->time;
  		}
 	}
+	frame_active=false;
 }
 
 template<typename T> inline std::string ToString(const T& val)

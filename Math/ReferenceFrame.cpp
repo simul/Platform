@@ -1,5 +1,5 @@
-#include "Simul/Platform/Math/ReferenceFrame.h"
-#include "Simul/Platform/Math/Vector3.inl"
+#include "Platform/Math/ReferenceFrame.h"
+#include "Platform/Math/Vector3.inl"
 
 using namespace simul::math;
 using namespace simul::geometry;

@@ -242,19 +242,21 @@ RasterizerState RenderFrontfaceCull
 {
 	FillMode					= SOLID;
 	CullMode = front;
+	FrontCounterClockwise		= true;
 };
 
 RasterizerState RenderBackfaceCull
 {
 	FillMode					= SOLID;
 	CullMode = back;
+	FrontCounterClockwise		= true;
 };
 #define DEPTH_BIAS_D32_FLOAT(d) (d/(1/pow(2,23)))
 RasterizerState wireframeRasterizer
 {
 	FillMode					= WIREFRAME;
 	CullMode					= none;
-	FrontCounterClockwise		= false;
+	FrontCounterClockwise		= true;
 	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
 	DepthBiasClamp				= 0.0;
 	SlopeScaledDepthBias		= 0.0;

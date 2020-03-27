@@ -1,7 +1,7 @@
 #define SIM_MATH
-#include "Simul/Platform/Math/VirtualVector.h"
-#include "Simul/Platform/Math/Vector3.h"
-#include "Simul/Platform/Math/SimVector.h"
+#include "Platform/Math/VirtualVector.h"
+#include "Platform/Math/Vector3.h"
+#include "Platform/Math/SimVector.h"
 #include <math.h>
 #include <algorithm>
 #include <iostream>

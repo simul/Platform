@@ -4,9 +4,9 @@
 #define _LIGHT_CACHE_H
 
 #include <map>
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/Mesh.h"
-#include "Simul/Platform/CrossPlatform/Material.h"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Mesh.h"
+#include "Platform/CrossPlatform/Material.h"
 
 namespace simul
 {

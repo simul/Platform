@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "FramebufferDX1x.h"
 
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/Timer.h"
-#include "Simul/Platform/Math/Pi.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/Timer.h"
+#include "Platform/Math/Pi.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 #include <tchar.h>
 #include <string>
@@ -60,15 +60,15 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	D3D12_CPU_DESCRIPTOR_HANDLE* dsView = nullptr;
 	if (is_cubemap)
 	{
-		rtView = col12Texture->AsD3D12RenderTargetView(current_face, 0);
+		rtView = col12Texture->AsD3D12RenderTargetView(deviceContext,current_face, 0);
 	}
 	else
 	{
-		rtView = col12Texture->AsD3D12RenderTargetView();
+		rtView = col12Texture->AsD3D12RenderTargetView(deviceContext);
 	}
 	if (buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
-		dsView = depth12Texture->AsD3D12DepthStencilView();
+		dsView = depth12Texture->AsD3D12DepthStencilView(deviceContext);
 	}
 
 	// Push current target and viewport
@@ -88,8 +88,8 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
     deviceContext.renderPlatform->ActivateRenderTargets(deviceContext, &targetsAndViewport);
     
     // Inform current samples
-    mCachedMSAAState = rPlat->GetMSAAInfo();
-    int colSamples = col12Texture->GetSampleCount();
+    mCachedMSAAState	= rPlat->GetMSAAInfo();
+    int colSamples		= col12Texture->GetSampleCount();
     rPlat->SetCurrentSamples(colSamples == 0 ? 1 : colSamples);
 
     // Cache current state
@@ -121,7 +121,7 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
 	if (!buffer_depth_texture->IsValid() || !depth_active)
 	{
-        SIMUL_CERR << "This FBO wasn't creted with depth or depth is not active.\n";
+        SIMUL_CERR << "This FBO wasn't created with depth, or depth is not active.\n";
 		return;
 	}
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
@@ -156,11 +156,12 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 	}
 }
 
-void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
+void Framebuffer::ClearDepth(crossplatform::DeviceContext &deviceContext,float depth)
 {
 	if (buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
-		context.asD3D12Context()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+		//((dx12::Texture*)buffer_depth_texture)->SetLayout(deviceContext,D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		deviceContext.asD3D12Context()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(deviceContext), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 	}
 }
 
@@ -172,11 +173,11 @@ void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float 
 		auto tex = (dx12::Texture*)buffer_texture;
 		for (int i = 0; i < 6; i++)
 		{
-			deviceContext.asD3D12Context()->ClearRenderTargetView(*tex->AsD3D12RenderTargetView(i), clearColor, 0, nullptr);
+			deviceContext.asD3D12Context()->ClearRenderTargetView(*tex->AsD3D12RenderTargetView(deviceContext,i), clearColor, 0, nullptr);
 		}
 	}
 	else
 	{
-		deviceContext.asD3D12Context()->ClearRenderTargetView(*buffer_texture->AsD3D12RenderTargetView(), clearColor, 0, nullptr);
+		deviceContext.asD3D12Context()->ClearRenderTargetView(*buffer_texture->AsD3D12RenderTargetView(deviceContext), clearColor, 0, nullptr);
 	}
 }

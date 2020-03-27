@@ -1,8 +1,8 @@
 #ifndef MATRIX4X4H
 #define MATRIX4X4H
 
-#include "Simul/Platform/Math/Export.h"
-#include "Simul/Platform/Math/Align.h" 
+#include "Platform/Math/Export.h"
+#include "Platform/Math/Align.h" 
 #include <assert.h>
 
 #ifdef WIN32

@@ -1,7 +1,7 @@
 #pragma once
-#include "SimulDirectXHeader.h"
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Buffer.h"
+#include "DirectXHeader.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Buffer.h"
 
 
 #pragma warning(disable:4251)

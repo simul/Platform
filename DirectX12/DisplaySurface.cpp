@@ -1,7 +1,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/StringFunctions.h"
 
 using namespace simul;
 using namespace dx12;
@@ -128,13 +128,14 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
     CreateSyncObjects();
 
     // Create this window command list
+    SAFE_RELEASE(mCommandList);
     mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
     mCommandList->SetName(L"WindowCommandList 2");
     mRecordingCommands = true;
 
     // Provide a cmd list so we can start recording commands
     auto dx12plat = (dx12::RenderPlatform*)renderPlatform;
-    dx12plat->SetCommandList(mCommandList);
+    //dx12plat->SetCommandList(mCommandList);
     dx12plat->DefaultOutputFormat = outFmt;
 }
 
@@ -151,6 +152,7 @@ void DisplaySurface::InvalidateDeviceObjects()
     SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
     SAFE_RELEASE(mQueue);
     SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
+    SAFE_RELEASE(mCommandList);
 }
 
 unsigned DisplaySurface::GetCurrentBackBufferIndex() const
@@ -197,7 +199,6 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
     // Get ready to present
     mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-    EndFrame();
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }
@@ -281,9 +282,9 @@ void DisplaySurface::EndFrame()
     HRESULT res = S_FALSE;
     res = mCommandList->Close();
     SIMUL_ASSERT(res == S_OK);
+//SIMUL_CERR<<"End Frame"<<std::endl;
     ID3D12CommandList* ppCommandLists[] = { mCommandList };
     mQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
     // Cache the current idx:
     int idx = GetCurrentBackBufferIndex();
 
@@ -382,6 +383,11 @@ void DisplaySurface::Resize()
     CreateRenderTargets(mDeviceRef);
 
     renderer->ResizeView(mViewId, screenWidth, screenHeight);
+    if(mQueue)
+    {
+	    std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",mHwnd,screenWidth,screenHeight);
+        mQueue->SetName(simul::base::StringToWString(str).c_str());
+    }
 	StartFrame();
 }
 

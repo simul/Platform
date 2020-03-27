@@ -2,9 +2,9 @@
 #define IterationH
 
 #include <vector>
-#include "Simul/Platform/Math/Matrix.h"
-#include "Simul/Platform/Math/SimVector.h"
-#include "Simul/Platform/Math/Export.h"
+#include "Platform/Math/Matrix.h"
+#include "Platform/Math/SimVector.h"
+#include "Platform/Math/Export.h"
 
 #ifdef _MSC_VER
 	#define ALIGN32  __declspec(align(32))

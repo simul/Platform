@@ -1,8 +1,8 @@
 #define NOMINMAX
 #include "TextRenderer.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Macros.h"
 #include <algorithm>
 using namespace simul;
 using namespace crossplatform;
@@ -127,7 +127,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
-	fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false);
+	fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
 	RecompileShaders();
 	ERRNO_BREAK
 	SAFE_DELETE(font_texture);
@@ -249,7 +249,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	int n=0;
 	float u = 1024.f / font_texture->width;
 	if(max_chars>fontChars.count)
-		fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false);
+		fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
 	FontChar *charList=fontChars.GetBuffer(deviceContext);
 	float x = x0;
 	for(int i=0;i<fontChars.count;i++)

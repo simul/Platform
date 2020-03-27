@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <algorithm>
-#include "Simul/Platform/Math/Noise3D.h"
-#include "Simul/Platform/Math/RandomNumberGenerator.h"
-#include "Simul/Base/MemoryInterface.h"
+#include "Platform/Math/Noise3D.h"
+#include "Platform/Math/RandomNumberGenerator.h"
+#include "Platform/Core/MemoryInterface.h"
 
 using namespace simul::math;
 

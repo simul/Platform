@@ -1,6 +1,8 @@
 #ifndef SIMUL_DIRECTX12_EXPORT_H
 #define SIMUL_DIRECTX12_EXPORT_H
 
+#include "Platform/Core/DebugMemory.h"
+
 #if defined(_MSC_VER)
 	//  Microsoft
 	#define SIMUL_EXPORT __declspec(dllexport)

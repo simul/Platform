@@ -23,7 +23,7 @@ float InverseTangent(float y,float x)
 }
 float InverseCosine(float x)
 {
-	return acos(x);
+	return acosf(x);
 }
 class BadNumber{};
 float Sqrt(float x)

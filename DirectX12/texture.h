@@ -1,9 +1,9 @@
 #pragma once
-#include "Simul/Platform/DirectX12/Export.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/Shaders/Sl/CppSl.sl"
-#include "SimulDirectXHeader.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/DirectX12/Export.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Shaders/Sl/CppSl.sl"
+#include "DirectXHeader.h"
+#include "Platform/Core/RuntimeError.h"
 #include "Heap.h"
 #include <string>
 
@@ -12,6 +12,7 @@ namespace DirectX
 {
 	struct TexMetadata;
 	class ScratchImage;
+	struct Image;
 }
 namespace simul
 {
@@ -59,10 +60,10 @@ namespace simul
 			void RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
 
 			ID3D12Resource*					AsD3D12Resource() override;
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(int index = -1, int mip = -1);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView();
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(int index = -1, int mip = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int index = -1, int mip = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext,int index = -1, int mip = -1);
 
 			bool							IsComputable() const override;
 			bool							HasRenderTargets() const override;
@@ -105,16 +106,16 @@ namespace simul
 			int GetSampleCount()const;
 
 			//! Returns the current state of the resource or subresource if provided.
-			D3D12_RESOURCE_STATES GetCurrentState(int mip = -1, int index = -1);
+			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext &deviceContext,int mip = -1, int index = -1);
 			//! Sets the state of the resource or subresource if provided.
-			void SetLayout(D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
+			void SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
 
 			DXGI_FORMAT	dxgi_format;
 			// Need an active command list to finish loading a texture!
 			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
 		protected:
-			bool							EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, 
+			bool											EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, 
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0,crossplatform::CompressionFormat																		cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
@@ -127,8 +128,15 @@ namespace simul
 
 			void											FreeRTVTables();
 			void											InitRTVTables(int l, int m);
+			void											CreateRTVTables(int l,int m);
 
-			void											InitStateTable(int l, int m);
+			void											InitStateTable(crossplatform::DeviceContext &deviceContext,int l, int m);
+			
+
+			dx12::Heap						mTextureSrvHeap;
+			dx12::Heap						mTextureUavHeap;
+			dx12::Heap						mTextureRtHeap;
+			dx12::Heap						mTextureDsHeap;
 
 			//! Texture data that lives in the GPU
 			ID3D12Resource*									mTextureDefault;
@@ -137,14 +145,9 @@ namespace simul
 			//! States of the subresources mSubResourcesStates[index][mip]
 			std::vector<std::vector<D3D12_RESOURCE_STATES>>	mSubResourcesStates;
 			//! Full resource state
-			D3D12_RESOURCE_STATES							mResourceState;
+			D3D12_RESOURCE_STATES			mResourceState;
 			D3D12_RESOURCE_STATES			mExternalLayout;
 			bool split_layouts=true;
-
-			dx12::Heap						mTextureSrvHeap;
-			dx12::Heap						mTextureUavHeap;
-			dx12::Heap						mTextureRtHeap;
-			dx12::Heap						mTextureDsHeap;
 
 			bool							mLoadedFromFile;	
 			bool							mInitializedFromExternal = false;
@@ -167,11 +170,28 @@ namespace simul
             DXGI_SAMPLE_DESC                mCachedMSAAState;
 
             int                             mNumSamples;
-			DirectX::TexMetadata	*metadata;
-			DirectX::ScratchImage	*scratchImage;
-			void *loadedData;
+			//DirectX::TexMetadata	*metadata;
+			//DirectX::ScratchImage	*scratchImage;
+			//void *loadedData;
 			void SplitLayouts();
 			void AssumeLayout(D3D12_RESOURCE_STATES state);
+			
+			struct WicContents
+			{
+				DirectX::TexMetadata	*metadata;
+				DirectX::ScratchImage	*scratchImage;
+				const DirectX::Image*	image;
+			};
+			std::vector<WicContents> wicContents;
+			struct FileContents
+			{
+				void* ptr		= NULL;
+				unsigned bytes	= 0;
+				int flags		= 0;
+			};
+			std::vector<FileContents> fileContents;
+			void ClearLoadingData();
+			void ClearFileContents();
 		};
 	}
 }

@@ -3,11 +3,11 @@
 #endif
 #include "DeviceManager.h"
 
-#include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/OpenGL/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/HdrRenderer.h"
-#include "Simul/Base/Timer.h"
+#include "Platform/CrossPlatform/Camera.h"
+#include "Platform/OpenGL/RenderPlatform.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/HdrRenderer.h"
+#include "Platform/Core/Timer.h"
 #include <stdint.h> // for uintptr_t
 #include <iomanip>
 #include "glad/glad.h"

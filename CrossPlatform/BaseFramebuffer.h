@@ -1,10 +1,10 @@
 #ifndef BASE_FRAMEBUFFER_H
 #define BASE_FRAMEBUFFER_H
-#include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Platform/CrossPlatform/Texture.h"
-#include "Simul/Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 #include <stack>
 
 #ifdef _MSC_VER

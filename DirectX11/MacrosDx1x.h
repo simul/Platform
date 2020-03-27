@@ -2,9 +2,9 @@
 #define MACROS_H_DONE
 #include <iostream>
 #include <tchar.h>
-#include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/CrossPlatform/Macros.h"
-#include "Simul/Base/RuntimeError.h"
+#include "Platform/DirectX11/Export.h"
+#include "Platform/CrossPlatform/Macros.h"
+#include "Platform/Core/RuntimeError.h"
 typedef std::basic_string<TCHAR> tstring;
 #define ENABLE_PIX
 #ifdef UNICODE

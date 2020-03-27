@@ -9,14 +9,14 @@
 // CreateEffect.cpp Create a DirectX .fx effect and report errors.
 
 #include "CreateEffectDX1x.h"
-#include "Simul/Base/StringToWString.h"
-#include "Simul/Base/EnvironmentVariables.h"
-#include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Platform/Math/Matrix4x4.h"
-#include "Simul/Platform/DirectX11/Utilities.h"
-#include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
-#include "Simul/Platform/DirectX11/Effect.h"
+#include "Platform/Core/StringToWString.h"
+#include "Platform/Core/EnvironmentVariables.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/DefaultFileLoader.h"
+#include "Platform/Math/Matrix4x4.h"
+#include "Platform/DirectX11/Utilities.h"
+#include "Platform/DirectX11/CompileShaderDX1x.h"
+#include "Platform/DirectX11/Effect.h"
 #include <string>
 
 #include <vector>
@@ -444,13 +444,6 @@ ERRNO_CHECK
 				changes_detected=true;
 			else if(text_date_jdn>0)	// maybe some of the includes have changed?
 			{
-				if(base::GetFeatureLevel()>=FeatureLevel::EXPERIMENTAL)
-				{
-					// Xbox One shader build:
-					//	/*
-					//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
-					//	*/
-				}
 				bool missing=false;
 				newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,shaderPathsUtf8,textData,textSize,macros,binary_date_jdn,missing);
 				if(missing)
