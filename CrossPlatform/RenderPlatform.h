@@ -373,7 +373,7 @@ namespace simul
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 		
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
-			crossplatform::GpuProfiler		*gpuProfiler;
+			crossplatform::GpuProfiler		*gpuProfiler=nullptr;
 			bool							gpuProfileFrameStarted = false;
 			bool can_save_and_restore;
 			//! Value used to determine the number of "x" that we will have, this is useful in dx12

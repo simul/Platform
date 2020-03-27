@@ -107,7 +107,7 @@ namespace simul
 									,max_level_this_frame(0)
 									,level(0)
 									,level_in_use(0)
-									,root(NULL)
+									,root(nullptr)
 			{
 			}
 			virtual ~BaseProfilingInterface()
@@ -145,7 +145,7 @@ namespace simul
 			int level;
 			int level_in_use;
 			bool frame_active=false;
-			ProfileData *root;
+			ProfileData *root=nullptr;
 		};
 		//! simul::base::DefaultProfiler inherits from ProfilingInterface to measure CPU performance.
 		class PLATFORM_CORE_EXPORT ProfilingInterface:public BaseProfilingInterface
