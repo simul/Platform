@@ -402,12 +402,12 @@ ERRNO_CHECK
 	std::string binary_filename_utf8=name_utf8;
 	// Modify the binary file with the macros so the output is unique to the specified values.
 	int def=0;
-	while(macros&&macros[def].Name!=0)
+	/*while(macros&&macros[def].Name!=0)
 	{
 		binary_filename_utf8+=macros[def].Name;
 		binary_filename_utf8+=macros[def].Definition;
 		def++;
-	}
+	}*/
 	binary_filename_utf8+=".fxo";
 	void *textData=NULL;
 	unsigned textSize=0;
