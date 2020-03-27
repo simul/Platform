@@ -129,6 +129,7 @@ void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
 	opts.push_back(crossplatform::CreateDefineOptions("THREADS_PER_GROUP", "128"));
 	r->EnsureEffectIsBuilt("gaussian", opts); 
 }
+
 void HdrRenderer::RecompileShaders()
 {
 	if(!renderPlatform)
@@ -137,6 +138,7 @@ void HdrRenderer::RecompileShaders()
 	renderPlatform->Destroy(m_pGaussianEffect);
 	std::map<std::string,std::string> defs;
 	hdr_effect					=renderPlatform->CreateEffect("hdr",defs);
+
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
 	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
 

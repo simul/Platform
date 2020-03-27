@@ -137,7 +137,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		profileData->last_child_updated=0;
 		profileStack.push_back(profileData);
 		parentData->updatedThisFrame=true;
-	//	parentData->last_child_updated=profileData->child_index;
+
 		profileData->parent=parentData;
 		SIMUL_ASSERT(profileData->QueryStarted == false);
 		if(profileData->QueryFinished!= false)

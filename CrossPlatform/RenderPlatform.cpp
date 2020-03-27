@@ -135,8 +135,6 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
 	ERRNO_BREAK
-	if(!gpuProfiler)
-		gpuProfiler=CreateGpuProfiler();
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -193,6 +191,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	
 	debugConstants.RestoreDeviceObjects(this);
 	
+	if(!gpuProfiler)
+		gpuProfiler=CreateGpuProfiler();
 	gpuProfiler->RestoreDeviceObjects(this);
 	textureQueryResult.InvalidateDeviceObjects();
 	textureQueryResult.RestoreDeviceObjects(this,1,true,true,nullptr,"texture query");
