@@ -85,14 +85,15 @@
 		"float4": "image"
 	},
 	"toTextureType": {
-		"default": "sampler",
-		"vec4": "sampler",
-		"char4": "sampler",
-		"uchar4": "sampler",
-		"ivec4": "isampler",
-		"uint": "usampler",
-		"float": "sampler",
-		"float4": "sampler"
+		"default": "sampler"
+		,"vec4": "sampler"
+		,"char4": "sampler"
+		,"uchar4": "sampler"
+		,"ivec4": "isampler"
+		,"uint": "usampler"
+		,"float": "sampler"
+		,"float4": "sampler"
+		,"half4"	: "sampler"
 	},
 	"templateTypes": {
 		"Texture2D<uint>": "utexture2D"

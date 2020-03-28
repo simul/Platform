@@ -87,7 +87,10 @@
 		,"float"  	: "sampler" 	
 		,"float4"	: "sampler"
 		,"half4"	: "sampler"
-	}
+	},
+	"templateTypes": {
+		"Texture2D<uint>": "utexture2D"
+	},
 	,"computeLayout" : "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;"
 	,"structuredBufferDeclaration" : "layout(std430,binding={slot})buffer {name}\n{\n\t{content} \n};"
 	,"replace": {
