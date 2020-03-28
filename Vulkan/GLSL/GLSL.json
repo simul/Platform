@@ -85,19 +85,20 @@
 		"float4": "image"
 	},
 	"toTextureType": {
-		"default": "sampler",
-		"vec4": "sampler",
-		"char4": "sampler",
-		"uchar4": "sampler",
-		"ivec4": "isampler",
-		"uint": "usampler",
-		"float": "sampler",
-		"float4": "sampler"
-	},
-	"templateTypes": {
+		"default": "sampler"
+		,"vec4": "sampler"
+		,"char4": "sampler"
+		,"uchar4": "sampler"
+		,"ivec4": "isampler"
+		,"uint": "usampler"
+		,"float": "sampler"
+		,"float4": "sampler"
+		,"half4"	: "sampler"
+	}
+	,"templateTypes": {
 		"Texture2D<uint>": "utexture2D"
-	},
-	"computeLayout": "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;",
+	}
+	,"computeLayout": "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;",
 	"structuredBufferDeclaration": "layout(std430,binding={slot})buffer {name}\n{\n\t{content} \n};",
 	"replace": {
 		"SV_VertexId": "S_VERTEX_ID",
