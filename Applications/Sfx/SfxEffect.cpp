@@ -78,7 +78,7 @@ Function* Effect::DeclareFunction(const std::string &functionName, Function &bui
 			if (!p.templ.empty() &&
 				(p.shaderResourceType & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE)
 			{
-				find_and_replace(f->declaration, "<" + p.templ + ">", "");
+				find_and_replace(f->declaration, p.type+ "<" + p.templ + ">", CombinedTypeString(p.type, p.templ));
 			}
 		}
 		// Checks
@@ -1339,6 +1339,21 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 
  void errSem(const string& str, int lex_linenumber);
 
+
+ std::string Effect::CombinedTypeString(const std::string& type, const std::string& memberType)
+ {
+	 if (memberType.length() == 0)
+		 return type;
+	 std::string key = type + "<";
+	 key += memberType;
+	 key += ">";
+	auto i= sfxConfig.templateTypes.find(key);
+	if (i != sfxConfig.templateTypes.end())
+	{
+		return i->second;
+	}
+	return type;
+ }
  bool Effect::CheckDeclaredGlobal(const Function* func, const std::string toCheck)
  {
 	 for (const auto g : func->globals)
@@ -1491,7 +1506,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					else
 					{
 						find_and_replace(str, "{pass_through}", td->original);
-						find_and_replace(str, "{type}", td->type);
+						find_and_replace(str, "{type}", CombinedTypeString(td->type,td->structureType));
 						find_and_replace(str, "{name}", td->name);
 						find_and_replace(str, "{slot}", ToString(GenerateTextureSlot(td->slot)));
 						dec = str;
@@ -1696,7 +1711,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 		samplerCB.slot			  = -1;
 	}
 
-	// Declare it!
+	// Declare them!
 	for(auto u=ordered_decs.begin();u!=ordered_decs.end();u++)
 	{
 		const Declaration *d=(u->second);

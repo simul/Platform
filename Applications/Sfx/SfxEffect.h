@@ -131,6 +131,7 @@ namespace sfx
 	public:
 		std::ostringstream m_sharedCode;
 		std::ostringstream& Log();
+		std::string CombinedTypeString(const std::string& type, const std::string& memberType);
 		TechniqueGroup &GetTechniqueGroup(const std::string &name);
 		const std::vector<std::string>& GetProgramList() const;
 		const std::vector<std::string>& GetFilenameList() const;
