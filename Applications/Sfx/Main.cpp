@@ -365,6 +365,16 @@ int main(int argc, char** argv)
 		}
 		if (j.count("computeLayout")>0)
 			sfxConfig.computeLayout = j["computeLayout"];
+		if (j.count("templateTypes") > 0)
+		{
+			json ttypes = j["templateTypes"];
+			for (json::iterator it = ttypes.begin(); it != ttypes.end(); ++it)
+			{
+				std::string a = it.key();
+				std::string b = it.value();
+				sfxConfig.templateTypes[a] = b;
+			}
+		}
 		json repl=j["replace"];
 		for (json::iterator it = repl.begin();it != repl.end(); ++it)
 		{

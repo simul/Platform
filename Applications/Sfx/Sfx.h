@@ -127,6 +127,8 @@ struct SfxConfig
 	std::map<std::string, std::string> toImageType;
 	//! SFX format to texture object type
 	std::map<std::string, std::string> toTextureType;
+	//! From templates to type names, e.g. Texture2D<uint> -> uTexture2D
+	std::map<std::string, std::string> templateTypes;
 	//! Declaration for a structured buffer
 	std::string structuredBufferDeclaration;
 	//! GFX Root signature source
