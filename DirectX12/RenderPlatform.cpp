@@ -705,7 +705,7 @@ void RenderPlatform::BeginD3D12Frame()
                 }
 #if SIMUL_INTERNAL_CHECKS
 				if (remainRefs)
-					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " "; << std::endl;
+					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " " << std::endl;
 #endif
 				if (GetMemoryInterface())
 					GetMemoryInterface()->UntrackVideoMemory(ptr); 
