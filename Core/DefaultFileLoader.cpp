@@ -21,30 +21,6 @@ using namespace simul;
 using namespace base;
 
 
-namespace simul
-{
-	namespace base
-	{
-		static bool debugBreaksEnabled=true;
-		bool DebugBreaksEnabled()
-		{
-			return debugBreaksEnabled;
-		}
-		void EnableDebugBreaks(bool b)
-		{
-			debugBreaksEnabled=b;
-		}
-		#ifndef _MSC_VER
-		void DebugBreak()
-		{
-			if(debugBreaksEnabled)
-			{
-				std::cout<<"Break here.\n";
-			}
-		}
-		#endif
-	}
-}
 static int do_mkdir(const char *path_utf8)
 {
 	ALWAYS_ERRNO_CHECK

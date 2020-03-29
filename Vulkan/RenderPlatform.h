@@ -114,7 +114,6 @@ namespace simul
             void									SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
-			void									RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			
             static vk::PrimitiveTopology			toVulkanTopology(crossplatform::Topology t);
 			static vk::CullModeFlags				toVulkanCullFace(crossplatform::CullFaceMode c);
@@ -154,7 +153,6 @@ namespace simul
 			void									CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
 			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
-			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
