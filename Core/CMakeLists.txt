@@ -11,4 +11,4 @@ add_static_library( Core SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_F
 
 # Setup and build the dynamic library.
 add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} DEFINITIONS PLATFORM_CORE_DLL=1 FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
- 
+  
