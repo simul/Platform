@@ -118,10 +118,13 @@ function(LibraryDefaults targname)
 		target_compile_definitions(${targname} PRIVATE PLATFORM_DEBUG_MEMORY=1 )
 	endif()
 	target_compile_definitions(${targname} PRIVATE PLATFORM_DEBUG_DISABLE=${PLATFORM_DEBUG_DISABLE} )
+	target_compile_definitions(${targname} PRIVATE CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR} )
+	target_compile_definitions(${targname} PRIVATE CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR} )
 	target_include_directories(${targname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 	target_include_directories(${targname} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}")
 	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}/..")
+	target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/..")
 
 	# The prebuilt libraries live here if not a source build:
 	if(NOT SIMUL_SOURCE_BUILD)

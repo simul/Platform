@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-if(SIMUL_DIR)
+if(SIMUL_PLATFORM_DIR)
 set(SIMUL_PLATFORM_FOLDER_PREFIX Platform)
 else()
 project(Platform)
@@ -40,14 +40,14 @@ endif()
 
 if(XBOXONE)
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION}  ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
 if(GDK)
 	add_subdirectory(Platform/DirectX12)
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
 	add_subdirectory(External/DirectX/DirectXTK12)
-	set( ENV{SIMUL_XDK_VERSION}  ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )

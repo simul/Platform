@@ -28,14 +28,14 @@ float InverseCosine(float x)
 class BadNumber{};
 float Sqrt(float x)
 {
-	return sqrt(x);
+	return sqrtf(x);
 }
 void IntegerPowerOfTen(float num,float &man,int &Exp)
 {
 	if(fabs(num)<1e-8f)
 		num=1;
-	float expf=log(num);
-	expf/=log(10.f);
+	float expf=logf(num);
+	expf/=logf(10.f);
 	if(expf>=0)
 		Exp=(int)(expf+0.5f);
 	else
