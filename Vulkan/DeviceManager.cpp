@@ -62,6 +62,14 @@ public:
 	vk::PhysicalDeviceProperties gpu_props;
 	vk::PhysicalDeviceMemoryProperties memory_properties;
 	vk::PhysicalDeviceFeatures gpu_features;
+	
+	DeviceManagerInternal()
+		: instance(vk::Instance()),
+		gpu(vk::PhysicalDevice()),
+		device(vk::Device()),
+		gpu_props(vk::PhysicalDeviceProperties()),
+		memory_properties(vk::PhysicalDeviceMemoryProperties()),
+		gpu_features(vk::PhysicalDeviceFeatures()) {};
 };
 
 DeviceManager::DeviceManager()

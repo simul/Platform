@@ -1558,6 +1558,35 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 		{
 			Struct *s=(Struct*)d;
 			string str = sfxConfig.structDeclaration;
+
+			if (sfxConfig.pixelOutputDeclaration.empty() || sfxConfig.pixelOutputDeclarationDSB.empty())
+			{
+				for (auto& member : s->m_structMembers)
+				{
+					if (member.semantic.size() == std::string("SV_TARGET688366XX").size()) //SV_TARGET6883660##n for Dual Source Blending
+					{
+						char checkDSB[3];
+						checkDSB[0] = (char)(10 * atoi(member.semantic.substr(9, 1).c_str())) + atoi(member.semantic.substr(10, 1).c_str());
+						checkDSB[1] = (char)(10 * atoi(member.semantic.substr(11, 1).c_str())) + atoi(member.semantic.substr(12, 1).c_str());
+						checkDSB[2] = (char)(10 * atoi(member.semantic.substr(13, 1).c_str())) + atoi(member.semantic.substr(14, 1).c_str());
+
+						if (checkDSB[0] != 'D' || checkDSB[1] != 'S' || checkDSB[2] != 'B')
+							std::cerr << "SV_TARGET index is not a valid for dual source blending: " << member.semantic << std::endl;
+						
+						int slotidx = atoi(member.semantic.substr(16, 1).c_str());
+						int dsbIndex = atoi(member.semantic.substr(15, 1).c_str());
+						int finalSV_TargetIdx = slotidx + dsbIndex;
+						if(finalSV_TargetIdx < 0 || finalSV_TargetIdx > 7)
+							std::cerr << "Resolved SV_TARGET index (for dual source blending) is not a valid: " << member.semantic << std::endl;
+
+						std::string replacementSemantic = "SV_TARGET" + std::to_string(finalSV_TargetIdx);
+						size_t pos = s->original.find(member.semantic);
+						if(pos != std::string::npos)
+							s->original.replace(pos, member.semantic.size(), replacementSemantic);
+					}
+				}
+			}
+
 			if (str.length() == 0)
 			{
 				str = "{pass_through}";
@@ -1966,7 +1995,12 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 						content += "\n";
 						for (auto member : s->m_structMembers)
 						{
-							string str = sfxConfig.pixelOutputDeclaration;
+							string str;
+							if (member.semantic.size() == std::string("SV_TARGET688366XX").size() && sfxConfig.pixelOutputDeclarationDSB.length() > 0 )
+								str = sfxConfig.pixelOutputDeclarationDSB;
+							else
+								str = sfxConfig.pixelOutputDeclaration;
+
 							string m;
 							process_member_decl(str, m);
 							// Declare the output
@@ -1983,6 +2017,22 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 							{
 								// TO-DO: replace with gl_Depth = value;
 								slotidx = "1";
+							}
+							else if (member.semantic.size() == std::string("SV_TARGET688366XX").size()) //SV_TARGET6883660##n for Dual Source Blending
+							{
+								char checkDSB[3];
+								checkDSB[0] = (char)(10 * atoi(member.semantic.substr(9 , 1).c_str())) + atoi(member.semantic.substr(10, 1).c_str());
+								checkDSB[1] = (char)(10 * atoi(member.semantic.substr(11, 1).c_str())) + atoi(member.semantic.substr(12, 1).c_str());
+								checkDSB[2] = (char)(10 * atoi(member.semantic.substr(13, 1).c_str())) + atoi(member.semantic.substr(14, 1).c_str());
+
+								if (checkDSB[0] != 'D' || checkDSB[1] != 'S' || checkDSB[2] != 'B')
+									std::cerr << "SV_TARGET index is not a valid for dual source blending: " << member.semantic << std::endl;
+
+								slotidx.append(member.semantic.substr(16, 1));
+
+								std::string dsbIndex;
+								dsbIndex.append(member.semantic.substr(15, 1));
+								find_and_replace(m, "{id}", dsbIndex);
 							}
 							else
 							{

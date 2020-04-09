@@ -235,6 +235,54 @@ shader posTexVertexOutput VS_DrawTextureOnSphere(idOnly IN)
 	return OUT;
 }
 
+shader posTexVertexOutput VS_DrawCurvedTextureOnSphere(idOnly IN)
+{
+	const uint divisions = 8;
+	const uint range = 2;
+	const uint totalPosCount = (divisions + 1) * (divisions + 1);
+	float step = float(range) / float(divisions);
+
+	vec3 baseQuad[6];
+	baseQuad[0] = vec3(-1.0, -1.0, 1.0);
+	baseQuad[1] = vec3(-1.0, -1.0 + step, 1.0);
+	baseQuad[2] = vec3(-1.0 + step, -1.0 + step, 1.0);
+	baseQuad[3] = vec3(-1.0 + step, -1.0 + step, 1.0);
+	baseQuad[4] = vec3(-1.0 + step, -1.0, 1.0);
+	baseQuad[5] = vec3(-1.0, -1.0, 1.0);
+
+	vec3 poss[8 * 8 * 6];
+	for (int y = 0; y < divisions; y++)
+	{
+		for (int x = 0; x < divisions; x++)
+		{
+			uint cornerVertId = 6 * (x + divisions * y);
+
+			poss[cornerVertId + 0] = baseQuad[0] + vec3(step * float(x), step * float(y), 0.0);
+			poss[cornerVertId + 1] = baseQuad[1] + vec3(step * float(x), step * float(y), 0.0);
+			poss[cornerVertId + 2] = baseQuad[2] + vec3(step * float(x), step * float(y), 0.0);
+			poss[cornerVertId + 3] = baseQuad[3] + vec3(step * float(x), step * float(y), 0.0);
+			poss[cornerVertId + 4] = baseQuad[4] + vec3(step * float(x), step * float(y), 0.0);
+			poss[cornerVertId + 5] = baseQuad[5] + vec3(step * float(x), step * float(y), 0.0);
+		}
+	}
+
+	vec3 pos;
+	posTexVertexOutput OUT;
+	uint vert = IN.vertex_id;
+	{
+		pos = poss[vert];
+		OUT.texCoords = pos.xy * 0.5 + vec2(0.5, 0.5);
+		pos.xy *= sin(2 * sideview); //Convert to sphereical coordinates style.
+		pos.z = cos(2 * sideview);	 //Convert to sphereical coordinates style.
+		pos = normalize(pos);
+	}
+	pos = radius * rotate_by_quaternion(quaternion, pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition = mul(debugWorldViewProj, vec4(pos.xyz, 1.0));
+	return OUT;
+}
+
 shader vec4 PS_DrawTextureOnSphere(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texc	=IN.texCoords.xy;
@@ -342,6 +390,19 @@ technique draw_texture_on_sphere
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
+}
+
+technique draw_curved_texture_on_sphere
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCurvedTextureOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawTextureOnSphere()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
 }
 
 technique draw_circle_on_sphere

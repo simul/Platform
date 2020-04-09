@@ -103,6 +103,7 @@ struct SfxConfig
 	std::string vertexInputDeclaration;
 	std::string outputDeclaration;
 	std::string pixelOutputDeclaration;
+	std::string pixelOutputDeclarationDSB;
 	std::string samplingSyntax;
 	std::string loadSyntax;
 	std::string storeSyntax;
