@@ -18,8 +18,10 @@ vec4 saturate(vec4 vvalue)	{return clamp(vvalue,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1
 
 vec4 mul(mat4 mat, vec4 vec){return mat * vec;}
 vec3 mul(mat3 mat, vec3 vec){return mat * vec;}
+vec2 mul(mat2 mat, vec2 vec){return mat * vec;}
 vec4 mul(vec4 vec, mat4 mat){return mat * vec;}
 vec3 mul(vec3 vec, mat3 mat){return mat * vec;}
+vec2 mul(vec2 vec, mat2 mat){return mat * vec;}
 uint reversebits(uint value){return bitfieldReverse(value);}
 
 #define int2 ivec2
@@ -63,5 +65,10 @@ uint4 typed_mod(uint4 a,uint4 b)
 {
 	return uint4(mod(a,b));
 }
+
+
+#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET6883660##n
+#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET6883661##n
+
 #endif
 #endif

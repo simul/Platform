@@ -285,6 +285,8 @@ int main(int argc, char** argv)
 			sfxConfig.outputDeclaration						=j["outputDeclaration"];
 		if (j.count("pixelOutputDeclaration")>0)
 			sfxConfig.pixelOutputDeclaration				=j["pixelOutputDeclaration"];
+		if (j.count("pixelOutputDeclarationDSB") > 0)
+			sfxConfig.pixelOutputDeclarationDSB				=j["pixelOutputDeclarationDSB"];
 		if (j.count("samplingSyntax")>0)
 			sfxConfig.samplingSyntax						=j["samplingSyntax"];
 		if (j.count("loadSyntax")>0)

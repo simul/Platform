@@ -42,6 +42,8 @@
 // This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
 // we will pass a dummy SetGeometryShader(a), we should 
 #define SetRenderTargetFormatState SetGeometryShader
+#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
+#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
 #endif
 
 #endif

@@ -20,6 +20,8 @@ vec4 mul(mat4 mat, vec4 vec){return mat * vec;}
 vec4 mul(vec4 vec, mat4 mat){return vec * mat;}
 vec3 mul(mat3 mat, vec3 vec){return mat * vec;}
 vec3 mul(vec3 vec, mat3 mat){return vec * mat;}
+vec2 mul(mat2 mat, vec2 vec){return mat * vec;}
+vec2 mul(vec2 vec, mat2 mat){return vec * mat;}
 
 #define int2 ivec2
 #define int3 ivec3
@@ -58,6 +60,9 @@ vec4 reverse_y_coord(vec4 a)
 {
 	return a;//vec4(a.x,1.0-a.y,a.z,a.w);
 }
+
+#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET6883660##n
+#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET6883661##n
 
 #endif
 #endif

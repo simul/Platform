@@ -209,6 +209,39 @@ void SphereRenderer::DrawTexture(DeviceContext &deviceContext,crossplatform::Tex
 	effect->Unapply(deviceContext);
 }
 
+void SphereRenderer::DrawCurvedTexture(DeviceContext& deviceContext, crossplatform::Texture* t, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
+{
+	math::Matrix4x4 view = deviceContext.viewStruct.view;
+	const math::Matrix4x4& proj = deviceContext.viewStruct.proj;
+
+	math::Matrix4x4 wvp, world;
+	world.ResetToUnitMatrix();
+
+	world._41 = origin.x;
+	world._42 = origin.y;
+	world._43 = origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp, world, view, proj);
+	sphereConstants.debugWorldViewProj = wvp;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float*)&cam_pos, (float*)&view_dir);
+	crossplatform::EffectTechnique* tech = effect->GetTechniqueByName("draw_curved_texture_on_sphere");
+	auto imageTexture = effect->GetShaderResource("imageTexture");
+	effect->SetTexture(deviceContext, imageTexture, t);
+	sphereConstants.quaternion = orient_quat;
+	sphereConstants.radius = sph_rad;
+	sphereConstants.sideview = qsize * 0.5f;
+	sphereConstants.debugColour = colour;
+	sphereConstants.debugViewDir = view_dir;
+	sphereConstants.multiplier = colour;
+	effect->SetConstantBuffer(deviceContext, &sphereConstants);
+
+	renderPlatform->SetTopology(deviceContext, TRIANGLELIST);
+	effect->Apply(deviceContext, tech, 0);
+	renderPlatform->Draw(deviceContext, 8 * 8 * 6, 0);
+	effect->Unapply(deviceContext);
+}
+
 void SphereRenderer::DrawCircle(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour, vec4 fill_colour)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
