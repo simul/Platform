@@ -830,8 +830,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		std::string sourcePlatformPath = (std::string(SIMUL) + "\\Platform\\") + platformName;
 		std::string buildPlatformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
 		// Sfx path
-		std::string exe = simulPath;
-		exe += "\\Tools\\bin\\Sfx.exe";
+		std::string exe = SIMUL_BUILD;
+		exe += "\\bin\\Release\\Sfx.exe";
 		std::wstring sfxPath(exe.begin(), exe.end());
 
 		/*
