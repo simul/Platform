@@ -9,7 +9,7 @@ using namespace simul::math;
 static float cos_interp(float x, float a, float b)
 {
 	float ft = x * 3.1415927f;
-	float f = (1.f - cos(ft)) * .5f;
+	float f = (1.f - cosf(ft)) * .5f;
 	return  a*(1.f-f) + b*f;
 }
 
