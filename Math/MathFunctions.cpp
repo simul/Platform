@@ -40,7 +40,7 @@ void IntegerPowerOfTen(float num,float &man,int &Exp)
 		Exp=(int)(expf+0.5f);
 	else
 		Exp=(int)(expf-0.5f);
-	float powr=pow(10.f,(float)Exp);
+	float powr=powf(10.f,(float)Exp);
 	man=num/powr;
 
 }    
