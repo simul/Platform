@@ -16,12 +16,11 @@ add_subdirectory(CrossPlatform)
 add_subdirectory(Applications/Sfx)
 
 if(SIMUL_BUILD_SAMPLES)
-if(SIMUL_SUPPORT_OPENGL or SIMUL_SUPPORT_VULKAN)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
-		add_subdirectory(External/glfw)
+	if(SIMUL_SUPPORT_OPENGL or SIMUL_SUPPORT_VULKAN)
+		if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
+			add_subdirectory(External/glfw)
+		endif()
 	endif()
-endif()
-
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
