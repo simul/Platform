@@ -17,13 +17,12 @@ add_subdirectory(Applications/Sfx)
 
 if(SIMUL_BUILD_SAMPLES)
 if(SIMUL_SUPPORT_OPENGL OR SIMUL_SUPPORT_VULKAN)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
-		add_subdirectory(External/glfw)
+		if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
+			add_subdirectory(External/glfw)
+		endif()
 	endif()
 endif()
 	add_subdirectory(Applications/Sample)
-
-endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_subdirectory(Vulkan)

@@ -240,9 +240,9 @@ namespace simul
 			{
 				return (IDirect3DDevice9*)platform_context;
 			}
-			inline sce::Gnmx::LightweightGfxContext *asGfxContext()
+			inline sce::Gnmx::LegacyContext *asGfxContext()
 			{
-				return (sce::Gnmx::LightweightGfxContext*)platform_context;
+				return (sce::Gnmx::LegacyContext*)platform_context;
 			}
 			inline nvn::CommandBuffer* asNVNContext()
 			{
