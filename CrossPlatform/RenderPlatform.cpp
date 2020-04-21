@@ -262,7 +262,7 @@ void RenderPlatform::RecompileShaders()
 	
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
-	
+
 	Destroy(solidEffect);
 	
 	solidEffect=CreateEffect("solid",defines);

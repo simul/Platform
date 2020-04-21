@@ -16,6 +16,7 @@
 #include "Platform/DirectX11/SaveTextureDX1x.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/DirectX11/CompileShaderDX1x.h"
+#include "Platform/DirectX11/PlatformStructuredBuffer.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/Math/Matrix4x4.h"
@@ -242,7 +243,6 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 
 	RecompileShaders();
 	
-#ifdef SIMUL_WIN8_SDK
 	{
 		SAFE_RELEASE(pUserDefinedAnnotation);
 		IUnknown *unknown=(IUnknown *)pImmediateContext;
@@ -252,7 +252,6 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 		V_CHECK(unknown->QueryInterface(IID_PPV_ARGS(&pUserDefinedAnnotation)));
 #endif
 	}
-#endif
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -281,9 +280,8 @@ void RenderPlatform::RecompileShaders()
 	crossplatform::RenderPlatform::RecompileShaders();
 }
 
-void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
+void RenderPlatform::BeginEvent	(crossplatform::DeviceContext &,const char *name)
 {
-#ifdef SIMUL_WIN8_SDK
 	static std::unordered_map<const char*,const wchar_t*> name_map;
 	auto n=name_map.find(name);
 	const wchar_t *wstr_name=nullptr;
@@ -301,7 +299,6 @@ void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *na
 		wstr_name=n->second;
 	if(pUserDefinedAnnotation&&wstr_name)
 		pUserDefinedAnnotation->BeginEvent(wstr_name);
-#endif
 #ifdef USE_PIX
 	PIXBeginEvent( 0, wstr_name );
 #endif
@@ -943,6 +940,42 @@ static D3D11_BLEND toD3dBlend(crossplatform::BlendOption o)
 	return D3D11_BLEND_ONE;
 }
 
+
+D3D11_FILL_MODE toD3d11FillMode(crossplatform::PolygonMode p)
+{
+	switch (p)
+	{
+	case crossplatform::POLYGON_MODE_FILL:
+		return D3D11_FILL_SOLID;
+	case crossplatform::POLYGON_MODE_LINE:
+		return D3D11_FILL_WIREFRAME;
+	case crossplatform::POLYGON_MODE_POINT:
+		SIMUL_BREAK("DirectX11 doesn't have a POINT polygon mode");
+		return D3D11_FILL_SOLID;
+	default:
+		SIMUL_BREAK("Undefined polygon mode");
+		return D3D11_FILL_SOLID;
+	}
+}
+
+D3D11_CULL_MODE toD3d11CullMode(crossplatform::CullFaceMode c)
+{
+	switch (c)
+	{
+	case simul::crossplatform::CULL_FACE_NONE:
+		return D3D11_CULL_NONE;
+	case simul::crossplatform::CULL_FACE_FRONT:
+		return D3D11_CULL_FRONT;
+	case simul::crossplatform::CULL_FACE_BACK:
+		return D3D11_CULL_BACK;
+	case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+		SIMUL_BREAK("In DirectX11 there is no FRONTANDBACK cull face mode");
+	default:
+		SIMUL_BREAK("Undefined cull face mode");
+		return D3D11_CULL_NONE;
+	}
+}
+
 crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatform::RenderStateDesc &desc)
 {
 	dx11::RenderState *s=new dx11::RenderState();
@@ -965,8 +998,25 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 		omDesc.IndependentBlendEnable			=desc.blend.IndependentBlendEnable;
 		omDesc.AlphaToCoverageEnable			=desc.blend.AlphaToCoverageEnable;
 		AsD3D11Device()->CreateBlendState(&omDesc,&s->m_blendState);
+		SetDebugObjectName(s->m_blendState, "Blend State");
 	}
-	else
+	if (desc.type == crossplatform::RASTERIZER)
+	{
+		D3D11_RASTERIZER_DESC rasterizerDesc;
+		ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
+
+		rasterizerDesc.FillMode = toD3d11FillMode(desc.rasterizer.polygonMode);
+		rasterizerDesc.CullMode = toD3d11CullMode(desc.rasterizer.cullFaceMode);
+		rasterizerDesc.FrontCounterClockwise = (desc.rasterizer.frontFace != crossplatform::FrontFace::FRONTFACE_CLOCKWISE);
+		rasterizerDesc.DepthBias = 0;
+		rasterizerDesc.DepthBiasClamp = 0.0f;
+		rasterizerDesc.SlopeScaledDepthBias = 0.0f;
+		rasterizerDesc.DepthClipEnable = false;
+		rasterizerDesc.MultisampleEnable = false;	// TO-DO : what if not!!!
+		rasterizerDesc.AntialiasedLineEnable = false;
+		AsD3D11Device()->CreateRasterizerState(&rasterizerDesc, &s->m_rasterizerState);
+	}
+	else if(desc.type==crossplatform::DEPTH)
 	{
 		D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 		//Initialize the description of the stencil state.
@@ -1499,27 +1549,28 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/) 
 {
-	/*for (int i = 0; i < 16; i++)
-	{
-		int vertexSteps;
-		if (deviceContext.contextState.applyVertexBuffers[i])
-			SetVertexBuffers(deviceContext, i, 1
-				, &(deviceContext.contextState.applyVertexBuffers[i])
-				, deviceContext.contextState.currentLayout
-				, &vertexSteps);
-	}
-
-	if (deviceContext.contextState.indexBuffer)
-	{
-		auto *ib = static_cast<const dx11::Buffer *>(deviceContext.contextState.indexBuffer);
-		SetIndexBuffer(deviceContext, deviceContext.contextState.indexBuffer);
-
-	}*/
 	if (deviceContext.contextState.currentLayout)
 	{
 		auto *l = static_cast<const dx11::Layout *>(deviceContext.contextState.currentLayout);
 		deviceContext.asD3D11DeviceContext()->IASetInputLayout(l->AsD3D11InputLayout());
 	}
+	crossplatform::ContextState* cs = GetContextState(deviceContext);
+	dx11::EffectPass* pass = static_cast<dx11::EffectPass*>(cs->currentEffectPass);
+	if (!cs->effectPassValid)
+	{
+		// This applies the pass, and also any associated state: Blend, Depth and Rasterizer states:
+		pass->Apply(deviceContext);
+		cs->effectPassValid = true;
+	}
+	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
+	
+	pass->SetConstantBuffers(deviceContext,cs->applyBuffers);
+	// Apply SRVs (textures and SB):
+	pass->SetSRVs(deviceContext,cs->textureAssignmentMap, cs->applyStructuredBuffers);
+
+	// Apply UAVs (RwTextures and RwSB):
+	pass->SetUAVs(deviceContext,cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
+
 	return true;
 }
 

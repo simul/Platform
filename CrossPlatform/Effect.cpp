@@ -238,6 +238,22 @@ Effect::~Effect()
 {
 	InvalidateDeviceObjects();
 	SIMUL_ASSERT(apply_count==0);
+	for (auto& i : depthStencilStates)
+	{
+		delete i.second;
+	}
+	for (auto& i : blendStates)
+	{
+		delete i.second;
+	}
+	for (auto& i : rasterizerStates)
+	{
+		delete i.second;
+	}
+	for (auto& i : rtFormatStates)
+	{
+		delete i.second;
+	}
 }
 
 void Effect::InvalidateDeviceObjects()
@@ -251,6 +267,27 @@ void Effect::InvalidateDeviceObjects()
 	groupCharMap.clear();
 	techniqueCharMap.clear();
 	techniques.clear();
+
+	for (auto& i : samplerStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : depthStencilStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : blendStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : rasterizerStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : rtFormatStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)

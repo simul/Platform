@@ -21,6 +21,7 @@ namespace simul
 	{
 		struct Window;
 		typedef std::map<int, IDXGIOutput*> OutputMap;
+
 		//! Manages the rendering device
 		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
 		{
@@ -47,7 +48,7 @@ namespace simul
 			//! Map of displays
 			OutputMap					mOutputs;
 			//! The D3D device
-			ID3D12Device*				mDevice;
+			ID3D12Device5*				mDevice;
 			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mCommandQueue;
 		};

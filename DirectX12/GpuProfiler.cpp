@@ -159,6 +159,7 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 	{
 		return mTimestampQueryData[offset];
 	}
+	return 0;
 }
 
 void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)

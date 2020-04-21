@@ -15,17 +15,11 @@
 #pragma warning(disable:3556,4717)
 // Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
 #define IN_COMPUTE_SHADER
-#define shader
-#define technique technique11
-#define group fxgroup
 #define f32touint16 f32tof16
 
 #endif
-#define SetTopology( a ) SetGeometryShader(NULL)
+
 #define constant_buffer ALIGN_16 cbuffer
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
 
 #ifndef __cplusplus
 #define char4 snorm float4

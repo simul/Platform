@@ -21,6 +21,7 @@ if(SIMUL_SUPPORT_OPENGL OR SIMUL_SUPPORT_VULKAN)
 		add_subdirectory(External/glfw)
 	endif()
 endif()
+	add_subdirectory(Applications/Sample)
 
 endif()
 
