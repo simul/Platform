@@ -204,6 +204,7 @@ namespace simul
 			RenderStateType type;
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
+			virtual void InvalidateDeviceObjects() {}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Shader
 		{
@@ -376,7 +377,7 @@ namespace simul
 			{
 				return topology;
 			}
-			virtual void Apply(crossplatform::DeviceContext &deviceContext,bool test)=0;
+			virtual void Apply(crossplatform::DeviceContext &deviceContext,bool test=false)=0;
 		protected:
 			unsigned samplerSlots;
 			unsigned constantBufferSlots;

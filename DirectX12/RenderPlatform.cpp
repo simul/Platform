@@ -1582,7 +1582,7 @@ D3D12_FILL_MODE toD3d12FillMode(crossplatform::PolygonMode p)
 	case crossplatform::POLYGON_MODE_LINE:
 		return D3D12_FILL_MODE_WIREFRAME;
 	case crossplatform::POLYGON_MODE_POINT:
-		SIMUL_BREAK("Directx12 doesn'thave a POINT polygon mode");
+		SIMUL_BREAK("Directx12 doesn't have a POINT polygon mode");
 		return D3D12_FILL_MODE_SOLID;
 	default:
 		SIMUL_BREAK("Undefined polygon mode");

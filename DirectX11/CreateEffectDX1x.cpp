@@ -25,9 +25,6 @@
 #include <fstream>
 #include "MacrosDX1x.h"
 #include "D3dx11effect.h"
-#ifndef SIMUL_WIN8_SDK
-#include <dxerr.h>
-#else
 #include <DirectXTex.h>
 typedef struct D3DX11_IMAGE_LOAD_INFO {
   UINT              Width;
@@ -46,13 +43,7 @@ typedef struct D3DX11_IMAGE_LOAD_INFO {
 } D3DX11_IMAGE_LOAD_INFO, *LPD3DX11_IMAGE_LOAD_INFO;
 enum {D3DX11_FROM_FILE=(UINT)-3};
 enum {D3DX11_FILTER_NONE=(1 << 0)};
-#endif
 
-#ifndef SIMUL_WIN8_SDK
-	#pragma comment(lib,"Effects11_DXSDK.lib")
-	#pragma comment(lib,"dxerr.lib")
-	#pragma comment(lib,"d3dx11.lib")
-#endif
 #ifdef _XBOX_ONE
 	#pragma comment(lib,"d3d11_x.lib")
 	#pragma comment(lib,"d3dcompiler.lib")
@@ -417,7 +408,7 @@ ERRNO_CHECK
 	double binary_date_jdn=0.0;
 	double newest_included_file=0.0;
 	std::string binaryPathUtf8;
-	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
+	bool found_bin = false;
 	for (const auto& binPath : shadeBinPathsUtf8)
 	{
 		double bin_date = simul::base::FileLoader::GetFileLoader()->GetFileDate(((binPath+"/")+binary_filename_utf8).c_str());
@@ -425,6 +416,7 @@ ERRNO_CHECK
 		{
 			binary_date_jdn = bin_date;
 			binaryPathUtf8 = binPath;
+			found_bin = true;
 		}
 	}
 	if ((shaderBuildMode&crossplatform::BUILD_IF_CHANGED) != 0)
@@ -459,6 +451,11 @@ ERRNO_CHECK
 	crossplatform::ShaderBuildMode anyBuild=crossplatform::ALWAYS_BUILD|crossplatform::BUILD_IF_CHANGED;
 	if((shaderBuildMode&anyBuild)==0||(!changes_detected&&binary_date_jdn>0))
 	{
+		if (!found_bin)
+		{
+			SIMUL_CERR << "Effect binary " << binary_filename_utf8.c_str() << " not found." << std::endl;
+			return S_FALSE;
+		}
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(((binaryPathUtf8 + "/") + binary_filename_utf8).c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
