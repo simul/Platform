@@ -92,6 +92,8 @@ namespace simul
 			Vulkan					= 21,	// Vulkan
 			Switch					= 22,	// Nintendo Switch NVN API
 			XboxOneD3D12			= 23,	//  XboxOne Direct3D 12
+			Commodore				= 45,	//  Commodore 64
+			Spectrum				= 77,	//  ZX Spectrum
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 
