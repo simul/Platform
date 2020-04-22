@@ -12,6 +12,7 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 	set(CMAKE_DEBUG_POSTFIX d )
 endif()
 
+
 # Set the output folder where program will be created
 set( EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/eop/ )
 set( LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lop/ )
