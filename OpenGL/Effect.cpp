@@ -734,7 +734,7 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 			if (numActiveMem > 0)
 			{
 				// Create the UBO
-				const int numMemberEles = 24; // TO-DO: we can query this but it shold be the same 
+				const int numMemberEles = 240; // TO-DO: we can query this but it shold be the same 
 				mHandlesUBO[i] = new TexHandlesUBO;
 				int uboIndex=glGetUniformBlockIndex(mProgramId, kTexHandleUbo);
 				mHandlesUBO[i]->Init(numActiveMem * numMemberEles, mProgramId, uboIndex, uboSlot);

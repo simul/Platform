@@ -12,7 +12,7 @@
 #include <d3dx11.h>
 #endif
 #include <algorithm>			// for std::min / max
-#include "D3dx11effect.h"
+
 using namespace simul;
 using namespace dx11;
 

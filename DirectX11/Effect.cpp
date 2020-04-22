@@ -8,7 +8,19 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX11/RenderPlatform.h"
+#include "Platform/DirectX11/PlatformStructuredBuffer.h"
+#if defined(_XBOX_ONE) 
+	#ifndef _GAMING_XBOX //Deprecated from the GDK
+		#include <D3Dcompiler_x.h>
+	#else
+		#include <D3Dcompiler.h>
+	#endif
+#else
+#include <D3Dcompiler.h>
+#endif
+#if !PLATFORM_D3D11_SFX
 #include "D3dx11effect.h"
+#endif
 
 #include <string>
 
@@ -110,347 +122,476 @@ bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_
 }
 
 RenderState::RenderState()
-	:m_depthStencilState(NULL)
-	,m_blendState(NULL)
+	:m_depthStencilState(nullptr)
+	,m_blendState(nullptr)
+	, m_rasterizerState(nullptr)
 {
 }
-RenderState::~RenderState()
+
+void RenderState::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_depthStencilState)
 	SAFE_RELEASE(m_blendState)
+	SAFE_RELEASE(m_rasterizerState)
 }
-static const int NUM_STAGING_BUFFERS=4;
-PlatformStructuredBuffer::PlatformStructuredBuffer()
-				:num_elements(0)
-				,element_bytesize(0)
-				,buffer(0)
-				,read_data(0)
-				,shaderResourceView(0)
-				,unorderedAccessView(0)
-				,lastContext(NULL)
-#if _XBOX_ONE
-				,m_pPlacementBuffer( nullptr )
-				,byteWidth( 0 )
-#endif
-				,m_nContexts( 0 )
-				,m_nObjects( 0 )
-				,m_nBuffering( 0 )
-				,iObject(0)
+
+RenderState::~RenderState()
+{
+	InvalidateDeviceObjects();
+}
+
+#if PLATFORM_D3D11_SFX
+
+EffectTechnique::EffectTechnique(crossplatform::RenderPlatform* r, crossplatform::Effect* e)
+	:crossplatform::EffectTechnique(r, e)
+{
+}
+
+int EffectTechnique::NumPasses() const
+{
+	return (int)passes_by_index.size();
+}
+
+dx11::Effect::Effect()
+{
+}
+
+Shader::~Shader()
+{
+	Release();
+}
+
+void Shader::Release()
+{
+	switch (type)
 	{
-		stagingBuffers=new ID3D11Buffer*[NUM_STAGING_BUFFERS];
-		for(int i=0;i<NUM_STAGING_BUFFERS;i++)
-			stagingBuffers[i]=NULL;
-		memset(&mapped,0,sizeof(mapped));
-	}
-
-PlatformStructuredBuffer::~PlatformStructuredBuffer()
-{
-	InvalidateDeviceObjects();
-	delete[] stagingBuffers;
+	case crossplatform::SHADERTYPE_PIXEL:
+		SAFE_RELEASE(pixelShader);
+		break;
+	case crossplatform::SHADERTYPE_VERTEX:
+		SAFE_RELEASE(vertexShader);
+		break;
+	case crossplatform::SHADERTYPE_COMPUTE:
+		SAFE_RELEASE(computeShader);
+		break;
+	};
+	SAFE_RELEASE(shaderBlob);
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,int ct,int unit_size,bool computable,bool cpu_r,void *init_data,const char *n)
+void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t DataSize, crossplatform::ShaderType t)
 {
-	InvalidateDeviceObjects();
+	struct FileBlob
+	{
+		void* pData;
+		uint32_t	DataSize;
+	};
+	auto* pd3dDevice = r->AsD3D11Device();
+	SAFE_RELEASE(shaderBlob);
+	D3DCreateBlob(DataSize, &shaderBlob);
+	memcpy(shaderBlob->GetBufferPointer(), data, shaderBlob->GetBufferSize());
+	// Copy shader
+	type = t;
+	if (t == crossplatform::SHADERTYPE_PIXEL)
+	{
+		pd3dDevice->CreatePixelShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), NULL, &pixelShader);
+	}
+	else if (t == crossplatform::SHADERTYPE_VERTEX)
+	{
+		pd3dDevice->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), NULL, &vertexShader);
+	}
+	else if (t == crossplatform::SHADERTYPE_COMPUTE)
+	{
+		pd3dDevice->CreateComputeShader(shaderBlob->GetBufferPointer(),shaderBlob->GetBufferSize(),NULL, &computeShader);
+	}
+	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
+	{
+		SIMUL_INTERNAL_CERR << "Geometry shaders are not implemented." << std::endl;
+	}
+	else 
+	{
+		SIMUL_INTERNAL_CERR << "This type of shader is not implemented." << std::endl;
+	}
+}
+
+EffectTechnique *Effect::CreateTechnique()
+{
+	return new dx11::EffectTechnique(renderPlatform,this);
+}
+
+void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
 	renderPlatform=r;
-	cpu_read=cpu_r;
-	num_elements=ct;
-	element_bytesize=unit_size;
-	D3D11_BUFFER_DESC sbDesc;
-	memset(&sbDesc,0,sizeof(sbDesc));
-	if(computable)
+	if(!renderPlatform)
+		return;
+	EnsureEffect(r, filename_utf8);
+	crossplatform::Effect::Load(r, filename_utf8, defines);
+}
+
+void Effect::PostLoad()
+{
+	// Ensure slots are correct
+	for (auto& tech : techniques)
 	{
-		sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS;
-		sbDesc.Usage				=D3D11_USAGE_DEFAULT;
-		sbDesc.CPUAccessFlags		=0;
-	}
-	else
-	{
-		sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
-		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
-		if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
-			usage=D3D11_USAGE_DEFAULT;
-		sbDesc.Usage				=usage;
-		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
-	}
-	sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
-	sbDesc.StructureByteStride	=element_bytesize;
-	sbDesc.ByteWidth			=element_bytesize*num_elements;
-	
-	D3D11_SUBRESOURCE_DATA sbInit = {init_data, 0, 0};
-
-	m_nContexts = 1;
-	m_nObjects = 1;
-	m_nBuffering = 12;
-#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
-	{
-		m_index.resize( m_nContexts * m_nObjects, 0 );
-		UINT numBuffers = m_nContexts * m_nObjects * m_nBuffering;
-		SIMUL_ASSERT( sbDesc.Usage == D3D11_USAGE_DEFAULT );
-		byteWidth = sbDesc.ByteWidth;
-
-		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(m_pPlacementBuffer);
-		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
-		// Force cache line alignment and packing to avoid cache flushing on Unmap in RoundRobinBuffers
-		byteWidth  = static_cast<UINT>( NextMultiple( byteWidth, SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE ) );
-		#endif
-	
-		m_pPlacementBuffer = static_cast<BYTE*>( VirtualAlloc( nullptr, numBuffers * byteWidth, 
-			MEM_LARGE_PAGES | MEM_GRAPHICS | MEM_RESERVE | MEM_COMMIT, 
-			PAGE_WRITECOMBINE | PAGE_READWRITE ));
-
-		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->TrackVideoMemory(m_pPlacementBuffer,numBuffers * byteWidth,"dx11::PlatformStructuredBuffer placement");
-
-		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
-		SIMUL_ASSERT( ( BytePtrToUint64( m_pPlacementBuffer ) & ( SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE - 1 ) ) == 0 );
-		#endif
-		if (init_data)
+		for (auto& pass : tech.second->passes_by_name)
 		{
-			for (uint i = 0; i < numBuffers; i++)
+			dx11::Shader* v = (dx11::Shader*)pass.second->shaders[crossplatform::SHADERTYPE_VERTEX];
+			dx11::Shader* p = (dx11::Shader*)pass.second->shaders[crossplatform::SHADERTYPE_PIXEL];
+			dx11::Shader* c = (dx11::Shader*)pass.second->shaders[crossplatform::SHADERTYPE_COMPUTE];
+			// Graphics pipeline
+			if (v && p)
 			{
-				memcpy(m_pPlacementBuffer+(i*byteWidth), init_data, byteWidth);
+				//CheckShaderSlots(v, v->vertexShader11);
+				//CheckShaderSlots(p, p->pixelShader11);
+				pass.second->SetConstantBufferSlots(p->constantBufferSlots | v->constantBufferSlots);
+				pass.second->SetTextureSlots(p->textureSlots | v->textureSlots);
+				pass.second->SetTextureSlotsForSB(p->textureSlotsForSB | v->textureSlotsForSB);
+				pass.second->SetRwTextureSlots(p->rwTextureSlots | v->rwTextureSlots);
+				pass.second->SetRwTextureSlotsForSB(p->rwTextureSlotsForSB | v->rwTextureSlotsForSB);
+				pass.second->SetSamplerSlots(p->samplerSlots | v->samplerSlots);
 			}
-		}
-		V_CHECK( ((ID3D11DeviceX*)renderPlatform->AsD3D11Device())->CreatePlacementBuffer( &sbDesc, m_pPlacementBuffer, &buffer ) );
-	}
-	else
-#endif
-	{
-		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(buffer);
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer));
-		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->TrackVideoMemory(buffer,sbDesc.ByteWidth,"dx11::PlatformStructuredBuffer main buffer");
-	}
-	if(cpu_read)
-	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
-	{
-		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffers[i]);
-		SAFE_RELEASE(stagingBuffers[i]);
-	}
-	// May not be needed, make sure not to set cpu_read if not:
-	if(computable&&cpu_read)
-	{
-		sbDesc.BindFlags=0;
-		sbDesc.Usage				=D3D11_USAGE_STAGING;
-		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ;
-		sbDesc.MiscFlags			=0 ;
-		for(int i=0;i<NUM_STAGING_BUFFERS;i++)
-		{
-			renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &stagingBuffers[i]);
-			if(renderPlatform&&renderPlatform->GetMemoryInterface())
-				renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffers[i],sbDesc.ByteWidth,"dx11::PlatformStructuredBuffer staging");
-		}
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-	memset(&srv_desc,0,sizeof(srv_desc));
-	srv_desc.Format						=DXGI_FORMAT_UNKNOWN;
-	srv_desc.ViewDimension				=D3D11_SRV_DIMENSION_BUFFER;
-	srv_desc.Buffer.ElementOffset		=0;
-	srv_desc.Buffer.ElementWidth		=0;
-	srv_desc.Buffer.FirstElement		=0;
-	srv_desc.Buffer.NumElements			=num_elements;
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(buffer, &srv_desc,&shaderResourceView));
-
-	if(computable)
-	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-		memset(&uav_desc,0,sizeof(uav_desc));
-		uav_desc.Format						=DXGI_FORMAT_UNKNOWN;
-		uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_BUFFER;
-		uav_desc.Buffer.FirstElement		=0;
-		uav_desc.Buffer.Flags				=0;
-		uav_desc.Buffer.NumElements			=num_elements;
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
-	}
-	numCopies=0;
-}
-
-void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
-{
-#if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-	{
-		iObject++;
-		iObject=iObject%m_nObjects;
-		UINT iObjectIdx = iObject;
-		UINT &iBufIdx = m_index[ iObjectIdx ];
-		iBufIdx++;
-		if ( iBufIdx >= m_nBuffering )
-		{
-			iBufIdx = 0;
-		}
-		void *ppMappedData =( &m_pPlacementBuffer[ ( iObjectIdx * m_nBuffering + iBufIdx ) * byteWidth ] );
-		return ppMappedData;
-	}
-	else
-#endif
-	{
-		lastContext=deviceContext.asD3D11DeviceContext();
-		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
-		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-			map_type=D3D11_MAP_WRITE;
-		if(!mapped.pData)
-			lastContext->Map(buffer,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
-		void *ptr=(void *)mapped.pData;
-		return ptr;
-	}
-}
-
-const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &)
-{
-	// Only immediate context works for mapping to read!
-	crossplatform::DeviceContext &deviceContext=renderPlatform->GetImmediateContext();
-	lastContext=deviceContext.asD3D11DeviceContext();
-	mapped.pData=NULL;
-	if(numCopies>=NUM_STAGING_BUFFERS)
-	{
-		HRESULT hr=DXGI_ERROR_WAS_STILL_DRAWING;
-		int wait=0;
-		while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
-		{
-			hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);//|SIMUL_D3D11_MAP_FLAGS
-			wait++;
-		}
-		if(wait>1)
-			SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
-		if(hr!=S_OK)
-		{
-			D3D11_BUFFER_DESC desc;
-			stagingBuffers[NUM_STAGING_BUFFERS-1]->GetDesc(&desc);
-			mapped.pData=NULL;
-			if(hr!=DXGI_ERROR_WAS_STILL_DRAWING)
+			// Compute pipeline
+			if (c)
 			{
-				SIMUL_CERR<<"Failed to map PlatformStructuredBuffer for reading. "<<desc.CPUAccessFlags<<std::endl;
-				SIMUL_BREAK_ONCE("Failed here");
+				//CheckShaderSlots(c, c->computeShader11);
+				pass.second->SetConstantBufferSlots(c->constantBufferSlots);
+				pass.second->SetTextureSlots(c->textureSlots);
+				pass.second->SetTextureSlotsForSB(c->textureSlotsForSB);
+				pass.second->SetRwTextureSlots(c->rwTextureSlots);
+				pass.second->SetRwTextureSlotsForSB(c->rwTextureSlotsForSB);
+				pass.second->SetSamplerSlots(c->samplerSlots);
 			}
-			return mapped.pData;
-		}
-		if(wait>1)
-		{
-			SIMUL_CERR_ONCE << "PlatformStructuredBuffer::OpenReadBuffer waited " << wait << " times." << std::endl;
+			dx11::EffectPass* ep = (EffectPass*)pass.second;
+			ep->MakeResourceSlotMap();
 		}
 	}
-	return mapped.pData;
 }
 
-void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &)
+
+dx11::Effect::~Effect()
 {
-	if(mapped.pData)
-		lastContext->Unmap(stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
-	mapped.pData=NULL;
-	lastContext=NULL;
+	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
+void Effect::InvalidateDeviceObjects()
 {
-	lastContext=deviceContext.asD3D11DeviceContext();
-	for(int i=0;i<NUM_STAGING_BUFFERS-1;i++)
-		std::swap(stagingBuffers[(NUM_STAGING_BUFFERS-1-i)],stagingBuffers[(NUM_STAGING_BUFFERS-2-i)]);
-	if(numCopies<NUM_STAGING_BUFFERS)
+	crossplatform::Effect::InvalidateDeviceObjects();
+}
+
+crossplatform::EffectTechnique* dx11::Effect::GetTechniqueByName(const char* name)
+{
+	if (techniques.find(name) != techniques.end())
 	{
-		numCopies++;
+		return techniques[name];
+	}
+	crossplatform::EffectTechniqueGroup* g = groups[""];
+	if (!g)
+		return nullptr;
+	if (g->techniques.find(name) != g->techniques.end())
+	{
+		return g->techniques[name];
+	}
+	return NULL;
+}
+
+crossplatform::EffectTechnique* dx11::Effect::GetTechniqueByIndex(int index)
+{
+	if (techniques_by_index.find(index) != techniques_by_index.end())
+	{
+		return techniques_by_index[index];
+	}
+	crossplatform::EffectTechniqueGroup* g = groups[""];
+	if (!g)
+		return nullptr;
+	if (g->techniques_by_index.find(index) != g->techniques_by_index.end())
+	{
+		return g->techniques_by_index[index];
+	}
+	return NULL;
+}
+
+void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext, crossplatform::ConstantBufferBase* s)
+{
+	//RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
+	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
+}
+
+void Effect::CheckShaderSlots(dx11::Shader* shader, ID3DBlob* shaderBlob)
+{
+}
+
+void EffectPass::SetConstantBuffers(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferAssignmentMap& cBuffers)
+{
+	auto cmdList = deviceContext.asD3D11DeviceContext();
+	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
+	int usedSlots = 0;
+
+	// The handles for the required constant buffers:
+	for (int i = 0; i < numConstantBufferResourceSlots; i++)
+	{
+		int slot = constantBufferResourceSlots[i];
+		auto cb = cBuffers[slot];
+		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
+		{
+			SIMUL_INTERNAL_CERR << "Resource binding error at slot " << slot << "." << std::endl;
+	
+			continue; 
+		}
+		auto d11cb = (dx11::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
+		appliedConstantBuffers[slot] = d11cb->asD3D11Buffer();
+		usedSlots |= (1 << slot);
+
+		cmdList->CSSetConstantBuffers(slot, 1, &(appliedConstantBuffers[slot]));
+		cmdList->VSSetConstantBuffers(slot, 1, &(appliedConstantBuffers[slot]));
+		cmdList->PSSetConstantBuffers(slot, 1, &(appliedConstantBuffers[slot]));
+	}
+}
+
+void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
+{
+	dx11::Shader* c = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	auto cmdList = deviceContext.asD3D11DeviceContext();
+	// We will set the DescriptorHeaps and RootDescriptorTablesArguments from ApplyContextState (at RenderPlatform)
+	// The create methods will only create the pso once (or if there is a change in the state)
+	if (c)
+	{
+		cmdList->CSSetShader(c->computeShader, nullptr, 0);
 	}
 	else
 	{
-		lastContext->CopyResource(stagingBuffers[0],buffer);
+		dx11::Shader* v = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
+		dx11::Shader* p = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
+		cmdList->VSSetShader(v->vertexShader, nullptr, 0);
+		cmdList->PSSetShader(p->pixelShader,nullptr,0);
+	}
+	if (blendState)
+	{
+		auto* b = (dx11::RenderState*)blendState;
+		vec4 bf = { 0.0f, 0.0f, 0.0f, 0.0f };
+		cmdList->OMSetBlendState(b->m_blendState,bf, 0xFFFFFFFF);
+	}
+	if (depthStencilState)
+	{
+		auto* d = (dx11::RenderState*)depthStencilState;
+		cmdList->OMSetDepthStencilState(d->m_depthStencilState,0);
+	}
+	if (rasterizerState)
+	{
+		auto* r= (dx11::RenderState*)rasterizerState;
+		cmdList->RSSetState(r->m_rasterizerState);
 	}
 }
 
-
-void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
+void EffectPass::SetSamplers(crossplatform::DeviceContext& deviceContext, crossplatform::SamplerStateAssignmentMap& samplers)
 {
-	lastContext=deviceContext.asD3D11DeviceContext();
-	if(lastContext)
+	auto cmdList = deviceContext.asD3D11DeviceContext();
+	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
+	int usedSlots = 0;
+
+	dx11::Shader* compute = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	for (int i = 0; i < numSamplerResourceSlots; i++)
 	{
-		lastContext=deviceContext.asD3D11DeviceContext();
-		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
-		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-			map_type=D3D11_MAP_WRITE;
-		HRESULT hr=lastContext->Map(buffer,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
-		if(hr==S_OK)
+		int slot = samplerResourceSlots[i];
+		crossplatform::SamplerState* samp = nullptr;
+		if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
 		{
-			memcpy(mapped.pData,data,num_elements*element_bytesize);
-			mapped.RowPitch=0;
-			mapped.DepthPitch=0;
-			lastContext->Unmap(buffer,0);
+			samp = deviceContext.contextState.samplerStateOverrides[slot];
+			// We dont override this slot, just take a default sampler state:
+			if (!samp)
+			{
+				samp = samplers[slot];
+			}
 		}
 		else
-			SIMUL_BREAK_ONCE("Map failed");
+		{
+			samp = samplers[slot];
+		}
+		if (!samp)
+		{
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name.c_str() << ". Sampler slot " << slot << " is invalid." << std::endl;
+
+			continue;
+		}
+		auto *s=samp->asD3D11SamplerState();
+		if (compute)
+		{
+			cmdList->CSSetSamplers(slot, 1, &s);
+		}
+		else
+		{
+			cmdList->VSSetSamplers(slot, 1, &s);
+			cmdList->PSSetSamplers(slot, 1, &s);
+		}
+		usedSlots |= (1 << slot);
 	}
-	else
-		SIMUL_BREAK_ONCE("Uninitialized device context");
-	mapped.pData=NULL;
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
+void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatform::TextureAssignmentMap& textures, crossplatform::StructuredBufferAssignmentMap& sBuffers)
 {
-	if(lastContext&&mapped.pData)
-		lastContext->Unmap(buffer,0);
-	mapped.pData=NULL;
-	if(!effect)
-		return;
-	if(!effect->asD3DX11Effect())
-		return;
-	ID3DX11EffectShaderResourceVariable *var	=static_cast<ID3DX11EffectShaderResourceVariable *>(shaderResource.platform_shader_resource);
-		
-	if(!var->IsValid())
+	auto cmdList = deviceContext.asD3D11DeviceContext();
+	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
+	int usedSBSlots = 0;
+	int usedTextureSlots = 0;
+
+	dx11::Shader* compute= (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	// Iterate over the textures:
+	for (int i = 0; i < numResourceSlots; i++)
 	{
-		return;
+		int slot = resourceSlots[i];
+		auto ta = textures[slot];
+		if (!ta.texture || !ta.texture->IsValid())
+		{
+			continue;
+		}
+		((dx11::Texture*)ta.texture)->FinishLoading(deviceContext);
+		auto* res = ta.texture->AsD3D11ShaderResourceView(ta.resourceType, ta.index, ta.mip);
+		if (compute)
+		{
+			cmdList->CSSetShaderResources(slot, 1, &res);
+		}
+		else
+		{
+			cmdList->VSSetShaderResources(slot, 1, &res);
+			cmdList->PSSetShaderResources(slot, 1, &res);
+		}
+		usedTextureSlots |= (1 << slot);
 	}
-	var->SetResource(shaderResourceView);
+	// Iterate over the structured buffers:
+	for (int i = 0; i < numSbResourceSlots; i++)
+	{
+		int slot = sbResourceSlots[i];
+		if ((usedTextureSlots&(1<<slot))!=0)
+		{
+			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name.c_str() << " has already being used by a texture. \n";
+		}
+		auto sb = (dx11::PlatformStructuredBuffer*)sBuffers[slot];
+		if (!sb)
+		{
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name.c_str() << ". Structured buffer slot " << slot << " is invalid." << std::endl;
+			continue;
+		}
+		auto *res= sb->AsD3D11ShaderResourceView();
+		if (compute)
+		{
+			cmdList->CSSetShaderResources(slot, 1, &res);
+		}
+		else
+		{
+			cmdList->VSSetShaderResources(slot, 1, &res);
+			cmdList->PSSetShaderResources(slot, 1, &res);
+		}
+		usedSBSlots |= (1 << slot);
+	}
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
+void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatform::TextureAssignmentMap& rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers)
 {
-	if(lastContext&&mapped.pData)
-		lastContext->Unmap(buffer,0);
-	mapped.pData=NULL;
-	if (!effect->asD3DX11Effect())
-		return;
-	ID3DX11EffectUnorderedAccessViewVariable *var	=static_cast<ID3DX11EffectUnorderedAccessViewVariable *>(shaderResource.platform_shader_resource);
-	//ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
-	if(!var->IsValid())
+	auto cmdList = deviceContext.asD3D11DeviceContext();
+	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
+	int usedRwSBSlots = 0;
+	int usedRwTextureSlots = 0;
+	dx11::Shader* compute = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+
+	// Iterate over the textures:
+	for (int i = 0; i < numRwResourceSlots; i++)
 	{
-		return;
+		int slot = rwResourceSlots[i];
+		auto ta = rwTextures[slot];
+
+		// If the texture is null or invalid, set a dummy:
+		// NOTE: again, this disables any slot checks...
+		if (!ta.texture || !ta.texture->IsValid())
+		{
+			continue;
+		}
+		auto *uav = ta.texture->AsD3D11UnorderedAccessView( ta.index, ta.mip);
+		if (compute)
+		{
+			cmdList->CSSetUnorderedAccessViews(slot, 1, &uav,nullptr);
+		}
+		usedRwTextureSlots |= (1 << slot);
 	}
-	var->SetUnorderedAccessView(unorderedAccessView);
+	// Iterate over the structured buffers:
+	for (int i = 0; i < numRwSbResourceSlots; i++)
+	{
+		int slot = rwSbResourceSlots[i];
+		if ((usedRwTextureSlots & (1 << slot)) != 0)
+		{
+			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name.c_str() << ", has already being used by a RWTexture. \n";
+		}
+		auto sb = (dx11::PlatformStructuredBuffer*)sBuffers[slot];
+		if (!sb)
+		{
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name.c_str() << ". RWStructured buffer slot " << slot << " is invalid." << std::endl;
+			continue;
+		}
+		auto *uav = sb->AsD3D11UnorderedAccessView();
+		if (compute)
+		{
+			cmdList->CSSetUnorderedAccessViews(slot, 1, &uav, nullptr);
+		}
+		usedRwSBSlots |= (1 << slot);
+
+
+		// Temp:
+
+		renderPlatform->ResourceBarrierUAV(deviceContext, sb);
+	}
 }
 
-void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &)
+void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectTechnique* effectTechnique, int pass_num)
+{
+	crossplatform::Effect::Apply(deviceContext, effectTechnique, pass_num);
+}
+
+void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectTechnique* effectTechnique, const char* passname)
+{
+	crossplatform::Effect::Apply(deviceContext, effectTechnique, passname);
+}
+
+void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
+{
+	if (apply_count != 1)
+		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n", this->filename.c_str()));
+	apply_count--;
+	crossplatform::ContextState* cs = renderPlatform->GetContextState(deviceContext);
+	cs->textureAssignmentMapValid = false;
+	cs->rwTextureAssignmentMapValid = false;
+	crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
+}
+
+void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
+{
+	crossplatform::Effect::Unapply(deviceContext);
+}
+
+void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
+{
+	auto c=deviceContext.asD3D11DeviceContext();
+	static ID3D11ShaderResourceView *src[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	c->VSSetShaderResources(0,32,src);
+	c->HSSetShaderResources(0,32,src);
+	c->DSSetShaderResources(0,32,src);
+	c->GSSetShaderResources(0,32,src);
+	c->PSSetShaderResources(0,32,src);
+	c->CSSetShaderResources(0,32,src);
+	static ID3D11UnorderedAccessView *uav[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	c->CSSetUnorderedAccessViews(0,8,uav,0);
+	crossplatform::Effect::UnbindTextures(deviceContext);
+}
+
+crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
+{
+	crossplatform::EffectPass *p=new dx11::EffectPass(renderPlatform,effect);
+	passes_by_name[name]=passes_by_index[i]=p;
+	return p;
+}
+
+EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e)
+	:crossplatform::EffectPass(r,e)
 {
 }
-void PlatformStructuredBuffer::InvalidateDeviceObjects()
-{
-	if(lastContext&&mapped.pData && buffer)
-		lastContext->Unmap(buffer,0);
-	mapped.pData=NULL;
-	SAFE_RELEASE(unorderedAccessView);
-	SAFE_RELEASE(shaderResourceView);
-	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
-	{
-		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffers[i]);
-		SAFE_RELEASE(stagingBuffers[i]);
-	}
-	num_elements=0;
-#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if(renderPlatform&&renderPlatform->GetMemoryInterface())
-		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(m_pPlacementBuffer);
-	VirtualFree( m_pPlacementBuffer, 0, MEM_RELEASE );
-	m_pPlacementBuffer=nullptr;
-	buffer=nullptr;
 #else
-	if(renderPlatform&&renderPlatform->GetMemoryInterface())
-		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(buffer);
-	SAFE_RELEASE(buffer);
-#endif
-}
 
 EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r,crossplatform::Effect *e)
 	:crossplatform::EffectTechnique(r,e)
@@ -473,7 +614,9 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new dx11::EffectTechnique(renderPlatform,this);
 }
+#ifndef D3DCOMPILE_DEBUG
 #define D3DCOMPILE_DEBUG 1
+#endif
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	memset(constantBuffersBySlot,0,16*sizeof(void*));
@@ -999,3 +1142,4 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool test)
 {
 
 }
+#endif

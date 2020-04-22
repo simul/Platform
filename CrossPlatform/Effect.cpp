@@ -238,6 +238,22 @@ Effect::~Effect()
 {
 	InvalidateDeviceObjects();
 	SIMUL_ASSERT(apply_count==0);
+	for (auto& i : depthStencilStates)
+	{
+		delete i.second;
+	}
+	for (auto& i : blendStates)
+	{
+		delete i.second;
+	}
+	for (auto& i : rasterizerStates)
+	{
+		delete i.second;
+	}
+	for (auto& i : rtFormatStates)
+	{
+		delete i.second;
+	}
 }
 
 void Effect::InvalidateDeviceObjects()
@@ -251,6 +267,24 @@ void Effect::InvalidateDeviceObjects()
 	groupCharMap.clear();
 	techniqueCharMap.clear();
 	techniques.clear();
+	// We don't own the sampler states in effects.
+	samplerStates.clear();
+	for (auto& i : depthStencilStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : blendStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : rasterizerStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
+	for (auto& i : rtFormatStates)
+	{
+		i.second->InvalidateDeviceObjects();
+	}
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
@@ -860,7 +894,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 
 			// Platform file
 			cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
-
+			cmdLine += string(" -EPLATFORM=") + sourcePlatformPath + "/..";
 			// Ouput file
 			std::string outDir = r->GetShaderBinaryPathsUtf8().back();
 			for (unsigned int i = 0; i < outDir.size(); i++)
@@ -1004,6 +1038,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	}
 #endif
 }
+
 void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
 {
 	renderPlatform=r;
