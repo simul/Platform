@@ -120,7 +120,7 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 	{
 		return false;
 	}
-	unsigned mTime=timestampQueryManager->GetTimestampQueryData(deviceContext,offset[currFrame]);
+	unsigned long long mTime=timestampQueryManager->GetTimestampQueryData(deviceContext,offset[currFrame]);
 	memcpy(data, &mTime, sz);
 	
 	//mReadBuffer->Unmap(0, &CD3DX12_RANGE(0, 0));

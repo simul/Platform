@@ -285,7 +285,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	textureDesc.DepthOrArraySize	= wicContents.size();
+	textureDesc.DepthOrArraySize	= (UINT16)wicContents.size();
 	textureDesc.MipLevels			= mips;
 	textureDesc.SampleDesc.Count	= 1;
 	textureDesc.SampleDesc.Quality	= 0;

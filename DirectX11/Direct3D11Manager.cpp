@@ -382,8 +382,6 @@ bool Direct3D11Manager::IsActive() const
 void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_driver)
 {
 	HRESULT result;
-//	IDXGIFactory* factory;
-//	int  i;//, numerator, denominator;
 	DXGI_ADAPTER_DESC adapterDesc;
 	D3D_FEATURE_LEVEL featureLevel;
 

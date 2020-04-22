@@ -244,6 +244,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	shaders.clear();
 	for(auto s:sharedSamplerStates)
 	{
+		s.second->InvalidateDeviceObjects();
 		delete s.second;
 	}
 	sharedSamplerStates.clear();
@@ -262,7 +263,7 @@ void RenderPlatform::RecompileShaders()
 	
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
-	
+
 	Destroy(solidEffect);
 	
 	solidEffect=CreateEffect("solid",defines);
@@ -1174,7 +1175,8 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
 	simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
-	std::string shaderSourcePath = GetShaderBinaryPathsUtf8().back() + filenameUtf8;
+	
+	std::string shaderSourcePath = fileLoader->FindFileInPathStack(filenameUtf8, GetShaderBinaryPathsUtf8());
 
 	// Load the shader source:
 	unsigned int fileSize = 0;

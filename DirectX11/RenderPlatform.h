@@ -32,9 +32,6 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 			ID3D11Device*					device;
-			ID3D11InputLayout				*m_pCubemapVtxDecl;
-			ID3D11Buffer					*m_pVertexBuffer;
-			ID3D11InputLayout*				m_pVtxDecl;
 			UINT64 fence;
 		public:
 			RenderPlatform();
@@ -44,6 +41,10 @@ namespace simul
 				return "DirectX 11";
 			}
 			crossplatform::RenderPlatformType GetType() const override;
+			virtual const char* GetSfxConfigFilename() const override
+			{
+				return "HLSL/HLSL11.json";
+			}
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
@@ -67,14 +68,9 @@ namespace simul
 			
 			void Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void DrawIndexed	(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
-			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false);
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext);
 
-			void DrawLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
-			void Draw2dLines	(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip);
-			//void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
-			void DrawCube		(crossplatform::DeviceContext &deviceContext);
-
+			
 			void ApplyDefaultMaterial();
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr);
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
@@ -177,7 +173,6 @@ namespace simul
 			};
 			int storedStateCursor;
 			std::vector<StoredState> storedStates;
-			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,vec4 mult,bool blend=false);
 
 };
 	}

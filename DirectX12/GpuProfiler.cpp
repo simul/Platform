@@ -37,6 +37,8 @@ void TimestampQueryManager::InvalidateDeviceObjects()
 {
 	for(int i=0;i<5;i++)
 	{
+		if(bMapped[i]&& mTimestampQueryReadBuffer[i])
+			mTimestampQueryReadBuffer[i]->Unmap(0, &CD3DX12_RANGE(0, 0));
 		SAFE_RELEASE_LATER(mTimestampQueryHeap[i]);
 		SAFE_RELEASE_LATER(mTimestampQueryReadBuffer[i]);
 		mTimestampQueryHeap[i]=nullptr;
@@ -159,6 +161,7 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 	{
 		return mTimestampQueryData[offset];
 	}
+	return 0;
 }
 
 void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)

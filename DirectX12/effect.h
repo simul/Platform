@@ -125,7 +125,8 @@ namespace simul
 				ID3DBlob*					pixelShader12;
 				ID3DBlob*					computeShader12;
 			};
-			ID3D12ShaderReflection*			mShaderReflection = nullptr;
+			ID3D12ShaderReflection*			mShaderReflection = nullptr; 
+			ID3D12LibraryReflection*			mLibraryReflection = nullptr;
 		};
 
         //! DirectX12 Effect implementation
