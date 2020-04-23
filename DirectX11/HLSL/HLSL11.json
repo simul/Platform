@@ -1,0 +1,18 @@
+{
+	"compiler": "$PLATFORM/External/DirectX/DXCompiler/dxc.exe",
+	"api": "DirectX 11",
+	"defaultOptions": "/T {shader_model} /nologo /Zi",
+	"sourceExtension": "hlsl",
+	"outputExtension": "cso",
+	"outputOption": "/Fo",
+	"releaseOptions": "/O3",
+	"debugOutputFileOption": "/Od /O0 -Fd\"{filename_root}.pdb\"",
+	"entryPointOption": "/E{name}",
+	"multiplePixelOutputFormats": false,
+	"generateSlots": true,
+	"define": {
+		"SFX_TYPED_UAV_LOADS": "1",
+		"SFX_D3D11": "1",
+		"SFX": "1"
+	}
+}

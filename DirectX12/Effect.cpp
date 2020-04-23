@@ -260,6 +260,7 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, cros
 	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
 	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
+#include "dxcapi.h"
 
 void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 {
@@ -267,11 +268,20 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	// Load the shader reflection code
 	if (!shader->mShaderReflection)
 	{
-		res = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&shader->mShaderReflection));
-		SIMUL_ASSERT(res == S_OK);
+		res = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&shader->mLibraryReflection));
+		
 		// unavailable:
-		if(res!=S_OK)
+		if (res != S_OK)
+		{
+		/*	IDxcContainerReflection* pReflection;
+			UINT32 shaderIdx;
+			gDxcDllHelper.CreateInstance(CLSID_DxcContainerReflection, &pReflection);
+			pReflection->Load(pBlob);
+			(pReflection->FindFirstPartKind(DXIL_FOURCC('D', 'X', 'I', 'L'), &shaderIdx));
+			(pReflection->GetPartReflection(shaderIdx, __uuidof(ID3D12ShaderReflection), (void**)&d3d12reflection));*/
 			return;
+		}
+
 	}
 
 	// Get shader description
