@@ -787,7 +787,8 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	crossplatform::ShaderResource shaderResource			=GetShaderResource(name);
 	crossplatform::Effect::SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
-#if PLATFORM_D3D11_SFX
+
+#if !PLATFORM_D3D11_SFX
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
@@ -862,6 +863,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const crossp
 }
 #endif
 
+#if !PLATFORM_D3D11_SFX
 ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 {
 	if(constantBuffersBySlot[Slot])
@@ -911,7 +913,6 @@ ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 	return found_buffer;
 }
 
-#if PLATFORM_D3D11_SFX
 void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)	
 {
 	if(!asD3DX11Effect())
