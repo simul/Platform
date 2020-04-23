@@ -22,8 +22,6 @@
 #include "D3dx11effect.h"
 #endif
 
-#include <string>
-
 using namespace simul;
 using namespace dx11;
 #pragma optimize("",off)
@@ -787,9 +785,9 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
 {
 	crossplatform::ShaderResource shaderResource			=GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
+	crossplatform::Effect::SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
-
+#if PLATFORM_D3D11_SFX
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
@@ -816,7 +814,6 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 		var->SetUnorderedAccessView(NULL);
 	crossplatform::Effect::SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
-
 
 void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
 {
@@ -863,6 +860,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const crossp
 	}
 	crossplatform::Effect::SetTexture(deviceContext,shaderResource,t,index,mip);
 }
+#endif
 
 ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 {
@@ -913,6 +911,7 @@ ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
 	return found_buffer;
 }
 
+#if PLATFORM_D3D11_SFX
 void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)	
 {
 	if(!asD3DX11Effect())
@@ -1018,6 +1017,7 @@ void Effect::SetSamplerState(crossplatform::DeviceContext & ,const crossplatform
 		return;
 	var->SetSampler(0,s->asD3D11SamplerState());
 }
+#endif
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {

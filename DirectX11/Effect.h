@@ -112,7 +112,7 @@ namespace simul
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 #if !PLATFORM_D3D11_SFX
 
-			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index=-1,int mip=-1);
+			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index=-1,int mip=-1) override;
 			
 #endif			
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass) override;
