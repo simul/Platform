@@ -18,6 +18,7 @@ file(GLOB SHADERS
 
 file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
+	"${SIMUL_PLATFORM_DIR}/DirectX11/HLSL/*.sl"
 )
 
 source_group("Shaders" FILES  ${SHADERS} )
