@@ -434,29 +434,51 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
         type = GL_VERTEX_SHADER;
         break;
     case simul::crossplatform::SHADERTYPE_HULL:
+		type = GL_TESS_CONTROL_SHADER;
+		break;
     case simul::crossplatform::SHADERTYPE_DOMAIN:
+		type = GL_TESS_EVALUATION_SHADER;
+		break;
     case simul::crossplatform::SHADERTYPE_GEOMETRY:
-    case simul::crossplatform::SHADERTYPE_COUNT:
-        break;
+		type = GL_GEOMETRY_SHADER;
+		break;
     case simul::crossplatform::SHADERTYPE_PIXEL:
         type = GL_FRAGMENT_SHADER;
         break;
     case simul::crossplatform::SHADERTYPE_COMPUTE:
         type = GL_COMPUTE_SHADER;
         break;
+    case simul::crossplatform::SHADERTYPE_COUNT:
     default:
         break;
     }
 	
-//	HGLRC hglrc	=wglGetCurrentContext();
-//	SIMUL_COUT<<(int)hglrc<<std::endl;
     const GLchar* glData    = (const GLchar*)fileData;
     ShaderId                = glCreateShader(type);
-	GLint sz= (GLint)DataSize;
-    glShaderSource(ShaderId, 1, &glData, &sz);
+	GLint sz				= (GLint)DataSize;
+	
+	src						= std::string(glData, sz);
+	name					= filename_utf8;
+    
+	glShaderSource(ShaderId, 1, &glData, &sz);
     glCompileShader(ShaderId);
-	src=glData;
-	name=filename_utf8;
+
+	// Check compile status:
+	GLint isCompiled = 0;
+	glGetShaderiv(ShaderId, GL_COMPILE_STATUS, &isCompiled);
+	if (isCompiled == 0)
+	{
+		GLint maxLength = 0;
+		glGetShaderiv(ShaderId, GL_INFO_LOG_LENGTH, &maxLength);
+		std::vector<GLchar> infoLog(maxLength);
+		glGetShaderInfoLog(ShaderId, maxLength, &maxLength, &infoLog[0]);
+
+		SIMUL_CERR << "Failed to compile the shader: " << filename_utf8 << "\n";
+		SIMUL_COUT << infoLog.data() << std::endl;
+		SIMUL_BREAK_ONCE("");
+
+		return;
+	}
 }
 
 void Shader::Release()
@@ -734,7 +756,7 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 			if (numActiveMem > 0)
 			{
 				// Create the UBO
-				const int numMemberEles = 24; // TO-DO: we can query this but it shold be the same 
+				const int numMemberEles = 240; // TO-DO: we can query this but it shold be the same 
 				mHandlesUBO[i] = new TexHandlesUBO;
 				int uboIndex=glGetUniformBlockIndex(mProgramId, kTexHandleUbo);
 				mHandlesUBO[i]->Init(numActiveMem * numMemberEles, mProgramId, uboIndex, uboSlot);

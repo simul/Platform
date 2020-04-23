@@ -94,7 +94,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		DXGI_ADAPTER_DESC1 hardwareAdapterDesc	= {};
 		int curAdapterIdx						= 0;
 		bool adapterFound						= false;
-
+		D3D_FEATURE_LEVEL featureLevel=D3D_FEATURE_LEVEL_12_1;
 		while (factory->EnumAdapters1(curAdapterIdx, &hardwareAdapter) != DXGI_ERROR_NOT_FOUND)
 		{
 			// Query description
@@ -108,7 +108,28 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			}
 
 			// Check if has the right feature level
-			res = D3D12CreateDevice(hardwareAdapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr);
+			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
+			if (SUCCEEDED(res))
+			{
+				adapterFound = true;
+				break;
+			}
+			featureLevel = D3D_FEATURE_LEVEL_12_0;
+			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
+			if (SUCCEEDED(res))
+			{
+				adapterFound = true;
+				break;
+			}
+			featureLevel=D3D_FEATURE_LEVEL_11_1;
+			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
+			if (SUCCEEDED(res))
+			{
+				adapterFound = true;
+				break;
+			}
+			featureLevel=D3D_FEATURE_LEVEL_11_0;
+			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
 			if (SUCCEEDED(res))
 			{
 				adapterFound = true;
@@ -116,11 +137,11 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			}
 			curAdapterIdx++;
 		}
-		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0, SIMUL_PPV_ARGS(&mDevice));
+		res = D3D12CreateDevice(hardwareAdapter,featureLevel, SIMUL_PPV_ARGS(&mDevice));
 		mDevice->SetName (L"D3D12 Device");
 		SIMUL_ASSERT(res == S_OK);
 
-		// We must crete the device with debug flags if we want break on severity
+		// We must create the device with debug flags if we want break on severity
 		// or mute warnings
 		if(use_debug)
 		{

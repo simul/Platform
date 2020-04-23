@@ -5,8 +5,9 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX11/RenderPlatform.h"
+#if !PLATFORM_D3D11_SFX
 #include "D3dx11effect.h"
-
+#endif
 #include <string>
 
 using namespace simul;

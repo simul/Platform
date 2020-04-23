@@ -87,13 +87,13 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 		init(renderPlatform, numVertices, numIndices, vertices, sIndices);
 	else
 		init(renderPlatform,numVertices,numIndices,vertices,lIndices);
+	SetSubMesh(0, 0, numIndices, nullptr);
 	delete [] vertices;
 	return true;
 }
 
 void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
-	//ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(layout)
 		layout->Apply(deviceContext);
 	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLELIST);
@@ -172,7 +172,7 @@ const crossplatform::Mesh::SubMesh *crossplatform::Mesh::GetSubMesh(int index) c
 	return mSubMeshes[index];
 }
 
-static const float unity=1000.0f;
+static const float unity=1.0f;
 struct Vec2
 {
 	float x,y;

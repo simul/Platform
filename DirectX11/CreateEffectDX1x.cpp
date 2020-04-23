@@ -24,10 +24,9 @@
 #include <assert.h>
 #include <fstream>
 #include "MacrosDX1x.h"
-#include "D3dx11effect.h"
-#ifndef SIMUL_WIN8_SDK
-#include <dxerr.h>
-#else
+#if !PLATFORM_D3D11_SFX
+	#include "D3dx11effect.h"
+#endif
 #include <DirectXTex.h>
 typedef struct D3DX11_IMAGE_LOAD_INFO {
   UINT              Width;
@@ -46,13 +45,7 @@ typedef struct D3DX11_IMAGE_LOAD_INFO {
 } D3DX11_IMAGE_LOAD_INFO, *LPD3DX11_IMAGE_LOAD_INFO;
 enum {D3DX11_FROM_FILE=(UINT)-3};
 enum {D3DX11_FILTER_NONE=(1 << 0)};
-#endif
 
-#ifndef SIMUL_WIN8_SDK
-	#pragma comment(lib,"Effects11_DXSDK.lib")
-	#pragma comment(lib,"dxerr.lib")
-	#pragma comment(lib,"d3dx11.lib")
-#endif
 #ifdef _XBOX_ONE
 	#pragma comment(lib,"d3d11_x.lib")
 	#pragma comment(lib,"d3dcompiler.lib")
@@ -214,123 +207,6 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	return tex;
 }
 		
-void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name		,ID3D11DepthStencilState * value)
-{
-	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();
-	var->SetDepthStencilState(0,value);
-}
-
-void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11SamplerState * value)
-{
-	ID3DX11EffectSamplerVariable*	var	=effect->GetVariableByName(name)->AsSampler();
-	var->SetSampler(0,value);
-}
-
-bool simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11ShaderResourceView * value)
-{
-	if(!effect)
-		return false;
-	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	if(!var->IsValid())
-	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
-	}
-	var->SetResource(value);
-	if(var->IsValid()!=0)
-		return true;
-	return false;
-}
-bool simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
-{
-	if (!effect)
-	{
-		return false;
-	}
-	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
-	if (!var->IsValid())
-	{
-		SIMUL_ASSERT_WARN(var->IsValid() != 0, (std::string("Invalid shader variable ") + name).c_str());
-	}
-	var->SetUnorderedAccessView(value);
-	if(value&&var->IsValid()!=0)
-		return true;
-	return false;
-}
-
-void simul::dx11::setStructuredBuffer(ID3DX11Effect *effect,const char *name,ID3D11ShaderResourceView * value)
-{
-	if (!effect)
-	{
-		return;
-	}
-	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	var->SetResource(value);
-}
-
-void simul::dx11::setTextureArray(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value)
-{
-	if (!effect)
-	{
-		return;
-	}
-	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	var->SetResource(value);
-}
-
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float value)
-{
-	if (!effect)
-	{
-		return;
-	}
-	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	var->SetFloat(value);
-}
-
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y)
-{
-	if (!effect)
-	{
-		return;
-	}
-	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	float V[]={x,y,0.f,0.f};
-	var->SetFloatVector(V);
-}
-
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y,float z,float w)
-{
-	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	float V[]={x,y,z,w};
-	var->SetFloatVector(V);
-}
-
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value)
-{
-	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	var->SetInt(value);
-}
-
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,const float *value)
-{
-	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	var->SetFloatVector(value);
-}
-
-void simul::dx11::setMatrix(ID3DX11Effect *effect,const char *name	,const float *value)
-{
-	ID3DX11EffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-	var->SetMatrix(value);
-}
-
 
 struct d3dMacro
 {
@@ -338,6 +214,7 @@ struct d3dMacro
 	std::string define;
 };
 
+#if !PLATFORM_D3D11_SFX
 HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_utf8, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=(HRESULT)(-1);
@@ -355,6 +232,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(pData);
 	return hr;
 }
+#endif
 
 static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std::vector<std::string> &shaderPathsUtf8
 	,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn,bool &missing)
@@ -385,6 +263,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 	return newestFileTime;
 }
 
+#if !PLATFORM_D3D11_SFX
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect,
 crossplatform::ShaderBuildMode shaderBuildMode, const std::vector<std::string>& shaderPathsUtf8,const std::vector<std::string> &shadeBinPathsUtf8)
 {
@@ -417,7 +296,7 @@ ERRNO_CHECK
 	double binary_date_jdn=0.0;
 	double newest_included_file=0.0;
 	std::string binaryPathUtf8;
-	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
+	bool found_bin = false;
 	for (const auto& binPath : shadeBinPathsUtf8)
 	{
 		double bin_date = simul::base::FileLoader::GetFileLoader()->GetFileDate(((binPath+"/")+binary_filename_utf8).c_str());
@@ -425,6 +304,7 @@ ERRNO_CHECK
 		{
 			binary_date_jdn = bin_date;
 			binaryPathUtf8 = binPath;
+			found_bin = true;
 		}
 	}
 	if ((shaderBuildMode&crossplatform::BUILD_IF_CHANGED) != 0)
@@ -459,6 +339,11 @@ ERRNO_CHECK
 	crossplatform::ShaderBuildMode anyBuild=crossplatform::ALWAYS_BUILD|crossplatform::BUILD_IF_CHANGED;
 	if((shaderBuildMode&anyBuild)==0||(!changes_detected&&binary_date_jdn>0))
 	{
+		if (!found_bin)
+		{
+			SIMUL_CERR << "Effect binary " << binary_filename_utf8.c_str() << " not found." << std::endl;
+			return S_FALSE;
+		}
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(((binaryPathUtf8 + "/") + binary_filename_utf8).c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
@@ -662,6 +547,7 @@ static const DWORD default_effect_flags=0;
 	delete [] macros;
 	return hr;
 }
+#endif
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
 #ifndef SAFE_RELEASE

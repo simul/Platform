@@ -16,7 +16,7 @@ add_subdirectory(CrossPlatform)
 add_subdirectory(Applications/Sfx)
 
 if(SIMUL_BUILD_SAMPLES)
-	if(SIMUL_SUPPORT_OPENGL or SIMUL_SUPPORT_VULKAN)
+	if(SIMUL_SUPPORT_VULKAN)
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
 			add_subdirectory(External/glfw)
 		endif()
@@ -28,9 +28,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux
 endif()
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-if(SIMUL_SUPPORT_OPENGL )
-	add_subdirectory(OpenGL)
-endif()
+	add_subdirectory(Applications/Sample)
+	if( SIMUL_SUPPORT_OPENGL )
+		add_subdirectory(OpenGL)
+	endif()
 	add_subdirectory(DirectX11)
 endif()
 

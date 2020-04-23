@@ -8,9 +8,21 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX11/RenderPlatform.h"
+#if PLATFORM_D3D11_SFX
+#include "Platform/DirectX11/PlatformStructuredBuffer.h"
+#endif
+#if defined(_XBOX_ONE) 
+	#ifndef _GAMING_XBOX //Deprecated from the GDK
+		#include <D3Dcompiler_x.h>
+	#else
+		#include <D3Dcompiler.h>
+	#endif
+#else
+#include <D3Dcompiler.h>
+#endif
+#if !PLATFORM_D3D11_SFX
 #include "D3dx11effect.h"
-
-#include <string>
+#endif
 
 using namespace simul;
 using namespace dx11;
@@ -110,15 +122,23 @@ bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_
 }
 
 RenderState::RenderState()
-	:m_depthStencilState(NULL)
-	,m_blendState(NULL)
+	:m_depthStencilState(nullptr)
+	,m_blendState(nullptr)
+	, m_rasterizerState(nullptr)
 {
 }
-RenderState::~RenderState()
+
+void RenderState::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_depthStencilState)
 	SAFE_RELEASE(m_blendState)
+	SAFE_RELEASE(m_rasterizerState)
 }
+RenderState::~RenderState()
+{
+	InvalidateDeviceObjects();
+}
+#if !PLATFORM_D3D11_SFX
 static const int NUM_STAGING_BUFFERS=4;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 				:num_elements(0)
@@ -451,7 +471,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(buffer);
 #endif
 }
-
+#endif
 EffectTechnique::EffectTechnique(crossplatform::RenderPlatform *r,crossplatform::Effect *e)
 	:crossplatform::EffectTechnique(r,e)
 {
@@ -473,7 +493,9 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new dx11::EffectTechnique(renderPlatform,this);
 }
+#ifndef D3DCOMPILE_DEBUG
 #define D3DCOMPILE_DEBUG 1
+#endif
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	memset(constantBuffersBySlot,0,16*sizeof(void*));
@@ -647,6 +669,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
 
+#if !PLATFORM_D3D11_SFX
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
@@ -999,3 +1022,4 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool test)
 {
 
 }
+#endif
