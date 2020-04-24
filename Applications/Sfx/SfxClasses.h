@@ -44,7 +44,7 @@ namespace sfx
 		, RW = 1
 		, ARRAY = 2
 		, MS = 4
-		,TEXTURE = 8
+		, TEXTURE = 8
 		, TEXTURE_1D = TEXTURE | 16
 		, TEXTURE_2D = TEXTURE | 32
 		, TEXTURE_3D = TEXTURE | 64

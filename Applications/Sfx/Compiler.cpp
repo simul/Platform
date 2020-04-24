@@ -684,10 +684,10 @@ int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,Sh
 	find_and_replace(wd,"\\","/");
 	
 	if (gEffect->GetOptions()->disableLineWrites)
-	{
-		size_t lineno=count_lines_in_string(preamble)+1;// add 1 because we're inserting a line into the same file.
-		preamble+=stringFormat("#line %d \"%s\"\n",lineno,tempf.c_str());
-	}
+		preamble += "//";
+
+	size_t lineno=count_lines_in_string(preamble)+1;// add 1 because we're inserting a line into the same file.
+	preamble+=stringFormat("#line %d \"%s\"\n",lineno,tempf.c_str());
 
 	preamble += shader->m_preamble;
 

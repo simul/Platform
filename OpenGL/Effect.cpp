@@ -717,7 +717,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 				{
 					const int &uboOffset=mTexturesUBOMapping[j][slot];
 					if(mHandlesUBO[j]!=nullptr&&uboOffset!=-1)
-						mHandlesUBO[j]->Update(chandle, uboOffset + (sizeof(GLuint64) * (sslot + 1)));
+						mHandlesUBO[j]->Update(chandle, uboOffset + (2 * sizeof(GLuint64) * (sslot + 1)));
 				}
             }
         }
@@ -806,7 +806,7 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 						continue;
 					mTexturesUBOMapping[i][texSlot]    = baseOffset;
                 
-					if ((baseOffset % (sizeof(GLuint64) * 24)) != 0)
+					if ((baseOffset % (2 * sizeof(GLuint64) * 24)) != 0)
 					{
 						SIMUL_BREAK("This can not happen");
 					}
@@ -835,7 +835,7 @@ void TexHandlesUBO::Init(size_t count, GLuint program, int index, int slot)
     glGenBuffers(1, &mId);
     glBindBuffer(GL_UNIFORM_BUFFER, mId);
 	size=(int)count;
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Setup the binding (the handles UBO is declared without layout):
@@ -850,10 +850,14 @@ void TexHandlesUBO::Bind(GLuint program)
 
 void TexHandlesUBO::Update(GLuint64 value, size_t offset)
 {
-	if(offset/sizeof(GLuint64)>=size)
+	if(offset/(2 * sizeof(GLuint64))>=size)
 		SIMUL_BREAK("");
+
+    GLuint64 _value[2] = { 0 , 0 };
+    _value[0] = value;
+
     glBindBuffer(GL_UNIFORM_BUFFER, mId);
-    glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(GLuint64), &value);
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, 2 * sizeof(GLuint64), &_value);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
