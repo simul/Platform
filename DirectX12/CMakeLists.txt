@@ -24,6 +24,7 @@ file(GLOB SHADERS
 
 file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
+	"${SIMUL_PLATFORM_DIR}/DirectX12/HLSL/*.sl"
 )
 
 set(in_RootSignature "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/GFX.hlsl")
@@ -59,15 +60,17 @@ if(SIMUL_SOURCE_BUILD)
 
 	# ROOT SIG BLOB!
 	if(XBOXONE OR GDK)
-		set(out_RootSignature "${CMAKE_CURRENT_BINARY_DIR}/../XboxOne/shaderbin/GFX.cso")
+		set(out_RootSignatureFolder "${CMAKE_CURRENT_BINARY_DIR}/../XboxOne/shaderbin")
 	else()
-		set(out_RootSignature "${CMAKE_CURRENT_BINARY_DIR}/shaderbin/GFX.cso")
+		set(out_RootSignatureFolder "${CMAKE_CURRENT_BINARY_DIR}/shaderbin")
 	endif()
+	# Create the target directory for the cso file:
+	file(MAKE_DIRECTORY ${out_RootSignatureFolder})
 	add_custom_command(TARGET DirectX12CoreShaders
-					COMMAND ${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"HLSL" /Fo"${out_RootSignature}" /nologo ${in_RootSignature}
+					COMMAND ${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"HLSL" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
 					MAIN_DEPENDENCY ${in_RootSignature}
 					WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-					COMMENT "${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /E\"GFXRS\" /I\"HLSL\" /Fo\"${out_RootSignature}\" /nologo ${in_RootSignature}"
+					COMMENT "${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E\"GFXRS\" /I\"HLSL\" /Fo\"${out_RootSignatureFolder}/GFX.cso\" /nologo ${in_RootSignature}"
 					)
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

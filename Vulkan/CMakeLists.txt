@@ -9,6 +9,7 @@ file(GLOB SHADERS
 
 file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
+	"${SIMUL_PLATFORM_DIR}/Vulkan/GLSL/*.sl"
 )
 
 file(GLOB SHADER_DEFS
