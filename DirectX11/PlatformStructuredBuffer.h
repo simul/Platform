@@ -1,5 +1,6 @@
 #pragma once
 
+#if PLATFORM_D3D11_SFX
 #include "Platform/DirectX11/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "DirectXHeader.h"
@@ -54,3 +55,4 @@ namespace simul
 		};
 	}
 }
+#endif
