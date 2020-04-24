@@ -71,6 +71,10 @@
 			:x(v[0]),y(v[1])
 		{
 		}
+		vec2(const vec2 &v)
+			:x(v.x),y(v.y)
+		{
+		}
 		bool operator==(const vec2 &v) const
 		{
 			return (x==v.x&&y==v.y);

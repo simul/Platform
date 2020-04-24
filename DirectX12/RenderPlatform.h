@@ -56,7 +56,11 @@ namespace simul
 	{
 		struct ImmediateContext
 		{
+#ifdef _XBOX_ONE
+			ID3D12GraphicsCommandList* ICommandList;
+#else
 			ID3D12GraphicsCommandList4*	ICommandList;
+#endif
 			ID3D12CommandAllocator*		IAllocator;
 			bool						IRecording=false;
 			bool						bActive=false;
