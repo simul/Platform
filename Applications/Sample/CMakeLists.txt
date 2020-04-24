@@ -25,8 +25,10 @@ set_target_properties(Sample_MD PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAK
                                                VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
 target_link_libraries(Sample_MD SimulDirectX11_MD SimulCrossPlatform_MD SimulMath_MD Core_MD)
 
-if(SIMUL_SOURCE_BUILD)
-	if(SIMUL_BUILD_SHADERS)
-	add_dependencies( Sample_MD DirectX12CoreShaders )
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	if(SIMUL_SOURCE_BUILD)
+		if(SIMUL_BUILD_SHADERS)
+			add_dependencies( Sample_MD DirectX12CoreShaders )
+		endif()
 	endif()
 endif()
