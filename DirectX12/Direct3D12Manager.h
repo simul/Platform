@@ -2,6 +2,7 @@
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Platform/DirectX12/Export.h"
 #include "Platform/DirectX12/RenderPlatform.h"
+#include "ThisPlatform/Direct3D12.h"
 
 #include "DirectXHeader.h"
 
@@ -48,11 +49,7 @@ namespace simul
 			//! Map of displays
 			OutputMap					mOutputs;
 			//! The D3D device
-#ifdef _XBOX_ONE
-			ID3D12Device* mDevice;
-#else
-			ID3D12Device5*				mDevice;
-#endif
+			ID3D12DeviceType*				mDevice;
 			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mCommandQueue;
 		};
