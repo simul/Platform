@@ -48,7 +48,11 @@ namespace simul
 			//! Map of displays
 			OutputMap					mOutputs;
 			//! The D3D device
+#ifdef _XBOX_ONE
+			ID3D12Device* mDevice;
+#else
 			ID3D12Device5*				mDevice;
+#endif
 			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mCommandQueue;
 		};
