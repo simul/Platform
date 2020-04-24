@@ -1,0 +1,2 @@
+#pragma once
+typedef ID3D12GraphicsCommandList4 ID3D12GraphicsCommandListType;
