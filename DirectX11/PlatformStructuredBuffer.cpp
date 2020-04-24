@@ -1,4 +1,6 @@
 #include "PlatformStructuredBuffer.h"
+
+#if PLATFORM_D3D11_SFX
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/Core/StringToWString.h"
 #include "Utilities.h"
@@ -318,6 +320,8 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
 	mapped.pData = NULL;
 	if (!effect->asD3DX11Effect())
 		return;
+	if(!shaderResource.platform_shader_resource)
+		return;
 	ID3DX11EffectUnorderedAccessViewVariable* var = static_cast<ID3DX11EffectUnorderedAccessViewVariable*>(shaderResource.platform_shader_resource);
 	//ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
 	if (!var->IsValid())
@@ -357,3 +361,4 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(buffer);
 #endif
 }
+#endif
