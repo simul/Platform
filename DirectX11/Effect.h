@@ -46,6 +46,7 @@ namespace simul
 			virtual ~RenderState();
 			void InvalidateDeviceObjects() override;
 		};
+#if !PLATFORM_D3D11_SFX
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{
 			ID3D11Buffer						*buffer;
@@ -88,6 +89,7 @@ namespace simul
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
 		}; 
+#endif
 		class SIMUL_DIRECTX11_EXPORT Shader :public simul::crossplatform::Shader
 		{
 		public:
