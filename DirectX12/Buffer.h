@@ -1,5 +1,5 @@
 #pragma once
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/Export.h"
 #include "Platform/CrossPlatform/Buffer.h"
 

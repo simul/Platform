@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 option(SIMUL_D3D12_ENABLE_PIX "" OFF)
 
 file(GLOB CMAKE
-    "*.cmake"
+	"*.cmake"
 )
 
 file(GLOB SOURCES
@@ -10,12 +10,12 @@ file(GLOB SOURCES
 )
 
 file(GLOB HEADERS
-    "*.h"
+	"*.h"
 )
 
 file(GLOB JSON
-    "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/*.json"
-    "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/*.json"
+	"${CMAKE_CURRENT_SOURCE_DIR}/HLSL/*.json"
+	"${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/*.json"
 )
 
 file(GLOB SHADERS
@@ -50,12 +50,12 @@ if(SIMUL_SOURCE_BUILD)
 	if(XBOXONE)
 		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12X.json" )
 	elseif(GDK)
-		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12X.json" )
+		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12GDK.json" )
 	else()
 		set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" )
 	endif()
 	#message(STATUS JSON_FILE ${JSON_FILE} )
-	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" -ESIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
+	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
 	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
 
 	# ROOT SIG BLOB!

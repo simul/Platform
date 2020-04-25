@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "ThisPlatform/Direct3D12.h"
 
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 
 #include <string>
 #include <map>
