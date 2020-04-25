@@ -2,7 +2,7 @@
 
 #include "Platform/DirectX12/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Heap.h"
 
 #pragma warning(disable:4251)

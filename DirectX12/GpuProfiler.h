@@ -8,7 +8,7 @@
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/Core/ProfilingInterface.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 
 #include <string>
 #include <map>

@@ -10,7 +10,7 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "ThisPlatform/Direct3D12.h"
 
 #include <algorithm>

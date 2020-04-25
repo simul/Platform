@@ -1,7 +1,7 @@
 #pragma once
 #include "Platform/DirectX12/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/ConstantBuffer.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/Query.h"
@@ -125,8 +125,10 @@ namespace simul
 				ID3DBlob*					pixelShader12;
 				ID3DBlob*					computeShader12;
 			};
-			ID3D12ShaderReflection*			mShaderReflection = nullptr; 
+			ID3D12ShaderReflection*			mShaderReflection = nullptr;
+#ifdef WIN64
 			ID3D12LibraryReflection*			mLibraryReflection = nullptr;
+#endif
 		};
 
         //! DirectX12 Effect implementation

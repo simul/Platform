@@ -2,7 +2,7 @@
 #include "Platform/DirectX12/Export.h"
 #include "Platform/DirectX12/GpuProfiler.h"
 #include "Platform/CrossPlatform/Query.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 
 #include "Heap.h"
 

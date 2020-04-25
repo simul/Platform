@@ -1,5 +1,5 @@
 #include "Layout.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/DirectX12/RenderPlatform.h"
