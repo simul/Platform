@@ -17,7 +17,7 @@ target_link_libraries(Sample_MT SimulDirectX11_MT SimulCrossPlatform_MT SimulMat
 
 add_dynamic_executable(Sample_MD WIN32 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS SAMPLE_USE_D3D11 FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 target_compile_definitions(Sample_MD PRIVATE SIMUL_DYNAMIC_LINK=1 DO_PROFILING=0)
-set_target_properties(Sample_MD PROPERTIES FOLDER Dynamic/Applications)
+
 target_include_directories(Sample_MD PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
 #target_include_directories(Sample_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/Effects11_Win8SDK/inc" )
 target_include_directories(Sample_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
