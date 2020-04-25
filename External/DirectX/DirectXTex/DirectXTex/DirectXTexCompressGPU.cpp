@@ -138,6 +138,7 @@ namespace
     }
 
 
+#ifndef _GAMING_XBOX
     //-------------------------------------------------------------------------------------
     // Compress using GPU, converting to the proper input format for the shader if needed
     //-------------------------------------------------------------------------------------
@@ -195,8 +196,10 @@ namespace
             return gpubc->Compress(*img, destImage);
         }
     }
+#endif
 };
 
+#ifndef _GAMING_XBOX
 //=====================================================================================
 // Entry-points
 //=====================================================================================
@@ -418,3 +421,4 @@ HRESULT DirectX::Compress(
 
     return S_OK;
 }
+#endif
