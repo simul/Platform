@@ -11,6 +11,7 @@
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
 #include "DirectXHeader.h"
+#include "ThisPlatform/Direct3D12.h"
 
 #include <algorithm>
 #include <string>
@@ -260,7 +261,6 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, cros
 	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
 	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
-#include "dxcapi.h"
 
 void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 {
