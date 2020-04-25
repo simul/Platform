@@ -12,8 +12,11 @@
 #ifndef __D3DX12_H__
 #define __D3DX12_H__
 
+#ifdef _GAMING_XBOX_SCARLETT
+#include "d3dx12_xs.h"
+#else
 #include "d3d12.h"
-
+#endif
 #if defined( __cplusplus )
 
 struct CD3DX12_DEFAULT {};

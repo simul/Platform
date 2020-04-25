@@ -88,8 +88,9 @@
 #endif
 
 #include <Windows.h>
-
-#if (defined(_XBOX_ONE) && defined(_TITLE)) || defined(_GAMING_XBOX)
+#ifdef _GAMING_XBOX_SCARLETT
+#include <d3d12_xs.h>
+#elif (defined(_XBOX_ONE) && defined(_TITLE)) || defined(_GAMING_XBOX)
 #include <d3d12_x.h>
 #ifndef _GAMING_XBOX
 #include <d3d11_x.h>

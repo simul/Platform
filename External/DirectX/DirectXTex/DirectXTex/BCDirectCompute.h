@@ -9,6 +9,7 @@
 
 #pragma once
 
+#ifndef _GAMING_XBOX
 namespace DirectX
 {
 
@@ -62,3 +63,4 @@ namespace DirectX
     };
 
 } // namespace
+#endif
