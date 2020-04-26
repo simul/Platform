@@ -268,8 +268,9 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 	// Load the shader reflection code
 	if (!shader->mShaderReflection)
 	{
+#ifndef _XBOX_ONE
 		res = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&shader->mLibraryReflection));
-		
+#endif
 		// unavailable:
 		if (res != S_OK)
 		{
