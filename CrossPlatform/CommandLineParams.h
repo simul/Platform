@@ -51,6 +51,8 @@ namespace simul
 						continue;
 					}
 					unsigned pos=(unsigned)arg.find(":");
+					if(pos>=arg.length())
+						pos = (unsigned)arg.find("=");
 					if(pos>=2&&pos<arg.length())
 					{
 						std::string left=arg.substr(0,pos);

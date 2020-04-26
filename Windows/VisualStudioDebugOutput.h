@@ -105,10 +105,10 @@ public:
 		std::cout.rdbuf(old_cout_buffer);
 		std::cerr.rdbuf(old_cerr_buffer);
 	}
+	std::string fn;
 	void setLogFile(const char *logfilename)
 	{
-	
-		std::string fn=logfilename;
+		fn=logfilename;
 		if(fn.find(":")>=fn.length())
 		{
 #ifndef _XBOX_ONE
