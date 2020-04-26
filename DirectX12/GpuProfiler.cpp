@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "GpuProfiler.h"
 #include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/Query.h"
 #include <stdint.h>
@@ -119,8 +120,10 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 		);
 		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mTimestampQueryReadBuffer[mTimestampQueryCurrFrame], sz)
-		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(L"mTimestampQueryReadBuffer");
-
+		std::string name("mTimestampQueryReadBuffer[");
+		name += ('0' + mTimestampQueryCurrFrame);
+		name += "]";
+		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(base::StringToWString(name).c_str());
 		mTimestampQueryHeapOffset=0;
 	}
 	*offset=mTimestampQueryHeapOffset;
@@ -152,9 +155,12 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 			if(res != S_OK)
 				return 0;
 			bMapped[lastFrame]=true;
+			unsigned long long result = mTimestampQueryData[offset];
+			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &CD3DX12_RANGE(0, 0));
+			bMapped[lastFrame] = false;
 			//SIMUL_COUT<<"Mapped 0x"<<std::hex<<(unsigned long long)mTimestampQueryReadBuffer[lastFrame]<<std::endl;
 			if(mTimestampQueryData)
-				return mTimestampQueryData[offset];
+				return result;
 		}
 	}
 	if(mTimestampQueryData)
