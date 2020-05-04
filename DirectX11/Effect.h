@@ -132,7 +132,9 @@ namespace simul
 		{
 		public:
 			EffectTechnique(simul::crossplatform::RenderPlatform *r,crossplatform::Effect *e);
+#if !PLATFORM_D3D11_SFX
 			virtual ~EffectTechnique();
+#endif
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};
