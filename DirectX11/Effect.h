@@ -97,7 +97,8 @@ namespace simul
 			virtual ~Shader();
 			void Release() override;
 			void load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) override;
-			ID3DBlob* shaderBlob=nullptr;
+
+			std::vector<uint8_t>		shader11;
 			union
 			{
 				ID3D11VertexShader* vertexShader = nullptr;
