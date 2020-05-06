@@ -1,7 +1,7 @@
 #pragma once
 #include "Platform/DirectX12/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/ConstantBuffer.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/Query.h"
@@ -118,15 +118,13 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT Shader :public simul::crossplatform::Shader
 		{
 		public:
+			~Shader();
 			void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
-			union
-			{
-				ID3DBlob*					vertexShader12;
-				ID3DBlob*					pixelShader12;
-				ID3DBlob*					computeShader12;
-			};
-			ID3D12ShaderReflection*			mShaderReflection = nullptr; 
-			ID3D12LibraryReflection*			mLibraryReflection = nullptr;
+			std::vector<uint8_t>		shader12;
+			ID3D12ShaderReflection*		mShaderReflection = nullptr;
+#ifdef WIN64
+			ID3D12LibraryReflection*	mLibraryReflection = nullptr;
+#endif
 		};
 
         //! DirectX12 Effect implementation
@@ -155,7 +153,7 @@ namespace simul
 			//! the sfx compiler is not as smart as the dx compiler so it will report that some resources are in use
 			//! when it is not true. In Dx12 we MUST be explicit about what are we doing so we need to know exactly the
 			//! resources that will be in use.
-			void CheckShaderSlots(dx12::Shader* shader, ID3DBlob* shaderBlob);
+			void CheckShaderSlots(dx12::Shader* shader, const std::vector<uint8_t>& shaderBlob);
 
             Heap* GetEffectSamplerHeap();
 

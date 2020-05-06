@@ -49,9 +49,9 @@ if(XBOXONE)
 endif()
 
 if(GDK)
-	add_subdirectory(Platform/DirectX12)
+	add_subdirectory(DirectX12)
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	add_subdirectory(External/DirectX/DirectXTK12)
+	#add_subdirectory(External/DirectX/DirectXTK12)
 	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
