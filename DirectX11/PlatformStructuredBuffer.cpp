@@ -284,14 +284,20 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
 {
 	if (lastContext && mapped.pData)
+	{
 		lastContext->Unmap(buffer, 0);
+		mapped.pData=nullptr;
+	}
 	crossplatform::PlatformStructuredBuffer::Apply(deviceContext, effect, shaderResource);
 }
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
 {
 	if (lastContext && mapped.pData)
+	{
 		lastContext->Unmap(buffer, 0);
+		mapped.pData = nullptr;
+	}
 	crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
 }
 #else
