@@ -15,6 +15,7 @@
 #pragma warning(disable:3556,4717)
 // Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
 #define IN_COMPUTE_SHADER
+
 #if !PLATFORM_D3D11_SFX
 #define shader
 #define technique technique11

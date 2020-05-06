@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX12/RenderPlatform.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include <string>
 
 using namespace simul;

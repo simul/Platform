@@ -1,5 +1,5 @@
 #pragma once
-
+#include "ThisPlatform/Direct3D12.h"
 //! Improves perfomance of CreateConstantBufferViews and CopyDescriptors
 //! by removing a run time "if". This should only be on release builds...
 #define D3DCOMPILE_NO_DEBUG 1 
@@ -13,6 +13,9 @@
 #include <DirectXMath.h>
 
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+	#ifdef _GAMING_XBOX_SCARLETT
+		#include "ThisPlatform/Direct3D12.h"
+	#else
 #ifndef _GAMING_XBOX //Deprecated from the GDK
 	#include <D3Dcompiler_x.h>
 #else
@@ -20,7 +23,7 @@
 #endif
 	#include <d3d12_x.h>		//! core 12.x header
 	#include <d3dx12_x.h>		//! utility 12.x header
-
+	#endif
 //	#include <dxgi1_6.h>
 	#define MONOLITHIC 1
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 1 
