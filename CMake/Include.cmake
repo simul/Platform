@@ -12,6 +12,12 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 	set(CMAKE_DEBUG_POSTFIX d )
 endif()
 
+# Get the git branch
+find_package (Git)
+execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	RESULT_VARIABLE GIT_BRANCH_RESULT
+	OUTPUT_VARIABLE PLATFORM_GIT_BRANCH)
 
 # Set the output folder where program will be created
 set( EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/eop/ )
