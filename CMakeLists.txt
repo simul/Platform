@@ -28,7 +28,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux
 endif()
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	add_subdirectory(Applications/Sample)
+	if(SIMUL_SOURCE_BUILD)
+		add_subdirectory(Applications/Sample)
+	endif()
 	if( SIMUL_SUPPORT_OPENGL )
 		add_subdirectory(OpenGL)
 	endif()
