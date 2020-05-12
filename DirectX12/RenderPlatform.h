@@ -7,7 +7,7 @@
 #include "Platform/DirectX12/GpuProfiler.h"
 #include "Platform/Shaders/SL/solid_constants.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include <vector>
 #include <queue>
 
@@ -56,7 +56,7 @@ namespace simul
 	{
 		struct ImmediateContext
 		{
-			ID3D12GraphicsCommandList4*	ICommandList;
+			ID3D12GraphicsCommandListType*	ICommandList;
 			ID3D12CommandAllocator*		IAllocator;
 			bool						IRecording=false;
 			bool						bActive=false;
@@ -296,7 +296,7 @@ namespace simul
 			ID3D12CommandAllocator*	 mImmediateAllocator=nullptr;
 			bool bImmediateContextActive=false;
 			bool bExternalImmediate=false;
-			#ifndef _XBOX_ONE
+			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
 		};

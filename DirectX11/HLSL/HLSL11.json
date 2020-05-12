@@ -1,5 +1,5 @@
 {
-	"compiler": "$PLATFORM/External/DirectX/DXCompiler/dxc.exe",
+	"compiler": "fxc.exe",
 	"api": "DirectX 11",
 	"defaultOptions": "/T {shader_model} /nologo /Zi",
 	"sourceExtension": "hlsl",
@@ -13,6 +13,7 @@
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
 		"SFX_D3D11": "1",
-		"SFX": "1"
+		"SFX": "1",
+		"PLATFORM_D3D11_SFX": "1"
 	}
 }
