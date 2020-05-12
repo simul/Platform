@@ -2,7 +2,7 @@
 #include "Platform/DirectX12/Export.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/Shaders/Sl/CppSl.sl"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Heap.h"
 #include <string>

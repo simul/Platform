@@ -53,7 +53,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	static int uu = 3;
 	// Set number of back buffers.
 	swapChainDesc.BufferCount =uu;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
 	// Set the width and height of the back buffer.
 	swapChainDesc.BufferDesc.Width = screenWidth;

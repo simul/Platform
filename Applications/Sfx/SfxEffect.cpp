@@ -1606,7 +1606,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				// GLSL requires the flat
 				if (s->m_structMembers[i].type.length() && (s->m_structMembers[i].type == "uint" || s->m_structMembers[i].type == "int"))
 				{
-					m += "flat ";
+					//m += "flat ";
 				}
 				m += structMemberDeclaration;
 				find_and_replace(m, "{type}", s->m_structMembers[i].type);

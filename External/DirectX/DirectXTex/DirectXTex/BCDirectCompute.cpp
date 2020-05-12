@@ -7,6 +7,7 @@
 // Licensed under the MIT License.
 //-------------------------------------------------------------------------------------
 
+#ifndef _GAMING_XBOX
 #include "DirectXTexP.h"
 
 #include "BCDirectCompute.h"
@@ -614,3 +615,4 @@ HRESULT GPUCompressBC::Compress(const Image& srcImage, const Image& destImage)
 
     return hr;
 }
+#endif

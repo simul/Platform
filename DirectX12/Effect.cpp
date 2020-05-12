@@ -10,7 +10,8 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
+#include "ThisPlatform/Direct3D12.h"
 
 #include <algorithm>
 #include <string>
@@ -77,25 +78,12 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	};
 	// Copy shader
 	type = t;
-	if (t == crossplatform::SHADERTYPE_PIXEL)
-	{
-		D3DCreateBlob(DataSize, &pixelShader12);
-		memcpy(pixelShader12->GetBufferPointer(), data, pixelShader12->GetBufferSize());
-	}
-	else if (t == crossplatform::SHADERTYPE_VERTEX)
-	{
-		D3DCreateBlob(DataSize, &vertexShader12);
-		memcpy(vertexShader12->GetBufferPointer(), data, vertexShader12->GetBufferSize());
-	}
-	else if (t == crossplatform::SHADERTYPE_COMPUTE)
-	{
-		D3DCreateBlob(DataSize, &computeShader12);
-		memcpy(computeShader12->GetBufferPointer(), data, computeShader12->GetBufferSize());
-	}
-	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
-	{
-		SIMUL_INTERNAL_CERR << "Geometry shaders are not implemented in Dx12" << std::endl;
-	}
+	shader12.resize(DataSize);
+	memcpy(shader12.data(), data, DataSize);
+}
+Shader::~Shader()
+{
+	
 }
 
 void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
@@ -150,8 +138,8 @@ void Effect::PostLoad()
 			// Graphics pipeline
 			if (v && p)
 			{
-				CheckShaderSlots(v, v->vertexShader12);
-				CheckShaderSlots(p, p->pixelShader12);
+				CheckShaderSlots(v, v->shader12);
+				CheckShaderSlots(p, p->shader12);
 				pass.second->SetConstantBufferSlots	(p->constantBufferSlots | v->constantBufferSlots);
 				pass.second->SetTextureSlots		(p->textureSlots		| v->textureSlots);
 				pass.second->SetTextureSlotsForSB	(p->textureSlotsForSB	| v->textureSlotsForSB);
@@ -162,7 +150,7 @@ void Effect::PostLoad()
 			// Compute pipeline
 			if (c)
 			{
-				CheckShaderSlots(c, c->computeShader12);
+				CheckShaderSlots(c, c->shader12);
 				pass.second->SetConstantBufferSlots	(c->constantBufferSlots);
 				pass.second->SetTextureSlots		(c->textureSlots);
 				pass.second->SetTextureSlotsForSB	(c->textureSlotsForSB);
@@ -260,16 +248,15 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, cros
 	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
 	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
-#include "dxcapi.h"
 
-void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
+void Effect::CheckShaderSlots(dx12::Shader * shader, const std::vector<uint8_t>& shaderBlob)
 {
 	HRESULT res = S_FALSE;
+#ifdef WIN64
 	// Load the shader reflection code
 	if (!shader->mShaderReflection)
 	{
-		res = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&shader->mLibraryReflection));
-		
+		res = D3DReflect(shaderBlob.data(), shaderBlob.size(), IID_PPV_ARGS(&shader->mLibraryReflection));
 		// unavailable:
 		if (res != S_OK)
 		{
@@ -396,6 +383,7 @@ void Effect::CheckShaderSlots(dx12::Shader * shader, ID3DBlob * shaderBlob)
 		SIMUL_INTERNAL_CERR_ONCE << shader->name.c_str() << ": failed samplerSlots check." << std::endl;
 		shader->samplerSlots = temp_shader.samplerSlots;
 	}
+#endif
 }
 
 Heap* Effect::GetEffectSamplerHeap()
@@ -750,7 +738,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
     mIsCompute                                  = true;
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC cpsoDesc  = {};
-    cpsoDesc.CS                                 = CD3DX12_SHADER_BYTECODE(c->computeShader12);
+    cpsoDesc.CS                                 = { c->shader12.data(), c->shader12.size() };
     cpsoDesc.pRootSignature                     = curRenderPlat->GetGraphicsRootSignature();
     cpsoDesc.NodeMask                           = 0;
     HRESULT res                                 = curRenderPlat->AsD3D12Device()->CreateComputePipelineState(&cpsoDesc,SIMUL_PPV_ARGS(&mComputePso));
@@ -945,8 +933,8 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext
     // Build the PSO description 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsoDesc = {};
     gpsoDesc.pRootSignature                     = curRenderPlat->GetGraphicsRootSignature();
-    gpsoDesc.VS                                 = CD3DX12_SHADER_BYTECODE(v->vertexShader12);
-    gpsoDesc.PS                                 = CD3DX12_SHADER_BYTECODE(p->pixelShader12);
+    gpsoDesc.VS                                 = { v->shader12.data(), v->shader12.size() };
+    gpsoDesc.PS                                 = { p->shader12.data(), p->shader12.size() };
     gpsoDesc.InputLayout.NumElements            = pCurInputLayout ? pCurInputLayout->NumElements : 0;
     gpsoDesc.InputLayout.pInputElementDescs     = pCurInputLayout ? pCurInputLayout->pInputElementDescs : nullptr;
     gpsoDesc.RasterizerState                    = *finalRaster;

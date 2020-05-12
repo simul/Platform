@@ -94,6 +94,10 @@ double latest_datetime=0.0;
 		{
 			result=(value==num);
 		}
+		else if(test==ZERO)
+		{
+			result=(value==0);
+		}
 		else if(test==NONZERO)
 		{
 			result=(value!=0);
@@ -602,13 +606,23 @@ if_condition: IDENTIFIER if_test
 				$$.num=hash_if(id,test,num);
 				$$.str=$1.str+$2.str;
 			}
+			| optional_boolean_not IDENTIFIER
+			{
+				if($1.test==NOT_DEFINED)
+					$$.test=ZERO;
+				else
+					$$.test=NONZERO;
+				string id=$2.str;
+				$$.num=hash_if(id,$$.test);
+				$$.str=id;
+			};
 			| optional_boolean_not defined_test
 			{
 				$$.test=$1.test;
-						Test test=$1.test;
-						string id=$1.str+$2.str;
-						$$.num=hash_if(id,$1.test);
-						$$.str=id;
+				Test test=$1.test;
+				string id=$1.str+$2.str;
+				$$.num=hash_if(id,$1.test);
+				$$.str=id;
 			};
 			| NUMBER
 			{

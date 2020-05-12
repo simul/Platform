@@ -16,3 +16,6 @@
 [submodule "Commodore"]
 	path = Commodore
 	url = git@github.com:simul/Commodore.git
+[submodule "Spectrum"]
+	path = Spectrum
+	url = git@github.com:simul/Spectrum.git

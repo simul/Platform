@@ -12,6 +12,12 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 	set(CMAKE_DEBUG_POSTFIX d )
 endif()
 
+# Get the git branch
+find_package (Git)
+execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	RESULT_VARIABLE GIT_BRANCH_RESULT
+	OUTPUT_VARIABLE PLATFORM_GIT_BRANCH)
 
 # Set the output folder where program will be created
 set( EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/eop/ )
@@ -145,9 +151,12 @@ function(LibraryDefaults targname)
 		target_link_options(${targname} PRIVATE /DEBUG)
 		add_definitions( -D_UNICODE -DUNICODE )
 	elseif(GDK)
-		target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/GDK")
+		if(PLATFORM_SPECTRUM)
+		else()
+			target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/GDK")
+		endif()
 		#target_compile_options(${targname} PRIVATE /diagnostics:classic /GS /TP /W3 /wd4011 /wd4514 /Zc:wchar_t /Zi /Gm- /Od /Ob0 /Zc:inline)
-		target_compile_options(${targname} PRIVATE /fp:fast /DWINAPI_FAMILY=WINAPI_FAMILY_TV_TITLE /D_GDK /DWIN32_LEAN_AND_MEAN)
+		target_compile_options(${targname} PRIVATE /fp:fast /EHsc /DWINAPI_FAMILY=WINAPI_FAMILY_TV_TITLE /D_GDK /DWIN32_LEAN_AND_MEAN)
 		#target_compile_options(${targname} PRIVATE /errorReport:prompt /WX- /Zc:forScope /RTC1 /arch:AVX /Gd /nologo) 
 		target_link_options(${targname} PRIVATE /DEBUG)
 		add_definitions( -D_UNICODE -DUNICODE )

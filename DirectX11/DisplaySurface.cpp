@@ -81,7 +81,7 @@ void DisplaySurface::InitSwapChain()
 
     // Set number of back buffers.
     swapChainDesc.BufferCount                           = uu;
-    swapChainDesc.SwapEffect                            = DXGI_SWAP_EFFECT_SEQUENTIAL;
+    swapChainDesc.SwapEffect                            = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     // Set the width and height of the back buffer.
     swapChainDesc.BufferDesc.Width                      = screenWidth;
     swapChainDesc.BufferDesc.Height                     = screenHeight;

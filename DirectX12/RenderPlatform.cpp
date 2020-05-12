@@ -481,7 +481,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Load the RootSignature blobs
 	auto fileLoader = base::FileLoader::GetFileLoader();
 	{
-		ID3DBlob* rblob				= nullptr;
+		std::vector<uint8_t> rblob				;
 		void* fileContents			= nullptr;
 		unsigned int loadedBytes	= 0;
 		fileLoader->AcquireFileContents(fileContents, loadedBytes, "//GFX.cso",GetShaderBinaryPathsUtf8(), false);
@@ -490,16 +490,15 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 			SIMUL_CERR << "Could not load the RootSignature blob.\n";
 			SIMUL_BREAK_ONCE("Could not load the RootSignature blob.");
 		}
-		res                         = D3DCreateBlob(loadedBytes, &rblob);
-        SIMUL_ASSERT(res == S_OK);
-		memcpy(rblob->GetBufferPointer(), fileContents, loadedBytes);
+		rblob.resize(loadedBytes);
+		memcpy(rblob.data(), fileContents, loadedBytes);
 		fileLoader->ReleaseFileContents(fileContents);
 
         res                         = m12Device->CreateRootSignature
         (
             0, 
-            rblob->GetBufferPointer(), 
-            rblob->GetBufferSize(), 
+			rblob.data(),
+            rblob.size(), 
             SIMUL_PPV_ARGS(&mGRootSignature)
         );
 		SIMUL_ASSERT(res == S_OK);
@@ -514,7 +513,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         ID3D12RootSignatureDeserializer* rsDeserial = nullptr;
         res                                         = D3D12CreateRootSignatureDeserializer
         (
-            rblob->GetBufferPointer(), rblob->GetBufferSize(), SIMUL_PPV_ARGS(&rsDeserial)
+			rblob.data(), rblob.size(), SIMUL_PPV_ARGS(&rsDeserial)
         );
         SIMUL_ASSERT(res == S_OK);
         D3D12_ROOT_SIGNATURE_DESC rsDesc            = {};
@@ -555,7 +554,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
             SIMUL_ASSERT(ResourceBindingLimits::NumSamplers == param.DescriptorTable.pDescriptorRanges[0].NumDescriptors);
         }
         rsDeserial->Release();
-		rblob->Release();
+		rblob.clear();
 
         // Check against the hardware limits:
         if (ResourceBindingLimits::NumUAV > mResourceBindingLimits.MaxUAVPerStage)

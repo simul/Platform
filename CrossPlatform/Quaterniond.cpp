@@ -124,7 +124,7 @@ void Quaterniond::DefineSmall(double ss,const vec3d &vv)
 	z/=magnitude;
 	s/=magnitude;
 }
-double dot(vec3d a,vec3d b)
+double dot(vec3d& a,vec3d& b)
 {
 	return a.x*b.x+a.y*b.y+a.z*b.z;
 }

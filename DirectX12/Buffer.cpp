@@ -1,4 +1,4 @@
-#include "DirectXHeader.h"
+#include "SimulDirectXHeader.h"
 #include "Buffer.h"
 #include "RenderPlatform.h"
 
