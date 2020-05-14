@@ -47,7 +47,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" CACHE STRING "" )
 endif()
 
-set( SIMUL_FX_EXECUTABLE "C:/Program Files (x86)/Windows Kits/10/bin/x64/fxc.exe" CACHE STRING "" )
+find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin" "C:/Program Files (x86)/Windows Kits/10/bin/10.0.18362.0" PATH_SUFFIXES x64 )
+if(NOT SIMUL_FX_EXECUTABLE)
+    message(FATAL_ERROR "Fxc not found!")
+endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set(SIMUL_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Sfx" CACHE STRING "" )

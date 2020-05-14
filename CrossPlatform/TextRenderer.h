@@ -51,6 +51,7 @@ namespace simul
 			bool recompile;
 			int fontWidth = 0;
 			FontIndex * fontIndices = nullptr;
+			int defaultTextHeight=20;
 		};
 	}
 }
