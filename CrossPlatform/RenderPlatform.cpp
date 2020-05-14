@@ -1017,8 +1017,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 
 void RenderPlatform::LinePrint(DeviceContext &deviceContext,const char *text,const float* colr,const float* bkg)
 {
-	static int X=6;
-	Print(deviceContext,X,deviceContext.framePrintY,text,colr,bkg);
+	Print(deviceContext, deviceContext.framePrintX,deviceContext.framePrintY,text,colr,bkg);
 	deviceContext.framePrintY+=textRenderer->GetDefaultTextHeight();
 }
 		

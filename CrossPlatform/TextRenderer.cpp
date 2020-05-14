@@ -135,6 +135,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	fontWidth = 11;
 	if (font_texture)
 	{
+		defaultTextHeight = font_texture->length;
 		fontIndices = new FontIndex[128];
 		for (int i = 0; i < 128; i++)
 		{
@@ -153,6 +154,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	{
 		fontIndices = defaultFontIndices;
 		font_texture = renderPlatform->CreateTexture("Font16.png");
+		defaultTextHeight=font_texture->length;
 		fontWidth = 0;
 	}
 }
@@ -191,7 +193,7 @@ void TextRenderer::Recompile()
 }
 int TextRenderer::GetDefaultTextHeight() const
 {
-	return 20;
+	return defaultTextHeight;
 }
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
@@ -245,7 +247,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 		renderPlatform->DrawQuad(deviceContext);
 		effect->Unapply(deviceContext);
 	}
-	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + ht)/screen_height, 0, 2.0f*ht / screen_height);
+	float ypixel=1.0f/ screen_height;
+	float ytexel=1.0f/ GetDefaultTextHeight();
+	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + ht)* ypixel, 0, 2.0f*(ht+1.0f)* ypixel);
 	int n=0;
 	float u = 1024.f / font_texture->width;
 	if(max_chars>fontChars.count)
@@ -274,7 +278,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 				c.text_rect = constantBuffer.background_rect;
 				c.text_rect.x = 2.0f * x / screen_width - 1.f;
 				c.text_rect.z = 2.0f * (float)f.pixel_width * fontScale / screen_width;
-				c.texc = vec4(f.x * u, 0.0f, (f.w - f.x) * u, 1.0f);
+				c.texc = vec4(f.x * u, 0.0f, (f.w - f.x) * u, 1.0f+ytexel);
 			}
 			n++;
 		}

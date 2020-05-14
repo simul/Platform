@@ -230,6 +230,7 @@ namespace simul
 			crossplatform::ContextState contextState;
 			long long frame_number;
 			bool initialized;
+			int framePrintX=0;
 			int framePrintY=0;
 			DeviceContext();
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
