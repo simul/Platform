@@ -1,5 +1,5 @@
 {
-	"compiler": "$PLATFORM/External/DirectX/DXCompiler/dxc.exe",
+	"compiler": "fxc.exe",
 	"api": "DirectX 11",
 	"defaultOptions": "/T {shader_model} /nologo /Zi",
 	"sourceExtension": "hlsl",
