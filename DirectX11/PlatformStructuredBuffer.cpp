@@ -211,7 +211,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 			wait++;
 		}
 		if (wait > 1)
-			SIMUL_CERR << "PlatformStructuredBuffer::OpenReadBuffer waited " << wait << " times." << std::endl;
+			SIMUL_INTERNAL_CERR << "PlatformStructuredBuffer::OpenReadBuffer waited " << wait << " times." << std::endl;
 		if (hr != S_OK)
 		{
 			D3D11_BUFFER_DESC desc;

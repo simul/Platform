@@ -820,6 +820,10 @@ static bool toBool(string s)
 	return false;
 }
 
+void Effect::Compile(const char *filename_utf8)
+{
+	EnsureEffect(renderPlatform,filename_utf8);
+}
 
 void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
