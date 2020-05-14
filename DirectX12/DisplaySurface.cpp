@@ -129,7 +129,10 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 	// Create this window command list
 	SAFE_RELEASE(mCommandList);
-	mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
+	res=mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
+	SIMUL_ASSERT(res == S_OK);
+	if(!mCommandList)
+		return;
 	mCommandList->SetName(L"WindowCommandList 2");
 	mRecordingCommands = true;
 

@@ -220,8 +220,8 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     {
 		int idx = (deviceContext.frame_number + 1) % mNumBuffers;
 		mCurReadMap = nullptr;
-		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
-		if (!unmap_success)
+		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]); 
+		if (unmap_success != GL_TRUE)
 		{
 			#if _DUBUG
 			SIMUL_COUT << "The structured buffer at binding " << mBinding << " , did not unmap successfully. Buffer assumed to be corrupt.\n";
