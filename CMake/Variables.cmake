@@ -41,15 +41,12 @@ else()
 	set(SIMUL_SUPPORT_PS4 OFF)
 endif()
 
+find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin" "C:/Program Files (x86)/Windows Kits/10/bin/10.0.18362.0" PATH_SUFFIXES x64 )
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
 	set( FLEX_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
 	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" CACHE STRING "" )
-endif()
-
-find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin" "C:/Program Files (x86)/Windows Kits/10/bin/10.0.18362.0" PATH_SUFFIXES x64 )
-if(NOT SIMUL_FX_EXECUTABLE)
-    message(FATAL_ERROR "Fxc not found!")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
