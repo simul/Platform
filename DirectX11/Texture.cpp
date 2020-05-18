@@ -680,6 +680,20 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
+	DXGI_FORMAT srvFormat = dxgiFormat;
+	DXGI_FORMAT uavFormat = dxgiFormat;
+	DXGI_FORMAT altUavFormat = dxgiFormat;
+	if (dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM)
+	{
+		srvFormat = dxgiFormat;
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if PLATFORM_TYPED_UAV_FORMATS
+		altUavFormat = uavFormat;
+#else
+		altUavFormat = DXGI_FORMAT_R32_UINT;
+#endif
+	}
 	if(texture)
 	{
 		ID3D11Texture3D* ppd(NULL);
@@ -699,20 +713,6 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	}
 	else
 		ok=false;
-	DXGI_FORMAT srvFormat = dxgiFormat;
-	DXGI_FORMAT uavFormat = dxgiFormat;
-	DXGI_FORMAT altUavFormat = dxgiFormat;
-	if (dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM)
-	{
-		srvFormat = dxgiFormat;
-		dxgiFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
-		uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-#if PLATFORM_TYPED_UAV_FORMATS
-		altUavFormat = uavFormat;
-#else
-		altUavFo rmat = DXGI_FORMAT_R32_UINT;
-#endif
-	}
 	bool changed=!ok;
 	if(!ok)
 	{
