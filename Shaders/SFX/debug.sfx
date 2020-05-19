@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+//  Copyright (c) Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
 #include "common.sl"
 #include "render_states.sl"

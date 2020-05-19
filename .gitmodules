@@ -19,3 +19,6 @@
 [submodule "Spectrum"]
 	path = Spectrum
 	url = git@github.com:simul/Spectrum.git
+[submodule "External/fmt"]
+	path = External/fmt
+	url = git@github.com:fmtlib/fmt.git
