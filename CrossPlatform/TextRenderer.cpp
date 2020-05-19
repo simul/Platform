@@ -127,7 +127,6 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
-	fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
 	RecompileShaders();
 	ERRNO_BREAK
 	SAFE_DELETE(font_texture);
@@ -161,7 +160,11 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void TextRenderer::InvalidateDeviceObjects()
 {
-	fontChars.InvalidateDeviceObjects();
+	for(auto &f:fontChars)
+	{
+		f.second.InvalidateDeviceObjects();
+	}
+	fontChars.clear();
 	constantBuffer.InvalidateDeviceObjects();
 	SAFE_DELETE(effect);
 	SAFE_DELETE(font_texture);
@@ -252,11 +255,12 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + ht)* ypixel, 0, 2.0f*(ht+1.0f)* ypixel);
 	int n=0;
 	float u = 1024.f / font_texture->width;
-	if(max_chars>fontChars.count)
-		fontChars.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
-	FontChar *charList=fontChars.GetBuffer(deviceContext);
+	crossplatform::StructuredBuffer<FontChar> &f=fontChars[deviceContext.platform_context];
+	if(max_chars>f.count)
+		f.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
+	FontChar *charList=f.GetBuffer(deviceContext);
 	float x = x0;
-	for(int i=0;i<fontChars.count;i++)
+	for(int i=0;i<f.count;i++)
 	{
 		if(txt[i]==0)
 			break;
@@ -290,7 +294,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 		effect->Apply(deviceContext,textTech,0);
 		effect->SetConstantBuffer(deviceContext,&constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
-		fontChars.Apply(deviceContext,effect,_fontChars);
+		f.Apply(deviceContext,effect,_fontChars);
 		renderPlatform->SetTopology(deviceContext,TRIANGLELIST);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);

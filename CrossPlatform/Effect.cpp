@@ -922,6 +922,10 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			{
 				cmdLine += " -F";
 			}
+			if ((buildMode & crossplatform::ShaderBuildMode::DEBUG_SHADERS) != 0)
+			{
+				cmdLine += " -D";
+			}
 		}
 
 		// Convert the command line to a wide string
@@ -1036,7 +1040,6 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		}
 		if(!result)
 		{
-
 			SIMUL_BREAK("Failed to build effect.");
 		}
 	}

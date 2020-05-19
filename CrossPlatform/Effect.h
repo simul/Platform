@@ -56,6 +56,7 @@ namespace simul
 			,BUILD_IF_CHANGED=2
 			, BREAK_ON_FAIL = 8			// 0x1000
 			, TRY_AGAIN_ON_FAIL = 12	// 0x11000 - includes break.
+			, DEBUG_SHADERS=16
 		};
 		inline ShaderBuildMode operator|(ShaderBuildMode a, ShaderBuildMode b)
 		{
