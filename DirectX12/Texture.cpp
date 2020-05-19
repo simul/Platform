@@ -1693,6 +1693,8 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 			srvFaceDesc.Shader4ComponentMapping				= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			srvFaceDesc.Format								= srvDesc.Format;
 			srvFaceDesc.ViewDimension						= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+			if(cubemap)
+				srvFaceDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 			for (int i = 0; i < totalNum; i++)
 			{
 				if (layerShaderResourceViews12)

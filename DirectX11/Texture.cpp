@@ -1283,6 +1283,8 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap,bool volume,bool msaa)
 			ZeroMemory(&face_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 			face_srv_desc.Format					= SRVDesc.Format;
 			face_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			if (cubemap)
+				face_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
 			for(int i=0;i<total_num;i++)
 			{
 				face_srv_desc.Texture2DArray.ArraySize=1;
