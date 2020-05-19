@@ -151,11 +151,11 @@ vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,flo
 	result		=clamp(result,vec4(-1.0,-1.0,-1.0,-1.0),vec4(1.0,1.0,1.0,1.0));
 	return result;
 }
-/*
-vec4 permute(vec4 x)
+
+vec4 permute4(vec4 x)
 {
 	return fmod((34.0*x+1.0)*x,289);
-}*/
+}
 
 float cellular3x3(vec3 P)
 {
@@ -164,13 +164,13 @@ float cellular3x3(vec3 P)
 	const float jitter	=0.8;
 	vec3 Pi		=fmod(floor(P),289.0);
 	vec3 Pf		=fract(P);
-	vec4 Pfx	=Pf.x+vec4(-0.5,-1.5,-0.5,-1.5);
-	vec4 Pfy	=Pf.y+vec4(-0.5,-0.5,-1.5,-1.5);
-	vec4 Pfz	=Pf.z+vec4(-0.5,-0.5,-0.5,-1.5);
+	vec4 Pfx	=Pf.xxxx+vec4(-0.5,-1.5,-0.5,-1.5);
+	vec4 Pfy	=Pf.yyyy+vec4(-0.5,-0.5,-1.5,-1.5);
+	vec4 Pfz	=Pf.zzzz+vec4(-0.5,-0.5,-0.5,-1.5);
 
-	vec4 p 		=permute(Pi.x+vec4(0.0,1.0,0.0,1.0));
-	p 			=permute(p+Pi.y+vec4(0.0,0.0,1.0,1.0));
-	p 			=permute(p+Pi.z+vec4(0.0,0.0,1.0,1.0));
+	vec4 p 		=permute4(Pi.xxxx+vec4(0.0,1.0,0.0,1.0));
+	p 			=permute4(p+Pi.yyyy+vec4(0.0,0.0,1.0,1.0));
+	p 			=permute4(p+Pi.zzzz+vec4(0.0,0.0,1.0,1.0));
 
 	vec4 ox		=fmod(p,7.0)*K+K2;
 	vec4 oy		=fmod(floor(p*K),7.0)*K+K2;
@@ -206,7 +206,7 @@ vec4 mod289(vec4 x) {
   return x - floor(x * (1.0 / 289.0)) * 289.0;
 }
 
-vec4 permute(vec4 x) {
+vec4 permute4a(vec4 x) {
      return mod289(((x*34.0)+1.0)*x);
 }
 
@@ -240,7 +240,7 @@ float snoise(vec3 v)
 
 // Permutations
   i = mod289(i); 
-  vec4 p = permute( permute( permute( 
+  vec4 p = permute4a( permute4a( permute4a( 
              i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
            + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
            + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
