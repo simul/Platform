@@ -4,6 +4,7 @@ import sys
 import configparser
 from pathlib import Path
 import os, fnmatch
+from git import Repo
 
 def find(pattern, path):
     result = []
@@ -41,20 +42,27 @@ def cmake(src,build_path,flags):
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
 	os.chdir(wd)
 
+def GetMSBuild():
+	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
+	process = subprocess.Popen([VSW,'-latest','-requires','Microsoft.Component.MSBuild','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
+	MSB = process.stdout.readline().strip()
+	process.poll()
+	return MSB
+
 def execute():
-	pid=subprocess.Popen(['git','submodule','update','--progress','--init','--','External/glfw'])
-	pid=subprocess.Popen(['git','submodule','update','--progress','--init','--','External/stb'])
+	repo = Repo(os.getcwd())
+	sms = repo.submodules
+	for sm in sms:
+		sm.update()
 
 	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
-
 	cmake('External/glfw','External/glfw/build_md',glfwflags)
 	cmake('External/glfw','External/glfw/build_mt',glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
+	platform_flags=[]
+	cmake('.','build',platform_flags)
 
 
 version=read_config_file('version.properties')
 user=read_config_file('user.properties')
-PS4_SDK_VERSION=version.get('PS4_SDK_VERSION')
-XDK_VERSION=version.get('XDK_VERSION')
-NINTENDO_SDK_VERSION=version.get('NINTENDO_SDK_VERSION')
-MSBUILD=user.get('MSBUILD')
+MSBUILD=user.get('MSBUILD',GetMSBuild())
 execute()
