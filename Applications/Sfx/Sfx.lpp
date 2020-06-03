@@ -670,6 +670,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL,IN_SHADER>"uniform"			{
 											stdReturn(UNIFORM);
 										}
+<INITIAL,IN_SHADER>"flat"			{
+											stdReturn(FLAT);
+										}
 <INITIAL,IN_SHADER>"groupshared"		{
 											stdReturn(GROUPSHARED);
 										}
