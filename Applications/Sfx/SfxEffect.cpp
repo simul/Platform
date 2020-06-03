@@ -208,17 +208,35 @@ void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration 
 	}
 }
 
-void Effect::AccumulateGlobals(const Function *f,std::set<string> &s) const
+void Effect::AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const
 {
 	for (auto i : f->globals)
 	{
 		s.insert(i);
+	}
+	for (auto u = f->functionsCalled.begin(); u != f->functionsCalled.end(); u++)
+	{
+		AccumulateGlobalsAsStrings(*u, s);
+	}
+}
+
+void Effect::AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const
+{
+	for (auto i : f->declarations)
+	{
+		auto d= declarations.find(i);
+		if(d!=declarations.end()&&d->second->declarationType==DeclarationType::VARIABLE)
+		{
+			const Variable*D=(const Variable*)d->second;
+			s.insert(D);
+		}
 	}
 	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
 		AccumulateGlobals(*u,s);
 	}
 }
+
 void Effect::AccumulateConstantBuffersUsed(const Function *f, std::set<ConstantBuffer*> &s) const
 {
 	for (auto i : f->constantBuffers)
@@ -249,6 +267,13 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, const Stru
 	cb->slot = slot;
 	cb->name=name;
 	declarations[name]=cb;
+}
+
+void Effect::DeclareVariable(const Variable* v)
+{
+	Variable *variable=new Variable;
+	*variable=*v;
+	declarations[variable->name] = variable;
 }
 
 Function *Effect::GetFunction(const std::string &functionName,int i)
@@ -1791,6 +1816,12 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 				}
 			}
 		}
+	}
+	std::set<const Variable*> vars;
+	AccumulateGlobals(function, vars);
+	for (auto v = vars.begin(); v != vars.end(); v++)
+	{
+		theShader<<v.operator*()->original<<std::endl;
 	}
 	for(auto u=ordered_fns.begin();u!=ordered_fns.end();u++)
 	{

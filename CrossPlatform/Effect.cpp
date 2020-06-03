@@ -25,18 +25,6 @@ ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer
 		defaultName = name + 7;
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const ShaderResource &shaderResource)
-{
-	if(shaderResource.slot>=0)
-		deviceContext.contextState.applyRwStructuredBuffers[shaderResource.slot] = this;
-}
-
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const ShaderResource &shaderResource)
-{
-	if(shaderResource.slot>=0)
-		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
-}
-
 EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 	:blendState(NULL)
 	,depthStencilState(NULL)

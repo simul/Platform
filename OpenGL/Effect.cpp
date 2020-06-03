@@ -148,10 +148,10 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n,crossplatform::BufferUsageHint b)
 {
     InvalidateDeviceObjects();
-
+	bufferUsageHint=b;
     mTotalSize      = ct * unit_size;
     this->cpu_read  = cpu_read;
     
@@ -172,7 +172,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    int idx = deviceContext.frame_number % mNumBuffers;
+    int idx = mLastIdx= deviceContext.frame_number % mNumBuffers;
     mGPUIsMapped = true;
 	return glMapNamedBuffer(mGPUBuffer[idx],GL_WRITE_ONLY);
 }
@@ -253,7 +253,8 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
-    int idx = deviceContext.frame_number % mNumBuffers;
+// mLastIdx is the one we last used to write to.
+    int idx = mLastIdx;
     if (mBinding != shaderResource.slot)
     {
         mBinding = shaderResource.slot;
@@ -269,6 +270,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
     crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
+	mLastIdx= deviceContext.frame_number % mNumBuffers;
 	Apply(deviceContext,effect,shaderResource);
 }
 
@@ -277,7 +279,7 @@ void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceCont
     // Insert a fence:
     if (cpu_read)
     {
-        int idx     = deviceContext.frame_number % mNumBuffers;
+        int idx     = mLastIdx;
 		
 		if (glIsSync(mFences[idx]))
 		{

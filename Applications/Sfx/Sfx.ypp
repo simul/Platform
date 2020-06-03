@@ -4,41 +4,41 @@
 
 
 %{
-    #include <iostream>
-    #include <map>
-    #include <string>
-    #include <vector>
-    #include <sstream>
-    #include <algorithm>
-    #include <regex>
-    
-    #include "Sfx.h"
-    #include "SfxClasses.h"
+	#include <iostream>
+	#include <map>
+	#include <string>
+	#include <vector>
+	#include <sstream>
+	#include <algorithm>
+	#include <regex>
+	
+	#include "Sfx.h"
+	#include "SfxClasses.h"
 
-    using namespace std;
-    using namespace  sfx;
-    
-    #ifdef _MSC_VER
-    // MS's C++ compiler is more strict than gcc
-    
-    // bison related
-    // Disable the warning about default being present but no other cases in switch
-    #pragma warning( disable:4065 )
+	using namespace std;
+	using namespace  sfx;
+	
+	#ifdef _MSC_VER
+	// MS's C++ compiler is more strict than gcc
+	
+	// bison related
+	// Disable the warning about default being present but no other cases in switch
+	#pragma warning( disable:4065 )
 
-    // No unistd.h (for flex)
-    #define YY_NO_UNISTD_H
+	// No unistd.h (for flex)
+	#define YY_NO_UNISTD_H
 		#define YYERROR_VERBOSE
-    #endif
+	#endif
 
-    #include "SfxScanner.h"
-    #include "SfxEffect.h"
-    #include "StringFunctions.h"
+	#include "SfxScanner.h"
+	#include "SfxEffect.h"
+	#include "StringFunctions.h"
 	extern int yy_start;
-    static void errSyn(const char *e);
-    void errSem(const string& str, int line=-1);
+	static void errSyn(const char *e);
+	void errSem(const string& str, int line=-1);
 	Function buildFunction;
 	Struct buildStruct;
-    RenderTargetFormatState buildrtFormatState;
+	RenderTargetFormatState buildrtFormatState;
 	RasterizerState buildRasterizerState;
 	BlendState buildBlendState;
 	DepthStencilState buildDepthStencilState;
@@ -157,81 +157,81 @@
 		return -1;
 	}
 
-    string GetSamplerConstructor(ShaderResourceType t,string texName,Function* f)
-    {
-        string name = "null";
-        auto config	= gEffect->GetConfig();
-        if(!config->toTextureType.empty())
-        {
-            if(t == ShaderResourceType::UNKNOWN)
-            {
-                // We must know the type
-                return string("{sampCons" + texName + "}");
-            }
-            auto declarations   = gEffect->GetDeclarations();
-            auto dec            = declarations.find(texName);
-            if(dec == declarations.end())
-            {
-                bool found = false;
-                for(auto& p : f->parameters)
-                {
-                    if(p.identifier == texName)
-                    {
-                        found = true;
-                        string searchT  = p.templ.empty() ? "default" : p.templ;
-                        auto stype      = config->toTextureType.find(searchT);
-                        name            = stype->second;
-                        break;
-                    }
-                }
-                if(!found)
-                {
-                    // It could not be ready yet:
-                    return string("{sampConsRIP" + texName + "}");
-                }
-            }
-            else
-            {
-                auto td         = (DeclaredTexture*)dec->second;
-                string searchT  = td->structureType.empty() ? "default" : td->structureType;
-                auto stype      = config->toTextureType.find(searchT);
+	string GetSamplerConstructor(ShaderResourceType t,string texName,Function* f)
+	{
+		string name = "null";
+		auto config	= gEffect->GetConfig();
+		if(!config->toTextureType.empty())
+		{
+			if(t == ShaderResourceType::UNKNOWN)
+			{
+				// We must know the type
+				return string("{sampCons" + texName + "}");
+			}
+			auto declarations   = gEffect->GetDeclarations();
+			auto dec			= declarations.find(texName);
+			if(dec == declarations.end())
+			{
+				bool found = false;
+				for(auto& p : f->parameters)
+				{
+					if(p.identifier == texName)
+					{
+						found = true;
+						string searchT  = p.templ.empty() ? "default" : p.templ;
+						auto stype	  = config->toTextureType.find(searchT);
+						name			= stype->second;
+						break;
+					}
+				}
+				if(!found)
+				{
+					// It could not be ready yet:
+					return string("{sampConsRIP" + texName + "}");
+				}
+			}
+			else
+			{
+				auto td		 = (DeclaredTexture*)dec->second;
+				string searchT  = td->structureType.empty() ? "default" : td->structureType;
+				auto stype	  = config->toTextureType.find(searchT);
 				if(stype==config->toTextureType.end())
 				{
 					string errstr="Unknown type: ";
 					errstr+=searchT;
 					errSyn(errstr.c_str());
 				}
-                name            = stype->second;
-            }
-            if((t & ShaderResourceType::TEXTURE_1D)==ShaderResourceType::TEXTURE_1D)
-            {
-                name += "1D";
-            }
-            if((t & ShaderResourceType::TEXTURE_2D) == ShaderResourceType::TEXTURE_2D)
-            {
-                name += "2D";
-            }
-            else if((t & ShaderResourceType::TEXTURE_3D) == ShaderResourceType::TEXTURE_3D)
-            {
-                name += "3D";
-            }
-            else if((t & ShaderResourceType::TEXTURE_CUBE) == ShaderResourceType::TEXTURE_CUBE)
-            {
-                name += "Cube";
-            }
-            // Handle MS
-            if((t & ShaderResourceType::MS) == ShaderResourceType::MS)
-            {
-                name += "MS";
-            }
-            // Finally, array
-            if((t & ShaderResourceType::ARRAY) == ShaderResourceType::ARRAY)
-            {
-                name += "Array";
-            }
-        }
-        return name;
-    }
+				name			= stype->second;
+			}
+			if((t & ShaderResourceType::TEXTURE_1D)==ShaderResourceType::TEXTURE_1D)
+			{
+				name += "1D";
+			}
+			if((t & ShaderResourceType::TEXTURE_2D) == ShaderResourceType::TEXTURE_2D)
+			{
+				name += "2D";
+			}
+			else if((t & ShaderResourceType::TEXTURE_3D) == ShaderResourceType::TEXTURE_3D)
+			{
+				name += "3D";
+			}
+			else if((t & ShaderResourceType::TEXTURE_CUBE) == ShaderResourceType::TEXTURE_CUBE)
+			{
+				name += "Cube";
+			}
+			// Handle MS
+			if((t & ShaderResourceType::MS) == ShaderResourceType::MS)
+			{
+				name += "MS";
+			}
+			// Finally, array
+			if((t & ShaderResourceType::ARRAY) == ShaderResourceType::ARRAY)
+			{
+				name += "Array";
+			}
+		}
+		return name;
+	}
 
 	void GetInputs(std::ostringstream &inputs,vector<YYSTYPE::variable> *vars)
 	{
@@ -257,7 +257,7 @@
 
 	string GetFixedParams(string params)
 	{
-        // TO-DO: why Nacho why ---> find_last_of find_last_of find_last_of find_last_of find_last_offind_last_of find_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_of
+		// TO-DO: why Nacho why ---> find_last_of find_last_of find_last_of find_last_of find_last_offind_last_of find_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_of
 		string newParams;
 		string copy(params);
 		reverse(copy.begin(),copy.end());
@@ -290,17 +290,17 @@
 		auto config		= gEffect->GetConfig();
 		string newParams= "ivec2(" + pos + ")," + "int(" + idx + ")";
 		string newExpr	= config->loadSyntax;
-        string samplerConstructor = GetSamplerConstructor(resourceType,textureName,&buildFunction);
+		string samplerConstructor = GetSamplerConstructor(resourceType,textureName,&buildFunction);
 		find_and_replace(newExpr,"{command}","texelFetch");
-        if(config->combineInShader)
-        {
-       //     find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName +")");
-            find_and_replace(newExpr,"{texture}", textureName );
-        }
-        else
-        {
-            find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName +"[0])");
-        }
+		if(config->combineInShader)
+		{
+	   //	 find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName +")");
+			find_and_replace(newExpr,"{texture}", textureName );
+		}
+		else
+		{
+			find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName +"[0])");
+		}
 		find_and_replace(newExpr,"{params}",newParams);
 		return newExpr;
 	}
@@ -326,8 +326,8 @@
 		}
 
 		// Select the command
-        bool rw                     = IsRW(resourceType);
-        string samplerConstructor   = "";
+		bool rw					 = IsRW(resourceType);
+		string samplerConstructor   = "";
 		if(rw)
 		{
 			find_and_replace(newExpr,"{command}","imageLoad");
@@ -335,23 +335,23 @@
 		else
 		{
 			find_and_replace(newExpr,"{command}","texelFetch");
-            samplerConstructor = GetSamplerConstructor(resourceType,textureName,&buildFunction);
+			samplerConstructor = GetSamplerConstructor(resourceType,textureName,&buildFunction);
 		}
 		std::string mip;
 		// Check the params
 		if(return_size == 1)
 		{
 			// gvec4 texelFetch(gsampler1D sampler,int P,int lod);
-            newParams = "int(" + params + ").x,(" + params + ").x"; 
+			newParams = "int(" + params + ").x,(" + params + ").x"; 
 			// newParams += ",0";
 		}
 		else if(return_size == 2)
 		{
 			mip="int("+params+".y)";
 			// gvec4 imageLoad(	gimage2D image,ivec2 P);
-            if(rw)
+			if(rw)
 				newParams = "ivec2(" + newParams + ").xy";
-            else
+			else
 			{
 				newParams = ("ivec2(" + newParams + ").xy");
 				if(with_mip)
@@ -363,38 +363,38 @@
 		else if(return_size == 3)
 		{
 			mip="int("+params+".z)";
-            if(rw)
-            {
+			if(rw)
+			{
 			// gvec4 imageLoad(	gimage2DArray image,ivec3 P);
 				newParams = "ivec3(" + newParams + ").xyz";
 			}
-            else
-            {
+			else
+			{
 			// gvec4 texelFetch( gsampler2DArray sampler,ivec3 P,int lod);
-			    newParams = ("ivec3(" + newParams + ").xyz");
+				newParams = ("ivec3(" + newParams + ").xyz");
 				if(with_mip)
 					newParams=(newParams+",")+mip;
 				else
 					newParams=(newParams+",0");
-            }
+			}
 		}
 		else if(return_size == 4)
 		{
 			mip="int("+params+".w)";
 			// gvec4 imageLoad(	gimage3D image,ivec3 P);
-            if(rw)
-            {
-                newParams = "ivec3(" + newParams + ").xyz";
-            }
-            // gvec4 texelFetch(gsampler3D sampler,ivec3 P,int lod);
-            else
-            {
-			    newParams = ("ivec3(" + newParams + ").xyz");
+			if(rw)
+			{
+				newParams = "ivec3(" + newParams + ").xyz";
+			}
+			// gvec4 texelFetch(gsampler3D sampler,ivec3 P,int lod);
+			else
+			{
+				newParams = ("ivec3(" + newParams + ").xyz");
 				if(with_mip)
 					newParams=(newParams+",")+mip;
 				else
 					newParams=(newParams+",0");
-            }
+			}
 		}
 		else
 		{
@@ -406,21 +406,21 @@
 			newParams = params;
 		}
 		if(!samplerConstructor.empty())
-        {
-            if(config->combineInShader)
-            {
+		{
+			if(config->combineInShader)
+			{
 				// Why would we be doing this??
-                find_and_replace(newExpr,"{texture}",textureName);//samplerConstructor + "(" + textureName + ")");
-            }
-            else
-            {
-                find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName + "[0])"); 
-            }
-        }
-        else
-        {
-		    find_and_replace(newExpr,"{texture}",textureName);
-        }
+				find_and_replace(newExpr,"{texture}",textureName);//samplerConstructor + "(" + textureName + ")");
+			}
+			else
+			{
+				find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName + "[0])"); 
+			}
+		}
+		else
+		{
+			find_and_replace(newExpr,"{texture}",textureName);
+		}
 		find_and_replace(newExpr,"{params}",newParams);
 		return newExpr;
 	}
@@ -481,37 +481,37 @@
 			f.content = std::regex_replace(f.content, re, result_expression);
 			base_match = std::smatch();
 		}
-        // Check and fix texture sampler constructors
-        auto config	= gEffect->GetConfig();
-        if(!config->toTextureType.empty())
-        {
-            for(auto j : f.parameters)
-            {
-                ShaderResourceType type = j.shaderResourceType;
-                // At this point we must know the type!
-                bool isTex = (type & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE;
-                if(!isTex)
-                {
-                    continue;
-                }
-                string toFind = "{sampCons" + j.identifier + "}";
-                find_and_replace(f.content,toFind,GetSamplerConstructor(type,j.identifier,&f));
+		// Check and fix texture sampler constructors
+		auto config	= gEffect->GetConfig();
+		if(!config->toTextureType.empty())
+		{
+			for(auto j : f.parameters)
+			{
+				ShaderResourceType type = j.shaderResourceType;
+				// At this point we must know the type!
+				bool isTex = (type & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE;
+				if(!isTex)
+				{
+					continue;
+				}
+				string toFind = "{sampCons" + j.identifier + "}";
+				find_and_replace(f.content,toFind,GetSamplerConstructor(type,j.identifier,&f));
 
-                // Also iterate over params (for MSAA)
-                if((type & ShaderResourceType::MS) == ShaderResourceType::MS)
-                {
-                    string mssaToFind = "{args" + j.identifier + "}";
-                    // TO-DO: In glsl, if we want to retrieve the sample of a mstexture
-                    // we need to call textureSamples(ms)
-                    find_and_replace(f.content,mssaToFind,"");
-                }
-                else
-                {
-                    string mssaToFind = "{args" + j.identifier + "}";
-                    find_and_replace(f.content,mssaToFind,",0");
-                }
-                string dimToFind = "{dim:" + j.identifier + "}";
-                find_and_replace(f.content,dimToFind,ToString(GetTextureDimension(j.shaderResourceType)));
+				// Also iterate over params (for MSAA)
+				if((type & ShaderResourceType::MS) == ShaderResourceType::MS)
+				{
+					string mssaToFind = "{args" + j.identifier + "}";
+					// TO-DO: In glsl, if we want to retrieve the sample of a mstexture
+					// we need to call textureSamples(ms)
+					find_and_replace(f.content,mssaToFind,"");
+				}
+				else
+				{
+					string mssaToFind = "{args" + j.identifier + "}";
+					find_and_replace(f.content,mssaToFind,",0");
+				}
+				string dimToFind = "{dim:" + j.identifier + "}";
+				find_and_replace(f.content,dimToFind,ToString(GetTextureDimension(j.shaderResourceType)));
 
 				string dimCheckToFind = "{dim_check:" + j.identifier;
 				size_t startPos = f.content.find(dimCheckToFind);
@@ -542,24 +542,24 @@
 
 					f.content.replace(startPos, (endPos + 1) - startPos, dimCheckReplace);
 				}
-            }
-            // We should check the globals too
-            for(auto g : f.globals)
-            {
-                Declaration* d=gEffect->GetDeclaration(g);
-                if(d&&d->declarationType == DeclarationType::TEXTURE)
-                {
-                    DeclaredTexture* t = (DeclaredTexture*)d;
-                    if(t->type == "StructuredBuffer" || t->type == "RWStructuredBuffer")
-                    {
-                        // We dont want to mess with SB
-                        continue;
-                    }
-                    string toFind = "{sampCons" + t->name + "}";
-                    find_and_replace(f.content,toFind,GetSamplerConstructor(t->shaderResourceType,t->name,&f));
-                }
-            }
-        }
+			}
+			// We should check the globals too
+			for(auto g : f.globals)
+			{
+				Declaration* d=gEffect->GetDeclaration(g);
+				if(d&&d->declarationType == DeclarationType::TEXTURE)
+				{
+					DeclaredTexture* t = (DeclaredTexture*)d;
+					if(t->type == "StructuredBuffer" || t->type == "RWStructuredBuffer")
+					{
+						// We dont want to mess with SB
+						continue;
+					}
+					string toFind = "{sampCons" + t->name + "}";
+					find_and_replace(f.content,toFind,GetSamplerConstructor(t->shaderResourceType,t->name,&f));
+				}
+			}
+		}
 	}
 %}
 
@@ -588,10 +588,10 @@
 %%
 
 prog : prog tok
-    | %empty
+	| %empty
 	{ // Initialization code
-    gEffect->m_sharedCode.str("");    // clear the stream
-    gLexPassthrough=false;
+	gEffect->m_sharedCode.str("");	// clear the stream
+	gLexPassthrough=false;
 };
 	tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 	{
@@ -615,13 +615,13 @@ prog : prog tok
 		string semantic		=$4.strs[0];
 		int register_number	=$4.num;
 		string def			=$6.strs[0];
-        if(t==RENDERTARGETFORMAT_STATE)
-        {
-            RenderTargetFormatState* fs  = gEffect->DeclareRenderTargetFormatState(name);
-            *fs                         = buildrtFormatState;
-            fs->name                    = name;
-            buildrtFormatState          = RenderTargetFormatState();
-        }
+		if(t==RENDERTARGETFORMAT_STATE)
+		{
+			RenderTargetFormatState* fs  = gEffect->DeclareRenderTargetFormatState(name);
+			*fs						 = buildrtFormatState;
+			fs->name					= name;
+			buildrtFormatState		  = RenderTargetFormatState();
+		}
 		if(t==RASTERIZER_STATE)
 		{
 			RasterizerState *rs=gEffect->DeclareRasterizerState(name);
@@ -710,23 +710,23 @@ prog : prog tok
 			semantic="u";
 		}
 		else
-        {
+		{
 			semantic="t";
-        }
+		}
 
-        // Use slots generated by SFX:
-        if(config->generateSlots)
-        {
-            semantic+="{slot}";
-        }
-        // Use default slots:
-        else
-        {
-		    if(slot>=0)
-		    	semantic+=to_string(slot);
-		    else
-		    	semantic+="{slot}";
-        }
+		// Use slots generated by SFX:
+		if(config->generateSlots)
+		{
+			semantic+="{slot}";
+		}
+		// Use default slots:
+		else
+		{
+			if(slot>=0)
+				semantic+=to_string(slot);
+			else
+				semantic+="{slot}";
+		}
 
 		ostringstream ostr;
 		ostr<<type;
@@ -796,7 +796,7 @@ prog : prog tok
 		// Set to default:
 		buildStruct					=Struct();
 	}
-    | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_semantic shader_brace_block lex_passthrough
+	| shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_semantic shader_brace_block lex_passthrough
 	{
 		//shader void GS_SnowParticles(point particleVertexOutput inp[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
 		ostringstream shaderCode,inputs;
@@ -834,7 +834,7 @@ prog : prog tok
 		buildFunction.clear();
 		int end_linenumber			=$8.lineno+(last_linenumber-global_linenumber);
 	}
-    | PROGRAM lex_fx IDENTIFIER '{' prog_def '}' lex_passthrough
+	| PROGRAM lex_fx IDENTIFIER '{' prog_def '}' lex_passthrough
 	{
 		gEffect->m_programs[$3.strs[0]]=$5.prog;
 	}
@@ -912,6 +912,12 @@ primary_exp: IDENTIFIER
 	string varName=$1.strs[0];
 	ConstantBuffer *cb = nullptr;
 	$$.strs[0]=varName;
+	if(varName=="stored_illum")
+	{
+		if (gEffect->IsDeclared(varName))
+			buildFunction.declarations.insert(varName);
+	}
+	
 	if(gEffect->IsDeclared(varName))
 		buildFunction.declarations.insert(varName);
 	else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
@@ -1260,19 +1266,24 @@ declaration_or_function: decl_specs decl_list_or_fn
 	if ($2.num == 0)
 	{
 		string type_spec = $1.strs[0];
-		$$.strs[0] = type_spec + " ";
+		Variable variable;
+		variable.original = type_spec + " ";
 		string init_declarator_list = $2.strs[0];
 		if (type_spec == "float")
 			type_spec = "";
 		stringReplaceAll(init_declarator_list, "%type%", type_spec);
 		stringReplaceAll(init_declarator_list, type_spec + type_spec, type_spec);
-		$$.strs[0] += init_declarator_list;
-		gEffect->m_sharedCode << $$.strs[0] << std::endl;
+		variable.init_declarator_list = init_declarator_list;
+		variable.original += init_declarator_list;
+		variable.name=$2.strs[1];
+		variable.structureType= $1.strs[1];
+		gEffect->DeclareVariable(&variable);
+		//gEffect->m_sharedCode << variable.original << std::endl;
 	}
 	else
 	{
 		string functionName				=$2.strs[0];
-		string inputs					=$2.strs[1];
+		string inputs					=$2.strs[2];
 		buildFunction.returnType		=$1.strs[0];
 		buildFunction.main_linenumber	=$1.lineno;
 		buildFunction.local_linenumber	=$1.lineno + (last_linenumber - global_linenumber);
@@ -1296,13 +1307,14 @@ declaration: decl_specs init_declarator_list
 decl_list_or_fn: init_declarator_list ';'
 	{
 		$$.strs[0] = $1.strs[0] + ";";
-		$$.strs[1]="";
+		$$.strs[1]= $1.strs[1];
 		$$.num = 0;
 	}
 	| function_def
 	{
 		$$.strs[0] = $1.strs[0];
-		$$.strs[1]=$1.strs[1];
+		$$.strs[1]	=$1.strs[1];
+		$$.strs[2] = $1.strs[2];
 		$$.num = 1;
 	}
 
@@ -1315,7 +1327,8 @@ function_def: IDENTIFIER p_dec_list shader_brace_block
 	buildFunction.parameters	=*$2.vars;
 	delete $2.vars;
 	$$.strs[0]					=functionName;
-	$$.strs[1]					=inputs;
+	$$.strs[1]					= functionName;
+	$$.strs[2]					=inputs;
 }
 
 p_dec_list: '(' param_declaration_list ')'
@@ -1329,15 +1342,18 @@ p_dec_list: '(' param_declaration_list ')'
 init_declarator_list: init_declarator
 {
 	$$.strs[0]=$1.strs[0];
+	$$.strs[1]=$1.strs[1];
 }
 | init_declarator_list ',' init_declarator
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	$$.strs[1] =( $1.strs[1]+',')+ $3.strs[1];
 }
 
 init_declarator: declarator
 {
 	$$.strs[0]=$1.strs[0];
+	$$.strs[1] = $1.strs[1];
 }
 | declarator '=' initializer
 {
@@ -1346,15 +1362,18 @@ init_declarator: declarator
 	string declarator	=$1.strs[0];
 	string initializer	=$3.strs[0];
 	$$.strs[0] = $1.strs[0] + $2.strs[0] + initializer;
+	$$.strs[1] = $1.strs[1];
 }
 
 declarator: IDENTIFIER
 {
 	$$.strs[0]=$1.strs[0];
+	$$.strs[1]=$1.strs[0];
 }
 | '(' declarator ')'
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	$$.strs[1] = $1.strs[1];
 }
 | declarator '[' number_exp ']'
 {
@@ -1404,49 +1423,53 @@ assignment_exp: conditional_exp
 			// Only apply this to textures not to SSBOs
 			if(	config->storeSyntax.length() > 0 && 
 				resourceType != ShaderResourceType::STRUCTURED_BUFFER &&  
-				resourceType != ShaderResourceType::RW_STRUCTURED_BUFFER)
+				resourceType != ShaderResourceType::RW_STRUCTURED_BUFFER
+				&&resourceType!=ShaderResourceType::UNKNOWN)
 			{
 				string s=config->storeSyntax;
-                auto toStoreDec = gEffect->declarations.find(varName);
-                if(toStoreDec != gEffect->declarations.end())
-                {
-                    if(toStoreDec->second->structureType == "vec4" || toStoreDec->second->structureType == "float4")
-                    {
-                        find_and_replace(s,"{cast}","vec4");
-                    }
-                    else if(toStoreDec->second->structureType == "char4")
-                    {
-                        find_and_replace(s,"{cast}","vec4");
-                    }
-                    else if(toStoreDec->second->structureType == "uchar4")
-                    {
-                        find_and_replace(s,"{cast}","vec4");
-                    }
-                    else if(toStoreDec->second->structureType == "ivec4")
-                    {
-                        find_and_replace(s,"{cast}","ivec4");
-                    }
-                    else if(toStoreDec->second->structureType == "uint")
-                    {
-                        find_and_replace(s,"{cast}","uvec4");
-                    }
-                    else if(toStoreDec->second->structureType == "float")
-                    {
-                        find_and_replace(s,"{cast}","vec4");
-                    }
-                    else if(toStoreDec->second->structureType == "half4")
-                    {
-                        find_and_replace(s,"{cast}","vec4");
-                    }
-                    else
-                    {
-                        find_and_replace(s,"{cast}","nullcast");
-                    }
-                }                               
-                else
-                {
-                    find_and_replace(s,"{cast}","");
-                }
+				auto toStoreDec = gEffect->declarations.find(varName);
+				//if(toStoreDec->declarationType== DeclarationType::TEXTURE|| toStoreDec->declarationType == DeclarationType::SAMPLER)
+				if(toStoreDec != gEffect->declarations.end())
+				{
+					if(toStoreDec->second->structureType == "vec4" || toStoreDec->second->structureType == "float4")
+					{
+						find_and_replace(s,"{cast}","vec4");
+					}
+					else if(toStoreDec->second->structureType == "char4")
+					{
+						find_and_replace(s,"{cast}","vec4");
+					}
+					else if(toStoreDec->second->structureType == "uchar4")
+					{
+						find_and_replace(s,"{cast}","vec4");
+					}
+					else if(toStoreDec->second->structureType == "ivec4")
+					{
+						find_and_replace(s,"{cast}","ivec4");
+					}
+					else if(toStoreDec->second->structureType == "uint")
+					{
+						find_and_replace(s,"{cast}","uvec4");
+					}
+					else if(toStoreDec->second->structureType == "float")
+					{
+						find_and_replace(s,"{cast}","vec4");
+					}
+					else if(toStoreDec->second->structureType == "half4")
+					{
+						find_and_replace(s,"{cast}","vec4");
+					}
+					else
+					{
+					// God almighty.
+						//find_and_replace(s,"{cast}","nullcast");
+						errSem(string("Unsupported structure type for image store: ") + toStoreDec->second->structureType);
+					}
+				}							   
+				else
+				{
+					find_and_replace(s,"{cast}","");
+				}
 				find_and_replace(s,"{varName}",varName);
 				find_and_replace(s,"{index}",index);
 				find_and_replace(s,"{tex_dimension}",ToString(GetTextureDimension(resourceType)));
@@ -1675,11 +1698,11 @@ postfix_indexed: postfix_exp '[' expression ']'
 			else
 			{
 				str << GetLoadExpr(varName,"0",index,resourceType,false);
-                // If and only its a RW texture (load operation), we insert it into the list
-                if(str.str().find("imageLoad") != std::string::npos)
-                {
-                    buildFunction.rwTexturesLoaded.insert(varName);
-                }
+				// If and only its a RW texture (load operation), we insert it into the list
+				if(str.str().find("imageLoad") != std::string::npos)
+				{
+					buildFunction.rwTexturesLoaded.insert(varName);
+				}
 			}
 		}
 		else
@@ -1765,7 +1788,7 @@ postfix_exp: primary_exp
 							full_expr << textureName << "." << command << "(" << params <<")";
 						}
 						$$.strs[0] = full_expr.str();
-                        buildFunction.rwTexturesLoaded.insert(textureName);
+						buildFunction.rwTexturesLoaded.insert(textureName);
 						buildFunction.declarations.insert(textureName);
 						buildFunction.resources.insert(textureName);
 					}
@@ -1781,16 +1804,16 @@ postfix_exp: primary_exp
 						const SfxConfig *config	= gEffect->GetConfig();
 						
 						// Special syntax used to sample:
-                        //  e.g noise3D.Sample(clampSampler,uv); -> texture(sampler3D(noise3D | clampSampler),uv);
-                        //  We must choose the proper:              {command}({samplerType}(tex|sampler),params);
+						//  e.g noise3D.Sample(clampSampler,uv); -> texture(sampler3D(noise3D | clampSampler),uv);
+						//  We must choose the proper:			  {command}({samplerType}(tex|sampler),params);
 						if( config->samplingSyntax.length() > 0)
 						{
-                            ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
-                            string samplerType      = GetSamplerConstructor(type,textureName,&buildFunction);
-                            string cmd              = config->samplingSyntax;
-                            find_and_replace(cmd,"{command}",command);
-                            find_and_replace(cmd,"{samplerType}",samplerType);
-                            string combTexSamp = "";
+							ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
+							string samplerType	  = GetSamplerConstructor(type,textureName,&buildFunction);
+							string cmd			  = config->samplingSyntax;
+							find_and_replace(cmd,"{command}",command);
+							find_and_replace(cmd,"{samplerType}",samplerType);
+							string combTexSamp = "";
 							if(config->combineTexturesSamplers )
 							{
 								if(config->combineInShader)
@@ -1798,15 +1821,15 @@ postfix_exp: primary_exp
 									combTexSamp = textureName + ", " + samplerStateName;
 								}
 								else
-	                            {
+								{
 									// combTexSamp = textureName + "_xfs_" + samplerStateName;
 									combTexSamp = textureName + "[" + samplerStateName + "]";
 								}
 							}
 							const SfxConfig *config	= gEffect->GetConfig();
-                            find_and_replace(cmd,"{textureSampler}",combTexSamp);
+							find_and_replace(cmd,"{textureSampler}",combTexSamp);
 							if(!config->reverseTexCoordY||!params||params->size()<1)
-	                            find_and_replace(cmd,"{otherParams}",otherParams);
+								find_and_replace(cmd,"{otherParams}",otherParams);
 							else
 							{
 								ostringstream otherParams;
@@ -1814,22 +1837,22 @@ postfix_exp: primary_exp
 								otherParams<<"reverse_y_coord("<<firstParam<<")";
 								for(int i=1;i<params->size();i++)
 									otherParams<<","<<(*params)[i].identifier;
-	                            find_and_replace(cmd,"{otherParams}",otherParams.str());
+								find_and_replace(cmd,"{otherParams}",otherParams.str());
 								const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
 								auto j=functions.find("reverse_y_coord");
 								for(auto u=j->second.begin();u!=j->second.end();u++)
 									buildFunction.functionsCalled.insert(*u);
 							}
-                            full_expr << cmd;    
+							full_expr << cmd;	
 						}
 						else
 						{
 							full_expr << textureName << "." << command << "(" << samplerStateName << "," << otherParams << ")";
 						}
-                        buildFunction.declarations.insert(textureName);
+						buildFunction.declarations.insert(textureName);
 						buildFunction.resources.insert(textureName);
 						buildFunction.resources.insert(samplerStateName);						
-                        $$.strs[0] = full_expr.str();
+						$$.strs[0] = full_expr.str();
 					}
 					| postfix_exp '(' argument_exp_list ')'
 					{
@@ -1839,14 +1862,14 @@ postfix_exp: primary_exp
 						auto vars			=*($3.vars);
 						delete $3.vars;
 						string expr4		=$4.strs[0];
-                        const SfxConfig *config	= gEffect->GetConfig();
+						const SfxConfig *config	= gEffect->GetConfig();
 
 						// ok this could be a function call.(((std::basic_string<char,std::char_traits<char>,std::allocator<char> >*)(&(command)))->_Bx._Buf)[0]=='d'
 						string command		=$1.strs[2];
 						const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
 						auto j=functions.find(command);
 
-                        auto dec = gEffect->GetDeclarations();
+						auto dec = gEffect->GetDeclarations();
 
 						if(j==functions.end())
 						{
@@ -1887,48 +1910,48 @@ postfix_exp: primary_exp
 										if(params.size())
 											params+=",";
 
-                                        // Standard behaviour (HLSL, PSSL & GLSL(Switch))
-                                        if(!config->combineTexturesSamplers || (config->combineTexturesSamplers && config->combineInShader))
-                                        {
-                                            // Nothing to do here...
-                                            params += p.identifier;
-                                        }
+										// Standard behaviour (HLSL, PSSL & GLSL(Switch))
+										if(!config->combineTexturesSamplers || (config->combineTexturesSamplers && config->combineInShader))
+										{
+											// Nothing to do here...
+											params += p.identifier;
+										}
 
 										// This is how OUR function knows this parameter.
 										buildFunction.declarations.insert(p.identifier);
 										const Declaration *d=gEffect->GetDeclaration(p.identifier);
 
-                                        if(d && d->declarationType == DeclarationType::SAMPLER)
+										if(d && d->declarationType == DeclarationType::SAMPLER)
 										{
 											buildFunction.resources.insert(p.identifier);
-                                            if(config->combineTexturesSamplers && !config->combineInShader)
-                                            {   
-                                                // We pass the index of the array:  uint64 textureXXX[kMaxTextures]; 
-                                                //                                  GetCloudIllum(vec3 pos, int cloudSampler);
-                                                //                                  texture(sampler2D(textureXXX[cloudSampler]),pos);
-                                                auto sampDec = (SamplerState*)d;
-                                                params += std::string("1 + ")  + std::to_string(sampDec->register_number);
-                                            }
+											if(config->combineTexturesSamplers && !config->combineInShader)
+											{   
+												// We pass the index of the array:  uint64 textureXXX[kMaxTextures]; 
+												//								  GetCloudIllum(vec3 pos, int cloudSampler);
+												//								  texture(sampler2D(textureXXX[cloudSampler]),pos);
+												auto sampDec = (SamplerState*)d;
+												params += std::string("1 + ")  + std::to_string(sampDec->register_number);
+											}
 										}
-                                        else if(d && d->declarationType == DeclarationType::TEXTURE)
-                                        {
-                                            if(config->combineTexturesSamplers && !config->combineInShader)
-                                            {
-										        params += p.identifier;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if(config->combineTexturesSamplers && !config->combineInShader)
-                                            {
-                                                params += p.identifier;
-                                            }
-                                        }
+										else if(d && d->declarationType == DeclarationType::TEXTURE)
+										{
+											if(config->combineTexturesSamplers && !config->combineInShader)
+											{
+												params += p.identifier;
+											}
+										}
+										else
+										{
+											if(config->combineTexturesSamplers && !config->combineInShader)
+											{
+												params += p.identifier;
+											}
+										}
 
-                                        if(param.shaderResourceType!=ShaderResourceType::UNKNOWN)
-                                        {
+										if(param.shaderResourceType!=ShaderResourceType::UNKNOWN)
+										{
 											buildFunction.resources.insert(p.identifier);
-                                        }
+										}
 									}
 									else if (index >= 0)
 									{
@@ -2006,10 +2029,12 @@ tex_load_command: LOAD
 decl_specs: IDENTIFIER
 	{
 		$$.strs[0] = $1.strs[0];
+		$$.strs[1] = $1.strs[0];
 	}
 	| type_qualifier type_spec
 	{
 		$$.strs[0] = ($1.strs[0]+" ")+$2.strs[0];
+		$$.strs[1] = $2.strs[0];
 	}
 
 type_spec: IDENTIFIER
@@ -2212,14 +2237,14 @@ lex_fx :
 { /* Switch lex to fx scanning */
 	read_shader=false;
 	read_function = false;
-    gLexPassthrough=false;
+	gLexPassthrough=false;
 };
 
 shader_fx :
 {
 	read_shader=true;
 	read_function = false;
-    gLexPassthrough=false;
+	gLexPassthrough=false;
 };
 
 number_or_filename : NUM
@@ -2238,13 +2263,13 @@ number_or_filename : NUM
 
 lex_passthrough :
 { /* Switch lex to passthrough mode */
-    gLexPassthrough=false;
+	gLexPassthrough=false;
 }
 ;
 
 read_block : { /* Read next block */
-    $$.strs[0]= sfxreadblock('{', '}');
-    $$.lineno= sfxget_lineno();
+	$$.strs[0]= sfxreadblock('{', '}');
+	$$.lineno= sfxget_lineno();
 }
 
 
@@ -2407,7 +2432,7 @@ param_declaration : type_qualifier storage param location
 type_qualifier: CONST
 {
 	$$.strs[0]	=$1.strs[0];
-}| GROUPSHARED
+} | GROUPSHARED
 {
 	$$.strs[0] = $1.strs[0];
 } | %empty
@@ -2417,22 +2442,22 @@ type_qualifier: CONST
 		
 type : IDENTIFIER optional_template_type
 {
-    $$.strs[0]=$1.strs[0];	// type
-    $$.strs[1]=$2.strs[1];	// template if present
+	$$.strs[0]=$1.strs[0];	// type
+	$$.strs[1]=$2.strs[1];	// template if present
 	$$.shaderResourceType		=(ShaderResourceType)0;
 } | texture_type optional_template_type
 {
-    $$.strs[0]=$1.strs[0];	// type
-    $$.strs[1]=$2.strs[1];	// template if present
+	$$.strs[0]=$1.strs[0];	// type
+	$$.strs[1]=$2.strs[1];	// template if present
 	$$.shaderResourceType		=ToShaderResourceType($1.token);
 }
 
 
 param: type IDENTIFIER optional_index optional_default
 {
-    $$.strs[0]	=$1.strs[0];	// type
-    $$.strs[1]	=$2.strs[0];	// name
-    $$.strs[2]	=$1.strs[1];	// template if present
+	$$.strs[0]	=$1.strs[0];	// type
+	$$.strs[1]	=$2.strs[0];	// name
+	$$.strs[2]	=$1.strs[1];	// template if present
 	$$.strs[3]	=$4.strs[0];	// default
 	$$.num		=$3.num;
 	$$.token	=$4.token;
@@ -2441,34 +2466,34 @@ param: type IDENTIFIER optional_index optional_default
 
 storage: STORAGEQ
 {
-    $$.strs[0]=$1.strs[0];
+	$$.strs[0]=$1.strs[0];
 }
 | %empty
 {
-    $$.strs[0]="";
+	$$.strs[0]="";
 }
 
 location : ':' NUM {
-    $$.strs[0]="";
-    $$.num=$2.num;
-    $$.rType=REGISTER_INT;
+	$$.strs[0]="";
+	$$.num=$2.num;
+	$$.rType=REGISTER_INT;
 }
-    | ':' IDENTIFIER {
-    $$.strs[0]=$2.strs[0];
-    $$.rType=REGISTER_NAME;
+	| ':' IDENTIFIER {
+	$$.strs[0]=$2.strs[0];
+	$$.rType=REGISTER_NAME;
 }
-    | %empty {
-    $$.strs[0]="";
-    $$.rType=REGISTER_NONE;
+	| %empty {
+	$$.strs[0]="";
+	$$.rType=REGISTER_NONE;
 }
 ;
 
 optional_semantic:':' IDENTIFIER
 {
-    $$.strs[0]=$2.strs[0];
+	$$.strs[0]=$2.strs[0];
 }
 | %empty {
-    $$.strs[0]="";
+	$$.strs[0]="";
 }
 ;
 tech_def : pass_list
@@ -2511,9 +2536,9 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 
 prog_def : shaders_list
 {
-    $$.prog = new Pass(*($1.shaders),buildPassState);
+	$$.prog = new Pass(*($1.shaders),buildPassState);
 	buildPassState=PassState();
-    delete $1.shaders;
+	delete $1.shaders;
 };
 
 shaders_list : shaders_list shader_def
@@ -2632,7 +2657,7 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 				 }
 				 int index=$5.num;
 			 }
-            | SET_RTFORMAT_COMMAND '(' IDENTIFIER ')' ';'
+			| SET_RTFORMAT_COMMAND '(' IDENTIFIER ')' ';'
 			 {
 				 buildPassState.renderTargetFormatState.objectName=$3.strs[0];
 				 auto dec=gEffect->GetDeclaration(buildPassState.renderTargetFormatState.objectName);
@@ -2777,7 +2802,7 @@ shader_def : SHADER_COMMAND '(' shader_compile ')' ';'
 				else
 				{
 					std::set<string> globals;
-					gEffect->AccumulateGlobals(function,globals);
+					gEffect->AccumulateGlobalsAsStrings(function,globals);
 					// find out what slots the function uses by interrogating its global variables.
 					// At this point we're not interested in params, just globals.
 					for(auto i:globals)
@@ -2842,9 +2867,9 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							int ival		=$3.num;
 							float fval		=$3.fnum;
 							bool bval		=(ival!=0);
-                            if(renderStateType==RENDERTARGETFORMAT_STATE)
-                            {
-                                if(is_equal(name,"TargetFormat"))
+							if(renderStateType==RENDERTARGETFORMAT_STATE)
+							{
+								if(is_equal(name,"TargetFormat"))
 									buildrtFormatState.formats[index]=toPixelOutputFmt(value);
 								else
 								{
@@ -2852,7 +2877,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 									str<<"Unknown render target format command: "<<name;
 									errSem(str.str().c_str());
 								}
-                            }
+							}
 							if(renderStateType==SAMPLER_STATE)
 							{
 								if(is_equal(name,"Filter"))
@@ -3239,7 +3264,7 @@ ShaderResourceType GetShaderResourceType(const Function &function, const string 
 		  }
 	  }
 	  auto j = gEffect->GetDeclarations().find(textureName);
-	  if (j != gEffect->GetDeclarations().end())
+	  if (j != gEffect->GetDeclarations().end()&&j->second->declarationType==DeclarationType::TEXTURE)
 		  return ((DeclaredTexture*)j->second)->shaderResourceType;
 	  return ShaderResourceType::UNKNOWN;
 }
@@ -3260,24 +3285,24 @@ bool getSfxError()
 
 void sfxWarning(const char* e)
 {
-    ostringstream errMsg;
+	ostringstream errMsg;
 	int lex_linenumber=sfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filenumber<<"("<< true_linenumber<<") : sfx warning: \""<<sfxget_text()<<"\" "<<e;
+	errMsg<<current_filenumber<<"("<< true_linenumber<<") : sfx warning: \""<<sfxget_text()<<"\" "<<e;
 	gEffect->Log()<<errMsg.str().c_str();
 }
 
 void  sfxerror(const char* e)
 {
-    errSyn(e);
+	errSyn(e);
 }
 
 void errSyn(const char* e)
 {
-    ostringstream errMsg;
+	ostringstream errMsg;
 	int lex_linenumber=sfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filename<<"("<< true_linenumber<<") : sfx syntax error: \""<<sfxget_text()<<"\" "<<e;
+	errMsg<<current_filename<<"("<< true_linenumber<<") : sfx syntax error: \""<<sfxget_text()<<"\" "<<e;
 	const char *st=GetStartModeText();
 	if(st)
 		errMsg<<" in "<<st;
@@ -3288,12 +3313,12 @@ void errSyn(const char* e)
 
 void errSem(const string& str, int lex_linenumber)
 {
-    ostringstream errMsg;
-    
-    if(lex_linenumber==-1)
-        lex_linenumber= sfxget_lineno();
+	ostringstream errMsg;
+	
+	if(lex_linenumber==-1)
+		lex_linenumber= sfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filename<<"("<<true_linenumber<<") : sfx error: "<<str;
+	errMsg<<current_filename<<"("<<true_linenumber<<") : sfx error: "<<str;
 	const char *st=GetStartModeText();
 	if(st)
 		errMsg<<" in "<<st;

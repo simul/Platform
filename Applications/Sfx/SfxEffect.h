@@ -20,6 +20,7 @@ namespace sfx
 			localTextures.clear();
 			resources.clear();
 			declaration.clear();
+			declarations.clear();
 			constantBuffers.clear();
 			types_used.clear();
 			locals.clear();
@@ -27,7 +28,7 @@ namespace sfx
 			min_parameters = 0;
 			initialized=false;
 		}
-		std::string						 declaration;
+		std::string						declaration;
 		std::set<std::string>			declarations;
 		std::set<Function*>				functionsCalled;
 		std::set<ConstantBuffer*>		constantBuffers;
@@ -140,7 +141,8 @@ namespace sfx
 		bool Save(std::string sfxFilename, std::string sfxoFilename);
 		void AccumulateDeclarationsUsed(const Function *f,std::set<const Declaration *> &ss, std::set<std::string>& rwLoad) const;
 		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
-		void AccumulateGlobals(const Function *f,std::set<std::string> &s) const;
+		void AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const;
+		void AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const;
 		void AccumulateConstantBuffersUsed(const Function *f, std::set<ConstantBuffer*> &s) const;
 		unsigned CompileAllShaders(std::string sfxoFilename,const std::string &sharedCode, std::string& log, BinaryMap &binaryMap);
 
@@ -211,6 +213,7 @@ namespace sfx
 		CompiledShader *AddCompiledShader(const std::string &name,std::set<Declaration *> declarations);
 		void DeclareStruct(const std::string &name, const Struct &ts,const std::string &original);
 		void DeclareConstantBuffer(const std::string &name, int slot,const Struct &ts,const std::string &original);
+		void DeclareVariable(const Variable *v);
 		bool IsDeclared(const std::string &name);
 		std::string GetTypeOfParameter(std::vector<sfxstype::variable>& parameters, std::string keyName);
 		std::string GetDeclaredType(const std::string &str) const;

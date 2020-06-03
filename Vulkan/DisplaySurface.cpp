@@ -438,6 +438,11 @@ void DisplaySurface::InitSwapChain()
 	}
 	swapchain_image_resources.resize(swapchainImages.size());
 
+	if(swapchain_image_resources.size()>SIMUL_VULKAN_FRAME_LAG+1)
+	{
+		SIMUL_BREAK("swapchain_image_resources.size() is too large");
+	}
+
 	for (uint32_t i = 0; i < swapchainImages.size(); ++i)
 	{
 		auto color_image_view = vk::ImageViewCreateInfo()

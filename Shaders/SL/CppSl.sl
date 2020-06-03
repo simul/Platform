@@ -779,6 +779,14 @@
 		{
 			return &x;
 		}
+		int3 operator*(int m) const
+		{
+			int3 ret;
+			ret.x=m*x;
+			ret.y=m*y;
+			ret.z=m*z;
+			return ret;
+		}
 		int3 operator+(int3 v2) const
 		{
 			int3 ret;

@@ -820,7 +820,6 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext,cro
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
 
 	ApplyContextState(deviceContext);
 	commandList->Dispatch(w, l, d);
@@ -834,7 +833,7 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &,crossplatfor
 void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
+
 
 	ApplyContextState(deviceContext);
 	commandList->DrawInstanced(num_verts,1,start_vert,0);
@@ -843,7 +842,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
+
 
 	ApplyContextState(deviceContext);
 	commandList->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
