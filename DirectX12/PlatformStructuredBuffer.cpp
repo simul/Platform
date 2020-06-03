@@ -27,7 +27,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable,bool cpu_read, void *init_data,const char *n)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable,bool cpu_read, void *init_data,const char *n, crossplatform::BufferUsageHint b)
 {
 	HRESULT res			= S_FALSE;
     if(n)
@@ -352,7 +352,7 @@ void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext&
         InvalidateDeviceObjects();
         
         SIMUL_COUT << name.c_str()<<": resizing Structured Buffer(" << mMaxApplyMod << ")\n";
-        RestoreDeviceObjects(deviceContext.renderPlatform, mNumElements, mElementByteSize, isUav, mCpuRead, pCacheData,name.c_str());
+        RestoreDeviceObjects(deviceContext.renderPlatform, mNumElements, mElementByteSize, isUav, mCpuRead, pCacheData,name.c_str(), bufferUsageHint);
         
         free(pCacheData);
         mCurApplies     = 0;

@@ -93,7 +93,7 @@ struct sfxstype
 		std::string  name;
 	};
 
-	int								lineno;
+	int	lineno;
 	int token;
 	union
 	{

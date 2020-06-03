@@ -188,7 +188,7 @@ namespace sfx
 	};
 	enum class DeclarationType
 	{
-		TEXTURE,SAMPLER,BLENDSTATE,RASTERIZERSTATE,DEPTHSTATE,BUFFER,STRUCT,CONSTANT_BUFFER,RENDERTARGETFORMAT_STATE
+		TEXTURE,SAMPLER,BLENDSTATE,RASTERIZERSTATE,DEPTHSTATE,BUFFER,STRUCT,CONSTANT_BUFFER,RENDERTARGETFORMAT_STATE,VARIABLE
 	};
 	struct Declaration
 	{
@@ -212,6 +212,13 @@ namespace sfx
 		std::string original;
 		std::string structureType; // e.g. Buffer<structType> if used.
 		DeclarationType declarationType;
+	};
+	struct Variable : public Declaration
+	{
+		Variable():Declaration(DeclarationType::VARIABLE)
+		{
+		}
+		std::string init_declarator_list;
 	};
 	struct BlendState: public Declaration
 	{
@@ -269,7 +276,7 @@ namespace sfx
 		bool		MultisampleEnable;
 		bool		AntialiasedLineEnable;
 	};
-	struct RenderTargetFormatState : public Declaration
+	struct RenderTargetFormatState: public Declaration
 	{
 		RenderTargetFormatState();
 		PixelOutputFormat formats[8];
@@ -303,7 +310,7 @@ namespace sfx
 			: Declaration (DeclarationType::STRUCT)
 		{
 		}
-		std::vector<StructMember>	 m_structMembers;
+		std::vector<StructMember> m_structMembers;
 	};
 	struct ConstantBuffer : public Struct
 	{
@@ -314,7 +321,7 @@ namespace sfx
 		}
 	};
 
-	struct DeclaredTexture:public Declaration
+	struct DeclaredTexture: public Declaration
 	{
 		DeclaredTexture():Declaration(DeclarationType::TEXTURE)
 		{
