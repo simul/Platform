@@ -579,7 +579,7 @@
 %token LOAD GET_DIMS SAMPLE SAMPLE_LOD
 %token SATURATE 
 
-%token STRUCT UNIFORM CONSTANT_BUFFER GROUPSHARED
+%token STRUCT UNIFORM FLAT CONSTANT_BUFFER GROUPSHARED
 
 %token SNORM UNORM
 
@@ -2314,6 +2314,12 @@ $$.strs[0]	="";
 optional_uniform: UNIFORM
 {
 	$$.strs[0]="uniform";
+}| UNIFORM FLAT
+{
+	$$.strs[0] = "uniform flat";
+} | FLAT
+{
+	$$.strs[0] = "flat";
 }
 | %empty
 {
