@@ -445,6 +445,15 @@ namespace simul
 			}
 			return false;
 		}
+		template<class T, BufferUsageHint bufferUsageHint> void StructuredBuffer<T, bufferUsageHint>::RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable, bool cpu_read, T* data, const char* n)
+		{
+			count = ct;
+			if (!platformStructuredBuffer)
+				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
+			else
+				platformStructuredBuffer->InvalidateDeviceObjects();
+			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
+		}
 #endif
 	}
 }
