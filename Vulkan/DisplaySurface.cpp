@@ -805,6 +805,10 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 {
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
+
+	if (!swapchain)
+		InitSwapChain();
+
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 // Ensure no more than FRAME_LAG renderings are outstanding
 	vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
