@@ -86,7 +86,7 @@ namespace simul
 			}
 			virtual const char *			GetSfxConfigFilename() const override
 			{
-				return "HLSL/HLSL12.json";
+				return "Sfx/DirectX12.json";
 			}
 			//! Returns the time stamp freq value
 			UINT64						  GetTimeStampFreq() const		 { return mTimeStampFreq; }

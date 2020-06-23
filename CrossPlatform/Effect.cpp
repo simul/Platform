@@ -879,7 +879,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if(simul::base::SimulInternalChecks)
 				cmdLine += " -V";
 			// Includes
-			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
+			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;" + sourcePlatformPath + "\\Sfx;";
 			cmdLine += std::string(SIMUL)+ "\\Shaders\\SL;";
 			cmdLine += std::string(SIMUL) + "\\Platform\\Shaders\\SL";
 			cmdLine += "\"";

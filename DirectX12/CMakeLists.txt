@@ -27,7 +27,7 @@ file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/DirectX12/HLSL/*.sl"
 )
 
-set(in_RootSignature "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/GFX.hlsl")
+set(in_RootSignature "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/GFX.hlsl")
 
 set(DX11_DEFS SIMUL_DIRECTX12_DLL=1 )
 
@@ -52,10 +52,10 @@ if(SIMUL_SOURCE_BUILD)
 	elseif(GDK)
 		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12GDK.json" )
 	else()
-		set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/HLSL/HLSL12.json" )
+		set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/DirectX12.json" )
 	endif()
 	#message(STATUS JSON_FILE ${JSON_FILE} )
-	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/HLSL" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
+	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
 	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
 
 	# ROOT SIG BLOB!
@@ -67,10 +67,10 @@ if(SIMUL_SOURCE_BUILD)
 	# Create the target directory for the cso file:
 	file(MAKE_DIRECTORY ${out_RootSignatureFolder})
 	add_custom_command(TARGET DirectX12CoreShaders
-					COMMAND ${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"HLSL" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
+					COMMAND ${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"Sfx" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
 					MAIN_DEPENDENCY ${in_RootSignature}
 					WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-					COMMENT "${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E\"GFXRS\" /I\"HLSL\" /Fo\"${out_RootSignatureFolder}/GFX.cso\" /nologo ${in_RootSignature}"
+					COMMENT "${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E\"GFXRS\" /I\"Sfx\" /Fo\"${out_RootSignatureFolder}/GFX.cso\" /nologo ${in_RootSignature}"
 					)
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
