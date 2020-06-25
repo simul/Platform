@@ -339,6 +339,7 @@ namespace simul
 			vec4							TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
 			virtual void					WaitForGpu(DeviceContext &){}
 			virtual void					WaitForFencedResources(crossplatform::DeviceContext &){}
+			virtual void					RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.

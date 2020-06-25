@@ -114,6 +114,8 @@ namespace simul
             void									SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
+			void									RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
+			void									RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			
             static vk::PrimitiveTopology			toVulkanTopology(crossplatform::Topology t);
 			static vk::CullModeFlags				toVulkanCullFace(crossplatform::CullFaceMode c);
@@ -150,12 +152,15 @@ namespace simul
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
 			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
-			void									CreateVulkanRenderpass(vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
+			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
 			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
+			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
+			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
+
 		private:
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
