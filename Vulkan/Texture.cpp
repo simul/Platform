@@ -706,7 +706,7 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 	if (!mRenderPass)
 	{
 		auto *v = (vulkan::RenderPlatform*)renderPlatform;
-		v->CreateVulkanRenderpass(mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
+		v->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
 	}
 	return mRenderPass;
 }
