@@ -1379,7 +1379,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 		mTargets.depthTarget.layer = 0;
 		mTargets.depthTarget.mip = 0;
 	}
-	mTargets.viewport = { 0, 0, targs[0]->width, targs[0]->length };
+	mTargets.viewport = int4(0, 0, targs[0]->width, targs[0]->length);
 
 	deviceContext.targetStack.push(&mTargets);
 	SetViewports(deviceContext, 1, &mTargets.viewport);
