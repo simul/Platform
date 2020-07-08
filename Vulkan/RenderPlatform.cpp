@@ -16,7 +16,6 @@
 
 using namespace simul;
 using namespace vulkan;
-std::map<unsigned long long,std::string> vulkan::RenderPlatform::ResourceMap;
 const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::VkObjectTypeMap =
 {
 	{VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},

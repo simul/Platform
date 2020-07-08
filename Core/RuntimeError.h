@@ -182,7 +182,7 @@ namespace simul
 				DebugBreak();\
 		}
 #else
-	#if defined(__ORBIS__) && (SIMUL_INTERNAL_CHECKS)
+	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
 		#define BREAK_IF_DEBUGGING if(simul::base::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
 	#else
 		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.

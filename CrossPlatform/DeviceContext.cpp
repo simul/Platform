@@ -52,6 +52,7 @@ void DeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	,Texture *depth_target
 )
 {
+	ApiCallCounter=0;
 	memset(&defaultTargetsAndViewport, 0, sizeof(defaultTargetsAndViewport));
 	defaultTargetsAndViewport.num = num_targets;
 	if(texture_targets)
