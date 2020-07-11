@@ -221,6 +221,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 	UINT rtHandleSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTHeap->GetCPUDescriptorHandleForHeapStart());
+	#ifndef _GAMING_XBOX
 	if(mSwapChain)
 	for (UINT n = 0; n < FrameCount; n++)
 	{
@@ -239,6 +240,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 			SIMUL_ASSERT(result == S_OK);
 		}
 	}
+	#endif
 }
 
 void DisplaySurface::CreateSyncObjects()
@@ -291,6 +293,7 @@ void DisplaySurface::EndFrame()
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 
+#ifndef _GAMING_XBOX
 	// Present new frame
 	const DWORD dwFlags = 0;
 	const UINT SyncInterval = 1;
@@ -301,7 +304,7 @@ void DisplaySurface::EndFrame()
 		SIMUL_CERR << removedRes << std::endl;
 	}
 	SIMUL_ASSERT(res == S_OK);
-
+	#endif
 	// Signal at the end of the pipe, note that we use the cached index 
 	// or we will be adding a fence for the next frame!
 	mQueue->Signal(mGPUFences[idx], mFenceValues[idx]);
@@ -374,6 +377,7 @@ void DisplaySurface::Resize()
 	viewport.h			  = screenHeight;
 	viewport.x			  = viewport.y = 0;
 
+#ifndef _GAMING_XBOX
 	// Resize the swapchain buffers
 	HRESULT res = mSwapChain->ResizeBuffers
 	(
@@ -383,6 +387,7 @@ void DisplaySurface::Resize()
 		0
 	);
 	SIMUL_ASSERT(res == S_OK);
+	#endif
 	CreateRenderTargets(mDeviceRef);
 
 	renderer->ResizeView(mViewId, screenWidth, screenHeight);

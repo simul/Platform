@@ -38,15 +38,6 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
-	#pragma comment(lib,"d3d12_x")
-	#pragma comment(lib,"d3dcompiler")
-#else
-	#pragma comment(lib,"d3d12.lib")
-	#pragma comment(lib,"D3dcompiler.lib")
-	#pragma comment(lib,"DXGI.lib")
-#endif 
-
 #ifndef SAFE_RELEASE
 	#define SAFE_RELEASE(p)			{ if(p) { (p)->Release(); (p)=nullptr; } }
 #endif
