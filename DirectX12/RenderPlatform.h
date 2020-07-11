@@ -8,6 +8,7 @@
 #include "Platform/Shaders/SL/solid_constants.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 #include "SimulDirectXHeader.h"
+#include "ThisPlatform/Direct3D12.h"
 #include <vector>
 #include <queue>
 
@@ -70,12 +71,8 @@ namespace simul
 		public:
 											RenderPlatform();
 			virtual							~RenderPlatform();
-			virtual float				   GetDefaultOutputGamma() const override;
-#if defined(_XBOX_ONE)  || defined(_GAMING_XBOX)
-			const char* GetName() const override { return "DirectX 12 Xbox One"; }
-#else
-			const char*	GetName() const override {return "DirectX 12";}
-#endif
+			virtual float					GetDefaultOutputGamma() const override;
+			const char* GetName() const override { return PLATFORM_NAME; }
 			crossplatform::RenderPlatformType GetType() const override
 			{
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
@@ -86,7 +83,7 @@ namespace simul
 			}
 			virtual const char *			GetSfxConfigFilename() const override
 			{
-				return "Sfx/DirectX12.json";
+				return SFX_CONFIG_FILENAME;
 			}
 			//! Returns the time stamp freq value
 			UINT64						  GetTimeStampFreq() const		 { return mTimeStampFreq; }
