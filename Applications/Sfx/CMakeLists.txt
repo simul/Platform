@@ -37,19 +37,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	#set_target_properties(Sfx PROPERTIES CMAKE_VS_PLATFORM_TOOLSET v142 )
 	#set_target_properties(Sfx PROPERTIES CMAKE_GENERATOR_TOOLSET v142 )
 	deploy_to_directory(Sfx ${CMAKE_SOURCE_DIR}\\Tools\\bin)
-	set(SFX_TEST_PLATFORM PS4/Render)
+	set(SFX_TEST_PLATFORM Commodore)
+	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx")
+	set(SFX_TEST_DEFINES "-E\"COMMODORE_SDK_DIR=C:\\Program Files (x86)\\SCE\\Prospero SDKs\\1.000\"")
 	set_target_properties(Sfx PROPERTIES
 	#VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../Platform/DirectX12/shaderbin"
 	#VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../Platform/PS4/shaderbin"
 		VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}"											  
 		#VS_DEBUGGER_COMMAND_ARGUMENTS "${CMAKE_SOURCE_DIR}/Shaders/SFX/test.sfx -I\"${SIMUL_PLATFORM_DIR}/DirectX11/HLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${SIMUL_PLATFORM_DIR}/Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../DirectX11/shaderbin\" -P\"${SIMUL_PLATFORM_DIR}/DirectX11/HLSL/HLSL11.json\" -E\"PLATFORM=${SIMUL_PLATFORM_DIR}\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../DirectX11/sfx_intermediate\" -w -f -v"
-		VS_DEBUGGER_COMMAND_ARGUMENTS "${SIMUL_DIR}/Shaders/SFX/test.sfx -I\"${SIMUL_PLATFORM_DIR}/Vulkan/GLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${SIMUL_PLATFORM_DIR}/Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../Vulkan/shaderbin\" -P\"${SIMUL_PLATFORM_DIR}/Vulkan/GLSL/GLSL.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../Vulkan/sfx_intermediate\" -w -f -v -d -l"
+		#VS_DEBUGGER_COMMAND_ARGUMENTS "${SIMUL_DIR}/Shaders/SFX/test.sfx -I\"${SIMUL_PLATFORM_DIR}/Vulkan/GLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${SIMUL_PLATFORM_DIR}/Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../Vulkan/shaderbin\" -P\"${SIMUL_PLATFORM_DIR}/Vulkan/GLSL/GLSL.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../Vulkan/sfx_intermediate\" -w -f -v -d -l"
 
 		#VS_DEBUGGER_COMMAND_ARGUMENTS "${CMAKE_SOURCE_DIR}/Shaders/SFX/test.sfx -I\"${SIMUL_PLATFORM_DIR}/DirectX12/HLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${SIMUL_PLATFORM_DIR}/Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../DirectX12/shaderbin\" -P\"${SIMUL_PLATFORM_DIR}/DirectX12/HLSL/HLSL12.json\" -E\"PLATFORM=${SIMUL_PLATFORM_DIR}\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../DirectX12/sfx_intermediate\" -w -f -v -d"
 		
 		#VS_DEBUGGER_COMMAND_ARGUMENTS "${SIMUL_DIR}/Shaders/SFX/test.sfx -I\"${SIMUL_PLATFORM_DIR}/OpenGL/GLSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${SIMUL_PLATFORM_DIR}/Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../OpenGL/shaderbin\" -P\"${SIMUL_PLATFORM_DIR}/OpenGL/GLSL/GLSL.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../OpenGL/sfx_intermediate\" -w -f -v -d"
 		
-		#VS_DEBUGGER_COMMAND_ARGUMENTS "${SIMUL_PLATFORM_DIR}/Shaders/Sfx/test.sfx -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/PSSL\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../PS4/shaderbin\" -P\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/PSSL/PSSL.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v -E\"SCE_ORBIS=C:\\\""
+		VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/Sfx\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/shaderbin\" -P\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/Sfx/${SFX_TEST_PLATFORM}.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v ${SFX_TEST_DEFINES}"
 	)
 
 endif()

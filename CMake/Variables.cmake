@@ -2,7 +2,6 @@ include_guard()
 
 option( SIMUL_INTERNAL_CHECKS "Enable Simul internal debugging checks?" OFF )
 
-option( SIMUL_SOURCE_BUILD "Build Simul libraries from source? If false, only samples are built." ON )
 option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
 option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
 option( SIMUL_BUILD_SAMPLES "Build executable samples?" ON )

@@ -120,6 +120,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		protected:
+			int ApiCallLimit=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
 			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
@@ -356,6 +357,8 @@ namespace simul
 			static PixelFormat ToColourFormat(PixelFormat f);
 			static bool IsDepthFormat(PixelFormat f);
 			static bool IsStencilFormat(PixelFormat f);
+			// Track resources for debugging:
+			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;

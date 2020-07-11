@@ -21,6 +21,7 @@
 #endif
 using namespace simul;
 using namespace crossplatform;
+std::map<unsigned long long,std::string> crossplatform::RenderPlatform::ResourceMap;
 
 ContextState& ContextState::operator=(const ContextState& cs)
 {

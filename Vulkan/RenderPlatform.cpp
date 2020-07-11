@@ -16,7 +16,6 @@
 
 using namespace simul;
 using namespace vulkan;
-std::map<unsigned long long,std::string> vulkan::RenderPlatform::ResourceMap;
 const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::VkObjectTypeMap =
 {
 	{VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
@@ -1380,7 +1379,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 		mTargets.depthTarget.layer = 0;
 		mTargets.depthTarget.mip = 0;
 	}
-	mTargets.viewport = { 0, 0, targs[0]->width, targs[0]->length };
+	mTargets.viewport = int4(0, 0, targs[0]->width, targs[0]->length);
 
 	deviceContext.targetStack.push(&mTargets);
 	SetViewports(deviceContext, 1, &mTargets.viewport);

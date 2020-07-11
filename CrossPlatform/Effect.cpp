@@ -433,7 +433,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	ta.index=index;
 	cs->rwTextureAssignmentMapValid=false;
 }
-
+ 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
 {
 	const ShaderResource *i=GetTextureDetails(name);
@@ -1067,10 +1067,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 #endif
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{
-		#ifdef __ORBIS__
+		//#if defined(__ORBIS__)||defined(__COMMODORE__)
 		// Some engines force filenames to lower case because reasons:
 		std::transform(binFilenameUtf8.begin(), binFilenameUtf8.end(), binFilenameUtf8.begin(), ::tolower);
-		#endif
+		//#endif
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
 			string err=base::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
@@ -1247,6 +1247,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string props	=words[2];
 				size_t pos_b		=0;
 				crossplatform::RenderStateDesc desc;
+				desc.name=name;
 				desc.type=crossplatform::BLEND;
 				desc.blend.AlphaToCoverageEnable=toBool(simul::base::toNext(props,',', pos_b));
 				pos_b++;
@@ -1299,6 +1300,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				crossplatform::RenderStateDesc desc;
 				string name		 = words[1];
+				desc.name			=name.c_str();
 				desc.type		   = crossplatform::RTFORMAT;
 				vector<string> props = simul::base::split(words[2], ',');
 				if (props.size() != 8)
@@ -1317,6 +1319,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				string name		=words[1];
 				crossplatform::RenderStateDesc desc;
+				desc.name			=name.c_str();
 				desc.type=crossplatform::RASTERIZER;
 				/*
 					RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
@@ -1348,6 +1351,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string props	=words[2];
 				size_t pos_d		=0;
 				crossplatform::RenderStateDesc desc;
+				desc.name=name.c_str();
 				desc.type=crossplatform::DEPTH;
 				desc.depth.test=toBool(simul::base::toNext(props,',',pos_d));
 				desc.depth.write=toInt(simul::base::toNext(props,',',pos_d))!=0;

@@ -157,8 +157,6 @@ namespace simul
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 
-			// Track resources for debugging:
-			static std::map<unsigned long long,std::string> ResourceMap;
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 
 		private:

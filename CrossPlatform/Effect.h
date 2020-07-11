@@ -199,11 +199,13 @@ namespace simul
 				RasterizerDesc          rasterizer;
                 RenderTargetFormatDesc  rtFormat;
 			};
+			std::string name;
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
 		{
 			RenderStateDesc desc;
 			RenderStateType type;
+			std::string name;
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
 			virtual void InvalidateDeviceObjects() {}

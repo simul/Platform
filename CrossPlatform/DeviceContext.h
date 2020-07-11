@@ -228,6 +228,7 @@ namespace simul
 			RenderPlatform *renderPlatform;
 			EffectTechnique *activeTechnique;
 			crossplatform::ContextState contextState;
+			int ApiCallCounter=0;
 			long long frame_number;
 			bool initialized;
 			int framePrintX=0;

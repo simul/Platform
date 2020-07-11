@@ -15,7 +15,7 @@ uniform Texture2DMS<vec4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TextureCubeArray cubeTextureArray;
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
-uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
+
 uniform RWTexture2D<vec4> FastClearTarget SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> FastClearTarget2DArray SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<uchar4> FastClearTarget2DArrayU8 SIMUL_RWTEXTURE_REGISTER(0);
