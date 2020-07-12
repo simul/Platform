@@ -49,6 +49,8 @@ if(SIMUL_SOURCE_BUILD)
 
 	if(XBOXONE)
 		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12X.json" )
+	elseif(PLATFORM_SPECTRUM)
+		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/Spectrum/Sfx/Spectrum.json" )
 	elseif(GDK)
 		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12GDK.json" )
 	else()
