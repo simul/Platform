@@ -1029,6 +1029,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		if(!result)
 		{
 			SIMUL_BREAK("Failed to build effect.");
+			if((buildMode & crossplatform::TRY_AGAIN_ON_FAIL) == 0)
+				break;
 		}
 	}
 #endif
