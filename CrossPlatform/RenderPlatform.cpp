@@ -387,7 +387,7 @@ void RenderPlatform::EndFrame(DeviceContext &dev)
 }
 
 
-void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
+void RenderPlatform::Clear(DeviceContext &deviceContext,vec4 colour_rgba)
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
 	debugConstants.debugColour=colour_rgba;
@@ -395,15 +395,6 @@ void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 	debugEffect->Apply(deviceContext,clearTechnique,0);
 	DrawQuad(deviceContext);
 	debugEffect->Unapply(deviceContext);
-}
-
-void RenderPlatform::ClearFencedTextureList()
-{
-	for (auto i : fencedTextures)
-	{
-		i->SetFence(0);
-	}
-	fencedTextures.clear();
 }
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)

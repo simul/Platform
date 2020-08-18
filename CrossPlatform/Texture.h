@@ -198,18 +198,17 @@ namespace simul
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
-			unsigned long long fence;
 			bool unfenceable;
 		public:
 			Texture(const char *name=NULL);
 			virtual ~Texture();
 			virtual void SetName(const char *n);
 			/// Set the fence on this texture: it cannot be used until the fence has been triggered by the rendering API.
-			void SetFence(unsigned long long);
+			void SetFence(DeviceContext &,unsigned long long);
 			/// Get the current fence on this texture; it should not be used until the API has passed this fence.
-			unsigned long long GetFence() const;
+			unsigned long long GetFence(DeviceContext &) const;
 			/// Clear the fence: this texture is ok to use now.
-			void ClearFence();
+			void ClearFence(DeviceContext &deviceContext);
 			/// For API's that care about Resource State, aka Layout, tell the Simul API what state it was in to begin with.
 			virtual void StoreExternalState(crossplatform::ResourceState){}
 			/// For API's that care about Resource State, aka Layout, restore the state internally.

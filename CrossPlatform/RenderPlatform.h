@@ -333,7 +333,6 @@ namespace simul
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 
-			virtual void					ClearFencedTextureList();
 			/// Fill in mipmaps from the zero level down.
 			virtual void					GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
 			// Get a blank (black) resource texture.
