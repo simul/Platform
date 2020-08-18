@@ -14,208 +14,9 @@ using namespace crossplatform;
 	return sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
 }
 
-Quaterniond::Quaterniond()
-{
-	Reset();
-}
-Quaterniond::Quaterniond(double X,double Y,double Z,double S,bool normalize)
-{
-	x=X;
-	y=Y;
-	z=Z;
-	s=S;
-	if(normalize)
-		this->MakeUnit();
-}
-
-Quaterniond::Quaterniond(const Quaterniond &q)
-{
-	s=q.s;
-	x=q.x;
-	y=q.y;
-	z=q.z;
-}
-
-Quaterniond::Quaterniond(double angle,const vec3d &vv)
-{
-	Define(angle,vv);
-}
-
-Quaterniond::Quaterniond(const double *q)
-{
-	x=q[0];
-	y=q[1];
-	z=q[2];
-	s=q[3];
-}
-
-Quaterniond::operator vec4() const
-{
-	vec4 v;
-	v.x=(float)x;
-	v.y=(float)y;
-	v.z=(float)z;
-	v.w=(float)s;
-	return v;
-}
-
-vec3d Quaterniond::operator*(const vec3d &vec) const
-{
-	const double x0=vec.x;
-	const double y0=vec.y;
-	const double z0=vec.z;
-	double s1=x*x0+y*y0+z*z0;
-	double x1=s*x0+y*z0-z*y0;
-	double y1=s*y0+z*x0-x*z0;
-	double z1=s*z0+x*y0-y*x0;
-	return vec3d(s1*x+s*x1+y*z1-z*y1,
-				 s1*y+s*y1+z*x1-x*z1,
-				 s1*z+s*z1+x*y1-y*x1);
-}
-vec3d Quaterniond::operator/(const vec3d &vec) const
-{
-	const double x0=vec.x;
-	const double y0=vec.y;
-	const double z0=vec.z;
-	double s1=-x*x0-y*y0-z*z0;
-	double x1= s*x0-y*z0+z*y0;
-	double y1= s*y0-z*x0+x*z0;
-	double z1= s*z0-x*y0+y*x0;
-	return vec3d(-s1*x+s*x1-y*z1+z*y1,
-				 -s1*y+s*y1-z*x1+x*z1,
-				 -s1*z+s*z1-x*y1+y*x1);
-}
-void Quaterniond::Reset()
-{
-	x=0.0;
-	y=0.0;
-	z=0.0;
-	s=1.0;
-}
-
-void Quaterniond::MakeUnit()
-{
-	double magnitude;
-	magnitude=sqrt((x*x+y*y+z*z+s*s));
-	if(magnitude==0)
-	{
-		s=1.0;
-		return;
-	}
-	x/=magnitude;
-	y/=magnitude;
-	z/=magnitude;
-	s/=magnitude;
-}
-
-void Quaterniond::DefineSmall(double ss,const vec3d &vv)
-{
-	ss*=0.5;
-	x=ss*vv.x;
-	y=ss*vv.y;
-	z=ss*vv.z;
-	s=1.0;
-	double magnitude;
-	magnitude=sqrt((x*x+y*y+z*z+s*s));
-	if(magnitude==0)
-		return;
-	x/=magnitude;
-	y/=magnitude;
-	z/=magnitude;
-	s/=magnitude;
-}
 double dot(vec3d& a,vec3d& b)
 {
 	return a.x*b.x+a.y*b.y+a.z*b.z;
-}
-double Quaterniond::AngleInDirection(const vec3d &vv) const
-{
-	double dp=dot(vv,vec3d(x,y,z));
-	double halfangle=asin(dp);
-	ERRNO_BREAK
-	return halfangle*2.0;
-}
-double Quaterniond::Angle() const
-{
-	double halfangle=acos(std::min(1.0,std::max(-1.0,s)));
-	ERRNO_BREAK
-	return halfangle*2.0;
-}
-void Quaterniond::Define(double angle,const vec3d &vv)
-{
-	angle/=2.0;
-	s=cos(angle);
-	double ss=sin(angle);
-	x=ss*vv.x;
-	y=ss*vv.y;
-	z=ss*vv.z;
-}
-
-void Quaterniond::Define(const vec3d &dir_sin)
-{
-	double mag=length(dir_sin);
-	// sin(a)=2sin(a/2)cos(a/2)
-	// so x sin(a) = 2 x sin (a/2) cos (a/2)
-
-	// Thus the quaternion, which is defined as:
-	// s=cos(a/2)
-	// v=sin(a/2) V
-	
-	// is given by:
-	// a2=asin(mag)/2
-	// s=cos(a2)
-
-	// v=sin(a/2) V
-	//	=V sin(a)/(2 cos(a/2))
-	//	=dir_sin / (2 cos(a/2))
-
-	double a2=asin(mag)/2.0;
-	s=cos(a2);
-	double div=1.0/(2.0*cos(a2));
-	x=dir_sin.x*div;
-	y=dir_sin.y*div;
-	z=dir_sin.z*div;
-}
-
-void Quaterniond::Define(const double ss,const double xx,const double yy,const double zz)
-{
-	s=ss;
-	x=xx;
-	y=yy;
-	z=zz;
-}
-
-Quaterniond Quaterniond::operator*(const Quaterniond &q) const
-{
-	Quaterniond r;
-    r.s= s*q.s - x*q.x - y*q.y - z*q.z;
-    r.x= s*q.x + x*q.s + y*q.z - z*q.y;
-    r.y= s*q.y + y*q.s + z*q.x - x*q.z;
-    r.z= s*q.z + z*q.s + x*q.y - y*q.x;
-	return r;
-}
-
-Quaterniond Quaterniond::operator/(const Quaterniond &q) const
-{
-	Quaterniond iq=q;
-	iq.x*=-1.0;
-	iq.y*=-1.0;
-	iq.z*=-1.0;
-	return (*this)*iq;
-}
-
-Quaterniond& Quaterniond::operator/=(const Quaterniond &q)
-{
-	double X,Y,Z;
-	X=s*q.x+q.s*x+q.y*z-q.z*y;
-	Y=s*q.y+q.s*y+q.z*x-q.x*z;
-	Z=s*q.z+q.s*z+q.x*y-q.y*x;
-	s=q.s*s-q.x*x-q.y*y-q.z*z;
-
-	x=X;
-	y=Y;
-	z=Z;
-	return *this;
 }
 namespace simul
 {
@@ -347,32 +148,6 @@ namespace simul
 	}
 }
 
-Quaterniond& Quaterniond::Rotate(double angle,const vec3d &axis)
-{
-	Quaterniond dq(angle,axis);
-	*this=dq*(*this);
-	MakeUnit();
-	return *this;
-}         
-void Quaterniond::Rotate(const vec3d &d)
-{
-	double sz=length(d);
-	if(sz>0)
-	{
-		vec3d a=d;
-		a/=sz;
-		Quaterniond dq(sz,a);
-		double s1=dq.s*s-dq.x*x-dq.y*y-dq.z*z;
-		double x1=s*dq.x+dq.s*x+dq.y*z-dq.z*y;
-		double y1=s*dq.y+dq.s*y+dq.z*x-dq.x*z;
-		double z1=s*dq.z+dq.s*z+dq.x*y-dq.y*x;
-		s=s1;
-		x=x1;
-		y=y1;
-		z=z1;
-	}
-}
-
 
 
 double simul::crossplatform::angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
@@ -405,10 +180,10 @@ Quaterniond simul::crossplatform::rotateByOffsetCartesian(const Quaterniond& inp
 	if (sph_radius <= 0)
 		return input;
 
-	float x_rad = offset.x / sph_radius;
-	float y_rad = offset.y / sph_radius;
-	crossplatform::Quaterniond x_rot(x_rad, vec3(0.0, 1.0, 0.0));
-	crossplatform::Quaterniond y_rot(-y_rad, vec3(1.0, 0.0, 0.0));
+	double x_rad = offset.x / sph_radius;
+	double y_rad = offset.y / sph_radius;
+	crossplatform::Quaterniond x_rot(x_rad, vec3d(0.0, 1.0, 0.0));
+	crossplatform::Quaterniond y_rot(-y_rad, vec3d(1.0, 0.0, 0.0));
 
 	return x_rot * y_rot * input;
 }
@@ -428,8 +203,8 @@ Quaterniond simul::crossplatform::rotateByOffsetPolar(const Quaterniond& input, 
 	//Calculate angle of the arclength from the offset 
 	double theta = polar_radius / sph_radius;			//double theta = (double)(length(offset) / sph_radius);
 	
-	crossplatform::Quaterniond x_rot(theta, vec3(0.0, 1.0, 0.0));
-	crossplatform::Quaterniond z_rot(phi, vec3(0.0, 0.0, 1.0));
+	crossplatform::Quaterniond x_rot(theta, vec3d(0.0, 1.0, 0.0));
+	crossplatform::Quaterniond z_rot(phi, vec3d(0.0, 0.0, 1.0));
 
 	return z_rot * x_rot * input;
 }
