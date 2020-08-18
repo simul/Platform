@@ -91,9 +91,11 @@ namespace simul
 			D3D12				    = 18,   // Direct3D 12
 			Vulkan					= 21,	// Vulkan
 			Switch					= 22,	// Nintendo Switch NVN API
-			XboxOneD3D12			= 23,	//  XboxOne Direct3D 12
-			Commodore				= 45,	//  Commodore 64
-			Spectrum				= 77,	//  ZX Spectrum
+			XboxOneD3D12			= 23,	// XboxOne Direct3D 12
+			GameCoreXboxOne			= 24,	// Game Core Xbox One graphics API using Direct3D 12.
+			GameCoreScarlett		= 25,	// Game Core Scarlett graphics API using Direct3D 12.
+			Commodore				= 45,	// Commodore 64
+			Spectrum				= 25,	// ZX Spectrum
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 
@@ -203,7 +205,7 @@ namespace simul
 			//! Ensures that all UAV read and write operation to the textures are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, crossplatform::Texture* texture) {};
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
-			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {}
+			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {};
 			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.

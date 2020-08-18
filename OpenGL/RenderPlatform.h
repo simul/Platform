@@ -59,6 +59,10 @@ namespace simul
             void        StoreGLState();
             //! Once we are done, we can restore it
             void        RestoreGLState();
+			//! Ensures that all UAV read and write operation to the textures are completed.
+			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture) override;
+			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
+			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 			void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d) override;
 			void        Draw(crossplatform::DeviceContext& deviceContext, int num_verts, int start_vert) override;
 			void        DrawIndexed(crossplatform::DeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
