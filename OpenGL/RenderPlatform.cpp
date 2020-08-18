@@ -129,6 +129,16 @@ void RenderPlatform::RestoreGLState()
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mCachedState.Framebuffer);
 }
 
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture)
+{
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
+{
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str();
