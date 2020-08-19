@@ -436,12 +436,6 @@
 		r.z=m*v.z;
 		return r;
 	}
-	inline float dot(const vec3 &a,const vec3 &b)
-	{
-		float c;
-		c=a.x*b.x+a.y*b.y+a.z*b.z;
-		return c;
-	}
 	struct vec4
 	{
 		float x,y,z,w;
@@ -950,6 +944,12 @@
 	inline void vec3d_to_vec3(vec3&v3,const vec3d& v)
 	{
 		v3= vec3(float(v.x), float(v.y), float(v.z));
+	}
+	template<typename T> float dot(const tvector3<T> &a,const tvector3<T> &b)
+	{
+		T c;
+		c=a.x*b.x+a.y*b.y+a.z*b.z;
+		return c;
 	}
 	inline vec3d cross(const vec3d &a,const vec3d &b)
 	{
