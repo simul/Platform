@@ -20,6 +20,8 @@ bool IsDebuggerPresent() {return false;}
 #define _MAX_PATH 260
 #endif
 
+#define _CRT_SECURE_NO_WARNINGS
+
 typedef void (__stdcall *DebugOutputCallback)(const char *);
 
 class VisualStudioDebugOutput : public BufferedStringStreamBuf
@@ -124,3 +126,5 @@ protected:
 	std::streambuf *old_cerr_buffer;
 	DebugOutputCallback callback;
 };
+
+#undef _CRT_SECURE_NO_WARNINGS
