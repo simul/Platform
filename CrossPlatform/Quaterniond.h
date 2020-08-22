@@ -132,17 +132,15 @@ namespace simul
 				z /= magnitude;
 				s /= magnitude;
 			}
-			double AngleInDirection(const vec3d &vv) const
+			T AngleInDirection(const tvector3<T> &vv) const
 			{
-				double dp = dot(vv, vec3d(x, y, z));
-				double halfangle = asin(dp);
-				ERRNO_BREAK
-				return halfangle * 2.0;
+				T dp = (T)dot(vv, tvector3<T>(x, y, z));
+				T halfangle = (T) asin(dp);
+				return halfangle * (T)2.0;
 			}
-			double Angle() const
+			T Angle() const
 			{
 				T halfangle = acos(std::min((T)1.0, std::max((T)-1.0, s)));
-				ERRNO_BREAK
 				return halfangle * (T)2.0;
 			}
 			// Operations
