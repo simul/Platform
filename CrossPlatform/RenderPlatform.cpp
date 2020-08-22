@@ -1047,7 +1047,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	{
 		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h==0)
 		{
-			SIMUL_BREAK_ONCE("The default viewport is empty. Please call deviceContext.setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
+			//SIMUL_BREAK_ONCE("The default viewport is empty. Please call deviceContext.setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
 		}
 		v= deviceContext.defaultTargetsAndViewport.viewport;
 	}
