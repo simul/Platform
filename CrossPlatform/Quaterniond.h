@@ -4,6 +4,7 @@
 #include "Platform/Math/Matrix.h"    
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Export.h"
+#include <algorithm>
 
 namespace simul
 {
@@ -273,7 +274,7 @@ namespace simul
 					z = z1;
 				}
 			}
-			template<typename U> void DefineSmall(T angle, const tvector3<U>& vv)
+			template<typename U> void DefineSmall(T ss, const tvector3<U>& vv)
 			{
 				ss *= T(0.5);
 				x = ss * T(vv.x);
