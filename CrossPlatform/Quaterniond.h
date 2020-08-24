@@ -5,6 +5,7 @@
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Export.h"
 #include <algorithm>
+#include <math.h>
 
 namespace simul
 {
