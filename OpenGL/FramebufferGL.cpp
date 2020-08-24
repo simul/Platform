@@ -145,7 +145,7 @@ bool FramebufferGL::CreateBuffers()
 	
 	int faces=is_cubemap?6:1;
 	current_face = 0;
-	mFBOId.resize(mips*(faces));
+	mFBOId.resize((size_t)mips*(size_t)faces);
     // Generate GL FBO:
     glGenFramebuffers((GLsizei)mFBOId.size(), mFBOId.data());
 	auto &f=mFBOId.begin();

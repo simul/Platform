@@ -941,6 +941,7 @@
 	};
 	//! Very simple 3 vector of doubles.
 	typedef tvector3<double> vec3d;
+
 	inline void vec3d_to_vec3(vec3&v3,const vec3d& v)
 	{
 		v3= vec3(float(v.x), float(v.y), float(v.z));
@@ -958,6 +959,12 @@
 		r.y=a.z*b.x-b.z*a.x;
 		r.z=a.x*b.y-b.x*a.y;
 		return r;
+	}
+	inline double dot(const vec3d &a,const vec3d &b)
+	{
+		double c;
+		c=a.x*b.x+a.y*b.y+a.z*b.z;
+		return c;
 	}
 	//! Very simple 4x4 matrix of doubles.
 	struct mat4d

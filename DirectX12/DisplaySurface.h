@@ -4,6 +4,11 @@
 #include "SimulDirectXHeader.h"
 #include "Export.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable:4251)
+#endif
+
 static const UINT FrameCount = 3;
 
 namespace simul
@@ -67,3 +72,7 @@ namespace simul
         };
     }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
