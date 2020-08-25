@@ -203,6 +203,10 @@
 		{
 			operator=(v);
 		}
+		template<typename U> tvector3(const tvector3<U> &u)
+		{
+			operator=(u);
+		}
 		operator T *()
 		{
 			return &x;
@@ -222,6 +226,13 @@
 			x=v[0];
 			y=v[1];
 			z=v[2];
+		}
+		template<typename U> const tvector3 &operator=(const tvector3<U> &u)
+		{
+			x = (T)u.x;
+			y = (T)u.y;
+			z = (T)u.z;
+			return *this;
 		}
 		void operator*=(T m)
 		{
@@ -946,12 +957,6 @@
 	{
 		v3= vec3(float(v.x), float(v.y), float(v.z));
 	}
-	template<typename T> float dot(const tvector3<T> &a,const tvector3<T> &b)
-	{
-		T c;
-		c=a.x*b.x+a.y*b.y+a.z*b.z;
-		return c;
-	}
 	inline vec3d cross(const vec3d &a,const vec3d &b)
 	{
 		vec3d r;
@@ -960,9 +965,9 @@
 		r.z=a.x*b.y-b.x*a.y;
 		return r;
 	}
-	inline double dot(const vec3d &a,const vec3d &b)
+	template<typename T> T dot(const tvector3<T> &a,const tvector3<T> &b)
 	{
-		double c;
+		T c;
 		c=a.x*b.x+a.y*b.y+a.z*b.z;
 		return c;
 	}
