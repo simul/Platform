@@ -203,6 +203,12 @@
 		{
 			operator=(v);
 		}
+		template<typename U> tvector3(const tvector3<U> &u)
+		{
+			x=(T)u.x;
+			y=(T)u.y;
+			z=(T)u.z;
+		}
 		operator T *()
 		{
 			return &x;
@@ -222,6 +228,12 @@
 			x=v[0];
 			y=v[1];
 			z=v[2];
+		}
+		template<typename U> const tvector3<T>& operator=(const tvector3<U> &u)
+		{
+			x=(T)u.x;
+			y=(T)u.y;
+			z=(T)u.z;
 		}
 		void operator*=(T m)
 		{
