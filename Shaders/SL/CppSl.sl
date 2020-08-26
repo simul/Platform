@@ -4,6 +4,8 @@
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifdef __cplusplus
+	// required for sqrt
+	#include <math.h>
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4324)
