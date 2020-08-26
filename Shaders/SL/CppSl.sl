@@ -321,6 +321,11 @@
 			z-=v[2];
 		}
 	};
+	template<typename T> T length(const tvector3<T>& u)
+	{
+		T size = u.x * u.x + u.y * u.y + u.z * u.z;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
 	typedef tvector3<float> vec3;
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{
