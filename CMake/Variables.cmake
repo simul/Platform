@@ -1,5 +1,7 @@
 include_guard()
-
+if(NOT DEFINED SIMUL_SOURCE_BUILD)
+	option( SIMUL_SOURCE_BUILD "Build from source?" ON )
+endif()
 option( SIMUL_INTERNAL_CHECKS "Enable Simul internal debugging checks?" OFF )
 
 option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
