@@ -274,7 +274,7 @@ public:
 
 	}
 
-	void GenerateCubemaps()
+	void GenerateCubemaps(crossplatform::DeviceContext& deviceContext)
 	{
 		crossplatform::Texture* hdrTexture = renderPlatform->CreateTexture("Textures/abandoned_tank_farm_04_2k.hdr");
 		//diffuseCubemap = renderPlatform->CreateTexture("abandoned_tank_farm_04_2k.hdr");
@@ -282,7 +282,6 @@ public:
 		specularTexture = renderPlatform->CreateTexture("specularTexture");
 		specularTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 8, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
 		// plonk the hdr into the cubemap.
-		auto& deviceContext = renderPlatform->GetImmediateContext();
 		renderPlatform->LatLongTextureToCubemap(deviceContext, specularTexture, hdrTexture);
 		delete hdrTexture;
 		delete diffuseCubemapTexture;
@@ -331,7 +330,7 @@ public:
 		}
 		renderPlatform->BeginFrame(deviceContext);
 		if(!diffuseCubemapTexture)
-			GenerateCubemaps();
+			GenerateCubemaps(deviceContext);
 		// Profiling
 #if DO_PROFILING 
 		simul::crossplatform::SetGpuProfilingInterface(deviceContext, renderPlatform->GetGpuProfiler());
@@ -346,6 +345,7 @@ public:
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
 			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+			cameraConstants.world = mat4::identity();
 			effect->SetConstantBuffer(deviceContext, &cameraConstants);
 			effect->SetTexture(deviceContext,"diffuseCubemap", diffuseCubemapTexture);
 			solidConstants.albedo=vec3(1.f,1.f,1.f);
