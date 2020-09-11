@@ -276,8 +276,22 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		}
 		cs->bufferSlots|=(1<<slot);
 	}
-	if(num_descr)
-		vulkanDevice->updateDescriptorSets(num_descr, writes, 0,nullptr);
+	if (num_descr)
+	{
+		for (int i = 0; i < num_descr; i++)
+		{
+			vk::WriteDescriptorSet& write = writes[i];
+			bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
+			
+			if (no_res)
+			{
+				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in shader '"
+					<< c->name << "' has no valid resource associated with it." << std::endl;
+				SIMUL_BREAK("VkWriteDescriptorSet error.");
+			}
+		}
+		vulkanDevice->updateDescriptorSets(num_descr, writes, 0, nullptr);
+	}
 
 	static bool error_checking=true;
 	// Now verify that ALL resource are set:
