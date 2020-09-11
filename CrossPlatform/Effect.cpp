@@ -380,7 +380,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const Shader
 	}
 	else if(!tex->IsValid())
 	{
-		SIMUL_BREAK_ONCE("Invalid texture applied");
+		//SIMUL_BREAK_ONCE("Invalid texture applied");
 		return;
 	}
 #endif

@@ -76,10 +76,10 @@ if(SIMUL_SOURCE_BUILD)
 					)
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	#add_dependencies(SimulDirectX12_MT DirectX12Shaders )
+	add_dependencies(SimulDirectX12_MT DirectX12CoreShaders )
 	#add_dependencies(DirectX12Shaders Sfx )
 	endif()
-	#add_dependencies(SimulDirectX12_MD DirectX12Shaders )
+	add_dependencies(SimulDirectX12_MD DirectX12CoreShaders )
 
 	target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
 

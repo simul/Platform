@@ -37,3 +37,16 @@ Supported Rendering API's
  * GitPython
  * Visual Studio 2017 or later (Windows)
  * Clang 8+ (Linux)
+
+
+Setup
+-----
+To run the Python setup script, ensure that the git Python module is installed.
+
+	pip install GitPython
+
+Now run Setup.py to update the submodules and build Platform.
+
+Configuring
+-----------
+With CMakeGui or a similar tool, you can configure Platform to your requirements. For example, individual API's such as Vulkan or D3D12 can be enabled or disabled.

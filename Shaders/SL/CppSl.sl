@@ -4,6 +4,8 @@
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifdef __cplusplus
+	// required for sqrt
+	#include <math.h>
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4324)
@@ -203,6 +205,10 @@
 		{
 			operator=(v);
 		}
+		template<typename U> tvector3(const tvector3<U> &u)
+		{
+			operator=(u);
+		}
 		operator T *()
 		{
 			return &x;
@@ -222,6 +228,13 @@
 			x=v[0];
 			y=v[1];
 			z=v[2];
+		}
+		template<typename U> const tvector3 &operator=(const tvector3<U> &u)
+		{
+			x = (T)u.x;
+			y = (T)u.y;
+			z = (T)u.z;
+			return *this;
 		}
 		void operator*=(T m)
 		{
@@ -310,6 +323,11 @@
 			z-=v[2];
 		}
 	};
+	template<typename T> T length(const tvector3<T>& u)
+	{
+		T size = u.x * u.x + u.y * u.y + u.z * u.z;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
 	typedef tvector3<float> vec3;
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{
@@ -435,12 +453,6 @@
 		r.y=m*v.y;
 		r.z=m*v.z;
 		return r;
-	}
-	inline float dot(const vec3 &a,const vec3 &b)
-	{
-		float c;
-		c=a.x*b.x+a.y*b.y+a.z*b.z;
-		return c;
 	}
 	struct vec4
 	{
@@ -952,11 +964,6 @@
 	{
 		v3= vec3(float(v.x), float(v.y), float(v.z));
 	}
-	inline void vec3_to_vec3d(vec3d&v3,const vec3& v)
-	{
-		v3= vec3d(double(v.x), double(v.y), double(v.z));
-	}
-
 	inline vec3d cross(const vec3d &a,const vec3d &b)
 	{
 		vec3d r;
@@ -965,9 +972,9 @@
 		r.z=a.x*b.y-b.x*a.y;
 		return r;
 	}
-	inline double dot(const vec3d &a,const vec3d &b)
+	template<typename T> T dot(const tvector3<T> &a,const tvector3<T> &b)
 	{
-		double c;
+		T c;
 		c=a.x*b.x+a.y*b.y+a.z*b.z;
 		return c;
 	}
