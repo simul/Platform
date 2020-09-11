@@ -379,7 +379,7 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *m
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug)
 {
-    crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend,gamma);
+    crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
