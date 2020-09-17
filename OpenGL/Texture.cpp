@@ -605,7 +605,7 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 	}
 }
 
-void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, int array_index /*= -1*/, int mip_index /*= 0*/)
+void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, int array_index, int mip_index)
 {
 	if (array_index == -1)
 	{
@@ -673,6 +673,7 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 
 }
 
+#if 0
 GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
 	bool useTopLayer		= layer < 0;
@@ -733,7 +734,45 @@ GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, 
 	}
 	return textureView;
 }
+#else
+GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
+{
+	if (mip == mips)
+	{
+		mip = 0;
+	}
 
+	int realArray = GetArraySize();
+	bool no_array = !cubemap && (arraySize <= 1);
+	bool isUAV = (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
+
+	// Base view:
+	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
+	{
+		if (cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY))
+		{
+			return mCubeArrayView;
+		}
+		return mTextureID;
+	}
+	// Layer view:
+	if (mip < 0 || mips <= 1)
+	{
+		if (layer < 0 || no_array)
+		{
+			return mTextureID;
+		}
+		return mLayerViews[layer];
+	}
+	// Mip view:
+	if (layer < 0)
+	{
+		return mMainMipViews[mip];
+	}
+	// Layer mip view:
+	return mLayerMipViews[layer][mip];
+}
+#endif
 GLuint Texture::GetGLMainView()
 {
 	return mTextureID;
