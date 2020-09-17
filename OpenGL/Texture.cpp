@@ -467,11 +467,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			if (cubemap)
 			{
 				glGenTextures(nmips, mMainMipViews.data());
-				GLenum target = GL_TEXTURE_CUBE_MAP;
-				if (num > 1)
-				{
-					target = GL_TEXTURE_CUBE_MAP_ARRAY;
-				}
+				GLenum target = num > 1 ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
 				for (int mip = 0; mip < mips; mip++)
 				{
 					glTextureView(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
@@ -484,10 +480,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			else
 			{
 				glGenTextures(mips, mMainMipViews.data());
-				GLenum target = GL_TEXTURE_2D_ARRAY;
 				for (int mip = 0; mip < mips; mip++)
 				{
-					glTextureView(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
+					glTextureView(mMainMipViews[mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
 
 					// Debug name:
 					viewName = name + "_mip_" + std::to_string(mip);
@@ -617,7 +612,6 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
 	}
 	if (mTextureFBOs[array_index][mip_index] == 0)
 	{
-		arraySize = cubemap ? 6 : 1;
 		CreateFBOs(mNumSamples);
 	}
 
@@ -673,68 +667,6 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 
 }
 
-#if 0
-GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
-{
-	bool useTopLayer		= layer < 0;
-	bool useTopMip			= mip < 0;
-	bool singleMipCount		= mips <= 1;
-	bool no_array			= !cubemap && (arraySize <= 1);
-	//bool isUAV			= (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
-	
-	if (mip == mips)
-	{
-		mip = 0;
-	}
-
-	GLuint textureView = 0;
-	
-	// Base view:
-	if ((singleMipCount && no_array) || (useTopLayer && useTopMip))
-	{
-		if (cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY))
-		{
-			textureView = mCubeArrayView;
-		}
-		if (IsValid())
-			textureView = mTextureID;
-	}
-
-	// Layer view:
-	if (useTopMip || singleMipCount)
-	{
-		bool valid = layer >= 0 && layer < (int)mLayerViews.size();
-		if (!no_array && valid)
-		{
-			textureView = mLayerViews[layer];
-		}
-	}
-
-	// Mip view:
-	bool valid = mip >= 0 && mip < (int)mMainMipViews.size();
-	if (valid)
-	{
-		textureView = mMainMipViews[mip];
-	}
-
-	// Layer mip view:
-	bool layer_valid = layer >= 0 && layer < mLayerMipViews.size();
-	if (layer_valid)
-	{
-		bool mip_valid = mip >= 0 && mip < mLayerMipViews[layer].size();
-		if (mip_valid)
-		{
-			textureView = mLayerMipViews[layer][mip];
-		}
-	}
-
-	if (textureView == 0)
-	{
-		SIMUL_BREAK("No valid OpenGL Texture View could be found.");
-	}
-	return textureView;
-}
-#else
 GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
 	if (mip == mips)
@@ -745,6 +677,37 @@ GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, 
 	int realArray = GetArraySize();
 	bool no_array = !cubemap && (arraySize <= 1);
 	bool isUAV = (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
+
+	auto bounds_check_return_texture_view = [&](const std::vector<GLuint>& arr, int idx) -> GLuint
+	{
+	#if _DEBUG
+		if (idx > -1 && idx < arr.size())
+			return arr[idx];
+		else
+			return mTextureID;
+	#else
+		return arr[idx];
+	#endif
+
+	};
+	auto bounds_check_nested_return_texture_view = [&](const std::vector<std::vector<GLuint>>& arr, int idx0, int idx1) -> GLuint
+	{
+	#if _DEBUG
+		if (idx0 > -1 && idx0 < arr.size())
+		{
+			if (idx1 > -1 && idx1 < arr[idx0].size())
+			{
+				return arr[idx0][idx1];
+			}
+			else
+				return mTextureID;
+		}
+		else
+			return mTextureID;
+	#else
+		return arr[idx0][idx1];
+	#endif
+	};
 
 	// Base view:
 	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
@@ -762,17 +725,17 @@ GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, 
 		{
 			return mTextureID;
 		}
-		return mLayerViews[layer];
+		return bounds_check_return_texture_view(mLayerViews,layer);
 	}
 	// Mip view:
 	if (layer < 0)
 	{
-		return mMainMipViews[mip];
+		return bounds_check_return_texture_view(mMainMipViews,mip);
 	}
 	// Layer mip view:
-	return mLayerMipViews[layer][mip];
+	return bounds_check_nested_return_texture_view(mLayerMipViews,layer,mip);
 }
-#endif
+
 GLuint Texture::GetGLMainView()
 {
 	return mTextureID;
@@ -836,7 +799,7 @@ void Texture::InitViews(int mipCount, int layers, bool isRenderTarget)
 
 void Texture::CreateFBOs(int sampleCount)
 {
-	for (int i = 0; i < arraySize; i++)
+	for (int i = 0; i < arraySize * (cubemap ? 6 : 1); i++)
 	{
 		for (int mip = 0; mip < mips; mip++)
 		{
