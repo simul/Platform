@@ -37,10 +37,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 if(XBOXONE AND SIMUL_SUPPORT_D3D11)
-	add_subdirectory(DirectX12)
+	add_subdirectory(DirectX11)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND SIMUL_SUPPORT_D3D12)
+	add_subdirectory(DirectX12)
+endif()
+
+if(XBOXONE AND SIMUL_SUPPORT_D3D12)
 	add_subdirectory(DirectX12)
 endif()
 
