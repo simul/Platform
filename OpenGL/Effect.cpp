@@ -368,7 +368,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 		GLuint imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
 		if (glIsTexture(imageView))
 		{
-			glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLFormat(tex->GetFormat()));
+			glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLInternalFormat(tex->GetFormat()));
 		}
 		else
 		{

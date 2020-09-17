@@ -309,7 +309,7 @@ crossplatform::Buffer* RenderPlatform::CreateBuffer()
 	return new opengl::Buffer();
 }
 
-GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
+GLuint RenderPlatform::ToGLInternalFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -364,7 +364,7 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	};
 }
 
-crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p)
+crossplatform::PixelFormat RenderPlatform::FromGLInternalFormat(GLuint p)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -416,7 +416,7 @@ crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p)
 	};
 }
 
-GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
+GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
 	switch(p)

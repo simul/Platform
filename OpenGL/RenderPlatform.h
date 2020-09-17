@@ -121,10 +121,13 @@ namespace simul
             static GLenum                           toGLTopology(crossplatform::Topology t);
             static GLenum                           toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f);
             static GLenum                           toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
-			static GLint                           toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w);
+			static GLint							toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w);
+			//! Returns the format that OpenGL stores the texture data internally. e.g. GL_RGBA8
+			static                                  GLuint ToGLInternalFormat(crossplatform::PixelFormat p);
+			//! Returns the crossplatform::PixelFormat from the OpenGL internal format. e.g PixelFormat::RGBA_8_UNORM
+			static                                  crossplatform::PixelFormat FromGLInternalFormat(GLuint p);
+			//! Return the format that OpenGL uses the load in pixel data. e.g GL_RGBA
 			static                                  GLuint ToGLFormat(crossplatform::PixelFormat p);
-			static                                  crossplatform::PixelFormat FromGLFormat(GLuint p);
-			static                                  GLuint ToGLExternalFormat(crossplatform::PixelFormat p);
 			static                                  GLenum DataType(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);
             
