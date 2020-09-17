@@ -675,54 +675,62 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 
 GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
+	bool useTopLayer		= layer < 0;
+	bool useTopMip			= mip < 0;
+	bool singleMipCount		= mips <= 1;
+	bool no_array			= !cubemap && (arraySize <= 1);
+	//bool isUAV			= (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
+	
 	if (mip == mips)
 	{
 		mip = 0;
 	}
 
-	int realArray	= GetArraySize();
-	bool no_array	= !cubemap && (arraySize <= 1);
-	bool isUAV		= (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
-
-	GLuint textureView = mTextureID;
-
+	GLuint textureView = 0;
+	
 	// Base view:
-	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
+	if ((singleMipCount && no_array) || (useTopLayer && useTopMip))
 	{
 		if (cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY))
 		{
 			textureView = mCubeArrayView;
 		}
+		if (IsValid())
+			textureView = mTextureID;
 	}
 
 	// Layer view:
-	if (mip < 0 || mips <= 1)
+	if (useTopMip || singleMipCount)
 	{
-		bool valid = layer < (int)mLayerViews.size();
-		if (layer < 0 && !no_array && valid)
+		bool valid = layer >= 0 && layer < (int)mLayerViews.size();
+		if (!no_array && valid)
 		{
 			textureView = mLayerViews[layer];
 		}
 	}
 
 	// Mip view:
-	bool valid = mip < (int)mMainMipViews.size();
-	if (mip < 0 && valid)
+	bool valid = mip >= 0 && mip < (int)mMainMipViews.size();
+	if (valid)
 	{
 		textureView = mMainMipViews[mip];
 	}
 
 	// Layer mip view:
-	bool layer_valid = layer < mLayerMipViews.size();
-	if (layer < 0 && layer_valid)
+	bool layer_valid = layer >= 0 && layer < mLayerMipViews.size();
+	if (layer_valid)
 	{
-		bool mip_valid = mip < mLayerMipViews[layer].size();
-		if (mip < 0 && mip_valid)
+		bool mip_valid = mip >= 0 && mip < mLayerMipViews[layer].size();
+		if (mip_valid)
 		{
 			textureView = mLayerMipViews[layer][mip];
 		}
 	}
 
+	if (textureView == 0)
+	{
+		SIMUL_BREAK("No valid OpenGL Texture View could be found.");
+	}
 	return textureView;
 }
 
