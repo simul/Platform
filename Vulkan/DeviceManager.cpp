@@ -102,8 +102,7 @@ DeviceManager::~DeviceManager()
 	delete deviceManagerInternal;
 }
 
-static bool CheckLayers(uint32_t check_count, char const *const *const check_names, uint32_t layer_count,
-	vk::LayerProperties *layers)
+static bool CheckLayers(uint32_t check_count, char const *const *const check_names, uint32_t layer_count, vk::LayerProperties *layers)
 {
 	for (uint32_t i = 0; i < check_count; i++)
 	{
@@ -119,6 +118,7 @@ static bool CheckLayers(uint32_t check_count, char const *const *const check_nam
 		if (!found)
 		{
 			fprintf(stderr, "Cannot find layer: %s\n", check_names[i]);
+			ERRNO_CHECK;
 			return false;
 		}
 	}
@@ -145,6 +145,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	enabled_extension_count = 0;
 	enabled_layer_count = 0;
 
+	char const *const instance_validation_layers_main[] = { "VK_LAYER_KHRONOS_validation" };
+
 	char const *const instance_validation_layers_alt1[] = { "VK_LAYER_LUNARG_standard_validation" };
 
 	char const *const instance_validation_layers_alt2[] = { "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation",
@@ -153,48 +155,64 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	
  	ERRNO_BREAK
 	// Look for validation layers
-	vk::Bool32 validation_found = VK_FALSE;
 	if (use_debug)
 	{
-		auto result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
+		vk::Result result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
 		SIMUL_VK_ASSERT_RETURN(result);
 
-		instance_validation_layers = instance_validation_layers_alt1;
 		if (instance_layer_count > 0)
 		{
 			std::unique_ptr<vk::LayerProperties[]> instance_layers(new vk::LayerProperties[instance_layer_count]);
 			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.get());
 			SIMUL_VK_ASSERT_RETURN(result);
 
-			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers,
-				instance_layer_count, instance_layers.get());
-			if (validation_found)
+			vk::Bool32 validation_set = VK_FALSE;
+			vk::Bool32 validation_found = VK_FALSE;
+
+			//Main
+			validation_found = CheckLayers(_countof(instance_validation_layers_main), instance_validation_layers_main, instance_layer_count, instance_layers.get());
+			if (validation_found && !validation_set)
 			{
-				enabled_layer_count = _countof(instance_validation_layers_alt1);
-				enabled_layers[0] = "VK_LAYER_LUNARG_standard_validation";
+				instance_validation_layers = instance_validation_layers_main;
+				enabled_layer_count = _countof(instance_validation_layers_main);
+				enabled_layers[0] = instance_validation_layers_main[0];
 				validation_layer_count = 1;
+				validation_set = VK_TRUE;
 			}
-			else
+
+			//Alt1
+			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers_alt1, instance_layer_count, instance_layers.get());
+			if (validation_found && !validation_set)
 			{
-				// use alternative set of validation layers
+				instance_validation_layers = instance_validation_layers_alt1;
+				enabled_layer_count = _countof(instance_validation_layers_alt1);
+				enabled_layers[0] = instance_validation_layers_alt1[0];
+				validation_layer_count = 1;
+				validation_set = VK_TRUE;
+			}
+
+			//Alt2
+			validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers_alt2, instance_layer_count, instance_layers.get());
+			if (validation_found && !validation_set)
+			{
 				instance_validation_layers = instance_validation_layers_alt2;
 				enabled_layer_count = _countof(instance_validation_layers_alt2);
-				validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers,
-					instance_layer_count, instance_layers.get());
 				validation_layer_count = _countof(instance_validation_layers_alt2);
 				for (uint32_t i = 0; i < validation_layer_count; i++)
 				{
-					enabled_layers[i] = instance_validation_layers[i];
+					enabled_layers[i] = instance_validation_layers_alt2[i];
 				}
+				validation_set = VK_TRUE;
 			}
-		}
 
-		if (!validation_found)
-		{
-			SIMUL_BREAK(
-				"vkEnumerateInstanceLayerProperties failed to find required validation layer.\n\n"
-				"Please look at the Getting Started guide for additional information.\n"
-				"vkCreateInstance Failure");
+			//Error
+			if (!validation_found && !validation_set)
+			{
+				SIMUL_BREAK(
+					"vkEnumerateInstanceLayerProperties failed to find required validation layer.\n\n"
+					"Please look at the Getting Started guide for additional information.\n"
+					"vkCreateInstance Failure");
+			}
 		}
 	}
  	ERRNO_BREAK
