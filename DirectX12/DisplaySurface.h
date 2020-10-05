@@ -9,7 +9,7 @@
     #pragma warning(disable:4251)
 #endif
 
-static const UINT FrameCount = 3;
+static const UINT FrameCount = 4;
 
 namespace simul
 {
@@ -53,7 +53,7 @@ namespace simul
             //! Scissor if used
             CD3DX12_RECT								mCurScissor;
             //! The actual backbuffer resources
-            ID3D12Resource*								mBackBuffers[3];
+            ID3D12Resource*								mBackBuffers[FrameCount];
             //! Heap to store views to the backbuffers
             ID3D12DescriptorHeap*						mRTHeap;
             //! The views of each backbuffers

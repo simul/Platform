@@ -214,6 +214,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 	rtvHeapDesc.NumDescriptors				= FrameCount; 
 	rtvHeapDesc.Type						= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	SAFE_RELEASE(mRTHeap);
 	result									= device->CreateDescriptorHeap(&rtvHeapDesc, SIMUL_PPV_ARGS(&mRTHeap));
 	SIMUL_ASSERT(result == S_OK);
 
@@ -259,6 +260,7 @@ void DisplaySurface::StartFrame()
 	if (mRecordingCommands) { return; }
 
 	HRESULT res = S_FALSE;
+	static UINT idx_old=0;
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
@@ -275,6 +277,7 @@ void DisplaySurface::StartFrame()
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
+	idx_old=idx;
 }
 
 void DisplaySurface::EndFrame()

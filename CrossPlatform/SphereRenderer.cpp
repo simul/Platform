@@ -64,7 +64,7 @@ void SphereRenderer::DrawCrossSection(crossplatform::DeviceContext &deviceContex
 
 	effect->SetConstantBuffer(deviceContext, &sphereConstants);
 
-	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::TRIANGLESTRIP);
+	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext, tech, 0);
 	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
 	effect->Unapply(deviceContext);
@@ -96,7 +96,7 @@ void SphereRenderer::DrawMultipleCrossSections(crossplatform::DeviceContext& dev
 	sphereConstants.slices = slices;
 	effect->SetConstantBuffer(deviceContext, &sphereConstants);
 
-	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::TRIANGLESTRIP);
+	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext, tech, 0);
 	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
 	effect->Unapply(deviceContext);
@@ -126,7 +126,7 @@ void SphereRenderer::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,0);
 
-	renderPlatform->SetTopology(deviceContext,LINESTRIP);
+	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
 	// first draw the latitudes:
 	renderPlatform->Draw(deviceContext, (sphereConstants.longitudes+1)*(sphereConstants.latitudes+1)*2, 0);
 	// first draw the longitudes:
@@ -163,14 +163,14 @@ void SphereRenderer::DrawQuad(DeviceContext &deviceContext,vec3 origin,vec4 orie
 	if(fill_colour.w>0.0f)
 	{
 		effect->Apply(deviceContext, tech, "fill");
-		renderPlatform->SetTopology(deviceContext, TRIANGLESTRIP);
+		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 		renderPlatform->Draw(deviceContext, 4, 0);
 		effect->Unapply(deviceContext);
 	}
 	if (colour.w > 0.0f)
 	{
 		effect->Apply(deviceContext, tech,"outline");
-		renderPlatform->SetTopology(deviceContext, LINELIST);
+		renderPlatform->SetTopology(deviceContext, Topology::LINELIST);
 		renderPlatform->Draw(deviceContext, 16, 0);
 		effect->Unapply(deviceContext);
 	}
@@ -203,7 +203,7 @@ void SphereRenderer::DrawTexture(DeviceContext &deviceContext,crossplatform::Tex
 	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 
-	renderPlatform->SetTopology(deviceContext,TRIANGLESTRIP);
+	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext,tech,0);
 	renderPlatform->Draw(deviceContext,16, 0);
 	effect->Unapply(deviceContext);
@@ -236,7 +236,7 @@ void SphereRenderer::DrawCurvedTexture(DeviceContext& deviceContext, crossplatfo
 	sphereConstants.multiplier = colour;
 	effect->SetConstantBuffer(deviceContext, &sphereConstants);
 
-	renderPlatform->SetTopology(deviceContext, TRIANGLELIST);
+	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 	effect->Apply(deviceContext, tech, 0);
 	renderPlatform->Draw(deviceContext, 8 * 8 * 6, 0);
 	effect->Unapply(deviceContext);
@@ -270,13 +270,13 @@ void SphereRenderer::DrawCircle(DeviceContext &deviceContext, vec3 origin, vec4 
 	if (fill_colour.w > 0.0f)
 	{
 		effect->Apply(deviceContext, tech, "fill");
-		renderPlatform->SetTopology(deviceContext, TRIANGLESTRIP);
+		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 		renderPlatform->Draw(deviceContext, 64, 0);
 		effect->Unapply(deviceContext);
 	}
 
 	effect->Apply(deviceContext,tech,"outline");
-	renderPlatform->SetTopology(deviceContext, LINESTRIP);
+	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
 	renderPlatform->Draw(deviceContext,32, 0);
 	effect->Unapply(deviceContext);
 }
@@ -307,7 +307,7 @@ void SphereRenderer::DrawArc(DeviceContext &deviceContext, vec3 origin, vec4 q1,
 	sphereConstants.latitudes		=12;
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,"outline");
-	renderPlatform->SetTopology(deviceContext, LINESTRIP);
+	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
 	renderPlatform->Draw(deviceContext,13, 0);
 	effect->Unapply(deviceContext);
 }

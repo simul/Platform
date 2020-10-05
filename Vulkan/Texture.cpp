@@ -136,6 +136,11 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	int l= loadedTextures[0].y;
 	size_t num= loadedTextures.size();
 	m=std::min(16,std::max(1,std::min(m,1 + int(floor(log2(w >= l ? w : l))))));
+	name="Texture array ";
+	for(auto m:texture_files)
+	{
+		name+=m+",";
+	}
 	if(num<=1)
 		ensureTexture2DSizeAndFormat(r,w,l,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
 	else
@@ -170,30 +175,35 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 {
 	if(!renderPlatform)
 		return;
+	vulkan::RenderPlatform *r= static_cast<vulkan::RenderPlatform * >(renderPlatform);
+
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(vulkanDevice)
 	{
 		for(auto i:mLayerViews)
 		{
-			vulkanDevice->destroyImageView(i);
+			r->PushToReleaseManager(i);
 		}
 		for(auto i:mFramebuffers)
 		{
 			for(auto j:i)
 			{
-				vulkanDevice->destroyFramebuffer(j);
+				//vulkanDevice->destroyFramebuffer(j);
+				r->PushToReleaseManager(j);
 			}
 		}
 		mFramebuffers.clear();
 		for(auto i:mMainMipViews)
 		{
-			vulkanDevice->destroyImageView(i);
+			//vulkanDevice->destroyImageView(i);
+			r->PushToReleaseManager(i);
 		}
 		for(auto i:mLayerMipViews)
 		{
 			for(auto j:i)
 			{
-				vulkanDevice->destroyImageView(j);
+				//vulkanDevice->destroyImageView(j);
+				r->PushToReleaseManager(j);
 			}
 		}
 		vulkanDevice->destroyImageView(mFaceArrayView);

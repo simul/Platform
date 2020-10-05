@@ -38,8 +38,47 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
+inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
+{
+	UINT size=0;
+	GUID g = WKPDID_D3DDebugObjectName;
+	HRESULT hr=(obj)->GetPrivateData(g,&size,	nullptr);
+	if(hr==S_OK)
+	{
+		if(size <= maxsize)
+			(obj)->GetPrivateData(g, &size, name);
+	}
+	else
+	{
+		g= WKPDID_D3DDebugObjectNameW;
+		hr = (obj)->GetPrivateData(g, &size, nullptr);
+		if (hr == S_OK)
+		{
+			wchar_t * src_w =new wchar_t[size+1];
+			(obj)->GetPrivateData(g, &size, src_w);
+			WideCharToMultiByte(CP_UTF8, 0, src_w, (int)size, name, (int)maxsize, NULL, NULL);
+			delete [] src_w;
+		}
+	}
+}
+
 #ifndef SAFE_RELEASE
 	#define SAFE_RELEASE(p)			{ if(p) { (p)->Release(); (p)=nullptr; } }
+	#define SAFE_RELEASE_DEBUG(p)	{\
+										if(p)\
+										{\
+											(p)->AddRef();\
+											int refct=(p)->Release()-1;\
+											if(refct!=21623460)\
+											{\
+												char name[20];\
+												GetD3DName((p),name,20);\
+												SIMUL_COUT<< name<<" refct "<<refct<<std::endl;\
+											}\
+											(p)->Release();\
+											(p)=nullptr;\
+										}\
+									}
 #endif
 
 #ifndef SAFE_RELEASE_LATER

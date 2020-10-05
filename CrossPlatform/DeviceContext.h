@@ -186,10 +186,11 @@ namespace simul
 			TextureAssignmentMap rwTextureAssignmentMap;
 			FenceMap fenceMap;
 			EffectPass *currentEffectPass=nullptr;
-			EffectTechnique *currentTechnique=nullptr;
+			//EffectTechnique *currentTechnique=nullptr;
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
 			Topology topology;
+			int apply_count = 0;
 			void invalidate()
 			{
 				effectPassValid=false;

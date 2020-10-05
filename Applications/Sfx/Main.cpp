@@ -298,7 +298,7 @@ int main(int argc, char** argv)
 		if (j.count("optimizationLevelOption")>0)
 			sfxConfig.optimizationLevelOption				=j["optimizationLevelOption"];
 		if (j.count("computePreamble")>0)
-			sfxConfig.computePreamble						= j["computePreamble"];
+			sfxConfig.computePreamble						=j["computePreamble"];
 		if(j.count("compilerMessageRegex")>0)
 		{
 			sfxConfig.compilerMessageRegex					=j["compilerMessageRegex"][0];

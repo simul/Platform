@@ -215,7 +215,6 @@ EffectTechniqueGroup::~EffectTechniqueGroup()
 
 Effect::Effect()
 	:renderPlatform(NULL)
-	,apply_count(0)
 	,currentPass(0)
 	,currentTechnique(NULL)
 	,platform_effect(NULL)
@@ -225,7 +224,6 @@ Effect::Effect()
 Effect::~Effect()
 {
 	InvalidateDeviceObjects();
-	SIMUL_ASSERT(apply_count==0);
 	for (auto& i : depthStencilStates)
 	{
 		delete i.second;
@@ -576,65 +574,43 @@ void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
-	if (apply_count != 0)
-		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
 	currentTechnique				=effectTechnique;
 	if(effectTechnique)
 	{
 		EffectPass *p				=(effectTechnique)->GetPass(pass_num>=0?pass_num:0);
-		if(p)
-		{
-			crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-			cs->invalidate();
-			cs->currentEffectPass=p;
-			cs->currentTechnique=effectTechnique;
-			cs->currentEffect=this;
-		}
-		else
-			SIMUL_BREAK("No pass found");
+		deviceContext.renderPlatform->ApplyPass(deviceContext, p);
 	}
 	currentPass=pass_num;
 }
 
+void Effect::Reapply(DeviceContext& deviceContext)
+{
+	Unapply(deviceContext);
+	Apply(deviceContext,deviceContext.contextState.currentEffectPass);
+}
+
+void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* p)
+{
+	renderPlatform->ApplyPass(deviceContext, p);
+}
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
-	currentTechnique				=effectTechnique;
-	if (apply_count != 0)
-		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
+	EffectPass* p = nullptr;
 	currentTechnique = effectTechnique;
 	if (effectTechnique)
 	{
-		EffectPass *p = NULL;
 		if(passname)
 			p=effectTechnique->GetPass(passname);
 		else
 			p=effectTechnique->GetPass(0);
-		if(p)
-		{
-			crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-			cs->invalidate();
-			cs->currentTechnique=effectTechnique;
-			cs->currentEffectPass=p;
-			cs->currentEffect=this;
-		}
-		else
-			SIMUL_BREAK("No pass found");
 	}
+	Apply(deviceContext,p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
-	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-	cs->currentEffectPass = NULL;
-	cs->currentEffect = NULL;
-	if (apply_count <= 0)
-		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
-	else if (apply_count>1)
-		SIMUL_BREAK("Effect::Apply has been called too many times!")
-		apply_count--;
+	renderPlatform->UnapplyPass(deviceContext);
 	currentTechnique = NULL;
 }
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)

@@ -37,7 +37,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	#set_target_properties(Sfx PROPERTIES CMAKE_VS_PLATFORM_TOOLSET v142 )
 	#set_target_properties(Sfx PROPERTIES CMAKE_GENERATOR_TOOLSET v142 )
 	deploy_to_directory(Sfx ${CMAKE_SOURCE_DIR}\\Tools\\bin)
-	set(SFX_TEST_PLATFORM Commodore)
+	set(SFX_TEST_PLATFORM Vulkan)
 	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx")
 	set(SFX_TEST_DEFINES "-E\"COMMODORE_SDK_DIR=C:\\Program Files (x86)\\SCE\\Prospero SDKs\\1.000\"")
 	set_target_properties(Sfx PROPERTIES

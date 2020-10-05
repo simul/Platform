@@ -295,7 +295,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x0,f
 		effect->SetConstantBuffer(deviceContext,&constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 		f.Apply(deviceContext,effect,_fontChars);
-		renderPlatform->SetTopology(deviceContext,TRIANGLELIST);
+		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);

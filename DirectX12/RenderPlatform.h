@@ -137,7 +137,6 @@ namespace simul
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
 			void									BeginFrame(crossplatform::DeviceContext& deviceContext);
 			void									EndFrame(crossplatform::DeviceContext& deviceContext);
-			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
@@ -147,12 +146,8 @@ namespace simul
 			void									Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			
-			void									DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false) override;
 			void									DrawQuad		(crossplatform::DeviceContext &deviceContext);
 
-			void									DrawLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
-			void									Draw2dLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip);
-			void									DrawCube		(crossplatform::DeviceContext &deviceContext);
 			void									ApplyDefaultMaterial();
 
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr) override;
@@ -188,10 +183,6 @@ namespace simul
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
 
-			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
-			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;

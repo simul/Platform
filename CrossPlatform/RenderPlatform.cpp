@@ -38,7 +38,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	textureAssignmentMap		=cs.textureAssignmentMap;
 	rwTextureAssignmentMap		=cs.rwTextureAssignmentMap;
 	currentEffectPass			=cs.currentEffectPass;
-	currentTechnique			=cs.currentTechnique;
+	//currentTechnique			=cs.currentTechnique;
 	currentEffect				=cs.currentEffect;
 	effectPassValid				=cs.effectPassValid;
 	vertexBuffersValid			=cs.vertexBuffersValid;
@@ -736,7 +736,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
-	SetTopology(deviceContext,TRIANGLESTRIP);
+	SetTopology(deviceContext,Topology::TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 
 	debugEffect->SetTexture(deviceContext, "cubeTexture", nullptr);
@@ -1208,6 +1208,32 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 	const std::map<std::string,std::string> defines;
 	static bool enabled=true;
 	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+}
+
+void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
+{
+	crossplatform::ContextState& cs = deviceContext.contextState;
+	if (cs.apply_count != 0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	cs.apply_count++;
+	cs.invalidate();
+	//cs.currentTechnique = effectTechnique;
+	cs.currentEffectPass = pass;
+	if (!pass)
+		SIMUL_BREAK("No pass found");
+	cs.currentEffect = pass->GetEffect();
+}
+
+void RenderPlatform::UnapplyPass(DeviceContext& deviceContext)
+{
+	crossplatform::ContextState& cs = deviceContext.contextState;
+	cs.currentEffectPass = NULL;
+	cs.currentEffect = NULL;
+	if (cs.apply_count <= 0)
+		SIMUL_BREAK("RenderPlatform::UnapplyPass without a corresponding Apply!")
+	else if (cs.apply_count > 1)
+		SIMUL_BREAK("RenderPlatform::ApplyPass has been called too many times!")
+	cs.apply_count--;
 }
 
 DisplaySurface* RenderPlatform::CreateDisplaySurface()

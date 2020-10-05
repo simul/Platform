@@ -57,15 +57,15 @@ const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::
 	{VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT"},
 	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT"},
 	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_BEGIN_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_END_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT"},
+	//{VK_DEBUG_REPORT_OBJECT_TYPE_BEGIN_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
+	//{VK_DEBUG_REPORT_OBJECT_TYPE_END_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT"},
+	//{VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT"},
 	{VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT"},
 };
 
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
 {
-#if 0
+#if 1
 	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
 	vk::Device *device=renderPlatform->AsVulkanDevice();
 	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
@@ -90,7 +90,9 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 	{
 		uint64_t *u=(uint64_t*)ds;
 		RenderPlatform::ResourceMap[*u]=name;
-	//	std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
+#ifdef _DEBUG
+		std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
+		#endif
 	}
 #endif
 }
@@ -195,8 +197,19 @@ void RenderPlatform::InvalidateDeviceObjects()
 	{
 		vulkanDevice->freeMemory 	(i);
 	}
-	vulkanDevice=nullptr;
 	releaseMemories.clear();
+
+	for (auto i : releaseImageViews)
+	{
+		vulkanDevice->destroyImageView(i);
+	}
+	releaseImageViews.clear();
+	for (auto i : releaseFramebuffers)
+	{
+		vulkanDevice->destroyFramebuffer(i);
+	}
+	releaseFramebuffers.clear();
+	vulkanDevice=nullptr;
 }
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
 {
@@ -209,6 +222,14 @@ void RenderPlatform::PushToReleaseManager(vk::BufferView &v)
 void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
 {
 	releaseMemories.insert(m);
+}
+void RenderPlatform::PushToReleaseManager(vk::ImageView& i)
+{
+	releaseImageViews.insert(i);
+}
+void RenderPlatform::PushToReleaseManager(vk::Framebuffer& f)
+{
+	releaseFramebuffers.insert(f);
 }
 
 void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
@@ -773,23 +794,23 @@ vk::PrimitiveTopology RenderPlatform::toVulkanTopology(crossplatform::Topology t
 {
     switch (t)
     {
-    case crossplatform::POINTLIST:
+    case crossplatform::Topology::POINTLIST:
         return vk::PrimitiveTopology::ePointList;
-    case crossplatform::LINELIST:
+    case crossplatform::Topology::LINELIST:
         return vk::PrimitiveTopology::eLineList;
-    case crossplatform::LINESTRIP:
+    case crossplatform::Topology::LINESTRIP:
         return vk::PrimitiveTopology::eLineStrip;
-    case crossplatform::TRIANGLELIST:
+    case crossplatform::Topology::TRIANGLELIST:
         return vk::PrimitiveTopology::eTriangleList;
-    case crossplatform::TRIANGLESTRIP:
+    case crossplatform::Topology::TRIANGLESTRIP:
         return vk::PrimitiveTopology::eTriangleStrip;
-    case crossplatform::LINELIST_ADJ:
+    case crossplatform::Topology::LINELIST_ADJ:
         return vk::PrimitiveTopology::eLineListWithAdjacency;
-    case crossplatform::LINESTRIP_ADJ:
+    case crossplatform::Topology::LINESTRIP_ADJ:
         return vk::PrimitiveTopology::eLineStripWithAdjacency;
-    case crossplatform::TRIANGLELIST_ADJ:
+    case crossplatform::Topology::TRIANGLELIST_ADJ:
         return vk::PrimitiveTopology::eTriangleListWithAdjacency;
-    case crossplatform::TRIANGLESTRIP_ADJ:
+    case crossplatform::Topology::TRIANGLESTRIP_ADJ:
         return vk::PrimitiveTopology::eTriangleStripWithAdjacency;
     default:
         break;

@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"command": "glslangValidator -V -S {stage}",
+		"command": "$VULKAN_SDK/Bin/glslangValidator -V -S {stage}",
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",

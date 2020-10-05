@@ -310,6 +310,17 @@ namespace simul
 			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+
+			/// <summary>
+			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
+			/// </summary>
+			virtual void					ApplyPass						(DeviceContext& deviceContext, EffectPass* pass);
+
+			/// <summary>
+			/// Unapply the previously applied effect pass after use in a draw or compute call.
+			/// </summary>
+			virtual void					UnapplyPass						(DeviceContext& deviceContext);
+
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
 			/// Some platforms may not support this.
 			virtual void					StoreRenderState				(DeviceContext &){}

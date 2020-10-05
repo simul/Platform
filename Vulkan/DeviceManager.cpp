@@ -548,8 +548,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 		RewriteVulkanMessage(str);
 		std::cerr << str.c_str() << std::endl;
 	}
-	//if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
-		//SIMUL_BREAK("Vulkan Error");
+	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+		SIMUL_BREAK("Vulkan Error");
     return VK_FALSE;
 }
 
@@ -601,8 +601,9 @@ void DeviceManager::CreateDevice()
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"dualSrcBlend\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.samplerAnisotropy)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"samplerAnisotropy\". Unable to proceed.\n");
-		if(!deviceManagerInternal->gpu_features.shaderFloat64)
-			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
+			// No, we really don't need this:
+	//	if(!deviceManagerInternal->gpu_features.shaderFloat64)
+	//		SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}

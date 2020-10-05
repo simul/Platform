@@ -275,7 +275,6 @@ namespace simul
 			crossplatform::RenderState *depthStencilState;
 			crossplatform::RenderState *rasterizerState;
             crossplatform::RenderState *renderTargetFormatState;
-			
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
             std::string rtFormatState;
@@ -289,6 +288,10 @@ namespace simul
 					name=n;
 			}
 
+			crossplatform::Effect* GetEffect()
+			{
+				return effect;
+			}
 			//! This updates the mapping from the pass's list of resources to the effect slot numbers (0-31)
 			void MakeResourceSlotMap();
 
@@ -537,7 +540,6 @@ namespace simul
 			IndexMap techniques_by_index;
 			std::string filename;
 			std::string filenameInUseUtf8;
-			int apply_count;
 			int currentPass;
 			crossplatform::EffectTechnique *currentTechnique;
 			void *platform_effect;
@@ -601,8 +603,10 @@ namespace simul
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass=0);
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass);
+			/// Apply the specified shader effect pass. Unapply must be called after rendering is done.
+			virtual void Apply(DeviceContext& deviceContext, EffectPass* p);
 			/// Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.
-			virtual void Reapply(DeviceContext &deviceContext)=0;
+			virtual void Reapply(DeviceContext &deviceContext);
 			/// Deactivate the shader.
 			virtual void Unapply(DeviceContext &deviceContext);
 			/// Zero-out the textures that are set for this shader. Call before apply.
