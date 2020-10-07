@@ -21,6 +21,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/Math/Matrix4x4.h"
 #include "Platform/CrossPlatform/Camera.h"
+
 #if !PLATFORM_D3D11_SFX
 #include "D3dx11effect.h"
 #endif
@@ -1180,23 +1181,23 @@ static D3D11_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
 	using namespace crossplatform;
 	switch(t)
 	{			
-	case POINTLIST:
+	case Topology::POINTLIST:
 		return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	case LINELIST:
+	case Topology::LINELIST:
 		return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
-	case LINESTRIP:
+	case Topology::LINESTRIP:
 		return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
-	case TRIANGLELIST:
+	case Topology::TRIANGLELIST:
 		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	case TRIANGLESTRIP:
+	case Topology::TRIANGLESTRIP:
 		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-	case LINELIST_ADJ:
+	case Topology::LINELIST_ADJ:
 		return D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
-	case LINESTRIP_ADJ:
+	case Topology::LINESTRIP_ADJ:
 		return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
-	case TRIANGLELIST_ADJ:
+	case Topology::TRIANGLELIST_ADJ:
 		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
-	case TRIANGLESTRIP_ADJ:
+	case Topology::TRIANGLESTRIP_ADJ:
 		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
 	default:
 		return D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
