@@ -334,7 +334,7 @@ namespace simul
 			//! Store the current rendertargets and viewports at the top of the stack
 			virtual void					PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv);
 			//! Restore rendertargets and viewports from the top of the stack.
-			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
+			virtual void					PopRenderTargets(DeviceContext &deviceContext);
 			//! Resolve an MSAA texture to a normal texture.
 			virtual void					Resolve(DeviceContext &,Texture * /*destination*/,Texture * /*source*/){}
 
