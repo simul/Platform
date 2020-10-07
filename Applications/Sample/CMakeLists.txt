@@ -52,7 +52,7 @@ if(${SAMPLE_API} MATCHES "SAMPLE_USE_D3D12")
 endif()
 
 if(${SAMPLE_API} MATCHES "SAMPLE_USE_VULKAN")
-	target_link_libraries(Sample_MT SimulVulkan_MD)
+	target_link_libraries(Sample_MT SimulVulkan_MT)
 	target_link_libraries(Sample_MD SimulVulkan_MD)
 	if(SIMUL_BUILD_SHADERS)
 		add_dependencies( Sample_MT VulkanCoreShaders )
