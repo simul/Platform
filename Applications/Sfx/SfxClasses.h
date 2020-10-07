@@ -143,7 +143,18 @@ namespace sfx
 		,BLEND_OP_ADD
 		,BLEND_OP_SUBTRACT
 		,BLEND_OP_MAX
-
+		,BLEND_OP_MIN
+	} ;
+	enum DepthComparison
+	{
+		DEPTH_ALWAYS,
+		DEPTH_NEVER,
+		DEPTH_LESS,
+		DEPTH_EQUAL,
+		DEPTH_LESS_EQUAL,
+		DEPTH_GREATER,
+		DEPTH_NOT_EQUAL,
+		DEPTH_GREATER_EQUAL
 	} ;
 	enum PixelOutputFormat
 	{

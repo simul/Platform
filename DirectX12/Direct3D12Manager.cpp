@@ -26,11 +26,11 @@ Direct3D12Manager::~Direct3D12Manager()
 	Shutdown();
 }
 
-
 bool Direct3D12Manager::IsActive() const
 {
 	return mCommandQueue != nullptr;
 }
+
 void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_driver )
 {
 	SIMUL_COUT << "=========================================\n";

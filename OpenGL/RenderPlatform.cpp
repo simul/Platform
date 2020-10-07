@@ -973,23 +973,23 @@ GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
 {
     switch (t)
     {
-    case crossplatform::POINTLIST:
+    case crossplatform::Topology::POINTLIST:
         return GL_POINTS;
-    case crossplatform::LINELIST:
+    case crossplatform::Topology::LINELIST:
         return GL_LINES;
-    case crossplatform::LINESTRIP:
+    case crossplatform::Topology::LINESTRIP:
         return GL_LINE_STRIP;
-    case crossplatform::TRIANGLELIST:
+    case crossplatform::Topology::TRIANGLELIST:
         return GL_TRIANGLES;
-    case crossplatform::TRIANGLESTRIP:
+    case crossplatform::Topology::TRIANGLESTRIP:
         return GL_TRIANGLE_STRIP;
-    case crossplatform::LINELIST_ADJ:
+    case crossplatform::Topology::LINELIST_ADJ:
         return GL_LINES_ADJACENCY;
-    case crossplatform::LINESTRIP_ADJ:
+    case crossplatform::Topology::LINESTRIP_ADJ:
         return GL_LINE_STRIP_ADJACENCY;
-    case crossplatform::TRIANGLELIST_ADJ:
+    case crossplatform::Topology::TRIANGLELIST_ADJ:
         return GL_TRIANGLES_ADJACENCY;
-    case crossplatform::TRIANGLESTRIP_ADJ:
+    case crossplatform::Topology::TRIANGLESTRIP_ADJ:
         return GL_TRIANGLE_STRIP_ADJACENCY;
     default:
         break;

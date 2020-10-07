@@ -44,7 +44,8 @@ namespace simul
 				return;
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);
 			mCpuHandle						= mHeap->GetCPUDescriptorHandleForHeapStart();
-			mGpuHandle						= mHeap->GetGPUDescriptorHandleForHeapStart();
+			if(shaderVisible)
+				mGpuHandle						= mHeap->GetGPUDescriptorHandleForHeapStart();
 			mName							= name;
 			mHeap->SetName(std::wstring(mName.begin(), mName.end()).c_str());
 

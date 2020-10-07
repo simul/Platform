@@ -405,11 +405,6 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Ef
 
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)
 {
-    if (apply_count != 1)
-    {
-        SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n", this->filename.c_str()));
-    }
-    apply_count--;
     crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
     cs->textureAssignmentMapValid = false;
     cs->rwTextureAssignmentMapValid = false;
@@ -558,7 +553,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
     {
         InvalidateDeviceObjects();
         crossplatform::ContextState* cs     = deviceContext.renderPlatform->GetContextState(deviceContext);
-        PassName                            = cs->currentTechnique->name;
+        PassName                            = cs->currentEffectPass->name;
 
         opengl::Shader* v   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
         opengl::Shader* f   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
