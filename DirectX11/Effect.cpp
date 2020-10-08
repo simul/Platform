@@ -549,8 +549,10 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 	crossplatform::ContextState* cs = renderPlatform->GetContextState(deviceContext);
 	cs->textureAssignmentMapValid = false;
 	cs->rwTextureAssignmentMapValid = false;
+	auto *t=currentTechnique;
+	int p=currentPass;
 	crossplatform::Effect::Unapply(deviceContext);
-	crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
+	crossplatform::Effect::Apply(deviceContext, t, p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
