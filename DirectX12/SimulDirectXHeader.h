@@ -16,11 +16,11 @@
 	#ifdef _GAMING_XBOX_SCARLETT
 		#include "ThisPlatform/Direct3D12.h"
 	#else
-#ifndef _GAMING_XBOX //Deprecated from the GDK
-	#include <D3Dcompiler_x.h>
-#else
-	#include <D3Dcompiler.h>
-#endif
+		#ifndef _GAMING_XBOX //Deprecated from the GDK
+			#include <D3Dcompiler_x.h>
+		#else
+			#include <D3Dcompiler.h>
+		#endif
 	#include <d3d12_x.h>		//! core 12.x header
 	#include <d3dx12_x.h>		//! utility 12.x header
 	#endif
@@ -41,6 +41,10 @@
 inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 {
 	UINT size=0;
+#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+	// not implemented?????
+	name[0] = 0;
+#else
 	GUID g = WKPDID_D3DDebugObjectName;
 	HRESULT hr=(obj)->GetPrivateData(g,&size,	nullptr);
 	if(hr==S_OK)
@@ -60,6 +64,7 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 			delete [] src_w;
 		}
 	}
+#endif
 }
 
 #ifndef SAFE_RELEASE
