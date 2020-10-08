@@ -589,8 +589,9 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 
 void Effect::Reapply(DeviceContext& deviceContext)
 {
+	auto *p= deviceContext.contextState.currentEffectPass;
 	Unapply(deviceContext);
-	Apply(deviceContext,deviceContext.contextState.currentEffectPass);
+	Apply(deviceContext,p);
 }
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* p)
