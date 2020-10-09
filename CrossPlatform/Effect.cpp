@@ -259,18 +259,22 @@ void Effect::InvalidateDeviceObjects()
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	depthStencilStates.clear();
 	for (auto& i : blendStates)
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	blendStates.clear();
 	for (auto& i : rasterizerStates)
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	rasterizerStates.clear();
 	for (auto& i : rtFormatStates)
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	rtFormatStates.clear();
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
@@ -585,8 +589,9 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 
 void Effect::Reapply(DeviceContext& deviceContext)
 {
+	auto *p= deviceContext.contextState.currentEffectPass;
 	Unapply(deviceContext);
-	Apply(deviceContext,deviceContext.contextState.currentEffectPass);
+	Apply(deviceContext,p);
 }
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* p)
