@@ -389,6 +389,7 @@ crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 {
 	crossplatform::EffectPass *p=new dx12::EffectPass(renderPlatform,effect);
 	passes_by_name[name]=passes_by_index[i]=p;
+	passes_by_name[name]->name=name;
 	return p;
 }
 
@@ -397,9 +398,10 @@ void EffectPass::InvalidateDeviceObjects()
 	// TO-DO: nice memory leaks here
 	auto pl=(dx12::RenderPlatform*)renderPlatform;
 	pl->PushToReleaseManager(mComputePso,"PSO");
-	for(auto &p:mGraphicsPsoMap)
+	for (auto& ele : mGraphicsPsoMap)
 	{
-		p.second->Release();
+		pl->PushToReleaseManager(mComputePso, "PSO");
+		SAFE_RELEASE_LATER(ele.second);
 	}
 	mGraphicsPsoMap.clear();
 }
@@ -954,9 +956,5 @@ EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e
 
 EffectPass::~EffectPass()
 {
-	for (auto& ele : mGraphicsPsoMap)
-	{
-		SAFE_RELEASE_LATER(ele.second);
-	}
-	mGraphicsPsoMap.clear();
+	InvalidateDeviceObjects();
 }

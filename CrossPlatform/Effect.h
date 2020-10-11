@@ -663,6 +663,11 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 			}
+			const ConstantBuffer<T>& operator=(const T& t)
+			{
+				T::operator=(t);
+				return *this;
+			}
 			void copyTo(void* pData)
 			{
 				*(T*)pData = *this;

@@ -476,6 +476,16 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	res = queue->GetTimestampFrequency(&mTimeStampFreq);
 	SIMUL_ASSERT(res == S_OK);
 	SAFE_RELEASE(queue);
+	{
+		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+		res = m12Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m12Queue));
+		SIMUL_ASSERT(res == S_OK);
+
+		std::string str = base::QuickFormat(" mQueue " );
+		m12Queue->SetName(simul::base::StringToWString(str).c_str());
+	}
 #endif
 
 	// Load the RootSignature blobs
@@ -634,6 +644,7 @@ void RenderPlatform::InvalidateDeviceObjects()
         }
 	}
 	mResourceBin.clear();
+	SAFE_RELEASE(m12Queue);
 }
 
 void RenderPlatform::RecompileShaders()

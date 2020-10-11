@@ -257,6 +257,8 @@ namespace simul
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
 			/// Create a platform-specific effect instance.
 			Effect							*CreateEffect					(const char *filename_utf8);
+			///  Create a platform-specific effect pass.
+			//virtual EffectPass				*CreateEffectPass();
 			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
 			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
@@ -306,6 +308,9 @@ namespace simul
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t);
+
+			virtual void					SetTexture(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int array_idx = -1, int mip = -1);
+			virtual void					SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int index = -1, int mip = -1);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.

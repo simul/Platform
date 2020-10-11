@@ -8,7 +8,7 @@ using namespace dx12;
 
 DisplaySurface::DisplaySurface():
 	mDeviceRef(nullptr),
-	mQueue(nullptr),
+//	mQueue(nullptr),
 	mSwapChain(nullptr),
 	mRTHeap(nullptr)
 	,mCommandList(nullptr)
@@ -34,6 +34,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	{
 		return;
 	}
+	dx12::RenderPlatform *dx12RenderPlatform=static_cast<dx12::RenderPlatform*>(renderPlatform);
 	InvalidateDeviceObjects();
 
 	mHwnd				   = handle;
@@ -87,19 +88,21 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	SIMUL_ASSERT(res == S_OK);
 
 	// Create a command queue
+#if 0
 	D3D12_COMMAND_QUEUE_DESC queueDesc  = {};
 	queueDesc.Type					  = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags					 = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	res = mDeviceRef->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mQueue));
 	SIMUL_ASSERT(res == S_OK);
+
 	std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",handle,screenWidth,screenHeight);
 	mQueue->SetName(simul::base::StringToWString(str).c_str());
-
-	// Create it
+#endif
+	// Create swapchain
 	IDXGISwapChain1* swapChain	= nullptr;
 	res							= factory->CreateSwapChainForHwnd
 	(
-		mQueue,
+		dx12RenderPlatform->GetCommandQueue(),
 		mHwnd,
 		&swapChainDesc12,
 		nullptr,
@@ -153,7 +156,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
-	SAFE_RELEASE(mQueue);
+	//SAFE_RELEASE(mQueue);
 	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 	SAFE_RELEASE(mCommandList);
 }
@@ -290,9 +293,9 @@ void DisplaySurface::EndFrame()
 	HRESULT res = S_FALSE;
 	res = mCommandList->Close();
 	SIMUL_ASSERT(res == S_OK);
-//SIMUL_CERR<<"End Frame"<<std::endl;
+	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 	ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	mQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 
@@ -310,7 +313,7 @@ void DisplaySurface::EndFrame()
 	#endif
 	// Signal at the end of the pipe, note that we use the cached index 
 	// or we will be adding a fence for the next frame!
-	mQueue->Signal(mGPUFences[idx], mFenceValues[idx]);
+	dx12RenderPlatform->GetCommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);
 }
 
 void DisplaySurface::WaitForAllWorkDone()
@@ -394,11 +397,6 @@ void DisplaySurface::Resize()
 	CreateRenderTargets(mDeviceRef);
 
 	renderer->ResizeView(mViewId, screenWidth, screenHeight);
-	if(mQueue)
-	{
-		std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",mHwnd,screenWidth,screenHeight);
-		mQueue->SetName(simul::base::StringToWString(str).c_str());
-	}
 	StartFrame();
 }
 

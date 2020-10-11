@@ -324,6 +324,7 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_name.size();
 }
 
+
 EffectPass *EffectTechnique::GetPass(int i)
 {
 	return passes_by_index[i];
@@ -369,36 +370,14 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  cro
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
 {
-	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
-	if(!res.valid)
-		return;
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	unsigned long slot=res.slot;
-	unsigned long dim=res.dimensions;
-#ifdef _DEBUG
-	if(!tex)
-	{
-		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
-	}
-	else if(!tex->IsValid())
-	{
-		//SIMUL_BREAK_ONCE("Invalid texture applied");
-		return;
-	}
-#endif
-	crossplatform::TextureAssignment &ta=cs->textureAssignmentMap[slot];
-	ta.resourceType=res.shaderResourceType;
-	ta.texture=(tex&&tex->IsValid()&&res.valid)?tex:0;
-	ta.dimensions=dim;
-	ta.uav=false;
-	ta.index=index;
-	ta.mip=mip;
-	cs->textureAssignmentMapValid=false;
+	renderPlatform->SetTexture(deviceContext,res,tex,index,mip);
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index,int mip)
 {
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
+	const ShaderResource &i = GetShaderResource(name);
+	SetTexture(deviceContext,i,tex,index,mip);
+/*	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	int slot = GetSlot(name);
 	if(slot<0)
 	{
@@ -413,38 +392,20 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 	ta.uav=false;
 	ta.index=index;
 	ta.mip=mip;
-	cs->textureAssignmentMapValid=false;
+	cs->textureAssignmentMapValid=false;*/
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
 {
-	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
-	if(!res.valid)
-		return;
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	unsigned long slot=res.slot;
-	if (slot >=1000)
-		slot -= 1000;
-	unsigned long dim=res.dimensions;
-	auto &ta=cs->rwTextureAssignmentMap[slot];
-	ta.resourceType=res.shaderResourceType;
-	ta.texture=(tex&&tex->IsValid()&&res.valid)?tex:0;
-	ta.dimensions=dim;
-	ta.uav=true;
-	ta.mip=mip;
-	ta.index=index;
-	cs->rwTextureAssignmentMapValid=false;
+	renderPlatform->SetUnorderedAccessView(deviceContext,  res,  tex,  index,  mip);
+
 }
  
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
 {
-	const ShaderResource *i=GetTextureDetails(name);
-	if(!i)
-	{
-		SIMUL_CERR<<"Didn't find UAV "<<name<<std::endl;
-		return;
-	}
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
+	const ShaderResource &i=GetShaderResource(name);
+	SetUnorderedAccessView(deviceContext,i,t,index,mip);
+/*	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	// Make sure no slot clash between uav's and srv's:
 	int slot = GetSlot(name);
 	{
@@ -458,7 +419,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 		ta.mip=mip;
 		ta.index=index;
 	}
-	cs->rwTextureAssignmentMapValid=false;
+	cs->rwTextureAssignmentMapValid=false;*/
 }
 
 const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 

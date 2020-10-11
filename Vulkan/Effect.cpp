@@ -194,17 +194,6 @@ crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
     return techniques_by_index[index];
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index, int mip)
-{
-    auto res = GetShaderResource(name);
-    SetUnorderedAccessView(deviceContext, res, tex, index, mip);
-}
-
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
-{
-	crossplatform::Effect::SetUnorderedAccessView(deviceContext,name,tex,index,mip);
-}
-
 void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)
 {
     RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;

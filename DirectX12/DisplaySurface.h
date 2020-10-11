@@ -41,7 +41,7 @@ namespace simul
             void Resize();
 
             ID3D12Device*                               mDeviceRef;
-            ID3D12CommandQueue*                         mQueue;
+            //ID3D12CommandQueue*                         mQueue; No. share ONE queue across threads.
             //! The swap chain used to present the rendered scene
 #if defined(_XBOX_ONE) |  defined(_GAMING_XBOX)
             IDXGISwapChain1*							mSwapChain;

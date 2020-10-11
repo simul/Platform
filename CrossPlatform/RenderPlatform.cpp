@@ -1129,6 +1129,12 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	Effect *e=CreateEffect(filename_utf8,defines);
 	return e;
 }
+
+/*Effect* RenderPlatform::CreateEffectPass()
+{
+	EffectPass* e = new EffectPass(this,effect);
+	return e;
+}*/
 void RenderPlatform::Destroy(Effect *&e)
 {
 	if (e)
@@ -1268,9 +1274,59 @@ void RenderPlatform::SetIndexBuffer(DeviceContext &deviceContext,const Buffer *b
 	deviceContext.contextState.indexBuffer=buffer;
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext& deviceContext, crossplatform::Topology t)
+void RenderPlatform::SetTopology(DeviceContext& deviceContext, crossplatform::Topology t)
 {
 	deviceContext.contextState.topology = t;
+}
+
+
+void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if (!res.valid)
+		return;
+	ContextState* cs = GetContextState(deviceContext);
+	unsigned long slot = res.slot;
+	unsigned long dim = res.dimensions;
+#ifdef _DEBUG
+	if (!tex)
+	{
+		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
+	}
+	else if (!tex->IsValid())
+	{
+		//SIMUL_BREAK_ONCE("Invalid texture applied");
+		return;
+	}
+#endif
+	TextureAssignment& ta = cs->textureAssignmentMap[slot];
+	ta.resourceType = res.shaderResourceType;
+	ta.texture = (tex && tex->IsValid() && res.valid) ? tex : 0;
+	ta.dimensions = dim;
+	ta.uav = false;
+	ta.index = index;
+	ta.mip = mip;
+	cs->textureAssignmentMapValid = false;
+}
+
+void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if (!res.valid)
+		return;
+	crossplatform::ContextState* cs = GetContextState(deviceContext);
+	unsigned long slot = res.slot;
+	if (slot >= 1000)
+		slot -= 1000;
+	unsigned long dim = res.dimensions;
+	auto& ta = cs->rwTextureAssignmentMap[slot];
+	ta.resourceType = res.shaderResourceType;
+	ta.texture = (tex && tex->IsValid() && res.valid) ? tex : 0;
+	ta.dimensions = dim;
+	ta.uav = true;
+	ta.mip = mip;
+	ta.index = index;
+	cs->rwTextureAssignmentMapValid = false;
 }
 
 namespace simul
