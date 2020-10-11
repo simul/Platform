@@ -57,7 +57,7 @@ namespace simul
 			}
 			virtual const char *GetSfxConfigFilename() const override
 			{
-				return "GLSL/GLSL.json";
+				return "Sfx/Vulkan.json";
 			}
 			void		RestoreDeviceObjects(void*) override;
 			void		InvalidateDeviceObjects() override;
