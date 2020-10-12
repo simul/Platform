@@ -395,13 +395,13 @@ crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 
 void EffectPass::InvalidateDeviceObjects()
 {
-	// TO-DO: nice memory leaks here
+	// TO-DO:  memory leaks here??
 	auto pl=(dx12::RenderPlatform*)renderPlatform;
-	pl->PushToReleaseManager(mComputePso,"PSO");
+	pl->PushToReleaseManager(mComputePso,"Compute PSO");
+	mComputePso=nullptr;
 	for (auto& ele : mGraphicsPsoMap)
 	{
-		pl->PushToReleaseManager(mComputePso, "PSO");
-		SAFE_RELEASE_LATER(ele.second);
+		pl->PushToReleaseManager(ele.second, "Graphics PSO");
 	}
 	mGraphicsPsoMap.clear();
 }
