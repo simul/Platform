@@ -1488,7 +1488,7 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
-	crossplatform::RenderPlatform::SetLayout();
+	crossplatform::RenderPlatform::SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
 	ApplyContextState(deviceContext);
