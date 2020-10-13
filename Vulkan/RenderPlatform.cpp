@@ -65,7 +65,7 @@ const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::
 
 void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
 {
-#if 1
+#if 0
 	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
 	vk::Device *device=renderPlatform->AsVulkanDevice();
 	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
@@ -73,7 +73,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 		.setObject((uint64_t)ds)
 		.setPObjectName(name);
 	auto inf=nameInfo.operator const VkDebugMarkerObjectNameInfoEXT &();
-	//* It would be nice if this worked:
+	//* It would be nice if this worked reliably on most drivers:
 	PFN_vkDebugMarkerSetObjectNameEXT vkDebugMarkerSetObjectNameEXT	=reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT> (instance->getProcAddr("vkDebugMarkerSetObjectNameEXT"));
 	if(vkDebugMarkerSetObjectNameEXT)
 	{

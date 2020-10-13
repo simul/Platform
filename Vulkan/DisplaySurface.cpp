@@ -1,6 +1,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
+#include "Platform/Core/StringFunctions.h"
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
@@ -259,7 +260,7 @@ void DisplaySurface::InitSwapChain()
 #if defined(WINVER) 
 	RECT rect;
 
-	GetWindowRect((HWND)mHwnd, &rect);
+	GetClientRect((HWND)mHwnd, &rect);
 
 	int screenWidth = abs(rect.right - rect.left);
 	int screenHeight = abs(rect.bottom - rect.top);
@@ -435,6 +436,11 @@ void DisplaySurface::InitSwapChain()
 		swapchainImages.resize(swapchainImageCount);
 		result = vulkanRenderPlatform->AsVulkanDevice()->getSwapchainImagesKHR(swapchain, (uint32_t*)&swapchainImageCount, swapchainImages.data());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		for(int i=0;i<swapchainImages.size();i++)
+		{
+			SetVulkanName( renderPlatform, &(swapchainImages[i]), base::QuickFormat("Swapchain %d",i));
+		}
 	}
 	swapchain_image_resources.resize(swapchainImages.size());
 
@@ -858,6 +864,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	renderPlatform->StoreRenderState(deferredContext);
 
+	EnsureImageLayout();
 	commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
 
 	auto const vkViewport =
@@ -870,7 +877,6 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	// Note that ending the renderpass changes the image's layout from
 	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
 	commandBuffer.endRenderPass();
-	EnsureImageLayout();
 	
 	ERRNO_BREAK
 	if (renderer)
@@ -1000,7 +1006,7 @@ void DisplaySurface::Resize()
 {
 #ifdef _MSC_VER
 	RECT rect;
-	if (!GetWindowRect((HWND)mHwnd, &rect))
+	if (!GetClientRect((HWND)mHwnd, &rect))
 		return;
 	UINT W = abs(rect.right - rect.left);
 	UINT H = abs(rect.bottom - rect.top);

@@ -339,8 +339,8 @@ public:
 #endif
 		hdrFramebuffer->SetWidthAndHeight(w, h);
 		hdrFramebuffer->Activate(deviceContext);
-	//	hdrFramebuffer->Clear(deviceContext, 0.0f, 0.2f, 0.5f, 1.0f, reverseDepth ? 0.0f : 1.0f);
-		{
+		hdrFramebuffer->Clear(deviceContext, 0.0f, 0.2f, 0.5f, 1.0f, reverseDepth ? 0.0f : 1.0f);
+		/*{
 			// Pre-Render Update
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
@@ -356,7 +356,7 @@ public:
 			exampleMesh->Draw(deviceContext, 0);
 			exampleMesh->EndDraw(deviceContext);
 			effect->Unapply(deviceContext);
-		}
+		}*/
 		hdrFramebuffer->Deactivate(deviceContext);
 		hDRRenderer->Render(deviceContext, hdrFramebuffer->GetTexture(),1.0f, 0.44f);
 #if DO_PROFILING 

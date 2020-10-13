@@ -527,14 +527,14 @@ void RewriteVulkanMessage( std::string &str)
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-    VkDebugReportFlagsEXT       flags,
-    VkDebugReportObjectTypeEXT  objectType,
-    uint64_t                    object,
-    size_t                      location,
-    int32_t                     messageCode,
-    const char*                 pLayerPrefix,
-    const char*                 pMessage,
-    void*                       pUserData)
+	VkDebugReportFlagsEXT	   flags,
+	VkDebugReportObjectTypeEXT  objectType,
+	uint64_t					object,
+	size_t					  location,
+	int32_t					 messageCode,
+	const char*				 pLayerPrefix,
+	const char*				 pMessage,
+	void*					   pUserData)
 {
 	if(pLayerPrefix)
 		std::cerr<<pLayerPrefix<<" layer: ";
@@ -550,22 +550,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	}
 	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
 		SIMUL_BREAK("Vulkan Error");
-    return VK_FALSE;
+	return VK_FALSE;
 }
 
 void DeviceManager::SetupDebugCallback()
 {
 	#if 1//def _DEBUG
 /* Load VK_EXT_debug_report entry points in debug builds */
-		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>     (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
-		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>            (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
-		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>    (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
+		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	 (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
+		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>			(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
+		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
 
 		/* Setup callback creation information */
 		VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
-		callbackCreateInfo.sType       = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-		callbackCreateInfo.pNext       = nullptr;
-		callbackCreateInfo.flags       = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+		callbackCreateInfo.sType	   = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+		callbackCreateInfo.pNext	   = nullptr;
+		callbackCreateInfo.flags	   = VK_DEBUG_REPORT_ERROR_BIT_EXT |
 										 VK_DEBUG_REPORT_WARNING_BIT_EXT |
 										 VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		callbackCreateInfo.pfnCallback = &DebugReportCallback;
@@ -581,8 +581,8 @@ void DeviceManager::CreateDevice()
 {
 	if(device_initialized)
 		return;
-    float const priorities[1] = {0.0};
-    std::vector<vk::DeviceQueueCreateInfo> queues;
+	float const priorities[1] = {0.0};
+	std::vector<vk::DeviceQueueCreateInfo> queues;
 	queues.resize(GetQueueProperties().size());
 	for(int i=0;i<queues.size();i++)
 	{
@@ -607,26 +607,26 @@ void DeviceManager::CreateDevice()
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
-    auto deviceInfo = vk::DeviceCreateInfo()
-                          .setQueueCreateInfoCount(1)
-                          .setPQueueCreateInfos(queues.data())
-                          .setEnabledLayerCount(0)
-                          .setPpEnabledLayerNames(nullptr)
-                          .setEnabledExtensionCount(enabled_extension_count)
-                          .setPpEnabledExtensionNames((const char *const *)extension_names.data())
-                          .setPEnabledFeatures(&deviceManagerInternal->gpu_features)
-						.setQueueCreateInfoCount((uint32_t)queues.size());
+	auto deviceInfo = vk::DeviceCreateInfo()
+							.setQueueCreateInfoCount(1)
+							.setPQueueCreateInfos(queues.data())
+							.setEnabledLayerCount(0)
+							.setPpEnabledLayerNames(nullptr)
+							.setEnabledExtensionCount(enabled_extension_count)
+							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
+							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
+							.setQueueCreateInfoCount((uint32_t)queues.size());
 	/*
-    if (separate_present_queue) {
-        queues[1].setQueueFamilyIndex(present_queue_family_index);
-        queues[1].setQueueCount(1);
-        queues[1].setPQueuePriorities(priorities);
-        deviceInfo.setQueueCreateInfoCount(2);
-    }*/
+	if (separate_present_queue) {
+		queues[1].setQueueFamilyIndex(present_queue_family_index);
+		queues[1].setQueueCount(1);
+		queues[1].setPQueuePriorities(priorities);
+		deviceInfo.setQueueCreateInfoCount(2);
+	}*/
 
-    auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
+	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
 	device_initialized=result == vk::Result::eSuccess;
-    SIMUL_ASSERT(device_initialized);
+	SIMUL_ASSERT(device_initialized);
 }
 
 std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKHR *surface)

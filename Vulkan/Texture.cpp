@@ -1188,6 +1188,6 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		split_layouts = false;
 	}
 #ifdef _DEBUG
-	SIMUL_COUT<<"Set layout for "<<name.c_str()<<": "<<to_string( newLayout )<<std::endl;
+//	SIMUL_COUT<<"Set layout for "<<name.c_str()<<": "<<to_string( newLayout )<<std::endl;
 #endif
 }
