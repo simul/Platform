@@ -4,7 +4,12 @@
 #include "SimulDirectXHeader.h"
 #include "Export.h"
 
-static const UINT FrameCount = 3;
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable:4251)
+#endif
+
+static const UINT FrameCount = 4;
 
 namespace simul
 {
@@ -36,7 +41,7 @@ namespace simul
             void Resize();
 
             ID3D12Device*                               mDeviceRef;
-            ID3D12CommandQueue*                         mQueue;
+            //ID3D12CommandQueue*                         mQueue; No. share ONE queue across threads.
             //! The swap chain used to present the rendered scene
 #if defined(_XBOX_ONE) |  defined(_GAMING_XBOX)
             IDXGISwapChain1*							mSwapChain;
@@ -48,7 +53,7 @@ namespace simul
             //! Scissor if used
             CD3DX12_RECT								mCurScissor;
             //! The actual backbuffer resources
-            ID3D12Resource*								mBackBuffers[3];
+            ID3D12Resource*								mBackBuffers[FrameCount];
             //! Heap to store views to the backbuffers
             ID3D12DescriptorHeap*						mRTHeap;
             //! The views of each backbuffers
@@ -67,3 +72,7 @@ namespace simul
         };
     }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

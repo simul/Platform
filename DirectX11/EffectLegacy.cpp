@@ -397,7 +397,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 		HRESULT hr=lastContext->Map(buffer,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
 		if(hr==S_OK)
 		{
-			memcpy(mapped.pData,data,num_elements*element_bytesize);
+			memcpy(mapped.pData,data,(size_t)num_elements*(size_t)element_bytesize);
 			mapped.RowPitch=0;
 			mapped.DepthPitch=0;
 			lastContext->Unmap(buffer,0);
@@ -941,8 +941,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 {
 	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	cs->invalidate();
-	cs->currentTechnique=effectTechnique;
-	cs->currentEffect=this;
+	cs->currentEffect = this;
+
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
 	if(effectTechnique)
@@ -990,8 +990,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 
 void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 {
-	if(apply_count!=1)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
+	/*if(apply_count!=1)
+		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));*/
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	if(!effect)
 		return;

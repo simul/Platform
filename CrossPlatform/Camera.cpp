@@ -718,11 +718,11 @@ const float *Camera::MakeStereoViewMatrix(WhichEye ) const
 	return MakeViewMatrix();
 }
 
-		float length(const vec3 &u)
-		{
-			float size=u.x*u.x+u.y*u.y+u.z*u.z;
-			return sqrt(size);
-		}
+float length(const vec3 &u)
+{
+	float size=u.x*u.x+u.y*u.y+u.z*u.z;
+	return sqrt(size);
+}
 
 vec3 Camera::ScreenPositionToDirection(float x,float y,float aspect)
 {

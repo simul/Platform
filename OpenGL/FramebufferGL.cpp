@@ -145,7 +145,7 @@ bool FramebufferGL::CreateBuffers()
 	
 	int faces=is_cubemap?6:1;
 	current_face = 0;
-	mFBOId.resize(mips*(faces));
+	mFBOId.resize((size_t)mips*(size_t)faces);
     // Generate GL FBO:
     glGenFramebuffers((GLsizei)mFBOId.size(), mFBOId.data());
 	auto &f=mFBOId.begin();
@@ -211,7 +211,7 @@ void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
 
     // Construct targets and viewport:
     targetsAndViewport.num              = 1;
-    targetsAndViewport.m_rt[0]          = (void*)mFBOId[fb];
+    targetsAndViewport.m_rt[0]          = (void*)(mFBOId[fb]);
     targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;

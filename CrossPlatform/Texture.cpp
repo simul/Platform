@@ -22,7 +22,6 @@ Texture::Texture(const char *n)
 				,renderTarget(false)
 				,external_texture(false)
 				,depthStencil(false)
-				,fence(0)
 				,unfenceable(false)
 				,width(0)
 				,length(0)
@@ -88,25 +87,34 @@ void Texture::SetName(const char *n)
 {
 	name=n;
 }
-unsigned long long Texture::GetFence() const
+unsigned long long Texture::GetFence(DeviceContext &deviceContext) const
 {
-	return fence;
+	const auto &i=deviceContext.contextState.fenceMap.find((const Texture*)this);
+	if(i!=deviceContext.contextState.fenceMap.end())
+		return i->second.label;
+	return 0;
 }
 
-void Texture::SetFence(unsigned long long f)
+void Texture::SetFence(DeviceContext &deviceContext,unsigned long long f)
 {
-	if(fence!=0&&f!=fence)
+	auto i=deviceContext.contextState.fenceMap.find(this);
+	if(i!=deviceContext.contextState.fenceMap.end())
+	if(i->second.label!=0)
 	{
 		// This is probably ok. We might be adding to a different part of a texture.
 	//	SIMUL_CERR<<"Setting fence when the last one is not cleared yet\n"<<std::endl;
 	}
-	fence=f;
+	auto &fence=deviceContext.contextState.fenceMap[this];
+	fence.label=f;
+	fence.texture=this;
 }
 
 
-void Texture::ClearFence()
+void Texture::ClearFence(DeviceContext &deviceContext)
 {
-	fence=0;
+	auto i=deviceContext.contextState.fenceMap.find(this);
+	if(i!=deviceContext.contextState.fenceMap.end())
+		deviceContext.contextState.fenceMap.erase(i);
 }
 
 void Texture::InvalidateDeviceObjects()

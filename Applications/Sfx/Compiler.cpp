@@ -220,8 +220,11 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	DWORD exitCode=0;
 	if(!GetExitCodeProcess(processInfo.hProcess, &exitCode))
 		return false;
-	if(exitCode!=0)
+	if(exitCode!=0&&exitCode!= 0xc0000005)//0xc0000005 is a bullshit error dxc occasionally throws up for no good reason.
+	{
+		SFX_CERR << "Exit code: 0x" <<std::hex<< (int)exitCode << std::endl;
 		has_errors=true;
+	}
 	//WaitForSingleObject( processInfo.hProcess, INFINITE );
  	CloseHandle( processInfo.hProcess );
 	CloseHandle( processInfo.hThread );

@@ -40,6 +40,11 @@ namespace simul
 		class SamplerState;
 		class Layout;
 		enum class ShaderResourceType;
+		struct Fence
+		{
+			crossplatform::Texture *texture;
+			unsigned long long label;
+		};
 		struct TextureAssignment
 		{
 			crossplatform::Texture *texture;
@@ -158,6 +163,7 @@ namespace simul
 		typedef FastMap<TextureAssignment,32> TextureAssignmentMap;
 		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
 		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
+		typedef std::unordered_map<const Texture*,Fence> FenceMap;
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
@@ -178,11 +184,13 @@ namespace simul
 			SamplerStateAssignmentMap samplerStateOverrides;
 			TextureAssignmentMap textureAssignmentMap;
 			TextureAssignmentMap rwTextureAssignmentMap;
+			FenceMap fenceMap;
 			EffectPass *currentEffectPass=nullptr;
-			EffectTechnique *currentTechnique=nullptr;
+			//EffectTechnique *currentTechnique=nullptr;
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
 			Topology topology;
+			int apply_count = 0;
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -228,6 +236,7 @@ namespace simul
 			RenderPlatform *renderPlatform;
 			EffectTechnique *activeTechnique;
 			crossplatform::ContextState contextState;
+			int ApiCallCounter=0;
 			long long frame_number;
 			bool initialized;
 			int framePrintX=0;

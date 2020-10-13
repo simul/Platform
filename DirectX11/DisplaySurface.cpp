@@ -202,7 +202,7 @@ void DisplaySurface::Resize()
     RECT rect;
 	InitSwapChain();
 #if defined(WINVER) &&!defined(_XBOX_ONE)
-    if (!GetWindowRect((HWND)mHwnd, &rect))
+    if (!GetClientRect((HWND)mHwnd, &rect))
         return;
 	if(!mSwapChain)
 		return;

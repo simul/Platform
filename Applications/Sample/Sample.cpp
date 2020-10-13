@@ -29,6 +29,7 @@
 #include "Platform/OpenGL/Texture.h"
 #endif
 #include "Platform/CrossPlatform/HDRRenderer.h"
+#include "Platform/CrossPlatform/SphericalHarmonics.h"
 #include "Platform/CrossPlatform/View.h"
 #include "Platform/CrossPlatform/Mesh.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
@@ -93,6 +94,8 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	static const bool reverseDepth=true;
 	//! A framebuffer to store the colour and depth textures for the view.
 	crossplatform::BaseFramebuffer	*hdrFramebuffer;
+	crossplatform::Texture* specularTexture = nullptr;
+	crossplatform::Texture* diffuseCubemapTexture = nullptr;
 	//! An HDR Renderer to put the contents of hdrFramebuffer to the screen. In practice you will probably have your own method for this.
 	crossplatform::HdrRenderer		*hDRRenderer;
 	
@@ -211,6 +214,8 @@ public:
 		OnLostDevice();
 		del(hDRRenderer,NULL);
 		del(hdrFramebuffer,NULL);
+		delete diffuseCubemapTexture;
+		delete specularTexture;
 		delete exampleMesh;
 		delete depthTexture;
 		delete renderPlatform;
@@ -269,6 +274,30 @@ public:
 
 	}
 
+	void GenerateCubemaps(crossplatform::DeviceContext& deviceContext)
+	{
+		crossplatform::Texture* hdrTexture = renderPlatform->CreateTexture("Textures/environment.hdr");
+		//diffuseCubemap = renderPlatform->CreateTexture("abandoned_tank_farm_04_2k.hdr");
+		delete specularTexture;
+		specularTexture = renderPlatform->CreateTexture("specularTexture");
+		specularTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 8, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
+		// plonk the hdr into the cubemap.
+		renderPlatform->LatLongTextureToCubemap(deviceContext, specularTexture, hdrTexture);
+		delete hdrTexture;
+		delete diffuseCubemapTexture;
+		diffuseCubemapTexture = renderPlatform->CreateTexture("diffuseCubemapTexture");
+		diffuseCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 32, 32, 1, 1, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
+
+		crossplatform::SphericalHarmonics  sphericalHarmonics;
+
+		// Now we will calculate spherical harmonics.
+		sphericalHarmonics.RestoreDeviceObjects(renderPlatform);
+		sphericalHarmonics.RenderMipsByRoughness(deviceContext, specularTexture);
+		sphericalHarmonics.CalcSphericalHarmonics(deviceContext, specularTexture);
+		// And using the harmonics, render a diffuse map:
+		sphericalHarmonics.RenderEnvmap(deviceContext, diffuseCubemapTexture, -1, 0.0f);
+	}
+
 	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame) override
 	{
 		// Device context structure
@@ -300,6 +329,8 @@ public:
 			deviceContext.viewStruct.Init();
 		}
 		renderPlatform->BeginFrame(deviceContext);
+		if(!diffuseCubemapTexture)
+			GenerateCubemaps(deviceContext);
 		// Profiling
 #if DO_PROFILING 
 		simul::crossplatform::SetGpuProfilingInterface(deviceContext, renderPlatform->GetGpuProfiler());
@@ -314,7 +345,11 @@ public:
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
 			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+			cameraConstants.world = mat4::identity();
 			effect->SetConstantBuffer(deviceContext, &cameraConstants);
+			effect->SetTexture(deviceContext,"diffuseCubemap", diffuseCubemapTexture);
+			solidConstants.albedo=vec3(1.f,1.f,1.f);
+
 			effect->SetConstantBuffer(deviceContext, &solidConstants);
 			effect->Apply(deviceContext, "solid", 0);
 			exampleMesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);

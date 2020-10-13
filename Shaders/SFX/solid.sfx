@@ -45,7 +45,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 #ifdef SFX_OPENGL
     OUT.normal.xyz	=mul(mat3(world),IN.normal);
 #else
-    OUT.normal.xyz	=mul(world,vec4(IN.normal,0.0)).xyz;
+    OUT.normal.xyz	= mul(world,vec4(IN.normal,0.0)).xyz;
 #endif
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;
@@ -98,7 +98,7 @@ vec3 PBR(vec3 normal,vec3 viewDir,vec3 lightDir,vec3 lightColour,vec3 diffuseCol
 	float n_l		= saturate(dot(normal, lightDir));
 	vec3 envSpecularColour = EnvBRDFApprox(specularColour, roughnessE, n_v);
 
-	vec3 env3	=diffuseCubemap.Sample(cubeSamplerState,refl.xyz).rgb;
+	vec3 env3	=diffuseCubemap.Sample(cubeSamplerState, normal.xyz).rgb;
 	vec3 env	=specularCubemap.SampleLevel(cubeSamplerState,refl.xyz,roughnessE*11.0).rgb;
 	env			=mix(env, env3, saturate((roughnessE - 0.25) / 0.75));
 
@@ -117,13 +117,13 @@ vec3 PBR(vec3 normal,vec3 viewDir,vec3 lightDir,vec3 lightColour,vec3 diffuseCol
 	specular *= saturate(pow(n_v + ao, roughnessE) - 1. + ao);
 
 	vec3 colour = diffuse+specular;
-	return colour;
+	return abs(normal);
 }
 
 shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
     vec3 normal		=normalize(IN.normal);
-	vec3 view		= normalize(IN.wpos.xyz - viewPosition);
+	vec3 view		=normalize(IN.wpos.xyz - viewPosition);
     vec3 c			=PBR(normal, view, vec3(0,-.7,.7), vec3(0.5,.48,.45), albedo, vec3(1,1,1),roughness);
     vec4 u			=vec4(c.rgb,1.0);
 	return u;

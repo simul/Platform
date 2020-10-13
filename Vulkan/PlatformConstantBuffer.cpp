@@ -92,12 +92,13 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	if(!renderPlatform)
 		return;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	if(!vulkanDevice)
 		return;
 	for (uint32_t i = 0; i < kNumBuffers; i++)
 	{
-		vulkanDevice->destroyBuffer(mBuffers[i], nullptr);
-		vulkanDevice->freeMemory(mMemory[i], nullptr);
+		r->PushToReleaseManager(mBuffers[i]);
+		r->PushToReleaseManager(mMemory[i]);
 	}
 	//vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
 	//vulkanDevice->destroyDescriptorSetLayout(mDescLayout, nullptr);

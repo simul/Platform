@@ -110,11 +110,16 @@ namespace simul
 			int					mLastIdx=0;
 			GLuint				mGPUBuffer[mNumBuffers];
 			size_t				mTotalSize;
-			int				 mBinding;
-			bool				mGPUIsMapped;
-
+			int					mBinding;
+			void*				mCurReadMap = nullptr;
 			GLsync				mFences[mNumBuffers];
-			void* mCurReadMap = nullptr;
+
+			bool IsBufferMapped(size_t idx)
+			{
+				GLint mapped;
+				glGetNamedBufferParameteriv(mGPUBuffer[idx], GL_BUFFER_MAPPED, &mapped);
+				return mapped == GL_TRUE;
+			}
 		};
 
 		//! An OpenGl program object (combination of shaders)

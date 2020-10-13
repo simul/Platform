@@ -546,13 +546,13 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::E
 
 void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 {
-	if (apply_count != 1)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n", this->filename.c_str()));
-	apply_count--;
 	crossplatform::ContextState* cs = renderPlatform->GetContextState(deviceContext);
 	cs->textureAssignmentMapValid = false;
 	cs->rwTextureAssignmentMapValid = false;
-	crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
+	auto *t=currentTechnique;
+	int p=currentPass;
+	crossplatform::Effect::Unapply(deviceContext);
+	crossplatform::Effect::Apply(deviceContext, t, p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)

@@ -476,6 +476,16 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	res = queue->GetTimestampFrequency(&mTimeStampFreq);
 	SIMUL_ASSERT(res == S_OK);
 	SAFE_RELEASE(queue);
+	{
+		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+		res = m12Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m12Queue));
+		SIMUL_ASSERT(res == S_OK);
+
+		std::string str = base::QuickFormat(" mQueue " );
+		m12Queue->SetName(simul::base::StringToWString(str).c_str());
+	}
 #endif
 
 	// Load the RootSignature blobs
@@ -634,6 +644,7 @@ void RenderPlatform::InvalidateDeviceObjects()
         }
 	}
 	mResourceBin.clear();
+	SAFE_RELEASE(m12Queue);
 }
 
 void RenderPlatform::RecompileShaders()
@@ -1871,23 +1882,23 @@ static D3D_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
 	using namespace crossplatform;
 	switch(t)
 	{			
-	case POINTLIST:
+	case Topology::POINTLIST:
 		return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-	case LINELIST:
+	case Topology::LINELIST:
 		return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-	case LINESTRIP:
+	case Topology::LINESTRIP:
 		return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-	case TRIANGLELIST:
+	case Topology::TRIANGLELIST:
 		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	case TRIANGLESTRIP:
+	case Topology::TRIANGLESTRIP:
 		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-	case LINELIST_ADJ:
+	case Topology::LINELIST_ADJ:
 		return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
-	case LINESTRIP_ADJ:
+	case Topology::LINESTRIP_ADJ:
 		return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
-	case TRIANGLELIST_ADJ:
+	case Topology::TRIANGLELIST_ADJ:
 		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
-	case TRIANGLESTRIP_ADJ:
+	case Topology::TRIANGLESTRIP_ADJ:
 		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
 	default:
 		return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
@@ -2082,56 +2093,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	return true;
 }
 
-void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
-{
-	//commandList		= deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
-}
-
-void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext & )
-{
-}
-
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend/*=false*/,float gamma, bool debug)
-{
-	//ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
-
-	crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
-}
-
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
-
-	SetTopology(deviceContext,simul::crossplatform::TRIANGLESTRIP);
+	SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	commandList->DrawInstanced(4, 1, 0, 0);
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *,int ,bool ,bool ,bool)
-{
-
-}
-
-void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *,int ,bool )
-{
-	
-}
-
-void RenderPlatform::DrawCube(crossplatform::DeviceContext &)
-{
-	
-}
-
-void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
-{
-}
-
-void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
-{
-}
 
 crossplatform::Shader *RenderPlatform::CreateShader()
 {

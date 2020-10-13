@@ -91,9 +91,11 @@ namespace simul
 			D3D12				    = 18,   // Direct3D 12
 			Vulkan					= 21,	// Vulkan
 			Switch					= 22,	// Nintendo Switch NVN API
-			XboxOneD3D12			= 23,	//  XboxOne Direct3D 12
-			Commodore				= 45,	//  Commodore 64
-			Spectrum				= 77,	//  ZX Spectrum
+			XboxOneD3D12			= 23,	// XboxOne Direct3D 12
+			GameCoreXboxOne			= 24,	// Game Core Xbox One graphics API using Direct3D 12.
+			GameCoreScarlett		= 25,	// Game Core Scarlett graphics API using Direct3D 12.
+			Commodore				= 45,	// Commodore 64
+			Spectrum				= 25,	// ZX Spectrum
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 
@@ -120,6 +122,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		protected:
+			int ApiCallLimit=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
 			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
@@ -202,7 +205,7 @@ namespace simul
 			//! Ensures that all UAV read and write operation to the textures are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, crossplatform::Texture* texture) {};
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
-			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {}
+			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {};
 			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
@@ -254,6 +257,8 @@ namespace simul
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
 			/// Create a platform-specific effect instance.
 			Effect							*CreateEffect					(const char *filename_utf8);
+			///  Create a platform-specific effect pass.
+			//virtual EffectPass				*CreateEffectPass();
 			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
 			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
@@ -303,10 +308,24 @@ namespace simul
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t);
+
+			virtual void					SetTexture(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int array_idx = -1, int mip = -1);
+			virtual void					SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int index = -1, int mip = -1);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+
+			/// <summary>
+			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
+			/// </summary>
+			virtual void					ApplyPass						(DeviceContext& deviceContext, EffectPass* pass);
+
+			/// <summary>
+			/// Unapply the previously applied effect pass after use in a draw or compute call.
+			/// </summary>
+			virtual void					UnapplyPass						(DeviceContext& deviceContext);
+
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
 			/// Some platforms may not support this.
 			virtual void					StoreRenderState				(DeviceContext &){}
@@ -320,7 +339,7 @@ namespace simul
 			//! Store the current rendertargets and viewports at the top of the stack
 			virtual void					PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv);
 			//! Restore rendertargets and viewports from the top of the stack.
-			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
+			virtual void					PopRenderTargets(DeviceContext &deviceContext);
 			//! Resolve an MSAA texture to a normal texture.
 			virtual void					Resolve(DeviceContext &,Texture * /*destination*/,Texture * /*source*/){}
 
@@ -330,7 +349,6 @@ namespace simul
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 
-			virtual void					ClearFencedTextureList();
 			/// Fill in mipmaps from the zero level down.
 			virtual void					GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
 			// Get a blank (black) resource texture.
@@ -339,6 +357,7 @@ namespace simul
 			vec4							TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
 			virtual void					WaitForGpu(DeviceContext &){}
 			virtual void					WaitForFencedResources(crossplatform::DeviceContext &){}
+			virtual void					RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
@@ -355,6 +374,8 @@ namespace simul
 			static PixelFormat ToColourFormat(PixelFormat f);
 			static bool IsDepthFormat(PixelFormat f);
 			static bool IsStencilFormat(PixelFormat f);
+			// Track resources for debugging:
+			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;

@@ -1,6 +1,7 @@
 #include "Mesh.h"
 #include "DeviceContext.h"
 #include "Macros.h"
+#include "Platform/Math/Pi.h"
 
 using namespace simul;
 using namespace crossplatform;
@@ -173,15 +174,7 @@ const crossplatform::Mesh::SubMesh *crossplatform::Mesh::GetSubMesh(int index) c
 }
 
 static const float unity=1.0f;
-struct Vec2
-{
-	float x,y;
-};
-struct Vec3
-{
-	float x,y,z;
-};
-static const Vec3 box_vertices[8] =
+static const vec3 box_vertices[8] =
 {
 	{-unity,		-unity,	-unity},
 	{-unity,		-unity,	unity},
@@ -237,26 +230,43 @@ static const unsigned int box_indices[36] =
 	MMP,
 	MMM,
 };
-#include "Platform/Math/Pi.h"
 void Mesh::Initialize(crossplatform::RenderPlatform *r,crossplatform::MeshType m)
 {
 	renderPlatform = r;
 	if(m==MeshType::CUBE_MESH)
 	{
-		Initialize(renderPlatform,8,(const float*)box_vertices,(const float*)box_vertices,(const float*)box_vertices,12,(const unsigned *)box_indices,nullptr);
+		vec3 box_vertices2[36];
+		vec3 box_normals[36];
+		unsigned box_indices2[36];
+		for(int i=0;i<36;i++)
+		{
+			box_indices2[i]=i;
+			box_vertices2[i]= box_vertices[box_indices[i]];
+			int face=i/6;
+			float nx=0.f,ny=0.f,nz=0.f;
+			if(face <2)
+				nz= face ==0?1.f:-1.f;
+			else if (face < 4)
+				ny = face == 2 ? 1.f : -1.f;
+			else
+				nx = face == 4 ? 1.f : -1.f;
+			vec3 n(nx,ny,nz);
+			box_normals[i]=n;
+		}
+		Initialize(renderPlatform,36,(const float*)box_vertices2,(const float*)box_normals,(const float*)box_vertices2,12,(const unsigned *)box_indices2,nullptr);
 	}
 	else
 	{
 		static int lat=16,lon=32;
 		int vertex_count=(lat+1)*lon;
-		Vec3 *sphere_vertices =new Vec3[vertex_count];
-		Vec3 *sphere_normals =new Vec3[vertex_count];
-		Vec2 *sphere_uvs =new Vec2[vertex_count];
+		vec3 *sphere_vertices =new vec3[vertex_count];
+		vec3 *sphere_normals =new vec3[vertex_count];
+		vec2 *sphere_uvs =new vec2[vertex_count];
 		int index_count=2*lat*(lon+1);
 		unsigned int *sphere_indices=new unsigned int[index_count];
-		Vec3 *v=sphere_vertices;
-		Vec3 *n=sphere_normals;
-		Vec2 *u=sphere_uvs;
+		vec3 *v=sphere_vertices;
+		vec3 *n=sphere_normals;
+		vec2 *u=sphere_uvs;
 		for(int i=0;i<lat+1;i++)
 		{
 			float elev=float(i)/float(lat+1)*SIMUL_PI_F/2.0f;

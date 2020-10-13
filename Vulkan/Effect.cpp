@@ -194,17 +194,6 @@ crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
     return techniques_by_index[index];
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index, int mip)
-{
-    auto res = GetShaderResource(name);
-    SetUnorderedAccessView(deviceContext, res, tex, index, mip);
-}
-
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
-{
-	crossplatform::Effect::SetUnorderedAccessView(deviceContext,name,tex,index,mip);
-}
-
 void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)
 {
     RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
@@ -225,15 +214,10 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Ef
 
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)
 {
-    if (apply_count != 1)
-    {
-        SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n", this->filename.c_str()));
-    }
-    apply_count--;
     crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
     cs->textureAssignmentMapValid = false;
     cs->rwTextureAssignmentMapValid = false;
-    crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
+    crossplatform::Effect::Reapply(deviceContext);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext& deviceContext)

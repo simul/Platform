@@ -1,6 +1,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
+#include "Platform/Core/StringFunctions.h"
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
@@ -259,7 +260,7 @@ void DisplaySurface::InitSwapChain()
 #if defined(WINVER) 
 	RECT rect;
 
-	GetWindowRect((HWND)mHwnd, &rect);
+	GetClientRect((HWND)mHwnd, &rect);
 
 	int screenWidth = abs(rect.right - rect.left);
 	int screenHeight = abs(rect.bottom - rect.top);
@@ -435,6 +436,11 @@ void DisplaySurface::InitSwapChain()
 		swapchainImages.resize(swapchainImageCount);
 		result = vulkanRenderPlatform->AsVulkanDevice()->getSwapchainImagesKHR(swapchain, (uint32_t*)&swapchainImageCount, swapchainImages.data());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		for(int i=0;i<swapchainImages.size();i++)
+		{
+			SetVulkanName( renderPlatform, &(swapchainImages[i]), base::QuickFormat("Swapchain %d",i));
+		}
 	}
 	swapchain_image_resources.resize(swapchainImages.size());
 
@@ -559,7 +565,7 @@ void DisplaySurface::InitSwapChain()
 
 void DisplaySurface::CreateRenderPass() 
 {
-	vulkanRenderPlatform->CreateVulkanRenderpass(render_pass,1,pixelFormat);
+	vulkanRenderPlatform->CreateVulkanRenderpass(deferredContext,render_pass,1,pixelFormat);
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
 // because at the start of the renderpass, we don't care about their contents.
 // At the start of the subpass, the color attachment's layout will be transitioned
@@ -805,6 +811,10 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 {
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
+
+	if (!swapchain)
+		InitSwapChain();
+
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 // Ensure no more than FRAME_LAG renderings are outstanding
 	vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
@@ -854,6 +864,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	renderPlatform->StoreRenderState(deferredContext);
 
+	EnsureImageLayout();
 	commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
 
 	auto const vkViewport =
@@ -884,6 +895,29 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	Resize();
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
+}
+
+void DisplaySurface::EnsureImageLayout()
+{
+	vk::Image &image=swapchain_image_resources[current_buffer].image;
+
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
+	vk::AccessFlags dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllCommands;	// very general..
+
+	auto  barrier = vk::ImageMemoryBarrier()
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setOldLayout(vk::ImageLayout::eUndefined)
+		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(image);
+	swapchain_image_resources[current_buffer].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+
 }
 
 void DisplaySurface::Present()
@@ -972,7 +1006,7 @@ void DisplaySurface::Resize()
 {
 #ifdef _MSC_VER
 	RECT rect;
-	if (!GetWindowRect((HWND)mHwnd, &rect))
+	if (!GetClientRect((HWND)mHwnd, &rect))
 		return;
 	UINT W = abs(rect.right - rect.left);
 	UINT H = abs(rect.bottom - rect.top);

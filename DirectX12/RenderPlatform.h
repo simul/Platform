@@ -8,6 +8,7 @@
 #include "Platform/Shaders/SL/solid_constants.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 #include "SimulDirectXHeader.h"
+#include "ThisPlatform/Direct3D12.h"
 #include <vector>
 #include <queue>
 
@@ -70,12 +71,8 @@ namespace simul
 		public:
 											RenderPlatform();
 			virtual							~RenderPlatform();
-			virtual float				   GetDefaultOutputGamma() const override;
-#if defined(_XBOX_ONE)  || defined(_GAMING_XBOX)
-			const char* GetName() const override { return "DirectX 12 Xbox One"; }
-#else
-			const char*	GetName() const override {return "DirectX 12";}
-#endif
+			virtual float					GetDefaultOutputGamma() const override;
+			const char* GetName() const override { return PLATFORM_NAME; }
 			crossplatform::RenderPlatformType GetType() const override
 			{
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
@@ -86,7 +83,7 @@ namespace simul
 			}
 			virtual const char *			GetSfxConfigFilename() const override
 			{
-				return "HLSL/HLSL12.json";
+				return SFX_CONFIG_FILENAME;
 			}
 			//! Returns the time stamp freq value
 			UINT64						  GetTimeStampFreq() const		 { return mTimeStampFreq; }
@@ -140,7 +137,6 @@ namespace simul
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
 			void									BeginFrame(crossplatform::DeviceContext& deviceContext);
 			void									EndFrame(crossplatform::DeviceContext& deviceContext);
-			void									IntializeLightingEnvironment(const float pAmbientLight[3]);
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
@@ -150,12 +146,8 @@ namespace simul
 			void									Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			
-			void									DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false) override;
 			void									DrawQuad		(crossplatform::DeviceContext &deviceContext);
 
-			void									DrawLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
-			void									Draw2dLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip);
-			void									DrawCube		(crossplatform::DeviceContext &deviceContext);
 			void									ApplyDefaultMaterial();
 
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr) override;
@@ -191,10 +183,6 @@ namespace simul
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
 
-			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
-			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;

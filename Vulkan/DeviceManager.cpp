@@ -102,8 +102,7 @@ DeviceManager::~DeviceManager()
 	delete deviceManagerInternal;
 }
 
-static bool CheckLayers(uint32_t check_count, char const *const *const check_names, uint32_t layer_count,
-	vk::LayerProperties *layers)
+static bool CheckLayers(uint32_t check_count, char const *const *const check_names, uint32_t layer_count, vk::LayerProperties *layers)
 {
 	for (uint32_t i = 0; i < check_count; i++)
 	{
@@ -119,6 +118,7 @@ static bool CheckLayers(uint32_t check_count, char const *const *const check_nam
 		if (!found)
 		{
 			fprintf(stderr, "Cannot find layer: %s\n", check_names[i]);
+			ERRNO_CHECK;
 			return false;
 		}
 	}
@@ -145,6 +145,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	enabled_extension_count = 0;
 	enabled_layer_count = 0;
 
+	char const *const instance_validation_layers_main[] = { "VK_LAYER_KHRONOS_validation" };
+
 	char const *const instance_validation_layers_alt1[] = { "VK_LAYER_LUNARG_standard_validation" };
 
 	char const *const instance_validation_layers_alt2[] = { "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation",
@@ -153,48 +155,64 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	
  	ERRNO_BREAK
 	// Look for validation layers
-	vk::Bool32 validation_found = VK_FALSE;
 	if (use_debug)
 	{
-		auto result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
+		vk::Result result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
 		SIMUL_VK_ASSERT_RETURN(result);
 
-		instance_validation_layers = instance_validation_layers_alt1;
 		if (instance_layer_count > 0)
 		{
 			std::unique_ptr<vk::LayerProperties[]> instance_layers(new vk::LayerProperties[instance_layer_count]);
 			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.get());
 			SIMUL_VK_ASSERT_RETURN(result);
 
-			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers,
-				instance_layer_count, instance_layers.get());
-			if (validation_found)
+			vk::Bool32 validation_set = VK_FALSE;
+			vk::Bool32 validation_found = VK_FALSE;
+
+			//Main
+			validation_found = CheckLayers(_countof(instance_validation_layers_main), instance_validation_layers_main, instance_layer_count, instance_layers.get());
+			if (validation_found && !validation_set)
 			{
-				enabled_layer_count = _countof(instance_validation_layers_alt1);
-				enabled_layers[0] = "VK_LAYER_LUNARG_standard_validation";
+				instance_validation_layers = instance_validation_layers_main;
+				enabled_layer_count = _countof(instance_validation_layers_main);
+				enabled_layers[0] = instance_validation_layers_main[0];
 				validation_layer_count = 1;
+				validation_set = VK_TRUE;
 			}
-			else
+
+			//Alt1
+			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers_alt1, instance_layer_count, instance_layers.get());
+			if (validation_found && !validation_set)
 			{
-				// use alternative set of validation layers
+				instance_validation_layers = instance_validation_layers_alt1;
+				enabled_layer_count = _countof(instance_validation_layers_alt1);
+				enabled_layers[0] = instance_validation_layers_alt1[0];
+				validation_layer_count = 1;
+				validation_set = VK_TRUE;
+			}
+
+			//Alt2
+			validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers_alt2, instance_layer_count, instance_layers.get());
+			if (validation_found && !validation_set)
+			{
 				instance_validation_layers = instance_validation_layers_alt2;
 				enabled_layer_count = _countof(instance_validation_layers_alt2);
-				validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers,
-					instance_layer_count, instance_layers.get());
 				validation_layer_count = _countof(instance_validation_layers_alt2);
 				for (uint32_t i = 0; i < validation_layer_count; i++)
 				{
-					enabled_layers[i] = instance_validation_layers[i];
+					enabled_layers[i] = instance_validation_layers_alt2[i];
 				}
+				validation_set = VK_TRUE;
 			}
-		}
 
-		if (!validation_found)
-		{
-			SIMUL_BREAK(
-				"vkEnumerateInstanceLayerProperties failed to find required validation layer.\n\n"
-				"Please look at the Getting Started guide for additional information.\n"
-				"vkCreateInstance Failure");
+			//Error
+			if (!validation_found && !validation_set)
+			{
+				SIMUL_BREAK(
+					"vkEnumerateInstanceLayerProperties failed to find required validation layer.\n\n"
+					"Please look at the Getting Started guide for additional information.\n"
+					"vkCreateInstance Failure");
+			}
 		}
 	}
  	ERRNO_BREAK
@@ -509,14 +527,14 @@ void RewriteVulkanMessage( std::string &str)
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-    VkDebugReportFlagsEXT       flags,
-    VkDebugReportObjectTypeEXT  objectType,
-    uint64_t                    object,
-    size_t                      location,
-    int32_t                     messageCode,
-    const char*                 pLayerPrefix,
-    const char*                 pMessage,
-    void*                       pUserData)
+	VkDebugReportFlagsEXT	   flags,
+	VkDebugReportObjectTypeEXT  objectType,
+	uint64_t					object,
+	size_t					  location,
+	int32_t					 messageCode,
+	const char*				 pLayerPrefix,
+	const char*				 pMessage,
+	void*					   pUserData)
 {
 	if(pLayerPrefix)
 		std::cerr<<pLayerPrefix<<" layer: ";
@@ -530,24 +548,24 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 		RewriteVulkanMessage(str);
 		std::cerr << str.c_str() << std::endl;
 	}
-	//if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
-		//SIMUL_BREAK("Vulkan Error");
-    return VK_FALSE;
+	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+		SIMUL_BREAK("Vulkan Error");
+	return VK_FALSE;
 }
 
 void DeviceManager::SetupDebugCallback()
 {
 	#if 1//def _DEBUG
 /* Load VK_EXT_debug_report entry points in debug builds */
-		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>     (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
-		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>            (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
-		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>    (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
+		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	 (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
+		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>			(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
+		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
 
 		/* Setup callback creation information */
 		VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
-		callbackCreateInfo.sType       = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-		callbackCreateInfo.pNext       = nullptr;
-		callbackCreateInfo.flags       = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+		callbackCreateInfo.sType	   = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+		callbackCreateInfo.pNext	   = nullptr;
+		callbackCreateInfo.flags	   = VK_DEBUG_REPORT_ERROR_BIT_EXT |
 										 VK_DEBUG_REPORT_WARNING_BIT_EXT |
 										 VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		callbackCreateInfo.pfnCallback = &DebugReportCallback;
@@ -563,8 +581,8 @@ void DeviceManager::CreateDevice()
 {
 	if(device_initialized)
 		return;
-    float const priorities[1] = {0.0};
-    std::vector<vk::DeviceQueueCreateInfo> queues;
+	float const priorities[1] = {0.0};
+	std::vector<vk::DeviceQueueCreateInfo> queues;
 	queues.resize(GetQueueProperties().size());
 	for(int i=0;i<queues.size();i++)
 	{
@@ -583,31 +601,32 @@ void DeviceManager::CreateDevice()
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"dualSrcBlend\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.samplerAnisotropy)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"samplerAnisotropy\". Unable to proceed.\n");
-		if(!deviceManagerInternal->gpu_features.shaderFloat64)
-			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
+			// No, we really don't need this:
+	//	if(!deviceManagerInternal->gpu_features.shaderFloat64)
+	//		SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
-    auto deviceInfo = vk::DeviceCreateInfo()
-                          .setQueueCreateInfoCount(1)
-                          .setPQueueCreateInfos(queues.data())
-                          .setEnabledLayerCount(0)
-                          .setPpEnabledLayerNames(nullptr)
-                          .setEnabledExtensionCount(enabled_extension_count)
-                          .setPpEnabledExtensionNames((const char *const *)extension_names.data())
-                          .setPEnabledFeatures(&deviceManagerInternal->gpu_features)
-						.setQueueCreateInfoCount((uint32_t)queues.size());
+	auto deviceInfo = vk::DeviceCreateInfo()
+							.setQueueCreateInfoCount(1)
+							.setPQueueCreateInfos(queues.data())
+							.setEnabledLayerCount(0)
+							.setPpEnabledLayerNames(nullptr)
+							.setEnabledExtensionCount(enabled_extension_count)
+							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
+							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
+							.setQueueCreateInfoCount((uint32_t)queues.size());
 	/*
-    if (separate_present_queue) {
-        queues[1].setQueueFamilyIndex(present_queue_family_index);
-        queues[1].setQueueCount(1);
-        queues[1].setPQueuePriorities(priorities);
-        deviceInfo.setQueueCreateInfoCount(2);
-    }*/
+	if (separate_present_queue) {
+		queues[1].setQueueFamilyIndex(present_queue_family_index);
+		queues[1].setQueueCount(1);
+		queues[1].setPQueuePriorities(priorities);
+		deviceInfo.setQueueCreateInfoCount(2);
+	}*/
 
-    auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
+	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
 	device_initialized=result == vk::Result::eSuccess;
-    SIMUL_ASSERT(device_initialized);
+	SIMUL_ASSERT(device_initialized);
 }
 
 std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKHR *surface)

@@ -23,34 +23,35 @@ namespace simul
             unsigned char* data;
         };
 
-		class SIMUL_OPENGL_EXPORT SamplerState:public crossplatform::SamplerState
+		class SIMUL_OPENGL_EXPORT SamplerState : public crossplatform::SamplerState
 		{
 		public:
 			        SamplerState();
 			virtual ~SamplerState() override;
             void    Init(crossplatform::SamplerStateDesc* desc);
 			void    InvalidateDeviceObjects() override;
-            GLuint  asGLuint()override;
+            GLuint  asGLuint() override;
+
         private:
             GLuint mSamplerID;
 		};
 
-		class SIMUL_OPENGL_EXPORT Texture:public simul::crossplatform::Texture
+		class SIMUL_OPENGL_EXPORT Texture : public simul::crossplatform::Texture
 		{
 		public:
 			                Texture();
 							~Texture() override;
             
-            void            SetName(const char* n)override;
+            void            SetName(const char* n) override;
 
 			void            LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8) override;
 			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1) override;
 			bool            IsValid() const override;
 			void            InvalidateDeviceObjects() override;
 			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			bool            ensureTexture2DSizeAndFormat(   crossplatform::RenderPlatform *renderPlatform, int w, int l,
-                                                            crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
-															vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
+			bool            ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,
+                                                         crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
+                                                         vec4 clear = vec4(0.0f, 0.0f, 0.0f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
 			bool            ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool ascubemap=false) override;
 			bool            ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false) override;
 			void            ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear) override;
@@ -73,7 +74,7 @@ namespace simul
 			void			MakeHandleResident(GLuint64 h);
         private:
             LoadedTexture   LoadTextureData(const char* path);
-            bool            IsSame(int w, int h, int d,int arraySize, int m, int msaa);
+            bool            IsSame(int w, int h, int d, int arraySize, int m, int msaa);
             //! Initializes the texture views
             void            InitViews(int mipCount, int layers, bool isRenderTarget);
             //! Creates the Framebuffers for this texture
@@ -84,6 +85,7 @@ namespace simul
             void            SetGLName(const char* n, GLuint id);
 
             GLenum                              mInternalGLFormat;
+            GLenum                              mGLFormat;
             GLuint                              mTextureID;
             GLuint                              mCubeArrayView;
 

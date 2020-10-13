@@ -16,11 +16,11 @@
 	#ifdef _GAMING_XBOX_SCARLETT
 		#include "ThisPlatform/Direct3D12.h"
 	#else
-#ifndef _GAMING_XBOX //Deprecated from the GDK
-	#include <D3Dcompiler_x.h>
-#else
-	#include <D3Dcompiler.h>
-#endif
+		#ifndef _GAMING_XBOX //Deprecated from the GDK
+			#include <D3Dcompiler_x.h>
+		#else
+			#include <D3Dcompiler.h>
+		#endif
 	#include <d3d12_x.h>		//! core 12.x header
 	#include <d3dx12_x.h>		//! utility 12.x header
 	#endif
@@ -38,17 +38,52 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
+inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
+{
+	UINT size=0;
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
-	#pragma comment(lib,"d3d12_x")
-	#pragma comment(lib,"d3dcompiler")
+	// not implemented?????
+	name[0] = 0;
 #else
-	#pragma comment(lib,"d3d12.lib")
-	#pragma comment(lib,"D3dcompiler.lib")
-	#pragma comment(lib,"DXGI.lib")
-#endif 
+	GUID g = WKPDID_D3DDebugObjectName;
+	HRESULT hr=(obj)->GetPrivateData(g,&size,	nullptr);
+	if(hr==S_OK)
+	{
+		if(size <= maxsize)
+			(obj)->GetPrivateData(g, &size, name);
+	}
+	else
+	{
+		g= WKPDID_D3DDebugObjectNameW;
+		hr = (obj)->GetPrivateData(g, &size, nullptr);
+		if (hr == S_OK)
+		{
+			wchar_t * src_w =new wchar_t[size+1];
+			(obj)->GetPrivateData(g, &size, src_w);
+			WideCharToMultiByte(CP_UTF8, 0, src_w, (int)size, name, (int)maxsize, NULL, NULL);
+			delete [] src_w;
+		}
+	}
+#endif
+}
 
 #ifndef SAFE_RELEASE
 	#define SAFE_RELEASE(p)			{ if(p) { (p)->Release(); (p)=nullptr; } }
+	#define SAFE_RELEASE_DEBUG(p)	{\
+										if(p)\
+										{\
+											(p)->AddRef();\
+											int refct=(p)->Release()-1;\
+											if(refct!=21623460)\
+											{\
+												char name[20];\
+												GetD3DName((p),name,20);\
+												SIMUL_COUT<< name<<" refct "<<refct<<std::endl;\
+											}\
+											(p)->Release();\
+											(p)=nullptr;\
+										}\
+									}
 #endif
 
 #ifndef SAFE_RELEASE_LATER

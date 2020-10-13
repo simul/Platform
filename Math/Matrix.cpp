@@ -1928,7 +1928,7 @@ Matrix& Matrix::operator=(const Matrix &M)
 
 Matrix& Matrix::operator=(const float *m)
 {
-	for(size_t i=0;i<Height*Width;i++)
+	for(size_t i=0;i<(size_t)Height*(size_t)Width;i++)
 		Values[i]=m[i];
 	return *this;
 }

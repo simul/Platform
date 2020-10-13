@@ -66,7 +66,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(!commandBuffer)
-		return ;
+		return;
 	vk::Device *vulkanDevice	=renderPlatform->AsVulkanDevice();
 	
     vulkan::Shader* c	= (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
@@ -276,8 +276,22 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		}
 		cs->bufferSlots|=(1<<slot);
 	}
-	if(num_descr)
-		vulkanDevice->updateDescriptorSets(num_descr, writes, 0,nullptr);
+	if (num_descr)
+	{
+		for (int i = 0; i < num_descr; i++)
+		{
+			vk::WriteDescriptorSet& write = writes[i];
+			bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
+			
+			if (no_res)
+			{
+				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in shader '"
+					<< c->name << "' has no valid resource associated with it." << std::endl;
+				SIMUL_BREAK("VkWriteDescriptorSet error.");
+			}
+		}
+		vulkanDevice->updateDescriptorSets(num_descr, writes, 0, nullptr);
+	}
 
 	static bool error_checking=true;
 	// Now verify that ALL resource are set:
@@ -365,18 +379,22 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			tv=deviceContext.targetStack.top();
 		else
 			tv=&(deviceContext.defaultTargetsAndViewport);
+	#if 1
 		for(int i=0;i<tv->num;i++)
 		{
+			auto &tt= tv->textureTargets[i];
 			if(tv->textureTargets[i].texture)
-				((vulkan::Texture*)tv->textureTargets[i].texture)->AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
+				((vulkan::Texture*)tt.texture)->SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
 		}
 		if(tv->depthTarget.texture)
 		{
+			auto& dt = tv->depthTarget;
 			if(depthStencilState->desc.depth.write)
-				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-			/*else if(depthStencilState->desc.depth.test)
-				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilReadOnlyOptimal);*/
+				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(deviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal,dt.layer,dt.mip);
+			else if(depthStencilState->desc.depth.test)
+				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(deviceContext,vk::ImageLayout::eDepthStencilReadOnlyOptimal,dt.layer,dt.mip);
 		}
+	#endif
 	}
 }
 

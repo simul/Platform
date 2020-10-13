@@ -215,7 +215,6 @@ EffectTechniqueGroup::~EffectTechniqueGroup()
 
 Effect::Effect()
 	:renderPlatform(NULL)
-	,apply_count(0)
 	,currentPass(0)
 	,currentTechnique(NULL)
 	,platform_effect(NULL)
@@ -225,7 +224,6 @@ Effect::Effect()
 Effect::~Effect()
 {
 	InvalidateDeviceObjects();
-	SIMUL_ASSERT(apply_count==0);
 	for (auto& i : depthStencilStates)
 	{
 		delete i.second;
@@ -261,18 +259,22 @@ void Effect::InvalidateDeviceObjects()
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	depthStencilStates.clear();
 	for (auto& i : blendStates)
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	blendStates.clear();
 	for (auto& i : rasterizerStates)
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	rasterizerStates.clear();
 	for (auto& i : rtFormatStates)
 	{
 		i.second->InvalidateDeviceObjects();
 	}
+	rtFormatStates.clear();
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
@@ -322,6 +324,7 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_name.size();
 }
 
+
 EffectPass *EffectTechnique::GetPass(int i)
 {
 	return passes_by_index[i];
@@ -367,36 +370,14 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  cro
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
 {
-	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
-	if(!res.valid)
-		return;
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	unsigned long slot=res.slot;
-	unsigned long dim=res.dimensions;
-#ifdef _DEBUG
-	if(!tex)
-	{
-		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
-	}
-	else if(!tex->IsValid())
-	{
-		SIMUL_BREAK_ONCE("Invalid texture applied");
-		return;
-	}
-#endif
-	crossplatform::TextureAssignment &ta=cs->textureAssignmentMap[slot];
-	ta.resourceType=res.shaderResourceType;
-	ta.texture=(tex&&tex->IsValid()&&res.valid)?tex:0;
-	ta.dimensions=dim;
-	ta.uav=false;
-	ta.index=index;
-	ta.mip=mip;
-	cs->textureAssignmentMapValid=false;
+	renderPlatform->SetTexture(deviceContext,res,tex,index,mip);
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index,int mip)
 {
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
+	const ShaderResource &i = GetShaderResource(name);
+	SetTexture(deviceContext,i,tex,index,mip);
+/*	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	int slot = GetSlot(name);
 	if(slot<0)
 	{
@@ -411,38 +392,20 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 	ta.uav=false;
 	ta.index=index;
 	ta.mip=mip;
-	cs->textureAssignmentMapValid=false;
+	cs->textureAssignmentMapValid=false;*/
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
 {
-	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
-	if(!res.valid)
-		return;
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	unsigned long slot=res.slot;
-	if (slot >=1000)
-		slot -= 1000;
-	unsigned long dim=res.dimensions;
-	auto &ta=cs->rwTextureAssignmentMap[slot];
-	ta.resourceType=res.shaderResourceType;
-	ta.texture=(tex&&tex->IsValid()&&res.valid)?tex:0;
-	ta.dimensions=dim;
-	ta.uav=true;
-	ta.mip=mip;
-	ta.index=index;
-	cs->rwTextureAssignmentMapValid=false;
-}
+	renderPlatform->SetUnorderedAccessView(deviceContext,  res,  tex,  index,  mip);
 
+}
+ 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
 {
-	const ShaderResource *i=GetTextureDetails(name);
-	if(!i)
-	{
-		SIMUL_CERR<<"Didn't find UAV "<<name<<std::endl;
-		return;
-	}
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
+	const ShaderResource &i=GetShaderResource(name);
+	SetUnorderedAccessView(deviceContext,i,t,index,mip);
+/*	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	// Make sure no slot clash between uav's and srv's:
 	int slot = GetSlot(name);
 	{
@@ -456,7 +419,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 		ta.mip=mip;
 		ta.index=index;
 	}
-	cs->rwTextureAssignmentMapValid=false;
+	cs->rwTextureAssignmentMapValid=false;*/
 }
 
 const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
@@ -576,65 +539,44 @@ void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
-	if (apply_count != 0)
-		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
 	currentTechnique				=effectTechnique;
 	if(effectTechnique)
 	{
 		EffectPass *p				=(effectTechnique)->GetPass(pass_num>=0?pass_num:0);
-		if(p)
-		{
-			crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-			cs->invalidate();
-			cs->currentEffectPass=p;
-			cs->currentTechnique=effectTechnique;
-			cs->currentEffect=this;
-		}
-		else
-			SIMUL_BREAK("No pass found");
+		deviceContext.renderPlatform->ApplyPass(deviceContext, p);
 	}
 	currentPass=pass_num;
 }
 
+void Effect::Reapply(DeviceContext& deviceContext)
+{
+	auto *p= deviceContext.contextState.currentEffectPass;
+	Unapply(deviceContext);
+	Apply(deviceContext,p);
+}
+
+void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* p)
+{
+	renderPlatform->ApplyPass(deviceContext, p);
+}
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
-	currentTechnique				=effectTechnique;
-	if (apply_count != 0)
-		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
+	EffectPass* p = nullptr;
 	currentTechnique = effectTechnique;
 	if (effectTechnique)
 	{
-		EffectPass *p = NULL;
 		if(passname)
 			p=effectTechnique->GetPass(passname);
 		else
 			p=effectTechnique->GetPass(0);
-		if(p)
-		{
-			crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-			cs->invalidate();
-			cs->currentTechnique=effectTechnique;
-			cs->currentEffectPass=p;
-			cs->currentEffect=this;
-		}
-		else
-			SIMUL_BREAK("No pass found");
 	}
+	Apply(deviceContext,p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
-	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-	cs->currentEffectPass = NULL;
-	cs->currentEffect = NULL;
-	if (apply_count <= 0)
-		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
-	else if (apply_count>1)
-		SIMUL_BREAK("Effect::Apply has been called too many times!")
-		apply_count--;
+	renderPlatform->UnapplyPass(deviceContext);
 	currentTechnique = NULL;
 }
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
@@ -879,7 +821,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if(simul::base::SimulInternalChecks)
 				cmdLine += " -V";
 			// Includes
-			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;";
+			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;" + sourcePlatformPath + "\\Sfx;";
 			cmdLine += std::string(SIMUL)+ "\\Shaders\\SL;";
 			cmdLine += std::string(SIMUL) + "\\Platform\\Shaders\\SL";
 			cmdLine += "\"";
@@ -1029,6 +971,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		if(!result)
 		{
 			SIMUL_BREAK("Failed to build effect.");
+			if((buildMode & crossplatform::TRY_AGAIN_ON_FAIL) == 0)
+				break;
 		}
 	}
 #endif
@@ -1067,10 +1011,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 #endif
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{
-		#ifdef __ORBIS__
+		//#if defined(__ORBIS__)||defined(__COMMODORE__)
 		// Some engines force filenames to lower case because reasons:
 		std::transform(binFilenameUtf8.begin(), binFilenameUtf8.end(), binFilenameUtf8.begin(), ::tolower);
-		#endif
+		//#endif
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
 			string err=base::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
@@ -1247,6 +1191,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string props	=words[2];
 				size_t pos_b		=0;
 				crossplatform::RenderStateDesc desc;
+				desc.name=name;
 				desc.type=crossplatform::BLEND;
 				desc.blend.AlphaToCoverageEnable=toBool(simul::base::toNext(props,',', pos_b));
 				pos_b++;
@@ -1299,6 +1244,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				crossplatform::RenderStateDesc desc;
 				string name		 = words[1];
+				desc.name			=name.c_str();
 				desc.type		   = crossplatform::RTFORMAT;
 				vector<string> props = simul::base::split(words[2], ',');
 				if (props.size() != 8)
@@ -1317,6 +1263,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				string name		=words[1];
 				crossplatform::RenderStateDesc desc;
+				desc.name			=name.c_str();
 				desc.type=crossplatform::RASTERIZER;
 				/*
 					RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
@@ -1348,6 +1295,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string props	=words[2];
 				size_t pos_d		=0;
 				crossplatform::RenderStateDesc desc;
+				desc.name=name.c_str();
 				desc.type=crossplatform::DEPTH;
 				desc.depth.test=toBool(simul::base::toNext(props,',',pos_d));
 				desc.depth.write=toInt(simul::base::toNext(props,',',pos_d))!=0;

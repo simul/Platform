@@ -144,7 +144,7 @@ namespace sfx
 		,BLEND_OP_SUBTRACT
 		,BLEND_OP_MAX
 		,BLEND_OP_MIN
-	};
+	} ;
 	enum DepthComparison
 	{
 		DEPTH_ALWAYS,
@@ -155,7 +155,7 @@ namespace sfx
 		DEPTH_GREATER,
 		DEPTH_NOT_EQUAL,
 		DEPTH_GREATER_EQUAL
-	} ;
+	};
 	enum PixelOutputFormat
 	{
 		FMT_UNKNOWN

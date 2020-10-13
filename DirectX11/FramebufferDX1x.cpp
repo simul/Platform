@@ -102,8 +102,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	}
 	else
 	{
-		SIMUL_BREAK_ONCE("No valid textures in framebuffer.");
-		return;
+	// This is ok, as long as we don't render to an invalid texture. e.g. a minimized window.
 	}
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 	targetsAndViewport.m_rt[0]=renderTargetView;

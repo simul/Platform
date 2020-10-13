@@ -129,6 +129,16 @@ void RenderPlatform::RestoreGLState()
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mCachedState.Framebuffer);
 }
 
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture)
+{
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
+{
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str();
@@ -299,7 +309,7 @@ crossplatform::Buffer* RenderPlatform::CreateBuffer()
 	return new opengl::Buffer();
 }
 
-GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
+GLuint RenderPlatform::ToGLInternalFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -354,7 +364,7 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	};
 }
 
-crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p)
+crossplatform::PixelFormat RenderPlatform::FromGLInternalFormat(GLuint p)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -406,7 +416,7 @@ crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p)
 	};
 }
 
-GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
+GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -963,23 +973,23 @@ GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
 {
     switch (t)
     {
-    case crossplatform::POINTLIST:
+    case crossplatform::Topology::POINTLIST:
         return GL_POINTS;
-    case crossplatform::LINELIST:
+    case crossplatform::Topology::LINELIST:
         return GL_LINES;
-    case crossplatform::LINESTRIP:
+    case crossplatform::Topology::LINESTRIP:
         return GL_LINE_STRIP;
-    case crossplatform::TRIANGLELIST:
+    case crossplatform::Topology::TRIANGLELIST:
         return GL_TRIANGLES;
-    case crossplatform::TRIANGLESTRIP:
+    case crossplatform::Topology::TRIANGLESTRIP:
         return GL_TRIANGLE_STRIP;
-    case crossplatform::LINELIST_ADJ:
+    case crossplatform::Topology::LINELIST_ADJ:
         return GL_LINES_ADJACENCY;
-    case crossplatform::LINESTRIP_ADJ:
+    case crossplatform::Topology::LINESTRIP_ADJ:
         return GL_LINE_STRIP_ADJACENCY;
-    case crossplatform::TRIANGLELIST_ADJ:
+    case crossplatform::Topology::TRIANGLELIST_ADJ:
         return GL_TRIANGLES_ADJACENCY;
-    case crossplatform::TRIANGLESTRIP_ADJ:
+    case crossplatform::Topology::TRIANGLESTRIP_ADJ:
         return GL_TRIANGLE_STRIP_ADJACENCY;
     default:
         break;

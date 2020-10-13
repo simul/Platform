@@ -4,6 +4,8 @@
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifdef __cplusplus
+	// required for sqrt
+	#include <math.h>
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4324)
@@ -183,134 +185,150 @@
 			return r;
 		}
 	};
-	struct vec3d;
-	struct vec3
+	template<typename T> struct tvector3
 	{
-		float x,y,z;
-		vec3()
+		T x,y,z;
+		tvector3()
 		{
 		}
-		vec3(float x,float y,float z)
+		tvector3(T x,T y,T z)
 		{
 			this->x=x;
 			this->y=y;
 			this->z=z;
 		}
-		vec3(const float *v)
+		tvector3(const T *v)
 		{
 			operator=(v);
 		}
-		vec3(const int *v)
+		tvector3(const int *v)
 		{
 			operator=(v);
 		}
-		operator float *()
+		template<typename U> tvector3(const tvector3<U> &u)
+		{
+			operator=(u);
+		}
+		operator T *()
 		{
 			return &x;
 		}
-		operator const float *() const
+		operator const T *() const
 		{
 			return &x;
 		}
 		void operator=(const int *v)
 		{
-			x=float(v[0]);
-			y=float(v[1]);
-			z=float(v[2]);
+			x=T(v[0]);
+			y=T(v[1]);
+			z=T(v[2]);
 		}
-		void operator=(const float *v)
+		void operator=(const T *v)
 		{
 			x=v[0];
 			y=v[1];
 			z=v[2];
 		}
-		void operator*=(float m)
+		template<typename U> const tvector3 &operator=(const tvector3<U> &u)
+		{
+			x = (T)u.x;
+			y = (T)u.y;
+			z = (T)u.z;
+			return *this;
+		}
+		void operator*=(T m)
 		{
 			x*=m;
 			y*=m;
 			z*=m;
 		}
-		void operator/=(float m)
+		void operator/=(T m)
 		{
 			x/=m;
 			y/=m;
 			z/=m;
 		}
-		vec3 operator-() const
+		tvector3 operator-() const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=-x;
 			r.y=-y;
 			r.z=-z;
 			return r;
 		}
-		vec3 operator*(float m) const
+		tvector3 operator*(T m) const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=m*x;
 			r.y=m*y;
 			r.z=m*z;
 			return r;
 		}
-		vec3 operator/(float m) const
+		tvector3 operator/(T m) const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=x/m;
 			r.y=y/m;
 			r.z=z/m;
 			return r;
 		}
-		vec3 operator*(vec3 v) const
+		tvector3 operator*(tvector3 v) const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=v.x*x;
 			r.y=v.y*y;
 			r.z=v.z*z;
 			return r;
 		}
-		vec3 operator/(vec3 v) const
+		tvector3 operator/(tvector3 v) const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=x/v.x;
 			r.y=y/v.y;
 			r.z=z/v.z;
 			return r;
 		}
-		vec3 operator+(vec3 v) const
+		tvector3 operator+(tvector3 v) const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=x+v.x;
 			r.y=y+v.y;
 			r.z=z+v.z;
 			return r;
 		}
-		vec3 operator-(vec3 v) const
+		tvector3 operator-(tvector3 v) const
 		{
-			vec3 r;
+			tvector3 r;
 			r.x=x-v.x;
 			r.y=y-v.y;
 			r.z=z-v.z;
 			return r;
 		}
-		void operator*=(const float *v)
+		void operator*=(const T *v)
 		{
 			x*=v[0];
 			y*=v[1];
 			z*=v[2];
 		}
-		void operator+=(const float *v)
+		void operator+=(const T *v)
 		{
 			x+=v[0];
 			y+=v[1];
 			z+=v[2];
 		}
-		void operator-=(const float *v)
+		void operator-=(const T *v)
 		{
 			x-=v[0];
 			y-=v[1];
 			z-=v[2];
 		}
 	};
+	template<typename T> T length(const tvector3<T>& u)
+	{
+		T size = u.x * u.x + u.y * u.y + u.z * u.z;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
+	typedef tvector3<float> vec3;
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{
 		vec3 r;
@@ -435,12 +453,6 @@
 		r.y=m*v.y;
 		r.z=m*v.z;
 		return r;
-	}
-	inline float dot(const vec3 &a,const vec3 &b)
-	{
-		float c;
-		c=a.x*b.x+a.y*b.y+a.z*b.z;
-		return c;
 	}
 	struct vec4
 	{
@@ -946,120 +958,8 @@
 		}
 	};
 	//! Very simple 3 vector of doubles.
-	struct vec3d
-	{
-		union
-		{
-			double v[3];
-			struct
-			{
-				double	x, y, z;
-			};
-			struct
-			{
-				double	r, g, b;
-			};
-		};
-		vec3d()
-		{
-		}
-		vec3d(double X,double Y,double Z)
-			:x(X),y(Y),z(Z)
-		{
-		}
-		vec3d(vec3 v)
-			:x((double)v.x),y((double)v.y),z((double)v.z)
-		{
-		}
-		operator vec3() const
-		{
-			vec3 o;
-			o.x=(float)x;
-			o.y=(float)y;
-			o.z=(float)z;
-			return o;
-		}
-		operator double *()
-		{
-			return v;
-		}
-		operator const double *()
-		{
-			return v;
-		}
-		void operator=(const double *u)
-		{
-			for(int i=0;i<3;i++)
-				v[i]=u[i];
-		}
-		void operator=(const float *u)
-		{
-			for(int i=0;i<3;i++)
-				v[i]=(double)u[i];
-		}
-		void operator=(const vec3 &u)
-		{
-			x=double(u.x);
-			y=double(u.y);
-			z=double(u.z);
-		}
-		void operator*=(double m)
-		{
-			x*=m;
-			y*=m;
-			z*=m;
-		}
-		void operator/=(double m)
-		{
-			x/=m;
-			y/=m;
-			z/=m;
-		}
-		void operator+=(vec3d u)
-		{
-			x+=u.x;
-			y+=u.y;
-			z+=u.z;
-		}
-		void operator-=(vec3d u)
-		{
-			x-=u.x;
-			y-=u.y;
-			z-=u.z;
-		}
-		vec3d operator*(vec3d v2) const
-		{
-			vec3d ret;
-			ret.x=v2.x*x;
-			ret.y=v2.y*y;
-			ret.z=v2.z*z;
-			return ret;
-		}
-		vec3d operator/(vec3d v2) const
-		{
-			vec3d ret;
-			ret.x=x/v2.x;
-			ret.y=y/v2.y;
-			ret.z=z/v2.z;
-			return ret;
-		}
-		vec3d operator+(vec3d v2) const
-		{
-			vec3d ret;
-			ret.x=x+v2.x;
-			ret.y=y+v2.y;
-			ret.z=z+v2.z;
-			return ret;
-		}
-		vec3d operator-(vec3d v2) const
-		{
-			vec3d ret;
-			ret.x=x-v2.x;
-			ret.y=y-v2.y;
-			ret.z=z-v2.z;
-			return ret;
-		}
-	};
+	typedef tvector3<double> vec3d;
+
 	inline void vec3d_to_vec3(vec3&v3,const vec3d& v)
 	{
 		v3= vec3(float(v.x), float(v.y), float(v.z));
@@ -1071,6 +971,12 @@
 		r.y=a.z*b.x-b.z*a.x;
 		r.z=a.x*b.y-b.x*a.y;
 		return r;
+	}
+	template<typename T> T dot(const tvector3<T> &a,const tvector3<T> &b)
+	{
+		T c;
+		c=a.x*b.x+a.y*b.y+a.z*b.z;
+		return c;
 	}
 	//! Very simple 4x4 matrix of doubles.
 	struct mat4d

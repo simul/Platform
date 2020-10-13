@@ -4,7 +4,7 @@ namespace simul
 	namespace crossplatform
 	{
 		//! A cross-platform equivalent to the OpenGL and DirectX vertex topology formats
-		enum Topology
+		enum class Topology
 		{
 			UNDEFINED			
 			,POINTLIST			

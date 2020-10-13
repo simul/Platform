@@ -97,7 +97,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		SIMUL_CERR<<"SetPixelFormat Failed."<<std::endl;
 		return ;
 	}
-	pixelFormat	=RenderPlatform::FromGLFormat(glPixelFormat);
+	pixelFormat	=RenderPlatform::FromGLInternalFormat(glPixelFormat);
 	hRC=hglrc;
 	/*
 	hRC=wglCreateContext(hDC);

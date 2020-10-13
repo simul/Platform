@@ -8,7 +8,7 @@ using namespace dx12;
 
 DisplaySurface::DisplaySurface():
 	mDeviceRef(nullptr),
-	mQueue(nullptr),
+//	mQueue(nullptr),
 	mSwapChain(nullptr),
 	mRTHeap(nullptr)
 	,mCommandList(nullptr)
@@ -34,6 +34,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	{
 		return;
 	}
+	dx12::RenderPlatform *dx12RenderPlatform=static_cast<dx12::RenderPlatform*>(renderPlatform);
 	InvalidateDeviceObjects();
 
 	mHwnd				   = handle;
@@ -87,19 +88,21 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	SIMUL_ASSERT(res == S_OK);
 
 	// Create a command queue
+#if 0
 	D3D12_COMMAND_QUEUE_DESC queueDesc  = {};
 	queueDesc.Type					  = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags					 = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	res = mDeviceRef->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mQueue));
 	SIMUL_ASSERT(res == S_OK);
+
 	std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",handle,screenWidth,screenHeight);
 	mQueue->SetName(simul::base::StringToWString(str).c_str());
-
-	// Create it
+#endif
+	// Create swapchain
 	IDXGISwapChain1* swapChain	= nullptr;
 	res							= factory->CreateSwapChainForHwnd
 	(
-		mQueue,
+		dx12RenderPlatform->GetCommandQueue(),
 		mHwnd,
 		&swapChainDesc12,
 		nullptr,
@@ -153,7 +156,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
-	SAFE_RELEASE(mQueue);
+	//SAFE_RELEASE(mQueue);
 	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 	SAFE_RELEASE(mCommandList);
 }
@@ -214,6 +217,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 	rtvHeapDesc.NumDescriptors				= FrameCount; 
 	rtvHeapDesc.Type						= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	SAFE_RELEASE(mRTHeap);
 	result									= device->CreateDescriptorHeap(&rtvHeapDesc, SIMUL_PPV_ARGS(&mRTHeap));
 	SIMUL_ASSERT(result == S_OK);
 
@@ -221,6 +225,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 	UINT rtHandleSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTHeap->GetCPUDescriptorHandleForHeapStart());
+	#ifndef _GAMING_XBOX
 	if(mSwapChain)
 	for (UINT n = 0; n < FrameCount; n++)
 	{
@@ -239,6 +244,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 			SIMUL_ASSERT(result == S_OK);
 		}
 	}
+	#endif
 }
 
 void DisplaySurface::CreateSyncObjects()
@@ -257,6 +263,7 @@ void DisplaySurface::StartFrame()
 	if (mRecordingCommands) { return; }
 
 	HRESULT res = S_FALSE;
+	static UINT idx_old=0;
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
@@ -273,6 +280,7 @@ void DisplaySurface::StartFrame()
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
+	idx_old=idx;
 }
 
 void DisplaySurface::EndFrame()
@@ -285,12 +293,13 @@ void DisplaySurface::EndFrame()
 	HRESULT res = S_FALSE;
 	res = mCommandList->Close();
 	SIMUL_ASSERT(res == S_OK);
-//SIMUL_CERR<<"End Frame"<<std::endl;
+	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 	ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	mQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 
+#ifndef _GAMING_XBOX
 	// Present new frame
 	const DWORD dwFlags = 0;
 	const UINT SyncInterval = 1;
@@ -301,10 +310,10 @@ void DisplaySurface::EndFrame()
 		SIMUL_CERR << removedRes << std::endl;
 	}
 	SIMUL_ASSERT(res == S_OK);
-
+	#endif
 	// Signal at the end of the pipe, note that we use the cached index 
 	// or we will be adding a fence for the next frame!
-	mQueue->Signal(mGPUFences[idx], mFenceValues[idx]);
+	dx12RenderPlatform->GetCommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);
 }
 
 void DisplaySurface::WaitForAllWorkDone()
@@ -374,6 +383,7 @@ void DisplaySurface::Resize()
 	viewport.h			  = screenHeight;
 	viewport.x			  = viewport.y = 0;
 
+#ifndef _GAMING_XBOX
 	// Resize the swapchain buffers
 	HRESULT res = mSwapChain->ResizeBuffers
 	(
@@ -383,14 +393,10 @@ void DisplaySurface::Resize()
 		0
 	);
 	SIMUL_ASSERT(res == S_OK);
+	#endif
 	CreateRenderTargets(mDeviceRef);
 
 	renderer->ResizeView(mViewId, screenWidth, screenHeight);
-	if(mQueue)
-	{
-		std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",mHwnd,screenWidth,screenHeight);
-		mQueue->SetName(simul::base::StringToWString(str).c_str());
-	}
 	StartFrame();
 }
 

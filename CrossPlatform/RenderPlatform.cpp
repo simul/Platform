@@ -21,6 +21,7 @@
 #endif
 using namespace simul;
 using namespace crossplatform;
+std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
 
 ContextState& ContextState::operator=(const ContextState& cs)
 {
@@ -37,7 +38,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	textureAssignmentMap		=cs.textureAssignmentMap;
 	rwTextureAssignmentMap		=cs.rwTextureAssignmentMap;
 	currentEffectPass			=cs.currentEffectPass;
-	currentTechnique			=cs.currentTechnique;
+	//currentTechnique			=cs.currentTechnique;
 	currentEffect				=cs.currentEffect;
 	effectPassValid				=cs.effectPassValid;
 	vertexBuffersValid			=cs.vertexBuffersValid;
@@ -386,7 +387,7 @@ void RenderPlatform::EndFrame(DeviceContext &dev)
 }
 
 
-void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
+void RenderPlatform::Clear(DeviceContext &deviceContext,vec4 colour_rgba)
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
 	debugConstants.debugColour=colour_rgba;
@@ -394,15 +395,6 @@ void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 	debugEffect->Apply(deviceContext,clearTechnique,0);
 	DrawQuad(deviceContext);
 	debugEffect->Unapply(deviceContext);
-}
-
-void RenderPlatform::ClearFencedTextureList()
-{
-	for (auto i : fencedTextures)
-	{
-		i->SetFence(0);
-	}
-	fencedTextures.clear();
 }
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)
@@ -744,7 +736,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
-	SetTopology(deviceContext,TRIANGLESTRIP);
+	SetTopology(deviceContext,Topology::TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 
 	debugEffect->SetTexture(deviceContext, "cubeTexture", nullptr);
@@ -1055,7 +1047,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	{
 		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h==0)
 		{
-			SIMUL_BREAK_ONCE("The default viewport is empty. Please call deviceContext.setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
+			//SIMUL_BREAK_ONCE("The default viewport is empty. Please call deviceContext.setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
 		}
 		v= deviceContext.defaultTargetsAndViewport.viewport;
 	}
@@ -1137,6 +1129,12 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	Effect *e=CreateEffect(filename_utf8,defines);
 	return e;
 }
+
+/*Effect* RenderPlatform::CreateEffectPass()
+{
+	EffectPass* e = new EffectPass(this,effect);
+	return e;
+}*/
 void RenderPlatform::Destroy(Effect *&e)
 {
 	if (e)
@@ -1218,6 +1216,32 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
 
+void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
+{
+	crossplatform::ContextState& cs = deviceContext.contextState;
+	if (cs.apply_count != 0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	cs.apply_count++;
+	cs.invalidate();
+	//cs.currentTechnique = effectTechnique;
+	cs.currentEffectPass = pass;
+	if (!pass)
+		SIMUL_BREAK("No pass found");
+	cs.currentEffect = pass->GetEffect();
+}
+
+void RenderPlatform::UnapplyPass(DeviceContext& deviceContext)
+{
+	crossplatform::ContextState& cs = deviceContext.contextState;
+	cs.currentEffectPass = NULL;
+	cs.currentEffect = NULL;
+	if (cs.apply_count <= 0)
+		SIMUL_BREAK("RenderPlatform::UnapplyPass without a corresponding Apply!")
+	else if (cs.apply_count > 1)
+		SIMUL_BREAK("RenderPlatform::ApplyPass has been called too many times!")
+	cs.apply_count--;
+}
+
 DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return nullptr;
@@ -1250,9 +1274,59 @@ void RenderPlatform::SetIndexBuffer(DeviceContext &deviceContext,const Buffer *b
 	deviceContext.contextState.indexBuffer=buffer;
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext& deviceContext, crossplatform::Topology t)
+void RenderPlatform::SetTopology(DeviceContext& deviceContext, crossplatform::Topology t)
 {
 	deviceContext.contextState.topology = t;
+}
+
+
+void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if (!res.valid)
+		return;
+	ContextState* cs = GetContextState(deviceContext);
+	unsigned long slot = res.slot;
+	unsigned long dim = res.dimensions;
+#ifdef _DEBUG
+	if (!tex)
+	{
+		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
+	}
+	else if (!tex->IsValid())
+	{
+		//SIMUL_BREAK_ONCE("Invalid texture applied");
+		return;
+	}
+#endif
+	TextureAssignment& ta = cs->textureAssignmentMap[slot];
+	ta.resourceType = res.shaderResourceType;
+	ta.texture = (tex && tex->IsValid() && res.valid) ? tex : 0;
+	ta.dimensions = dim;
+	ta.uav = false;
+	ta.index = index;
+	ta.mip = mip;
+	cs->textureAssignmentMapValid = false;
+}
+
+void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if (!res.valid)
+		return;
+	crossplatform::ContextState* cs = GetContextState(deviceContext);
+	unsigned long slot = res.slot;
+	if (slot >= 1000)
+		slot -= 1000;
+	unsigned long dim = res.dimensions;
+	auto& ta = cs->rwTextureAssignmentMap[slot];
+	ta.resourceType = res.shaderResourceType;
+	ta.texture = (tex && tex->IsValid() && res.valid) ? tex : 0;
+	ta.dimensions = dim;
+	ta.uav = true;
+	ta.mip = mip;
+	ta.index = index;
+	cs->rwTextureAssignmentMapValid = false;
 }
 
 namespace simul
