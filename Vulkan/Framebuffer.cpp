@@ -118,7 +118,7 @@ bool Framebuffer::CreateBuffers()
     }
     if (!buffer_texture)
     {
-        std::string sn = "BaseFramebuffer_" + name;
+        std::string sn = "Framebuffer_Colour_" + name;
         buffer_texture = renderPlatform->CreateTexture(sn.c_str());
     }
     static int quality = 0;
@@ -135,7 +135,7 @@ bool Framebuffer::CreateBuffers()
     }
     if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)
     {
-        std::string sn = "BaseFramebufferDepth_" + name;
+        std::string sn = "Framebuffer_Depth_" + name;
         buffer_depth_texture = renderPlatform->CreateTexture(sn.c_str());
         buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality);
     }
@@ -261,9 +261,9 @@ vk::Framebuffer *Framebuffer::GetVulkanFramebuffer(crossplatform::DeviceContext 
 	if(cube_face<0)
 		cube_face=0;
 	if(buffer_texture&&colour_active)
-		((vulkan::Texture*)buffer_texture)->SplitLayouts();//vk::ImageLayout::ePresentSrcKHR);
+		((vulkan::Texture*)buffer_texture)->SplitLayouts();
 	if(buffer_depth_texture&&depth_active)
-		((vulkan::Texture*)buffer_depth_texture)->SplitLayouts();//vk::ImageLayout::eDepthStencilReadOnlyOptimal);
+		((vulkan::Texture*)buffer_depth_texture)->SplitLayouts();
 	if(depth_active)
 	{
 		if(colour_active)

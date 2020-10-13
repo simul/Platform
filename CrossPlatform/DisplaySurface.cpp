@@ -43,6 +43,10 @@ void DisplaySurface::SetRenderer(crossplatform::PlatformRendererInterface *ci,in
 	{
 		if(mViewId<0)
 			mViewId =renderer->AddView();
+		RECT rect;
+		GetClientRect(mHwnd,&rect);
+		viewport.w= rect.right-rect.left;
+		viewport.h=rect.bottom- rect.top;
 		renderer->ResizeView(mViewId,viewport.w,viewport.h);
 	}
 }

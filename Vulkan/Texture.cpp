@@ -82,7 +82,8 @@ void SamplerState::InvalidateDeviceObjects()
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
-	vulkanDevice->destroySampler(mSampler);
+	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
+	r->PushToReleaseManager(mSampler);
 	renderPlatform=nullptr;
 }
 
@@ -116,15 +117,16 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	LoadTextureArray(r,texture_files,1);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, const std::vector<std::string>& texture_files,int m)
 {
 	InvalidateDeviceObjects();
-	renderPlatform=r;
+	this->renderPlatform= renderPlatform;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	for(auto i:loadedTextures)
 	{
-		vulkanDevice->destroyBuffer(i.buffer);
-		vulkanDevice->freeMemory(i.mem, nullptr);
+		r->PushToReleaseManager(i.buffer);
+		r->PushToReleaseManager(i.mem);
 	}
 	loadedTextures.resize(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
@@ -157,14 +159,15 @@ void Texture::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
+	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(vulkanDevice)
 	{
 		InvalidateDeviceObjectsExceptLoaded();
 		for(auto i:loadedTextures)
 		{
-			vulkanDevice->destroyBuffer(i.buffer);
-			vulkanDevice->freeMemory(i.mem, nullptr);
+			r->PushToReleaseManager(i.buffer);
+			r->PushToReleaseManager(i.mem);
 		}
 		loadedTextures.clear();
 	}
@@ -188,38 +191,35 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		{
 			for(auto j:i)
 			{
-				//vulkanDevice->destroyFramebuffer(j);
 				r->PushToReleaseManager(j);
 			}
 		}
 		mFramebuffers.clear();
 		for(auto i:mMainMipViews)
 		{
-			//vulkanDevice->destroyImageView(i);
 			r->PushToReleaseManager(i);
 		}
 		for(auto i:mLayerMipViews)
 		{
 			for(auto j:i)
 			{
-				//vulkanDevice->destroyImageView(j);
 				r->PushToReleaseManager(j);
 			}
 		}
-		vulkanDevice->destroyImageView(mFaceArrayView);
-		vulkanDevice->destroyImageView(mCubeArrayView);
-		vulkanDevice->destroyImageView(mMainView);
-		vulkanDevice->destroyRenderPass(mRenderPass);
+		r->PushToReleaseManager(mFaceArrayView);
+		r->PushToReleaseManager(mCubeArrayView);
+		r->PushToReleaseManager(mMainView);
+		r->PushToReleaseManager(mRenderPass);
 		mRenderPass = nullptr;
 		mLayerViews.clear();
 		mMainMipViews.clear();
 		mLayerMipViews.clear();
 		if(!external_texture)
 		{
-			vulkanDevice->destroyImage(mImage, nullptr);
-			vulkanDevice->freeMemory(mMem, nullptr);
+			r->PushToReleaseManager(mImage);
+			r->PushToReleaseManager(mMem);
 		}
-		vulkanDevice->destroyBuffer(mBuffer, nullptr);
+		r->PushToReleaseManager(mBuffer);
 	}
 	renderPlatform=nullptr;
 }
@@ -384,7 +384,7 @@ void Texture::AssumeLayout(vk::ImageLayout layout)
 #ifdef _DEBUG
 	SIMUL_COUT<<"Assume layout for "<<name.c_str()<<": "<<to_string( layout )<<std::endl;
 #endif
-}
+ }
 
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
@@ -678,19 +678,24 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	// layer views: individual layers of an array.
 	if(dim==2&&totalNum>1)
 	{
-		//if(cubemap&&layers>1)
-		//	viewType=vk::ImageViewType::eCube;
-		//else
-			viewType=vk::ImageViewType::e2DArray;
+		int c=1;
+		if(cubemap)//&&layers>1)
+		{
+			viewType=vk::ImageViewType::eCube;
+			c=6;
+		}
+		else
+			viewType=vk::ImageViewType::e2D;
 		viewCreateInfo.setViewType(viewType);
 		mLayerViews.resize(totalNum);
-		for(int i=0;i<totalNum;i++)
+		for(int i=0;i< layers;i++)
 		{
-			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i,1));
+			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i*c,c));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerViews[i]));
 			SetVulkanName(renderPlatform,(uint64_t*)&mLayerViews[i],(name+" mFaceArrayView").c_str());
 		}
 	}
+	viewCreateInfo.setViewType(vk::ImageViewType::e2D);
 	mLayerMipViews.resize(totalNum);
 	for (int i = 0; i < totalNum; i++)
 	{
@@ -715,8 +720,8 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 {
 	if (!mRenderPass)
 	{
-		auto *v = (vulkan::RenderPlatform*)renderPlatform;
-		v->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
+		auto *r = (vulkan::RenderPlatform*)renderPlatform;
+		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
 	}
 	return mRenderPass;
 }
@@ -920,10 +925,11 @@ void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
 void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void* src, int texel_index, int num_texels)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vulkan::RenderPlatform *r=static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	for(auto i:loadedTextures)
 	{
-		vulkanDevice->destroyBuffer(i.buffer);
-		vulkanDevice->freeMemory(i.mem, nullptr);
+		r->PushToReleaseManager(i.buffer);
+		r->PushToReleaseManager(i.mem);
 	}
 	loadedTextures.clear();
 	loadedTextures.resize(1);

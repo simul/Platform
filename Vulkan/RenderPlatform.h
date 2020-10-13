@@ -50,6 +50,9 @@ namespace simul
 			void PushToReleaseManager(vk::DeviceMemory &);
 			void PushToReleaseManager(vk::ImageView&);
 			void PushToReleaseManager(vk::Framebuffer&);
+			void PushToReleaseManager(vk::RenderPass& r);
+			void PushToReleaseManager(vk::Image& i);
+			void PushToReleaseManager(vk::Sampler& i);
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
 			{
@@ -170,6 +173,9 @@ namespace simul
 			std::set<vk::DeviceMemory>						releaseMemories;
 			std::set<vk::ImageView>							releaseImageViews;
 			std::set<vk::Framebuffer>						releaseFramebuffers;
+			std::set<vk::RenderPass>						releaseRenderPasses;
+			std::set<vk::Image>								releaseImages;
+			std::set<vk::Sampler>							releaseSamplers;
 			vulkan::Texture*								mDummy2D=nullptr;
 			vulkan::Texture*								mDummy2DMS=nullptr;
 			vulkan::Texture*								mDummy3D=nullptr;

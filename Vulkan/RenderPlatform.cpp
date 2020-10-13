@@ -209,7 +209,22 @@ void RenderPlatform::InvalidateDeviceObjects()
 		vulkanDevice->destroyFramebuffer(i);
 	}
 	releaseFramebuffers.clear();
-	vulkanDevice=nullptr;
+	for (auto i : releaseRenderPasses)
+	{
+		vulkanDevice->destroyRenderPass(i);
+	}
+	releaseRenderPasses.clear();
+	for (auto i : releaseImages)
+	{
+		vulkanDevice->destroyImage(i);
+	}
+	releaseImages.clear();
+	for (auto i : releaseSamplers)
+	{
+		vulkanDevice->destroySampler(i);
+	}
+	releaseSamplers.clear();
+	vulkanDevice=nullptr; 
 }
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
 {
@@ -230,6 +245,18 @@ void RenderPlatform::PushToReleaseManager(vk::ImageView& i)
 void RenderPlatform::PushToReleaseManager(vk::Framebuffer& f)
 {
 	releaseFramebuffers.insert(f);
+}
+void RenderPlatform::PushToReleaseManager(vk::RenderPass& r)
+{
+	releaseRenderPasses.insert(r);
+}
+void RenderPlatform::PushToReleaseManager(vk::Image& i)
+{
+	releaseImages.insert(i);
+}
+void RenderPlatform::PushToReleaseManager(vk::Sampler& i)
+{
+	releaseSamplers.insert(i);
 }
 
 void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
@@ -1746,27 +1773,27 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		colour_reference=new vk::AttachmentReference[num_colour];
 	for(int i=0;i<num_colour;i++)
 	{
-		attachments[i]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(pixelFormat))
-														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite ? vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
-														  .setStoreOp(vk::AttachmentStoreOp::eStore)
-														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-														  .setInitialLayout(depthTestWrite ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined)
-														  .setFinalLayout(msaa ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::ePresentSrcKHR);
+		attachments[i]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(pixelFormat))
+														.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
+														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite ? vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
+														.setStoreOp(vk::AttachmentStoreOp::eStore)
+														.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+														.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+														.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal )
+														.setFinalLayout( vk::ImageLayout::eColorAttachmentOptimal );
 		colour_reference[i].setAttachment(i).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	}
 		
 	if(depth)
 	{
-		attachments[num_attachments-1]=  vk::AttachmentDescription()	 .setFormat(ToVulkanFormat(depthFormat))
-														  .setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														  .setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite?vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
-														  .setStoreOp(vk::AttachmentStoreOp::eStore)
-														  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-														  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-														  .setInitialLayout(depthTestWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined)
-														  .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		attachments[num_attachments-1]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(depthFormat))
+																		.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
+																		.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite?vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
+																		.setStoreOp(vk::AttachmentStoreOp::eStore)
+																		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+																		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+																		.setInitialLayout(depthTestWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined)
+																		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		depth_reference.setAttachment(num_attachments-1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
 	

@@ -120,9 +120,36 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	loadingComplete=false;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_indices,int index_size_bytes,const void* data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,const void* src_data)
 {
     InvalidateDeviceObjects();
+	renderPlatform = r;
+
+	stride = index_size_bytes;
+	bufferLoad.size = num_indices * index_size_bytes;
+
+	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
+		, vk::BufferUsageFlagBits::eTransferSrc
+		, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+		, bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory, "vertex buffer upload");
+
+	void* target_data;
+	if (src_data)
+	{
+		vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+		vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size, vk::MemoryMapFlagBits(), &target_data);
+		if (target_data)
+		{
+			memcpy(target_data, src_data, (size_t)bufferLoad.size);
+			vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
+		}
+	}
+
+	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
+		, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
+		, vk::MemoryPropertyFlagBits::eDeviceLocal
+		, mBuffer, mBufferMemory, "Index buffer");
+	loadingComplete = false;
 }
 
 void* Buffer::Map(crossplatform::DeviceContext& deviceContext)

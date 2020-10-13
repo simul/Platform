@@ -870,6 +870,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	// Note that ending the renderpass changes the image's layout from
 	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
 	commandBuffer.endRenderPass();
+	EnsureImageLayout();
 	
 	ERRNO_BREAK
 	if (renderer)
@@ -888,6 +889,29 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	Resize();
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
+}
+
+void DisplaySurface::EnsureImageLayout()
+{
+	vk::Image &image=swapchain_image_resources[current_buffer].image;
+
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
+	vk::AccessFlags dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllCommands;	// very general..
+
+	auto  barrier = vk::ImageMemoryBarrier()
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setOldLayout(vk::ImageLayout::eUndefined)
+		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(image);
+	swapchain_image_resources[current_buffer].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+
 }
 
 void DisplaySurface::Present()

@@ -66,7 +66,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 	
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(!commandBuffer)
-		return ;
+		return;
 	vk::Device *vulkanDevice	=renderPlatform->AsVulkanDevice();
 	
     vulkan::Shader* c	= (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
@@ -379,18 +379,22 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			tv=deviceContext.targetStack.top();
 		else
 			tv=&(deviceContext.defaultTargetsAndViewport);
+	#if 1
 		for(int i=0;i<tv->num;i++)
 		{
+			auto &tt= tv->textureTargets[i];
 			if(tv->textureTargets[i].texture)
-				((vulkan::Texture*)tv->textureTargets[i].texture)->AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
+				((vulkan::Texture*)tt.texture)->SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
 		}
 		if(tv->depthTarget.texture)
 		{
+			auto& dt = tv->depthTarget;
 			if(depthStencilState->desc.depth.write)
-				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-			/*else if(depthStencilState->desc.depth.test)
-				((vulkan::Texture*)tv->depthTarget.texture)->AssumeLayout(vk::ImageLayout::eDepthStencilReadOnlyOptimal);*/
+				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(deviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal,dt.layer,dt.mip);
+			else if(depthStencilState->desc.depth.test)
+				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(deviceContext,vk::ImageLayout::eDepthStencilReadOnlyOptimal,dt.layer,dt.mip);
 		}
+	#endif
 	}
 }
 
