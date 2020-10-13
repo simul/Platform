@@ -503,7 +503,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			auto vulkanBuffer=(vulkan::Buffer*)cs->indexBuffer;
 			vulkanBuffer->FinishLoading(deviceContext);
 			vk::IndexType indexType=vk::IndexType::eUint32;
-			if(cs->indexBuffer->stride==4)
+			if(cs->indexBuffer->stride==2)
 				indexType=::vk::IndexType::eUint16;
 			commandBuffer->bindIndexBuffer( ((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
 		}
