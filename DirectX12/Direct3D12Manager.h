@@ -51,7 +51,8 @@ namespace simul
 			//! The D3D device
 			ID3D12DeviceType*				mDevice;
 			//! Used to submit commands to the GPU
-			ID3D12CommandQueue*			mCommandQueue;
+			ID3D12CommandQueue*			mGraphicsQueue=nullptr;
+			ID3D12CommandQueue*			mComputeQueue=nullptr;
 		};
 	}
 }

@@ -16,8 +16,7 @@ using namespace dx12;
 #pragma comment(lib,"dxguid")
 
 Direct3D12Manager::Direct3D12Manager():
-	mDevice(nullptr),
-	mCommandQueue(nullptr)
+	mDevice(nullptr)
 {
 }
 
@@ -28,7 +27,7 @@ Direct3D12Manager::~Direct3D12Manager()
 
 bool Direct3D12Manager::IsActive() const
 {
-	return mCommandQueue != nullptr;
+	return mGraphicsQueue != nullptr;
 }
 
 void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_driver )
@@ -220,9 +219,15 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	D3D12_COMMAND_QUEUE_DESC queueDesc	= {};
 	queueDesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
-	res									= mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mCommandQueue));
+	res									= mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mGraphicsQueue));
 	SIMUL_ASSERT(res == S_OK);
-    mCommandQueue->SetName(L"Main CommandQueue");
+    mGraphicsQueue->SetName(L"Main CommandQueue");
+
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mComputeQueue));
+	SIMUL_ASSERT(res == S_OK);
+	mComputeQueue->SetName(L"Aynchronous Compute CommandQueue");
+	
 #endif
 #endif
 }
@@ -322,7 +327,8 @@ void Direct3D12Manager::Shutdown()
 	ReportMessageFilterState();
 	SAFE_RELEASE(mIContext.IAllocator);
 	SAFE_RELEASE(mIContext.ICommandList);
-	SAFE_RELEASE(mCommandQueue);
+	SAFE_RELEASE(mGraphicsQueue);
+	SAFE_RELEASE(mComputeQueue);
 	
 	SAFE_RELEASE(mDevice);
 #ifndef _XBOX_ONE
@@ -382,12 +388,12 @@ void Direct3D12Manager::FlushImmediateCommandList()
     mIContext.IRecording    = false;
     HRESULT res             = mIContext.ICommandList->Close();
     ID3D12CommandList* ppCommandLists[] = { mIContext.ICommandList };
-    mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    mGraphicsQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
     
     // Wait until completed
     ID3D12Fence* pFence;
     res = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&pFence));
-    mCommandQueue->Signal(pFence, 64);
+    mGraphicsQueue->Signal(pFence, 64);
     // ugly spinlock wait
     while(pFence->GetCompletedValue() != 64) {}
     pFence->Release();
@@ -395,7 +401,7 @@ void Direct3D12Manager::FlushImmediateCommandList()
 
 void* Direct3D12Manager::GetCommandQueue()
 {
-	return mCommandQueue;
+	return mGraphicsQueue;
 }
 
 

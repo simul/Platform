@@ -1931,7 +1931,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	//immediateContext.platform_context   = deviceContext.platform_context;
     dx12::RenderState* state            = (dx12::RenderState*)s;
-    // We cache the description, during EffectPass::Aply() we will check if the PSO
+    // We cache the description, during EffectPass::Apply() we will check if the PSO
     // needs to be recreated
 	if (s->type == crossplatform::BLEND)
 	{
