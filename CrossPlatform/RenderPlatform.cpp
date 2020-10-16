@@ -128,7 +128,7 @@ vk::Device *RenderPlatform::AsVulkanDevice()
 	return nullptr;
 }
 
-DeviceContext &RenderPlatform::GetImmediateContext()
+GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 {
 	return immediateContext;
 }
@@ -298,12 +298,12 @@ void RenderPlatform::PopTexturePath()
 	texturePathsUtf8.pop_back();
 }
 
-void RenderPlatform::PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv)
+void RenderPlatform::PushRenderTargets(GraphicsDeviceContext &deviceContext, TargetsAndViewport *tv)
 {
 	deviceContext.GetFrameBufferStack().push(tv);
 }
 
-void RenderPlatform::PopRenderTargets(DeviceContext &deviceContext)
+void RenderPlatform::PopRenderTargets(GraphicsDeviceContext &deviceContext)
 {
 	deviceContext.GetFrameBufferStack().pop();
 }
@@ -373,7 +373,7 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(DeviceContext &dev)
+void RenderPlatform::BeginFrame(GraphicsDeviceContext &dev)
 {
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
@@ -382,12 +382,12 @@ void RenderPlatform::BeginFrame(DeviceContext &dev)
 	}
 }
 
-void RenderPlatform::EndFrame(DeviceContext &dev)
+void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
 {
 }
 
 
-void RenderPlatform::Clear(DeviceContext &deviceContext,vec4 colour_rgba)
+void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
 	debugConstants.debugColour=colour_rgba;
@@ -408,18 +408,19 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	// Clear the texture: how we do this depends on what kind of texture it is.
 	// Does it have rendertargets? We can clear each of these in turn.
-	if(texture->HasRenderTargets()&&texture->arraySize)
+	auto *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
+	if(texture->HasRenderTargets()&&texture->arraySize&&graphicsDeviceContext!=nullptr)
 	{
 		int total_num=texture->arraySize*(texture->IsCubemap()?6:1);
 		for(int i=0;i<total_num;i++)
 		{
 			for(int j=0;j<texture->mips;j++)
 			{
-				texture->activateRenderTarget(deviceContext,i,j);
-				debugEffect->Apply(deviceContext,"clear",0);
-					DrawQuad(deviceContext);
-				debugEffect->Unapply(deviceContext);
-				texture->deactivateRenderTarget(deviceContext);
+				texture->activateRenderTarget(*graphicsDeviceContext,i,j);
+				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
+					DrawQuad(*graphicsDeviceContext);
+				debugEffect->Unapply(*graphicsDeviceContext);
+				texture->deactivateRenderTarget(*graphicsDeviceContext);
 			}
 		}
 		debugEffect->UnbindTextures(deviceContext);
@@ -498,9 +499,9 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		debugEffect->UnbindTextures(deviceContext);
 	}
 	//Finally, is the texture a depth stencil? In this case, we call the specified API's clear function in order to clear it.
-	else if (texture->IsDepthStencil() && !cleared)
+	else if (texture->IsDepthStencil() && !cleared&&graphicsDeviceContext!=nullptr)
 	{
-		texture->ClearDepthStencil(deviceContext, colour.x, 0);
+		texture->ClearDepthStencil(*graphicsDeviceContext, colour.x, 0);
 	}
 	else
 	{
@@ -508,7 +509,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	}
 }
 
-void RenderPlatform::GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
+void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
 {
 	if(!t||!t->IsValid())
 		return;
@@ -616,7 +617,7 @@ bool crossplatform::RenderPlatform::IsStencilFormat(PixelFormat f)
 	};
 }
 
-void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
+void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
 {
 	PosColourVertex line_vertices[2];
 	line_vertices[0].pos= vec3(startp)-deviceContext.viewStruct.cam_pos;
@@ -632,7 +633,7 @@ static float length(const vec3 &u)
 	float size=u.x*u.x+u.y*u.y+u.z*u.z;
 	return sqrt(size);
 }
-void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
 {
 	vec3 pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	vec3 d=dir;
@@ -642,7 +643,7 @@ void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *dir,fl
 	DrawCircle(deviceContext,pos,dir,radius,colr,fill);
 }
 
-void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
 {
 	PosColourVertex line_vertices[37];
 	math::Vector3 direction(dir);
@@ -666,7 +667,7 @@ void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *pos,co
 	DrawLines(deviceContext,line_vertices,36,true,false,false);
 }
 
-void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
+void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
@@ -689,7 +690,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 	return new Mesh;
 }
 
-void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
+void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
 	//unsigned int num_v=0;
 
@@ -744,7 +745,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	SetViewports(deviceContext,1,&oldv);
 }
 
-void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg,int offsetx,int offsety,bool centred)
+void RenderPlatform::PrintAt3dPos(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg,int offsetx,int offsety,bool centred)
 {
 	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
@@ -778,7 +779,7 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,bkg);
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug)
 {
 	static int level=0;
 	static int lod=0;
@@ -907,7 +908,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	}
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
+void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
@@ -925,12 +926,12 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	effect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug)
 {
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug);
 }
 
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
+void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
 	,const float *proj)
 {
 	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
@@ -978,7 +979,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	}
 }
 
-void RenderPlatform::Draw2dLine(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)
+void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)
 {
 	PosColourVertex pts[2];
 	pts[0].pos=pos1;
@@ -990,7 +991,7 @@ void RenderPlatform::Draw2dLine(DeviceContext &deviceContext,vec2 pos1,vec2 pos2
 	Draw2dLines(deviceContext,pts,2,false);
 }
 
-void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
+void RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
 	static float clr[]={1.f,1.f,0.f,1.f};
@@ -1007,7 +1008,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
-void RenderPlatform::LinePrint(DeviceContext &deviceContext,const char *text,const float* colr,const float* bkg)
+void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *text,const float* colr,const float* bkg)
 {
 	Print(deviceContext, deviceContext.framePrintX,deviceContext.framePrintY,text,colr,bkg);
 	deviceContext.framePrintY+=textRenderer->GetDefaultTextHeight();
@@ -1020,7 +1021,7 @@ crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::Devic
 	return v;
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
 	if(num>0&&vps!=nullptr)
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
@@ -1036,7 +1037,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	}
 }
 
-crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
+crossplatform::Viewport	RenderPlatform::GetViewport(GraphicsDeviceContext &deviceContext,int index)
 {
 	crossplatform::Viewport v;
 	if(deviceContext.GetFrameBufferStack().size())
@@ -1054,7 +1055,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	return v;
 }
 
-void RenderPlatform::SetLayout(DeviceContext &deviceContext,Layout *l)
+void RenderPlatform::SetLayout(GraphicsDeviceContext &deviceContext,Layout *l)
 {
 	if(l)
 		l->Apply(deviceContext);
@@ -1267,14 +1268,14 @@ void RenderPlatform::ClearVertexBuffers(crossplatform::DeviceContext& deviceCont
 
 }
 
-void RenderPlatform::SetIndexBuffer(DeviceContext &deviceContext,const Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(GraphicsDeviceContext &deviceContext,const Buffer *buffer)
 {
 	if (!buffer)
 		return;
 	deviceContext.contextState.indexBuffer=buffer;
 }
 
-void RenderPlatform::SetTopology(DeviceContext& deviceContext, crossplatform::Topology t)
+void RenderPlatform::SetTopology(GraphicsDeviceContext& deviceContext, crossplatform::Topology t)
 {
 	deviceContext.contextState.topology = t;
 }
@@ -1367,7 +1368,7 @@ namespace simul
 			}
 			return texcXYWH;
 		}
-		void DrawGrid(crossplatform::DeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
+		void DrawGrid(GraphicsDeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
 		{
 			// 101 lines across, 101 along.
 			numLines++;

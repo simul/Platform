@@ -25,6 +25,24 @@
 using namespace simul;
 using namespace dx12;
 
+const char *PlatformD3D12GetErrorText(HRESULT hr)
+{
+	static std::string str;
+	char *lpBuf;
+	DWORD res=FormatMessage(
+#ifndef _XBOX_ONE
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+#endif
+			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, hr, 0, (LPTSTR)&lpBuf, 0, NULL);
+	if(lpBuf)
+		str=lpBuf;
+#ifndef _XBOX_ONE
+	LocalFree(lpBuf);
+#endif
+	return str.c_str();
+}
+
 RenderPlatform::RenderPlatform():
 	mTimeStampFreq(0)
 	,m12Device(nullptr)
@@ -669,7 +687,7 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 #endif
 }
 
-void RenderPlatform::BeginFrame(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	BeginD3D12Frame();
@@ -725,7 +743,7 @@ void RenderPlatform::BeginD3D12Frame()
 	}
 }
 
-void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
@@ -841,7 +859,7 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &,crossplatfor
 	
 }
 
-void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
 
@@ -850,7 +868,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 	commandList->DrawInstanced(num_verts,1,start_vert,0);
 }
 
-void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
+void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
 
@@ -1732,7 +1750,7 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplat
 
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
+void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
     mTargets        = {};
     mTargets.num    = num;
@@ -1751,7 +1769,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
     ActivateRenderTargets(deviceContext, &mTargets);
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport* targets)
+void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext,crossplatform::TargetsAndViewport* targets)
 {
 	// We have to flush because otherwise the barrier will occur after the switch.
 	FlushBarriers(deviceContext);
@@ -1770,7 +1788,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
     SetViewports(deviceContext, 1, &targets->viewport);
 }
 
-void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	// We have to flush because otherwise the barrier will occur after the switch.
 	FlushBarriers(deviceContext);
@@ -1802,7 +1820,7 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext& dev
 	    SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
 }
 
-void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	// We have to flush because otherwise the barrier will occur after the switch.
 	FlushBarriers(deviceContext);
@@ -1832,7 +1850,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
     }
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	//immediateContext.platform_context=deviceContext.platform_context;
@@ -1867,7 +1885,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
-void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,const crossplatform::Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext,const crossplatform::Buffer *buffer)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	//immediateContext.platform_context=deviceContext.platform_context;
@@ -1905,7 +1923,7 @@ static D3D_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
 	};
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
+void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Topology t)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	//immediateContext.platform_context=deviceContext.platform_context;
@@ -1915,7 +1933,7 @@ void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,cro
 	mStoredTopology = T;
 }
 
-void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l)
+void RenderPlatform::SetLayout(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Layout *l)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	//immediateContext.platform_context=deviceContext.platform_context;
@@ -1951,7 +1969,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
     }
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture* destination,crossplatform::Texture* source)
+void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext,crossplatform::Texture* destination,crossplatform::Texture* source)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
     //immediateContext.platform_context   = commandList;
@@ -2093,7 +2111,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	return true;
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);

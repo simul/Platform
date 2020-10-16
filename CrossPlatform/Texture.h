@@ -51,6 +51,7 @@ namespace simul
 		class RenderPlatform;
 		class Texture;
 		struct DeviceContext;
+		struct GraphicsDeviceContext;
 		enum class CompressionFormat : uint32_t
 		{
 			UNCOMPRESSED,
@@ -280,15 +281,15 @@ namespace simul
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
 			//! Clear the depth stencil
-			virtual void ClearDepthStencil(DeviceContext &deviceContext, float = 0, int = 0) = 0;
+			virtual void ClearDepthStencil(GraphicsDeviceContext &deviceContext, float = 0, int = 0) = 0;
 			//! Generate the mipmaps automatically.
-			virtual void GenerateMips(DeviceContext &deviceContext)=0;
+			virtual void GenerateMips(GraphicsDeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
-			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1,int mip_index=0);
+			virtual void activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index=-1,int mip_index=0);
 			//! Deactivate as a rendertarget.
-			virtual void deactivateRenderTarget(DeviceContext &deviceContext);
+			virtual void deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext);
 			virtual int GetLength() const
 			{
 				return length;

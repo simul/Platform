@@ -227,21 +227,20 @@ namespace simul
 		};
 		class EffectTechnique;
 		class RenderPlatform;
-		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
-		//! The DeviceContext also carries a pointer to the platform-specific RenderPlatform.
-		//! DeviceContext is context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
+		struct GraphicsDeviceContext;
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
-			void *platform_context;
-			RenderPlatform *renderPlatform;
-			EffectTechnique *activeTechnique;
-			crossplatform::ContextState contextState;
 			int ApiCallCounter=0;
-			long long frame_number;
-			bool initialized;
-			int framePrintX=0;
-			int framePrintY=0;
-			DeviceContext();
+			long long frame_number=0;
+			bool initialized=false;
+			void *platform_context=nullptr;
+			RenderPlatform *renderPlatform=nullptr;
+			EffectTechnique *activeTechnique=nullptr;
+			crossplatform::ContextState contextState;
+			virtual GraphicsDeviceContext *AsGraphicsDeviceContext()
+			{
+				return nullptr;
+			}
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
 			{
 				return (ID3D11DeviceContext*)platform_context;
@@ -262,6 +261,23 @@ namespace simul
 			{
 				return (ID3D12GraphicsCommandList*)platform_context;
 			}
+		};
+		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
+		{
+		};
+
+		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
+		//! The DeviceContext also carries a pointer to the platform-specific RenderPlatform.
+		//! DeviceContext is context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
+		struct SIMUL_CROSSPLATFORM_EXPORT GraphicsDeviceContext : public DeviceContext
+		{
+			GraphicsDeviceContext *AsGraphicsDeviceContext() override
+			{
+				return this;
+			}
+			int framePrintX=0;
+			int framePrintY=0;
+			GraphicsDeviceContext();
 			ViewStruct viewStruct;
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();

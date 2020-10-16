@@ -58,17 +58,17 @@ namespace simul
 			ID3D11Device *AsD3D11Device();
 			virtual void BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void EndEvent			(crossplatform::DeviceContext &deviceContext);
-			void BeginFrame(crossplatform::DeviceContext &deviceContext);
-			void EndFrame(crossplatform::DeviceContext &deviceContext);
+			void BeginFrame(crossplatform::GraphicsDeviceContext &deviceContext);
+			void EndFrame(crossplatform::GraphicsDeviceContext &deviceContext);
 			void CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 
 			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			
 			void ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
 			
-			void Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
-			void DrawIndexed	(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
-			void DrawQuad		(crossplatform::DeviceContext &deviceContext);
+			void Draw			(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert);
+			void DrawIndexed	(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
+			void DrawQuad		(crossplatform::GraphicsDeviceContext &deviceContext);
 
 			
 			void ApplyDefaultMaterial();
@@ -88,24 +88,24 @@ namespace simul
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,const crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL) override;
 			void									ClearVertexBuffers(crossplatform::DeviceContext& deviceContext) override;
-			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
+			void									SetStreamOutTarget(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
 
-			void									ApplyDefaultRenderTargets(crossplatform::DeviceContext &deviceContext);
-			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
-			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
+			void									ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext);
+			void									ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
+			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext) override;
 		
 		//	crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
-			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
-			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext, const crossplatform::Buffer *buffer) override;
+			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
+			void									SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext, const crossplatform::Buffer *buffer) override;
 			
-			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
-			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
+			void									SetTopology(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Topology t) override;
+			void									SetLayout(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Layout *l) override;
 			
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
+			void									PopRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
-			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
+			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p, crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);

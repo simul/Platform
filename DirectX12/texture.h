@@ -83,13 +83,13 @@ namespace simul
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0);
 			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
-			void							ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear) override;
-			void							GenerateMips(crossplatform::DeviceContext &deviceContext) override;
+			void							ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
+			void							GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			bool							isMapped() const;
 			void							unmap();
 			vec4							GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
-			void							activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index=-1,int mip_index=0);
-			void							deactivateRenderTarget(crossplatform::DeviceContext &deviceContext);
+			void							activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index=-1,int mip_index=0);
+			void							deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext);
 
 			virtual int GetLength() const
 			{

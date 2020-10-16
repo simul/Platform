@@ -83,7 +83,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	}
 }
 
-void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	for(auto t:texturesToDelete[mCurIdx])
@@ -95,7 +95,7 @@ void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 	texturesToDelete[mCurIdx].clear();
 }
 
-void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
@@ -149,20 +149,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
     EndEvent(deviceContext);
 }
 
-void RenderPlatform::DrawLine(crossplatform::DeviceContext &,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
-{
-}
-
-void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
-{
-}
-
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug)
-{
-    crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend,gamma);
-}
-
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
+void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext)   
 {
     BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyCurrentPass(deviceContext);
@@ -177,7 +164,8 @@ void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceConte
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;
 		mCurIdx = mCurIdx % kNumIdx;
-		BeginFrame(deviceContext);
+		if(deviceContext.AsGraphicsDeviceContext())
+			BeginFrame(*deviceContext.AsGraphicsDeviceContext());
 	}
 
     crossplatform::ContextState* cs = &deviceContext.contextState;
@@ -831,7 +819,7 @@ void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& device
     SetRenderState(deviceContext, standardRenderStates[s]);
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
 	auto dst = (opengl::Texture*)destination;
 	auto src = (opengl::Texture*)source;
@@ -887,11 +875,11 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext& deviceContex
     }
 }
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext&,crossplatform::Buffer *buffer,int/* start_index*/)
+void RenderPlatform::SetStreamOutTarget(crossplatform::GraphicsDeviceContext&,crossplatform::Buffer *buffer,int/* start_index*/)
 {
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
+void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
     if (num >= mMaxColorAttatch)
     {
@@ -900,7 +888,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
     }
 }
 #include <cstdint>
-void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
 {
     deviceContext.GetFrameBufferStack().pop();
 
@@ -924,7 +912,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
     }
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
+void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
     if (num >= mMaxViewports)
     {
@@ -938,11 +926,11 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,in
     }
 }
 
-void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &, const crossplatform::Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &, const crossplatform::Buffer *buffer)
 {
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext &,crossplatform::Topology t)
+void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &,crossplatform::Topology t)
 {
     mCurTopology = toGLTopology(t);
 }
@@ -965,7 +953,7 @@ void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 {
 }
 
-void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
+void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &)
 {
 }
 
@@ -997,7 +985,7 @@ GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
     return GL_LINE_LOOP;
 }
 
-void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
     BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
     ApplyCurrentPass(deviceContext);
@@ -1005,23 +993,11 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
     EndEvent(deviceContext);
 }
 
-void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
+void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
-{
-}
-
-void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
-{
-}
-
-void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &,const float *,float ,const float *,bool)
-{
-}
-
-void RenderPlatform::GenerateMips(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
+void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
 {
     t->GenerateMips(deviceContext);
 }

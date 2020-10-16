@@ -420,7 +420,7 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 	}
 	else
 	{
-		cmdList->SetPipelineState(mGraphicsPsoMap[CreateGraphicsPso(deviceContext)]);
+		cmdList->SetPipelineState(mGraphicsPsoMap[CreateGraphicsPso(*deviceContext.AsGraphicsDeviceContext())]);
 	}
 }
 
@@ -748,7 +748,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	}
 }
 
-size_t EffectPass::CreateGraphicsPso(crossplatform::DeviceContext& deviceContext)
+size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	auto curRenderPlat  = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	mTechName		   = name;

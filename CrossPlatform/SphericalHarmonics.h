@@ -55,11 +55,11 @@ namespace simul
 				,uint2 size
 				,vec4 *targetValuesFloat4);
 			/// Draw a diffuse environment map to the specified framebuffer.
-			void RenderEnvmap(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *target,int cubemapIndex,float blend);
+			void RenderEnvmap(GraphicsDeviceContext &deviceContext,crossplatform::Texture *target,int cubemapIndex,float blend);
 			/// Taking the zero mip as the initial data source, use the formula roughness=mip/max_mip to render it down to the lower mips.
-			void RenderMipsByRoughness(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *target);
+			void RenderMipsByRoughness(GraphicsDeviceContext &deviceContext, crossplatform::Texture *target);
 			/// Copy from a given mip face to the next one down, with blending or without (if blend is 0).
-			void CopyMip(crossplatform::DeviceContext &deviceContext,Texture *tex,int face,int mip,float blend);
+			void CopyMip(GraphicsDeviceContext &deviceContext,Texture *tex,int face,int mip,float blend);
 		protected:
 			RenderPlatform *renderPlatform;
 			StructuredBuffer<vec4>	probeResultsRW;

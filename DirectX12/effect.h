@@ -81,7 +81,7 @@ namespace simul
             void        CheckSlots(int requiredSlots, int usedSlots, int numSlots, const char* type);
 
             void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
-            size_t      CreateGraphicsPso(crossplatform::DeviceContext& deviceContext);
+            size_t      CreateGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
 		private:
 			virtual     ~EffectPass();
 			//! We hold a map with unique PSOs

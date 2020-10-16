@@ -84,7 +84,7 @@ float RoughnessFromMip(float mip, float numMips)
 	return exp2(( 3.0f+mip-numMips) / roughness_mip_scale);
 }
 
-void SphericalHarmonics::RenderMipsByRoughness(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *target)
+void SphericalHarmonics::RenderMipsByRoughness(GraphicsDeviceContext &deviceContext, crossplatform::Texture *target)
 {
 	for (int m = 0; m < target->mips - 1; m++)
 	{
@@ -95,7 +95,7 @@ void SphericalHarmonics::RenderMipsByRoughness(crossplatform::DeviceContext &dev
 	}
 }
 
-void SphericalHarmonics::CopyMip(crossplatform::DeviceContext &deviceContext,Texture *tex,int face,int src_mip,float blend)
+void SphericalHarmonics::CopyMip(GraphicsDeviceContext &deviceContext,Texture *tex,int face,int src_mip,float blend)
 {
 	if (!lightProbesEffect)
 	{
@@ -273,7 +273,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 }
 
 
-void SphericalHarmonics::RenderEnvmap(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *target_texture,int cubemapIndex,float blend)
+void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,crossplatform::Texture *target_texture,int cubemapIndex,float blend)
 {
 	if (!target_texture)
 		return;

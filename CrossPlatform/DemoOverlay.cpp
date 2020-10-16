@@ -39,7 +39,7 @@ void DemoOverlay::InvalidateDeviceObjects()
 	renderPlatform=NULL;
 }
 
-void DemoOverlay::Render(DeviceContext &deviceContext)
+void DemoOverlay::Render(GraphicsDeviceContext &deviceContext)
 {
 	if(!texture2||!texture1)
 		return;

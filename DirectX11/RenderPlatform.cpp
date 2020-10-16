@@ -280,14 +280,14 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 #endif
 }
 
-void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 }
 
-void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
@@ -361,14 +361,14 @@ void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContex
 #endif
 }
 
-void RenderPlatform::Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+void RenderPlatform::Draw			(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	ApplyContextState(deviceContext);
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	pContext->Draw(num_verts,start_vert);
 }
 
-void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
+void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
 	ApplyContextState(deviceContext);
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
@@ -1064,7 +1064,7 @@ void RenderPlatform::ClearVertexBuffers(crossplatform::DeviceContext& deviceCont
 
 }
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer,int start_index)
+void RenderPlatform::SetStreamOutTarget(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer,int start_index)
 {
 	ID3D11Buffer *b=NULL;
 	if(vertexBuffer)
@@ -1073,7 +1073,7 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 	deviceContext.asD3D11DeviceContext()->SOSetTargets(1,&b,&offset );
 }
 
-void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	if(!deviceContext.asD3D11DeviceContext())
 		return;
@@ -1092,7 +1092,7 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::DeviceContext &dev
 	context->RSSetViewports(1, &viewport);
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
+void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
 	ID3D11RenderTargetView *rt[8];
 	SIMUL_ASSERT(num<=8);
@@ -1127,12 +1127,12 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	SetViewports(deviceContext,num,v);
 }
 
-void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	PopRenderTargets(deviceContext);
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
 	if(!vps)
 		return;
@@ -1151,7 +1151,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
 }
 
-void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext, const crossplatform::Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext, const crossplatform::Buffer *buffer)
 {
 	if(!buffer)
 	{
@@ -1204,13 +1204,13 @@ static D3D11_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
 	};
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
+void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Topology t)
 {
 	D3D11_PRIMITIVE_TOPOLOGY T=toD3dTopology(t);
 	deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(T);
 }
 
-void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l)
+void RenderPlatform::SetLayout(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Layout *l)
 {
 	if(l)
 		l->Apply(deviceContext);
@@ -1237,7 +1237,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 	}
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
 	deviceContext.asD3D11DeviceContext()->ResolveSubresource(destination->AsD3D11Texture2D(),0,source->AsD3D11Texture2D(),0,dx11::RenderPlatform::ToDxgiFormat(destination->GetFormat()));
 }
@@ -1485,7 +1485,7 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 #endif
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	crossplatform::RenderPlatform::SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
@@ -1518,7 +1518,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 #endif
 }
 
-void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	std::stack<crossplatform::TargetsAndViewport*> &fbs=deviceContext.GetFrameBufferStack();
 	crossplatform::TargetsAndViewport *oldtv=fbs.top();

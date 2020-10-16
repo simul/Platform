@@ -1766,13 +1766,13 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D12Device* pd3dDevice,int w,crossp
 {
 }
 
-void Texture::ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear)
+void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
     const D3D12_CLEAR_FLAGS kFlags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
     deviceContext.asD3D12Context()->ClearDepthStencilView(*AsD3D12DepthStencilView(deviceContext), kFlags, depthClear, stencilClear, 0, nullptr);
 }
 
-void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
+void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 {
     if (mips == 1)
     {
@@ -1798,7 +1798,7 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &,vec2 ,bool )
 	return vec4(0.0f,0.0f,0.0f,0.0f);
 }
 
-void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index,int mip)
+void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index,int mip)
 {
     if (array_index < 0)
     {
@@ -1837,7 +1837,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	}
 }
 
-void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
+void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
     rp->DeactivateRenderTargets(deviceContext);

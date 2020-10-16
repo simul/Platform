@@ -23,17 +23,17 @@ namespace simul
             FramebufferGL(const char *name = nullptr);
             virtual ~FramebufferGL();
             void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform) override;
-            void ActivateDepth(crossplatform::DeviceContext &) override;
+            void ActivateDepth(crossplatform::GraphicsDeviceContext &) override;
             void SetAntialiasing(int s) override;
 
             void InvalidateDeviceObjects() override;
             bool CreateBuffers() override;
-            void Activate(crossplatform::DeviceContext &deviceContext) override;
+            void Activate(crossplatform::GraphicsDeviceContext &deviceContext) override;
             void SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth) override;
-            void Deactivate(crossplatform::DeviceContext &deviceContext) override;
-            void DeactivateDepth(crossplatform::DeviceContext &deviceContext) override;
-            void Clear(crossplatform::DeviceContext &deviceContext,float,float,float,float,float,int mask = 0) override;
-            void ClearColour(crossplatform::DeviceContext &deviceContext,float,float,float,float) override;
+            void Deactivate(crossplatform::GraphicsDeviceContext &deviceContext) override;
+            void DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
+            void Clear(crossplatform::GraphicsDeviceContext &deviceContext,float,float,float,float,float,int mask = 0) override;
+            void ClearColour(crossplatform::GraphicsDeviceContext &deviceContext,float,float,float,float) override;
             void SetWidthAndHeight(int w,int h,int mips = -1) override;
             void SetAsCubemap(int face_size,int num_mips = 1,crossplatform::PixelFormat f = crossplatform::RGBA_32_FLOAT) override;
             void SetFormat(crossplatform::PixelFormat) override;

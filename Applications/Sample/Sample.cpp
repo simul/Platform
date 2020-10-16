@@ -274,7 +274,7 @@ public:
 
 	}
 
-	void GenerateCubemaps(crossplatform::DeviceContext& deviceContext)
+	void GenerateCubemaps(crossplatform::GraphicsDeviceContext& deviceContext)
 	{
 		crossplatform::Texture* hdrTexture = renderPlatform->CreateTexture("Textures/environment.hdr");
 		//diffuseCubemap = renderPlatform->CreateTexture("abandoned_tank_farm_04_2k.hdr");
@@ -301,7 +301,7 @@ public:
 	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame) override
 	{
 		// Device context structure
-		simul::crossplatform::DeviceContext	deviceContext;
+		simul::crossplatform::GraphicsDeviceContext	deviceContext;
 
 		// Store back buffer, depth buffer and viewport information
         deviceContext.defaultTargetsAndViewport.num             = 1;

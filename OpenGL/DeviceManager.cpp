@@ -305,6 +305,6 @@ void DeviceManager::ReloadTextures()
 {
 }
 
-void DeviceManager::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
+void DeviceManager::RenderDepthBuffers(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int x0,int y0,int dx,int dy)
 {
 }

@@ -47,7 +47,7 @@ void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatf
 		, textureCreate->numOfSamples);
 }
 
-void Texture::activateRenderTarget(DeviceContext &deviceContext,int array_index,int mip_index )
+void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int array_index,int mip_index )
 {
 	if (array_index == -1)
 	{
@@ -73,7 +73,7 @@ void Texture::activateRenderTarget(DeviceContext &deviceContext,int array_index,
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
-void Texture::deactivateRenderTarget(DeviceContext &deviceContext)
+void Texture::deactivateRenderTarget(GraphicsDeviceContext &deviceContext)
 {
 	deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
 }

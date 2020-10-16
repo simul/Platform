@@ -34,16 +34,16 @@ namespace simul
 			//! Call this if needed (not usually) to ensure that the buffers are created.
 			virtual bool CreateBuffers();
 			//! Activate the framebuffer - must be followed after rendering by a call to \ref Deactivate().
-			virtual void Activate(crossplatform::DeviceContext &)=0;
-			virtual void ActivateDepth(crossplatform::DeviceContext &)=0;
+			virtual void Activate(crossplatform::GraphicsDeviceContext &)=0;
+			virtual void ActivateDepth(crossplatform::GraphicsDeviceContext &)=0;
 			//! Return true if the framebuffer's depth buffer has been activated and not yet deactivated.
 			virtual bool IsDepthActive() const;
 			//! Return true if the framebuffer's colour buffer has been activated and not yet deactivated.
 			virtual bool IsColourActive() const;
 			//! Deactivate the framebuffer - must be preceded a call to \ref Activate().
-			virtual void Deactivate(DeviceContext &)=0;
+			virtual void Deactivate(GraphicsDeviceContext &)=0;
 			//! Deactivate only the depth buffer, so it can be used as a texture for rendering to the colour buffer.
-			virtual void DeactivateDepth(DeviceContext &){}
+			virtual void DeactivateDepth(GraphicsDeviceContext &){}
 			//! Set the API-dependent colour buffer format for this framebuffer. Across all API's, setting 0 means no rendering to colour.
 			virtual void SetFormat(PixelFormat);
 			//! Set the API-dependent colour depth format for this framebuffer. Across all API's, setting 0 means no rendering to depth.
@@ -58,9 +58,9 @@ namespace simul
 			}
 			virtual void SetGenerateMips(bool);
 			//! Clear the colour and depth buffers if present.
-			virtual void Clear(crossplatform::DeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
+			virtual void Clear(crossplatform::GraphicsDeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
 			//! Set the size of the framebuffer in pixel height and width.
-			virtual void ClearColour(crossplatform::DeviceContext &context,float,float,float,float)=0;
+			virtual void ClearColour(crossplatform::GraphicsDeviceContext &context,float,float,float,float)=0;
 			//! Set the size of the framebuffer.
 			virtual void SetWidthAndHeight(int w,int h,int num_mips=1);
 			//! Set this to be a cubemap framebuffer, so that its texture object will be a cubemap. Equivalent to SetWidthAndHeight.

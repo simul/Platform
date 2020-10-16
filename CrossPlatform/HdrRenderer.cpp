@@ -177,12 +177,12 @@ void HdrRenderer::InvalidateDeviceObjects()
 	}
 	renderPlatform=NULL;
 }
-void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma)
+void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma)
 {
 	Render(deviceContext,texture,0,Exposure, Gamma);
 }
 
-void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float offsetX,float Exposure,float Gamma)
+void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float offsetX,float Exposure,float Gamma)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"HDR")
 	hdrConstants.gamma		=Gamma;
@@ -246,7 +246,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
-void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma)
+void HdrRenderer::RenderInfraRed(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"RenderInfraRed")
 	bool msaa=(texture->GetSampleCount()>1);
@@ -272,7 +272,7 @@ void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,cro
 }
 
 
-void HdrRenderer::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture
+void HdrRenderer::RenderWithOculusCorrection(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture
 	,float offsetX,float Exposure,float Gamma)
 {
 hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
@@ -322,7 +322,7 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 	return box_width;
 }
 
-void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture)
+void HdrRenderer::RenderGlowTexture(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture)
 {
 	if(!m_pGaussianEffect)
 		return;
@@ -417,7 +417,7 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
-void HdrRenderer::RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+void HdrRenderer::RenderDebug(GraphicsDeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 	int w=width/4-8;
 	int h=(int)(w*((float)brightpassTextures[0]->length/(float)brightpassTextures[0]->width));

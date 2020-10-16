@@ -170,7 +170,7 @@ namespace simul
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
 			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
 			//! Gets an object containing immediate-context API-specific values.
-			DeviceContext &GetImmediateContext();
+			GraphicsDeviceContext &GetImmediateContext();
 			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath	(const char *pathUtf8);
 			//! Remove a path from the top of the texture path stack.
@@ -198,8 +198,8 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void BeginFrame			(DeviceContext &);
-			virtual void EndFrame			(DeviceContext &);
+			virtual void BeginFrame			(GraphicsDeviceContext &);
+			virtual void EndFrame			(GraphicsDeviceContext &);
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
@@ -211,35 +211,36 @@ namespace simul
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
-			virtual void Clear				(DeviceContext &deviceContext,vec4 colour_rgba);
+			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.
-			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
+			virtual void Draw				(GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
-			virtual void DrawIndexed		(DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
-			virtual void DrawLine			(crossplatform::DeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
+			virtual void DrawIndexed		(GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
+			virtual void DrawLine			(GraphicsDeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
 		
-			virtual void DrawLineLoop		(DeviceContext &,const double *,int ,const double *,const float [4]){}
+			virtual void DrawLineLoop		(GraphicsDeviceContext &,const double *,int ,const double *,const float [4]){}
 
-			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false);
-			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f,bool debug=false);
-			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
+			virtual void DrawTexture		(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false);
+			void DrawTexture				(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f,bool debug=false);
+			void DrawDepth					(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
-			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
-			virtual void DrawQuad			(DeviceContext &){}
+			virtual void DrawQuad			(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
+			virtual void DrawQuad			(GraphicsDeviceContext &){}
 
-			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
+			virtual void Print				(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			//! Print diagnostics, starting from the top, and going down the screen one line each time as the frame progresses, then restarting next frame.
-			void LinePrint					(DeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(DeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
-			void Draw2dLine					(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
-			virtual void Draw2dLines		(DeviceContext &/*deviceContext*/,PosColourVertex * /*lines*/,int /*vertex_count*/,bool /*strip*/){}
+			void LinePrint					(GraphicsDeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
+			virtual void DrawLines			(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
+			void Draw2dLine					(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
+			virtual void Draw2dLines		(GraphicsDeviceContext &/*deviceContext*/,PosColourVertex * /*lines*/,int /*vertex_count*/,bool /*strip*/){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.
-			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
+			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
 			/// Draw a circle in 3D space at pos
-			virtual void DrawCircle			(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
+			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
-			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
-			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
+			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
+			virtual void PrintAt3dPos		(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
+			virtual void SetModelMatrix		(GraphicsDeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			(){}
 			/// Create a platform-specific material instance.
 			 Material						*GetOrCreateMaterial(const char *name);
@@ -294,25 +295,25 @@ namespace simul
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,const Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
 			virtual void					ClearVertexBuffers				(DeviceContext& deviceContext);
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
-			virtual void					SetStreamOutTarget				(DeviceContext &,Buffer *,int =0){}
+			virtual void					SetStreamOutTarget				(GraphicsDeviceContext &,Buffer *,int =0){}
 
-			virtual void					ApplyDefaultRenderTargets(crossplatform::DeviceContext &){};
+			virtual void					ApplyDefaultRenderTargets		(crossplatform::GraphicsDeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
-			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-            virtual void                    ActivateRenderTargets(DeviceContext &, TargetsAndViewport* ) {}
-            virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
-			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps);
+			virtual void					ActivateRenderTargets			(GraphicsDeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
+            virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
+            virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
+			virtual void					SetViewports					(GraphicsDeviceContext &deviceContext,int num,const Viewport *vps);
 			/// Get the viewport at the given index.
-			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index);
+			virtual Viewport				GetViewport						(GraphicsDeviceContext &deviceContext,int index);
 			/// Activate the specified index buffer in preparation for rendering.
-			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,const Buffer *buffer);
+			virtual void					SetIndexBuffer					(GraphicsDeviceContext &deviceContext,const Buffer *buffer);
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
-			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t);
+			virtual void					SetTopology						(GraphicsDeviceContext &deviceContext,Topology t);
 
-			virtual void					SetTexture(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int array_idx = -1, int mip = -1);
-			virtual void					SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int index = -1, int mip = -1);
+			virtual void					SetTexture						(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int array_idx = -1, int mip = -1);
+			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int index = -1, int mip = -1);
 			//! Set the layout for following draw calls - format of the vertex buffer.
-			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
+			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 
@@ -337,28 +338,28 @@ namespace simul
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
 			//! Store the current rendertargets and viewports at the top of the stack
-			virtual void					PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv);
+			virtual void					PushRenderTargets				(GraphicsDeviceContext &deviceContext, TargetsAndViewport *tv);
 			//! Restore rendertargets and viewports from the top of the stack.
-			virtual void					PopRenderTargets(DeviceContext &deviceContext);
+			virtual void					PopRenderTargets				(GraphicsDeviceContext &deviceContext);
 			//! Resolve an MSAA texture to a normal texture.
-			virtual void					Resolve(DeviceContext &,Texture * /*destination*/,Texture * /*source*/){}
+			virtual void					Resolve							(GraphicsDeviceContext &,Texture * /*destination*/,Texture * /*source*/){}
 
-			void							LatLongTextureToCubemap(DeviceContext &deviceContext,Texture *destination,Texture *source);
+			void							LatLongTextureToCubemap			(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
-			virtual void					SaveTexture(Texture *,const char *){}
+			virtual void					SaveTexture						(Texture *,const char *){}
 			/// Clear the contents of the given texture to the specified colour
-			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
+			virtual void					ClearTexture					(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 
 			/// Fill in mipmaps from the zero level down.
-			virtual void					GenerateMips(DeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
+			virtual void					GenerateMips					(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
 			// Get a blank (black) resource texture.
 			//virtual Texture					*GetDummyTexture(crossplatform::);
 			//! Query for the texture value at the specified position in the texture. On most API's, the query will have a few frames' latency.
-			vec4							TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
-			virtual void					WaitForGpu(DeviceContext &){}
-			virtual void					WaitForFencedResources(crossplatform::DeviceContext &){}
-			virtual void					RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) {}
-			virtual void					RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) {}
+			vec4							TexelQuery						(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
+			virtual void					WaitForGpu						(DeviceContext &){}
+			virtual void					WaitForFencedResources			(DeviceContext &){}
+			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
+			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
@@ -384,7 +385,7 @@ namespace simul
 			std::map<std::string,SamplerState*> sharedSamplerStates;
 
 			ShaderBuildMode					shaderBuildMode;
-			DeviceContext					immediateContext;
+			GraphicsDeviceContext			immediateContext;
 
 			// All for debug Effect
 			crossplatform::Effect			*debugEffect;
@@ -429,7 +430,7 @@ namespace simul
 		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
 		/// \param [in]	brightness 	Brightness of the lines.
 		/// \param [in]	numLines	Number of gridlines to draw.
-		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
+		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::GraphicsDeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
 		// Clang works differently to VC++:
 #if !defined( _MSC_VER ) || defined(_GAMING_XBOX)
 		template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)

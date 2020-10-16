@@ -6,7 +6,7 @@ namespace simul
 	{
 		class Texture;
 		class RenderPlatform;
-		struct DeviceContext;
+		struct GraphicsDeviceContext;
 		class SIMUL_CROSSPLATFORM_EXPORT DemoOverlay
 		{
 			Texture *texture1,*texture2;
@@ -16,7 +16,7 @@ namespace simul
 			~DemoOverlay();
 			void RestoreDeviceObjects(RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
-			void Render(DeviceContext &deviceContext);
+			void Render(GraphicsDeviceContext &deviceContext);
 		};
 	}
 }

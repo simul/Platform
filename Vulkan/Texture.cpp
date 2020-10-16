@@ -906,7 +906,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	return true;
 }
 
-void Texture::ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear)
+void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 	activateRenderTarget(deviceContext,0,0);
 	renderPlatform->GetDebugEffect()->Apply(deviceContext,"clear_depth",0);
@@ -915,7 +915,7 @@ void Texture::ClearDepthStencil(crossplatform::DeviceContext& deviceContext, flo
 	deactivateRenderTarget(deviceContext);
 }
 
-void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
+void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if (IsValid())
 	{

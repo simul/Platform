@@ -64,8 +64,8 @@ namespace simul
 			}
 			void		RestoreDeviceObjects(void*) override;
 			void		InvalidateDeviceObjects() override;
-			void		BeginFrame(crossplatform::DeviceContext& deviceContext) override;
-			void		EndFrame(crossplatform::DeviceContext& deviceContext) override;
+			void		BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext) override;
+			void		EndFrame(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void		CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *) override;
 			float		GetDefaultOutputGamma() const override;
 			void		BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
@@ -75,15 +75,11 @@ namespace simul
 			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 			
-			void		Draw(crossplatform::DeviceContext& deviceContext, int num_verts, int start_vert) override;
-			void		DrawIndexed(crossplatform::DeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
-			void		DrawLineLoop(crossplatform::DeviceContext& deviceContext, const double *mat, int num, const double *vertexArray, const float colr[4]) override;
-			void		DrawTexture(crossplatform::DeviceContext& deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false) override;
-			void		DrawQuad(crossplatform::DeviceContext& deviceContext) override;
-			void		DrawLines(crossplatform::DeviceContext& deviceContext, crossplatform::PosColourVertex* lines, int count, bool strip = false, bool test_depth = false, bool view_centred = false) override;
-			void		Draw2dLines(crossplatform::DeviceContext& deviceContext, crossplatform::PosColourVertex* lines, int count, bool strip) override;
-			void		DrawCircle(crossplatform::DeviceContext& context, const float *dir, float rads, const float* colr, bool fill = false) override;
-			void		GenerateMips(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
+			void		Draw(crossplatform::GraphicsDeviceContext& deviceContext, int num_verts, int start_vert) override;
+			void		DrawIndexed(crossplatform::GraphicsDeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
+			void		DrawTexture(crossplatform::GraphicsDeviceContext& deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false) override;
+			void		DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext) override;
+			void		GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
 			//! This should be called after a Draw/Dispatch command that uses
 			//! textures. Here we will apply the textures.
 			bool		ApplyContextState(crossplatform::DeviceContext &deviceContext,bool error_checking=true) override;
@@ -105,19 +101,19 @@ namespace simul
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			void*									GetDevice();
 			
-			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0) override;
-			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth) override;
-			void									DeactivateRenderTargets(crossplatform::DeviceContext &) override;
-			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
+			void									SetStreamOutTarget(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0) override;
+			void									ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth) override;
+			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &) override;
+			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
 
 			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;
-			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext) override;
+			void									PopRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
             void									SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
-			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
+			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			void									RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void									RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
@@ -152,13 +148,13 @@ namespace simul
 			//! Returns dummy texture chosen from resource type.
 			vulkan::Texture*						GetDummyTexture(crossplatform::ShaderResourceType);
 			
-			vk::Framebuffer*						GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext);
-			crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::DeviceContext &deviceContext);
+			vk::Framebuffer*						GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext);
+			crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
 			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
 			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
-			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext);
+			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 

@@ -343,56 +343,65 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			}
 		}
 	}
-	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
-	if(!c)
-		pixelFormat=vulkanRenderPlatform->GetActivePixelFormat(deviceContext);
-	crossplatform::Topology appliedTopology = topology;
-	if (cs->topology != crossplatform::Topology::UNDEFINED)
-		appliedTopology = cs->topology;
-	if (appliedTopology == crossplatform::Topology::UNDEFINED)
-		appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat, appliedTopology);
-	const auto &p=mRenderPasses.find(hashval);
+	crossplatform::GraphicsDeviceContext *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
+	RenderPassHash  hashval=0 ;
 	RenderPassPipeline *renderPassPipeline=nullptr;
-	if(p==mRenderPasses.end())
-	{
-		renderPassPipeline=&mRenderPasses[hashval];
-		InitializePipeline(deviceContext,renderPassPipeline,pixelFormat, appliedTopology);
-	}
-	else
-		renderPassPipeline=&(mRenderPasses[hashval]);
 	if(c)
 	{
+		const auto &p=mRenderPasses.find(hashval);
+		if(p==mRenderPasses.end())
+		{
+			renderPassPipeline=&mRenderPasses[hashval];
+			InitializePipeline(deviceContext,renderPassPipeline,crossplatform::PixelFormat::UNKNOWN, crossplatform::Topology::UNDEFINED);
+		}
+		else
+			renderPassPipeline=&(mRenderPasses[hashval]);
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute,renderPassPipeline->mPipeline);
 		if(descriptorSet)
 			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else
 	{
+		crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
+		pixelFormat=vulkanRenderPlatform->GetActivePixelFormat(*graphicsDeviceContext);
+		crossplatform::Topology appliedTopology = topology;
+		if (cs->topology != crossplatform::Topology::UNDEFINED)
+			appliedTopology = cs->topology;
+		if (appliedTopology == crossplatform::Topology::UNDEFINED)
+			appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
+		hashval = MakeRenderPassHash(pixelFormat, appliedTopology);
+		const auto &p=mRenderPasses.find(hashval);
+		if(p==mRenderPasses.end())
+		{
+			renderPassPipeline=&mRenderPasses[hashval];
+			InitializePipeline(deviceContext,renderPassPipeline,pixelFormat, appliedTopology);
+		}
+		else
+			renderPassPipeline=&(mRenderPasses[hashval]);
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics,renderPassPipeline->mPipeline);
 		if(descriptorSet)
 			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 		// Now figure out the layout business for the rendertargets:
 		crossplatform::TargetsAndViewport *tv;
-		if(deviceContext.targetStack.size())
-			tv=deviceContext.targetStack.top();
+		if(graphicsDeviceContext->targetStack.size())
+			tv=graphicsDeviceContext->targetStack.top();
 		else
-			tv=&(deviceContext.defaultTargetsAndViewport);
+			tv=&(graphicsDeviceContext->defaultTargetsAndViewport);
 	#if 1
 		for(int i=0;i<tv->num;i++)
 		{
 			auto &tt= tv->textureTargets[i];
 			if(tv->textureTargets[i].texture)
-				((vulkan::Texture*)tt.texture)->SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
+				((vulkan::Texture*)tt.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
 		}
 		if(tv->depthTarget.texture)
 		{
 			auto& dt = tv->depthTarget;
 			if(depthStencilState->desc.depth.write)
-				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(deviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal,dt.layer,dt.mip);
+				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal,dt.layer,dt.mip);
 			else if(depthStencilState->desc.depth.test)
-				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(deviceContext,vk::ImageLayout::eDepthStencilReadOnlyOptimal,dt.layer,dt.mip);
+				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eDepthStencilReadOnlyOptimal,dt.layer,dt.mip);
 		}
 	#endif
 	}
@@ -648,14 +657,15 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 	}
 	else
 	{
+		auto *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
 		crossplatform::TargetsAndViewport* tv;
-		if (deviceContext.targetStack.size())
-			tv = deviceContext.targetStack.top();
+		if (graphicsDeviceContext->targetStack.size())
+			tv = graphicsDeviceContext->targetStack.top();
 		else
-			tv = &(deviceContext.defaultTargetsAndViewport);
+			tv = &(graphicsDeviceContext->defaultTargetsAndViewport);
 		int num_RT = tv->num;
 
-		vk::RenderPass* rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
+		vk::RenderPass* rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(*graphicsDeviceContext);
 		bool rebuildRenderPass = false; //Check for valid pointer and underlying VkHandle.
 		if (rp)
 			rebuildRenderPass = !(*rp);
@@ -882,7 +892,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 {
 }
 
-vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::DeviceContext & deviceContext,crossplatform::PixelFormat pixelFormat,crossplatform::Topology topology)
+vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext,crossplatform::PixelFormat pixelFormat,crossplatform::Topology topology)
 {
 	auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 	if(rp)

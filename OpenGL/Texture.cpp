@@ -146,7 +146,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// By default, generate mips:
-	crossplatform::DeviceContext dc;
+	crossplatform::GraphicsDeviceContext dc;
 	GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
@@ -198,7 +198,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 	// By default, generate mips:
-	crossplatform::DeviceContext dc;
+	crossplatform::GraphicsDeviceContext dc;
 	GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
@@ -575,12 +575,12 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	return false;
 }
 
-void Texture::ClearDepthStencil(crossplatform::DeviceContext& deviceContext, float depthClear, int stencilClear)
+void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 
 }
 
-void Texture::GenerateMips(crossplatform::DeviceContext& deviceContext)
+void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if (IsValid())
 	{
@@ -600,7 +600,7 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 	}
 }
 
-void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, int array_index, int mip_index)
+void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, int array_index, int mip_index)
 {
 	if (array_index == -1)
 	{
@@ -632,7 +632,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext& deviceContext, 
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
-void Texture::deactivateRenderTarget(crossplatform::DeviceContext& deviceContext)
+void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
 }

@@ -30,14 +30,14 @@ namespace simul
 			//! Platform-dependent function called when uninitializing the HDR renderer.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
-			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
-			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma);
-			void RenderInfraRed(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma);
-			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
+			void Render(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
+			void Render(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma);
+			void RenderInfraRed(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma);
+			void RenderWithOculusCorrection(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
-			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture);
+			void RenderGlowTexture(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture);
 			//! Draw the debug textures
-			void RenderDebug(crossplatform::DeviceContext &deviceContext, int x0, int y0, int w, int h);
+			void RenderDebug(GraphicsDeviceContext &deviceContext, int x0, int y0, int w, int h);
 			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			void RecompileShaders();
 			crossplatform::Texture *GetBlurTexture();

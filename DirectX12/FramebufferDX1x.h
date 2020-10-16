@@ -17,13 +17,13 @@ namespace simul
 			void            RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void            InvalidateDeviceObjects();
             virtual void    SetAntialiasing(int a);
-			virtual void    Activate(crossplatform::DeviceContext &deviceContext);
-			virtual void    ActivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void    Deactivate(crossplatform::DeviceContext &deviceContext);
-			virtual void    DeactivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void    Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
-			virtual void    ClearDepth(crossplatform::DeviceContext &context,float);
-			virtual void    ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
+			virtual void    Activate(crossplatform::GraphicsDeviceContext &deviceContext);
+			virtual void    ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext);
+			virtual void    Deactivate(crossplatform::GraphicsDeviceContext &deviceContext);
+			virtual void    DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext);
+			virtual void    Clear(crossplatform::GraphicsDeviceContext &context,float,float,float,float,float,int mask=0);
+			virtual void    ClearDepth(crossplatform::GraphicsDeviceContext &context,float);
+			virtual void    ClearColour(crossplatform::GraphicsDeviceContext &context, float, float, float, float );
         private:
             DXGI_SAMPLE_DESC mCachedMSAAState;
 		};

@@ -37,7 +37,7 @@ void SphereRenderer::RecompileShaders()
 	effect=renderPlatform->CreateEffect("sphere");
 }
 
-void SphereRenderer::DrawCrossSection(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
+void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
 {
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -69,7 +69,7 @@ void SphereRenderer::DrawCrossSection(crossplatform::DeviceContext &deviceContex
 	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
 	effect->Unapply(deviceContext);
 }
-void SphereRenderer::DrawMultipleCrossSections(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, crossplatform::Texture* t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices)
+void SphereRenderer::DrawMultipleCrossSections(GraphicsDeviceContext& deviceContext, crossplatform::Effect* effect, crossplatform::Texture* t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices)
 {
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
 	const math::Matrix4x4& proj = deviceContext.viewStruct.proj;
@@ -102,7 +102,7 @@ void SphereRenderer::DrawMultipleCrossSections(crossplatform::DeviceContext& dev
 	effect->Unapply(deviceContext);
 }
 
-void SphereRenderer::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
+void SphereRenderer::DrawLatLongSphere(GraphicsDeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
 {
 	//viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 &view=deviceContext.viewStruct.view;
@@ -135,7 +135,7 @@ void SphereRenderer::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	effect->Unapply(deviceContext);
 }
 
-void SphereRenderer::DrawQuad(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour, vec4 fill_colour)
+void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour, vec4 fill_colour)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -176,7 +176,7 @@ void SphereRenderer::DrawQuad(DeviceContext &deviceContext,vec3 origin,vec4 orie
 	}
 }
 
-void SphereRenderer::DrawTexture(DeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
+void SphereRenderer::DrawTexture(GraphicsDeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -209,7 +209,7 @@ void SphereRenderer::DrawTexture(DeviceContext &deviceContext,crossplatform::Tex
 	effect->Unapply(deviceContext);
 }
 
-void SphereRenderer::DrawCurvedTexture(DeviceContext& deviceContext, crossplatform::Texture* t, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
+void SphereRenderer::DrawCurvedTexture(GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
 {
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
 	const math::Matrix4x4& proj = deviceContext.viewStruct.proj;
@@ -242,7 +242,7 @@ void SphereRenderer::DrawCurvedTexture(DeviceContext& deviceContext, crossplatfo
 	effect->Unapply(deviceContext);
 }
 
-void SphereRenderer::DrawCircle(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour, vec4 fill_colour)
+void SphereRenderer::DrawCircle(GraphicsDeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour, vec4 fill_colour)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -281,7 +281,7 @@ void SphereRenderer::DrawCircle(DeviceContext &deviceContext, vec3 origin, vec4 
 	effect->Unapply(deviceContext);
 }
 
-void SphereRenderer::DrawArc(DeviceContext &deviceContext, vec3 origin, vec4 q1, vec4 q2, float sph_rad, vec4 colour)
+void SphereRenderer::DrawArc(GraphicsDeviceContext &deviceContext, vec3 origin, vec4 q1, vec4 q2, float sph_rad, vec4 colour)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;

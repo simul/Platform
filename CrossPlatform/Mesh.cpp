@@ -93,7 +93,7 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 	return true;
 }
 
-void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
+void Mesh::BeginDraw(GraphicsDeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
 	if(layout)
 		layout->Apply(deviceContext);
@@ -102,7 +102,7 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::
 }
 
 // Draw all the faces with specific material with given shading mode.
-void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int meshIndex) const
+void Mesh::Draw(GraphicsDeviceContext &deviceContext,int meshIndex) const
 {
 	bool init = done_begin;
 	if (!init)
@@ -121,7 +121,7 @@ void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int meshIndex) const
 }
 
 // Unbind buffers, reset vertex arrays, turn off lighting and texture.
-void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
+void Mesh::EndDraw(GraphicsDeviceContext &deviceContext) const
 {
 	if (layout)
 		layout->Unapply(deviceContext);
@@ -132,7 +132,7 @@ void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 void Mesh::UpdateVertexPositions(int , float *) const
 {
 }
-void Mesh::apply(crossplatform::DeviceContext &deviceContext,unsigned instanceStride,Buffer *instanceBuffer)
+void Mesh::apply(GraphicsDeviceContext &deviceContext,unsigned instanceStride,Buffer *instanceBuffer)
 {
 	renderPlatform->SetVertexBuffers(deviceContext, 0, 1, &vertexBuffer, layout);
 	renderPlatform->SetIndexBuffer(deviceContext, indexBuffer);

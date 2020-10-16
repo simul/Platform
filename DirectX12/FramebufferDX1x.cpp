@@ -44,7 +44,7 @@ void Framebuffer::SetAntialiasing(int a)
     }
 }
 
-void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 {
     if ((!buffer_texture || !buffer_texture->IsValid()) && (!buffer_depth_texture || !buffer_depth_texture->IsValid()))
     {
@@ -97,12 +97,12 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	depth_active	                    = dsView != nullptr;
 }
 
-void Framebuffer::ActivateDepth(crossplatform::DeviceContext&)
+void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext&)
 {
 	SIMUL_BREAK_ONCE("Nacho has to check this");
 }
 
-void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext)
 {
     if (!colour_active && !depth_active)
     {
@@ -117,7 +117,7 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
     ((dx12::RenderPlatform*)deviceContext.renderPlatform)->SetCurrentSamples(mCachedMSAAState.Count, mCachedMSAAState.Quality);
 }
 
-void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	if (!buffer_depth_texture->IsValid() || !depth_active)
 	{
@@ -131,7 +131,7 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
     depth_active                    = false;
 }
 
-void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
+void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
 {
     if ((!buffer_texture || !buffer_texture->IsValid()) && (!buffer_depth_texture || !buffer_depth_texture->IsValid()))
     {
@@ -156,7 +156,7 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 	}
 }
 
-void Framebuffer::ClearDepth(crossplatform::DeviceContext &deviceContext,float depth)
+void Framebuffer::ClearDepth(crossplatform::GraphicsDeviceContext &deviceContext,float depth)
 {
 	if (buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
@@ -165,7 +165,7 @@ void Framebuffer::ClearDepth(crossplatform::DeviceContext &deviceContext,float d
 	}
 }
 
-void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a)
+void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext,float r,float g,float b,float a)
 {
 	float clearColor[4] = { r,g,b,a };
 	if (is_cubemap)

@@ -25,7 +25,7 @@ namespace simul
 			void        Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
             void        SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 
-			vk::RenderPass &GetVulkanRenderPass(crossplatform::DeviceContext & deviceContext,crossplatform::PixelFormat pixf,crossplatform::Topology topology);
+			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext,crossplatform::PixelFormat pixf,crossplatform::Topology topology);
         private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();

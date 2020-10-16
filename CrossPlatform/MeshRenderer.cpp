@@ -39,7 +39,7 @@ void MeshRenderer::InvalidateDeviceObjects()
 	effect = nullptr;
 }
 
-void MeshRenderer::Render(DeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap)
+void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap)
 {
 	if (!effect)
 		RecompileShaders();

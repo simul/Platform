@@ -32,8 +32,7 @@ bool Direct3D12Manager::IsActive() const
 
 void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_driver )
 {
-	SIMUL_COUT << "=========================================\n";
-	SIMUL_COUT << "Initializing Directx12 manager with: \n";
+	SIMUL_COUT << "Initializing DX12 D3D12 DirectX12 manager with: \n";
 	SIMUL_COUT << "-Device Debug = " << (use_debug ? "enabled" : "disabled") << std::endl;
 
 	HRESULT res	= S_FALSE;
@@ -223,11 +222,26 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	SIMUL_ASSERT(res == S_OK);
     mGraphicsQueue->SetName(L"Main CommandQueue");
 
+	// Asynchronous compute:
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mComputeQueue));
+	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&m_computeCommandQueue));
 	SIMUL_ASSERT(res == S_OK);
-	mComputeQueue->SetName(L"Aynchronous Compute CommandQueue");
+	m_computeCommandQueue->SetName(L"Aynchronous Compute CommandQueue");
 	
+	for (int i = 0; i < FrameCount; ++i)
+	{
+		V_CHECK (mDevice->CreateCommandAllocator (D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS (&asyncComputeFrames[i].allocator)));
+		V_CHECK (mDevice->CreateCommandList (0, D3D12_COMMAND_LIST_TYPE_COMPUTE, asyncComputeFrames[i].allocator.Get(), nullptr, IID_PPV_ARGS (&asyncComputeFrames[i].commandList)));
+		V_CHECK (mDevice->CreateFence (0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS (&asyncComputeFrames[i].fence)));
+
+		wchar_t buffer[64] = {};
+		swprintf_s (buffer, L"Compute CommandLists[%i] (compute queue)", i);
+		asyncComputeFrames[i].commandList->SetName(buffer);
+		swprintf_s (buffer, L"m_computeAllocators[%i]", i);
+		asyncComputeFrames[i].allocator->SetName( buffer);
+		
+		asyncComputeFrames[i].commandList->Close ();
+	}
 #endif
 #endif
 }
@@ -313,6 +327,15 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 #endif
 	return o;
 }
+
+void AsyncComputeFrame::InvalidateDeviceObjects()
+{
+	allocator.Reset();
+	commandList.Reset();
+	fence.Reset();
+}
+
+
 void Direct3D12Manager::Shutdown()
 {
 	if(!mDevice)
@@ -328,7 +351,11 @@ void Direct3D12Manager::Shutdown()
 	SAFE_RELEASE(mIContext.IAllocator);
 	SAFE_RELEASE(mIContext.ICommandList);
 	SAFE_RELEASE(mGraphicsQueue);
-	SAFE_RELEASE(mComputeQueue);
+	for(int i=0;i<FrameCount;i++)
+	{
+		asyncComputeFrames[i].InvalidateDeviceObjects();
+	}
+	m_computeCommandQueue.Reset();
 	
 	SAFE_RELEASE(mDevice);
 #ifndef _XBOX_ONE

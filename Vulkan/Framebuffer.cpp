@@ -80,7 +80,7 @@ void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
     BaseFramebuffer::RestoreDeviceObjects(r);
 }
 
-void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 }
 
@@ -168,7 +168,7 @@ void Framebuffer::InvalidateDeviceObjects()
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
-void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
+void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
@@ -215,7 +215,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext& deviceContext)
     deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 #include "Platform/Core/StringFunctions.h"
-void Framebuffer::InitVulkanFramebuffer(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(buffer_texture)
@@ -254,7 +254,7 @@ void Framebuffer::InitVulkanFramebuffer(crossplatform::DeviceContext &deviceCont
 	initialized=true;
 }
 
-vk::Framebuffer *Framebuffer::GetVulkanFramebuffer(crossplatform::DeviceContext &deviceContext,int cube_face)
+vk::Framebuffer *Framebuffer::GetVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext,int cube_face)
 {
 	if(!initialized)
 		InitVulkanFramebuffer(deviceContext);
@@ -275,7 +275,7 @@ vk::Framebuffer *Framebuffer::GetVulkanFramebuffer(crossplatform::DeviceContext 
 		return &(mFramebuffers[RPType::COLOUR][cube_face]);
 }
 
-vk::RenderPass *Framebuffer::GetVulkanRenderPass(crossplatform::DeviceContext &deviceContext)
+vk::RenderPass *Framebuffer::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	if(!initialized)
 		InitVulkanFramebuffer(deviceContext);
@@ -291,7 +291,7 @@ void Framebuffer::SetExternalTextures(crossplatform::Texture* colour, crossplatf
     BaseFramebuffer::SetExternalTextures(colour, depth);
 }
 
-void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
+void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
 {
     // This call must be made within a Activate - Deactivate block!
     bool changed = false;
@@ -319,19 +319,19 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext, float r, fl
     }
 }
 
-void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a)
+void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a)
 {
     SIMUL_BREAK("");
 }
 
-void Framebuffer::Deactivate(crossplatform::DeviceContext& deviceContext)
+void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
     colour_active   = false;
     depth_active    = false;
 }
 
-void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
     // This call must be made inside Activate - Deactivate block!
     if (depth_active)

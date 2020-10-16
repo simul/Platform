@@ -23,7 +23,7 @@ namespace simul
 			//! To be called when the rendering device is no longer valid.
 			void InvalidateDeviceObjects();
 			//! Render the lens flares based on the given direction to the light, and its colour.
-			void Render(DeviceContext &deviceContext, Mesh *mesh,mat4 model
+			void Render(GraphicsDeviceContext &deviceContext, Mesh *mesh,mat4 model
 			, Texture *diffuseCubemap, Texture *specularCubemap);
 			void ApplyMaterial(DeviceContext &deviceContext, Material *material);
 		protected:

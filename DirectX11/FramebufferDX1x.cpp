@@ -77,7 +77,7 @@ void Framebuffer::MoveDepthToSlowRAM()
 		buffer_depth_texture->MoveToSlowRAM();
 }
 
-void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
@@ -115,7 +115,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
-void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float ,float )
+void Framebuffer::SetViewport(crossplatform::GraphicsDeviceContext &deviceContext,float X,float Y,float W,float H,float ,float )
 {
 	D3D11_VIEWPORT viewport;
 	viewport.Width = floorf((float)Width*W + 0.5f);
@@ -127,7 +127,7 @@ void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float 
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &viewport);
 }
 
-void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(!pContext)
@@ -155,7 +155,7 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	renderPlatform->PopRenderTargets(deviceContext);
@@ -165,7 +165,7 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 	depth_active=false;
 }
 
-void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
+void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(!buffer_texture->AsD3D11RenderTargetView())
@@ -184,7 +184,7 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 	fb->m_dt=nullptr;
 }
 
-void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
+void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
@@ -224,13 +224,13 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 		pContext->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),mask,depth,0);
 }
 
-void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
+void Framebuffer::ClearDepth(crossplatform::GraphicsDeviceContext &context,float depth)
 {
 	if(buffer_depth_texture->AsD3D11DepthStencilView())
 		context.asD3D11DeviceContext()->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
 }
 
-void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a)
+void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext,float r,float g,float b,float a)
 {
 	float clearColor[4]={r,g,b,a};
 	if(is_cubemap)

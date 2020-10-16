@@ -59,7 +59,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	//if(!rendertarget)
 	//	return;
 	ERRNO_BREAK
-	crossplatform::DeviceContext deviceContext;
+	crossplatform::GraphicsDeviceContext deviceContext;
 	viewSize[view_id]					= int2(w,h);
 	deviceContext.platform_context		= context;
 	deviceContext.renderPlatform		= renderPlatform;

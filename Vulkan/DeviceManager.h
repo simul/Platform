@@ -62,7 +62,7 @@ namespace simul
 		protected:
 			void CreateDevice();
 			void SetupDebugCallback();
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
+			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
 			uint32_t enabled_extension_count;
 			uint32_t enabled_layer_count;
 			bool device_initialized;

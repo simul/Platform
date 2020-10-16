@@ -259,7 +259,7 @@ void RenderPlatform::PushToReleaseManager(vk::Sampler& i)
 	releaseSamplers.insert(i);
 }
 
-void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
 	auto *vulkanDevice=AsVulkanDevice();
@@ -267,7 +267,7 @@ void RenderPlatform::BeginFrame(crossplatform::DeviceContext& deviceContext)
 	//vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frame_index]);
 }
 
-void RenderPlatform::EndFrame(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
@@ -421,16 +421,12 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 }
 //Intra-commandbuffer synchronisations https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 
-void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
-{
-}
-
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug)
+void RenderPlatform::DrawTexture(crossplatform::GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug)
 {
     crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext& deviceContext)   
+void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext)   
 {
 	if(!deviceContext.contextState.currentEffectPass)
 		return;
@@ -470,11 +466,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	
 	// We will only set the tables once per frame
-	if (mLastFrame != deviceContext.frame_number)
+	if (deviceContext.AsGraphicsDeviceContext()&&mLastFrame != deviceContext.frame_number)
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
-		BeginFrame(deviceContext);
+		BeginFrame(*deviceContext.AsGraphicsDeviceContext());
 
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;
@@ -490,6 +486,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	// If not a compute shader, apply viewports:
 	if(commandBuffer!=nullptr&&pass->shaders[crossplatform::SHADERTYPE_COMPUTE]==nullptr)
 	{
+		crossplatform::GraphicsDeviceContext *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
 		vk::DeviceSize offsets[] = { 0 };
 		for(auto i:cs->applyVertexBuffers)
 		{
@@ -509,7 +506,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		}
 		pass->Apply(deviceContext,false);
 		                                                                                                        
-		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(deviceContext);
+		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
 		size_t clearColoursCount = (size_t)mTargets.num + (mTargets.m_dt ? 1 : 0);
 		std::vector<vk::ClearValue>clearValues(clearColoursCount);
 		for (size_t i = 0; i < clearColoursCount; i++)
@@ -526,11 +523,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			clearValues[0] = vk::ClearColorValue(std::array<float, 4>({{0.0f, 0.0f, 0.0f, 0.0f}}));
 			clearValues[1] = vk::ClearDepthStencilValue(0.0f, 0u);
 		}
-		crossplatform::Viewport vp=GetViewport(deviceContext,0);
+		crossplatform::Viewport vp=GetViewport(*graphicsDeviceContext,0);
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
-													.setRenderPass(pass->GetVulkanRenderPass(deviceContext, GetActivePixelFormat(deviceContext),cs->topology))
+													.setRenderPass(pass->GetVulkanRenderPass(*graphicsDeviceContext, GetActivePixelFormat(*graphicsDeviceContext),cs->topology))
 													.setFramebuffer(*framebuffer)
 													.setClearValueCount((uint32_t)clearColoursCount)
 													.setPClearValues(clearValues.data())
@@ -556,7 +553,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	return true;
 }
 
-crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::DeviceContext &deviceContext)
+crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
 	{
@@ -1322,7 +1319,7 @@ void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& device
     SetRenderState(deviceContext, standardRenderStates[s]);
 }
 
-void RenderPlatform::Resolve(crossplatform::DeviceContext& deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
 	/*vulkan::Texture* src = (vulkan::Texture*)source;
 	vulkan::Texture* dst = (vulkan::Texture*)destination;
@@ -1399,11 +1396,11 @@ void* RenderPlatform::GetDevice()
 	return (void*)vulkanDevice;
 }
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext&,crossplatform::Buffer *buffer,int/* start_index*/)
+void RenderPlatform::SetStreamOutTarget(crossplatform::GraphicsDeviceContext&,crossplatform::Buffer *buffer,int/* start_index*/)
 {
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
+void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
 	if (num > 8)
 	{
@@ -1435,7 +1432,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext& deviceC
 	SetViewports(deviceContext, 1, &mTargets.viewport);
 }
 #include <cstdint>
-void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	deviceContext.GetFrameBufferStack().pop();
 	mTargets = {};
@@ -1454,7 +1451,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext& devic
     }
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
+void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
 	//vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(num>0&&vps!=nullptr)
@@ -1481,11 +1478,11 @@ void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 {
 }
 
-void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
+void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &)
 {
 }
 
-void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
     BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
     ApplyContextState(deviceContext);
@@ -1499,7 +1496,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
     EndEvent(deviceContext);
 }
 
-void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
+void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
     BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
     ApplyContextState(deviceContext);
@@ -1513,19 +1510,7 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
     EndEvent(deviceContext);
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
-{
-}
-
-void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
-{
-}
-
-void RenderPlatform::DrawCircle	(crossplatform::DeviceContext &,const float *,float ,const float *,bool)
-{
-}
-
-void RenderPlatform::GenerateMips(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
+void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
 {
     t->GenerateMips(deviceContext);
 }
@@ -1560,7 +1545,7 @@ bool RenderPlatform::memory_type_from_properties(uint32_t typeBits, vk::MemoryPr
 	return false;
 }
 
-vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::DeviceContext &deviceContext)
+vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	bool dTaV = false;
 	crossplatform::TargetsAndViewport *tv;
@@ -1697,7 +1682,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 }
 
 
-vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::DeviceContext& deviceContext)
+vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	bool dTaV = false;
 	crossplatform::TargetsAndViewport *tv;

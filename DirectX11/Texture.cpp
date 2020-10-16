@@ -1407,7 +1407,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 	mips=m;
 }
 
-void Texture::ClearDepthStencil(crossplatform::DeviceContext &deviceContext, float depthClear, int stencilClear)
+void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear)
 {
 	if (!depthStencil || !depthStencilView)
 		SIMUL_CERR << "Attempting to clear a texture that is not a Depth Stencil" << std::endl;
@@ -1416,7 +1416,7 @@ void Texture::ClearDepthStencil(crossplatform::DeviceContext &deviceContext, flo
 
 }
 
-void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
+void Texture::GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	// We can't detect if this has worked or not.
 	if(renderTargetViews&&*renderTargetViews)
@@ -1531,7 +1531,7 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 	return vec4((const float*)pixel);
 }
 
-void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index,int mip)
+void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index,int mip)
 {
 	if(!deviceContext.asD3D11DeviceContext())
 		return;
@@ -1568,7 +1568,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 
 }
 
-void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
+void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	if(renderPlatform)
 		renderPlatform->DeactivateRenderTargets(deviceContext);

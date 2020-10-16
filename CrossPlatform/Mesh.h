@@ -42,12 +42,12 @@ namespace simul
 				,const unsigned short *sIndices);
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
-			void BeginDraw(DeviceContext &deviceContext, ShadingMode pShadingMode) const;
+			void BeginDraw(GraphicsDeviceContext &deviceContext, ShadingMode pShadingMode) const;
 			// Draw all the faces with specific material with given shading mode.
-			void Draw(crossplatform::DeviceContext &deviceContext, int pMaterialIndex) const;
+			void Draw(GraphicsDeviceContext &deviceContext, int pMaterialIndex) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
-			void EndDraw(crossplatform::DeviceContext &deviceContext) const;
-			void apply(crossplatform::DeviceContext &deviceContext, unsigned instanceStride, Buffer *instanceBuffer);
+			void EndDraw(GraphicsDeviceContext &deviceContext) const;
+			void apply(GraphicsDeviceContext &deviceContext, unsigned instanceStride, Buffer *instanceBuffer);
 			// Get the count of material groups
 			int GetSubMeshCount() const;
 			void SetSubMesh(int submesh,int index_start,int num_indices,Material *m);

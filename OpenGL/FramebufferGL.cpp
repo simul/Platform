@@ -78,7 +78,7 @@ void FramebufferGL::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
     BaseFramebuffer::RestoreDeviceObjects(r);
 }
 
-void FramebufferGL::ActivateDepth(crossplatform::DeviceContext &deviceContext)
+void FramebufferGL::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 }
 
@@ -180,7 +180,7 @@ void FramebufferGL::InvalidateDeviceObjects()
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
-void FramebufferGL::Activate(crossplatform::DeviceContext& deviceContext)
+void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
@@ -229,7 +229,7 @@ void FramebufferGL::SetExternalTextures(crossplatform::Texture* colour, crosspla
     BaseFramebuffer::SetExternalTextures(colour, depth);
 }
 
-void FramebufferGL::Clear(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
+void FramebufferGL::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
 {
     // This call must be made within a Activate - Deactivate block!
     bool changed = false;
@@ -255,19 +255,19 @@ void FramebufferGL::Clear(crossplatform::DeviceContext &deviceContext, float r, 
     }
 }
 
-void FramebufferGL::ClearColour(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a)
+void FramebufferGL::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a)
 {
     SIMUL_BREAK("");
 }
 
-void FramebufferGL::Deactivate(crossplatform::DeviceContext& deviceContext)
+void FramebufferGL::Deactivate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
     colour_active   = false;
     depth_active    = false;
 }
 
-void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
+void FramebufferGL::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
     // This call must be made inside Activate - Deactivate block!
 	GLenum target = numAntialiasingSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;

@@ -45,7 +45,7 @@ namespace simul
 			void InitDebugging();
 			simul::opengl::RenderPlatform *renderPlatformOpenGL;
 		protected:
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
+			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
 			GLFWwindow* offscreen_context;
 			HGLRC           hRC;
 		};

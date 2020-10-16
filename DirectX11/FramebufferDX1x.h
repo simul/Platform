@@ -35,19 +35,19 @@ namespace simul
 			virtual void MoveToSlowRAM();
 			virtual void MoveDepthToSlowRAM();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			virtual void Activate(crossplatform::DeviceContext &deviceContext);
-			virtual void ActivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void Deactivate(crossplatform::DeviceContext &deviceContext);
-			virtual void DeactivateDepth(crossplatform::DeviceContext &deviceContext);
-			virtual void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
-			virtual void ClearDepth(crossplatform::DeviceContext &context,float);
-			virtual void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
+			virtual void Activate(crossplatform::GraphicsDeviceContext &deviceContext) override;
+			virtual void ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
+			virtual void Deactivate(crossplatform::GraphicsDeviceContext &deviceContext) override;
+			virtual void DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
+			virtual void Clear(crossplatform::GraphicsDeviceContext &context,float,float,float,float,float,int mask=0) override;
+			virtual void ClearDepth(crossplatform::GraphicsDeviceContext &context,float) ;
+			virtual void ClearColour(crossplatform::GraphicsDeviceContext &context, float, float, float, float ) override;
 
 		protected:
 			bool useESRAM,useESRAMforDepth;
 		protected:
-			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
-			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);
+			void SaveOldRTs(crossplatform::GraphicsDeviceContext &deviceContext);
+			void SetViewport(crossplatform::GraphicsDeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);
 		};
 	}
 }

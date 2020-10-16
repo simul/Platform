@@ -24,24 +24,20 @@ ContextState::ContextState()
 }
 
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
-std::stack<crossplatform::TargetsAndViewport*>& DeviceContext::GetFrameBufferStack()
+std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()
 {
 	return targetStack;
 }
 
-DeviceContext::DeviceContext():
-	platform_context(0)
-	,renderPlatform(0)
-	,activeTechnique(0)
-	,frame_number(0)
-	,cur_backbuffer(0)
+GraphicsDeviceContext::GraphicsDeviceContext():
+	cur_backbuffer(0)
 {
 	viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
 }
 
 
-void DeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
+void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	,const ApiDepthRenderTarget* dt
 	,uint32_t viewportLeft
 	,uint32_t viewportTop
