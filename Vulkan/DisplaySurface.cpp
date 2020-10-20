@@ -576,7 +576,6 @@ void DisplaySurface::CreateRenderPass()
 // the renderpass, no barriers are necessary.
 }
 
-
 void DisplaySurface::CreateFramebuffers()
 {
 	vk::ImageView attachments[1];
@@ -594,6 +593,12 @@ void DisplaySurface::CreateFramebuffers()
 		attachments[0] = swapchain_image_resources[i].view;
 		auto const result = GetVulkanDevice()->createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+	if (renderer)
+	{
+		if (mViewId < 0)
+			mViewId = renderer->AddView();
+		renderer->ResizeView(mViewId, viewport.w, viewport.h);
 	}
 }
 

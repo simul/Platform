@@ -165,10 +165,17 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			std::unique_ptr<vk::LayerProperties[]> instance_layers(new vk::LayerProperties[instance_layer_count]);
 			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.get());
 			SIMUL_VK_ASSERT_RETURN(result);
+			if(instance_layer_count)
+			{
+				std::cout <<"Vulkan layers:\n";
+			}
+			for (uint32_t j = 0; j < instance_layer_count; j++)
+			{
+				std::cout << "\t"<<instance_layers[j].layerName<<std::endl;
+			}
 
 			vk::Bool32 validation_set = VK_FALSE;
 			vk::Bool32 validation_found = VK_FALSE;
-
 			//Main
 			validation_found = CheckLayers(_countof(instance_validation_layers_main), instance_validation_layers_main, instance_layer_count, instance_layers.get());
 			if (validation_found && !validation_set)

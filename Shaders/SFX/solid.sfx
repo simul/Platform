@@ -17,6 +17,28 @@ uniform Texture2D shadowTexture;
 uniform Texture3D inscatterVolumeTexture;
 //////////////////////////
 
+uniform StructuredBuffer<Light> lights;
+
+float GetRoughness(vec4 combinedLookup)
+{
+	return combinedLookup.r;
+}
+
+float GetMetallic(vec4 combinedLookup)
+{
+	return combinedLookup.g;
+}
+
+float GetAO(vec4 combinedLookup)
+{
+	return combinedLookup.b;
+}
+
+float GetSpecular(vec4 combinedLookup)
+{
+	return combinedLookup.a;
+}
+
 struct vertexInput
 {
     vec3 position		: POSITION;
@@ -27,25 +49,58 @@ struct vertexInput
 struct vertexOutput
 {
     vec4 hPosition		: SV_POSITION;
-    vec2 texCoords		: TEXCOORD0;
-    vec3 normal			: TEXCOORD1;
-    vec3 wpos			: TEXCOORD2;
-    vec3 view			: TEXCOORD3;
-    vec4 clip_pos		: TEXCOORD4;
+    vec2 texCoords0		: TEXCOORD0;
+    vec2 texCoords1		: TEXCOORD1;
+    vec3 normal			: TEXCOORD2;
+	vec3 tangent		: TEXCOORD3;
+    vec3 wpos			: TEXCOORD4;
+    vec3 view			: TEXCOORD5;
+    vec4 clip_pos		: TEXCOORD6;
 };
 
-shader vertexOutput VS_Solid(vertexInput IN)
+shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 {
     vertexOutput OUT;
 	vec4 opos		=vec4(IN.position.xyz,1.0);
     OUT.wpos		=mul(world, opos).xyz;
 	OUT.view		=normalize(OUT.wpos.xyz- viewPosition);
-    OUT.clip_pos	=mul( opos,worldViewProj);
-	OUT.texCoords	=IN.texCoords;
+    OUT.clip_pos	=mul(opos,worldViewProj);
+	OUT.texCoords0	=vec2(0,0);
+	OUT.texCoords1	=vec2(0,0);
 #ifdef SFX_OPENGL
-    OUT.normal.xyz	=mul(mat3(world),IN.normal);
+    OUT.normal.xyz	=mul(vec3(0,0,1.0), mat3(world));
+	OUT.tangent.xyz = mul(vec3(0, 0, 1.0), mat3(world));
 #else
-    OUT.normal.xyz	= mul(world,vec4(IN.normal,0.0)).xyz;
+    OUT.normal.xyz	=mul(vec4(vec3(0,0,1.0),0.0), world).xyz;
+	OUT.tangent.xyz =mul(vec4(vec3(0, 0, 1.0), 0.0), world).xyz;
+#endif
+	OUT.hPosition	=OUT.clip_pos;
+    return OUT;
+}
+
+shader vertexOutput VS_Solid(vertexInput IN)
+{
+    vertexOutput OUT;
+	vec4 opos		=vec4(IN.position.xyz,1.0);
+    vec4 wpos		=mul(opos, world);
+
+	//wpos.xyz		-= videoCamPosition;
+	OUT.view		=normalize(wpos.xyz-viewPosition);
+	vec4 viewspace_pos = mul( view, vec4(wpos.xyz, 1.0));
+	OUT.clip_pos	=mul(proj,vec4(viewspace_pos.xyz,1.0));
+	OUT.wpos = wpos.xyz;
+	//OUT.clip_pos	=mul( opos, worldViewProj);
+	OUT.texCoords0	=IN.texCoords;
+	OUT.texCoords1	=IN.texCoords;
+#ifdef SFX_OPENGL
+	OUT.normal.xyz = mul(IN.normal, mat3(world));
+	OUT.tangent.xyz = mul(IN.tangent, mat3(world));
+#else
+	OUT.normal = mul(vec4(IN.normal.xyz, 0.0), world).xyz;
+	vec3 tangent=vec3(1.0,0.0,0.0);
+	OUT.tangent = vec4(mul(tangent.xyz, mat3(world)).xyz,0.0).xyz;
+	//OUT.normal = IN.normal;
+	//OUT.tangent = IN.tangent;
 #endif
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;
@@ -76,57 +131,235 @@ float DistributionTerm(float roughness, float n_h)
 	return m2 / (d * d * SIMUL_PI_F);
 }
 
+//SPECULAR
+//Fresnel-Schlick
+vec3 fresnel_schlick(vec3 R0, vec3 h, vec3 wi)
+{
+	return R0 + (1.0 - R0) * pow((1.0 - saturate(dot(h, wi))), 5.0);
+}
 vec3 FresnelTerm(vec3 specularColour, float v_h)
 {
-	vec3 fresnel = specularColour + (1. - specularColour) * pow((1. - v_h), 5.);
+	vec3 fresnel = specularColour + (vec3(1.0,1.0,1.0)- specularColour) * pow((1.0 - v_h), 5.);
 	return fresnel;
 }
 
-vec3 PBR(vec3 normal,vec3 viewDir,vec3 lightDir,vec3 lightColour,vec3 diffuseColour,vec3 specularColour,float roughness)
+float MipFromRoughness(float roughness, float CubemapMaxMip)
 {
-	float roughnessE	=roughness * roughness;
-	float roughnessL	=max(.01, roughnessE);
-	vec3 refl			=reflect(viewDir, normal);
+	// Heuristic that maps roughness to mip level
+	// This is done in a way such that a certain mip level will always have the same roughness, regardless of how many mips are in the texture
+	// Using more mips in the cubemap just allows sharper reflections to be supported
+	const float REFLECTION_CAPTURE_ROUGHEST_MIP = 6.0 - 1.0;
+	float LevelFrom1x1 = REFLECTION_CAPTURE_ROUGHEST_MIP - 1.2 * log2(roughness);
+	return (log2(roughness * 1.2) + 3.0);
+}
 
-	vec3 diffuse	= vec3(0,0,0);
-	vec3 specular	= vec3(0,0,0);
+struct SurfaceState
+{
+	vec3 F;
+	vec3 kS;
+	vec3 kD;
+	vec3 refl;
+	float n_v;
+};
 
-	vec3 halfVec	= normalize(viewDir + lightDir);
-	float v_h		= saturate(dot(viewDir, halfVec));
-	float n_h		= saturate(dot(normal, halfVec));
-	float n_v		= saturate(dot(normal, viewDir));
-	float n_l		= saturate(dot(normal, lightDir));
-	vec3 envSpecularColour = EnvBRDFApprox(specularColour, roughnessE, n_v);
+// The instantaneous properties at a specific point on a surface.
+struct SurfaceProperties
+{
+    vec3 albedo;		// diffuse color
+    vec3 normal;
+    vec3 emission;
+	vec3 position;
+	float roughness;
+	float roughness2;
+	float metallic;
+	float ao;
+    float specular;		// specular power in 0..1 range
+    float gloss;		// specular intensity
+    float alpha;		// alpha for transparencies
+};
 
-	vec3 env3	=diffuseCubemap.Sample(cubeSamplerState, normal.xyz).rgb;
-	vec3 env	=specularCubemap.SampleLevel(cubeSamplerState,refl.xyz,roughnessE*11.0).rgb;
-	env			=mix(env, env3, saturate((roughnessE - 0.25) / 0.75));
 
-	diffuse		+=diffuseColour * diffuseCubemap.Sample(cubeSamplerState, normal.xyz).rgb;;
-	specular	+=envSpecularColour * env;
+SurfaceState PreprocessSurface(vec3 viewDir,SurfaceProperties surfaceProperties)
+{
+	SurfaceState surfaceState;
+	// Constant normal incidence Fresnel factor for all dielectrics.
+	vec3 Fdielectric			=vec3(0.04,0.04,0.04);
+	// Fresnel reflectance at normal incidence (for metals use albedo color).
+	vec3 F0						= lerp(Fdielectric, surfaceProperties.albedo, surfaceProperties.metallic);
+	// Angle between surface normal and outgoing light direction.
+	float cosLo					= saturate( dot(surfaceProperties.normal,-viewDir) );
+	surfaceState.F				= FresnelTerm(F0, cosLo);
+	surfaceState.kS				= surfaceState.F;
+	surfaceState.kD				= lerp(vec3(1.0, 1.0, 1.0) - surfaceState.kS, vec3(0.0,0.0,0.0), surfaceProperties.metallic);
+	surfaceState.refl			= reflect(viewDir,surfaceProperties.normal);
+	surfaceState.n_v			= saturate(dot(surfaceProperties.normal, viewDir));
+	return surfaceState;
+}
 
-	diffuse		+=lightColour *diffuseColour * saturate(n_l);
+vec3 PBRAmbient(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surfaceProperties)
+{
+	float roughness_mip		= MipFromRoughness(surfaceProperties.roughness, 5.0);
+	// Sample the environment maps:
+	vec3 diffuse_env		= diffuseCubemap.SampleLevel(cubeSamplerState, surfaceProperties.normal.xyz,0.0).rgb;
+	vec3 env				= specularCubemap.SampleLevel(cubeSamplerState,surfaceState.refl.xyz, roughness_mip).rgb;
+	//vec3 rough_env			= roughSpecularCubemap.SampleLevel(cubeSamplerState, surfaceState.refl.xyz, saturate(roughness_mip-3.0)).rgb;
+	//env						=lerp(env,rough_env,saturate(roughness_mip-2.0));
 
-	vec3 lightF		=FresnelTerm(specularColour, v_h);
-	float lightD	=DistributionTerm(roughnessL, n_h);
-	float lightV	=VisibilityTerm(roughnessL, n_v, n_l);
-	specular		+=lightColour * lightF * (lightD * lightV * SIMUL_PI_F * n_l);
+	//env					=mix(env, diffuse_env, saturate((roughnessE - 0.25) / 0.75));
 
-	float ao = 1;// SceneAO(pos, normal, localToWorld);
-	//diffuse *= ao;
-	specular *= saturate(pow(n_v + ao, roughnessE) - 1. + ao);
+	vec3 envSpecularColour	=EnvBRDFApprox(surfaceProperties.albedo, surfaceProperties.roughness2, surfaceState.n_v);
+	vec3 specular			=surfaceState.kS*envSpecularColour * env;
 
-	vec3 colour = diffuse+specular;
-	return abs(normal);
+	 //Metallic materials will have no diffuse output.
+	
+	vec3 diffuse			= surfaceState.kD*surfaceProperties.albedo * diffuse_env;
+	diffuse					*= surfaceProperties.ao;
+	vec3 colour				= diffuse+specular;
+
+	return colour;
+}
+
+vec3 PBRAddLight(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surfaceProperties,Light light)
+{
+	vec3 diff						=light.position-surfaceProperties.position;
+	float dist_to_light				=length(diff);
+	float d							=max(1.0,dist_to_light/light.radius);
+	vec3 irradiance					=light.colour.xyz*lerp(1.0,5.0/(d*d),light.is_point);
+	vec3 dir_from_surface_to_light	=lerp(-light.direction,normalize(diff),light.is_point);
+	float roughnessL				= max(.01, surfaceProperties.roughness2);
+	float n_l						=saturate(dot(surfaceProperties.normal, dir_from_surface_to_light));
+	vec3 halfway					=normalize(viewDir+dir_from_surface_to_light);
+	vec3 refl						=normalize(reflect(viewDir,surfaceProperties.normal));
+	float n_h						=saturate(dot(refl, dir_from_surface_to_light));
+	float lightD					=DistributionTerm(roughnessL, n_h);
+	float lightV					=VisibilityTerm(roughnessL, surfaceState.n_v, n_l);
+	// Per-light:
+	vec3 diffuse					=surfaceState.kD*irradiance * surfaceProperties.albedo * saturate(n_l);
+	vec3 specular					=irradiance * surfaceState.F * (lightD * lightV * SIMUL_PI_F );
+
+	//float ao				= SceneAO(pos, normal, localToWorld);
+	specular						*= surfaceState.kS*saturate(pow(surfaceState.n_v + surfaceProperties.ao, surfaceProperties.roughness2) - 1.0 + surfaceProperties.ao);
+	vec3 colour						= diffuse+specular;
+
+	return colour;
+}
+
+vec4 Solid(vertexOutput IN)
+{
+	vec3 tangentx		= normalize(IN.tangent);
+	vec3 tangenty		= normalize(cross(IN.normal, tangentx));
+	mat3 TangentMatrix	= mat3(tangentx, normalize(tangenty), normalize(IN.normal)); //transforms world=>tangent space
+
+	vec3 normalLookup	= vec3(0,0,1.0);//normalTexture.Sample(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R).xyz;
+	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
+	vec3 normal			= normalize(mul(normalLookup, TangentMatrix));
+
+	vec3 diffuseColour	= diffuseTexture.Sample(wrapSamplerState, IN.texCoords0.xy * diffuseTexCoordsScalar_R).rgb;
+	diffuseColour		= diffuseColour.rgb * diffuseOutputScalar.rgb;
+
+	vec3 view			= normalize(IN.wpos.xyz - viewPosition);
+	vec4 combinedLookup = vec4(1.0,1.0,1.0,1.0);//combinedTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R);
+	// from combinedLookup we will either use roughness*roughnessTexture, or (1-roughness)*smoothnessTexture. This depends on combinedOutputScalarRoughMetalOcclusion.a.
+	combinedLookup		=combinedLookup.araa;
+	//combinedLookup.a	=1.0-combinedLookup.a;
+	// occlusion to 1.0 for now.
+	combinedLookup.b	=1.0;
+	// So combinedLookup is now rough-metal-occl-smooth
+	vec4 roughMetalOcclusion;
+	roughMetalOcclusion.rgb			=combinedOutputScalarRoughMetalOcclusion.rgb*combinedLookup.rgb;
+	// smoothness:
+	roughMetalOcclusion.a			=(1.0-combinedOutputScalarRoughMetalOcclusion.r)*combinedLookup.a;
+	SurfaceProperties surfaceProperties;
+	surfaceProperties.position		=IN.wpos;
+	// Either roughness or 1.0-smoothness depending on alpha of scalar.
+	surfaceProperties.roughness		=lerp(roughMetalOcclusion.r,1.0-roughMetalOcclusion.a,combinedOutputScalarRoughMetalOcclusion.a);
+	surfaceProperties.metallic		=GetMetallic(roughMetalOcclusion);
+	surfaceProperties.ao			=GetAO(roughMetalOcclusion);
+
+	surfaceProperties.normal		=normal;
+	surfaceProperties.albedo		=diffuseColour;
+	surfaceProperties.roughness2	=surfaceProperties.roughness*surfaceProperties.roughness;
+
+	SurfaceState surfaceState	=PreprocessSurface(view,surfaceProperties);
+	vec3 c						=PBRAmbient(surfaceState, view, surfaceProperties);
+	for(int i=0;i<10;i++)
+	{
+		if(i>=lightCount)
+			break;
+		Light light			=lights[i];
+		c					+=PBRAddLight(surfaceState,view,surfaceProperties,light);
+	}
+	//c.gb += 0.03;
+
+	vec3 emissive		= vec3(0,0,0);//emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
+	emissive			*= emissiveOutputScalar.rgb;
+//	c=1.0-roughMetalOcclusion.a;
+	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
+
+	return u;
+}
+
+vec4 Solid_AlbedoOnly(vertexOutput IN)
+{
+	vec3 diffuseColour	= diffuseTexture.Sample(wrapSamplerState, IN.texCoords0.xy * diffuseTexCoordsScalar_R).rgb;
+	diffuseColour = diffuseColour.rgb * diffuseOutputScalar.rgb;
+
+	return vec4(diffuseColour.rgb, 1.0);
 }
 
 shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
-    vec3 normal		=normalize(IN.normal);
-	vec3 view		=normalize(IN.wpos.xyz - viewPosition);
-    vec3 c			=PBR(normal, view, vec3(0,-.7,.7), vec3(0.5,.48,.45), albedo, vec3(1,1,1),roughness);
-    vec4 u			=vec4(c.rgb,1.0);
-	return u;
+	return Solid(IN);
+}
+
+shader vec4 PS_Depth(vertexOutput IN) : SV_TARGET
+{
+	return Solid(IN);
+}
+
+shader vec4 PS_Solid_AlbedoOnly(vertexOutput IN) : SV_TARGET
+{
+	return Solid_AlbedoOnly(IN);
+} 
+
+vec4 DebugNormal(vertexOutput IN, int swizzle_mode)
+{
+	vec3 tangentx = normalize(IN.tangent);
+	vec3 tangenty = normalize(cross(IN.normal, tangentx));
+	mat3 TangentMatrix = mat3(tangentx, normalize(tangenty), normalize(IN.normal)); //transforms world=>tangent space
+
+	vec3 normalLookup	= vec3(0,0,1.0);//normalTexture.Sample(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R).bgr;
+	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
+	vec3 normal = normalize(mul(normalLookup, TangentMatrix));
+	normal = (normal + vec3(1.0f, 1.0f, 1.0f)) / 2.0f;
+	return vec4(IN.normal.xyz, 1.0f);
+/*	switch(swizzle_mode)
+	{
+		case 1: return vec4(normal.yxz, 1.0f); //Unreal-Swizzled
+		case 2: return vec4(normal.xzy, 1.0f); //Unity-Swizzled
+		case 3: return vec4(IN.normal.xyz, 1.0f); // Vertex normals unswizzled
+		default: return vec4(normalLookup.xyz, 1.0f); //Unswizzled
+	}*/
+}
+
+shader vec4 PS_DebugNormal_Unswizzled(vertexOutput IN) : SV_TARGET
+{
+	return DebugNormal(IN, 0);
+}
+
+shader vec4 PS_DebugNormal_Unreal(vertexOutput IN) : SV_TARGET
+{
+	return DebugNormal(IN, 1);
+}
+
+shader vec4 PS_DebugNormal_Unity(vertexOutput IN) : SV_TARGET
+{
+	return DebugNormal(IN, 2);
+}
+
+shader vec4 PS_DebugNormal_VertexNormals(vertexOutput IN) : SV_TARGET
+{
+	return DebugNormal(IN, 3);
 }
 
 /// A function that applies atmospherics and cloud visibility to a pixel of a transparent object.
@@ -144,7 +377,6 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	// so only dot-product the third row of invViewProj, with clip_pos.
 	float sine					=normalize(view).z;
 	vec2 texCoords				=0.5*vec2(clip_pos.x+1.0,1.0-clip_pos.y);
-	//vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
 
 	vec4 nearFarCloud			=texture_wrap_lod(nearFarTextureCube	,view		,0);
 
@@ -198,6 +430,13 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 
 VertexShader vs_solid = CompileShader(vs_4_0, VS_Solid());
 PixelShader ps_solid = CompileShader(ps_4_0, PS_Solid());
+
+//Debug renders.
+PixelShader ps_solid_albedo_only = CompileShader(ps_4_0, PS_Solid_AlbedoOnly()); //Albedo only view
+PixelShader ps_debug_normal_unswizzled = CompileShader(ps_4_0, PS_DebugNormal_Unswizzled()); //Unswizzled Normal view
+PixelShader ps_debug_normal_unreal = CompileShader(ps_4_0, PS_DebugNormal_Unreal()); //Unreal-basis normal view
+PixelShader ps_debug_normal_unity = CompileShader(ps_4_0, PS_DebugNormal_Unity()); //Unity-basis normal view
+PixelShader ps_debug_normal_vertexnormals = CompileShader(ps_4_0, PS_DebugNormal_VertexNormals()); //Vertex normals
 technique solid
 {
     pass base 

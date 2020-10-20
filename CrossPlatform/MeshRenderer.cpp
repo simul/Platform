@@ -79,8 +79,45 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 {
 	//solidConstants.lightIrradiance = physicalLightRenderData.lightColour;
 	//solidConstants.lightDir = physicalLightRenderData.dirToLight;
-	solidConstants.albedo = material->albedo.value;
-	solidConstants.roughness = material->roughness.value;
-	solidConstants.metal = material->metal.value;
+	//solidConstants.albedo = material->albedo.value;
+	//solidConstants.roughness = material->roughness.value;
+	//solidConstants.metal = material->metal.value;
+
+	int lightCount=0;
+	int reverseDepth=1;
+	vec2 vec2_unit(1.0f,1.0f);
+	vec4 vec4_unit(1.0f, 1.0f, 1.0f, 1.0f);
+	vec4 vec3_unit(1.0f,  1.0f, 1.0f);
+	solidConstants.diffuseOutputScalar						=vec4_unit;
+	solidConstants.diffuseTexCoordsScalar_R					=vec2_unit;
+	solidConstants.diffuseTexCoordsScalar_G					=vec2_unit;
+	solidConstants.diffuseTexCoordsScalar_B					=vec2_unit;
+	solidConstants.diffuseTexCoordsScalar_A					=vec2_unit;
+
+	solidConstants.normalOutputScalar						=vec4_unit;
+	solidConstants.normalTexCoordsScalar_R					=vec2_unit;
+	solidConstants.normalTexCoordsScalar_G					=vec2_unit;
+	solidConstants.normalTexCoordsScalar_B					=vec2_unit;
+	solidConstants.normalTexCoordsScalar_A					=vec2_unit;
+
+	solidConstants.combinedOutputScalarRoughMetalOcclusion	=vec4_unit;
+	solidConstants.combinedTexCoordsScalar_R				=vec2_unit;
+	solidConstants.combinedTexCoordsScalar_G				=vec2_unit;
+	solidConstants.combinedTexCoordsScalar_B				=vec2_unit;
+	solidConstants.combinedTexCoordsScalar_A				=vec2_unit;
+
+	solidConstants.emissiveOutputScalar						= vec4_unit;
+	solidConstants.emissiveTexCoordsScalar_R				=vec2_unit;
+	solidConstants.emissiveTexCoordsScalar_G				=vec2_unit;
+	solidConstants.emissiveTexCoordsScalar_B				=vec2_unit;
+	solidConstants.emissiveTexCoordsScalar_A				=vec2_unit;
+
+	solidConstants.u_SpecularColour							=vec3_unit;
+
+	solidConstants.u_DiffuseTexCoordIndex=0;
+	solidConstants.u_NormalTexCoordIndex=1;
+	solidConstants.u_CombinedTexCoordIndex=2;
+	solidConstants.u_EmissiveTexCoordIndex=3;
+
 	effect->SetConstantBuffer(deviceContext, &solidConstants);
 }

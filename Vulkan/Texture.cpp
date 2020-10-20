@@ -1159,7 +1159,8 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		.setImage(mImage);
-	if (layer >= 0 && mip >= 0)
+	int totalNum = cubemap ? 6 * arraySize : arraySize;
+	if (layer >= 0 && mip >= 0 && (arraySize >1||mips>1))
 	{
 		vk::ImageLayout &l = mLayerMipLayouts[layer][mip];
 		if (split_layouts)
