@@ -348,8 +348,7 @@ public:
 			cameraConstants.world = mat4::identity();
 			effect->SetConstantBuffer(deviceContext, &cameraConstants);
 			effect->SetTexture(deviceContext,"diffuseCubemap", diffuseCubemapTexture);
-			solidConstants.albedo=vec3(1.f,1.f,1.f);
-
+			
 			effect->SetConstantBuffer(deviceContext, &solidConstants);
 			effect->Apply(deviceContext, "solid", 0);
 			exampleMesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);

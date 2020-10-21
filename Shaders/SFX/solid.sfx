@@ -46,6 +46,12 @@ struct vertexInput
     vec3 normal			: TEXCOORD1;
 };
 
+struct vertexInputP
+{
+    vec3 position		: POSITION;
+};
+
+
 struct vertexOutput
 {
     vec4 hPosition		: SV_POSITION;
@@ -98,7 +104,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 #else
 	OUT.normal = mul(vec4(IN.normal.xyz, 0.0), world).xyz;
 	vec3 tangent=vec3(1.0,0.0,0.0);
-	OUT.tangent = vec4(mul(tangent.xyz, mat3(world)).xyz,0.0).xyz;
+	OUT.tangent = mul(vec4(tangent.xyz,0),world).xyz;
 	//OUT.normal = IN.normal;
 	//OUT.tangent = IN.tangent;
 #endif
