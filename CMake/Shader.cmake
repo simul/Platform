@@ -5,6 +5,7 @@ find_program(SIMUL_FX_EXECUTABLE fx)
 
 function ( add_sfx_shader_project targetName configJsonFile )
 	if(SIMUL_BUILD_SHADERS)
+	message(${configJsonFile})
 		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES" ${ARGN} )
 		if("${sfx_FOLDER}" STREQUAL "")
 			set(sfx_FOLDER Shaders)

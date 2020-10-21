@@ -713,6 +713,7 @@ bool sfxParseEffectFromMemory( int effect, const char* src,const char *filename,
 			string wd="";
 			if(_getcwd(buffer,_MAX_PATH))
 				wd=string(buffer)+"/";
+			mkpath(sfxOptions->intermediateDirectory);
 			string ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(filename))+"_pp";
 			ofstream pps(ppfile);
 			pps<<src;

@@ -571,7 +571,7 @@
 %token REGULARBUFFER RW_REGULARBUFFER STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token FILTER ADDRESS_U ADDRESS_V ADDRESS_W ADDRESS_WRAP ADDRESS_CLAMP ADDRESS_MIRROR FILTER_MIN_MAG_MIP_LINEAR FILTER_MIN_MAG_MIP_POINT FILTER_ANISOTROPIC
 
-%token BREAK COMMENT CONTINUE DO ELSE FOR GOTO IF RETURN WHILE WHITESPACE
+%token BREAK COMMENT CONTINUE DO ELSE FOR GOTO IF SWITCH CASE DEFAULT RETURN WHILE WHITESPACE
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -2164,6 +2164,10 @@ statement:	COMMENT
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+statement;
 					$$.strs[1]="";
 				}
+			| SWITCH '(' expression ')' '{' switch_cases '}'
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
+				}
 			| GOTO IDENTIFIER ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -2272,12 +2276,28 @@ read_block : { /* Read next block */
 	$$.lineno= sfxget_lineno();
 }
 
-
 struct_definition: '{' struct_member_list '}'
 {
 	$$.strs[0]="{\n";
 	$$.strs[0]+=($2.strs[0]+"\n}\n");
 }
+
+switch_cases: switch_cases switch_case
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0];
+} | switch_case
+{
+	$$.strs[0]=$1.strs[0];
+}
+
+switch_case: CASE expression ':' statement_list
+{
+	$$.strs[0]=($1.strs[0]+" ")+$2.strs[0]+$3.strs[0]+$4.strs[0];
+} | DEFAULT ':' statement_list
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
+
 struct_member_list: struct_member_list struct_element
 {
 	string list			=$1.strs[0];

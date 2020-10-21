@@ -563,6 +563,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"for"								stdReturn(FOR);
 <IN_SHADER>"goto"								stdReturn(GOTO);
 <IN_SHADER>"if"									stdReturn(IF);
+<IN_SHADER>"switch"								stdReturn(SWITCH);
+<IN_SHADER>"case"								stdReturn(CASE);
+<IN_SHADER>"default"							stdReturn(DEFAULT);
 <IN_SHADER>"else"								stdReturn(ELSE);
 <IN_SHADER>"while"								stdReturn(WHILE);
 <IN_SHADER>"<"									stdReturn('<');

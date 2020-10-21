@@ -903,10 +903,11 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	int dx=input.MouseX-input.LastMouseX;
 	int dy=input.MouseY-input.LastMouseY;
 	float mouseDeltaX=0.f,mouseDeltaY=0.f;
+	static float rr=750.0f;
 	if(input.MouseButtons&(MouseCameraInput::LEFT_BUTTON|MouseCameraInput::RIGHT_BUTTON))
 	{
-		mouseDeltaX =dx/750.f;
-		mouseDeltaY =dy/750.f;
+		mouseDeltaX =dx/rr;
+		mouseDeltaY =dy/rr;
 	}
 	input.LastMouseX=input.MouseX;
 	input.LastMouseY=input.MouseY;

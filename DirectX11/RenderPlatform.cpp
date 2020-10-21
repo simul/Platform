@@ -1521,6 +1521,8 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContex
 void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	std::stack<crossplatform::TargetsAndViewport*> &fbs=deviceContext.GetFrameBufferStack();
+	if(!fbs.size())
+		return ;
 	crossplatform::TargetsAndViewport *oldtv=fbs.top();
 	fbs.pop();
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();

@@ -19,3 +19,5 @@ public:
 	void ReleaseFileContents(void* pointer);
 	void Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text);
 };
+
+extern int mkpath(const std::string &filename_utf8);
