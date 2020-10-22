@@ -134,7 +134,6 @@ namespace simul
 			void		SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 			GLuint		GetGLId();
 
-			std::string PassName;
 		private:
 			//! SFX will generate an UBO with arrays of handles, the idea is to map the slot
 			//! provided by .sfxo and map it to the actual location within the UBO so we 

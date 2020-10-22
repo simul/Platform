@@ -215,8 +215,6 @@ EffectTechniqueGroup::~EffectTechniqueGroup()
 
 Effect::Effect()
 	:renderPlatform(NULL)
-	,currentPass(0)
-	,currentTechnique(NULL)
 	,platform_effect(NULL)
 {
 }
@@ -539,13 +537,11 @@ void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
-	currentTechnique				=effectTechnique;
 	if(effectTechnique)
 	{
 		EffectPass *p				=(effectTechnique)->GetPass(pass_num>=0?pass_num:0);
 		deviceContext.renderPlatform->ApplyPass(deviceContext, p);
 	}
-	currentPass=pass_num;
 }
 
 void Effect::Reapply(DeviceContext& deviceContext)
@@ -563,7 +559,6 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::E
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
 	EffectPass* p = nullptr;
-	currentTechnique = effectTechnique;
 	if (effectTechnique)
 	{
 		if(passname)
@@ -577,7 +572,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	renderPlatform->UnapplyPass(deviceContext);
-	currentTechnique = NULL;
 }
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
 {

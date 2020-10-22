@@ -406,9 +406,11 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Ef
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)
 {
     crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+    auto *p=cs->currentEffectPass;
+    crossplatform::Effect::Unapply(deviceContext);
     cs->textureAssignmentMapValid = false;
     cs->rwTextureAssignmentMapValid = false;
-    crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
+    crossplatform::Effect::Apply(deviceContext, p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext& deviceContext)
@@ -509,8 +511,7 @@ crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
     crossplatform::EffectPass(r,e)
-	,mProgramId(0),
-    PassName("passname")
+	,mProgramId(0)
 {
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
 	{
@@ -553,13 +554,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
     {
         InvalidateDeviceObjects();
         crossplatform::ContextState* cs     = deviceContext.renderPlatform->GetContextState(deviceContext);
-        PassName                            = cs->currentEffectPass->name;
+       // name                            = cs->currentEffectPass->name;
 
         opengl::Shader* v   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
         opengl::Shader* f   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
         opengl::Shader* c   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
         mProgramId          = glCreateProgram();
-        glObjectLabel(GL_PROGRAM, mProgramId, -1, PassName.c_str());
+        glObjectLabel(GL_PROGRAM, mProgramId, -1, name.c_str());
 
         bool attachedShaders = false;
         // GFX:
@@ -583,7 +584,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
         }
         else
         {
-            SIMUL_CERR << "Failed to attach shader to the program for pass: " << this->PassName.c_str() << "\n";
+            SIMUL_CERR << "Failed to attach shader to the program for pass: " << this->name.c_str() << "\n";
             SIMUL_BREAK("");
         }
 		
@@ -597,7 +598,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             std::vector<GLchar> infoLog(maxLength);
             glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);
 
-            SIMUL_CERR << "Failed to link the program for pass: "<<this->PassName.c_str()<<"\n";
+            SIMUL_CERR << "Failed to link the program for pass: "<<this->name.c_str()<<"\n";
             SIMUL_COUT << infoLog.data() << std::endl;
             SIMUL_BREAK_ONCE("");
 

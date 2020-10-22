@@ -992,7 +992,17 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	{
 		D3D12_RESOURCE_DESC desc = mTextureDefault->GetDesc();
 		if (desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || desc.Format != dxgiFormat)
-			ok = false;
+		{
+			int mindim=std::min(std::min(w,l),d);
+			while(m>1&&(1<<(m-1))>mindim)
+			{
+				m--;
+			}
+			if (desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || desc.Format != dxgiFormat)
+			{
+				ok = false;
+			}
+		}
 		if (computable != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
 			ok = false;
 		if (rendertargets != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
@@ -1005,6 +1015,11 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	bool changed = !ok;
 	if (!ok)
 	{
+		int mindim=std::min(std::min(w,l),d);
+		while(m>1&&(1<<(m-1))>mindim)
+		{
+			m--;
+		}
 		auto &deviceContext=renderPlatform->GetImmediateContext();
 		dxgi_format = dxgiFormat;
 		width		= w;

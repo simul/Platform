@@ -141,7 +141,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
-	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str();
+	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str();
     BeginEvent(deviceContext, effectPass);
     ApplyCurrentPass(deviceContext);
     glDispatchCompute(w, l, d);
@@ -151,7 +151,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext)   
 {
-    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
+    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
     ApplyCurrentPass(deviceContext);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     EndEvent(deviceContext);
@@ -987,7 +987,7 @@ GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
-    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->PassName.c_str());
+    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
     ApplyCurrentPass(deviceContext);
     glDrawArrays(mCurTopology, start_vert, num_verts);
     EndEvent(deviceContext);
