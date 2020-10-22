@@ -3,6 +3,7 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
 #include "Platform/CrossPlatform/Effect.h"
+#include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/Shaders/SL/solid_constants.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 
