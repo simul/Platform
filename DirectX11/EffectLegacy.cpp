@@ -838,9 +838,9 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,cross
 		else
 #endif
 		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
-		if (currentTechnique)
+		if (deviceContext.activeTechnique)
 		{
-			ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
+			ID3DX11EffectTechnique *tech	= deviceContext.activeTechnique->asD3DX11EffectTechnique();
 			if(currentPass)
 				V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
 		}
@@ -929,7 +929,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	if(!effectTechnique)
 		return;
 	ID3DX11Effect *effect			=asD3DX11Effect();
-	currentTechnique				=effectTechnique;
+	deviceContext.activeTechnique	=effectTechnique;
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
 	currentPass						=tech->GetPassByIndex(pass_num);
 	HRESULT hr						=currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
@@ -944,7 +944,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	cs->currentEffect = this;
 
 	ID3DX11Effect *effect			=asD3DX11Effect();
-	currentTechnique				=effectTechnique;
+	deviceContext.activeTechnique	=effectTechnique;
 	if(effectTechnique)
 	{
 		ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
@@ -995,9 +995,9 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	if(!effect)
 		return;
-	if (!currentTechnique)
+	if (!deviceContext.activeTechnique)
 		return;
-	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
+	ID3DX11EffectTechnique *tech	= deviceContext.activeTechnique->asD3DX11EffectTechnique();
 	if(currentPass)
 		V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
 }
@@ -1010,7 +1010,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	deviceContext.asD3D11DeviceContext()->GSSetShader(nullptr,nullptr,0);
 	deviceContext.asD3D11DeviceContext()->PSSetShader(nullptr,nullptr,0);
 	deviceContext.asD3D11DeviceContext()->VSSetShader(nullptr,nullptr,0);
-	currentTechnique=NULL;
+	deviceContext.activeTechnique=NULL;
 	currentPass = NULL;
 	//UnbindTextures(deviceContext);
 	crossplatform::Effect::Unapply(deviceContext);
