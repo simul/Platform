@@ -315,6 +315,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		}
 		delete[] instance_extensions;
 	}
+	errno = 0;
  	ERRNO_BREAK
 
 	if (!surfaceExtFound)
