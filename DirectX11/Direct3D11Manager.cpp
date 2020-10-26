@@ -686,10 +686,13 @@ void Direct3D11Manager::ReportMessageFilterState()
 	SIZE_T filterlength;
 	infoQueue->GetStorageFilter(NULL, &filterlength);
 	D3D11_INFO_QUEUE_FILTER *filter = (D3D11_INFO_QUEUE_FILTER*)malloc(filterlength);
-	memset( filter, 0, filterlength );
-	int numfilt=infoQueue->GetStorageFilterStackSize();
-	infoQueue->GetStorageFilter(filter,&filterlength);
-	free(filter);
+	if (filter)
+	{
+		memset(filter, 0, filterlength);
+		int numfilt = infoQueue->GetStorageFilterStackSize();
+		infoQueue->GetStorageFilter(filter, &filterlength);
+		free(filter);
+	}
 }
 
 void* Direct3D11Manager::GetDevice()
