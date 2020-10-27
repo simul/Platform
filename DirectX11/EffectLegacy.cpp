@@ -1,6 +1,7 @@
 #define NOMINMAX
 
 #if !PLATFORM_D3D11_SFX
+
 #include "Effect.h"
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
@@ -838,9 +839,8 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,cross
 		else
 #endif
 		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
-		if (deviceContext.activeTechnique)
+		if (deviceContext.contextState.currentEffectPass)
 		{
-			ID3DX11EffectTechnique *tech	= deviceContext.activeTechnique->asD3DX11EffectTechnique();
 			if(currentPass)
 				V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
 		}
