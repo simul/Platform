@@ -40,7 +40,7 @@ namespace simul
 		class SamplerState;
 		class Layout;
 		enum class ShaderResourceType;
-		struct Fence
+		struct TextureFence
 		{
 			crossplatform::Texture *texture;
 			unsigned long long label;
@@ -163,7 +163,7 @@ namespace simul
 		typedef FastMap<TextureAssignment,32> TextureAssignmentMap;
 		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
 		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
-		typedef std::unordered_map<const Texture*,Fence> FenceMap;
+		typedef std::unordered_map<const Texture*,TextureFence> FenceMap;
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
@@ -228,14 +228,17 @@ namespace simul
 		class EffectTechnique;
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
+		enum class DeviceContextType
+		{
+			COMPUTE,COPY,GRAPHICS
+		};
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
-			int ApiCallCounter=0;
+			DeviceContextType deviceContextType;
+			long long completed_frame=0;
 			long long frame_number=0;
-			bool initialized=false;
 			void *platform_context=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
-			EffectTechnique *activeTechnique=nullptr;
 			crossplatform::ContextState contextState;
 			virtual GraphicsDeviceContext *AsGraphicsDeviceContext()
 			{
@@ -264,6 +267,11 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
 		{
+			ComputeDeviceContext()
+			{
+				deviceContextType=DeviceContextType::COMPUTE;
+			}
+
 		};
 
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
@@ -275,6 +283,7 @@ namespace simul
 			{
 				return this;
 			}
+			bool initialized=false;
 			int framePrintX=0;
 			int framePrintY=0;
 			GraphicsDeviceContext();

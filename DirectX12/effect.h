@@ -142,13 +142,6 @@ namespace simul
 			crossplatform::EffectTechnique* GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 
-			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass) override;
-			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass) override;
-
-			void Unapply(crossplatform::DeviceContext &deviceContext) override;
-			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s) override;
-
 			//! This method uses the shader reflection code to check the resources slots. This is needed because
 			//! the sfx compiler is not as smart as the dx compiler so it will report that some resources are in use
 			//! when it is not true. In Dx12 we MUST be explicit about what are we doing so we need to know exactly the

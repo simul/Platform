@@ -1,5 +1,5 @@
 #define NOMINMAX
-#include "FramebufferDX1x.h"
+#include "Platform/DirectX12/Framebuffer.h"
 
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/Timer.h"

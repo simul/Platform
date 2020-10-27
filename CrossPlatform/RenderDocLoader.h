@@ -13,7 +13,7 @@
 
 #include <filesystem>
 #include "Platform/CrossPlatform/Export.h"
-#include "Platform/RenderDoc/Include/renderdoc_app.h"
+#include "Platform/External/RenderDoc/Include/renderdoc_app.h"
 
 namespace simul
 {

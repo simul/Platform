@@ -60,7 +60,7 @@ namespace simul
 			void RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
 
 			ID3D12Resource*					AsD3D12Resource() override;
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1,bool=true);
 			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int index = -1, int mip = -1);
 			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext);
 			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext,int index = -1, int mip = -1);
@@ -109,7 +109,8 @@ namespace simul
 			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext &deviceContext,int mip = -1, int index = -1);
 			//! Sets the state of the resource or subresource if provided.
 			void SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
-
+			
+			void SwitchToContext(crossplatform::DeviceContext &deviceContext);
 			DXGI_FORMAT	dxgi_format;
 			// Need an active command list to finish loading a texture!
 			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;

@@ -1,4 +1,4 @@
-#include "Platform/DirectX12/Direct3D12Manager.h"
+#include "Platform/DirectX12/DeviceManager.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX12/SimulDirectXHeader.h"
@@ -15,22 +15,22 @@ using namespace dx12;
 
 #pragma comment(lib,"dxguid")
 
-Direct3D12Manager::Direct3D12Manager():
+DeviceManager::DeviceManager():
 	mDevice(nullptr)
 {
 }
 
-Direct3D12Manager::~Direct3D12Manager()
+DeviceManager::~DeviceManager()
 {
 	Shutdown();
 }
 
-bool Direct3D12Manager::IsActive() const
+bool DeviceManager::IsActive() const
 {
 	return mGraphicsQueue != nullptr;
 }
 
-void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_driver )
+void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driver )
 {
 	SIMUL_COUT << "Initializing DX12 D3D12 DirectX12 manager with: \n";
 	SIMUL_COUT << "-Device Debug = " << (use_debug ? "enabled" : "disabled") << std::endl;
@@ -75,7 +75,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	res						= CreateDXGIFactory2(dxgiFactoryFlags, SIMUL_PPV_ARGS(&factory));
 	SIMUL_ASSERT(res == S_OK);
 
-	bool mUseWarpDevice = false;
+	static bool mUseWarpDevice = false;
 	// Create device with the warp adapter
 	if (mUseWarpDevice)
 	{
@@ -227,31 +227,41 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&m_computeCommandQueue));
 	SIMUL_ASSERT(res == S_OK);
 	m_computeCommandQueue->SetName(L"Aynchronous Compute CommandQueue");
+
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
+	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&m_copyCommandQueue));
+	SIMUL_ASSERT(res == S_OK);
+	m_copyCommandQueue->SetName(L"Copy CommandQueue");
 	
 	for (int i = 0; i < FrameCount; ++i)
 	{
-		V_CHECK (mDevice->CreateCommandAllocator (D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS (&asyncComputeFrames[i].allocator)));
-		V_CHECK (mDevice->CreateCommandList (0, D3D12_COMMAND_LIST_TYPE_COMPUTE, asyncComputeFrames[i].allocator.Get(), nullptr, IID_PPV_ARGS (&asyncComputeFrames[i].commandList)));
-		V_CHECK (mDevice->CreateFence (0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS (&asyncComputeFrames[i].fence)));
-
+		mComputeContexts[i].RestoreDeviceObjects(mDevice);
 		wchar_t buffer[64] = {};
-		swprintf_s (buffer, L"Compute CommandLists[%i] (compute queue)", i);
-		asyncComputeFrames[i].commandList->SetName(buffer);
-		swprintf_s (buffer, L"m_computeAllocators[%i]", i);
-		asyncComputeFrames[i].allocator->SetName( buffer);
-		
-		asyncComputeFrames[i].commandList->Close ();
+		swprintf_s (buffer, L"ComputeContext CommandList %i", i);
+		V_CHECK(mComputeContexts[i].ICommandList->SetName(buffer));
+		swprintf_s (buffer, L"ComputeContext Allocator %i", i);
+		V_CHECK(mComputeContexts[i].IAllocator->SetName(buffer));
 	}
 #endif
 #endif
 }
 
-int Direct3D12Manager::GetNumOutputs()
+void D3D12ComputeContext::RestoreDeviceObjects(ID3D12DeviceType *mDevice)
+{
+	V_CHECK (mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE,  SIMUL_PPV_ARGS(&IAllocator)));
+	V_CHECK (mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, IAllocator, nullptr, SIMUL_PPV_ARGS(&ICommandList)));
+	V_CHECK (mDevice->CreateFence(0, D3D12_FENCE_FLAG_SHARED, SIMUL_PPV_ARGS (&IFence)));//__uuidof(**(ppType)), IID_PPV_ARGS_Helper(ppType)
+	
+	
+ 	V_CHECK(ICommandList->Close());
+}
+
+int DeviceManager::GetNumOutputs()
 {
 	return (int)mOutputs.size();
 }
 
-crossplatform::Output Direct3D12Manager::GetOutput(int i)
+crossplatform::Output DeviceManager::GetOutput(int i)
 {
 	crossplatform::Output o;
 	
@@ -328,18 +338,22 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 	return o;
 }
 
-void AsyncComputeFrame::InvalidateDeviceObjects()
+void D3D12ComputeContext::InvalidateDeviceObjects()
 {
-	allocator.Reset();
-	commandList.Reset();
-	fence.Reset();
+	SAFE_RELEASE(IAllocator);
+	SAFE_RELEASE(ICommandList);
+	SAFE_RELEASE(IFence);
 }
 
 
-void Direct3D12Manager::Shutdown()
+void DeviceManager::Shutdown()
 {
 	if(!mDevice)
 		return;
+	for (int i = 0; i < FrameCount; ++i)
+	{
+		mComputeContexts[i].InvalidateDeviceObjects();
+	}
 	// TO-DO: wait for the GPU to complete last work
 	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
 	{
@@ -351,9 +365,11 @@ void Direct3D12Manager::Shutdown()
 	SAFE_RELEASE(mIContext.IAllocator);
 	SAFE_RELEASE(mIContext.ICommandList);
 	SAFE_RELEASE(mGraphicsQueue);
+	m_computeCommandQueue.Reset();
+	m_copyCommandQueue.Reset();
 	for(int i=0;i<FrameCount;i++)
 	{
-		asyncComputeFrames[i].InvalidateDeviceObjects();
+		//asyncComputeFrames[i].InvalidateDeviceObjects();
 	}
 	m_computeCommandQueue.Reset();
 	
@@ -370,30 +386,65 @@ void Direct3D12Manager::Shutdown()
 #endif
 }
 
-void Direct3D12Manager::ReportMessageFilterState()
+void DeviceManager::ReportMessageFilterState()
 {
 }
 
-void* Direct3D12Manager::GetDevice()
+void* DeviceManager::GetDevice()
 {
 	return mDevice;
 }
 
-void* Direct3D12Manager::GetDeviceContext()
+void* DeviceManager::GetDeviceContext()
 { 
 	return 0; 
 }
 
-void* Direct3D12Manager::GetImmediateContext()
+void D3D12ComputeContext::StartFrame()
+{
+	if(active)
+		return;
+	V_CHECK(IAllocator->Reset());
+	V_CHECK(ICommandList->Reset(IAllocator, nullptr));
+	active=true;
+}
+void D3D12ComputeContext::EndFrame()
+{
+	if(!active)
+		return;
+	V_CHECK(ICommandList->Close());
+	active=false;
+}
+
+void DeviceManager::GetComputeContext(crossplatform::DeviceContext &computeContext)
+{
+	//m_computeCommandQueue->Wait (asyncComputeFrames[lastFrameIndex].fence, asyncComputeFrames[lastFrameIndex].fenceValue);
+
+	//computeContext.ApiCallCounter=0;
+	
+	if(mComputeContexts[computeFrame].fenceValue>0)
+	{
+		m_computeCommandQueue->Wait(mComputeContexts[computeFrame].IFence, mComputeContexts[computeFrame].fenceValue);
+		while(mComputeContexts[computeFrame].IFence->GetCompletedValue()!=mComputeContexts[computeFrame].fenceValue)
+		{
+		}
+	}
+	computeContext.completed_frame=mComputeContexts[computeFrame].fenceValue;
+	mComputeContexts[computeFrame].StartFrame();
+	mComputeContexts[computeFrame].fenceValue=computeContext.frame_number;
+	m_computeCommandQueue->Signal(mComputeContexts[computeFrame].IFence, 0);
+	computeContext.platform_context=mComputeContexts[computeFrame].ICommandList;
+}
+
+void* DeviceManager::GetImmediateContext()
 {
     if (!mIContext.ICommandList)
     {
-        mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mIContext.IAllocator));
-        mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mIContext.IAllocator, nullptr, SIMUL_PPV_ARGS(&mIContext.ICommandList));
-        mIContext.ICommandList->Close();
+        V_CHECK (mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mIContext.IAllocator)));
+        V_CHECK (mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mIContext.IAllocator, nullptr, SIMUL_PPV_ARGS(&mIContext.ICommandList)));
+        V_CHECK (mIContext.ICommandList->Close());
         mIContext.IRecording = false;
-    }
-
+	}
     if (mIContext.IRecording)
     {
         FlushImmediateCommandList();
@@ -406,8 +457,25 @@ void* Direct3D12Manager::GetImmediateContext()
     return &mIContext;
 }
 
-void Direct3D12Manager::FlushImmediateCommandList()
+void DeviceManager::EndAsynchronousFrame()
 {
+	if(computeFrame<FrameCount&&mComputeContexts[computeFrame].active)
+	{
+		mComputeContexts[computeFrame].EndFrame();
+		ID3D12GraphicsCommandList* pCommandList = mComputeContexts[computeFrame].ICommandList;
+		ID3D12CommandList *comm[]={pCommandList};
+		m_computeCommandQueue->ExecuteCommandLists(1,comm);
+		m_computeCommandQueue->Signal(mComputeContexts[computeFrame].IFence, mComputeContexts[computeFrame].fenceValue);
+		lastFrameIndex=computeFrame;
+		computeFrame++;
+		if(computeFrame>=FrameCount)
+			computeFrame=0;
+	}
+}
+
+void DeviceManager::FlushImmediateCommandList()
+{
+	EndAsynchronousFrame();
     if (!mIContext.IRecording)
     {
         return;
@@ -426,7 +494,7 @@ void Direct3D12Manager::FlushImmediateCommandList()
     pFence->Release();
 }
 
-void* Direct3D12Manager::GetCommandQueue()
+void* DeviceManager::GetCommandQueue()
 {
 	return mGraphicsQueue;
 }
