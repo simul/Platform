@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if PLATFORM_LOAD_RENDERDOC
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/EnvironmentVariables.h"
 #include "Platform/CrossPlatform/RenderDocLoader.h"
@@ -16,7 +16,7 @@ void RenderDocLoader::Load()
 		return;
 
 	std::string simul_dir = simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL").c_str();
-	s_RenderDocFullpath = simul_dir + "/Platform/RenderDoc/lib/x64/renderdoc.dll";
+	s_RenderDocFullpath = simul_dir + "/Platform/External/RenderDoc/lib/x64/renderdoc.dll";
 	s_HModuleRenderDoc = LoadLibraryA(s_RenderDocFullpath.generic_string().c_str());
 
 	if (!s_HModuleRenderDoc)
