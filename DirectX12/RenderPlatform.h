@@ -24,7 +24,6 @@ extern const char *PlatformD3D12GetErrorText(HRESULT hr);
 	#define V_CHECK(x)\
 	{\
 		HRESULT hrx ;\
-		VERIFY_EXPLICIT_CAST(x,HRESULT);\
 		hrx = x;\
 		if( FAILED(hrx) )\
 		{\
