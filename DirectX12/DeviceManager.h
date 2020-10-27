@@ -24,25 +24,19 @@ namespace simul
 		struct Window;
 		typedef std::map<int, IDXGIOutput*> OutputMap;
 		
-		struct AsyncComputeFrame
-		{
-			void InvalidateDeviceObjects();
-			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-			Microsoft::WRL::ComPtr<ID3D12Fence>	fence;
-		};
 		//! Manages the rendering device
-		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
+		class SIMUL_DIRECTX12_EXPORT DeviceManager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
-										Direct3D12Manager();
-										~Direct3D12Manager();
+										DeviceManager();
+										~DeviceManager();
 			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void						Initialize(bool use_debug=false,bool instrument= false, bool default_driver = false);
 			bool						IsActive() const;
 			void						Shutdown();
 			void*						GetDevice();
 			void*						GetDeviceContext();
+			void						GetComputeContext(crossplatform::DeviceContext &);
 
             void*                       GetImmediateContext();
             void                        FlushImmediateCommandList();
@@ -51,8 +45,11 @@ namespace simul
 			int							GetNumOutputs();
 			crossplatform::Output		GetOutput(int i);
 			void						ReportMessageFilterState();
-
+			void EndAsynchronousFrame();
 		protected:
+
+			int computeFrame=0;
+			int lastFrameIndex=FrameCount-1;
             ImmediateContext            mIContext;
 			//! Map of displays
 			OutputMap					mOutputs;
@@ -60,10 +57,11 @@ namespace simul
 			ID3D12DeviceType*			mDevice;
 			//! Used to submit commands to the GPU
 			ID3D12CommandQueue*			mGraphicsQueue=nullptr;
-	// Compute objects.
+			// Compute objects.
 			static const int FrameCount=4;
 			Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_computeCommandQueue;
-			AsyncComputeFrame asyncComputeFrames[FrameCount];
+			Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_copyCommandQueue;
+			D3D12ComputeContext				 mComputeContexts[FrameCount];
 		};
 	}
 }

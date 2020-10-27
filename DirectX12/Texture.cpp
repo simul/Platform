@@ -253,24 +253,27 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		wic.scratchImage=new DirectX::ScratchImage;
 	if(name.find(".hdr")==name.length()-4)
 	{
-		res= DirectX::LoadFromHDRMemory( f.ptr, _In_ f.bytes,wic.metadata,*wic.scratchImage );
+		res= DirectX::LoadFromHDRMemory( f.ptr, _In_ f.bytes, wic.metadata,*wic.scratchImage );
 
 	}
     else if (name.find(".dds") != std::string::npos)
     {
-        res = DirectX::LoadFromDDSMemory(f.ptr, f.bytes, f.flags,wic.metadata, *wic.scratchImage);
+        res = DirectX::LoadFromDDSMemory(f.ptr, f.bytes, f.flags, wic.metadata, *wic.scratchImage);
     }
     else
     {
 	    res = DirectX::LoadFromWICMemory(f.ptr, f.bytes, f.flags, wic.metadata, *wic.scratchImage);
     }
     SIMUL_ASSERT(res == S_OK)
-		
+	
+	if(res == S_OK)
+	{
 	// The texture will be considered "valid" from here.
 	// Set the properties of this texture
-	width			= (int)wic.metadata->width;
-	length			= (int)wic.metadata->height;
-	pixelFormat		=RenderPlatform::FromDxgiFormat(wic.metadata->format);
+		width			= (int)wic.metadata->width;
+		length			= (int)wic.metadata->height;
+		pixelFormat		=RenderPlatform::FromDxgiFormat(wic.metadata->format);
+	}
 	mLoadedFromFile = true;
 	
 	// ok to free loaded data??
@@ -586,7 +589,7 @@ ID3D12Resource* Texture::AsD3D12Resource()
 	return mTextureDefault;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState /*= true*/, crossplatform::ShaderResourceType t, int index, int mip)
+D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState /*= true*/, crossplatform::ShaderResourceType t, int index, int mip,bool pixel_shader)
 {
     if (mip >= mips)
     {
@@ -614,9 +617,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 	if (setState)
 	{
 		auto curState = GetCurrentState(deviceContext,mip,index);
-		if	((curState & (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)) != (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) )
+		auto newState=pixel_shader?D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		if	((curState & (newState)) != (newState) )
 		{
-			SetLayout(deviceContext,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,mip,index);
+			SetLayout(deviceContext,newState,mip,index);
 		}
 	}
 
@@ -1933,6 +1937,13 @@ void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 	    }
     }
 	split_layouts=false;
+}
+
+void Texture::SwitchToContext(crossplatform::DeviceContext &deviceContext)
+{
+	if(deviceContext.deviceContextType!=crossplatform::DeviceContextType::COMPUTE)
+		return;
+	SetLayout(deviceContext,D3D12_RESOURCE_STATE_COMMON);
 }
 
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index /*= -1*/)

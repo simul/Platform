@@ -106,7 +106,7 @@ namespace simul
 				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
 				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
 			}
-#else
+#else 
 			void RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr);
 #endif
 			T* GetBuffer(crossplatform::DeviceContext& deviceContext)
@@ -195,7 +195,7 @@ namespace simul
 				if (platformStructuredBuffer)
 					platformStructuredBuffer->InvalidateDeviceObjects();
 				delete platformStructuredBuffer;
-				platformStructuredBuffer = NULL;
+				platformStructuredBuffer = nullptr;
 				count = 0;
 			}
 			void ResetCopies()

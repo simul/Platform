@@ -104,6 +104,15 @@ namespace simul
 			vec3 pos;
 			vec4 colour;
 		};
+		struct SIMUL_CROSSPLATFORM_EXPORT Fence
+		{
+			virtual void RestoreDeviceObjects(RenderPlatform *r)
+			{
+			}
+			virtual void InvalidateDeviceObjects()
+			{
+			}
+		};
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
@@ -170,6 +179,15 @@ namespace simul
 			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
 			//! Gets an object containing immediate-context API-specific values.
 			GraphicsDeviceContext &GetImmediateContext();
+			//! Gets an object containing the current global compute context.
+			ComputeDeviceContext &GetComputeDeviceContext()
+			{
+				return computeContext;
+			}
+			void SetComputeDeviceContext(const ComputeDeviceContext &c)
+			{
+				computeContext=c;
+			}
 			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath	(const char *pathUtf8);
 			//! Remove a path from the top of the texture path stack.
@@ -209,6 +227,7 @@ namespace simul
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
+			virtual void Signal(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.
@@ -281,6 +300,7 @@ namespace simul
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc);
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.
 			virtual Query					*CreateQuery					(QueryType q)=0;
+			virtual Fence					*CreateFence(){return nullptr;}
 			/// Get or create an API-specific shader object.
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
 			virtual Shader					*EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
@@ -313,6 +333,8 @@ namespace simul
 			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int index = -1, int mip = -1);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
+
+			virtual void					SetConstantBuffer				(DeviceContext& deviceContext,ConstantBufferBase *s);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 
@@ -385,7 +407,7 @@ namespace simul
 
 			ShaderBuildMode					shaderBuildMode;
 			GraphicsDeviceContext			immediateContext;
-
+			ComputeDeviceContext			computeContext;
 			// All for debug Effect
 			crossplatform::Effect			*debugEffect;
 			crossplatform::EffectTechnique	*textured;

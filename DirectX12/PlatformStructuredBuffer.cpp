@@ -52,7 +52,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     // SIMUL_COUT << "Allocating GPU memory for Structured Buffer: " << totalGpuBytes << " (" << (float)totalGpuBytes / 1024.0f / 1024.0f << ")\n";
 
     // Create the buffers:
-    D3D12_RESOURCE_STATES initState     = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : mShaderResourceState;
+    //  const D3D12_RESOURCE_STATES		mShaderResourceState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    D3D12_RESOURCE_STATES initState     = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	D3D12_RESOURCE_FLAGS bufferFlags    = computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS   : D3D12_RESOURCE_FLAG_NONE;
     mCurrentState                       = initState;
 
@@ -387,10 +388,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
     
 	// Check the resource state
-	if (mCurrentState != mShaderResourceState)
+	bool is_pixel_shader=(deviceContext.contextState.currentEffectPass->shaders[crossplatform::SHADERTYPE_PIXEL]!=nullptr);
+     D3D12_RESOURCE_STATES		readState = is_pixel_shader?D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+	if (mCurrentState != readState)
 	{
-		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, mCurrentState, mShaderResourceState);
-        mCurrentState = mShaderResourceState;
+		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, mCurrentState, readState);
+        mCurrentState = readState;
 	}
 	
     if (mCurApplies < mMaxApplyMod)
