@@ -39,7 +39,7 @@ add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINI
 	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" )
 
 add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS ${DX11_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-
+ 
 if(SIMUL_SOURCE_BUILD)
 	target_compile_definitions(SimulDirectX12_MD PRIVATE ${DX11_DEFS})
 	set_target_properties(SimulDirectX12_MD PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
