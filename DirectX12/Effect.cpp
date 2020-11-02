@@ -216,28 +216,6 @@ crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByIndex(int index)
 	return NULL;
 }
 
-void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
-{
-	crossplatform::Effect::Apply(deviceContext,effectTechnique,pass_num);
-}
-
-void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
-{
-	crossplatform::Effect::Apply(deviceContext,effectTechnique,passname);
-}
-
-void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
-{
-	crossplatform::Effect::Unapply(deviceContext);
-}
-
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, crossplatform::ConstantBufferBase *s)
-{
-	//RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
-	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
-}
-
 void Effect::CheckShaderSlots(dx12::Shader * shader, const std::vector<uint8_t>& shaderBlob)
 {
 	HRESULT res = S_FALSE;
@@ -380,10 +358,6 @@ Heap* Effect::GetEffectSamplerHeap()
 	return mSamplersHeap;
 }
 
-void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
-{
-	crossplatform::Effect::UnbindTextures(deviceContext);
-}
 
 crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 {
@@ -503,6 +477,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 			mCbSrcHandles[slot] = nullCbv;
 			continue;
 		}
+		cb->GetPlatformConstantBuffer()->Apply(deviceContext, cb->GetSize(), cb->GetAddr());
 		auto d12cb			= (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		mCbSrcHandles[slot]	= d12cb->AsD3D12ConstantBuffer();
 		usedSlots			|= (1 << slot);
@@ -541,7 +516,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 	// The handles for the required SRVs:
 	memset(mSrvSrcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * ResourceBindingLimits::NumSRV);
 	memset(mSrvUsedSlotsArray.data(), 0, sizeof(bool) * ResourceBindingLimits::NumSRV);
-
+	bool is_pixel_shader=(deviceContext.contextState.currentEffectPass->shaders[crossplatform::SHADERTYPE_PIXEL]!=nullptr);
 	// Iterate over the textures:
 	for (int i = 0; i < numResourceSlots; i++)
 	{
@@ -563,7 +538,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			}
 		}
 		((dx12::Texture*)ta.texture)->FinishLoading(deviceContext);
-		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext,true, ta.resourceType, ta.index, ta.mip);
+		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext,true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
 		mSrvUsedSlotsArray[slot]= true;
 		usedTextureSlots |= (1 << slot);
 	}

@@ -30,7 +30,6 @@ template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 PlatformConstantBuffer::PlatformConstantBuffer() :
 	mSlots(0),
 	mMaxDescriptors(0),
-	mLastFrameIndex(UINT_MAX),
 	mCurApplyCount(0)
 {
 	for (unsigned int i = 0; i < kNumBuffers; i++)
@@ -112,8 +111,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12Constant
     if (mCurApplyCount == 0)
     {
 		SIMUL_BREAK("We must apply this cb first");
+		mCurApplyCount=1;
     }
-	return cpuDescriptorHandles[mLastFrameIndex][mCurApplyCount-1];
+	return cpuDescriptorHandles[buffer_index][mCurApplyCount-1];
 }
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t size,void *addr)
@@ -155,12 +155,16 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
 {
+//	if(deviceContext.deviceContextType==simul::crossplatform::DeviceContextType::COMPUTE)
+//		return;
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrameIndex != curFrameIndex)
+	if (last_frame_number != deviceContext.frame_number)
 	{
-		mLastFrameIndex = curFrameIndex;
+		last_frame_number = deviceContext.frame_number;
+		buffer_index++;
+		if(buffer_index>=kNumBuffers)
+			buffer_index=0;
 		mCurApplyCount = 0;
 	}
 	if (mCurApplyCount >= mMaxDescriptors)
@@ -175,12 +179,12 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 	UINT8* pDest = nullptr;
 	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
 	const CD3DX12_RANGE mapRange(0, 0);
-	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
+	HRESULT hResult=mUploadHeap[buffer_index]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
 	if(hResult==S_OK)
 	{
 		memcpy(pDest + offset, addr, size);
 		const CD3DX12_RANGE unMapRange(offset, offset+size);
-		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
+		mUploadHeap[buffer_index]->Unmap(0, &unMapRange);
 	}
 	mCurApplyCount++;
 }

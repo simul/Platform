@@ -226,6 +226,7 @@ namespace simul
 			virtual void StoreExternalState(crossplatform::ResourceState){}
 			/// For API's that care about Resource State, aka Layout, restore the state internally.
 			virtual void RestoreExternalTextureState(DeviceContext &) {}
+			virtual void SwitchToContext(DeviceContext &) {}
 			/// Is the texture "unfenceable": if so, it need never be checked for fences, either because it is constant,
 			/// or because we don't care if it's not been updated.
 			bool IsUnfenceable() const
@@ -255,7 +256,7 @@ namespace simul
 			//! Returns the SRV specified by layer,mip. The type t ensures that the assigned resource is compatible (UNKNWON matches anything).
 			//! Layer -1 means all layers at the given mip, while mip -1 defaults to the whole texture/layer.
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool = true,crossplatform::ShaderResourceType = crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1) { return 0; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool = true,crossplatform::ShaderResourceType = crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1,bool=true) { return 0; }
 			//! Returns the UAV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1,int=-1){return 0;}
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = -1, int = -1) { return 0; }

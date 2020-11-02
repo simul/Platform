@@ -40,7 +40,8 @@ namespace simul
 			UINT							mSlots;				//number of 256-byte chunks of memory...
 			UINT							mMaxDescriptors;
 
-			UINT							mLastFrameIndex;
+			long long						last_frame_number=UINT_MAX;
+			UINT							buffer_index=0;
 			UINT							mCurApplyCount;
 
 			ID3D12Resource*					mUploadHeap[kNumBuffers];

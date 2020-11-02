@@ -32,6 +32,7 @@ std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameB
 GraphicsDeviceContext::GraphicsDeviceContext():
 	cur_backbuffer(0)
 {
+	deviceContextType=DeviceContextType::GRAPHICS;
 	viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
 }
@@ -48,7 +49,7 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	,Texture *depth_target
 )
 {
-	ApiCallCounter=0;
+	//ApiCallCounter=0;
 	memset(&defaultTargetsAndViewport, 0, sizeof(defaultTargetsAndViewport));
 	defaultTargetsAndViewport.num = num_targets;
 	if(texture_targets)

@@ -21,7 +21,16 @@
 extern const char *PlatformD3D12GetErrorText(HRESULT hr);
 #define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
 #ifndef V_CHECK
-	#define V_CHECK(x)	{HRESULT hrx = x;VERIFY_EXPLICIT_CAST(x,HRESULT);hrx = x; if( FAILED(hrx) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_CHECK error, return value is "<<PlatformD3D12GetErrorText(hrx)<<std::endl;BREAK_IF_DEBUGGING; } }
+	#define V_CHECK(x)\
+	{\
+		HRESULT hrx ;\
+		hrx = x;\
+		if( FAILED(hrx) )\
+		{\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_CHECK error, return value is "<<PlatformD3D12GetErrorText(hrx)<<std::endl;\
+			BREAK_IF_DEBUGGING;\
+		}\
+	}
 #endif
 namespace simul
 {
@@ -68,9 +77,27 @@ namespace simul
 			bool							IRecording=false;
 			bool							bActive=false;
 		};
+		struct D3D12ComputeContext
+		{
+			void RestoreDeviceObjects(ID3D12DeviceType*			mDevice);
+			void InvalidateDeviceObjects();
+			void StartFrame();
+			void EndFrame();
+			ID3D12GraphicsCommandListType	*ICommandList;
+			ID3D12CommandAllocator			*IAllocator;
+			ID3D12Fence						*IFence;
+			UINT64 fenceValue=0;
+			bool active=false;
+		};
 		class Heap;
-		class Fence;
 		class Material;
+		struct SIMUL_DIRECTX12_EXPORT Fence: public crossplatform::Fence
+		{
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
+			void InvalidateDeviceObjects() override;
+		protected:
+			ID3D12Fence *d3d12Fence=nullptr;
+		};
 		//! A class to implement common rendering functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT RenderPlatform: public crossplatform::RenderPlatform
 		{
@@ -97,12 +124,14 @@ namespace simul
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
+			void							SetD3D12ComputeContext(D3D12ComputeContext* ctx);
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
 			ID3D12CommandQueue*				GetCommandQueue()			   { return m12Queue; }
+			ID3D12CommandQueue*				GetComputeQueue()			   { return mComputeQueue; }
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
@@ -148,7 +177,6 @@ namespace simul
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
-			void									ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			
@@ -166,6 +194,7 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;			
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
+			crossplatform::Fence					*CreateFence() override;
 			crossplatform::Shader					*CreateShader() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
@@ -244,6 +273,7 @@ namespace simul
 			ID3D12Device*				m12Device;
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
+			ID3D12CommandQueue*			mComputeQueue=nullptr;
 			//! Reference to a command list
 			ID3D12GraphicsCommandList*	mImmediateCommandList;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 

@@ -85,40 +85,63 @@ namespace simul
 		};
 
 		//! OpenGL Structured Buffer implementation (SSBO)
-		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
+		class PlatformStructuredBuffer :public crossplatform::PlatformStructuredBuffer
 		{
 		public:
-						PlatformStructuredBuffer();
+			PlatformStructuredBuffer();
 			virtual	 ~PlatformStructuredBuffer();
 
-			void		RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data,const char *name,crossplatform::BufferUsageHint b);
-			void*		GetBuffer(crossplatform::DeviceContext &deviceContext);
-			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void		CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void		CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
-			void		SetData(crossplatform::DeviceContext &deviceContext,void *data);
+			void		RestoreDeviceObjects(crossplatform::RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, crossplatform::BufferUsageHint b);
+			void*		GetBuffer(crossplatform::DeviceContext& deviceContext);
+			const void* OpenReadBuffer(crossplatform::DeviceContext& deviceContext);
+			void		CloseReadBuffer(crossplatform::DeviceContext& deviceContext);
+			void		CopyToReadBuffer(crossplatform::DeviceContext& deviceContext);
+			void		SetData(crossplatform::DeviceContext& deviceContext, void* data);
 			void		InvalidateDeviceObjects();
 
-			void		Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
-			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource);
+			void		Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource);
+			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource);
 			void		AddFence(crossplatform::DeviceContext& deviceContext);
 
-			void		Unbind(crossplatform::DeviceContext &deviceContext);
+			void		Unbind(crossplatform::DeviceContext& deviceContext);
 
 		private:
-			static const int	mNumBuffers =3;
-			int					mLastIdx=0;
+			static const int	mNumBuffers = 3;
+			int					mLastIdx = 0;
 			GLuint				mGPUBuffer[mNumBuffers];
 			size_t				mTotalSize;
 			int					mBinding;
 			void*				mCurReadMap = nullptr;
 			GLsync				mFences[mNumBuffers];
 
-			bool IsBufferMapped(size_t idx)
+			inline bool IsBufferMapped(size_t idx)
 			{
 				GLint mapped;
 				glGetNamedBufferParameteriv(mGPUBuffer[idx], GL_BUFFER_MAPPED, &mapped);
 				return mapped == GL_TRUE;
+			}
+
+			inline int GetLastIndex(crossplatform::DeviceContext& deviceContext, int idxOffset = 0)
+			{
+				int idx = 0;
+				if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+				{
+					idx = mLastIdx = 0;
+				}
+				else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
+				{
+					idx = mLastIdx = (deviceContext.frame_number + idxOffset) % mNumBuffers;
+				}
+				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
+				{
+					idx = mLastIdx = ((mLastIdx++) + idxOffset) % mNumBuffers;
+				}
+				else
+				{
+					SIMUL_BREAK_ONCE("");
+				}
+
+				return idx;
 			}
 		};
 
@@ -134,7 +157,6 @@ namespace simul
 			void		SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 			GLuint		GetGLId();
 
-			std::string PassName;
 		private:
 			//! SFX will generate an UBO with arrays of handles, the idea is to map the slot
 			//! provided by .sfxo and map it to the actual location within the UBO so we 

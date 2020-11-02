@@ -48,8 +48,6 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 	}
 	if(clear)
 		toRender.clear();
-//	if(renderPlatform&&frame_started)
-//		renderPlatform->EndFrame(renderPlatform->GetImmediateContext());
 }
 
 DisplaySurfaceManager::DisplaySurfaceManager():

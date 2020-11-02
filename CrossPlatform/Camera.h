@@ -67,10 +67,13 @@ namespace simul
 		/// Identify the buttons
 			enum 
 			{
-				LEFT_BUTTON		=0x01
-				,MIDDLE_BUTTON	=0x02
-				,RIGHT_BUTTON	=0x04
-				,WHEEL			=0x08
+				LEFT_BUTTON		            = 0x01
+				,MIDDLE_BUTTON	            = 0x02
+				,RIGHT_BUTTON	            = 0x04
+				,WHEEL			            = 0x08
+				,LEFT_BUTTON_RELEASED       = 0x10
+				,MIDDLE_BUTTON_RELEASED     = 0x20
+				,RIGHT_BUTTON_RELEASED      = 0x30
 			};
 			MouseCameraInput()
 				:MouseX(0)

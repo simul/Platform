@@ -529,8 +529,6 @@ namespace simul
 			IndexMap techniques_by_index;
 			std::string filename;
 			std::string filenameInUseUtf8;
-			int currentPass;
-			crossplatform::EffectTechnique *currentTechnique;
 			void *platform_effect;
 			Effect();
 			virtual ~Effect();

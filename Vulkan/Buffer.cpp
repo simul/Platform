@@ -137,7 +137,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	if (src_data)
 	{
 		vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
-		vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size, vk::MemoryMapFlagBits(), &target_data);
+		SIMUL_VK_CHECK(vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size, vk::MemoryMapFlagBits(), &target_data));
 		if (target_data)
 		{
 			memcpy(target_data, src_data, (size_t)bufferLoad.size);

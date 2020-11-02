@@ -46,7 +46,6 @@ namespace simul
             //! different offsets + CPU<->GPU memory transition
             void                            UpdateBuffer(simul::crossplatform::DeviceContext& deviceContext);
 
-            const D3D12_RESOURCE_STATES		mShaderResourceState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 			static const unsigned int		mBuffering = 3;
 			ID3D12Resource*					mGPUBuffer;
 			ID3D12Resource*					mUploadBuffer;

@@ -215,8 +215,6 @@ EffectTechniqueGroup::~EffectTechniqueGroup()
 
 Effect::Effect()
 	:renderPlatform(NULL)
-	,currentPass(0)
-	,currentTechnique(NULL)
 	,platform_effect(NULL)
 {
 }
@@ -357,15 +355,9 @@ void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &
 	cs->samplerStateOverridesValid = false;
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,  crossplatform::ConstantBufferBase *s)
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)
 {
-	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
-	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
-
-	cs->applyBuffers[s->GetIndex()] = s;
-	cs->constantBuffersValid = false;
-	pcb->SetChanged();
+	renderPlatform->SetConstantBuffer(deviceContext,s);
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
@@ -377,22 +369,6 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 {
 	const ShaderResource &i = GetShaderResource(name);
 	SetTexture(deviceContext,i,tex,index,mip);
-/*	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	int slot = GetSlot(name);
-	if(slot<0)
-	{
-		SIMUL_CERR_ONCE<<"Didn't find Texture "<<name<<std::endl;
-		return;
-	}
-	int dim = GetDimensions(name);
-	crossplatform::TextureAssignment &ta=cs->textureAssignmentMap[slot];
-	ta.resourceType=GetResourceType(name);
-	ta.texture=(tex&&tex->IsValid())?tex:0;
-	ta.dimensions=dim;
-	ta.uav=false;
-	ta.index=index;
-	ta.mip=mip;
-	cs->textureAssignmentMapValid=false;*/
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
@@ -539,13 +515,11 @@ void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
-	currentTechnique				=effectTechnique;
 	if(effectTechnique)
 	{
 		EffectPass *p				=(effectTechnique)->GetPass(pass_num>=0?pass_num:0);
 		deviceContext.renderPlatform->ApplyPass(deviceContext, p);
 	}
-	currentPass=pass_num;
 }
 
 void Effect::Reapply(DeviceContext& deviceContext)
@@ -563,7 +537,6 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::E
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
 	EffectPass* p = nullptr;
-	currentTechnique = effectTechnique;
 	if (effectTechnique)
 	{
 		if(passname)
@@ -577,7 +550,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	renderPlatform->UnapplyPass(deviceContext);
-	currentTechnique = NULL;
 }
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
 {

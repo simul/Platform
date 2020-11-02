@@ -153,25 +153,38 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	bufferUsageHint = b;
     mTotalSize      = (size_t)ct * (size_t)unit_size;
     this->cpu_read  = cpu_read;
-    
-    // Create the SSBO:
-    glGenBuffers(mNumBuffers, &mGPUBuffer[0]);
     GLenum flags = GL_MAP_WRITE_BIT;
     if (cpu_read)
     {
         flags |= GL_MAP_READ_BIT;
     }
-    for (int i = 0; i < mNumBuffers; i++)
+    
+    // Create the SSBO:
+    if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
     {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
+        glGenBuffers(1, &mGPUBuffer[0]);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[0]);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        mGPUBuffer[1] = mGPUBuffer[2] = 0;
+    }
+    else
+    {
+        glGenBuffers(mNumBuffers, &mGPUBuffer[0]);
+        
+        for (int i = 0; i < mNumBuffers; i++)
+        {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
+            glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        }
     }
 }
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    int idx = mLastIdx= deviceContext.frame_number % mNumBuffers;
+    int idx = GetLastIndex(deviceContext);
+
     if (!IsBufferMapped(idx))
 	    return glMapNamedBuffer(mGPUBuffer[idx],GL_WRITE_ONLY);
     else 
@@ -186,7 +199,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
 	{
 		// We want to map from the oldest buffer:
-		int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+		int idx = GetLastIndex(deviceContext, 1);
 		const GLuint64 maxTimeOut = 100000; // 0.1ms
 		if (!glIsSync(mFences[idx]))
 		{
@@ -230,7 +243,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     if (!cpu_read)
         return;
 
-	int idx = (deviceContext.frame_number + 1) % mNumBuffers;
+    int idx = GetLastIndex(deviceContext, 1);
     if (IsBufferMapped(idx))
     {
         mCurReadMap = nullptr;
@@ -283,7 +296,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
     crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
-	mLastIdx= deviceContext.frame_number % mNumBuffers;
+    mLastIdx = GetLastIndex(deviceContext);
 	Apply(deviceContext,effect,shaderResource);
 }
 
@@ -406,9 +419,11 @@ void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Ef
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)
 {
     crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+    auto *p=cs->currentEffectPass;
+    crossplatform::Effect::Unapply(deviceContext);
     cs->textureAssignmentMapValid = false;
     cs->rwTextureAssignmentMapValid = false;
-    crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
+    crossplatform::Effect::Apply(deviceContext, p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext& deviceContext)
@@ -509,8 +524,7 @@ crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
     crossplatform::EffectPass(r,e)
-	,mProgramId(0),
-    PassName("passname")
+	,mProgramId(0)
 {
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
 	{
@@ -553,13 +567,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
     {
         InvalidateDeviceObjects();
         crossplatform::ContextState* cs     = deviceContext.renderPlatform->GetContextState(deviceContext);
-        PassName                            = cs->currentEffectPass->name;
+       // name                            = cs->currentEffectPass->name;
 
         opengl::Shader* v   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
         opengl::Shader* f   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
         opengl::Shader* c   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
         mProgramId          = glCreateProgram();
-        glObjectLabel(GL_PROGRAM, mProgramId, -1, PassName.c_str());
+        glObjectLabel(GL_PROGRAM, mProgramId, -1, name.c_str());
 
         bool attachedShaders = false;
         // GFX:
@@ -583,7 +597,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
         }
         else
         {
-            SIMUL_CERR << "Failed to attach shader to the program for pass: " << this->PassName.c_str() << "\n";
+            SIMUL_CERR << "Failed to attach shader to the program for pass: " << this->name.c_str() << "\n";
             SIMUL_BREAK("");
         }
 		
@@ -597,7 +611,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             std::vector<GLchar> infoLog(maxLength);
             glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);
 
-            SIMUL_CERR << "Failed to link the program for pass: "<<this->PassName.c_str()<<"\n";
+            SIMUL_CERR << "Failed to link the program for pass: "<<this->name.c_str()<<"\n";
             SIMUL_COUT << infoLog.data() << std::endl;
             SIMUL_BREAK_ONCE("");
 

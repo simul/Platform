@@ -25,7 +25,7 @@ std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
 
 ContextState& ContextState::operator=(const ContextState& cs)
 {
-	std::cerr<<"Warning: copying contextState is slow."<<std::endl;
+	SIMUL_CERR<<"Warning: copying contextState is slow."<<std::endl;
 
 	last_action_was_compute		=cs.last_action_was_compute;
 
@@ -80,6 +80,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,textRenderer(nullptr)
 {
 	immediateContext.renderPlatform=this;
+	computeContext.renderPlatform=this;
 }
 
 RenderPlatform::~RenderPlatform()
@@ -1061,6 +1062,14 @@ void RenderPlatform::SetLayout(GraphicsDeviceContext &deviceContext,Layout *l)
 {
 	if(l)
 		l->Apply(deviceContext);
+}
+
+void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBufferBase *s)
+{
+	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
+	deviceContext.contextState.applyBuffers[s->GetIndex()] = s;
+	deviceContext.contextState.constantBuffersValid = false;
+	pcb->SetChanged();
 }
 
 crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()

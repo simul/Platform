@@ -15,6 +15,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux
 else()
 	option(SIMUL_SUPPORT_VULKAN "" OFF )
 endif()
+
+option(PLATFORM_LOAD_RENDERDOC "Always load the renderdoc dll?" OFF )
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set( WINDOWS ON )
