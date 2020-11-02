@@ -52,6 +52,17 @@ namespace simul
 		class Texture;
 		struct DeviceContext;
 		struct GraphicsDeviceContext;
+		enum DepthComparison
+		{
+			DEPTH_NEVER=0,
+			DEPTH_ALWAYS,
+			DEPTH_LESS,
+			DEPTH_EQUAL,
+			DEPTH_LESS_EQUAL,
+			DEPTH_GREATER,
+			DEPTH_NOT_EQUAL,
+			DEPTH_GREATER_EQUAL
+		};
 		enum class CompressionFormat : uint32_t
 		{
 			UNCOMPRESSED,
@@ -77,6 +88,7 @@ namespace simul
 			};
 			Wrapping x,y,z;
 			Filtering filtering;
+			DepthComparison depthComparison;
 			int slot;			// register slot
 		};
 		/// A structure for creating or initializing textures.

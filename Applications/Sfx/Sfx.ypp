@@ -574,7 +574,7 @@
 %token BREAK COMMENT CONTINUE DO ELSE FOR GOTO IF SWITCH CASE DEFAULT RETURN WHILE WHITESPACE
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 
-%token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
+%token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ COMPARISON D_NEVER D_ALWAYS D_LESS D_EQUAL D_LESS_EQUAL D_GREATER D_NOT_EQUAL D_GREATER_EQUAL
 
 %token LOAD GET_DIMS SAMPLE SAMPLE_LOD
 %token SATURATE 
@@ -2914,6 +2914,8 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 									buildSamplerState.AddressV=(AddressMode)ival;
 								if(is_equal(name,"AddressW"))
 									buildSamplerState.AddressW=(AddressMode)ival;
+								if(is_equal(name,"Comparison"))
+									buildSamplerState.depthComparison=(DepthComparison)ival;
 							}
 							if(renderStateType==RASTERIZER_STATE)
 							{
@@ -3032,6 +3034,11 @@ sampler_state_identifier : FILTER
 						$$.strs[0]=$1.strs[0];
 						$$.num=$1.num;
 					  }
+					  | COMPARISON
+					  {
+						$$.strs[0]=$1.strs[0];
+						$$.num=$1.num;
+					  }
 sampler_state_value : ADDRESS_WRAP
 					  {
 						$$.strs[0]=$1.strs[0];
@@ -3061,6 +3068,43 @@ sampler_state_value : ADDRESS_WRAP
 					{
 						$$.strs[0] = $1.strs[0];
 						$$.num = FilterMode::ANISOTROPIC;
+					}
+					| depth_comparison
+					{
+						$$.strs[0] = $1.strs[0];
+						$$.num = $1.num;
+					}
+depth_comparison: D_NEVER
+					{
+						$$.num =0;
+					}
+					| D_ALWAYS
+					{
+						$$.num =1;
+					}
+					| D_LESS
+					{
+						$$.num =2;
+					}
+					| D_EQUAL
+					{
+						$$.num =3;
+					}
+					| D_LESS_EQUAL
+					{
+						$$.num =4;
+					}
+					| D_GREATER
+					{
+						$$.num =5;
+					}
+					| D_NOT_EQUAL
+					{
+						$$.num =6;
+					}
+					| D_GREATER_EQUAL
+					{
+						$$.num =7;
 					}
 optional_index : '[' number_exp ']'
 				 {
@@ -3096,7 +3140,7 @@ render_state_rvalue : IDENTIFIER
 							$$.lineno=$1.lineno;
 						  $$.fnum=$1.fnum;
 					  }
-						  |sampler_state_value
+					|sampler_state_value
 					  {
 							$$.lineno=$1.lineno;
 						  $$.strs[0]=$1.strs[0];

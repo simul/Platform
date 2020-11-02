@@ -239,6 +239,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													SetLexStartState(IN_RENDER_STATE);
 													stdReturn(RENDER_STATE_DECL);
 												}
+<INITIAL,IN_SHADER>^"SamplerComparisonState" {
+													sfxlval.strs[0]=yytext;
+													sfxlval.lineno=yylineno;
+													renderStateType=SAMPLER_STATE;
+													SetLexStartState(IN_RENDER_STATE);
+													stdReturn(RENDER_STATE_DECL);
+												}
 
 <INITIAL>"Texture2DMS"			{
 													stdReturn(TEXTURE2DMS);
@@ -795,6 +802,34 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_RENDER_STATE>"ANISOTROPIC"				{
 												stdReturn(FILTER_ANISOTROPIC);
 											}
+<IN_RENDER_STATE>"NEVER"					{
+												stdReturn(D_NEVER);
+											}
+<IN_RENDER_STATE>"ALWAYS"					{
+												stdReturn(D_ALWAYS);
+											}
+<IN_RENDER_STATE>"LESS"						{
+												stdReturn(D_LESS);
+											}
+<IN_RENDER_STATE>"EQUAL"					{
+												stdReturn(D_EQUAL);
+											}
+<IN_RENDER_STATE>"LESS_EQUAL"				{
+												stdReturn(D_LESS_EQUAL);
+											}
+<IN_RENDER_STATE>"GREATER"					{
+												stdReturn(D_GREATER);
+											}
+<IN_RENDER_STATE>"NOT_EQUAL"				{
+												stdReturn(D_NOT_EQUAL);
+											}
+<IN_RENDER_STATE>"GREATER_EQUAL"			{
+												stdReturn(D_GREATER_EQUAL);
+											}
+<IN_RENDER_STATE>"Comparison"				{
+												stdReturn(COMPARISON);
+	
+}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>{ID_BLCK}				{
 												sfxlval.lineno=yylineno;
 												sfxlval.strs[0]=yytext;

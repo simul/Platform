@@ -754,6 +754,8 @@ void Effect::Compile(const char *filename_utf8)
 {
 	EnsureEffect(renderPlatform,filename_utf8);
 }
+#define STRINGIFY(a) STRINGIFY2(a)
+#define STRINGIFY2(a) #a
 
 void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
@@ -776,14 +778,10 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		_dupenv_s(&SIMUL, &SIMUL_size, "SIMUL");
 		_dupenv_s(&b, &b_size, "SIMUL_BUILD");
 	#endif
-		if (!SIMUL)
-			return;
-		std::string simulPath = SIMUL;
-		std::string SIMUL_BUILD = b?b:SIMUL;
+		std::string SIMUL_BUILD = b?b:(SIMUL?SIMUL:"");
 		if (SIMUL_BUILD.empty())
 		{
-			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
-			return;
+			SIMUL_BUILD= STRINGIFY(CMAKE_BINARY_DIR);
 		}
 		std::string filenameUtf8=std::string(filename_utf8)+ ".sfx";
 		const auto &paths=r->GetShaderPathsUtf8();
@@ -795,10 +793,11 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		std::string platformName = r->GetName();
 
 		base::find_and_replace(platformName, " ", "");
-		std::string sourcePlatformPath = (std::string(SIMUL) + "\\Platform\\") + platformName;
-		std::string buildPlatformPath = (SIMUL_BUILD + "\\Platform\\") + platformName;
+		std::string sourcePlatformPath = (STRINGIFY(PLATFORM_SOURCE_DIR)) ;
+		std::string sourceCurrentPlatformPath = (std::string(STRINGIFY(PLATFORM_SOURCE_DIR))+"\\") + platformName;
+		std::string buildPlatformPath = (std::string(STRINGIFY(PLATFORM_BUILD_DIR)) + "\\") + platformName;
 		// Sfx path
-		std::string exe = SIMUL_BUILD;
+		std::string exe = STRINGIFY(CMAKE_BINARY_DIR);
 		exe += "\\bin\\Release\\Sfx.exe";
 		std::wstring sfxPath(exe.begin(), exe.end());
 
@@ -821,14 +820,14 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if(simul::base::SimulInternalChecks)
 				cmdLine += " -V";
 			// Includes
-			cmdLine += " -I\"" + sourcePlatformPath + "\\HLSL;" + sourcePlatformPath + "\\GLSL;" + sourcePlatformPath + "\\Sfx;";
-			cmdLine += std::string(SIMUL)+ "\\Shaders\\SL;";
-			cmdLine += std::string(SIMUL) + "\\Platform\\Shaders\\SL";
+			cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\HLSL;" + sourceCurrentPlatformPath + "\\GLSL;" + sourceCurrentPlatformPath + "\\Sfx;";
+			cmdLine += sourcePlatformPath+ "\\Shaders\\SL;";
+			cmdLine +=  + "..\\SL";
 			cmdLine += "\"";
 
 			// Platform file
-			cmdLine += (string(" -P\"") + (sourcePlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
-			cmdLine += string(" -EPLATFORM=") + sourcePlatformPath + "/..";
+			cmdLine += (string(" -P\"") + (sourceCurrentPlatformPath +"\\")+r->GetSfxConfigFilename())+"\"";
+			cmdLine += string(" -EPLATFORM=") + sourcePlatformPath ;
 			// Ouput file
 			std::string outDir = r->GetShaderBinaryPathsUtf8().back();
 			for (unsigned int i = 0; i < outDir.size(); i++)
@@ -970,7 +969,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		}
 		if(!result)
 		{
-			SIMUL_BREAK("Failed to build effect.");
+			SIMUL_BREAK_ONCE("Failed to build effect.");
 			if((buildMode & crossplatform::TRY_AGAIN_ON_FAIL) == 0)
 				break;
 		}
@@ -1318,6 +1317,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				desc.x=stringToWrapping(st[1]);
 				desc.y=stringToWrapping(st[2]);
 				desc.z=stringToWrapping(st[3]);
+				if(st.size()>4)
+					desc.depthComparison=(crossplatform::DepthComparison)toInt(st[4]);
 				desc.slot=reg;
 				crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(sampler_name.c_str(),&desc);
 				samplerStates[sampler_name]=ss;

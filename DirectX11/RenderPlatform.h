@@ -109,6 +109,8 @@ namespace simul
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p, crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
+			
+			static D3D11_COMPARISON_FUNC toD3dComparison(crossplatform::DepthComparison d);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 		protected:

@@ -226,7 +226,8 @@ namespace simul
 			virtual void DrawQuad			(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
 			virtual void DrawQuad			(GraphicsDeviceContext &){}
 
-			virtual void Print				(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
+			//! Print at the specified position, returns the number of lines.
+			virtual int Print				(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			//! Print diagnostics, starting from the top, and going down the screen one line each time as the frame progresses, then restarting next frame.
 			void LinePrint					(GraphicsDeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			virtual void DrawLines			(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}

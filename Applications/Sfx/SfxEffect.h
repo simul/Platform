@@ -128,7 +128,7 @@ namespace sfx
 		mutable int last_filenumber;
 		bool CheckDeclaredGlobal(const Function* func,const std::string toCheck);
 		//! Declare in output format.
-		void Declare(std::ostream &os,const Declaration *d, ConstantBuffer& texCB, ConstantBuffer& sampCB, const std::set<std::string>& rwLoad, std::set<const SamplerState*>& declaredSS,const Function* mainFunction);
+		void Declare(ShaderType,std::ostream &os,const Declaration *d, ConstantBuffer& texCB, ConstantBuffer& sampCB, const std::set<std::string>& rwLoad, std::set<const SamplerState*>& declaredSS,const Function* mainFunction);
 	public:
 		std::ostringstream m_sharedCode;
 		std::ostringstream& Log();
@@ -139,6 +139,7 @@ namespace sfx
 		void SetFilenameList(const char **);
 		void PopulateProgramList();
 		bool Save(std::string sfxFilename, std::string sfxoFilename);
+		void AccumulateStructDeclarations(std::set<const Declaration *> &s,std::string i) const;
 		void AccumulateDeclarationsUsed(const Function *f,std::set<const Declaration *> &ss, std::set<std::string>& rwLoad) const;
 		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
 		void AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const;
