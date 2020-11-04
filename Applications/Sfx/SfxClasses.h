@@ -297,6 +297,7 @@ namespace sfx
 		AddressMode AddressU;
 		AddressMode AddressV;
 		AddressMode AddressW;
+		DepthComparison depthComparison;
 	};
 	struct StructMember
 	{

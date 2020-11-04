@@ -1738,7 +1738,7 @@ crossplatform::Query *RenderPlatform::CreateQuery(crossplatform::QueryType type)
 void Fence::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {			
 	dx12::RenderPlatform *dx12R=(dx12::RenderPlatform *)r;
-	V_CHECK(dx12R->AsD3D12Device()->CreateFence (0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS (&d3d12Fence)));
+	V_CHECK(dx12R->AsD3D12Device()->CreateFence (0, D3D12_FENCE_FLAG_SHARED, SIMUL_PPV_ARGS (&d3d12Fence)));
 }
 
 void Fence::InvalidateDeviceObjects()

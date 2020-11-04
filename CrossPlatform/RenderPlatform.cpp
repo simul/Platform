@@ -992,7 +992,7 @@ void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,v
 	Draw2dLines(deviceContext,pts,2,false);
 }
 
-void RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
+int RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
 	static float clr[]={1.f,1.f,0.f,1.f};
@@ -1002,11 +1002,13 @@ void RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,cons
 	if(!bkg)
 		bkg=black;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	int lines=0;
 	if(*text!=0)
 	{
-		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)viewport.h,text,colr,bkg,mirrorYText);
+		lines+=textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)viewport.h,text,colr,bkg,mirrorYText);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	return lines;
 }
 
 void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *text,const float* colr,const float* bkg)
@@ -1236,8 +1238,11 @@ void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
 	//cs.currentTechnique = effectTechnique;
 	cs.currentEffectPass = pass;
 	if (!pass)
+	{
 		SIMUL_BREAK("No pass found");
-	cs.currentEffect = pass->GetEffect();
+	}
+	else
+		cs.currentEffect = pass->GetEffect();
 }
 
 void RenderPlatform::UnapplyPass(DeviceContext& deviceContext)

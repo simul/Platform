@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if PLATFORM_LOAD_RENDERDOC
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/EnvironmentVariables.h"
 #include "Platform/CrossPlatform/RenderDocLoader.h"

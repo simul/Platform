@@ -199,7 +199,7 @@ int TextRenderer::GetDefaultTextHeight() const
 	return defaultTextHeight;
 }
 
-void TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
+int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
 	if (recompile)
 		Recompile();
@@ -300,4 +300,5 @@ void TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);
 	}
+	return lines;
 }

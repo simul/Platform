@@ -120,17 +120,6 @@ namespace simul
 			int numRTs;
 			RTBlendDesc RenderTarget[8];
 		};
-		enum DepthComparison
-		{
-			DEPTH_ALWAYS,
-			DEPTH_NEVER,
-			DEPTH_LESS,
-			DEPTH_EQUAL,
-			DEPTH_LESS_EQUAL,
-			DEPTH_GREATER,
-			DEPTH_NOT_EQUAL,
-			DEPTH_GREATER_EQUAL
-		};
 		struct DepthStencilDesc
 		{
 			bool test;

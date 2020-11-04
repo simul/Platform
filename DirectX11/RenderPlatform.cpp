@@ -442,7 +442,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
     samplerDesc.AddressU = toD3d11TextureAddressMode(d->x);
     samplerDesc.AddressV = toD3d11TextureAddressMode(d->y);
     samplerDesc.AddressW = toD3d11TextureAddressMode(d->z);
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.ComparisonFunc = toD3dComparison(d->depthComparison);
     samplerDesc.MaxAnisotropy = 16;
     samplerDesc.MinLOD = 0;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
@@ -816,7 +816,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 	delete [] decl;
 	return l;
 }
-static D3D11_COMPARISON_FUNC toD3dComparison(crossplatform::DepthComparison d)
+D3D11_COMPARISON_FUNC RenderPlatform::toD3dComparison(crossplatform::DepthComparison d)
 {
 	switch(d)
 	{

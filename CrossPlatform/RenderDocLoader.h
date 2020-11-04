@@ -1,7 +1,6 @@
 #pragma once
-
 #include "Platform/CrossPlatform/Export.h"
-#ifdef _WIN32
+#if PLATFORM_LOAD_RENDERDOC
 
 #ifdef _MSC_VER
 #pragma warning(push)

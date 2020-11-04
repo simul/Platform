@@ -159,12 +159,47 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 					types_used.insert(dt->structureType);
 				}
 			}
+				break;
+			case DeclarationType::STRUCT:
+			{
+				Struct *st=(Struct*)d;
+				for(auto s:st->m_structMembers)
+				{
+					types_used.insert(s.type);
+				}
+			}
 			default:
 				break;
 			}
 		}
 	}
+
 	return types_used;
+}
+void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::string i) const
+{
+	// Is the type declared?
+	auto decl=declarations.find(i);
+	if(decl==declarations.end())
+		return;
+	
+	const Declaration *d=decl->second;
+	if(d)
+	switch(d->declarationType)
+	{
+	case DeclarationType::STRUCT:
+	{
+		const Struct *st=(const Struct*)d;
+		s.insert(d);
+		for(int j=0;j<st->m_structMembers.size();j++)
+		{
+			AccumulateStructDeclarations(s,st->m_structMembers[j].type);
+		}
+	}
+	default:
+		break;
+	}
+	
 }
 
 void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration *> &s,std::set<std::string>& rwLoad) const
@@ -184,23 +219,7 @@ void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration 
 	const auto types_used=f->GetTypesUsed();
 	for(auto i:types_used)
 	{
-		// Is the type declared?
-		auto decl=declarations.find(i);
-		if(decl==declarations.end())
-			continue;
-		
-		const Declaration *d=decl->second;
-		if(d)
-		switch(d->declarationType)
-		{
-		case DeclarationType::STRUCT:
-		{
-			const Struct *st=(const Struct*)d;
-			s.insert(d);
-		}
-		default:
-			break;
-		}
+		AccumulateStructDeclarations(s,i);
 	}
 	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
@@ -805,6 +824,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			<< "," << ToString(ss->AddressU)
 			<< "," << ToString(ss->AddressV)
 			<< "," << ToString(ss->AddressW)
+			<< "," << ToString(ss->depthComparison)
 			<< "," << "\n";
 	}
 	
@@ -1398,7 +1418,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 	 return false;
  }
 
- void Effect::Declare(ostream &os,const Declaration *d, ConstantBuffer& texCB, ConstantBuffer& sampCB, const std::set<std::string>& rwLoad, std::set<const SamplerState*>& declaredSS, const Function* mainFunction)
+ void Effect::Declare(ShaderType shaderType,ostream &os,const Declaration *d, ConstantBuffer& texCB, ConstantBuffer& sampCB, const std::set<std::string>& rwLoad, std::set<const SamplerState*>& declaredSS, const Function* mainFunction)
 {
 	switch(d->declarationType)
 	{
@@ -1411,23 +1431,30 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				dec = "";
 			}
 			// It is a (RW)StructuredBuffer
-			if (!sfxConfig.structuredBufferDeclaration.empty() && (td->type == "RWStructuredBuffer" || td->type == "StructuredBuffer"))
-			{
-				dec = sfxConfig.structuredBufferDeclaration;
-				static int ssbouid = 0;
-				find_and_replace(dec, "{name}", td->name + "_ssbo");
-				int temp_slot=td->slot;
-				if(IsRW(td->shaderResourceType))
-					temp_slot=GenerateTextureWriteSlot(td->slot);
-				else
-					temp_slot=GenerateTextureSlot(td->slot);
-				find_and_replace(dec, "{slot}", ToString(temp_slot));
-				find_and_replace(dec, "{content}", td->structureType + " " + td->name + "[];");
-				ssbouid++;
+			if (( td->type == "RWStructuredBuffer" || td->type == "StructuredBuffer")
+			
+				&&!sfxConfig.structuredBufferDeclaration.empty())
+				{
+					dec = sfxConfig.structuredBufferDeclaration;
+					static int ssbouid = 0;
+					find_and_replace(dec, "{name}", td->name + "_ssbo");
+					int temp_slot=td->slot;
+					if(IsRW(td->shaderResourceType))
+						temp_slot=GenerateTextureWriteSlot(td->slot);
+					else
+						temp_slot=GenerateTextureSlot(td->slot);
+					find_and_replace(dec, "{slot}", ToString(temp_slot));
+					find_and_replace(dec, "{content}", td->structureType + " " + td->name + "[];");
+					ssbouid++;
+				
 			}
 			// Its an Image or Texture
 			else
 			{
+				if ( (td->type == "RWStructuredBuffer" || td->type == "StructuredBuffer"))
+				{
+					std::cout<<"";
+				}
 				// Check the type of this texture (we want to know if will be used to load/store operations)
 				bool isImage = false;
 				bool isImageArray = false;
@@ -1494,7 +1521,11 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					find_and_replace(str, "{pass_through}", td->original);
 					find_and_replace(str, "{type}", ntype);
 					find_and_replace(str, "{name}", td->name);
-					find_and_replace(str, "{slot}", ToString(GenerateTextureWriteSlot(td->slot)));
+					int slot=td->slot;
+					if(shaderType==FRAGMENT_SHADER)
+						slot++;
+					slot=GenerateTextureWriteSlot(slot);
+					find_and_replace(str, "{slot}", ToString(slot));
 
 					if (!sfxConfig.toImageFormat.empty())
 					{
@@ -1782,7 +1813,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 					theShader << "#line " << d->line_number << " " << GetFilenameOrNumber(d->file_number) << endl;
 			}
 		}
-		Declare(theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+		Declare(compiledShader->shaderType,theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 	}
 
 	// Declare the texture and sampler CB:
@@ -1790,11 +1821,11 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	{
 		if (!textureCB.m_structMembers.empty())
 		{
-			Declare(theShader, (Declaration*)&textureCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates,function);
+			Declare(compiledShader->shaderType,theShader, (Declaration*)&textureCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates,function);
 		}
 		if (sfxConfig.combineInShader && !samplerCB.m_structMembers.empty())
 		{
-			Declare(theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+			Declare(compiledShader->shaderType,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 		}
 	}
 
