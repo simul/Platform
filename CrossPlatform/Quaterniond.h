@@ -22,6 +22,13 @@ namespace simul
 			{
 				Reset();
 			}
+			Quaternion(const tvector4<T> &v)
+			{
+				x=v.x;
+				y=v.y;
+				z=v.z;
+				s=v.w;
+			}
 			Quaternion(T X,T Y,T Z,T S,bool normalize=true)
 			{
 				x = X;
@@ -150,11 +157,11 @@ namespace simul
 			{
 				return (const double *)(&x);
 			}
-			vec3d operator*(const tvector3<T>&vec) const
+			tvector3<T> operator*(const tvector3<T>&vec) const
 			{
-				const T x0 = vec.x;
-				const T y0 = vec.y;
-				const T z0 = vec.z;
+				const T &x0 = vec.x;
+				const T &y0 = vec.y;
+				const T &z0 = vec.z;
 				T s1 = x * x0 + y * y0 + z * z0;
 				T x1 = s * x0 + y * z0 - z * y0;
 				T y1 = s * y0 + z * x0 - x * z0;
@@ -165,11 +172,11 @@ namespace simul
 			}
 
 			/// Equivalent to (!this)* vec
-			vec3d operator/(const tvector3<T>&vec) const
+			tvector3<T> operator/(const tvector3<T>&vec) const
 			{
-				const T x0 = vec.x;
-				const T y0 = vec.y;
-				const T z0 = vec.z;
+				const T &x0 = vec.x;
+				const T &y0 = vec.y;
+				const T &z0 = vec.z;
 				T s1 = -x * x0 - y * y0 - z * z0;
 				T x1 = s * x0 - y * z0 + z * y0;
 				T y1 = s * y0 - z * x0 + x * z0;
@@ -202,7 +209,7 @@ namespace simul
 				s=q[3];
 				return *this;
 			}
-			Quaternion& operator=(const vec4 &v)
+			Quaternion& operator=(const tvector4<T> &v)
 			{
 				x=v.x;
 				y=v.y;
@@ -313,6 +320,7 @@ namespace simul
 			ret.z = s1 * q.z + q.s * z1 + q.x * y1 - q.y * x1;
 		}
 		typedef Quaternion<double> Quaterniond;
+		typedef Quaternion<float> Quaternionf;
 		/// Multiply, or rotate, vec3d v by q, return the value in vec3d ret. v and ret must have size 3.
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(vec3d & ret,const Quaterniond & q,const vec3d & v);
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyByNegative(Quaterniond& ret,const Quaterniond& q1,const Quaterniond& q2);

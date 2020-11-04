@@ -454,93 +454,93 @@
 		r.z=m*v.z;
 		return r;
 	}
-	struct vec4
+	template<typename T> struct tvector4
 	{
-		float x,y,z,w;
-		vec4(float x=0,float y=0,float z=0,float w=0)
+		T x,y,z,w;
+		tvector4(T x=0,T y=0,T z=0,T w=0)
 		{
 			this->x=x;
 			this->y=y;
 			this->z=z;
 			this->w=w;
 		}
-		vec4(vec3 v,float w)
+		tvector4(const tvector3<T> &v,T w)
 		{
 			this->x=v.x;
 			this->y=v.y;
 			this->z=v.z;
 			this->w=w;
 		}
-		vec4(const float *v)
+		tvector4(const T *v)
 		{
 			this->x=v[0];
 			this->y=v[1];
 			this->z=v[2];
 			this->w=v[3];
 		}
-		operator const float *()
+		operator const T *()
 		{
 			return &x;
 		}
-		void operator=(const float *v)
+		void operator=(const T *v)
 		{
 			x=v[0];
 			y=v[1];
 			z=v[2];
 			w=v[3];
 		}
-		vec4 operator*(float m)
+		tvector4 operator*(T m)
 		{
-			vec4 r(x*m,y*m,z*m,w*m);
+			tvector4 r(x*m,y*m,z*m,w*m);
 			return r;
 		}
-		vec4 operator+(vec4 v) const
+		tvector4 operator+(tvector4 v) const
 		{
-			vec4 r;
+			tvector4 r;
 			r.x=x+v.x;
 			r.y=y+v.y;
 			r.z=z+v.z;
 			r.w=w+v.w;
 			return r;
 		}
-		vec4 operator-(vec4 v) const
+		tvector4 operator-(tvector4 v) const
 		{
-			vec4 r;
+			tvector4 r;
 			r.x=x-v.x;
 			r.y=y-v.y;
 			r.z=z-v.z;
 			r.w=w-v.w;
 			return r;
 		}
-		void operator+=(vec4 v)
+		void operator+=(tvector4 v)
 		{
 			x+=v.x;
 			y+=v.y;
 			z+=v.z;
 			w+=v.w;
 		}
-		void operator-=(vec4 v)
+		void operator-=(tvector4 v)
 		{
 			x-=v.x;
 			y-=v.y;
 			z-=v.z;
 			w-=v.w;
 		}
-		void operator*=(float m)
+		void operator*=(T m)
 		{
 			x*=m;
 			y*=m;
 			z*=m;
 			w*=m;
 		}
-		void operator/=(float m)
+		void operator/=(T m)
 		{
 			x/=m;
 			y/=m;
 			z/=m;
 			w/=m;
 		}
-		void operator*=(const float *v)
+		void operator*=(const T *v)
 		{
 			x*=v[0];
 			y*=v[1];
@@ -548,36 +548,41 @@
 			w*=v[3];
 		}
 	};
-	inline vec4 operator*(float m,const vec4 &v)
+	typedef tvector4<float> vec4;
+	template<typename T>
+	tvector4<T> operator*(T m,const tvector4<T> &v)
 	{
-		vec4 r;
+		tvector4 r;
 		r.x=m*v.x;
 		r.y=m*v.y;
 		r.z=m*v.z;
 		r.w=m*v.w;
 		return r;
 	}
-	inline vec4 operator*(const vec4 &v,float m)
+	template<typename T>
+	tvector4<T> operator*(const tvector4<T> &v,T m)
 	{
-		vec4 r;
+		tvector4<T> r;
 		r.x=m*v.x;
 		r.y=m*v.y;
 		r.z=m*v.z;
 		r.w=m*v.w;
 		return r;
 	}
-	inline vec4 operator*(const vec4 &v,const mat4 &m)
+	template<typename T>
+	tvector4<T> operator*(const tvector4<T> &v,const mat4 &m)
 	{
-		vec4 r;
+		tvector4<T> r;
 		r.x=m._11*v.x+m._21*v.y+m._31*v.z+m._41*v.w;
 		r.y=m._12*v.x+m._22*v.y+m._32*v.z+m._42*v.w;
 		r.z=m._13*v.x+m._23*v.y+m._33*v.z+m._43*v.w;
 		r.w=m._14*v.x+m._24*v.y+m._34*v.z+m._44*v.w;
 		return r;
 	}
-	inline vec4 operator*(const mat4 &m,const vec4 &v)
+	template<typename T>
+	tvector4<T> operator*(const mat4 &m,const tvector4<T> &v)
 	{
-		vec4 r;
+		tvector4<T> r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z+m._14*v.w;
 		r.y=m._21*v.x+m._22*v.y+m._23*v.z+m._24*v.w;
 		r.z=m._31*v.x+m._32*v.y+m._33*v.z+m._34*v.w;
