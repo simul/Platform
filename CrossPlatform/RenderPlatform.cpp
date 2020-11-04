@@ -1311,7 +1311,16 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 #endif
 	TextureAssignment& ta = cs->textureAssignmentMap[slot];
 	ta.resourceType = res.shaderResourceType;
-	ta.texture = (tex && tex->IsValid() && res.valid) ? tex : 0;
+	ta.texture = tex ;
+	if(!res.valid)
+		ta.texture = nullptr;
+	else if(tex)
+	{
+		if(!tex->IsValid())
+		{
+			ta.texture=nullptr;
+		}
+	}
 	ta.dimensions = dim;
 	ta.uav = false;
 	ta.index = index;
@@ -1331,7 +1340,11 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	unsigned long dim = res.dimensions;
 	auto& ta = cs->rwTextureAssignmentMap[slot];
 	ta.resourceType = res.shaderResourceType;
-	ta.texture = (tex && tex->IsValid() && res.valid) ? tex : 0;
+	ta.texture = tex ;
+	if(!res.valid)
+		ta.texture = nullptr;
+	if(tex&&!tex->IsValid())
+		ta.texture=nullptr;
 	ta.dimensions = dim;
 	ta.uav = true;
 	ta.mip = mip;

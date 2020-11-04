@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Platform/CrossPlatform/Export.h"
 #ifdef _WIN32
 
 #ifdef _MSC_VER
@@ -12,7 +13,6 @@
 #include <Windows.h>
 
 #include <filesystem>
-#include "Platform/CrossPlatform/Export.h"
 #include "Platform/External/RenderDoc/Include/renderdoc_app.h"
 
 namespace simul
