@@ -1013,8 +1013,8 @@ int RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,const
 
 void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *text,const float* colr,const float* bkg)
 {
-	Print(deviceContext, deviceContext.framePrintX,deviceContext.framePrintY,text,colr,bkg);
-	deviceContext.framePrintY+=textRenderer->GetDefaultTextHeight();
+	int lines=Print(deviceContext, deviceContext.framePrintX,deviceContext.framePrintY,text,colr,bkg);
+	deviceContext.framePrintY+=lines*textRenderer->GetDefaultTextHeight();
 }
 		
 crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &,int)

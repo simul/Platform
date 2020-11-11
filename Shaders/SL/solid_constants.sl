@@ -51,6 +51,7 @@ struct Light
 	float power;
 	vec3 direction;
 	float is_point;
+	float is_spot;
 	float radius;
 	vec3 pad3;
 };
