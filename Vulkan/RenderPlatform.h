@@ -77,7 +77,6 @@ namespace simul
 			
 			void		Draw(crossplatform::GraphicsDeviceContext& deviceContext, int num_verts, int start_vert) override;
 			void		DrawIndexed(crossplatform::GraphicsDeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
-			void		DrawTexture(crossplatform::GraphicsDeviceContext& deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false) override;
 			void		DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void		GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
 			//! This should be called after a Draw/Dispatch command that uses
