@@ -794,6 +794,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			// Includes
 			cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\HLSL;" + sourceCurrentPlatformPath + "\\GLSL;" + sourceCurrentPlatformPath + "\\Sfx;";
 			cmdLine += sourcePlatformPath+ "\\Shaders\\SL;";
+			cmdLine += paths[index]+"..\\SL;";
 			cmdLine +=  + "..\\SL";
 			cmdLine += "\"";
 
