@@ -421,11 +421,6 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 }
 //Intra-commandbuffer synchronisations https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 
-void RenderPlatform::DrawTexture(crossplatform::GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug)
-{
-    crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
-}
-
 void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext)   
 {
 	if(!deviceContext.contextState.currentEffectPass)

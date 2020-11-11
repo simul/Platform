@@ -552,7 +552,7 @@
 	template<typename T>
 	tvector4<T> operator*(T m,const tvector4<T> &v)
 	{
-		tvector4 r;
+		tvector4<T> r;
 		r.x=m*v.x;
 		r.y=m*v.y;
 		r.z=m*v.z;

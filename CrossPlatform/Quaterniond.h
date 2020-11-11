@@ -58,13 +58,22 @@ namespace simul
 			{
 				Define(angle_radians, vv);
 			}
-			operator vec4() const
+			template<typename U> operator tvector4<U>() const
 			{
-				vec4 v;
-				v.x = (float)x;
-				v.y = (float)y;
-				v.z = (float)z;
-				v.w = (float)s;
+				tvector4<U> v;
+				v.x = (U)x;
+				v.y = (U)y;
+				v.z = (U)z;
+				v.w = (U)s;
+				return v;
+			}
+			operator tvector4<T>() const
+			{
+				tvector4<T> v;
+				v.x = x;
+				v.y = y;
+				v.z = z;
+				v.w = s;
 				return v;
 			}
 			void Reset()
