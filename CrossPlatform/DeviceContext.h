@@ -240,6 +240,9 @@ namespace simul
 			void *platform_context=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
 			crossplatform::ContextState contextState;
+#ifdef _DEBUG
+			int ApiCallCounter=0;
+#endif
 			virtual GraphicsDeviceContext *AsGraphicsDeviceContext()
 			{
 				return nullptr;
