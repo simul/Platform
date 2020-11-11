@@ -258,6 +258,8 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext, void* data)
 {
+	if(!data)
+		return;
 	lastContext = deviceContext.asD3D11DeviceContext();
 	if (lastContext)
 	{
