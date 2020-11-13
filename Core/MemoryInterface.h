@@ -75,11 +75,11 @@ namespace simul
 			//! Implementations MUST ignore NULL values.
 			virtual void DeallocateVideoMemory( void*  ){}
 			virtual const char *GetNameAtIndex(int ) const{return "";}
-			virtual int GetBytesAllocated(const char *) const {return 0;}
-			virtual int GetTotalBytesAllocated() const {return 0;}
-			virtual int GetCurrentVideoBytesAllocated() const {return 0;}
-			virtual int GetTotalVideoBytesAllocated() const {return 0;}
-			virtual int GetTotalVideoBytesFreed() const {return 0;}
+			virtual size_t GetBytesAllocated(const char *) const {return 0;}
+			virtual size_t GetTotalBytesAllocated() const {return 0;}
+			virtual size_t GetCurrentVideoBytesAllocated() const {return 0;}
+			virtual size_t GetTotalVideoBytesAllocated() const {return 0;}
+			virtual size_t GetTotalVideoBytesFreed() const {return 0;}
 			virtual void TrackVideoMemory(void* , size_t,const char *){}
 			virtual void UntrackVideoMemory(void* ){}
 		};
