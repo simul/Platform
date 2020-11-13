@@ -12,7 +12,7 @@ namespace simul
 		/// Default implementation of MemoryInterface, using standard allocators.
 		class DefaultMemoryInterface:public MemoryInterface
 		{
-			std::map<const char *,int> memoryTracks;
+			std::map<const char *,size_t> memoryTracks;
 			std::map<void *,const char *> allocationNames;
 		public:
 			DefaultMemoryInterface()
@@ -66,7 +66,7 @@ namespace simul
 					return nullptr;
 				return i->second;
 			}
-			int GetBytesAllocated(const char *name) const override
+			size_t GetBytesAllocated(const char *name) const override
 			{
 				if(!name)
 					return 0;
@@ -75,24 +75,24 @@ namespace simul
 					return 0;
 				return i->second;
 			}
-			int GetTotalBytesAllocated() const override
+			size_t GetTotalBytesAllocated() const override
 			{
-				int bytes=0;
+				size_t bytes=0;
 				for(auto i:memoryTracks)
 				{
 					bytes+=i.second;
 				}
 				return bytes;
 			}
-			virtual int GetCurrentVideoBytesAllocated() const override
+			virtual size_t GetCurrentVideoBytesAllocated() const override
 			{
 				return 0;
 			}
-			virtual int GetTotalVideoBytesAllocated() const override
+			virtual size_t GetTotalVideoBytesAllocated() const override
 			{
 				return 0;
 			}
-			virtual int GetTotalVideoBytesFreed() const override
+			virtual size_t GetTotalVideoBytesFreed() const override
 			{
 				return 0;
 			}

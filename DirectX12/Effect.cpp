@@ -375,7 +375,7 @@ void EffectPass::InvalidateDeviceObjects()
 	mComputePso=nullptr;
 	for (auto& ele : mGraphicsPsoMap)
 	{
-		pl->PushToReleaseManager(ele.second, "Graphics PSO");
+		pl->PushToReleaseManager(ele.second.pipelineState, "Graphics PSO");
 	}
 	mGraphicsPsoMap.clear();
 }
@@ -394,7 +394,7 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 	}
 	else
 	{
-		cmdList->SetPipelineState(mGraphicsPsoMap[CreateGraphicsPso(*deviceContext.AsGraphicsDeviceContext())]);
+		cmdList->SetPipelineState(GetGraphicsPso(*deviceContext.AsGraphicsDeviceContext()));
 	}
 }
 
@@ -723,7 +723,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	}
 }
 
-size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext)
+ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	auto curRenderPlat  = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	mTechName		   = name;
@@ -732,7 +732,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 	if (!v && !p)
 	{
 		SIMUL_INTERNAL_CERR << "The pass " << name.c_str() << " does not have valid shaders!!! \n";
-		return (size_t)-1;
+		return nullptr;
 	}
 
 	// Get the current blend state:
@@ -783,7 +783,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 	{
 		msaaDesc = curRenderPlat->GetMSAAInfo();
 	}
-	size_t msaaHash = msaaDesc.Count + msaaDesc.Quality;
+	uint64_t msaaHash = ((uint64_t)msaaDesc.Count + (uint64_t)msaaDesc.Quality)<<(uint64_t)32;
 
 	// Get the current targets:
 	const crossplatform::TargetsAndViewport* targets = &deviceContext.defaultTargetsAndViewport;
@@ -794,7 +794,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 
 	// Current render target output state:
 	D3D12_RENDER_TARGET_FORMAT_DESC* finalRt = nullptr;
-	size_t rthash = 0;
+	uint64_t rthash = 0;
 	if (renderTargetFormatState)
 	{
 		finalRt = &((dx12::RenderState*)renderTargetFormatState)->RtFormatDesc;
@@ -824,6 +824,11 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 			{
 				tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(curRenderPlat->DefaultOutputFormat);
 			}
+			if(tmpState.RTFormats[i]==DXGI_FORMAT_R11G11B10_FLOAT)
+			{
+				//SIMUL_INTERNAL_CERR << "DXGI_FORMAT_R11G11B10_FLOAT\n";
+				tmpState.Count							= targets->num;
+			}
 		}
 		rthash  = tmpState.GetHash();
 
@@ -840,7 +845,7 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 	// Get hash for the current config:
 	// TO-DO: what about the depth format
 	// This is a bad hashing method
-	size_t hash = (uint64_t)&finalBlend ^ (uint64_t)&finalDepth ^ (uint64_t)&finalRaster ^ finalRt->GetHash() ^ msaaHash;
+	uint64_t hash = ((uint64_t)finalBlend) ^ ((uint64_t)finalDepth) ^ ((uint64_t)finalRaster) ^ rthash ^ msaaHash;
 
 	// Runtime check for depth write:
 	if (finalDepth->DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO && !targets->m_dt)
@@ -856,12 +861,17 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 	// If the map has items, and the item is in the map, just return
 	if (!mGraphicsPsoMap.empty() && mGraphicsPsoMap.find(hash) != mGraphicsPsoMap.end())
 	{
-		return hash;
+		Pso &pso=mGraphicsPsoMap[hash];
+		if(pso.desc.RTVFormats[0]!=finalRt->RTFormats[0])
+		{
+			SIMUL_INTERNAL_CERR<<"Format mismatch in PSO\n";
+		}
+		return pso.pipelineState;
 	}
 
 	// Build a new pso pair <pixel format, PSO>
-	std::pair<size_t, ID3D12PipelineState*> psoPair;
-	psoPair.first   = hash;
+	 Pso &pso=mGraphicsPsoMap[hash];
+	
 	mIsCompute	  = false;
 
 	// Try to get the input layout (if none, we dont need to set it to the pso)
@@ -897,29 +907,29 @@ size_t EffectPass::CreateGraphicsPso(crossplatform::GraphicsDeviceContext& devic
 	}
 	
 	// Build the PSO description 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsoDesc = {};
-	gpsoDesc.pRootSignature					 = curRenderPlat->GetGraphicsRootSignature();
-	gpsoDesc.VS								 = { v->shader12.data(), v->shader12.size() };
-	gpsoDesc.PS								 = { p->shader12.data(), p->shader12.size() };
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC &gpsoDesc = pso.desc;
+	gpsoDesc.pRootSignature						= curRenderPlat->GetGraphicsRootSignature();
+	gpsoDesc.VS									= { v->shader12.data(), v->shader12.size() };
+	gpsoDesc.PS									= { p->shader12.data(), p->shader12.size() };
 	gpsoDesc.InputLayout.NumElements			= pCurInputLayout ? pCurInputLayout->NumElements : 0;
-	gpsoDesc.InputLayout.pInputElementDescs	 = pCurInputLayout ? pCurInputLayout->pInputElementDescs : nullptr;
+	gpsoDesc.InputLayout.pInputElementDescs		= pCurInputLayout ? pCurInputLayout->pInputElementDescs : nullptr;
 	gpsoDesc.RasterizerState					= *finalRaster;
-	gpsoDesc.BlendState						 = *finalBlend;
-	gpsoDesc.DepthStencilState				  = *finalDepth;
-	gpsoDesc.SampleMask						 = UINT_MAX;
-	gpsoDesc.PrimitiveTopologyType			  = primitiveType;
-	gpsoDesc.NumRenderTargets				   = finalRt->Count;
+	gpsoDesc.BlendState							= *finalBlend;
+	gpsoDesc.DepthStencilState					= *finalDepth;
+	gpsoDesc.SampleMask							= UINT_MAX;
+	gpsoDesc.PrimitiveTopologyType				= primitiveType;
+	gpsoDesc.NumRenderTargets					= finalRt->Count;
 	memcpy(gpsoDesc.RTVFormats, finalRt->RTFormats, sizeof(DXGI_FORMAT) * finalRt->Count);
-	gpsoDesc.DSVFormat						  = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat): DXGI_FORMAT_UNKNOWN;
-	gpsoDesc.SampleDesc						 = msaaDesc;
+	gpsoDesc.DSVFormat							= targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat): DXGI_FORMAT_UNKNOWN;
+	gpsoDesc.SampleDesc							= msaaDesc;
 
 	// Create it:
-	HRESULT res			 = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState(&gpsoDesc,SIMUL_PPV_ARGS(&psoPair.second));
+	HRESULT res			 = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState(&gpsoDesc,SIMUL_PPV_ARGS(&pso.pipelineState));
 	SIMUL_ASSERT(res == S_OK);	
-	psoPair.second->SetName(std::wstring(mTechName.begin(), mTechName.end()).c_str());
-	mGraphicsPsoMap.insert(psoPair);
-
-	return hash;
+	std::string psoName=((mTechName+" PSO for ")+base::QuickFormat("%d",finalRt?finalRt->RTFormats[0]:0));
+	pso.pipelineState->SetName(std::wstring(psoName.begin(), psoName.end()).c_str());
+	
+	return pso.pipelineState;
 }
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
