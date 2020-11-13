@@ -25,22 +25,22 @@ namespace simul
 	}
 	namespace dx12
 	{
+		// Note: not a real D3D12_... _DESC:
         struct D3D12_RENDER_TARGET_FORMAT_DESC
         {
             //! Returns an unique number that represents this rt desc
             inline size_t GetHash()
             {
-                const size_t charSize = sizeof(char);
                 size_t h      = 0;
-                h            |= (size_t)RTFormats[0] << charSize * 8 * 0;
-                h            |= (size_t)RTFormats[1] << charSize * 8 * 1;
-                h            |= (size_t)RTFormats[2] << charSize * 8 * 2;
-                h            |= (size_t)RTFormats[3] << charSize * 8 * 3;
-                h            |= (size_t)RTFormats[4] << charSize * 8 * 4;
-                h            |= (size_t)RTFormats[5] << charSize * 8 * 5;
-                h            |= (size_t)RTFormats[6] << charSize * 8 * 6;
-                h            |= (size_t)RTFormats[7] << charSize * 8 * 7;
-                h            ^= (size_t)Count;
+                h            |= (size_t)RTFormats[0] << ( 5 * 0);
+                h            |= (size_t)RTFormats[1] << ( 5 * 1);
+                h            |= (size_t)RTFormats[2] << ( 5 * 2);
+                h            |= (size_t)RTFormats[3] << ( 5 * 3);
+                h            |= (size_t)RTFormats[4] << ( 5 * 4);
+                h            |= (size_t)RTFormats[5] << ( 5 * 5);
+                h            |= (size_t)RTFormats[6] << ( 5 * 6);
+                h            |= (size_t)RTFormats[7] << ( 5 * 7);
+                h            ^= (size_t)Count<<( 5 * 8);
                 return h;
             }
             UINT        Count;
@@ -81,11 +81,16 @@ namespace simul
             void        CheckSlots(int requiredSlots, int usedSlots, int numSlots, const char* type);
 
             void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
-            size_t      CreateGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
+            ID3D12PipelineState *GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
 		private:
 			virtual     ~EffectPass();
+			struct Pso
+			{
+				D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
+				ID3D12PipelineState					*pipelineState=nullptr;
+			};
 			//! We hold a map with unique PSOs
-			std::unordered_map<size_t, ID3D12PipelineState*>                mGraphicsPsoMap;
+			std::unordered_map<size_t, Pso>                mGraphicsPsoMap;
             std::unordered_map<size_t, D3D12_RENDER_TARGET_FORMAT_DESC*>    mTargetsMap;
 			//! We only have one compute Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
