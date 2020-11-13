@@ -90,8 +90,8 @@ namespace simul
 				ID3D12PipelineState					*pipelineState=nullptr;
 			};
 			//! We hold a map with unique PSOs
-			std::unordered_map<size_t, Pso>                mGraphicsPsoMap;
-            std::unordered_map<size_t, D3D12_RENDER_TARGET_FORMAT_DESC*>    mTargetsMap;
+			std::unordered_map<uint64_t, Pso>                mGraphicsPsoMap;
+            std::unordered_map<uint64_t, D3D12_RENDER_TARGET_FORMAT_DESC*>    mTargetsMap;
 			//! We only have one compute Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
 			//! Is this a compute pass?

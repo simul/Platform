@@ -783,7 +783,7 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	{
 		msaaDesc = curRenderPlat->GetMSAAInfo();
 	}
-	size_t msaaHash = msaaDesc.Count + msaaDesc.Quality;
+	uint64_t msaaHash = ((uint64_t)msaaDesc.Count + (uint64_t)msaaDesc.Quality)<<(uint64_t)32;
 
 	// Get the current targets:
 	const crossplatform::TargetsAndViewport* targets = &deviceContext.defaultTargetsAndViewport;
@@ -794,7 +794,7 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 
 	// Current render target output state:
 	D3D12_RENDER_TARGET_FORMAT_DESC* finalRt = nullptr;
-	size_t rthash = 0;
+	uint64_t rthash = 0;
 	if (renderTargetFormatState)
 	{
 		finalRt = &((dx12::RenderState*)renderTargetFormatState)->RtFormatDesc;
@@ -826,7 +826,8 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 			}
 			if(tmpState.RTFormats[i]==DXGI_FORMAT_R11G11B10_FLOAT)
 			{
-				SIMUL_INTERNAL_CERR << "DXGI_FORMAT_R11G11B10_FLOAT\n";
+				//SIMUL_INTERNAL_CERR << "DXGI_FORMAT_R11G11B10_FLOAT\n";
+				tmpState.Count							= targets->num;
 			}
 		}
 		rthash  = tmpState.GetHash();
@@ -844,7 +845,7 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	// Get hash for the current config:
 	// TO-DO: what about the depth format
 	// This is a bad hashing method
-	size_t hash = (uint64_t)&finalBlend ^ (uint64_t)&finalDepth ^ (uint64_t)&finalRaster ^ rthash ^ msaaHash;
+	uint64_t hash = ((uint64_t)finalBlend) ^ ((uint64_t)finalDepth) ^ ((uint64_t)finalRaster) ^ rthash ^ msaaHash;
 
 	// Runtime check for depth write:
 	if (finalDepth->DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO && !targets->m_dt)
