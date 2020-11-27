@@ -925,9 +925,12 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 
 	// Create it:
 	HRESULT res			 = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState(&gpsoDesc,SIMUL_PPV_ARGS(&pso.pipelineState));
-	SIMUL_ASSERT(res == S_OK);	
-	std::string psoName=((mTechName+" PSO for ")+base::QuickFormat("%d",finalRt?finalRt->RTFormats[0]:0));
-	pso.pipelineState->SetName(std::wstring(psoName.begin(), psoName.end()).c_str());
+	SIMUL_ASSERT(res == S_OK);
+	if(pso.pipelineState)
+	{
+		std::string psoName=((mTechName+" PSO for ")+base::QuickFormat("%d",finalRt?finalRt->RTFormats[0]:0));
+		pso.pipelineState->SetName(std::wstring(psoName.begin(), psoName.end()).c_str());
+	}
 	
 	return pso.pipelineState;
 }

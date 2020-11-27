@@ -30,8 +30,7 @@ namespace simul
 			void		SetData(crossplatform::DeviceContext &deviceContext,void *data) override;
 			void		InvalidateDeviceObjects() override;
 
-			void		Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource) override;
-			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource) override;
+			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const crossplatform::ShaderResource &shaderResource) override;
 			void		AddFence(crossplatform::DeviceContext& deviceContext) ;
 
 			void		Unbind(crossplatform::DeviceContext &deviceContext) override;

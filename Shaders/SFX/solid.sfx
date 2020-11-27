@@ -41,10 +41,11 @@ float GetSpecular(vec4 combinedLookup)
 
 struct vertexInput
 {
-    vec3 position		: POSITION;
-    vec2 texCoords		: TEXCOORD0;
-    vec3 normal			: TEXCOORD1;
-	vec3 tangent		: TEXCOORD2;
+	vec3 position : POSITION;
+	vec3 normal : NORMAL;
+	vec4 tangent : TANGENT;
+	vec2 texCoords : TEXCOORD0;
+	vec2 texCoords1 : TEXCOORD1;
 };
 
 struct vertexInputP
@@ -75,11 +76,11 @@ shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 	OUT.texCoords0	=vec2(0,0);
 	OUT.texCoords1	=vec2(0,0);
 #ifdef SFX_OPENGL
-    OUT.normal.xyz	=mul(vec3(0,0,1.0), mat3(world));
-	OUT.tangent.xyz = mul(vec3(0, 0, 1.0), mat3(world));
+    OUT.normal.xyz	=mul(IN.normal.xyz, mat3(world));
+	OUT.tangent.xyz = mul(IN.tangent.xyz, mat3(world));
 #else
-    OUT.normal.xyz	=mul(vec4(vec3(0,0,1.0),0.0), world).xyz;
-	OUT.tangent.xyz =mul(vec4(vec3(0,0,1.0),0.0), world).xyz;
+    OUT.normal.xyz	=mul(vec4(IN.normal.xyz,0.0), world).xyz;
+	OUT.tangent = vec4(mul(IN.tangent.xyz, (mat3)world).xyz, 0.0).xyz;
 #endif
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;

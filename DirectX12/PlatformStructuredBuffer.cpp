@@ -179,9 +179,9 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 }
 
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect *effect, const crossplatform::ShaderResource &shaderResource)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,  const crossplatform::ShaderResource &shaderResource)
 {
-	crossplatform::PlatformStructuredBuffer::Apply(deviceContext, effect, shaderResource);
+	crossplatform::PlatformStructuredBuffer::Apply(deviceContext,  shaderResource);
 
     // Reset the current applies, we need to do this even if we didnt change the buffer:
     if (mLastFrame != deviceContext.frame_number)
@@ -202,9 +202,9 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 	}
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource &shaderResource)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource)
 {
-    crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
+    crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext,  shaderResource);
 
     // Reset the current applies, we need to do this even if we didnt change the buffer:
     if (mLastFrame != deviceContext.frame_number)

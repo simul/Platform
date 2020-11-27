@@ -57,11 +57,13 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 	crossplatform::LayoutDesc layoutDesc[] =
 	{
 		{ "POSITION", 0, crossplatform::RGB_32_FLOAT, 0, 0, false, 0 },
-		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT, 0, 12, false, 0 },
-		{ "TEXCOORD", 1, crossplatform::RGB_32_FLOAT, 0, 20, false, 0 },
+		{ "NORMAL", 0, crossplatform::RGB_32_FLOAT, 0, 12, false, 0 },
+		{ "TANGENT", 0, crossplatform::RGBA_32_FLOAT, 0, 24, false, 0 },
+		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT, 0, 40, false, 0 },
+		{ "TEXCOORD", 1, crossplatform::RG_32_FLOAT, 0, 48, false, 0 },
 	};
 	SAFE_DELETE(layout);
-	layout = renderPlatform->CreateLayout(3, layoutDesc,true);
+	layout = renderPlatform->CreateLayout(5, layoutDesc,true);
 	
 	
 	// Put positions, texcoords and normals in an array of structs:
@@ -70,8 +72,10 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 	struct Vertex
 	{
 		vec3 pos;
-		vec2 texc;
 		vec3 normal;
+		vec4 tangent;
+		vec2 texc0;
+		vec2 texc1;
 	};
 	stride = sizeof(Vertex);
 	Vertex *vertices=new Vertex[lPolygonVertexCount];
@@ -80,9 +84,14 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 		Vertex &v		=vertices[i];
 		v.pos			=&(lVertices[i*3]);
 		if(lUVs)
-			v.texc		=&(lUVs[i*2]);
+		{
+			v.texc0 =v.texc1=&(lUVs[i*2]);
+		}
 		if(lNormals)
+		{
 			v.normal	=&(lNormals[i*3]);
+			v.tangent = vec4(1.0,0,0,0);
+		}
 	}
 	if(sIndices)
 		init(renderPlatform, numVertices, numIndices, vertices, sIndices);

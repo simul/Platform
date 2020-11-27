@@ -1067,9 +1067,19 @@ void RenderPlatform::SetLayout(GraphicsDeviceContext &deviceContext,Layout *l)
 void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBufferBase *s)
 {
 	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
+	pcb->Apply(deviceContext, s->GetSize(), s->GetAddr());
+
 	deviceContext.contextState.applyBuffers[s->GetIndex()] = s;
 	deviceContext.contextState.constantBuffersValid = false;
 	pcb->SetChanged();
+}
+
+void RenderPlatform::SetStructuredBuffer(DeviceContext& deviceContext, BaseStructuredBuffer* s, const ShaderResource& shaderResource)
+{
+	if((shaderResource.shaderResourceType& ShaderResourceType::RW)== ShaderResourceType::RW)
+		s->platformStructuredBuffer->ApplyAsUnorderedAccessView(deviceContext, shaderResource);
+	else
+		s->platformStructuredBuffer->Apply(deviceContext,shaderResource);
 }
 
 crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()

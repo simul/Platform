@@ -7,13 +7,13 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const ShaderResource& shaderResource)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& shaderResource)
 {
 	if (shaderResource.slot >= 0)
 		deviceContext.contextState.applyRwStructuredBuffers[shaderResource.slot] = this;
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const ShaderResource& shaderResource)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, const ShaderResource& shaderResource)
 {
 	if (shaderResource.slot >= 0)
 		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;

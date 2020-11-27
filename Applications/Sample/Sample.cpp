@@ -10,7 +10,7 @@
 #include "Platform/Core/EnvironmentVariables.h"
 #ifdef SAMPLE_USE_D3D12
 #include "Platform/DirectX12/RenderPlatform.h"
-#include "Platform/DirectX12/Direct3D12Manager.h"
+#include "Platform/DirectX12/DeviceManager.h"
 #include "Platform/DirectX12/Texture.h"
 #endif
 #ifdef SAMPLE_USE_D3D11
@@ -27,7 +27,8 @@
 #include "Platform/OpenGL/RenderPlatform.h"
 #include "Platform/OpenGL/DeviceManager.h"
 #include "Platform/OpenGL/Texture.h"
-#endif
+#endif 
+#include "Platform/CrossPlatform/RenderDocLoader.h"
 #include "Platform/CrossPlatform/HDRRenderer.h"
 #include "Platform/CrossPlatform/SphericalHarmonics.h"
 #include "Platform/CrossPlatform/View.h"
@@ -64,7 +65,7 @@ vulkan::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface *graphicsDeviceInterface=&deviceManager;
 #endif
 #ifdef SAMPLE_USE_D3D12
-dx12::Direct3D12Manager deviceManager;
+dx12::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface *graphicsDeviceInterface=&deviceManager;
 #endif
 #ifdef SAMPLE_USE_D3D11
@@ -106,6 +107,7 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 	crossplatform::ConstantBuffer<CameraConstants> cameraConstants;
 
+	crossplatform::StructuredBuffer<Light> lightsStructuredBuffer;
 	//! A camera instance to generate view and proj matrices and handle mouse control.
 	//! In practice you will have your own solution for this.
 	crossplatform::Camera			camera;
@@ -249,6 +251,7 @@ public:
 		solidConstants.RestoreDeviceObjects(renderPlatform);
 		solidConstants.LinkToEffect(effect,"SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
+		lightsStructuredBuffer.RestoreDeviceObjects(renderPlatform,10);
 	}
 
 	// We only ever create one view in this example, but in general, this should return a new value each time it's called.
@@ -345,11 +348,13 @@ public:
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
 			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+			cameraConstants.view = deviceContext.viewStruct.view;
+			cameraConstants.proj = deviceContext.viewStruct.proj; 
 			cameraConstants.world = mat4::identity();
-			effect->SetConstantBuffer(deviceContext, &cameraConstants);
-			effect->SetTexture(deviceContext,"diffuseCubemap", diffuseCubemapTexture);
-			
-			effect->SetConstantBuffer(deviceContext, &solidConstants);
+			renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
+			renderPlatform->SetConstantBuffer(deviceContext, &solidConstants);
+			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
+			renderPlatform->SetTexture(deviceContext,effect->GetShaderResource("diffuseCubemap"), diffuseCubemapTexture);
 			effect->Apply(deviceContext, "solid", 0);
 			exampleMesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
 			exampleMesh->Draw(deviceContext, 0);
@@ -375,6 +380,7 @@ public:
 		}
 		solidConstants.InvalidateDeviceObjects();
 		cameraConstants.InvalidateDeviceObjects();
+		lightsStructuredBuffer.InvalidateDeviceObjects();
 		hDRRenderer->InvalidateDeviceObjects();
 		exampleMesh->InvalidateDeviceObjects();
 		hdrFramebuffer->InvalidateDeviceObjects();
@@ -541,6 +547,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	szArgList = CommandLineToArgvW(GetCommandLineW(), &argCount);
 
 #ifdef _MSC_VER
+	//simul::crossplatform::RenderDocLoader::Load();
 	// The following disables error dialogues in the case of a crash, this is so automated testing will not hang. See http://blogs.msdn.com/b/oldnewthing/archive/2004/07/27/198410.aspx
 	SetErrorMode(SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
 	// But that doesn't work sometimes, so:

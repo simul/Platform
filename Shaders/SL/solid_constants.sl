@@ -47,13 +47,16 @@ struct Light
 {
 	mat4 lightSpaceTransform;
 	vec4 colour;
+
 	vec3 position;
 	float power;
+
 	vec3 direction;
 	float is_point;
+
 	float is_spot;
 	float radius;
-	vec3 pad3;
+	vec2 pad_light1;
 };
 
 #endif

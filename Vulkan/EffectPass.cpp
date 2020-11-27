@@ -285,8 +285,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			
 			if (no_res)
 			{
-				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in shader '"
-					<< c->name << "' has no valid resource associated with it." << std::endl;
+				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in pass '"
+					<< name.c_str() << "' has no valid resource associated with it." << std::endl;
 				SIMUL_BREAK("VkWriteDescriptorSet error.");
 			}
 		}

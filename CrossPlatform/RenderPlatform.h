@@ -336,6 +336,13 @@ namespace simul
 			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
 
 			virtual void					SetConstantBuffer				(DeviceContext& deviceContext,ConstantBufferBase *s);
+
+			/// <summary>
+			/// Apply a structured buffer for use in a shader.
+			/// </summary>
+			/// <param name="deviceContext"></param>
+			/// <param name="s"></param>
+			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 

@@ -21,7 +21,7 @@ if(${SAMPLE_API} MATCHES "SAMPLE_USE_D3D11")
 	if(SIMUL_BUILD_SHADERS)
 		add_dependencies( Sample_MT DirectX11CoreShaders )
 	endif()
-endif()
+endif() 
 
 
 add_dynamic_executable(Sample_MD WIN32 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS ${SAMPLE_API} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
