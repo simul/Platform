@@ -395,7 +395,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			if(tv->textureTargets[i].texture)
 				((vulkan::Texture*)tt.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
 		}
-		if(tv->depthTarget.texture)
+		if(tv->depthTarget.texture&&depthStencilState)
 		{
 			auto& dt = tv->depthTarget;
 			if(depthStencilState->desc.depth.write)
