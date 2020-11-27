@@ -134,7 +134,7 @@ namespace simul
 				}
 				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
 				{
-					idx = mLastIdx = ((mLastIdx++) + idxOffset) % mNumBuffers;
+					idx = mLastIdx = ((mLastIdx + 1) + idxOffset) % mNumBuffers;
 				}
 				else
 				{

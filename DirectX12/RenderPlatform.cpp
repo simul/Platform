@@ -306,7 +306,14 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 #endif
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+
+#ifndef SIMUL_DEBUG_BARRIERS
     commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+#else
+	for(size_t i = 0; i < mCurBarriers; i++)
+		commandList->ResourceBarrier(1, &mPendingBarriers[i]);
+#endif
+
 #endif
     mCurBarriers = 0;
 }
@@ -1097,6 +1104,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	{
 	case DXGI_FORMAT_R16_FLOAT:
 		return R_16_FLOAT;
+	case DXGI_FORMAT_R16G16B16A16_TYPELESS:
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
 	case DXGI_FORMAT_R11G11B10_FLOAT:

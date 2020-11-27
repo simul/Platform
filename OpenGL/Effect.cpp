@@ -243,7 +243,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     if (!cpu_read)
         return;
 
-    int idx = GetLastIndex(deviceContext, 1);
+    int idx = GetLastIndex(deviceContext, 0);
     if (IsBufferMapped(idx))
     {
         mCurReadMap = nullptr;
@@ -375,6 +375,9 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
 {
+    if (!name.valid)
+        return;
+
     opengl::Texture* gTex = (opengl::Texture*)tex;
 	if (gTex)
 	{
@@ -706,7 +709,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
         }
 
 		//Used for Debug with RenderDoc, as it don't load these extension/functions -AJR
-		if (!GLAD_GL_ARB_bindless_texture)
+		if (GLAD_GL_ARB_bindless_texture)
 		{
 			glGetTextureHandleARB = (PFNGLGETTEXTUREHANDLEARBPROC)wglGetProcAddress("glGetTextureHandleARB");
 			glGetTextureSamplerHandleARB = (PFNGLGETTEXTURESAMPLERHANDLEARBPROC)wglGetProcAddress("glGetTextureSamplerHandleARB");
