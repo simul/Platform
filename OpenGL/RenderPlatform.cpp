@@ -169,9 +169,19 @@ void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceConte
 	}
 
     crossplatform::ContextState* cs = &deviceContext.contextState;
-    opengl::EffectPass* pass    = (opengl::EffectPass*)cs->currentEffectPass;
-    
-    pass->SetTextureHandles(deviceContext);
+	opengl::EffectPass* pass = (opengl::EffectPass*)cs->currentEffectPass;
+	
+	pass->SetTextureHandles(deviceContext);
+}
+
+void RenderPlatform::ApplyPass(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* pass)
+{
+	crossplatform::ContextState& cs = deviceContext.contextState;
+	if (cs.apply_count == 0)
+	{
+		crossplatform::RenderPlatform::ApplyPass(deviceContext, pass);
+		cs.currentEffectPass->Apply(deviceContext, true);
+	}
 }
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)

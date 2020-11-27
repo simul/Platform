@@ -134,11 +134,11 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
     // Print the message:
     if (!debugMsgGroups.empty())
     {
-        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY:" << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << ", GROUP(" << debugMsgGroups[debugMsgGroups.size()-1].c_str() << ") " << message << std::endl;
+        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY: " << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << ", GROUP(" << debugMsgGroups[debugMsgGroups.size()-1].c_str() << ") " << message << std::endl;
     }
     else
     {
-        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY:" << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << "," << message << std::endl;
+        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY: " << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << "," << message << std::endl;
     }
     if (type != GL_DEBUG_TYPE_PERFORMANCE)
     {

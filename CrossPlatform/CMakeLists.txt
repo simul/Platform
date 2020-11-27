@@ -4,6 +4,10 @@ file(GLOB SOURCES "*.cpp" )
 
 file(GLOB HEADERS "*.h" )
 
+if(PLATFORM_LOAD_RENDERDOC)
+	add_definitions(-DPLATFORM_LOAD_RENDERDOC=1)
+endif()
+
 # Setup and build the static library.
 add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
 	DEFINITIONS PLATFORM_LOAD_RENDERDOC=$<BOOL:${PLATFORM_LOAD_RENDERDOC}>

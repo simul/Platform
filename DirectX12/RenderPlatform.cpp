@@ -21,7 +21,7 @@
 #ifdef SIMUL_ENABLE_PIX
     #include "pix3.h"
 #endif
-//#define SIMUL_DEBUG_BARRIERS 1
+#define SIMUL_DEBUG_BARRIERS 0
 using namespace simul;
 using namespace dx12;
 
@@ -162,7 +162,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			SIMUL_ASSERT(before==b.Transition.StateAfter);
 			if(before!=b.Transition.StateAfter)
 			{
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
 				{
 					SIMUL_CERR<<"Barrier error : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") - "<<D3D12ResourceStateToString(before)<<" IS NOT "<<D3D12ResourceStateToString(b.Transition.StateBefore)<<std::endl;
@@ -174,7 +174,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 				if(mCurBarriers>1)
 				{
 					std::swap(b,mPendingBarriers[mCurBarriers-1]);
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
 				{
 					SIMUL_COUT<<"Barrier swapped: 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
@@ -183,7 +183,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 				}
 				else
 				{
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
 				{
 					SIMUL_COUT<<"Barrier removed : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
@@ -194,7 +194,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			}
 			else
 			{
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
 				{
 					SIMUL_COUT<<"Barrier combined : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
@@ -208,7 +208,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 	if(!found)
 	{
 		auto& barrier = mPendingBarriers[mCurBarriers++];
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 		if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
 		{
 			SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
@@ -240,7 +240,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 	
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
 #endif
 /*	if (true)
@@ -268,7 +268,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 	
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
 #endif
 	if (true)
@@ -298,7 +298,7 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
     {
         return; 
     }
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 	if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
 	{
 		SIMUL_COUT<<"\t\tFlush "<<mCurBarriers<<" barriers."<<std::endl;
@@ -306,7 +306,14 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 #endif
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+
+#ifndef SIMUL_DEBUG_BARRIERS
     commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+#else
+	for(size_t i = 0; i < mCurBarriers; i++)
+		commandList->ResourceBarrier(1, &mPendingBarriers[i]);
+#endif
+
 #endif
     mCurBarriers = 0;
 }
@@ -1097,6 +1104,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	{
 	case DXGI_FORMAT_R16_FLOAT:
 		return R_16_FLOAT;
+	case DXGI_FORMAT_R16G16B16A16_TYPELESS:
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
 	case DXGI_FORMAT_R11G11B10_FLOAT:

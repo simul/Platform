@@ -71,6 +71,7 @@ namespace simul
             //! This should be called after a Draw/Dispatch command that uses
             //! textures. Here we will apply the textures.
             void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
+			void		ApplyPass(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* pass) override;
 
             void        InsertFences(crossplatform::DeviceContext& deviceContext);
 

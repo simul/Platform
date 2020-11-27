@@ -119,7 +119,7 @@ namespace simul
 				return SFX_CONFIG_FILENAME;
 			}
 			//! Returns the time stamp freq value
-			UINT64						  GetTimeStampFreq() const		 { return mTimeStampFreq; }
+			UINT64							GetTimeStampFreq() const		 { return mTimeStampFreq; }
 			//! Sets the reference of a command list. This is usually not needed as we will cache
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
@@ -130,8 +130,8 @@ namespace simul
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
-			ID3D12CommandQueue*				GetCommandQueue()			   { return m12Queue; }
-			ID3D12CommandQueue*				GetComputeQueue()			   { return mComputeQueue; }
+			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
+			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
@@ -280,7 +280,7 @@ namespace simul
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
 			//! Heap used to hold override sampler states
-			dx12::Heap*				 mFrameOverrideSamplerHeap;
+			dx12::Heap*					mFrameOverrideSamplerHeap;
 			dx12::Heap*					mSamplerHeap;
 			dx12::Heap*					mRenderTargetHeap;
 			dx12::Heap*					mDepthStencilHeap;
@@ -303,8 +303,8 @@ namespace simul
 			std::vector<std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
-			int								 mTotalBarriers;
-			int								 mCurBarriers;
+			int									mTotalBarriers;
+			int									mCurBarriers;
 			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
 			bool								isInitialized = false;
 			bool								mIsMsaaEnabled;

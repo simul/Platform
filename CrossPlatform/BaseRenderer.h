@@ -58,14 +58,8 @@ namespace simul
 				,view_id(0)
 				,depthTextureStyle(DepthTextureStyle::PROJECTION)
 			{}
-			ViewStruct(const ViewStruct &vs):
-				initialized(false)
-				,view_id(vs.view_id)
-				,model(vs.model)
-				,view(vs.view)
-				,proj(vs.proj)
-				,depthTextureStyle(vs.depthTextureStyle)
-			{}
+			ViewStruct(const ViewStruct &vs) = default;
+
 			bool initialized;
 			int view_id;			///< An id unique to each rendered view, but persistent across frames.
 			math::Matrix4x4 model;	///< The model matrix
