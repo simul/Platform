@@ -76,11 +76,11 @@ shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 	OUT.texCoords0	=vec2(0,0);
 	OUT.texCoords1	=vec2(0,0);
 #ifdef SFX_OPENGL
-    OUT.normal.xyz	=mul(IN.normal.xyz, mat3(world));
-	OUT.tangent.xyz = mul(IN.tangent.xyz, mat3(world));
+    OUT.normal.xyz	=mul(IN.position.xyz, mat3(world));
+	OUT.tangent.xyz = mul(vec4(1.0, 0, 0, 0.0), mat3(world));
 #else
-    OUT.normal.xyz	=mul(vec4(IN.normal.xyz,0.0), world).xyz;
-	OUT.tangent = vec4(mul(IN.tangent.xyz, (mat3)world).xyz, 0.0).xyz;
+    OUT.normal.xyz	=mul(vec4(IN.position.xyz,0.0), world).xyz;
+	OUT.tangent		=mul(vec4(1.0,0,0,0.0), world).xyz;
 #endif
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;
@@ -105,8 +105,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 	OUT.tangent.xyz = mul(IN.tangent, mat3(world));
 #else
 	OUT.normal = mul(vec4(IN.normal.xyz, 0.0), world).xyz;
-	vec3 tangent=vec3(1.0,0.0,0.0);
-	OUT.tangent = mul(vec4(tangent.xyz,0),world).xyz;
+	OUT.tangent = mul(vec4(IN.tangent.xyz, 0.0), world).xyz;
 	//OUT.normal = IN.normal;
 	//OUT.tangent = IN.tangent;
 #endif
@@ -186,6 +185,10 @@ struct SurfaceProperties
     float alpha;		// alpha for transparencies
 };
 
+vec3 Reflect(vec3 i,vec3 n)
+{
+	return i-2.0*n*dot(i,n);
+}
 
 SurfaceState PreprocessSurface(vec3 viewDir,SurfaceProperties surfaceProperties)
 {
@@ -199,7 +202,7 @@ SurfaceState PreprocessSurface(vec3 viewDir,SurfaceProperties surfaceProperties)
 	surfaceState.F				= FresnelTerm(F0, cosLo);
 	surfaceState.kS				= surfaceState.F;
 	surfaceState.kD				= lerp(vec3(1.0, 1.0, 1.0) - surfaceState.kS, vec3(0.0,0.0,0.0), surfaceProperties.metallic);
-	surfaceState.refl			= reflect(viewDir,surfaceProperties.normal);
+	surfaceState.refl			= reflect(normalize(viewDir),normalize(surfaceProperties.normal));
 	surfaceState.n_v			= saturate(dot(surfaceProperties.normal, viewDir));
 	return surfaceState;
 }
@@ -210,18 +213,14 @@ vec3 PBRAmbient(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surface
 	// Sample the environment maps:
 	vec3 diffuse_env		= diffuseCubemap.SampleLevel(cubeSamplerState, surfaceProperties.normal.xyz,0.0).rgb;
 	vec3 env				= specularCubemap.SampleLevel(cubeSamplerState,surfaceState.refl.xyz, roughness_mip).rgb;
-	//vec3 rough_env			= roughSpecularCubemap.SampleLevel(cubeSamplerState, surfaceState.refl.xyz, saturate(roughness_mip-3.0)).rgb;
-	//env						=lerp(env,rough_env,saturate(roughness_mip-2.0));
-
-	//env					=mix(env, diffuse_env, saturate((roughnessE - 0.25) / 0.75));
 
 	vec3 envSpecularColour	=EnvBRDFApprox(surfaceProperties.albedo, surfaceProperties.roughness2, surfaceState.n_v);
 	vec3 specular			=surfaceState.kS*envSpecularColour * env;
 
 	 //Metallic materials will have no diffuse output.
 	
-	vec3 diffuse			= surfaceState.kD*surfaceProperties.albedo * diffuse_env;
-	diffuse					*= surfaceProperties.ao;
+	vec3 diffuse			= surfaceProperties.albedo * surfaceState.kD* diffuse_env;
+	//diffuse					*= surfaceProperties.ao;
 	vec3 colour				= diffuse+specular;
 
 	return colour;
@@ -256,13 +255,13 @@ vec4 Solid(vertexOutput IN)
 {
 	vec3 tangentx		= normalize(IN.tangent);
 	vec3 tangenty		= normalize(cross(IN.normal, tangentx));
-	mat3 TangentMatrix	= mat3(tangentx, normalize(tangenty), normalize(IN.normal)); //transforms world=>tangent space
+	mat3 TangentMatrix	= mat3(tangentx, tangenty, normalize(IN.normal)); //transforms world=>tangent space
 
 	vec3 normalLookup	= vec3(0,0,1.0);//normalTexture.Sample(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R).xyz;
 	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
 	vec3 normal			= normalize(mul(normalLookup, TangentMatrix));
 
-	vec3 diffuseColour	= diffuseTexture.Sample(wrapSamplerState, IN.texCoords0.xy * diffuseTexCoordsScalar_R).rgb;
+	vec3 diffuseColour	= vec3(1.0,1.0,1.0);//diffuseTexture.Sample(wrapSamplerState, IN.texCoords0.xy * diffuseTexCoordsScalar_R).rgb;
 	diffuseColour		= diffuseColour.rgb * diffuseOutputScalar.rgb;
 
 	vec3 view			= normalize(IN.wpos.xyz - viewPosition);
@@ -281,10 +280,10 @@ vec4 Solid(vertexOutput IN)
 	surfaceProperties.position		=IN.wpos;
 	// Either roughness or 1.0-smoothness depending on alpha of scalar.
 	surfaceProperties.roughness		=lerp(roughMetalOcclusion.r,1.0-roughMetalOcclusion.a,combinedOutputScalarRoughMetalOcclusion.a);
-	surfaceProperties.metallic		=GetMetallic(roughMetalOcclusion);
+	surfaceProperties.metallic		=0.0;//GetMetallic(roughMetalOcclusion);
 	surfaceProperties.ao			=GetAO(roughMetalOcclusion);
 
-	surfaceProperties.normal		=normal;
+	surfaceProperties.normal		= IN.normal;
 	surfaceProperties.albedo		=diffuseColour;
 	surfaceProperties.roughness2	=surfaceProperties.roughness*surfaceProperties.roughness;
 

@@ -1,5 +1,4 @@
 #include "MeshRenderer.h"
-#include "Mesh.h"
 #include "Material.h"
 
 using namespace simul;
@@ -39,17 +38,49 @@ void MeshRenderer::InvalidateDeviceObjects()
 	effect = nullptr;
 }
 
+void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int index)
+{
+	cameraConstants.world = deviceContext.viewStruct.model;
+	cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+	cameraConstants.view = deviceContext.viewStruct.view;
+	cameraConstants.proj = deviceContext.viewStruct.proj;
+	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
+	renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
+	mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
+	mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
+	effect->SetConstantBuffer(deviceContext, &cameraConstants);
+	Mesh::SubMesh* subMesh = mesh->GetSubMesh(index);
+	
+	Material* mat = subMesh->material;
+	ApplyMaterial(deviceContext, mat);
+	auto *vb= mesh->GetVertexBuffer();
+	renderPlatform->SetVertexBuffers(deviceContext, 0, 1, &vb, mesh->GetLayout());
+	renderPlatform->SetIndexBuffer(deviceContext, mesh->GetIndexBuffer());
+	renderPlatform->DrawIndexed(deviceContext, subMesh->TriangleCount * 3, subMesh->IndexOffset, 0);
+}
+
+void MeshRenderer::DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh, const Mesh::SubNode& subNode)
+{
+	auto& mat = subNode.orientation.GetMatrix();
+	deviceContext.viewStruct.PushModelMatrix(mat);
+	for (int i = 0; i < subNode.subMeshes.size(); i++)
+		DrawSubMesh(deviceContext, mesh,subNode.subMeshes[i]);
+	for (int i = 0; i < subNode.children.size(); i++)
+		DrawSubNode(deviceContext, mesh, subNode.children[i]);
+	deviceContext.viewStruct.PopModelMatrix();
+}
+
 void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap)
 {
 	if (!effect)
 		RecompileShaders();
 	if (!effect)
 		return;
-	//model.transpose();
+	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
+	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);
+	mesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
 	mat4 w;
 	mat4 tw =*( (mat4*)&(mesh->orientation.GetMatrix()));
-//	tw._14 = tw._24 = tw._34 =  0.0f;
-	//tw._44 = 1.0f;
 	tw.transpose();
 	mat4::mul(w, tw, model);
 	
@@ -57,22 +88,8 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 	{
 		Render(deviceContext, c,w,diffuseCubemap,specularCubemap);
 	}
-	cameraConstants.world = w;
-	mat4::mul(cameraConstants.worldViewProj, w, *((mat4*)(&deviceContext.viewStruct.viewProj)));
-	mat4::mul(cameraConstants.modelView, w, *((mat4*)(&deviceContext.viewStruct.view)));
-	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
-	//cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;#
-	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
-	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);
-	effect->SetConstantBuffer(deviceContext, &cameraConstants);
-	for (int i=0;i<mesh->mSubMeshes.size();i++)
-	{
-		Material *mat=mesh->mSubMeshes[i]->material;
-		ApplyMaterial(deviceContext, mat);
-		effect->Apply(deviceContext, "solid", 0);
-		mesh->Draw(deviceContext, i);
-		effect->Unapply(deviceContext);
-	}
+	DrawSubNode(deviceContext,mesh,mesh->GetRootNode());
+	mesh->EndDraw(deviceContext);
 }
 
 void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *material)

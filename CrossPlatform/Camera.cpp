@@ -12,17 +12,6 @@ using namespace simul;
 using namespace math;
 using namespace crossplatform;
 
-void ViewStruct::Init()
-{
-	ERRNO_BREAK
-	frustum=GetFrustumFromProjectionMatrix(proj);
-	MakeViewProjMatrix((float*)&viewProj, (const float*)&view, (const float*)&proj);
-	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
-	view.Inverse(*((simul::math::Matrix4x4*)&invView));
-	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
-	initialized=true;
-}
-
 static const float DEG_TO_RAD=SIMUL_PI_F/180.f;
 static const float RAD_TO_DEG=180.f/SIMUL_PI_F;
 /*

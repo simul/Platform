@@ -688,7 +688,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 			vk::AttachmentDescription attachments[2] = { vk::AttachmentDescription()
 																  .setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
 																  .setSamples(vk::SampleCountFlagBits::e1)
-																  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
+																  .setLoadOp(vk::AttachmentLoadOp::eLoad)
 																  .setStoreOp(vk::AttachmentStoreOp::eStore)
 																  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 																  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

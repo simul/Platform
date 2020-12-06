@@ -43,7 +43,7 @@ namespace simul
 			virtual		~RenderPlatform() override;
 
 			vk::Device *AsVulkanDevice() override;
-			vk::Instance *AsVulkanInstance();
+			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::BufferView &);
@@ -89,7 +89,6 @@ namespace simul
 			crossplatform::BaseFramebuffer*			CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
-			crossplatform::Effect*					CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines) override;
 			crossplatform::PlatformConstantBuffer*	CreatePlatformConstantBuffer() override;
 			crossplatform::PlatformStructuredBuffer*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*					CreateBuffer() override;

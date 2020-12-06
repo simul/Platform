@@ -805,6 +805,7 @@ int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,Sh
 
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);
+
 	bool res=RunDOSCommand(psslc.c_str(),wd,log,sfxConfig,cc);
 	if (res)
 	{
@@ -842,6 +843,7 @@ int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,Sh
 			if(!sz)
 			{
 				std::cerr << log.str() << std::endl;
+				std::cerr << "Empty output binary" << outputFile.c_str()<< std::endl;
 				SFX_BREAK("Empty output binary");
 				exit(1);
 			}

@@ -656,12 +656,6 @@ crossplatform::Effect* RenderPlatform::CreateEffect()
 	return e;
 }
 
-crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
-{
-	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8,defines);
-	return e;
-}
-
 crossplatform::PlatformConstantBuffer* RenderPlatform::CreatePlatformConstantBuffer()
 {
 	return new vulkan::PlatformConstantBuffer();
@@ -1757,7 +1751,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	{
 		attachments[i]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(pixelFormat))
 														.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite ? vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
+														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
 														.setStoreOp(vk::AttachmentStoreOp::eStore)
 														.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

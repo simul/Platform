@@ -755,7 +755,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],base::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
 	
 			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
 			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
@@ -1160,25 +1160,54 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		.setImage(mImage);
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
-	if (layer >= 0 && mip >= 0 && (arraySize >1||mips>1))
+	if ((layer >= 0 || mip >= 0) && (arraySize >1||mips>1))
 	{
-		vk::ImageLayout &l = mLayerMipLayouts[layer][mip];
-		if (split_layouts)
+		int num_mips=1;
+		int num_layers=1;
+		if(layer<0)
 		{
-			l = vk::ImageLayout::eUndefined;
+			layer=0;
+			num_layers= totalNum;
 		}
-		barrier.setOldLayout(l);
-		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, mip, 1, layer, 1));
+		if (mip < 0)
+		{
+			mip = 0;
+			num_mips = mips;
+		}
+		for(int l= layer;l< layer+num_layers;l++)
+		{
+			for(int m= mip;m< mip+num_mips;m++)
+			{
+				vk::ImageLayout& imageLayout = mLayerMipLayouts[l][m];
+				barrier.setOldLayout(imageLayout);
+				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+				imageLayout = newLayout;
+			}
+		}
 		split_layouts = true;
-		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
-		l = newLayout;
+	}
+	else if(split_layouts)
+	{
+	// This is the case going from split to unsplit layout. God.
+		for (int l = 0; l <  totalNum; l++)
+		{
+			for (int m = 0; m < mips; m++)
+			{
+				vk::ImageLayout& imageLayout = mLayerMipLayouts[l][m];
+				if (imageLayout == newLayout)
+					continue;
+				barrier.setOldLayout(imageLayout);
+				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+				imageLayout = newLayout;
+			}
+		}
+		AssumeLayout(newLayout);
+		split_layouts = false;
 	}
 	else
 	{
-		if (split_layouts)
-		{
-			currentImageLayout = vk::ImageLayout::eUndefined;
-		}
 		if (currentImageLayout == newLayout)
 			return;
 		int totalNum = cubemap ? 6 * arraySize : arraySize;

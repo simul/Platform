@@ -31,9 +31,10 @@ namespace simul
 			mutable bool done_begin;
 			crossplatform::RenderPlatform *renderPlatform;
 		public:
-			Mesh();
+			Mesh(crossplatform::RenderPlatform* r);
 			virtual ~Mesh();
 			void InvalidateDeviceObjects();
+			void Load(const char *filename);
 			void Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m);
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform
 				,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs
@@ -43,6 +44,11 @@ namespace simul
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
 			void BeginDraw(GraphicsDeviceContext &deviceContext, ShadingMode pShadingMode) const;
+			/// <summary>
+			/// \deprecated Use MeshRenderer.
+			/// </summary>
+			/// <param name="deviceContext"></param>
+			void Draw(GraphicsDeviceContext& deviceContext) const;
 			// Draw all the faces with specific material with given shading mode.
 			void Draw(GraphicsDeviceContext &deviceContext, int pMaterialIndex) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
@@ -50,22 +56,28 @@ namespace simul
 			void apply(GraphicsDeviceContext &deviceContext, unsigned instanceStride, Buffer *instanceBuffer);
 			// Get the count of material groups
 			int GetSubMeshCount() const;
-			void SetSubMesh(int submesh,int index_start,int num_indices,Material *m);
+			struct SubMesh
+			{
+				SubMesh() : IndexOffset(0), TriangleCount(0), drawAs(AS_TRIANGLES), material(nullptr) {}
+				int IndexOffset;
+				int TriangleCount;
+
+				enum DrawAs { AS_TRIANGLES, AS_TRISTRIP };
+				DrawAs drawAs;
+				Material* material;
+			};
+			struct SubNode
+			{
+				std::vector<int> subMeshes;
+				simul::geometry::SimulOrientation orientation;
+				std::vector<SubNode> children;
+			};
+			SubMesh *SetSubMesh(int submesh,int index_start,int num_indices,Material *m);
 			
 			int VERTEX_STRIDE;
 			int NORMAL_STRIDE;
 			int UV_STRIDE;
 			int TRIANGLE_VERTEX_COUNT;
-			struct SubMesh
-			{
-				SubMesh() : IndexOffset(0), TriangleCount(0),drawAs(AS_TRIANGLES),material(nullptr) {}
-				int IndexOffset;
-				int TriangleCount;
-
-				enum DrawAs {AS_TRIANGLES,AS_TRISTRIP};
-				DrawAs drawAs;
-				Material *material;
-			};
 			//! The submeshes are the parts that have different materials.
 			SubMesh *GetSubMesh(int index);
 			const SubMesh *GetSubMesh(int index) const;
@@ -81,7 +93,25 @@ namespace simul
 			unsigned indexSize;
 			unsigned numVertices;
 			unsigned numIndices;
+			SubNode &GetRootNode()
+			{
+				return rootNode;
+			}
+			Buffer* GetVertexBuffer()
+			{
+				return vertexBuffer;
+			}
+			Buffer* GetIndexBuffer()
+			{
+				return indexBuffer;
+			}
+			Layout* GetLayout()
+			{
+			return layout;
+			}
 		protected:
+			void DrawSubNode(GraphicsDeviceContext& deviceContext, const SubNode& subNode) const;
+			SubNode rootNode;
 			void releaseBuffers();
 			// Template function to initialize vertices from an arbitrary vertex structure.
 			template<class T,typename U> void init(crossplatform::RenderPlatform *renderPlatform,const std::vector<T> &vertices,std::vector<U> indices)

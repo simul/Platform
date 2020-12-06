@@ -33,6 +33,7 @@
 #include "Platform/CrossPlatform/SphericalHarmonics.h"
 #include "Platform/CrossPlatform/View.h"
 #include "Platform/CrossPlatform/Mesh.h"
+#include "Platform/CrossPlatform/MeshRenderer.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
@@ -94,16 +95,15 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	//! distributes numerical precision to where it is better used.
 	static const bool reverseDepth=true;
 	//! A framebuffer to store the colour and depth textures for the view.
-	crossplatform::BaseFramebuffer	*hdrFramebuffer;
-	crossplatform::Texture* specularTexture = nullptr;
-	crossplatform::Texture* diffuseCubemapTexture = nullptr;
+	crossplatform::BaseFramebuffer	*hdrFramebuffer = nullptr;
+	crossplatform::Texture* specularCubemapTexture	= nullptr;
+	crossplatform::Texture* diffuseCubemapTexture	= nullptr;
 	//! An HDR Renderer to put the contents of hdrFramebuffer to the screen. In practice you will probably have your own method for this.
-	crossplatform::HdrRenderer		*hDRRenderer;
-	
-	// A simple example mesh to draw as transparent
-	//crossplatform::Mesh *transparentMesh;
-	crossplatform::Mesh *exampleMesh;
-	crossplatform::Effect *effect;
+	crossplatform::HdrRenderer		*hDRRenderer	=nullptr;
+	crossplatform::MeshRenderer		*meshRenderer	=nullptr;
+	// An example mesh to draw.
+	crossplatform::Mesh *exampleMesh				= nullptr;
+	crossplatform::Effect *effect					= nullptr;
 	crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 	crossplatform::ConstantBuffer<CameraConstants> cameraConstants;
 
@@ -118,16 +118,11 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	crossplatform::Texture *depthTexture;
 
 public:
-	int framenumber;
+	int framenumber=0;
 	//! The render platform implements the cross-platform Simul graphics API for a specific target API,
-	simul::crossplatform::RenderPlatform *renderPlatform;
+	simul::crossplatform::RenderPlatform *renderPlatform= nullptr;
 
-	PlatformRenderer():
-		renderPlatform(nullptr)
-		,hdrFramebuffer(NULL)
-		,hDRRenderer(NULL)
-		,effect(NULL)
-		,framenumber(0)
+	PlatformRenderer()
 	{
 #ifdef SAMPLE_USE_D3D12
 		renderPlatform =new dx12::RenderPlatform();
@@ -172,15 +167,17 @@ public:
 #if 0
 		camera.SetCameraViewStruct(vs);
 #endif
+		meshRenderer=new crossplatform::MeshRenderer();
 		memset(keydown,0,sizeof(keydown));
 
 		exampleMesh = renderPlatform->CreateMesh();
-
+		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		// Whether run from the project directory or from the executable location, we want to be
 		// able to find the shaders and textures:
 		renderPlatform->PushTexturePath("");
 		renderPlatform->PushTexturePath("../../../../Media/Textures");
 		renderPlatform->PushTexturePath("../../Media/Textures");
+		renderPlatform->PushTexturePath("Media/Textures");
 		// Or from the Simul directory -e.g. by automatic builds:
 #ifdef SAMPLE_USE_D3D12
 		renderPlatform->PushShaderPath("Platform/DirectX12/HLSL/");
@@ -188,9 +185,6 @@ public:
 		renderPlatform->PushShaderPath("../../Platform/DirectX12/HLSL");
 #endif
 		renderPlatform->PushShaderPath("Platform/Shaders/SFX/");
-
-		renderPlatform->PushTexturePath("Media/Textures");
-
 		renderPlatform->PushShaderPath("../../../../Platform/CrossPlatform/SFX");
 		renderPlatform->PushShaderPath("../../Platform/CrossPlatform/SFX");
 		renderPlatform->PushShaderPath("../../../../Shaders/SFX/");
@@ -203,12 +197,13 @@ public:
 		std::string cmake_source_dir = STRING_OF_MACRO(CMAKE_SOURCE_DIR);
 		if(cmake_binary_dir.length())
 		{
+			renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR))+"/")+renderPlatform->GetPathName() + "/HLSL").c_str());
 			renderPlatform->PushShaderBinaryPath(((cmake_binary_dir+ "/") + renderPlatform->GetPathName() +"/shaderbin").c_str());
 			std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + renderPlatform->GetPathName());
 			renderPlatform->PushShaderBinaryPath((platform_build_path+"/shaderbin").c_str());
 			renderPlatform->PushTexturePath((cmake_source_dir +"/Resources/Textures").c_str());
 		}
-		renderPlatform->PushShaderBinaryPath("shaderbin");
+		renderPlatform->PushShaderBinaryPath((std::string("shaderbin/")+ renderPlatform->GetPathName()).c_str());
 	}
 
 	~PlatformRenderer()
@@ -217,7 +212,7 @@ public:
 		del(hDRRenderer,NULL);
 		del(hdrFramebuffer,NULL);
 		delete diffuseCubemapTexture;
-		delete specularTexture;
+		delete specularCubemapTexture;
 		delete exampleMesh;
 		delete depthTexture;
 		delete renderPlatform;
@@ -228,6 +223,12 @@ public:
 	{
 		renderPlatform->RecompileShaders();
 		hDRRenderer->RecompileShaders();
+
+		effect->Load(renderPlatform, "solid");
+
+		// Force regen of cubemaps.
+		delete diffuseCubemapTexture;
+		diffuseCubemapTexture=nullptr;
 	}
 
 	bool IsEnabled() const
@@ -242,10 +243,12 @@ public:
 		((dx12::RenderPlatform*)renderPlatform)->SetImmediateContext((dx12::ImmediateContext*)deviceManager.GetImmediateContext());
 #endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
-		exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
+		//exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
+		exampleMesh->Load("models/CesiumMilkTruck.gltf");
 		// These are for example:
 		hDRRenderer->RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
+		meshRenderer->RestoreDeviceObjects(renderPlatform);
 		effect=renderPlatform->CreateEffect();
 		effect->Load(renderPlatform,"solid");
 		solidConstants.RestoreDeviceObjects(renderPlatform);
@@ -280,12 +283,11 @@ public:
 	void GenerateCubemaps(crossplatform::GraphicsDeviceContext& deviceContext)
 	{
 		crossplatform::Texture* hdrTexture = renderPlatform->CreateTexture("Textures/environment.hdr");
-		//diffuseCubemap = renderPlatform->CreateTexture("abandoned_tank_farm_04_2k.hdr");
-		delete specularTexture;
-		specularTexture = renderPlatform->CreateTexture("specularTexture");
-		specularTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 8, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
+		delete specularCubemapTexture;
+		specularCubemapTexture = renderPlatform->CreateTexture("specularCubemapTexture");
+		specularCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 8, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
 		// plonk the hdr into the cubemap.
-		renderPlatform->LatLongTextureToCubemap(deviceContext, specularTexture, hdrTexture);
+		renderPlatform->LatLongTextureToCubemap(deviceContext, specularCubemapTexture, hdrTexture);
 		delete hdrTexture;
 		delete diffuseCubemapTexture;
 		diffuseCubemapTexture = renderPlatform->CreateTexture("diffuseCubemapTexture");
@@ -295,10 +297,10 @@ public:
 
 		// Now we will calculate spherical harmonics.
 		sphericalHarmonics.RestoreDeviceObjects(renderPlatform);
-		sphericalHarmonics.RenderMipsByRoughness(deviceContext, specularTexture);
-		sphericalHarmonics.CalcSphericalHarmonics(deviceContext, specularTexture);
+		sphericalHarmonics.RenderMipsByRoughness(deviceContext, specularCubemapTexture);
+		sphericalHarmonics.CalcSphericalHarmonics(deviceContext, specularCubemapTexture);
 		// And using the harmonics, render a diffuse map:
-		sphericalHarmonics.RenderEnvmap(deviceContext, diffuseCubemapTexture, -1, 0.0f);
+		sphericalHarmonics.RenderEnvmap(deviceContext, diffuseCubemapTexture, -1, 1.0f);
 	}
 
 	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame) override
@@ -331,9 +333,13 @@ public:
             }
 			deviceContext.viewStruct.Init();
 		}
+		if(framenumber ==0)
+			simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
 		renderPlatform->BeginFrame(deviceContext);
 		if(!diffuseCubemapTexture)
+		{
 			GenerateCubemaps(deviceContext);
+		}
 		// Profiling
 #if DO_PROFILING 
 		simul::crossplatform::SetGpuProfilingInterface(deviceContext, renderPlatform->GetGpuProfiler());
@@ -347,18 +353,24 @@ public:
 			// Pre-Render Update
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
-			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
-			cameraConstants.view = deviceContext.viewStruct.view;
-			cameraConstants.proj = deviceContext.viewStruct.proj; 
-			cameraConstants.world = mat4::identity();
-			renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
+
+			vec4 unity2(1.0f, 1.0f);
+			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
+			vec4 zero4(0,0,0,0);
+			solidConstants.diffuseOutputScalar						=unity4;
+			solidConstants.diffuseTexCoordsScalar_R=unity2;
+			solidConstants.diffuseTexCoordsScalar_G=unity2;
+			solidConstants.diffuseTexCoordsScalar_B=unity2;
+			solidConstants.diffuseTexCoordsScalar_A=unity2;
+			solidConstants.combinedOutputScalarRoughMetalOcclusion	=vec4(1.0f,1.0f,1.0f,0.0f);
+			solidConstants.u_SpecularColour={1.f,1.f,1.f};
 			renderPlatform->SetConstantBuffer(deviceContext, &solidConstants);
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
 			renderPlatform->SetTexture(deviceContext,effect->GetShaderResource("diffuseCubemap"), diffuseCubemapTexture);
+			renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("specularCubemap"), specularCubemapTexture);
 			effect->Apply(deviceContext, "solid", 0);
-			exampleMesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
-			exampleMesh->Draw(deviceContext, 0);
-			exampleMesh->EndDraw(deviceContext);
+			meshRenderer->Render(deviceContext, exampleMesh,mat4::identity(),diffuseCubemapTexture,specularCubemapTexture);
+
 			effect->Unapply(deviceContext);
 		}
 		hdrFramebuffer->Deactivate(deviceContext);
@@ -367,6 +379,8 @@ public:
 		renderPlatform->GetGpuProfiler()->EndFrame(deviceContext);
 		renderPlatform->LinePrint(deviceContext,renderPlatform->GetGpuProfiler()->GetDebugText());
 #endif
+		if (framenumber == 0)
+			simul::crossplatform::RenderDocLoader::FinishCapture();
 		framenumber++;
 	}
 
@@ -384,6 +398,7 @@ public:
 		hDRRenderer->InvalidateDeviceObjects();
 		exampleMesh->InvalidateDeviceObjects();
 		hdrFramebuffer->InvalidateDeviceObjects();
+		meshRenderer->InvalidateDeviceObjects();
 		renderPlatform->InvalidateDeviceObjects();
 	}
 
@@ -547,7 +562,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	szArgList = CommandLineToArgvW(GetCommandLineW(), &argCount);
 
 #ifdef _MSC_VER
-	//simul::crossplatform::RenderDocLoader::Load();
 	// The following disables error dialogues in the case of a crash, this is so automated testing will not hang. See http://blogs.msdn.com/b/oldnewthing/archive/2004/07/27/198410.aspx
 	SetErrorMode(SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
 	// But that doesn't work sometimes, so:
@@ -588,6 +602,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	}
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
 	graphicsDeviceInterface->Initialize(true,false,false);
+	//simul::crossplatform::RenderDocLoader::Load();
 
 	renderer=new PlatformRenderer();
 	displaySurfaceManager.Initialize(renderer->renderPlatform);
