@@ -36,6 +36,7 @@ struct VertexXyzRgba
 namespace vk
 {
 	class Device;
+	class Instance;
 }
 namespace simul
 {
@@ -162,11 +163,13 @@ namespace simul
 			{
 				return "";
 			}
+			//virtual void *GetNativeDevicePointer()=0
 			//! Returns the DX12 graphics command list
 			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
 			virtual ID3D12Device* AsD3D12Device();
 			virtual ID3D11Device *AsD3D11Device();
 			virtual vk::Device *AsVulkanDevice();
+			virtual vk::Instance* AsVulkanInstance();
 			//! Platform-dependent function called when initializing the Render Platform.
 			virtual void RestoreDeviceObjects(void*);
 			//! Platform-dependent function called when uninitializing the Render Platform.

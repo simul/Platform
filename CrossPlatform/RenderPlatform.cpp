@@ -128,6 +128,10 @@ vk::Device *RenderPlatform::AsVulkanDevice()
 {
 	return nullptr;
 }
+vk::Instance* RenderPlatform::AsVulkanInstance() 
+{
+	return nullptr;
+}
 
 GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 {
@@ -688,7 +692,7 @@ crossplatform::Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 
 crossplatform::Mesh *RenderPlatform::CreateMesh()
 {
-	return new Mesh;
+	return new Mesh(this);
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)

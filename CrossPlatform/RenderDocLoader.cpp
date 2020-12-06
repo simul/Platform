@@ -2,13 +2,20 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/EnvironmentVariables.h"
 #include "Platform/CrossPlatform/RenderDocLoader.h"
+#include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/External/RenderDoc/Include/renderdoc_app.h"
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <filesystem>
 
 using namespace simul;
 using namespace crossplatform;
 
-RENDERDOC_API_1_4_1* RenderDocLoader::s_RenderDocAPI = nullptr;
-HMODULE RenderDocLoader::s_HModuleRenderDoc;
-std::filesystem::path RenderDocLoader::s_RenderDocFullpath;
+static RENDERDOC_API_1_4_1* s_RenderDocAPI = nullptr;
+static HMODULE s_HModuleRenderDoc;
+static std::filesystem::path s_RenderDocFullpath;
 
 #define STRINGIFY(a) STRINGIFY2(a)
 #define STRINGIFY2(a) #a
@@ -36,6 +43,12 @@ void RenderDocLoader::Load()
 		SIMUL_CERR_ONCE << "RenderDocLoader was unable to initialise RenderDoc.\n";
 		return;
 	}
+	uint32_t pid= s_RenderDocAPI->LaunchReplayUI(1,nullptr);
+	if(!pid)
+	{
+		SIMUL_CERR_ONCE << "Failed to launch replay ui.\n";
+		return;
+	}
 }
 
 void RenderDocLoader::Unload() 
@@ -50,6 +63,54 @@ void RenderDocLoader::Unload()
 		errno = 0;
 	}
 }
+void RenderDocLoader::TriggerMultiFrameCapture(uint32_t num)
+{
+	if (s_RenderDocAPI)
+	{
+		s_RenderDocAPI->TriggerMultiFrameCapture(num);
+	}
+}
+void RenderDocLoader::StartCapture(RenderPlatform *renderPlatform,void * windowHandlePtr)
+{
+	// To start a frame capture, call StartFrameCapture.
+	// You can specify NULL, NULL for the device to capture on if you have only one device and
+	// either no windows at all or only one window, and it will capture from that device.
+	// See the documentation below for a longer explanation
+	if (s_RenderDocAPI)
+	{
+		void* nativeDevicePtr=nullptr;
+	switch(renderPlatform->GetType())
+	{
+	case RenderPlatformType::D3D11:
+		nativeDevicePtr=renderPlatform->AsD3D11Device();
+		break;
+	case RenderPlatformType::D3D12:
+		nativeDevicePtr = renderPlatform->AsD3D12Device();
+		break;
+	case RenderPlatformType::Vulkan:
+		nativeDevicePtr = RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(renderPlatform->AsVulkanInstance());
+		break;
+		default:
+		break;
+	}
+		//#define RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(inst) (*((void **)(inst)))
+		s_RenderDocAPI->StartFrameCapture(nativeDevicePtr,windowHandlePtr);
+	}
+}
+void RenderDocLoader::FinishCapture()
+{
+
+	// Your rendering should happen here
+
+	// stop the capture
+	if (s_RenderDocAPI)
+	{
+		if(!s_RenderDocAPI->EndFrameCapture(NULL, NULL))
+		{
+			SIMUL_CERR_ONCE << "EndFrameCapture failed\n";
+		}
+	}
+}
 #else //Dummy class implementation
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 
@@ -58,4 +119,6 @@ using namespace crossplatform;
 
 void RenderDocLoader::Load() {}
 void RenderDocLoader::Unload() {}
+void RenderDocLoader::StartCapture(){}
+void RenderDocLoader::FinishCapture(){}
 #endif
