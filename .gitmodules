@@ -22,3 +22,6 @@
 [submodule "External/fmt"]
 	path = External/fmt
 	url = git@github.com:fmtlib/fmt.git
+[submodule "External/assimp"]
+	path = External/assimp
+	url = git@github.com:assimp/assimp.git
