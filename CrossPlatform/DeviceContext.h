@@ -53,8 +53,6 @@ namespace simul
 			int mip;// if -1, it's the whole texture.
 			int index;	// if -1 it's the whole texture
 			crossplatform::ShaderResourceType resourceType;
-            //! Used on gl platforms
-            //std::string name;
 		};
 		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
 		template<typename T,int count> class FastMap
