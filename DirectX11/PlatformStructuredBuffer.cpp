@@ -1,12 +1,8 @@
 #include "PlatformStructuredBuffer.h"
 
-#if PLATFORM_D3D11_SFX
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/Core/StringToWString.h"
 #include "Utilities.h"
-#if !PLATFORM_D3D11_SFX
-#include "D3dx11effect.h"
-#endif
 
 using namespace simul;
 using namespace dx11;
@@ -282,64 +278,27 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 		SIMUL_BREAK_ONCE("Uninitialized device context");
 	mapped.pData = NULL;
 }
-#if PLATFORM_D3D11_SFX
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
+
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, const crossplatform::ShaderResource& shaderResource)
 {
 	if (lastContext && mapped.pData)
 	{
 		lastContext->Unmap(buffer, 0);
 		mapped.pData=nullptr;
 	}
-	crossplatform::PlatformStructuredBuffer::Apply(deviceContext, effect, shaderResource);
+	crossplatform::PlatformStructuredBuffer::Apply(deviceContext, shaderResource);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource)
 {
 	if (lastContext && mapped.pData)
 	{
 		lastContext->Unmap(buffer, 0);
 		mapped.pData = nullptr;
 	}
-	crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
-}
-#else
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext&, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
-{
-	if (lastContext && mapped.pData)
-		lastContext->Unmap(buffer, 0);
-	mapped.pData = NULL;
-	if (!effect)
-		return;
-	if (!effect->asD3DX11Effect())
-		return;
-	ID3DX11EffectShaderResourceVariable* var = static_cast<ID3DX11EffectShaderResourceVariable*>(shaderResource.platform_shader_resource);
-
-	if (!var->IsValid())
-	{
-		return;
-	}
-	var->SetResource(shaderResourceView);
+	crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext,  shaderResource);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext&, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
-{
-	if (lastContext && mapped.pData)
-		lastContext->Unmap(buffer, 0);
-	mapped.pData = NULL;
-	if (!effect->asD3DX11Effect())
-		return;
-	if(!shaderResource.platform_shader_resource)
-		return;
-	ID3DX11EffectUnorderedAccessViewVariable* var = static_cast<ID3DX11EffectUnorderedAccessViewVariable*>(shaderResource.platform_shader_resource);
-	//ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
-	if (!var->IsValid())
-	{
-		return;
-	}
-	var->SetUnorderedAccessView(unorderedAccessView);
-}
-
-#endif
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext&)
 {
 }
@@ -369,4 +328,3 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(buffer);
 #endif
 }
-#endif

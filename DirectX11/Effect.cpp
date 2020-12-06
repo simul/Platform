@@ -1,5 +1,4 @@
 #define NOMINMAX
-#if PLATFORM_D3D11_SFX
 #include "Effect.h"
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
@@ -586,4 +585,3 @@ EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e
 {
 }
 
-#endif

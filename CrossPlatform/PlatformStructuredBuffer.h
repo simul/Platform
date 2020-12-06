@@ -52,6 +52,10 @@ namespace simul
 			virtual void InvalidateDeviceObjects() = 0;
 			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
 			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& shaderResource);
+			// Deprecated
+			virtual void Apply(DeviceContext& deviceContext, Effect* effect, const ShaderResource& shaderResource);
+			// Deprecated
+			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, Effect* effect, const ShaderResource& shaderResource);
 			virtual void Unbind(DeviceContext& deviceContext) = 0;
 			virtual void* GetBuffer(crossplatform::DeviceContext& deviceContext) = 0;
 			virtual const void* OpenReadBuffer(crossplatform::DeviceContext& deviceContext) = 0;

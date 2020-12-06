@@ -22,9 +22,6 @@
 #include "Platform/Math/Matrix4x4.h"
 #include "Platform/CrossPlatform/Camera.h"
 
-#if !PLATFORM_D3D11_SFX
-#include "D3dx11effect.h"
-#endif
 #include "DisplaySurface.h"
 
 #ifdef _XBOX_ONE
@@ -329,6 +326,7 @@ D3D11_MAP_FLAG RenderPlatform::GetMapFlags()
 #endif
 		return (D3D11_MAP_FLAG)0;
 }
+
 void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	ApplyContextState(deviceContext);
@@ -1440,7 +1438,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		auto *l = static_cast<const dx11::Layout *>(deviceContext.contextState.currentLayout);
 		deviceContext.asD3D11DeviceContext()->IASetInputLayout(l->AsD3D11InputLayout());
 	}
-#if PLATFORM_D3D11_SFX
 	crossplatform::ContextState* cs = GetContextState(deviceContext);
 	dx11::EffectPass* pass = static_cast<dx11::EffectPass*>(cs->currentEffectPass);
 	if (!cs->effectPassValid)
@@ -1457,7 +1454,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 	// Apply UAVs (RwTextures and RwSB):
 	pass->SetUAVs(deviceContext,cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
-#endif
+
 	return true;
 }
 

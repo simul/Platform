@@ -17,25 +17,7 @@
 // Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
 #define IN_COMPUTE_SHADER
 
-#if !PLATFORM_D3D11_SFX
-#define shader
-#define technique technique11
-#define group fxgroup
-#endif
-#define f32touint16 f32tof16
-
-
-#endif
-#if !PLATFORM_D3D11_SFX
-#define SetTopology( a ) SetGeometryShader(NULL)
-#endif
-
 #define constant_buffer ALIGN_16 cbuffer
-#if !PLATFORM_D3D11_SFX
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
-#endif
 
 #ifndef __cplusplus
 #define char4 snorm float4
@@ -51,9 +33,7 @@
 #define layout(a)
 // This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
 // we will pass a dummy SetGeometryShader(a), we should 
-#if PLATFORM_D3D11_SFX
-#define SetRenderTargetFormatState(a) //
-#else
+#define SetRenderTargetFormatState(a)
 #define SetRenderTargetFormatState SetGeometryShader
 #endif
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
