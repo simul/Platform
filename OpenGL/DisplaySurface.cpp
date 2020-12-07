@@ -182,11 +182,11 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	static vec4 clear = { 0.0f,0.0f,0.0f,1.0f};
 	glViewport(0, 0, viewport.w, viewport.h);   
-    //g/lClearColor(clear.x,clear.y,clear.z,clear.w);
+	//g/lClearColor(clear.x,clear.y,clear.z,clear.w);
 	//glClearDepth(1.0f);
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  //  mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
- //   mDeferredContext->RSSetViewports(1, &mViewport);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
+	//mDeferredContext->RSSetViewports(1, &mViewport);
 	if(renderer)
 		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h,frameNumber);
 
