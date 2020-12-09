@@ -8,6 +8,7 @@
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Buffer.h"
 #include "Platform/CrossPlatform/Topology.h"
+#include "Platform/CrossPlatform/AxesStandard.h"
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/Shaders/SL/solid_constants.sl"
 #include "Platform/Math/Orientation.h"
@@ -34,7 +35,7 @@ namespace simul
 			Mesh(crossplatform::RenderPlatform* r);
 			virtual ~Mesh();
 			void InvalidateDeviceObjects();
-			void Load(const char *filename);
+			void Load(const char *filename,float scale=1.0f, AxesStandard fromStandard=AxesStandard::Engineering);
 			void Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m);
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform
 				,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs

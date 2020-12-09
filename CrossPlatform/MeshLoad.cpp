@@ -1,5 +1,8 @@
 #include "Mesh.h"
 #include "Macros.h"
+#include "Platform/CrossPlatform/Material.h"
+#include "Platform/CrossPlatform/AxesStandard.h"
+#include "Platform/Core/StringFunctions.h"
 using namespace simul;
 using namespace crossplatform;
 
@@ -11,7 +14,7 @@ using namespace crossplatform;
 
 using namespace Assimp;
 
-void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode)
+void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float scale, AxesStandard fromStandard,AxesStandard toStandard)
 {
 	static aiMatrix4x4 identity(1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
@@ -26,16 +29,49 @@ void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode)
 	}
 	// the new object is the parent for all child nodes
 	math::Matrix4x4 transform= *((const math::Matrix4x4*)&node.mTransformation);
+
 	subNode.orientation.Define(transform);
+	vec3 pos= subNode.orientation.GetPosition();
+	pos=scale* ConvertPosition(fromStandard, toStandard, pos);
+	subNode.orientation.SetPosition((const float*)&pos);
 	subNode.children.resize(node.mNumChildren);
 	// continue for all child nodes
 	for(unsigned i=0;i<node.mNumChildren;i++)
 	{
-		CopyNodesWithMeshes(mesh,*node.mChildren[i], subNode.children[i]);
+		CopyNodesWithMeshes(mesh,*node.mChildren[i], subNode.children[i], scale, fromStandard, toStandard);
 	}
 }
+static void ConvertMaterial(Material* M, const aiMaterial *m)
+{
+	auto String = [&, m](const char* name)
+	{
+		aiString str;
+		m->Get(name, 0, 0, str);
+		return std::string(str.C_Str());
+	};
+	SIMUL_COUT<<"\n"<<String("?mat.name").c_str()<<std::endl;
+	for(int i=0;i<m->mNumProperties;i++)
+	{
+		const aiMaterialProperty *p= m->mProperties[i];
+		SIMUL_COUT<<p->mKey.C_Str()<<", type "<<p->mType<<", index "<<p->mIndex<<std::endl;
+	}
+	auto Colour3 = [&,m](const char *name)
+		{
+			aiColor3D result(1.f, 1.f, 1.f);
+			m->Get(name, 0, 0, result);
+			return vec3(result.r, result.g, result.b);
+		};
+	auto Float = [&, m](const char* name,float deflt)
+	{
+		float result=deflt;
+		m->Get(name, 0, 0, result);
+		return result;
+	};
+	M->albedo.value= Colour3("$clr.diffuse");
+	M->roughness.value = 1.0f-Float("$mat.shininess",1.0f);
+}
 
-void Mesh::Load(const char* filenameUtf8)
+void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 {
 	InvalidateDeviceObjects();
 	// Create an instance of the Importer class
@@ -52,6 +88,18 @@ void Mesh::Load(const char* filenameUtf8)
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType);
+	std::string short_filename=scene->GetShortFilename(filenameUtf8);
+	std::vector< Material*> materials;
+	for(int i=0;i<scene->mNumMaterials;i++)
+	{
+		const aiMaterial *m=scene->mMaterials[i];
+		aiString name(short_filename.c_str());
+		m->Get("?mat.name",0,0,name);
+		Material *M=renderPlatform->GetOrCreateMaterial(base::QuickFormat("%s", name.C_Str()));
+		materials.push_back(M);
+		ConvertMaterial(M,m);
+	}
+
 	numVertices = 0;
 	numIndices = 0;
 	struct Vertex
@@ -74,6 +122,7 @@ void Mesh::Load(const char* filenameUtf8)
 	stride = sizeof(Vertex);
 	SAFE_DELETE(layout);
 	layout = renderPlatform->CreateLayout(5, layoutDesc, true);
+
 	for(unsigned i=0;i<scene->mNumMeshes;i++)
 	{
 		const aiMesh* mesh = scene->mMeshes[i];
@@ -91,9 +140,11 @@ void Mesh::Load(const char* filenameUtf8)
 		for(unsigned j=0;j<mesh->mNumVertices;j++)
 		{
 			Vertex &v=vertices[vertex++];
-			v.pos=*((vec3*)&(mesh->mVertices[j]));
+			v.pos=scale*ConvertPosition(fromStandard,AxesStandard::Engineering,(*((vec3*)&(mesh->mVertices[j]))));
 			if(mesh->mNormals)
-				v.normal=*((vec3*)&(mesh->mNormals[j]));
+			{
+				v.normal= ConvertPosition(fromStandard, AxesStandard::Engineering, *((vec3*)&(mesh->mNormals[j])));
+			}
 		}
 		for (unsigned j = 0; j < mesh->mNumFaces; j++)
 		{
@@ -118,11 +169,14 @@ void Mesh::Load(const char* filenameUtf8)
 	//	subMesh->orientation.Define(mat);
 		vertex += mesh->mNumVertices;
 		index += mesh->mNumFaces * 3;
+		if (mesh->mMaterialIndex >= 0)
+			subMesh->material=materials[mesh->mMaterialIndex];
 	}
 	if(scene->mRootNode)
-		CopyNodesWithMeshes(this, *scene->mRootNode, rootNode);
+		CopyNodesWithMeshes(this, *scene->mRootNode, rootNode,scale, fromStandard, AxesStandard::Engineering);
 	// Kill it after the work is done
 	DefaultLogger::kill();
+	errno = 0;
 	// If the import failed, report it
 	if (!scene)
 	{

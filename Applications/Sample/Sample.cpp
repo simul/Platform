@@ -244,7 +244,7 @@ public:
 #endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
 		//exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
-		exampleMesh->Load("models/CesiumMilkTruck.gltf");
+		exampleMesh->Load("models/AlfaRomeo.fbx",0.01f,crossplatform::AxesStandard::OpenGL);//CesiumMilkTruck.gltf");
 		// These are for example:
 		hDRRenderer->RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);

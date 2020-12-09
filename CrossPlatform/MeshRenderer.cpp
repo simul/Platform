@@ -105,7 +105,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	vec2 vec2_unit(1.0f,1.0f);
 	vec4 vec4_unit(1.0f, 1.0f, 1.0f, 1.0f);
 	vec4 vec3_unit(1.0f,  1.0f, 1.0f);
-	solidConstants.diffuseOutputScalar						=vec4_unit;
+	solidConstants.diffuseOutputScalar						=vec4(material->albedo.value,1.0f);
 	solidConstants.diffuseTexCoordsScalar_R					=vec2_unit;
 	solidConstants.diffuseTexCoordsScalar_G					=vec2_unit;
 	solidConstants.diffuseTexCoordsScalar_B					=vec2_unit;
