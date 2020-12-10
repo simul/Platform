@@ -392,7 +392,8 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
     else
     {
         // Unbind it:
-        glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+        if(name.slot>=0&&name.slot<GL_MAX_IMAGE_UNITS)
+            glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
     }
 }
 
