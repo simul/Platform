@@ -243,7 +243,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     if (!cpu_read)
         return;
 
-    int idx = GetLastIndex(deviceContext, 1);
+    int idx = GetLastIndex(deviceContext, 0);
     if (IsBufferMapped(idx))
     {
         mCurReadMap = nullptr;
@@ -375,6 +375,9 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
 {
+    if (!name.valid)
+        return;
+
     opengl::Texture* gTex = (opengl::Texture*)tex;
 	if (gTex)
 	{
@@ -576,25 +579,25 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
         mProgramId          = glCreateProgram();
         glObjectLabel(GL_PROGRAM, mProgramId, -1, name.c_str());
 
-        bool attachedShaders = false;
+        int attachedShaders = 0;
         // GFX:
         if (v && f)
         {
             glAttachShader(mProgramId, v->ShaderId);
             glAttachShader(mProgramId, f->ShaderId);
-            attachedShaders = true;
         }
         // Compute:
         else
         {
             glAttachShader(mProgramId, c->ShaderId);
-            attachedShaders = true;
         }
+        glGetProgramiv(mProgramId, GL_ATTACHED_SHADERS, &attachedShaders);
 
         //Link program:
-        if (attachedShaders)
+        if ((v && f && attachedShaders == 2) || (c && attachedShaders == 1))
         {
             glLinkProgram(mProgramId);
+            glValidateProgram(mProgramId);
         }
         else
         {
@@ -602,17 +605,28 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
             SIMUL_BREAK("");
         }
 		
-        // Check link status:
+        // Check link and validate status:
+
         GLint isLinked = 0;
         glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
-        if (isLinked == 0)
+        GLint isValid = 0;
+        glGetProgramiv(mProgramId, GL_VALIDATE_STATUS, &isValid);
+
+        if (isLinked == 0 || isValid == 0)
         {
             GLint maxLength = 0;
             glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
             std::vector<GLchar> infoLog(maxLength);
             glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);
-
-            SIMUL_CERR << "Failed to link the program for pass: "<<this->name.c_str()<<"\n";
+            
+            if (!isLinked)
+            {
+                SIMUL_CERR << "Failed to link the program for pass: " << this->name.c_str() << "\n";
+            }
+            if (!isValid)
+            {
+                SIMUL_CERR << "Failed to validate the program for pass: " << this->name.c_str() << "\n";
+            }
             SIMUL_COUT << infoLog.data() << std::endl;
             SIMUL_BREAK_ONCE("");
 
