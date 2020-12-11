@@ -864,6 +864,14 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 }
 
+void RenderPlatform::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+{
+	opengl::Effect* effect = reinterpret_cast<opengl::Effect*>(deviceContext.contextState.currentEffect);
+	effect->SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+
+	crossplatform::RenderPlatform::SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+}
+
 void* RenderPlatform::GetDevice()
 {
 	return nullptr;
