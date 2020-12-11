@@ -399,7 +399,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool ascubemap)
 {
 	int totalCount = ascubemap ? 6 * num : num;
-	if (!IsSame(w, l, 1, totalCount, nmips, 1))
+	if (!IsSame(w, l, 1, num, nmips, 1))
 	{
 		InvalidateDeviceObjects();
 		renderPlatform=r;
@@ -626,10 +626,10 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceC
 	// Activate the render target and set the viewport:
 	GLuint id = GLuint(uintptr_t(targetsAndViewport.m_rt[0]));
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
-	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
-
 	// Cache it:
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
+	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
+
 }
 
 void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext)

@@ -864,6 +864,14 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 }
 
+void RenderPlatform::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+{
+	opengl::Effect* effect = reinterpret_cast<opengl::Effect*>(deviceContext.contextState.currentEffect);
+	effect->SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+
+	crossplatform::RenderPlatform::SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+}
+
 void* RenderPlatform::GetDevice()
 {
 	return nullptr;
@@ -929,6 +937,7 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceCo
         SIMUL_CERR << "Too many viewports \n";
         return;
     }
+	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
     for (int i = 0; i < num; i++)
     {
         glViewportIndexedf(i, (GLfloat)vps[i].x, (GLfloat)vps[i].y, (GLfloat)vps[i].w, (GLfloat)vps[i].h);
