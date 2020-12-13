@@ -16,7 +16,7 @@ namespace simul
 		public:
 			static void Load();
 			static void Unload();
-			static void TriggerMultiFrameCapture(uint32_t num);
+			static void TriggerMultiFrameCapture(unsigned num);
 			static void StartCapture(RenderPlatform* renderPlatform, void* windowHandlePtr);
 			static void FinishCapture();
 		};

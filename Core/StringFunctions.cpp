@@ -23,7 +23,6 @@ namespace simul
 			using std::string;
 			using std::vector;
             static size_t ttab;
-			 
 			vector<string> SplitPath(const string& fullPath)
 			{
 				size_t slash_pos = fullPath.find_last_of("/");

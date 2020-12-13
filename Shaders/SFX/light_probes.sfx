@@ -234,8 +234,8 @@ vec4 RoughnessMip(vec3 view,bool rough)
 		}
 	}
 	outp = result / Weight;
-	outp.rgb+=0.4*saturate(view)+0.1*saturate(-view);
-	outp.g= float(mipIndex)/3.0;
+	//outp.rgb+=0.4*saturate(view)+0.1*saturate(-view);
+	//outp.g= float(mipIndex)/3.0;
 	return vec4(outp.rgb, alpha);
 }
 

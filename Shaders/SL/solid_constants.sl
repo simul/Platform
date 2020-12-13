@@ -8,7 +8,8 @@ SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
 
 	int lightCount;
 	int reverseDepth;
-	vec2 _pad0;
+	float max_roughness_mip;
+	int padxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(SolidConstants,13)

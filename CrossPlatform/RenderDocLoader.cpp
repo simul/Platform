@@ -70,7 +70,7 @@ void RenderDocLoader::Unload()
 		errno = 0;
 	}
 }
-void RenderDocLoader::TriggerMultiFrameCapture(uint32_t num)
+void RenderDocLoader::TriggerMultiFrameCapture(unsigned num)
 {
 	if (s_RenderDocAPI)
 	{
@@ -126,6 +126,6 @@ using namespace crossplatform;
 
 void RenderDocLoader::Load() {}
 void RenderDocLoader::Unload() {}
-void RenderDocLoader::StartCapture(){}
+void RenderDocLoader::StartCapture(RenderPlatform *renderPlatform,void * windowHandlePtr){}
 void RenderDocLoader::FinishCapture(){}
 #endif

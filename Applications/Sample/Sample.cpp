@@ -96,6 +96,7 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	//! distributes numerical precision to where it is better used.
 	static const bool reverseDepth=true;
 	//! A framebuffer to store the colour and depth textures for the view.
+	crossplatform::Texture* hdrTexture =nullptr;
 	crossplatform::BaseFramebuffer	*hdrFramebuffer = nullptr;
 	crossplatform::Texture* specularCubemapTexture	= nullptr;
 	crossplatform::Texture* diffuseCubemapTexture	= nullptr;
@@ -207,12 +208,13 @@ public:
 		}
 		renderPlatform->PushShaderBinaryPath((std::string("shaderbin/")+ renderPlatform->GetPathName()).c_str());
 	}
-
+	
 	~PlatformRenderer()
 	{	
 		OnLostDevice();
 		del(hDRRenderer,NULL);
 		del(hdrFramebuffer,NULL);
+		delete hdrTexture;
 		delete diffuseCubemapTexture;
 		delete specularCubemapTexture;
 		delete exampleMesh;
@@ -299,20 +301,22 @@ public:
 	{
 
 	}
-
 	void GenerateCubemaps(crossplatform::GraphicsDeviceContext& deviceContext)
 	{
-		crossplatform::Texture* hdrTexture = renderPlatform->CreateTexture("Textures/environment.hdr");
-		delete specularCubemapTexture;
-		specularCubemapTexture = renderPlatform->CreateTexture("specularCubemapTexture");
-		specularCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 8, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
+		if(!hdrTexture)
+			hdrTexture = renderPlatform->CreateTexture("Textures/environment.hdr");
+
+		if(!specularCubemapTexture)
+		{
+			specularCubemapTexture = renderPlatform->CreateTexture("specularCubemapTexture");
+		}
+		specularCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 11, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
 		// plonk the hdr into the cubemap.
 		renderPlatform->LatLongTextureToCubemap(deviceContext, specularCubemapTexture, hdrTexture);
-		delete hdrTexture;
-		delete diffuseCubemapTexture;
-		diffuseCubemapTexture = renderPlatform->CreateTexture("diffuseCubemapTexture");
+		if(!diffuseCubemapTexture)
+			diffuseCubemapTexture = renderPlatform->CreateTexture("diffuseCubemapTexture");
 		diffuseCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 32, 32, 1, 1, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
-
+	
 		crossplatform::SphericalHarmonics  sphericalHarmonics;
 
 		// Now we will calculate spherical harmonics.
@@ -321,6 +325,8 @@ public:
 		sphericalHarmonics.CalcSphericalHarmonics(deviceContext, specularCubemapTexture);
 		// And using the harmonics, render a diffuse map:
 		sphericalHarmonics.RenderEnvmap(deviceContext, diffuseCubemapTexture, -1, 1.0f);
+		//delete hdrTexture;
+		//hdrTexture=nullptr;
 	}
 
 	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame) override
@@ -378,6 +384,7 @@ public:
 			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
 			vec4 zero4(0,0,0,0);
 			sceneConstants.lightCount=10;
+			sceneConstants.max_roughness_mip=specularCubemapTexture->mips;
 			renderPlatform->SetConstantBuffer(deviceContext, &sceneConstants);
 			
 			lightsStructuredBuffer.SetData(deviceContext,lights);
@@ -387,17 +394,13 @@ public:
 
 			effect->Unapply(deviceContext);
 		}
-		static bool show_cubemaps=false;
+		static bool show_cubemaps=true;
 		if(show_cubemaps)
 		{
-			float x = -.6f, m = -1.0f;
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
-			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			float x = -.8f, m = -1.0f;
+			static float r=0.15f;
+			for(int m=0;m<specularCubemapTexture->mips;m++)
+				renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += r, -.2f, .2f, 1.f, 1.f, float(m));
 		}
 		static bool show_textures=false;
 		if(show_textures)

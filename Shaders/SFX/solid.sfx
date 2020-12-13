@@ -208,7 +208,7 @@ SurfaceState PreprocessSurface(vec3 viewDir,SurfaceProperties surfaceProperties)
 
 vec3 PBRAmbient(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surfaceProperties)
 {
-	float roughness_mip		= MipFromRoughness(surfaceProperties.roughness, 5.0);
+	float roughness_mip		= MipFromRoughness(surfaceProperties.roughness, max_roughness_mip);
 	// Sample the environment maps:
 	vec3 diffuse_env		= 0.1*diffuseCubemap.SampleLevel(cubeSamplerState, surfaceProperties.normal.xyz,0.0).rgb;
 	vec3 env				= specularCubemap.SampleLevel(cubeSamplerState,surfaceState.refl.xyz, roughness_mip).rgb;
