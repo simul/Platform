@@ -26,6 +26,7 @@ namespace simul
 		{
 			return (AxesStandard)((unsigned)a & (unsigned)b);
 		}
+		extern mat4 SIMUL_CROSSPLATFORM_EXPORT ConvertMatrix(AxesStandard fromStandard, AxesStandard toStandard, const mat4& m);
 		extern int8_t SIMUL_CROSSPLATFORM_EXPORT ConvertAxis(AxesStandard fromStandard, AxesStandard toStandard, int8_t axis);
 		extern Quaternionf SIMUL_CROSSPLATFORM_EXPORT ConvertRotation(AxesStandard fromStandard, AxesStandard toStandard,const Quaternionf& rotation);
 		extern vec3 SIMUL_CROSSPLATFORM_EXPORT ConvertPosition(AxesStandard fromStandard, AxesStandard toStandard, const vec3& position);

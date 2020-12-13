@@ -375,19 +375,9 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 
 void RenderPlatform::ApplyDefaultMaterial()
 {
-    const float BLACK_COLOR[] = {0.0f, 0.0f, 0.0f, 1.0f};
-    const float GREEN_COLOR[] = {0.0f, 1.0f, 0.0f, 1.0f};
-//    const GLfloat WHITE_COLOR[] = {1.0f, 1.0f, 1.0f, 1.0f};
-/*    glMaterialfv(GL_FRONT, GL_EMISSION, BLACK_COLOR);
-    glMaterialfv(GL_FRONT, GL_AMBIENT, BLACK_COLOR);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, GREEN_COLOR);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, BLACK_COLOR);
-    glMaterialf(GL_FRONT, GL_SHININESS, 0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
-crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture *RenderPlatform::createTexture()
 {
 	ERRNO_BREAK
 	crossplatform::Texture * tex=NULL;
@@ -398,14 +388,6 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	else
 #endif
 	tex=new dx11::Texture();
-	if(fileNameUtf8&&strlen(fileNameUtf8)>0)
-	{
-		if(strstr( fileNameUtf8,".")!=nullptr)
-			tex->LoadFromFile(this,fileNameUtf8);
-		tex->SetName(fileNameUtf8);
-	}
-	
-	ERRNO_BREAK
 	return tex;
 }
 

@@ -11,6 +11,7 @@ using namespace crossplatform;
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
 #include <assimp/DefaultLogger.hpp>     // Post processing flags
+#include <assimp/pbrmaterial.h>     // PBR defs
 
 using namespace Assimp;
 
@@ -28,12 +29,14 @@ void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float s
 		subNode.subMeshes[i]=node.mMeshes[i];
 	}
 	// the new object is the parent for all child nodes
-	math::Matrix4x4 transform= *((const math::Matrix4x4*)&node.mTransformation);
-
-	subNode.orientation.Define(transform);
-	vec3 pos= subNode.orientation.GetPosition();
-	pos=scale* ConvertPosition(fromStandard, toStandard, pos);
-	subNode.orientation.SetPosition((const float*)&pos);
+	mat4 transform= *((mat4*)&node.mTransformation);
+	transform=ConvertMatrix(fromStandard, AxesStandard::Engineering, transform);
+	vec4 sc= { 1.f,1.f,1.f,scale };
+	transform._m03*=scale;
+	transform._m13*=scale;
+	transform._m23*=scale;
+	transform.transpose();
+	subNode.orientation.Define(*((const math::Matrix4x4*)&transform));
 	subNode.children.resize(node.mNumChildren);
 	// continue for all child nodes
 	for(unsigned i=0;i<node.mNumChildren;i++)
@@ -41,36 +44,120 @@ void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float s
 		CopyNodesWithMeshes(mesh,*node.mChildren[i], subNode.children[i], scale, fromStandard, toStandard);
 	}
 }
-static void ConvertMaterial(Material* M, const aiMaterial *m)
+
+static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const aiMaterial *m)
 {
+	auto Colour4 = [&, m](const char* name,vec4 dflt= {1.f, 1.f, 1.f, 1.f})
+	{
+		aiColor4D aiColour;
+		vec4 result=dflt;
+		if (m->Get(name, aiTextureType_NONE, 0, aiColour) == aiReturn_SUCCESS)
+			result = vec4(aiColour.r, aiColour.g, aiColour.b, aiColour.a);
+		return result;
+	};
+	auto Colour3 = [&, m](const char* name, vec3 dflt = { 1.f, 1.f, 1.f })
+	{
+		aiColor3D aiColour;
+		vec3 result = dflt;
+		if(m->Get(name, aiTextureType_NONE, 0, aiColour)==aiReturn_SUCCESS)
+			result=vec3(aiColour.r, aiColour.g, aiColour.b);
+		return result;
+	};
+	auto Float = [&, m](const char* name, float deflt)
+	{
+		float result = deflt;
+		if (m->Get(name, aiTextureType_NONE, 0, result) == aiReturn_SUCCESS)
+			return result;
+		else
+			return deflt;
+	};
 	auto String = [&, m](const char* name)
 	{
 		aiString str;
-		m->Get(name, 0, 0, str);
+		m->Get(name, aiTextureType_NONE, 0, str);
 		return std::string(str.C_Str());
 	};
 	SIMUL_COUT<<"\n"<<String("?mat.name").c_str()<<std::endl;
-	for(int i=0;i<m->mNumProperties;i++)
+	for(unsigned i=0;i<m->mNumProperties;i++)
 	{
 		const aiMaterialProperty *p= m->mProperties[i];
-		SIMUL_COUT<<p->mKey.C_Str()<<", type "<<p->mType<<", index "<<p->mIndex<<std::endl;
-	}
-	auto Colour3 = [&,m](const char *name)
+		SIMUL_COUT<<p->mKey.C_Str()<<", type "<<p->mType<<", index "<<p->mIndex;
+		if(p->mType==aiPTI_Float)
 		{
-			aiColor3D result(1.f, 1.f, 1.f);
-			m->Get(name, 0, 0, result);
-			return vec3(result.r, result.g, result.b);
-		};
-	auto Float = [&, m](const char* name,float deflt)
+			if(p->mDataLength==4)
+			{
+				float result=Float(p->mKey.C_Str(),0.0f);
+				std::cout<<" "<<result;
+			}
+			if(p->mDataLength==12)
+			{
+				vec4 result=Colour3(p->mKey.C_Str());
+				std::cout<<" "<<result.x<<"," << result.y << "," << result.z;
+			}
+			if(p->mDataLength==16)
+			{
+				vec4 result=Colour4(p->mKey.C_Str());
+				std::cout<<" "<<result.x<<"," << result.y << "," << result.z << "," << result.w;
+			}
+		}
+		std::cout<<std::endl;
+	}
+	aiTextureMapping mapping;
+	unsigned uvindex = 0;
+	ai_real blend = 1.0f;
+	for(unsigned t= aiTextureType_DIFFUSE;t< aiTextureType_UNKNOWN;t++)
 	{
-		float result=deflt;
-		m->Get(name, 0, 0, result);
-		return result;
-	};
-	M->albedo.value= Colour3("$clr.diffuse");
+		unsigned num=  m->GetTextureCount((aiTextureType)t);
+		if(num>0)
+			SIMUL_COUT << "Texture type "<<t << std::endl;
+		for (unsigned i = 0; i <num; i++)
+		{
+			aiString texturePath;
+			m->GetTexture((aiTextureType)t,i,&texturePath,&mapping,&uvindex,&blend);
+			SIMUL_COUT <<"\t"<< texturePath.C_Str() << std::endl;
+		}
+	}
+	M->albedo.value= Colour3("$clr.diffuse")+ Colour3("$clr.ambient") + Colour3("$clr.specular");
+	M->emissive.value = Colour3("$clr.emissive");
+	//m->Get(AI_MATKEY_COLOR_DIFFUSE, aiColour);
+	m->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, M->metal.value);
+	m->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, M->roughness.value);
+	
+//$mat.twosided, type 5, index 0
+//$mat.shininess, type 1, index 0
+	aiString texturePath;
+	if(aiReturn_SUCCESS==m->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath, &mapping, &uvindex, &blend))
+	{
+		Texture *T=renderPlatform->GetOrCreateTexture(texturePath.C_Str(),true);
+		M->albedo.texture=T;
+	}
+	else
+	{
+		M->albedo.texture = renderPlatform->GetOrCreateTexture("white");
+	}
+	if (aiReturn_SUCCESS == m->GetTexture(aiTextureType_NORMALS, 0, &texturePath, &mapping, &uvindex, &blend))
+	{
+		Texture* T = renderPlatform->GetOrCreateTexture(texturePath.C_Str(),true);
+		M->normal.texture = T;
+	}
+	else
+	{
+		M->normal.texture = renderPlatform->GetOrCreateTexture("blue");
+	}
+	if (aiReturn_SUCCESS == m->GetTexture(aiTextureType_METALNESS, 0, &texturePath, &mapping, &uvindex, &blend))
+	{
+		Texture* T = renderPlatform->GetOrCreateTexture(texturePath.C_Str());
+		M->metal.texture = T;
+	}
+	else
+	{
+		M->metal.texture = renderPlatform->GetOrCreateTexture("black");
+	}
 	M->roughness.value = 1.0f-Float("$mat.shininess",1.0f);
-}
 
+	
+}
+#include "Platform/Core/StringFunctions.h"
 void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 {
 	InvalidateDeviceObjects();
@@ -79,6 +166,7 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 
 	// Create a logger instance
 	DefaultLogger::create("", Logger::VERBOSE);
+	ERRNO_BREAK
 
 	// And have it read the given file with some example postprocessing
 	// Usually - if speed is not the most important aspect for you - you'll
@@ -88,17 +176,29 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType);
+	errno=0;
+	ERRNO_BREAK
 	std::string short_filename=scene->GetShortFilename(filenameUtf8);
 	std::vector< Material*> materials;
-	for(int i=0;i<scene->mNumMaterials;i++)
+	std::string file;
+	std::vector<std::string>pathsplit=base::SplitPath(filenameUtf8);
+	if(pathsplit.size())
+		renderPlatform->PushTexturePath(pathsplit[0].c_str());
+	for(unsigned i=0;i<scene->mNumMaterials;i++)
 	{
 		const aiMaterial *m=scene->mMaterials[i];
-		aiString name(short_filename.c_str());
+		aiString name;
 		m->Get("?mat.name",0,0,name);
+		if(name.length==0)
+		{
+			name=base::QuickFormat("%s %d",short_filename.c_str(),i);
+		}
 		Material *M=renderPlatform->GetOrCreateMaterial(base::QuickFormat("%s", name.C_Str()));
 		materials.push_back(M);
-		ConvertMaterial(M,m);
+		ConvertMaterial(renderPlatform,M,m);
 	}
+	if (pathsplit.size())
+		renderPlatform->PopTexturePath();
 
 	numVertices = 0;
 	numIndices = 0;
@@ -144,6 +244,24 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 			if(mesh->mNormals)
 			{
 				v.normal= ConvertPosition(fromStandard, AxesStandard::Engineering, *((vec3*)&(mesh->mNormals[j])));
+			}
+			if (mesh->mTangents)
+			{
+				v.tangent = ConvertPosition(fromStandard, AxesStandard::Engineering, *((vec3*)&(mesh->mTangents[j])));
+			}
+			if(mesh->mTextureCoords)
+			{
+			// Textures converted from GL-style to D3D
+				if(mesh->mTextureCoords[0])
+				{
+					v.texc0.x=mesh->mTextureCoords[0][j].x;
+					v.texc0.y=1.0f- mesh->mTextureCoords[0][j].y;
+				}
+				if(mesh->mTextureCoords[1])
+				{
+					v.texc1.x = mesh->mTextureCoords[1][j].x;
+					v.texc1.y = 1.0f - mesh->mTextureCoords[1][j].y;
+				}
 			}
 		}
 		for (unsigned j = 0; j < mesh->mNumFaces; j++)

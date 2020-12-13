@@ -193,8 +193,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	textRenderer=new TextRenderer;
 	
 	textRenderer->RestoreDeviceObjects(this);
-	
-	
 	debugConstants.RestoreDeviceObjects(this);
 	
 	if(!gpuProfiler)
@@ -254,6 +252,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		delete s.second;
 	}
 	sharedSamplerStates.clear();
+	for (auto t : textures)
+	{
+		SAFE_DELETE(t.second);
+	}
+	textures.clear();
 }
 
 void RenderPlatform::RecompileShaders()
@@ -678,8 +681,36 @@ void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const 
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
+crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,bool gen_mips)
+{
+	auto i = textures.find(filename);
+	if (i != textures.end())
+		return i->second;
+	crossplatform::Texture* t=CreateTexture(filename, gen_mips);
+	textures[filename] = t;
+	// special textures:
+	if (std::string(filename) == "white")
+	{
+		t->ensureTexture2DSizeAndFormat(this,1,1, 1,PixelFormat::RGBA_8_UNORM,false,false,false,1,0,true,vec4(1.f,1.f,1.f,1.f));
+		unsigned white_rgba8=0xFFFFFFFF;
+		t->setTexels(GetImmediateContext(),&white_rgba8,0,1);
+	}
+	else if (std::string(filename) == "black")
+	{
+		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
+		unsigned black_rgba8 = 0;
+		t->setTexels(GetImmediateContext(), &black_rgba8, 0, 1);
+	}
+	else if (std::string(filename) == "blue")
+	{
+		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
+		unsigned blue_rgba8 = 0x7FFF7F7F;
+		t->setTexels(GetImmediateContext(), &blue_rgba8, 0, 1);
+	}
+	return t;
+}
 
-crossplatform::Material *RenderPlatform::GetOrCreateMaterial(const char *name)
+Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 {
 	auto i = materials.find(name);
 	if (i != materials.end())
@@ -690,9 +721,21 @@ crossplatform::Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 	return mat;
 }
 
-crossplatform::Mesh *RenderPlatform::CreateMesh()
+Mesh *RenderPlatform::CreateMesh()
 {
 	return new Mesh(this);
+}			
+
+Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
+{
+	crossplatform::Texture* tex = createTexture();
+	if (fileNameUtf8 && strlen(fileNameUtf8) > 0)
+	{
+		if (strstr(fileNameUtf8, ".") != nullptr)
+			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
+		tex->SetName(fileNameUtf8);
+	}
+	return tex;
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)

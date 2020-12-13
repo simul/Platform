@@ -2,13 +2,16 @@
 #ifndef SOLID_CONSTANTS_SL
 #define SOLID_CONSTANTS_SL
 
-SIMUL_CONSTANT_BUFFER(SolidConstants,13)
+SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
 	vec4 depthToLinFadeDistParams;
 	vec4 fullResToLowResTransformXYWH;
 
 	int lightCount;
 	int reverseDepth;
 	vec2 _pad0;
+SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(SolidConstants,13)
 
 	vec4 diffuseOutputScalar;
 	vec2 diffuseTexCoordsScalar_R;

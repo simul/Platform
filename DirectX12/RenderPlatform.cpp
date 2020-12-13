@@ -460,7 +460,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Create dummy textures
 	mDummy2D = CreateTexture("Dummy2D");
 	mDummy3D = CreateTexture("Dummy3D");
-	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 	mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 	// Create null descriptors
@@ -641,10 +641,14 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 #endif
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	RecompileShaders();
+
+	generalFence= CreateFence();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	delete generalFence;
+	generalFence=nullptr;
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
 	if(mFrameHeap)
@@ -885,6 +889,12 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	commandList->Dispatch(w, l, d);
 }
 
+void RenderPlatform::Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value)
+{
+	dx12::Fence *f=fence;
+	m12Queue->Signal(f->AsD3d12Fence(),value);
+}
+
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
@@ -907,19 +917,10 @@ void RenderPlatform::ApplyDefaultMaterial()
 {
 }
 
-crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture *RenderPlatform::createTexture()
 {
-	ERRNO_BREAK
 	crossplatform::Texture * tex=NULL;
 	tex=new dx12::Texture();
-	if(fileNameUtf8&&strlen(fileNameUtf8)>0)
-	{
-		if(strstr( fileNameUtf8,".")!=nullptr)
-			tex->LoadFromFile(this,fileNameUtf8);
-		tex->SetName(fileNameUtf8);
-	}
-	
-	ERRNO_BREAK
 	return tex;
 }
 
@@ -1447,18 +1448,6 @@ D3D12_QUERY_HEAP_TYPE simul::dx12::RenderPlatform::ToD3D12QueryHeapType(crosspla
 	default:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
 	}
-}
-
-UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
-{
-	// Requested the whole resource
-	if ((mip == -1 && layer == -1)||(mips==1&&layers==1))
-	{
-		return D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	}
-	int curMip		= (mip == -1) ? 0 : mip;
-	int curLayer	= (layer == -1) ? 0 : layer;
-    return D3D12CalcSubresource(curMip, curLayer, 0, mips, layers);
 }
 
 void RenderPlatform::SetCurrentSamples(int samples, int quality/*=0*/)
@@ -2055,7 +2044,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool error_checking)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
+
 	crossplatform::ContextState *cs = GetContextState(deviceContext);
 	if (!cs || !cs->currentEffectPass)
 	{
@@ -2161,6 +2150,7 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContex
 	SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	commandList->DrawInstanced(4, 1, 0, 0);
+	//Signal(deviceContext, generalFence, generalFenceVal++);
 }
 
 

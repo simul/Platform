@@ -101,13 +101,14 @@ void SphericalHarmonics::CopyMip(GraphicsDeviceContext &deviceContext,Texture *t
 	{
 		RecompileShaders();
 	}
+	renderPlatform->WaitForFencedResources(deviceContext);
 	lightProbeConstants.alpha = 1.0f-blend;
 	lightProbeConstants.numMips = tex->mips;
 	lightProbeConstants.cubeFace = face;
 	lightProbeConstants.mipIndex = src_mip + 1;
 	lightProbesEffect->UnbindTextures(deviceContext);
 	lightProbeConstants.roughness = RoughnessFromMip((float)lightProbeConstants.mipIndex,(float)tex->mips);
-	lightProbesEffect->SetConstantBuffer(deviceContext, &lightProbeConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &lightProbeConstants);
 
 	crossplatform::EffectTechnique *tech		= nullptr;
 	if (blend > 0.0f)
@@ -120,7 +121,7 @@ void SphericalHarmonics::CopyMip(GraphicsDeviceContext &deviceContext,Texture *t
 	}
 	const char *passname = (lightProbeConstants.roughness < 0.01f) ? "smooth" : (lightProbeConstants.roughness < 0.99f ? "general" : "rough");
 	// The source is the i'th mip of the faceIndex face of the cubemap texture.
-	lightProbesEffect->SetTexture(deviceContext, "sourceCubemap", tex, -1, src_mip);
+	lightProbesEffect->SetTexture(deviceContext, "sourceCubemap", tex, -1, 0);
 	// The target is the (i+1)'th mip of the faceIndex face.
 	tex->activateRenderTarget(deviceContext, face, src_mip + 1);
 	lightProbesEffect->Apply(deviceContext, tech, passname); 

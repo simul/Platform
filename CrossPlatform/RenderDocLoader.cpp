@@ -26,6 +26,7 @@ void RenderDocLoader::Load()
 	if (s_HModuleRenderDoc)
 		return;
 
+	ERRNO_BREAK
 	std::string platform_dir = PLATFORM_SOURCE_DIR_STR;
 	s_RenderDocFullpath = platform_dir + "/External/RenderDoc/lib/x64/renderdoc.dll";
 	s_HModuleRenderDoc = LoadLibraryA(s_RenderDocFullpath.generic_string().c_str());
@@ -34,6 +35,7 @@ void RenderDocLoader::Load()
 	{
 		std::string error_str = "RenderDocLoader was unable to load '" + s_RenderDocFullpath.generic_string() + "'. GetLastError: " + std::to_string(GetLastError());
 		SIMUL_CERR_ONCE << error_str.c_str() << "\n";
+		ERRNO_BREAK
 		return;
 	}
 
@@ -41,14 +43,19 @@ void RenderDocLoader::Load()
 	if (!RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_4_1, (void**)&s_RenderDocAPI))
 	{
 		SIMUL_CERR_ONCE << "RenderDocLoader was unable to initialise RenderDoc.\n";
+		ERRNO_BREAK
 		return;
 	}
+	#if 0
 	uint32_t pid= s_RenderDocAPI->LaunchReplayUI(1,nullptr);
 	if(!pid)
 	{
 		SIMUL_CERR_ONCE << "Failed to launch replay ui.\n";
+		ERRNO_BREAK
 		return;
 	}
+	#endif
+	ERRNO_BREAK
 }
 
 void RenderDocLoader::Unload() 

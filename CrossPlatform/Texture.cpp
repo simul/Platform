@@ -124,3 +124,16 @@ void Texture::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 	textureLoadComplete=true;
 }
+
+bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::TextureCreate* tc)
+{
+	bool res=false;
+	if (tc->d == 2&&tc->arraysize==1)
+		res= ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil );
+	else if(tc->d==2)
+		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap ) ;
+	else if(tc->d==3)
+		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
+	return res;
+
+}

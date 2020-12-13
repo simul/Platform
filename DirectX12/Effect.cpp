@@ -477,8 +477,8 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 			mCbSrcHandles[slot] = nullCbv;
 			continue;
 		}
-		cb->GetPlatformConstantBuffer()->Apply(deviceContext, cb->GetSize(), cb->GetAddr());
-		auto d12cb			= (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
+		auto d12cb = (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
+		d12cb->Apply(deviceContext, cb->GetSize(), cb->GetAddr());
 		mCbSrcHandles[slot]	= d12cb->AsD3D12ConstantBuffer();
 		usedSlots			|= (1 << slot);
 	}

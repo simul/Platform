@@ -15,7 +15,7 @@ using namespace crossplatform;
 void ViewStruct::PushModelMatrix(math::Matrix4x4 m)
 {
 	math::Matrix4x4 newModel;
-	Multiply4x4(newModel, m, model);
+	Multiply4x4(newModel, model, m);
 	model=newModel;
 	modelStack.push(newModel);
 }

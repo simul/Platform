@@ -61,7 +61,8 @@ void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 
 void MeshRenderer::DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh, const Mesh::SubNode& subNode)
 {
-	auto& mat = subNode.orientation.GetMatrix();
+	auto mat = subNode.orientation.GetMatrix();
+	mat.Transpose();
 	deviceContext.viewStruct.PushModelMatrix(mat);
 	for (int i = 0; i < subNode.subMeshes.size(); i++)
 		DrawSubMesh(deviceContext, mesh,subNode.subMeshes[i]);
@@ -105,6 +106,9 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	vec2 vec2_unit(1.0f,1.0f);
 	vec4 vec4_unit(1.0f, 1.0f, 1.0f, 1.0f);
 	vec4 vec3_unit(1.0f,  1.0f, 1.0f);
+	renderPlatform->SetTexture(deviceContext,effect->GetShaderResource("diffuseTexture"),material->albedo.texture);
+	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("normalTexture"), material->normal.texture);
+	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("metalTexture"), material->metal.texture);
 	solidConstants.diffuseOutputScalar						=vec4(material->albedo.value,1.0f);
 	solidConstants.diffuseTexCoordsScalar_R					=vec2_unit;
 	solidConstants.diffuseTexCoordsScalar_G					=vec2_unit;

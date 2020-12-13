@@ -48,6 +48,7 @@ VisualStudioDebugOutput debug_buffer(true,NULL,128);
 
 #include <SDKDDKVer.h>
 #include <shellapi.h>
+#include <random>
 
 #define STRING_OF_MACRO1(x) #x
 #define STRING_OF_MACRO(x) STRING_OF_MACRO1(x)
@@ -104,7 +105,7 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	// An example mesh to draw.
 	crossplatform::Mesh *exampleMesh				= nullptr;
 	crossplatform::Effect *effect					= nullptr;
-	crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+	crossplatform::ConstantBuffer<SceneConstants> sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants> cameraConstants;
 
 	crossplatform::StructuredBuffer<Light> lightsStructuredBuffer;
@@ -159,12 +160,12 @@ public:
 		crossplatform::CameraViewStruct vs;
 		vs.exposure			= 1.f;
 		vs.farZ				= 300000.f;
-		vs.nearZ			= 1.f;
+		vs.nearZ			= 0.1f;
 		vs.gamma			= 0.44f;
-		vs.InfiniteFarPlane	= false;
-		vs.projection		= crossplatform::FORWARD;
+		vs.InfiniteFarPlane	= true;
+		vs.projection		= crossplatform::DEPTH_REVERSE;
 		// We can leave the default camera setup in place, or change it:
-#if 0
+#if 1
 		camera.SetCameraViewStruct(vs);
 #endif
 		meshRenderer=new crossplatform::MeshRenderer();
@@ -178,6 +179,7 @@ public:
 		renderPlatform->PushTexturePath("../../../../Media/Textures");
 		renderPlatform->PushTexturePath("../../Media/Textures");
 		renderPlatform->PushTexturePath("Media/Textures");
+		renderPlatform->PushTexturePath("models");
 		// Or from the Simul directory -e.g. by automatic builds:
 #ifdef SAMPLE_USE_D3D12
 		renderPlatform->PushShaderPath("Platform/DirectX12/HLSL/");
@@ -236,6 +238,7 @@ public:
 		return true;
 	}
 
+	Light lights[10];
 	void OnCreateDevice(void* pd3dDevice)
 	{
 #ifdef SAMPLE_USE_D3D12
@@ -244,17 +247,34 @@ public:
 #endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
 		//exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
-		exampleMesh->Load("models/AlfaRomeo.fbx",0.01f,crossplatform::AxesStandard::OpenGL);//CesiumMilkTruck.gltf");
+		exampleMesh->Load("models/Sponza/Sponza.gltf",1.0f,crossplatform::AxesStandard::OpenGL);//CesiumMilkTruck.gltf");
 		// These are for example:
 		hDRRenderer->RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 		meshRenderer->RestoreDeviceObjects(renderPlatform);
 		effect=renderPlatform->CreateEffect();
 		effect->Load(renderPlatform,"solid");
-		solidConstants.RestoreDeviceObjects(renderPlatform);
-		solidConstants.LinkToEffect(effect,"SolidConstants");
+		sceneConstants.RestoreDeviceObjects(renderPlatform);
+		sceneConstants.LinkToEffect(effect,"SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 		lightsStructuredBuffer.RestoreDeviceObjects(renderPlatform,10);
+
+		lights[0].colour = vec4(0.25f, 0.15f, 0.05f, 0);
+		lights[0].direction = vec3(0, .707f, -.707f);
+		lights[0].is_point = lights[0].is_spot = 0;
+
+		std::random_device rd;   // non-deterministic generator
+		std::mt19937 gen(rd());  // to seed mersenne twister.
+		std::uniform_real_distribution<float> dist(0, 1.0f); 
+
+		for(int i=1;i<10;i++)
+		{
+			lights[i].colour = 0.5f*vec4(dist(gen), dist(gen), dist(gen), 0);
+			lights[i].position = vec3(12.0f*dist(gen)-6.0f, 4.0f * dist(gen) - 2.0f, 10.0f*dist(gen));
+			lights[i].is_point =1.0;
+			lights[i].is_spot = 0;
+			lights[i].radius=1.0f+dist(gen)*1.0f;
+		}
 	}
 
 	// We only ever create one view in this example, but in general, this should return a new value each time it's called.
@@ -333,8 +353,8 @@ public:
             }
 			deviceContext.viewStruct.Init();
 		}
-		if(framenumber ==0)
-			simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
+		//if(framenumber ==0)
+		//	simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
 		renderPlatform->BeginFrame(deviceContext);
 		if(!diffuseCubemapTexture)
 		{
@@ -357,30 +377,54 @@ public:
 			vec4 unity2(1.0f, 1.0f);
 			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
 			vec4 zero4(0,0,0,0);
-			solidConstants.diffuseOutputScalar						=unity4;
-			solidConstants.diffuseTexCoordsScalar_R=unity2;
-			solidConstants.diffuseTexCoordsScalar_G=unity2;
-			solidConstants.diffuseTexCoordsScalar_B=unity2;
-			solidConstants.diffuseTexCoordsScalar_A=unity2;
-			solidConstants.combinedOutputScalarRoughMetalOcclusion	=vec4(1.0f,1.0f,1.0f,0.0f);
-			solidConstants.u_SpecularColour={1.f,1.f,1.f};
-			renderPlatform->SetConstantBuffer(deviceContext, &solidConstants);
+			sceneConstants.lightCount=10;
+			renderPlatform->SetConstantBuffer(deviceContext, &sceneConstants);
+			
+			lightsStructuredBuffer.SetData(deviceContext,lights);
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
-			renderPlatform->SetTexture(deviceContext,effect->GetShaderResource("diffuseCubemap"), diffuseCubemapTexture);
-			renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("specularCubemap"), specularCubemapTexture);
 			effect->Apply(deviceContext, "solid", 0);
 			meshRenderer->Render(deviceContext, exampleMesh,mat4::identity(),diffuseCubemapTexture,specularCubemapTexture);
 
 			effect->Unapply(deviceContext);
 		}
+		static bool show_cubemaps=false;
+		if(show_cubemaps)
+		{
+			float x = -.6f, m = -1.0f;
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+			renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += .2f, -.2f, .2f, 1.f, 1.f, m += 1.0f);
+		}
+		static bool show_textures=false;
+		if(show_textures)
+		{
+			int x = 8, y = (h * 2) / 3;
+			static int s = 64;
+			auto &textures= renderPlatform->GetTextures();
+			for(auto t: textures)
+			{
+				renderPlatform->DrawTexture(deviceContext,x,y,s,s, t.second);
+				x+= s + 2;
+				if(x+s>=w-8)
+				{
+					x=8;
+					y+=s+2;
+				}
+			}
+		}	
 		hdrFramebuffer->Deactivate(deviceContext);
+
 		hDRRenderer->Render(deviceContext, hdrFramebuffer->GetTexture(),1.0f, 0.44f);
 #if DO_PROFILING 
 		renderPlatform->GetGpuProfiler()->EndFrame(deviceContext);
 		renderPlatform->LinePrint(deviceContext,renderPlatform->GetGpuProfiler()->GetDebugText());
 #endif
-		if (framenumber == 0)
-			simul::crossplatform::RenderDocLoader::FinishCapture();
+		//if (framenumber == 0)
+		//	simul::crossplatform::RenderDocLoader::FinishCapture();
 		framenumber++;
 	}
 
@@ -392,7 +436,7 @@ public:
 			delete effect;
 			effect=nullptr;
 		}
-		solidConstants.InvalidateDeviceObjects();
+		sceneConstants.InvalidateDeviceObjects();
 		cameraConstants.InvalidateDeviceObjects();
 		lightsStructuredBuffer.InvalidateDeviceObjects();
 		hDRRenderer->InvalidateDeviceObjects();
@@ -426,7 +470,7 @@ public:
 		(
 			&camera
 								,time_step
-								,4.f
+								,40.f
 								,mouseCameraState
 								,mouseCameraInput
 			,14000.f
@@ -602,7 +646,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	}
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
 	graphicsDeviceInterface->Initialize(true,false,false);
-	//simul::crossplatform::RenderDocLoader::Load();
+	simul::crossplatform::RenderDocLoader::Load();
 
 	renderer=new PlatformRenderer();
 	displaySurfaceManager.Initialize(renderer->renderPlatform);

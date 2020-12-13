@@ -95,6 +95,10 @@ namespace simul
 		{
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
+			ID3D12Fence* AsD3d12Fence()
+			{
+				return d3d12Fence;
+			}
 		protected:
 			ID3D12Fence *d3d12Fence=nullptr;
 		};
@@ -177,6 +181,7 @@ namespace simul
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
+			void									Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value);
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			
@@ -184,7 +189,6 @@ namespace simul
 
 			void									ApplyDefaultMaterial();
 
-			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr) override;
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d) override;
 			crossplatform::Effect					*CreateEffect() override;
@@ -234,9 +238,6 @@ namespace simul
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
 			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
 			static std::string						D3D12ResourceStateToString(D3D12_RESOURCE_STATES states);
-			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
-			//! If both -1, the hole resource index will be returned
-			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
 			//! We cache the current number of samples
 			void									SetCurrentSamples(int samples, int quality = 0);
 			bool									IsMSAAEnabled();
@@ -264,6 +265,9 @@ namespace simul
 			crossplatform::PixelFormat			  DefaultOutputFormat;
 			
 		protected:
+			crossplatform::Texture* createTexture() override;
+			crossplatform::Fence* generalFence=nullptr;
+			unsigned long long generalFenceVal=1;
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
 			void BeginD3D12Frame();

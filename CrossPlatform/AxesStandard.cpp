@@ -134,7 +134,7 @@ int8_t simul::crossplatform::ConvertAxis(AxesStandard fromStandard, AxesStandard
 			static int8_t gl_uy[] = { 0, 1, 5 };
 			return gl_uy[axis];
 		}
-		else if (toStandard == AxesStandard::Unreal)
+		else if (toStandard == AxesStandard::Engineering)
 		{
 			static int8_t gl_e[] = { 0, 5, 1 };
 			return gl_e[axis];
@@ -199,6 +199,23 @@ vec3 simul::crossplatform::ConvertScale(AxesStandard fromStandard, AxesStandard 
 		}
 	}
 	return s;
+}
+mat4 simul::crossplatform::ConvertMatrix(AxesStandard fromStandard, AxesStandard toStandard, const mat4& m)
+{
+	int8_t ax[3];
+	ax[0]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 0);
+	ax[1]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 1);
+	ax[2]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 2);
+	float s[3]={(ax[0]<3)-(ax[0]>2),(ax[1] < 3) - (ax[1] > 2),(ax[2] < 3) - (ax[2] > 2)};
+	ax[0]=ax[0]%3;
+	ax[1]=ax[1]%3;
+	ax[2]=ax[2]%3;
+	mat4 n;
+	n={  m.m[ax[0]*4+ax[0]]				,m.m[ax[0]*4+ax[1]]*s[0]*s[1]	,m.m[ax[0]*4+ax[2]]*s[0]*s[2]	,m.m[ax[0]*4+3] * s[0]
+		,m.m[ax[1]*4+ax[0]]*s[1]*s[0]	,m.m[ax[1]*4+ax[1]]				,m.m[ax[1]*4+ax[2]]*s[1]*s[2]	,m.m[ax[1]*4+3] * s[1]
+		,m.m[ax[2]*4+ax[0]]*s[2]*s[0]	,m.m[ax[2]*4+ax[1]]*s[2]*s[1]	,m.m[ax[2]*4+ax[2]]				,m.m[ax[2]*4+3] * s[2]
+		,m.m[   3 *4+ax[0]]*s[0]		,m.m[   3 *4+ax[1]]*s[1]		,m.m[   3 *4+ax[2]]*s[2]		,m.m[   3 *4+3]};
+	return n;
 }
 
 vec3 simul::crossplatform::ConvertPosition(AxesStandard fromStandard, AxesStandard toStandard, const vec3& position)

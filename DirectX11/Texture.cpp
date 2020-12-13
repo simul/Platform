@@ -156,7 +156,7 @@ void Texture::InvalidateDeviceObjects()
 }
 
 // Load a texture file
-void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
+void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8,int m)
 {
 	ERRNO_BREAK
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
@@ -873,7 +873,7 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::Text
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
-	, int w, int l
+	, int w, int l, int m
 	, crossplatform::PixelFormat f
 	, bool computable, bool rendertarget, bool depthstencil
 	, int num_samples, int aa_quality, bool

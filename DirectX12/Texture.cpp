@@ -216,7 +216,7 @@ void Texture::InvalidateDeviceObjects()
 	mTextureDsHeap.Release();
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
+void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8, bool gen_mips)
 {
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
@@ -231,15 +231,28 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	cubemap					= false;
 	this->renderPlatform	= renderPlatform;
 
+	std::string filename_utf8 = std::string(pFilePathUtf8);
 	// Find the path to the file
 	std::string strPath;
-	int idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(pFilePathUtf8, pathsUtf8);
-	if (idx<-1 || idx >= (int)pathsUtf8.size())
-		return;
 	strPath = pFilePathUtf8;
+	int idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
+	if (idx<-1 || idx >= (int)pathsUtf8.size())
+	{
+		std::string file;
+		std::vector<std::string> split_path=base::SplitPath( filename_utf8);
+		if(split_path.size()>1)
+		{
+			strPath=split_path[1];
+			idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
+		}
+		errno = 0;
+		if (idx < -1 || idx >= (int)pathsUtf8.size())
+			return;
+	}
+	errno=0;
 	if (idx >= 0)
 		strPath = (pathsUtf8[idx] + "/") + strPath;
-	 name=pFilePathUtf8;
+	 name= strPath;
 	 fileContents.resize(1);
 	 auto &f=fileContents[0];
 	// Load the data
@@ -756,8 +769,6 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	else
 	{
 		auto renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-		// HACK: to make sure the cmd list is there 
-		//renderPlat->SetCommandList(deviceContext.asD3D12Context());
 		
 		if (!mTextureDefault)
 		{
@@ -1163,23 +1174,23 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 
 bool Texture::EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *create)
 {
-	return EnsureTexture2DSizeAndFormat(r, create->w, create->l, create->f, create->computable, create->make_rt
+	return EnsureTexture2DSizeAndFormat(r, create->w, create->l, create->mips, create->f, create->computable, create->make_rt
 		, create->setDepthStencil, create->numOfSamples, create->aa_quality, false
 		, create->clear, create->clearDepth, create->clearStencil, create->compressionFormat,create->initialData);
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
-											int w,int l,
+											int w,int l, int m,
 											crossplatform::PixelFormat f,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
 											vec4 clear, float clearDepth, uint clearStencil)
 {
-	return EnsureTexture2DSizeAndFormat(r,w,l,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil);
+	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil);
 }
 
 bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
-											int w,int l,
+											int w,int l, int m,
 											crossplatform::PixelFormat f,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
@@ -1187,7 +1198,6 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											,crossplatform::CompressionFormat cf,const void *data)
 {
 	// Define pixel formats of this texture
-	int m			= 1;
 	renderPlatform	= r;
 	pixelFormat		= f;
 	dxgi_format		= (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -1425,6 +1435,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			mTextureDsHeap.Offset();
 
             depthStencil = true;
+			InitStateTable(renderPlatform->GetImmediateContext(), l, m);
 		}
 		//auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 		//rPlat->FlushBarriers(deviceContext);
@@ -1891,7 +1902,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 					if (curState != mResourceState)
 					{
 						rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, curState, mResourceState, false,
-														RenderPlatform::GetResourceIndex(m,l,mips, (int)numLayers));
+														GetSubresourceIndex(m,l));
 						mSubResourcesStates[l][m] = mResourceState;
 					}
 				}
@@ -1946,6 +1957,21 @@ void Texture::SwitchToContext(crossplatform::DeviceContext &deviceContext)
 	SetLayout(deviceContext,D3D12_RESOURCE_STATE_COMMON);
 }
 
+unsigned Texture::GetSubresourceIndex(int mip, int layer)
+{
+	// Requested the whole resource
+	if (mip == -1 && layer == -1)
+	{
+		return D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	}
+	int curMip = (mip == -1) ? 0 : mip;
+	int curLayer = (layer == -1) ? 0 : layer;
+	int totalArray = arraySize;
+	if (cubemap)
+		totalArray *= 6;
+	return D3D12CalcSubresource(curMip, curLayer, 0, mips, totalArray);
+}
+
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index /*= -1*/)
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
@@ -1954,10 +1980,11 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 	{
 		curArray *= 6;
 	}
+	static bool flush=false;
 	// Set the resource state
 	if (mip == -1 && index == -1)
 	{
-		int numLayers       = (int)mSubResourcesStates.size();
+		int numLayers       = (int)curArray;
 		if (split_layouts)
 		{
 		// And set all the subresources to that state
@@ -1969,7 +1996,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		    		for (int m = 0; m < mips; m++)
 		    		{
 						if(mSubResourcesStates[l][m]!=state)
-							rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mSubResourcesStates[l][m], state,false, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
+							rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mSubResourcesStates[l][m], state, flush, GetSubresourceIndex(m,l));
 		    			mSubResourcesStates[l][m] = state;
 		    		}
 				}
@@ -1978,7 +2005,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		}
 		else if(mResourceState!=state)
 		{
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state, false, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state, flush, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			for (int l = 0; l < numLayers; l++)
 			{
 		    	for (int m = 0; m < mips; m++)
@@ -1993,25 +2020,43 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 	// Set a subresource state
 	else
 	{
-		int curMip		= (mip == -1) ? 0 : mip;
-		int curLayer	= (index == -1) ? 0 : index;
-		
+		int mipRange=1,m0=mip;
+		if(mip == -1)
+		{
+			mipRange=mips;
+			m0=0;
+		}
+		int layerRange=1,l0=index;
+		if(index == -1)
+		{
+			layerRange=curArray;
+			l0=0;
+		}
 		if (mSubResourcesStates.empty()) //Temporary fixed - AJR
 		{
 			//SIMUL_CERR << "mSubResourcesStates.empty() = true. Setting state into mSubResourcesStates[0][0]." << std::endl;
 			mSubResourcesStates.push_back({ state });
 		}
-		D3D12_RESOURCE_STATES oldState=mResourceState;
-		if(split_layouts)
-			oldState=mSubResourcesStates[curLayer][curMip];
-		if(state!=oldState)
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, oldState, state, false, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
+		for(int l=l0;l<l0+layerRange;l++)
+		{
+			for(int m=m0;m<m0+mipRange;m++)
+			{
+				D3D12_RESOURCE_STATES oldState=mResourceState;
+				if(split_layouts)
+					oldState=mSubResourcesStates[l][m];
+				if(state!=oldState)
+				{
+					int resourceIndex=GetSubresourceIndex(m, l);
+					rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, oldState, state, true, resourceIndex);
+				}
 
-		mSubResourcesStates[curLayer][curMip] = state;
+				mSubResourcesStates[l][m] = state;
+			}
+		}
 		// Array Size == 1 && mips = 1 (it only has 1 sub resource)
 		// the asSRV code will return the mainSRV!
-		bool no_array = !cubemap && (arraySize <= 1);
-		if (mip==-1 && curLayer==-1)
+		//bool no_array = !cubemap && (arraySize <= 1);
+		if (mip==-1 && index==-1)
 		{
 			mResourceState = state;
 		}

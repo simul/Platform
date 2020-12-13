@@ -85,7 +85,6 @@ namespace simul
 			
 			void		InsertFences(crossplatform::DeviceContext& deviceContext);
 			crossplatform::Material*				CreateMaterial();
-			crossplatform::Texture*					CreateTexture(const char *lFileNameUtf8= nullptr) override;
 			crossplatform::BaseFramebuffer*			CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
@@ -158,7 +157,8 @@ namespace simul
 
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 
-		private:
+		protected:
+			crossplatform::Texture* createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;

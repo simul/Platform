@@ -52,6 +52,8 @@ namespace simul
 {
 	namespace base
 	{
+
+		extern PLATFORM_CORE_EXPORT std::vector<std::string> SplitPath(const std::string& fullPath);
 		extern PLATFORM_CORE_EXPORT bool GetDelimited(const std::string &str,std::string &First,std::string &Remainder,char delim);
 		extern PLATFORM_CORE_EXPORT std::string ExtractDelimited(std::string &str,char delim);
 		extern PLATFORM_CORE_EXPORT std::string ExtractDelimited(std::string &str,const std::string &delim);

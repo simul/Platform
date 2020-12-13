@@ -106,7 +106,7 @@ void PlatformConstantBuffer::SetNumBuffers(crossplatform::RenderPlatform *r, UIN
 D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12ConstantBuffer()
 {
 	// This method is a bit hacky, it basically returns the CPU handle of the last
-	// "current" descriptor we will increase the curApply after the aplly that's why 
+	// "current" descriptor we will increase the curApply after the apply that's why 
 	// we substract 1 here
     if (mCurApplyCount == 0)
     {
@@ -155,8 +155,6 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
 {
-//	if(deviceContext.deviceContextType==simul::crossplatform::DeviceContextType::COMPUTE)
-//		return;
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	// If new frame, update current frame index and reset the apply count
 	if (last_frame_number != deviceContext.frame_number)
@@ -186,6 +184,11 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 		const CD3DX12_RANGE unMapRange(offset, offset+size);
 		mUploadHeap[buffer_index]->Unmap(0, &unMapRange);
 	}
+	else
+	{
+		SIMUL_BREAK_ONCE("hResult != S_OK");
+	}
+
 	mCurApplyCount++;
 }
 
