@@ -407,7 +407,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		width		= w;
 		length		= l;
 		mips		= nmips;
-		arraySize	= 1;
+		arraySize	= num;
 		depth		= 1;
 		dim			= 2;
 		pixelFormat = f;
