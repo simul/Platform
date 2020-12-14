@@ -1017,7 +1017,8 @@ void DisplaySurface::Resize()
 	UINT H = abs(rect.bottom - rect.top);
 	if (viewport.w == W&&viewport.h == H)
 		return;
-	InitSwapChain();
+	if(W*H>0)
+		InitSwapChain();
 
 	viewport.w = W;
 	viewport.h = H;

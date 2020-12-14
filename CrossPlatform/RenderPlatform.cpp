@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "RenderPlatform.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/FileLoader.h"

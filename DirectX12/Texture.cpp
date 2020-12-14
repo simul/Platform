@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Texture.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringToWString.h"

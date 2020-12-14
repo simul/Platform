@@ -432,9 +432,9 @@
 		static inline mat4 translation(vec3 tr)
 		{
 			mat4 m=identity();
-			m._41=tr.x;
-			m._42=tr.y;
-			m._43=tr.z;
+			m._14 = tr.x;
+			m._24 = tr.y;
+			m._34 =tr.z;
 			return m;
 		}
 	};

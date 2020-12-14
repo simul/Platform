@@ -1,4 +1,3 @@
-#define NOMINMAX
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/Math/Quaternion.h"

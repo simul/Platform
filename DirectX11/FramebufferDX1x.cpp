@@ -7,7 +7,7 @@
 // agreement.
 
 // Framebuffer.cpp A renderer for skies, clouds and weather effects.
-#define NOMINMAX
+
 #include "FramebufferDX1x.h"
 
 #include <tchar.h>

@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
 #include "Platform/CrossPlatform/Effect.h"

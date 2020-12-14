@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Utilities.h"
 #include "MacrosDX1x.h"
 #include "Platform/Core/StringToWString.h"

@@ -9,8 +9,10 @@
 uniform Texture2D diffuseTexture;
 uniform Texture2D normalTexture;
 uniform Texture2D metalTexture;
+uniform Texture2D ambientOcclusionTexture;
+uniform Texture2D emissiveTexture;
 uniform TextureCube diffuseCubemap;
-uniform TextureCube specularCubemap;
+uniform TextureCube specularCubemap; 
 
 //////////////////////////
 uniform TextureCube nearFarTextureCube;
@@ -210,7 +212,7 @@ vec3 PBRAmbient(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surface
 {
 	float roughness_mip		= MipFromRoughness(surfaceProperties.roughness, max_roughness_mip);
 	// Sample the environment maps:
-	vec3 diffuse_env		= 0.1*diffuseCubemap.SampleLevel(cubeSamplerState, surfaceProperties.normal.xyz,0.0).rgb;
+	vec3 diffuse_env		= diffuseCubemap.SampleLevel(cubeSamplerState, surfaceProperties.normal.xyz,0.0).rgb;
 	vec3 env				= specularCubemap.SampleLevel(cubeSamplerState,surfaceState.refl.xyz, roughness_mip).rgb;
 
 	vec3 envSpecularColour	=EnvBRDFApprox(surfaceProperties.albedo, surfaceProperties.roughness2, surfaceState.n_v);
@@ -218,7 +220,7 @@ vec3 PBRAmbient(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surface
 
 	 //Metallic materials will have no diffuse output.
 	vec3 diffuse			= surfaceProperties.albedo * surfaceState.kD* diffuse_env;
-	//diffuse					*= surfaceProperties.ao;
+	diffuse					*= surfaceProperties.ao;
 	vec3 colour				= diffuse+specular;
 
 	return colour;
@@ -265,8 +267,8 @@ vec4 Solid(vertexOutput IN)
 	vec3 view			= normalize(IN.wpos.xyz - viewPosition);
 
 	float metal			= metalTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R).r;
-
-	vec4 combinedLookup = vec4(1.0, metal,1.0,1.0);//combinedTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R);
+	float ao			= ambientOcclusionTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R).r;
+	vec4 combinedLookup = vec4(1.0, metal, ao,1.0);//combinedTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R);
 	// from combinedLookup we will either use roughness*roughnessTexture, or (1-roughness)*smoothnessTexture. This depends on combinedOutputScalarRoughMetalOcclusion.a.
 	combinedLookup		=combinedLookup.araa;
 	//combinedLookup.a	=1.0-combinedLookup.a;
@@ -281,7 +283,7 @@ vec4 Solid(vertexOutput IN)
 	surfaceProperties.position		=IN.wpos;
 	// Either roughness or 1.0-smoothness depending on alpha of scalar.
 	surfaceProperties.roughness		=lerp(roughMetalOcclusion.r,1.0-roughMetalOcclusion.a,combinedOutputScalarRoughMetalOcclusion.a);
-	surfaceProperties.metallic		=0.0;//GetMetallic(roughMetalOcclusion);
+	surfaceProperties.metallic		=GetMetallic(roughMetalOcclusion);
 	surfaceProperties.ao			=GetAO(roughMetalOcclusion);
 
 	surfaceProperties.normal		=normal;
@@ -289,8 +291,8 @@ vec4 Solid(vertexOutput IN)
 	surfaceProperties.roughness2	=surfaceProperties.roughness*surfaceProperties.roughness;
 
 	SurfaceState surfaceState	=PreprocessSurface(view,surfaceProperties);
-	vec3 c						=PBRAmbient(surfaceState, view, surfaceProperties);
-	for(int i=0;i<10;i++)
+	vec3 c						=.3*PBRAmbient(surfaceState, view, surfaceProperties);
+	for(int i=8;i<10;i++)
 	{
 		if(i>=lightCount)
 			break;
@@ -298,11 +300,12 @@ vec4 Solid(vertexOutput IN)
 		c					+=PBRAddLight(surfaceState,view,surfaceProperties,light);
 	}
 
-	vec3 emissive		=vec3(0,0,0);//emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
+	vec3 emissive		=emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
 	emissive			*= emissiveOutputScalar.rgb;
 //	c=1.0-roughMetalOcclusion.a;
 	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
 	//u.rgb= normalLookup.rgb;
+	//u.rgb=vec3(ao,ao, ao);
 	return u;
 }
 

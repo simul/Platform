@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "GpuProfiler.h"
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/StringToWString.h"

@@ -7,59 +7,32 @@
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/Mesh.h"
 #include "Platform/CrossPlatform/Material.h"
-
+//#define UNIT_LIB_DEFAULT_TYPE float
+#include "Platform/External/units/units.h"
+using meter_t = units::unit_t<units::length::meter>;
+using watts_per_sqm_per_nm = units::compound_unit<units::power::watts, units::inverse<units::squared<units::length::meter>>, units::inverse<units::length::nanometer>>;
+typedef tvector3<watts_per_sqm_per_nm> vec3_watts_per_sqm_per_nm;
 namespace simul
 {
 	namespace crossplatform
 	{
-		struct AnimCurve
+		enum LightType
 		{
-			virtual ~AnimCurve(){}
-			virtual float Evaluate(double time) const=0;
+			Sphere,			// There is no "point" light due to the degeneracy at the centre. Sphere is a better choice.
+			Directional,	// Uniform lighting in a parallel direction.
+			Spot			// Considered to be a sphere light with a limited cone in a given direction.
 		};
-		// Property cache, value and animation curve.
-		struct SIMUL_CROSSPLATFORM_EXPORT PropertyChannel
-		{
-			PropertyChannel() : mValue(0.0f),mAnimCurve(NULL) {}
-			~PropertyChannel();
-			//! Query the channel value at specific time.
-			float Get(double pTime) const;
-			float mValue;
-			AnimCurve * mAnimCurve;
-		};
-		// Cache for  lights
+		//! A light component.
 		class SIMUL_CROSSPLATFORM_EXPORT Light
 		{
 		public:
 			Light();
 			virtual ~Light();
-			// Set ambient light. Turn on light0 and set its attributes to default (white directional light in Z axis).
-			// If the scene contains at least one light, the attributes of light0 will be overridden.
-			//static void IntializeEnvironment(const fbxsdk_201x_x_x::FbxColor & pAmbientLight);
-
-			// Draw a geometry (sphere for point and directional light, cone for spot light).
-			// And set light attributes.
-			void SetLight(const double *,double time) const;
-///
-			enum LightType
-			{
-				ePoint, 
-				eDirectional, 
-				eSpot,
-				eArea,
-				eVolume
-			};
-			void setType(LightType type)
-			{
-				mType=type;
-			}
-			virtual void UpdateLight(const double *mat,float lConeAngle,const float lLightColor[4]) const=0;
-			static int sLightCount;         // How many lights in this scene.
-			LightType mType;
-			PropertyChannel mColorRed;
-			PropertyChannel mColorGreen;
-			PropertyChannel mColorBlue;
-			PropertyChannel mConeAngle;
+			LightType type;
+			//! 
+			vec3_watts_per_sqm_per_nm irradiance;
+			//! For a sphere light, the radius at which its irradiance applies over the surface.
+			meter_t radius;
 		protected:
 		};
 	}

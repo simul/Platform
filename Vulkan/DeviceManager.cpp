@@ -39,11 +39,7 @@ using namespace vulkan;
 using namespace std;
 
 #ifdef _MSC_VER
-#ifdef _DEBUG
 #pragma comment(lib, "vulkan-1")
-#else
-#pragma comment(lib, "vulkan-1")
-#endif
 #endif
 static std::vector<std::string> debugMsgGroups;
 static void VulkanDebugCallback()

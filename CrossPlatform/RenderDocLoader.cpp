@@ -5,7 +5,7 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/External/RenderDoc/Include/renderdoc_app.h"
 
-#define NOMINMAX
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <filesystem>

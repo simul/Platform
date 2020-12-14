@@ -69,7 +69,6 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	add_subdirectory(External/DirectX/Effects11_Win8SDK)
 endif()
 
 if(SIMUL_SUPPORT_PS4)

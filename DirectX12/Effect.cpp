@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 
 #include "Effect.h"
 #include "Texture.h"

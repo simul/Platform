@@ -77,6 +77,7 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 		RecompileShaders();
 	if (!effect)
 		return;
+	deviceContext.viewStruct.PushModelMatrix(*((math::Matrix4x4*)&model));
 	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
 	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);
 	mesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
@@ -91,6 +92,7 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 	}
 	DrawSubNode(deviceContext,mesh,mesh->GetRootNode());
 	mesh->EndDraw(deviceContext);
+	deviceContext.viewStruct.PopModelMatrix();
 }
 
 void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *material)
@@ -109,6 +111,8 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	renderPlatform->SetTexture(deviceContext,effect->GetShaderResource("diffuseTexture"),material->albedo.texture);
 	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("normalTexture"), material->normal.texture);
 	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("metalTexture"), material->metal.texture);
+	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("ambientOcclusionTexture"), material->ambientOcclusion.texture);
+	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("emissiveTexture"), material->emissive.texture);
 	solidConstants.diffuseOutputScalar						=vec4(material->albedo.value,1.0f);
 	solidConstants.diffuseTexCoordsScalar_R					=vec2_unit;
 	solidConstants.diffuseTexCoordsScalar_G					=vec2_unit;
@@ -121,7 +125,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	solidConstants.normalTexCoordsScalar_B					=vec2_unit;
 	solidConstants.normalTexCoordsScalar_A					=vec2_unit;
 
-	solidConstants.combinedOutputScalarRoughMetalOcclusion	=vec4_unit;
+	solidConstants.combinedOutputScalarRoughMetalOcclusion	=vec4(material->roughness.value,material->metal.value,material->ambientOcclusion.value,0);
 	solidConstants.combinedTexCoordsScalar_R				=vec2_unit;
 	solidConstants.combinedTexCoordsScalar_G				=vec2_unit;
 	solidConstants.combinedTexCoordsScalar_B				=vec2_unit;

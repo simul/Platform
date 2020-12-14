@@ -1,4 +1,3 @@
-#define NOMINMAX
 #include "GpuProfiler.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/Core/StringFunctions.h"

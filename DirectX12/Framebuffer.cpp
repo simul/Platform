@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/DirectX12/Framebuffer.h"
 
 #include "Platform/Core/RuntimeError.h"

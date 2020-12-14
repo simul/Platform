@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/CrossPlatform/TextInputOutput.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringFunctions.h"

@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
 
@@ -105,6 +105,7 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	crossplatform::MeshRenderer		*meshRenderer	=nullptr;
 	// An example mesh to draw.
 	crossplatform::Mesh *exampleMesh				= nullptr;
+	crossplatform::Mesh *environmentMesh			= nullptr;
 	crossplatform::Effect *effect					= nullptr;
 	crossplatform::ConstantBuffer<SceneConstants> sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants> cameraConstants;
@@ -173,6 +174,7 @@ public:
 		memset(keydown,0,sizeof(keydown));
 
 		exampleMesh = renderPlatform->CreateMesh();
+		environmentMesh= renderPlatform->CreateMesh();
 		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		// Whether run from the project directory or from the executable location, we want to be
 		// able to find the shaders and textures:
@@ -218,6 +220,7 @@ public:
 		delete diffuseCubemapTexture;
 		delete specularCubemapTexture;
 		delete exampleMesh;
+		delete environmentMesh;
 		delete depthTexture;
 		delete renderPlatform;
 	}
@@ -249,7 +252,9 @@ public:
 #endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
 		//exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
-		exampleMesh->Load("models/Sponza/Sponza.gltf",1.0f,crossplatform::AxesStandard::OpenGL);//CesiumMilkTruck.gltf");
+		exampleMesh->Load("models/DamagedHelmet/DamagedHelmet.gltf",0.1f,crossplatform::AxesStandard::OpenGL);//Sponza/Sponza.gltf");
+		environmentMesh->Load("models/Sponza/Sponza.gltf", 1.0f, crossplatform::AxesStandard::OpenGL);
+
 		// These are for example:
 		hDRRenderer->RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
@@ -261,8 +266,8 @@ public:
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 		lightsStructuredBuffer.RestoreDeviceObjects(renderPlatform,10);
 
-		lights[0].colour = vec4(0.25f, 0.15f, 0.05f, 0);
-		lights[0].direction = vec3(0, .707f, -.707f);
+		lights[0].colour = vec4(0.2f, 0.15f, 0.05f, 0);
+		lights[0].direction = vec3(.707f, 0, -.707f);
 		lights[0].is_point = lights[0].is_spot = 0;
 
 		std::random_device rd;   // non-deterministic generator
@@ -390,11 +395,12 @@ public:
 			lightsStructuredBuffer.SetData(deviceContext,lights);
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
 			effect->Apply(deviceContext, "solid", 0);
-			meshRenderer->Render(deviceContext, exampleMesh,mat4::identity(),diffuseCubemapTexture,specularCubemapTexture);
-
+			meshRenderer->Render(deviceContext, exampleMesh,mat4::translation(vec3(0,0,2.0f)),diffuseCubemapTexture,specularCubemapTexture);
+			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture);
+			
 			effect->Unapply(deviceContext);
 		}
-		static bool show_cubemaps=true;
+		static bool show_cubemaps=false;
 		if(show_cubemaps)
 		{
 			float x = -.8f, m = -1.0f;
@@ -444,6 +450,7 @@ public:
 		lightsStructuredBuffer.InvalidateDeviceObjects();
 		hDRRenderer->InvalidateDeviceObjects();
 		exampleMesh->InvalidateDeviceObjects();
+		environmentMesh->InvalidateDeviceObjects();
 		hdrFramebuffer->InvalidateDeviceObjects();
 		meshRenderer->InvalidateDeviceObjects();
 		renderPlatform->InvalidateDeviceObjects();
@@ -469,13 +476,15 @@ public:
 		mouseCameraInput.forward_back_input	=(float)keydown['w']-(float)keydown['s'];
 		mouseCameraInput.right_left_input	=(float)keydown['d']-(float)keydown['a'];
 		mouseCameraInput.up_down_input		=(float)keydown['t']-(float)keydown['g'];
+		static float cam_speed=4.0f;
+
 		crossplatform::UpdateMouseCamera
 		(
 			&camera
-								,time_step
-								,40.f
-								,mouseCameraState
-								,mouseCameraInput
+			,time_step
+			,cam_speed
+			,mouseCameraState
+			,mouseCameraInput
 			,14000.f
 		);
 	}

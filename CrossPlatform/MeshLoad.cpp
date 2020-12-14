@@ -122,6 +122,9 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 	//m->Get(AI_MATKEY_COLOR_DIFFUSE, aiColour);
 	m->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, M->metal.value);
 	m->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, M->roughness.value);
+
+	// Seems to be always 1.0
+	M->ambientOcclusion.value=1.0f;
 	
 //$mat.twosided, type 5, index 0
 //$mat.shininess, type 1, index 0
@@ -152,6 +155,29 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 	else
 	{
 		M->metal.texture = renderPlatform->GetOrCreateTexture("black");
+	}
+	if (aiReturn_SUCCESS == m->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &texturePath, &mapping, &uvindex, &blend))
+	{
+		Texture* T = renderPlatform->GetOrCreateTexture(texturePath.C_Str());
+		M->ambientOcclusion.texture = T;
+	}
+	else if(aiReturn_SUCCESS == m->GetTexture(aiTextureType_LIGHTMAP, 0, &texturePath, &mapping, &uvindex, &blend))
+	{
+		Texture* T = renderPlatform->GetOrCreateTexture(texturePath.C_Str());
+		M->ambientOcclusion.texture = T;
+	}
+	else
+	{
+		M->ambientOcclusion.texture = renderPlatform->GetOrCreateTexture("white");
+	}
+	if (aiReturn_SUCCESS == m->GetTexture(aiTextureType_EMISSIVE, 0, &texturePath, &mapping, &uvindex, &blend))
+	{
+		Texture* T = renderPlatform->GetOrCreateTexture(texturePath.C_Str());
+		M->emissive.texture = T;
+	}
+	else
+	{
+		M->emissive.texture = renderPlatform->GetOrCreateTexture("black");
 	}
 	M->roughness.value = 1.0f-Float("$mat.shininess",1.0f);
 

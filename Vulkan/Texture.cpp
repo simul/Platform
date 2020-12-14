@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 
 #include "Platform/Core/FileLoader.h"
 #include "Texture.h"
