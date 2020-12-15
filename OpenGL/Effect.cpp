@@ -183,7 +183,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    int idx = GetLastIndex(deviceContext);
+    int idx = GetIndex(deviceContext);
 
     if (!IsBufferMapped(idx))
 	    return glMapNamedBuffer(mGPUBuffer[idx],GL_WRITE_ONLY);
@@ -199,7 +199,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
 	{
 		// We want to map from the oldest buffer:
-		int idx = GetLastIndex(deviceContext, 1);
+		int idx = GetIndex(deviceContext, 1);
 		const GLuint64 maxTimeOut = 100000; // 0.1ms
 		if (!glIsSync(mFences[idx]))
 		{
@@ -243,7 +243,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     if (!cpu_read)
         return;
 
-    int idx = GetLastIndex(deviceContext, 0);
+    int idx = GetIndex(deviceContext, 1);
     if (IsBufferMapped(idx))
     {
         mCurReadMap = nullptr;
@@ -296,7 +296,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
     crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
-    mLastIdx = GetLastIndex(deviceContext);
+    mLastIdx = GetIndex(deviceContext);
 	Apply(deviceContext,effect,shaderResource);
 }
 
@@ -347,8 +347,16 @@ Effect::Effect()
 {
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
+void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
 {
+#define OPENGL_SHADER_DEBUG
+#if defined(OPENGL_SHADER_DEBUG)
+    crossplatform::ShaderBuildMode buildMode = r->GetShaderBuildMode();
+    r->SetShaderBuildMode(crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
+    crossplatform::Effect::EnsureEffect(r, filename_utf8);
+    r->SetShaderBuildMode(buildMode);
+#endif
+
 	crossplatform::Effect::Load(r, filename_utf8,defines);
 }
 
@@ -483,31 +491,34 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
     }
 	
     const GLchar* glData    = (const GLchar*)fileData;
-    ShaderId                = glCreateShader(type);
+    GLuint shaderId         = glCreateShader(type);
 	GLint sz				= (GLint)DataSize;
 	
 	src						= std::string(glData, sz);
 	name					= filename_utf8;
     
-	glShaderSource(ShaderId, 1, &glData, &sz);
-    glCompileShader(ShaderId);
+	glShaderSource(shaderId, 1, &glData, &sz);
+    glCompileShader(shaderId);
 
 	// Check compile status:
 	GLint isCompiled = 0;
-	glGetShaderiv(ShaderId, GL_COMPILE_STATUS, &isCompiled);
+	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &isCompiled);
 	if (isCompiled == 0)
 	{
 		GLint maxLength = 0;
-		glGetShaderiv(ShaderId, GL_INFO_LOG_LENGTH, &maxLength);
+		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
 		std::vector<GLchar> infoLog(maxLength);
-		glGetShaderInfoLog(ShaderId, maxLength, &maxLength, &infoLog[0]);
+		glGetShaderInfoLog(shaderId, maxLength, &maxLength, infoLog.data());
 
 		SIMUL_CERR << "Failed to compile the shader: " << filename_utf8 << "\n";
-		SIMUL_COUT << infoLog.data() << std::endl;
+        if(infoLog.data() && infoLog.size())
+		    SIMUL_COUT << infoLog.data() << std::endl;
 		SIMUL_BREAK_ONCE("");
-
-		return;
 	}
+    else
+    {
+        ShaderId = shaderId;
+    }
 }
 
 void Shader::Release()
