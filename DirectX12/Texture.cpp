@@ -285,6 +285,15 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// Set the properties of this texture
 		width			= (int)wic.metadata->width;
 		length			= (int)wic.metadata->height;
+		if(gen_mips)
+		{
+			int m=100;
+			m = std::min(m, int(floor(log2(std::max(width, length)))) +1);
+			m=std::min(16,std::max(1,m));
+			mips=m;
+		}
+		else
+			mips=1;
 		pixelFormat		=RenderPlatform::FromDxgiFormat(wic.metadata->format);
 	}
 	mLoadedFromFile = true;
@@ -416,15 +425,25 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	// Create the handle
 	mainShaderResourceView12 = mTextureSrvHeap.GetCpuHandleFromStartAfOffset(0);
 	
-	
 	int totalNum	= cubemap ? 6 * arraySize : arraySize;
 	InitSRVTables(totalNum, mips);
 	CreateSRVTables(arraySize, mips, cubemap);
 	InitRTVTables(totalNum, mips);
 	CreateRTVTables(totalNum, mips);
 	
-	
 	textureLoadComplete=true;
+	if (mips > 1)
+	{
+		if(deviceContext.deviceContextType!=crossplatform::DeviceContextType::GRAPHICS)
+		{
+			SIMUL_BREAK_ONCE("Unable to generate mips as context is compute.");
+		}
+		else
+		{
+			GenerateMips(*deviceContext.AsGraphicsDeviceContext());
+		}
+	}
+	
 	ClearLoadingData();
 }
 
@@ -490,102 +509,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Set the properties of this texture
 	mLoadedFromFile = true;
 	textureLoadComplete=false;
-	return;
-#if 0
-	// Check that formats and sizes are the same (we will use as reference the first image in the array)
-	unsigned int	mainWidth	= (unsigned int)wicContents[0].metadata->width;
-	unsigned int	mainLength	= (unsigned int)wicContents[0].metadata->height;
-	DXGI_FORMAT		mainFormat	= wicContents[0].metadata->format;
-	for (int i = 1; i < arraySize; i++)
-	{
-		if (wicContents[i].metadata->width != mainWidth ||
-			wicContents[i].metadata->width != mainLength ||
-			wicContents[i].metadata->format != mainFormat)
-		{
-			SIMUL_BREAK("The textures provided don't have the same properties");
-			ClearLoadingData();
-			return;
-		}
-	}
-	
-	mLoadedFromFile = true;
-	loadingfile
-	auto format = RenderPlatform::FromDxgiFormat(mainFormat);
-
-	// Clean resources
-	SAFE_RELEASE_LATER(mTextureDefault);
-	SAFE_RELEASE_LATER(mTextureUpload);
-	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-
-	ensureTextureArraySizeAndFormat(r,(int)wicContents[0].metadata->width,(int)wicContents[0].metadata->height,arraySize,m,format,false,true);
-	
-	// Make the texture description
-	D3D12_RESOURCE_DESC textureDesc = {};
-	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	textureDesc.Alignment			= 0;							// Let runtime decide
-	textureDesc.Width				= mainWidth;
-	textureDesc.Height				= mainLength;
-	textureDesc.DepthOrArraySize	= arraySize;
-	textureDesc.MipLevels			= m;
-	textureDesc.Format				= mainFormat;
-	textureDesc.SampleDesc.Count	= 1;
-	textureDesc.SampleDesc.Quality	= 0;
-	textureDesc.Layout				= D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
-	textureDesc.Flags				= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
-	textureDesc=mTextureDefault->GetDesc();
-	std::string sName = name;
-	std::wstring n = L"GPU_";
-	n += std::wstring(sName.begin(), sName.end());
-	mTextureDefault->SetName(n.c_str());
-	
-	// Create an upload heap
-	UINT64 sliceSize [16];
-	UINT64 textureUploadBufferSize = 0;
-	UINT   numRows[16];
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT pLayouts[16];
-	// only single mip in the upload.
-	textureDesc.MipLevels=1;
-	r->AsD3D12Device()->GetCopyableFootprints
-	(
-		&textureDesc,
-		0, arraySize, 0,
-		pLayouts, numRows, sliceSize,
-		&textureUploadBufferSize
-	);
-	res = r->AsD3D12Device()->CreateCommittedResource
-	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ
-		,nullptr,
-        SIMUL_PPV_ARGS(&mTextureUpload)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mTextureUpload, textureUploadBufferSize)
-	n = L"UPLOAD_";
-	n += std::wstring(sName.begin(), sName.end());
-	mTextureUpload->SetName(std::wstring(sName.begin(), sName.end()).c_str());
-	
-	auto &deviceContext=renderPlatform->GetImmediateContext();
-	// Perform the texture copy
-	std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas;
-	textureSubDatas.resize(arraySize);
-	dx12::RenderPlatform *dx12RenderPlatform		= (dx12::RenderPlatform*)renderPlatform;
-	for (int i = 0; i < arraySize; i++)
-	{
-		textureSubDatas[i].pData = wicContents[i].image->pixels;
-		textureSubDatas[i].RowPitch = wicContents[i].image->rowPitch;
-		textureSubDatas[i].SlicePitch = wicContents[i].image->rowPitch * textureDesc.Height;
-		dx12RenderPlatform->ResourceTransitionSimple(deviceContext,mTextureDefault, GetCurrentState(deviceContext), D3D12_RESOURCE_STATE_COPY_DEST, true);
-		UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload,pLayouts[i].Offset, i*m, 1, &textureSubDatas[i]);
-		dx12RenderPlatform->ResourceTransitionSimple(deviceContext,mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(deviceContext), true);
-	}
-	
-	mLoadedFromFile = true;
-	ClearLoadingData();
-#endif
 }
 
 bool Texture::IsValid() const

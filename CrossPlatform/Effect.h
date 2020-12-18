@@ -47,6 +47,7 @@ namespace simul
 			SHADERTYPE_GEOMETRY,
 			SHADERTYPE_PIXEL,
 			SHADERTYPE_COMPUTE,
+			SHADERTYPE_RAYTRACE,
 			SHADERTYPE_COUNT
 		};
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
@@ -198,6 +199,9 @@ namespace simul
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
 			virtual void InvalidateDeviceObjects() {}
+		};
+		struct RayDispatch
+		{
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Shader
 		{

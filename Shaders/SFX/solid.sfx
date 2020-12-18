@@ -255,9 +255,9 @@ vec4 Solid(vertexOutput IN)
 {
 	vec3 tangentx		= normalize(IN.tangent);
 	vec3 tangenty		= normalize(cross(IN.normal, tangentx));
-	mat3 TangentMatrix	= mat3(tangentx, tangenty, normalize(IN.normal)); //transforms world=>tangent space
+	mat3 TangentMatrix	= transpose(mat3(tangentx, tangenty, normalize(IN.normal))); //transforms world=>tangent space
 
-	vec3 normalLookup	= normalTexture.Sample(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R).xyz;
+	vec3 normalLookup	= normalTexture.SampleLevel(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R,0).xyz;
 	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
 	vec3 normal			= normalize(mul( TangentMatrix, normalLookup));
 
@@ -270,10 +270,7 @@ vec4 Solid(vertexOutput IN)
 	float ao			= ambientOcclusionTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R).r;
 	vec4 combinedLookup = vec4(1.0, metal, ao,1.0);//combinedTexture.Sample(wrapSamplerState, IN.texCoords0.xy * combinedTexCoordsScalar_R);
 	// from combinedLookup we will either use roughness*roughnessTexture, or (1-roughness)*smoothnessTexture. This depends on combinedOutputScalarRoughMetalOcclusion.a.
-	combinedLookup		=combinedLookup.araa;
-	//combinedLookup.a	=1.0-combinedLookup.a;
-	// occlusion to 1.0 for now.
-	combinedLookup.b	=1.0;
+	
 	// So combinedLookup is now rough-metal-occl-smooth
 	vec4 roughMetalOcclusion;
 	roughMetalOcclusion.rgb			=combinedOutputScalarRoughMetalOcclusion.rgb*combinedLookup.rgb;
@@ -305,7 +302,6 @@ vec4 Solid(vertexOutput IN)
 //	c=1.0-roughMetalOcclusion.a;
 	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
 	//u.rgb= normalLookup.rgb;
-	//u.rgb=vec3(ao,ao, ao);
 	return u;
 }
 

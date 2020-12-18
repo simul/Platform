@@ -38,7 +38,7 @@ namespace sfx
 {
 	typedef std::map<std::string, std::tuple<std::streampos, std::size_t>> BinaryMap;
 	/// This must track simul::crossplatform::ShaderResourceType
-	enum class ShaderResourceType
+	enum class ShaderResourceType : unsigned long long
 	{
 		UNKNOWN = 0
 		, RW = 1
@@ -72,6 +72,8 @@ namespace sfx
 		, RW_TEXTURE_1D_ARRAY = RW | TEXTURE_1D | ARRAY
 		, RW_TEXTURE_2D_ARRAY = RW | TEXTURE_2D | ARRAY
 		, RW_TEXTURE_3D_ARRAY = RW | TEXTURE_3D | ARRAY
+		, RAYTRACE_ACCELERATION_STRUCT =65536
+		, TEMPLATIZED_CONSTANT_BUFFER =131072
 		, COUNT
 	};
 	inline ShaderResourceType operator|(ShaderResourceType a, ShaderResourceType b)
@@ -91,6 +93,9 @@ namespace sfx
 		GEOMETRY_SHADER,
 		FRAGMENT_SHADER,
 		COMPUTE_SHADER,
+		RAY_GENERATION_SHADER,
+		CLOSEST_HIT_SHADER,
+		MISS_SHADER,
 		EXPORT_SHADER,
 		NUM_SHADER_TYPES
 	};
@@ -332,6 +337,15 @@ namespace sfx
 		std::string layout;
 		std::string texel_format;
 		ShaderResourceType shaderResourceType;
+		int slot;
+	};
+
+	struct DeclaredConstantBuffer: public Declaration
+	{
+		DeclaredConstantBuffer():Declaration(DeclarationType::CONSTANT_BUFFER)
+		{
+		}
+		std::string type;
 		int slot;
 	};
 

@@ -177,7 +177,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"struct"					{
 										stdReturn(STRUCT);
 									}
-<INITIAL>"cbuffer"|"ConstantBuffer"					{
+<INITIAL>"cbuffer"					{
 										modReturn(CONSTANT_BUFFER, "cbuffer");
 									}
 <INITIAL>"register"					{
@@ -286,6 +286,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"RWTexture2D"							{
 													stdReturn(RW_TEXTURE2D);
 												}
+<INITIAL>"ConstantBuffer"		{
+													stdReturn(TEMPLATIZED_CONSTANT_BUFFER);
+												}
+<INITIAL>"RaytracingAccelerationStructure"		{
+													stdReturn(RAYTRACE_ACCELERATION_STRUCT);
+												}
 <INITIAL>"RW_Texture2D_Array"			{
 													stdReturn(RW_TEXTURE2D_ARRAY);
 												}
@@ -368,7 +374,22 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetComputeShader"						{
+<INITIAL,IN_SHADER>"SetRayGenerationShader"			{
+														sfxlval.sType=RAY_GENERATION_SHADER;	 	
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
+<INITIAL,IN_SHADER>"SetClosestHitShader"			{
+														sfxlval.sType=CLOSEST_HIT_SHADER;	 	
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
+<INITIAL,IN_SHADER>"SetMissShader"			{
+														sfxlval.sType=MISS_SHADER;	 	
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
+<INITIAL,IN_SHADER>"SetComputeShader"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else

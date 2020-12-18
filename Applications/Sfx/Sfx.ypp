@@ -449,6 +449,15 @@
 				}
 			}
 			if(!found)
+			for(auto j:f.locals)
+			{
+				if(j.identifier==res_name)
+				{
+					found=true;
+					break;
+				}
+			}
+			if(!found)
 			{
 				f.globals.insert(i);
 			}
@@ -567,7 +576,7 @@
 %token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
-%token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
+%token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D TEMPLATIZED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
 %token REGULARBUFFER RW_REGULARBUFFER STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token FILTER ADDRESS_U ADDRESS_V ADDRESS_W ADDRESS_WRAP ADDRESS_CLAMP ADDRESS_MIRROR FILTER_MIN_MAG_MIP_LINEAR FILTER_MIN_MAG_MIP_POINT FILTER_ANISOTROPIC
 
@@ -617,15 +626,15 @@ prog : prog tok
 		string def			=$6.strs[0];
 		if(t==RENDERTARGETFORMAT_STATE)
 		{
-			RenderTargetFormatState* fs  = gEffect->DeclareRenderTargetFormatState(name);
-			*fs						 = buildrtFormatState;
+			RenderTargetFormatState* fs	= gEffect->DeclareRenderTargetFormatState(name);
+			*fs							= buildrtFormatState;
 			fs->name					= name;
-			buildrtFormatState		  = RenderTargetFormatState();
+			buildrtFormatState			= RenderTargetFormatState();
 		}
 		if(t==RASTERIZER_STATE)
 		{
-			RasterizerState *rs=gEffect->DeclareRasterizerState(name);
-			*rs=buildRasterizerState;
+			RasterizerState *rs	=gEffect->DeclareRasterizerState(name);
+			*rs					=buildRasterizerState;
 			// Set to default:
 			buildRasterizerState=RasterizerState();
 		}
@@ -694,7 +703,7 @@ prog : prog tok
 		}
 		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
 	}
-	| optional_uniform texture_type optional_template_type IDENTIFIER optional_register_semantic ';'
+	| optional_uniform resource_type optional_template_type IDENTIFIER optional_register_semantic ';'
 	{
 		const SfxConfig *config		=gEffect->GetConfig();
 		string type=$2.strs[0];
@@ -702,12 +711,25 @@ prog : prog tok
 		string templ_type=$3.strs[1];
 		string name=$4.strs[0];
 		int slot=$5.num;
+		
+		int space=0;
+		string space_num=$5.strs[2];
+		if(space_num.length()>1)
+		{
+			space_num=space_num.substr(1,space_num.length()-1);
+			space=atoi(space_num.c_str());
+		}
+
 		ShaderResourceType srt=ToShaderResourceType($2.token);
 		string semantic;
 		
 		if(IsRW(srt))
 		{
 			semantic="u";
+		}
+		else if(srt==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		{
+			semantic="b";
 		}
 		else
 		{
@@ -734,19 +756,34 @@ prog : prog tok
 			ostr<<"<"<<templ<<">";
 		ostr<<" "<<name<<": register("<<semantic<<");\n";
 		string original=ostr.str();
-		
-		DeclaredTexture *dt=gEffect->DeclareTexture(name, srt, slot, templ_type, original);
-		if (!dt)
-			sfxError = true;
+		if(srt==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		{
+			DeclaredConstantBuffer *dt=gEffect->DeclareTemplatizedConstantBuffer(name, slot, space, templ_type, original);
+			if (!dt)
+				sfxError = true;
+			else
+			{
+				dt->global_line_number = $1.lineno;
+				dt->file_number = current_filenumber;
+				dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
+				dt->type = type;
+			}
+		}
 		else
 		{
-			dt->global_line_number = $1.lineno;
-			dt->file_number = current_filenumber;
-			dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
-			dt->variant = false;
-			dt->type = type;
-			dt->layout = "";
-			dt->texel_format = semantic;
+			DeclaredTexture *dt=gEffect->DeclareTexture(name, srt, slot, space, templ_type, original);
+			if (!dt)
+				sfxError = true;
+			else
+			{
+				dt->global_line_number = $1.lineno;
+				dt->file_number = current_filenumber;
+				dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
+				dt->variant = false;
+				dt->type = type;
+				dt->layout = "";
+				dt->texel_format = semantic;
+			}
 		}
 	}
 	| STRUCT IDENTIFIER struct_definition ';'
@@ -912,14 +949,12 @@ primary_exp: IDENTIFIER
 	string varName=$1.strs[0];
 	ConstantBuffer *cb = nullptr;
 	$$.strs[0]=varName;
-	if(varName=="stored_illum")
-	{
-		if (gEffect->IsDeclared(varName))
-			buildFunction.declarations.insert(varName);
-	}
 	
 	if(gEffect->IsDeclared(varName))
+	{
 		buildFunction.declarations.insert(varName);
+		buildFunction.resources.insert(varName);
+	}
 	else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
 	{
 		buildFunction.constantBuffers.insert(cb);
@@ -939,7 +974,17 @@ primary_exp: IDENTIFIER
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }
 
-texture_type: TEXTURE2D 
+resource_type: TEMPLATIZED_CONSTANT_BUFFER
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.token=$1.token;
+	}
+	| RAYTRACE_ACCELERATION_STRUCT
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.token=$1.token;
+	}
+	| TEXTURE2D 
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
@@ -1158,10 +1203,11 @@ optional_unorm_snorm: UNORM
 	$$.strs[0]="";
 }
 
-optional_register_semantic: ':' REGISTER '(' IDENTIFIER ')'
+optional_register_semantic: ':' REGISTER '(' IDENTIFIER optional_additional_identifier ')'
 {
-	$$.strs[0]=string(": register(")+$4.strs[0]+")";
+	$$.strs[0]=string(": register(")+$4.strs[0]+$5.strs[0]+")";
 	$$.strs[1]=$4.strs[0];
+	$$.strs[2]=$4.strs[1];
 	string idnum=$4.strs[0];
 	if(idnum.length()>1)
 	{
@@ -1300,6 +1346,7 @@ declaration: decl_specs init_declarator_list
 	$$.strs[0] =($1.strs[0] +" ") +$2.strs[0];
 	sfxstype::variable var;
 	var.type=$1.strs[0];
+	var.identifier=$2.strs[2];
 	buildFunction.locals.push_back(var);
 	$$.strs[1]=$2.strs[0];
 }
@@ -1343,17 +1390,20 @@ init_declarator_list: init_declarator
 {
 	$$.strs[0]=$1.strs[0];
 	$$.strs[1]=$1.strs[1];
+	$$.strs[2]=$1.strs[2];
 }
 | init_declarator_list ',' init_declarator
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	$$.strs[1] =( $1.strs[1]+',')+ $3.strs[1];
+	$$.strs[2]=$1.strs[2];
 }
 
 init_declarator: declarator
 {
-	$$.strs[0]=$1.strs[0];
+	$$.strs[0] = $1.strs[0];
 	$$.strs[1] = $1.strs[1];
+	$$.strs[2] = $1.strs[0];
 }
 | declarator '=' initializer
 {
@@ -1363,6 +1413,7 @@ init_declarator: declarator
 	string initializer	=$3.strs[0];
 	$$.strs[0] = $1.strs[0] + $2.strs[0] + initializer;
 	$$.strs[1] = $1.strs[1];
+	$$.strs[2] = declarator;
 }
 
 declarator: IDENTIFIER
@@ -1916,9 +1967,13 @@ postfix_exp: primary_exp
 											// Nothing to do here...
 											params += p.identifier;
 										}
-
+										string root_identifier=p.identifier;
+										size_t first_dot=root_identifier.find('.');
+										if(first_dot<root_identifier.length())
+											root_identifier=root_identifier.substr(0,first_dot);
 										// This is how OUR function knows this parameter.
-										buildFunction.declarations.insert(p.identifier);
+										buildFunction.declarations.insert(root_identifier);
+										buildFunction.resources.insert(root_identifier);
 										const Declaration *d=gEffect->GetDeclaration(p.identifier);
 
 										if(d && d->declarationType == DeclarationType::SAMPLER)
@@ -1982,6 +2037,8 @@ postfix_exp: primary_exp
 					| postfix_exp '.' IDENTIFIER
 					{
 						string expr1=$1.strs[0];
+						if(gEffect->GetDeclaration(expr1)!=nullptr)
+							buildFunction.resources.insert(expr1);
 						string expr3=$3.strs[0];
 						$$.strs[2]=expr3;			//Command
 						$$.strs[0]=expr1+$2.strs[0]+expr3;
@@ -2392,6 +2449,16 @@ opt_num: number_exp
 	$$.strs[0]=stringFormat("%d",$$.num);
 }
 
+
+optional_additional_identifier : ',' IDENTIFIER
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0];
+}
+| 
+{
+	$$.strs[0]="";
+}
+
 param_declaration_list : param_declaration_list ',' param_declaration
 {
 	$$.vars=$1.vars;
@@ -2471,12 +2538,13 @@ type : IDENTIFIER optional_template_type
 	$$.strs[0]=$1.strs[0];	// type
 	$$.strs[1]=$2.strs[1];	// template if present
 	$$.shaderResourceType		=(ShaderResourceType)0;
-} | texture_type optional_template_type
+} | resource_type optional_template_type
 {
 	$$.strs[0]=$1.strs[0];	// type
 	$$.strs[1]=$2.strs[1];	// template if present
 	$$.shaderResourceType		=ToShaderResourceType($1.token);
 }
+
 
 
 param: type IDENTIFIER optional_index optional_default
@@ -2837,9 +2905,10 @@ shader_def : SHADER_COMMAND '(' shader_compile ')' ';'
 						auto d=gEffect->GetDeclarations().find(i);
 						if (d== gEffect->GetDeclarations().end())
 						{
-							ostringstream errMsg;
-							errMsg << "Variable not found: " << i.c_str() << std::endl;
-							errSem(errMsg.str(), $5.lineno);
+							// Often these not-found variables will be members of anonymous constant buffers.
+							//ostringstream errMsg;
+							//errMsg << "Variable not found: " << i.c_str() << std::endl;
+							//errSem(errMsg.str(), $5.lineno);
 							continue;
 						}
 						Declaration *dec=d->second;
@@ -3151,6 +3220,10 @@ ShaderResourceType ToShaderResourceType(int t)
 {
 	  switch (t)
 	  {
+	  case TEMPLATIZED_CONSTANT_BUFFER:
+		  return ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER;
+	  case RAYTRACE_ACCELERATION_STRUCT:
+		  return ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT;
 	  case TEXTURE1D:
 		  return ShaderResourceType::TEXTURE_1D;
 	  case TEXTURE2D:

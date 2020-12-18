@@ -98,7 +98,11 @@ namespace simul
 			Spectrum				= 25,	// ZX Spectrum
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
-
+		enum RenderingFeatures:uint32_t
+		{
+			None=0,
+			Raytracing=1
+		};
 		/// A vertex format for debugging.
 		struct PosColourVertex
 		{
@@ -119,7 +123,7 @@ namespace simul
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const int4 *vi,const Texture *t);
 
-		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
+		/*! RenderPlatform is an interface that allows Platform's rendering functions to be developed
 			in a cross-platform manner. By abstracting the common functionality of the different graphics API's
 			into an interface, we can write render code that need not know which API is being used. It is possible
 			to create platform-specific objects like /link CreateTexture textures/endlink, /link CreateEffect effects/endlink
@@ -131,6 +135,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		protected:
+			RenderingFeatures renderingFeatures=RenderingFeatures::None;
 			int ApiCallLimit=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
 			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
@@ -152,6 +157,10 @@ namespace simul
 			bool GetCanSaveAndRestore() const
 			{
 				return can_save_and_restore;
+			}
+			const RenderingFeatures &GetRenderingFeatures() const
+			{
+				return renderingFeatures;
 			}
 			//! Returns the current idx (used in ring buffers)
 			unsigned char GetIdx()const                   { return mCurIdx; }
@@ -230,6 +239,7 @@ namespace simul
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
+			virtual void DispatchRays		(DeviceContext &deviceContext,const uint3 &dispatch){}
 			virtual void Signal				(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
@@ -421,6 +431,8 @@ namespace simul
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
+			void FinishLoadingTextures(DeviceContext& deviceContext);
+			std::set<Texture*> unfinishedTextures;
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			virtual Texture* createTexture() = 0;
 			simul::base::MemoryInterface *memoryInterface;

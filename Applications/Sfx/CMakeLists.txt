@@ -39,10 +39,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set( SFX_TEST_PLATFORM "DirectX11" CACHE STRING "Which platform to use when debugging the Sfx executable" )
 	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL) 
 
-	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE STRING "Which file to use when debugging Sfx")
-	set(SFX_TEST_DEFINES "-E\"COMMODORE_SDK_DIR=C:\\Program Files (x86)\\SCE\\Prospero SDKs\\1.000\"" CACHE STRING "")
+	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE FILEPATH "Which file to use when debugging Sfx")
+	set(SFX_TEST_DEFINES "-E\"EXAMPLE_DEFINE=example\"" CACHE STRING "")
 	set_target_properties(Sfx PROPERTIES
-		VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}"
+		VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\nPLATFORM=${SIMUL_PLATFORM_DIR}"
 		VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/Sfx\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/../../Shaders/SL\" -O\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/shaderbin\" -P\"${CMAKE_CURRENT_SOURCE_DIR}/../../${SFX_TEST_PLATFORM}/Sfx/${SFX_TEST_PLATFORM}.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v ${SFX_TEST_DEFINES}"
 	)
 

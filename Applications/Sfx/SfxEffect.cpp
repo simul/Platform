@@ -147,6 +147,8 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 		for(auto i:globals)
 		{
 			Declaration *d=gEffect->GetDeclaration(i);
+			if(!d)
+				continue;
 			switch(d->declarationType)
 			{
 			case DeclarationType::TEXTURE:
@@ -154,6 +156,16 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 				DeclaredTexture *dt=(DeclaredTexture*)d;
 				// Is is something like RWStructuredBuffer<StructureType>..?
 				// Then we "use" StructureType and will need its declaration.
+				if(dt->structureType.length())
+				{
+					types_used.insert(dt->structureType);
+				}
+			}
+				break;
+			case DeclarationType::CONSTANT_BUFFER:
+			{
+				DeclaredConstantBuffer *dt=(DeclaredConstantBuffer*)d;
+				// Is is something like ConstantBuffer<StructureType>..?
 				if(dt->structureType.length())
 				{
 					types_used.insert(dt->structureType);
@@ -212,6 +224,9 @@ void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration 
 	for (auto u = f->globals.begin(); u != f->globals.end(); u++)
 	{
 		auto v=declarations.find(*u);
+		// Probably member of an anonymous constant buffer, so don't fail. Should find which buffer?
+		if(v==declarations.end())
+			continue;
 		v->second->name = v->first;
 		const Declaration *d=v->second;
 		s.insert(d);
@@ -639,11 +654,17 @@ void Effect::CalculateResourceSlots(CompiledShader *compiledShader,set<int> &tex
 			SamplerState *ss=(SamplerState *)(d);
 			samplerSlots.insert(ss->register_number);
 		}
+		else if(d->declarationType==DeclarationType::CONSTANT_BUFFER)
+		{
+			DeclaredTexture *td=(DeclaredTexture *)(d);
+			constantBufferSlots.insert(td->slot);
+		}
 		else
 		{
 			std::cerr<<"Unhandled resource type for slot: Resource is "<<(int)d->declarationType<<std::endl;
 		}
 	}
+	// older-style anonymous constant buffers.
 	for (auto c : compiledShader->constantBuffers)
 	{
 		constantBufferSlots.insert(c->slot);
@@ -784,31 +805,45 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 	{
 		if (!t->second->ref_count)
 			continue;
-		if (t->second->declarationType != DeclarationType::TEXTURE)
-			continue;
-		DeclaredTexture *dt = (DeclaredTexture*)t->second;
-		bool writeable = IsRW(dt->shaderResourceType);
-		bool is_array = IsArrayTexture(dt->shaderResourceType);
-		bool is_cubemap = IsCubemap(dt->shaderResourceType);
-		bool is_msaa = IsMSAATexture(dt->shaderResourceType);
-		int dimensions = GetTextureDimension(dt->shaderResourceType, true);
-		string rw = writeable ? "read_write" : "read_only";
-		string ar = is_array ? "array" : "single";
-		outstr << "texture " << t->first << " ";
-		if (is_cubemap)
-			outstr << "cubemap";
-		else
-			outstr << dimensions << "d";
-		if (is_msaa)
-			outstr << "ms";
-		
-		outstr << " " << rw << " " << (writeable?GenerateTextureWriteSlot(dt->slot,false):GenerateTextureSlot(dt->slot,false))<< " " << ar << std::endl;
-		if (dt->slot >= 32)
+		if (t->second->declarationType == DeclarationType::TEXTURE)
 		{
-			std::cerr << sfxFilename.c_str() << "(0): error: by default, only 16 texture slots are enabled in Gnmx." << std::endl;
-			std::cerr << sfxoFilename.c_str() << "(0): warning: See output." << std::endl;
-			exit(31);
+			DeclaredTexture *dt = (DeclaredTexture*)t->second;
+			bool writeable = IsRW(dt->shaderResourceType);
+			bool is_array = IsArrayTexture(dt->shaderResourceType);
+			bool is_cubemap = IsCubemap(dt->shaderResourceType);
+			bool is_msaa = IsMSAATexture(dt->shaderResourceType);
+			int dimensions = GetTextureDimension(dt->shaderResourceType, true);
+			string rw = writeable ? "read_write" : "read_only";
+			string ar = is_array ? "array" : "single";
+			outstr << "texture " << t->first << " ";
+		
+			if (is_cubemap)
+				outstr << "cubemap";
+			else
+				outstr << dimensions << "d";
+			if (is_msaa)
+				outstr << "ms";
+		
+			outstr << " " << rw << " " << (writeable?GenerateTextureWriteSlot(dt->slot,false):GenerateTextureSlot(dt->slot,false))<< " " << ar << std::endl;
+			if (dt->slot >= 32)
+			{
+				std::cerr << sfxFilename.c_str() << "(0): error: by default, only 16 texture slots are enabled in Gnmx." << std::endl;
+				std::cerr << sfxoFilename.c_str() << "(0): warning: See output." << std::endl;
+				exit(31);
+			}
 		}
+	}
+	// templatized constant buffers.
+	for (auto t = declarations.begin(); t != declarations.end(); ++t)
+	{
+		if (t->second->declarationType != DeclarationType::CONSTANT_BUFFER)
+			continue;
+		if (!t->second->ref_count)
+			continue;
+		DeclaredConstantBuffer *dt = (DeclaredConstantBuffer*)t->second;
+		outstr << "constantbuffer " << t->first << " ";
+		
+		outstr << " " <<dt->slot<< std::endl;
 	}
 	// Add samplers to the effect file
 	for (auto t = declarations.begin(); t != declarations.end(); ++t)
@@ -918,45 +953,6 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 	std::vector<unsigned char> binBuffer;
 	std::map<string, size_t> fileSizes;
 	std::map<string, size_t> fileOffsets;
-#if 0
-	if (sfxOptions.wrapOutput)
-	{
-		std::set<std::string> shaderBinaries;
-
-		for (auto &compiledShader: m_compiledShaders)
-		{
-			for (const auto &sb : compiledShader.second->sbFilenames)
-			{
-				string sbFilename = sb.second;
-				// If we're wrapping the binaries in the sfxo,
-				if (sfxOptions.wrapOutput)
-				{
-					shaderBinaries.insert(sbFilename);
-				}
-			}
-		}
-		// If needed, write the shader binaries.
-		size_t currentOffset = 0;
-		for (const string &sb : shaderBinaries)
-		{
-			string fullSbFileName = (sfxOptions.intermediateDirectory + "/") + sb;
-			std::ifstream input(fullSbFileName, std::ios::binary);
-			std::vector<unsigned char> buffer(std::istreambuf_iterator<char>(input), {});
-			size_t filesize = buffer.size();
-
-			binBuffer.insert(
-				binBuffer.end(),
-				std::make_move_iterator(buffer.begin()),
-				std::make_move_iterator(buffer.end())
-			);
-
-			fileOffsets[sb] = currentOffset;
-			fileSizes[sb] = filesize;
-			currentOffset += filesize;
-		}
-		// Now binBuffer contains the entire binary output from all the shaders.
-	}
-#endif
 	// Add the group/technique/pass combinations to the effect file
 	for (map<string, TechniqueGroup>::const_iterator g = m_techniqueGroups.begin(); g != m_techniqueGroups.end(); ++g)
 	{
@@ -1195,7 +1191,17 @@ string Effect::GetDeclaredType(const string &name) const
 	return "unknown";
 }
 
-DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType shaderResourceType,int slot,const string &structureType,const string &original)
+DeclaredConstantBuffer* Effect::DeclareTemplatizedConstantBuffer(const string &name,int slot,int space,const string &structureType,const string &original)
+{
+	DeclaredConstantBuffer* t	  = new DeclaredConstantBuffer();
+	t->structureType		= structureType;
+	t->original			 = original;
+	t->name				 = name;
+	declarations[name] = (t);
+	return t;
+}
+
+DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType shaderResourceType,int slot,int space,const string &structureType,const string &original)
 {
 	DeclaredTexture* t	  = new DeclaredTexture();
 	t->structureType		= structureType;
@@ -1210,7 +1216,11 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 	{
 		num	= -1;
 		// RW texture
-		if (rw)
+		if(shaderResourceType==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		{
+			//find a good buffer slot later...
+		}
+		else if (rw)
 		{
 			if (rwTextureNumberMap.find(name) != rwTextureNumberMap.end())
 			{
@@ -1354,13 +1364,7 @@ int Effect::GetRWTextureNumber(string n, int specified_slot)
 			if (specified_slot >= 0)
 				texture_number = specified_slot;
 			else return -1;
-			/*{
-				while (m_declaredTexturesByNumber.find(1000+texture_number) != m_declaredTexturesByNumber.end())
-				{
-					texture_number++;
-				}
-				current_rw_texture_number = texture_number + 1;
-			}*/
+	
 			rwTextureNumberMap[n] = texture_number;
 		}
 	}
@@ -1680,51 +1684,63 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 		break;
 		case DeclarationType::CONSTANT_BUFFER:
 		{
-			ConstantBuffer *s = (ConstantBuffer*)d;
-			string str = sfxConfig.constantBufferDeclaration;
-			if (str.length() == 0)
+			if(d->structureType.length())
 			{
-				str = "{pass_through}";
-				os << s->original.c_str() << endl;
-				return;
-			}
-
-			find_and_replace(str, "{pass_through}", s->original);
-			string members;
-			// in square brackets [] is the definition for ONE member.
-			std::regex re_member("\\[(.*)\\]");
-			std::smatch match;
-			string structMemberDeclaration;
-			if (std::regex_search(str, match, re_member))
-			{
-				structMemberDeclaration = match[1].str();
-				str.replace(match[0].first, match[0].first + match[0].length(), "{members}");
-			}
-			for (int i = 0; i < s->m_structMembers.size(); i++)
-			{
-				string m = structMemberDeclaration;
-				string type=s->m_structMembers[i].type;
-				if(type==string("mat4"))
-				{
-				//	type="layout(row_major) mat4";
-				}
-				find_and_replace(m, "{type}", type);
-				find_and_replace(m, "{name}", s->m_structMembers[i].name);
-				find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
-				members += m + "\n";
-			}
-			find_and_replace(str, "{members}", members);
-			find_and_replace(str, "{name}", s->name);
-			if (s->slot == -1)
-			{
-				// Let the compiler decide
-				find_and_replace(str, "layout(binding = {slot})", "");
+				// templatized.
+				DeclaredConstantBuffer *c = (DeclaredConstantBuffer*)d;
+				string str=d->original;
+				find_and_replace(str, "{slot}", ToString(c->slot));
+				os << str.c_str() << endl;
 			}
 			else
 			{
-				find_and_replace(str, "{slot}", ToString(GenerateConstantBufferSlot(s->slot)));
+				// Anonymous.
+				ConstantBuffer *s = (ConstantBuffer*)d;
+				string str = sfxConfig.constantBufferDeclaration;
+				if (str.length() == 0)
+				{
+					str = "{pass_through}";
+					os << s->original.c_str() << endl;
+					return;
+				}
+
+				find_and_replace(str, "{pass_through}", s->original);
+				string members;
+				// in square brackets [] is the definition for ONE member.
+				std::regex re_member("\\[(.*)\\]");
+				std::smatch match;
+				string structMemberDeclaration;
+				if (std::regex_search(str, match, re_member))
+				{
+					structMemberDeclaration = match[1].str();
+					str.replace(match[0].first, match[0].first + match[0].length(), "{members}");
+				}
+				for (int i = 0; i < s->m_structMembers.size(); i++)
+				{
+					string m = structMemberDeclaration;
+					string type=s->m_structMembers[i].type;
+					if(type==string("mat4"))
+					{
+					//	type="layout(row_major) mat4";
+					}
+					find_and_replace(m, "{type}", type);
+					find_and_replace(m, "{name}", s->m_structMembers[i].name);
+					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
+					members += m + "\n";
+				}
+				find_and_replace(str, "{members}", members);
+				find_and_replace(str, "{name}", s->name);
+				if (s->slot == -1)
+				{
+					// Let the compiler decide
+					find_and_replace(str, "layout(binding = {slot})", "");
+				}
+				else
+				{
+					find_and_replace(str, "{slot}", ToString(GenerateConstantBufferSlot(s->slot)));
+				}
+				os << str.c_str() << endl;
 			}
-			os << str.c_str() << endl;
 		}
 		default:
 		break;
@@ -1813,7 +1829,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 					theShader << "#line " << d->line_number << " " << GetFilenameOrNumber(d->file_number) << endl;
 			}
 		}
-		Declare(compiledShader->shaderType,theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+		Declare(compiledShader->shaderType, theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 	}
 
 	// Declare the texture and sampler CB:

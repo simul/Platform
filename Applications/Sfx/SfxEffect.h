@@ -220,7 +220,8 @@ namespace sfx
 		std::string GetDeclaredType(const std::string &str) const;
 		int GetRWTextureNumber(std::string n, int specified_slot=-1);
 		int GetTextureNumber(std::string n, int specified_slot=-1);
-		DeclaredTexture *DeclareTexture(const std::string &name, ShaderResourceType shaderResourceType, int slot,const std::string &templatedType,const std::string &original);
+		DeclaredConstantBuffer* DeclareTemplatizedConstantBuffer(const std::string &name,int slot,int space,const std::string &structureType,const std::string &original);
+		DeclaredTexture *DeclareTexture(const std::string &name, ShaderResourceType shaderResourceType, int slot,int space,const std::string &templatedType,const std::string &original);
 		SamplerState *DeclareSamplerState(const std::string &name,int reg,const SamplerState &templateSS);
 		RasterizerState *DeclareRasterizerState(const std::string &name);
 		RenderTargetFormatState *DeclareRenderTargetFormatState(const std::string &name);

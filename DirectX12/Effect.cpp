@@ -537,7 +537,6 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				ta.texture = rPlat->GetDummy2D();
 			}
 		}
-		((dx12::Texture*)ta.texture)->FinishLoading(deviceContext);
 		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext,true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
 		mSrvUsedSlotsArray[slot]= true;
 		usedTextureSlots |= (1 << slot);

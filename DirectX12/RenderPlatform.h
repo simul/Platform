@@ -178,9 +178,10 @@ namespace simul
 			void									EndFrame(crossplatform::GraphicsDeviceContext& deviceContext);
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
-			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
+			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
-			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
+			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
+			void									DispatchRays	(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch) override;
 			void									Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value);
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;

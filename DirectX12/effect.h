@@ -57,12 +57,22 @@ namespace simul
 			D3D12_DEPTH_STENCIL_DESC	    DepthStencilDesc;
             D3D12_RENDER_TARGET_FORMAT_DESC RtFormatDesc;
 		};
-
 		//! DirectX12 structured buffer class
 		class EffectPass;
 		class Effect;
 		class RenderPlatform;
-
+		struct ShaderTable
+		{
+			unsigned long long GPUVirtualAddress;
+			unsigned long long width;
+			unsigned long long sizeInBytes;
+		};
+		struct RaytraceTable
+		{
+			ShaderTable hitGroup;
+			ShaderTable miss;
+			ShaderTable rayGen;
+		};
         //! DirectX12 Effect Pass implementation, this will hold several PSOs, its also in charge of 
         // setting resources.
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
@@ -82,7 +92,12 @@ namespace simul
 
             void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
             ID3D12PipelineState *GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
+			const RaytraceTable *GetRaytraceTable() const
+			{
+				return &raytraceTable;
+			}
 		private:
+			RaytraceTable raytraceTable;
 			virtual     ~EffectPass();
 			struct Pso
 			{

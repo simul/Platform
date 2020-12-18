@@ -376,6 +376,16 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	if (m12Device != device)
 	{
 		m12Device = (ID3D12Device*)device;
+		// Check feature support.
+		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
+		
+		renderingFeatures=crossplatform::RenderingFeatures::None;
+        if(S_OK==m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData)))
+		{
+			bool rt=(featureSupportData.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
+			if(rt)
+				renderingFeatures=(crossplatform::RenderingFeatures)((uint32_t)renderingFeatures|(uint32_t)crossplatform::RenderingFeatures::Raytracing);
+		}
 	}
 	//immediateContext.platform_context = commandList;
 
@@ -887,6 +897,32 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 	ApplyContextState(deviceContext);
 	commandList->Dispatch(w, l, d);
+}
+
+void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch)
+{
+	ApplyContextState(deviceContext);
+	ID3D12GraphicsCommandList5*	commandList =static_cast<ID3D12GraphicsCommandList5*>(deviceContext.asD3D12Context());
+	//crossplatform::RenderingFeatures::Raytracing
+    D3D12_DISPATCH_RAYS_DESC d3d12DispatchDesc = {};
+	dx12::EffectPass *effectPass12=static_cast<dx12::EffectPass*>(deviceContext.contextState.currentEffectPass);
+
+	const RaytraceTable *raytraceTable=effectPass12->GetRaytraceTable();
+	if(!raytraceTable)
+		return;
+    // Since each shader table has only one shader record, the stride is same as the size.
+    d3d12DispatchDesc.HitGroupTable.StartAddress				= raytraceTable->hitGroup.GPUVirtualAddress;
+    d3d12DispatchDesc.HitGroupTable.SizeInBytes					= raytraceTable->hitGroup.width;
+    d3d12DispatchDesc.HitGroupTable.StrideInBytes				= raytraceTable->hitGroup.sizeInBytes;
+    d3d12DispatchDesc.MissShaderTable.StartAddress				= raytraceTable->miss.GPUVirtualAddress;
+    d3d12DispatchDesc.MissShaderTable.SizeInBytes				= raytraceTable->miss.width;
+    d3d12DispatchDesc.MissShaderTable.StrideInBytes				= raytraceTable->miss.sizeInBytes;
+    d3d12DispatchDesc.RayGenerationShaderRecord.StartAddress	= raytraceTable->rayGen.GPUVirtualAddress;
+    d3d12DispatchDesc.RayGenerationShaderRecord.SizeInBytes		= raytraceTable->rayGen.width;
+    d3d12DispatchDesc.Width = dispatch.x;
+    d3d12DispatchDesc.Height = dispatch.y;
+    d3d12DispatchDesc.Depth = dispatch.z;
+	commandList->DispatchRays(&d3d12DispatchDesc);
 }
 
 void RenderPlatform::Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value)

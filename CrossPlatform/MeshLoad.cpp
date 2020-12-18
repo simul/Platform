@@ -13,6 +13,8 @@ using namespace crossplatform;
 #include <assimp/DefaultLogger.hpp>     // Post processing flags
 #include <assimp/pbrmaterial.h>     // PBR defs
 
+#include <iomanip> // for setw
+
 using namespace Assimp;
 
 void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float scale, AxesStandard fromStandard,AxesStandard toStandard)
@@ -78,10 +80,11 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 		return std::string(str.C_Str());
 	};
 	SIMUL_COUT<<"\n"<<String("?mat.name").c_str()<<std::endl;
+	std::cout<<std::setw(5)<<std::setprecision(4)<<std::fixed;
 	for(unsigned i=0;i<m->mNumProperties;i++)
 	{
 		const aiMaterialProperty *p= m->mProperties[i];
-		SIMUL_COUT<<p->mKey.C_Str()<<", type "<<p->mType<<", index "<<p->mIndex;
+		SIMUL_COUT<<p->mKey.C_Str()<<", type "<<p->mType<<", index "<<p->mIndex<<":";
 		if(p->mType==aiPTI_Float)
 		{
 			if(p->mDataLength==4)
@@ -203,7 +206,8 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType);
 	errno=0;
-	ERRNO_BREAK
+	if(!scene)
+		return;
 	std::string short_filename=scene->GetShortFilename(filenameUtf8);
 	std::vector< Material*> materials;
 	std::string file;

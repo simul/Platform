@@ -449,7 +449,7 @@ wstring BuildCompileCommand(CompiledShader *shader,const SfxConfig &sfxConfig,co
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length())
+	if (sfxConfig.entryPointOption.length()&&shader->shaderType!=RAY_GENERATION_SHADER&&shader->shaderType!=CLOSEST_HIT_SHADER&&shader->shaderType!=MISS_SHADER)
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
 
 	string filename_root=WStringToString(outputFile);
@@ -579,7 +579,7 @@ int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,Sh
 		,map<int,string> fileList
 		,std::ofstream &combinedBinary
 		, BinaryMap &binaryMap
-		,const Declaration* rtState /*= nullptr*/)
+		,const Declaration* rtState )
 {
 	string filenameOnly = GetFilenameOnly( sourceFile);
 	wstring targetFilename=StringToWString(filenameOnly);

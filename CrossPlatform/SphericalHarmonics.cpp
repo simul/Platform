@@ -86,9 +86,9 @@ float RoughnessFromMip(float mip, float numMips)
 
 void SphericalHarmonics::RenderMipsByRoughness(GraphicsDeviceContext &deviceContext, crossplatform::Texture *target)
 {
-	for (int m = 0; m < target->mips - 1; m++)
+	for (int j = 0; j < 6; j++)
 	{
-		for (int j = 0; j < 6; j++)
+		for (int m = 0; m < target->mips - 1; m++)
 		{
 			CopyMip(deviceContext,target,j,m,0.0f);
 		}

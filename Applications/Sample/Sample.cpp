@@ -117,6 +117,8 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	crossplatform::MouseCameraState	mouseCameraState;
 	crossplatform::MouseCameraInput	mouseCameraInput;
 	bool keydown[256];
+	bool show_cubemaps=false;
+	bool show_textures=false;
 
 	crossplatform::Texture *depthTexture;
 
@@ -389,7 +391,7 @@ public:
 			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
 			vec4 zero4(0,0,0,0);
 			sceneConstants.lightCount=10;
-			sceneConstants.max_roughness_mip=specularCubemapTexture->mips;
+			sceneConstants.max_roughness_mip=(float)specularCubemapTexture->mips;
 			renderPlatform->SetConstantBuffer(deviceContext, &sceneConstants);
 			
 			lightsStructuredBuffer.SetData(deviceContext,lights);
@@ -400,7 +402,6 @@ public:
 			
 			effect->Unapply(deviceContext);
 		}
-		static bool show_cubemaps=false;
 		if(show_cubemaps)
 		{
 			float x = -.8f, m = -1.0f;
@@ -408,7 +409,6 @@ public:
 			for(int m=0;m<specularCubemapTexture->mips;m++)
 				renderPlatform->DrawCubemap(deviceContext, specularCubemapTexture, x += r, -.2f, .2f, 1.f, 1.f, float(m));
 		}
-		static bool show_textures=false;
 		if(show_textures)
 		{
 			int x = 8, y = (h * 2) / 3;
@@ -416,7 +416,7 @@ public:
 			auto &textures= renderPlatform->GetTextures();
 			for(auto t: textures)
 			{
-				renderPlatform->DrawTexture(deviceContext,x,y,s,s, t.second);
+				renderPlatform->DrawTexture(deviceContext,x,y,s,s, t.second,1.f,false,1.f,true);
 				x+= s + 2;
 				if(x+s>=w-8)
 				{
@@ -506,6 +506,7 @@ public:
 	
 	void OnKeyboard(unsigned wParam,bool bKeyDown)
 	{
+		if(!bKeyDown)
 		switch (wParam) 
 		{ 
 			case VK_LEFT: 
@@ -513,16 +514,22 @@ public:
 			case VK_UP: 
 			case VK_DOWN:
 				break;
+			case 'C':
+				show_cubemaps=!show_cubemaps;
+				break;
+			case 'T':
+				show_textures=!show_textures;
+				break;
 			case 'R':
 				RecompileShaders();
 				break;
 			default: 
-				int  k=tolower(wParam);
-				if(k>255)
-					return;
-				keydown[k]=bKeyDown?1:0;
-			break; 
+			break;
 		}
+		int  k=tolower(wParam);
+		if(k>255)
+			return;
+		keydown[k]=bKeyDown?1:0;
 	}
 };
 

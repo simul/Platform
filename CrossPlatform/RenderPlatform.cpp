@@ -732,7 +732,10 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 	if (fileNameUtf8 && strlen(fileNameUtf8) > 0)
 	{
 		if (strstr(fileNameUtf8, ".") != nullptr)
+		{
 			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
+			unfinishedTextures.insert(tex);
+		}
 		tex->SetName(fileNameUtf8);
 	}
 	return tex;
@@ -1008,7 +1011,6 @@ void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y
 	if(mirrorY2)
 	{
 		y1=(int)viewport.h-y1-dy;
-		//dy*=-1;
 	}
 	{
 		if(tex&&v)
@@ -1288,6 +1290,8 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
 {
 	crossplatform::ContextState& cs = deviceContext.contextState;
+	if(cs.apply_count==0)
+		FinishLoadingTextures(deviceContext);
 	if (cs.apply_count != 0)
 		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
 	cs.apply_count++;
@@ -1351,6 +1355,12 @@ void RenderPlatform::SetTopology(GraphicsDeviceContext& deviceContext, crossplat
 	deviceContext.contextState.topology = t;
 }
 
+void RenderPlatform::FinishLoadingTextures(DeviceContext& deviceContext)
+{
+	for(auto t:unfinishedTextures)
+		t->FinishLoading(deviceContext);
+	unfinishedTextures.clear();
+}
 
 void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
 {
@@ -1358,6 +1368,8 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	if (!res.valid)
 		return;
 	ContextState* cs = GetContextState(deviceContext);
+	if(cs->apply_count==0)
+		FinishLoadingTextures(deviceContext);
 	unsigned long slot = res.slot;
 	unsigned long dim = res.dimensions;
 #ifdef _DEBUG
