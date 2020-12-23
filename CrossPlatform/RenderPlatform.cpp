@@ -415,13 +415,21 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		int total_num=texture->arraySize*(texture->IsCubemap()?6:1);
 		for(int i=0;i<total_num;i++)
 		{
+			int w=texture->width;
+			int l=texture->length;
+			int d=texture->depth;
 			for(int j=0;j<texture->mips;j++)
 			{
+				debugConstants.texSize=uint4(w,l,d,1);
+				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 				texture->activateRenderTarget(*graphicsDeviceContext,i,j);
 				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
 					DrawQuad(*graphicsDeviceContext);
 				debugEffect->Unapply(*graphicsDeviceContext);
 				texture->deactivateRenderTarget(*graphicsDeviceContext);
+				w=(w+1)/2;
+				l=(l+1)/2;
+				d=(d+1)/2;
 			}
 		}
 		debugEffect->UnbindTextures(deviceContext);
@@ -486,13 +494,15 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				{
 					SIMUL_BREAK_ONCE("Can't clear texture dim.");
 				}
+				debugConstants.texSize=uint4(w,l,d,1);
+				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 				debugEffect->Apply(deviceContext,techname,0);
 				DispatchCompute(deviceContext,W,L,D);
 				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",nullptr);
 				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",nullptr);
-				w/=2;
-				l/=2;
-				d/=2;
+				w=(w+1)/2;
+				l=(l+1)/2;
+				d=(d+1)/2;
 				debugEffect->Unapply(deviceContext);
 			}
 		}
