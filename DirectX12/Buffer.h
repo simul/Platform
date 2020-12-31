@@ -21,6 +21,14 @@ namespace simul
 			void						EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data);
 			void						*Map(crossplatform::DeviceContext &deviceContext) override;
 			void						Unmap(crossplatform::DeviceContext &deviceContext) override;
+			ID3D12Resource * const AsD3D12Buffer()  const override
+			{
+				return mGpuHeap;
+			}
+			ID3D12Resource *  AsD3D12Buffer() override 
+			{
+				return mGpuHeap;
+			}
 			D3D12_VERTEX_BUFFER_VIEW*	GetVertexBufferView() override;
 			D3D12_INDEX_BUFFER_VIEW*	GetIndexBufferView() override;
 

@@ -381,13 +381,15 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(GraphicsDeviceContext &dev)
+void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 {
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
-		gpuProfiler->StartFrame(dev);
+		gpuProfiler->StartFrame(deviceContext);
 		gpuProfileFrameStarted = true;
 	}
+	FinishLoadingTextures(deviceContext);
+	FinishGeneratingTextureMips(deviceContext);
 }
 
 void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
@@ -525,8 +527,8 @@ void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m0=i,m1=i+1;
-		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,0);
 		debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("copy_2d"),"wrap");
+		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,0);
 		t->activateRenderTarget(deviceContext,array_idx,m1);
 		DrawQuad(deviceContext);
 		t->deactivateRenderTarget(deviceContext);
@@ -939,9 +941,9 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		vec4 semiblack(0, 0, 0, 0.5);
 		char mip_txt[]="MIP: 0";
 		char lvl_txt[]="LVL: 0";
-		if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
+		if(tex&&tex->GetMipCount()>1&&displayLod>0&&displayLod<10)
 		{
-			mip_txt[5]='0'+lod;
+			mip_txt[5]='0'+(char)displayLod;
 			Print(deviceContext,x1,y1+20,mip_txt,white,semiblack);
 		}
 		if(tex&&tex->arraySize>1)
@@ -1290,8 +1292,6 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
 {
 	crossplatform::ContextState& cs = deviceContext.contextState;
-	if(cs.apply_count==0)
-		FinishLoadingTextures(deviceContext);
 	if (cs.apply_count != 0)
 		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
 	cs.apply_count++;
@@ -1358,8 +1358,23 @@ void RenderPlatform::SetTopology(GraphicsDeviceContext& deviceContext, crossplat
 void RenderPlatform::FinishLoadingTextures(DeviceContext& deviceContext)
 {
 	for(auto t:unfinishedTextures)
+	{
 		t->FinishLoading(deviceContext);
+		if(t->ShouldGenerateMips())
+			unMippedTextures.insert(t);
+	}
 	unfinishedTextures.clear();
+}
+
+void RenderPlatform::FinishGeneratingTextureMips(DeviceContext& deviceContext)
+{
+	if(!deviceContext.AsGraphicsDeviceContext())
+		return;
+	for(auto t:unMippedTextures)
+	{
+		t->GenerateMips(*deviceContext.AsGraphicsDeviceContext());
+	}
+	unMippedTextures.clear();
 }
 
 void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
@@ -1369,7 +1384,9 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 		return;
 	ContextState* cs = GetContextState(deviceContext);
 	if(cs->apply_count==0)
+	{
 		FinishLoadingTextures(deviceContext);
+	}
 	unsigned long slot = res.slot;
 	unsigned long dim = res.dimensions;
 #ifdef _DEBUG
@@ -1399,6 +1416,23 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	ta.uav = false;
 	ta.index = index;
 	ta.mip = mip;
+	cs->textureAssignmentMapValid = false;
+}
+
+void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if (!res.valid)
+		return;
+	ContextState* cs = GetContextState(deviceContext);
+	TextureAssignment& ta = cs->textureAssignmentMap[res.slot];
+	ta.resourceType = res.shaderResourceType;
+	SIMUL_ASSERT(ta.resourceType==ShaderResourceType::ACCELERATION_STRUCTURE);
+	ta.accelerationStructure = a ;
+	ta.dimensions = 0;
+	ta.uav = false;
+	ta.index = 0;
+	ta.mip = 0;
 	cs->textureAssignmentMapValid = false;
 }
 

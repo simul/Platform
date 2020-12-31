@@ -439,7 +439,6 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 	ostringstream sLog;
 	int res=1;
 	PixelOutputFormat pixelOutputFormat=FMT_UNKNOWN;
-	ShaderCommand types[NUM_OF_SHADER_TYPES]={SetVertexShader,SetHullShader,SetDomainShader,SetGeometryShader,SetPixelShader,SetComputeShader};
 	std::ofstream combinedBinary;
 	if (sfxOptions.wrapOutput)
 	{
@@ -587,6 +586,14 @@ string stringOf(ShaderCommand t)
 		return "pixel";
 	case SetComputeShader:
 		return "compute";
+	case SetRayGenerationShader:
+		return "raygeneration";
+	case SetMissShader:
+		return "miss";
+	case SetClosestHitShader:
+		return "closesthit";
+	case SetCallableShader:
+		return "callable";
 	case SetExportShader:
 		return "export";
 	default:
@@ -645,6 +652,10 @@ void Effect::CalculateResourceSlots(CompiledShader *compiledShader,set<int> &tex
 					uavTextureSlotsForSB.insert(slot);
 				else
 					textureSlotsForSB.insert(slot);
+			}
+			else if(td->shaderResourceType==ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT)
+			{
+				textureSlots.insert(slot);	
 			}
 			else
 				std::cerr<<"Warning: unknown resource type "<<(int)td->shaderResourceType<<std::endl;
@@ -815,7 +826,15 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			int dimensions = GetTextureDimension(dt->shaderResourceType, true);
 			string rw = writeable ? "read_write" : "read_only";
 			string ar = is_array ? "array" : "single";
-			outstr << "texture " << t->first << " ";
+			if(dt->shaderResourceType==ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT)
+			{
+				outstr<< "accelerationstructure ";
+			}
+			else
+			{
+				outstr<< "texture ";
+			}
+			outstr << t->first << " ";
 		
 			if (is_cubemap)
 				outstr << "cubemap";
@@ -1197,6 +1216,8 @@ DeclaredConstantBuffer* Effect::DeclareTemplatizedConstantBuffer(const string &n
 	t->structureType		= structureType;
 	t->original			 = original;
 	t->name				 = name;
+	t->slot				=slot;
+	t->space			=space;
 	declarations[name] = (t);
 	return t;
 }
@@ -1215,8 +1236,14 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 	if (sfxConfig.generateSlots)
 	{
 		num	= -1;
+		// scene
+		if(shaderResourceType==ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT)
+		{
+			//keep declared slot?...
+			num=slot;
+		}
 		// RW texture
-		if(shaderResourceType==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		else if (shaderResourceType==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
 		{
 			//find a good buffer slot later...
 		}
@@ -2230,6 +2257,22 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 		}
 
 		theShader<< csLayout <<"\n";
+	}
+	if (compiledShader->shaderType == RAY_GENERATION_SHADER)
+	{
+		theShader<<"[shader(\"raygeneration\")]\n";//sfxConfig
+	}
+	if (compiledShader->shaderType == CLOSEST_HIT_SHADER)
+	{
+		theShader<<"[shader(\"closesthit\")]\n";//sfxConfig
+	}
+	if (compiledShader->shaderType == MISS_SHADER)
+	{
+		theShader<<"[shader(\"miss\")]\n";//sfxConfig
+	}
+	if (compiledShader->shaderType == CALLABLE_SHADER)
+	{
+		theShader<<"[shader(\"callable\")]\n";//sfxConfig
 	}
 	// Only if COMPILED as a GS, not VS streamout.
 	if (compiledShader->shaderType == GEOMETRY_SHADER)

@@ -41,6 +41,9 @@
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
+#include "Platform/CrossPlatform/AccelerationStructure.h"
+
+#include "Shaders/raytrace.sl"
 #ifdef _MSC_VER
 #include "Platform/Windows/VisualStudioDebugOutput.h"
 VisualStudioDebugOutput debug_buffer(true,NULL,128);
@@ -107,8 +110,15 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	crossplatform::Mesh *exampleMesh				= nullptr;
 	crossplatform::Mesh *environmentMesh			= nullptr;
 	crossplatform::Effect *effect					= nullptr;
+	crossplatform::Effect *raytrace_effect					= nullptr;
 	crossplatform::ConstantBuffer<SceneConstants> sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants> cameraConstants;
+
+	// For raytracing, if available:
+	
+	crossplatform::AccelerationStructure		*accelerationStructure=nullptr;
+	crossplatform::Texture* rtTargetTexture	= nullptr;
+	crossplatform::ConstantBuffer<crossplatform::ConstantBufferWithSlot<RayGenConstantBuffer,0>> rayGenConstants;
 
 	crossplatform::StructuredBuffer<Light> lightsStructuredBuffer;
 	//! A camera instance to generate view and proj matrices and handle mouse control.
@@ -177,6 +187,9 @@ public:
 
 		exampleMesh = renderPlatform->CreateMesh();
 		environmentMesh= renderPlatform->CreateMesh();
+
+		accelerationStructure=renderPlatform->CreateAccelerationStructure();
+		rtTargetTexture = renderPlatform->CreateTexture("rtTargetTexture");
 		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		// Whether run from the project directory or from the executable location, we want to be
 		// able to find the shaders and textures:
@@ -221,6 +234,8 @@ public:
 		delete hdrTexture;
 		delete diffuseCubemapTexture;
 		delete specularCubemapTexture;
+		delete rtTargetTexture;
+		delete accelerationStructure;
 		delete exampleMesh;
 		delete environmentMesh;
 		delete depthTexture;
@@ -234,7 +249,7 @@ public:
 		hDRRenderer->RecompileShaders();
 
 		effect->Load(renderPlatform, "solid");
-
+		raytrace_effect->Load(renderPlatform,"raytrace");
 		// Force regen of cubemaps.
 		delete diffuseCubemapTexture;
 		diffuseCubemapTexture=nullptr;
@@ -257,12 +272,18 @@ public:
 		exampleMesh->Load("models/DamagedHelmet/DamagedHelmet.gltf",0.1f,crossplatform::AxesStandard::OpenGL);//Sponza/Sponza.gltf");
 		environmentMesh->Load("models/Sponza/Sponza.gltf", 1.0f, crossplatform::AxesStandard::OpenGL);
 
+		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,256,256,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
+		accelerationStructure->RestoreDeviceObjects(environmentMesh);
+		rayGenConstants.RestoreDeviceObjects(renderPlatform);
+
 		// These are for example:
 		hDRRenderer->RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 		meshRenderer->RestoreDeviceObjects(renderPlatform);
 		effect=renderPlatform->CreateEffect();
 		effect->Load(renderPlatform,"solid");
+		raytrace_effect=renderPlatform->CreateEffect();
+		raytrace_effect->Load(renderPlatform,"raytrace");
 		sceneConstants.RestoreDeviceObjects(renderPlatform);
 		sceneConstants.LinkToEffect(effect,"SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
@@ -366,6 +387,11 @@ public:
             }
 			deviceContext.viewStruct.Init();
 		}
+		if(!accelerationStructure->IsInitialized())
+		{
+			accelerationStructure->RuntimeInit(deviceContext);
+			return;
+		}
 		//if(framenumber ==0)
 		//	simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
 		renderPlatform->BeginFrame(deviceContext);
@@ -401,6 +427,19 @@ public:
 			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture);
 			
 			effect->Unapply(deviceContext);
+		}
+
+		{
+			renderPlatform->ApplyPass(deviceContext,raytrace_effect->GetTechniqueByIndex(0)->GetPass(0));
+			rayGenConstants.viewport={-1.f,-1.f,1.f,1.f};
+			rayGenConstants.stencil={-0.8f,-0.8f,0.8f,0.8f};
+			renderPlatform->SetConstantBuffer(deviceContext,&rayGenConstants);
+			renderPlatform->SetAccelerationStructure(deviceContext,raytrace_effect->GetShaderResource("Scene"),accelerationStructure);
+			renderPlatform->SetUnorderedAccessView(deviceContext,raytrace_effect->GetShaderResource("RenderTarget"),rtTargetTexture);
+			renderPlatform->DispatchRays(deviceContext,uint3(256,256,1));
+			renderPlatform->UnapplyPass(deviceContext);
+
+			renderPlatform->DrawTexture(deviceContext,12,12,512,512, rtTargetTexture,1.f,false,1.f,true);
 		}
 		if(show_cubemaps)
 		{
@@ -445,6 +484,12 @@ public:
 			delete effect;
 			effect=nullptr;
 		}
+		if(raytrace_effect)
+		{
+			raytrace_effect->InvalidateDeviceObjects();
+			delete raytrace_effect;
+			raytrace_effect=nullptr;
+		}
 		sceneConstants.InvalidateDeviceObjects();
 		cameraConstants.InvalidateDeviceObjects();
 		lightsStructuredBuffer.InvalidateDeviceObjects();
@@ -453,6 +498,8 @@ public:
 		environmentMesh->InvalidateDeviceObjects();
 		hdrFramebuffer->InvalidateDeviceObjects();
 		meshRenderer->InvalidateDeviceObjects();
+		rayGenConstants.InvalidateDeviceObjects();
+
 		renderPlatform->InvalidateDeviceObjects();
 	}
 

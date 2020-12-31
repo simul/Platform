@@ -10,7 +10,9 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
+#include "Platform/DirectX12/AccelerationStructure.h"
 #include "SimulDirectXHeader.h"
+#include "DirectXRaytracingHelper.h"
 #include "ThisPlatform/Direct3D12.h"
 
 #include <algorithm>
@@ -81,9 +83,10 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	shader12.resize(DataSize);
 	memcpy(shader12.data(), data, DataSize);
 }
+
 Shader::~Shader()
 {
-	
+	SAFE_RELEASE(shaderTableResource);
 }
 
 void Effect::Load(crossplatform::RenderPlatform* r,const char* filename_utf8,const std::map<std::string,std::string>& defines)
@@ -158,11 +161,74 @@ void Effect::PostLoad()
 				pass.second->SetRwTextureSlotsForSB	(c->rwTextureSlotsForSB);
 				pass.second->SetSamplerSlots		(c->samplerSlots);
 			}
+			for(int s=crossplatform::SHADERTYPE_RAY_GENERATION;s<crossplatform::SHADERTYPE_CALLABLE+1;s++)
+			{
+				dx12::Shader* sh= (dx12::Shader*)pass.second->shaders[s];
+				if(!sh)
+					continue;
+				CheckShaderSlots(sh, sh->shader12);
+				pass.second->SetUsesConstantBufferSlots	(sh->constantBufferSlots);
+				pass.second->SetUsesTextureSlots		(sh->textureSlots);
+				pass.second->SetUsesTextureSlotsForSB	(sh->textureSlotsForSB);
+				pass.second->SetUsesRwTextureSlots		(sh->rwTextureSlots);
+				pass.second->SetUsesRwTextureSlotsForSB	(sh->rwTextureSlotsForSB);
+				pass.second->SetUsesSamplerSlots		(sh->samplerSlots);
+			}
+			dx12::Shader* r= (dx12::Shader*)pass.second->shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
+			if(r)
+			{
+				dx12::EffectPass *pass12=((dx12::EffectPass*)pass.second);
+				pass12->CreateRaytracePso();
+				pass12->InitRaytraceTable();
+			}
 			dx12::EffectPass *ep=(EffectPass *)pass.second;
 			ep->MakeResourceSlotMap();
 		}
 	}
 }
+
+void EffectPass::InitRaytraceTable()
+{
+	auto *device=renderPlatform->AsD3D12Device();
+	ID3D12StateObjectProperties *stateObjectProperties=nullptr;
+	V_CHECK(mRaytracePso->QueryInterface(SIMUL_PPV_ARGS(&stateObjectProperties)));
+
+	dx12::Shader* r= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
+	dx12::Shader* h= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CLOSEST_HIT];
+	dx12::Shader* m= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_MISS];
+	dx12::Shader* c= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CALLABLE];
+	// Upload the shaders to the GPU:
+	for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<=crossplatform::SHADERTYPE_CALLABLE;i++)
+	{
+		dx12::Shader *s=(dx12::Shader*)shaders[i];
+		if(!s||i==crossplatform::SHADERTYPE_CLOSEST_HIT)
+			continue;
+		struct RootArguments {	} ;
+		RootArguments rootArguments;
+		UINT numShaderRecords = 1;
+		UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + sizeof(rootArguments);
+		ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
+		void *rayGenShaderIdentifier = stateObjectProperties->GetShaderIdentifier(base::StringToWString(s->entryPoint).c_str());
+		shaderTable.push_back(ShaderRecord(rayGenShaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, &rootArguments, sizeof(rootArguments)));
+	
+		s->shaderTableResource = shaderTable.GetResource();
+	}
+	// hit is done as a group:
+	
+    // Hit group shader table
+    {
+        UINT numShaderRecords = 1;
+        UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
+		void *hitGroupShaderIdentifier = stateObjectProperties->GetShaderIdentifier(L"HitGroup");
+        shaderTable.push_back(ShaderRecord(hitGroupShaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
+		h->shaderTableResource = shaderTable.GetResource();
+    }
+	raytraceTable.rayGen={r->shaderTableResource->GetGPUVirtualAddress(),r->shaderTableResource->GetDesc().Width,r->shaderTableResource->GetDesc().Width};
+	raytraceTable.hitGroup={h->shaderTableResource->GetGPUVirtualAddress(),h->shaderTableResource->GetDesc().Width,h->shaderTableResource->GetDesc().Width};
+	raytraceTable.miss={m->shaderTableResource->GetGPUVirtualAddress(),m->shaderTableResource->GetDesc().Width,m->shaderTableResource->GetDesc().Width};
+}
+
 
 dx12::Effect::~Effect()
 {
@@ -383,6 +449,7 @@ void EffectPass::InvalidateDeviceObjects()
 void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asCompute)
 {		
 	dx12::Shader* c = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	dx12::Shader* r = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
 	auto cmdList	= deviceContext.asD3D12Context();
 	// We will set the DescriptorHeaps and RootDescriptorTablesArguments from ApplyContextState (at RenderPlatform)
 	// The create methods will only create the pso once (or if there is a change in the state)
@@ -391,6 +458,12 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 		CreateComputePso(deviceContext);
 		if(mComputePso)
 			cmdList->SetPipelineState(mComputePso);
+	}
+	else if(r)
+	{
+		ID3D12GraphicsCommandList4 *rtc=(ID3D12GraphicsCommandList4*)cmdList;
+		rtc->SetPipelineState1(mRaytracePso);
+		mIsRaytrace=true;
 	}
 	else
 	{
@@ -489,9 +562,9 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 		if (!usesConstantBufferSlot(s))
 		{
 			// if (resLimits.BindingTier <= D3D12_RESOURCE_BINDING_TIER_2)
-			{
-				device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			}
+			
+			device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			
 		}
 		else
 		{
@@ -522,22 +595,36 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 	{
 		int slot	= resourceSlots[i];
 		auto ta		= textures[slot];
-
-		// If the texture is null or invalid, set a dummy:
-		// NOTE: this basically disables any slot checks as we will always
-		// set something
-		if (!ta.texture || !ta.texture->IsValid())
+		if(ta.resourceType==crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE)
 		{
-			if(ta.dimensions == 3)
-			{
-				ta.texture = rPlat->GetDummy3D();
-			}
-			else
-			{
-				ta.texture = rPlat->GetDummy2D();
-			}
+			ID3D12Resource *a=((dx12::AccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
+			
+			auto cmdList	= deviceContext.asD3D12Context();
+			ID3D12GraphicsCommandList4 *rtc=(ID3D12GraphicsCommandList4*)cmdList;
+    //commandList->SetComputeRootDescriptorTable(GlobalRootSignatureParams::OutputViewSlot, m_raytracingOutputResourceUAVGpuDescriptor);
+			rtc->SetComputeRootShaderResourceView(2, a->GetGPUVirtualAddress());
+			mSrvSrcHandles[slot]=nullSrv;
+			//device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), mCbSrcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			//mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
 		}
-		mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext,true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
+		else
+		{
+			// If the texture is null or invalid, set a dummy:
+			// NOTE: this basically disables any slot checks as we will always
+			// set something
+			if (!ta.texture || !ta.texture->IsValid())
+			{
+				if(ta.dimensions == 3)
+				{
+					ta.texture = rPlat->GetDummy3D();
+				}
+				else
+				{
+					ta.texture = rPlat->GetDummy2D();
+				}
+			}
+			mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
+		}
 		mSrvUsedSlotsArray[slot]= true;
 		usedTextureSlots |= (1 << slot);
 	}
@@ -571,7 +658,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), nullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 		}
-		else
+		else if(mSrvSrcHandles[s].ptr)
 		{
 			device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), mSrvSrcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
@@ -701,12 +788,12 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	}
 
 	mIsCompute								  = true;
-
+	auto *device=curRenderPlat->AsD3D12Device();
 	D3D12_COMPUTE_PIPELINE_STATE_DESC cpsoDesc  = {};
 	cpsoDesc.CS								 = { c->shader12.data(), c->shader12.size() };
 	cpsoDesc.pRootSignature					 = curRenderPlat->GetGraphicsRootSignature();
 	cpsoDesc.NodeMask						   = 0;
-	HRESULT res								 = curRenderPlat->AsD3D12Device()->CreateComputePipelineState(&cpsoDesc,SIMUL_PPV_ARGS(&mComputePso));
+	HRESULT res								 = device->CreateComputePipelineState(&cpsoDesc,SIMUL_PPV_ARGS(&mComputePso));
 	SIMUL_ASSERT(res == S_OK);
 	if (res == S_OK)
 	{
@@ -720,6 +807,172 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 		SIMUL_INTERNAL_CERR << "Failed to create compute PSO.\n";
 		SIMUL_BREAK_ONCE("Failed to create compute PSO")
 	}
+}
+#include "Platform/DirectX12/d3dx12.h"
+D3D12_STATE_SUBOBJECT CreateDxilLibrary(LPCWSTR entrypoint, const void *pShaderByteCode, SIZE_T bytecodeLength, D3D12_DXIL_LIBRARY_DESC &dxilLibDesc, D3D12_EXPORT_DESC &exportDesc)
+{
+    exportDesc = { entrypoint, nullptr, D3D12_EXPORT_FLAG_NONE };
+    D3D12_STATE_SUBOBJECT dxilLibSubObject = {};
+    dxilLibDesc.DXILLibrary.pShaderBytecode = pShaderByteCode;
+    dxilLibDesc.DXILLibrary.BytecodeLength = bytecodeLength;
+    dxilLibDesc.NumExports = 1;
+    dxilLibDesc.pExports = &exportDesc;
+    dxilLibSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    dxilLibSubObject.pDesc = &dxilLibDesc;
+    return dxilLibSubObject;
+}
+//#include "Platform/DirectX12/nv_helpers_dx12/RaytracingPipelineGenerator.h"
+void EffectPass::CreateRaytracePso()
+{
+	ID3D12Device5 *pDevice5=((dx12::RenderPlatform*)renderPlatform)->AsD3D12Device5();
+	if(!pDevice5)
+		return;
+    // Create 7 subobjects that combine into a RTPSO:
+    // Subobjects need to be associated with DXIL exports (i.e. shaders) either by way of default or explicit associations.
+    // Default association applies to every exported shader entrypoint that doesn't have any of the same type of subobject associated with it.
+    // This simple sample utilizes default shader association except for local root signature subobject
+    // which has an explicit association specified purely for demonstration purposes.
+    // 1 - DXIL library
+    // 1 - Triangle hit group
+    // 1 - Shader config
+    // 2 - Local root signature and association
+    // 1 - Global root signature
+    // 1 - Pipeline config
+
+	std::map<crossplatform::ShaderType,D3D12_EXPORT_DESC> exportDescs;
+	std::map<crossplatform::ShaderType,D3D12_DXIL_LIBRARY_DESC> dxilLibDescs;
+    std::vector<D3D12_STATE_SUBOBJECT> subObjects;
+	
+	size_t num_libs=0;
+	for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<crossplatform::SHADERTYPE_CALLABLE+1;i++)
+	{
+		dx12::Shader* s= (dx12::Shader*)shaders[i];
+		if(!s)
+			continue;
+		num_libs++;
+	}
+
+	subObjects.reserve(20);
+    // DXIL library
+    // This contains the shaders and their entrypoints for the state object.
+    // Since shaders are not considered a subobject, they need to be passed in via DXIL library subobjects.
+	
+ 	for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<crossplatform::SHADERTYPE_CALLABLE+1;i++)
+	{
+		dx12::Shader* s= (dx12::Shader*)shaders[i];
+		if(!s)
+			continue;
+		crossplatform::ShaderType shaderType=(crossplatform::ShaderType)i;
+		wnames[shaderType]						=base::StringToWString(s->entryPoint);
+		LPCWSTR entrypoint						=wnames[shaderType].c_str();
+		D3D12_EXPORT_DESC &exportDesc			=exportDescs[shaderType];
+		D3D12_DXIL_LIBRARY_DESC &dxilLibDesc	=dxilLibDescs[shaderType];
+
+		exportDesc = { entrypoint, nullptr, D3D12_EXPORT_FLAG_NONE };
+		subObjects.push_back(D3D12_STATE_SUBOBJECT());
+		D3D12_STATE_SUBOBJECT &dxilLibSubObject = subObjects.back();
+		dxilLibDesc.DXILLibrary.pShaderBytecode = s->shader12.data();
+		dxilLibDesc.DXILLibrary.BytecodeLength = s->shader12.size();
+		dxilLibDesc.NumExports = 1;
+		dxilLibDesc.pExports = &exportDesc;
+		dxilLibSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+		dxilLibSubObject.pDesc = &dxilLibDesc;
+	}
+	
+	#if 0
+	nv_helpers_dx12::RayTracingPipelineGenerator pipeline(pDevice5);
+ 	for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<crossplatform::SHADERTYPE_CALLABLE+1;i++)
+	{
+		dx12::Shader* s= (dx12::Shader*)shaders[i];
+		if(!s)
+			continue;
+		crossplatform::ShaderType shaderType=(crossplatform::ShaderType)i;
+		ID3DBlob *pBlob=nullptr;
+		D3DCreateBlob(s->shader12.size(),&pBlob);
+
+		pipeline.AddLibrary((IDxcBlob*)pBlob, {wnames[shaderType].c_str()});
+	}
+	pipeline.AddHitGroup(L"HitGroup", wnames[crossplatform::ShaderType::SHADERTYPE_CLOSEST_HIT].c_str());
+    auto globalRootSignature = ((dx12::RenderPlatform*)renderPlatform)->GetRaytracingRootSignature();
+	pipeline.AddRootSignatureAssociation(globalRootSignature, {wnames[crossplatform::ShaderType::SHADERTYPE_RAY_GENERATION].c_str()});
+	pipeline.AddRootSignatureAssociation(globalRootSignature, {wnames[crossplatform::ShaderType::SHADERTYPE_MISS].c_str()});
+	pipeline.AddRootSignatureAssociation(globalRootSignature, {L"HitGroup"});
+	pipeline.SetMaxPayloadSize(4 * sizeof(float)); // RGB + distance
+  pipeline.SetMaxAttributeSize(2 * sizeof(float)); // barycentric coordinates
+  pipeline.SetMaxRecursionDepth(1);
+  mRaytracePso = pipeline.Generate();
+	#else
+	
+	D3D12_STATE_SUBOBJECT shaderConfigStateObject;
+	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig;
+	shaderConfig.MaxAttributeSizeInBytes = 2 * sizeof(float); // float2 barycentrics
+	shaderConfig.MaxPayloadSizeInBytes = 4 * sizeof(float);   // float4 color
+	shaderConfigStateObject.pDesc = &shaderConfig;
+	shaderConfigStateObject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+	subObjects.push_back(shaderConfigStateObject);
+	
+    // Triangle hit group
+    // A hit group specifies closest hit, any hit and intersection shaders to be executed when a ray intersects the geometry's triangle/AABB.
+    // In this sample, we only use triangle geometry with a closest hit shader, so others are not set.
+	dx12::Shader* h= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CLOSEST_HIT];
+	LPCWSTR hitGroupExportName = L"HitGroup";
+	D3D12_HIT_GROUP_DESC hitGroupDesc = {};
+	hitGroupDesc.Type					= D3D12_HIT_GROUP_TYPE_TRIANGLES;
+	hitGroupDesc.ClosestHitShaderImport	= wnames[crossplatform::SHADERTYPE_CLOSEST_HIT].c_str();
+	//hitGroupDesc.AnyHitShaderImport	= wnames[crossplatform::SHADERTYPE_CLOSEST_HIT].c_str();
+	hitGroupDesc.HitGroupExport			= hitGroupExportName;
+	D3D12_STATE_SUBOBJECT hitGroupSubobject = {};
+	hitGroupSubobject.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+	hitGroupSubobject.pDesc = &hitGroupDesc;
+	subObjects.push_back(hitGroupSubobject);
+	
+    auto globalRootSignature = ((dx12::RenderPlatform*)renderPlatform)->GetRaytracingGlobalRootSignature();
+ /*   auto localRootSignature = ((dx12::RenderPlatform*)renderPlatform)->GetRaytracingLocalRootSignature();
+
+	D3D12_STATE_SUBOBJECT localRootSignatureSubObject;
+    localRootSignatureSubObject.pDesc = &localRootSignature;
+    localRootSignatureSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+    subObjects.push_back(localRootSignatureSubObject);
+    D3D12_STATE_SUBOBJECT &localRootSignatureSubobject = subObjects.back();*/
+
+    D3D12_STATE_SUBOBJECT globalRootSignatureSubObject;
+    globalRootSignatureSubObject.pDesc = &globalRootSignature;
+    globalRootSignatureSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    subObjects.push_back(globalRootSignatureSubObject);
+    D3D12_STATE_SUBOBJECT &glboalRootSignatureSubobject = subObjects.back();
+    
+    D3D12_STATE_SUBOBJECT exportsAssociationSubObject;
+    exportsAssociationSubObject.pDesc = &globalRootSignature;
+    exportsAssociationSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+      //  rootSignatureAssociation->SetSubobjectToAssociate(*localRootSignature);
+      //  rootSignatureAssociation->AddExport(c_raygenShaderName);
+		
+
+    // Local root signature and shader association
+    //CreateLocalRootSignatureSubobjects(&raytracingPipeline);
+    // This is a root signature that enables a shader to have unique arguments that come from shader tables.
+
+    // Global root signature
+    // This is a root signature that is shared across all raytracing shaders invoked during a DispatchRays() call.
+
+    // Pipeline config
+    // Defines the maximum TraceRay() recursion depth.
+    D3D12_STATE_SUBOBJECT configurationSubObject;
+    D3D12_RAYTRACING_PIPELINE_CONFIG pipelineConfig;
+    pipelineConfig.MaxTraceRecursionDepth = 1;
+    configurationSubObject.pDesc = &pipelineConfig;
+    configurationSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+    subObjects.push_back(configurationSubObject);
+	
+    D3D12_STATE_OBJECT_DESC stateObject;
+    stateObject.NumSubobjects = (UINT)subObjects.size();
+    stateObject.pSubobjects = subObjects.data();
+    stateObject.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+    PrintStateObjectDesc(&stateObject);
+    // Create the state object.
+    HRESULT res=pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
+	V_CHECK(res);
+	#endif
 }
 
 ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -869,9 +1122,10 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	}
 
 	// Build a new pso pair <pixel format, PSO>
-	 Pso &pso=mGraphicsPsoMap[hash];
+	Pso &pso=mGraphicsPsoMap[hash];
 	
 	mIsCompute	  = false;
+	mIsRaytrace=false;
 
 	// Try to get the input layout (if none, we dont need to set it to the pso)
 	D3D12_INPUT_LAYOUT_DESC* pCurInputLayout	= curRenderPlat->GetCurrentInputLayout();
@@ -922,8 +1176,9 @@ ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	gpsoDesc.DSVFormat							= targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat): DXGI_FORMAT_UNKNOWN;
 	gpsoDesc.SampleDesc							= msaaDesc;
 
+	auto *device=curRenderPlat->AsD3D12Device();
 	// Create it:
-	HRESULT res			 = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState(&gpsoDesc,SIMUL_PPV_ARGS(&pso.pipelineState));
+	HRESULT res			 = device->CreateGraphicsPipelineState(&gpsoDesc,SIMUL_PPV_ARGS(&pso.pipelineState));
 	SIMUL_ASSERT(res == S_OK);
 	if(pso.pipelineState)
 	{

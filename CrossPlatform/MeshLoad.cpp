@@ -14,16 +14,20 @@ using namespace crossplatform;
 #include <assimp/pbrmaterial.h>     // PBR defs
 
 #include <iomanip> // for setw
-
+#if SIMUL_INTERNAL_CHECKS
+#define PLATFORM_DEBUG_MATERIAL_LOAD 0
+#else
+#define PLATFORM_DEBUG_MATERIAL_LOAD 0
+#endif
 using namespace Assimp;
 
-void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float scale, AxesStandard fromStandard,AxesStandard toStandard)
+void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float scale, AxesStandard fromStandard,AxesStandard toStandard,size_t &numNodes)
 {
 	static aiMatrix4x4 identity(1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
-
+	numNodes++;
 	// copy the meshes
 	subNode.subMeshes.resize(node.mNumMeshes);
 	for(unsigned i=0;i<node.mNumMeshes;i++)
@@ -43,7 +47,7 @@ void CopyNodesWithMeshes(Mesh *mesh,aiNode &node, Mesh::SubNode &subNode,float s
 	// continue for all child nodes
 	for(unsigned i=0;i<node.mNumChildren;i++)
 	{
-		CopyNodesWithMeshes(mesh,*node.mChildren[i], subNode.children[i], scale, fromStandard, toStandard);
+		CopyNodesWithMeshes(mesh,*node.mChildren[i], subNode.children[i], scale, fromStandard, toStandard,numNodes);
 	}
 }
 
@@ -79,31 +83,43 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 		m->Get(name, aiTextureType_NONE, 0, str);
 		return std::string(str.C_Str());
 	};
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 	SIMUL_COUT<<"\n"<<String("?mat.name").c_str()<<std::endl;
 	std::cout<<std::setw(5)<<std::setprecision(4)<<std::fixed;
+#endif
 	for(unsigned i=0;i<m->mNumProperties;i++)
 	{
 		const aiMaterialProperty *p= m->mProperties[i];
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 		SIMUL_COUT<<p->mKey.C_Str()<<", type "<<p->mType<<", index "<<p->mIndex<<":";
+#endif
 		if(p->mType==aiPTI_Float)
 		{
 			if(p->mDataLength==4)
 			{
 				float result=Float(p->mKey.C_Str(),0.0f);
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 				std::cout<<" "<<result;
+#endif
 			}
 			if(p->mDataLength==12)
 			{
 				vec4 result=Colour3(p->mKey.C_Str());
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 				std::cout<<" "<<result.x<<"," << result.y << "," << result.z;
+#endif
 			}
 			if(p->mDataLength==16)
 			{
 				vec4 result=Colour4(p->mKey.C_Str());
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 				std::cout<<" "<<result.x<<"," << result.y << "," << result.z << "," << result.w;
+#endif
 			}
 		}
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 		std::cout<<std::endl;
+#endif
 	}
 	aiTextureMapping mapping;
 	unsigned uvindex = 0;
@@ -111,13 +127,17 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 	for(unsigned t= aiTextureType_DIFFUSE;t< aiTextureType_UNKNOWN;t++)
 	{
 		unsigned num=  m->GetTextureCount((aiTextureType)t);
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 		if(num>0)
 			SIMUL_COUT << "Texture type "<<t << std::endl;
+#endif
 		for (unsigned i = 0; i <num; i++)
 		{
 			aiString texturePath;
 			m->GetTexture((aiTextureType)t,i,&texturePath,&mapping,&uvindex,&blend);
+#if PLATFORM_DEBUG_MATERIAL_LOAD
 			SIMUL_COUT <<"\t"<< texturePath.C_Str() << std::endl;
+#endif
 		}
 	}
 	M->albedo.value= Colour3("$clr.diffuse")+ Colour3("$clr.ambient") + Colour3("$clr.specular");
@@ -263,6 +283,10 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 	unsigned index= 0;
 	std::vector<Vertex> vertices(numVertices);
 	std::vector<unsigned> indices(numIndices);
+	vec3 min_pos={FLT_MAX,FLT_MAX,FLT_MAX};
+	vec3 max_pos=-min_pos;
+	std::vector<uint2> vertex_ranges;
+	vertex_ranges.resize(scene->mNumMeshes);
 	for (unsigned i = 0; i < scene->mNumMeshes; i++)
 	{
 		const aiMesh* mesh = scene->mMeshes[i];
@@ -271,6 +295,8 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 		{
 			Vertex &v=vertices[vertex++];
 			v.pos=scale*ConvertPosition(fromStandard,AxesStandard::Engineering,(*((vec3*)&(mesh->mVertices[j]))));
+			max_pos=std::max(max_pos,v.pos);
+			min_pos=std::min(min_pos,v.pos);
 			if(mesh->mNormals)
 			{
 				v.normal= ConvertPosition(fromStandard, AxesStandard::Engineering, *((vec3*)&(mesh->mNormals[j])));
@@ -294,6 +320,8 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 				}
 			}
 		}
+		uint2 &range=vertex_ranges[i];
+		range={INT_MAX,0};
 		for (unsigned j = 0; j < mesh->mNumFaces; j++)
 		{
 			for(unsigned k=0;k< mesh->mFaces[j].mNumIndices;k++)
@@ -302,17 +330,24 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 				{
 					SIMUL_CERR<<"Num indices is "<< mesh->mFaces[j].mNumIndices<<std::endl;
 				}
-				indices[index++] = meshVertex+mesh->mFaces[j].mIndices[k];
+				unsigned int vertex_index=meshVertex+mesh->mFaces[j].mIndices[k];
+				indices[index++] = vertex_index;
+				range.x=std::min(range.x,vertex_index);
+				range.y=std::max(range.y,vertex_index);
 			}
 		}
 	}
+	SIMUL_COUT<<"Width: "<< max_pos.x-min_pos.x<<std::endl;
+	SIMUL_COUT<<"Length: "<< max_pos.y-min_pos.y<<std::endl;
+	SIMUL_COUT<<"Height: "<< max_pos.z-min_pos.z<<std::endl;
 	init(renderPlatform, numVertices, numIndices, vertices.data(), indices.data());
 	vertex = 0;
 	index = 0;
 	for (unsigned i = 0; i < scene->mNumMeshes; i++)
 	{
 		const aiMesh* mesh = scene->mMeshes[i];
-		SubMesh *subMesh=SetSubMesh(i, index, mesh->mNumFaces * 3, nullptr);
+		
+		SubMesh *subMesh=SetSubMesh(i, index, mesh->mNumFaces * 3, nullptr,vertex_ranges[i].x,vertex_ranges[i].y);
 		
 	//	subMesh->orientation.Define(mat);
 		vertex += mesh->mNumVertices;
@@ -320,8 +355,9 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 		if (mesh->mMaterialIndex >= 0)
 			subMesh->material=materials[mesh->mMaterialIndex];
 	}
+	numNodes=1;
 	if(scene->mRootNode)
-		CopyNodesWithMeshes(this, *scene->mRootNode, rootNode,scale, fromStandard, AxesStandard::Engineering);
+		CopyNodesWithMeshes(this, *scene->mRootNode, rootNode, scale, fromStandard, AxesStandard::Engineering,numNodes);
 	// Kill it after the work is done
 	DefaultLogger::kill();
 	errno = 0;

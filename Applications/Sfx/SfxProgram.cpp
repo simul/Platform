@@ -50,15 +50,9 @@ Pass::Pass(const map<ShaderType,string>& shaders,const PassState &passState)
 {
 	this->passState=passState;
 	map<ShaderType,string>::const_iterator it;
-	ShaderType types[NUM_SHADER_TYPES]={VERTEX_SHADER,
-										TESSELATION_CONTROL_SHADER,		 
-										TESSELATION_EVALUATION_SHADER,	 
-										GEOMETRY_SHADER,
-										FRAGMENT_SHADER,
-										COMPUTE_SHADER};
 	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-		it=shaders.find(types[i]);
+		it=shaders.find((sfx::ShaderType)i);
 		if(it==shaders.end())
 			continue;
 		if(it->second==string("gsConstructed"))

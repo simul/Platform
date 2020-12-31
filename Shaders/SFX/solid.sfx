@@ -289,7 +289,7 @@ vec4 Solid(vertexOutput IN)
 
 	SurfaceState surfaceState	=PreprocessSurface(view,surfaceProperties);
 	vec3 c						=.3*PBRAmbient(surfaceState, view, surfaceProperties);
-	for(int i=8;i<10;i++)
+	for(int i=0;i<10;i++)
 	{
 		if(i>=lightCount)
 			break;

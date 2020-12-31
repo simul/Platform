@@ -47,7 +47,10 @@ namespace simul
 			SHADERTYPE_GEOMETRY,
 			SHADERTYPE_PIXEL,
 			SHADERTYPE_COMPUTE,
-			SHADERTYPE_RAYTRACE,
+			SHADERTYPE_RAY_GENERATION,	// Raytrace shader types
+			SHADERTYPE_CLOSEST_HIT,
+			SHADERTYPE_MISS,
+			SHADERTYPE_CALLABLE,
 			SHADERTYPE_COUNT
 		};
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
@@ -639,6 +642,11 @@ namespace simul
 			virtual int GetIndex() const = 0;
 			virtual size_t GetSize() const = 0;
 			virtual void* GetAddr() const = 0;
+		};
+		template<class T,int slot> class ConstantBufferWithSlot: public T
+		{
+			public:
+			static const int bindingIndex=slot;
 		};
 		template<class T> class ConstantBuffer :public ConstantBufferBase, public T
 		{

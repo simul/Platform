@@ -1,6 +1,7 @@
 #include "Platform/DirectX12/ConstantBuffer.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX12/RenderPlatform.h"
@@ -186,7 +187,24 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 	}
 	else
 	{
+		ID3D12DeviceRemovedExtendedData *pDred;
+		rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
+
+		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
+		D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
+		pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput);
+		pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput);
+		auto n=DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
+		while(n)
+		{
+			if(n->pCommandQueueDebugNameW)
+				std::cerr<<simul::base::WStringToUtf8(n->pCommandQueueDebugNameW).c_str()<<std::endl;
+			if(n->pCommandListDebugNameW)
+				std::cerr<<simul::base::WStringToUtf8(n->pCommandListDebugNameW).c_str()<<std::endl;
+			n=n->pNext;
+		}
 		SIMUL_BREAK_ONCE("hResult != S_OK");
+
 	}
 
 	mCurApplyCount++;

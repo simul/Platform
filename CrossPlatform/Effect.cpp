@@ -954,8 +954,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	renderPlatform=r;
 
 	// Clear the effect
-	groups.clear();
-	groupCharMap.clear();
+	InvalidateDeviceObjects();
 	for(auto i:textureDetailsMap)
 	{
 		delete i.second;
@@ -1088,6 +1087,17 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if (is_equal(word, "group") )
 			{
 				group_name = line.substr(sp + 1, line.length() - sp - 1);
+			}
+			else if(is_equal(word,"accelerationstructure"))
+			{
+				const string &name	=words[1];
+				const string &register_num	=words[4];
+				int slot=atoi(register_num.c_str());
+				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
+				res->slot				=slot;
+				res->shaderResourceType=crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE;
+				textureDetailsMap[name]=res;
+				textureResources[slot]=res;
 			}
 			else if(is_equal(word,"texture"))
 			{
@@ -1498,6 +1508,14 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					}
 					else if(_stricmp(type.c_str(),"compute")==0)
 						t=crossplatform::SHADERTYPE_COMPUTE;
+					else if(_stricmp(type.c_str(),"raygeneration")==0)
+						t=crossplatform::SHADERTYPE_RAY_GENERATION;
+					else if(_stricmp(type.c_str(),"closesthit")==0)
+						t=crossplatform::SHADERTYPE_CLOSEST_HIT;
+					else if(_stricmp(type.c_str(),"miss")==0)
+						t=crossplatform::SHADERTYPE_MISS;
+					else if(_stricmp(type.c_str(),"callable")==0)
+						t=crossplatform::SHADERTYPE_CALLABLE;
 					else
 					{
 						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));

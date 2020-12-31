@@ -31,6 +31,7 @@ namespace simul
 		protected:
 			mutable bool done_begin;
 			crossplatform::RenderPlatform *renderPlatform;
+			size_t numNodes=0;
 		public:
 			Mesh(crossplatform::RenderPlatform* r);
 			virtual ~Mesh();
@@ -43,6 +44,10 @@ namespace simul
 				,const unsigned int *lIndices
 				,const unsigned short *sIndices);
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
+			size_t NumNodes() const
+			{
+				return numNodes;
+			}
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
 			void BeginDraw(GraphicsDeviceContext &deviceContext, ShadingMode pShadingMode) const;
 			/// <summary>
@@ -60,9 +65,11 @@ namespace simul
 			struct SubMesh
 			{
 				SubMesh() : IndexOffset(0), TriangleCount(0), drawAs(AS_TRIANGLES), material(nullptr) {}
-				int IndexOffset;
-				int TriangleCount;
+				int IndexOffset=0;
+				int TriangleCount=0;
 
+				int LowestIndex=0;
+				int HighestIndex=0;
 				enum DrawAs { AS_TRIANGLES, AS_TRISTRIP };
 				DrawAs drawAs;
 				Material* material;
@@ -73,7 +80,7 @@ namespace simul
 				simul::geometry::SimulOrientation orientation;
 				std::vector<SubNode> children;
 			};
-			SubMesh *SetSubMesh(int submesh,int index_start,int num_indices,Material *m);
+			SubMesh *SetSubMesh(int submesh,int index_start,int num_indices,Material *m,int lowest=-1,int highest=-1);
 			
 			int VERTEX_STRIDE;
 			int NORMAL_STRIDE;

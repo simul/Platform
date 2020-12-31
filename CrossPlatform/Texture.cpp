@@ -119,6 +119,7 @@ void Texture::ClearFence(DeviceContext &deviceContext)
 
 void Texture::InvalidateDeviceObjects()
 {
+	shouldGenerateMips=false;
 	width=length=depth=arraySize=dim=mips=0;
 	pixelFormat=PixelFormat::UNKNOWN;
 	renderPlatform=nullptr;

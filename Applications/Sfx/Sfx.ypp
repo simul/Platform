@@ -763,7 +763,7 @@ prog : prog tok
 				sfxError = true;
 			else
 			{
-				dt->global_line_number = $1.lineno;
+				dt->global_line_number = $2.lineno;
 				dt->file_number = current_filenumber;
 				dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
 				dt->type = type;
@@ -776,7 +776,7 @@ prog : prog tok
 				sfxError = true;
 			else
 			{
-				dt->global_line_number = $1.lineno;
+				dt->global_line_number = $2.lineno;
 				dt->file_number = current_filenumber;
 				dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
 				dt->variant = false;
@@ -792,7 +792,7 @@ prog : prog tok
 		string name					=$2.strs[0];
 		buildStruct.file_number		=current_filenumber;
 		buildStruct.line_number		=sfxget_lineno()+(last_linenumber-global_linenumber);
-		buildStruct.global_line_number	=$1.lineno;
+		buildStruct.global_line_number	=$2.lineno;
 		
 		
 		ostringstream ostr;
@@ -853,7 +853,7 @@ prog : prog tok
 		gEffect->m_cslayout[shaderName]=currentCsLayout;
 		gEffect->m_gslayout[shaderName]=currentGsLayout;
 
-		buildFunction.main_linenumber		=$1.lineno;
+		buildFunction.main_linenumber		=$2.lineno;
 		buildFunction.declaration			=((returnType+" ")+ shaderName +"(")+inputs.str()+")";
 		if($7.strs[0].length()>0)
 		{

@@ -70,7 +70,7 @@ namespace simul
 		class SwapChain;
         struct Window;
         class DisplaySurface;
-
+		class AccelerationStructure;
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
@@ -275,7 +275,12 @@ namespace simul
 			virtual void SetModelMatrix		(GraphicsDeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			(){}
 			/// Create a platform-specific material instance.
-			 Material						*GetOrCreateMaterial(const char *name);
+			Material						*GetOrCreateMaterial(const char *name);
+			/// Create a platform specific raytracing acceleration structure.
+			virtual AccelerationStructure	*CreateAccelerationStructure()
+			{
+				return nullptr;
+			}
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.
@@ -359,6 +364,8 @@ namespace simul
 			/// <param name="deviceContext"></param>
 			/// <param name="s"></param>
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
+			///
+			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 
@@ -432,7 +439,9 @@ namespace simul
 			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
 			void FinishLoadingTextures(DeviceContext& deviceContext);
+			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
 			std::set<Texture*> unfinishedTextures;
+			std::set<Texture*> unMippedTextures;
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			virtual Texture* createTexture() = 0;
 			simul::base::MemoryInterface *memoryInterface;

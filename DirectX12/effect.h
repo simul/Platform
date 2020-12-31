@@ -82,6 +82,7 @@ namespace simul
 			void        InvalidateDeviceObjects();
 			void        Apply(crossplatform::DeviceContext &deviceContext,bool asCompute) override;
 			bool        IsCompute()const { return mIsCompute; }
+			bool		IsRaytrace() const {return mIsRaytrace;}
 
 			void        SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,dx12::Heap* samplerHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 			void        SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
@@ -92,11 +93,15 @@ namespace simul
 
             void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
             ID3D12PipelineState *GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
+			void CreateRaytracePso();
 			const RaytraceTable *GetRaytraceTable() const
 			{
 				return &raytraceTable;
 			}
+			void		InitRaytraceTable();
+			
 		private:
+    std::map<crossplatform::ShaderType,std::wstring> wnames;
 			RaytraceTable raytraceTable;
 			virtual     ~EffectPass();
 			struct Pso
@@ -107,10 +112,14 @@ namespace simul
 			//! We hold a map with unique PSOs
 			std::unordered_map<uint64_t, Pso>                mGraphicsPsoMap;
             std::unordered_map<uint64_t, D3D12_RENDER_TARGET_FORMAT_DESC*>    mTargetsMap;
-			//! We only have one compute Pipeline  
+			//! We only have one compute/raytrace Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
+			//! For raytracing, the pipeline state object is NOT a PipelineState, but a ID3D12StateObject...!
+			ID3D12StateObject*							mRaytracePso = nullptr;
 			//! Is this a compute pass?
 			bool                                        mIsCompute = false;
+			//! Is this a raytrace pass?
+			bool										mIsRaytrace=false;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>	    mSrvCbvUavRanges;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>	    mSamplerRanges;
 			std::string								    mTechName;
@@ -141,6 +150,8 @@ namespace simul
 			~Shader();
 			void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
 			std::vector<uint8_t>		shader12;
+			// If raytracing, store in D3D12Resource pointers.
+			ID3D12Resource *shaderTableResource=nullptr;
 			ID3D12ShaderReflection*		mShaderReflection = nullptr;
 #ifdef WIN64
 			ID3D12LibraryReflection*	mLibraryReflection = nullptr;

@@ -208,6 +208,7 @@ namespace simul
 			bool renderTarget;
 			bool external_texture;
 			bool depthStencil;
+			bool shouldGenerateMips=false;
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
@@ -242,6 +243,10 @@ namespace simul
 			bool IsDepthStencil() const
 			{
 				return depthStencil;
+			}
+			bool ShouldGenerateMips() const
+			{
+				return shouldGenerateMips;
 			}
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;

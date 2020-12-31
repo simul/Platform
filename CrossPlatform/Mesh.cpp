@@ -177,8 +177,12 @@ void Mesh::releaseBuffers()
 	numIndices = 0;
 }
 
-Mesh::SubMesh *Mesh::SetSubMesh(int submesh, int index_start, int num_indices,Material *m)
+Mesh::SubMesh *Mesh::SetSubMesh(int submesh, int index_start, int num_indices,Material *m,int lowest,int highest)
 {
+	if(lowest==-1)
+		lowest=0;
+	if(highest==-1)
+		highest=this->numVertices-1;
 	while (submesh >= mSubMeshes.size())
 	{
 		mSubMeshes.push_back(new SubMesh);
@@ -187,6 +191,8 @@ Mesh::SubMesh *Mesh::SetSubMesh(int submesh, int index_start, int num_indices,Ma
 	s->IndexOffset = index_start;
 	s->TriangleCount = num_indices / 3;
 	s->material = m;
+	s->LowestIndex=lowest;
+	s->HighestIndex=highest;
 	return s;
 }
 int crossplatform::Mesh::GetSubMeshCount() const

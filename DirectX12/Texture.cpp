@@ -432,6 +432,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	CreateRTVTables(totalNum, mips);
 	
 	textureLoadComplete=true;
+	shouldGenerateMips=false;
 	if (mips > 1)
 	{
 		if(deviceContext.deviceContextType!=crossplatform::DeviceContextType::GRAPHICS)
@@ -440,7 +441,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		}
 		else
 		{
-			GenerateMips(*deviceContext.AsGraphicsDeviceContext());
+			shouldGenerateMips=true;
 		}
 	}
 	

@@ -133,6 +133,8 @@ namespace simul
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
+			//! Returns the device for raytracing, or nullptr if unavailable.
+			ID3D12Device5*					AsD3D12Device5();
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
 			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
 			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
@@ -201,6 +203,7 @@ namespace simul
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Fence					*CreateFence() override;
 			crossplatform::Shader					*CreateShader() override;
+			crossplatform::AccelerationStructure	*CreateAccelerationStructure() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
 
@@ -246,6 +249,9 @@ namespace simul
 			
 			ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
+			ID3D12RootSignature*					GetComputeRootSignature()const;
+			ID3D12RootSignature*					GetRaytracingLocalRootSignature() const;
+			ID3D12RootSignature*					GetRaytracingGlobalRootSignature() const;
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
@@ -275,7 +281,8 @@ namespace simul
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
-			ID3D12Device*				m12Device;
+			ID3D12Device*				m12Device=nullptr;
+			ID3D12Device5*				m12Device5=nullptr;
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
 			ID3D12CommandQueue*			mComputeQueue=nullptr;
@@ -291,9 +298,12 @@ namespace simul
 			dx12::Heap*					mDepthStencilHeap;
 			dx12::Heap*					mNullHeap;
 			//! Shared root signature for graphics
-			ID3D12RootSignature*		mGRootSignature;
+			ID3D12RootSignature*		mGRootSignature=nullptr;
 			//! Shared root signature for compute
-			ID3D12RootSignature*		mCRootSignature;
+			ID3D12RootSignature*		mCRootSignature=nullptr;
+			//! For raytracing
+			ID3D12RootSignature*		mGRaytracingLocalSignature=nullptr;
+			ID3D12RootSignature*		mGRaytracingGlobalSignature=nullptr;
 
 			//! Dummy 2D texture
 			crossplatform::Texture*		mDummy2D;
@@ -328,6 +338,7 @@ namespace simul
 			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
+			ID3D12RootSignature *LoadRootSignature(const char *filename);
 		};
 	}
 }

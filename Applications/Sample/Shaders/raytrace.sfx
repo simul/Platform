@@ -1,7 +1,8 @@
 #include "shader_platform.sl"
 #include "raytrace.sl"
 
-RaytracingAccelerationStructure Scene : register(t0, space0);
+
+RaytracingAccelerationStructure Scene : register(t25, space0);
 RWTexture2D<vec4> RenderTarget : register(u0);
 ConstantBuffer<RayGenConstantBuffer> g_rayGenCB : register(b0);
 
@@ -16,22 +17,26 @@ bool IsInsideViewport(vec2 p, Viewport viewport)
         && (p.y >= viewport.top && p.y <= viewport.bottom);
 }
 
-//[shader("raygeneration")]
 void MyRaygenShader()
 {
     uint3 ray_index=DispatchRaysIndex();
     uint3 ray_dim=DispatchRaysDimensions();
-    vec2 lerpValues = (vec2)ray_index.xy / (vec2)ray_dim.xy;
+    vec2 lerpValues = vec2(ray_index.xy)/vec2(ray_dim.xy);
      
     // Orthographic projection since we're raytracing in screen space.
-    vec3 rayDir = float3(0, 0, 1);
-    vec3 origin = float3(
-        lerp(g_rayGenCB.viewport.left, g_rayGenCB.viewport.right, lerpValues.x),
-        lerp(g_rayGenCB.viewport.top, g_rayGenCB.viewport.bottom, lerpValues.y),
-        0.0f);
-
-    if (IsInsideViewport(origin.xy, g_rayGenCB.stencil))
+    vec3 rayDir = vec3(0, 0, -1.0);
+    float c=2000.0;
+    vec3 origin = vec3(
+        lerp(-c, c, lerpValues.x),
+        lerp(-c, c, lerpValues.y),
+        1000.0f);
+        
+       // RenderTarget[ray_index.xy] = vec4(1, lerpValues.xy, 1);
+      
+   // if (IsInsideViewport(origin.xy, g_rayGenCB.stencil))
     {
+        //RenderTarget[ray_index.xy] = vec4(1.0,0,0,0);
+       
         // Trace the ray.
         // Set the ray's extents.
         RayDesc ray;
@@ -41,16 +46,18 @@ void MyRaygenShader()
         // TMin should be kept small to prevent missing geometry at close contact areas.
         ray.TMin = 0.001;
         ray.TMax = 10000.0;
-        RayPayload payload = { float4(0, 0, 0, 0) };
-        TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, ~0, 0, 1, 0, ray, payload);
-
+        RayPayload payload = { vec4(0, 0, 0, 0) };
+        TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 1, 0, ray, payload);
+        vec3 pos=origin+rayDir*payload.color.r;
+        //payload.color.r=saturate(pos.z/150.0);
+        //RAY_FLAG_CULL_BACK_FACING_TRIANGLES
         // Write the raytraced color to the output texture.
         RenderTarget[ray_index.xy] = payload.color;
     }
-    else
+    //else
     {
         // Render interpolated DispatchRaysIndex outside the stencil window
-        RenderTarget[ray_index.xy] = float4(lerpValues, 0, 1);
+     //   RenderTarget[ray_index.xy] = vec4(lerpValues, 0, 1);
     }
 }
 
@@ -58,13 +65,14 @@ void MyRaygenShader()
 void MyClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
     float3 barycentrics = float3(2 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
-    payload.color = float4(barycentrics, 1);
+   // payload.color = float4(RayTCurrent(),attr.barycentrics.xy, 1);
+    payload.color = float4(1.0, 0.5, 1, 1);
 }
 
 //[shader("miss")]
 void MyMissShader(inout RayPayload payload)
 {
-    payload.color = float4(0, 0, 1, 1);
+    payload.color = float4(1.0, 0.5, 0, 1);
 }
 
 

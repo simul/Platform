@@ -12,19 +12,18 @@ namespace simul
 {
 	namespace base
 	{
-		const std::wstring &StringToWString(const std::string &text)
+		std::wstring StringToWString(const std::string &text)
 		{
 			size_t origsize = strlen(text.c_str()) + 1;
 			const size_t newsize = origsize;
-			wchar_t *wcstring=new wchar_t[newsize];
+			wchar_t *wcstring=new wchar_t[newsize+2];
 #ifdef _MSC_VER
 			size_t convertedChars = 0;
 			mbstowcs_s(&convertedChars, wcstring, origsize, text.c_str(), _TRUNCATE);
 #else
 			mbstowcs(wcstring,text.c_str(),origsize);
 #endif
-			static std::wstring str;
-			str=std::wstring(wcstring);
+			std::wstring str(wcstring);
 			delete [] wcstring;
 			return str;
 		}
@@ -72,7 +71,7 @@ namespace simul
 			delete [] output_buffer;
 			return str_utf8;
 		}
-		const std::string &WStringToString(const std::wstring &text)
+		std::string WStringToString(const std::wstring &text)
 		{
 			size_t origsize = text.length()+ 1;
 			const size_t newsize = origsize;
@@ -84,8 +83,7 @@ namespace simul
 #else
 			wcstombs(cstring, text.c_str(), (size_t)newsize );
 #endif
-
-			static std::string str;
+			std::string str;
 			str=std::string(cstring);
 			delete [] cstring;
 			return str;

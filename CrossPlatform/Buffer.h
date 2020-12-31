@@ -3,6 +3,7 @@
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/Layout.h"
 struct ID3D11Buffer;
+struct ID3D12Resource;
 struct D3D12_VERTEX_BUFFER_VIEW;
 struct D3D12_INDEX_BUFFER_VIEW;
 typedef unsigned GLuint;
@@ -20,11 +21,19 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11Buffer *AsD3D11Buffer()
 			{
-				return NULL;
+				return nullptr;
 			}
 			virtual ID3D11Buffer * const AsD3D11Buffer() const
 			{
-				return NULL;
+				return nullptr;
+			}
+			virtual ID3D12Resource * const AsD3D12Buffer() const
+			{
+				return nullptr;
+			}
+			virtual ID3D12Resource *  AsD3D12Buffer() 
+			{
+				return nullptr;
 			}
 			virtual GLuint AsGLuint()
 			{

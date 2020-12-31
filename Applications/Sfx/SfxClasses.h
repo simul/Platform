@@ -96,6 +96,7 @@ namespace sfx
 		RAY_GENERATION_SHADER,
 		CLOSEST_HIT_SHADER,
 		MISS_SHADER,
+		CALLABLE_SHADER,
 		EXPORT_SHADER,
 		NUM_SHADER_TYPES
 	};
@@ -182,6 +183,10 @@ namespace sfx
 		,SetGeometryShader		//GS Geometry Shader			|	Geometry Shader
 		,SetPixelShader			//FS Fragment Shader			|	Pixel Shader
 		,SetComputeShader		//CS Compute Shader			|	Compute Shader
+		,SetRayGenerationShader
+		,SetClosestHitShader
+		,SetMissShader
+		,SetCallableShader
 		,SetExportShader		// this is a PS4 thing. We will write Vertex shaders as export shaders when necessary.
 		,NUM_OF_SHADER_TYPES
 		,SetRasterizerState
@@ -327,26 +332,32 @@ namespace sfx
 		}
 	};
 
-	struct DeclaredTexture: public Declaration
+	struct DeclaredResource: public Declaration
 	{
-		DeclaredTexture():Declaration(DeclarationType::TEXTURE)
+		DeclaredResource(DeclarationType t):Declaration(t)
+		{
+		}
+		int slot=0;
+		int space=0;
+		std::string type;
+	};
+
+	struct DeclaredTexture: public DeclaredResource
+	{
+		DeclaredTexture():DeclaredResource(DeclarationType::TEXTURE)
 		{
 		}
 		bool variant;			// if true, we must define different versions for different texture output formats.
-		std::string type;
 		std::string layout;
 		std::string texel_format;
 		ShaderResourceType shaderResourceType;
-		int slot;
 	};
 
-	struct DeclaredConstantBuffer: public Declaration
+	struct DeclaredConstantBuffer: public DeclaredResource
 	{
-		DeclaredConstantBuffer():Declaration(DeclarationType::CONSTANT_BUFFER)
+		DeclaredConstantBuffer():DeclaredResource(DeclarationType::CONSTANT_BUFFER)
 		{
 		}
-		std::string type;
-		int slot;
 	};
 
 	struct PassRasterizerState
