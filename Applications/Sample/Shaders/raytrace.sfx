@@ -45,9 +45,9 @@ void MyRaygenShader()
         // Set TMin to a non-zero small value to avoid aliasing issues due to floating - point errors.
         // TMin should be kept small to prevent missing geometry at close contact areas.
         ray.TMin = 0.001;
-        ray.TMax = 10000.0;
+        ray.TMax = 1000.0;
         RayPayload payload = { vec4(0, 0, 0, 0) };
-        TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 1, 0, ray, payload);
+        TraceRay(Scene, RAY_FLAG_NONE, ~0, 0, 1, 0, ray, payload);
         vec3 pos=origin+rayDir*payload.color.r;
         //payload.color.r=saturate(pos.z/150.0);
         //RAY_FLAG_CULL_BACK_FACING_TRIANGLES
@@ -66,15 +66,18 @@ void MyClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersection
 {
     float3 barycentrics = float3(2 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
    // payload.color = float4(RayTCurrent(),attr.barycentrics.xy, 1);
-    payload.color = float4(1.0, 0.5, 1, 1);
+    payload.color = float4(barycentrics.xy, 1, 1);
+}
+void MyAnyHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+{
+    payload.color = float4(1,0, 1, 1);
 }
 
 //[shader("miss")]
 void MyMissShader(inout RayPayload payload)
 {
-    payload.color = float4(1.0, 0.5, 0, 1);
+    payload.color = float4(.5, 0.2, 0, 1);
 }
-
 
 technique raytrace
 {
@@ -82,6 +85,7 @@ technique raytrace
     {
 		SetRayGenerationShader(CompileShader(lib_6_3,MyRaygenShader()));
 		SetClosestHitShader(CompileShader(lib_6_3,MyClosestHitShader()));
+		SetAnyHitShader(CompileShader(lib_6_3,MyAnyHitShader()));
 		SetMissShader(CompileShader(lib_6_3,MyMissShader()));
     }
 }

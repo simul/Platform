@@ -13,6 +13,7 @@
 #include "Platform/DirectX12/AccelerationStructure.h"
 #include "SimulDirectXHeader.h"
 #include "DirectXRaytracingHelper.h"
+#include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
 #include "ThisPlatform/Direct3D12.h"
 
 #include <algorithm>
@@ -20,6 +21,7 @@
 
 using namespace simul;
 using namespace dx12;
+LPCWSTR hitGroupExportName = L"HitGroup";
 
 inline bool IsPowerOfTwo( UINT64 n )
 {
@@ -186,7 +188,7 @@ void Effect::PostLoad()
 		}
 	}
 }
-
+#include "DXRHelper.h"
 void EffectPass::InitRaytraceTable()
 {
 	auto *device=renderPlatform->AsD3D12Device();
@@ -195,38 +197,110 @@ void EffectPass::InitRaytraceTable()
 
 	dx12::Shader* r= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
 	dx12::Shader* h= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CLOSEST_HIT];
+	dx12::Shader* a= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_ANY_HIT];
 	dx12::Shader* m= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_MISS];
 	dx12::Shader* c= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CALLABLE];
-	// Upload the shaders to the GPU:
+	#if 0
+	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
+//  D3D12_GPU_DESCRIPTOR_HANDLE srvUavHeapHandle =      m_srvUavHeap->GetGPUDescriptorHandleForHeapStart();
+	    // The ray generation only uses heap data
+	m_sbtHelper.AddRayGenerationProgram(base::StringToWString(r->entryPoint).c_str(), {});
+
+  // The miss and hit shaders do not access any external resources: instead they
+  // communicate their results through the ray payload
+	m_sbtHelper.AddMissProgram(base::StringToWString(m->entryPoint).c_str(), {});
+
+  // Adding the triangle hit shader
+	m_sbtHelper.AddHitGroup(L"HitGroup", {});
+  uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
+
+  // Create the SBT on the upload heap. This is required as the helper will use
+  // mapping to write the SBT contents. After the SBT compilation it could be
+  // copied to the default heap for performance.
+	m_sbtStorage = nv_helpers_dx12::CreateBuffer(
+      device, sbtSize, D3D12_RESOURCE_FLAG_NONE,
+      D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
+	m_sbtHelper.Generate(m_sbtStorage, stateObjectProperties);
+	unsigned long long addr=m_sbtStorage->GetGPUVirtualAddress();
+	uint32_t rayGenerationSectionSizeInBytes = m_sbtHelper.GetRayGenSectionSize();
+	uint32_t missSectionSizeInBytes = m_sbtHelper.GetMissSectionSize();
+	uint32_t hitGroupsSectionSize = m_sbtHelper.GetHitGroupSectionSize();
+	raytraceTable.rayGen={addr,rayGenerationSectionSizeInBytes,rayGenerationSectionSizeInBytes};
+	raytraceTable.miss={addr+rayGenerationSectionSizeInBytes,missSectionSizeInBytes,m_sbtHelper.GetMissEntrySize()};
+	raytraceTable.hitGroup={addr+rayGenerationSectionSizeInBytes+missSectionSizeInBytes,hitGroupsSectionSize,m_sbtHelper.GetHitGroupEntrySize()};
+	#endif
+  #if 1
 	for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<=crossplatform::SHADERTYPE_CALLABLE;i++)
 	{
 		dx12::Shader *s=(dx12::Shader*)shaders[i];
-		if(!s||i==crossplatform::SHADERTYPE_CLOSEST_HIT)
+		if(!s||i==crossplatform::SHADERTYPE_CLOSEST_HIT
+		||i==crossplatform::SHADERTYPE_ANY_HIT)
 			continue;
 		struct RootArguments {	} ;
 		RootArguments rootArguments;
 		UINT numShaderRecords = 1;
-		UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + sizeof(rootArguments);
-		ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
-		void *rayGenShaderIdentifier = stateObjectProperties->GetShaderIdentifier(base::StringToWString(s->entryPoint).c_str());
-		shaderTable.push_back(ShaderRecord(rayGenShaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, &rootArguments, sizeof(rootArguments)));
+		UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;// + sizeof(rootArguments);
+	// Upload the shaders to the GPU:
+		auto wstr=base::StringToWString(s->entryPoint);
+		ShaderUploadTable *shaderTable=new ShaderUploadTable(device, numShaderRecords, shaderRecordSize, wstr.c_str());
+		void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(wstr.c_str());
+		//shaderTable->push_back(ShaderRecord(shaderIdentifier, shaderRecordSize, &rootArguments, sizeof(rootArguments)));
+        shaderTable->push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
+#if 0
 	
-		s->shaderTableResource = shaderTable.GetResource();
+		s->shaderTableResource = shaderTable->GetResource();
+		s->shaderTableResource->AddRef();
+
 	}
 	// hit is done as a group:
 	
     // Hit group shader table
+	if(h)
     {
         UINT numShaderRecords = 1;
         UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
-		void *hitGroupShaderIdentifier = stateObjectProperties->GetShaderIdentifier(L"HitGroup");
-        shaderTable.push_back(ShaderRecord(hitGroupShaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
-		h->shaderTableResource = shaderTable.GetResource();
+        ShaderUploadTable *shaderTable=new ShaderUploadTable(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
+		void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(hitGroupExportName);
+        shaderTable->push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
+		h->shaderTableResource = shaderTable->GetResource();
+		h->shaderTableResource->AddRef();
     }
 	raytraceTable.rayGen={r->shaderTableResource->GetGPUVirtualAddress(),r->shaderTableResource->GetDesc().Width,r->shaderTableResource->GetDesc().Width};
-	raytraceTable.hitGroup={h->shaderTableResource->GetGPUVirtualAddress(),h->shaderTableResource->GetDesc().Width,h->shaderTableResource->GetDesc().Width};
+	if(h)
+	{
+		auto d=h->shaderTableResource->GetDesc();
+		raytraceTable.hitGroup={h->shaderTableResource->GetGPUVirtualAddress(),d.Width,h->shaderTableResource->GetDesc().Width};
+	}
 	raytraceTable.miss={m->shaderTableResource->GetGPUVirtualAddress(),m->shaderTableResource->GetDesc().Width,m->shaderTableResource->GetDesc().Width};
+#else
+		s->shaderTableResource = shaderTable->GetResource();
+		s->shaderTableResource->AddRef();
+		if(i==crossplatform::SHADERTYPE_RAY_GENERATION)
+		{
+			raytraceTable.rayGen={s->shaderTableResource->GetGPUVirtualAddress(),s->shaderTableResource->GetDesc().Width,s->shaderTableResource->GetDesc().Width};
+		}
+		else if(i==crossplatform::SHADERTYPE_MISS)
+		{
+			raytraceTable.miss={s->shaderTableResource->GetGPUVirtualAddress(),s->shaderTableResource->GetDesc().Width,s->shaderTableResource->GetDesc().Width};
+		}
+	}
+	// hit is done as a group:
+	
+    // Hit group shader table
+	if(h)
+    {
+        UINT numShaderRecords = 1;
+        UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        ShaderUploadTable *shaderTable=new ShaderUploadTable(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
+		void *hitGroupShaderIdentifier = stateObjectProperties->GetShaderIdentifier(hitGroupExportName);
+       // shaderTable->push_back(ShaderRecord(hitGroupShaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
+		h->shaderTableResource = shaderTable->GetResource();
+		h->shaderTableResource->AddRef();
+		auto d=h->shaderTableResource->GetDesc();
+		raytraceTable.hitGroup={h->shaderTableResource->GetGPUVirtualAddress(),d.Width,h->shaderTableResource->GetDesc().Width};
+	}
+	#endif
+	#endif
 }
 
 
@@ -822,6 +896,29 @@ D3D12_STATE_SUBOBJECT CreateDxilLibrary(LPCWSTR entrypoint, const void *pShaderB
     return dxilLibSubObject;
 }
 //#include "Platform/DirectX12/nv_helpers_dx12/RaytracingPipelineGenerator.h"
+void EffectPass::CreateLocalRootSignature()
+{
+	ID3DBlob *blob=nullptr;
+	ID3DBlob *error=nullptr;
+	CD3DX12_ROOT_PARAMETER rootParameters[1];
+	memset(rootParameters,0,sizeof(rootParameters));
+	rootParameters[0].InitAsShaderResourceView(26);
+	CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
+	rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
+	//rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	//rsDesc.Version=D3D_ROOT_SIGNATURE_VERSION_1_1;
+	HRESULT res=D3D12SerializeRootSignature(&rsDesc,D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
+	if(res!=S_OK)
+	{
+		std::string err=static_cast<const char *>(error->GetBufferPointer());
+		SIMUL_BREAK(err.c_str());
+	}
+	auto *device=renderPlatform->AsD3D12Device();
+	V_CHECK(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&localRootSignature)));
+	localRootSignature->SetName(L"Raytracing Local Root Signature");
+	//mGRaytrac*ingSignature	=LoadRootSignature("//RTX.cso");
+	
+}
 void EffectPass::CreateRaytracePso()
 {
 	ID3D12Device5 *pDevice5=((dx12::RenderPlatform*)renderPlatform)->AsD3D12Device5();
@@ -832,10 +929,10 @@ void EffectPass::CreateRaytracePso()
     // Default association applies to every exported shader entrypoint that doesn't have any of the same type of subobject associated with it.
     // This simple sample utilizes default shader association except for local root signature subobject
     // which has an explicit association specified purely for demonstration purposes.
-    // 1 - DXIL library
+    // 3 - DXIL library
     // 1 - Triangle hit group
     // 1 - Shader config
-    // 2 - Local root signature and association
+    // 0 - Local root signature and association
     // 1 - Global root signature
     // 1 - Pipeline config
 
@@ -869,14 +966,14 @@ void EffectPass::CreateRaytracePso()
 		D3D12_DXIL_LIBRARY_DESC &dxilLibDesc	=dxilLibDescs[shaderType];
 
 		exportDesc = { entrypoint, nullptr, D3D12_EXPORT_FLAG_NONE };
-		subObjects.push_back(D3D12_STATE_SUBOBJECT());
-		D3D12_STATE_SUBOBJECT &dxilLibSubObject = subObjects.back();
+		D3D12_STATE_SUBOBJECT dxilLibSubObject ;
 		dxilLibDesc.DXILLibrary.pShaderBytecode = s->shader12.data();
 		dxilLibDesc.DXILLibrary.BytecodeLength = s->shader12.size();
 		dxilLibDesc.NumExports = 1;
 		dxilLibDesc.pExports = &exportDesc;
 		dxilLibSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
 		dxilLibSubObject.pDesc = &dxilLibDesc;
+		subObjects.push_back(dxilLibSubObject);
 	}
 	
 	#if 0
@@ -909,17 +1006,18 @@ void EffectPass::CreateRaytracePso()
 	shaderConfig.MaxPayloadSizeInBytes = 4 * sizeof(float);   // float4 color
 	shaderConfigStateObject.pDesc = &shaderConfig;
 	shaderConfigStateObject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+	
 	subObjects.push_back(shaderConfigStateObject);
 	
     // Triangle hit group
     // A hit group specifies closest hit, any hit and intersection shaders to be executed when a ray intersects the geometry's triangle/AABB.
     // In this sample, we only use triangle geometry with a closest hit shader, so others are not set.
 	dx12::Shader* h= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CLOSEST_HIT];
-	LPCWSTR hitGroupExportName = L"HitGroup";
 	D3D12_HIT_GROUP_DESC hitGroupDesc = {};
 	hitGroupDesc.Type					= D3D12_HIT_GROUP_TYPE_TRIANGLES;
 	hitGroupDesc.ClosestHitShaderImport	= wnames[crossplatform::SHADERTYPE_CLOSEST_HIT].c_str();
-	//hitGroupDesc.AnyHitShaderImport	= wnames[crossplatform::SHADERTYPE_CLOSEST_HIT].c_str();
+	if(wnames[crossplatform::SHADERTYPE_ANY_HIT].length())
+		hitGroupDesc.AnyHitShaderImport	= wnames[crossplatform::SHADERTYPE_ANY_HIT].c_str();
 	hitGroupDesc.HitGroupExport			= hitGroupExportName;
 	D3D12_STATE_SUBOBJECT hitGroupSubobject = {};
 	hitGroupSubobject.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
@@ -928,22 +1026,29 @@ void EffectPass::CreateRaytracePso()
 	
     auto globalRootSignature = ((dx12::RenderPlatform*)renderPlatform)->GetRaytracingGlobalRootSignature();
  /*   auto localRootSignature = ((dx12::RenderPlatform*)renderPlatform)->GetRaytracingLocalRootSignature();
-
+ */
 	D3D12_STATE_SUBOBJECT localRootSignatureSubObject;
     localRootSignatureSubObject.pDesc = &localRootSignature;
     localRootSignatureSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
     subObjects.push_back(localRootSignatureSubObject);
-    D3D12_STATE_SUBOBJECT &localRootSignatureSubobject = subObjects.back();*/
 
     D3D12_STATE_SUBOBJECT globalRootSignatureSubObject;
     globalRootSignatureSubObject.pDesc = &globalRootSignature;
     globalRootSignatureSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
     subObjects.push_back(globalRootSignatureSubObject);
-    D3D12_STATE_SUBOBJECT &glboalRootSignatureSubobject = subObjects.back();
-    
+    /*
+	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION exp;
+	exp.NumExports=1;
+	const wchar_t *wc[3];
+	wc[0]=wnames[crossplatform::SHADERTYPE_RAY_GENERATION].c_str();
+	wc[1]=wnames[crossplatform::SHADERTYPE_CLOSEST_HIT].c_str();
+	wc[2]=wnames[crossplatform::SHADERTYPE_MISS].c_str();
+	exp.pExports=wc;
     D3D12_STATE_SUBOBJECT exportsAssociationSubObject;
-    exportsAssociationSubObject.pDesc = &globalRootSignature;
+    exportsAssociationSubObject.pDesc = &exp;
     exportsAssociationSubObject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+	exp.pSubobjectToAssociate=;
+    subObjects.push_back(exportsAssociationSubObject);*/
       //  rootSignatureAssociation->SetSubobjectToAssociate(*localRootSignature);
       //  rootSignatureAssociation->AddExport(c_raygenShaderName);
 		

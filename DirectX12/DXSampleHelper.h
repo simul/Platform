@@ -191,7 +191,7 @@ protected:
         if (m_resource)
         {
             m_resource->Unmap(0, nullptr);
-            //SAFE_RELEASE(m_resource);
+            SAFE_RELEASE(m_resource);
         }
     }
 

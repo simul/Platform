@@ -687,28 +687,6 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mGRaytracingGlobalSignature->SetName(L"Raytracing Global Root Signature");
 		//mGRaytracingSignature	=LoadRootSignature("//RTX.cso");
 	}
-	/*
-	
-	{
-		ID3DBlob *blob=nullptr;
-		ID3DBlob *error=nullptr;
-		CD3DX12_ROOT_PARAMETER rootParameters[1];
-		memset(rootParameters,0,sizeof(rootParameters));
-		rootParameters[0].InitAsShaderResourceView(26);
-		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
-		rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
-		//rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-		//rsDesc.Version=D3D_ROOT_SIGNATURE_VERSION_1_1;
-		HRESULT res=D3D12SerializeRootSignature(&rsDesc,D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
-		if(res!=S_OK)
-		{
-			std::string err=static_cast<const char *>(error->GetBufferPointer());
-			SIMUL_BREAK(err.c_str());
-		}
-		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRaytracingLocalSignature)));
-		mGRaytracingLocalSignature->SetName(L"Raytracing Local Root Signature");
-		//mGRaytrac*ingSignature	=LoadRootSignature("//RTX.cso");
-	}*/
 #ifndef _XBOX_ONE	
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
@@ -1096,17 +1074,17 @@ void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,co
 	if(!raytraceTable)
 		return;
     // Since each shader table has only one shader record, the stride is same as the size.
-    d3d12DispatchDesc.HitGroupTable.StartAddress				= raytraceTable->hitGroup.GPUVirtualAddress;
-    d3d12DispatchDesc.HitGroupTable.SizeInBytes					= raytraceTable->hitGroup.width;
-    d3d12DispatchDesc.HitGroupTable.StrideInBytes				= raytraceTable->hitGroup.sizeInBytes;
-    d3d12DispatchDesc.MissShaderTable.StartAddress				= raytraceTable->miss.GPUVirtualAddress;
-    d3d12DispatchDesc.MissShaderTable.SizeInBytes				= raytraceTable->miss.width;
-    d3d12DispatchDesc.MissShaderTable.StrideInBytes				= raytraceTable->miss.sizeInBytes;
     d3d12DispatchDesc.RayGenerationShaderRecord.StartAddress	= raytraceTable->rayGen.GPUVirtualAddress;
-    d3d12DispatchDesc.RayGenerationShaderRecord.SizeInBytes		= raytraceTable->rayGen.width;
-    d3d12DispatchDesc.Width = dispatch.x;
-    d3d12DispatchDesc.Height = dispatch.y;
-    d3d12DispatchDesc.Depth = dispatch.z;
+    d3d12DispatchDesc.RayGenerationShaderRecord.SizeInBytes		= raytraceTable->rayGen.sizeInBytes;
+    d3d12DispatchDesc.MissShaderTable.StartAddress				= raytraceTable->miss.GPUVirtualAddress;
+    d3d12DispatchDesc.MissShaderTable.SizeInBytes				= raytraceTable->miss.sizeInBytes;
+    d3d12DispatchDesc.MissShaderTable.StrideInBytes				= raytraceTable->miss.width;
+    d3d12DispatchDesc.HitGroupTable.StartAddress				= raytraceTable->hitGroup.GPUVirtualAddress;
+    d3d12DispatchDesc.HitGroupTable.SizeInBytes					= raytraceTable->hitGroup.sizeInBytes;
+    d3d12DispatchDesc.HitGroupTable.StrideInBytes				= raytraceTable->hitGroup.width;
+    d3d12DispatchDesc.Width		= dispatch.x;
+    d3d12DispatchDesc.Height	= dispatch.y;
+    d3d12DispatchDesc.Depth		= dispatch.z;
 	commandList->DispatchRays(&d3d12DispatchDesc);
 }
 

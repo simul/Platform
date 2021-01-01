@@ -384,6 +384,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
+<INITIAL,IN_SHADER>"SetAnyHitShader"			{
+														sfxlval.sType=ANY_HIT_SHADER;	 	
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
 <INITIAL,IN_SHADER>"SetMissShader"			{
 														sfxlval.sType=MISS_SHADER;	 	
 														SetLexStartState(IN_SHADER_COMPILE);

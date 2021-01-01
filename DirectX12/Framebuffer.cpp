@@ -180,4 +180,4 @@ void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContex
 	{
 		deviceContext.asD3D12Context()->ClearRenderTargetView(*buffer_texture->AsD3D12RenderTargetView(deviceContext), clearColor, 0, nullptr);
 	}
-}
+ }

@@ -588,6 +588,8 @@ string stringOf(ShaderCommand t)
 		return "compute";
 	case SetRayGenerationShader:
 		return "raygeneration";
+	case SetAnyHitShader:
+		return "anyhit";
 	case SetMissShader:
 		return "miss";
 	case SetClosestHitShader:
@@ -2265,6 +2267,10 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	if (compiledShader->shaderType == CLOSEST_HIT_SHADER)
 	{
 		theShader<<"[shader(\"closesthit\")]\n";//sfxConfig
+	}
+	if (compiledShader->shaderType == ANY_HIT_SHADER)
+	{
+		theShader<<"[shader(\"anyhit\")]\n";//sfxConfig
 	}
 	if (compiledShader->shaderType == MISS_SHADER)
 	{

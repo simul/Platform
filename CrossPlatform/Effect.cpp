@@ -1512,6 +1512,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						t=crossplatform::SHADERTYPE_RAY_GENERATION;
 					else if(_stricmp(type.c_str(),"closesthit")==0)
 						t=crossplatform::SHADERTYPE_CLOSEST_HIT;
+					else if(_stricmp(type.c_str(),"anyhit")==0)
+						t=crossplatform::SHADERTYPE_ANY_HIT;
 					else if(_stricmp(type.c_str(),"miss")==0)
 						t=crossplatform::SHADERTYPE_MISS;
 					else if(_stricmp(type.c_str(),"callable")==0)

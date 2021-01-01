@@ -95,6 +95,7 @@ namespace sfx
 		COMPUTE_SHADER,
 		RAY_GENERATION_SHADER,
 		CLOSEST_HIT_SHADER,
+		ANY_HIT_SHADER,
 		MISS_SHADER,
 		CALLABLE_SHADER,
 		EXPORT_SHADER,
@@ -185,6 +186,7 @@ namespace sfx
 		,SetComputeShader		//CS Compute Shader			|	Compute Shader
 		,SetRayGenerationShader
 		,SetClosestHitShader
+		,SetAnyHitShader
 		,SetMissShader
 		,SetCallableShader
 		,SetExportShader		// this is a PS4 thing. We will write Vertex shaders as export shaders when necessary.

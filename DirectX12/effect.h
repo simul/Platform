@@ -64,14 +64,14 @@ namespace simul
 		struct ShaderTable
 		{
 			unsigned long long GPUVirtualAddress;
-			unsigned long long width;
 			unsigned long long sizeInBytes;
+			unsigned long long width;
 		};
 		struct RaytraceTable
 		{
-			ShaderTable hitGroup;
-			ShaderTable miss;
 			ShaderTable rayGen;
+			ShaderTable miss;
+			ShaderTable hitGroup;
 		};
         //! DirectX12 Effect Pass implementation, this will hold several PSOs, its also in charge of 
         // setting resources.
@@ -93,7 +93,8 @@ namespace simul
 
             void        CreateComputePso(crossplatform::DeviceContext& deviceContext);
             ID3D12PipelineState *GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
-			void CreateRaytracePso();
+			void		CreateLocalRootSignature();
+			void		CreateRaytracePso();
 			const RaytraceTable *GetRaytraceTable() const
 			{
 				return &raytraceTable;
@@ -101,8 +102,10 @@ namespace simul
 			void		InitRaytraceTable();
 			
 		private:
-    std::map<crossplatform::ShaderType,std::wstring> wnames;
+			std::map<crossplatform::ShaderType,std::wstring> wnames;
 			RaytraceTable raytraceTable;
+			ID3D12RootSignature *localRootSignature=nullptr;
+			ID3D12Resource *m_sbtStorage=nullptr;
 			virtual     ~EffectPass();
 			struct Pso
 			{

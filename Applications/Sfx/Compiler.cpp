@@ -449,7 +449,7 @@ wstring BuildCompileCommand(CompiledShader *shader,const SfxConfig &sfxConfig,co
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length()&&shader->shaderType!=RAY_GENERATION_SHADER&&shader->shaderType!=CLOSEST_HIT_SHADER&&shader->shaderType!=MISS_SHADER)
+	if (sfxConfig.entryPointOption.length()&&shader->shaderType!=RAY_GENERATION_SHADER&&shader->shaderType!=CLOSEST_HIT_SHADER&&shader->shaderType!=ANY_HIT_SHADER&&shader->shaderType!=MISS_SHADER)
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
 
 	string filename_root=WStringToString(outputFile);
