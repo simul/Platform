@@ -272,7 +272,7 @@ public:
 		exampleMesh->Load("models/DamagedHelmet/DamagedHelmet.gltf",0.1f,crossplatform::AxesStandard::OpenGL);//Sponza/Sponza.gltf");
 		environmentMesh->Load("models/Sponza/Sponza.gltf", 1.0f, crossplatform::AxesStandard::OpenGL);
 
-		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,256,256,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
+		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,128,128,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
 		accelerationStructure->RestoreDeviceObjects(environmentMesh);
 		rayGenConstants.RestoreDeviceObjects(renderPlatform);
 
@@ -407,7 +407,7 @@ public:
 #endif
 		hdrFramebuffer->SetWidthAndHeight(w, h);
 		hdrFramebuffer->Activate(deviceContext);
-		hdrFramebuffer->Clear(deviceContext, 0.0f, 0.0f, 0.0f, 0.0f, reverseDepth ? 0.0f : 1.0f);
+		hdrFramebuffer->Clear(deviceContext, 1.0f, 1.0f, 1.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
 		{
 			// Pre-Render Update
 			static simul::core::Timer timer;
@@ -436,7 +436,7 @@ public:
 			renderPlatform->SetConstantBuffer(deviceContext,&rayGenConstants);
 			renderPlatform->SetAccelerationStructure(deviceContext,raytrace_effect->GetShaderResource("Scene"),accelerationStructure);
 			renderPlatform->SetUnorderedAccessView(deviceContext,raytrace_effect->GetShaderResource("RenderTarget"),rtTargetTexture);
-			renderPlatform->DispatchRays(deviceContext,uint3(256,256,1));
+			renderPlatform->DispatchRays(deviceContext,uint3(128,128,1));
 			renderPlatform->UnapplyPass(deviceContext);
 
 			renderPlatform->DrawTexture(deviceContext,12,12,512,512, rtTargetTexture,1.f,false,1.f,true);
@@ -711,7 +711,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		UpdateWindow(hWnd);
 	}
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
-	graphicsDeviceInterface->Initialize(true,false,false);
+	graphicsDeviceInterface->Initialize(false,false,false);
 	simul::crossplatform::RenderDocLoader::Load();
 
 	renderer=new PlatformRenderer();
