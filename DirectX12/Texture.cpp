@@ -880,12 +880,12 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			cubemap							= true;
 			textureDesc.DepthOrArraySize	= 1;
 		}
-		dxgi_format = textureDesc.Format;
+		dxgi_format = RenderPlatform::DsvToTypelessFormat(textureDesc.Format);
 		pixelFormat = RenderPlatform::FromDxgiFormat(dxgi_format);
 		width		= (int)textureDesc.Width;
 		length		= (int)textureDesc.Height;
         mNumSamples = textureDesc.SampleDesc.Count;
-		if (!srv)
+		if (!srv&&(textureDesc.Flags&D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE)==0)
 		{
 			InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 			CreateSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels, cubemap, false, textureDesc.SampleDesc.Count > 1);
@@ -900,7 +900,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		{
             if (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
             {
-                FreeSRVTables();
+                FreeRTVTables();
 
                 D3D12_RENDER_TARGET_VIEW_DESC rtDesc    = {};
                 rtDesc.Format                           = RenderPlatform::TypelessToSrvFormat(textureDesc.Format);
@@ -909,9 +909,18 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
                 mips                                    = textureDesc.MipLevels;
                 if (renderTargetViews12)
                 {
-                    rtDesc.ViewDimension                    = (textureDesc.SampleDesc.Count) >1 ? D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-                    rtDesc.Texture2DArray.FirstArraySlice   = 0;
-                    rtDesc.Texture2DArray.ArraySize         = 1;
+                    rtDesc.ViewDimension                    =arraySize<=1?((textureDesc.SampleDesc.Count) >1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D)
+																		:((textureDesc.SampleDesc.Count) >1 ? D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D12_RTV_DIMENSION_TEXTURE2DARRAY);
+					if(arraySize<=1)
+					{
+						rtDesc.Texture2D.MipSlice=0;
+						rtDesc.Texture2D.PlaneSlice=0;
+					}
+					else
+					{
+						rtDesc.Texture2DArray.FirstArraySlice   = 0;
+						rtDesc.Texture2DArray.ArraySize         = 1;
+					}
 
                     mTextureRtHeap.Restore((dx12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRtHeap", false);
 

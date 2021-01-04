@@ -687,6 +687,7 @@ namespace simul
 					platformConstantBuffer = p->CreatePlatformConstantBuffer();
 					platformConstantBuffer->SetName(typeid(T).name());
 					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
+					platformConstantBuffer->LinkToEffect(nullptr, typeid(T).name(), T::bindingIndex);
 				}
 			}
 			void LinkToEffect(Effect* effect, const char* name)

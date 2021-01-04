@@ -121,7 +121,7 @@ namespace simul
 				return mapped == GL_TRUE;
 			}
 
-			inline int GetLastIndex(crossplatform::DeviceContext& deviceContext, int idxOffset = 0)
+			inline int GetIndex(crossplatform::DeviceContext& deviceContext, int idxOffset = 0)
 			{
 				int idx = 0;
 				if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
@@ -134,7 +134,7 @@ namespace simul
 				}
 				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
 				{
-					idx = mLastIdx = ((mLastIdx + 1) + idxOffset) % mNumBuffers;
+					idx = mLastIdx = (mLastIdx + idxOffset) % mNumBuffers;
 				}
 				else
 				{

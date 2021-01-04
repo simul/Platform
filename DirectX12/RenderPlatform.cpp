@@ -1123,6 +1123,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_8_UNORM_SRGB;
 	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
 		return RGBA_8_UNORM_SRGB;
+	case DXGI_FORMAT_R8G8B8A8_TYPELESS:
 	case DXGI_FORMAT_R8G8B8A8_UNORM:
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_R8G8B8A8_SNORM:
@@ -1375,6 +1376,23 @@ bool simul::dx12::RenderPlatform::IsTypeless(DXGI_FORMAT fmt, bool partialTypele
 		default:
 			return false;
 	}
+}
+
+DXGI_FORMAT simul::dx12::RenderPlatform::DsvToTypelessFormat(DXGI_FORMAT fmt)
+{
+	switch (fmt)
+	{
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		return DXGI_FORMAT_R24G8_TYPELESS;
+	case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		return DXGI_FORMAT_R32G8X24_TYPELESS;
+	case DXGI_FORMAT_D32_FLOAT:
+		return DXGI_FORMAT_R32_TYPELESS;
+	case DXGI_FORMAT_D16_UNORM:
+		return DXGI_FORMAT_R16_TYPELESS;
+	default:break;
+	};
+	return fmt;
 }
 
 DXGI_FORMAT simul::dx12::RenderPlatform::TypelessToDsvFormat(DXGI_FORMAT fmt)
@@ -1845,21 +1863,36 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 				t->SetLayout(deviceContext,D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 	}
+	D3D12_CPU_DESCRIPTOR_HANDLE h[8];
+	D3D12_CPU_DESCRIPTOR_HANDLE *D=nullptr;
 	if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE h[8];
 		for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
 		{
-			h[i] = *((CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[i]);
+			h[i] = deviceContext.defaultTargetsAndViewport.m_rt[i]?*((CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[i]):CD3DX12_CPU_DESCRIPTOR_HANDLE();
 		}
-		deviceContext.asD3D12Context()->OMSetRenderTargets
-		(
-			(UINT)deviceContext.defaultTargetsAndViewport.num,
-				h,
-			false,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
-		);
 	}
+	else
+	{
+		for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
+		{
+			auto &t=deviceContext.defaultTargetsAndViewport.textureTargets[i];
+			h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
+		}
+	}
+	auto &d=deviceContext.defaultTargetsAndViewport.depthTarget;
+	if(d.texture)
+		D=d.texture->AsD3D12DepthStencilView(deviceContext);
+	else
+		D=(D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt;
+	deviceContext.asD3D12Context()->OMSetRenderTargets
+	(
+		(UINT)deviceContext.defaultTargetsAndViewport.num,
+			h,
+		false,
+		D
+	);
+	
 	if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
 	    SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
 }

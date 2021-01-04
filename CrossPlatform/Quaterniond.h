@@ -22,6 +22,13 @@ namespace simul
 			{
 				Reset();
 			}
+			Quaternion(const tvector3<T>& v, T S)
+			{
+				x = v.x;
+				y = v.y;
+				z = v.z;
+				s = S;
+			}
 			Quaternion(const tvector4<T> &v)
 			{
 				x=v.x;
