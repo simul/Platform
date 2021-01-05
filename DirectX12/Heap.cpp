@@ -39,9 +39,13 @@ namespace simul
 			res								= device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
 #endif
 			SIMUL_ASSERT(res == S_OK);
-			SIMUL_GPU_TRACK_MEMORY(mHeap, totalCnt) // Of course, not the actual memory size. But what is? D3D doesn't want us to know...
-			if(!mHeap)
+			if(res!=S_OK)
+			{
+				SIMUL_BREAK("CreateDescriptorHeap failed.");
 				return;
+			}
+			SIMUL_GPU_TRACK_MEMORY(mHeap, totalCnt) // Of course, not the actual memory size. But what is? D3D doesn't want us to know...
+		
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);
 			mCpuHandle						= mHeap->GetCPUDescriptorHandleForHeapStart();
 			if(shaderVisible)
