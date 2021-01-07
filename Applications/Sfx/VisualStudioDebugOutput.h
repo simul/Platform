@@ -1,4 +1,6 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "BufferedStringStreamBuf.h"
 #ifdef _MSC_VER
 #include <windows.h>
@@ -19,8 +21,6 @@ bool IsDebuggerPresent() {return false;}
 #ifndef _MAX_PATH
 #define _MAX_PATH 260
 #endif
-
-#define _CRT_SECURE_NO_WARNINGS
 
 typedef void (__stdcall *DebugOutputCallback)(const char *);
 
