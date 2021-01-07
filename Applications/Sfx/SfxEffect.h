@@ -1,83 +1,15 @@
-#ifndef PSFXEFFECT_H
-#define PSFXEFFECT_H
+#pragma once
 #include <set>
 #include "Sfx.h"
 #include "SfxParser.h"
+#include "Function.h"
+#include "ShaderInstance.h"
 
 namespace sfx
 {
-	struct Function
-	{
-		void clear()
-		{
-			functionsCalled.clear();
-			returnType.clear();
-			name.clear();
-			content.clear();
-			parameters.clear();		
-			globals.clear();
-			rwTexturesLoaded.clear();
-			localTextures.clear();
-			resources.clear();
-			declaration.clear();
-			declarations.clear();
-			constantBuffers.clear();
-			types_used.clear();
-			locals.clear();
-			main_linenumber=0;
-			min_parameters = 0;
-			initialized=false;
-		}
-		std::string						declaration;
-		std::set<std::string>			declarations;
-		std::set<Function*>				functionsCalled;
-		std::set<ConstantBuffer*>		constantBuffers;
-		const std::set<std::string>&	GetTypesUsed() const;
-		std::string						returnType;
-		std::string						name;
-		std::string						content;
-		//! textures, samplers, buffers. To be divided into parameters and globals when we read the signature
-		//! of the function.
-		std::set<std::string>			resources;			
-		int								min_parameters;
-		//! Passed in from the caller.
-		std::vector<sfxstype::variable> parameters;		
-		//! Passed in from the caller.
-		std::vector<sfxstype::variable> locals;		
-		//! Referenced but not passed - must be global.
-		std::set<std::string>			globals;					
-		//! RW Textures used in load operations
-		std::set<std::string>			rwTexturesLoaded;		 
-		//! Holds a set of local textures.
-		std::set<std::string>			localTextures;			
-		
-		int								main_linenumber;
-		int								local_linenumber;
-		std::string						filename;
-	protected:
-		mutable std::set<std::string>	types_used;
-		mutable bool					initialized;
-	};
 
-	//! A shader to be compiled. 
-	struct CompiledShader
-	{
-		CompiledShader(const std::set<Declaration*> &d);
-		CompiledShader(const CompiledShader &cs);
-		ShaderType shaderType;
-		std::string m_profile;
-		std::string m_functionName;
-		std::string m_preamble;
-		std::string m_augmentedSource;
-		std::string entryPoint;
-		std::map<int,std::string> sbFilenames;// maps from PixelOutputFormat for pixel shaders, or int for vertex(0) and export(1) shaders.
-		std::set<Declaration*> declarations;
-		std::set<ConstantBuffer*> constantBuffers;
-		int global_line_number;
-		std::string rtFormatStateName;
-	};
 	typedef std::map<std::string,std::vector<Function*> > FunctionMap;
-	typedef std::map<std::string,CompiledShader*> CompiledShaderMap;
+	typedef std::map<std::string,ShaderInstance*> ShaderInstanceMap;
 	typedef std::map<std::string,std::string> StringMap;
 	struct TechniqueGroup
 	{
@@ -100,7 +32,7 @@ namespace sfx
 
 		std::map<std::string,std::string>			m_cslayout;
 		std::map<std::string,std::string>			m_gslayout;
-		CompiledShaderMap						m_compiledShaders;
+		ShaderInstanceMap						m_shaderInstances;
 		struct InterfaceDcl
 		{
 			std::string id;
@@ -120,7 +52,7 @@ namespace sfx
 		SfxOptions					sfxOptions;
 
 		/// For a given shader compilation, work out which slots it uses.
-		void CalculateResourceSlots(CompiledShader *compiledShader,std::set<int> &textureSlots,std::set<int> &uavSlots
+		void CalculateResourceSlots(ShaderInstance *shaderInstance,std::set<int> &textureSlots,std::set<int> &uavSlots
 			,std::set<int> &textureSlotsForSB, std::set<int> &uavTextureSlotsForSB
 			,std::set<int> &bufferSlots,std::set<int> &samplerSlots);
 		std::map<std::string,int> filenumbers;
@@ -210,8 +142,10 @@ namespace sfx
 			}
 			return nullptr;
 		}
-		void ConstructSource(CompiledShader *cs);
-		CompiledShader *AddCompiledShader(const std::string &name,std::set<Declaration *> declarations);
+		/// Get the named instance, or create it if it's a function without a default instance.
+		ShaderInstance *GetShaderInstance(const std::string &functionName,ShaderType type);
+		void ConstructSource(ShaderInstance *cs);
+		ShaderInstance *AddShaderInstance(const std::string &name,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno);
 		void DeclareStruct(const std::string &name, const Struct &ts,const std::string &original);
 		void DeclareConstantBuffer(const std::string &name, int slot,const Struct &ts,const std::string &original);
 		void DeclareVariable(const Variable *v);
@@ -242,4 +176,3 @@ namespace sfx
 	};
 	extern Effect *gEffect;
 }
-#endif

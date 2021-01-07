@@ -446,7 +446,7 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 		find_and_replace(sfxbFilename, ".sfxo", ".sfxb");
 		combinedBinary.open(sfxbFilename, std::ios_base::binary);
 	}
-	for(CompiledShaderMap::iterator i=m_compiledShaders.begin();i!=m_compiledShaders.end();i++)
+	for(ShaderInstanceMap::iterator i=m_shaderInstances.begin();i!=m_shaderInstances.end();i++)
 	{
 		ConstructSource(i->second);
 		if(i->second->shaderType==FRAGMENT_SHADER)
@@ -632,10 +632,10 @@ string stringOf(Topology t)
 }
 extern string ToString(PixelOutputFormat pixelOutputFormat);
 
-void Effect::CalculateResourceSlots(CompiledShader *compiledShader,set<int> &textureSlots,set<int> &uavSlots,set<int> &textureSlotsForSB,set<int> &uavTextureSlotsForSB,set<int> &constantBufferSlots,set<int> &samplerSlots)
+void Effect::CalculateResourceSlots(ShaderInstance *shaderInstance,set<int> &textureSlots,set<int> &uavSlots,set<int> &textureSlotsForSB,set<int> &uavTextureSlotsForSB,set<int> &constantBufferSlots,set<int> &samplerSlots)
 {
 	// Note there may be some API-dependence in how we do this.
-	for(auto d:compiledShader->declarations)
+	for(auto d:shaderInstance->declarations)
 	{
 		if(d->declarationType==DeclarationType::TEXTURE)
 		{
@@ -678,21 +678,51 @@ void Effect::CalculateResourceSlots(CompiledShader *compiledShader,set<int> &tex
 		}
 	}
 	// older-style anonymous constant buffers.
-	for (auto c : compiledShader->constantBuffers)
+	for (auto c : shaderInstance->constantBuffers)
 	{
 		constantBufferSlots.insert(c->slot);
 	}
 }
 
-CompiledShader *Effect::AddCompiledShader(const std::string &compiledShaderName,set<Declaration *> declarations)
+ShaderInstance *Effect::AddShaderInstance(const std::string &shaderInstanceName,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno)
 {
-	CompiledShader *cs=new CompiledShader(declarations);
-	m_compiledShaders[compiledShaderName]	=cs;
+	auto i=m_shaderInstances.find(shaderInstanceName);
+	if(i!=m_shaderInstances.end())
+		return i->second;
+	Function *function=gEffect->GetFunction(functionName,0);
+	std::set<Declaration *> declarations;
+	std::set<string> globals;
+	gEffect->AccumulateGlobalsAsStrings(function,globals);
+	// find out what slots the function uses by interrogating its global variables.
+	// At this point we're not interested in params, just globals.
+	for(auto i:globals)
+	{
+		string type=gEffect->GetDeclaredType(i);
+		auto d=gEffect->GetDeclarations().find(i);
+		if (d==gEffect->GetDeclarations().end())
+			continue;
+		Declaration *dec=d->second;
+		declarations.insert(dec);
+	}
+
+	ShaderInstance *shaderInstance=new ShaderInstance(declarations);
+	m_shaderInstances[shaderInstanceName]	=shaderInstance;
+	
+	if(GetConfig()->entryPointOption.length()>0)
+		shaderInstance->entryPoint					=functionName;
+	else
+		shaderInstance->entryPoint					="main";
+	shaderInstance->m_functionName					=functionName;
+	shaderInstance->shaderType						=type;
+	shaderInstance->m_profile						=profileName;
+	shaderInstance->global_line_number				=lineno;
+
 	for(auto d:declarations)
 	{
 		d->ref_count++;
 	}
-	return cs;
+	AccumulateConstantBuffersUsed(function, shaderInstance->constantBuffers);
+	return shaderInstance;
 }
 
 std::size_t hash(const char *s)
@@ -701,6 +731,30 @@ std::size_t hash(const char *s)
 	//s[0] * (31 ^ (n - 1) + s[1] * 31 ^ (n - 2) + ... + s[n - 1]
 	std::size_t h1 = std::hash<std::string>{}(s);
 	return h1;
+}
+
+ShaderInstance *Effect::GetShaderInstance(const std::string &instanceName,ShaderType type)
+{
+	auto s=m_shaderInstances.find(instanceName);
+	if(s!=m_shaderInstances.end())
+	{
+		if(s->second->shaderType==UNKNOWN_SHADER_TYPE||type==UNKNOWN_SHADER_TYPE||type==s->second->shaderType)
+		{	
+			if(s->second->shaderType==UNKNOWN_SHADER_TYPE&&type!=UNKNOWN_SHADER_TYPE)
+				s->second->shaderType=type;
+			return s->second;
+		}
+		else
+		{
+			std::string instanceName1=instanceName+stringOf((ShaderCommand)type);
+			return AddShaderInstance(instanceName1,s->second->m_functionName,type,s->second->m_profile,s->second->global_line_number);
+		}
+	}
+	std::string functionName=instanceName;
+	Function *function=gEffect->GetFunction(functionName,0);
+	if(!function)
+		return nullptr;
+	return AddShaderInstance(instanceName,functionName,type,"",function->main_linenumber);
 }
 
 bool Effect::Save(string sfxFilename,string sfxoFilename)
@@ -1016,6 +1070,92 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 				{
 					outstr<<"\t\t\ttopology: "<<stringOf(pass->passState.topologyState.topology)<<"\n";
 				}
+				auto writeSb=[&] (ofstream &outstr,ShaderInstance *shaderInstance,const std::string &sbFilename,std::string pfm="")
+					{
+						if(!sbFilename.size())
+							return;
+						std::set<int> textureSlots,uavSlots,cbufferSlots,samplerSlots,textureSlotsForSB,uavTextureSlotsForSB;
+						CalculateResourceSlots(shaderInstance,textureSlots,uavSlots,textureSlotsForSB,uavTextureSlotsForSB,cbufferSlots,samplerSlots);
+						outstr<<stringOf((ShaderCommand)shaderInstance->shaderType);
+						if (!shaderInstance->rtFormatStateName.empty())
+						{
+							outstr << "(" << shaderInstance->rtFormatStateName << ")";
+						}
+						else if(shaderInstance->shaderType==FRAGMENT_SHADER&&pfm.length())
+							outstr<<"("<<pfm<<")";
+						outstr << ": " << sbFilename;
+						outstr << "("<<shaderInstance->entryPoint.c_str()<<")";
+						if (sfxOptions.wrapOutput)
+						{
+							if(binaryMap.find(sbFilename)!=binaryMap.end())
+							{
+							// Write the offset and size.
+								std::streampos pos;
+								size_t sz;
+								std::tie(pos, sz) = binaryMap[sbFilename];
+								if((int)pos<0)
+								{
+									SFX_CERR << sbFilename.c_str()<< " has bad entry in binary map."<< std::endl;
+									exit(153);
+								}
+								outstr << " inline:(0x" << std::hex << pos <<",0x"<< sz <<std::dec<<")";
+							}
+							else
+							{
+								SFX_CERR << sbFilename.c_str()<< "wasn't found in the binary map."<< std::endl;
+							}
+
+						}
+						// Print texture slots
+						outstr<<", t:(";
+						for(auto w:textureSlots)
+						{
+							if(w!=*(textureSlots.begin()))
+								outstr<<",";
+							outstr<<GenerateTextureSlot(w,false);
+						}
+						// Print uav slots
+						outstr<<"), u:(";
+						for(auto w:uavSlots)
+						{
+							if(w!=*(uavSlots.begin()))
+								outstr<<",";
+							outstr<<GenerateTextureWriteSlot(w,false);
+						}
+						// Print structured buffer slots
+						outstr<<"), b:(";
+						for(auto w:textureSlotsForSB)
+						{
+							if(w!=*(textureSlotsForSB.begin()))
+								outstr<<",";
+							outstr<<GenerateTextureSlot(w,false);
+						}
+						// Print structured buffer slots
+						outstr<<"), z:(";
+						for(auto w:uavTextureSlotsForSB)
+						{
+							if(w!=*(uavTextureSlotsForSB.begin()))
+								outstr<<",";
+							outstr<<GenerateTextureWriteSlot(w,false);
+						}
+						// Print constant buffer slots
+						outstr<<"), c:(";
+						for(auto w: cbufferSlots)
+						{
+							if(w!=*(cbufferSlots.begin()))
+								outstr<<",";
+							outstr<<GenerateConstantBufferSlot(w,false);
+						}
+						// Print sampler slots
+						outstr<<"), s:(";
+						for(auto w:samplerSlots)
+						{
+							if(w!=*(samplerSlots.begin()))
+								outstr<<",";
+							outstr<<GenerateSamplerSlot(w,false);
+						}
+						outstr<<")\n";
+					};
 				for(int s=0;s<NUM_OF_SHADER_TYPES;s++)
 				{
 					if(!pass->HasShader((ShaderType)s))
@@ -1025,12 +1165,12 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					ShaderType shaderType=(ShaderType)s;
 					if(shaderType==ShaderType::VERTEX_SHADER&&pass->HasShader(GEOMETRY_SHADER))
 						shaderType=EXPORT_SHADER;
-					const string &compiledShaderName=pass->GetShader((ShaderType)shaderType);
-					CompiledShader *compiledShader=m_compiledShaders[compiledShaderName];
+					const string &shaderInstanceName=pass->GetShader((ShaderType)shaderType);
+					ShaderInstance *shaderInstance=GetShaderInstance(shaderInstanceName,shaderType);
 					int vertex_or_export=0;
 					if(shaderType==EXPORT_SHADER)
 						vertex_or_export=1;
-					Function *function = gEffect->GetFunction(compiledShader->m_functionName, 0);
+					Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
 					if(shaderType==VERTEX_SHADER&&function->parameters.size())
 					{
 						outstr<<"\t\t\tlayout:\n";
@@ -1061,97 +1201,40 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 						}
 						outstr<<"\t\t\t}\n";
 					}
-					for(auto v=compiledShader->sbFilenames.begin();v!=compiledShader->sbFilenames.end();v++)
+					for(auto v=shaderInstance->sbFilenames.begin();v!=shaderInstance->sbFilenames.end();v++)
 					{
 						string sbFilename=v->second;
 						PixelOutputFormat pixelOutputFormat=(PixelOutputFormat)v->first;
 						string pfm=ToString(pixelOutputFormat);
+						outstr<<"\t\t\t";
 						if(shaderType==FRAGMENT_SHADER||(int)pixelOutputFormat==vertex_or_export)
-						if(sbFilename.size())
-						{
-							std::set<int> textureSlots,uavSlots,cbufferSlots,samplerSlots,textureSlotsForSB,uavTextureSlotsForSB;
-							CalculateResourceSlots(compiledShader,textureSlots,uavSlots,textureSlotsForSB,uavTextureSlotsForSB,cbufferSlots,samplerSlots);
-							outstr<<"\t\t\t"<<stringOf((ShaderCommand)shaderType);
-							if (!compiledShader->rtFormatStateName.empty())
-							{
-								outstr << "(" << compiledShader->rtFormatStateName << ")";
-							}
-							else if(shaderType==FRAGMENT_SHADER&&pfm.length())
-								outstr<<"("<<pfm<<")";
-							outstr << ": " << sbFilename;
-							outstr << "("<<compiledShader->entryPoint.c_str()<<")";
-							if (sfxOptions.wrapOutput)
-							{
-								if(binaryMap.find(sbFilename)!=binaryMap.end())
-								{
-								// Write the offset and size.
-									std::streampos pos;
-									size_t sz;
-									std::tie(pos, sz) = binaryMap[sbFilename];
-									if((int)pos<0)
-									{
-										SFX_CERR << sbFilename.c_str()<< " has bad entry in binary map."<< std::endl;
-										exit(153);
-									}
-									outstr << " inline:(0x" << std::hex << pos <<",0x"<< sz <<std::dec<<")";
-								}
-								else
-								{
-									SFX_CERR << sbFilename.c_str()<< "wasn't found in the binary map."<< std::endl;
-								}
-
-							}
-							// Print texture slots
-							outstr<<", t:(";
-							for(auto w:textureSlots)
-							{
-								if(w!=*(textureSlots.begin()))
-									outstr<<",";
-								outstr<<GenerateTextureSlot(w,false);
-							}
-							// Print uav slots
-							outstr<<"), u:(";
-							for(auto w:uavSlots)
-							{
-								if(w!=*(uavSlots.begin()))
-									outstr<<",";
-								outstr<<GenerateTextureWriteSlot(w,false);
-							}
-							// Print structured buffer slots
-							outstr<<"), b:(";
-							for(auto w:textureSlotsForSB)
-							{
-								if(w!=*(textureSlotsForSB.begin()))
-									outstr<<",";
-								outstr<<GenerateTextureSlot(w,false);
-							}
-							// Print structured buffer slots
-							outstr<<"), z:(";
-							for(auto w:uavTextureSlotsForSB)
-							{
-								if(w!=*(uavTextureSlotsForSB.begin()))
-									outstr<<",";
-								outstr<<GenerateTextureWriteSlot(w,false);
-							}
-							// Print constant buffer slots
-							outstr<<"), c:(";
-							for(auto w: cbufferSlots)
-							{
-								if(w!=*(cbufferSlots.begin()))
-									outstr<<",";
-								outstr<<GenerateConstantBufferSlot(w,false);
-							}
-							// Print sampler slots
-							outstr<<"), s:(";
-							for(auto w:samplerSlots)
-							{
-								if(w!=*(samplerSlots.begin()))
-									outstr<<",";
-								outstr<<GenerateSamplerSlot(w,false);
-							}
-							outstr<<")\n";
-						}
+							writeSb(outstr,shaderInstance,sbFilename,pfm);
 					}
+				}
+				
+				// If it's raytrace, go through the hitgroups.
+				for(auto h:pass->passState.raytraceHitGroups)
+				{
+					outstr<<"\t\t\thitgroup: "<<h.first<<"\n\t\t\t{\n";
+					if(h.second.closestHit.length())
+					{
+						ShaderInstance *shaderInstance=GetShaderInstance(h.second.closestHit,CLOSEST_HIT_SHADER);
+						outstr<<"\t\t\t\t";
+						writeSb(outstr,shaderInstance,shaderInstance->sbFilenames[0]);
+					}
+					if(h.second.anyHit.length())
+					{
+						ShaderInstance *shaderInstance=GetShaderInstance(h.second.anyHit,ANY_HIT_SHADER);
+						outstr<<"\t\t\t\t";
+						writeSb(outstr,shaderInstance,shaderInstance->sbFilenames[0]);
+					}
+					if(h.second.intersection.length())
+					{
+						ShaderInstance *shaderInstance=GetShaderInstance(h.second.intersection,INTERSECTION_SHADER);
+						outstr<<"\t\t\t\t";
+						writeSb(outstr,shaderInstance,shaderInstance->sbFilenames[0]);
+					}
+					outstr<<"\t\t\t}\n";
 				}
 				outstr<<"\t\t}\n";
 			}
@@ -1166,6 +1249,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 
 	if (sfxOptions.wrapOutput)
 	{
+	// TODO: binary is here, sfxb not needed??
 		outstr.write((const char *)binBuffer.data(), binBuffer.size());
 	}
 	std::cout<<sfxoFilename.c_str()<<": info: output effect file."<<std::endl;
@@ -1776,9 +1860,9 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 	};
 }
 
-void Effect::ConstructSource(CompiledShader *compiledShader)
+void Effect::ConstructSource(ShaderInstance *shaderInstance)
 {
-	string shaderName = compiledShader->m_functionName;
+	string shaderName = shaderInstance->m_functionName;
 	if (strcasecmp(shaderName.c_str(), "NULL") == 0)
 		return;
 
@@ -1788,7 +1872,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	{
 		ostringstream errMsg;
 		errMsg << "Unable to find referenced shader \"" << shaderName << '\"';
-		errSem(errMsg.str(), compiledShader->global_line_number);
+		errSem(errMsg.str(), shaderInstance->global_line_number);
 		return;
 	}
 
@@ -1809,7 +1893,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 		}
 	}
 	// for now, add in ALL the constant buffers...
-	for(auto i:compiledShader->constantBuffers)
+	for(auto i:shaderInstance->constantBuffers)
 	{
 		decs.insert(i);
 	}
@@ -1833,7 +1917,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	if (combo)
 	{
 		textureCB.declarationType	= DeclarationType::CONSTANT_BUFFER;
-		kTexHandleUbo[16]=ext[compiledShader->shaderType];
+		kTexHandleUbo[16]=ext[shaderInstance->shaderType];
 		textureCB.name			  = kTexHandleUbo;
 		textureCB.ref_count		 = 1;
 		textureCB.slot			  = kTexHandleUbo[16] == 'p' ? 1 : 0;
@@ -1858,7 +1942,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 					theShader << "#line " << d->line_number << " " << GetFilenameOrNumber(d->file_number) << endl;
 			}
 		}
-		Declare(compiledShader->shaderType, theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+		Declare(shaderInstance->shaderType, theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 	}
 
 	// Declare the texture and sampler CB:
@@ -1866,11 +1950,11 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	{
 		if (!textureCB.m_structMembers.empty())
 		{
-			Declare(compiledShader->shaderType,theShader, (Declaration*)&textureCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates,function);
+			Declare(shaderInstance->shaderType,theShader, (Declaration*)&textureCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates,function);
 		}
 		if (sfxConfig.combineInShader && !samplerCB.m_structMembers.empty())
 		{
-			Declare(compiledShader->shaderType,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+			Declare(shaderInstance->shaderType,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 		}
 	}
 
@@ -1950,7 +2034,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	string content			= function->content;
 	string inputDeclaration = sfxConfig.inputDeclaration;
 	bool split_structs		= false;
-	if(compiledShader->shaderType==sfx::ShaderType::VERTEX_SHADER)
+	if(shaderInstance->shaderType==sfx::ShaderType::VERTEX_SHADER)
 	{
 		if (sfxConfig.vertexInputDeclaration.length() > 0)
 		{
@@ -2014,7 +2098,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 				}
 			}
 			// Fragment shader (could be or not a struct)
-			else if(compiledShader->shaderType == sfx::ShaderType::FRAGMENT_SHADER)
+			else if(shaderInstance->shaderType == sfx::ShaderType::FRAGMENT_SHADER)
 			{
 				string customId = i.identifier;
 
@@ -2039,7 +2123,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 				setup_code += ((i.type + " ") + customId + "=") + (blockname + ".") + customId + ";\n";
 			}
 			// Compute shader (could be or not a struct)
-			else if (compiledShader->shaderType == sfx::ShaderType::COMPUTE_SHADER)
+			else if (shaderInstance->shaderType == sfx::ShaderType::COMPUTE_SHADER)
 			{
 				for (auto s: sfxConfig.computeSemantics)
 				{
@@ -2067,7 +2151,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	}
 	if(function->returnType!="void")
 	{
-		if(compiledShader->shaderType==sfx::ShaderType::FRAGMENT_SHADER)
+		if(shaderInstance->shaderType==sfx::ShaderType::FRAGMENT_SHADER)
 		{
 			if(sfxConfig.pixelOutputDeclaration.length()>0)
 			{
@@ -2224,7 +2308,7 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 		}
 	}
 	// Add the CS layout:
-	if (compiledShader->shaderType == COMPUTE_SHADER)
+	if (shaderInstance->shaderType == COMPUTE_SHADER)
 	{
 		std::string csLayout = gEffect->m_cslayout[shaderName];
 		// Convert the compute layout
@@ -2260,28 +2344,28 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 
 		theShader<< csLayout <<"\n";
 	}
-	if (compiledShader->shaderType == RAY_GENERATION_SHADER)
+	if (shaderInstance->shaderType == RAY_GENERATION_SHADER)
 	{
-		theShader<<"[shader(\"raygeneration\")]\n";//sfxConfig
+		theShader<<"[shader(\"raygeneration\")]\n";
 	}
-	if (compiledShader->shaderType == CLOSEST_HIT_SHADER)
+	if (shaderInstance->shaderType == CLOSEST_HIT_SHADER)
 	{
-		theShader<<"[shader(\"closesthit\")]\n";//sfxConfig
+		theShader<<"[shader(\"closesthit\")]\n";
 	}
-	if (compiledShader->shaderType == ANY_HIT_SHADER)
+	if (shaderInstance->shaderType == ANY_HIT_SHADER)
 	{
 		theShader<<"[shader(\"anyhit\")]\n";//sfxConfig
 	}
-	if (compiledShader->shaderType == MISS_SHADER)
+	if (shaderInstance->shaderType == MISS_SHADER)
 	{
 		theShader<<"[shader(\"miss\")]\n";//sfxConfig
 	}
-	if (compiledShader->shaderType == CALLABLE_SHADER)
+	if (shaderInstance->shaderType == CALLABLE_SHADER)
 	{
 		theShader<<"[shader(\"callable\")]\n";//sfxConfig
 	}
 	// Only if COMPILED as a GS, not VS streamout.
-	if (compiledShader->shaderType == GEOMETRY_SHADER)
+	if (shaderInstance->shaderType == GEOMETRY_SHADER)
 	{
 		theShader << gEffect->m_gslayout[shaderName] << "\n";
 	}
@@ -2295,5 +2379,5 @@ void Effect::ConstructSource(CompiledShader *compiledShader)
 	// Add main function content:
 	theShader << "{\n" << content << "\n}";
 
-	compiledShader->m_augmentedSource = theShader.str();
+	shaderInstance->m_augmentedSource = theShader.str();
 }

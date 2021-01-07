@@ -41,6 +41,7 @@ namespace simul
 		*/
 		enum ShaderType
 		{
+			SHADERTYPE_UNKNOWN=0,
 			SHADERTYPE_VERTEX,
 			SHADERTYPE_HULL,		// tesselation control.
 			SHADERTYPE_DOMAIN,		// tesselation evaluation.
@@ -48,10 +49,12 @@ namespace simul
 			SHADERTYPE_PIXEL,
 			SHADERTYPE_COMPUTE,
 			SHADERTYPE_RAY_GENERATION,	// Raytrace shader types
-			SHADERTYPE_CLOSEST_HIT,
-			SHADERTYPE_ANY_HIT,
 			SHADERTYPE_MISS,
 			SHADERTYPE_CALLABLE,
+			SHADERTYPE_CLOSEST_HIT,
+			SHADERTYPE_ANY_HIT,
+			SHADERTYPE_INTERSECTION,
+			SHADERTYPE_EXPORT,		// not generally used.
 			SHADERTYPE_COUNT
 		};
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
@@ -265,6 +268,12 @@ namespace simul
 			int					dimensions;
 			bool				valid;
 		};
+		struct SIMUL_CROSSPLATFORM_EXPORT RaytraceHitGroup
+		{
+			Shader* closestHit=nullptr;
+			Shader* anyHit=nullptr;
+			Shader* intersection=nullptr;
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
@@ -274,6 +283,7 @@ namespace simul
 			crossplatform::RenderState *renderTargetFormatState;
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
+			std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
 			std::string rtFormatState;
 			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);

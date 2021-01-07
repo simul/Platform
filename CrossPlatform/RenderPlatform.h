@@ -223,6 +223,8 @@ namespace simul
 			void SetShaderBuildMode			(ShaderBuildMode s);
 			//! When shaders should be built, or loaded if available.
 			ShaderBuildMode GetShaderBuildMode() const;
+			//! Clear/reload all textures stored in the main list.
+			void ClearTextures();
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
@@ -277,10 +279,7 @@ namespace simul
 			/// Create a platform-specific material instance.
 			Material						*GetOrCreateMaterial(const char *name);
 			/// Create a platform specific raytracing acceleration structure.
-			virtual AccelerationStructure	*CreateAccelerationStructure()
-			{
-				return nullptr;
-			}
+			virtual AccelerationStructure	*CreateAccelerationStructure();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.
@@ -454,7 +453,8 @@ namespace simul
 			GraphicsDeviceContext			immediateContext;
 			ComputeDeviceContext			computeContext;
 			// All for debug Effect
-			crossplatform::Effect			*debugEffect;
+			crossplatform::Effect			*debugEffect=nullptr;
+			crossplatform::Effect			*mipEffect=nullptr;
 			crossplatform::EffectTechnique	*textured;
 			crossplatform::EffectTechnique	*untextured;
 			crossplatform::EffectTechnique	*showVolume;

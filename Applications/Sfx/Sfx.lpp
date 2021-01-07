@@ -154,11 +154,40 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"snorm"					{
 										stdReturn(SNORM);
 									}
-<INITIAL,IN_SHADER>"pass"						{
+<INITIAL,IN_SHADER>"pass"			{
 										sfxlval.boolean=false;
 										stdReturn(PASS);
 									}
-<INITIAL,IN_SHADER>"group"					{
+<INITIAL,IN_SHADER>"raytrace_pass"	{
+										stdReturn(RAYTRACE_PASS);
+									}
+<IN_SHADER>"RayGeneration"			{
+										stdReturn(SET_RAY_GENERATION);
+									}
+<IN_SHADER>"HitGroup"					{
+										stdReturn(SET_HIT_GROUP);
+									}
+<IN_SHADER>"ClosestHit"				{
+										stdReturn(SET_CLOSEST_HIT);
+									}
+<IN_SHADER>"AnyHit"					{
+										stdReturn(SET_ANY_HIT);
+									}
+<IN_SHADER>"Intersection"			{
+										stdReturn(SET_INTERSECTION);
+									}
+<IN_SHADER>"Miss"					{
+										stdReturn(SET_MISS);
+									}
+<IN_SHADER>"Callable"				{
+										stdReturn(SET_CALLABLE);
+									}
+<IN_SHADER,IN_SHADER_COMPILE>"CompileShader"	{
+												sfxlval.lineno=yylineno;
+												stdReturn(COMPILE_SHADER_INSTANCE);
+									}
+									     
+<INITIAL,IN_SHADER>"group"			{
 										sfxlval.boolean=false;
 										stdReturn(GROUP);
 									}
@@ -768,10 +797,6 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 											}// Without this line, the yylineno would get out of whack.
 
 
-<IN_SHADER_COMPILE>"CompileShader"			{
-												sfxlval.lineno=yylineno;
-												stdReturn(COMPILE_SHADER);
-											}
 <IN_SHADER_COMPILE>"ConstructGSWithSO"		{
 												sfxlval.lineno=yylineno;
 												stdReturn(CONSTRUCT_GS);
@@ -1013,11 +1038,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													gEffect->m_sharedCode<<yytext;
 												else
 												{
-													//if(read_shader)
-													{
-														brace++;
-														SetLexStartState(IN_SHADER);
-													}
+													brace++;
+													SetLexStartState(IN_SHADER);
 													sfxlval.strs[0]=yytext;
 													stdReturn('{');
 												}

@@ -88,7 +88,6 @@ void Texture::FreeRTVTables()
 
 void Texture::InitUAVTables(int l,int m)
 {
-	InitStateTable(renderPlatform->GetImmediateContext(),l, m);
 
 	mipUnorderedAccessViews12 = nullptr;
 	if (m)
@@ -127,8 +126,6 @@ void Texture::FreeUAVTables()
 
 void Texture::InitRTVTables(int l,int m)
 {
-	InitStateTable(renderPlatform->GetImmediateContext(),l, m);
-
 	renderTargetViews12 = new D3D12_CPU_DESCRIPTOR_HANDLE*[l];
 	for (int i = 0; i<l; i++)
 	{
@@ -164,11 +161,11 @@ void Texture::CreateRTVTables(int totalNum,int m)
 }
 
 
-void Texture::InitStateTable(crossplatform::DeviceContext &deviceContext,int l, int m)
+void Texture::InitStateTable(int l, int m)
 {
 	// Create state table, at this point, we expect that the state
 	// has already being set !!!
-	auto curState = GetCurrentState(deviceContext);
+	auto curState = mResourceState;//GetCurrentState(deviceContext);
 	mSubResourcesStates.clear();
 	mSubResourcesStates.resize(l);
 	for (int layer = 0; layer < l; layer++)
@@ -350,7 +347,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 				D3D12_HEAP_FLAG_NONE,
 				&textureDesc,
-				D3D12_RESOURCE_STATE_COPY_DEST,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
 				nullptr,
 				SIMUL_PPV_ARGS(&mTextureDefault)
 			);
@@ -385,6 +382,9 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		SIMUL_PPV_ARGS(&mTextureUpload)
 	);
 	SIMUL_ASSERT(res == S_OK);
+	// Init states
+	InitStateTable(arraySize, mips);
+	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	SIMUL_GPU_TRACK_MEMORY(mTextureUpload, textureUploadBufferSize)
 	SIMUL_GPU_TRACK_MEMORY(mTextureDefault, textureUploadBufferSize)
@@ -394,9 +394,9 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	
 	std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas;
 	textureSubDatas.resize(arraySize);
-	AssumeLayout(D3D12_RESOURCE_STATE_COPY_DEST);
 	for(int i=0;i<wicContents.size();i++)
 	{
+		SetLayout(deviceContext,D3D12_RESOURCE_STATE_COPY_DEST,0,i);
 		WicContents &wic=wicContents[i];
 		// Perform the texture copy
 		D3D12_SUBRESOURCE_DATA &textureSubData	= textureSubDatas[i];
@@ -407,8 +407,6 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload,pLayouts[i].Offset, i*mips, 1, &textureSubDatas[i]);
 	}
 	
-	// Init states
-	InitStateTable(deviceContext,arraySize, mips);
 
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
@@ -445,6 +443,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		}
 	}
 	
+	SetLayout(deviceContext,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	ClearLoadingData();
 }
 
@@ -785,6 +784,7 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
 {
+	auto &deviceContext=renderPlatform->GetImmediateContext();
 	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
 	renderPlatform				= r;
 	// If it's the same as before, return.
@@ -820,6 +820,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		width		= (int)textureDesc.Width;
 		length		= (int)textureDesc.Height;
         mNumSamples = textureDesc.SampleDesc.Count;
+		InitStateTable(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 		if (!srv)
 		{
 			InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
@@ -899,9 +900,6 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	}
 	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 	dim			= 2;
-	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
-	auto &deviceContext=renderPlatform->GetImmediateContext();
-	//rPlat->FlushBarriers(deviceContext);
 }
 
 void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
@@ -1032,6 +1030,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		srvDesc.Texture3D.MipLevels				= m;
 		srvDesc.Texture3D.MostDetailedMip		= 0;
 		FreeSRVTables();
+		InitStateTable(1,m);
 		InitSRVTables(1, m);
 
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DSrvHeap", false);
@@ -1268,24 +1267,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
 		
-
-		// Find the initial texture state
-      /*  if (rendertarget)
-        {
-			AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-        else if (depthstencil)
-        {
-			AssumeLayout(D3D12_RESOURCE_STATE_DEPTH_WRITE);
-        }
-		else if (computable)
-        {
-			AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-        }
-		else*/
-		{
-			AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-		}
+		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
+		InitStateTable(1, m);
 		// Create the main SRV
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -1359,7 +1342,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			mTextureDsHeap.Offset();
 
             depthStencil = true;
-			InitStateTable(renderPlatform->GetImmediateContext(), l, m);
+			InitStateTable( l, m);
 		}
 		//auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 		//rPlat->FlushBarriers(deviceContext);
@@ -1477,7 +1460,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	FreeSRVTables();
 	FreeRTVTables();
 	FreeUAVTables();
-
+	
+	InitStateTable(totalNum, m);
 	InitSRVTables(totalNum, m);
 	CreateSRVTables(num, m, cubemap);
 
@@ -1728,12 +1712,11 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-    if (mips == 1)
+    if (mips <= 1)
     {
-        SIMUL_CERR_ONCE << "Calling GenerateMips on the texture: " << name << " which only has 1 mip (this has no effect). \n";
         return;
     }
-    deviceContext.renderPlatform->GenerateMips(deviceContext, this, true, 0);
+    deviceContext.renderPlatform->GenerateMips(deviceContext, this, true);
 }
 
 
@@ -2000,9 +1983,6 @@ void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceCo
 
 void Texture::InitSRVTables(int l,int m)
 {
-	auto &deviceContext=renderPlatform->GetImmediateContext();
-	InitStateTable(deviceContext,l, m);
-
 	// SRV's for each layer, including all mips
 	if (l>1)
 		layerShaderResourceViews12 = new D3D12_CPU_DESCRIPTOR_HANDLE[l];				

@@ -1,0 +1,31 @@
+//  Copyright (c) 2015-2021 Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "sampler_states.sl"
+
+uniform Texture2D inputTexture;
+
+shader vec4 PS_Mip(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=IN.texCoords.xy;
+	vec4 res	=texture_wrap_lod(inputTexture,texc.xy,0);
+	//res.rg=.5*texc.xy;
+	return res;
+}
+
+VertexShader vs_simplefullscreen_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
+
+technique mip
+{
+    pass mip
+    {
+		SetRasterizerState( RenderNoCull );
+		SetTopology( TriangleList );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_Mip()));
+    }
+}

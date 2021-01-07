@@ -44,7 +44,7 @@ namespace simul
 			crossplatform::RenderPlatformType GetType() const override;
 			virtual const char* GetSfxConfigFilename() const override
 			{
-				return "HLSL/HLSL11.json";
+				return "Sfx/DirectX11.json";
 			}
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();

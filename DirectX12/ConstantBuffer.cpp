@@ -192,8 +192,8 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 
 		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
 		D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
-		pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput);
-		pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput);
+		V_CHECK(pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput))
+		V_CHECK(pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput));
 		auto n=DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
 		while(n)
 		{

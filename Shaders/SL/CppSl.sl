@@ -341,6 +341,13 @@
 		T size = u.x * u.x + u.y * u.y + u.z * u.z;
 		return static_cast<T>(sqrt(static_cast<double>(size)));
 	}
+	template<typename T> tvector3<T> normalize(const tvector3<T>& u)
+	{
+		T l=length(u);
+		if(l>0)
+			return u/l;
+		return u;
+	}
 	typedef tvector3<float> vec3;
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{

@@ -131,7 +131,7 @@ namespace simul
 			void											InitRTVTables(int l, int m);
 			void											CreateRTVTables(int l,int m);
 
-			void											InitStateTable(crossplatform::DeviceContext &deviceContext,int l, int m);
+			void											InitStateTable(int l, int m);
 			
 
 			dx12::Heap						mTextureSrvHeap;

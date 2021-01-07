@@ -345,7 +345,7 @@ static int mkpath(const std::wstring &filename_utf8)
 	return (status);
 }
 
-string FillInVariablesSM51(const string &src,CompiledShader *shader)
+string FillInVariablesSM51(const string &src,ShaderInstance *shader)
 {
 	std::regex param_re("\\{shader_model\\}");
 	string ret=src;
@@ -380,7 +380,7 @@ string FillInVariable(const string &src, const std::string &var,const std::strin
 	return ret;
 }
 
-string FillInVariables(const string &src, CompiledShader *shader)
+string FillInVariables(const string &src, ShaderInstance *shader)
 {
 	std::regex param_re("\\{shader_model\\}");
 	string ret = src;
@@ -398,7 +398,7 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 	}
 }
 
-wstring BuildCompileCommand(CompiledShader *shader,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
+wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
 							wstring tempFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
 {
 	// Check if we are generating GLSL 
@@ -573,7 +573,7 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	return has_errors;
 }
 
-int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,ShaderType t,PixelOutputFormat pixelOutputFormat,const string &sharedSource, ostringstream& sLog
+int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,ShaderType t,PixelOutputFormat pixelOutputFormat,const string &sharedSource, ostringstream& sLog
 		,const SfxConfig &sfxConfig
 		,const SfxOptions &sfxOptions
 		,map<int,string> fileList

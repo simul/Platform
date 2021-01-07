@@ -26,7 +26,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! Render the mesh.
 			void Render(GraphicsDeviceContext &deviceContext, Mesh *mesh,mat4 model
-						,Texture *diffuseCubemap,Texture *specularCubemap);
+						,Texture *diffuseCubemap,Texture *specularCubemap,Texture *screenspaceShadow);
 			void ApplyMaterial(DeviceContext &deviceContext, Material *material);
 		protected:
 			void DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int);

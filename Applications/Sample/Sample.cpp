@@ -241,15 +241,21 @@ public:
 		delete depthTexture;
 		delete renderPlatform;
 	}
-
+	void ReloadMeshes()
+	{
+		//exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
+		exampleMesh->Load("models/DamagedHelmet/DamagedHelmet.gltf",0.1f,crossplatform::AxesStandard::OpenGL);//Sponza/Sponza.gltf");
+		environmentMesh->Load("models/Sponza/Sponza.gltf", 1.0f, crossplatform::AxesStandard::OpenGL);
+	}
 	// This allows live-recompile of shaders. 
 	void RecompileShaders()
 	{
 		renderPlatform->RecompileShaders();
 		hDRRenderer->RecompileShaders();
-
 		effect->Load(renderPlatform, "solid");
 		raytrace_effect->Load(renderPlatform,"raytrace");
+		renderPlatform->ClearTextures();
+		//ReloadMeshes();
 		// Force regen of cubemaps.
 		delete diffuseCubemapTexture;
 		diffuseCubemapTexture=nullptr;
@@ -268,11 +274,8 @@ public:
 		((dx12::RenderPlatform*)renderPlatform)->SetImmediateContext((dx12::ImmediateContext*)deviceManager.GetImmediateContext());
 #endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
-		//exampleMesh->Initialize(renderPlatform, crossplatform::MeshType::CUBE_MESH);
-		exampleMesh->Load("models/DamagedHelmet/DamagedHelmet.gltf",0.1f,crossplatform::AxesStandard::OpenGL);//Sponza/Sponza.gltf");
-		environmentMesh->Load("models/Sponza/Sponza.gltf", 1.0f, crossplatform::AxesStandard::OpenGL);
-
-		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,128,128,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
+		ReloadMeshes();
+		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,512,256,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
 		accelerationStructure->RestoreDeviceObjects(environmentMesh);
 		rayGenConstants.RestoreDeviceObjects(renderPlatform);
 
@@ -289,8 +292,8 @@ public:
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 		lightsStructuredBuffer.RestoreDeviceObjects(renderPlatform,10);
 
-		lights[0].colour = vec4(0.2f, 0.15f, 0.05f, 0);
-		lights[0].direction = vec3(.707f, 0, -.707f);
+		lights[0].colour = vec4(0.4f, 0.3f, 0.1f, 0);
+		lights[0].direction = normalize(vec3(-.5f,.2f,-1.0f));
 		lights[0].is_point = lights[0].is_spot = 0;
 
 		std::random_device rd;   // non-deterministic generator
@@ -299,7 +302,7 @@ public:
 
 		for(int i=1;i<10;i++)
 		{
-			lights[i].colour = 0.5f*vec4(dist(gen), dist(gen), dist(gen), 0);
+			lights[i].colour = 0.25f*vec4(dist(gen), dist(gen), dist(gen), 0);
 			lights[i].position = vec3(12.0f*dist(gen)-6.0f, 4.0f * dist(gen) - 2.0f, 10.0f*dist(gen));
 			lights[i].is_point =1.0;
 			lights[i].is_spot = 0;
@@ -413,6 +416,11 @@ public:
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
 
+			lights[0].direction.x=.5*sin(real_time*1.64f);
+			lights[0].direction.y=.2*sin(real_time*1.1f);
+			lights[0].direction.z=-1.0;
+			lights[0].direction=normalize(lights[0].direction);
+
 			vec4 unity2(1.0f, 1.0f);
 			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
 			vec4 zero4(0,0,0,0);
@@ -423,23 +431,42 @@ public:
 			lightsStructuredBuffer.SetData(deviceContext,lights);
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
 			effect->Apply(deviceContext, "solid", 0);
-			meshRenderer->Render(deviceContext, exampleMesh,mat4::translation(vec3(0,0,2.0f)),diffuseCubemapTexture,specularCubemapTexture);
-			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture);
+			// pass raytraced rtTargetTexture as shadow.
+			meshRenderer->Render(deviceContext, exampleMesh,mat4::translation(vec3(0,0,2.0f)),diffuseCubemapTexture,specularCubemapTexture,rtTargetTexture);
+			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture,rtTargetTexture);
 			
 			effect->Unapply(deviceContext);
 		}
 
 		{
-			renderPlatform->ApplyPass(deviceContext,raytrace_effect->GetTechniqueByIndex(0)->GetPass(0));
+			cameraConstants.world = deviceContext.viewStruct.model;
+			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+			cameraConstants.invWorldViewProj=deviceContext.viewStruct.invViewProj;
+			cameraConstants.view = deviceContext.viewStruct.view;
+			cameraConstants.proj = deviceContext.viewStruct.proj;
+			cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
+			renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
+			mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
+			mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
+			renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
+			
 			rayGenConstants.viewport={-1.f,-1.f,1.f,1.f};
 			rayGenConstants.stencil={-0.8f,-0.8f,0.8f,0.8f};
 			renderPlatform->SetConstantBuffer(deviceContext,&rayGenConstants);
-			renderPlatform->SetAccelerationStructure(deviceContext,raytrace_effect->GetShaderResource("Scene"),accelerationStructure);
-			renderPlatform->SetUnorderedAccessView(deviceContext,raytrace_effect->GetShaderResource("RenderTarget"),rtTargetTexture);
-			renderPlatform->DispatchRays(deviceContext,uint3(128,128,1));
+
+			auto rayPass			=raytrace_effect->GetTechniqueByIndex(0)->GetPass(0);
+			auto res_scene			=raytrace_effect->GetShaderResource("Scene");
+			auto res_targetTexture	=raytrace_effect->GetShaderResource("RenderTarget");
+			auto res_lights			=raytrace_effect->GetShaderResource("lights");
+
+			renderPlatform->ApplyPass(deviceContext,rayPass);
+			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, res_lights);
+			renderPlatform->SetAccelerationStructure(deviceContext,res_scene,accelerationStructure);
+			renderPlatform->SetUnorderedAccessView(deviceContext,res_targetTexture,rtTargetTexture);
+			renderPlatform->DispatchRays(deviceContext,uint3(512,256,1));
 			renderPlatform->UnapplyPass(deviceContext);
 
-			renderPlatform->DrawTexture(deviceContext,12,12,512,512, rtTargetTexture,1.f,false,1.f,true);
+			renderPlatform->DrawTexture(deviceContext,0,0,256, 256, rtTargetTexture);
 		}
 		if(show_cubemaps)
 		{
@@ -450,9 +477,11 @@ public:
 		}
 		if(show_textures)
 		{
-			int x = 8, y = (h * 2) / 3;
-			static int s = 64;
+			static int s = 128;
 			auto &textures= renderPlatform->GetTextures();
+			int l=(w-8)/(s+2);
+			int d=(textures.size()+l-1)/l;
+			int x = 8, y = h -(s+2)*d;
 			for(auto t: textures)
 			{
 				renderPlatform->DrawTexture(deviceContext,x,y,s,s, t.second,1.f,false,1.f,true);
@@ -711,7 +740,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		UpdateWindow(hWnd);
 	}
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
-	graphicsDeviceInterface->Initialize(false,false,false);
+	graphicsDeviceInterface->Initialize(commandLineParams("debug"),false,false);
 	simul::crossplatform::RenderDocLoader::Load();
 
 	renderer=new PlatformRenderer();

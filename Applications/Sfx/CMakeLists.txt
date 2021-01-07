@@ -7,6 +7,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 						Sfx.cpp
 						SfxEffect.cpp
 						SfxProgram.cpp
+						ShaderInstance.cpp
 						StringFunctions.cpp
 						StringToWString.cpp )
 	file(GLOB HEADERS 	"*.h" )

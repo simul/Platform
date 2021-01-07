@@ -18,6 +18,7 @@ uniform TextureCube specularCubemap;
 uniform TextureCube nearFarTextureCube;
 uniform Texture2D loss2dTexture;
 uniform Texture2D shadowTexture;
+uniform Texture2D screenspaceShadowTexture;
 uniform Texture3D inscatterVolumeTexture;
 //////////////////////////
 
@@ -95,12 +96,10 @@ shader vertexOutput VS_Solid(vertexInput IN)
     vertexOutput OUT;
 	vec4 opos		=vec4(IN.position.xyz,1.0);
     vec4 wpos		=mul(opos, world);
-
-	//wpos.xyz		-= videoCamPosition;
 	OUT.view		=normalize(wpos.xyz-viewPosition);
 	vec4 viewspace_pos = mul( view, vec4(wpos.xyz, 1.0));
 	OUT.clip_pos	=mul(proj,vec4(viewspace_pos.xyz,1.0));
-	OUT.wpos = wpos.xyz;
+	OUT.wpos		= wpos.xyz;
 	//OUT.clip_pos	=mul( opos, worldViewProj);
 	OUT.texCoords0	=IN.texCoords;
 	OUT.texCoords1	=IN.texCoords;
@@ -223,10 +222,10 @@ vec3 PBRAmbient(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surface
 	diffuse					*= surfaceProperties.ao;
 	vec3 colour				= diffuse+specular;
 
-	return colour;
+	return .2*colour;
 }
 
-vec3 PBRAddLight(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surfaceProperties,Light light)
+vec3 PBRAddLight(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surfaceProperties,Light light,vec2 screenPos)
 {
 	vec3 diff						=light.position-surfaceProperties.position;
 	float dist_to_light				=length(diff);
@@ -247,12 +246,13 @@ vec3 PBRAddLight(SurfaceState surfaceState,vec3 viewDir,SurfaceProperties surfac
 	//float ao				= SceneAO(pos, normal, localToWorld);
 	specular						*= surfaceState.kS*saturate(pow(surfaceState.n_v + surfaceProperties.ao, surfaceProperties.roughness2) - 1.0 + surfaceProperties.ao);
 	vec3 colour						= surfaceProperties.albedo*(diffuse+specular);
-
-	return colour;
+	float shadow					=lerp(screenspaceShadowTexture.Sample(clampSamplerState,screenPos).x,1.0,light.is_point);
+	return colour*shadow;
 }
 
 vec4 Solid(vertexOutput IN)
 {
+	vec2 screenPos	=IN.clip_pos.xy/IN.clip_pos.w*vec2(0.5,-0.5)+vec2(0.5,0.5);
 	vec3 tangentx		= normalize(IN.tangent);
 	vec3 tangenty		= normalize(cross(IN.normal, tangentx));
 	mat3 TangentMatrix	= transpose(mat3(tangentx, tangenty, normalize(IN.normal))); //transforms world=>tangent space
@@ -294,14 +294,14 @@ vec4 Solid(vertexOutput IN)
 		if(i>=lightCount)
 			break;
 		Light light			=lights[i];
-		c					+=PBRAddLight(surfaceState,view,surfaceProperties,light);
+		c					+=PBRAddLight(surfaceState,view,surfaceProperties,light,screenPos);
 	}
 
 	vec3 emissive		=emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
 	emissive			*= emissiveOutputScalar.rgb;
 //	c=1.0-roughMetalOcclusion.a;
 	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
-	//u.rgb= normalLookup.rgb;
+	//u.rg= frac(screenPos);
 	return u;
 }
 

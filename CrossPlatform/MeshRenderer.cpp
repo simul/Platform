@@ -71,7 +71,7 @@ void MeshRenderer::DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 	deviceContext.viewStruct.PopModelMatrix();
 }
 
-void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap)
+void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap,Texture *screenspaceShadowTexture)
 {
 	if (!effect)
 		RecompileShaders();
@@ -80,6 +80,7 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 	deviceContext.viewStruct.PushModelMatrix(*((math::Matrix4x4*)&model));
 	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
 	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);
+	effect->SetTexture(deviceContext, "screenspaceShadowTexture", screenspaceShadowTexture);
 	mesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
 	mat4 w;
 	mat4 tw =*( (mat4*)&(mesh->orientation.GetMatrix()));
@@ -88,7 +89,7 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 	
 	for (auto c : mesh->children)
 	{
-		Render(deviceContext, c,w,diffuseCubemap,specularCubemap);
+		Render(deviceContext, c,w,diffuseCubemap,specularCubemap,screenspaceShadowTexture);
 	}
 	DrawSubNode(deviceContext,mesh,mesh->GetRootNode());
 	mesh->EndDraw(deviceContext);

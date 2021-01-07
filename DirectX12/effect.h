@@ -102,7 +102,6 @@ namespace simul
 			void		InitRaytraceTable();
 			
 		private:
-			std::map<crossplatform::ShaderType,std::wstring> wnames;
 			RaytraceTable raytraceTable;
 			ID3D12RootSignature *localRootSignature=nullptr;
 			ID3D12Resource *m_sbtStorage=nullptr;

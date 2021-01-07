@@ -156,7 +156,7 @@ void Texture::InvalidateDeviceObjects()
 }
 
 // Load a texture file
-void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8,int m)
+void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8, bool gen_mips)
 {
 	ERRNO_BREAK
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
@@ -488,7 +488,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		int refct=t->AddRef();
 		if (simul::base::SimulInternalChecks)
 		{
-			SIMUL_COUT << refct << std::endl;
+			//SIMUL_COUT << refct << std::endl;
 		}
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;

@@ -687,7 +687,6 @@ shader vec4 PS_Copy2DWrap(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texc	=IN.texCoords.xy;
 	vec4 res	=texture_wrap_lod(imageTexture,texc.xy,0);
-//	res.r+=.3;
 	return res;
 }
 
@@ -790,6 +789,15 @@ shader void CS_TexelQuery(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 
 technique copy_2d
 {
+    pass wrap
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Copy2DWrap()));
+    }
     pass replace
     {
 		SetRasterizerState( RenderNoCull );
@@ -816,15 +824,6 @@ technique copy_2d
         SetGeometryShader(NULL);
 		SetVertexShader(vs_simplefullscreen_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_Copy2DOffset()));
-    }
-    pass wrap
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(vs_simplefullscreen_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_Copy2DWrap()));
     }
 }
 

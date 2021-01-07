@@ -87,6 +87,7 @@ namespace sfx
 	/// Values that represent ShaderType.
 	enum ShaderType
 	{
+		UNKNOWN_SHADER_TYPE=0,
 		VERTEX_SHADER,
 		TESSELATION_CONTROL_SHADER,		//= Hull shader
 		TESSELATION_EVALUATION_SHADER,	//= Domain Shader
@@ -94,10 +95,11 @@ namespace sfx
 		FRAGMENT_SHADER,
 		COMPUTE_SHADER,
 		RAY_GENERATION_SHADER,
-		CLOSEST_HIT_SHADER,
-		ANY_HIT_SHADER,
 		MISS_SHADER,
 		CALLABLE_SHADER,
+		CLOSEST_HIT_SHADER,
+		ANY_HIT_SHADER,
+		INTERSECTION_SHADER,
 		EXPORT_SHADER,
 		NUM_SHADER_TYPES
 	};
@@ -178,17 +180,19 @@ namespace sfx
 	};
 	enum ShaderCommand
 	{
-		SetVertexShader			//VS Vertex Shader			|	Vertex Shader
+		Unknown=0
+		,SetVertexShader			//VS Vertex Shader			|	Vertex Shader
 		,SetHullShader			//TC Tessellation Control	|	Hull Shader
 		,SetDomainShader		//TE Tessellation Evaluation	|	Domain Shader
 		,SetGeometryShader		//GS Geometry Shader			|	Geometry Shader
 		,SetPixelShader			//FS Fragment Shader			|	Pixel Shader
 		,SetComputeShader		//CS Compute Shader			|	Compute Shader
 		,SetRayGenerationShader
-		,SetClosestHitShader
-		,SetAnyHitShader
 		,SetMissShader
 		,SetCallableShader
+		,SetClosestHitShader
+		,SetAnyHitShader
+		,SetIntersectionShader
 		,SetExportShader		// this is a PS4 thing. We will write Vertex shaders as export shaders when necessary.
 		,NUM_OF_SHADER_TYPES
 		,SetRasterizerState
@@ -397,7 +401,12 @@ namespace sfx
 		bool apply;
 		Topology topology;
 	};
-
+	struct RaytraceHitGroup
+	{
+		std::string closestHit;
+		std::string anyHit;
+		std::string intersection;
+	};
 	struct PassState
 	{
 		PassState()
@@ -408,6 +417,8 @@ namespace sfx
 		PassBlendState blendState;
 		PassRenderTargetFormatState renderTargetFormatState;
 		TopologyState topologyState;
+		std::map<ShaderType,std::string> shaders;
+		std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
 	};
 }
 #include "SfxProgram.h"

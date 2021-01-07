@@ -12,6 +12,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/CrossPlatform/AccelerationStructure.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -229,6 +230,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(solidEffect);
 	
 	SAFE_DELETE(copyEffect);
+	SAFE_DELETE(mipEffect);
 	
 	textured=nullptr;
 	untextured=nullptr;
@@ -278,8 +280,10 @@ void RenderPlatform::RecompileShaders()
 	solidEffect=CreateEffect("solid",defines);
 	
 	Destroy(copyEffect);
-	
 	copyEffect=CreateEffect("copy",defines);
+	
+	Destroy(mipEffect);
+	mipEffect=CreateEffect("mip",defines);
 	
 	
 	textRenderer->RecompileShaders();
@@ -388,8 +392,10 @@ void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 		gpuProfiler->StartFrame(deviceContext);
 		gpuProfileFrameStarted = true;
 	}
-	FinishLoadingTextures(deviceContext);
+	// Note: we generate the mips first because for some reason, doing that in the same frame
+	// as loading a texture SOMETIMES in D3D12, cause the mip to not generate.
 	FinishGeneratingTextureMips(deviceContext);
+	FinishLoadingTextures(deviceContext);
 }
 
 void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
@@ -518,22 +524,26 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		SIMUL_CERR_ONCE<<("No method was found to clear this texture.\n");
 	}
 }
-
+#include "Platform/Core/StringFunctions.h"
 void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
 {
 	if(!t||!t->IsValid())
 		return;
-
+	auto _imageTexture=mipEffect->GetShaderResource("inputTexture");
+	auto pass=mipEffect->GetTechniqueByName("mip")->GetPass("mip");
+	ApplyPass(deviceContext,pass);
+	vec4 white(1.0, 1.0, 1.0, 1.0);
+	vec4 semiblack(0, 0, 0, 0.5);
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m0=i,m1=i+1;
-		debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("copy_2d"),"wrap");
-		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,0);
 		t->activateRenderTarget(deviceContext,array_idx,m1);
+		SetTexture(deviceContext,_imageTexture,t,array_idx,0);
 		DrawQuad(deviceContext);
+		//Print(deviceContext,0,0,base::QuickFormat("%d",m1),white,semiblack);
 		t->deactivateRenderTarget(deviceContext);
-		debugEffect->Unapply(deviceContext);
 	}
+	UnapplyPass(deviceContext);
 }
 
 vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture)
@@ -683,6 +693,13 @@ void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const 
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
+void RenderPlatform::ClearTextures()
+{
+	//textures.clear();
+	//unfinishedTextures.clear();
+	//unMippedTextures.clear();
+}
+
 crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,bool gen_mips)
 {
 	auto i = textures.find(filename);
@@ -721,6 +738,11 @@ Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 	mat->SetEffect(solidEffect);
 	materials[name]=mat;
 	return mat;
+}
+
+AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+{
+	return new AccelerationStructure(this);
 }
 
 Mesh *RenderPlatform::CreateMesh()
@@ -836,10 +858,11 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 {
 	static int level=0;
 	static int lod=0;
-	static int frames=100;
+	static int frames=25;
 	static int count=frames;
+	static unsigned long long framenumber=0;
 	float displayLod=0.0f;
-	if(debug)
+	if(debug&&framenumber!=deviceContext.frame_number)
 	{
 		count--;
 		if(!count)
@@ -847,15 +870,15 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			lod++;
 			count=frames;
 		}
-		if(tex)
-		{
-			int m=tex->GetMipCount();
-			displayLod=float((lod%(m?m:1)));
-			if(!tex->IsValid())
-				tex=nullptr;
-		}
+		framenumber=deviceContext.frame_number;
 	}
-	
+	if(debug&&tex)
+	{
+		int m=tex->GetMipCount();
+		displayLod=float((lod%(m?m:1)));
+		if(!tex->IsValid())
+			tex=nullptr;
+	}
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
@@ -887,7 +910,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		if(tex->arraySize>1)
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
-			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
+			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex,-1,(int)displayLod);
 			if(debug)
 			{
 				static char c=0;
@@ -904,14 +927,14 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		else
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap");
-			debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+			debugEffect->SetTexture(deviceContext,"cubeTexture",tex,-1,(int)displayLod);
 			debugConstants.displayLevel=0;
 		}
 	}
 	else if(tex&&tex->arraySize>1)
 	{
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
-		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex);
+		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex,-1,(int)displayLod);
 		{
 			static char c = 0;
 			static char cc = 20;
@@ -927,13 +950,13 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 	else if(tex)
 	{
-		debugEffect->SetTexture(deviceContext,imageTexture,tex);
+		debugEffect->SetTexture(deviceContext,imageTexture,tex,-1,(int)displayLod);
 	}
 	else
 	{
 		tech=untextured;
 	}
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
 	if(debug)
 	{
@@ -1372,7 +1395,7 @@ void RenderPlatform::FinishGeneratingTextureMips(DeviceContext& deviceContext)
 		return;
 	for(auto t:unMippedTextures)
 	{
-		t->GenerateMips(*deviceContext.AsGraphicsDeviceContext());
+		GenerateMips(*deviceContext.AsGraphicsDeviceContext(),t,true);
 	}
 	unMippedTextures.clear();
 }
