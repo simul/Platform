@@ -180,7 +180,7 @@ void Effect::InvalidateDeviceObjects()
 		}
 	}
 	techniques.clear();
-	SAFE_RELEASE(mSamplersHeap);
+	SAFE_DELETE(mSamplersHeap);
 	crossplatform::Effect::InvalidateDeviceObjects();
 }
 
@@ -378,6 +378,12 @@ void EffectPass::InvalidateDeviceObjects()
 		pl->PushToReleaseManager(ele.second.pipelineState, "Graphics PSO");
 	}
 	mGraphicsPsoMap.clear();
+
+	for (auto& value : mTargetsMap)
+	{
+		SAFE_DELETE(value.second);
+	}
+	mTargetsMap.clear();
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asCompute)
