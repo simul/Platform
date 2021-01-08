@@ -200,7 +200,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	{
 		// We want to map from the oldest buffer:
 		int idx = GetIndex(deviceContext, 1);
-		const GLuint64 maxTimeOut = 100000; // 0.1ms
+		/*const GLuint64 maxTimeOut = 100000; // 0.1ms
 		if (!glIsSync(mFences[idx]))
 		{
 			#if _DUBUG
@@ -210,9 +210,9 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 
 			mFences[idx] = nullptr;
 			return nullptr;
-		}
+		}*/
 		
-		GLenum res  = glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
+        GLenum res = GL_ALREADY_SIGNALED; // glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
 		if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
 		{
             if(!IsBufferMapped(idx))
@@ -243,7 +243,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
     if (!cpu_read)
         return;
 
-    int idx = GetIndex(deviceContext, 1);
+    int idx = GetIndex(deviceContext);
     if (IsBufferMapped(idx))
     {
         mCurReadMap = nullptr;
@@ -286,7 +286,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     {
         mBinding = shaderResource.slot;
     }
-    if (IsBufferMapped(idx))
+    if (IsBufferMapped(idx)) //Will unmap write only buffers. Read only should be unmapped by CloseReadBuffer().
     {
         glUnmapNamedBuffer(mGPUBuffer[idx]);
     }
@@ -315,7 +315,7 @@ void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceCont
 		else
 			mFences[idx] = nullptr;
 
-        mFences[idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        //mFences[idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     }
 }
 

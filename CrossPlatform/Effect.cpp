@@ -273,6 +273,12 @@ void Effect::InvalidateDeviceObjects()
 		i.second->InvalidateDeviceObjects();
 	}
 	rtFormatStates.clear();
+
+	for (auto i : textureDetailsMap)
+	{
+		delete i.second;
+	}
+	textureDetailsMap.clear();
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)

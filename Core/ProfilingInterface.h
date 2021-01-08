@@ -135,6 +135,8 @@ namespace simul
 			///
 			/// \return	null if it fails, else the debug text.
 			const char *GetDebugText(TextStyle st = PLAINTEXT) const;
+			//! Returns just the overall time taken, in ms
+			const char* GetDebugTextSimple(TextStyle st = PLAINTEXT) const;
 
 			void Clear(base::ProfileData *p=nullptr);
 			//! Call this at the start of the frame to reset values.

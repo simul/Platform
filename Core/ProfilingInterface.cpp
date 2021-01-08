@@ -350,6 +350,17 @@ const char *simul::base::BaseProfilingInterface::GetDebugText(base::TextStyle st
 	return str.c_str();
 }
 
+const char* simul::base::BaseProfilingInterface::GetDebugTextSimple(base::TextStyle style) const
+{
+	static std::string str;
+	str = "";
+	if (!root)
+		return "";
+	float total = root->time;
+	str += formatLine("", 0, total, 0.0f, style); //we do force spaces within formatLine after the empty name
+	return str.c_str();
+}
+
 void simul::base::BaseProfilingInterface::Clear(base::ProfileData *p)
 {
 	if(!p)
