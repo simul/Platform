@@ -49,6 +49,10 @@ namespace simul
 
 			const int kBufferAlign			= D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
 			D3D12_CPU_DESCRIPTOR_HANDLE		*cpuDescriptorHandles[kNumBuffers];
+
+			// point to whatever Apply sent us.
+			void* src=nullptr;
+			size_t size=0;
 		};
 	}
 }

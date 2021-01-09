@@ -202,70 +202,71 @@ void EffectPass::InitRaytraceTable()
 	dx12::Shader* m= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_MISS];
 	dx12::Shader* c= (dx12::Shader*)shaders[crossplatform::SHADERTYPE_CALLABLE];
 
-  #if 1
-	for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<=crossplatform::SHADERTYPE_CALLABLE;i++)
+	if(renderPlatform->HasRenderingFeatures(simul::crossplatform::RenderingFeatures::Raytracing))
 	{
-		dx12::Shader *s=(dx12::Shader*)shaders[i];
-		if(!s||i==crossplatform::SHADERTYPE_CLOSEST_HIT
-		||i==crossplatform::SHADERTYPE_ANY_HIT)
-			continue;
-		//struct RootArguments {	} ;
-		//RootArguments rootArguments;
-		UINT numShaderRecords = 1;
-		UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;// + sizeof(rootArguments);
-	// Upload the shaders to the GPU:
-		auto wstr=base::StringToWString(s->entryPoint);
-		ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, wstr.c_str());
-		void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(wstr.c_str());
-		//shaderTable->push_back(ShaderRecord(shaderIdentifier, shaderRecordSize, &rootArguments, sizeof(rootArguments)));
-        shaderTable.push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
-
-		s->shaderTableResource = shaderTable.GetResource();
-		s->shaderTableResource->AddRef();
-		if(i==crossplatform::SHADERTYPE_RAY_GENERATION)
+		for(int i=crossplatform::SHADERTYPE_RAY_GENERATION;i<=crossplatform::SHADERTYPE_CALLABLE;i++)
 		{
-			raytraceTable.rayGen={s->shaderTableResource->GetGPUVirtualAddress(),s->shaderTableResource->GetDesc().Width,s->shaderTableResource->GetDesc().Width};
-		}
-		else if(i==crossplatform::SHADERTYPE_MISS)
-		{
-			raytraceTable.miss={s->shaderTableResource->GetGPUVirtualAddress(),s->shaderTableResource->GetDesc().Width,s->shaderTableResource->GetDesc().Width};
-		}
-	}
-	// hit is done as a group:
-	
-    // Hit group shader table
-	if(h)
-    {
-        UINT numShaderRecords = 1;
-        UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, L"MyHitGroup");
-		void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(hitGroupExportName);
-        shaderTable.push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
-		h->shaderTableResource = shaderTable.GetResource();
-		h->shaderTableResource->AddRef();
-		auto d=h->shaderTableResource->GetDesc();
-		raytraceTable.hitGroup={h->shaderTableResource->GetGPUVirtualAddress(),d.Width,h->shaderTableResource->GetDesc().Width};
-	}
-	else if(raytraceHitGroups.size())
-	{
-		UINT numShaderRecords = raytraceHitGroups.size();
-		UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-		auto wstr=base::StringToWString(raytraceHitGroups.begin()->first);
-		ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, wstr.c_str());
-		for(auto &hg:raytraceHitGroups)
-		{
-			dx12::Shader* h= (dx12::Shader*)hg.second.closestHit;
-			auto wstr=base::StringToWString(hg.first);
+			dx12::Shader *s=(dx12::Shader*)shaders[i];
+			if(!s||i==crossplatform::SHADERTYPE_CLOSEST_HIT
+			||i==crossplatform::SHADERTYPE_ANY_HIT)
+				continue;
+			//struct RootArguments {	} ;
+			//RootArguments rootArguments;
+			UINT numShaderRecords = 1;
+			UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;// + sizeof(rootArguments);
+		// Upload the shaders to the GPU:
+			auto wstr=base::StringToWString(s->entryPoint);
+			ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, wstr.c_str());
 			void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(wstr.c_str());
+			//shaderTable->push_back(ShaderRecord(shaderIdentifier, shaderRecordSize, &rootArguments, sizeof(rootArguments)));
+			shaderTable.push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
+
+			s->shaderTableResource = shaderTable.GetResource();
+			s->shaderTableResource->AddRef();
+			if(i==crossplatform::SHADERTYPE_RAY_GENERATION)
+			{
+				raytraceTable.rayGen={s->shaderTableResource->GetGPUVirtualAddress(),s->shaderTableResource->GetDesc().Width,s->shaderTableResource->GetDesc().Width};
+			}
+			else if(i==crossplatform::SHADERTYPE_MISS)
+			{
+				raytraceTable.miss={s->shaderTableResource->GetGPUVirtualAddress(),s->shaderTableResource->GetDesc().Width,s->shaderTableResource->GetDesc().Width};
+			}
+		}
+		// hit is done as a group:
+	
+		// Hit group shader table
+		if(h)
+		{
+			UINT numShaderRecords = 1;
+			UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+			ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, L"MyHitGroup");
+			void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(hitGroupExportName);
 			shaderTable.push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
 			h->shaderTableResource = shaderTable.GetResource();
 			h->shaderTableResource->AddRef();
+			auto d=h->shaderTableResource->GetDesc();
+			raytraceTable.hitGroup={h->shaderTableResource->GetGPUVirtualAddress(),d.Width,h->shaderTableResource->GetDesc().Width};
 		}
-		ID3D12Resource *res=shaderTable.GetResource();
-		auto d=res->GetDesc();
-		raytraceTable.hitGroup={res->GetGPUVirtualAddress(),shaderTable.GetBufferSize(),shaderTable.GetShaderRecordSize()};
+		else if(raytraceHitGroups.size())
+		{
+			UINT numShaderRecords = raytraceHitGroups.size();
+			UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+			auto wstr=base::StringToWString(raytraceHitGroups.begin()->first);
+			ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, wstr.c_str());
+			for(auto &hg:raytraceHitGroups)
+			{
+				dx12::Shader* h= (dx12::Shader*)hg.second.closestHit;
+				auto wstr=base::StringToWString(hg.first);
+				void *shaderIdentifier = stateObjectProperties->GetShaderIdentifier(wstr.c_str());
+				shaderTable.push_back(ShaderRecord(shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES));
+				h->shaderTableResource = shaderTable.GetResource();
+				h->shaderTableResource->AddRef();
+			}
+			ID3D12Resource *res=shaderTable.GetResource();
+			auto d=res->GetDesc();
+			raytraceTable.hitGroup={res->GetGPUVirtualAddress(),shaderTable.GetBufferSize(),shaderTable.GetShaderRecordSize()};
+		}
 	}
-	#endif
 }
 
 
@@ -590,7 +591,7 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 			continue;
 		}
 		auto d12cb = (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
-		d12cb->Apply(deviceContext, cb->GetSize(), cb->GetAddr());
+		d12cb->ActualApply(deviceContext,this,slot);
 		mCbSrcHandles[slot]	= d12cb->AsD3D12ConstantBuffer();
 		usedSlots			|= (1 << slot);
 	}

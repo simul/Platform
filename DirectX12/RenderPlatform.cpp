@@ -1068,7 +1068,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch)
 {
-	if(!m12Device5)
+	if(!m12Device5||!HasRenderingFeatures(crossplatform::RenderingFeatures::Raytracing))
 		return;
 	ApplyContextState(deviceContext);
 	ID3D12GraphicsCommandList5*	commandList =static_cast<ID3D12GraphicsCommandList5*>(deviceContext.asD3D12Context());

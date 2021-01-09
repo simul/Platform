@@ -45,7 +45,6 @@ PlatformConstantBuffer::~PlatformConstantBuffer()
 	InvalidateDeviceObjects();
 }
 
-static float megas = 0.0f;
 void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, void* addr) 
 {
 	renderPlatform = r;
@@ -78,9 +77,6 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		);
 		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mUploadHeap[i], mBufferSize)
-
-		// Just debug memory usage
-		megas += (float)(mBufferSize) / 1048576.0f;
 		
 		// If it is an UPLOAD buffer, will be the memory allocated in VRAM too?
 		// as far as we know, an UPLOAD buffer has CPU read/write access and GPU read access.
@@ -94,7 +90,6 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 			cbvDesc.BufferLocation					= mUploadHeap[i]->GetGPUVirtualAddress() + offset;
 			renderPlatform->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
 		}
-		//SIMUL_COUT << "Total MB Allocated in the GPU: " << std::to_string(megas) << std::endl;
 	}
 }
 
@@ -104,7 +99,7 @@ void PlatformConstantBuffer::SetNumBuffers(crossplatform::RenderPlatform *r, UIN
 }
 
 
-D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12ConstantBuffer()
+D3D12_CPU_DESCRIPTOR_HANDLE PlatformConstantBuffer::AsD3D12ConstantBuffer()
 {
 	// This method is a bit hacky, it basically returns the CPU handle of the last
 	// "current" descriptor we will increase the curApply after the apply that's why 
@@ -152,9 +147,17 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 		cpuDescriptorHandles[i]=nullptr;
 	}
 	renderPlatform=nullptr;
+	src = nullptr;
+	size = 0;
 }
 
-void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
+void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t sz, void *addr)
+{
+	src=addr;
+	size=sz;
+}
+
+void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceContext, crossplatform::EffectPass* , int )
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	// If new frame, update current frame index and reset the apply count
@@ -162,8 +165,8 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 	{
 		last_frame_number = deviceContext.frame_number;
 		buffer_index++;
-		if(buffer_index>=kNumBuffers)
-			buffer_index=0;
+		if (buffer_index >= kNumBuffers)
+			buffer_index = 0;
 		mCurApplyCount = 0;
 	}
 	if (mCurApplyCount >= mMaxDescriptors)
@@ -176,42 +179,36 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceCo
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constant buffer
 	// has a minimum size of kBufferAlign)
 	UINT8* pDest = nullptr;
-	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
+	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;
 	const CD3DX12_RANGE mapRange(0, 0);
-	HRESULT hResult=mUploadHeap[buffer_index]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
-	if(hResult==S_OK)
+	HRESULT hResult = mUploadHeap[buffer_index]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
+	if (hResult == S_OK)
 	{
-		memcpy(pDest + offset, addr, size);
-		const CD3DX12_RANGE unMapRange(offset, offset+size);
+		memcpy(pDest + offset, src, size);
+		const CD3DX12_RANGE unMapRange(offset, offset + size);
 		mUploadHeap[buffer_index]->Unmap(0, &unMapRange);
 	}
 	else
 	{
-		ID3D12DeviceRemovedExtendedData *pDred;
+		ID3D12DeviceRemovedExtendedData* pDred;
 		rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
 
 		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
 		D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
 		V_CHECK(pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput))
-		V_CHECK(pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput));
-		auto n=DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
-		while(n)
+			V_CHECK(pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput));
+		auto n = DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
+		while (n)
 		{
-			if(n->pCommandQueueDebugNameW)
-				std::cerr<<simul::base::WStringToUtf8(n->pCommandQueueDebugNameW).c_str()<<std::endl;
-			if(n->pCommandListDebugNameW)
-				std::cerr<<simul::base::WStringToUtf8(n->pCommandListDebugNameW).c_str()<<std::endl;
-			n=n->pNext;
+			if (n->pCommandQueueDebugNameW)
+				std::cerr << simul::base::WStringToUtf8(n->pCommandQueueDebugNameW).c_str() << std::endl;
+			if (n->pCommandListDebugNameW)
+				std::cerr << simul::base::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
+			n = n->pNext;
 		}
 		SIMUL_BREAK_ONCE("hResult != S_OK");
-
 	}
-
 	mCurApplyCount++;
-}
-
-void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext&, crossplatform::EffectPass* , int )
-{
 }
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& )
