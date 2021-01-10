@@ -97,6 +97,11 @@ RenderPlatform::~RenderPlatform()
 	materials.clear();
 }
 
+bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
+{
+	return (renderingFeatures & r) == r;
+}
+
 std::string RenderPlatform::GetPathName() const
 {
 	static std::string pathname;
