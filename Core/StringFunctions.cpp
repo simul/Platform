@@ -23,6 +23,23 @@ namespace simul
 			using std::string;
 			using std::vector;
             static size_t ttab;
+			vector<string> SplitPath(const string& fullPath)
+			{
+				size_t slash_pos = fullPath.find_last_of("/");
+				if (slash_pos >= fullPath.length())
+					slash_pos = 0;
+				size_t back_pos = fullPath.find_last_of("\\");
+				if (back_pos<fullPath.length() && back_pos>slash_pos)
+					slash_pos = back_pos;
+				if (slash_pos >= fullPath.length())
+					slash_pos = 0;
+				string dirOnly = fullPath.substr(0, slash_pos);
+				string filenameOnly = fullPath.substr(slash_pos+1, fullPath.length() - slash_pos-1);
+				vector<string> v;
+				v.push_back(dirOnly);
+				v.push_back(filenameOnly);
+				return v;
+			}
 			//------------------------------------------------------------------------------
 			std::string ExtractDelimited(std::string &str,char delim)
 			{

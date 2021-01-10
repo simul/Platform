@@ -21,8 +21,8 @@ namespace simul
 											PlatformStructuredBuffer();
 			virtual							~PlatformStructuredBuffer();
 			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name, crossplatform::BufferUsageHint b);
-			void							Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource &shaderResource);
-            void                            ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource &shaderResource);
+			void							Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
+            void                            ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
 			//! Returns an initialized pointer with the size of this structured buffer that can be used to set data. After
 			//! changing the data of this pointer, we must Apply this SB so the changes will be uploaded to the GPU.
 			void*							GetBuffer(crossplatform::DeviceContext &deviceContext);

@@ -15,8 +15,9 @@ template <class T> inline void VectorDelete(std::vector<T>& vec)
 	vec.clear();
 }
 
-crossplatform::Mesh::Mesh() 
+Mesh::Mesh(crossplatform::RenderPlatform* r)
 	:done_begin(false)
+	,renderPlatform(r)
 	,mHasNormal(false)
 	,mHasUV(false)
 	, mAllByControlPoint(true)
@@ -34,6 +35,7 @@ crossplatform::Mesh::~Mesh()
 {
 	InvalidateDeviceObjects();
 }
+
 void Mesh::InvalidateDeviceObjects()
 {
 	releaseBuffers();
@@ -41,7 +43,6 @@ void Mesh::InvalidateDeviceObjects()
 	VectorDelete(children);
 	SAFE_DELETE(layout);
 }
-
 
 bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount
 	,const unsigned int *lIndices
@@ -57,11 +58,13 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 	crossplatform::LayoutDesc layoutDesc[] =
 	{
 		{ "POSITION", 0, crossplatform::RGB_32_FLOAT, 0, 0, false, 0 },
-		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT, 0, 12, false, 0 },
-		{ "TEXCOORD", 1, crossplatform::RGB_32_FLOAT, 0, 20, false, 0 },
+		{ "NORMAL", 0, crossplatform::RGB_32_FLOAT, 0, 12, false, 0 },
+		{ "TANGENT", 0, crossplatform::RGBA_32_FLOAT, 0, 24, false, 0 },
+		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT, 0, 40, false, 0 },
+		{ "TEXCOORD", 1, crossplatform::RG_32_FLOAT, 0, 48, false, 0 },
 	};
 	SAFE_DELETE(layout);
-	layout = renderPlatform->CreateLayout(3, layoutDesc,true);
+	layout = renderPlatform->CreateLayout(5, layoutDesc,true);
 	
 	
 	// Put positions, texcoords and normals in an array of structs:
@@ -70,9 +73,13 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 	struct Vertex
 	{
 		vec3 pos;
-		vec2 texc;
 		vec3 normal;
+		vec4 tangent;
+		vec2 texc0;
+		vec2 texc1;
 	};
+	vec3 x={1.0f, 0.f, 0.f};
+	vec3 y={0.f,1.0f, 0.f};
 	stride = sizeof(Vertex);
 	Vertex *vertices=new Vertex[lPolygonVertexCount];
 	for(int i=0;i<lPolygonVertexCount;i++)
@@ -80,9 +87,20 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 		Vertex &v		=vertices[i];
 		v.pos			=&(lVertices[i*3]);
 		if(lUVs)
-			v.texc		=&(lUVs[i*2]);
+		{
+			v.texc0 =v.texc1=&(lUVs[i*2]);
+		}
 		if(lNormals)
+		{
 			v.normal	=&(lNormals[i*3]);
+			vec3 tangent;
+			if(fabs(dot(v.normal,y))<0.707f)
+				tangent=cross(y,v.normal);
+			else
+				tangent = cross(v.normal, x);
+			tangent/=length(tangent);
+			v.tangent=vec4(tangent.x, tangent.y, tangent.z,0.0);
+		}
 	}
 	if(sIndices)
 		init(renderPlatform, numVertices, numIndices, vertices, sIndices);
@@ -101,6 +119,20 @@ void Mesh::BeginDraw(GraphicsDeviceContext &deviceContext,crossplatform::Shading
 	done_begin=true;
 }
 
+void Mesh::DrawSubNode(GraphicsDeviceContext& deviceContext,const SubNode &subNode) const
+{
+	auto &mat= subNode.orientation.GetMatrix();
+	deviceContext.viewStruct.PushModelMatrix(mat);
+	for (int i = 0; i < subNode.subMeshes.size(); i++)
+		Draw(deviceContext,subNode.subMeshes[i]);
+	for (int i = 0; i < subNode.children.size(); i++)
+		DrawSubNode(deviceContext, subNode.children[i]);
+	deviceContext.viewStruct.PopModelMatrix();
+}
+void Mesh::Draw(GraphicsDeviceContext& deviceContext) const
+{
+	DrawSubNode(deviceContext,rootNode);
+}
 // Draw all the faces with specific material with given shading mode.
 void Mesh::Draw(GraphicsDeviceContext &deviceContext,int meshIndex) const
 {
@@ -145,8 +177,12 @@ void Mesh::releaseBuffers()
 	numIndices = 0;
 }
 
-void Mesh::SetSubMesh(int submesh, int index_start, int num_indices,Material *m)
+Mesh::SubMesh *Mesh::SetSubMesh(int submesh, int index_start, int num_indices,Material *m,int lowest,int highest)
 {
+	if(lowest==-1)
+		lowest=0;
+	if(highest==-1)
+		highest=this->numVertices-1;
 	while (submesh >= mSubMeshes.size())
 	{
 		mSubMeshes.push_back(new SubMesh);
@@ -155,6 +191,9 @@ void Mesh::SetSubMesh(int submesh, int index_start, int num_indices,Material *m)
 	s->IndexOffset = index_start;
 	s->TriangleCount = num_indices / 3;
 	s->material = m;
+	s->LowestIndex=lowest;
+	s->HighestIndex=highest;
+	return s;
 }
 int crossplatform::Mesh::GetSubMeshCount() const
 {

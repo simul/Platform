@@ -82,7 +82,7 @@ namespace simul
 			const math::Vector3 &GetPosition() const;								///< Get a reference to the position.
 			void SetPosition(const math::Vector3 &X);								///< Set the position in global co-ordinates to equal X.
 			void Translate(const math::Vector3 &DX);								///< Move the position in global co-ordinates by DX.
-			void LocalTranslate(const math::Vector3 &DX);								///< Move the position in global co-ordinates by DX.
+			void LocalTranslate(const math::Vector3 &DX);							///< Move the position in global co-ordinates by DX.
 			void DefineFromAircraftEuler(float a,float b,float c,int vertical_axis=2);
 			void DefineFromCameraEuler(float a,float b,float c);
 			void DefineFromClassicalEuler(float a,float b,float c);

@@ -6,7 +6,8 @@
 #include <stdarg.h>
 #include "SfxClasses.h"
 
-	
+
+extern std::vector<std::string> SplitPath(const std::string& fullPath);
 extern std::string NextName(const std::string &Line);
 extern std::string GetFilenameOnly(const std::string &str);
 extern std::string GetDirectoryFromFilename(const std::string &str);

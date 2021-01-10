@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #pragma warning(disable:4748)

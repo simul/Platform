@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "TextRenderer.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/DeviceContext.h"

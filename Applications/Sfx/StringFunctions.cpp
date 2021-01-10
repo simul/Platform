@@ -472,7 +472,7 @@ string GetDirectoryFromFilename(const string &str)
 	return str.substr(0,pos);
 }
 
-vector<string> SplitPath(string fullPath)
+vector<string> SplitPath(const string &fullPath)
 {
 	size_t slash_pos = fullPath.find_last_of("/");
 	if (slash_pos >= fullPath.length())

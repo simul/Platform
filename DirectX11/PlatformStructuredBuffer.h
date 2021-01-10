@@ -1,6 +1,5 @@
 #pragma once
 
-#if PLATFORM_D3D11_SFX
 #include "Platform/DirectX11/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "DirectXHeader.h"
@@ -49,10 +48,10 @@ namespace simul
 			{
 				return unorderedAccessView;
 			}
-			void Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource);
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource);
+			void Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource);
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,  const crossplatform::ShaderResource& shaderResource);
+
 			void Unbind(crossplatform::DeviceContext& deviceContext);
 		};
 	}
 }
-#endif

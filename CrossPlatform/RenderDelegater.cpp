@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"

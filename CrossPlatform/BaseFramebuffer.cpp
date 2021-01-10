@@ -196,13 +196,13 @@ bool BaseFramebuffer::CreateBuffers()
 	if(!external_texture&&target_format!=crossplatform::UNKNOWN)
 	{
 		if(!is_cubemap)
-			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality,false,DefaultClearColour,DefaultClearDepth,DefaultClearStencil);
+			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,1,target_format,false,true,false,numAntialiasingSamples,quality,false,DefaultClearColour,DefaultClearDepth,DefaultClearStencil);
 		else
 			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,1,mips,target_format,false,true,true);
 	}
 	if(!external_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality, false, vec4(0.0f), DefaultClearDepth,DefaultClearStencil);
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height,1, depth_format, false, false, true, numAntialiasingSamples, quality, false, vec4(0.0f), DefaultClearDepth,DefaultClearStencil);
 	}
 	return true;
 }

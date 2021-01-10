@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 
 #include "Platform/Core/FileLoader.h"
 #include "Texture.h"
@@ -109,12 +109,12 @@ void Texture::SetName(const char* n)
 	
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8)
+void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	std::vector<std::string> texture_files;
 	texture_files.push_back(pFilePathUtf8);
-	LoadTextureArray(r,texture_files,1);
+	LoadTextureArray(r,texture_files,gen_mips?0:1);
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, const std::vector<std::string>& texture_files,int m)
@@ -137,14 +137,17 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, co
 	int w= loadedTextures[0].x;
 	int l= loadedTextures[0].y;
 	size_t num= loadedTextures.size();
-	m=std::min(16,std::max(1,std::min(m,1 + int(floor(log2(w >= l ? w : l))))));
+	if(!m)
+		m=100;
+	m = std::min(m, int(floor(log2(std::max(w, l)))) +1);
+	m=std::min(16,std::max(1,m));
 	name="Texture array ";
 	for(auto m:texture_files)
 	{
 		name+=m+",";
 	}
 	if(num<=1)
-		ensureTexture2DSizeAndFormat(r,w,l,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
+		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0);
 	else
 		ensureTextureArraySizeAndFormat(r,(int)w,(int)l,(int)num,(int)m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
 	textureLoadComplete=false;
@@ -535,11 +538,11 @@ void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	SetVulkanName(renderPlatform, &mImage, name.c_str());
 }
 
-bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l,
-											crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
-											vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m,
+	crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
+	vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
 {
-	if (IsSame(w, l, 1, 1, 1,f,num_samples,computable,rendertarget,depthstencil, true))
+	if (IsSame(w, l, 1, 1, m,f, num_samples, computable, rendertarget, depthstencil, true))
 	{
 		return false;
 	}
@@ -548,7 +551,9 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 	// include eTransferDst IN CASE this is for a texture file loaded.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst ;
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst;
+	if(m>1)
+		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	if(rendertarget)
 		usageFlags|=vk::ImageUsageFlagBits::eColorAttachment;
 	if(depthstencil)
@@ -569,7 +574,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (int32_t)1 })
-		.setMipLevels(1)
+		.setMipLevels(m)
 		.setArrayLayers(1)
 		.setSamples((vk::SampleCountFlagBits)num_samples) //AJR
 		.setTiling(vk::ImageTiling::eOptimal)
@@ -596,7 +601,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 
-	InitViewTables(2,f,w,l,1, 1, rendertarget,false,depthstencil);
+	InitViewTables(2,f,w,l,m, 1, rendertarget,false,depthstencil);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
 
 	pixelFormat=f;
@@ -604,7 +609,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	length=l;
 	depth=1;
 	arraySize=1;
-	mips=1;
+	mips=m;
 	dim=2;
 	cubemap=false;
 	mNumSamples=num_samples;
@@ -755,7 +760,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],(name+" mFramebuffers").c_str());
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],base::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
 	
 			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
 			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
@@ -975,22 +980,34 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 
 void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 {
-	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(path,renderPlatform->GetTexturePathsUtf8());
+	const auto & pathsUtf8= renderPlatform->GetTexturePathsUtf8();
+	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(path,pathsUtf8);
 	std::string filenameInUseUtf8=path;
-	if(index==-2||index>=(int)renderPlatform->GetTexturePathsUtf8().size())
+	if(index==-2||index>=(int)pathsUtf8.size())
 	{
 		errno=0;
-		SIMUL_CERR<<"Failed to find texture file "<<filenameInUseUtf8<<std::endl;
-		return;
+		std::string file;
+		std::vector<std::string> split_path = base::SplitPath(path);
+		if (split_path.size() > 1)
+		{
+			file = split_path[1];
+			index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
+		}
+		if (index < -1 || index >= (int)pathsUtf8.size())
+		{
+			SIMUL_CERR<<"Failed to find texture file "<<filenameInUseUtf8<<std::endl;
+			return;
+		}
+		filenameInUseUtf8=file;
 	}
-	else if(index<renderPlatform->GetTexturePathsUtf8().size())
+	if(index<renderPlatform->GetTexturePathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetTexturePathsUtf8()[index]+"/")+filenameInUseUtf8;
 
 	int x,y,n;
 	void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
 	if (!data)
 	{
-		SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
+		SIMUL_CERR << "Failed to load the texture: " << filenameInUseUtf8.c_str() << std::endl;
 		return;
 	}
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
@@ -1160,25 +1177,54 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		.setImage(mImage);
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
-	if (layer >= 0 && mip >= 0 && (arraySize >1||mips>1))
+	if ((layer >= 0 || mip >= 0) && (arraySize >1||mips>1))
 	{
-		vk::ImageLayout &l = mLayerMipLayouts[layer][mip];
-		if (split_layouts)
+		int num_mips=1;
+		int num_layers=1;
+		if(layer<0)
 		{
-			l = vk::ImageLayout::eUndefined;
+			layer=0;
+			num_layers= totalNum;
 		}
-		barrier.setOldLayout(l);
-		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, mip, 1, layer, 1));
+		if (mip < 0)
+		{
+			mip = 0;
+			num_mips = mips;
+		}
+		for(int l= layer;l< layer+num_layers;l++)
+		{
+			for(int m= mip;m< mip+num_mips;m++)
+			{
+				vk::ImageLayout& imageLayout = mLayerMipLayouts[l][m];
+				barrier.setOldLayout(imageLayout);
+				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+				imageLayout = newLayout;
+			}
+		}
 		split_layouts = true;
-		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
-		l = newLayout;
+	}
+	else if(split_layouts)
+	{
+	// This is the case going from split to unsplit layout. God.
+		for (int l = 0; l <  totalNum; l++)
+		{
+			for (int m = 0; m < mips; m++)
+			{
+				vk::ImageLayout& imageLayout = mLayerMipLayouts[l][m];
+				if (imageLayout == newLayout)
+					continue;
+				barrier.setOldLayout(imageLayout);
+				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+				imageLayout = newLayout;
+			}
+		}
+		AssumeLayout(newLayout);
+		split_layouts = false;
 	}
 	else
 	{
-		if (split_layouts)
-		{
-			currentImageLayout = vk::ImageLayout::eUndefined;
-		}
 		if (currentImageLayout == newLayout)
 			return;
 		int totalNum = cubemap ? 6 * arraySize : arraySize;

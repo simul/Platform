@@ -44,6 +44,7 @@
 	DepthStencilState buildDepthStencilState;
 	SamplerState buildSamplerState;
 	PassState buildPassState;
+	RaytraceHitGroup buildRaytraceHitGroup;
 	TechniqueGroup buildGroup;
 	string currentTechniqueGroup;
 	static int last_linenumber=0;
@@ -449,6 +450,15 @@
 				}
 			}
 			if(!found)
+			for(auto j:f.locals)
+			{
+				if(j.identifier==res_name)
+				{
+					found=true;
+					break;
+				}
+			}
+			if(!found)
 			{
 				f.globals.insert(i);
 			}
@@ -565,9 +575,9 @@
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
 %token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
-%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS
+%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
-%token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
+%token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D TEMPLATIZED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
 %token REGULARBUFFER RW_REGULARBUFFER STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token FILTER ADDRESS_U ADDRESS_V ADDRESS_W ADDRESS_WRAP ADDRESS_CLAMP ADDRESS_MIRROR FILTER_MIN_MAG_MIP_LINEAR FILTER_MIN_MAG_MIP_POINT FILTER_ANISOTROPIC
 
@@ -585,6 +595,7 @@
 
 %token POINTLIST_TOPOLOGY LINELIST_TOPOLOGY LINESTRIP_TOPOLOGY TRIANGLELIST_TOPOLOGY TRIANGLESTRIP_TOPOLOGY LINELIST_ADJACENCY_TOPOLOGY LINESTRIP_ADJACENCY_TOPOLOGY TRIANGLELIST_ADJACENCY_TOPOLOGY TRIANGLESTRIP_ADJACENCY_TOPOLOGY
 
+%token SET_RAY_GENERATION SET_MISS SET_CALLABLE SET_HIT_GROUP SET_CLOSEST_HIT SET_ANY_HIT SET_INTERSECTION  
 %%
 
 prog : prog tok
@@ -617,15 +628,15 @@ prog : prog tok
 		string def			=$6.strs[0];
 		if(t==RENDERTARGETFORMAT_STATE)
 		{
-			RenderTargetFormatState* fs  = gEffect->DeclareRenderTargetFormatState(name);
-			*fs						 = buildrtFormatState;
+			RenderTargetFormatState* fs	= gEffect->DeclareRenderTargetFormatState(name);
+			*fs							= buildrtFormatState;
 			fs->name					= name;
-			buildrtFormatState		  = RenderTargetFormatState();
+			buildrtFormatState			= RenderTargetFormatState();
 		}
 		if(t==RASTERIZER_STATE)
 		{
-			RasterizerState *rs=gEffect->DeclareRasterizerState(name);
-			*rs=buildRasterizerState;
+			RasterizerState *rs	=gEffect->DeclareRasterizerState(name);
+			*rs					=buildRasterizerState;
 			// Set to default:
 			buildRasterizerState=RasterizerState();
 		}
@@ -677,24 +688,24 @@ prog : prog tok
 	{
 		currentGsLayout=$1.strs[0];
 	}
-	| DECL_SHADER IDENTIFIER '=' shader_compile ';'
+	| DECL_SHADER IDENTIFIER '=' shader_compile_or_instance ';'
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
-		string compiledShaderName		=$2.strs[0];
-		CompiledShader *cs				=gEffect->m_compiledShaders[$4.strs[0]];
-		CompiledShader *compiledShader	=NULL;
-		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i!=gEffect->m_compiledShaders.end())
+		string shaderInstanceName		=$2.strs[0];
+		ShaderInstance *cs				=gEffect->m_shaderInstances[$4.strs[0]];
+		ShaderInstance *shaderInstance	=NULL;
+		ShaderInstanceMap::iterator i	=gEffect->m_shaderInstances.find(shaderInstanceName);
+		if(i!=gEffect->m_shaderInstances.end())
 		{
 			delete i->second;
 			// TODO: Warn here about double-compiling a shader.
 //			sfxWarning("double-compiling shader ");
 		}
-		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
+		gEffect->m_shaderInstances[shaderInstanceName]=shaderInstance=cs;
 	}
-	| optional_uniform texture_type optional_template_type IDENTIFIER optional_register_semantic ';'
+	| optional_uniform resource_type optional_template_type IDENTIFIER optional_register_semantic ';'
 	{
 		const SfxConfig *config		=gEffect->GetConfig();
 		string type=$2.strs[0];
@@ -702,12 +713,25 @@ prog : prog tok
 		string templ_type=$3.strs[1];
 		string name=$4.strs[0];
 		int slot=$5.num;
+		
+		int space=0;
+		string space_num=$5.strs[2];
+		if(space_num.length()>1)
+		{
+			space_num=space_num.substr(1,space_num.length()-1);
+			space=atoi(space_num.c_str());
+		}
+
 		ShaderResourceType srt=ToShaderResourceType($2.token);
 		string semantic;
 		
 		if(IsRW(srt))
 		{
 			semantic="u";
+		}
+		else if(srt==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		{
+			semantic="b";
 		}
 		else
 		{
@@ -734,19 +758,34 @@ prog : prog tok
 			ostr<<"<"<<templ<<">";
 		ostr<<" "<<name<<": register("<<semantic<<");\n";
 		string original=ostr.str();
-		
-		DeclaredTexture *dt=gEffect->DeclareTexture(name, srt, slot, templ_type, original);
-		if (!dt)
-			sfxError = true;
+		if(srt==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		{
+			DeclaredConstantBuffer *dt=gEffect->DeclareTemplatizedConstantBuffer(name, slot, space, templ_type, original);
+			if (!dt)
+				sfxError = true;
+			else
+			{
+				dt->global_line_number = $2.lineno;
+				dt->file_number = current_filenumber;
+				dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
+				dt->type = type;
+			}
+		}
 		else
 		{
-			dt->global_line_number = $1.lineno;
-			dt->file_number = current_filenumber;
-			dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
-			dt->variant = false;
-			dt->type = type;
-			dt->layout = "";
-			dt->texel_format = semantic;
+			DeclaredTexture *dt=gEffect->DeclareTexture(name, srt, slot, space, templ_type, original);
+			if (!dt)
+				sfxError = true;
+			else
+			{
+				dt->global_line_number = $2.lineno;
+				dt->file_number = current_filenumber;
+				dt->line_number = sfxget_lineno() + (last_linenumber - global_linenumber);
+				dt->variant = false;
+				dt->type = type;
+				dt->layout = "";
+				dt->texel_format = semantic;
+			}
 		}
 	}
 	| STRUCT IDENTIFIER struct_definition ';'
@@ -755,7 +794,7 @@ prog : prog tok
 		string name					=$2.strs[0];
 		buildStruct.file_number		=current_filenumber;
 		buildStruct.line_number		=sfxget_lineno()+(last_linenumber-global_linenumber);
-		buildStruct.global_line_number	=$1.lineno;
+		buildStruct.global_line_number	=$2.lineno;
 		
 		
 		ostringstream ostr;
@@ -816,7 +855,7 @@ prog : prog tok
 		gEffect->m_cslayout[shaderName]=currentCsLayout;
 		gEffect->m_gslayout[shaderName]=currentGsLayout;
 
-		buildFunction.main_linenumber		=$1.lineno;
+		buildFunction.main_linenumber		=$2.lineno;
 		buildFunction.declaration			=((returnType+" ")+ shaderName +"(")+inputs.str()+")";
 		if($7.strs[0].length()>0)
 		{
@@ -912,14 +951,12 @@ primary_exp: IDENTIFIER
 	string varName=$1.strs[0];
 	ConstantBuffer *cb = nullptr;
 	$$.strs[0]=varName;
-	if(varName=="stored_illum")
-	{
-		if (gEffect->IsDeclared(varName))
-			buildFunction.declarations.insert(varName);
-	}
 	
 	if(gEffect->IsDeclared(varName))
+	{
 		buildFunction.declarations.insert(varName);
+		buildFunction.resources.insert(varName);
+	}
 	else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
 	{
 		buildFunction.constantBuffers.insert(cb);
@@ -939,7 +976,17 @@ primary_exp: IDENTIFIER
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }
 
-texture_type: TEXTURE2D 
+resource_type: TEMPLATIZED_CONSTANT_BUFFER
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.token=$1.token;
+	}
+	| RAYTRACE_ACCELERATION_STRUCT
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.token=$1.token;
+	}
+	| TEXTURE2D 
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
@@ -1158,10 +1205,11 @@ optional_unorm_snorm: UNORM
 	$$.strs[0]="";
 }
 
-optional_register_semantic: ':' REGISTER '(' IDENTIFIER ')'
+optional_register_semantic: ':' REGISTER '(' IDENTIFIER optional_additional_identifier ')'
 {
-	$$.strs[0]=string(": register(")+$4.strs[0]+")";
+	$$.strs[0]=string(": register(")+$4.strs[0]+$5.strs[0]+")";
 	$$.strs[1]=$4.strs[0];
+	$$.strs[2]=$4.strs[1];
 	string idnum=$4.strs[0];
 	if(idnum.length()>1)
 	{
@@ -1300,6 +1348,7 @@ declaration: decl_specs init_declarator_list
 	$$.strs[0] =($1.strs[0] +" ") +$2.strs[0];
 	sfxstype::variable var;
 	var.type=$1.strs[0];
+	var.identifier=$2.strs[2];
 	buildFunction.locals.push_back(var);
 	$$.strs[1]=$2.strs[0];
 }
@@ -1343,17 +1392,20 @@ init_declarator_list: init_declarator
 {
 	$$.strs[0]=$1.strs[0];
 	$$.strs[1]=$1.strs[1];
+	$$.strs[2]=$1.strs[2];
 }
 | init_declarator_list ',' init_declarator
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	$$.strs[1] =( $1.strs[1]+',')+ $3.strs[1];
+	$$.strs[2]=$1.strs[2];
 }
 
 init_declarator: declarator
 {
-	$$.strs[0]=$1.strs[0];
+	$$.strs[0] = $1.strs[0];
 	$$.strs[1] = $1.strs[1];
+	$$.strs[2] = $1.strs[0];
 }
 | declarator '=' initializer
 {
@@ -1363,6 +1415,7 @@ init_declarator: declarator
 	string initializer	=$3.strs[0];
 	$$.strs[0] = $1.strs[0] + $2.strs[0] + initializer;
 	$$.strs[1] = $1.strs[1];
+	$$.strs[2] = declarator;
 }
 
 declarator: IDENTIFIER
@@ -1916,9 +1969,13 @@ postfix_exp: primary_exp
 											// Nothing to do here...
 											params += p.identifier;
 										}
-
+										string root_identifier=p.identifier;
+										size_t first_dot=root_identifier.find('.');
+										if(first_dot<root_identifier.length())
+											root_identifier=root_identifier.substr(0,first_dot);
 										// This is how OUR function knows this parameter.
-										buildFunction.declarations.insert(p.identifier);
+										buildFunction.declarations.insert(root_identifier);
+										buildFunction.resources.insert(root_identifier);
 										const Declaration *d=gEffect->GetDeclaration(p.identifier);
 
 										if(d && d->declarationType == DeclarationType::SAMPLER)
@@ -1982,6 +2039,8 @@ postfix_exp: primary_exp
 					| postfix_exp '.' IDENTIFIER
 					{
 						string expr1=$1.strs[0];
+						if(gEffect->GetDeclaration(expr1)!=nullptr)
+							buildFunction.resources.insert(expr1);
 						string expr3=$3.strs[0];
 						$$.strs[2]=expr3;			//Command
 						$$.strs[0]=expr1+$2.strs[0]+expr3;
@@ -2392,6 +2451,16 @@ opt_num: number_exp
 	$$.strs[0]=stringFormat("%d",$$.num);
 }
 
+
+optional_additional_identifier : ',' IDENTIFIER
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0];
+}
+| 
+{
+	$$.strs[0]="";
+}
+
 param_declaration_list : param_declaration_list ',' param_declaration
 {
 	$$.vars=$1.vars;
@@ -2471,12 +2540,13 @@ type : IDENTIFIER optional_template_type
 	$$.strs[0]=$1.strs[0];	// type
 	$$.strs[1]=$2.strs[1];	// template if present
 	$$.shaderResourceType		=(ShaderResourceType)0;
-} | texture_type optional_template_type
+} | resource_type optional_template_type
 {
 	$$.strs[0]=$1.strs[0];	// type
 	$$.strs[1]=$2.strs[1];	// template if present
 	$$.shaderResourceType		=ToShaderResourceType($1.token);
 }
+
 
 
 param: type IDENTIFIER optional_index optional_default
@@ -2554,7 +2624,21 @@ pass_list: pass_list pass_def
 	delete p;
 };
 
-pass_def: PASS IDENTIFIER '{' prog_def '}'
+legacy_pass_def: PASS IDENTIFIER '{' prog_def '}'
+{
+	$$.prog = $4.prog;
+	$$.strs[0] = $2.strs[0];
+}
+
+pass_def: legacy_pass_def
+{
+	$$.prog = $1.prog;
+	$$.strs[0] = $1.strs[0];
+} | raytrace_pass_def
+{
+}
+
+raytrace_pass_def: RAYTRACE_PASS IDENTIFIER '{' raytrace_def '}'
 {
 	$$.prog = $4.prog;
 	$$.strs[0] = $2.strs[0];
@@ -2562,41 +2646,42 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 
 prog_def : shaders_list
 {
-	$$.prog = new Pass(*($1.shaders),buildPassState);
+	$$.prog = new Pass(buildPassState);
 	buildPassState=PassState();
-	delete $1.shaders;
 };
 
+raytrace_def : raytrace_shaders_list
+{
+	$$.prog = new Pass(buildPassState);
+	buildPassState=PassState();
+};
+raytrace_shaders_list : raytrace_shaders_list raytrace_shader_def
+{
+} | raytrace_shader_def
+{
+}
 shaders_list : shaders_list shader_def
 	{
-			map<ShaderType,string>* map1=$1.shaders;
 			ShaderType sType	=$2.sType;
 			string name			=$2.strs[0];
-			(*map1)[sType]		=name;
-			$$.shaders			=map1;
+			buildPassState.shaders[sType]		=name;
 	}
 	| shader_def
 	{
-			map<ShaderType, string>* map1=new map<ShaderType, string>();
 			string name			=$1.strs[0];
 			ShaderType sType	=$1.sType;
 			$$.strs[0]			=name;
 			$$.sType			=sType;
-			(*map1)[sType]		=name;
-			$$.shaders=map1;
+			buildPassState.shaders[sType]		=name;
 	}
 	| shaders_list shader_fn
 	{
-		map<ShaderType, string>* map1=$1.shaders;
-		$$.shaders=$1.shaders;
 		$$.strs[0]	="";
 		$$.strs[1]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	}
 	| shader_fn
 	{
-		map<ShaderType, string>* map1=new map<ShaderType, string>();
-		$$.shaders=map1;
 		$$.strs[0]	="";
 		$$.strs[1]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
@@ -2712,7 +2797,59 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 			//	 buildPassState.blendState.blendFactor=vec4
 			 };
 
-shader_def : SHADER_COMMAND '(' shader_compile ')' ';'
+ raytrace_shader_def: set_raytrace_shader '=' shader_compile_or_instance ';'
+ {
+	$$.strs[0]=$3.strs[0];
+	buildPassState.shaders[$1.sType]=$3.strs[0];
+	// the compiled shader:
+	ShaderInstance *shaderInstance=gEffect->GetShaderInstance($3.strs[0],$1.sType);
+ } | SET_HIT_GROUP IDENTIFIER '{' hit_group_shader_list '}' ';'
+ {
+	$$.strs[0]=$2.strs[0];
+	buildPassState.raytraceHitGroups[$2.strs[0]]=buildRaytraceHitGroup;
+	buildRaytraceHitGroup=RaytraceHitGroup();
+ };
+
+ set_raytrace_shader: SET_RAY_GENERATION
+ {
+	$$.sType	=ShaderType::RAY_GENERATION_SHADER;
+ } | SET_CALLABLE
+ {
+	$$.sType	=ShaderType::CALLABLE_SHADER;
+ } | SET_MISS
+ {
+	$$.sType	=ShaderType::MISS_SHADER;
+ }
+
+ hit_group_shader_list: set_hit_group_command
+ {
+ } | set_hit_group_command hit_group_shader_list
+ {
+ }
+
+ set_hit_group_command: set_hit_group_type '=' shader_compile_or_instance ';'
+ {
+	if($1.sType==ShaderType::CLOSEST_HIT_SHADER)
+		buildRaytraceHitGroup.closestHit=$3.strs[0];
+	if($1.sType==ShaderType::ANY_HIT_SHADER)
+		buildRaytraceHitGroup.anyHit=$3.strs[0];
+	if($1.sType==ShaderType::INTERSECTION_SHADER)
+		buildRaytraceHitGroup.intersection=$3.strs[0];
+	gEffect->GetShaderInstance($3.strs[0],$1.sType);
+ }
+
+ set_hit_group_type: SET_CLOSEST_HIT
+ {
+	$$.sType	=ShaderType::CLOSEST_HIT_SHADER;
+ } | SET_ANY_HIT
+ {
+	$$.sType	=ShaderType::ANY_HIT_SHADER;
+ } | SET_INTERSECTION
+ {
+	$$.sType	=ShaderType::INTERSECTION_SHADER;
+ }
+
+shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
 			{
 				$$.strs[1]	="";
 				$$.strs[0]	="";
@@ -2721,46 +2858,59 @@ shader_def : SHADER_COMMAND '(' shader_compile ')' ';'
 				//		VertexShader vs_main=CompileShader(430,VS_Main());
 				// i.e. it's a combination of shadertype, profile, and function name.
 				// so these are stored in gEffect->m_compiledSHaders.
-				string compiledShaderName=$3.strs[0];
-				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-				if(i==gEffect->m_compiledShaders.end())
+				string shaderInstanceName=$3.strs[0];
+				ShaderInstanceMap::iterator i=gEffect->m_shaderInstances.find(shaderInstanceName);
+				if(i==gEffect->m_shaderInstances.end())
 				{
-					if(strcasecmp(compiledShaderName.c_str(),"NULL")==0)
+					if(strcasecmp(shaderInstanceName.c_str(),"NULL")==0)
 					{
 					}
 					else
 					{
 						ostringstream errMsg;
-						errMsg<<"Unable to find compiled shader \""<<compiledShaderName<<'\"';
+						errMsg<<"Unable to find compiled shader \""<<shaderInstanceName<<'\"';
 						errSem(errMsg.str(), $3.lineno);
 					}
 				}
 				else
 				{
-					CompiledShader *compiledShader	=i->second;
+					ShaderInstance *shaderInstance	=i->second;
 			
 					$$.sCommand						=$1.sCommand;
 					$$.sType						=$1.sType;
 					sfx::ShaderType shaderType=$1.sType;
+					shaderInstance->shaderType=shaderType;
 					// If it's a streamout, set it as vertex, not geometry shader.
-					if(shaderType==GEOMETRY_SHADER&&compiledShader->shaderType==VERTEX_SHADER)
+					if(shaderType==GEOMETRY_SHADER&&shaderInstance->shaderType==VERTEX_SHADER)
 					{
 						std::cout<<"Using streamout vertex shader for "<<i->first.c_str()<<std::endl;
-						compiledShaderName="gsConstructed";// to be discarded later. PS4 uses the Vertex shader directly for ConstructGS
+						shaderInstanceName="gsConstructed";// to be discarded later. PS4 uses the Vertex shader directly for ConstructGS
 						// so actually this will be regarded as a vertex shader, replacing the pure vertex shader.
 					}
-					$$.strs[0]=compiledShaderName;
+					$$.strs[0]=shaderInstanceName;
 				}
 			};
 
-		shader_compile: IDENTIFIER
+		shader_compile_or_instance: IDENTIFIER
 		{
-			string compiledShaderName	=$1.strs[0];
-			$$.strs[0]					=compiledShaderName;
+		// an identifier for a shader instance could be an existing instance, or just a function name. For the latter, we create a default instance.
+			string shaderInstanceName	=$1.strs[0];
+			// Get or create:
+			gEffect->GetShaderInstance(shaderInstanceName,UNKNOWN_SHADER_TYPE);
+			$$.strs[0]					=shaderInstanceName;
 			$$.num						=0;
 			$$.lineno					=$1.lineno;
 		}
-		| CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
+		| shader_compile
+		{
+			string shaderInstanceName	=$1.strs[0];
+			// Get or create:
+			gEffect->GetShaderInstance(shaderInstanceName,UNKNOWN_SHADER_TYPE);
+			$$.strs[0]					=shaderInstanceName;
+			$$.num						=0;
+			$$.lineno					=$1.lineno;
+		}
+		shader_compile: CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
 		{
 			//"POSITION.xyz;TYPE0.x;VELOCITY0.xyz"
 			// For PS4, you can actually just stream straight from a vertex shader.
@@ -2771,13 +2921,13 @@ shader_def : SHADER_COMMAND '(' shader_compile ')' ';'
 			$$.lineno										=$5.lineno;
 			string vertexShaderName							=$3.strs[0];
 			string declar									=$5.strs[0];
-			if(gEffect->m_compiledShaders.find(vertexShaderName)!=gEffect->m_compiledShaders.end())
+			if(gEffect->m_shaderInstances.find(vertexShaderName)!=gEffect->m_shaderInstances.end())
 			{
-				CompiledShader *compiledVertexShader	=gEffect->m_compiledShaders[vertexShaderName];
+				ShaderInstance *compiledVertexShader	=gEffect->m_shaderInstances[vertexShaderName];
 				stringstream ss;
 				ss << vertexShaderName<<"_streamout";
 				// we duplicate the vertex shader that's mentioned:
-				CompiledShader *compiledStreamOutVertexShader	=new CompiledShader(*compiledVertexShader);
+				ShaderInstance *compiledStreamOutVertexShader	=new ShaderInstance(*compiledVertexShader);
 
 				// slightly modify declaration to match PSSL streamout format:
 				// declar already contains enclosing quotes:
@@ -2799,71 +2949,38 @@ shader_def : SHADER_COMMAND '(' shader_compile ')' ';'
 				int byte_stride=24;
 				string ps4_declar=declar;//QuickFormat("%d,%d,":,stream_num,byte_stride)+declar;
 				compiledStreamOutVertexShader->m_preamble	+=string("\n#pragma argument (gsstream="+ps4_declar+")\n");
-				gEffect->m_compiledShaders[ss.str()]		=compiledStreamOutVertexShader;
+				gEffect->m_shaderInstances[ss.str()]		=compiledStreamOutVertexShader;
 				$$.strs[0]									=ss.str();
 			}
 		}
-		| COMPILE_SHADER '(' IDENTIFIER ',' IDENTIFIER '(' ')' ')' 
+		| COMPILE_SHADER_INSTANCE '(' IDENTIFIER ',' IDENTIFIER optional_brackets ')' 
 		{
 			$$.lineno										=$5.lineno;
 			string profileName								=$3.strs[0];
 			string shaderName								=$5.strs[0];
-			stringstream ss;
-			ss<<shaderName<<"Compiled"<<profileName;
-			string compiledShaderName						=ss.str();
-			$$.strs[0]										=compiledShaderName;
-			CompiledShader *compiledShader					=NULL;
-			if(gEffect->m_compiledShaders.find(compiledShaderName)!=gEffect->m_compiledShaders.end())
-				compiledShader	=gEffect->m_compiledShaders[compiledShaderName];
+			string shaderInstanceName						=(shaderName+"Compiled")+profileName;
+			$$.strs[0]										=shaderInstanceName;
+			ShaderInstance *shaderInstance					=NULL;
+			if(gEffect->m_shaderInstances.find(shaderInstanceName)!=gEffect->m_shaderInstances.end())
+				shaderInstance	=gEffect->m_shaderInstances[shaderInstanceName];
 			else
 			{
-				std::set<Declaration *> declarations;
-				Function *function=gEffect->GetFunction(shaderName,0);
-				if(!function)
+				shaderInstance=gEffect->AddShaderInstance(shaderInstanceName,shaderName,UNKNOWN_SHADER_TYPE,profileName,$3.lineno);
+				if(!shaderInstance)
 				{
 					ostringstream errMsg;
 					errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 					errSem(errMsg.str(), $5.lineno);
 				}
-				else
-				{
-					std::set<string> globals;
-					gEffect->AccumulateGlobalsAsStrings(function,globals);
-					// find out what slots the function uses by interrogating its global variables.
-					// At this point we're not interested in params, just globals.
-					for(auto i:globals)
-					{
-						string type=gEffect->GetDeclaredType(i);
-						auto d=gEffect->GetDeclarations().find(i);
-						if (d== gEffect->GetDeclarations().end())
-						{
-							ostringstream errMsg;
-							errMsg << "Variable not found: " << i.c_str() << std::endl;
-							errSem(errMsg.str(), $5.lineno);
-							continue;
-						}
-						Declaration *dec=d->second;
-						declarations.insert(dec);
-					}
-					compiledShader=gEffect->AddCompiledShader(compiledShaderName,declarations);
-					gEffect->AccumulateConstantBuffersUsed(function, compiledShader->constantBuffers);
-				}
 			}
-			if(gEffect->GetConfig()->entryPointOption.length()>0)
-				compiledShader->entryPoint					=shaderName;
-			else
-				compiledShader->entryPoint					="main";
-			compiledShader->m_functionName					=$5.strs[0];
-			compiledShader->shaderType						=$1.sType;
-			compiledShader->m_profile						=$$.strs[1]=profileName;
-			compiledShader->global_line_number				=$3.lineno;
-			if(strcasecmp(compiledShader->m_functionName.c_str(),"NULL")!=0)
+			$$.strs[1]=profileName;
+			if(strcasecmp(shaderInstance->m_functionName.c_str(),"NULL")!=0)
 			{
-				Function *function=gEffect->GetFunction(compiledShader->m_functionName,0);
+				Function *function=gEffect->GetFunction(shaderInstance->m_functionName,0);
 				if(!function)
 				{
 					ostringstream errMsg;
-					errMsg<<"Unable to find referenced shader \""<<compiledShader->m_functionName<<"\" - make sure you declare it with the 'shader' directive.";
+					errMsg<<"Unable to find referenced shader \""<<shaderInstance->m_functionName<<"\" - make sure you declare it with the 'shader' directive.";
 					errSem(errMsg.str(), $3.lineno);
 				}
 			}
@@ -3115,6 +3232,14 @@ optional_index : '[' number_exp ']'
 				 {
 					 $$.num=0;
 				 };
+
+optional_brackets :'(' ')'
+				 {
+				 }
+				 | %empty
+				 {
+				 }
+
  optional_default: '=' constant
 	{
 		$$.strs[0] = $2.strs[0];
@@ -3151,6 +3276,10 @@ ShaderResourceType ToShaderResourceType(int t)
 {
 	  switch (t)
 	  {
+	  case TEMPLATIZED_CONSTANT_BUFFER:
+		  return ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER;
+	  case RAYTRACE_ACCELERATION_STRUCT:
+		  return ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT;
 	  case TEXTURE1D:
 		  return ShaderResourceType::TEXTURE_1D;
 	  case TEXTURE2D:

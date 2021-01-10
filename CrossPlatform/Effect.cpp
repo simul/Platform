@@ -1,4 +1,3 @@
-#define NOMINMAX
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -19,17 +18,17 @@ using namespace crossplatform;
 using namespace std;
 
 
-ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(NULL)
+ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(nullptr)
 {
 	if (name&&strlen(name) >7)
 		defaultName = name + 7;
 }
 
 EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
-	:blendState(NULL)
-	,depthStencilState(NULL)
-	,rasterizerState(NULL)
-	,renderTargetFormatState(NULL)
+	:blendState(nullptr)
+	,depthStencilState(nullptr)
+	,rasterizerState(nullptr)
+	,renderTargetFormatState(nullptr)
 	,numResourceSlots(0)
 	,numRwResourceSlots(0)
 	,numSbResourceSlots(0)
@@ -47,9 +46,9 @@ EffectPass::EffectPass(RenderPlatform *r,Effect *parent)
 	,effect(parent)
 {
 	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
-		shaders[i]=NULL;
+		shaders[i]=nullptr;
 	for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
-		pixelShaders[i]=NULL;
+		pixelShaders[i]=nullptr;
 	memset(resourceSlots, 0, sizeof(resourceSlots));
 	memset(rwResourceSlots, 0, sizeof(rwResourceSlots));
 	memset(sbResourceSlots, 0, sizeof(sbResourceSlots));
@@ -214,8 +213,8 @@ EffectTechniqueGroup::~EffectTechniqueGroup()
 }
 
 Effect::Effect()
-	:renderPlatform(NULL)
-	,platform_effect(NULL)
+	:renderPlatform(nullptr)
+	,platform_effect(nullptr)
 {
 }
 
@@ -282,7 +281,7 @@ void Effect::InvalidateDeviceObjects()
 }
 
 EffectTechnique::EffectTechnique(RenderPlatform *r,Effect *e)
-	:platform_technique(NULL)
+	:platform_technique(nullptr)
 	,should_fence_outputs(true)
 	, renderPlatform(r)
 	, effect(e)
@@ -305,7 +304,7 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
 		return i->second;
 	TechniqueMap::iterator j=techniques.find(name);
 	if(j==techniques.end())
-		return NULL;
+		return nullptr;
 	charMap[name]=j->second;
 	return j->second;
 }
@@ -469,7 +468,7 @@ EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,c
 
 EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const string &techname_,const string &passname)
 {
-	EffectTechnique *tech=NULL;
+	EffectTechnique *tech=nullptr;
 	string techname=techname_;
 	{
 		if(groups.find(groupname)==groups.end())
@@ -846,7 +845,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		SECURITY_ATTRIBUTES secAttrib = {};
 		secAttrib.nLength = sizeof(SECURITY_ATTRIBUTES);
 		secAttrib.bInheritHandle = TRUE;
-		secAttrib.lpSecurityDescriptor = NULL;
+		secAttrib.lpSecurityDescriptor = nullptr;
 
 		HANDLE coutWrite = 0;
 		HANDLE coutRead = 0;
@@ -867,8 +866,8 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		PROCESS_INFORMATION processInfo = {};
 		bool success = (bool)CreateProcessW
 		(
-			NULL, wcstring,
-			NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,		//CREATE_NEW_CONSOLE
+			nullptr, wcstring,
+			nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr,		//CREATE_NEW_CONSOLE
 			&startInfo, &processInfo
 		);
 		if (processInfo.hProcess == nullptr)
@@ -894,13 +893,13 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				DWORD dwBytesAvailable;
 				DWORD dwWaitResult = WaitForMultipleObjects(3, hWaitHandles, FALSE, 60000L);
 
-				while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				while (PeekNamedPipe(coutRead, nullptr, 0, nullptr, &dwBytesAvailable, nullptr) && dwBytesAvailable)
 				{
 					ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
 					output_str+=std::string((char*)buff, (size_t)dwBytesRead);
 					any_output=true;
 				}
-				while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				while (PeekNamedPipe(cerrRead, nullptr, 0, nullptr, &dwBytesAvailable, nullptr) && dwBytesAvailable)
 				{
 					ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
 					output_str+=std::string((char*)buff, (size_t)dwBytesRead);
@@ -914,7 +913,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 					DWORD err = GetLastError();
 					char* msg;
 					// Ask Windows to prepare a standard message for a GetLastError() code:
-					if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
+					if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr))
 						break;
 
 					SIMUL_CERR << "Error message: " << msg << std::endl;
@@ -961,8 +960,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	renderPlatform=r;
 
 	// Clear the effect
-	groups.clear();
-	groupCharMap.clear();
+	InvalidateDeviceObjects();
 	for(auto i:textureDetailsMap)
 	{
 		delete i.second;
@@ -1039,11 +1037,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,TOO_FAR=5
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,TOO_FAR=5
 	};
 	Level level				=OUTSIDE;
-	EffectTechnique *tech	=NULL;
-	EffectPass *p			=NULL;
+	EffectTechnique *tech	=nullptr;
+	EffectPass *p			=nullptr;
+	RaytraceHitGroup *hg	=nullptr;
 	crossplatform::LayoutDesc layoutDesc[32];
 	int layoutCount=0;
 	int layoutOffset=0;
@@ -1084,7 +1083,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		int sp=(int)line.find(" ");
 		int open_brace= (int)line.find("{");
 		if(open_brace>=0)
-			level=(Level)(level+1);
+		{
+			if(level!=HITGROUP)
+				level=(Level)(level+1);
+		}
 		string word;
 		if(sp >= 0)
 			word=line.substr(0, sp);
@@ -1095,6 +1097,17 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if (is_equal(word, "group") )
 			{
 				group_name = line.substr(sp + 1, line.length() - sp - 1);
+			}
+			else if(is_equal(word,"accelerationstructure"))
+			{
+				const string &name	=words[1];
+				const string &register_num	=words[4];
+				int slot=atoi(register_num.c_str());
+				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
+				res->slot				=slot;
+				res->shaderResourceType=crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE;
+				textureDetailsMap[name]=res;
+				textureResources[slot]=res;
 			}
 			else if(is_equal(word,"texture"))
 			{
@@ -1351,7 +1364,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				layoutSlot++;
 			}
 		}
-		else if(level==PASS)
+		else if(level==PASS||level==HITGROUP)
 		{
 			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
@@ -1505,6 +1518,23 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					}
 					else if(_stricmp(type.c_str(),"compute")==0)
 						t=crossplatform::SHADERTYPE_COMPUTE;
+					else if(_stricmp(type.c_str(),"raygeneration")==0)
+						t=crossplatform::SHADERTYPE_RAY_GENERATION;
+					else if(_stricmp(type.c_str(),"hitgroup")==0)
+					{
+						level=HITGROUP;
+						hg=&p->raytraceHitGroups[name];
+						next	=(int)str.find('\n',pos+1);
+						continue;
+					}
+					else if(_stricmp(type.c_str(),"closesthit")==0)
+						t=crossplatform::SHADERTYPE_CLOSEST_HIT;
+					else if(_stricmp(type.c_str(),"anyhit")==0)
+						t=crossplatform::SHADERTYPE_ANY_HIT;
+					else if(_stricmp(type.c_str(),"miss")==0)
+						t=crossplatform::SHADERTYPE_MISS;
+					else if(_stricmp(type.c_str(),"callable")==0)
+						t=crossplatform::SHADERTYPE_CALLABLE;
 					else
 					{
 						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
@@ -1524,7 +1554,27 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						if(t==crossplatform::SHADERTYPE_PIXEL&&fmt!=FMT_UNKNOWN)
 							p->pixelShaders[fmt]=s;
 						else
-							p->shaders[t]=s;
+						{
+							if(level==PASS)
+							{
+								p->shaders[t]=s;
+							}
+							else
+							{
+								if(t==SHADERTYPE_CLOSEST_HIT)
+								{
+									hg->closestHit=s;
+								}
+								if(t==SHADERTYPE_ANY_HIT)
+								{
+									hg->anyHit=s;
+								}
+								if(t==SHADERTYPE_INTERSECTION)
+								{
+									hg->intersection=s;
+								}
+							}
+						}
 						if (!passRtFormat.empty())
 						{
 							p->rtFormatState = passRtFormat;
@@ -1660,7 +1710,10 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					SIMUL_BREAK_ONCE(base::QuickFormat("No shaders in pass %s of effect %s.",pass_name.c_str(),filename_utf8));
 				}
 			}
-			level = (Level)(level - 1);
+			if(level==HITGROUP)
+				level=PASS;
+			else
+				level = (Level)(level - 1);
 			if (level == OUTSIDE)
 				group_name = "";
 		}

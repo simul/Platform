@@ -6,11 +6,12 @@ file(GLOB CMAKE
 )
 
 file(GLOB SOURCES
-	"*.cpp" "glad.c"
+	"*.cpp" "**/*.cpp"
 )
 
 file(GLOB HEADERS
-	"*.h"
+	"*.h" "**/*.h"
+
 )
 
 file(GLOB JSON
@@ -26,6 +27,7 @@ file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
 	"${SIMUL_PLATFORM_DIR}/DirectX12/HLSL/*.sl"
 )
+source_group("NV" src FILES "**/*.cpp" "**/*.h" )
 
 set(in_RootSignature "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/GFX.hlsl")
 

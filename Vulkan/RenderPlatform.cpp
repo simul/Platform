@@ -103,11 +103,11 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 RenderPlatform::RenderPlatform():
 	mDummy2D(nullptr)
-    ,mDummy3D(nullptr)
+	,mDummy3D(nullptr)
 {
-    mirrorY     = false;
-    mirrorY2    = false;
-    mirrorYText = false;
+	mirrorY	 = false;
+	mirrorY2	= false;
+	mirrorYText = false;
 
 }
 
@@ -118,7 +118,7 @@ RenderPlatform::~RenderPlatform()
 
 const char* RenderPlatform::GetName()const
 {
-    return "Vulkan";
+	return "Vulkan";
 }
 
 void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
@@ -383,15 +383,15 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	auto *vkEffectPass=((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
-    BeginEvent(deviceContext, vkEffectPass->name.c_str());
-    ApplyContextState(deviceContext);
+	BeginEvent(deviceContext, vkEffectPass->name.c_str());
+	ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	if(commandBuffer)
 	{
 		commandBuffer->dispatch(w, l, d);
 	}
-    InsertFences(deviceContext);
-    EndEvent(deviceContext);
+	InsertFences(deviceContext);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
@@ -425,8 +425,8 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 {
 	if(!deviceContext.contextState.currentEffectPass)
 		return;
-    BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-    ApplyContextState(deviceContext);
+	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
 	if(commandBuffer)
@@ -434,13 +434,13 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 		commandBuffer->draw(4,1,0,0);
 		commandBuffer->endRenderPass();
 	}
-    EndEvent(deviceContext);
+	EndEvent(deviceContext);
 }
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext,bool error_checking)
 {
-    crossplatform::ContextState* cs = &deviceContext.contextState;
-    vulkan::EffectPass* pass    = (vulkan::EffectPass*)cs->currentEffectPass;
+	crossplatform::ContextState* cs = &deviceContext.contextState;
+	vulkan::EffectPass* pass	= (vulkan::EffectPass*)cs->currentEffectPass;
 
 	if(!cs||!cs->currentEffectPass)
 	{
@@ -473,8 +473,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 		// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
 		//mFrameHeap[mCurIdx].Reset();
-        // Reset the override samplers heap
-        //mFrameOverrideSamplerHeap[mCurIdx].Reset();
+		// Reset the override samplers heap
+		//mFrameOverrideSamplerHeap[mCurIdx].Reset();
 	}
 	//crossplatform::PixelOutputFormat pfm=GetCurrentPixelOutputFormat(deviceContext);
 	
@@ -500,7 +500,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			commandBuffer->bindIndexBuffer( ((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
 		}
 		pass->Apply(deviceContext,false);
-		                                                                                                        
+																												
 		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
 		size_t clearColoursCount = (size_t)mTargets.num + (mTargets.m_dt ? 1 : 0);
 		std::vector<vk::ClearValue>clearValues(clearColoursCount);
@@ -567,40 +567,40 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::G
 
 uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties)
 {
-    vk::PhysicalDeviceMemoryProperties memProperties;
+	vk::PhysicalDeviceMemoryProperties memProperties;
 	vk::PhysicalDevice *gpu=GetVulkanGPU();
 	gpu->getMemoryProperties(&memProperties);
 
-     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	 for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 	 {
-         if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		 if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 		 {
-             return i;
-         }
-     }
+			 return i;
+		 }
+	 }
 
-     SIMUL_BREAK("failed to find suitable memory type!");
+	 SIMUL_BREAK("failed to find suitable memory type!");
 	 return 0;
  }
 #include "Platform/Core/StringFunctions.h"
 void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
 {
-    vk::BufferCreateInfo bufferInfo = {};
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+	vk::BufferCreateInfo bufferInfo = {};
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-    SIMUL_VK_CHECK (vulkanDevice->createBuffer(&bufferInfo, nullptr, &buffer));
+	SIMUL_VK_CHECK (vulkanDevice->createBuffer(&bufferInfo, nullptr, &buffer));
 
-    vk::MemoryRequirements memRequirements;
-    vulkanDevice->getBufferMemoryRequirements( buffer, &memRequirements);
+	vk::MemoryRequirements memRequirements;
+	vulkanDevice->getBufferMemoryRequirements( buffer, &memRequirements);
 
-    vk::MemoryAllocateInfo allocInfo = {};
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+	vk::MemoryAllocateInfo allocInfo = {};
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-    SIMUL_VK_CHECK (vulkanDevice->allocateMemory(&allocInfo, nullptr, &bufferMemory)); 
-    vulkanDevice->bindBufferMemory( buffer, bufferMemory, 0);
+	SIMUL_VK_CHECK (vulkanDevice->allocateMemory(&allocInfo, nullptr, &bufferMemory)); 
+	vulkanDevice->bindBufferMemory( buffer, bufferMemory, 0);
 #ifdef _DEBUG
 	if(name)
 	{
@@ -613,27 +613,13 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 {
-    auto pass = (vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
+	auto pass = (vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
 
 }
 
-crossplatform::Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture* RenderPlatform::createTexture()
 {
 	crossplatform::Texture* tex= new vulkan::Texture;
-	ERRNO_BREAK
-    if (fileNameUtf8 && strlen(fileNameUtf8) > 0 && strcmp(fileNameUtf8, "ESRAM") != 0)
-	{
-		std::string str(fileNameUtf8);
-        if (str.find(".") < str.length())
-        {
-			ERRNO_BREAK
-            tex->LoadFromFile(this, fileNameUtf8);
-	ERRNO_BREAK
-        }
-	}
-	ERRNO_BREAK
-    tex->SetName(fileNameUtf8);
-	ERRNO_BREAK
 	return tex;
 }
 
@@ -646,19 +632,13 @@ crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 crossplatform::SamplerState* RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc* desc)
 {
 	vulkan::SamplerState* s = new vulkan::SamplerState();
-    s->Init(this,desc);
+	s->Init(this,desc);
 	return s;
 }
 
 crossplatform::Effect* RenderPlatform::CreateEffect()
 {
 	vulkan::Effect* e=new vulkan::Effect();
-	return e;
-}
-
-crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
-{
-	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8,defines);
 	return e;
 }
 
@@ -704,10 +684,10 @@ vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceTy
 
 vulkan::Texture* RenderPlatform::GetDummyTextureCube()
 {
-    if (!mDummyTextureCube)
-    {
-        mDummyTextureCube = (vulkan::Texture*)CreateTexture("mDummyTextureCube");
-        mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,true);
+	if (!mDummyTextureCube)
+	{
+		mDummyTextureCube = (vulkan::Texture*)CreateTexture("mDummyTextureCube");
+		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,true);
 		
 		const float whiteTexels[24] = { 1.0f,1.0f,1.0f,1.0f
 										,1.0f,1.0f,1.0f,1.0f
@@ -715,20 +695,20 @@ vulkan::Texture* RenderPlatform::GetDummyTextureCube()
 										,1.0f,1.0f,1.0f,1.0f
 										,1.0f,1.0f,1.0f,1.0f
 										,1.0f,1.0f,1.0f,1.0f};
-        mDummyTextureCube->setTexels(immediateContext, &whiteTexels[0], 0, 6);
-    }
-    return mDummyTextureCube;
+		mDummyTextureCube->setTexels(immediateContext, &whiteTexels[0], 0, 6);
+	}
+	return mDummyTextureCube;
 }
 
 vulkan::Texture* RenderPlatform::GetDummy2D()
 {
-    if (!mDummy2D)
-    {
-        mDummy2D = (vulkan::Texture*)CreateTexture("dummy2d");
-        mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
-        mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
-    }
-    return mDummy2D;
+	if (!mDummy2D)
+	{
+		mDummy2D = (vulkan::Texture*)CreateTexture("dummy2d");
+		mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+		mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+	}
+	return mDummy2D;
 }
 
 vulkan::Texture* RenderPlatform::GetDummy2DMS()
@@ -736,7 +716,7 @@ vulkan::Texture* RenderPlatform::GetDummy2DMS()
 	if (!mDummy2DMS)
 	{
 		mDummy2DMS = (vulkan::Texture*)CreateTexture("dummy2dms");
-		mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, false, false, 2);
+		mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, false, false, 2);
 		mDummy2DMS->setTexels(immediateContext, &whiteTexel[0], 0, 1);
 
 	}
@@ -745,19 +725,19 @@ vulkan::Texture* RenderPlatform::GetDummy2DMS()
 
 vulkan::Texture* RenderPlatform::GetDummy3D()
 {
-    if (!mDummy3D)
-    {
-        mDummy3D = (vulkan::Texture*)CreateTexture("dummy3d");
-        mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1,1, crossplatform::PixelFormat::RGBA_8_UNORM);
-        mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
-    }
-    return mDummy3D;
+	if (!mDummy3D)
+	{
+		mDummy3D = (vulkan::Texture*)CreateTexture("dummy3d");
+		mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+		mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+	}
+	return mDummy3D;
 }
 crossplatform::RenderState* RenderPlatform::CreateRenderState(const crossplatform::RenderStateDesc &desc)
 {
 	vulkan::RenderState* s  = new vulkan::RenderState;
-	s->desc                 = desc;
-	s->type                 = desc.type;
+	s->desc				 = desc;
+	s->type				 = desc.type;
 	return s;
 }
 
@@ -769,29 +749,29 @@ crossplatform::Query* RenderPlatform::CreateQuery(crossplatform::QueryType type)
 
 vk::Filter simul::vulkan::RenderPlatform::toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
-    {
-        return vk::Filter::eLinear;
-    }
-    return vk::Filter::eNearest;
+	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+	{
+		return vk::Filter::eLinear;
+	}
+	return vk::Filter::eNearest;
 }
 
 vk::Filter simul::vulkan::RenderPlatform::toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
-    {
-        return vk::Filter::eLinear;
-    }
-    return vk::Filter::eNearest;
+	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+	{
+		return vk::Filter::eLinear;
+	}
+	return vk::Filter::eNearest;
 }
 
 vk::SamplerMipmapMode simul::vulkan::RenderPlatform::toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
-    {
-        return vk::SamplerMipmapMode::eLinear;
-    }
-    return vk::SamplerMipmapMode::eNearest;
+	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+	{
+		return vk::SamplerMipmapMode::eLinear;
+	}
+	return vk::SamplerMipmapMode::eNearest;
 }
 
 vk::SamplerAddressMode RenderPlatform::toVulkanWrapping(crossplatform::SamplerStateDesc::Wrapping w)
@@ -813,30 +793,30 @@ vk::SamplerAddressMode RenderPlatform::toVulkanWrapping(crossplatform::SamplerSt
 
 vk::PrimitiveTopology RenderPlatform::toVulkanTopology(crossplatform::Topology t)
 {
-    switch (t)
-    {
-    case crossplatform::Topology::POINTLIST:
-        return vk::PrimitiveTopology::ePointList;
-    case crossplatform::Topology::LINELIST:
-        return vk::PrimitiveTopology::eLineList;
-    case crossplatform::Topology::LINESTRIP:
-        return vk::PrimitiveTopology::eLineStrip;
-    case crossplatform::Topology::TRIANGLELIST:
-        return vk::PrimitiveTopology::eTriangleList;
-    case crossplatform::Topology::TRIANGLESTRIP:
-        return vk::PrimitiveTopology::eTriangleStrip;
-    case crossplatform::Topology::LINELIST_ADJ:
-        return vk::PrimitiveTopology::eLineListWithAdjacency;
-    case crossplatform::Topology::LINESTRIP_ADJ:
-        return vk::PrimitiveTopology::eLineStripWithAdjacency;
-    case crossplatform::Topology::TRIANGLELIST_ADJ:
-        return vk::PrimitiveTopology::eTriangleListWithAdjacency;
-    case crossplatform::Topology::TRIANGLESTRIP_ADJ:
-        return vk::PrimitiveTopology::eTriangleStripWithAdjacency;
-    default:
-        break;
-    };
-    return vk::PrimitiveTopology::eLineStrip;
+	switch (t)
+	{
+	case crossplatform::Topology::POINTLIST:
+		return vk::PrimitiveTopology::ePointList;
+	case crossplatform::Topology::LINELIST:
+		return vk::PrimitiveTopology::eLineList;
+	case crossplatform::Topology::LINESTRIP:
+		return vk::PrimitiveTopology::eLineStrip;
+	case crossplatform::Topology::TRIANGLELIST:
+		return vk::PrimitiveTopology::eTriangleList;
+	case crossplatform::Topology::TRIANGLESTRIP:
+		return vk::PrimitiveTopology::eTriangleStrip;
+	case crossplatform::Topology::LINELIST_ADJ:
+		return vk::PrimitiveTopology::eLineListWithAdjacency;
+	case crossplatform::Topology::LINESTRIP_ADJ:
+		return vk::PrimitiveTopology::eLineStripWithAdjacency;
+	case crossplatform::Topology::TRIANGLELIST_ADJ:
+		return vk::PrimitiveTopology::eTriangleListWithAdjacency;
+	case crossplatform::Topology::TRIANGLESTRIP_ADJ:
+		return vk::PrimitiveTopology::eTriangleStripWithAdjacency;
+	default:
+		break;
+	};
+	return vk::PrimitiveTopology::eLineStrip;
 }
 /*
 GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
@@ -844,8 +824,8 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return GL_FLOAT;
+	case RGB_11_11_10_FLOAT:
+		return GL_FLOAT;
 	case RGBA_16_FLOAT:
 		return GL_FLOAT;
 	case RGBA_32_FLOAT:
@@ -896,20 +876,20 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 
 vk::BlendOp RenderPlatform::toVulkanBlendOperation(crossplatform::BlendOperation o)
 {
-    switch (o)
-    {
-    case simul::crossplatform::BLEND_OP_ADD:
-        return vk::BlendOp::eAdd;
-    case simul::crossplatform::BLEND_OP_SUBTRACT:
-        return vk::BlendOp::eSubtract;
-    case simul::crossplatform::BLEND_OP_MAX:
-        return vk::BlendOp::eMax;
-    case simul::crossplatform::BLEND_OP_MIN:
-        return vk::BlendOp::eMin;
-    default:
-        break;
-    }
-    return vk::BlendOp::eAdd;
+	switch (o)
+	{
+	case simul::crossplatform::BLEND_OP_ADD:
+		return vk::BlendOp::eAdd;
+	case simul::crossplatform::BLEND_OP_SUBTRACT:
+		return vk::BlendOp::eSubtract;
+	case simul::crossplatform::BLEND_OP_MAX:
+		return vk::BlendOp::eMax;
+	case simul::crossplatform::BLEND_OP_MIN:
+		return vk::BlendOp::eMin;
+	default:
+		break;
+	}
+	return vk::BlendOp::eAdd;
 }
 
 vk::CompareOp RenderPlatform::toVulkanComparison(crossplatform::DepthComparison d)
@@ -985,8 +965,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return vk::Format::eB10G11R11UfloatPack32;
+	case RGB_11_11_10_FLOAT:
+		return vk::Format::eB10G11R11UfloatPack32;
 	case RGBA_16_FLOAT:
 		return vk::Format::eR16G16B16A16Sfloat;
 	case RGBA_32_FLOAT:
@@ -1128,8 +1108,8 @@ int RenderPlatform::FormatTexelBytes(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return 4;
+	case RGB_11_11_10_FLOAT:
+		return 4;
 	case RGBA_16_FLOAT:
 		return 8;
 	case RGBA_32_FLOAT:
@@ -1181,8 +1161,8 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return 3;
+	case RGB_11_11_10_FLOAT:
+		return 3;
 	case RGBA_16_FLOAT:
 		return 4;
 	case RGBA_32_FLOAT:
@@ -1261,57 +1241,57 @@ vk::CullModeFlags RenderPlatform::toVulkanCullFace(crossplatform::CullFaceMode c
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
-    auto state = (vulkan::RenderState*)s;
-    if (state->type == crossplatform::RenderStateType::BLEND)
-    {
-        crossplatform::BlendDesc bdesc = state->desc.blend;
-        // We need to iterate over all the rts as we may have some settings
-        // from older passes:
-        const int kBlendMaxRt = 8;
-        for (int i = 0; i < kBlendMaxRt; i++)
-        {
-            if (i >= bdesc.numRTs || bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
-            {
-            }
-            else
-            {
-            }
-        }
-    }
-    else if (state->type == crossplatform::RenderStateType::DEPTH)
-    {
-        crossplatform::DepthStencilDesc ddesc = state->desc.depth;
-        if (ddesc.test)
-        {
-        }
-        else
-        {
-        }
-    }
-    else if (state->type == crossplatform::RenderStateType::RASTERIZER)
-    {
-        crossplatform::RasterizerDesc rdesc = state->desc.rasterizer;
-        if (rdesc.cullFaceMode == crossplatform::CullFaceMode::CULL_FACE_NONE)
-        {
-         //   glDisable(GL_CULL_FACE);
-        }
-        else
-        {
-         //   glEnable(GL_CULL_FACE);
-         //   glCullFace(toGlCullFace(rdesc.cullFaceMode));
-        }
-        // Reversed
-      //  glFrontFace(rdesc.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE ? GL_CCW : GL_CW);
-    }
-    else
-    {
-        SIMUL_CERR << "Trying to set an invalid render state \n";
-    }
+	auto state = (vulkan::RenderState*)s;
+	if (state->type == crossplatform::RenderStateType::BLEND)
+	{
+		crossplatform::BlendDesc bdesc = state->desc.blend;
+		// We need to iterate over all the rts as we may have some settings
+		// from older passes:
+		const int kBlendMaxRt = 8;
+		for (int i = 0; i < kBlendMaxRt; i++)
+		{
+			if (i >= bdesc.numRTs || bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
+			{
+			}
+			else
+			{
+			}
+		}
+	}
+	else if (state->type == crossplatform::RenderStateType::DEPTH)
+	{
+		crossplatform::DepthStencilDesc ddesc = state->desc.depth;
+		if (ddesc.test)
+		{
+		}
+		else
+		{
+		}
+	}
+	else if (state->type == crossplatform::RenderStateType::RASTERIZER)
+	{
+		crossplatform::RasterizerDesc rdesc = state->desc.rasterizer;
+		if (rdesc.cullFaceMode == crossplatform::CullFaceMode::CULL_FACE_NONE)
+		{
+		 //   glDisable(GL_CULL_FACE);
+		}
+		else
+		{
+		 //   glEnable(GL_CULL_FACE);
+		 //   glCullFace(toGlCullFace(rdesc.cullFaceMode));
+		}
+		// Reversed
+	  //  glFrontFace(rdesc.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE ? GL_CCW : GL_CW);
+	}
+	else
+	{
+		SIMUL_CERR << "Trying to set an invalid render state \n";
+	}
 }
 
 void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)
 {
-    SetRenderState(deviceContext, standardRenderStates[s]);
+	SetRenderState(deviceContext, standardRenderStates[s]);
 }
 
 void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
@@ -1432,18 +1412,18 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 	deviceContext.GetFrameBufferStack().pop();
 	mTargets = {};
 
-    // Default FBO:
-    if (deviceContext.GetFrameBufferStack().empty())
-    {
-        auto defT = deviceContext.defaultTargetsAndViewport;
-        SetViewports(deviceContext, 1, &defT.viewport);
-    }
-    // Plugin FBO:
-    else
-    {
-        auto topRt = deviceContext.GetFrameBufferStack().top();
-        SetViewports(deviceContext, 1, &topRt->viewport);
-    }
+	// Default FBO:
+	if (deviceContext.GetFrameBufferStack().empty())
+	{
+		auto defT = deviceContext.defaultTargetsAndViewport;
+		SetViewports(deviceContext, 1, &defT.viewport);
+	}
+	// Plugin FBO:
+	else
+	{
+		auto topRt = deviceContext.GetFrameBufferStack().top();
+		SetViewports(deviceContext, 1, &topRt->viewport);
+	}
 }
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
@@ -1462,7 +1442,7 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crosspla
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-    return new vulkan::DisplaySurface();
+	return new vulkan::DisplaySurface();
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
@@ -1479,8 +1459,8 @@ void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &)
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
-    BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-    ApplyContextState(deviceContext);
+	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
 	if(commandBuffer)
@@ -1488,13 +1468,13 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 		commandBuffer->draw(num_verts,1,start_vert,0);
 		commandBuffer->endRenderPass();
 	}
-    EndEvent(deviceContext);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
-    BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-    ApplyContextState(deviceContext);
+	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
 	if(commandBuffer)
@@ -1502,12 +1482,12 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 		commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
 		commandBuffer->endRenderPass();
 	}
-    EndEvent(deviceContext);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
 {
-    t->GenerateMips(deviceContext);
+	t->GenerateMips(deviceContext);
 }
 
 crossplatform::Shader* RenderPlatform::CreateShader()
@@ -1757,7 +1737,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	{
 		attachments[i]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(pixelFormat))
 														.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite ? vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
+														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
 														.setStoreOp(vk::AttachmentStoreOp::eStore)
 														.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

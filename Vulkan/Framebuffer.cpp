@@ -126,7 +126,7 @@ bool Framebuffer::CreateBuffers()
     {
         if (!is_cubemap)
         {
-            buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, target_format, false, true, false, numAntialiasingSamples, quality);
+            buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height,1, target_format, false, true, false, numAntialiasingSamples, quality);
         }
         else
         {
@@ -137,7 +137,7 @@ bool Framebuffer::CreateBuffers()
     {
         std::string sn = "Framebuffer_Depth_" + name;
         buffer_depth_texture = renderPlatform->CreateTexture(sn.c_str());
-        buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality);
+        buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height,1, depth_format, false, false, true, numAntialiasingSamples, quality);
     }
     
     return true;

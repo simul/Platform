@@ -99,12 +99,12 @@ uint ReverseBits32(uint bits) {
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
 	return (bits);
 }*/
-
 vec2 Hammersley(uint index, uint NumSamples, uint2 random)
 {
-	float E1 = frac((float)index / NumSamples + float(random.x & 0xffff) / (1 << 16));
+	float E1 = frac((float)index / float(NumSamples)+ (float(random.x & 0xFFFF) / float(1 << 16)));
+//E1 =float(index) / float(NumSamples);
 	// Radical inverse:
-	float E2 = float(reversebits(index) ^ random.y) * 2.3283064365386963e-10;
+	float E2 = frac(float(reversebits(index) ^ random.y) * 2.3283064365386963e-10);
 	return vec2(E1, E2);
 }
 
@@ -119,26 +119,27 @@ shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
 
 mat3 GetTangentBasis(vec3 Z_dir)
 {
-	vec3 UpVector = abs(Z_dir.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
+	vec3 UpVector = abs(Z_dir.z) < 0.999 ? vec3(0, 0, 1.0) : vec3(1.0, 0, 0);
 	vec3 TangentX = normalize(cross(UpVector, Z_dir));
 	vec3 TangentY = cross(Z_dir, TangentX);
-	return mat3(TangentX, TangentY, Z_dir);
+	return transpose(mat3(TangentX, TangentY, Z_dir));
 }
 
 float3 TangentToWorld(vec3 Vec, vec3 Z_dir)
 {
-	return mul(Vec, GetTangentBasis(Z_dir));
+	return mul( GetTangentBasis(Z_dir), Vec);
 }
 float RoughnessFromMip(float Mip, float CubemapMaxMip)
 {
 	float LevelFrom1x1 = CubemapMaxMip - 1 - Mip;
 	return exp2(( - LevelFrom1x1) / 1.2);
 }
+
 vec4 CosineSampleHemisphere(vec2 E)
 {
-	float Phi = 2 * PI * E.x;
+	float Phi = 2.0 * PI * E.x;
 	float cos_theta = sqrt(E.y);
-	float sin_theta = sqrt(1 - cos_theta * cos_theta);
+	float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
 	vec3 H;
 	H.x = sin_theta * cos(Phi);
@@ -191,12 +192,14 @@ vec4 RoughnessMip(vec3 view,bool rough)
 	for (uint i = 0; i < NumSamples; i++)
 	{
 		vec2 E = Hammersley(i, NumSamples, uint2(0,0));
+		//E.y=.999;
 		vec3 L;
 		if(rough) // used for roughness > 0.99
 		{
 			// roughness=1, GGX is constant. Use cosine distribution instead
 			L		= CosineSampleHemisphere(E).xyz;
 			float NoL = L.z;
+			L=mul( TangentToWorld, L);
 		#ifdef CPP_GLSL
 			result	+= sourceCubemap.SampleLevel(cubeSamplerState, vec3(-L.x, -L.y, L.z), 0) * NoL;
 		#else
@@ -220,7 +223,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 
 				float ConeAngle = acos(saturate( 1.0 - SolidAngleSample / (2.0*PI) ));
 
-				L = mul( L, TangentToWorld );
+				L = mul(  TangentToWorld, L );
 				// Apply a limit to avoid numerical issues:
 				#ifdef CPP_GLSL
 					vec4 lookup=100.0*saturate(0.01*sourceCubemap.SampleLevel(cubeSamplerState,vec3(-L.x, -L.y, L.z), 0));
@@ -234,6 +237,8 @@ vec4 RoughnessMip(vec3 view,bool rough)
 		}
 	}
 	outp = result / Weight;
+	//outp.rgb+=0.4*saturate(view)+0.1*saturate(-view);
+	//outp.g= float(mipIndex)/3.0;
 	return vec4(outp.rgb, alpha);
 }
 

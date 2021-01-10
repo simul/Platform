@@ -181,7 +181,7 @@ Effect::~Effect()
 void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
 {
 	EnsureEffect(r, filename_utf8);
-	crossplatform::Effect::Load(r, filename_utf8, defines);
+ 	crossplatform::Effect::Load(r, filename_utf8, defines);
 }
 
 EffectTechnique* Effect::CreateTechnique()
@@ -192,24 +192,6 @@ EffectTechnique* Effect::CreateTechnique()
 crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
 {
     return techniques_by_index[index];
-}
-
-void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)
-{
-    RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-    s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
-
-    crossplatform::Effect::SetConstantBuffer(deviceContext, s);
-}
-
-void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass)
-{
-    crossplatform::Effect::Apply(deviceContext, effectTechnique, pass);
-}
-
-void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,const char* pass)
-{
-    crossplatform::Effect::Apply(deviceContext, effectTechnique, pass);
 }
 
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)

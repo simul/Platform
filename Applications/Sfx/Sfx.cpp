@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 /* Portions of this code are Copyright (c) 2011, Max Aizenshtein <max.sniffer@gmail.com>
 All rights reserved.
 

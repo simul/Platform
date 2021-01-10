@@ -89,15 +89,9 @@ namespace simul
 			void							Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines) override;
 			void							Compile(const char *filename_utf8) override;
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index) override;
-		
-			void							SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase* s) override;
-			
-			void							Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass) override;
-			void							Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,const char* pass) override;
 			void							Reapply(crossplatform::DeviceContext& deviceContext) override;
 			void							Unapply(crossplatform::DeviceContext& deviceContext) override;
 			void							UnbindTextures(crossplatform::DeviceContext& deviceContext) override;
-		
 		private:
 			EffectTechnique*				CreateTechnique() override;
 		};

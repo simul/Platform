@@ -58,11 +58,13 @@ namespace simul
 				T value;
 			};
 			Channel<vec3> albedo;
+			Channel<vec3> emissive;
+			Channel<vec3> normal;
 			Channel<float> roughness;
 			Channel<float> metal;
 			Channel<float> ambientOcclusion;
 		protected:
-			crossplatform::Effect *effect;
+			crossplatform::Effect *effect=nullptr;
 			std::string name;
 		};
 	}

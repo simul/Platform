@@ -105,7 +105,6 @@ struct sfxstype
 		Pass*		prog;
 
 		std::map<std::string, Pass>*			passes;
-		std::map<ShaderType, std::string>*	shaders;
 		std::vector<variable>*			vars;
 		std::vector<samplerVar>*			texNames;
 	};

@@ -208,6 +208,7 @@ namespace simul
 			bool renderTarget;
 			bool external_texture;
 			bool depthStencil;
+			bool shouldGenerateMips=false;
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
@@ -243,7 +244,11 @@ namespace simul
 			{
 				return depthStencil;
 			}
-			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
+			bool ShouldGenerateMips() const
+			{
+				return shouldGenerateMips;
+			}
+			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
@@ -284,11 +289,11 @@ namespace simul
 			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
 			virtual void InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
-			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*) { return false; }
+			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*);
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
-			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
+			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int m
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
-				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0)=0;
+				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0)=0;
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.

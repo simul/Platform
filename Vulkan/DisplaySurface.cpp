@@ -161,7 +161,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 #ifdef _MSC_VER
 	if (hDC && !ReleaseDC(mHwnd, hDC))                    // Are We Able To Release The DC
 	{
-		SIMUL_CERR << "Release Device Context Failed." << GetErr() << std::endl;
+ 		SIMUL_CERR << "Release Device Context Failed." << GetErr() << std::endl;
 		hDC = NULL;                           // Set DC To NULL
 	}
 	hDC = nullptr;                           // Set DC To NULL
@@ -1017,7 +1017,8 @@ void DisplaySurface::Resize()
 	UINT H = abs(rect.bottom - rect.top);
 	if (viewport.w == W&&viewport.h == H)
 		return;
-	InitSwapChain();
+	if(W*H>0)
+		InitSwapChain();
 
 	viewport.w = W;
 	viewport.h = H;
