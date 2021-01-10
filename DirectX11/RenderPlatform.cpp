@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX11/RenderPlatform.h"
@@ -22,9 +22,6 @@
 #include "Platform/Math/Matrix4x4.h"
 #include "Platform/CrossPlatform/Camera.h"
 
-#if !PLATFORM_D3D11_SFX
-#include "D3dx11effect.h"
-#endif
 #include "DisplaySurface.h"
 
 #ifdef _XBOX_ONE
@@ -329,6 +326,7 @@ D3D11_MAP_FLAG RenderPlatform::GetMapFlags()
 #endif
 		return (D3D11_MAP_FLAG)0;
 }
+
 void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	ApplyContextState(deviceContext);
@@ -377,19 +375,9 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 
 void RenderPlatform::ApplyDefaultMaterial()
 {
-    const float BLACK_COLOR[] = {0.0f, 0.0f, 0.0f, 1.0f};
-    const float GREEN_COLOR[] = {0.0f, 1.0f, 0.0f, 1.0f};
-//    const GLfloat WHITE_COLOR[] = {1.0f, 1.0f, 1.0f, 1.0f};
-/*    glMaterialfv(GL_FRONT, GL_EMISSION, BLACK_COLOR);
-    glMaterialfv(GL_FRONT, GL_AMBIENT, BLACK_COLOR);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, GREEN_COLOR);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, BLACK_COLOR);
-    glMaterialf(GL_FRONT, GL_SHININESS, 0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
-crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture *RenderPlatform::createTexture()
 {
 	ERRNO_BREAK
 	crossplatform::Texture * tex=NULL;
@@ -400,14 +388,6 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	else
 #endif
 	tex=new dx11::Texture();
-	if(fileNameUtf8&&strlen(fileNameUtf8)>0)
-	{
-		if(strstr( fileNameUtf8,".")!=nullptr)
-			tex->LoadFromFile(this,fileNameUtf8);
-		tex->SetName(fileNameUtf8);
-	}
-	
-	ERRNO_BREAK
 	return tex;
 }
 
@@ -1440,7 +1420,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		auto *l = static_cast<const dx11::Layout *>(deviceContext.contextState.currentLayout);
 		deviceContext.asD3D11DeviceContext()->IASetInputLayout(l->AsD3D11InputLayout());
 	}
-#if PLATFORM_D3D11_SFX
 	crossplatform::ContextState* cs = GetContextState(deviceContext);
 	dx11::EffectPass* pass = static_cast<dx11::EffectPass*>(cs->currentEffectPass);
 	if (!cs->effectPassValid)
@@ -1452,15 +1431,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
 	
 	pass->SetConstantBuffers(deviceContext,cs->applyBuffers);
-
+	
 	// Apply UAVs (RwTextures and RwSB):
-	pass->SetUAVs(deviceContext, cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
+	pass->SetUAVs(deviceContext,cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
 
 	// Apply SRVs (textures and SB):
 	pass->SetSRVs(deviceContext,cs->textureAssignmentMap, cs->applyStructuredBuffers);
 
 
-#endif
 	return true;
 }
 
