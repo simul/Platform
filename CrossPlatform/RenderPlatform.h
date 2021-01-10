@@ -158,10 +158,13 @@ namespace simul
 			{
 				return can_save_and_restore;
 			}
+			//! Get the mask of bits representing supported features.
 			const RenderingFeatures &GetRenderingFeatures() const
 			{
 				return renderingFeatures;
 			}
+			//! Returns true if all the specified feature bits are supported.
+			bool HasRenderingFeatures(RenderingFeatures r) const;
 			//! Returns the current idx (used in ring buffers)
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.

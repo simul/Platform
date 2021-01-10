@@ -138,3 +138,12 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 	return res;
 
 }
+
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l,
+	crossplatform::PixelFormat f, bool computable , bool rendertarget , bool depthstencil , int num_samples , int aa_quality , bool wrap ,
+	vec4 clear , float clearDepth , uint clearStencil )
+{
+	return ensureTexture2DSizeAndFormat(renderPlatform,  w,  l, 1,
+		 f,  computable,  rendertarget,  depthstencil,  num_samples,  aa_quality,  wrap,
+		 clear,  clearDepth,  clearStencil);
+}
