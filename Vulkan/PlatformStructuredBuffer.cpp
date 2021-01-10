@@ -133,12 +133,6 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
     }
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
-{
-	crossplatform::PlatformStructuredBuffer::Apply(deviceContext,effect,shaderResource);
-    int idx = deviceContext.frame_number % kNumBuffers;
-}
-
 void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectPass *,int slot,bool as_uav) 
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
@@ -197,10 +191,10 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 }
 
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource &shaderResource)
 {
-    crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
-	Apply(deviceContext,effect,shaderResource);
+    crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext,  shaderResource);
+	Apply(deviceContext,shaderResource);
 }
 
 void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceContext)

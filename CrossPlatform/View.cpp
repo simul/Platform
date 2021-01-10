@@ -1,6 +1,6 @@
 
 #ifdef _MSC_VER
-#define NOMINMAX
+
 #endif
 #include "View.h"
 #include "Platform/Math/Vector3.h"

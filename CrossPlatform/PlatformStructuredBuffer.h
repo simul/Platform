@@ -50,7 +50,11 @@ namespace simul
 			virtual ~PlatformStructuredBuffer() {}
 			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, BufferUsageHint usageHint) = 0;
 			virtual void InvalidateDeviceObjects() = 0;
+			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
+			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& shaderResource);
+			// Deprecated
 			virtual void Apply(DeviceContext& deviceContext, Effect* effect, const ShaderResource& shaderResource);
+			// Deprecated
 			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, Effect* effect, const ShaderResource& shaderResource);
 			virtual void Unbind(DeviceContext& deviceContext) = 0;
 			virtual void* GetBuffer(crossplatform::DeviceContext& deviceContext) = 0;
@@ -73,6 +77,8 @@ namespace simul
 
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
 		{
+		public:
+			PlatformStructuredBuffer* platformStructuredBuffer=nullptr;
 		};
 		class PlatformStructuredBuffer;
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -83,11 +89,9 @@ namespace simul
 		/// \endcode
 		template<class T, BufferUsageHint bufferUsageHint= BufferUsageHint::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
 		{
-			PlatformStructuredBuffer* platformStructuredBuffer;
 		public:
 			StructuredBuffer()
-				:platformStructuredBuffer(NULL)
-				, count(0)
+				:count(0)
 			{
 			}
 			~StructuredBuffer()
@@ -172,23 +176,23 @@ namespace simul
 				}
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
-			void Apply(crossplatform::DeviceContext& pContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
+			void Apply(crossplatform::DeviceContext& pContext, crossplatform::Effect* , const crossplatform::ShaderResource& shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return;
 				}
-				platformStructuredBuffer->Apply(pContext, effect, shaderResource);
+				platformStructuredBuffer->Apply(pContext,  shaderResource);
 			}
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& pContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource)
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& pContext, crossplatform::Effect* , const crossplatform::ShaderResource& shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return;
 				}
-				platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext, effect, shaderResource);
+				platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext, shaderResource);
 			}
 			void InvalidateDeviceObjects()
 			{

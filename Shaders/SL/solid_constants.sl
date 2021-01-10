@@ -2,13 +2,17 @@
 #ifndef SOLID_CONSTANTS_SL
 #define SOLID_CONSTANTS_SL
 
-SIMUL_CONSTANT_BUFFER(SolidConstants,13)
+SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
 	vec4 depthToLinFadeDistParams;
 	vec4 fullResToLowResTransformXYWH;
 
 	int lightCount;
 	int reverseDepth;
-	vec2 _pad0;
+	float max_roughness_mip;
+	int padxxx;
+SIMUL_CONSTANT_BUFFER_END
+
+SIMUL_CONSTANT_BUFFER(SolidConstants,13)
 
 	vec4 diffuseOutputScalar;
 	vec2 diffuseTexCoordsScalar_R;
@@ -47,13 +51,16 @@ struct Light
 {
 	mat4 lightSpaceTransform;
 	vec4 colour;
+
 	vec3 position;
 	float power;
+
 	vec3 direction;
 	float is_point;
+
 	float is_spot;
 	float radius;
-	vec3 pad3;
+	vec2 pad_light1;
 };
 
 #endif

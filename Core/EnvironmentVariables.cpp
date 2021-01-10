@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/Core/EnvironmentVariables.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/StringFunctions.h"

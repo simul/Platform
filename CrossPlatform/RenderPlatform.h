@@ -36,6 +36,7 @@ struct VertexXyzRgba
 namespace vk
 {
 	class Device;
+	class Instance;
 }
 namespace simul
 {
@@ -69,7 +70,7 @@ namespace simul
 		class SwapChain;
         struct Window;
         class DisplaySurface;
-
+		class AccelerationStructure;
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
@@ -97,7 +98,11 @@ namespace simul
 			Spectrum				= 25,	// ZX Spectrum
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
-
+		enum RenderingFeatures:uint32_t
+		{
+			None=0,
+			Raytracing=1
+		};
 		/// A vertex format for debugging.
 		struct PosColourVertex
 		{
@@ -118,7 +123,7 @@ namespace simul
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const int4 *vi,const Texture *t);
 
-		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
+		/*! RenderPlatform is an interface that allows Platform's rendering functions to be developed
 			in a cross-platform manner. By abstracting the common functionality of the different graphics API's
 			into an interface, we can write render code that need not know which API is being used. It is possible
 			to create platform-specific objects like /link CreateTexture textures/endlink, /link CreateEffect effects/endlink
@@ -130,6 +135,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		protected:
+			RenderingFeatures renderingFeatures=RenderingFeatures::None;
 			int ApiCallLimit=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
 			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
@@ -152,6 +158,13 @@ namespace simul
 			{
 				return can_save_and_restore;
 			}
+			//! Get the mask of bits representing supported features.
+			const RenderingFeatures &GetRenderingFeatures() const
+			{
+				return renderingFeatures;
+			}
+			//! Returns true if all the specified feature bits are supported.
+			bool HasRenderingFeatures(RenderingFeatures r) const;
 			//! Returns the current idx (used in ring buffers)
 			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
@@ -162,11 +175,13 @@ namespace simul
 			{
 				return "";
 			}
+			//virtual void *GetNativeDevicePointer()=0
 			//! Returns the DX12 graphics command list
 			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
 			virtual ID3D12Device* AsD3D12Device();
 			virtual ID3D11Device *AsD3D11Device();
 			virtual vk::Device *AsVulkanDevice();
+			virtual vk::Instance* AsVulkanInstance();
 			//! Platform-dependent function called when initializing the Render Platform.
 			virtual void RestoreDeviceObjects(void*);
 			//! Platform-dependent function called when uninitializing the Render Platform.
@@ -211,6 +226,8 @@ namespace simul
 			void SetShaderBuildMode			(ShaderBuildMode s);
 			//! When shaders should be built, or loaded if available.
 			ShaderBuildMode GetShaderBuildMode() const;
+			//! Clear/reload all textures stored in the main list.
+			void ClearTextures();
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
@@ -227,7 +244,8 @@ namespace simul
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
-			virtual void Signal(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
+			virtual void DispatchRays		(DeviceContext &deviceContext,const uint3 &dispatch){}
+			virtual void Signal				(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.
@@ -262,11 +280,16 @@ namespace simul
 			virtual void SetModelMatrix		(GraphicsDeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			(){}
 			/// Create a platform-specific material instance.
-			 Material						*GetOrCreateMaterial(const char *name);
+			Material						*GetOrCreateMaterial(const char *name);
+			/// Create a platform specific raytracing acceleration structure.
+			virtual AccelerationStructure	*CreateAccelerationStructure();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
-			/// Create a platform-specific texture instance.
-			virtual Texture					*CreateTexture					(const char *lFileNameUtf8 =nullptr)	=0;
+			/// Create a texture of the given file or name. If filename exists, it will be loaded.
+			/// Otherwise just created. Textures created with this function are owned by the RenderPlatform.
+			Texture							*GetOrCreateTexture(const char* filename, bool gen_mips=false);
+			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
+			Texture							*CreateTexture					(const char *lFileNameUtf8=nullptr ,bool gen_mips=false);
 			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
 			virtual BaseFramebuffer			*CreateFramebuffer				(const char * =nullptr)	=0;
 			/// Create a platform-specific sampler state instance.
@@ -336,6 +359,15 @@ namespace simul
 			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
 
 			virtual void					SetConstantBuffer				(DeviceContext& deviceContext,ConstantBufferBase *s);
+
+			/// <summary>
+			/// Apply a structured buffer for use in a shader.
+			/// </summary>
+			/// <param name="deviceContext"></param>
+			/// <param name="s"></param>
+			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
+			///
+			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 
@@ -374,8 +406,7 @@ namespace simul
 
 			/// Fill in mipmaps from the zero level down.
 			virtual void					GenerateMips					(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx=-1);
-			// Get a blank (black) resource texture.
-			//virtual Texture					*GetDummyTexture(crossplatform::);
+		
 			//! Query for the texture value at the specified position in the texture. On most API's, the query will have a few frames' latency.
 			vec4							TexelQuery						(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
 			virtual void					WaitForGpu						(DeviceContext &){}
@@ -383,12 +414,21 @@ namespace simul
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+			std::map<std::string, crossplatform::Material*> &GetMaterials()
+			{
+				return materials;
+			}
+			std::map<std::string, crossplatform::Texture*>& GetTextures()
+			{
+				return textures;
+			}
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
 			crossplatform::Effect *copyEffect;
 			std::map<std::string,crossplatform::Material*> materials;
-			std::vector<std::string> GetTexturePathsUtf8();
+			std::map<std::string, crossplatform::Texture*> textures;
+			std::vector<std::string> GetTexturePathsUtf8(); 
 			simul::base::MemoryInterface *GetMemoryInterface();
 			void SetMemoryInterface(simul::base::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
@@ -400,6 +440,12 @@ namespace simul
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
+			void FinishLoadingTextures(DeviceContext& deviceContext);
+			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
+			std::set<Texture*> unfinishedTextures;
+			std::set<Texture*> unMippedTextures;
+			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
+			virtual Texture* createTexture() = 0;
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
 			std::vector<std::string> texturePathsUtf8;
@@ -410,7 +456,8 @@ namespace simul
 			GraphicsDeviceContext			immediateContext;
 			ComputeDeviceContext			computeContext;
 			// All for debug Effect
-			crossplatform::Effect			*debugEffect;
+			crossplatform::Effect			*debugEffect=nullptr;
+			crossplatform::Effect			*mipEffect=nullptr;
 			crossplatform::EffectTechnique	*textured;
 			crossplatform::EffectTechnique	*untextured;
 			crossplatform::EffectTechnique	*showVolume;

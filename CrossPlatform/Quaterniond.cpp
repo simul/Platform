@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #define SIM_MATH
 #include "Quaterniond.h"
 #include "Platform/Core/RuntimeError.h"

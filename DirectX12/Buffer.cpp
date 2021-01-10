@@ -32,6 +32,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 	renderPlatform = r;
 	stride = layout->GetStructSize();
 	mBufferSize = num_vertices * layout->GetStructSize();
+	count=num_vertices;
 	SAFE_DELETE(mGpuHeap);
 	// Just debug memory usage
 	//float megas = (float)mBufferSize / 1048576.0f;
@@ -86,8 +87,9 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
 {
 	HRESULT res = S_FALSE;
 	renderPlatform = r;
+	stride=index_size_bytes;
 	mBufferSize = index_size_bytes * num_indices;
-
+	count=num_indices;
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),

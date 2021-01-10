@@ -345,7 +345,7 @@ static int mkpath(const std::wstring &filename_utf8)
 	return (status);
 }
 
-string FillInVariablesSM51(const string &src,CompiledShader *shader)
+string FillInVariablesSM51(const string &src,ShaderInstance *shader)
 {
 	std::regex param_re("\\{shader_model\\}");
 	string ret=src;
@@ -380,7 +380,7 @@ string FillInVariable(const string &src, const std::string &var,const std::strin
 	return ret;
 }
 
-string FillInVariables(const string &src, CompiledShader *shader)
+string FillInVariables(const string &src, ShaderInstance *shader)
 {
 	std::regex param_re("\\{shader_model\\}");
 	string ret = src;
@@ -398,7 +398,7 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 	}
 }
 
-wstring BuildCompileCommand(CompiledShader *shader,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
+wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
 							wstring tempFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
 {
 	// Check if we are generating GLSL 
@@ -449,7 +449,7 @@ wstring BuildCompileCommand(CompiledShader *shader,const SfxConfig &sfxConfig,co
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length())
+	if (sfxConfig.entryPointOption.length()&&shader->shaderType!=RAY_GENERATION_SHADER&&shader->shaderType!=CLOSEST_HIT_SHADER&&shader->shaderType!=ANY_HIT_SHADER&&shader->shaderType!=MISS_SHADER)
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
 
 	string filename_root=WStringToString(outputFile);
@@ -573,13 +573,13 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	return has_errors;
 }
 
-int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,ShaderType t,PixelOutputFormat pixelOutputFormat,const string &sharedSource, ostringstream& sLog
+int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,ShaderType t,PixelOutputFormat pixelOutputFormat,const string &sharedSource, ostringstream& sLog
 		,const SfxConfig &sfxConfig
 		,const SfxOptions &sfxOptions
 		,map<int,string> fileList
 		,std::ofstream &combinedBinary
 		, BinaryMap &binaryMap
-		,const Declaration* rtState /*= nullptr*/)
+		,const Declaration* rtState )
 {
 	string filenameOnly = GetFilenameOnly( sourceFile);
 	wstring targetFilename=StringToWString(filenameOnly);
@@ -805,6 +805,7 @@ int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,Sh
 
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);
+
 	bool res=RunDOSCommand(psslc.c_str(),wd,log,sfxConfig,cc);
 	if (res)
 	{
@@ -842,6 +843,7 @@ int Compile(CompiledShader *shader,const string &sourceFile,string targetFile,Sh
 			if(!sz)
 			{
 				std::cerr << log.str() << std::endl;
+				std::cerr << "Empty output binary" << outputFile.c_str()<< std::endl;
 				SFX_BREAK("Empty output binary");
 				exit(1);
 			}

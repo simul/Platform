@@ -44,7 +44,7 @@ namespace simul
 			crossplatform::RenderPlatformType GetType() const override;
 			virtual const char* GetSfxConfigFilename() const override
 			{
-				return "HLSL/HLSL11.json";
+				return "Sfx/DirectX11.json";
 			}
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
@@ -73,7 +73,6 @@ namespace simul
 
 			
 			void ApplyDefaultMaterial();
-			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr);
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d);
 			crossplatform::Effect					*CreateEffect();
@@ -115,6 +114,7 @@ namespace simul
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 		protected:
+			crossplatform::Texture* createTexture();
 			bool ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/ = true) override;
 			void WaitForFencedResources(crossplatform::DeviceContext &deviceContext);
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;

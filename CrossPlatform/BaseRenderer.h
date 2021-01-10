@@ -4,6 +4,8 @@
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/ViewStruct.h"
+#include <stack>
 
 
 #ifdef _MSC_VER
@@ -50,32 +52,6 @@ namespace simul
 			MultiResScissorRect multiResScissorRects[9];
 		};
 		// NVCHANGE_END: TrueSky + VR MultiRes Support
-		/// A simple struct encapsulating a view and a projection matrix.
-		struct SIMUL_CROSSPLATFORM_EXPORT ViewStruct
-		{
-			ViewStruct():
-				initialized(false)
-				,view_id(0)
-				,depthTextureStyle(DepthTextureStyle::PROJECTION)
-			{}
-			ViewStruct(const ViewStruct &vs) = default;
-
-			bool initialized;
-			int view_id;			///< An id unique to each rendered view, but persistent across frames.
-			math::Matrix4x4 model;	///< The model matrix
-			math::Matrix4x4 view;	///< The view matrix. If considered as row-major, position information is in the 4th row.
-			math::Matrix4x4 proj;	///< The projection matrix, row-major.
-			// derived matrices
-			math::Matrix4x4 invViewProj;
-			math::Matrix4x4 invView;
-			math::Matrix4x4 viewProj;
-			// derived vectors.
-			vec3 cam_pos,view_dir,up;
-			simul::crossplatform::Frustum frustum;	///< The viewing frustum, calculated from the proj matrix and stored for convenience using simul::crossplatform::GetFrustumFromProjectionMatrix.
-			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
-			//! MUST be called whenever view or proj change.
-			void Init();
-		};
 		/// Values that represent what pass to render, be it the near pass, the far, or both: far to render target 0, near to render target 1.
 		enum NearFarPass
 		{

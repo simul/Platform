@@ -56,14 +56,14 @@ void HdrRenderer::SetBufferSize(int w,int h)
 			H/=2;
 			if (W*H <= 0)
 				continue;
-			brightpassTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
-			glowTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::R_32_UINT,true,false);
+			brightpassTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,1,crossplatform::RGBA_16_FLOAT,false,true);
+			glowTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W, H, 1,crossplatform::R_32_UINT,true,false);
 		}
 		H=Height/35;
 		W=Width/35;
 		if(blurTexture&&W*H > 0)
 		{
-			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
+			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W, H, 1,crossplatform::RGBA_16_FLOAT,false,true);
 		}
 	}
 	//RecompileShaders();

@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/StringFunctions.h"
@@ -10,6 +10,7 @@
 #include "Platform/DirectX12/ConstantBuffer.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
+#include "Platform/DirectX12/AccelerationStructure.h"
 #include "Platform/DirectX12/Texture.h"
 #include "Platform/DirectX12/Framebuffer.h"
 #include "Platform/DirectX12/Effect.h"
@@ -21,25 +22,26 @@
 #ifdef SIMUL_ENABLE_PIX
     #include "pix3.h"
 #endif
-#define SIMUL_DEBUG_BARRIERS 0
 using namespace simul;
 using namespace dx12;
+#if SIMUL_INTERNAL_CHECKS
+#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
+#define SIMUL_DEBUG_BARRIERS 0
+crossplatform::DeviceContextType barrierDeviceContextType=crossplatform::DeviceContextType::GRAPHICS;
+#else
+#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
+#define SIMUL_DEBUG_BARRIERS 0
+#endif
 
 const char *PlatformD3D12GetErrorText(HRESULT hr)
 {
 	static std::string str;
-	char *lpBuf;
-	DWORD res=FormatMessage(
-#ifndef _XBOX_ONE
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-#endif
-			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, hr, 0, (LPTSTR)&lpBuf, 0, NULL);
-	if(lpBuf)
-		str=lpBuf;
-#ifndef _XBOX_ONE
-	LocalFree(lpBuf);
-#endif
+	char buf[101];
+	buf[100]=0;
+	DWORD res=FormatMessageA(
+			FORMAT_MESSAGE_FROM_SYSTEM ,//| FORMAT_MESSAGE_IGNORE_INSERTS
+			NULL, hr, 0, buf,100, NULL);
+	str=buf;
 	return str.c_str();
 }
 
@@ -110,6 +112,11 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
+ID3D12Device5* RenderPlatform::AsD3D12Device5()
+{
+	return m12Device5;
+}
+
 std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
 {
 	std::string str;
@@ -143,7 +150,10 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 #endif
 	if(D3D12_RESOURCE_STATE_GENERIC_READ==states)						str=" GENERIC_READ";
 	if((D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)==states)						str=" SHADER_RESOURCE";
-
+	if(str.length()==0)
+	{
+		SIMUL_BREAK("Bad resource state");
+	}
 	return str;
 }
 #include <iomanip>
@@ -163,7 +173,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			if(before!=b.Transition.StateAfter)
 			{
 #if SIMUL_DEBUG_BARRIERS
-				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
+				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					SIMUL_CERR<<"Barrier error : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") - "<<D3D12ResourceStateToString(before)<<" IS NOT "<<D3D12ResourceStateToString(b.Transition.StateBefore)<<std::endl;
 				}
@@ -175,7 +185,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 				{
 					std::swap(b,mPendingBarriers[mCurBarriers-1]);
 #if SIMUL_DEBUG_BARRIERS
-				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
+				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					SIMUL_COUT<<"Barrier swapped: 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
 				}
@@ -184,7 +194,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 				else
 				{
 #if SIMUL_DEBUG_BARRIERS
-				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
+				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					SIMUL_COUT<<"Barrier removed : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
 				}
@@ -195,7 +205,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			else
 			{
 #if SIMUL_DEBUG_BARRIERS
-				if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
+				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					SIMUL_COUT<<"Barrier combined : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
 				}
@@ -209,7 +219,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 	{
 		auto& barrier = mPendingBarriers[mCurBarriers++];
 #if SIMUL_DEBUG_BARRIERS
-		if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
+		if(deviceContext.deviceContextType==barrierDeviceContextType)
 		{
 			SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
 		}
@@ -219,7 +229,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			res, before, after, subRes
 		);
 	}
-	if (flush)
+	//if (flush)
 	{
 		FlushBarriers(deviceContext);
 	}
@@ -299,7 +309,7 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
         return; 
     }
 #if SIMUL_DEBUG_BARRIERS
-	if(deviceContext.deviceContextType==crossplatform::DeviceContextType::COMPUTE)
+	if(deviceContext.deviceContextType==barrierDeviceContextType)
 	{
 		SIMUL_COUT<<"\t\tFlush "<<mCurBarriers<<" barriers."<<std::endl;
 	}
@@ -330,7 +340,11 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 		return;
     }
 	std::string dName=n;
-#if SIMUL_INTERNAL_CHECKS
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+	char name[20];
+	GetD3DName(res,name,19);
+	name[19]=0;
+	SIMUL_COUT<<"Push "<<name<<" (0x"<<std::hex<<""<<res<<") to release manager.\n";
 	// Don't add duplicates, this operation can be potentially slow if we have tons of resources
 	for (unsigned int i = 0; i < mResourceBin.size(); i++)
 	{
@@ -341,7 +355,7 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
         }
 	}
 #endif
-#if 0//SIMUL_INTERNAL_CHECKS
+#if 0//PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 	res->AddRef();
 	int count=res->Release();
 	SIMUL_COUT<<(n?n:"")<<" "<<(unsigned long long)res<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
@@ -373,9 +387,21 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	{
 		return;
 	}
+	m12Device5=nullptr;
 	if (m12Device != device)
 	{
 		m12Device = (ID3D12Device*)device;
+		// Check feature support.
+		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
+		
+		renderingFeatures=crossplatform::RenderingFeatures::None;
+        if(S_OK==m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData)))
+		{
+			bool rt=(featureSupportData.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
+			if(rt)
+				renderingFeatures=(crossplatform::RenderingFeatures)((uint32_t)renderingFeatures|(uint32_t)crossplatform::RenderingFeatures::Raytracing);
+			m12Device->QueryInterface(SIMUL_PPV_ARGS(&m12Device5));
+		}
 	}
 	//immediateContext.platform_context = commandList;
 
@@ -460,7 +486,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Create dummy textures
 	mDummy2D = CreateTexture("Dummy2D");
 	mDummy3D = CreateTexture("Dummy3D");
-	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 	mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 	// Create null descriptors
@@ -538,35 +564,174 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 #endif
 
 	// Load the RootSignature blobs
-	auto fileLoader = base::FileLoader::GetFileLoader();
+	//LoadRootSignature("//GFX.cso");
 	{
-		std::vector<uint8_t> rblob				;
-		void* fileContents			= nullptr;
-		unsigned int loadedBytes	= 0;
-		fileLoader->AcquireFileContents(fileContents, loadedBytes, "//GFX.cso",GetShaderBinaryPathsUtf8(), false);
-		if (!fileContents || loadedBytes <= 0)
-		{
-			SIMUL_CERR << "Could not load the RootSignature blob.\n";
-			SIMUL_BREAK_ONCE("Could not load the RootSignature blob.");
-		}
-		rblob.resize(loadedBytes);
-		memcpy(rblob.data(), fileContents, loadedBytes);
-		fileLoader->ReleaseFileContents(fileContents);
+		//SIMUL_BREAK_ONCE("Could not load the RootSignature.");
+		//mGRootSignature			=LoadRootSignature("//GFX.cso");
+		ID3DBlob *blob=nullptr;
+		ID3DBlob *error=nullptr;
+		// Global Root Signature
+		// This is a root signature that is shared across all raytracing shaders invoked during a DispatchRays() call.
+		D3D12_DESCRIPTOR_RANGE cbvSrvUavDescriptorRanges[]={{},{},{}};
+		memset(cbvSrvUavDescriptorRanges,0,sizeof(cbvSrvUavDescriptorRanges));
+		D3D12_DESCRIPTOR_RANGE &cbvDescriptorRange = cbvSrvUavDescriptorRanges[0];
+		cbvDescriptorRange.BaseShaderRegister = 0;
+		cbvDescriptorRange.NumDescriptors = 14;
+		cbvDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		cbvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 
-        res                         = m12Device->CreateRootSignature
-        (
-            0, 
-			rblob.data(),
-            rblob.size(), 
-            SIMUL_PPV_ARGS(&mGRootSignature)
-        );
-		SIMUL_ASSERT(res == S_OK);
-        if (mGRootSignature)
-		{
-			mGRootSignature->SetName(L"GraphicsRootSignature");
-		}
+		D3D12_DESCRIPTOR_RANGE &srvDescriptorRange = cbvSrvUavDescriptorRanges[1];
+		srvDescriptorRange.BaseShaderRegister = 0;
+		srvDescriptorRange.NumDescriptors = 24;
+		srvDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		srvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 
-        // If we call this (D3D12CreateRootSignatureDeserializer) d3d12.dll won't be delay loaded 
+		D3D12_DESCRIPTOR_RANGE &uavDescriptorRange = cbvSrvUavDescriptorRanges[2];
+		uavDescriptorRange.BaseShaderRegister = 0;
+		uavDescriptorRange.NumDescriptors = 16;
+		uavDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		uavDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+
+		D3D12_DESCRIPTOR_RANGE samplerDescriptorRange = {};
+		samplerDescriptorRange.BaseShaderRegister = 0;
+		samplerDescriptorRange.NumDescriptors = 16;
+		samplerDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		samplerDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+
+		CD3DX12_ROOT_PARAMETER rootParameters[2];
+		memset(rootParameters,0,sizeof(rootParameters));
+		rootParameters[0].InitAsDescriptorTable(3, cbvSrvUavDescriptorRanges);
+		rootParameters[1].InitAsDescriptorTable(1, &samplerDescriptorRange);
+		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
+		rsDesc.Flags|=D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+		HRESULT res=D3D12SerializeRootSignature(&rsDesc,D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
+		if(res!=S_OK)
+		{
+			std::string err=static_cast<const char *>(error->GetBufferPointer());
+			SIMUL_BREAK(err.c_str());
+		}
+		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRootSignature)));
+		
+		mGRootSignature->SetName(L"Graphics Root Signature");
+	}
+	// Load the RootSignature blobs
+	if(!(mCRootSignature			=LoadRootSignature("//GFX.cso")))
+	{
+		SIMUL_BREAK_ONCE("Could not load the RootSignature.");
+	}
+	{
+		ID3DBlob *blob=nullptr;
+		ID3DBlob *error=nullptr;
+		// Global Root Signature
+		// This is a root signature that is shared across all raytracing shaders invoked during a DispatchRays() call.
+		D3D12_DESCRIPTOR_RANGE cbvSrvUavDescriptorRanges[3];
+		memset(cbvSrvUavDescriptorRanges,0,sizeof(cbvSrvUavDescriptorRanges));
+		D3D12_DESCRIPTOR_RANGE &cbvDescriptorRange = cbvSrvUavDescriptorRanges[0];
+		cbvDescriptorRange.BaseShaderRegister = 0;
+		cbvDescriptorRange.NumDescriptors = 14;
+		cbvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		cbvDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		//cbvDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+
+		D3D12_DESCRIPTOR_RANGE &srvDescriptorRange = cbvSrvUavDescriptorRanges[1];
+		srvDescriptorRange.BaseShaderRegister = 0;
+		srvDescriptorRange.NumDescriptors = 24;
+		srvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		srvDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		//srvDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+
+		D3D12_DESCRIPTOR_RANGE &uavDescriptorRange = cbvSrvUavDescriptorRanges[2];
+		uavDescriptorRange.BaseShaderRegister = 0;
+		uavDescriptorRange.NumDescriptors = 16;
+		uavDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		uavDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		//uavDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+
+		D3D12_DESCRIPTOR_RANGE samplerDescriptorRange = {};
+		samplerDescriptorRange.BaseShaderRegister = 0;
+		samplerDescriptorRange.NumDescriptors = 16;
+		samplerDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+		samplerDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		//samplerDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+		
+		D3D12_DESCRIPTOR_RANGE sceneBuffersDescriptorRange = {};
+		sceneBuffersDescriptorRange.BaseShaderRegister =25;
+		sceneBuffersDescriptorRange.NumDescriptors = 1;
+		sceneBuffersDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		sceneBuffersDescriptorRange.OffsetInDescriptorsFromTableStart=D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		//sceneBuffersDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+		
+		//CD3DX12_DESCRIPTOR_RANGE1 UAVDescriptor;
+		//UAVDescriptor.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+
+		CD3DX12_ROOT_PARAMETER rootParameters[3];
+		memset(rootParameters,0,sizeof(rootParameters));
+		rootParameters[0].InitAsDescriptorTable(3, cbvSrvUavDescriptorRanges);
+		rootParameters[1].InitAsDescriptorTable(1, &samplerDescriptorRange);
+		rootParameters[2].InitAsShaderResourceView(25);
+		//rootParameters[5].InitAsUnorderedAccessView(0);
+	/*	rootParameters[4].InitAsUnorderedAccessView(0);
+		rootParameters[5].InitAsUnorderedAccessView(1);
+		rootParameters[6].InitAsShaderResourceView(0);*/
+	/*	rootParameters[0].InitAsDescriptorTable(1, &cbvDescriptorRange);
+		rootParameters[1].InitAsDescriptorTable(1, &srvDescriptorRange);
+		rootParameters[2].InitAsDescriptorTable(1, &uavDescriptorRange);
+		rootParameters[3].InitAsDescriptorTable(1, &samplerDescriptorRange);
+		rootParameters[4].InitAsDescriptorTable(1, &sceneBuffersDescriptorRange);*/
+		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
+		//rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
+		//rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+		//rsDesc.Version=D3D_ROOT_SIGNATURE_VERSION_1_1;
+		HRESULT res=D3D12SerializeRootSignature(&rsDesc,D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
+		if(res!=S_OK)
+		{
+			std::string err=static_cast<const char *>(error->GetBufferPointer());
+			SIMUL_BREAK(err.c_str());
+		}
+		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRaytracingGlobalSignature)));
+		mGRaytracingGlobalSignature->SetName(L"Raytracing Global Root Signature");
+		//mGRaytracingSignature	=LoadRootSignature("//RTX.cso");
+	}
+#ifndef _XBOX_ONE	
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
+#endif
+#endif
+	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
+	RecompileShaders();
+
+	generalFence= CreateFence();
+}
+
+ID3D12RootSignature *RenderPlatform::LoadRootSignature(const char *filename)
+{
+	ID3D12RootSignature *rs=nullptr;
+	auto fileLoader = base::FileLoader::GetFileLoader();
+	std::vector<uint8_t> rblob;
+	void* fileContents			= nullptr;
+	unsigned int loadedBytes	= 0;
+	fileLoader->AcquireFileContents(fileContents, loadedBytes, filename,GetShaderBinaryPathsUtf8(), false);
+	if (!fileContents || loadedBytes <= 0)
+	{
+		SIMUL_CERR << "Could not load the RootSignature "<<filename<<".\n";
+		return nullptr;
+	}
+	rblob.resize(loadedBytes);
+	memcpy(rblob.data(), fileContents, loadedBytes);
+	fileLoader->ReleaseFileContents(fileContents);
+	HRESULT res = m12Device->CreateRootSignature
+     (
+         0, 
+		rblob.data(),
+         rblob.size(), 
+         SIMUL_PPV_ARGS(&rs)
+     );
+	SIMUL_ASSERT(res == S_OK);
+     if (rs)
+	{
+		rs->SetName(base::StringToWString(filename).c_str());
+	}
+     // If we call this (D3D12CreateRootSignatureDeserializer) d3d12.dll won't be delay loaded 
 #if 0
         // Finally lets check which slots does the rs expect
         ID3D12RootSignatureDeserializer* rsDeserial = nullptr;
@@ -612,8 +777,6 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
             param = rsDesc.pParameters[1];
             SIMUL_ASSERT(ResourceBindingLimits::NumSamplers == param.DescriptorTable.pDescriptorRanges[0].NumDescriptors);
         }
-        rsDeserial->Release();
-		rblob.clear();
 
         // Check against the hardware limits:
         if (ResourceBindingLimits::NumUAV > mResourceBindingLimits.MaxUAVPerStage)
@@ -632,19 +795,28 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
         {
             SIMUL_CERR << "Current max num samplers: " << ResourceBindingLimits::NumSamplers << ", but hardware only supports: " << mResourceBindingLimits.NumSamplers << std::endl;
         }
-#endif
-	}
-#ifndef _XBOX_ONE	
-#if SIMUL_INTERNAL_CHECKS
-	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
-#endif
-#endif
-	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-	RecompileShaders();
-}
 
+		// now re-create:
+		{
+			ID3DBlob *blob=nullptr;
+			ID3DBlob *error=nullptr;
+			HRESULT res=D3D12SerializeRootSignature(&rsDesc,D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
+			if(res!=S_OK)
+			{
+				std::string err=static_cast<const char *>(error->GetBufferPointer());
+				SIMUL_BREAK(err.c_str());
+			}
+			V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&rs)));
+		}
+        rsDeserial->Release();
+		rblob.clear();
+#endif
+	return rs;
+}
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	delete generalFence;
+	generalFence=nullptr;
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
 	if(mFrameHeap)
@@ -670,6 +842,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy2D);
 	SAFE_DELETE(mDummy3D);
 	SAFE_RELEASE(mGRootSignature);
+	SAFE_RELEASE(mCRootSignature);
+	SAFE_RELEASE(mGRaytracingLocalSignature);
+	SAFE_RELEASE(mGRaytracingGlobalSignature);
 	
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	for (int i =0;i<mResourceBin.size();i++)
@@ -677,16 +852,22 @@ void RenderPlatform::InvalidateDeviceObjects()
 		auto ptr = mResourceBin[i].second.second;
         if (ptr)
         {
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+			char name[20];
+			GetD3DName(ptr,name,19);
+			name[19]=0;
+			SIMUL_COUT<<"Releasing: "<<name<<" (0x"<<std::hex<<ptr<<".\n";
             int remainRefs = ptr->Release();
 			if(remainRefs)
 			{
 				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
 			}
-#if 0//SIMUL_INTERNAL_CHECKS
 			else
 			{
 				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" freed."<<std::endl;
 			}
+#else
+            ptr->Release();
 #endif
 			if (GetMemoryInterface()) 
 				GetMemoryInterface()->UntrackVideoMemory(ptr);
@@ -762,7 +943,7 @@ void RenderPlatform::BeginD3D12Frame()
                 {
                     remainRefs = ptr->Release();
                 }
-#if SIMUL_INTERNAL_CHECKS
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 				if (remainRefs)
 					SIMUL_CERR << mResourceBin[i].second.first << " is still referenced( " << remainRefs << " " << std::endl;
 #endif
@@ -885,6 +1066,39 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	commandList->Dispatch(w, l, d);
 }
 
+void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch)
+{
+	if(!m12Device5||!HasRenderingFeatures(crossplatform::RenderingFeatures::Raytracing))
+		return;
+	ApplyContextState(deviceContext);
+	ID3D12GraphicsCommandList5*	commandList =static_cast<ID3D12GraphicsCommandList5*>(deviceContext.asD3D12Context());
+	//crossplatform::RenderingFeatures::Raytracing
+    D3D12_DISPATCH_RAYS_DESC d3d12DispatchDesc = {};
+	dx12::EffectPass *effectPass12		=static_cast<dx12::EffectPass*>(deviceContext.contextState.currentEffectPass);
+	const RaytraceTable *raytraceTable	=effectPass12->GetRaytraceTable();
+	if(!raytraceTable)
+		return;
+    // Since each shader table has only one shader record, the stride is same as the size.
+    d3d12DispatchDesc.RayGenerationShaderRecord.StartAddress	= raytraceTable->rayGen.GPUVirtualAddress;
+    d3d12DispatchDesc.RayGenerationShaderRecord.SizeInBytes		= raytraceTable->rayGen.sizeInBytes;
+    d3d12DispatchDesc.MissShaderTable.StartAddress				= raytraceTable->miss.GPUVirtualAddress;
+    d3d12DispatchDesc.MissShaderTable.SizeInBytes				= raytraceTable->miss.sizeInBytes;
+    d3d12DispatchDesc.MissShaderTable.StrideInBytes				= raytraceTable->miss.width;
+    d3d12DispatchDesc.HitGroupTable.StartAddress				= raytraceTable->hitGroup.GPUVirtualAddress;
+    d3d12DispatchDesc.HitGroupTable.SizeInBytes					= raytraceTable->hitGroup.sizeInBytes;
+    d3d12DispatchDesc.HitGroupTable.StrideInBytes				= raytraceTable->hitGroup.width;
+    d3d12DispatchDesc.Width		= dispatch.x;
+    d3d12DispatchDesc.Height	= dispatch.y;
+    d3d12DispatchDesc.Depth		= dispatch.z;
+	commandList->DispatchRays(&d3d12DispatchDesc);
+}
+
+void RenderPlatform::Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value)
+{
+	dx12::Fence *f=fence;
+	m12Queue->Signal(f->AsD3d12Fence(),value);
+}
+
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
@@ -907,19 +1121,10 @@ void RenderPlatform::ApplyDefaultMaterial()
 {
 }
 
-crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture *RenderPlatform::createTexture()
 {
-	ERRNO_BREAK
 	crossplatform::Texture * tex=NULL;
 	tex=new dx12::Texture();
-	if(fileNameUtf8&&strlen(fileNameUtf8)>0)
-	{
-		if(strstr( fileNameUtf8,".")!=nullptr)
-			tex->LoadFromFile(this,fileNameUtf8);
-		tex->SetName(fileNameUtf8);
-	}
-	
-	ERRNO_BREAK
 	return tex;
 }
 
@@ -1467,18 +1672,6 @@ D3D12_QUERY_HEAP_TYPE simul::dx12::RenderPlatform::ToD3D12QueryHeapType(crosspla
 	}
 }
 
-UINT RenderPlatform::GetResourceIndex(int mip, int layer, int mips, int layers)
-{
-	// Requested the whole resource
-	if ((mip == -1 && layer == -1)||(mips==1&&layers==1))
-	{
-		return D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	}
-	int curMip		= (mip == -1) ? 0 : mip;
-	int curLayer	= (layer == -1) ? 0 : layer;
-    return D3D12CalcSubresource(curMip, curLayer, 0, mips, layers);
-}
-
 void RenderPlatform::SetCurrentSamples(int samples, int quality/*=0*/)
 {
     mMsaaInfo.Count     = samples;
@@ -1503,6 +1696,21 @@ ResourceBindingLimits RenderPlatform::GetResourceBindingLimits() const
 ID3D12RootSignature* RenderPlatform::GetGraphicsRootSignature() const
 {
 	return mGRootSignature;
+}
+
+ID3D12RootSignature* RenderPlatform::GetComputeRootSignature() const
+{
+	return mCRootSignature;
+}
+
+ID3D12RootSignature* RenderPlatform::GetRaytracingLocalRootSignature() const
+{
+	return mGRaytracingLocalSignature;
+}
+
+ID3D12RootSignature* RenderPlatform::GetRaytracingGlobalRootSignature() const
+{
+	return mGRaytracingGlobalSignature;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullCBV() const
@@ -2088,7 +2296,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool error_checking)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	//immediateContext.platform_context=deviceContext.platform_context;
+
 	crossplatform::ContextState *cs = GetContextState(deviceContext);
 	if (!cs || !cs->currentEffectPass)
 	{
@@ -2148,11 +2356,19 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	//       the shader binary, refer to Simul/Platform/<target>/HLSL/GFX.hls
 	const UINT cbvSrvUavTableId = 0;
 	const UINT samplerTableId	= 1;
+	auto bufferGpuHandle=mFrameHeap[mCurIdx].GpuHandle();
+	auto samplerGpuHandle=currentSamplerHeap->GpuHandle();
 	if (pass->IsCompute())
 	{
 		cmdList->SetComputeRootSignature(mGRootSignature);
 		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
         cmdList->SetComputeRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
+	}
+	else if(pass->IsRaytrace())
+	{
+		cmdList->SetComputeRootSignature(mGRaytracingGlobalSignature);
+		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId,bufferGpuHandle);
+        cmdList->SetComputeRootDescriptorTable(samplerTableId, samplerGpuHandle);
 	}
 	else
 	{
@@ -2184,7 +2400,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
     DepthStateOverride  = nullptr;
     BlendStateOverride  = nullptr;
     RasterStateOverride = nullptr;
-
+	
+	if(pass->IsRaytrace())
+	{
+	}
 	return true;
 }
 
@@ -2194,6 +2413,7 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContex
 	SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	commandList->DrawInstanced(4, 1, 0, 0);
+	//Signal(deviceContext, generalFence, generalFenceVal++);
 }
 
 
@@ -2203,6 +2423,10 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return S;
 }
 
+crossplatform::AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+{
+	return new AccelerationStructure(this);
+}
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return new dx12::DisplaySurface();

@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "RenderPlatform.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/FileLoader.h"
@@ -12,6 +12,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
+#include "Platform/CrossPlatform/AccelerationStructure.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -96,6 +97,11 @@ RenderPlatform::~RenderPlatform()
 	materials.clear();
 }
 
+bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
+{
+	return (renderingFeatures & r) == r;
+}
+
 std::string RenderPlatform::GetPathName() const
 {
 	static std::string pathname;
@@ -125,6 +131,10 @@ ID3D11Device *RenderPlatform::AsD3D11Device()
 }
 
 vk::Device *RenderPlatform::AsVulkanDevice()
+{
+	return nullptr;
+}
+vk::Instance* RenderPlatform::AsVulkanInstance() 
 {
 	return nullptr;
 }
@@ -189,8 +199,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	textRenderer=new TextRenderer;
 	
 	textRenderer->RestoreDeviceObjects(this);
-	
-	
 	debugConstants.RestoreDeviceObjects(this);
 	
 	if(!gpuProfiler)
@@ -227,6 +235,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(solidEffect);
 	
 	SAFE_DELETE(copyEffect);
+	SAFE_DELETE(mipEffect);
 	
 	textured=nullptr;
 	untextured=nullptr;
@@ -250,6 +259,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		delete s.second;
 	}
 	sharedSamplerStates.clear();
+	for (auto t : textures)
+	{
+		SAFE_DELETE(t.second);
+	}
+	textures.clear();
 }
 
 void RenderPlatform::RecompileShaders()
@@ -271,8 +285,10 @@ void RenderPlatform::RecompileShaders()
 	solidEffect=CreateEffect("solid",defines);
 	
 	Destroy(copyEffect);
-	
 	copyEffect=CreateEffect("copy",defines);
+	
+	Destroy(mipEffect);
+	mipEffect=CreateEffect("mip",defines);
 	
 	
 	textRenderer->RecompileShaders();
@@ -374,13 +390,17 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(GraphicsDeviceContext &dev)
+void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 {
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
-		gpuProfiler->StartFrame(dev);
+		gpuProfiler->StartFrame(deviceContext);
 		gpuProfileFrameStarted = true;
 	}
+	// Note: we generate the mips first because for some reason, doing that in the same frame
+	// as loading a texture SOMETIMES in D3D12, cause the mip to not generate.
+	FinishGeneratingTextureMips(deviceContext);
+	FinishLoadingTextures(deviceContext);
 }
 
 void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
@@ -519,22 +539,26 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		SIMUL_CERR_ONCE<<("No method was found to clear this texture.\n");
 	}
 }
-
+#include "Platform/Core/StringFunctions.h"
 void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
 {
 	if(!t||!t->IsValid())
 		return;
-
+	auto _imageTexture=mipEffect->GetShaderResource("inputTexture");
+	auto pass=mipEffect->GetTechniqueByName("mip")->GetPass("mip");
+	ApplyPass(deviceContext,pass);
+	vec4 white(1.0, 1.0, 1.0, 1.0);
+	vec4 semiblack(0, 0, 0, 0.5);
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m0=i,m1=i+1;
-		debugEffect->SetTexture(deviceContext,"imageTexture",t,array_idx,0);
-		debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("copy_2d"),"wrap");
 		t->activateRenderTarget(deviceContext,array_idx,m1);
+		SetTexture(deviceContext,_imageTexture,t,array_idx,0);
 		DrawQuad(deviceContext);
+		//Print(deviceContext,0,0,base::QuickFormat("%d",m1),white,semiblack);
 		t->deactivateRenderTarget(deviceContext);
-		debugEffect->Unapply(deviceContext);
 	}
+	UnapplyPass(deviceContext);
 }
 
 vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture)
@@ -684,8 +708,43 @@ void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const 
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
+void RenderPlatform::ClearTextures()
+{
+	//textures.clear();
+	//unfinishedTextures.clear();
+	//unMippedTextures.clear();
+}
 
-crossplatform::Material *RenderPlatform::GetOrCreateMaterial(const char *name)
+crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,bool gen_mips)
+{
+	auto i = textures.find(filename);
+	if (i != textures.end())
+		return i->second;
+	crossplatform::Texture* t=CreateTexture(filename, gen_mips);
+	textures[filename] = t;
+	// special textures:
+	if (std::string(filename) == "white")
+	{
+		t->ensureTexture2DSizeAndFormat(this,1,1, 1,PixelFormat::RGBA_8_UNORM,false,false,false,1,0,true,vec4(1.f,1.f,1.f,1.f));
+		unsigned white_rgba8=0xFFFFFFFF;
+		t->setTexels(GetImmediateContext(),&white_rgba8,0,1);
+	}
+	else if (std::string(filename) == "black")
+	{
+		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
+		unsigned black_rgba8 = 0;
+		t->setTexels(GetImmediateContext(), &black_rgba8, 0, 1);
+	}
+	else if (std::string(filename) == "blue")
+	{
+		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
+		unsigned blue_rgba8 = 0x7FFF7F7F;
+		t->setTexels(GetImmediateContext(), &blue_rgba8, 0, 1);
+	}
+	return t;
+}
+
+Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 {
 	auto i = materials.find(name);
 	if (i != materials.end())
@@ -696,9 +755,29 @@ crossplatform::Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 	return mat;
 }
 
-crossplatform::Mesh *RenderPlatform::CreateMesh()
+AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
 {
-	return new Mesh;
+	return new AccelerationStructure(this);
+}
+
+Mesh *RenderPlatform::CreateMesh()
+{
+	return new Mesh(this);
+}			
+
+Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
+{
+	crossplatform::Texture* tex = createTexture();
+	if (fileNameUtf8 && strlen(fileNameUtf8) > 0)
+	{
+		if (strstr(fileNameUtf8, ".") != nullptr)
+		{
+			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
+			unfinishedTextures.insert(tex);
+		}
+		tex->SetName(fileNameUtf8);
+	}
+	return tex;
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
@@ -794,10 +873,11 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 {
 	static int level=0;
 	static int lod=0;
-	static int frames=100;
+	static int frames=25;
 	static int count=frames;
+	static unsigned long long framenumber=0;
 	float displayLod=0.0f;
-	if(debug)
+	if(debug&&framenumber!=deviceContext.frame_number)
 	{
 		count--;
 		if(!count)
@@ -805,15 +885,15 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			lod++;
 			count=frames;
 		}
-		if(tex)
-		{
-			int m=tex->GetMipCount();
-			displayLod=float((lod%(m?m:1)));
-			if(!tex->IsValid())
-				tex=nullptr;
-		}
+		framenumber=deviceContext.frame_number;
 	}
-	
+	if(debug&&tex)
+	{
+		int m=tex->GetMipCount();
+		displayLod=float((lod%(m?m:1)));
+		if(!tex->IsValid())
+			tex=nullptr;
+	}
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
@@ -845,7 +925,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		if(tex->arraySize>1)
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
-			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
+			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex,-1,(int)displayLod);
 			if(debug)
 			{
 				static char c=0;
@@ -862,14 +942,14 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		else
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap");
-			debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+			debugEffect->SetTexture(deviceContext,"cubeTexture",tex,-1,(int)displayLod);
 			debugConstants.displayLevel=0;
 		}
 	}
 	else if(tex&&tex->arraySize>1)
 	{
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
-		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex);
+		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex,-1,(int)displayLod);
 		{
 			static char c = 0;
 			static char cc = 20;
@@ -885,13 +965,13 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 	else if(tex)
 	{
-		debugEffect->SetTexture(deviceContext,imageTexture,tex);
+		debugEffect->SetTexture(deviceContext,imageTexture,tex,-1,(int)displayLod);
 	}
 	else
 	{
 		tech=untextured;
 	}
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
 	if(debug)
 	{
@@ -899,9 +979,9 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		vec4 semiblack(0, 0, 0, 0.5);
 		char mip_txt[]="MIP: 0";
 		char lvl_txt[]="LVL: 0";
-		if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
+		if(tex&&tex->GetMipCount()>1&&displayLod>0&&displayLod<10)
 		{
-			mip_txt[5]='0'+lod;
+			mip_txt[5]='0'+(char)displayLod;
 			Print(deviceContext,x1,y1+20,mip_txt,white,semiblack);
 		}
 		if(tex&&tex->arraySize>1)
@@ -971,7 +1051,6 @@ void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y
 	if(mirrorY2)
 	{
 		y1=(int)viewport.h-y1-dy;
-		//dy*=-1;
 	}
 	{
 		if(tex&&v)
@@ -1077,9 +1156,19 @@ void RenderPlatform::SetLayout(GraphicsDeviceContext &deviceContext,Layout *l)
 void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBufferBase *s)
 {
 	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
+	pcb->Apply(deviceContext, s->GetSize(), s->GetAddr());
+
 	deviceContext.contextState.applyBuffers[s->GetIndex()] = s;
 	deviceContext.contextState.constantBuffersValid = false;
 	pcb->SetChanged();
+}
+
+void RenderPlatform::SetStructuredBuffer(DeviceContext& deviceContext, BaseStructuredBuffer* s, const ShaderResource& shaderResource)
+{
+	if((shaderResource.shaderResourceType& ShaderResourceType::RW)== ShaderResourceType::RW)
+		s->platformStructuredBuffer->ApplyAsUnorderedAccessView(deviceContext, shaderResource);
+	else
+		s->platformStructuredBuffer->Apply(deviceContext,shaderResource);
 }
 
 crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()
@@ -1304,6 +1393,27 @@ void RenderPlatform::SetTopology(GraphicsDeviceContext& deviceContext, crossplat
 	deviceContext.contextState.topology = t;
 }
 
+void RenderPlatform::FinishLoadingTextures(DeviceContext& deviceContext)
+{
+	for(auto t:unfinishedTextures)
+	{
+		t->FinishLoading(deviceContext);
+		if(t->ShouldGenerateMips())
+			unMippedTextures.insert(t);
+	}
+	unfinishedTextures.clear();
+}
+
+void RenderPlatform::FinishGeneratingTextureMips(DeviceContext& deviceContext)
+{
+	if(!deviceContext.AsGraphicsDeviceContext())
+		return;
+	for(auto t:unMippedTextures)
+	{
+		GenerateMips(*deviceContext.AsGraphicsDeviceContext(),t,true);
+	}
+	unMippedTextures.clear();
+}
 
 void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
 {
@@ -1311,6 +1421,10 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	if (!res.valid)
 		return;
 	ContextState* cs = GetContextState(deviceContext);
+	if(cs->apply_count==0)
+	{
+		FinishLoadingTextures(deviceContext);
+	}
 	unsigned long slot = res.slot;
 	unsigned long dim = res.dimensions;
 #ifdef _DEBUG
@@ -1340,6 +1454,23 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	ta.uav = false;
 	ta.index = index;
 	ta.mip = mip;
+	cs->textureAssignmentMapValid = false;
+}
+
+void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if (!res.valid)
+		return;
+	ContextState* cs = GetContextState(deviceContext);
+	TextureAssignment& ta = cs->textureAssignmentMap[res.slot];
+	ta.resourceType = res.shaderResourceType;
+	SIMUL_ASSERT(ta.resourceType==ShaderResourceType::ACCELERATION_STRUCTURE);
+	ta.accelerationStructure = a ;
+	ta.dimensions = 0;
+	ta.uav = false;
+	ta.index = 0;
+	ta.mip = 0;
 	cs->textureAssignmentMapValid = false;
 }
 

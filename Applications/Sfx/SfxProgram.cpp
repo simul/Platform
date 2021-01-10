@@ -46,43 +46,17 @@ Pass::Pass()
 {
 }
 
-Pass::Pass(const map<ShaderType,string>& shaders,const PassState &passState)
+Pass::Pass(const PassState &passState)
 {
 	this->passState=passState;
 	map<ShaderType,string>::const_iterator it;
-	ShaderType types[NUM_SHADER_TYPES]={VERTEX_SHADER,
-										TESSELATION_CONTROL_SHADER,		 
-										TESSELATION_EVALUATION_SHADER,	 
-										GEOMETRY_SHADER,
-										FRAGMENT_SHADER,
-										COMPUTE_SHADER};
 	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-		it=shaders.find(types[i]);
-		if(it==shaders.end())
+		it=passState.shaders.find((sfx::ShaderType)i);
+		if(it==passState.shaders.end())
 			continue;
 		if(it->second==string("gsConstructed"))
 			continue;
-		m_compiledShaderNames[i]=it->second;
+		m_shaderInstanceNames[i]=it->second;
 	}
-}
-
-CompiledShader::CompiledShader(const std::set<Declaration*> &d)
-	:	global_line_number(0)
-{
-	declarations=d;
-}
-
-CompiledShader::CompiledShader(const CompiledShader &cs)
-{
-	shaderType			=cs.shaderType;
-	m_profile			=cs.m_profile;
-	m_functionName		=cs.m_functionName;
-	m_preamble			=cs.m_preamble;
-	m_augmentedSource	=cs.m_augmentedSource;
-	sbFilenames			=cs.sbFilenames;
-	entryPoint			=cs.entryPoint;
-	declarations		=cs.declarations;
-	global_line_number	=cs.global_line_number;
-	constantBuffers		=cs.constantBuffers;
 }

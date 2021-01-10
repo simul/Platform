@@ -5,9 +5,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX11/RenderPlatform.h"
-#if !PLATFORM_D3D11_SFX
-#include "D3dx11effect.h"
-#endif
+
 #include <string>
 
 using namespace simul;
@@ -226,7 +224,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		HRESULT hr = pContext->Map(m_pD3D11Buffer, 0, map_type, flags, &mapped_res);
 		V_CHECK(hr);
 		if(mapped_res.pData)
-		memcpy(mapped_res.pData,addr,size);
+			memcpy(mapped_res.pData,addr,size);
 		pContext->Unmap(m_pD3D11Buffer, 0);
 	}
 }

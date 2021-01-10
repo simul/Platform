@@ -38,7 +38,7 @@ namespace sfx
 {
 	typedef std::map<std::string, std::tuple<std::streampos, std::size_t>> BinaryMap;
 	/// This must track simul::crossplatform::ShaderResourceType
-	enum class ShaderResourceType
+	enum class ShaderResourceType : unsigned long long
 	{
 		UNKNOWN = 0
 		, RW = 1
@@ -72,6 +72,8 @@ namespace sfx
 		, RW_TEXTURE_1D_ARRAY = RW | TEXTURE_1D | ARRAY
 		, RW_TEXTURE_2D_ARRAY = RW | TEXTURE_2D | ARRAY
 		, RW_TEXTURE_3D_ARRAY = RW | TEXTURE_3D | ARRAY
+		, RAYTRACE_ACCELERATION_STRUCT =65536
+		, TEMPLATIZED_CONSTANT_BUFFER =131072
 		, COUNT
 	};
 	inline ShaderResourceType operator|(ShaderResourceType a, ShaderResourceType b)
@@ -85,12 +87,19 @@ namespace sfx
 	/// Values that represent ShaderType.
 	enum ShaderType
 	{
+		UNKNOWN_SHADER_TYPE=0,
 		VERTEX_SHADER,
 		TESSELATION_CONTROL_SHADER,		//= Hull shader
 		TESSELATION_EVALUATION_SHADER,	//= Domain Shader
 		GEOMETRY_SHADER,
 		FRAGMENT_SHADER,
 		COMPUTE_SHADER,
+		RAY_GENERATION_SHADER,
+		MISS_SHADER,
+		CALLABLE_SHADER,
+		CLOSEST_HIT_SHADER,
+		ANY_HIT_SHADER,
+		INTERSECTION_SHADER,
 		EXPORT_SHADER,
 		NUM_SHADER_TYPES
 	};
@@ -171,12 +180,19 @@ namespace sfx
 	};
 	enum ShaderCommand
 	{
-		SetVertexShader			//VS Vertex Shader			|	Vertex Shader
+		Unknown=0
+		,SetVertexShader			//VS Vertex Shader			|	Vertex Shader
 		,SetHullShader			//TC Tessellation Control	|	Hull Shader
 		,SetDomainShader		//TE Tessellation Evaluation	|	Domain Shader
 		,SetGeometryShader		//GS Geometry Shader			|	Geometry Shader
 		,SetPixelShader			//FS Fragment Shader			|	Pixel Shader
 		,SetComputeShader		//CS Compute Shader			|	Compute Shader
+		,SetRayGenerationShader
+		,SetMissShader
+		,SetCallableShader
+		,SetClosestHitShader
+		,SetAnyHitShader
+		,SetIntersectionShader
 		,SetExportShader		// this is a PS4 thing. We will write Vertex shaders as export shaders when necessary.
 		,NUM_OF_SHADER_TYPES
 		,SetRasterizerState
@@ -322,17 +338,32 @@ namespace sfx
 		}
 	};
 
-	struct DeclaredTexture: public Declaration
+	struct DeclaredResource: public Declaration
 	{
-		DeclaredTexture():Declaration(DeclarationType::TEXTURE)
+		DeclaredResource(DeclarationType t):Declaration(t)
+		{
+		}
+		int slot=0;
+		int space=0;
+		std::string type;
+	};
+
+	struct DeclaredTexture: public DeclaredResource
+	{
+		DeclaredTexture():DeclaredResource(DeclarationType::TEXTURE)
 		{
 		}
 		bool variant;			// if true, we must define different versions for different texture output formats.
-		std::string type;
 		std::string layout;
 		std::string texel_format;
 		ShaderResourceType shaderResourceType;
-		int slot;
+	};
+
+	struct DeclaredConstantBuffer: public DeclaredResource
+	{
+		DeclaredConstantBuffer():DeclaredResource(DeclarationType::CONSTANT_BUFFER)
+		{
+		}
 	};
 
 	struct PassRasterizerState
@@ -370,7 +401,12 @@ namespace sfx
 		bool apply;
 		Topology topology;
 	};
-
+	struct RaytraceHitGroup
+	{
+		std::string closestHit;
+		std::string anyHit;
+		std::string intersection;
+	};
 	struct PassState
 	{
 		PassState()
@@ -381,6 +417,8 @@ namespace sfx
 		PassBlendState blendState;
 		PassRenderTargetFormatState renderTargetFormatState;
 		TopologyState topologyState;
+		std::map<ShaderType,std::string> shaders;
+		std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
 	};
 }
 #include "SfxProgram.h"

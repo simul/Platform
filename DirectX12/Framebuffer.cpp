@@ -1,4 +1,4 @@
-#define NOMINMAX
+
 #include "Platform/DirectX12/Framebuffer.h"
 
 #include "Platform/Core/RuntimeError.h"
@@ -180,4 +180,4 @@ void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContex
 	{
 		deviceContext.asD3D12Context()->ClearRenderTargetView(*buffer_texture->AsD3D12RenderTargetView(deviceContext), clearColor, 0, nullptr);
 	}
-}
+ }

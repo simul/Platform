@@ -196,6 +196,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 		SIMUL_COUT << "-Adapter: " << gpuDesc << std::endl;
 		SIMUL_COUT << "-Adapter memory: " << gpuMem << "(MB)" << std::endl;
 
+
 		// Enumerate mOutputs(monitors)
 		IDXGIOutput* output = nullptr;
 		int outputIdx		= 0;

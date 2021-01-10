@@ -44,12 +44,12 @@ namespace simul
             
             void            SetName(const char* n) override;
 
-			void            LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8) override;
+			void            LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips = false) override;
 			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1) override;
 			bool            IsValid() const override;
 			void            InvalidateDeviceObjects() override;
 			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			bool            ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,
+			bool            ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,int m,
                                                          crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
                                                          vec4 clear = vec4(0.0f, 0.0f, 0.0f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
 			bool            ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool ascubemap=false) override;

@@ -3,14 +3,14 @@
 #include <string>
 #include <vector>
 #include "Platform/Core/StringToWString.h"
-struct ID3D11DeviceContext;
-struct IDirect3DDevice9;
+#include "Platform/CrossPlatform/Export.h"
+
 namespace simul
 {
 	namespace crossplatform
 	{
 		/// A simple structure to store the command-line parameters for an executable.
-		struct CommandLineParams
+		struct SIMUL_CROSSPLATFORM_EXPORT CommandLineParams
 		{
 			CommandLineParams()
 				:pos_x(16)
@@ -21,6 +21,7 @@ namespace simul
 				,screenshot(false)
 			{
 			}
+			bool operator()(const char *);
 			int quitafterframe;
 			int win_w,win_h;
 			int pos_x,pos_y;

@@ -18,7 +18,7 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT Mesh:public crossplatform::Mesh
 		{
 		public:
-			Mesh();
+			Mesh(crossplatform::RenderPlatform*);
 			~Mesh();
 			bool Initialize(const std::vector<vec3> &vertices,const std::vector<unsigned int> &indices);
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices);

@@ -95,6 +95,10 @@ namespace simul
 		{
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
+			ID3D12Fence* AsD3d12Fence()
+			{
+				return d3d12Fence;
+			}
 		protected:
 			ID3D12Fence *d3d12Fence=nullptr;
 		};
@@ -129,6 +133,8 @@ namespace simul
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
+			//! Returns the device for raytracing, or nullptr if unavailable.
+			ID3D12Device5*					AsD3D12Device5();
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
 			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
 			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
@@ -174,9 +180,11 @@ namespace simul
 			void									EndFrame(crossplatform::GraphicsDeviceContext& deviceContext);
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
-			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)override;
+			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
-			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
+			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
+			void									DispatchRays	(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch) override;
+			void									Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value);
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			
@@ -184,7 +192,6 @@ namespace simul
 
 			void									ApplyDefaultMaterial();
 
-			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr) override;
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d) override;
 			crossplatform::Effect					*CreateEffect() override;
@@ -196,6 +203,7 @@ namespace simul
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Fence					*CreateFence() override;
 			crossplatform::Shader					*CreateShader() override;
+			crossplatform::AccelerationStructure	*CreateAccelerationStructure() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
 
@@ -235,9 +243,6 @@ namespace simul
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
 			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
 			static std::string						D3D12ResourceStateToString(D3D12_RESOURCE_STATES states);
-			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
-			//! If both -1, the hole resource index will be returned
-			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
 			//! We cache the current number of samples
 			void									SetCurrentSamples(int samples, int quality = 0);
 			bool									IsMSAAEnabled();
@@ -245,6 +250,9 @@ namespace simul
 			
 			ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
+			ID3D12RootSignature*					GetComputeRootSignature()const;
+			ID3D12RootSignature*					GetRaytracingLocalRootSignature() const;
+			ID3D12RootSignature*					GetRaytracingGlobalRootSignature() const;
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
@@ -265,13 +273,17 @@ namespace simul
 			crossplatform::PixelFormat			  DefaultOutputFormat;
 			
 		protected:
+			crossplatform::Texture* createTexture() override;
+			crossplatform::Fence* generalFence=nullptr;
+			unsigned long long generalFenceVal=1;
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
 			void BeginD3D12Frame();
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
-			ID3D12Device*				m12Device;
+			ID3D12Device*				m12Device=nullptr;
+			ID3D12Device5*				m12Device5=nullptr;
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
 			ID3D12CommandQueue*			mComputeQueue=nullptr;
@@ -287,9 +299,12 @@ namespace simul
 			dx12::Heap*					mDepthStencilHeap;
 			dx12::Heap*					mNullHeap;
 			//! Shared root signature for graphics
-			ID3D12RootSignature*		mGRootSignature;
+			ID3D12RootSignature*		mGRootSignature=nullptr;
 			//! Shared root signature for compute
-			ID3D12RootSignature*		mCRootSignature;
+			ID3D12RootSignature*		mCRootSignature=nullptr;
+			//! For raytracing
+			ID3D12RootSignature*		mGRaytracingLocalSignature=nullptr;
+			ID3D12RootSignature*		mGRaytracingGlobalSignature=nullptr;
 
 			//! Dummy 2D texture
 			crossplatform::Texture*		mDummy2D;
@@ -324,6 +339,7 @@ namespace simul
 			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
+			ID3D12RootSignature *LoadRootSignature(const char *filename);
 		};
 	}
 }

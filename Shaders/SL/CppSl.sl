@@ -6,6 +6,8 @@
 #ifdef __cplusplus
 	// required for sqrt
 	#include <math.h>
+	// required for std::min and max
+	#include <algorithm> 
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4324)
@@ -323,10 +325,28 @@
 			z-=v[2];
 		}
 	};
+	namespace std
+	{
+		template <typename T> tvector3<T> max(tvector3<T> a,tvector3<T> b)
+			{
+				return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
+			};
+		template <typename T> tvector3<T> min(tvector3<T> a,tvector3<T> b)
+			{
+				return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
+			};
+	}
 	template<typename T> T length(const tvector3<T>& u)
 	{
 		T size = u.x * u.x + u.y * u.y + u.z * u.z;
 		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
+	template<typename T> tvector3<T> normalize(const tvector3<T>& u)
+	{
+		T l=length(u);
+		if(l>0)
+			return u/l;
+		return u;
 	}
 	typedef tvector3<float> vec3;
 	inline vec3 cross(const vec3 &a,const vec3 &b)
@@ -432,9 +452,9 @@
 		static inline mat4 translation(vec3 tr)
 		{
 			mat4 m=identity();
-			m._41=tr.x;
-			m._42=tr.y;
-			m._43=tr.z;
+			m._14 = tr.x;
+			m._24 = tr.y;
+			m._34 =tr.z;
 			return m;
 		}
 	};

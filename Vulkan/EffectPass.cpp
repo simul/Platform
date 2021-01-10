@@ -285,8 +285,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			
 			if (no_res)
 			{
-				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in shader '"
-					<< c->name << "' has no valid resource associated with it." << std::endl;
+				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in pass '"
+					<< name.c_str() << "' has no valid resource associated with it." << std::endl;
 				SIMUL_BREAK("VkWriteDescriptorSet error.");
 			}
 		}
@@ -688,7 +688,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 			vk::AttachmentDescription attachments[2] = { vk::AttachmentDescription()
 																  .setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
 																  .setSamples(vk::SampleCountFlagBits::e1)
-																  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
+																  .setLoadOp(vk::AttachmentLoadOp::eLoad)
 																  .setStoreOp(vk::AttachmentStoreOp::eStore)
 																  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 																  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)

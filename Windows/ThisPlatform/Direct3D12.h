@@ -2,7 +2,7 @@
 #include <d3d12.h>
 #include <d3dx12.h>
 typedef ID3D12GraphicsCommandList ID3D12GraphicsCommandListType;
-typedef ID3D12Device ID3D12DeviceType;
+typedef ID3D12Device5 ID3D12DeviceType;
 #include "dxcapi.h"
 
 #pragma comment(lib,"d3d12.lib")

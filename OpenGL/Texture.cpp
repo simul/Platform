@@ -85,7 +85,7 @@ void Texture::SetName(const char* n)
 	}
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8)
+void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 
@@ -147,7 +147,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 
 	// By default, generate mips:
 	crossplatform::GraphicsDeviceContext dc;
-	GenerateMips(dc);
+	if(gen_mips)
+		GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
 }
@@ -310,18 +311,18 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	}
 }
 
-bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l,
+bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,
 											crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
 											vec4 clear, float clearDepth, uint clearStencil)
 {
-	if (!IsSame(w, l, 1, 1, 1, num_samples))
+	if (!IsSame(w, l, 1, 1, m, num_samples))
 	{
 		InvalidateDeviceObjects();
 		renderPlatform=r;
 
 		width				= w;
 		length				= l;
-		mips				= 1; // TODO: Support higher mips.
+		mips				= m; // TODO: Support higher mips.
 		arraySize			= 1;
 		depth				= 1;
 		dim					= 2;

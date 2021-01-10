@@ -43,7 +43,7 @@ namespace simul
 			virtual		~RenderPlatform() override;
 
 			vk::Device *AsVulkanDevice() override;
-			vk::Instance *AsVulkanInstance();
+			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::BufferView &);
@@ -85,11 +85,9 @@ namespace simul
 			
 			void		InsertFences(crossplatform::DeviceContext& deviceContext);
 			crossplatform::Material*				CreateMaterial();
-			crossplatform::Texture*					CreateTexture(const char *lFileNameUtf8= nullptr) override;
 			crossplatform::BaseFramebuffer*			CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
-			crossplatform::Effect*					CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines) override;
 			crossplatform::PlatformConstantBuffer*	CreatePlatformConstantBuffer() override;
 			crossplatform::PlatformStructuredBuffer*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*					CreateBuffer() override;
@@ -159,7 +157,8 @@ namespace simul
 
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 
-		private:
+		protected:
+			crossplatform::Texture* createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;

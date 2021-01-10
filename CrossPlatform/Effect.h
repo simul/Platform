@@ -22,8 +22,8 @@ struct ID3D11UnorderedAccessView;
 typedef unsigned int GLuint;
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4251)
+	#pragma warning(push)
+	#pragma warning(disable:4251)
 #endif
 namespace simul
 {
@@ -41,12 +41,20 @@ namespace simul
 		*/
 		enum ShaderType
 		{
+			SHADERTYPE_UNKNOWN=0,
 			SHADERTYPE_VERTEX,
 			SHADERTYPE_HULL,		// tesselation control.
 			SHADERTYPE_DOMAIN,		// tesselation evaluation.
 			SHADERTYPE_GEOMETRY,
 			SHADERTYPE_PIXEL,
 			SHADERTYPE_COMPUTE,
+			SHADERTYPE_RAY_GENERATION,	// Raytrace shader types
+			SHADERTYPE_MISS,
+			SHADERTYPE_CALLABLE,
+			SHADERTYPE_CLOSEST_HIT,
+			SHADERTYPE_ANY_HIT,
+			SHADERTYPE_INTERSECTION,
+			SHADERTYPE_EXPORT,		// not generally used.
 			SHADERTYPE_COUNT
 		};
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
@@ -128,31 +136,31 @@ namespace simul
 		};
 		enum ViewportScissor
 		{
-			VIEWPORT_SCISSOR_DISABLE      = 0, ///< Disable the scissor rectangle for a viewport.
-			VIEWPORT_SCISSOR_ENABLE       = 1, ///< Enable the scissor rectangle for a viewport.
+			VIEWPORT_SCISSOR_DISABLE	  = 0, ///< Disable the scissor rectangle for a viewport.
+			VIEWPORT_SCISSOR_ENABLE		= 1, ///< Enable the scissor rectangle for a viewport.
 		};
 		enum CullFaceMode
 		{
-			CULL_FACE_NONE              = 0, ///< Disable face culling.
-			CULL_FACE_FRONT             = 1, ///< Cull front-facing primitives only.
-			CULL_FACE_BACK              = 2, ///< Cull back-facing primitives only.
-			CULL_FACE_FRONTANDBACK      = 3, ///< Cull front and back faces.
+			CULL_FACE_NONE			  = 0, ///< Disable face culling.
+			CULL_FACE_FRONT			 = 1, ///< Cull front-facing primitives only.
+			CULL_FACE_BACK			  = 2, ///< Cull back-facing primitives only.
+			CULL_FACE_FRONTANDBACK	  = 3, ///< Cull front and back faces.
 		};
 		enum FrontFace
 		{
-			FRONTFACE_CLOCKWISE                     = 1, ///< Clockwise is front-facing.
-			FRONTFACE_COUNTERCLOCKWISE              = 0, ///< Counter-clockwise is front-facing.
+			FRONTFACE_CLOCKWISE					 = 1, ///< Clockwise is front-facing.
+			FRONTFACE_COUNTERCLOCKWISE			  = 0, ///< Counter-clockwise is front-facing.
 		};
 		enum PolygonMode
 		{
-			POLYGON_MODE_POINT              = 0, ///< Render polygons as points.
-			POLYGON_MODE_LINE               = 1, ///< Render polygons in wireframe.
-			POLYGON_MODE_FILL               = 2, ///< Render polygons as solid/filled.
+			POLYGON_MODE_POINT			  = 0, ///< Render polygons as points.
+			POLYGON_MODE_LINE				= 1, ///< Render polygons in wireframe.
+			POLYGON_MODE_FILL				= 2, ///< Render polygons as solid/filled.
 		};
 		enum PolygonOffsetMode
 		{
-			POLYGON_OFFSET_ENABLE           = 1, ///< Enable polygon offset.
-			POLYGON_OFFSET_DISABLE          = 0, ///< Disable polygon offset.
+			POLYGON_OFFSET_ENABLE			= 1, ///< Enable polygon offset.
+			POLYGON_OFFSET_DISABLE		  = 0, ///< Disable polygon offset.
 		};
 		struct RasterizerDesc
 		{
@@ -162,18 +170,18 @@ namespace simul
 			PolygonMode			polygonMode;
 			PolygonOffsetMode	polygonOffsetMode;
 		};
-        //! Specifies the bound render target pixel format
-        struct RenderTargetFormatDesc
-        {
-            PixelOutputFormat   formats[8];
-        };
+		//! Specifies the bound render target pixel format
+		struct RenderTargetFormatDesc
+		{
+			PixelOutputFormat	formats[8];
+		};
 		enum RenderStateType
 		{
 			NONE
 			,BLEND
 			,DEPTH
 			,RASTERIZER
-            ,RTFORMAT
+			,RTFORMAT
 			,NUM_RENDERSTATE_TYPES
 		};
 		//! An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
@@ -183,10 +191,10 @@ namespace simul
 			RenderStateType type;
 			union
 			{
-				DepthStencilDesc        depth;
-				BlendDesc               blend;
-				RasterizerDesc          rasterizer;
-                RenderTargetFormatDesc  rtFormat;
+				DepthStencilDesc		depth;
+				BlendDesc				blend;
+				RasterizerDesc		  rasterizer;
+				RenderTargetFormatDesc  rtFormat;
 			};
 			std::string name;
 		};
@@ -198,6 +206,9 @@ namespace simul
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
 			virtual void InvalidateDeviceObjects() {}
+		};
+		struct RayDispatch
+		{
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Shader
 		{
@@ -245,17 +256,23 @@ namespace simul
 		/// A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
-			ShaderResource():   shaderResourceType(crossplatform::ShaderResourceType::UNKNOWN), 
-                                platform_shader_resource(nullptr),
-                                slot(-1),
-                                dimensions(-1),
-                                valid(false)
-            {}
+			ShaderResource():	shaderResourceType(crossplatform::ShaderResourceType::UNKNOWN), 
+								platform_shader_resource(nullptr),
+								slot(-1),
+								dimensions(-1),
+								valid(false)
+			{}
 			ShaderResourceType  shaderResourceType;
-			void*               platform_shader_resource;
-			int                 slot;
-			int                 dimensions;
-			bool                valid;
+			void*				platform_shader_resource;
+			int					slot;
+			int					dimensions;
+			bool				valid;
+		};
+		struct SIMUL_CROSSPLATFORM_EXPORT RaytraceHitGroup
+		{
+			Shader* closestHit=nullptr;
+			Shader* anyHit=nullptr;
+			Shader* intersection=nullptr;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
@@ -263,10 +280,11 @@ namespace simul
 			crossplatform::RenderState *blendState;
 			crossplatform::RenderState *depthStencilState;
 			crossplatform::RenderState *rasterizerState;
-            crossplatform::RenderState *renderTargetFormatState;
+			crossplatform::RenderState *renderTargetFormatState;
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
-            std::string rtFormatState;
+			std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
+			std::string rtFormatState;
 			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);
 			virtual ~EffectPass();
@@ -518,7 +536,7 @@ namespace simul
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
-            std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
+			std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
@@ -636,6 +654,11 @@ namespace simul
 			virtual size_t GetSize() const = 0;
 			virtual void* GetAddr() const = 0;
 		};
+		template<class T,int slot> class ConstantBufferWithSlot: public T
+		{
+			public:
+			static const int bindingIndex=slot;
+		};
 		template<class T> class ConstantBuffer :public ConstantBufferBase, public T
 		{
 			std::set<Effect*> linkedEffects;
@@ -744,5 +767,5 @@ namespace simul
 }
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif

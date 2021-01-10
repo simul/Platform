@@ -3,7 +3,7 @@
 using namespace simul;
 using namespace opengl;
 
-Mesh::Mesh() :crossplatform::Mesh()
+Mesh::Mesh(crossplatform::RenderPlatform*r) :crossplatform::Mesh(r)
 {
 }
 

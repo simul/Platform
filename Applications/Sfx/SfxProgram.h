@@ -8,18 +8,18 @@ namespace sfx
 	public:
 		PassState passState;
 		Pass();
-		Pass(const std::map<ShaderType, std::string>& shaders,const PassState &passState);
+		Pass(const PassState &passState);
 		bool HasShader(ShaderType t) const
 		{
-			return m_compiledShaderNames[(int)t].length()>0;
+			return m_shaderInstanceNames[(int)t].length()>0;
 		}
 		std::string GetShader(ShaderType t) const
 		{
-			return m_compiledShaderNames[(int)t];
+			return m_shaderInstanceNames[(int)t];
 		}
 
 	private:
-		std::string m_compiledShaderNames[NUM_OF_SHADER_COMMANDS];
+		std::string m_shaderInstanceNames[NUM_OF_SHADER_COMMANDS];
 		friend int ::sfxparse();
 	};
 	class Technique

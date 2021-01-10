@@ -208,7 +208,7 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 
 crossplatform::Mesh* RenderPlatform::CreateMesh()
 {
-	return new opengl::Mesh;
+	return new opengl::Mesh(this);
 }
 
 crossplatform::Light* RenderPlatform::CreateLight()
@@ -216,18 +216,9 @@ crossplatform::Light* RenderPlatform::CreateLight()
 	return new opengl::Light();
 }
 
-crossplatform::Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture* RenderPlatform::createTexture()
 {
-	crossplatform::Texture* tex= new opengl::Texture;
-    if (fileNameUtf8 && strlen(fileNameUtf8) > 0 && strcmp(fileNameUtf8, "ESRAM") != 0)
-	{
-		std::string str(fileNameUtf8);
-        if (str.find(".") < str.length())
-        {
-            tex->LoadFromFile(this, fileNameUtf8);
-        }
-	}
-    tex->SetName(fileNameUtf8);
+	crossplatform::Texture* tex= new opengl::Texture();
 	return tex;
 }
 
@@ -557,7 +548,7 @@ opengl::Texture* RenderPlatform::GetDummy2D()
     if (!mDummy2D)
     {
         mDummy2D = (opengl::Texture*)CreateTexture("dummy2d");
-        mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+        mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
         mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
     }
     return mDummy2D;
@@ -568,7 +559,7 @@ opengl::Texture* RenderPlatform::GetDummy3D()
     if (!mDummy3D)
     {
         mDummy3D = (opengl::Texture*)CreateTexture("dummy3d");
-        mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1,1, crossplatform::PixelFormat::RGBA_8_UNORM);
+        mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
         mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
     }
     return mDummy3D;
