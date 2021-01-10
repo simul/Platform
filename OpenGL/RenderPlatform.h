@@ -78,7 +78,6 @@ namespace simul
             crossplatform::Material*                CreateMaterial();
 			crossplatform::Mesh*                    CreateMesh() override;
 			crossplatform::Light*                   CreateLight();
-			crossplatform::Texture*                 CreateTexture(const char *lFileNameUtf8= nullptr) override;
 			crossplatform::BaseFramebuffer*         CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*            CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*                  CreateEffect() override;
@@ -138,7 +137,8 @@ namespace simul
             //! Returns 3D dummy texture 1 white texel
             opengl::Texture*                        GetDummy3D();
 
-        private:
+        protected:
+			crossplatform::Texture* createTexture() override;
             //! GL forces us to have a VertexArrayObject bound, we bind it but we dont use it
             GLuint              mNullVAO;
             GLenum              mCurTopology;
