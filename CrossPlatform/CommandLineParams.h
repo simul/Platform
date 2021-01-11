@@ -13,11 +13,11 @@ namespace simul
 		struct SIMUL_CROSSPLATFORM_EXPORT CommandLineParams
 		{
 			CommandLineParams()
-				:pos_x(16)
-				,pos_y(16)
-				,quitafterframe(0)
-				,win_h(720)
+				:quitafterframe(0)
 				,win_w(1280)
+				,win_h(720)
+				,pos_x(16)
+				,pos_y(16)
 				,screenshot(false)
 			{
 			}
