@@ -190,6 +190,7 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	}
 	else
 	{
+#ifndef _XBOX_ONE
 		ID3D12DeviceRemovedExtendedData* pDred;
 		rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
 
@@ -206,6 +207,7 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 				std::cerr << simul::base::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
 			n = n->pNext;
 		}
+#endif
 		SIMUL_BREAK_ONCE("hResult != S_OK");
 	}
 	mCurApplyCount++;

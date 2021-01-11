@@ -116,8 +116,10 @@ namespace simul
             std::unordered_map<uint64_t, D3D12_RENDER_TARGET_FORMAT_DESC*>    mTargetsMap;
 			//! We only have one compute/raytrace Pipeline  
 			ID3D12PipelineState*						mComputePso = nullptr;
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 			//! For raytracing, the pipeline state object is NOT a PipelineState, but a ID3D12StateObject...!
 			ID3D12StateObject*							mRaytracePso = nullptr;
+#endif
 			//! Is this a compute pass?
 			bool                                        mIsCompute = false;
 			//! Is this a raytrace pass?
