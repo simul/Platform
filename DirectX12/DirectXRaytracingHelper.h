@@ -10,8 +10,9 @@
 //*********************************************************
 
 #pragma once
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 #include <wrl/client.h>
-#include <d3d12.h>
+#include "ThisPlatform/Direct3D12.h"
 #include <inttypes.h>
 #include <string>
 #include <vector>
@@ -289,3 +290,4 @@ inline void PrintStateObjectDesc(const D3D12_STATE_OBJECT_DESC* desc)
     wstr << L"\n";
     OutputDebugStringW(wstr.str().c_str());
 }
+#endif

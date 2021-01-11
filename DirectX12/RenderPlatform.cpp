@@ -112,10 +112,12 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 ID3D12Device5* RenderPlatform::AsD3D12Device5()
 {
 	return m12Device5;
 }
+#endif
 
 std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
 {
@@ -387,14 +389,17 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	{
 		return;
 	}
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	m12Device5=nullptr;
+#endif
 	if (m12Device != device)
 	{
 		m12Device = (ID3D12Device*)device;
+		renderingFeatures = crossplatform::RenderingFeatures::None;
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 		// Check feature support.
 		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
 		
-		renderingFeatures=crossplatform::RenderingFeatures::None;
         if(S_OK==m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData)))
 		{
 			bool rt=(featureSupportData.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
@@ -402,6 +407,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 				renderingFeatures=(crossplatform::RenderingFeatures)((uint32_t)renderingFeatures|(uint32_t)crossplatform::RenderingFeatures::Raytracing);
 			m12Device->QueryInterface(SIMUL_PPV_ARGS(&m12Device5));
 		}
+#endif
 	}
 	//immediateContext.platform_context = commandList;
 
@@ -1068,6 +1074,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch)
 {
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	if(!m12Device5||!HasRenderingFeatures(crossplatform::RenderingFeatures::Raytracing))
 		return;
 	ApplyContextState(deviceContext);
@@ -1091,6 +1098,7 @@ void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,co
     d3d12DispatchDesc.Height	= dispatch.y;
     d3d12DispatchDesc.Depth		= dispatch.z;
 	commandList->DispatchRays(&d3d12DispatchDesc);
+#endif
 }
 
 void RenderPlatform::Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value)
