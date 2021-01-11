@@ -36,12 +36,21 @@ crossplatform::DeviceContextType barrierDeviceContextType=crossplatform::DeviceC
 const char *PlatformD3D12GetErrorText(HRESULT hr)
 {
 	static std::string str;
-	char buf[101];
-	buf[100]=0;
-	DWORD res=FormatMessageA(
+#ifdef _XBOX_ONE
+	std::wstring wstr;
+	wstr.resize(101);
+	DWORD res=FormatMessageW(
 			FORMAT_MESSAGE_FROM_SYSTEM ,//| FORMAT_MESSAGE_IGNORE_INSERTS
-			NULL, hr, 0, buf,100, NULL);
-	str=buf;
+			NULL, hr, 0, (wchar_t*)wstr.data(),100, NULL);
+	str=base::WStringToUtf8(wstr);
+#else
+	char buf[101];
+	buf[100] = 0;
+	DWORD res = FormatMessageA(
+		FORMAT_MESSAGE_FROM_SYSTEM,//| FORMAT_MESSAGE_IGNORE_INSERTS
+		NULL, hr, 0, buf, 100, NULL);
+	str = buf;
+#endif
 	return str.c_str();
 }
 
