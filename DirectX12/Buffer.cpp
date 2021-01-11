@@ -26,32 +26,32 @@ void Buffer::InvalidateDeviceObjects()
 	mGpuHeap=nullptr;
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertices, const crossplatform::Layout* layout, const void* data, bool cpu_access, bool streamout_target)
 {
 	HRESULT res = S_FALSE;
 	renderPlatform = r;
 	stride = layout->GetStructSize();
 	mBufferSize = num_vertices * layout->GetStructSize();
-	count=num_vertices;
+	count = num_vertices;
 	SAFE_DELETE(mGpuHeap);
+	SAFE_DELETE(mIntermediateHeap);
 	// Just debug memory usage
 	//float megas = (float)mBufferSize / 1048576.0f;
 	//SIMUL_COUT << "Allocating: " << std::to_string(mBufferSize) << ".bytes in the GPU, (" << std::to_string(megas) << ".MB)\n";
-
 	// Upload heap to hold the vertex data in the GPU (we will be mapping it to copy new data)
-	CD3DX12_RESOURCE_DESC b=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
+
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		data?D3D12_RESOURCE_STATE_COPY_DEST:D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+		data ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
 		nullptr,
 		SIMUL_PPV_ARGS(&mGpuHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
-	mGpuHeap->SetName(L"VertexUpload");
+		mGpuHeap->SetName(L"VertexUpload");
 
 	if (data)
 	{
@@ -66,44 +66,54 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *r,int num_vertice
 		);
 		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-		mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+			mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+
+		D3D12_SUBRESOURCE_DATA subresourceData = {};
+		subresourceData.pData = data;
+		subresourceData.RowPitch = mBufferSize;
+		subresourceData.SlicePitch = subresourceData.RowPitch;
+
+		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = mGpuHeap;
+		barrier.Transition.Subresource = 0;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+
+		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier);
 	}
 
-	D3D12_SUBRESOURCE_DATA subresourceData = {};
-	subresourceData.pData = data;
-	subresourceData.RowPitch = mBufferSize;
-	subresourceData.SlicePitch = subresourceData.RowPitch;
-
-	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
-
-	
 	// Make a vertex buffer view
-	mVertexBufferView.SizeInBytes		= mBufferSize;
-	mVertexBufferView.StrideInBytes		= stride;
-	mVertexBufferView.BufferLocation	= mGpuHeap->GetGPUVirtualAddress();
+	mVertexBufferView.SizeInBytes = mBufferSize;
+	mVertexBufferView.StrideInBytes = stride;
+	mVertexBufferView.BufferLocation = mGpuHeap->GetGPUVirtualAddress();
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,int index_size_bytes,const void *data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices, int index_size_bytes, const void* data)
 {
 	HRESULT res = S_FALSE;
 	renderPlatform = r;
-	stride=index_size_bytes;
+	stride = index_size_bytes;
 	mBufferSize = index_size_bytes * num_indices;
-	count=num_indices;
+	count = num_indices;
+	SAFE_DELETE(mGpuHeap);
+	SAFE_DELETE(mIntermediateHeap);
+
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		data?D3D12_RESOURCE_STATE_COPY_DEST:D3D12_RESOURCE_STATE_INDEX_BUFFER,
+		data ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_INDEX_BUFFER,
 		nullptr,
-        SIMUL_PPV_ARGS(&mGpuHeap)
+		SIMUL_PPV_ARGS(&mGpuHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
-	mGpuHeap->SetName(L"IndexUpload");
-
-	SAFE_DELETE(mIntermediateHeap );
+		mGpuHeap->SetName(L"IndexUpload");
 
 	if (data)
 	{
@@ -118,13 +128,24 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
 		);
 		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-		mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
-		/*
-		crossplatform::DeviceContext tmpCrap;
-		Map(tmpCrap);
-		memcpy(mGpuMappedPtr, data, mBufferSize);
-		Unmap(tmpCrap);
-		*/
+			mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
+
+		D3D12_SUBRESOURCE_DATA subresourceData = {};
+		subresourceData.pData = data;
+		subresourceData.RowPitch = mBufferSize;
+		subresourceData.SlicePitch = subresourceData.RowPitch;
+
+		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = mGpuHeap;
+		barrier.Transition.Subresource = 0;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+
+		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier);
 	}
 
 	DXGI_FORMAT indexFormat;
@@ -142,16 +163,8 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *r,int num_indices,
 		SIMUL_BREAK("Improve this!");
 	}
 
-	D3D12_SUBRESOURCE_DATA subresourceData = {};
-	subresourceData.pData = data;
-	subresourceData.RowPitch = mBufferSize;
-	subresourceData.SlicePitch = subresourceData.RowPitch;
-
-	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap,
-		0, 0, 1, &subresourceData);
-
-	mIndexBufferView.Format			= indexFormat;
-	mIndexBufferView.SizeInBytes	= mBufferSize;
+	mIndexBufferView.Format = indexFormat;
+	mIndexBufferView.SizeInBytes = mBufferSize;
 	mIndexBufferView.BufferLocation = mGpuHeap->GetGPUVirtualAddress();
 }
 

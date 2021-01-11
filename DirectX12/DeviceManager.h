@@ -45,7 +45,7 @@ namespace simul
 			int							GetNumOutputs();
 			crossplatform::Output		GetOutput(int i);
 			void						ReportMessageFilterState();
-			void EndAsynchronousFrame();
+			void						EndAsynchronousFrame();
 		protected:
 
 			int computeFrame=0;
