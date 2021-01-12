@@ -1351,7 +1351,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			mTextureDsHeap.Offset();
 
             depthStencil = true;
-			InitStateTable( 1, l);
+			InitStateTable( 1, m);
 		}
 		//auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 		//rPlat->FlushBarriers(deviceContext);

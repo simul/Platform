@@ -38,7 +38,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	deploy_to_directory(Sfx ${CMAKE_SOURCE_DIR}\\Tools\\bin)
 	
 	set( SFX_TEST_PLATFORM "DirectX11" CACHE STRING "Which platform to use when debugging the Sfx executable" )
-	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL) 
+	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4) 
 
 	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE FILEPATH "Which file to use when debugging Sfx")
 	set(SFX_TEST_DEFINES "-E\"EXAMPLE_DEFINE=example\"" CACHE STRING "")
