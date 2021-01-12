@@ -147,13 +147,13 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 						&processInfo )		// Pointer to PROCESS_INFORMATION structure
 					)
 	{
-		SFX_CERR << "Failed to create process:" << WStringToUtf8(com) <<  std::endl;
+		log << "Failed to create process:" << WStringToUtf8(com) <<  std::endl;
 		return false;
 	}
 	// Wait until child process exits.
 	if(processInfo.hProcess==nullptr)
 	{
-		std::cerr<<"Error: Could not find the executable for "<<WStringToUtf8(com)<<std::endl;
+		log <<"Error: Could not find the executable for "<<WStringToUtf8(com)<<std::endl;
 		return false;
 	}
 	HANDLE WaitHandles[] = {
@@ -190,7 +190,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		// Process is done, or we timed out:
 		if (dwWaitResult == WAIT_TIMEOUT)
 		{
-			SFX_CERR << "Timeout executing " << com << std::endl;
+			log << "Timeout executing " << com << std::endl;
 			has_errors = true;
 		}
 		if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
@@ -208,7 +208,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 			if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
 				break;
 
-			SFX_CERR<<"Error message: "<<msg<<std::endl;
+			log <<"Error message: "<<msg<<std::endl;
 			{
 				CloseHandle( processInfo.hProcess );
 				CloseHandle( processInfo.hThread );
@@ -219,10 +219,13 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	
 	DWORD exitCode=0;
 	if(!GetExitCodeProcess(processInfo.hProcess, &exitCode))
+	{
+		log << "Failed to get exit code for command: "<< WStringToUtf8(wcommand).c_str()<< std::endl;
 		return false;
+	}
 	if(exitCode!=0&&exitCode!= 0xc0000005)//0xc0000005 is a bullshit error dxc occasionally throws up for no good reason.
 	{
-		SFX_CERR << "Exit code: 0x" <<std::hex<< (int)exitCode << std::endl;
+		log << "Exit code: 0x" <<std::hex<< (int)exitCode << std::endl;
 		has_errors=true;
 	}
 	//WaitForSingleObject( processInfo.hProcess, INFINITE );
@@ -233,7 +236,10 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		TerminateProcess(processInfo.hProcess,1);
 #endif
 	if(has_errors)
+	{
+		log << "Errors from command: " << WStringToUtf8(wcommand).c_str() << std::endl;
 		return false;
+	}
 	return true;
 }
 
@@ -855,7 +861,7 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 		std::cerr << sourceFile.c_str() << "(0): error: failed building shader " << shader->m_functionName.c_str()<<std::endl;
 		if (sfxOptions.verbose)
 			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shader->m_functionName.c_str()<<std::endl;
-		std::cerr << log.str() << std::endl;
+		std::cerr <<"LOG follows:\n"<< log.str() << std::endl;
 	}
 
 	return res;
