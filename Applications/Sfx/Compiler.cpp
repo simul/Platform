@@ -858,10 +858,9 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 	}
 	else
 	{
-		std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shader->m_functionName.c_str()<<"\n";
+		std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shader->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
 		if (sfxOptions.verbose)
 			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shader->m_functionName.c_str()<<std::endl;
-		std::cerr <<"LOG follows:\n"<< log.str() << std::endl;
 	}
 
 	return res;
