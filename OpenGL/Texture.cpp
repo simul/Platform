@@ -147,7 +147,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 
 	// By default, generate mips:
 	crossplatform::GraphicsDeviceContext dc;
-	if(gen_mips)
+	//if(gen_mips)
 		GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
