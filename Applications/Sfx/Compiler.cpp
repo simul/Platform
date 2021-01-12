@@ -219,7 +219,10 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	
 	DWORD exitCode=0;
 	if(!GetExitCodeProcess(processInfo.hProcess, &exitCode))
+	{
+		SFX_CERR << "Failed to get exit code for command: "<< WStringToUtf8(wcommand).c_str()<< std::endl;
 		return false;
+	}
 	if(exitCode!=0&&exitCode!= 0xc0000005)//0xc0000005 is a bullshit error dxc occasionally throws up for no good reason.
 	{
 		SFX_CERR << "Exit code: 0x" <<std::hex<< (int)exitCode << std::endl;
@@ -233,7 +236,10 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		TerminateProcess(processInfo.hProcess,1);
 #endif
 	if(has_errors)
+	{
+		SFX_CERR << "Errors from command: " << WStringToUtf8(wcommand).c_str() << std::endl;
 		return false;
+	}
 	return true;
 }
 
@@ -855,7 +861,7 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 		std::cerr << sourceFile.c_str() << "(0): error: failed building shader " << shader->m_functionName.c_str()<<std::endl;
 		if (sfxOptions.verbose)
 			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shader->m_functionName.c_str()<<std::endl;
-		std::cerr << log.str() << std::endl;
+		std::cerr <<"LOG follows:\n"<< log.str() << std::endl;
 	}
 
 	return res;
