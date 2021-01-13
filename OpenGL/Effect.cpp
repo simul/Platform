@@ -185,10 +185,18 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 {
     int idx = GetIndex(deviceContext);
 
-    if (!IsBufferMapped(idx))
-	    return glMapNamedBuffer(mGPUBuffer[idx],GL_WRITE_ONLY);
-    else 
-        return nullptr;
+    if (IsBufferMapped(idx))
+    {
+        GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
+        if (unmap_success != GL_TRUE)
+        {
+            SIMUL_COUT << "The structured buffer at binding " << mBinding << " did not unmap successfully.";
+            SIMUL_BREAK_ONCE("");
+        }
+    }
+
+    return glMapNamedBuffer(mGPUBuffer[idx], GL_WRITE_ONLY);
+ 
 }
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
@@ -251,7 +259,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 		if (unmap_success != GL_TRUE)
 		{
 			#if _DUBUG
-			SIMUL_COUT << "The structured buffer at binding " << mBinding << " , did not unmap successfully. Buffer assumed to be corrupt.\n";
+			SIMUL_COUT << "The structured buffer at binding " << mBinding << " did not unmap successfully. Buffer assumed to be corrupt.\n";
 			SIMUL_BREAK_ONCE("");
 			#endif
 
@@ -278,6 +286,16 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
     }
 }
 
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
+{
+    Apply(deviceContext, nullptr, shaderResource);
+}
+
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
+{
+    ApplyAsUnorderedAccessView(deviceContext, nullptr, shaderResource);
+}
+
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
 // mLastIdx is the one we last used to write to.
@@ -295,7 +313,6 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
-    crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext, effect, shaderResource);
     mLastIdx = GetIndex(deviceContext);
 	Apply(deviceContext,effect,shaderResource);
 }

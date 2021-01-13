@@ -7,6 +7,7 @@
 
 #if defined(UNIX)
 	#define _strcpy(d,n,s) (strncpy(d,s,n))
+	#define strcpy_s(d, n, s) (strncpy(d,s,n));
 #endif
 namespace simul
 {

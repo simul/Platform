@@ -513,6 +513,10 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 			if(!res)
 				return 0;
 		}
+		else if(i->second->shaderType==UNKNOWN_SHADER_TYPE)
+		{
+			std::cerr<<"Warning: shader is not used "<<i->first<<std::endl;
+		}
 		else
 		{
 			res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
