@@ -8,8 +8,8 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 	uniform vec4 multiplier;
 	uniform vec4 quaternion;
 
-	uniform int latitudes;
-	uniform int longitudes;
+	uniform uint latitudes;
+	uniform uint longitudes;
 	uniform float radius;
 	uniform float sideview;
 
