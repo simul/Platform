@@ -543,49 +543,6 @@ optional_params: '(' argument_exp_list ')'
 				$$.str="";
 				$$.strs.clear();
 			};
-param_list : param_list ',' rvalue
-			{
-				string &el=$3.str;
-				vector<string> &defs=$$.strs;
-				defs=$1.strs;
-				defs.push_back(el);
-				$$.str=$1.str+$2.str+$3.str;
-			}
-			|
-			rvalue
-			{
-				string &el=$1.str;
-				vector<string> &defs=$$.strs;
-				defs.clear();
-				defs.push_back(el);
-				$$.str=el;
-			}
-			|
-			{
-				$$.str="";
-				 $$.strs.clear();
-			};
-rvalue: IDENTIFIER optional_params
-			{
-				 $$.str=$1.str+$2.str;
-			}
-			|
-			rvalue symbol rvalue
-			{
-				string &r=$1.str;
-				string &s=$2.str;
-				string &v=$3.str;
-				$$.str=r+s+v;
-			}
-			| '(' rvalue ')'
-			{
-				 $$.str=$1.str+$2.str+$3.str;
-			}
-			|
-			NUMBER
-			{
-				 $$.str=$1.str;
-			};
 
 if_conditions: if_conditions OR if_condition
 			{
@@ -605,12 +562,9 @@ if_condition: IDENTIFIER if_test
 				$$.num=hash_if(id,test,num);
 				$$.str=$1.str+$2.str;
 			}
-			| optional_boolean_not IDENTIFIER
+			| BOOLEAN_NOT IDENTIFIER
 			{
-				if($1.test==NOT_DEFINED)
-					$$.test=ZERO;
-				else
-					$$.test=NONZERO;
+				$$.test=ZERO;
 				string id=$2.str;
 				$$.num=hash_if(id,$$.test);
 				$$.str=id;

@@ -18,10 +18,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles")
 	# If you want to disable line directives in Flex, use -L. For Bison, use -l.
 	set(FLEX_FLAGS "")
-	set(BISON_FLAGS "-Wcounterexamples")
+	set(BISON_FLAGS "" )	# use  for Bison to debug shift-reduce conflicts.
 	# specify FULL PATH to Preprocessor.lpp etc, so Flex and Bison will give us clickable warning/error messages.
 	flex_target(PreprocessorLexer ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessor.lpp ${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorLexer.cpp DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorLexer.h" COMPILE_FLAGS ${FLEX_FLAGS}  )
-	bison_target(PreprocessorParser ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessor.ypp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorParser.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorParser.h" COMPILE_FLAGS ${BISON_FLAGS}  )
+	bison_target(PreprocessorParser ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessor.ypp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorParser.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorParser.h" COMPILE_FLAGS ${BISON_FLAGS} )
 
 	flex_target(SfxScanner ${CMAKE_CURRENT_SOURCE_DIR}/Sfx.lpp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxScanner.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxScanner.h"  COMPILE_FLAGS ${FLEX_FLAGS}  )
 	bison_target(SfxLALRParser ${CMAKE_CURRENT_SOURCE_DIR}/Sfx.ypp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxLALRParser.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxLALRParser.hpp" COMPILE_FLAGS ${BISON_FLAGS}  )

@@ -66,7 +66,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	vec3 pos;
 	if(vertex_id<((uint)latitudes+1)*((uint)longitudes+1))
 	{
-		uint latitude_strip	=vertex_id/(longitudes+1);
+		int latitude_strip	=vertex_id/(longitudes+1);
 		vertex_id			-=latitude_strip*(longitudes+1);
 		int longitude		=vertex_id;
 		float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);

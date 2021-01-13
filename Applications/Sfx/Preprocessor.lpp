@@ -239,9 +239,13 @@
 		}
 		return outp;
 	}
+	std::string pp_recent;
 	static int ppReturn_(int u)
 	{
 		prepro_lval.str=yytext;
+		pp_recent += prepro_lval.str + " ";
+		while (pp_recent.length() > 100)
+			pp_recent.erase(0, 1);
 		return (u);
 	}
 	#define stdReturn(u) return ppReturn_(u)
@@ -389,9 +393,17 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 								prepro_lval.str = yytext;
 								stdReturn(')');
 							}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+-=!~\.]	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+]	{
 	prepro_lval.str = yytext;
-	stdReturn(prepro_lval.str[0]);
+ 	stdReturn(prepro_lval.str[0]);
+}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[-=!~]	{
+	prepro_lval.str = yytext;
+ 	stdReturn(prepro_lval.str[0]);
+}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[\.]	{
+	prepro_lval.str = yytext;
+ 	stdReturn(prepro_lval.str[0]);
 }
 <INSERTING_MACRO,IN_MACRO_DEFINITION>"{"	{
 								prepro_lval.str=yytext;
@@ -466,9 +478,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 											stdReturn(AND);
 					}
 <IF_STATEMENT,IN_MACRO_DEFINITION>"("	{
-						prepro_lval.str=yytext;
+											prepro_lval.str=yytext;
 											stdReturn('(');
-					} 
+										} 
 <IF_STATEMENT,DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}		{
 						prepro_lval.str=yytext;
 						stdReturn(IDENTIFIER);
@@ -487,7 +499,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 }
 <IN_MACRO_DEFINITION>[ \t]	{
 							prepro_lval.str=yytext;
-								stdReturn(WHITESPACE);
+							stdReturn(WHITESPACE);
 						}
 <IF_STATEMENT>"!" {
 						prepro_lval.str=yytext;
