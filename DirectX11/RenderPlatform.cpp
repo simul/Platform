@@ -1431,11 +1431,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
 	
 	pass->SetConstantBuffers(deviceContext,cs->applyBuffers);
+	
+	// Apply UAVs (RwTextures and RwSB):
+	pass->SetUAVs(deviceContext,cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
+
 	// Apply SRVs (textures and SB):
 	pass->SetSRVs(deviceContext,cs->textureAssignmentMap, cs->applyStructuredBuffers);
 
-	// Apply UAVs (RwTextures and RwSB):
-	pass->SetUAVs(deviceContext,cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
 
 	return true;
 }

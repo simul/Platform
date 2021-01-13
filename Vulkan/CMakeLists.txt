@@ -44,7 +44,7 @@ target_include_directories(SimulVulkan_MD PUBLIC "${VULKAN_SDK_DIR}/Include")
 target_include_directories(SimulVulkan_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 target_include_directories(SimulVulkan_MD PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
 
-add_sfx_shader_project( VulkanCoreShaders "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/Vulkan.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders)
+add_sfx_shader_project( VulkanCoreShaders "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/Vulkan.json" INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} OPTIONS -w DEFINES VULKAN_SDK=${VULKAN_SDK_DIR} OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders)
 
 if(SIMUL_BUILD_SHADERS)
 	#add_dependencies(SimulVulkan_MT VulkanShaders)
