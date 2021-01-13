@@ -34,11 +34,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	source_group("Generated Files" FILES ${GeneratedFiles} )
 	add_dynamic_executable(Sfx CONSOLE SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${FLEX_BISON} ${GeneratedFiles} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 	target_include_directories(Sfx PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles" )
-
-	deploy_to_directory(Sfx ${CMAKE_SOURCE_DIR}\\Tools\\bin)
 	
 	set( SFX_TEST_PLATFORM "DirectX11" CACHE STRING "Which platform to use when debugging the Sfx executable" )
-	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL) 
+	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4) 
 
 	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE FILEPATH "Which file to use when debugging Sfx")
 	set(SFX_TEST_DEFINES "-E\"EXAMPLE_DEFINE=example\"" CACHE STRING "")

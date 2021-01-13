@@ -17,11 +17,11 @@ vec3 saturate(vec3 vvalue)	{return clamp(vvalue,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1
 vec4 saturate(vec4 vvalue)	{return clamp(vvalue,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1.0,1.0,1.0));}
 
 vec4 mul(mat4 mat, vec4 vec){return mat * vec;}
+vec4 mul(vec4 vec, mat4 mat){return vec * mat;}
 vec3 mul(mat3 mat, vec3 vec){return mat * vec;}
+vec3 mul(vec3 vec, mat3 mat){return vec * mat;}
 vec2 mul(mat2 mat, vec2 vec){return mat * vec;}
-vec4 mul(vec4 vec, mat4 mat){return mat * vec;}
-vec3 mul(vec3 vec, mat3 mat){return mat * vec;}
-vec2 mul(vec2 vec, mat2 mat){return mat * vec;}
+vec2 mul(vec2 vec, mat2 mat){return vec * mat;}
 uint reversebits(uint value){return bitfieldReverse(value);}
 
 #define int2 ivec2

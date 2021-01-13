@@ -146,7 +146,7 @@ namespace simul
 			void MakeUnit()
 			{
 				T magnitude;
-				magnitude = sqrt((x * x + y * y + z * z + s * s));
+				magnitude = (T)sqrt((x * x + y * y + z * z + s * s));
 				if (magnitude == 0)
 				{
 					s = (T)1.0;
