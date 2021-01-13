@@ -585,9 +585,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 				if(inActiveBlock())
 					Write();
 }
-" " {
-}
-<PREPRO,DEFINING,IN_MACRO_DEFINITION,INSERTING_MACRO,IF_STATEMENT>" " {
+<INITIAL,PREPRO,DEFINING,IN_MACRO_DEFINITION,INSERTING_MACRO,IF_STATEMENT>" " {
+	Write();
 	 }
 <IN_MACRO_DEFINITION>[#\\] {
 	if (inActiveBlock())

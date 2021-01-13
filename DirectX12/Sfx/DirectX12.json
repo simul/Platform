@@ -1,7 +1,7 @@
 {
 	"compiler": "$PLATFORM/External/DirectX/DXCompiler/dxc.exe",
 	"api": "DirectX 12",
-	"defaultOptions": "/T {shader_model} /nologo /Zi",
+	"defaultOptions": "/T {shader_model} /nologo /Zi -Qembed_debug",
 	"sourceExtension": "hlsl",
 	"outputExtension": "cso",
 	"outputOption": "/Fo",

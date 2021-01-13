@@ -1,6 +1,6 @@
-%name-prefix "prepro_"
+%define api.prefix {prepro_}
 %debug
-%error-verbose
+%define parse.error verbose
 %{
     #ifdef _MSC_VER
 		// MS's C++ compiler is more strict than gcc
@@ -23,9 +23,8 @@
 	extern void prepro_error(const char *s);
 	extern void prepro_warning(const char *s);
 	#include "GeneratedFiles/PreprocessorLexer.h"
-	#define YYSTYPE PreprocessorType
-	#ifndef YYDEBUG
-	#define YYDEBUG 0
+	#ifndef PREPRO_DEBUG
+	#define PREPRO_DEBUG 0
 	#endif
 	using namespace std;
 	bool preproError=false;

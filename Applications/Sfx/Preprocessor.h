@@ -26,11 +26,13 @@ struct MacroDefinition
 	std::string filename;
 	int line_number;
 };
+// prevent echoing of unprocessed chars:
+#define ECHO
 extern double latest_datetime;
-#undef YYSTYPE
-#define YYSTYPE PreprocessorType
-#undef YYDEBUG
-#define YYDEBUG 1
+#undef PREPRO_STYPE
+#define PREPRO_STYPE PreprocessorType
+#undef PREPRO_DEBUG
+#define PREPRO_DEBUG 1
 // These are the callback functions for file handling that we will send to the preprocessor.
 extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName,double &datetime);
 extern void (*prepro_close)(FILE *f);
