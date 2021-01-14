@@ -478,10 +478,9 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	if(sfxConfig.optimizationLevelOption.length()&&sfxOptions.optimizationLevel>=0)
 	{
 		command += Utf8ToWString(sfxConfig.optimizationLevelOption);
-		char ostr[10];
-		sprintf(ostr,"%d",sfxOptions.optimizationLevel);
-		command += Utf8ToWString(ostr);
-		command += L" ";
+		wchar_t ostr[]=L"0 ";
+		ostr[0]=L'0'+(wchar_t)sfxOptions.optimizationLevel;
+		command += ostr;
 	}
 	if (sfxConfig.outputOption.size())
 	{

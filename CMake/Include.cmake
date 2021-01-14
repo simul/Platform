@@ -94,7 +94,7 @@ function( deploy_to_directory targetName destDir )
 		set(LIBFILE "")
 	endif ()
 	set(no_copy $<NOT:$<CONFIG:Release>>) 
-	add_custom_command(TARGET ${targetName} BYPRODUCTS none.txt 
+	add_custom_command( TARGET ${targetName} BYPRODUCTS none.txt 
 		POST_BUILD 
 		COMMAND if \"$(Configuration)\" == \"Release\" (\n
 		set TARG_DLL=$<TARGET_FILE:${targetName}>\n
