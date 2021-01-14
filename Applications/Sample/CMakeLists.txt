@@ -15,7 +15,10 @@ target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/Direc
 target_compile_definitions(Sample_MT PRIVATE DO_PROFILING=0 )
 set_target_properties(Sample_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 						VS_DEBUGGER_ENVIRONMENT "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
-target_link_libraries(Sample_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT assimp )
+target_link_libraries(Sample_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT )
+if(PLATFORM_USE_ASSIMP)
+	target_link_libraries( assimp )
+endif()
 if(${SAMPLE_API} MATCHES "SAMPLE_USE_D3D11")
 	target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
 	target_link_libraries(Sample_MT SimulDirectX11_MT )
