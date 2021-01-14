@@ -190,7 +190,7 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	}
 	else
 	{
-#ifndef _XBOX_ONE
+#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_SCARLETT)
 		ID3D12DeviceRemovedExtendedData* pDred;
 		rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
 
