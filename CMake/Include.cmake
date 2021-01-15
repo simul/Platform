@@ -93,8 +93,8 @@ function( deploy_to_directory targetName destDir )
 	else()
 		set(LIBFILE "")
 	endif ()
-	set(no_copy $<NOT:$<CONFIG:Release>>) 
-	add_custom_command( TARGET ${targetName} BYPRODUCTS none.txt 
+	set(no_copy $<NOT:$<CONFIG:Release>>)
+	add_custom_command(TARGET ${targetName} BYPRODUCTS none.txt 
 		POST_BUILD 
 		COMMAND if \"$(Configuration)\" == \"Release\" (\n
 		set TARG_DLL=$<TARGET_FILE:${targetName}>\n
@@ -105,8 +105,9 @@ function( deploy_to_directory targetName destDir )
 		set TARG_LIB=${LIBFILE}\n
 		if not \"%TARG_LIB%\"==\"\" (\n
 			copy \"%TARG_LIB:/=\\%\" \"%TARG_DIR%\"\n
-		)\n
 		)
+		)
+		\n
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
 endfunction()
 
