@@ -206,7 +206,7 @@ mat4 simul::crossplatform::ConvertMatrix(AxesStandard fromStandard, AxesStandard
 	ax[0]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 0);
 	ax[1]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 1);
 	ax[2]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 2);
-	float s[3]={(ax[0]<3)-(ax[0]>2),(ax[1] < 3) - (ax[1] > 2),(ax[2] < 3) - (ax[2] > 2)};
+	float s[3]={float((ax[0]<3)-(ax[0]>2)),float((ax[1] < 3) - (ax[1] > 2)),float((ax[2] < 3) - (ax[2] > 2))};
 	ax[0]=ax[0]%3;
 	ax[1]=ax[1]%3;
 	ax[2]=ax[2]%3;

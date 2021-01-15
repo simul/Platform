@@ -658,7 +658,6 @@ void Direct3D11Manager::Shutdown()
 		uint acceptable_refs=1+(d3dDebug?1:0)+(infoQueue?1:0);
 		if(references>acceptable_refs)
 		{
-			SIMUL_BREAK("Unfreed references remain in DirectX 11");
 #ifndef _XBOX_ONE
 			if(d3dDebug)
 			{
@@ -666,6 +665,7 @@ void Direct3D11Manager::Shutdown()
 				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			}
 #endif
+			SIMUL_BREAK("Unfreed references remain in DirectX 11");
 		}
 #ifndef _XBOX_ONE
 		SAFE_RELEASE(d3dDebug);

@@ -17,7 +17,6 @@ namespace simul
 	namespace crossplatform
 	{
 		class CameraOutputInterface;
-		class BaseOpticsRenderer;
 		/// A class that faces the raw API and implements PlatformRendererInterface
 		/// in order to translate to the platform-independent renderer.
 		class SIMUL_CROSSPLATFORM_EXPORT RenderDelegater

@@ -147,13 +147,13 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 						&processInfo )		// Pointer to PROCESS_INFORMATION structure
 					)
 	{
-		SFX_CERR << "Failed to create process:" << WStringToUtf8(com) <<  std::endl;
+		log << "Failed to create process:" << WStringToUtf8(com) <<  std::endl;
 		return false;
 	}
 	// Wait until child process exits.
 	if(processInfo.hProcess==nullptr)
 	{
-		std::cerr<<"Error: Could not find the executable for "<<WStringToUtf8(com)<<std::endl;
+		log <<"Error: Could not find the executable for "<<WStringToUtf8(com)<<std::endl;
 		return false;
 	}
 	HANDLE WaitHandles[] = {
@@ -190,7 +190,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		// Process is done, or we timed out:
 		if (dwWaitResult == WAIT_TIMEOUT)
 		{
-			SFX_CERR << "Timeout executing " << com << std::endl;
+			log << "Timeout executing " << com << std::endl;
 			has_errors = true;
 		}
 		if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
@@ -208,7 +208,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 			if (!FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL))
 				break;
 
-			SFX_CERR<<"Error message: "<<msg<<std::endl;
+			log <<"Error message: "<<msg<<std::endl;
 			{
 				CloseHandle( processInfo.hProcess );
 				CloseHandle( processInfo.hThread );
@@ -219,10 +219,13 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	
 	DWORD exitCode=0;
 	if(!GetExitCodeProcess(processInfo.hProcess, &exitCode))
+	{
+		log << "Failed to get exit code for command: "<< WStringToUtf8(wcommand).c_str()<< std::endl;
 		return false;
+	}
 	if(exitCode!=0&&exitCode!= 0xc0000005)//0xc0000005 is a bullshit error dxc occasionally throws up for no good reason.
 	{
-		SFX_CERR << "Exit code: 0x" <<std::hex<< (int)exitCode << std::endl;
+		log << "Exit code: 0x" <<std::hex<< (int)exitCode << std::endl;
 		has_errors=true;
 	}
 	//WaitForSingleObject( processInfo.hProcess, INFINITE );
@@ -233,7 +236,10 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		TerminateProcess(processInfo.hProcess,1);
 #endif
 	if(has_errors)
+	{
+		log << "Errors from command: " << WStringToUtf8(wcommand).c_str() << std::endl;
 		return false;
+	}
 	return true;
 }
 
@@ -472,10 +478,9 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	if(sfxConfig.optimizationLevelOption.length()&&sfxOptions.optimizationLevel>=0)
 	{
 		command += Utf8ToWString(sfxConfig.optimizationLevelOption);
-		char ostr[10];
-		sprintf(ostr,"%d",sfxOptions.optimizationLevel);
-		command += Utf8ToWString(ostr);
-		command += L" ";
+		wchar_t ostr[]=L"0 ";
+		ostr[0]=L'0'+(wchar_t)sfxOptions.optimizationLevel;
+		command += ostr;
 	}
 	if (sfxConfig.outputOption.size())
 	{
@@ -809,19 +814,25 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 	bool res=RunDOSCommand(psslc.c_str(),wd,log,sfxConfig,cc);
 	if (res)
 	{
+		bool write_log=false;
+		string &log_str=log.str();
 		if (sfxOptions.verbose)
 		{
 			std::cout << tempf.c_str() << "(0): info: Temporary shader source file." << std::endl;
+			write_log=true;
 		}
-		if (log.str().find("warning") < log.str().length())
+		if (log.str().find("warning") < log_str.length()||log.str().find("Warning") < log_str.length())
 		{
 			std::cerr << (sourceFile).c_str() << "(0): Warning: warnings compiling " << shader->m_functionName.c_str() << std::endl;
+			write_log=true;
 		}
-		if (log.str().find("error") < log.str().length())
+		if (log_str.find("error") < log_str.length()||log_str.find("Error") < log_str.length())
 		{
 			res = 0;
+			write_log = true;
 		}
-		std::cerr << log.str() << std::endl;
+		if(log.str().length()&&write_log)
+			std::cerr << log.str() << std::endl;
 		// If we provide invalid args to fxc:
 		if (log.str().find("Unknown or invalid option") < log.str().length())
 		{
@@ -843,7 +854,7 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 			if(!sz)
 			{
 				std::cerr << log.str() << std::endl;
-				std::cerr << "Empty output binary" << outputFile.c_str()<< std::endl;
+				std::cerr << "Empty output binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
 				SFX_BREAK("Empty output binary");
 				exit(1);
 			}
@@ -852,10 +863,9 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 	}
 	else
 	{
-		std::cerr << sourceFile.c_str() << "(0): error: failed building shader " << shader->m_functionName.c_str()<<std::endl;
+		std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shader->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
 		if (sfxOptions.verbose)
 			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shader->m_functionName.c_str()<<std::endl;
-		std::cerr << log.str() << std::endl;
 	}
 
 	return res;

@@ -92,10 +92,12 @@ function( deploy_to_directory targetName destDir )
 		set( LIBFILE $<TARGET_LINKER_FILE:${targetName}>)
 	else()
 		set(LIBFILE "")
-	endif ()	
+	endif ()
+	set(no_copy $<NOT:$<CONFIG:Release>>)
 	add_custom_command(TARGET ${targetName} BYPRODUCTS none.txt 
 		POST_BUILD 
-		COMMAND set TARG_DLL=$<TARGET_FILE:${targetName}>\n
+		COMMAND if \"$(Configuration)\" == \"Release\" (\n
+		set TARG_DLL=$<TARGET_FILE:${targetName}>\n
 		set TARG_DLL=%TARG_DLL:/=\\%\n
 		set TARG_DIR=${destDir}\n
 		set TARG_DIR=%TARG_DIR:/=\\%\n
@@ -104,7 +106,9 @@ function( deploy_to_directory targetName destDir )
 		if not \"%TARG_LIB%\"==\"\" (\n
 			copy \"%TARG_LIB:/=\\%\" \"%TARG_DIR%\"\n
 		)
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+		)
+		\n
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
 endfunction()
 
 function(set_target_runtime targname rt)

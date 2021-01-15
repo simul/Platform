@@ -1,4 +1,3 @@
-#define NOMINMAX
 
 #include "Texture.h"
 #include "RenderPlatform.h"
@@ -124,7 +123,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	width				= tdata.x;
 	length				= tdata.y;
 	arraySize			= 1;
-	mips				= 1 + int(floor(log2(width >= length ? width : length)));
+	mips				= 1 + (gen_mips ? int(floor(log2(width >= length ? width : length))) : 0);
 	dim					= 2;
 	depth				= 1;
 	cubemap				= false;
@@ -147,7 +146,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 
 	// By default, generate mips:
 	crossplatform::GraphicsDeviceContext dc;
-	if(gen_mips)
+	//if(gen_mips)
 		GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);

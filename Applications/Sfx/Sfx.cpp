@@ -38,6 +38,7 @@ Additions are Copyright (c) 2012- , Simul Software Ltd
 #include <fstream>
 #include <time.h>
 #include <vector>
+#include <filesystem>
 
 #ifdef _MSC_VER
 #include <direct.h>
@@ -598,6 +599,7 @@ bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,cons
 			shaderbin+="/";
 		sfxoFilename=shaderbin+sfxoFilename;
 	}
+	sfxoFilename=std::filesystem::absolute(sfxoFilename.c_str()).u8string();
 
 	
 	vector<string> sourceFilesUtf8;
