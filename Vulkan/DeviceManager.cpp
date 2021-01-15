@@ -20,7 +20,13 @@
 #include <linux/input.h>
 #endif
 #include <vulkan/vulkan.hpp>
+#ifdef NOMINMAX
+#undef NOMINMAX
+#endif
 #include <vulkan/vk_sdk_platform.h>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 namespace simul
 {
 	namespace vulkan
