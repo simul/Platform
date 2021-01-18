@@ -206,7 +206,6 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	eSRAMManager=new ESRAMManager(device);
 #endif
 	RecompileShaders();
-	RecompileShaders();
 	
 	{
 		SAFE_RELEASE(pUserDefinedAnnotation);
