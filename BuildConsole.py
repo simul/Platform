@@ -125,7 +125,7 @@ def main(argv):
 	opts, args = getopt.getopt(argv, "hp:")
 	for opt, arg in opts:
 		if opt == "-h":
-			print("usage: Build.py -p <Platform>")
+			print("usage: BuildConsole.py -p <Platform>")
 			sys.exit(0)
 		elif opt in "-p":
 			PlatformName = arg
