@@ -1054,7 +1054,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn('}');
 												}
 											}
-<INITIAL>^"["								{
+<INITIAL>^[\t ]*"["								{
 												SetLexStartState(IN_LAYOUT);
 												stdReturn('[');
 											}

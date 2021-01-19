@@ -192,6 +192,7 @@ void Effect::PostLoad()
 //#include "DXRHelper.h"
 void EffectPass::InitRaytraceTable()
 {
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	auto *device=renderPlatform->AsD3D12Device();
 	ID3D12StateObjectProperties *stateObjectProperties=nullptr;
 	V_CHECK(mRaytracePso->QueryInterface(SIMUL_PPV_ARGS(&stateObjectProperties)));
@@ -267,6 +268,7 @@ void EffectPass::InitRaytraceTable()
 			raytraceTable.hitGroup={res->GetGPUVirtualAddress(),shaderTable.GetBufferSize(),shaderTable.GetShaderRecordSize()};
 		}
 	}
+#endif
 }
 
 
@@ -507,8 +509,10 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 	}
 	else if(r)
 	{
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 		ID3D12GraphicsCommandList4 *rtc=(ID3D12GraphicsCommandList4*)cmdList;
 		rtc->SetPipelineState1(mRaytracePso);
+#endif
 		mIsRaytrace=true;
 	}
 	else
@@ -643,6 +647,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		auto ta		= textures[slot];
 		if(ta.resourceType==crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE)
 		{
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 			ID3D12Resource *a=((dx12::AccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
 			
 			auto cmdList	= deviceContext.asD3D12Context();
@@ -653,6 +658,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				mSrvSrcHandles[slot]=nullSrv;
 			//device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), mCbSrcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			//mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
+#endif
 		}
 		else
 		{
@@ -863,13 +869,14 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 
 void EffectPass::CreateLocalRootSignature()
 {
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	ID3DBlob *blob=nullptr;
 	ID3DBlob *error=nullptr;
 	CD3DX12_ROOT_PARAMETER rootParameters[1];
 	memset(rootParameters,0,sizeof(rootParameters));
 	rootParameters[0].InitAsShaderResourceView(26);
 	CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
-	rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
+	rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 	//rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 	//rsDesc.Version=D3D_ROOT_SIGNATURE_VERSION_1_1;
 	HRESULT res=D3D12SerializeRootSignature(&rsDesc,D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
@@ -882,10 +889,12 @@ void EffectPass::CreateLocalRootSignature()
 	V_CHECK(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&localRootSignature)));
 	localRootSignature->SetName(L"Raytracing Local Root Signature");
 	//mGRaytrac*ingSignature	=LoadRootSignature("//RTX.cso");
+#endif
 	
 }
 void EffectPass::CreateRaytracePso()
 {
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	ID3D12Device5 *pDevice5=((dx12::RenderPlatform*)renderPlatform)->AsD3D12Device5();
 	if(!pDevice5)
 		return;
@@ -1077,6 +1086,7 @@ void EffectPass::CreateRaytracePso()
     // Create the state o bject.
     HRESULT res=pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
 	V_CHECK(res);
+#endif
 }
 
 ID3D12PipelineState *EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext)
