@@ -110,7 +110,7 @@ def RunMSBuild(MSBuild, build_dir, platform_name):
 		print("ERROR: Unable to find .sln file in build directory: " + build_dir)
 		return
 
-	cmd = MSBuild + " " + sln + " /p:Configuration=Release /p:Platform=" + platform_name
+	cmd = wrap_dq(MSBuild) + " " + sln + " /m:1 /p:Configuration=Release /p:Platform=" + platform_name
 
 	print(cmd)
 	returnCode = subprocess.call(cmd, stderr=subprocess.STDOUT,  shell=True)
@@ -207,7 +207,7 @@ def main(argv):
 	defines.append("-D CMAKE_MAKE_PROGRAM=" + wrap_dq(MSBuild))
 
 	RunCMake(cwd, BuildDir, VISUAL_STUDIO_VERSION, CMake_A_PlatformName, defines)
-	RunMSBuild(MSBuild, BuildDir, PlatformName)
+	RunMSBuild(MSBuild, BuildDir, PLATFORM_NAME_VS)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
