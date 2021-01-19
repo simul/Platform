@@ -1,4 +1,3 @@
-#define NOMINMAX
 
 #include "Texture.h"
 #include "RenderPlatform.h"

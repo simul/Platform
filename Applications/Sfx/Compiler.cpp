@@ -478,10 +478,9 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	if(sfxConfig.optimizationLevelOption.length()&&sfxOptions.optimizationLevel>=0)
 	{
 		command += Utf8ToWString(sfxConfig.optimizationLevelOption);
-		char ostr[10];
-		sprintf(ostr,"%d",sfxOptions.optimizationLevel);
-		command += Utf8ToWString(ostr);
-		command += L" ";
+		wchar_t ostr[]=L"0 ";
+		ostr[0]=L'0'+(wchar_t)sfxOptions.optimizationLevel;
+		command += ostr;
 	}
 	if (sfxConfig.outputOption.size())
 	{
@@ -815,19 +814,25 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 	bool res=RunDOSCommand(psslc.c_str(),wd,log,sfxConfig,cc);
 	if (res)
 	{
+		bool write_log=false;
+		string &log_str=log.str();
 		if (sfxOptions.verbose)
 		{
 			std::cout << tempf.c_str() << "(0): info: Temporary shader source file." << std::endl;
+			write_log=true;
 		}
-		if (log.str().find("warning") < log.str().length())
+		if (log.str().find("warning") < log_str.length()||log.str().find("Warning") < log_str.length())
 		{
 			std::cerr << (sourceFile).c_str() << "(0): Warning: warnings compiling " << shader->m_functionName.c_str() << std::endl;
+			write_log=true;
 		}
-		if (log.str().find("error") < log.str().length())
+		if (log_str.find("error") < log_str.length()||log_str.find("Error") < log_str.length())
 		{
 			res = 0;
+			write_log = true;
 		}
-		std::cerr << log.str() << std::endl;
+		if(log.str().length()&&write_log)
+			std::cerr << log.str() << std::endl;
 		// If we provide invalid args to fxc:
 		if (log.str().find("Unknown or invalid option") < log.str().length())
 		{
@@ -849,7 +854,7 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 			if(!sz)
 			{
 				std::cerr << log.str() << std::endl;
-				std::cerr << "Empty output binary" << outputFile.c_str()<< std::endl;
+				std::cerr << "Empty output binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
 				SFX_BREAK("Empty output binary");
 				exit(1);
 			}

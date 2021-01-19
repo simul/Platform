@@ -1,4 +1,4 @@
-%name-prefix "sfx"
+%define api.prefix {sfx}
 %define parse.error verbose
 %define parse.trace
 
@@ -2296,19 +2296,19 @@ shader_and_layout: SHADER shader_fx
 	$$.strs[0]=s1;
 };
 	
-lex_fx :
+lex_fx : %empty
 { /* Switch lex to fx scanning */
 	read_shader=false;
 	read_function = false;
 	gLexPassthrough=false;
-};
+}
 
-shader_fx :
+shader_fx : %empty
 {
 	read_shader=true;
 	read_function = false;
 	gLexPassthrough=false;
-};
+}
 
 number_or_filename : NUM
 {
@@ -2324,13 +2324,14 @@ number_or_filename : NUM
 	 $$.num=-1;
 };
 
-lex_passthrough :
+lex_passthrough : %empty
 { /* Switch lex to passthrough mode */
 	gLexPassthrough=false;
 }
 ;
 
-read_block : { /* Read next block */
+read_block : %empty
+{ /* Read next block */
 	$$.strs[0]= sfxreadblock('{', '}');
 	$$.lineno= sfxget_lineno();
 }
@@ -2456,7 +2457,7 @@ optional_additional_identifier : ',' IDENTIFIER
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0];
 }
-| 
+| %empty
 {
 	$$.strs[0]="";
 }
@@ -2494,7 +2495,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 	$$.vars->push_back(var);
 	$$.strs[0]		=$1.strs[0];
 }
-|
+| %empty
 {
 	$$.vars = new vector<YYSTYPE::variable>;
 	$$.strs[0]="";

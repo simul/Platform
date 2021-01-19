@@ -118,7 +118,6 @@ int main(int argc, char** argv)
 				{
 					sfxOptions.disableLineWrites = true;
 					std::cout << "Disabling #line directives" << std::endl;
-					//printf("Disabling #line directives");
 				}
 				else if (argtype == 'p' || argtype == 'P')
 					platformFilename = arg;

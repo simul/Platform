@@ -14,6 +14,7 @@
 #pragma warning( disable : 3557)
 // Disable more unhelpful warnings
 #pragma warning(disable:3556,4717)
+#pragma warning(disable : 3556)	// warning about using uint divides instead of int. Not always practical.
 // Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
 #define IN_COMPUTE_SHADER
 

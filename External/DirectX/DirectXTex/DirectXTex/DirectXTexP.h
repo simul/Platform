@@ -74,7 +74,6 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4005)
-#define NOMINMAX
 #define NODRAWTEXT
 #define NOGDI
 #define NOBITMAP

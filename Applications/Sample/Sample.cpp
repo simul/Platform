@@ -416,8 +416,8 @@ public:
 			static simul::core::Timer timer;
 			float real_time = timer.UpdateTimeSum() / 1000.0f;
 
-			lights[0].direction.x=.5*sin(real_time*1.64f);
-			lights[0].direction.y=.2*sin(real_time*1.1f);
+			lights[0].direction.x=.5f*sin(real_time*1.64f);
+			lights[0].direction.y=.2f*sin(real_time*1.1f);
 			lights[0].direction.z=-1.0;
 			lights[0].direction=normalize(lights[0].direction);
 
@@ -480,7 +480,7 @@ public:
 			static int s = 128;
 			auto &textures= renderPlatform->GetTextures();
 			int l=(w-8)/(s+2);
-			int d=(textures.size()+l-1)/l;
+			int d=int(textures.size()+l-1)/l;
 			int x = 8, y = h -(s+2)*d;
 			for(auto t: textures)
 			{
