@@ -700,7 +700,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 			SetVulkanName(renderPlatform,(uint64_t*)&mLayerViews[i],(name+" mFaceArrayView").c_str());
 		}
 	}
-	viewCreateInfo.setViewType(vk::ImageViewType::e2D);
+	viewCreateInfo.setViewType(dim==2?vk::ImageViewType::e2D:vk::ImageViewType::e3D);
 	mLayerMipViews.resize(totalNum);
 	for (int i = 0; i < totalNum; i++)
 	{
@@ -1124,6 +1124,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 {
 	if(newLayout==vk::ImageLayout::eUndefined)
 		return;
+	if (mip == mips)
+	{
+		mip = 0;
+	}
 	//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	//	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages)
 	auto *commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
