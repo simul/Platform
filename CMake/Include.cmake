@@ -92,10 +92,12 @@ function( deploy_to_directory targetName destDir )
 		set( LIBFILE $<TARGET_LINKER_FILE:${targetName}>)
 	else()
 		set(LIBFILE "")
-	endif ()	
+	endif ()
+	set(no_copy $<NOT:$<CONFIG:Release>>)
 	add_custom_command(TARGET ${targetName} BYPRODUCTS none.txt 
 		POST_BUILD 
-		COMMAND set TARG_DLL=$<TARGET_FILE:${targetName}>\n
+		COMMAND if \"$(Configuration)\" == \"Release\" (\n
+		set TARG_DLL=$<TARGET_FILE:${targetName}>\n
 		set TARG_DLL=%TARG_DLL:/=\\%\n
 		set TARG_DIR=${destDir}\n
 		set TARG_DIR=%TARG_DIR:/=\\%\n
@@ -104,7 +106,9 @@ function( deploy_to_directory targetName destDir )
 		if not \"%TARG_LIB%\"==\"\" (\n
 			copy \"%TARG_LIB:/=\\%\" \"%TARG_DIR%\"\n
 		)
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+		)
+		\n
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
 endfunction()
 
 function(set_target_runtime targname rt)
@@ -136,25 +140,25 @@ function(LibraryDefaults targname)
 	target_compile_definitions(${targname} PRIVATE CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR} )
 	target_compile_definitions(${targname} PRIVATE PLATFORM_SOURCE_DIR=${PLATFORM_SOURCE_DIR} )
 	target_compile_definitions(${targname} PRIVATE PLATFORM_BUILD_DIR=${PLATFORM_BUILD_DIR} )
-	if(SIMUL_SUPPORT_D3D11)
-		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D11=1 PLATFORM_SUPPORT_D3D11=1 )
+	if(PLATFORM_SUPPORT_D3D11)
+		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D11=1 PLATFORM_SUPPORT_D3D11=1)
 	else()
-		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D11=0 PLATFORM_SUPPORT_D3D11=0 )
+		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D11=0 PLATFORM_SUPPORT_D3D11=0)
 	endif()
-	if(SIMUL_SUPPORT_D3D12)
-		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D12=1 PLATFORM_SUPPORT_D3D12=1 )
+	if(PLATFORM_SUPPORT_D3D12)
+		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D12=1 PLATFORM_SUPPORT_D3D12=1)
 	else()
-		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D12=0 PLATFORM_SUPPORT_D3D12=0 )
+		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D12=0 PLATFORM_SUPPORT_D3D12=0)
 	endif()
 
-	if(SIMUL_SUPPORT_OPENGL)
+	if(PLATFORM_SUPPORT_OPENGL)
 		target_compile_definitions(${targname} PRIVATE SIMUL_USE_OPENGL=1 PLATFORM_SUPPORT_OPENGL=1)
 	else()
 		target_compile_definitions(${targname} PRIVATE SIMUL_USE_OPENGL=0 PLATFORM_SUPPORT_OPENGL=0)
 	endif()
 
-	if(SIMUL_SUPPORT_VULKAN)
-		target_compile_definitions(${targname} PRIVATE SIMUL_USE_VULKAN=1 PLATFORM_SUPPORT_VULKAN=1) 
+	if(PLATFORM_SUPPORT_VULKAN)
+		target_compile_definitions(${targname} PRIVATE SIMUL_USE_VULKAN=1 PLATFORM_SUPPORT_VULKAN=1)
 	else()
 		target_compile_definitions(${targname} PRIVATE SIMUL_USE_VULKAN=0 PLATFORM_SUPPORT_VULKAN=0)
 	endif()
@@ -194,7 +198,7 @@ function(LibraryDefaults targname)
 		target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/Windows")
 		add_definitions( -DNOMINMAX )
 		add_definitions( -DWIN64 )
-		target_compile_options( ${targname} PRIVATE /W3 /wd4011 /wd4514 /wd4251)
+		target_compile_options( ${targname} PRIVATE /W3 /wd4011 /wd4514 /wd4251 /w15038 )
 		target_link_options( ${targname} PRIVATE /DEBUG )
 		add_definitions( -DUNICODE -D_UNICODE -DSIMUL_BUILD_NUMBER=$ENV{SIMUL_BUILD_NUMBER} )
 		target_compile_definitions(${targname} PRIVATE PLATFORM_NO_OPTIMIZATION )

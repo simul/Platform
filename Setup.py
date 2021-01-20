@@ -51,9 +51,11 @@ def GetMSBuild():
 
 def execute():
 	repo = Repo(os.getcwd())
-	sms = repo.submodules
-	for sm in sms:
-		sm.update()
+	#We can update from the main repo; doesn't require credentials in submodules
+	repo.git.submodule('update', '--init') 
+	#sms = repo.submodules
+	#for sm in sms:
+	#	sm.update()
 
 	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
 	cmake('External/glfw','External/glfw/build_md',glfwflags)

@@ -16,6 +16,7 @@ bool IsDebuggerPresent() {return false;}
 #include <iostream>
 #include <sstream>
 #include <time.h>
+#include <string.h>// for strerror_s
 #include <cerrno>
 #include <cstring>
 #ifndef _MAX_PATH
@@ -41,8 +42,8 @@ public:
 			to_output_window=send_to_output_window;
 			old_cout_buffer = std::cout.rdbuf(this);
 			old_cerr_buffer = std::cerr.rdbuf(this);
-
-			freopen("trace.txt", "w", stderr);
+			FILE *fstream;
+			freopen_s(&fstream,"trace.txt", "w", stderr);
 		}
 		if(logfilename)
 			setLogFile(logfilename);
@@ -81,9 +82,10 @@ public:
 			fn+="/";
 			fn+=logfilename;
 		}
+		errno=0;
 		logFile.open(fn.c_str());
 		if(errno!=0)
-			throw strerror(errno);
+			writeString("Failed to open logfile.");
 		if(logFile.good())
 			to_logfile=true;
 	}

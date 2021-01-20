@@ -162,7 +162,7 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,v
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	if(fill_colour.w>0.0f)
 	{
-		effect->Apply(deviceContext, tech, "fill");
+		effect->Apply(deviceContext, tech, "chequer");
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 		renderPlatform->Draw(deviceContext, 4, 0);
 		effect->Unapply(deviceContext);

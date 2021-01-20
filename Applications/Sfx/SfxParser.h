@@ -143,8 +143,9 @@ int fopen_s(FILE** pFile, const char *filename, const char *mode);
 	extern PixelOutputFormat toPixelOutputFmt(const std::string &str);
 
 }
-#undef YYSTYPE
-#define YYSTYPE sfxstype
+#define SFXSTYPE sfxstype
+// prevent echoing of unprocessed chars:
+#define ECHO
 
 std::string sfxreadblock(unsigned char openChar, unsigned char closeChar);
 void sfxerror(const char*);

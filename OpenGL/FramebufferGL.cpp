@@ -129,7 +129,7 @@ bool FramebufferGL::CreateBuffers()
     {
         if (!is_cubemap)
         {
-            buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, target_format, false, true, false, numAntialiasingSamples, quality);
+            buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, 1, target_format, false, true, false, numAntialiasingSamples, quality);
         }
         else
         {
@@ -138,7 +138,7 @@ bool FramebufferGL::CreateBuffers()
     }
     if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)
     {
-        buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality);
+        buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, 1,depth_format, false, false, true, numAntialiasingSamples, quality);
     }
 
 	glDeleteFramebuffers((GLsizei)mFBOId.size(),mFBOId.data());
@@ -211,7 +211,9 @@ void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext
 
     // Construct targets and viewport:
     targetsAndViewport.num              = 1;
-    targetsAndViewport.m_rt[0]          = (void*)(mFBOId[fb]);
+	GLuint fboid						= mFBOId[fb];
+	unsigned long long	fboid_ull		=(unsigned long long)fboid;
+    targetsAndViewport.m_rt[0]          = (void*)(fboid_ull);
     targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;
