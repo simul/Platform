@@ -64,124 +64,124 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4201) // anonymous unions warning
 #endif
-	struct vec2
+	template<typename T> struct tvector2
 	{
-		float x,y;
-		vec2(float X=0.0,float Y=0.0)
+		T x, y;
+		tvector2(T X=0.0,T Y=0.0)
 			:x(X),y(Y)
 		{
 		}
-		vec2(const float *v)
+		tvector2(const T *v)
 			:x(v[0]),y(v[1])
 		{
 		}
-		vec2(const vec2 &v)
+		tvector2(const tvector2 &v)
 			:x(v.x),y(v.y)
 		{
 		}
-		bool operator==(const vec2 &v) const
+		bool operator==(const tvector2 &v) const
 		{
 			return (x==v.x&&y==v.y);
 		}
-		bool operator!=(const vec2 &v) const
+		bool operator!=(const tvector2 &v) const
 		{
 			return (x!=v.x||y!=v.y);
 		}
-		operator const float *() const
+		operator const T *() const
 		{
 			return &x;
 		}
-		const vec2& operator=(const float *v)
+		const tvector2& operator=(const T *v)
 		{
 			x=v[0];
 			y=v[1];
 			return *this;
 		}
-		const vec2& operator=(const vec2 &v)
+		const tvector2& operator=(const tvector2 &v)
 		{
 			x=v.x;
 			y=v.y;
 			return *this;
 		}
-		void operator+=(vec2 v)
+		void operator+=(tvector2 v)
 		{
 			x+=v.x;
 			y+=v.y;
 		}
-		vec2& operator-=(vec2 v)
+		tvector2& operator-=(tvector2 v)
 		{
 			x-=v.x;
 			y-=v.y;
 			return *this;
 		}
-		vec2& operator*=(vec2 v)
+		tvector2& operator*=(tvector2 v)
 		{
 			x*=v.x;
 			y*=v.y;
 			return *this;
 		}
-		vec2& operator/=(vec2 v)
+		tvector2& operator/=(tvector2 v)
 		{
 			x/=v.x;
 			y/=v.y;
 			return *this;
 		}
-		vec2 operator+(vec2 v) const
+		tvector2 operator+(tvector2 v) const
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=x+v.x;
 			r.y=y+v.y;
 			return r;
 		}
-		vec2 operator-(vec2 v) const
+		tvector2 operator-(tvector2 v) const
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=x-v.x;
 			r.y=y-v.y;
 			return r;
 		}
-		vec2 operator*(float m) const
+		tvector2 operator*(T m) const
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=x*m;
 			r.y=y*m;
 			return r;
 		}
-		vec2 operator/(float m) const
+		tvector2 operator/(T m) const
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=x/m;
 			r.y=y/m;
 			return r;
 		}
 		
-		vec2 operator*(vec2 v) const
+		tvector2 operator*(tvector2 v) const
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=x*v.x;
 			r.y=y*v.y;
 			return r;
 		}
-		vec2 operator/(vec2 v) const
+		tvector2 operator/(tvector2 v) const
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=x/v.x;
 			r.y=y/v.y;
 			return r;
 		}
-		void operator*=(float m)
+		void operator*=(T m)
 		{
 			x*=m;
 			y*=m;
 		}
-		void operator/=(float m)
+		void operator/=(T m)
 		{
 			x/=m;
 			y/=m;
 		}
-		friend vec2 operator*(float m,vec2 v)
+		friend tvector2 operator*(T m,tvector2 v)
 		{
-			vec2 r;
+			tvector2 r;
 			r.x=v.x*m;
 			r.y=v.y*m;
 			return r;
@@ -327,6 +327,14 @@
 	};
 	namespace std
 	{
+		template <typename T> tvector2<T> max(tvector2<T> a, tvector2<T> b)
+		{
+			return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
+		};
+		template <typename T> tvector2<T> min(tvector2<T> a, tvector2<T> b)
+		{
+			return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
+		};
 		template <typename T> tvector3<T> max(tvector3<T> a,tvector3<T> b)
 			{
 				return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
@@ -335,6 +343,11 @@
 			{
 				return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
 			};
+	}
+	template<typename T> T length(const tvector2<T>& u)
+	{
+		T size = u.x * u.x + u.y * u.y ;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
 	}
 	template<typename T> T length(const tvector3<T>& u)
 	{
@@ -348,7 +361,16 @@
 			return u/l;
 		return u;
 	}
+	typedef tvector2<float> vec2;
 	typedef tvector3<float> vec3;
+	template<typename T> T cross(const tvector2<T>& a, const tvector2<T>& b)
+	{
+		return  a.x * b.y - b.x * a.y;
+	}
+	template<typename T> T dot(const tvector2<T>& a, const tvector2<T>& b)
+	{
+		return  a.x * b.x+a.y * b.y;
+	}
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{
 		vec3 r;

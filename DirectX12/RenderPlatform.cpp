@@ -71,10 +71,10 @@ RenderPlatform::RenderPlatform():
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
 
-	,mIsMsaaEnabled(false)
     ,DepthStateOverride(nullptr)
     ,BlendStateOverride(nullptr)
     ,RasterStateOverride(nullptr)
+	, mIsMsaaEnabled(false)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;

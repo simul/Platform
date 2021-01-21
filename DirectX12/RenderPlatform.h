@@ -39,12 +39,12 @@ namespace simul
 	struct ResourceBindingLimits
 	{
 		ResourceBindingLimits():
+			BindingTier(D3D12_RESOURCE_BINDING_TIER_1),
 			MaxShaderVisibleDescriptors(0),
 			MaxCBVPerStage(0),
 			MaxSRVPerStage(0),
 			MaxUAVPerStage(0),
-			MaxSaplerPerStage(0),
-			BindingTier(D3D12_RESOURCE_BINDING_TIER_1)
+			MaxSaplerPerStage(0)
 		{
 		}
 		D3D12_RESOURCE_BINDING_TIER BindingTier;

@@ -127,7 +127,6 @@ void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
 	r->EnsureEffectIsBuilt("hdr", opts);
 	opts.push_back(crossplatform::CreateDefineOptions("SCAN_SMEM_SIZE", "1920"));
 	opts.push_back(crossplatform::CreateDefineOptions("THREADS_PER_GROUP", "128"));
-	r->EnsureEffectIsBuilt("gaussian", opts); 
 }
 
 void HdrRenderer::RecompileShaders()

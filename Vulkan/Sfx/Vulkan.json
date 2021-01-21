@@ -137,6 +137,8 @@
 		"uint2": "uvec2",
 		"uint3": "uvec3",
 		"uint4": "uvec4",
+		"float2": "vec2",
+		"float3": "vec3",
 		"float4": "vec4",
 		"SamplerState": "sampler",
 		"Texture1D": "texture1D",
