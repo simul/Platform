@@ -11,6 +11,12 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		enum class BufferType
+		{
+			UNKNOWN,
+			INDEX,
+			VERTEX
+		};
 		class RenderPlatform;
 		struct DeviceContext;
 		class SIMUL_CROSSPLATFORM_EXPORT Buffer
@@ -39,6 +45,10 @@ namespace simul
 			{
 				return 0;
 			}
+			BufferType GetBufferType()
+			{
+				return bufferType;
+			}
 			//! Set up as a vertex buffer. You must pass a pointer to an already-created Layout, and don't destroy the layout until after destroying the vertex buffer.
 			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false)=0;
 			//! Set up as an index buffer.
@@ -52,6 +62,7 @@ namespace simul
 			virtual D3D12_VERTEX_BUFFER_VIEW* GetVertexBufferView() { return NULL; }
 			virtual D3D12_INDEX_BUFFER_VIEW* GetIndexBufferView() { return NULL; }
 		protected:
+			BufferType bufferType= BufferType::UNKNOWN;
             crossplatform::Layout*  mBufferLayout=nullptr;
 			crossplatform::RenderPlatform *renderPlatform=nullptr;
 		};

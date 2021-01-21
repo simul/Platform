@@ -2102,7 +2102,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 		for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
 		{
 			auto &t=deviceContext.defaultTargetsAndViewport.textureTargets[i];
-			h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
+			if(t.texture)
+				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
 		}
 	}
 	auto &d=deviceContext.defaultTargetsAndViewport.depthTarget;

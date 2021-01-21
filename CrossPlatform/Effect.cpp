@@ -427,7 +427,9 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		if(s<0)
 		{
 			res.valid = false;
-			SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
+			#if SIMUL_INTERNAL_CHECKS
+			//SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
+			#endif
 			//SIMUL_BREAK_ONCE("Invalid Shader resource")
 			return res;
 		}
