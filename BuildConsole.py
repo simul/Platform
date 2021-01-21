@@ -122,13 +122,16 @@ def main(argv):
 
 	#Pass cmd args
 	PlatformName=""
-	opts, args = getopt.getopt(argv, "hp:")
+	BuildDir=""
+	opts, args = getopt.getopt(argv, "hp:b:")
 	for opt, arg in opts:
 		if opt == "-h":
 			print("usage: BuildConsole.py -p <Platform>")
 			sys.exit(0)
 		elif opt in "-p":
 			PlatformName = arg
+		elif opt in "-b":
+			BuildDir = arg
 		else:
 			continue
 
@@ -155,7 +158,11 @@ def main(argv):
 		print("ERROR: Unknown Console type.")
 		sys.exit(0)
 
-	BuildDir = "build_" + PlatformName
+	#Set inmplicit BuildDir
+	if not BuildDir:
+		BuildDir = "build_" + PlatformName
+	else:
+		BuildDir=BuildDir.strip()
 
 	#Get ThisPlatformProperties info
 	ThisPlatformProperties = read_config_file(PlatformName, "ThisPlatform.properties")
