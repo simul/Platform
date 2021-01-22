@@ -112,15 +112,15 @@ void Texture::FreeUAVTables()
 	}
 	mipUnorderedAccessViews12 = nullptr;
 
-	if (layerMipShaderResourceViews12)
+	if (layerMipUnorderedAccessViews12)
 	{
 		int total_num = cubemap ? arraySize * 6 : arraySize;
 		for (int i = 0; i<total_num; i++)
 		{
-			delete[] layerMipShaderResourceViews12[i];
+			delete[] layerMipUnorderedAccessViews12[i];
 		}
-		delete[] layerMipShaderResourceViews12;
-		layerMipShaderResourceViews12 = nullptr;
+		delete[] layerMipUnorderedAccessViews12;
+		layerMipUnorderedAccessViews12 = nullptr;
 	}
 }
 
