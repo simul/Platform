@@ -260,7 +260,10 @@ void DisplaySurface::CreateSyncObjects()
 void DisplaySurface::StartFrame()
 {
 	// If we already requested the command list just exit
-	if (mRecordingCommands) { return; }
+	if (mRecordingCommands)
+	{
+		return;
+	}
 
 	HRESULT res = S_FALSE;
 	static UINT idx_old=0;

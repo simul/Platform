@@ -31,7 +31,6 @@ namespace simul
 			}
 			D3D12_VERTEX_BUFFER_VIEW*	GetVertexBufferView() override;
 			D3D12_INDEX_BUFFER_VIEW*	GetIndexBufferView() override;
-
 		private:
 			ID3D12Resource*				mGpuHeap;
 			ID3D12Resource*				mIntermediateHeap;
@@ -39,6 +38,7 @@ namespace simul
 			UINT8*						mGpuMappedPtr;
 			D3D12_VERTEX_BUFFER_VIEW	mVertexBufferView;
 			D3D12_INDEX_BUFFER_VIEW		mIndexBufferView;
+			unsigned char *				mappedData=nullptr;
 		};
 	}
 };

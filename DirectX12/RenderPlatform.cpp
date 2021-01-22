@@ -71,10 +71,10 @@ RenderPlatform::RenderPlatform():
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
 
-	,mIsMsaaEnabled(false)
     ,DepthStateOverride(nullptr)
     ,BlendStateOverride(nullptr)
     ,RasterStateOverride(nullptr)
+	, mIsMsaaEnabled(false)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -2102,7 +2102,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 		for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
 		{
 			auto &t=deviceContext.defaultTargetsAndViewport.textureTargets[i];
-			h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
+			if(t.texture)
+				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
 		}
 	}
 	auto &d=deviceContext.defaultTargetsAndViewport.depthTarget;
