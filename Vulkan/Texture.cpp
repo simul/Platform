@@ -5,26 +5,12 @@
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
 #include "Effect.h"
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <algorithm>
 
 using namespace simul;
 using namespace vulkan;
 
-void DeleteTextures(size_t num,GLuint *t)
-{
-	if(!t||!num)
-		return;
-	for(int i=0;i<num;i++)
-	{
-//		if(t[i]!=0&&!glIsTexture(t[i]))
-		{
-	//		SIMUL_BREAK_ONCE("Not a texture");
-		}
-	}
-	//glDeleteTextures(num,t);
-}
 
 // TODO: This is ridiculous. But GL, at least in the current NVidia implementation, seems unable to write to a re-used texture id that it has generated after that id 
 // was previously freed. Bad bug.
@@ -131,7 +117,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, co
 	loadedTextures.resize(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
 	{
-		//std::string mainPath	= r->GetTexturePathsUtf8()[0] + "/" + texture_files[i];
 		LoadTextureData(loadedTextures[i],texture_files[i].c_str());
 	}
 	int w= loadedTextures[0].x;
@@ -362,6 +347,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 				currentImageLayout, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer,
 				vk::PipelineStageFlagBits::eFragmentShader);
 		}
+	}
+	for (unsigned int i = 0; i < loadedTextures.size(); i++)
+	{
+		FreeTranslatedTextureData(loadedTextures[i].data);
 	}
 	
 	textureLoadComplete=true;
@@ -1004,18 +993,24 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 		filenameInUseUtf8=(renderPlatform->GetTexturePathsUtf8()[index]+"/")+filenameInUseUtf8;
 
 	int x,y,n;
-	void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
-	if (!data)
+	void* buffer=nullptr;
+	unsigned size=0;
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buffer,size,filenameInUseUtf8.c_str(),false);
+	//void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
+	if (!buffer)
 	{
 		SIMUL_CERR << "Failed to load the texture: " << filenameInUseUtf8.c_str() << std::endl;
 		return;
 	}
+	void* data = nullptr;
+	TranslateLoadedTextureData(data,buffer,size,x,y,n,4);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
 }
 
 void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f)
 {
-	lt.data=(const unsigned char*)data;
+	lt.data=( unsigned char*)data;
 	lt.x=x;
 	lt.y=y;
 	lt.z=z;
