@@ -30,5 +30,5 @@ add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
 	
 if(PLATFORM_USE_ASSIMP)
 	target_link_directories(SimulCrossPlatform_MD PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE} )
-	target_link_libraries( SimulCrossPlatform_MD assimp-vc142-mt )
+	target_link_libraries( SimulCrossPlatform_MD ${ASSIMP_LIBNAME} )
 endif()

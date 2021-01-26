@@ -20,7 +20,7 @@ target_link_libraries( Test_MT SimulCrossPlatform_MT SimulMath_MT Core_MT direct
 
 if(PLATFORM_USE_ASSIMP)
 	target_link_directories( Test_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE})
-	target_link_libraries( Test_MT assimp-vc142-mt )
+	target_link_libraries( Test_MT ${ASSIMP_LIBNAME} )
 endif()
 
 if(PLATFORM_SUPPORT_D3D11)

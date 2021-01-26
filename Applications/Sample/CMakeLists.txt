@@ -18,7 +18,7 @@ set_target_properties(Sample_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAK
 target_link_libraries(Sample_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT )
 if(PLATFORM_USE_ASSIMP)
 	target_link_directories( Sample_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE})
-	target_link_libraries( Sample_MT assimp-vc142-mt )
+	target_link_libraries( Sample_MT ${ASSIMP_LIBNAME} )
 endif()
 if(${SAMPLE_API} MATCHES "SAMPLE_USE_D3D11")
 	target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
