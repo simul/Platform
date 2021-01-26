@@ -90,6 +90,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	mVertexBufferView.SizeInBytes = mBufferSize;
 	mVertexBufferView.StrideInBytes = stride;
 	mVertexBufferView.BufferLocation = mGpuHeap->GetGPUVirtualAddress();
+	bufferType = crossplatform::BufferType::VERTEX;
 }
 
 void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices, int index_size_bytes, const void* data)
@@ -128,7 +129,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		);
 		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-			mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
+		mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
 
 		D3D12_SUBRESOURCE_DATA subresourceData = {};
 		subresourceData.pData = data;
@@ -166,22 +167,52 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	mIndexBufferView.Format = indexFormat;
 	mIndexBufferView.SizeInBytes = mBufferSize;
 	mIndexBufferView.BufferLocation = mGpuHeap->GetGPUVirtualAddress();
+	bufferType = crossplatform::BufferType::INDEX;
 }
 
 void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
-	mGpuMappedPtr = nullptr;
-	HRESULT hr=mGpuHeap->Map(0, nullptr, reinterpret_cast<void**>(&mGpuMappedPtr));
+	mGpuMappedPtr = new UINT8[mBufferSize];
+/*	HRESULT hr=mGpuHeap->Map(0, nullptr, reinterpret_cast<void**>(&mGpuMappedPtr));
 	if (hr != S_OK)
-		return nullptr;
+		return nullptr;*/
 	return (void*)mGpuMappedPtr;
 }
 
 void Buffer::Unmap(crossplatform::DeviceContext &)
 {
-	const CD3DX12_RANGE range(0, 0);
-	mGpuHeap->Unmap(0, nullptr);// &range);
+	//const CD3DX12_RANGE range(0, 0);
+	//mGpuHeap->Unmap(0, nullptr);// &range);
+	if(mGpuMappedPtr)
+	{
+		D3D12_SUBRESOURCE_DATA subresourceData = {};
+		subresourceData.pData = mGpuMappedPtr;
+		subresourceData.RowPitch = mBufferSize;
+		subresourceData.SlicePitch = subresourceData.RowPitch;
+
+		D3D12_RESOURCE_BARRIER barrier1;
+		barrier1.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier1.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier1.Transition.pResource = mGpuHeap;
+		barrier1.Transition.Subresource = 0;
+		barrier1.Transition.StateBefore = bufferType==crossplatform::BufferType::INDEX?D3D12_RESOURCE_STATE_INDEX_BUFFER:D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		barrier1.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+
+		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier1);
+		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+		D3D12_RESOURCE_BARRIER barrier2;
+		barrier2.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier2.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier2.Transition.pResource = mGpuHeap;
+		barrier2.Transition.Subresource = 0;
+		barrier2.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		barrier2.Transition.StateAfter = barrier1.Transition.StateBefore;
+
+		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier2);
+	}
+	delete [] mGpuMappedPtr;
+	mGpuMappedPtr=nullptr;
 }
 
 D3D12_VERTEX_BUFFER_VIEW* Buffer::GetVertexBufferView()

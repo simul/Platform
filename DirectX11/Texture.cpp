@@ -187,6 +187,8 @@ int Texture::GetMemorySize() const
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int m)
 {
 	renderPlatform=r;
+	if(m<0||m>16)
+		m=1;
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	std::vector<ID3D11Texture2D *> textures;
@@ -1066,7 +1068,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	renderPlatform=r;
-
+	if(m<0||m>16)
+		m=1;
 	int total_num			=cubemap?6*num:num;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC textureDesc;

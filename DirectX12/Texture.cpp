@@ -29,18 +29,18 @@ void SamplerState::InvalidateDeviceObjects()
 }
 
 Texture::Texture():
-	mTextureUpload(nullptr),
 	mTextureDefault(nullptr),
+	mTextureUpload(nullptr),
+	mLoadedFromFile(false),
 	layerShaderResourceViews12(nullptr),
 	mainMipShaderResourceViews12(nullptr),
 	layerMipShaderResourceViews12(nullptr),
 	mipUnorderedAccessViews12(nullptr),
 	layerMipUnorderedAccessViews12(nullptr),
-	renderTargetViews12(nullptr),
-	mLoadedFromFile(false),
-    mNumSamples(1)
+	renderTargetViews12(nullptr)
 	,mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ)
 	,mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ)
+	,mNumSamples(1)
 {
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
@@ -112,15 +112,15 @@ void Texture::FreeUAVTables()
 	}
 	mipUnorderedAccessViews12 = nullptr;
 
-	if (layerMipShaderResourceViews12)
+	if (layerMipUnorderedAccessViews12)
 	{
 		int total_num = cubemap ? arraySize * 6 : arraySize;
 		for (int i = 0; i<total_num; i++)
 		{
-			delete[] layerMipShaderResourceViews12[i];
+			delete[] layerMipUnorderedAccessViews12[i];
 		}
-		delete[] layerMipShaderResourceViews12;
-		layerMipShaderResourceViews12 = nullptr;
+		delete[] layerMipUnorderedAccessViews12;
+		layerMipUnorderedAccessViews12 = nullptr;
 	}
 }
 
