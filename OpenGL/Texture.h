@@ -73,7 +73,7 @@ namespace simul
 			/// handles so they can be made unresident when it is deleted.
 			void			MakeHandleResident(GLuint64 h);
         private:
-            LoadedTexture   LoadTextureData(const char* path);
+            void			LoadTextureData(LoadedTexture &,const char* path);
             bool            IsSame(int w, int h, int d, int arraySize, int m, int msaa);
             //! Initializes the texture views
             void            InitViews(int mipCount, int layers, bool isRenderTarget);
