@@ -103,7 +103,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	LoadTextureArray(r,texture_files,gen_mips?0:1);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, const std::vector<std::string>& texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, const std::vector<std::string>& texture_files, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	this->renderPlatform= renderPlatform;
@@ -122,7 +122,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, co
 	int w= loadedTextures[0].x;
 	int l= loadedTextures[0].y;
 	size_t num= loadedTextures.size();
-	if(!m)
+	int m=1;
+	if(gen_mips)
 		m=100;
 	m = std::min(m, int(floor(log2(std::max(w, l)))) +1);
 	m=std::min(16,std::max(1,m));

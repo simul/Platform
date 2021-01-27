@@ -810,9 +810,9 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	view._43=0;
 	simul::math::Vector3 offs;
 	Multiply3(offs,view,offs0);
-	world._41=offs.x;
-	world._42=offs.y;
-	world._43=offs.z;
+	world._14 =offs.x;
+	world._24 =offs.y;
+	world._34 =offs.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.displayLod=displayLod;
@@ -1428,7 +1428,7 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	unsigned long slot = res.slot;
 	unsigned long dim = res.dimensions;
 #ifdef _DEBUG
-	if (!tex)
+	if (!tex) 
 	{
 		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
 	}
