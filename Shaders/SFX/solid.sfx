@@ -338,14 +338,15 @@ vec4 DebugNormal(vertexOutput IN, int swizzle_mode)
 	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
 	vec3 normal = normalize(mul(normalLookup, TangentMatrix));
 	normal = (normal + vec3(1.0f, 1.0f, 1.0f)) / 2.0f;
-	return vec4(IN.normal.xyz, 1.0f);
-/*	switch(swizzle_mode)
+	switch(swizzle_mode)
 	{
 		case 1: return vec4(normal.yxz, 1.0f); //Unreal-Swizzled
 		case 2: return vec4(normal.xzy, 1.0f); //Unity-Swizzled
 		case 3: return vec4(IN.normal.xyz, 1.0f); // Vertex normals unswizzled
-		default: return vec4(normalLookup.xyz, 1.0f); //Unswizzled
-	}*/
+		default: 
+			break;
+	}
+	return vec4(normal.xyz, 1.0f);
 }
 
 shader vec4 PS_DebugNormal_Unswizzled(vertexOutput IN) : SV_TARGET

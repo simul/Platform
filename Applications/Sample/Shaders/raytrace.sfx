@@ -70,7 +70,7 @@ void InitialClosestHit(inout RayPayload payload, in BuiltInTriangleIntersectionA
     ShadowPayload shadowPayload;
     shadowPayload.is_hit=false;
     shadowPayload.dist=0.0;
-    TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES         , 0xFF, 1, 0, 1, ray, payload);
+    TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 1, 0, 1, ray, payload);
     if(shadowPayload.is_hit)
         payload.colour*=1.0-exp(-shadowPayload.dist/5.0);
 }
