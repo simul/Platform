@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 2.9)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	file(GLOB CMAKE 	"*.cmake" )
 	file(GLOB SOURCES 	Compiler.cpp

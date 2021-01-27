@@ -1,8 +1,8 @@
 
 #include "Texture.h"
 #include "RenderPlatform.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Core/StringFunctions.h"
 #include <algorithm>
 
 using namespace simul;
@@ -93,7 +93,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	for (auto& path : r->GetTexturePathsUtf8())
 	{
 		std::string mainPath = path + "/" + std::string(pFilePathUtf8);
-		tdata = LoadTextureData(mainPath.c_str());
+		LoadTextureData(tdata ,mainPath.c_str());
 		if (tdata.data)
 			break;
 	}
@@ -162,7 +162,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 		for (auto& path : r->GetTexturePathsUtf8())
 		{
 			std::string mainPath = path + "/" + texture_files[i];
-			loadedTextures[i] = LoadTextureData(mainPath.c_str());
+			LoadTextureData(loadedTextures[i] ,mainPath.c_str());
 			if (loadedTextures[i].data)
 				break;
 		}
@@ -204,6 +204,11 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
 
 	InitViews(mips, arraySize, true);
+	for (unsigned int i = 0; i < loadedTextures.size(); i++)
+	{
+		FreeTranslatedTextureData( loadedTextures[i].data);
+	}
+	loadedTextures.clear();
 	
 	// CreateFBOs(1);
 }
@@ -741,18 +746,53 @@ GLuint Texture::GetGLMainView()
 	return mTextureID;
 }
 
-LoadedTexture Texture::LoadTextureData(const char* path)
+ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 {
-	LoadedTexture lt	= {0, 0, 0, 0, nullptr};
-	lt.data				= stbi_load(path, &lt.x, &lt.y, &lt.n, 4);
+	lt	= {0, 0, 0, 0, nullptr};
+	const auto& pathsUtf8 = renderPlatform->GetTexturePathsUtf8();
+	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(path, pathsUtf8);
+	std::string filenameInUseUtf8 = path;
+	if (index == -2 || index >= (int)pathsUtf8.size())
+	{
+		errno = 0;
+		std::string file;
+		std::vector<std::string> split_path = base::SplitPath(path);
+		if (split_path.size() > 1)
+		{
+			file = split_path[1];
+			index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
+		}
+		if (index < -1 || index >= (int)pathsUtf8.size())
+		{
+			SIMUL_CERR << "Failed to find texture file " << filenameInUseUtf8 << std::endl;
+			return;
+		}
+		filenameInUseUtf8 = file;
+	}
+	if (index < renderPlatform->GetTexturePathsUtf8().size())
+		filenameInUseUtf8 = (renderPlatform->GetTexturePathsUtf8()[index] + "/") + filenameInUseUtf8;
+
+	int x, y, n;
+	void* buffer = nullptr;
+	unsigned size = 0;
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buffer, size, filenameInUseUtf8.c_str(), false);
+	//void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
+	if (!buffer)
+	{
+		SIMUL_CERR << "Failed to load the texture: " << filenameInUseUtf8.c_str() << std::endl;
+		return;
+	}
+	void* data = nullptr;
+	TranslateLoadedTextureData(data, buffer, size, x, y, n, 4);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
+	lt.data = (unsigned char *)data;
 	if (!lt.data)
 	{
-		#if _DEBUG
-			SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
-		#endif
+#if _DEBUG
+		SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
+#endif
 		errno = 0; //ERRNO_CLEAR
 	}
-	return lt;
 }
 
 bool Texture::IsSame(int w, int h, int d, int arr, int m, int msaa)

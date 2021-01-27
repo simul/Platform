@@ -8,30 +8,30 @@
 
 //API Selection Marcos
 #ifdef SAMPLE_USE_ALL_X64_API
-#define SAMPLE_USE_D3D11
-#define SAMPLE_USE_D3D12
-#define SAMPLE_USE_VULKAN
-#define SAMPLE_USE_OPENGL
+#define SAMPLE_USE_D3D11 1
+#define SAMPLE_USE_D3D12 1
+#define SAMPLE_USE_VULKAN 1
+#define SAMPLE_USE_OPENGL 1
 #endif
 
 //Platform includes
 #include "Platform/Core/EnvironmentVariables.h"
-#ifdef SAMPLE_USE_D3D12
+#if SAMPLE_USE_D3D12
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/DeviceManager.h"
 #include "Platform/DirectX12/Texture.h"
 #endif
-#ifdef SAMPLE_USE_D3D11
+#if SAMPLE_USE_D3D11
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/DirectX11/Direct3D11Manager.h"
 #include "Platform/DirectX11/Texture.h"
 #endif
-#ifdef SAMPLE_USE_VULKAN
+#if SAMPLE_USE_VULKAN
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/DeviceManager.h"
 #include "Platform/Vulkan/Texture.h"
 #endif
-#ifdef SAMPLE_USE_OPENGL
+#if SAMPLE_USE_OPENGL
 #include "Platform/OpenGL/RenderPlatform.h"
 #include "Platform/OpenGL/DeviceManager.h"
 #include "Platform/OpenGL/Texture.h"
@@ -67,16 +67,16 @@ using namespace simul;
 #define STRING_OF_MACRO(x) STRING_OF_MACRO1(x)
 
 //Per API device managers 
-#ifdef SAMPLE_USE_D3D11
+#if SAMPLE_USE_D3D11
 dx11::Direct3D11Manager dx11_deviceManager;
 #endif
-#ifdef SAMPLE_USE_D3D12
+#if SAMPLE_USE_D3D12
 dx12::DeviceManager dx12_deviceManager;
 #endif
-#ifdef SAMPLE_USE_VULKAN
+#if SAMPLE_USE_VULKAN
 vulkan::DeviceManager vk_deviceManager;
 #endif
-#ifdef SAMPLE_USE_OPENGL
+#if SAMPLE_USE_OPENGL
 opengl::DeviceManager gl_deviceManager;
 #endif
 
@@ -111,27 +111,35 @@ public:
 		{
 		case crossplatform::RenderPlatformType::D3D11:
 		{
+#if SAMPLE_USE_D3D11
 			graphicsDeviceInterface = &dx11_deviceManager;
 			renderPlatform = new dx11::RenderPlatform();
+#endif
 			break;
 		}
 		default:
 		case crossplatform::RenderPlatformType::D3D12:
 		{
+#if SAMPLE_USE_D3D12
 			graphicsDeviceInterface = &dx12_deviceManager;
 			renderPlatform = new dx12::RenderPlatform();
+#endif
 			break;
 		}
 		case crossplatform::RenderPlatformType::Vulkan:
 		{
+#if SAMPLE_USE_VULKAN
 			graphicsDeviceInterface = &vk_deviceManager;
 			renderPlatform = new vulkan::RenderPlatform();
+#endif
 			break;
 		}
 		case crossplatform::RenderPlatformType::OpenGL:
 		{
+#if SAMPLE_USE_OPENGL
 			graphicsDeviceInterface = &gl_deviceManager;
 			renderPlatform = new opengl::RenderPlatform();
+#endif
 			break;
 		}
 		}

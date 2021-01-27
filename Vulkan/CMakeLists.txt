@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 2.9)
 
 file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )

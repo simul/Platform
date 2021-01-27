@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 2.9)
 option(SIMUL_D3D12_ENABLE_PIX "" OFF)
 
 file(GLOB CMAKE

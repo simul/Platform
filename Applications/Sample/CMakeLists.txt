@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.14)
+
+cmake_minimum_required(VERSION 2.9)
 
 file(GLOB CMAKE "*.cmake" )
 
@@ -17,7 +18,8 @@ set_target_properties(Sample_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAK
 						VS_DEBUGGER_ENVIRONMENT "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
 target_link_libraries(Sample_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT )
 if(PLATFORM_USE_ASSIMP)
-	target_link_libraries( assimp )
+	target_link_directories( Sample_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE})
+	target_link_libraries( Sample_MT ${ASSIMP_LIBNAME} )
 endif()
 
 if(PLATFORM_SUPPORT_D3D11)
