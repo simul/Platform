@@ -32,7 +32,7 @@ namespace simul
 			virtual ~Texture() override;
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips) override;
-			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
+			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
 			bool IsValid() const;
 			ID3D11Texture2D *AsD3D11Texture2D()
 			{

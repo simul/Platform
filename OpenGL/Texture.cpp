@@ -152,7 +152,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
 {
 	InvalidateDeviceObjects();
 
@@ -171,7 +171,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	width				= loadedTextures[0].x;
 	length				= loadedTextures[0].y;
 	arraySize			= (int)loadedTextures.size();
-	mips				= std::min(m,1 + int(floor(log2(width >= length ? width : length))));
+	mips				= gen_mips?std::min(16,1 + int(floor(log2(width >= length ? width : length)))):1;
 	dim					= 2;
 	depth				= 1;
 	cubemap				= false;

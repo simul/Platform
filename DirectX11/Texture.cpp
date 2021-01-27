@@ -7,6 +7,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include <string>
+#include <math.h>
 #include <algorithm>
 
 using namespace simul;
@@ -184,11 +185,9 @@ int Texture::GetMemorySize() const
 	return mem*ByteSizeOfFormatElement(dxgi_format);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	renderPlatform=r;
-	if(m<0||m>16)
-		m=1;
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	std::vector<ID3D11Texture2D *> textures;
@@ -199,12 +198,22 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	D3D11_TEXTURE2D_DESC desc;
 	ID3D11DeviceContext *pContext=NULL;
 	r->AsD3D11Device()->GetImmediateContext(&pContext);
+	int w=1,l=1;
 	for(int i=0;i<(int)textures.size();i++)
 	{
 		if(!textures[i])
 			return;
 		textures[i]->GetDesc(&desc);
+		w=desc.Width;
+		l=desc.Height;
 	}
+	int m = 1;
+	if (gen_mips)
+		m = 100;
+	m = std::min(m, int(floor(log2(std::max(w, l)))) + 1);
+	m = std::min(16, std::max(1, m));
+	if (m < 0 || m>16)
+		m = 1;
 	auto format = RenderPlatform::FromDxgiFormat(desc.Format);
 
 	ensureTextureArraySizeAndFormat(r,desc.Width,desc.Height,(int)textures.size(),m,format,false,true);
