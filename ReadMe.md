@@ -12,7 +12,6 @@ At the moment, due to its origins in trueSKY, Platform is quite focused on Compu
 
 Supported Platforms
 -------------------
-
  * Windows 10
  * Linux
  * PS4
@@ -21,7 +20,6 @@ Supported Platforms
 
 Supported Rendering API's
 -------------------
-
  * Direct3D 11
  * Direct3D 12
  * PS4
@@ -30,7 +28,6 @@ Supported Rendering API's
 
  Required
  ---------
-
  * CMake
  * Python 3
  * Git
@@ -45,8 +42,15 @@ To run the Python setup script, ensure that the git Python module is installed.
 
 	pip install GitPython
 
-Now run Setup.py to update the submodules and build Platform.
+Now run Setup.py to update the submodules and build Platform for Windows x64.
 
 Configuring
 -----------
 With CMakeGui or a similar tool, you can configure Platform to your requirements. For example, individual API's such as Vulkan or D3D12 can be enabled or disabled.
+
+Compiling
+---------
+By default for Windows, a Visual Studio solution Platform.sln will be created and built in Platform/build. To build for another platform:
+
+Use the CMake cross-compiling toolchain file in Platform/[PlatformName]/CMake.
+Ensure that the x64 version is built first. In particular, other platforms use the Sfx effect compiler which is created at Platform/build/bin/Release/Sfx.exe.
