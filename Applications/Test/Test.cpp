@@ -101,6 +101,8 @@ int kOverrideHeight = 900;
 enum class TestType
 {
 	CLEAR_COLOUR,
+	QUAD_COLOUR,
+	TEXT
 };
 
 class PlatformRenderer : public crossplatform::PlatformRendererInterface
@@ -113,11 +115,11 @@ public:
 	int framenumber = 0;
 
 	//Render Primitives
-	crossplatform::RenderPlatform*					renderPlatform	= nullptr;
-	crossplatform::Texture*							depthTexture	= nullptr;
-	crossplatform::HdrRenderer*						hdrRenderer		= nullptr;
-	crossplatform::BaseFramebuffer*					hdrFramebuffer	= nullptr;
-	crossplatform::Effect*							effect			= nullptr;
+	crossplatform::RenderPlatform* renderPlatform = nullptr;
+	crossplatform::Texture* depthTexture = nullptr;
+	crossplatform::HdrRenderer* hdrRenderer = nullptr;
+	crossplatform::BaseFramebuffer* hdrFramebuffer = nullptr;
+	crossplatform::Effect* effect = nullptr;
 	crossplatform::ConstantBuffer<SceneConstants>	sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants>	cameraConstants;
 
@@ -320,7 +322,7 @@ public:
 		return true;
 	}
 
-	int AddView() override 
+	int AddView() override
 	{
 		static int last_view_id = 0;
 		return last_view_id++;
@@ -330,6 +332,9 @@ public:
 
 	void Render(int view_id, void* context, void* colorBuffer, int w, int h, long long frame) override
 	{
+		if (w * h == 0) //FramebufferGL can't deal with a viewport of {0,0,0,0}!
+			return;
+
 		// Device context structure
 		simul::crossplatform::GraphicsDeviceContext	deviceContext;
 
@@ -361,30 +366,74 @@ public:
 
 		//Begin frame
 		renderPlatform->BeginFrame(deviceContext);
+		hdrFramebuffer->SetWidthAndHeight(w, h);
+		hdrFramebuffer->Activate(deviceContext);
 
 		switch (testType)
 		{
 		default:
 		case TestType::CLEAR_COLOUR:
 		{
-			Test_ClearColour(deviceContext, w, h);
+			Test_ClearColour(deviceContext);
+			break;
+		}
+		case TestType::QUAD_COLOUR:
+		{
+			Test_QuadColour(deviceContext, w, h);
+			break;
+		}
+		case TestType::TEXT:
+		{
+			Test_Text(deviceContext, w, h);
 			break;
 		}
 		}
 
+		hdrFramebuffer->Deactivate(deviceContext);
 		hdrRenderer->Render(deviceContext, hdrFramebuffer->GetTexture(), 1.0f, 0.44f);
 
 		framenumber++;
 	}
 
-	void Test_ClearColour(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	void Test_ClearColour(crossplatform::GraphicsDeviceContext& deviceContext)
 	{
-		hdrFramebuffer->SetWidthAndHeight(w, h);
-		hdrFramebuffer->Activate(deviceContext);
-		hdrFramebuffer->Clear(deviceContext, 1.0f, 0.0f, 1.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
-		hdrFramebuffer->Deactivate(deviceContext);
+		hdrFramebuffer->Clear(deviceContext, 0.00f, 0.31f, 0.57f, 1.00f, reverseDepth ? 0.0f : 1.0f);
 	}
 
+	void Test_QuadColour(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		hdrFramebuffer->Clear(deviceContext, 0.00f, 0.31f, 0.57f, 1.00f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->GetDebugConstantBuffer().multiplier = vec4(0.0f, 0.33f, 1.0f, 1.0f);
+		renderPlatform->SetConstantBuffer(deviceContext, &(renderPlatform->GetDebugConstantBuffer()));
+		renderPlatform->DrawQuad(deviceContext, w / 4, h / 4, w / 2, h / 2, renderPlatform->GetDebugEffect(), renderPlatform->GetDebugEffect()->GetTechniqueByName("untextured"), "noblend");
+	}
+
+	void Test_Text(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		int x = w / 4;
+		int y = h / 4;
+
+		std::string api = std::string("API: ") + renderPlatform->GetName();
+		std::string message;
+		switch (renderPlatformType)
+		{
+		case crossplatform::RenderPlatformType::D3D11:
+			message = "All your binaries are belong to us.";
+			break;
+		default:
+		case crossplatform::RenderPlatformType::D3D12:
+			message = "It's a trap!";
+			break;
+		case crossplatform::RenderPlatformType::Vulkan:
+			message = "You've met with a terrible fate, haven't you?"; 
+			break;
+		case crossplatform::RenderPlatformType::OpenGL:
+			message = "It's an older code, sir, but it checks out.";
+			break;
+		}
+		renderPlatform->Print(deviceContext, x, y, api.c_str()); y += 16;
+		renderPlatform->Print(deviceContext, x, y, message.c_str()); y += 16;
+	}
 };
 PlatformRenderer* platformRenderer;
 
@@ -415,11 +464,13 @@ simul::crossplatform::RenderPlatformType GetRenderPlatformTypeFromCmdLnArgs(wcha
 		}
 		else
 		{
-			SIMUL_COUT << "Unknown API Type. This should be a specified on the command line arguments\n";
-			SIMUL_COUT << "Defaulting to D3D12.\n";
-			return crossplatform::RenderPlatformType::D3D12;
+			continue;
 		}
 	}
+	
+	SIMUL_COUT << "Unknown API Type. This should be a specified on the command line arguments\n";
+	SIMUL_COUT << "Defaulting to D3D12.\n";
+	return crossplatform::RenderPlatformType::D3D12;
 }
 
 TestType GetTestTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
