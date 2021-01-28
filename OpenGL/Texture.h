@@ -45,7 +45,7 @@ namespace simul
             void            SetName(const char* n) override;
 
 			void            LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips = false) override;
-			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1) override;
+			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
 			bool            IsValid() const override;
 			void            InvalidateDeviceObjects() override;
 			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
@@ -73,7 +73,7 @@ namespace simul
 			/// handles so they can be made unresident when it is deleted.
 			void			MakeHandleResident(GLuint64 h);
         private:
-            LoadedTexture   LoadTextureData(const char* path);
+            void			LoadTextureData(LoadedTexture &,const char* path);
             bool            IsSame(int w, int h, int d, int arraySize, int m, int msaa);
             //! Initializes the texture views
             void            InitViews(int mipCount, int layers, bool isRenderTarget);

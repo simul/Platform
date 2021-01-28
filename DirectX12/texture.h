@@ -53,7 +53,7 @@ namespace simul
 			//! Loads this texture from a file
 			void							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips);
 			//! Loads this texture from multiple files
-			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
+			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
 			bool							IsValid() const;
 			
 			void StoreExternalState(crossplatform::ResourceState);

@@ -279,7 +279,7 @@ void DisplaySurface::StartFrame()
 	mFenceValues[idx]++;
 
 	res = mCommandAllocators[idx]->Reset();
-	SIMUL_ASSERT(res == S_OK);
+	SIMUL_ASSERT(res == S_OK); 
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;

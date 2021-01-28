@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.9)
 
 file(GLOB SOURCES "*.cpp" )
 
@@ -10,11 +10,13 @@ endif()
 
 if(PLATFORM_USE_ASSIMP)
 	set(INCLUDE_DIRS "${SIMUL_PLATFORM_DIR}/External/assimp/include" "${CMAKE_BINARY_DIR}/External/assimp/include")
-	set(ADDITIONAL_LIBS assimp)
+	set(ADDITIONAL_LIBS "")
 else()
 	set(INCLUDE_DIRS "")
 	set(ADDITIONAL_LIBS "")
 endif()
+
+set(INCLUDE_DIRS ${INCLUDE_DIRS} "${SIMUL_PLATFORM_DIR}/External/stb")
 
 # Setup and build the static library.
 add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
@@ -25,3 +27,8 @@ add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
 add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} 
 	DEFINITIONS SIMUL_CROSSPLATFORM_DLL=1 PLATFORM_LOAD_RENDERDOC=$<BOOL:${PLATFORM_LOAD_RENDERDOC}> PLATFORM_USE_ASSIMP=$<BOOL:${PLATFORM_USE_ASSIMP}>
 	LINK SimulMath_MD Core_MD FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} LINK ${ADDITIONAL_LIBS} INCLUDES ${INCLUDE_DIRS})
+	
+if(PLATFORM_USE_ASSIMP)
+	target_link_directories(SimulCrossPlatform_MD PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE} )
+	target_link_libraries( SimulCrossPlatform_MD ${ASSIMP_LIBNAME} )
+endif()

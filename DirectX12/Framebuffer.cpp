@@ -74,6 +74,12 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	// Push current target and viewport
     targetsAndViewport.num				= 1;
     targetsAndViewport.m_rt[0]			= rtView;
+	targetsAndViewport.textureTargets[0].texture=buffer_texture;
+	targetsAndViewport.textureTargets[0].layer=0;
+	targetsAndViewport.textureTargets[0].mip=0;
+	targetsAndViewport.depthTarget.texture=buffer_depth_texture;
+	targetsAndViewport.depthTarget.layer = 0;
+	targetsAndViewport.depthTarget.mip = 0;
     targetsAndViewport.rtFormats[0]     = col12Texture->pixelFormat;
     targetsAndViewport.m_dt				= dsView;
     if (buffer_depth_texture&&buffer_depth_texture->IsValid())
