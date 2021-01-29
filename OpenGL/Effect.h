@@ -118,6 +118,7 @@ namespace simul
 			size_t				mTotalSize;
 			int					mBinding;
 			void*				mCurReadMap = nullptr;
+			void*				mMappedWritePtr = nullptr;
 			GLsync				mFences[mNumBuffers];
 
 			inline bool IsBufferMapped(size_t idx)

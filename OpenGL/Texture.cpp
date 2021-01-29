@@ -156,6 +156,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
 {
 	InvalidateDeviceObjects();
+	renderPlatform = r;
 
 	std::vector<LoadedTexture> loadedTextures(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
