@@ -1,0 +1,41 @@
+//  Copyright (c) Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "sampler_states.sl"
+
+//uniform Texture2D image : register(t0);
+uniform RWTexture2D<float4> rwImage : register(u0);
+
+CS_LAYOUT(32, 32, 1)
+shader void CS_Checkerboard(uint3 p : SV_DispatchThreadID)
+{
+	uint2 imageDim;
+	rwImage.GetDimensions(imageDim.x, imageDim.y);
+	
+	uint squareLength = min(imageDim.x, imageDim.y) / 8;
+	uint squareIndex_x = p.x / squareLength;
+	uint squareIndex_y = p.y / squareLength;
+	
+	vec4 res;
+	if ((squareIndex_x % 2 == 0 && squareIndex_y % 2 == 0)
+		|| (squareIndex_x % 2 != 0 && squareIndex_y % 2 != 0))
+	{
+		res = vec4(0, 0, 0, 1);
+	}
+	else
+	{
+		res = vec4(1, 1, 1, 1);
+	}
+	
+	rwImage[p.xy] = res;
+}
+
+technique test_checkerboard
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_Checkerboard()));
+
+	}
+}

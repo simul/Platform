@@ -102,7 +102,8 @@ enum class TestType
 {
 	CLEAR_COLOUR,
 	QUAD_COLOUR,
-	TEXT
+	TEXT,
+	CHECKERBOARD
 };
 
 class PlatformRenderer : public crossplatform::PlatformRendererInterface
@@ -131,6 +132,9 @@ public:
 		:renderPlatformType(rpType), testType(tType), debug(use_debug)
 	{
 		//Inital RenderPlatform and RenderDoc
+		if (debug)
+			crossplatform::RenderDocLoader::Load();
+		
 		switch (renderPlatformType)
 		{
 		case crossplatform::RenderPlatformType::D3D11:
@@ -167,11 +171,8 @@ public:
 			break;
 		}
 		}
-
 		graphicsDeviceInterface->Initialize(debug, false, false);
-		if (debug)
-			crossplatform::RenderDocLoader::Load();
-
+		
 		//RenderPlatforn Set up
 		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		renderPlatform->PushTexturePath("Textures");
@@ -387,6 +388,11 @@ public:
 			Test_Text(deviceContext, w, h);
 			break;
 		}
+		case TestType::CHECKERBOARD:
+		{
+			Test_Checkerboard(deviceContext, w, h);
+			break;
+		}
 		}
 
 		hdrFramebuffer->Deactivate(deviceContext);
@@ -433,6 +439,25 @@ public:
 		}
 		renderPlatform->Print(deviceContext, x, y, api.c_str()); y += 16;
 		renderPlatform->Print(deviceContext, x, y, message.c_str()); y += 16;
+	}
+
+	void Test_Checkerboard(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
+		crossplatform::EffectTechnique* checkerboard = test->GetTechniqueByName("test_checkerboard");
+		crossplatform::ShaderResource res = test->GetShaderResource("rwImage");
+
+		crossplatform::Texture* texture = renderPlatform->CreateTexture();
+		texture->ensureTexture2DSizeAndFormat(renderPlatform, 512, 512, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+
+		renderPlatform->ApplyPass(deviceContext, checkerboard->GetPass(0));
+		renderPlatform->SetUnorderedAccessView(deviceContext, res, texture);
+		renderPlatform->DispatchCompute(deviceContext, texture->width / 32, texture->length / 32, 1);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res, nullptr);
+		renderPlatform->UnapplyPass(deviceContext);
+
+		hdrFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5f, 1.00f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->DrawTexture(deviceContext, (w - h) / 2, 0, h, h, texture);
 	}
 };
 PlatformRenderer* platformRenderer;
