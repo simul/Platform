@@ -147,6 +147,8 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
+#define SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER 1
+
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n,crossplatform::BufferUsageHint b)
 {
     InvalidateDeviceObjects();
@@ -158,6 +160,13 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     {
         flags |= GL_MAP_READ_BIT;
     }
+    
+#if SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
+    if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+    {
+        flags |= GL_MAP_PERSISTENT_BIT;
+    }
+    #endif
     
     // Create the SSBO:
     if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
@@ -183,6 +192,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
+#if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
     int idx = GetIndex(deviceContext);
 
     if (IsBufferMapped(idx))
@@ -196,7 +206,16 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
     }
 
     return glMapNamedBuffer(mGPUBuffer[idx], GL_WRITE_ONLY);
- 
+#else
+    if (!mMappedWritePtr)
+    {
+        if (IsBufferMapped(0))
+            glUnmapNamedBuffer(mGPUBuffer[0]);
+
+        mMappedWritePtr = glMapNamedBuffer(mGPUBuffer[0], GL_WRITE_ONLY);
+    }
+    return mMappedWritePtr;
+#endif
 }
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
@@ -304,10 +323,14 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     {
         mBinding = shaderResource.slot;
     }
-    if (IsBufferMapped(idx)) //Will unmap write only buffers. Read only should be unmapped by CloseReadBuffer().
+    //Will unmap write only buffers, unless the buffer is persistently mapped.
+    //Otherwise: Read only should be unmapped by CloseReadBuffer().
+    #if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
+    if (IsBufferMapped(idx)) 
     {
         glUnmapNamedBuffer(mGPUBuffer[idx]);
     }
+    #endif
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
 }
 
