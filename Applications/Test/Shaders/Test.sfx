@@ -6,6 +6,8 @@
 
 //uniform Texture2D image : register(t0);
 uniform RWTexture2D<float4> rwImage : register(u0);
+uniform RWStructuredBuffer<uint> rwSB : register(u1);
+uniform StructuredBuffer<float4> roSB : register(t0);
 
 CS_LAYOUT(32, 32, 1)
 shader void CS_Checkerboard(uint3 p : SV_DispatchThreadID)
@@ -31,11 +33,126 @@ shader void CS_Checkerboard(uint3 p : SV_DispatchThreadID)
 	rwImage[p.xy] = res;
 }
 
+CS_LAYOUT(1, 1, 1)
+shader void CS_Fibonnacci(uint p : SV_DispatchThreadID)
+{
+	uint count, stride, size;
+	rwSB.GetDimensions(count, stride);
+	
+	size = count * stride;
+	if (size == 0)
+		return;
+	
+	rwSB[0] = 1;
+	rwSB[1] = 1;
+	
+	for (uint i = 2; i < count; i++)
+	{
+		uint a = rwSB[i - 2];
+		uint b = rwSB[i - 1];
+		rwSB[i] = a + b;
+	}
+}
+
+CS_LAYOUT(32, 32, 1)
+shader void CS_TVTestCard(uint3 p : SV_DispatchThreadID)
+{
+	uint2 imageDim;
+	rwImage.GetDimensions(imageDim.x, imageDim.y);
+	
+	uint columnWidth = imageDim.x / 7;
+	uint columnHeight = 5 * imageDim.y / 6;
+	uint columnIndex = p.x / columnWidth;
+	uint rowIndex = p.y / columnHeight;
+	
+	vec4 res;
+	bool upper = rowIndex == 0;
+	if (upper)
+	{
+		switch (columnIndex)
+		{
+			case 0:
+				res = roSB[6];
+				break;
+			case 1:
+				res = roSB[5];
+				break;
+			case 2:
+				res = roSB[3];
+				break;
+			case 3:
+				res = roSB[1];
+				break;
+			case 4:
+				res = roSB[4];
+				break;
+			case 5:
+				res = roSB[0];
+				break;
+			case 6:
+				res = roSB[2];
+				break;
+			default:
+				res = vec4(0, 0, 0, 1);
+				break;
+
+		}
+	}
+	else
+	{
+		switch (columnIndex)
+		{
+			case 0:
+				res = roSB[2];
+				break;
+			case 1:
+				res = roSB[8];
+				break;
+			case 2:
+				res = roSB[4];
+				break;
+			case 3:
+				res = roSB[8];
+				break;
+			case 4:
+				res = roSB[3];
+				break;
+			case 5:
+				res = roSB[8];
+				break;
+			case 6:
+				res = 0.5 * roSB[6];
+				break;
+			default:
+				res = vec4(0, 0, 0, 1);
+				break;
+		}
+	}
+	rwImage[p.xy] = res;
+}
+
 technique test_checkerboard
 {
 	pass p0
 	{
 		SetComputeShader(CompileShader(cs_5_0, CS_Checkerboard()));
+
+	}
+}
+
+technique test_fibonacci
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_Fibonnacci()));
+	}
+}
+
+technique test_tvtestcard
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_TVTestCard()));
 
 	}
 }

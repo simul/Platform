@@ -103,7 +103,9 @@ enum class TestType
 	CLEAR_COLOUR,
 	QUAD_COLOUR,
 	TEXT,
-	CHECKERBOARD
+	CHECKERBOARD,
+	FIBONACCI,
+	TVTESTCARD
 };
 
 class PlatformRenderer : public crossplatform::PlatformRendererInterface
@@ -127,12 +129,16 @@ public:
 	//Scene Objects
 	crossplatform::Camera							camera;
 
+	//Test Object
+	crossplatform::StructuredBuffer<uint>			rwSB;
+	crossplatform::StructuredBuffer<vec4>			roSB;
+
 public:
 	PlatformRenderer(const crossplatform::RenderPlatformType& rpType, const TestType& tType, bool use_debug)
 		:renderPlatformType(rpType), testType(tType), debug(use_debug)
 	{
 		//Inital RenderPlatform and RenderDoc
-		if (debug)
+		//if (debug)
 			crossplatform::RenderDocLoader::Load();
 		
 		switch (renderPlatformType)
@@ -393,6 +399,16 @@ public:
 			Test_Checkerboard(deviceContext, w, h);
 			break;
 		}
+		case TestType::FIBONACCI:
+		{
+			Test_Fibonacci(deviceContext);
+			break;
+		}
+		case TestType::TVTESTCARD:
+		{
+			Test_TVTestCard(deviceContext, w, h);
+			break;
+		}
 		}
 
 		hdrFramebuffer->Deactivate(deviceContext);
@@ -458,6 +474,93 @@ public:
 
 		hdrFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5f, 1.00f, reverseDepth ? 0.0f : 1.0f);
 		renderPlatform->DrawTexture(deviceContext, (w - h) / 2, 0, h, h, texture);
+	}
+
+	void Test_Fibonacci(crossplatform::GraphicsDeviceContext deviceContext)
+	{
+		static bool first = true;
+		if (first)
+		{
+			rwSB.RestoreDeviceObjects(renderPlatform, 32, true, true);
+			first = false;
+		}
+
+		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
+		crossplatform::EffectTechnique* fibonacci = test->GetTechniqueByName("test_fibonacci");
+		crossplatform::ShaderResource res = test->GetShaderResource("rwSB");
+
+		rwSB.ApplyAsUnorderedAccessView(deviceContext, test, res);
+		renderPlatform->ApplyPass(deviceContext, fibonacci->GetPass(0));
+		renderPlatform->DispatchCompute(deviceContext, 1, 1, 1);
+		renderPlatform->UnapplyPass(deviceContext);
+		rwSB.CopyToReadBuffer(deviceContext);
+
+		//First buffer won't be ready as it a ring of buffers
+		if (deviceContext.frame_number < 3)
+			return;
+
+		bool pass = true;
+		const uint* ptr = rwSB.OpenReadBuffer(deviceContext);
+		if (!ptr)
+		{
+			pass = false;
+		}
+		if (ptr[0] != 1 && ptr[1] != 1)
+		{
+			pass = false;
+		}
+		for (uint i = 2; i < rwSB.count; i++)
+		{
+			uint a = ptr[i - 2];
+			uint b = ptr[i - 1];
+
+			if (ptr[i] != (a + b))
+			{
+				pass = false;
+				break;
+			}
+		}
+
+		rwSB.CloseReadBuffer(deviceContext);
+		vec4 colour = pass ? vec4(0, 1, 0, 1) : vec4(1, 0, 0, 1);
+		hdrFramebuffer->Clear(deviceContext, colour.x, colour.y, colour.z, colour.w, reverseDepth ? 0.0f : 1.0f);
+	}
+
+	void Test_TVTestCard(crossplatform::GraphicsDeviceContext deviceContext, int w, int h)
+	{
+		vec4 colours[8] = {
+			vec4(1,0,0,1),
+			vec4(0,1,0,1),
+			vec4(0,0,1,1),
+			vec4(0,1,1,1),
+			vec4(1,0,1,1),
+			vec4(1,1,0,1),
+			vec4(1,1,1,1),
+			vec4(0,0,0,0)
+		};
+		roSB.RestoreDeviceObjects(renderPlatform, _countof(colours), false, true, colours);
+		vec4* ptr = roSB.GetBuffer(deviceContext);
+		if (ptr)
+			memcpy(ptr, colours, sizeof(colours));
+		else
+			return;
+
+		crossplatform::Texture* texture = renderPlatform->CreateTexture();
+		texture->ensureTexture2DSizeAndFormat(renderPlatform, w, h, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+
+		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
+		crossplatform::EffectTechnique* tvtestcard = test->GetTechniqueByName("test_tvtestcard");
+		crossplatform::ShaderResource res_roSB = test->GetShaderResource("roSB");
+		crossplatform::ShaderResource res_rwImage = test->GetShaderResource("rwImage");
+	
+		renderPlatform->ApplyPass(deviceContext, tvtestcard->GetPass(0));
+		roSB.Apply(deviceContext, test, res_roSB);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res_rwImage, texture);
+		renderPlatform->DispatchCompute(deviceContext, texture->width/32, texture->length/32, 1);
+		renderPlatform->UnapplyPass(deviceContext);
+
+		hdrFramebuffer->Clear(deviceContext, 1.0f, 0.0f, 0.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->DrawTexture(deviceContext, 0, 0, w, h, texture);
 	}
 };
 PlatformRenderer* platformRenderer;
