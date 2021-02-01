@@ -21,14 +21,13 @@ shader posTexVertexOutput FontVertexShader(idOnly IN)
 	FontChar f=fontChars[char_index];
 	idOnly cIN;
 	cIN.vertex_id=ids[vert_index];
-	/*#ifdef  SFX_OPENGL
+	#ifdef  SFX_OPENGL
 	f.text_rect.y *= -1;
 	f.text_rect.y -= f.text_rect.w;
-	#endif*/
+	#endif
 
     posTexVertexOutput OUT	=VS_ScreenQuad(cIN,f.text_rect);
 	OUT.texCoords			=vec4(f.texc.xy+f.texc.zw*OUT.texCoords.xy,0.0,1.0).xy;
-	OUT.texCoords.y = 1.0 - OUT.texCoords.y;
     return OUT;
 }
  
