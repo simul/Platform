@@ -353,8 +353,10 @@ namespace simul
 			// For API's that don't track resources:
 			bool unfenceable;
 			// a wrapper around stbi_load_from_memory.
-			static bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
-			static void FreeTranslatedTextureData(void *data);
+			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
+			void FreeTranslatedTextureData(void *data);
+		private:
+			bool stbi_loaded = false;
 		};
 	}
 }

@@ -17,7 +17,8 @@ FramebufferGL::FramebufferGL(const char* name):
     BaseFramebuffer(name),
     mFBOId(0)
 {
-    this->name = name;
+    if (name)
+        this->name = name;
 }
 
 FramebufferGL::~FramebufferGL()
