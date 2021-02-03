@@ -31,7 +31,7 @@
 		inline void  operator delete(void*, void*)                        { } \
 		class MacroMustEndWithSemiColon
 #else
-	#define DEFINE_NEW_DELETE_OVERRIDES
+	#define DEFINE_NEW_DELETE_OVERRIDES class MacroMustEndWithSemiColon
 #endif
 
 namespace simul
