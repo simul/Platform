@@ -152,10 +152,14 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* render
 bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)
 {
 	target = stbi_load_from_memory((const unsigned char*)src, (int)size, &x, &y, &num_channels, 4);
+	stbi_loaded = true;
 	return(target!=nullptr);
 }
 
 void Texture::FreeTranslatedTextureData(void* data)
 {
-	stbi_image_free(data);
+	if (stbi_loaded)
+	{
+		stbi_image_free(data);
+	}
 }

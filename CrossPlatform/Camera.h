@@ -147,7 +147,8 @@ namespace simul
 															,float cam_spd
 															,MouseCameraState &state
 															,MouseCameraInput &input
-															,float max_height);
+															,float max_height
+															,bool lock_height = false);
 		
 		math::Matrix4x4 SIMUL_CROSSPLATFORM_EXPORT MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded);
 		// The x-y min and max (in z and w) of the bounds of the projection on the given face of a cubemap.

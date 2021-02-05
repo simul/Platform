@@ -865,7 +865,8 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 					,float cam_spd
 					,MouseCameraState &state
 					,MouseCameraInput &input
-					,float max_height)
+					,float max_height
+					,bool lock_height)
 {
 	simul::math::Vector3 pos=cam->GetPosition();
 
@@ -876,14 +877,24 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	state.forward_back_spd	*=retain;
 	state.right_left_spd	*=retain;
 	state.up_down_spd		*=retain;
+
 	state.forward_back_spd	+=input.forward_back_input*cam_spd*introduce;
 	state.right_left_spd	+=input.right_left_input*cam_spd*introduce;
 	state.up_down_spd		+=input.up_down_input*cam_spd*introduce;
 
-	pos						-=state.forward_back_spd*time_step*cam->Orientation.Tz();
+	math::Vector3 forward = cam->Orientation.Tz();
+	if (lock_height)
+	{
+		forward.z = 0;
+		forward.Normalize();
+	}
+	pos						-=state.forward_back_spd*time_step*forward;
 	pos						+=state.right_left_spd*time_step*cam->Orientation.Tx();
-	pos.z					+=state.up_down_spd*time_step;
-
+	if (!lock_height)
+	{
+		pos.z += state.up_down_spd * time_step;
+	}
+	
 	if(pos.z>max_height)
 		pos.z=max_height;
 

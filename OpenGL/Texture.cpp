@@ -87,6 +87,7 @@ void Texture::SetName(const char* n)
 void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
+	renderPlatform = r;
 
 	// Load from file:
 	LoadedTexture tdata = { 0, 0, 0, 0, nullptr };
@@ -155,6 +156,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
 {
 	InvalidateDeviceObjects();
+	renderPlatform = r;
 
 	std::vector<LoadedTexture> loadedTextures(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
@@ -786,6 +788,9 @@ GLuint Texture::GetGLMainView()
 	TranslateLoadedTextureData(data, buffer, size, x, y, n, 4);
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	lt.data = (unsigned char *)data;
+	lt.x = x;
+	lt.y = y;
+	lt.n = n;
 	if (!lt.data)
 	{
 #if _DEBUG
