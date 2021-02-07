@@ -328,11 +328,11 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
 
-#ifndef SIMUL_DEBUG_BARRIERS
-    commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
-#else
+#if SIMUL_DEBUG_BARRIERS
 	for(size_t i = 0; i < mCurBarriers; i++)
 		commandList->ResourceBarrier(1, &mPendingBarriers[i]);
+#else
+    commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
 #endif
 
 #endif
