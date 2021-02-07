@@ -104,8 +104,6 @@ namespace simul
 			
 			void			LoadTextureData(LoadedTexture &lt,const char* path);
 			void			SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f);
-			//! Initializes the texture views
-			void			InitViews(int mipCount, int layers, bool isRenderTarget);
 			//! Creates the Framebuffers for this texture
 			void			CreateFBOs(int sampleCount);
 			//! Applies default sampling parameters to the texId texture
@@ -124,6 +122,12 @@ namespace simul
 
 			std::vector<vk::ImageView>					mLayerViews;
 			std::vector<vk::ImageView>					mMainMipViews;
+
+			// For cubemaps/cubemap arrays there are two kinds of layer mip view.
+			// we can have a cubemap view that's one layer and mip, but a cubemap.
+			// or we can have a 2d view that's one layer, face and mip.
+			// so we really need two arrays.
+			std::vector<std::vector<vk::ImageView>>		mCubemapLayerMipViews;
 			std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
 			
 			std::vector<std::vector<vk::Framebuffer>>	mFramebuffers;

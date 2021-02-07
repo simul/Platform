@@ -3067,7 +3067,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							if(renderStateType==DEPTHSTENCIL_STATE)
 							{
 								if(is_equal(name,"DepthEnable"))
-									buildDepthStencilState.DepthEnable		=toBool(value);
+									buildDepthStencilState.DepthTestEnable		=toBool(value);
 								else if(is_equal(name,"DepthWriteMask"))
 								{
 									if(is_equal(value,"ALL"))

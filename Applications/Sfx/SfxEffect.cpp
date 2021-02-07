@@ -1023,7 +1023,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			continue;
 		DepthStencilState *d=(DepthStencilState *)t->second;
 		outstr<<"DepthStencilState "<<t->first<<" "
-			<<ToString(d->DepthEnable)
+			<<ToString(d->DepthTestEnable)
 			<<","<<ToString(d->DepthWriteMask)
 			<<","<<ToString((int)d->DepthFunc);
 		outstr<<"\n";

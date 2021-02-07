@@ -341,8 +341,11 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
 	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
 													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
-	src->SetLayout(deviceContext, srcLayout);
-	dst->SetLayout(deviceContext, dstLayout);
+
+	// often, the textures might have been in ePreinitialized or eUndefined, which we CANNOT
+	//   transition TO, so we CAN't restore the previous layouts here:
+	//src->SetLayout(deviceContext, srcLayout);
+	//dst->SetLayout(deviceContext, dstLayout);
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const 

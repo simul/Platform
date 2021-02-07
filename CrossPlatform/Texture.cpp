@@ -120,6 +120,8 @@ void Texture::ClearFence(DeviceContext &deviceContext)
 
 void Texture::InvalidateDeviceObjects()
 {
+	if(renderPlatform)
+		renderPlatform->InvalidatingTexture(this);
 	shouldGenerateMips=false;
 	width=length=depth=arraySize=dim=mips=0;
 	pixelFormat=PixelFormat::UNKNOWN;

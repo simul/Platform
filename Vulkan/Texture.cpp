@@ -103,16 +103,16 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	LoadTextureArray(r,texture_files,gen_mips?0:1);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, const std::vector<std::string>& texture_files, bool gen_mips)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files, bool gen_mips)
 {
 	InvalidateDeviceObjects();
-	this->renderPlatform= renderPlatform;
+	renderPlatform= r;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
+	vulkan::RenderPlatform* vr = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	for(auto i:loadedTextures)
 	{
-		r->PushToReleaseManager(i.buffer);
-		r->PushToReleaseManager(i.mem);
+		vr->PushToReleaseManager(i.buffer);
+		vr->PushToReleaseManager(i.mem);
 	}
 	loadedTextures.resize(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
@@ -121,6 +121,12 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, co
 	}
 	int w= loadedTextures[0].x;
 	int l= loadedTextures[0].y;
+	if(w*l==0)
+	{
+	// don't try to complete the load with empty data.
+		textureLoadComplete=true;
+		return;
+	}
 	size_t num= loadedTextures.size();
 	int m=1;
 	if(gen_mips)
@@ -188,6 +194,14 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		{
 			r->PushToReleaseManager(i);
 		}
+		for(auto i:mCubemapLayerMipViews)
+		{
+			for(auto j:i)
+			{
+				r->PushToReleaseManager(j);
+			}
+		}
+		mCubemapLayerMipViews.clear();
 		for(auto i:mLayerMipViews)
 		{
 			for(auto j:i)
@@ -210,7 +224,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		}
 		r->PushToReleaseManager(mBuffer);
 	}
-	renderPlatform=nullptr;
 }
 
 void Texture::SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
@@ -418,6 +431,10 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	if (layer < 0)
 	{
 		return &mMainMipViews[mip];
+	}
+	if((type&crossplatform::ShaderResourceType::TEXTURE_CUBE)==crossplatform::ShaderResourceType::TEXTURE_CUBE)
+	{
+		return &mCubemapLayerMipViews[layer][mip];
 	}
 	// Layer mip view:
 	return &mLayerMipViews[layer][mip];
@@ -674,20 +691,29 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	if(dim==2&&totalNum>1)
 	{
 		int c=1;
-		if(cubemap)//&&layers>1)
-		{
-			viewType=vk::ImageViewType::eCube;
-			c=6;
-		}
-		else
-			viewType=vk::ImageViewType::e2D;
+		viewType=vk::ImageViewType::e2D;
 		viewCreateInfo.setViewType(viewType);
 		mLayerViews.resize(totalNum);
-		for(int i=0;i< layers;i++)
+		for(int i=0;i< totalNum;i++)
 		{
-			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i*c,c));
+			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerViews[i]));
 			SetVulkanName(renderPlatform,(uint64_t*)&mLayerViews[i],(name+" mFaceArrayView").c_str());
+		}
+	}
+	if(cubemap)
+	{
+		viewCreateInfo.setViewType(vk::ImageViewType::eCube);
+		mCubemapLayerMipViews.resize(layers);
+		for (int i = 0; i < layers; i++)
+		{
+			mCubemapLayerMipViews[i].resize(mipCount);
+			for (int j = 0; j < mipCount; j++)
+			{
+				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,j,1,6*i,6));
+				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mCubemapLayerMipViews[i][j]));
+				SetVulkanName(renderPlatform,(uint64_t*)&mCubemapLayerMipViews[i][j],(name+" mCubemapLayerMipView").c_str());
+			}
 		}
 	}
 	viewCreateInfo.setViewType(dim==2?vk::ImageViewType::e2D:vk::ImageViewType::e3D);
@@ -997,7 +1023,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	void* buffer=nullptr;
 	unsigned size=0;
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buffer,size,filenameInUseUtf8.c_str(),false);
-	//void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
+
 	if (!buffer)
 	{
 		SIMUL_CERR << "Failed to load the texture: " << filenameInUseUtf8.c_str() << std::endl;
@@ -1064,22 +1090,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 
 	vulkanDevice->unmapMemory(lt.mem);
 	textureLoadComplete=false;
-}
-
-
-
-
-void Texture::InitViews(int mipCount, int layers, bool isRenderTarget)
-{
-	mLayerViews.resize(layers);
-
-	mMainMipViews.resize(mipCount);
-
-	mLayerMipViews.resize(layers);
-	for (int i = 0; i < layers; i++)
-	{
-		mLayerMipViews[i].resize(mipCount);
-	}
 }
 
 void Texture::CreateFBOs(int sampleCount)

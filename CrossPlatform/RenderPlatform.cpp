@@ -474,7 +474,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				int W=(w+4-1)/4;
 				int L=(l+4-1)/4;
 				int D=(d+4-1)/4;
-				if (texture->dim == 2 && texture->NumFaces()>1)
+				/*if (texture->dim == 2 && texture->NumFaces()>1)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
@@ -483,14 +483,15 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
 					{
 						techname="compute_clear_2d_array_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i);
+						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i,j);
 					}
 					else
 					{
-						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i);
+						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i,j);
 					}
 				}
-				else if(texture->dim==2)
+				else*/
+				if(texture->dim==2)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
@@ -774,10 +775,18 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 		{
 			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
 			unfinishedTextures.insert(tex);
+			SIMUL_COUT<<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
 		}
 		tex->SetName(fileNameUtf8);
 	}
 	return tex;
+}
+
+void RenderPlatform::InvalidatingTexture(Texture *t)
+{
+	auto i=unfinishedTextures.find(t);
+	if(i!=unfinishedTextures.end())
+		unfinishedTextures.erase(i);
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)

@@ -290,6 +290,8 @@ namespace simul
 			Texture							*GetOrCreateTexture(const char* filename, bool gen_mips=false);
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			Texture							*CreateTexture					(const char *lFileNameUtf8=nullptr ,bool gen_mips=false);
+			/// called automatically from invalidate to clear the texture from e.g. the unfinishedTextures list. Do not call this directly.
+			void							InvalidatingTexture(Texture *t);
 			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
 			virtual BaseFramebuffer			*CreateFramebuffer				(const char * =nullptr)	=0;
 			/// Create a platform-specific sampler state instance.

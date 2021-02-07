@@ -274,7 +274,7 @@ namespace sfx
 	struct DepthStencilState: public Declaration
 	{
 		DepthStencilState();
-		bool DepthEnable;
+		bool DepthTestEnable;
 		int DepthWriteMask;
 		DepthComparison DepthFunc;
 	};
