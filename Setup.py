@@ -45,7 +45,8 @@ def cmake(src,build_path,flags):
 
 def GetMSBuild():
 	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
-	process = subprocess.run([VSW,'-latest','-requires','Microsoft.Component.MSBuild','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
+	process = subprocess.Popen([VSW,'-latest','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
+	#'-requires','Microsoft.Component.MSBuild', not useful.
 	MSB = process.stdout.readline().strip()
 	process.poll()
 	return MSB
