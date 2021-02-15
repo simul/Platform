@@ -39,13 +39,13 @@ def cmake(src,build_path,flags):
 	retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
 	sln=find('*.sln','.')[0]
 	#print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
-	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
-	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
+	pid=subprocess.run([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
+	pid=subprocess.run([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
 	os.chdir(wd)
 
 def GetMSBuild():
 	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
-	process = subprocess.Popen([VSW,'-latest','-requires','Microsoft.Component.MSBuild','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
+	process = subprocess.run([VSW,'-latest','-requires','Microsoft.Component.MSBuild','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
 	MSB = process.stdout.readline().strip()
 	process.poll()
 	return MSB
