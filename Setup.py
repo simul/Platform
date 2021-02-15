@@ -50,8 +50,9 @@ def GetMSBuild():
 	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
 	process = subprocess.Popen([VSW,'-latest','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
 	#'-requires','Microsoft.Component.MSBuild', not useful.
-	MSB = process.stdout.readline().strip()
+	MSB = process.stdout.readline().strip().decode('UTF-8')
 	process.poll()
+	print('MSB '+MSB)
 	return MSB
 
 def execute():
