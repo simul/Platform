@@ -133,10 +133,8 @@ namespace simul
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 			//! Returns the device for raytracing, or nullptr if unavailable.
 			ID3D12Device5*					AsD3D12Device5();
-#endif
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
 			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
 			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
@@ -285,9 +283,8 @@ namespace simul
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device=nullptr;
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 			ID3D12Device5*				m12Device5=nullptr;
-#endif
+			
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
 			ID3D12CommandQueue*			mComputeQueue=nullptr;

@@ -37,10 +37,10 @@ Texture::Texture():
 	layerMipShaderResourceViews12(nullptr),
 	mipUnorderedAccessViews12(nullptr),
 	layerMipUnorderedAccessViews12(nullptr),
-	renderTargetViews12(nullptr)
-	,mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ)
-	,mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ)
-	,mNumSamples(1)
+	mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ),
+	mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
+	renderTargetViews12(nullptr),
+	mNumSamples(1)
 {
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
@@ -263,7 +263,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		wic.scratchImage=new DirectX::ScratchImage;
 	if(name.find(".hdr")==name.length()-4)
 	{
-		res= DirectX::LoadFromHDRMemory( f.ptr, _In_ f.bytes, wic.metadata,*wic.scratchImage );
+		res= DirectX::LoadFromHDRMemory(f.ptr, (size_t)f.bytes, wic.metadata, *wic.scratchImage);
 
 	}
     else if (name.find(".dds") != std::string::npos)

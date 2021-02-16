@@ -53,9 +53,12 @@ const char *PlatformD3D12GetErrorText(HRESULT hr)
 #endif
 	return str.c_str();
 }
-
 RenderPlatform::RenderPlatform():
-	mTimeStampFreq(0)
+    DepthStateOverride(nullptr)
+    ,BlendStateOverride(nullptr)
+    ,RasterStateOverride(nullptr)
+	
+	,mTimeStampFreq(0)
 	,m12Device(nullptr)
 	,m12Queue(nullptr)
 	,mImmediateCommandList(nullptr)
@@ -70,11 +73,7 @@ RenderPlatform::RenderPlatform():
 	,mDummy2D(nullptr)
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
-
-    ,DepthStateOverride(nullptr)
-    ,BlendStateOverride(nullptr)
-    ,RasterStateOverride(nullptr)
-	, mIsMsaaEnabled(false)
+	,mIsMsaaEnabled(false)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -121,12 +120,10 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 ID3D12Device5* RenderPlatform::AsD3D12Device5()
 {
 	return m12Device5;
 }
-#endif
 
 std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
 {
@@ -2111,13 +2108,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 		D=d.texture->AsD3D12DepthStencilView(deviceContext);
 	else
 		D=(D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt;
-	deviceContext.asD3D12Context()->OMSetRenderTargets
-	(
-		(UINT)deviceContext.defaultTargetsAndViewport.num,
-			h,
-		false,
-		D
-	);
+	
+	deviceContext.asD3D12Context()->OMSetRenderTargets((UINT)deviceContext.defaultTargetsAndViewport.num, h, false, D);
 	
 	if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h)
 	    SetViewports(deviceContext, 1, &deviceContext.defaultTargetsAndViewport.viewport);
