@@ -122,6 +122,9 @@ namespace simul
 			{
 				return SFX_CONFIG_FILENAME;
 			}
+#if defined(_XBOX_ONE)
+			typedef ID3D12Device ID3D12Device5;
+#endif
 			//! Returns the time stamp freq value
 			UINT64							GetTimeStampFreq() const		 { return mTimeStampFreq; }
 			//! Sets the reference of a command list. This is usually not needed as we will cache
