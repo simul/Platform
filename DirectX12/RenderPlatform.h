@@ -122,9 +122,6 @@ namespace simul
 			{
 				return SFX_CONFIG_FILENAME;
 			}
-#if defined(_XBOX_ONE)
-			typedef ID3D12Device ID3D12Device5;
-#endif
 			//! Returns the time stamp freq value
 			UINT64							GetTimeStampFreq() const		 { return mTimeStampFreq; }
 			//! Sets the reference of a command list. This is usually not needed as we will cache
@@ -137,7 +134,9 @@ namespace simul
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the device for raytracing, or nullptr if unavailable.
+#if !defined(_XBOX_ONE)
 			ID3D12Device5*					AsD3D12Device5();
+#endif
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
 			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
 			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
@@ -286,8 +285,6 @@ namespace simul
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device=nullptr;
-			ID3D12Device5*				m12Device5=nullptr;
-			
 			//! Reference to the command queue
 			ID3D12CommandQueue*			m12Queue;
 			ID3D12CommandQueue*			mComputeQueue=nullptr;

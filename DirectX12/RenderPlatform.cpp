@@ -120,10 +120,18 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
+#if !defined(_XBOX_ONE)
 ID3D12Device5* RenderPlatform::AsD3D12Device5()
 {
+	ID3D12Device5* m12Device5 = nullptr;
+	HRESULT res = m12Device->QueryInterface(SIMUL_PPV_ARGS(&m12Device5));
+
+	if(res != S_OK)
+		m12Device5 = nullptr;
+
 	return m12Device5;
 }
+#endif
 
 std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
 {
@@ -396,7 +404,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		return;
 	}
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
-	m12Device5=nullptr;
+	ID3D12Device* m12Device5=nullptr;
 #endif
 	if (m12Device != device)
 	{
@@ -411,7 +419,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 			bool rt=(featureSupportData.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
 			if(rt)
 				renderingFeatures=(crossplatform::RenderingFeatures)((uint32_t)renderingFeatures|(uint32_t)crossplatform::RenderingFeatures::Raytracing);
-			m12Device->QueryInterface(SIMUL_PPV_ARGS(&m12Device5));
+			m12Device5 = AsD3D12Device5();
 		}
 #endif
 	}
@@ -1081,6 +1089,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch)
 {
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
+	ID3D12Device5* m12Device5 = AsD3D12Device5();
 	if(!m12Device5||!HasRenderingFeatures(crossplatform::RenderingFeatures::Raytracing))
 		return;
 	ApplyContextState(deviceContext);
