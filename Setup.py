@@ -38,16 +38,21 @@ def cmake(src,build_path,flags):
 	cmakeCmd = ["cmake.exe", '-G','Visual Studio 16 2019', os.path.relpath(src, build_path)]
 	retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
 	sln=find('*.sln','.')[0]
-	#print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
+	print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
+	process.poll()
+	print(MSBUILD+'/p:Configuration=Debug'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
+	process.poll()
 	os.chdir(wd)
 
 def GetMSBuild():
 	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
-	process = subprocess.Popen([VSW,'-latest','-requires','Microsoft.Component.MSBuild','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
-	MSB = process.stdout.readline().strip()
+	process = subprocess.Popen([VSW,'-latest','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
+	#'-requires','Microsoft.Component.MSBuild', not useful.
+	MSB = process.stdout.readline().strip().decode('UTF-8')
 	process.poll()
+	print('MSB '+MSB)
 	return MSB
 
 def execute():

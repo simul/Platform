@@ -11,8 +11,8 @@
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
 #include "Platform/DirectX12/AccelerationStructure.h"
-#include "SimulDirectXHeader.h"
 #include "DirectXRaytracingHelper.h"
+#include "SimulDirectXHeader.h"
 //#include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
 #include "ThisPlatform/Direct3D12.h"
 #include "Platform/DirectX12/d3dx12.h"
@@ -250,7 +250,7 @@ void EffectPass::InitRaytraceTable()
 		}
 		else if(raytraceHitGroups.size())
 		{
-			UINT numShaderRecords = raytraceHitGroups.size();
+			UINT numShaderRecords = static_cast<UINT>(raytraceHitGroups.size());
 			UINT shaderRecordSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 			auto wstr=base::StringToWString(raytraceHitGroups.begin()->first);
 			ShaderUploadTable shaderTable(device, numShaderRecords, shaderRecordSize, wstr.c_str());

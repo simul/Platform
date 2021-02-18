@@ -7,11 +7,11 @@ using namespace dx12;
 PlatformStructuredBuffer::PlatformStructuredBuffer():
     mGPUBuffer(nullptr),
     mUploadBuffer(nullptr),
-	mNumElements(0),
-	mChanged(false),
-	mElementByteSize(0),
 	mReadSrc(nullptr),
 	mTempBuffer(nullptr),
+	mChanged(false),
+	mNumElements(0),
+	mElementByteSize(0),
     mCpuRead(false),
     mCurApplies(0),
     mLastFrame(UINT64_MAX)
