@@ -116,7 +116,8 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 
 	// For raytracing, if available:
 	
-	crossplatform::AccelerationStructure		*accelerationStructure=nullptr;
+	crossplatform::BottomLevelAccelerationStructure		*bl_accelerationStructure=nullptr;
+	crossplatform::TopLevelAccelerationStructure		*tl_accelerationStructure=nullptr;
 	crossplatform::Texture* rtTargetTexture	= nullptr;
 	crossplatform::ConstantBuffer<crossplatform::ConstantBufferWithSlot<RayGenConstantBuffer,0>> rayGenConstants;
 
@@ -188,7 +189,8 @@ public:
 		exampleMesh = renderPlatform->CreateMesh();
 		environmentMesh= renderPlatform->CreateMesh();
 
-		accelerationStructure=renderPlatform->CreateAccelerationStructure();
+		bl_accelerationStructure=renderPlatform->CreateBottomLevelAccelerationStructure();
+		tl_accelerationStructure=renderPlatform->CreateTopLevelAccelerationStructure();
 		rtTargetTexture = renderPlatform->CreateTexture("rtTargetTexture");
 		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		// Whether run from the project directory or from the executable location, we want to be
@@ -235,7 +237,8 @@ public:
 		delete diffuseCubemapTexture;
 		delete specularCubemapTexture;
 		delete rtTargetTexture;
-		delete accelerationStructure;
+		delete tl_accelerationStructure;
+		delete bl_accelerationStructure;
 		delete exampleMesh;
 		delete environmentMesh;
 		delete depthTexture;
@@ -275,8 +278,9 @@ public:
 #endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
 		ReloadMeshes();
-		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,512,256,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
-		accelerationStructure->RestoreDeviceObjects(environmentMesh);
+		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,kOverrideWidth,kOverrideHeight,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
+		bl_accelerationStructure->SetMesh(environmentMesh);
+		tl_accelerationStructure->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructure, math::Matrix4x4::IdentityMatrix()} });
 		rayGenConstants.RestoreDeviceObjects(renderPlatform);
 
 		// These are for example:
@@ -390,11 +394,18 @@ public:
             }
 			deviceContext.viewStruct.Init();
 		}
-		if(!accelerationStructure->IsInitialized())
+
+		if (!bl_accelerationStructure->IsInitialized())
 		{
-			accelerationStructure->RuntimeInit(deviceContext);
+			bl_accelerationStructure->BuildAccelerationStructureAtRuntime(deviceContext);
 			return;
 		}
+		if (!tl_accelerationStructure->IsInitialized())
+		{
+			tl_accelerationStructure->BuildAccelerationStructureAtRuntime(deviceContext);
+			return;
+		}
+
 		//if(framenumber ==0)
 		//	simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
 		renderPlatform->BeginFrame(deviceContext);
@@ -461,9 +472,9 @@ public:
 
 			renderPlatform->ApplyPass(deviceContext,rayPass);
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, res_lights);
-			renderPlatform->SetAccelerationStructure(deviceContext,res_scene,accelerationStructure);
+			renderPlatform->SetAccelerationStructure(deviceContext,res_scene,tl_accelerationStructure);
 			renderPlatform->SetUnorderedAccessView(deviceContext,res_targetTexture,rtTargetTexture);
-			renderPlatform->DispatchRays(deviceContext,uint3(512,256,1));
+			renderPlatform->DispatchRays(deviceContext,uint3(kOverrideWidth,kOverrideHeight,1));
 			renderPlatform->UnapplyPass(deviceContext);
 
 			renderPlatform->DrawTexture(deviceContext,0,0,256, 256, rtTargetTexture);

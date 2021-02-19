@@ -70,7 +70,8 @@ namespace simul
 		class SwapChain;
         struct Window;
         class DisplaySurface;
-		class AccelerationStructure;
+		class BottomLevelAccelerationStructure;
+		class TopLevelAccelerationStructure;
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
@@ -282,7 +283,9 @@ namespace simul
 			/// Create a platform-specific material instance.
 			Material						*GetOrCreateMaterial(const char *name);
 			/// Create a platform specific raytracing acceleration structure.
-			virtual AccelerationStructure	*CreateAccelerationStructure();
+			virtual BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
+			/// Create a platform specific raytracing acceleration structure.
+			virtual TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.
@@ -369,7 +372,7 @@ namespace simul
 			/// <param name="s"></param>
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			///
-			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a);
+			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 

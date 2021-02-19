@@ -2442,10 +2442,16 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return S;
 }
 
-crossplatform::AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
 {
-	return new AccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this);
 }
+
+crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+{
+	return new TopLevelAccelerationStructure(this);
+}
+
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return new dx12::DisplaySurface();

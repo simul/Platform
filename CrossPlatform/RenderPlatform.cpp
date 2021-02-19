@@ -756,9 +756,14 @@ Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 	return mat;
 }
 
-AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
 {
-	return new AccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this);
+}
+
+TopLevelAccelerationStructure*RenderPlatform::CreateTopLevelAccelerationStructure()
+{
+	return new TopLevelAccelerationStructure(this);
 }
 
 Mesh *RenderPlatform::CreateMesh()
@@ -1466,7 +1471,7 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	cs->textureAssignmentMapValid = false;
 }
 
-void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a)
+void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if (!res.valid)

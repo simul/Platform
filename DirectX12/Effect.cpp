@@ -648,7 +648,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		if(ta.resourceType==crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE)
 		{
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
-			ID3D12Resource *a=((dx12::AccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
+			ID3D12Resource *a=((dx12::TopLevelAccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
 			
 			auto cmdList	= deviceContext.asD3D12Context();
 			ID3D12GraphicsCommandList4 *rtc=(ID3D12GraphicsCommandList4*)cmdList;
