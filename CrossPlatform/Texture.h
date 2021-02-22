@@ -202,17 +202,6 @@ namespace simul
 		/// A Texture base class.
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
-		protected:
-			bool cubemap;
-			bool computable;
-			bool renderTarget;
-			bool external_texture;
-			bool depthStencil;
-			bool shouldGenerateMips=false;
-			std::string name;
-			simul::crossplatform::TargetsAndViewport targetsAndViewport;
-			// For API's that don't track resources:
-			bool unfenceable;
 		public:
 			Texture(const char *name=NULL);
 			virtual ~Texture();
@@ -249,7 +238,7 @@ namespace simul
 				return shouldGenerateMips;
 			}
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
-			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;
+			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
             virtual nvn::Texture* AsNXTexture() { return 0; };
@@ -352,6 +341,20 @@ namespace simul
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
 			bool textureLoadComplete;
+		protected:
+			bool cubemap;
+			bool computable;
+			bool renderTarget;
+			bool external_texture;
+			bool depthStencil;
+			bool shouldGenerateMips = false;
+			std::string name;
+			simul::crossplatform::TargetsAndViewport targetsAndViewport;
+			// For API's that don't track resources:
+			bool unfenceable;
+			// a wrapper around stbi_load_from_memory.
+			static bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
+			static void FreeTranslatedTextureData(void *data);
 		};
 	}
 }

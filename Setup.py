@@ -40,6 +40,7 @@ def cmake(src,build_path,flags):
 	sln=find('*.sln','.')[0]
 	#print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
+	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
 	os.chdir(wd)
 
 def GetMSBuild():
@@ -60,6 +61,9 @@ def execute():
 	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
 	cmake('External/glfw','External/glfw/build_md',glfwflags)
 	cmake('External/glfw','External/glfw/build_mt',glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
+	assimpflags=["-DASSIMP_BUILD_DOCS=false","-DASSIMP_BUILD_EXAMPLES=false","-DASSIMP_BUILD_TESTS=false","-DASSIMP_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
+	cmake('External/assimp','External/assimp/build_md',glfwflags)
+	cmake('External/assimp','External/assimp/build_mt',glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
 	platform_flags=[]
 	cmake('.','build',platform_flags)
 

@@ -8,8 +8,8 @@ PlatformStructuredBuffer::PlatformStructuredBuffer():
     mGPUBuffer(nullptr),
     mUploadBuffer(nullptr),
 	mNumElements(0),
-	mElementByteSize(0),
 	mChanged(false),
+	mElementByteSize(0),
 	mReadSrc(nullptr),
 	mTempBuffer(nullptr),
     mCpuRead(false),
@@ -170,7 +170,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	}
 
 	// Create a temporal buffer that we will use to upload data to the GPU
-	mTempBuffer = malloc(mUnitSize);
+    mTempBuffer = reinterpret_cast<void*>(new char[mUnitSize]);
 	memset(mTempBuffer, 0, mUnitSize);
     if (init_data)
     {

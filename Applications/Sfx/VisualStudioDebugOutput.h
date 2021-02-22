@@ -42,8 +42,8 @@ public:
 			to_output_window=send_to_output_window;
 			old_cout_buffer = std::cout.rdbuf(this);
 			old_cerr_buffer = std::cerr.rdbuf(this);
-
-			freopen("trace.txt", "w", stderr);
+			FILE *fstream;
+			freopen_s(&fstream,"trace.txt", "w", stderr);
 		}
 		if(logfilename)
 			setLogFile(logfilename);

@@ -1,8 +1,9 @@
-
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/RuntimeError.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <iostream>
 #include <algorithm>
 
@@ -17,13 +18,7 @@ SamplerState::~SamplerState()
 }
 
 Texture::Texture(const char *n)
-				:cubemap(false)
-				,computable(false)
-				,renderTarget(false)
-				,external_texture(false)
-				,depthStencil(false)
-				,unfenceable(false)
-				,width(0)
+				:width(0)
 				,length(0)
 				,depth(0)
 				,arraySize(0)
@@ -32,6 +27,12 @@ Texture::Texture(const char *n)
 				,pixelFormat(crossplatform::UNKNOWN)
 				,renderPlatform(NULL)
 				,textureLoadComplete(true)
+				,cubemap(false)
+				,computable(false)
+				,renderTarget(false)
+				,external_texture(false)
+				,depthStencil(false)
+				,unfenceable(false)		
 {
 	if(n)
 		name=n;
@@ -146,4 +147,15 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* render
 	return ensureTexture2DSizeAndFormat(renderPlatform,  w,  l, 1,
 		 f,  computable,  rendertarget,  depthstencil,  num_samples,  aa_quality,  wrap,
 		 clear,  clearDepth,  clearStencil);
+}
+
+bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)
+{
+	target = stbi_load_from_memory((const unsigned char*)src, (int)size, &x, &y, &num_channels, 4);
+	return(target!=nullptr);
+}
+
+void Texture::FreeTranslatedTextureData(void* data)
+{
+	stbi_image_free(data);
 }

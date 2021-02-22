@@ -260,7 +260,10 @@ void DisplaySurface::CreateSyncObjects()
 void DisplaySurface::StartFrame()
 {
 	// If we already requested the command list just exit
-	if (mRecordingCommands) { return; }
+	if (mRecordingCommands)
+	{
+		return;
+	}
 
 	HRESULT res = S_FALSE;
 	static UINT idx_old=0;
@@ -276,7 +279,7 @@ void DisplaySurface::StartFrame()
 	mFenceValues[idx]++;
 
 	res = mCommandAllocators[idx]->Reset();
-	SIMUL_ASSERT(res == S_OK);
+	SIMUL_ASSERT(res == S_OK); 
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;

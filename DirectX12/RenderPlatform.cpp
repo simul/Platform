@@ -71,10 +71,10 @@ RenderPlatform::RenderPlatform():
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
 
-	,mIsMsaaEnabled(false)
     ,DepthStateOverride(nullptr)
     ,BlendStateOverride(nullptr)
     ,RasterStateOverride(nullptr)
+	, mIsMsaaEnabled(false)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
@@ -436,7 +436,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mResourceBindingLimits.MaxCBVPerStage				= 14;
 		mResourceBindingLimits.MaxSRVPerStage				= 128;
 		mResourceBindingLimits.MaxUAVPerStage				= 8;
-		mResourceBindingLimits.MaxSaplerPerStage			= 16;
+		mResourceBindingLimits.MaxSamplersPerStage			= 16;
 	}
 	// TIER2
 	else if (featureOptions.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_2)
@@ -445,7 +445,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mResourceBindingLimits.MaxCBVPerStage				= 14;
 		mResourceBindingLimits.MaxSRVPerStage				= 1000000;
 		mResourceBindingLimits.MaxUAVPerStage				= 64;
-		mResourceBindingLimits.MaxSaplerPerStage			= 1000000;
+		mResourceBindingLimits.MaxSamplersPerStage			= 1000000;
 	}
 	// TIER3
 	else
@@ -454,7 +454,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mResourceBindingLimits.MaxCBVPerStage				= 1000000;
 		mResourceBindingLimits.MaxSRVPerStage				= 1000000;
 		mResourceBindingLimits.MaxUAVPerStage				= 1000000;
-		mResourceBindingLimits.MaxSaplerPerStage			= 1000000;
+		mResourceBindingLimits.MaxSamplersPerStage			= 1000000;
 	}
 	if(mFrameHeap)
 	for(int i=0;i<3;i++)
@@ -2102,7 +2102,8 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 		for (int i = 0; i < deviceContext.defaultTargetsAndViewport.num; i++)
 		{
 			auto &t=deviceContext.defaultTargetsAndViewport.textureTargets[i];
-			h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
+			if(t.texture)
+				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
 		}
 	}
 	auto &d=deviceContext.defaultTargetsAndViewport.depthTarget;

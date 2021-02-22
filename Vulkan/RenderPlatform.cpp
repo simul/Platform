@@ -226,6 +226,14 @@ void RenderPlatform::InvalidateDeviceObjects()
 	releaseSamplers.clear();
 	vulkanDevice=nullptr; 
 }
+
+void RenderPlatform::RecompileShaders()
+{
+	if (!vulkanDevice)
+		return;
+	//shaders.clear();
+	crossplatform::RenderPlatform::RecompileShaders();
+}
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
 {
 	releaseBuffers.insert(b);

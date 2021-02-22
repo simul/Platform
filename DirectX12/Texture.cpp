@@ -29,18 +29,18 @@ void SamplerState::InvalidateDeviceObjects()
 }
 
 Texture::Texture():
-	mTextureUpload(nullptr),
 	mTextureDefault(nullptr),
+	mTextureUpload(nullptr),
+	mLoadedFromFile(false),
 	layerShaderResourceViews12(nullptr),
 	mainMipShaderResourceViews12(nullptr),
 	layerMipShaderResourceViews12(nullptr),
 	mipUnorderedAccessViews12(nullptr),
 	layerMipUnorderedAccessViews12(nullptr),
-	renderTargetViews12(nullptr),
-	mLoadedFromFile(false),
-    mNumSamples(1)
+	renderTargetViews12(nullptr)
 	,mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ)
 	,mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ)
+	,mNumSamples(1)
 {
 	// Set the pointer to an invalid value so we can perform checks
 	mainShaderResourceView12.ptr	= -1;
@@ -112,15 +112,15 @@ void Texture::FreeUAVTables()
 	}
 	mipUnorderedAccessViews12 = nullptr;
 
-	if (layerMipShaderResourceViews12)
+	if (layerMipUnorderedAccessViews12)
 	{
 		int total_num = cubemap ? arraySize * 6 : arraySize;
 		for (int i = 0; i<total_num; i++)
 		{
-			delete[] layerMipShaderResourceViews12[i];
+			delete[] layerMipUnorderedAccessViews12[i];
 		}
-		delete[] layerMipShaderResourceViews12;
-		layerMipShaderResourceViews12 = nullptr;
+		delete[] layerMipUnorderedAccessViews12;
+		layerMipUnorderedAccessViews12 = nullptr;
 	}
 }
 
@@ -304,6 +304,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 {
 	if(textureLoadComplete)
 		return;
+	if(mips<0|| mips>16)
+		mips=1;
 	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -447,7 +449,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	ClearLoadingData();
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
@@ -456,7 +458,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 
 	// Set initial properties of the texture
 	name			= "Array:" + texture_files[0] + ",...";
-	mips			= m;
 	arraySize		= (int)texture_files.size();
 	depth			= (int)texture_files.size();
 	cubemap			= false;
@@ -491,8 +492,6 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		wic.metadata		=new DirectX::TexMetadata;
 		wic.scratchImage	=new DirectX::ScratchImage;
 		wic.image		=new DirectX::Image;
-		width			= (int)wic.metadata->width;
-		length			= (int)wic.metadata->height;
         if (texture_files[0].find(".dds") != std::string::npos)
         {
             res = DirectX::LoadFromDDSMemory(curContents.ptr, curContents.bytes, curContents.flags, wic.metadata, *wic.scratchImage);
@@ -501,10 +500,21 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
         {
             res = DirectX::LoadFromWICMemory(curContents.ptr, curContents.bytes, curContents.flags, wic.metadata, *wic.scratchImage);
         }
+		width = (int)wic.metadata->width;
+		length = (int)wic.metadata->height;
 		pixelFormat		=RenderPlatform::FromDxgiFormat(wic.metadata->format);
 		wic.image = wic.scratchImage->GetImage(0, 0, 0);
 	}
-		
+
+	if (gen_mips)
+	{
+		int m = 100;
+		m = std::min(m, int(floor(log2(std::max(width, length)))) + 1);
+		m = std::min(16, std::max(1, m));
+		mips = m;
+	}
+	else
+		mips = 1;
 	// The texture will be considered "valid" from here.
 	// Set the properties of this texture
 	mLoadedFromFile = true;

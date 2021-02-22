@@ -134,12 +134,16 @@ View *ViewManager::AddView(int id)
 	return view;
 }
 
-void	ViewManager::AddView(int id,View *v)
+int	ViewManager::AddView(int id,View *v)
 {
+	if(id<0)
+		id= last_created_view_id+1;
 	int view_id		=id;
 	View *view		=views[view_id]=v;
 	view->useExternalFramebuffer=false;
 	view->RestoreDeviceObjects(renderPlatform);
+	last_created_view_id=view_id;
+	return view_id;
 }
 
 void ViewManager::RemoveView(int view_id)

@@ -206,7 +206,6 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	eSRAMManager=new ESRAMManager(device);
 #endif
 	RecompileShaders();
-	RecompileShaders();
 	
 	{
 		SAFE_RELEASE(pUserDefinedAnnotation);
@@ -1427,6 +1426,18 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		// This applies the pass, and also any associated state: Blend, Depth and Rasterizer states:
 		pass->Apply(deviceContext);
 		cs->effectPassValid = true;
+	}
+	{
+		auto c = deviceContext.asD3D11DeviceContext();
+		static ID3D11ShaderResourceView* src[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+		c->VSSetShaderResources(0, 32, src);
+		c->HSSetShaderResources(0, 32, src);
+		c->DSSetShaderResources(0, 32, src);
+		c->GSSetShaderResources(0, 32, src);
+		c->PSSetShaderResources(0, 32, src);
+		c->CSSetShaderResources(0, 32, src);
+		static ID3D11UnorderedAccessView* uav[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+		c->CSSetUnorderedAccessViews(0, 8, uav, 0);
 	}
 	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
 	
