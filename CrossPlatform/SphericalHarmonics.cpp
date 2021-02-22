@@ -253,6 +253,20 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	sphericalHarmonicsEffect->Unapply(deviceContext);
 	sphericalHarmonics.CopyToReadBuffer(deviceContext);
 	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
+	static bool test2=false;
+	if(test2)
+	{
+		const vec4* h=(const vec4* )sphericalHarmonics.OpenReadBuffer(deviceContext);
+		if(h)
+		{
+			for(int i=0;i<num_coefficients;i++)
+			{
+				std::cout<<i<<", RGB: ("<<h[i].x<<","<<h[i].y<<","<<h[i].z<<std::endl;
+			}
+			std::cout<<std::endl;
+		}
+		sphericalSamples.CloseReadBuffer(deviceContext);
+	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }

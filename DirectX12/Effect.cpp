@@ -1042,7 +1042,7 @@ void EffectPass::CreateRaytracePso()
 	D3D12_STATE_SUBOBJECT shaderConfigStateObject;
 	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig;
 	shaderConfig.MaxAttributeSizeInBytes = 2 * sizeof(float); // float2 barycentrics
-	shaderConfig.MaxPayloadSizeInBytes = 4 * sizeof(float);   // float4 color
+	shaderConfig.MaxPayloadSizeInBytes = 12 * sizeof(float);   // float4 color
 	shaderConfigStateObject.pDesc = &shaderConfig;
 	shaderConfigStateObject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
 	

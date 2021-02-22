@@ -26,7 +26,7 @@ uniform RWTexture2D<vec4> copyTargetTexture;
 uniform TextureCube sourceCubemap;
 
 
-vec4 EvaluateSH(vec3 view)
+vec4 EvaluateSHFromSB(vec3 view)
 {
 	// convert spherical coords to unit vector 
 	//	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
@@ -82,7 +82,7 @@ shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 
 	vec3 view		=mul(invViewProj,clip_pos).xyz;
 	view			=normalize(view);
-	vec4 result		=EvaluateSH(view);
+	vec4 result		=EvaluateSHFromSB(view);
 	//result.r = 0;
 	//result.g= SH(4, -4, theta, phi);
 	//result.b = -result.g;

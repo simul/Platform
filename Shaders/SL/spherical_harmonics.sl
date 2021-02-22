@@ -172,4 +172,52 @@ float SH(int l, int m, float theta, float phi)
 }
 
 
+vec4 EvaluateSH(vec3 view,vec4 coefficients[9],int numSHBands)
+{
+	// convert spherical coords to unit vector 
+	//	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	// Therefore as atan2(y,x) is the angle from the X-AXIS:
+	float theta		=acos(view.z);
+	float phi		=atan2(view.y,view.x);
+	// SH(int l, int m, float theta, float phi) is the basis function/
+	// return a point sample of a Spherical Harmonic basis function 
+	vec4 result		=vec4(0,0,0,0);
+	// Coefficients for 
+	//A_0 = 3.141593	0,0
+	//A_1 = 2.094395	1,-1 1,0 1,1
+	//A_2 = 0.785398	2,-2 2,-1 2,0 2,1 2,2
+	//A_3 = 0			3,-3 3,-2 3,-1 3,0 3,1 3,2 3,3
+	//A_4 = -0.130900 
+	//A_5 = 0 
+	//A_6 = 0.049087 
+
+	float A[]={		3.1415926
+						,2.094395
+						,0.785398
+						,0		
+						,-0.130900
+						,0 
+						,0.049087
+						,0
+						,-0.02454
+						,0
+						,0.014317154
+						,0
+						,-0.009203885
+						,0
+						,0.006327671
+						,0
+						};
+	int n=0;
+	for(int l=0;l<MAX_SH_BANDS;l++)
+	{
+		if (l >= numSHBands)
+			break;
+		float w =  WindowFunction(float(l) / float(numSHBands)); // should we  bake this into SH?
+		for (int m = -l; m <= l; m++)
+			result += coefficients[n++] * SH(l, m, theta, phi) *w *A[l] / 3.1415926;
+	}
+	return result;
+}
+
 #endif
