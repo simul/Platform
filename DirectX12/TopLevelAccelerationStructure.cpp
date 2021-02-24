@@ -12,6 +12,10 @@ using namespace simul;
 using namespace dx12;
 
 
+#if defined(_XBOX_ONE)
+#define PLATFORM_SUPPORT_D3D12_RAYTRACING 0
+#endif
+
 /////////////////////////////////
 //TopLevelAccelerationStructure//
 /////////////////////////////////
