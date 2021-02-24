@@ -12,7 +12,9 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
+#include "Platform/CrossPlatform/BaseAccelerationStructure.h"
+#include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
