@@ -9,11 +9,12 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		typedef std::vector<std::pair<crossplatform::BottomLevelAccelerationStructure*, math::Matrix4x4>> BottomLevelAccelerationStructuresAndTransforms;
+
 		// Derived class for Top Level Acceleration Structures, which contain Bottom Level Acceleration Structures to be built.
 		class SIMUL_CROSSPLATFORM_EXPORT TopLevelAccelerationStructure : public BaseAccelerationStructure
 		{
 		public:
-			typedef std::vector<std::pair<crossplatform::BottomLevelAccelerationStructure*, math::Matrix4x4>> BottomLevelAccelerationStructuresAndTransforms;
 			BottomLevelAccelerationStructuresAndTransforms BLASandTransforms;
 
 		public:
@@ -22,7 +23,14 @@ namespace simul
 
 			void SetBottomLevelAccelerationStructuresAndTransforms(const BottomLevelAccelerationStructuresAndTransforms& BLASandTransforms);
 
+			BottomLevelAccelerationStructuresAndTransforms* GetBottomLevelAccelerationStructuresAndTransforms();
+
 			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) { initialized = true; }
+			
+			int GetID();
+
+		private:
+			int ID;
 		};
 	}
 }

@@ -72,6 +72,7 @@ namespace simul
         class DisplaySurface;
 		class BottomLevelAccelerationStructure;
 		class TopLevelAccelerationStructure;
+		class AccelerationStructureManager;
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
@@ -286,6 +287,8 @@ namespace simul
 			virtual BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
 			/// Create a platform specific raytracing acceleration structure.
 			virtual TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure();
+			/// Create a platform agnostic raytracing acceleration structure maanger
+			AccelerationStructureManager* CreateAccelerationStructureManager();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.

@@ -23,6 +23,7 @@ using namespace dx12;
 TopLevelAccelerationStructure::TopLevelAccelerationStructure(crossplatform::RenderPlatform* r)
 	:crossplatform::TopLevelAccelerationStructure(r)
 {
+
 }
 
 TopLevelAccelerationStructure::~TopLevelAccelerationStructure()
@@ -67,6 +68,8 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 	if (BLASandTransforms.empty())
 		return;
 
+	instanceDescs.clear();
+
 	for (const auto& BLASandTransform : BLASandTransforms)
 	{
 		const auto& BLAS = BLASandTransform.first;
@@ -76,17 +79,17 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 		// Create an instance desc for the bottom-level acceleration structure.
 		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc;
 		instanceDesc.Transform[0][0] = Transform.m00;
-		instanceDesc.Transform[0][1] = Transform.m01;
-		instanceDesc.Transform[0][2] = Transform.m02;
-		instanceDesc.Transform[0][3] = Transform.m03;
-		instanceDesc.Transform[1][0] = Transform.m10;
+		instanceDesc.Transform[0][1] = Transform.m10;
+		instanceDesc.Transform[0][2] = Transform.m20;
+		instanceDesc.Transform[0][3] = Transform.m30;
+		instanceDesc.Transform[1][0] = Transform.m01;
 		instanceDesc.Transform[1][1] = Transform.m11;
-		instanceDesc.Transform[1][2] = Transform.m12;
-		instanceDesc.Transform[1][3] = Transform.m13;
-		instanceDesc.Transform[2][0] = Transform.m20;
-		instanceDesc.Transform[2][1] = Transform.m21;
+		instanceDesc.Transform[1][2] = Transform.m21;
+		instanceDesc.Transform[1][3] = Transform.m31;
+		instanceDesc.Transform[2][0] = Transform.m02;
+		instanceDesc.Transform[2][1] = Transform.m12;
 		instanceDesc.Transform[2][2] = Transform.m22;
-		instanceDesc.Transform[2][3] = Transform.m23;
+		instanceDesc.Transform[2][3] = Transform.m32;
 		instanceDesc.InstanceID = 0;
 		instanceDesc.InstanceMask = 1;
 		instanceDesc.InstanceContributionToHitGroupIndex = 0;
@@ -127,3 +130,4 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 #endif
 	initialized = true;
 }
+

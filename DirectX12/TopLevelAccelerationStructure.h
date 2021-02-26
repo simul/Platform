@@ -28,6 +28,8 @@ namespace simul
 			ID3D12Resource* accelerationStructure = nullptr;
 			ID3D12Resource* scratchResource = nullptr;
 			ID3D12Resource* instanceDescsResource = nullptr;
+
+		
 		};
 	}
 }

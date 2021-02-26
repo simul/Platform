@@ -15,6 +15,7 @@
 #include "Platform/CrossPlatform/BaseAccelerationStructure.h"
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/AccelerationStructureManager.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -763,9 +764,14 @@ BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationS
 	return new BottomLevelAccelerationStructure(this);
 }
 
-TopLevelAccelerationStructure*RenderPlatform::CreateTopLevelAccelerationStructure()
+TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
 {
 	return new TopLevelAccelerationStructure(this);
+}
+
+AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
+{
+	return new AccelerationStructureManager(this);
 }
 
 Mesh *RenderPlatform::CreateMesh()
