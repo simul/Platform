@@ -76,8 +76,7 @@ void Texture::FreeRTVTables()
 {
 	if (renderTargetViews12)
 	{
-		int total_num = cubemap ? arraySize * 6 : arraySize;
-		for (int i = 0; i<total_num; i++)
+		for (size_t i = 0; i< renderTargetViews12Size; i++)
 		{
 			delete[] renderTargetViews12[i];
 		}
@@ -102,6 +101,7 @@ void Texture::InitUAVTables(int l,int m)
 			layerMipUnorderedAccessViews12[i] = new D3D12_CPU_DESCRIPTOR_HANDLE[m];	// UAV's for each layer at different mips.
 		}
 	}
+	layerMipUnorderedAccessViews12Size = l;
 }
 
 void Texture::FreeUAVTables()
@@ -114,8 +114,7 @@ void Texture::FreeUAVTables()
 
 	if (layerMipUnorderedAccessViews12)
 	{
-		int total_num = cubemap ? arraySize * 6 : arraySize;
-		for (int i = 0; i<total_num; i++)
+		for (size_t i = 0; i< layerMipUnorderedAccessViews12Size; i++)
 		{
 			delete[] layerMipUnorderedAccessViews12[i];
 		}
@@ -131,6 +130,7 @@ void Texture::InitRTVTables(int l,int m)
 	{
 		renderTargetViews12[i] = new D3D12_CPU_DESCRIPTOR_HANDLE[m];
 	}
+	renderTargetViews12Size = static_cast<size_t>(l);
 }
 
 void Texture::CreateRTVTables(int totalNum,int m)
@@ -2024,18 +2024,17 @@ void Texture::InitSRVTables(int l,int m)
 	}
 	else
 		layerMipShaderResourceViews12 = nullptr;
+
+	layerMipShaderResourceViews12Size = l;
 }
 
 void Texture::FreeSRVTables()
 {
-	// Check  that cubemap and array size have already being set before we call this method
-	int total_num = cubemap ? arraySize * 6 : arraySize;
-
 	if (layerShaderResourceViews12)
 		delete[] layerShaderResourceViews12;
 	layerShaderResourceViews12 = nullptr;
 
-	for (int i = 0; i<total_num; i++)
+	for (size_t i = 0; i< layerMipShaderResourceViews12Size; i++)
 	{		
 		if (layerMipShaderResourceViews12)
 		{
