@@ -39,7 +39,7 @@ namespace simul
 		class Texture;
 		class SamplerState;
 		class Layout;
-		class AccelerationStructure;
+		class TopLevelAccelerationStructure;
 		enum class ShaderResourceType;
 		struct TextureFence
 		{
@@ -49,7 +49,7 @@ namespace simul
 		struct TextureAssignment
 		{
 			crossplatform::Texture *texture;
-			crossplatform::AccelerationStructure *accelerationStructure;
+			crossplatform::TopLevelAccelerationStructure *accelerationStructure;
 			int dimensions;
 			bool uav;
 			int mip;// if -1, it's the whole texture.

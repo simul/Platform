@@ -12,7 +12,10 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
+#include "Platform/CrossPlatform/BaseAccelerationStructure.h"
+#include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/AccelerationStructureManager.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -756,9 +759,19 @@ Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 	return mat;
 }
 
-AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
 {
-	return new AccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this);
+}
+
+TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+{
+	return new TopLevelAccelerationStructure(this);
+}
+
+AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
+{
+	return new AccelerationStructureManager(this);
 }
 
 Mesh *RenderPlatform::CreateMesh()
@@ -1466,7 +1479,7 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	cs->textureAssignmentMapValid = false;
 }
 
-void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a)
+void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if (!res.valid)

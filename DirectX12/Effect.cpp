@@ -10,7 +10,9 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
-#include "Platform/DirectX12/AccelerationStructure.h"
+#include "Platform/DirectX12/BaseAccelerationStructure.h"
+#include "Platform/DirectX12/TopLevelAccelerationStructure.h"
+#include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
 #include "DirectXRaytracingHelper.h"
 #include "SimulDirectXHeader.h"
 //#include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
@@ -648,7 +650,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		if(ta.resourceType==crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE)
 		{
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
-			ID3D12Resource *a=((dx12::AccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
+			ID3D12Resource *a=((dx12::TopLevelAccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
 			
 			auto cmdList	= deviceContext.asD3D12Context();
 			ID3D12GraphicsCommandList4 *rtc=(ID3D12GraphicsCommandList4*)cmdList;
