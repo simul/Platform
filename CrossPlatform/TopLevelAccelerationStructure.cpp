@@ -1,5 +1,7 @@
 #include "TopLevelAccelerationStructure.h"
 
+#include <atomic>
+
 using namespace simul;
 using namespace crossplatform;
 

@@ -3,6 +3,10 @@
 #include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
+#if defined(_XBOX_ONE)
+#define PLATFORM_SUPPORT_D3D12_RAYTRACING 0
+#endif
+
 namespace simul
 {
 	namespace dx12
@@ -18,10 +22,12 @@ namespace simul
 			void BuildAccelerationStructureAtRuntime(crossplatform::DeviceContext& deviceContext) override;
 
 		protected:
+		#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs;
 			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo;
 
 			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc;
+		#endif		
 
 			ID3D12Resource* accelerationStructure = nullptr;
 			ID3D12Resource* scratchResource = nullptr;
