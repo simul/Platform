@@ -1167,12 +1167,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 				for (int j = 0; j < m; j++)
 				{
 					uav_desc.Texture2DArray.FirstArraySlice = i;
-			uav_desc.Texture2DArray.ArraySize=1;
+					uav_desc.Texture2DArray.ArraySize=1;
 					uav_desc.Texture2DArray.MipSlice = j;
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
-			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+					SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 				}
-		}
+	}
 
 	if(rendertarget)
 	{

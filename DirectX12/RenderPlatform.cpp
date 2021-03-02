@@ -10,7 +10,9 @@
 #include "Platform/DirectX12/ConstantBuffer.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/PlatformStructuredBuffer.h"
-#include "Platform/DirectX12/AccelerationStructure.h"
+#include "Platform/DirectX12/BaseAccelerationStructure.h"
+#include "Platform/DirectX12/TopLevelAccelerationStructure.h"
+#include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
 #include "Platform/DirectX12/Texture.h"
 #include "Platform/DirectX12/Framebuffer.h"
 #include "Platform/DirectX12/Effect.h"
@@ -2442,10 +2444,16 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return S;
 }
 
-crossplatform::AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
 {
-	return new AccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this);
 }
+
+crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+{
+	return new TopLevelAccelerationStructure(this);
+}
+
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
     return new dx12::DisplaySurface();

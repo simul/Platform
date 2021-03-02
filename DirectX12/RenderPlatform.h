@@ -205,7 +205,8 @@ namespace simul
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Fence					*CreateFence() override;
 			crossplatform::Shader					*CreateShader() override;
-			crossplatform::AccelerationStructure	*CreateAccelerationStructure() override;
+			crossplatform::BottomLevelAccelerationStructure*CreateBottomLevelAccelerationStructure() override;
+			crossplatform::TopLevelAccelerationStructure*CreateTopLevelAccelerationStructure() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
 

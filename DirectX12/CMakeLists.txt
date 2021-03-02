@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.9)
 option(SIMUL_D3D12_ENABLE_PIX "" OFF)
+option(PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 
 file(GLOB CMAKE
 	"*.cmake"

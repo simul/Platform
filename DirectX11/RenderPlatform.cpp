@@ -597,6 +597,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	{
 	case DXGI_FORMAT_R16_FLOAT:
 		return R_16_FLOAT;
+	case DXGI_FORMAT_R16G16B16A16_TYPELESS:
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
@@ -609,6 +610,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return R_32_FLOAT;
 	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
 		return RGBA_8_UNORM_SRGB;
+	case DXGI_FORMAT_R8G8B8A8_TYPELESS:
 	case DXGI_FORMAT_R8G8B8A8_UNORM:
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_B8G8R8A8_UNORM:
@@ -625,6 +627,9 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_32_UINT;
 	case DXGI_FORMAT_D32_FLOAT:
 		return D_32_FLOAT;
+	case DXGI_FORMAT_R32G8X24_TYPELESS:
+		return D_32_FLOAT_S_8_UINT;
+	case DXGI_FORMAT_R24G8_TYPELESS:
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		return D_24_UNORM_S_8_UINT;
 	case DXGI_FORMAT_D16_UNORM:
