@@ -10,13 +10,13 @@ using namespace dx11;
 
 static const int NUM_STAGING_BUFFERS = 4;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
-	:num_elements(0)
-	, element_bytesize(0)
-	, buffer(0)
-	, read_data(0)
-	, shaderResourceView(0)
-	, unorderedAccessView(0)
-	, lastContext(NULL)
+	:buffer(0)
+	,shaderResourceView(0)
+	,unorderedAccessView(0)
+	,num_elements(0)
+	,element_bytesize(0)
+	,lastContext(NULL)
+	,read_data(0)
 #if _XBOX_ONE
 	, m_pPlacementBuffer(nullptr)
 	, byteWidth(0)

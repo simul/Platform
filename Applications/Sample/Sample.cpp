@@ -41,7 +41,10 @@
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
+#include "Platform/CrossPlatform/BaseAccelerationStructure.h"
+#include "Platform/CrossPlatform/AccelerationStructureManager.h"
+#include "Platform/DirectX12/TopLevelAccelerationStructure.h"
+#include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
 
 #include "Shaders/raytrace.sl"
 #ifdef _MSC_VER
@@ -115,9 +118,11 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	crossplatform::ConstantBuffer<CameraConstants> cameraConstants;
 
 	// For raytracing, if available:
-	
-	crossplatform::BottomLevelAccelerationStructure		*bl_accelerationStructure=nullptr;
-	crossplatform::TopLevelAccelerationStructure		*tl_accelerationStructure=nullptr;
+	crossplatform::BottomLevelAccelerationStructure		*bl_accelerationStructure = nullptr;
+	crossplatform::BottomLevelAccelerationStructure		*bl_accelerationStructureExample = nullptr;
+	crossplatform::TopLevelAccelerationStructure		*tl_accelerationStructure = nullptr;
+	crossplatform::TopLevelAccelerationStructure		*tl_accelerationStructureExample = nullptr;
+	crossplatform::AccelerationStructureManager			*accelerationStructureManager = nullptr;
 	crossplatform::Texture* rtTargetTexture	= nullptr;
 	crossplatform::ConstantBuffer<crossplatform::ConstantBufferWithSlot<RayGenConstantBuffer,0>> rayGenConstants;
 
@@ -190,7 +195,10 @@ public:
 		environmentMesh= renderPlatform->CreateMesh();
 
 		bl_accelerationStructure=renderPlatform->CreateBottomLevelAccelerationStructure();
+		bl_accelerationStructureExample = renderPlatform->CreateBottomLevelAccelerationStructure();
 		tl_accelerationStructure=renderPlatform->CreateTopLevelAccelerationStructure();
+		tl_accelerationStructureExample = renderPlatform->CreateTopLevelAccelerationStructure();
+		accelerationStructureManager = renderPlatform->CreateAccelerationStructureManager();
 		rtTargetTexture = renderPlatform->CreateTexture("rtTargetTexture");
 		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		// Whether run from the project directory or from the executable location, we want to be
@@ -238,7 +246,9 @@ public:
 		delete specularCubemapTexture;
 		delete rtTargetTexture;
 		delete tl_accelerationStructure;
+		delete tl_accelerationStructureExample;
 		delete bl_accelerationStructure;
+		delete bl_accelerationStructureExample;
 		delete exampleMesh;
 		delete environmentMesh;
 		delete depthTexture;
@@ -280,7 +290,26 @@ public:
 		ReloadMeshes();
 		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,kOverrideWidth,kOverrideHeight,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
 		bl_accelerationStructure->SetMesh(environmentMesh);
-		tl_accelerationStructure->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructure, math::Matrix4x4::IdentityMatrix()} });
+		bl_accelerationStructureExample->SetMesh(exampleMesh);
+		math::Matrix4x4 translation = math::Matrix4x4::RotationX(3.1415926536);
+		math::Matrix4x4 translation2 = math::Matrix4x4::RotationX(3.1415926536);
+
+		//No direct translate function that won't overwrite or mess with current values
+		translation.m30 += 0.f; //math::Matrix4x4::Translation(0.0f, 1.0f, 2.0f);
+		translation.m31 += 1.f;
+		translation.m32 += 2.0f;
+
+		translation2.m30 += 0.f; //math::Matrix4x4::Translation(0.0f, 0.0f, 2.0f);
+		translation2.m31 += 0.f;
+		translation2.m32 += 2.0f;
+
+
+		tl_accelerationStructure->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructureExample, translation}, {bl_accelerationStructure, math::Matrix4x4::IdentityMatrix()} });
+		tl_accelerationStructureExample->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructureExample, translation2} });
+
+		accelerationStructureManager->AddTopLevelAcclelerationStructure(tl_accelerationStructure, tl_accelerationStructure->GetID());
+		accelerationStructureManager->AddTopLevelAcclelerationStructure(tl_accelerationStructureExample, tl_accelerationStructureExample->GetID());
+
 		rayGenConstants.RestoreDeviceObjects(renderPlatform);
 
 		// These are for example:
@@ -395,16 +424,23 @@ public:
 			deviceContext.viewStruct.Init();
 		}
 
-		if (!bl_accelerationStructure->IsInitialized())
-		{
-			bl_accelerationStructure->BuildAccelerationStructureAtRuntime(deviceContext);
-			return;
-		}
-		if (!tl_accelerationStructure->IsInitialized())
-		{
-			tl_accelerationStructure->BuildAccelerationStructureAtRuntime(deviceContext);
-			return;
-		}
+		// Pre-Render Update
+		static simul::core::Timer timer;
+		float real_time = timer.UpdateTimeSum() / 1000.0f;
+
+		lights[0].direction.x = .05f * sin(real_time * 1.64f);
+		lights[0].direction.y = .02f * sin(real_time * 1.1f);
+		lights[0].direction.z = -1.0;
+		lights[0].direction = normalize(lights[0].direction);
+
+		math::Matrix4x4 translation2 = math::Matrix4x4::RotationX(3.1415926536);
+		translation2.m30 += sin(real_time); 
+		translation2.m31 += 0.f;
+		translation2.m32 += 2.0f;
+		tl_accelerationStructureExample->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructureExample, translation2} });
+
+		accelerationStructureManager->GenerateCombinedAccelerationStructure(); // Preferably the top level super acceleration structure won't have the have its blas's updated each time, however that will require a more elegant solution
+		accelerationStructureManager->BuildCombinedAccelerationStructure(deviceContext);
 
 		//if(framenumber ==0)
 		//	simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
@@ -422,33 +458,6 @@ public:
 		hdrFramebuffer->SetWidthAndHeight(w, h);
 		hdrFramebuffer->Activate(deviceContext);
 		hdrFramebuffer->Clear(deviceContext, 1.0f, 1.0f, 1.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
-		{
-			// Pre-Render Update
-			static simul::core::Timer timer;
-			float real_time = timer.UpdateTimeSum() / 1000.0f;
-
-			lights[0].direction.x=.5f*sin(real_time*1.64f);
-			lights[0].direction.y=.2f*sin(real_time*1.1f);
-			lights[0].direction.z=-1.0;
-			lights[0].direction=normalize(lights[0].direction);
-
-			vec4 unity2(1.0f, 1.0f);
-			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
-			vec4 zero4(0,0,0,0);
-			sceneConstants.lightCount=10;
-			sceneConstants.max_roughness_mip=(float)specularCubemapTexture->mips;
-			renderPlatform->SetConstantBuffer(deviceContext, &sceneConstants);
-			
-			lightsStructuredBuffer.SetData(deviceContext,lights);
-			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
-			effect->Apply(deviceContext, "solid", 0);
-			// pass raytraced rtTargetTexture as shadow.
-			meshRenderer->Render(deviceContext, exampleMesh,mat4::translation(vec3(0,0,2.0f)),diffuseCubemapTexture,specularCubemapTexture,rtTargetTexture);
-			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture,rtTargetTexture);
-			
-			effect->Unapply(deviceContext);
-		}
-
 		{
 			cameraConstants.world = deviceContext.viewStruct.model;
 			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
@@ -472,13 +481,35 @@ public:
 
 			renderPlatform->ApplyPass(deviceContext,rayPass);
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, res_lights);
-			renderPlatform->SetAccelerationStructure(deviceContext,res_scene,tl_accelerationStructure);
+			renderPlatform->SetAccelerationStructure(deviceContext,res_scene, accelerationStructureManager->GetCombinedAccelerationStructure());
 			renderPlatform->SetUnorderedAccessView(deviceContext,res_targetTexture,rtTargetTexture);
 			renderPlatform->DispatchRays(deviceContext,uint3(kOverrideWidth,kOverrideHeight,1));
 			renderPlatform->UnapplyPass(deviceContext);
 
-			renderPlatform->DrawTexture(deviceContext,0,0,256, 256, rtTargetTexture);
+			
 		}
+
+		{
+			vec4 unity2(1.0f, 1.0f);
+			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
+			vec4 zero4(0, 0, 0, 0);
+			sceneConstants.lightCount = 10;
+			sceneConstants.max_roughness_mip = (float)specularCubemapTexture->mips;
+			renderPlatform->SetConstantBuffer(deviceContext, &sceneConstants);
+
+			lightsStructuredBuffer.SetData(deviceContext, lights);
+			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
+			effect->Apply(deviceContext, "solid", 0);
+			// pass raytraced rtTargetTexture as shadow.
+			meshRenderer->Render(deviceContext, exampleMesh, mat4::translation(vec3(sin(real_time), 0.0f, 2.0f)), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
+			meshRenderer->Render(deviceContext, exampleMesh, mat4::translation(vec3(0.0f, 1.0f, 2.0f)), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
+			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
+
+			effect->Unapply(deviceContext);
+		}
+
+		renderPlatform->DrawTexture(deviceContext, 0, 0, 256, 256, rtTargetTexture);
+
 		if(show_cubemaps)
 		{
 			float x = -.8f, m = -1.0f;

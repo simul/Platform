@@ -12,7 +12,10 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
+#include "Platform/CrossPlatform/BaseAccelerationStructure.h"
+#include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/AccelerationStructureManager.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -474,7 +477,8 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				int W=(w+4-1)/4;
 				int L=(l+4-1)/4;
 				int D=(d+4-1)/4;
-				/*if (texture->dim == 2 && texture->NumFaces()>1)
+
+				if (texture->dim == 2 && texture->NumFaces() > 1)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
@@ -490,12 +494,11 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i,j);
 					}
 				}
-				else*/
-				if(texture->dim==2)
+				else if(texture->dim==2)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
-					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i,j);
+					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, i, j);
 					D=1;
 				}
 				else if(texture->dim==3)
@@ -761,9 +764,14 @@ BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationS
 	return new BottomLevelAccelerationStructure(this);
 }
 
-TopLevelAccelerationStructure*RenderPlatform::CreateTopLevelAccelerationStructure()
+TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
 {
 	return new TopLevelAccelerationStructure(this);
+}
+
+AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
+{
+	return new AccelerationStructureManager(this);
 }
 
 Mesh *RenderPlatform::CreateMesh()

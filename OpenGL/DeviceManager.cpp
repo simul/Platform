@@ -138,7 +138,7 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
     }
     else
     {
-        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY: " << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << "," << message << std::endl;
+        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY: " << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << ", " << message << std::endl;
     }
     if (type != GL_DEBUG_TYPE_PERFORMANCE)
     {
