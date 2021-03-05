@@ -1039,7 +1039,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,TOO_FAR=5
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,RAYTRACING_CONFIG=5,TOO_FAR=5
 	};
 	Level level				=OUTSIDE;
 	EffectTechnique *tech	=nullptr;
@@ -1086,7 +1086,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		int open_brace= (int)line.find("{");
 		if(open_brace>=0)
 		{
-			if(level!=HITGROUP)
+			if(level!=HITGROUP || level!=RAYTRACING_CONFIG)
 				level=(Level)(level+1);
 		}
 		string word;
@@ -1366,7 +1366,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				layoutSlot++;
 			}
 		}
-		else if(level==PASS||level==HITGROUP)
+		else if(level==PASS||level==HITGROUP||level==RAYTRACING_CONFIG)
 		{
 			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
@@ -1529,14 +1529,43 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						next	=(int)str.find('\n',pos+1);
 						continue;
 					}
-					else if(_stricmp(type.c_str(),"closesthit")==0)
-						t=crossplatform::SHADERTYPE_CLOSEST_HIT;
-					else if(_stricmp(type.c_str(),"anyhit")==0)
-						t=crossplatform::SHADERTYPE_ANY_HIT;
+					else if (_stricmp(type.c_str(), "RayTracingShaderConfig") == 0)
+					{
+						level = RAYTRACING_CONFIG;
+						next = (int)str.find('\n', pos + 1);
+						continue;
+					}
+					else if (_stricmp(type.c_str(), "RayTracingPipelineConfig") == 0)
+					{
+						level = RAYTRACING_CONFIG;
+						next = (int)str.find('\n', pos + 1);
+						continue;
+					}
 					else if(_stricmp(type.c_str(),"miss")==0)
 						t=crossplatform::SHADERTYPE_MISS;
 					else if(_stricmp(type.c_str(),"callable")==0)
 						t=crossplatform::SHADERTYPE_CALLABLE;
+					else if(_stricmp(type.c_str(),"closesthit")==0)
+						t=crossplatform::SHADERTYPE_CLOSEST_HIT;
+					else if(_stricmp(type.c_str(),"anyhit")==0)
+						t=crossplatform::SHADERTYPE_ANY_HIT;
+					else if(_stricmp(type.c_str(),"intersection")==0)
+						t=crossplatform::SHADERTYPE_INTERSECTION;
+					else if (_stricmp(type.c_str(), "maxpayloadsize") == 0)
+					{
+						std::string str_num = line.substr(std::string("maxpayloadsize: ").size());
+						p->maxPayloadSize = atoi(str_num.c_str());
+					}
+					else if(_stricmp(type.c_str(),"maxattributesize")==0)
+					{
+						std::string str_num = line.substr(std::string("maxattributesize: ").size());
+						p->maxAttributeSize = atoi(str_num.c_str());
+					}
+					else if(_stricmp(type.c_str(),"maxtracerecursiondepth")==0)
+					{
+						std::string str_num = line.substr(std::string("maxtracerecursiondepth: ").size());
+						p->maxTraceRecursionDepth = atoi(str_num.c_str());
+					}
 					else
 					{
 						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
@@ -1712,7 +1741,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					SIMUL_BREAK_ONCE(base::QuickFormat("No shaders in pass %s of effect %s.",pass_name.c_str(),filename_utf8));
 				}
 			}
-			if(level==HITGROUP)
+			if(level==HITGROUP||level==RAYTRACING_CONFIG)
 				level=PASS;
 			else
 				level = (Level)(level - 1);

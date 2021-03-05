@@ -455,9 +455,10 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length()&&shader->shaderType!=RAY_GENERATION_SHADER&&shader->shaderType!=CLOSEST_HIT_SHADER&&shader->shaderType!=ANY_HIT_SHADER&&shader->shaderType!=MISS_SHADER)
+	if (sfxConfig.entryPointOption.length() && shader->m_profile.find("lib_6_") == std::string::npos)
+	{
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
-
+	}
 	string filename_root=WStringToString(outputFile);
 	size_t dot_pos=filename_root.find_last_of(".");
 	if(dot_pos<filename_root.size())
@@ -806,7 +807,7 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 		return true;
 	}
 	if(sfxOptions.verbose)
-		std::cout<<WStringToUtf8(psslc).c_str()<<"\n";
+		std::cout<<WStringToUtf8(psslc).c_str()<<std::endl;
 
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);
