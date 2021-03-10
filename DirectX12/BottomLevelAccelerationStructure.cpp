@@ -4,7 +4,6 @@
 #include "Platform/DirectX12/SimulDirectXHeader.h"
 #include "Platform/DirectX12/BaseAccelerationStructure.h"
 #include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
-#include <algorithm>
 #include <functional>
 
 using namespace simul;

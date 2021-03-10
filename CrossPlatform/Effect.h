@@ -284,6 +284,9 @@ namespace simul
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
 			std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
+			int maxPayloadSize = 0;
+			int maxAttributeSize = 0;
+			int maxTraceRecursionDepth = 0;
 			std::string rtFormatState;
 			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);

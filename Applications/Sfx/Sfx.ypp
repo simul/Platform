@@ -595,7 +595,7 @@
 
 %token POINTLIST_TOPOLOGY LINELIST_TOPOLOGY LINESTRIP_TOPOLOGY TRIANGLELIST_TOPOLOGY TRIANGLESTRIP_TOPOLOGY LINELIST_ADJACENCY_TOPOLOGY LINESTRIP_ADJACENCY_TOPOLOGY TRIANGLELIST_ADJACENCY_TOPOLOGY TRIANGLESTRIP_ADJACENCY_TOPOLOGY
 
-%token SET_RAY_GENERATION SET_MISS SET_CALLABLE SET_HIT_GROUP SET_CLOSEST_HIT SET_ANY_HIT SET_INTERSECTION  
+%token SET_RAY_GENERATION SET_MISS SET_CALLABLE SET_HIT_GROUP SET_CLOSEST_HIT SET_ANY_HIT SET_INTERSECTION SET_RAY_TRACING_SHADER_CONFIG SET_RAY_TRACING_PIPELINE_CONFIG SET_MAX_PAYLOAD_SIZE SET_MAX_ATTRIBUTE_SIZE SET_MAX_TRACE_RECURSION_DEPTH
 %%
 
 prog : prog tok
@@ -2809,6 +2809,13 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 	$$.strs[0]=$2.strs[0];
 	buildPassState.raytraceHitGroups[$2.strs[0]]=buildRaytraceHitGroup;
 	buildRaytraceHitGroup=RaytraceHitGroup();
+ } | SET_RAY_TRACING_SHADER_CONFIG '{' ray_tracing_shader_config_list '}' ';'
+ {
+	 //buildPassState.maxPayloadSize=0;
+	 //buildPassState.maxAttributeSize=0;
+ } | SET_RAY_TRACING_PIPELINE_CONFIG '{' ray_tracing_pipeline_config_list '}' ';'
+ {
+	 //buildPassState.maxTraceRecursionDepth=0;
  };
 
  set_raytrace_shader: SET_RAY_GENERATION
@@ -2848,6 +2855,37 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
  } | SET_INTERSECTION
  {
 	$$.sType	=ShaderType::INTERSECTION_SHADER;
+ }
+
+ ray_tracing_shader_config_list: set_ray_tracing_shader_config
+ {
+ } | set_ray_tracing_shader_config ray_tracing_shader_config_list
+ {
+ }
+ | %empty
+ {
+ }
+
+ ray_tracing_pipeline_config_list:
+ {
+ } | set_ray_tracing_pipeline_config ray_tracing_pipeline_config_list
+ {
+ }
+ | %empty
+ {
+ }
+
+set_ray_tracing_shader_config: SET_MAX_PAYLOAD_SIZE '=' NUM ';'
+ {
+	buildPassState.maxPayloadSize= $3.unum;
+ } | SET_MAX_ATTRIBUTE_SIZE '=' NUM ';'
+ {
+	buildPassState.maxAttributeSize = $3.unum;
+ }
+
+ set_ray_tracing_pipeline_config: SET_MAX_TRACE_RECURSION_DEPTH '=' NUM ';'
+ {
+	 buildPassState.maxTraceRecursionDepth = $3.unum;
  }
 
 shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
