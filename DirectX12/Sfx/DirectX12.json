@@ -11,6 +11,7 @@
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,
 	"generateSlots": true,
+	"supportRaytracing":  true,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
 		"SFX_D3D12": "1"

@@ -48,6 +48,7 @@ struct SfxConfig
 		,combineTexturesSamplers(false)
 		,combineInShader(false)
 		,forceSM51(false)
+		,supportRaytracing(false)
 	{
 		samplerDeclaration= "SamplerState {name}: register(s{slot});";
 	}
@@ -136,6 +137,8 @@ struct SfxConfig
 	std::string graphicsRootSignatureSource;
 	//! TEMP: Forces all shaders to be 5_1
 	bool forceSM51;
+	//! Does this API support Raytracing
+	bool supportRaytracing;
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
 };
