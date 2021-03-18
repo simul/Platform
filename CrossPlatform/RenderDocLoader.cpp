@@ -133,6 +133,5 @@ void RenderDocLoader::Load() {}
 void RenderDocLoader::Unload() {}
 void RenderDocLoader::StartCapture(RenderPlatform *renderPlatform,void * windowHandlePtr){}
 void RenderDocLoader::FinishCapture(){}
-bool RenderDocLoader::IsLoaded(){return false}
-}
+bool RenderDocLoader::IsLoaded(){return false;}
 #endif
