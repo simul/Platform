@@ -49,7 +49,6 @@
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
 
 #ifdef _MSC_VER
 #include "Platform/Windows/VisualStudioDebugOutput.h"

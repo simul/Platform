@@ -6,7 +6,7 @@
 	"outputExtension": "cso",
 	"outputOption": "/Fo",
 	"releaseOptions": "/O3",
-	"debugOutputFileOption": "/Od /O0 -Fd\"{filename_root}.pdb\"",
+	"debugOutputFileOption": "/Od -Fd\"{filename_root}.pdb\"",
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,
 	"generateSlots": true,
