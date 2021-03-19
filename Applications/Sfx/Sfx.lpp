@@ -164,7 +164,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"RayGeneration"			{
 										stdReturn(SET_RAY_GENERATION);
 									}
-<IN_SHADER>"HitGroup"					{
+<IN_SHADER>"HitGroup"				{
 										stdReturn(SET_HIT_GROUP);
 									}
 <IN_SHADER>"ClosestHit"				{
@@ -181,6 +181,21 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 									}
 <IN_SHADER>"Callable"				{
 										stdReturn(SET_CALLABLE);
+									}
+<IN_SHADER>"RayTracingShaderConfig"	{
+										stdReturn(SET_RAY_TRACING_SHADER_CONFIG);
+									}
+<IN_SHADER>"RayTracingPipelineConfig"			{
+										stdReturn(SET_RAY_TRACING_PIPELINE_CONFIG);
+									}
+<IN_SHADER>"MaxPayloadSize"			{
+										stdReturn(SET_MAX_PAYLOAD_SIZE);
+									}
+<IN_SHADER>"MaxAttributeSize"		{
+										stdReturn(SET_MAX_ATTRIBUTE_SIZE);
+									}
+<IN_SHADER>"MaxTraceRecursionDepth"	{
+										stdReturn(SET_MAX_TRACE_RECURSION_DEPTH);
 									}
 <IN_SHADER,IN_SHADER_COMPILE>"CompileShader"	{
 												sfxlval.lineno=yylineno;

@@ -92,6 +92,10 @@ void MyMissShader(inout RayPayload payload)
     payload.dist    =10000.0;
 }
 
+void MyIntersectionShader()
+{
+}
+
 technique raytrace
 {
     raytrace_pass raytrace1
@@ -100,11 +104,23 @@ technique raytrace
         Miss=CompileShader(lib_6_3,MyMissShader);
         HitGroup MainHitGroup
         {
+            //Intersection=CompileShader(lib_6_3,MyIntersectionShader); //Optional
+            AnyHit = CompileShader(lib_6_3, MyAnyHitShader);          //Optional 
             ClosestHit=CompileShader(lib_6_3,InitialClosestHit);
         };
         HitGroup SecondHitGroup
         {
             ClosestHit=CompileShader(lib_6_3,ShadowHit);
+        };
+
+        RayTracingShaderConfig
+        {
+            MaxPayloadSize = 16;
+            //MaxAttributeSize = 8; //Optional if using BuiltInTriangleIntersectionAttributes
+        };
+        RayTracingPipelineConfig
+        {
+            MaxTraceRecursionDepth = 2;
         };
     }
 }

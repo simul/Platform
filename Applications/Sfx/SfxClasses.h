@@ -419,6 +419,9 @@ namespace sfx
 		TopologyState topologyState;
 		std::map<ShaderType,std::string> shaders;
 		std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
+		int maxPayloadSize = 0;
+		int maxAttributeSize = 0;
+		int maxTraceRecursionDepth = 0;
 	};
 }
 #include "SfxProgram.h"

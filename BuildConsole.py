@@ -10,9 +10,28 @@ from enum import Enum
 class PlatformType(Enum):
 	UNKNOWN = 0
 	PS4 = 1
-	COMMODORE = 2
+	PS5 = 2
 	XBOX_ONE = 3
-	XBOX_SERIES_X = 4
+	XBOX_SERIES = 4
+
+def GetPlatformType(PlatformName):
+	platform = PlatformType.UNKNOWN
+	PlatformName = PlatformName.upper()
+
+	# Ordered as:
+	# Simul Platform name, VS Build name and then Alternative names.
+	if PlatformName == "PS4" or PlatformName == "ORBIS": 
+		platform = PlatformType.PS4
+	elif PlatformName == "COMMODORE" or PlatformName == "PROSPERO" or PlatformName == "PS5":
+		platform = PlatformType.PS5
+	elif PlatformName == "XBOXONE" or PlatformName == "DURANGO" or PlatformName == "XBOXONES" or PlatformName == "XBOXONEX": 
+		platform = PlatformType.XBOX_ONE
+	elif PlatformName == "SPECTRUM" or PlatformName == "GAMING.XBOX.SCARLETT.X64" or PlatformName == "XBOXSERIESS" or PlatformName == "XBOXSERIESX" or PlatformName == "SCARLETT":
+		platform = PlatformType.XBOX_SERIES
+	else:
+		platform = PlatformType.UNKNOWN
+
+	return platform
 
 def add_section_header(properties_file, header_name):
 	# read a .properties file without section headers.
@@ -126,7 +145,7 @@ def main(argv):
 	opts, args = getopt.getopt(argv, "hp:b:")
 	for opt, arg in opts:
 		if opt == "-h":
-			print("usage: BuildConsole.py -p <Platform>")
+			print("usage: BuildConsole.py -p <Platform> -b <BuildDir>")
 			sys.exit(0)
 		elif opt in "-p":
 			PlatformName = arg
@@ -142,17 +161,7 @@ def main(argv):
 	else:
 		PlatformName=PlatformName.strip()
 
-	ePlatform = PlatformType.UNKNOWN
-	if PlatformName == "PS4": 
-		ePlatform = PlatformType.PS4
-	elif PlatformName == "Commodore":
-		ePlatform = PlatformType.COMMODORE
-	elif PlatformName == "XboxOne":
-		ePlatform = PlatformType.XBOX_ONE
-	elif PlatformName == "Spectrum":
-		ePlatform = PlatformType.XBOX_SERIES_X
-	else:
-		ePlatform = PlatformType.UNKNOWN
+	ePlatform = GetPlatformType(PlatformName)
 
 	if ePlatform == PlatformType.UNKNOWN:
 		print("ERROR: Unknown Console type.")
@@ -191,7 +200,7 @@ def main(argv):
 
 	#Set CMake PlatformName (-A parameter)
 	CMake_A_PlatformName = ""
-	if ePlatform == PlatformType.PS4 or ePlatform == PlatformType.COMMODORE:
+	if ePlatform == PlatformType.PS4 or ePlatform == PlatformType.PS5:
 		CMake_A_PlatformName = PLATFORM_NAME_VS
 
 	#Set CMake defines
@@ -202,11 +211,11 @@ def main(argv):
 	
 	if ePlatform == PlatformType.PS4:
 		defines.append("-D "+ wrap_dq("SCE_ORBIS_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
-	if ePlatform == PlatformType.COMMODORE:
+	if ePlatform == PlatformType.PS5:
 		defines.append("-D " + wrap_dq("COMMODORE_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
 	if ePlatform == PlatformType.XBOX_ONE:
 		defines.append("-D REQUIRED_XB1_TOOLCHAIN_VERSION="+SDK_VERSION)
-	if ePlatform == PlatformType.XBOX_SERIES_X:
+	if ePlatform == PlatformType.XBOX_SERIES:
 		defines.append("-D REQUIRED_GDK_TOOLCHAIN_VERSION="+SDK_VERSION)
 	
 	defines.append("-D SIMUL_SOURCE_BUILD=1")

@@ -600,6 +600,8 @@ string stringOf(ShaderCommand t)
 		return "closesthit";
 	case SetCallableShader:
 		return "callable";
+	case SetIntersectionShader:
+		return "intersection";
 	case SetExportShader:
 		return "export";
 	default:
@@ -1240,6 +1242,33 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					}
 					outstr<<"\t\t\t}\n";
 				}
+
+				//If it's raytrace, define the Shader and Pipeline configs
+				if (!pass->passState.raytraceHitGroups.empty())
+				{
+					//---RayTracingShaderConfig---
+					outstr << "\t\t\tRayTracingShaderConfig:" << "\n\t\t\t{\n";
+					
+					//Default is sizeof(float) * 8.
+					int maxPayloadSize = pass->passState.maxPayloadSize != 0 ? pass->passState.maxPayloadSize : 32; 
+					outstr << "\t\t\t\t" << "MaxPayloadSize: " << std::to_string(maxPayloadSize) << "\n";
+
+					//Default is sizeof(BuiltInTriangleIntersectionAttributes).
+					int maxAttributeSize = pass->passState.maxAttributeSize != 0 ? pass->passState.maxAttributeSize : 8; 
+					outstr << "\t\t\t\t" << "MaxAttributeSize: " << std::to_string(maxAttributeSize) << "\n";
+
+					outstr << "\t\t\t}\n";
+					
+					//---RayTracingPipelineConfig---
+					outstr << "\t\t\tRayTracingPipelineConfig:" << "\n\t\t\t{\n";
+
+					//Default is 2 for inital hit and shadow.
+					int maxTraceRecursionDepth = pass->passState.maxTraceRecursionDepth != 0 ? pass->passState.maxTraceRecursionDepth : 2; 
+					outstr << "\t\t\t\t" << "MaxTraceRecursionDepth: " << std::to_string(maxTraceRecursionDepth) << "\n";
+
+					outstr << "\t\t\t}\n";
+				}
+
 				outstr<<"\t\t}\n";
 			}
 			outstr<<"\t}\n";
@@ -2363,6 +2392,10 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	if (shaderInstance->shaderType == MISS_SHADER)
 	{
 		theShader<<"[shader(\"miss\")]\n";//sfxConfig
+	}
+	if (shaderInstance->shaderType == INTERSECTION_SHADER)
+	{
+		theShader << "[shader(\"intersection\")]\n";//sfxConfig
 	}
 	if (shaderInstance->shaderType == CALLABLE_SHADER)
 	{

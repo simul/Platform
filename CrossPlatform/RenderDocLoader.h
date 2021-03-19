@@ -19,6 +19,7 @@ namespace simul
 			static void TriggerMultiFrameCapture(unsigned num);
 			static void StartCapture(RenderPlatform* renderPlatform, void* windowHandlePtr);
 			static void FinishCapture();
+			static bool IsLoaded();
 		};
 	}
 }

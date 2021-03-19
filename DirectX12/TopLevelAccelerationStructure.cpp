@@ -5,8 +5,6 @@
 #include "Platform/DirectX12/BaseAccelerationStructure.h"
 #include "Platform/DirectX12/TopLevelAccelerationStructure.h"
 #include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
-#include <algorithm>
-#include <functional>
 
 using namespace simul;
 using namespace dx12;
@@ -130,4 +128,3 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 #endif
 	initialized = true;
 }
-

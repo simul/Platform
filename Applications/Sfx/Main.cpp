@@ -397,6 +397,10 @@ int main(int argc, char** argv)
 		{
 			sfxConfig.forceSM51 = j["forceSM51"];
 		}
+		if (j.count("supportRaytracing") > 0)
+		{
+			sfxConfig.supportRaytracing = j["supportRaytracing"];
+		}
 	}
 	catch(std::exception &e)
 	{

@@ -455,9 +455,10 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length()&&shader->shaderType!=RAY_GENERATION_SHADER&&shader->shaderType!=CLOSEST_HIT_SHADER&&shader->shaderType!=ANY_HIT_SHADER&&shader->shaderType!=MISS_SHADER)
+	if (sfxConfig.entryPointOption.length() && shader->m_profile.find("lib_6_") == std::string::npos)
+	{
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
-
+	}
 	string filename_root=WStringToString(outputFile);
 	size_t dot_pos=filename_root.find_last_of(".");
 	if(dot_pos<filename_root.size())
@@ -578,12 +579,18 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	return has_errors;
 }
 
-int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,ShaderType t,PixelOutputFormat pixelOutputFormat,const string &sharedSource, ostringstream& sLog
+int Compile(ShaderInstance *shader
+		,const string &sourceFile
+		,string targetFile
+		,ShaderType t
+		,PixelOutputFormat pixelOutputFormat
+		,const string &sharedSource
+		,ostringstream& sLog
 		,const SfxConfig &sfxConfig
 		,const SfxOptions &sfxOptions
 		,map<int,string> fileList
 		,std::ofstream &combinedBinary
-		, BinaryMap &binaryMap
+		,BinaryMap &binaryMap
 		,const Declaration* rtState )
 {
 	string filenameOnly = GetFilenameOnly( sourceFile);
@@ -651,6 +658,38 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 	case COMPUTE_SHADER:
 		shaderTypeSuffix=L"c";
 		break;
+	case RAY_GENERATION_SHADER:
+	case MISS_SHADER:
+	case CALLABLE_SHADER:
+	case CLOSEST_HIT_SHADER:
+	case ANY_HIT_SHADER:
+	case INTERSECTION_SHADER:
+	{
+		if (sfxConfig.supportRaytracing)
+		{
+			break;
+		}
+		else
+		{
+			auto RTShaderTypeToStr = [](const ShaderType t) -> const char*
+			{
+				switch (t)
+				{
+				case RAY_GENERATION_SHADER: return "RAY_GENERATION";
+				case MISS_SHADER:			return "MISS";
+				case CALLABLE_SHADER:		return "CALLABLE";
+				case CLOSEST_HIT_SHADER:	return "CLOSEST_HIT";
+				case ANY_HIT_SHADER:		return "ANY_HIT";
+				case INTERSECTION_SHADER:	return "INTERSECTION";
+				default:					return "NON_RT";
+				}
+			};
+
+			std::cout << "Warning: Raytracing shader not supported. Type: " << RTShaderTypeToStr(t) << " Name: " << shader->m_functionName << ".\n";
+			//std::cout << "Warning: " << filenameOnly << " will not generate a " << filenameOnly << "o or a " << filenameOnly << "b.\n";
+			return 1; //Return 1 here, not compiling raytracing shaders is okay.
+		}
+	}
 	default:
 		break;
 	};
@@ -806,7 +845,7 @@ int Compile(ShaderInstance *shader,const string &sourceFile,string targetFile,Sh
 		return true;
 	}
 	if(sfxOptions.verbose)
-		std::cout<<WStringToUtf8(psslc).c_str()<<"\n";
+		std::cout<<WStringToUtf8(psslc).c_str()<<std::endl;
 
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);

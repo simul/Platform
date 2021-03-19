@@ -47,7 +47,7 @@ namespace simul
 			BufferUsageHint bufferUsageHint;
 		public:
 			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(BufferUsageHint::MANY_PER_FRAME) {}
-			virtual ~PlatformStructuredBuffer() {}
+			virtual ~PlatformStructuredBuffer() = default;
 			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, BufferUsageHint usageHint) = 0;
 			virtual void InvalidateDeviceObjects() = 0;
 			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
@@ -78,6 +78,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
 		{
 		public:
+			virtual ~BaseStructuredBuffer() = default;
 			PlatformStructuredBuffer* platformStructuredBuffer=nullptr;
 		};
 		class PlatformStructuredBuffer;
@@ -87,7 +88,7 @@ namespace simul
 		/// \code
 		/// 	StructuredBuffer<Example> example;
 		/// \endcode
-		template<class T, BufferUsageHint bufferUsageHint= BufferUsageHint::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
+		template<class T, BufferUsageHint bufferUsageHint = BufferUsageHint::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
 		{
 		public:
 			StructuredBuffer()

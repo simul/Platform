@@ -150,4 +150,18 @@ posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 	return OUT;
 }
 
+uint FlattenArrayIndex(uint3 idx, uint2 size)
+{
+	return idx.x + (idx.y * size.x) + (idx.z * size.x * size.y);
+}
+
+uint3 UnflattenArrayIndex(uint idx, uint2 size)
+{
+	uint z = idx / (size.x * size.y);
+	idx -= (z * size.x * size.y);
+	uint y = idx / size.x;
+    uint x = idx % size.x;
+	return uint3(x, y, z);
+}
+
 #endif

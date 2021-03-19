@@ -118,6 +118,11 @@ void RenderDocLoader::FinishCapture()
 		}
 	}
 }
+bool RenderDocLoader::IsLoaded()
+{
+	return (s_HModuleRenderDoc ? true : false);
+}
+
 #else //Dummy class implementation
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 
@@ -128,4 +133,5 @@ void RenderDocLoader::Load() {}
 void RenderDocLoader::Unload() {}
 void RenderDocLoader::StartCapture(RenderPlatform *renderPlatform,void * windowHandlePtr){}
 void RenderDocLoader::FinishCapture(){}
+bool RenderDocLoader::IsLoaded(){return false;}
 #endif
