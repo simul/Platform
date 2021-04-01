@@ -1422,7 +1422,6 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						}
 					}
 				}
-
 				string name;
 				if(words.size()>1)
 					name=words[1];
@@ -1576,7 +1575,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					{
 						s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
 					}
-					else
+					else if(filenamestr.length())
 					{
 						s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
 					}
@@ -1612,7 +1611,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						}
 						shaderCount++;
 					}
-					else
+					else if(filenamestr.length()>0)
 					{
 						SIMUL_BREAK_ONCE(base::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
 					}
@@ -1679,54 +1678,57 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							}
 						}
 					}
-					if(!s->constantBufferSlots)
-						s->constantBufferSlots	=cbSlots;
-					if(!s->textureSlots)
-						s->textureSlots			=textureSlots;
-					if(!s->samplerSlots)
-						s->samplerSlots			=shaderSamplerSlots;
-					if(!s->rwTextureSlots)
-						s->rwTextureSlots		=rwTextureSlots;
-					if(!s->textureSlotsForSB)
-						s->textureSlotsForSB	=textureSlotsForSB;
-					if(!s->rwTextureSlotsForSB)
-						s->rwTextureSlotsForSB	=rwTextureSlotsForSB;
-					// Now we will know which slots must be used by the pass:
-					p->SetUsesConstantBufferSlots(s->constantBufferSlots);
-					p->SetUsesTextureSlots(s->textureSlots);
-					p->SetUsesTextureSlotsForSB(s->textureSlotsForSB);
-					p->SetUsesRwTextureSlots(s->rwTextureSlots);
-					p->SetUsesRwTextureSlotsForSB(s->rwTextureSlotsForSB);
-					p->SetUsesSamplerSlots(s->samplerSlots);
-
-					// set the actual sampler states for each shader based on the slots it uses:
-					// Which sampler states are needed?
-					unsigned slots=s->samplerSlots;
-					for(int slot=0;slot<64;slot++)
+					if(s)
 					{
-						unsigned bit=1<<slot;
-						if(slots&(bit))
+						if(!s->constantBufferSlots)
+							s->constantBufferSlots	=cbSlots;
+						if(!s->textureSlots)
+							s->textureSlots			=textureSlots;
+						if(!s->samplerSlots)
+							s->samplerSlots			=shaderSamplerSlots;
+						if(!s->rwTextureSlots)
+							s->rwTextureSlots		=rwTextureSlots;
+						if(!s->textureSlotsForSB)
+							s->textureSlotsForSB	=textureSlotsForSB;
+						if(!s->rwTextureSlotsForSB)
+							s->rwTextureSlotsForSB	=rwTextureSlotsForSB;
+						// Now we will know which slots must be used by the pass:
+						p->SetUsesConstantBufferSlots(s->constantBufferSlots);
+						p->SetUsesTextureSlots(s->textureSlots);
+						p->SetUsesTextureSlotsForSB(s->textureSlotsForSB);
+						p->SetUsesRwTextureSlots(s->rwTextureSlots);
+						p->SetUsesRwTextureSlotsForSB(s->rwTextureSlotsForSB);
+						p->SetUsesSamplerSlots(s->samplerSlots);
+
+						// set the actual sampler states for each shader based on the slots it uses:
+						// Which sampler states are needed?
+						unsigned slots=s->samplerSlots;
+						for(int slot=0;slot<64;slot++)
 						{
-							for(auto j:samplerStates)
+							unsigned bit=1<<slot;
+							if(slots&(bit))
 							{
-								if(samplerSlots[slot]==j.second)
+								for(auto j:samplerStates)
 								{
-									std::string ss_name=j.first;
-									crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(ss_name.c_str());
-									s->samplerStates[slot]=ss;
+									if(samplerSlots[slot]==j.second)
+									{
+										std::string ss_name=j.first;
+										crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(ss_name.c_str());
+										s->samplerStates[slot]=ss;
+									}
 								}
 							}
+							slots&=(~bit);
+							if(!slots)
+								break;
 						}
-						slots&=(~bit);
-						if(!slots)
-							break;
-					}
-					p->MakeResourceSlotMap();
-					s->entryPoint=entry_point;
-					if(t==crossplatform::SHADERTYPE_VERTEX&&layoutCount)
-					{
-						s->layout.SetDesc(layoutDesc,layoutCount);
-						layoutCount=0;
+						p->MakeResourceSlotMap();
+						s->entryPoint=entry_point;
+						if(t==crossplatform::SHADERTYPE_VERTEX&&layoutCount)
+						{
+							s->layout.SetDesc(layoutDesc,layoutCount);
+							layoutCount=0;
+						}
 					}
 				}
 			}
@@ -1738,7 +1740,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				if(shaderCount==0)
 				{
-					SIMUL_BREAK_ONCE(base::QuickFormat("No shaders in pass %s of effect %s.",pass_name.c_str(),filename_utf8));
+					SIMUL_CERR<<"No shaders in pass "<<pass_name.c_str()<<" of effect "<<filename_utf8<<std::endl;
 				}
 			}
 			if(level==HITGROUP||level==RAYTRACING_CONFIG)

@@ -46,6 +46,8 @@ namespace simul
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
 			void PushToReleaseManager(vk::Buffer &);
+			void PushToReleaseManager(vk::Pipeline& r);
+			void PushToReleaseManager(vk::PipelineCache& r);
 			void PushToReleaseManager(vk::BufferView &);
 			void PushToReleaseManager(vk::DeviceMemory &);
 			void PushToReleaseManager(vk::ImageView&);
@@ -53,6 +55,10 @@ namespace simul
 			void PushToReleaseManager(vk::RenderPass& r);
 			void PushToReleaseManager(vk::Image& i);
 			void PushToReleaseManager(vk::Sampler& i);
+			void PushToReleaseManager(vk::PipelineLayout& i);
+			void PushToReleaseManager(vk::DescriptorSet& i);
+			void PushToReleaseManager(vk::DescriptorSetLayout& i);
+			void PushToReleaseManager(vk::DescriptorPool& i);
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
 			{
@@ -147,11 +153,15 @@ namespace simul
 			vulkan::Texture*						GetDummyTexture(crossplatform::ShaderResourceType);
 			
 			vk::Framebuffer*						GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext);
-			crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext);
+			static crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
 			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
-			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN,bool clear=false,int numOfSamples=1);
+			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,const crossplatform::PixelFormat *pixelFormats
+																			,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN
+																			,bool clear=false
+																			,int numOfSamples=1
+																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr);
 			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
@@ -171,6 +181,14 @@ namespace simul
 			std::set<vk::RenderPass>						releaseRenderPasses;
 			std::set<vk::Image>								releaseImages;
 			std::set<vk::Sampler>							releaseSamplers;
+			std::set<vk::Pipeline>							releasePipelines;
+			std::set<vk::PipelineCache>						releasePipelineCaches;
+
+			std::set<vk::PipelineLayout>					releasePipelineLayouts;
+			std::set<vk::DescriptorSet>						releaseDescriptorSets;
+			std::set<vk::DescriptorSetLayout>						releaseDescriptorSetLayouts;
+			std::set<vk::DescriptorPool>					releaseDescriptorPools;
+
 			vulkan::Texture*								mDummy2D=nullptr;
 			vulkan::Texture*								mDummy2DMS=nullptr;
 			vulkan::Texture*								mDummy3D=nullptr;

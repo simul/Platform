@@ -246,8 +246,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions);
 		SIMUL_VK_ASSERT_RETURN(result);
 
+		if(instance_layer_count)
+		{
+			SIMUL_COUT<<"Vulkan extensions supported on this device:\n";
+		}
 		for (uint32_t i = 0; i < instance_extension_count; i++)
 		{
+			SIMUL_COUT << "\t"<<instance_extensions[i].extensionName<<std::endl;
 			if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugExtFound = 1;

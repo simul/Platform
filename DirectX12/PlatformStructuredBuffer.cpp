@@ -108,6 +108,10 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     // we initialize a set of READ_BACK buffers:
     if (mCpuRead)
     {
+		for (unsigned int i = 0; i < mBuffering; i++)
+		{
+			SAFE_RELEASE_LATER(mReadBuffers[i]);
+		}
         for (unsigned int i = 0; i < mBuffering; i++)
         {
             res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource

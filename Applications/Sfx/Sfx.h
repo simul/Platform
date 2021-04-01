@@ -114,6 +114,7 @@ struct SfxConfig
 	//! Preamble only for compute shaders
 	std::string computePreamble;
 	std::map<std::string,std::string> vertexSemantics;
+	std::map<std::string,std::string> pixelSemantics;
 	std::map<std::string, std::string> vertexOutputAssignment;
 	std::map<std::string, std::string> fragmentOutputAssignment;
 	//! Mapping of semantics used in compute shaders

@@ -9,13 +9,13 @@
 		}
 	},
 	"api": "Vulkan",
-	"defaultOptions": "",
+	"defaultOptions": "-Os",
 	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
-	"debugOption": "-g",
+	"debugOption": "-g -Od",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
@@ -55,6 +55,9 @@
 		"SV_VertexID": "gl_VertexIndex",
 		"SV_InstanceId": "gl_InstanceIndex",
 		"SV_POSITION": "gl_Position"
+	},
+	"pixelSemantics": {
+		"SV_IsFrontFace": "gl_FrontFacing"
 	},
 	"vertexOutputAssignment": {
 		"SV_POSITION": "gl_Position"
@@ -163,7 +166,6 @@
 		"lerp": "mix",
 		"atan2": "atan",
 		"frac": "fract",
-		"flat": "",
-		"fmod": "modf"
+		"flat": ""
 	}
 }

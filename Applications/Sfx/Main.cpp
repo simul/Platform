@@ -313,6 +313,16 @@ int main(int argc, char** argv)
 				sfxConfig.vertexSemantics[a]			=b;
 			}
 		}
+		if(j.count("pixelSemantics")>0)
+		{
+			json pixelSemantics				=j["pixelSemantics"];
+			for (json::iterator it = pixelSemantics.begin();it != pixelSemantics.end(); ++it)
+			{
+				std::string a=it.key();
+				std::string b=it.value();
+				sfxConfig.pixelSemantics[a]			=b;
+			}
+		}
 		if (j.count("vertexOutputAssignment") > 0)
 		{
 			json vertexOutputAssignment			= j["vertexOutputAssignment"];

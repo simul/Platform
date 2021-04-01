@@ -565,7 +565,7 @@ void DisplaySurface::InitSwapChain()
 
 void DisplaySurface::CreateRenderPass() 
 {
-	vulkanRenderPlatform->CreateVulkanRenderpass(deferredContext,render_pass,1,pixelFormat);
+	vulkanRenderPlatform->CreateVulkanRenderpass(deferredContext,render_pass,1,&pixelFormat);
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
 // because at the start of the renderpass, we don't care about their contents.
 // At the start of the subpass, the color attachment's layout will be transitioned

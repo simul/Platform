@@ -27,7 +27,7 @@ namespace simul
 		//! A cross-platform equivalent to the OpenGL and DirectX pixel formats
 		enum PixelFormat
 		{
-			UNKNOWN
+			UNKNOWN=0
 			,RGBA_32_FLOAT
 			,RGBA_32_UINT
 			,RGBA_32_INT
@@ -67,18 +67,21 @@ namespace simul
 			,INT_32_FLOAT
 			,R_32_UINT
 			,R_32_INT
+
 			// depth formats:
 			,D_32_FLOAT// DXGI_FORMAT_D32_FLOAT or GL_DEPTH_COMPONENT32F
-			, D_32_UINT
+			,D_32_UINT
 			,D_32_FLOAT_S_8_UINT
 			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
 
-			, R_16_FLOAT
-			, R_8_UNORM
-			, R_8_SNORM
-			
+			,R_16_FLOAT
+			,R_8_UNORM
+			,R_8_SNORM
+
 			,RGB10_A2_UNORM
+
+			,R_24_FLOAT_X_8
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

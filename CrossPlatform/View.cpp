@@ -50,10 +50,10 @@ void View::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		resolvedTexture		=renderPlatform->CreateTexture("Resolved");	
 		if(!useExternalFramebuffer)
 		{
-			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 			hdrFramebuffer->SetUseFastRAM(true,true);
 			hdrFramebuffer->SetFormat(RGBA_16_FLOAT);
 			hdrFramebuffer->SetDepthFormat(D_32_FLOAT);
+			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 		}
 	}
 }

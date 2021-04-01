@@ -331,7 +331,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	 
 		if (!wic.image)
 		{
-			SIMUL_BREAK("Failed to load this texture.");
+			SIMUL_BREAK_INTERNAL("Failed to load this texture.");
 			continue;
 		}
 
@@ -705,7 +705,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		
 		if (!mTextureDefault)
 		{
-			SIMUL_BREAK("The texture is invalid");
+			SIMUL_BREAK_INTERNAL("The texture is invalid");
 			return;
 		}
 		renderPlat->PushToReleaseManager(mTextureUpload, "TextureSetTexelsUpload");
@@ -741,9 +741,9 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 
 		// Checks
 		if (texel_index != 0)
-			SIMUL_BREAK("Nacho has to implement this");
+			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
 		if(srcSlice != (texelSize * (width * length)))
-			SIMUL_BREAK("Nacho has to implement this");
+			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
 
 		// Transition main texture to copy dest
 		renderPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, GetCurrentState(deviceContext), D3D12_RESOURCE_STATE_COPY_DEST,true);
@@ -868,7 +868,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 						rtDesc.Texture2DArray.ArraySize         = 1;
 					}
 
-                    mTextureRtHeap.Restore((dx12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRtHeap", false);
+                    mTextureRtHeap.Restore((dx12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels, D3D12_DESCRIPTOR_HEAP_TYPE_RTV,(name+"TextureRtHeap").c_str(), false);
 
                     for (int i = 0; i < (int)textureDesc.DepthOrArraySize; i++)
                     {
@@ -1052,7 +1052,9 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		InitStateTable(1,m);
 		InitSRVTables(1, m);
 
-		mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DSrvHeap", false);
+		if(name.length()==0)
+			SIMUL_BREAK_INTERNAL("Unnamed texture")
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name+" Texture3DSrvHeap").c_str(), false);
 		r->AsD3D12Device()->CreateShaderResourceView(mTextureDefault,&srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
@@ -1073,7 +1075,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			FreeUAVTables();
 			InitUAVTables(1, m);
 			changed = true;
-			mTextureUavHeap.Restore((dx12::RenderPlatform*)r, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DUavHeap", false);
+			mTextureUavHeap.Restore((dx12::RenderPlatform*)r, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,(name+ " Texture3DUavHeap").c_str(), false);
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 			uavDesc.Format								= dxgiFormat;
@@ -1105,7 +1107,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		}
 		if (d <= 8 && rendertargets && (!renderTargetViews12 || !renderTargetViews12[0] || !ok))
 		{
-			SIMUL_BREAK("Render targets for 3D textures are not currently supported.");
+			SIMUL_BREAK_INTERNAL("Render targets for 3D textures are not currently supported.");
 		}
 	}
 
@@ -1294,7 +1296,10 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		srvDesc.Format							= srvFormat;
 		srvDesc.ViewDimension					= num_samples > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels				= 1;
-
+		if(name.length()==0)
+		{
+			SIMUL_BREAK_INTERNAL("Unnamed texture");
+		}
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
@@ -1750,7 +1755,7 @@ void Texture::unmap()
 
 vec4 Texture::GetTexel(crossplatform::DeviceContext &,vec2 ,bool )
 {
-    SIMUL_BREAK("")
+    SIMUL_BREAK_INTERNAL("")
 	return vec4(0.0f,0.0f,0.0f,0.0f);
 }
 

@@ -426,7 +426,7 @@ void DeviceManager::GetComputeContext(crossplatform::DeviceContext &computeConte
 	if(mComputeContexts[computeFrame].fenceValue>0)
 	{
 		m_computeCommandQueue->Wait(mComputeContexts[computeFrame].IFence, mComputeContexts[computeFrame].fenceValue);
-		while(mComputeContexts[computeFrame].IFence->GetCompletedValue()!=mComputeContexts[computeFrame].fenceValue)
+		while(mComputeContexts[computeFrame].IFence->GetCompletedValue()<mComputeContexts[computeFrame].fenceValue)
 		{
 		}
 	}

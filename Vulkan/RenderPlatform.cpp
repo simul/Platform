@@ -224,6 +224,39 @@ void RenderPlatform::InvalidateDeviceObjects()
 		vulkanDevice->destroySampler(i);
 	}
 	releaseSamplers.clear();
+	for (auto i : releasePipelines)
+	{
+		vulkanDevice->destroyPipeline(i,nullptr);
+	}
+	releasePipelines.clear();
+	for (auto i : releasePipelineCaches)
+	{
+		vulkanDevice->destroyPipelineCache(i,nullptr);
+	}
+	releasePipelineCaches.clear();
+
+
+	for (auto i : releasePipelineLayouts)
+	{
+		vulkanDevice->destroyPipelineLayout(i,nullptr);
+	}
+	releasePipelineLayouts.clear();
+	for (auto i : releaseDescriptorSetLayouts)
+	{
+		vulkanDevice->destroyDescriptorSetLayout(i);
+	}
+	releaseDescriptorSetLayouts.clear();
+	for (auto i : releaseDescriptorSets)
+	{
+		//vulkanDevice->destroyDescriptorSet(i,nullptr);
+	}
+	releaseDescriptorSets.clear();
+	for (auto i : releaseDescriptorPools)
+	{
+		vulkanDevice->destroyDescriptorPool(i,nullptr);
+	}
+	releaseDescriptorPools.clear();
+
 	vulkanDevice=nullptr; 
 }
 
@@ -258,6 +291,14 @@ void RenderPlatform::PushToReleaseManager(vk::RenderPass& r)
 {
 	releaseRenderPasses.insert(r);
 }
+void RenderPlatform::PushToReleaseManager(vk::Pipeline& r)
+{
+	releasePipelines.insert(r);
+}
+void RenderPlatform::PushToReleaseManager(vk::PipelineCache& r)
+{
+	releasePipelineCaches.insert(r);
+}
 void RenderPlatform::PushToReleaseManager(vk::Image& i)
 {
 	releaseImages.insert(i);
@@ -265,6 +306,23 @@ void RenderPlatform::PushToReleaseManager(vk::Image& i)
 void RenderPlatform::PushToReleaseManager(vk::Sampler& i)
 {
 	releaseSamplers.insert(i);
+}
+
+void RenderPlatform::PushToReleaseManager(vk::PipelineLayout& i)
+{
+	releasePipelineLayouts.insert(i);
+}
+void RenderPlatform::PushToReleaseManager(vk::DescriptorSet& i)
+{
+	releaseDescriptorSets.insert(i);
+}
+void RenderPlatform::PushToReleaseManager(vk::DescriptorSetLayout& i)
+{
+	releaseDescriptorSetLayouts.insert(i);
+}
+void RenderPlatform::PushToReleaseManager(vk::DescriptorPool& i)
+{
+	releaseDescriptorPools.insert(i);
 }
 
 void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -533,7 +591,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
-													.setRenderPass(pass->GetVulkanRenderPass(*graphicsDeviceContext, GetActivePixelFormat(*graphicsDeviceContext),cs->topology))
+													.setRenderPass(pass->GetVulkanRenderPass(*graphicsDeviceContext))
 													.setFramebuffer(*framebuffer)
 													.setClearValueCount((uint32_t)clearColoursCount)
 													.setPClearValues(clearValues.data())
@@ -1010,6 +1068,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 		return vk::Format::eR8G8B8Snorm;
 	case R_8_UNORM:
 		return vk::Format::eR8Unorm;
+	case R_8_SNORM:
+		return vk::Format::eR8Snorm;
 	case R_32_UINT:
 		return vk::Format::eR32Uint;
 	case RG_32_UINT:
@@ -1025,7 +1085,7 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 	case D_16_UNORM:
 		return vk::Format::eD16UnormS8Uint;
 	default:
-		return vk::Format::eR8G8B8Unorm;
+		return vk::Format::eUndefined;
 	};
 }
  vk::ImageLayout RenderPlatform::ToVulkanImageLayout(crossplatform::ResourceState r)
@@ -1598,9 +1658,9 @@ void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
 	SIMUL_ASSERT(mFramebuffers.empty() && mFramebufferRenderPasses.empty());
 }
 
-unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
+RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 {
-	unsigned long long hashval=0;
+	RenderPassHash hashval=0;
 	if (tv->textureTargets[0].texture)
 	{
 		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
@@ -1610,60 +1670,69 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	if(tv->depthTarget.texture)
 		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
 	hashval+=tv->num;
+	return hashval;
+}
+
+unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
+{
+	crossplatform::PixelFormat colourPF[16] = {crossplatform::PixelFormat::UNKNOWN};
+	for(int i=0;i<tv->num;i++)
+	{
+		colourPF[i] = tv->textureTargets[i].texture->pixelFormat;
+	}
+	vulkan::EffectPass*vp=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
+	RenderPassHash hashval=MakeTargetHash(tv);
+	hashval+=5*(deviceContext.contextState.currentEffectPass?vp->GetHash(colourPF[0],deviceContext.contextState.topology):0);
 	std::map<unsigned long long,vk::Framebuffer>::iterator h=mFramebuffers.find(hashval);
-	if(h!=mFramebuffers.end()&&h->second && !mFramebuffers.empty())
-		return hashval;
+	if(h==mFramebuffers.end()||!h->second ||mFramebuffers.empty())
+	{
+		int count=tv->num+(tv->depthTarget.texture!=nullptr);
 
-	int count=tv->num+(tv->depthTarget.texture!=nullptr);
-	vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
+		int width=0,length=0;
+		if(tv->textureTargets[0].texture)
+		{
+			width=tv->textureTargets[0].texture->width;
+			length=tv->textureTargets[0].texture->length;
+		}
+		else if(tv->depthTarget.texture)
+		{
+			width=tv->depthTarget.texture->width;
+			length=tv->depthTarget.texture->length;
+		}
+		else
+		{
+			SIMUL_BREAK("");
+		}
+		crossplatform::PixelFormat depthPF = crossplatform::PixelFormat::UNKNOWN;
+		if (tv->depthTarget.texture)
+			depthPF = tv->depthTarget.texture->pixelFormat;
+		vk::RenderPass &vkRenderPass=mFramebufferRenderPasses[hashval];
+		CreateVulkanRenderpass(deviceContext, vkRenderPass, tv->num, colourPF, depthPF, false, tv->textureTargets[0].texture->GetSampleCount());
+	
+		vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
+	
+		vk::ImageView attachments[9];
 
-	int width=0,length=0;
-	crossplatform::PixelFormat colourPF = crossplatform::PixelFormat::UNKNOWN;
-	crossplatform::PixelFormat depthPF = crossplatform::PixelFormat::UNKNOWN;
-	if (tv->textureTargets[0].texture)
-		colourPF = tv->textureTargets[0].texture->pixelFormat;
-	if (tv->depthTarget.texture)
-		depthPF = tv->depthTarget.texture->pixelFormat;
-	if(tv->textureTargets[0].texture)
-	{
-		width=tv->textureTargets[0].texture->width;
-		length=tv->textureTargets[0].texture->length;
-		//vkRenderPass = ((vulkan::Texture*)(tv->textureTargets[0].texture))->GetRenderPass(deviceContext);
-	}
-	else if(tv->depthTarget.texture)
-	{
-		width=tv->depthTarget.texture->width;
-		length=tv->depthTarget.texture->length;
-	}
-	else
-	{
-		SIMUL_BREAK("");
-	}
-	CreateVulkanRenderpass(deviceContext, vkRenderPass, tv->num, colourPF, depthPF, false, tv->textureTargets[0].texture->GetSampleCount());
+		vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
+		framebufferCreateInfo.renderPass = vkRenderPass;
+		framebufferCreateInfo.attachmentCount =count;
+		framebufferCreateInfo.width = width;
+		framebufferCreateInfo.height = length;
+		framebufferCreateInfo.layers = 1;
 	
-	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	
-	vk::ImageView attachments[9];
-
-	vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
-	framebufferCreateInfo.renderPass = vkRenderPass;
-	framebufferCreateInfo.attachmentCount =count;
-	framebufferCreateInfo.width = width;
-	framebufferCreateInfo.height = length;
-	framebufferCreateInfo.layers = 1;
-	
-	vk::Device *vulkanDevice=AsVulkanDevice();
-	framebufferCreateInfo.width = width;
-	framebufferCreateInfo.height = length;
-	for (int j= 0; j < tv->num; j++)
-	{
-		attachments[j]=*(tv->textureTargets[j].texture->AsVulkanImageView());
+		vk::Device *vulkanDevice=AsVulkanDevice();
+		framebufferCreateInfo.width = width;
+		framebufferCreateInfo.height = length;
+		for (int j= 0; j < tv->num; j++)
+		{
+			attachments[j]=*(tv->textureTargets[j].texture->AsVulkanImageView());
+		}
+		if(tv->depthTarget.texture)
+			attachments[tv->num]=*(tv->depthTarget.texture->AsVulkanImageView());
+		framebufferCreateInfo.pAttachments = attachments;
+		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
+		SetVulkanName(this,(uint64_t*)&mFramebuffers[hashval],"mFramebuffers");
 	}
-	if(tv->depthTarget.texture)
-		attachments[tv->num]=*(tv->depthTarget.texture->AsVulkanImageView());
-	framebufferCreateInfo.pAttachments = attachments;
-	SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
-	SetVulkanName(this,(uint64_t*)&mFramebuffers[hashval],"mFramebuffers");
 	return hashval;
 }
 
@@ -1694,6 +1763,7 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 			}
 			else //ActivateRenderTargets(..., num, ...);
 			{
+			// For Vulkan, insanely, a Framebuffer contains details of the renderpass. So each framebuffer is uniquely tied to the renderstate.
 				unsigned long long combo = InitFramebuffer(deviceContext, tv);
 				return &(mFramebuffers[combo]);
 			}
@@ -1723,7 +1793,9 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 	}
 }
 
-void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,crossplatform::PixelFormat pixelFormat,crossplatform::PixelFormat depthFormat,bool clear,int numOfSamples)
+void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,const crossplatform::PixelFormat *pixelFormats
+	,crossplatform::PixelFormat depthFormat,bool clear,int numOfSamples
+	,const vk::ImageLayout *initial_layouts,const vk::ImageLayout *target_layouts)
 {
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
 // because at the start of the renderpass, we don't care about their contents.
@@ -1744,29 +1816,43 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	vk::AttachmentReference depth_reference;	
 	if(num_colour!=0)
 		colour_reference=new vk::AttachmentReference[num_colour];
+	SIMUL_ASSERT(num_colour<=16);
 	for(int i=0;i<num_colour;i++)
 	{
-		attachments[i]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(pixelFormat))
+		vk::ImageLayout layout=crossplatform::RenderPlatform::IsDepthFormat(pixelFormats[i])?
+			vk::ImageLayout::eDepthAttachmentOptimal:vk::ImageLayout::eColorAttachmentOptimal;
+		//if(initial_layouts)
+		//	layout=initial_layouts[i];
+		vk::ImageLayout end_layout=vk::ImageLayout::eColorAttachmentOptimal ;
+		//if(target_layouts)
+		//	end_layout=target_layouts[i];
+		attachments[i]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(pixelFormats[i]))
 														.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
 														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
 														.setStoreOp(vk::AttachmentStoreOp::eStore)
 														.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 														.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-														.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal )
-														.setFinalLayout( vk::ImageLayout::eColorAttachmentOptimal );
+														.setInitialLayout( layout )
+														.setFinalLayout( end_layout );
 		colour_reference[i].setAttachment(i).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	}
 		
 	if(depth)
 	{
+		vk::ImageLayout layout=depthTestWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined;
+		//if(initial_layouts)
+		//	layout=initial_layouts[num_colour];
+		vk::ImageLayout end_layout=vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		//if(target_layouts)
+		//	end_layout=target_layouts[num_colour];
 		attachments[num_attachments-1]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(depthFormat))
 																		.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
 																		.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite?vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
 																		.setStoreOp(vk::AttachmentStoreOp::eStore)
 																		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 																		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-																		.setInitialLayout(depthTestWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined)
-																		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+																		.setInitialLayout(layout)
+																		.setFinalLayout(end_layout);
 		depth_reference.setAttachment(num_attachments-1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
 	

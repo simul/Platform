@@ -2134,26 +2134,39 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			else if(shaderInstance->shaderType == sfx::ShaderType::FRAGMENT_SHADER)
 			{
 				string customId = i.identifier;
-
-				if (sfxConfig.identicalIOBlocks)
+				auto s=sfxConfig.pixelSemantics.find(i.semantic);
+				if(i.semantic.length()>0&&s!=sfxConfig.pixelSemantics.end())
 				{
-					// In OpenGL io blocks should match, this means, that the name of					
-					// the members should be the same...					
-					customId = "BlockData";
-					find_and_replace(content, i.identifier, customId);
+					setup_code+=((i.type+" ")+i.identifier+"=")+s->second+";\n";
 				}
 				else
 				{
-					customId = string("BlockData") + QuickFormat("%d", num);
-					find_and_replace_identifier(content, i.identifier, customId);
+					if (sfxConfig.identicalIOBlocks)
+					{
+						// In OpenGL io blocks should match, this means, that the name of					
+						// the members should be the same...					
+						customId = "BlockData";
+						find_and_replace(content, i.identifier, customId);
+					}
+					else
+					{
+						customId = string("BlockData") + QuickFormat("%d", num);
+						find_and_replace_identifier(content, i.identifier, customId);
+					}
+					string m = memberDeclaration;
+					string acceptable_type=i.type;
+					// ioblocks can't have bool's.
+					if(i.type=="bool")
+					{
+						acceptable_type="char";
+					}
+					find_and_replace(m, "{type}", acceptable_type);
+					find_and_replace(m, "{name}", customId);
+					find_and_replace(m, "{semantic}", i.semantic);
+					find_and_replace(m, "{slot}", ToString(num++));
+					members += m + "\n";
+					setup_code += ((i.type + " ") + customId + "=") + (blockname + ".") + customId + ";\n";
 				}
-				string m = memberDeclaration;
-				find_and_replace(m, "{type}", i.type);
-				find_and_replace(m, "{name}", customId);
-				find_and_replace(m, "{semantic}", i.semantic);
-				find_and_replace(m, "{slot}", ToString(num++));
-				members += m + "\n";
-				setup_code += ((i.type + " ") + customId + "=") + (blockname + ".") + customId + ";\n";
 			}
 			// Compute shader (could be or not a struct)
 			else if (shaderInstance->shaderType == sfx::ShaderType::COMPUTE_SHADER)

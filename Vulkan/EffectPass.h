@@ -14,6 +14,7 @@ namespace simul
 {
 	namespace vulkan
 	{
+		typedef unsigned long long RenderPassHash;
         //! A Vulkan program object (combination of shaders)
 		class SIMUL_VULKAN_EXPORT EffectPass :public simul::crossplatform::EffectPass
 		{
@@ -25,7 +26,13 @@ namespace simul
 			void        Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
             void        SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 
-			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext,crossplatform::PixelFormat pixf,crossplatform::Topology topology);
+			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
+
+			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+				, const crossplatform::RenderState *blendState=nullptr
+				, const crossplatform::RenderState *depthStencilState=nullptr
+				, const crossplatform::RenderState *rasterizerState=nullptr);
+			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology);
         private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();
@@ -41,12 +48,6 @@ namespace simul
 				vk::PipelineCache			mPipelineCache;
 				vk::RenderPass				mRenderPass;
 			};
-			typedef unsigned long long RenderPassHash;
-			static inline RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology)
-			{
-				unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)topology;
-				return hashval;
-			}
 			std::map<RenderPassHash,RenderPassPipeline> mRenderPasses;
 			vk::DescriptorPool			mDescriptorPool;
 			
@@ -62,7 +63,10 @@ namespace simul
 			static int GenerateTextureSlot(int s,bool offset=true);
 			static int GenerateTextureWriteSlot(int s,bool offset=true);
 			static int GenerateConstantBufferSlot(int s,bool offset=true);
-			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology);
+			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+				, const crossplatform::RenderState *blendState=nullptr
+				, const crossplatform::RenderState *depthStencilState=nullptr
+				, const crossplatform::RenderState *rasterizerState=nullptr);
 			bool initialized=false;
 			vk::DescriptorSetLayoutBinding *layout_bindings=nullptr;
 		};

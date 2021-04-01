@@ -19,22 +19,18 @@
 #if SAMPLE_USE_D3D12
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/DeviceManager.h"
-#include "Platform/DirectX12/Texture.h"
 #endif
 #if SAMPLE_USE_D3D11
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/DirectX11/Direct3D11Manager.h"
-#include "Platform/DirectX11/Texture.h"
 #endif
 #if SAMPLE_USE_VULKAN
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/DeviceManager.h"
-#include "Platform/Vulkan/Texture.h"
 #endif
 #if SAMPLE_USE_OPENGL
 #include "Platform/OpenGL/RenderPlatform.h"
 #include "Platform/OpenGL/DeviceManager.h"
-#include "Platform/OpenGL/Texture.h"
 #endif 
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 #include "Platform/CrossPlatform/HDRRenderer.h"

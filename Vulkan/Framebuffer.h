@@ -34,7 +34,6 @@ namespace simul
             void DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
             void Clear(crossplatform::GraphicsDeviceContext &deviceContext,float,float,float,float,float,int mask = 0) override;
             void ClearColour(crossplatform::GraphicsDeviceContext &deviceContext,float,float,float,float) override;
-            void SetWidthAndHeight(int w,int h,int mips = -1) override;
             void SetAsCubemap(int face_size,int num_mips = 1,crossplatform::PixelFormat f = crossplatform::RGBA_32_FLOAT) override;
             void SetFormat(crossplatform::PixelFormat) override;
             void SetDepthFormat(crossplatform::PixelFormat) override;

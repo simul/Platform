@@ -25,10 +25,11 @@ void Buffer::InvalidateDeviceObjects()
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
-	vulkanDevice->destroyBuffer(mBuffer, nullptr);
-	vulkanDevice->freeMemory(mBufferMemory, nullptr);
-	vulkanDevice->destroyBuffer(bufferLoad.stagingBuffer, nullptr);
-	vulkanDevice->freeMemory(bufferLoad.stagingBufferMemory, nullptr);
+	vulkan::RenderPlatform *rp=(vulkan::RenderPlatform *)renderPlatform;
+	rp->PushToReleaseManager(mBuffer);
+	rp->PushToReleaseManager(mBufferMemory);
+	rp->PushToReleaseManager(bufferLoad.stagingBuffer);
+	rp->PushToReleaseManager(bufferLoad.stagingBufferMemory);
 	renderPlatform=nullptr;
 }
 

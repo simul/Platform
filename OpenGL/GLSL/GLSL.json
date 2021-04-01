@@ -13,7 +13,7 @@
 		"GLSL": "1",
 		"SFX_GLSL": "1",
 		"SFX_OPENGL": "1",
-		"uint64_t":  "uvec2"
+		"uint64_t": "uvec2"
 	},
 	"generateSlots": true,
 	"identicalIOBlocks": true,
@@ -47,6 +47,9 @@
 		"SV_VertexID": "gl_VertexID",
 		"SV_InstanceId": "gl_InstanceID",
 		"SV_POSITION": "gl_Position"
+	},
+	"pixelSemantics": {
+		"SV_IsFrontFace": "gl_FrontFacing"
 	},
 	"vertexOutputAssignment": {
 		"SV_POSITION": "gl_Position"

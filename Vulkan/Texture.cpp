@@ -11,15 +11,6 @@
 using namespace simul;
 using namespace vulkan;
 
-
-// TODO: This is ridiculous. But GL, at least in the current NVidia implementation, seems unable to write to a re-used texture id that it has generated after that id 
-// was previously freed. Bad bug.
-// Therefore we force the issue by making the tex id's go up sequentially, not standard GL behaviour:
-void glGenTextures_DONT_REUSE(int count,GLuint *tex)
-{
-	//glGenTextures(count,tex);
-}
-
 SamplerState::SamplerState()
 {
 }
@@ -52,7 +43,7 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 			.setCompareOp(vk::CompareOp::eNever)
 			.setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
 			.setUnnormalizedCoordinates(VK_FALSE);
-	vulkanDevice->createSampler(&samplerCreateInfo,nullptr,&mSampler);
+	SIMUL_VK_CHECK(vulkanDevice->createSampler(&samplerCreateInfo,nullptr,&mSampler));
 	SetVulkanName(renderPlatform,(uint64_t*)&mSampler,"Sampler ");
 }
 
@@ -742,7 +733,14 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 	if (!mRenderPass)
 	{
 		auto *r = (vulkan::RenderPlatform*)renderPlatform;
-		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
+		if(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)
+		{
+			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal);
+	}
+		vk::ImageLayout layouts[]={currentImageLayout};
+		vk::ImageLayout end_layouts[]={(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:currentImageLayout};
+		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,GetSampleCount(),layouts,end_layouts);
+		AssumeLayout(end_layouts[0]);
 	}
 	return mRenderPass;
 }
@@ -752,7 +750,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 	if(mFramebuffers.size())
 		return;
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);// effectPass->GetVulkanRenderPass(deviceContext, pixelFormat);
+	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);
 	
 	vk::ImageView attachments[1]={nullptr};
 
@@ -929,11 +927,25 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
-	activateRenderTarget(deviceContext,0,0);
+	/*activateRenderTarget(deviceContext,0,0);
 	renderPlatform->GetDebugEffect()->Apply(deviceContext,"clear_depth",0);
 	renderPlatform->DrawQuad(deviceContext);
 	renderPlatform->GetDebugEffect()->Unapply(deviceContext);
 	deactivateRenderTarget(deviceContext);
+	*/
+	SetLayout(deviceContext,vk::ImageLayout::eTransferDstOptimal);
+	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+	vk::Image &image=mImage;
+	vk::ImageLayout image_layout=currentImageLayout;
+	std::vector<vk::ImageSubresourceRange> image_subresource_ranges;
+	// if stencil, may need |vk::ImageAspectFlagBits::eStencil
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
+	image_subresource_ranges.push_back(imageSubresourceRange);
+	vk::ClearDepthStencilValue clear_value;
+	clear_value.depth=depthClear;
+	clear_value.stencil=stencilClear;
+	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
+	SetLayout(deviceContext,vk::ImageLayout::eDepthAttachmentOptimal);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)

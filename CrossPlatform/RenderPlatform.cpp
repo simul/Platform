@@ -477,8 +477,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				int W=(w+4-1)/4;
 				int L=(l+4-1)/4;
 				int D=(d+4-1)/4;
-
-				if (texture->dim == 2 && texture->NumFaces() > 1)
+			/*	if (texture->dim == 2 && texture->NumFaces() > 1)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
@@ -494,7 +493,8 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i,j);
 					}
 				}
-				else if(texture->dim==2)
+				else*/
+				if(texture->dim==2)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
