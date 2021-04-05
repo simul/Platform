@@ -42,8 +42,8 @@ Texture::Texture()
 	,mipUnorderedAccessViews(NULL)
 	,layerMipUnorderedAccessViews(NULL)
 	,depthStencilView(NULL)
-	,renderTargetViews(NULL)
 	,stagingBuffer(NULL)
+	,renderTargetViews(NULL)
 	,last_context(NULL)
 {
 	memset(&mapped,0,sizeof(mapped));

@@ -126,6 +126,7 @@ namespace simul
 #else
 #define SIMUL_ASSERT(value)
 #endif
+
 #define SIMUL_BREAK(msg)\
 	{\
 		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
@@ -138,6 +139,16 @@ namespace simul
 		if(!done) \
 		{ std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl; BREAK_IF_DEBUGGING ; done=true; } \
 	}
+
+#if SIMUL_INTERNAL_CHECKS
+#define SIMUL_BREAK_INTERNAL(msg)\
+	{\
+		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
+		BREAK_IF_DEBUGGING\
+	}
+#else
+#define SIMUL_BREAK_INTERNAL(msg)
+#endif
 
 #define SIMUL_ASSERT_WARN(val,message)\
 	if((val)!=true)\

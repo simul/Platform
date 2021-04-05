@@ -29,6 +29,8 @@ void SamplerState::InvalidateDeviceObjects()
 }
 
 Texture::Texture():
+	mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ),
+	mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
 	mTextureDefault(nullptr),
 	mTextureUpload(nullptr),
 	mLoadedFromFile(false),
@@ -37,8 +39,6 @@ Texture::Texture():
 	layerMipShaderResourceViews12(nullptr),
 	mipUnorderedAccessViews12(nullptr),
 	layerMipUnorderedAccessViews12(nullptr),
-	mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ),
-	mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
 	renderTargetViews12(nullptr),
 	mNumSamples(1)
 {

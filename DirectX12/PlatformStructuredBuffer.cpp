@@ -271,6 +271,12 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+	SIMUL_ASSERT(mCpuRead);
+	if(!mCpuRead)
+	{
+		SIMUL_BREAK_ONCE("Cpu read not enabled, can't write to read buffer for this PlatformStructuredBuffer.");
+		return;
+	}
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
 	unsigned int curIdx                     = deviceContext.frame_number % mBuffering;
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
