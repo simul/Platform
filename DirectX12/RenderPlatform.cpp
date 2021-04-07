@@ -508,7 +508,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Create dummy textures
 	mDummy2D = CreateTexture("Dummy2D");
 	mDummy3D = CreateTexture("Dummy3D");
-	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 	mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 	// Create null descriptors

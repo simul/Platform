@@ -1119,7 +1119,11 @@ void EffectPass::CreateRaytracePso()
     stateObject.NumSubobjects = (UINT)subObjects.size();
     stateObject.pSubobjects = subObjects.data();
     stateObject.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+
+#if PLATFORM_DEBUG_DISABLE == 1
     PrintStateObjectDesc(&stateObject);
+#endif
+
     // Create the state object.
     HRESULT res=pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
 	V_CHECK(res);

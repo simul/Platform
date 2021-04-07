@@ -741,9 +741,9 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 
 		// Checks
 		if (texel_index != 0)
-			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
-		if(srcSlice != (texelSize * (width * length)))
-			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
+			SIMUL_BREAK_INTERNAL("Nacho has to implement this");
+		if (srcSlice != (texelSize * (width * length)))
+			SIMUL_BREAK_INTERNAL("Nacho has to implement this");
 
 		// Transition main texture to copy dest
 		renderPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, GetCurrentState(deviceContext), D3D12_RESOURCE_STATE_COPY_DEST,true);
@@ -1052,8 +1052,8 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		InitStateTable(1,m);
 		InitSRVTables(1, m);
 
-		if(name.length()==0)
-			SIMUL_BREAK_INTERNAL("Unnamed texture")
+		if (name.length() == 0)
+			SIMUL_BREAK_INTERNAL("Unnamed texture");
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name+" Texture3DSrvHeap").c_str(), false);
 		r->AsD3D12Device()->CreateShaderResourceView(mTextureDefault,&srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
@@ -1755,7 +1755,7 @@ void Texture::unmap()
 
 vec4 Texture::GetTexel(crossplatform::DeviceContext &,vec2 ,bool )
 {
-    SIMUL_BREAK_INTERNAL("")
+	SIMUL_BREAK_INTERNAL("");
 	return vec4(0.0f,0.0f,0.0f,0.0f);
 }
 

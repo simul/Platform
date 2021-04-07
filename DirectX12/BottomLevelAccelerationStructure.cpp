@@ -4,6 +4,7 @@
 #include "Platform/DirectX12/SimulDirectXHeader.h"
 #include "Platform/DirectX12/BaseAccelerationStructure.h"
 #include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 #include <functional>
 
 using namespace simul;
@@ -140,9 +141,6 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 		UINT64 AABBCount = _countof(ppAABBResources);
 		ppAABBResources[0] = aabbBuffer->platformStructuredBuffer->AsD3D12Resource(deviceContext);
 
-		//Will do the transition to D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE (from D3D12_RESOURCE_STATE_UNORDERED_ACCESS).
-		auto srv = aabbBuffer->platformStructuredBuffer->AsD3D12ShaderResourceView(deviceContext);
-
 		if (ppAABBResources == nullptr || AABBCount == 0)
 			return;
 
@@ -196,8 +194,21 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 	buildDesc.SourceAccelerationStructureData = 0;
 	buildDesc.ScratchAccelerationStructureData = scratchResource->GetGPUVirtualAddress();
 
+	//BuildRaytracingAccelerationStructure need the StructuredBuffer for AABB in D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+	//Transition to D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE (from D3D12_RESOURCE_STATE_UNORDERED_ACCESS).
+	if (aabbBuffer)
+		commandList4->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(aabbBuffer->platformStructuredBuffer->AsD3D12Resource(deviceContext), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	
 	commandList4->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
-	commandList4->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(accelerationStructure));
+	
+	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+	//Restore state of StructuredBuffer
+	//Transition to D3D12_RESOURCE_STATE_UNORDERED_ACCESS (from D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE).
+	if (aabbBuffer)
+		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(aabbBuffer->platformStructuredBuffer->AsD3D12Resource(deviceContext), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	
+	barriers.push_back(CD3DX12_RESOURCE_BARRIER::UAV(accelerationStructure));
+	commandList4->ResourceBarrier((UINT)barriers.size(), barriers.data());
 #endif
 	initialized = true;
 }
