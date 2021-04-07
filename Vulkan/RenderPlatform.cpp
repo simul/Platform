@@ -1820,7 +1820,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	for(int i=0;i<num_colour;i++)
 	{
 		vk::ImageLayout layout=crossplatform::RenderPlatform::IsDepthFormat(pixelFormats[i])?
-			vk::ImageLayout::eDepthAttachmentOptimal:vk::ImageLayout::eColorAttachmentOptimal;
+			vk::ImageLayout::eDepthAttachmentOptimalKHR:vk::ImageLayout::eColorAttachmentOptimal;
 		//if(initial_layouts)
 		//	layout=initial_layouts[i];
 		vk::ImageLayout end_layout=vk::ImageLayout::eColorAttachmentOptimal ;
