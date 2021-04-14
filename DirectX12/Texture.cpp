@@ -820,10 +820,14 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
 	
 		// Assume cubemap
-		if (textureDesc.DepthOrArraySize == 6)
+		if (textureDesc.DepthOrArraySize == 6 && (textureDesc.Width == textureDesc.Height))
 		{
 			cubemap							= true;
 			textureDesc.DepthOrArraySize	= 1;
+		}
+		else
+		{
+			cubemap							= false;
 		}
 		dxgi_format = RenderPlatform::DsvToTypelessFormat(textureDesc.Format);
 		pixelFormat = RenderPlatform::FromDxgiFormat(dxgi_format);
