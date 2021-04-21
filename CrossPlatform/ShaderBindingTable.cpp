@@ -1,4 +1,5 @@
 #include "Platform/CrossPlatform/ShaderBindingTable.h"
+#include <algorithm>
 
 using namespace simul;
 using namespace crossplatform;
