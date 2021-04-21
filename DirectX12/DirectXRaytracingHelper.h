@@ -131,7 +131,7 @@ inline void AllocateUAVBuffer(ID3D12Device* pDevice, UINT64 bufferSize, ID3D12Re
         &bufferDesc,
         initialResourceState,
         nullptr,
-        IID_PPV_ARGS(ppResource)));
+        SIMUL_PPV_ARGS(ppResource)));
     if (resourceName)
     {
         (*ppResource)->SetName(resourceName);
@@ -168,7 +168,7 @@ inline void AllocateUploadBuffer(ID3D12Device* pDevice, void *pData, UINT64 data
         &bufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(ppResource)));
+        SIMUL_PPV_ARGS(ppResource)));
     if (resourceName)
     {
         (*ppResource)->SetName(resourceName);

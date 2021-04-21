@@ -41,7 +41,7 @@ namespace simul
 			ShaderRecord(Type shaderRecordType, Handle shaderHandle, Parameters shaderParameters = nullptr, size_t shaderParameterSize = 0)
 				:type(shaderRecordType), handle(shaderHandle), parameters(shaderParameters), parametersSize(shaderParameterSize)
 			{
-				SIMUL_ASSERT((handleSize + parametersSize) <= ShaderRecordMaxStride);
+				SIMUL_ASSERT((handleSize + parametersSize) <= ShaderRecord::DefaultMaxStride);
 			}
 
 			inline const size_t GetSize() const { return handleSize + parametersSize; }

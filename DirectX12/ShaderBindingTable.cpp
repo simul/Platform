@@ -2,7 +2,6 @@
 #include "Platform/DirectX12/effect.h"
 #include "Platform/Core/StringToWString.h"
 #include "DirectXRaytracingHelper.h"
-#include "SimulDirectXHeader.h"
 #include <string>
 
 using namespace simul;
@@ -45,7 +44,7 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 			auto AddShaderRecord = [&](const std::string& name, crossplatform::ShaderRecord::Type type) -> void
 			{
 				std::wstring wstr_name = base::StringToWString(name);
-				crossplatform::ShaderRecord::Handle handle = rayTracingPipelineProperties->GetShaderIdentifier(wstr_name.c_str());
+				crossplatform::ShaderRecord::Handle handle = const_cast<void*>(rayTracingPipelineProperties->GetShaderIdentifier(wstr_name.c_str())); //Xbox retruns this as type: const void*, not void*.
 				result[type].push_back(handle);
 			};
 
@@ -90,6 +89,7 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 
 void ShaderBindingTable::BuildShaderBindingTableResources(crossplatform::RenderPlatform* renderPlatform)
 {
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	ID3D12Device* device = renderPlatform->AsD3D12Device();
 	const wchar_t* names[4] = {
 		L"ShaderBinidngTable_RayGen",
@@ -104,13 +104,7 @@ void ShaderBindingTable::BuildShaderBindingTableResources(crossplatform::RenderP
 		{
 			auto uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 			auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(static_cast<UINT>(sbtRes.second.size()));
-			ThrowIfFailed(device->CreateCommittedResource(
-				&uploadHeapProperties,
-				D3D12_HEAP_FLAG_NONE,
-				&bufferDesc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&SBTResources[sbtRes.first])));
+			ThrowIfFailed(device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, SIMUL_PPV_ARGS(&SBTResources[sbtRes.first])));
 			SBTResources[sbtRes.first]->SetName(names[(size_t)sbtRes.first]);
 
 			uint8_t* mappedData;
@@ -120,4 +114,5 @@ void ShaderBindingTable::BuildShaderBindingTableResources(crossplatform::RenderP
 			SBTResources[sbtRes.first]->Unmap(0, &readRange);
 		}
 	}
+#endif
 }
