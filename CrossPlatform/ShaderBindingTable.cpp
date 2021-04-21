@@ -43,12 +43,12 @@ void ShaderBindingTable::FinalizeShaderRecords()
 		shaderBindingTableResources[type].resize(newSize);
 
 		char* dstPtr = shaderBindingTableResources[type].data() + currentSize;
-		memcpy_s(dstPtr, ShaderRecord::DefaultHandleSize, shaderRecord.handle, ShaderRecord::DefaultHandleSize);
+		memcpy(dstPtr, shaderRecord.handle, ShaderRecord::DefaultHandleSize);
 
 		if (shaderRecord.parameters && shaderBindingTableStrides[type] > ShaderRecord::DefaultHandleSize)
 		{
 			dstPtr += ShaderRecord::DefaultHandleSize;
-			memcpy_s(dstPtr, shaderRecord.parametersSize, shaderRecord.parameters, shaderRecord.parametersSize);
+			memcpy(dstPtr, shaderRecord.parameters, shaderRecord.parametersSize);
 		}
 	}
 }
