@@ -63,7 +63,7 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 		return;
 	}
 
-	if (instanceDescs.empty())
+	if (_instanceDescs.empty())
 		return;
 
 	instanceDescs.clear();
