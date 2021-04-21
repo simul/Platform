@@ -284,6 +284,8 @@ namespace simul
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
 			std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
+			std::map<std::string,Shader*> missShaders;
+			std::map<std::string, Shader*> callableShaders;
 			int maxPayloadSize = 0;
 			int maxAttributeSize = 0;
 			int maxTraceRecursionDepth = 0;

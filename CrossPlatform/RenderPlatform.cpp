@@ -16,6 +16,7 @@
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/AccelerationStructureManager.h"
+#include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -772,6 +773,11 @@ TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructu
 AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
 {
 	return new AccelerationStructureManager(this);
+}
+
+ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
+{
+	return new ShaderBindingTable();
 }
 
 Mesh *RenderPlatform::CreateMesh()

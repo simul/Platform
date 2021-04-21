@@ -23,6 +23,7 @@ namespace simul
 			crossplatform::Mesh* mesh = nullptr;
 			crossplatform::Raytracing_AABB_SB* aabbBuffer = nullptr;
 			GeometryType geometryType = GeometryType::UNKNOWN;
+			uint32_t geometryCount = 0;
 
 		public:
 			BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r);
@@ -32,6 +33,9 @@ namespace simul
 			void SetAABB(crossplatform::StructuredBuffer<Raytracing_AABB>* aabbBuffer);
 
 			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) { initialized = true; }
+			
+			inline const uint32_t& GetGeometryCount() const { return geometryCount; }
+			inline uint32_t GetGeometryCount() { return geometryCount; }
 		};
 	}
 }

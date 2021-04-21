@@ -26,15 +26,15 @@ void AccelerationStructureManager::InvalidateDeviceObjects()
 
 void AccelerationStructureManager::GenerateCombinedAccelerationStructure()
 {
-	BottomLevelAccelerationStructuresAndTransforms* tempBLASList = new BottomLevelAccelerationStructuresAndTransforms;
+	InstanceDescs* tempBLASList = new InstanceDescs;
 
 	for (auto TLAS : TLASList)
 	{
-		BottomLevelAccelerationStructuresAndTransforms* temp = TLAS.second->GetBottomLevelAccelerationStructuresAndTransforms();
+		InstanceDescs* temp = TLAS.second->GetInstanceDescs();
 		tempBLASList->insert(tempBLASList->end(), temp->begin(), temp->end());
 	}
 
-	combinedTLAS->SetBottomLevelAccelerationStructuresAndTransforms(*tempBLASList);
+	combinedTLAS->SetInstanceDescs(*tempBLASList);
 	generatedCombinedAS = true;
 }
 

@@ -9,29 +9,42 @@ namespace simul
 {
 	namespace crossplatform
 	{
-		typedef std::vector<std::pair<crossplatform::BottomLevelAccelerationStructure*, math::Matrix4x4>> BottomLevelAccelerationStructuresAndTransforms;
+		struct InstanceDesc
+		{
+			crossplatform::BottomLevelAccelerationStructure* blas = nullptr;
+			math::Matrix4x4 transform;
+			uint32_t contributionToHitGroupIdx = 0;
+
+			InstanceDesc() = delete;
+			InstanceDesc(crossplatform::BottomLevelAccelerationStructure* BLAS, math::Matrix4x4 Transform, uint32_t ContributionToHitGroupIdx = 0)
+				: blas(BLAS), transform(Transform), contributionToHitGroupIdx(ContributionToHitGroupIdx) {}
+			~InstanceDesc() = default;
+		};
+
+		typedef std::vector<InstanceDesc> InstanceDescs;
 
 		// Derived class for Top Level Acceleration Structures, which contain Bottom Level Acceleration Structures to be built.
 		class SIMUL_CROSSPLATFORM_EXPORT TopLevelAccelerationStructure : public BaseAccelerationStructure
 		{
 		public:
-			BottomLevelAccelerationStructuresAndTransforms BLASandTransforms;
+			InstanceDescs _instanceDescs;
+
+		protected:
+			uint32_t instanceCount = 0;
+
+		private:
+			int ID;
 
 		public:
 			TopLevelAccelerationStructure(crossplatform::RenderPlatform* r);
 			virtual ~TopLevelAccelerationStructure();
 
-			void SetBottomLevelAccelerationStructuresAndTransforms(const BottomLevelAccelerationStructuresAndTransforms& BLASandTransforms);
-
-			BottomLevelAccelerationStructuresAndTransforms* GetBottomLevelAccelerationStructuresAndTransforms();
+			void SetInstanceDescs(const InstanceDescs& instanceDescs);
+			InstanceDescs* GetInstanceDescs();
 
 			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) { initialized = true; }
 			
-			int GetID();
-
-		private:
-			int ID;
+			inline int GetID() { return ID; }
 		};
 	}
 }
-#pragma once

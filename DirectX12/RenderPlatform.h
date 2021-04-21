@@ -185,7 +185,7 @@ namespace simul
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
-			void									DispatchRays	(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch) override;
+			void									DispatchRays	(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr) override;
 			void									Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value);
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
@@ -207,6 +207,7 @@ namespace simul
 			crossplatform::Shader					*CreateShader() override;
 			crossplatform::BottomLevelAccelerationStructure*CreateBottomLevelAccelerationStructure() override;
 			crossplatform::TopLevelAccelerationStructure*CreateTopLevelAccelerationStructure() override;
+			crossplatform::ShaderBindingTable*		CreateShaderBindingTable() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
 

@@ -22,18 +22,13 @@ TopLevelAccelerationStructure::~TopLevelAccelerationStructure()
 {
 }
 
-void TopLevelAccelerationStructure::SetBottomLevelAccelerationStructuresAndTransforms(const BottomLevelAccelerationStructuresAndTransforms& BLASandTransforms)
+void TopLevelAccelerationStructure::SetInstanceDescs(const InstanceDescs& instanceDescs)
 {
-	this->BLASandTransforms = BLASandTransforms;
+	this->_instanceDescs = instanceDescs;
 	initialized = false;
 }
 
-BottomLevelAccelerationStructuresAndTransforms* TopLevelAccelerationStructure::GetBottomLevelAccelerationStructuresAndTransforms()
+InstanceDescs* TopLevelAccelerationStructure::GetInstanceDescs()
 {
-	return &BLASandTransforms;
-}
-
-int TopLevelAccelerationStructure::GetID()
-{
-	return ID;
+	return &_instanceDescs;
 }

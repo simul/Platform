@@ -63,15 +63,15 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 		return;
 	}
 
-	if (BLASandTransforms.empty())
+	if (instanceDescs.empty())
 		return;
 
 	instanceDescs.clear();
 
-	for (const auto& BLASandTransform : BLASandTransforms)
+	for (const auto& _instanceDesc : _instanceDescs)
 	{
-		const auto& BLAS = BLASandTransform.first;
-		const auto& Transform = BLASandTransform.second;
+		const auto& BLAS = _instanceDesc.blas;
+		const auto& Transform = _instanceDesc.transform;
 		BottomLevelAccelerationStructure* d3d12BLAS = (dx12::BottomLevelAccelerationStructure*)BLAS;
 
 		// Create an instance desc for the bottom-level acceleration structure.
@@ -88,19 +88,21 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 		instanceDesc.Transform[2][1] = Transform.m12;
 		instanceDesc.Transform[2][2] = Transform.m22;
 		instanceDesc.Transform[2][3] = Transform.m32;
-		instanceDesc.InstanceID = 0;
-		instanceDesc.InstanceMask = 1;
-		instanceDesc.InstanceContributionToHitGroupIndex = 0;
-		instanceDesc.Flags = 0;
+		instanceDesc.InstanceID = static_cast<UINT>(instanceDescs.size()); //Use current size of the array as custom ID, starting at 0... 
+		instanceDesc.InstanceMask = 0xFF;
+		instanceDesc.InstanceContributionToHitGroupIndex = _instanceDesc.contributionToHitGroupIdx;
+		instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 		instanceDesc.AccelerationStructure = d3d12BLAS->AsD3D12ShaderResource(deviceContext)->GetGPUVirtualAddress();
 		instanceDescs.push_back(instanceDesc);
 	}
 	AllocateUploadBuffer(device, instanceDescs.data(), (instanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC)), &instanceDescsResource, L"InstanceDescsResource");
 
+	instanceCount = static_cast<uint32_t>(instanceDescs.size());
+
 	// Get required sizes for an acceleration structure.
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-	inputs.NumDescs = static_cast<UINT>(BLASandTransforms.size());
+	inputs.NumDescs = static_cast<UINT>(instanceDescs.size());
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	inputs.InstanceDescs = instanceDescsResource->GetGPUVirtualAddress();
 

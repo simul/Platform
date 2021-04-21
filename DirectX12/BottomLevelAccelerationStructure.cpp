@@ -169,6 +169,8 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 		SIMUL_BREAK("ERROR: BottomLevelAccelerationStructure::geometryType is invalid");
 	}
 
+	geometryCount = static_cast<uint32_t>(geometryDescs.size());
+
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 	inputs.NumDescs = static_cast<UINT>(geometryDescs.size());
