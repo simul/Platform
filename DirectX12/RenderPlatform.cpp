@@ -2096,7 +2096,7 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 				t->SetLayout(deviceContext,D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 	}
-	D3D12_CPU_DESCRIPTOR_HANDLE h[8];
+	D3D12_CPU_DESCRIPTOR_HANDLE h[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	D3D12_CPU_DESCRIPTOR_HANDLE *D=nullptr;
 	if(deviceContext.defaultTargetsAndViewport.m_rt[0]||deviceContext.defaultTargetsAndViewport.m_dt)
 	{

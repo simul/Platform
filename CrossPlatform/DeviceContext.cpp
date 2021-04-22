@@ -68,11 +68,21 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 		if (depth_target)
 			defaultTargetsAndViewport.depthFormat = depth_target->GetFormat();
 	}
+
+	//TargetsAndViewport::num is defaulted to 0, but an valid RTV here should count.
+	if (defaultTargetsAndViewport.num == 0 && rt)
+		defaultTargetsAndViewport.num = 1;
+
 	defaultTargetsAndViewport.m_rt[0] = rt;
 	defaultTargetsAndViewport.m_rt[1] = nullptr;
 	defaultTargetsAndViewport.m_rt[2] = nullptr;
 	defaultTargetsAndViewport.m_rt[3] = nullptr;
+	defaultTargetsAndViewport.m_rt[4] = nullptr;
+	defaultTargetsAndViewport.m_rt[5] = nullptr;
+	defaultTargetsAndViewport.m_rt[6] = nullptr;
+	defaultTargetsAndViewport.m_rt[7] = nullptr;
 	defaultTargetsAndViewport.m_dt = dt;
+
 	defaultTargetsAndViewport.viewport.x = viewportLeft;
 	defaultTargetsAndViewport.viewport.y = viewportTop;
 	defaultTargetsAndViewport.viewport.w = viewportRight - viewportLeft;

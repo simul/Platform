@@ -296,14 +296,14 @@ namespace simul
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
 			//! as 
-			void setDefaultRenderTargets(const ApiRenderTarget*
-				,const ApiDepthRenderTarget*
+			void setDefaultRenderTargets(const ApiRenderTarget* rt
+				,const ApiDepthRenderTarget* dt
 				,uint32_t viewportLeft
 				,uint32_t viewportTop
 				,uint32_t viewportRight
 				,uint32_t viewportBottom
 				,Texture **texture_targets=nullptr
-				,int num_targets=1
+				,int num_targets=0
 				,Texture *depth_target=nullptr
 			);
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
