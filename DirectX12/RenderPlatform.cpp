@@ -13,6 +13,7 @@
 #include "Platform/DirectX12/BaseAccelerationStructure.h"
 #include "Platform/DirectX12/TopLevelAccelerationStructure.h"
 #include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
+#include "Platform/DirectX12/ShaderBindingTable.h"
 #include "Platform/DirectX12/Texture.h"
 #include "Platform/DirectX12/Framebuffer.h"
 #include "Platform/DirectX12/Effect.h"
@@ -1088,32 +1089,56 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	commandList->Dispatch(w, l, d);
 }
 
-void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch)
+void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt)
 {
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	ID3D12Device5* m12Device5 = AsD3D12Device5();
 	if(!m12Device5||!HasRenderingFeatures(crossplatform::RenderingFeatures::Raytracing))
 		return;
+
 	ApplyContextState(deviceContext);
 	ID3D12GraphicsCommandList5*	commandList =static_cast<ID3D12GraphicsCommandList5*>(deviceContext.asD3D12Context());
-	//crossplatform::RenderingFeatures::Raytracing
-    D3D12_DISPATCH_RAYS_DESC d3d12DispatchDesc = {};
-	dx12::EffectPass *effectPass12		=static_cast<dx12::EffectPass*>(deviceContext.contextState.currentEffectPass);
-	const RaytraceTable *raytraceTable	=effectPass12->GetRaytraceTable();
-	if(!raytraceTable)
+
+	const dx12::ShaderBindingTable* raytraceTable = nullptr;
+	if (sbt)
+	{
+		raytraceTable = reinterpret_cast<const dx12::ShaderBindingTable*>(sbt);
+	}
+	else
+	{
+		dx12::EffectPass* effectPass12 = reinterpret_cast<dx12::EffectPass*>(deviceContext.contextState.currentEffectPass);
+		raytraceTable = reinterpret_cast<const dx12::ShaderBindingTable*>(effectPass12->GetShaderBindingTable()); //C++ weirdness here, we need to use reinterpret_cast<> for type conversion safety.
+	}
+	if (!raytraceTable)
 		return;
-    // Since each shader table has only one shader record, the stride is same as the size.
-    d3d12DispatchDesc.RayGenerationShaderRecord.StartAddress	= raytraceTable->rayGen.GPUVirtualAddress;
-    d3d12DispatchDesc.RayGenerationShaderRecord.SizeInBytes		= raytraceTable->rayGen.sizeInBytes;
-    d3d12DispatchDesc.MissShaderTable.StartAddress				= raytraceTable->miss.GPUVirtualAddress;
-    d3d12DispatchDesc.MissShaderTable.SizeInBytes				= raytraceTable->miss.sizeInBytes;
-    d3d12DispatchDesc.MissShaderTable.StrideInBytes				= raytraceTable->miss.width;
-    d3d12DispatchDesc.HitGroupTable.StartAddress				= raytraceTable->hitGroup.GPUVirtualAddress;
-    d3d12DispatchDesc.HitGroupTable.SizeInBytes					= raytraceTable->hitGroup.sizeInBytes;
-    d3d12DispatchDesc.HitGroupTable.StrideInBytes				= raytraceTable->hitGroup.width;
-    d3d12DispatchDesc.Width		= dispatch.x;
-    d3d12DispatchDesc.Height	= dispatch.y;
-    d3d12DispatchDesc.Depth		= dispatch.z;
+
+    D3D12_DISPATCH_RAYS_DESC d3d12DispatchDesc = {};
+	if (raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::RAYGEN))
+	{
+		d3d12DispatchDesc.RayGenerationShaderRecord.StartAddress	= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::RAYGEN)->GetGPUVirtualAddress();
+		d3d12DispatchDesc.RayGenerationShaderRecord.SizeInBytes		= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::RAYGEN)->GetDesc().Width;
+	}
+	if (raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::MISS))
+	{
+		d3d12DispatchDesc.MissShaderTable.StartAddress				= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::MISS)->GetGPUVirtualAddress();
+		d3d12DispatchDesc.MissShaderTable.SizeInBytes				= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::MISS)->GetDesc().Width;
+		d3d12DispatchDesc.MissShaderTable.StrideInBytes				= raytraceTable->GetShaderBindingTableStrides().at(crossplatform::ShaderRecord::Type::MISS);
+	}
+	if (raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::HIT_GROUP))
+	{
+		d3d12DispatchDesc.HitGroupTable.StartAddress				= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::HIT_GROUP)->GetGPUVirtualAddress();
+		d3d12DispatchDesc.HitGroupTable.SizeInBytes					= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::HIT_GROUP)->GetDesc().Width;
+		d3d12DispatchDesc.HitGroupTable.StrideInBytes				= raytraceTable->GetShaderBindingTableStrides().at(crossplatform::ShaderRecord::Type::HIT_GROUP);
+	}
+	if (raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::CALLABLE))
+	{
+		d3d12DispatchDesc.CallableShaderTable.StartAddress			= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::CALLABLE)->GetGPUVirtualAddress();
+		d3d12DispatchDesc.CallableShaderTable.SizeInBytes			= raytraceTable->SBTResources.at(crossplatform::ShaderRecord::Type::CALLABLE)->GetDesc().Width;
+		d3d12DispatchDesc.CallableShaderTable.StrideInBytes			= raytraceTable->GetShaderBindingTableStrides().at(crossplatform::ShaderRecord::Type::CALLABLE);
+	}
+    d3d12DispatchDesc.Width											= dispatch.x;
+    d3d12DispatchDesc.Height										= dispatch.y;
+    d3d12DispatchDesc.Depth											= dispatch.z;
 	commandList->DispatchRays(&d3d12DispatchDesc);
 #endif
 }
@@ -2452,6 +2477,11 @@ crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLev
 crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
 {
 	return new TopLevelAccelerationStructure(this);
+}
+
+crossplatform::ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
+{
+	return new ShaderBindingTable();
 }
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()

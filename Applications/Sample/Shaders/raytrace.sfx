@@ -101,7 +101,10 @@ technique raytrace
     raytrace_pass raytrace1
     {
         RayGeneration=CompileShader(lib_6_3,MyRaygenShader);
-        Miss=CompileShader(lib_6_3,MyMissShader);
+        MissShaders
+        {
+            CompileShader(lib_6_3, MyMissShader);
+        };
         HitGroup MainHitGroup
         {
             //Intersection=CompileShader(lib_6_3,MyIntersectionShader); //Optional

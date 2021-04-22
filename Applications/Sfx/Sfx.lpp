@@ -182,6 +182,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"Callable"				{
 										stdReturn(SET_CALLABLE);
 									}
+<IN_SHADER>"MissShaders"			{
+										stdReturn(SET_MISS_SHADERS);
+									}
+<IN_SHADER>"CallableShaders"		{
+										stdReturn(SET_CALLABLE_SHADERS);
+									}
 <IN_SHADER>"RayTracingShaderConfig"	{
 										stdReturn(SET_RAY_TRACING_SHADER_CONFIG);
 									}

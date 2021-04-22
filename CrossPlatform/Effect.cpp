@@ -1039,7 +1039,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,RAYTRACING_CONFIG=5,TOO_FAR=5
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,MISS_SHADERS=5,CALLABLE_SHADERS=5,RAYTRACING_CONFIG=5,TOO_FAR=6
 	};
 	Level level				=OUTSIDE;
 	EffectTechnique *tech	=nullptr;
@@ -1086,7 +1086,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		int open_brace= (int)line.find("{");
 		if(open_brace>=0)
 		{
-			if(level!=HITGROUP || level!=RAYTRACING_CONFIG)
+			if(level!=HITGROUP || level!=MISS_SHADERS || level!=CALLABLE_SHADERS || level!=RAYTRACING_CONFIG)
 				level=(Level)(level+1);
 		}
 		string word;
@@ -1366,7 +1366,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				layoutSlot++;
 			}
 		}
-		else if(level==PASS||level==HITGROUP||level==RAYTRACING_CONFIG)
+		else if(level==PASS||level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
 		{
 			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
@@ -1528,6 +1528,18 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						next	=(int)str.find('\n',pos+1);
 						continue;
 					}
+					else if (_stricmp(type.c_str(), "MissShaders") == 0)
+					{
+						level = MISS_SHADERS;
+						next = (int)str.find('\n', pos + 1);
+						continue;
+					}
+					else if (_stricmp(type.c_str(), "CallableShaders") == 0)
+					{
+						level = CALLABLE_SHADERS;
+						next = (int)str.find('\n', pos + 1);
+						continue;
+					}
 					else if (_stricmp(type.c_str(), "RayTracingShaderConfig") == 0)
 					{
 						level = RAYTRACING_CONFIG;
@@ -1589,7 +1601,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							{
 								p->shaders[t]=s;
 							}
-							else
+							else if(level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS)
 							{
 								if(t==SHADERTYPE_CLOSEST_HIT)
 								{
@@ -1603,6 +1615,19 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 								{
 									hg->intersection=s;
 								}
+								if(t==SHADERTYPE_MISS)
+								{
+									s->entryPoint=entry_point;
+									p->missShaders[s->entryPoint]=s;
+								}
+								if(t==SHADERTYPE_CALLABLE)
+								{
+									s->entryPoint=entry_point;
+									p->callableShaders[s->entryPoint]=s;
+								}
+							}
+							else
+							{
 							}
 						}
 						if (!passRtFormat.empty())
@@ -1743,7 +1768,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					SIMUL_CERR<<"No shaders in pass "<<pass_name.c_str()<<" of effect "<<filename_utf8<<std::endl;
 				}
 			}
-			if(level==HITGROUP||level==RAYTRACING_CONFIG)
+			if(level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
 				level=PASS;
 			else
 				level = (Level)(level - 1);

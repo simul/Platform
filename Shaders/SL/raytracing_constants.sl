@@ -31,7 +31,7 @@ HitGroupRecordAddress
 = D3D12_DISPATCH_RAYS_DESC.HitGroupTable.StartAddress					[from: DispatchRays()] 
 + D3D12_DISPATCH_RAYS_DESC.HitGroupTable.StrideInBytes					[from: DispatchRays()] 
 * ( RayContributionToHitGroupIndex										[from: TraceRay()] 
-+ ( MultiplierForGeometryContributionToHitGroupIndex					[from shader: TraceRay()] 
++ ( MultiplierForGeometryContributionToHitGroupIndex					[from: TraceRay()] 
 * GeometryContributionToHitGroupIndex )									[system generated index of geometry in bottom-level acceleration structure (0,1,2,3..)]
 + D3D12_RAYTRACING_INSTANCE_DESC.InstanceContributionToHitGroupIndex )	[from: instance]
 

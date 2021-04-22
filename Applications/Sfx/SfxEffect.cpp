@@ -1243,6 +1243,38 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					outstr<<"\t\t\t}\n";
 				}
 
+				//If it's raytrace, go through the miss shaders.
+				if (!pass->passState.missShaders.empty())
+				{
+					outstr << "\t\t\tMissShaders:" << "\n\t\t\t{\n";
+					for (auto m : pass->passState.missShaders)
+					{
+						if (m.length())
+						{
+							ShaderInstance* shaderInstance = GetShaderInstance(m, MISS_SHADER);
+							outstr << "\t\t\t\t";
+							writeSb(outstr, shaderInstance, shaderInstance->sbFilenames[0]);
+						}
+					}
+					outstr << "\t\t\t}\n";
+				}
+
+				//If it's raytrace, go through the callable shaders.
+				if (!pass->passState.callableShaders.empty())
+				{
+					outstr << "\t\t\tCallableShaders:" << "\n\t\t\t{\n";
+					for (auto c : pass->passState.callableShaders)
+					{
+						if (c.length())
+						{
+							ShaderInstance* shaderInstance = GetShaderInstance(c, CALLABLE_SHADER);
+							outstr << "\t\t\t\t";
+							writeSb(outstr, shaderInstance, shaderInstance->sbFilenames[0]);
+						}
+					}
+					outstr << "\t\t\t}\n";
+				}
+
 				//If it's raytrace, define the Shader and Pipeline configs
 				if (!pass->passState.raytraceHitGroups.empty())
 				{

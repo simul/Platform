@@ -73,6 +73,8 @@ namespace simul
 		class BottomLevelAccelerationStructure;
 		class TopLevelAccelerationStructure;
 		class AccelerationStructureManager;
+		class ShaderBindingTable;
+
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
@@ -246,7 +248,7 @@ namespace simul
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
-			virtual void DispatchRays		(DeviceContext &deviceContext,const uint3 &dispatch){}
+			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
 			virtual void Signal				(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
@@ -287,8 +289,10 @@ namespace simul
 			virtual BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
 			/// Create a platform specific raytracing acceleration structure.
 			virtual TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure();
-			/// Create a platform agnostic raytracing acceleration structure maanger
-			AccelerationStructureManager* CreateAccelerationStructureManager();
+			/// Create a platform agnostic raytracing acceleration structure maanger.
+			AccelerationStructureManager*	CreateAccelerationStructureManager();
+			/// Create a platform agnostic raytracing shader binding table.
+			virtual ShaderBindingTable*				CreateShaderBindingTable();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.

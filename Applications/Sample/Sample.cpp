@@ -304,8 +304,8 @@ public:
 		translation2.m32 += 2.0f;
 
 
-		tl_accelerationStructure->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructureExample, translation}, {bl_accelerationStructure, math::Matrix4x4::IdentityMatrix()} });
-		tl_accelerationStructureExample->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructureExample, translation2} });
+		tl_accelerationStructure->SetInstanceDescs({ {bl_accelerationStructureExample, translation}, {bl_accelerationStructure, math::Matrix4x4::IdentityMatrix()} });
+		tl_accelerationStructureExample->SetInstanceDescs({ {bl_accelerationStructureExample, translation2} });
 
 		accelerationStructureManager->AddTopLevelAcclelerationStructure(tl_accelerationStructure, tl_accelerationStructure->GetID());
 		accelerationStructureManager->AddTopLevelAcclelerationStructure(tl_accelerationStructureExample, tl_accelerationStructureExample->GetID());
@@ -437,7 +437,7 @@ public:
 		translation2.m30 += sin(real_time); 
 		translation2.m31 += 0.f;
 		translation2.m32 += 2.0f;
-		tl_accelerationStructureExample->SetBottomLevelAccelerationStructuresAndTransforms({ {bl_accelerationStructureExample, translation2} });
+		tl_accelerationStructureExample->SetInstanceDescs({ {bl_accelerationStructureExample, translation2} });
 
 		accelerationStructureManager->GenerateCombinedAccelerationStructure(); // Preferably the top level super acceleration structure won't have the have its blas's updated each time, however that will require a more elegant solution
 		accelerationStructureManager->BuildCombinedAccelerationStructure(deviceContext);
@@ -783,7 +783,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	}
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
 	graphicsDeviceInterface->Initialize(commandLineParams("debug"),false,false);
-	simul::crossplatform::RenderDocLoader::Load();
+	//simul::crossplatform::RenderDocLoader::Load();
 
 	renderer=new PlatformRenderer();
 	displaySurfaceManager.Initialize(renderer->renderPlatform);

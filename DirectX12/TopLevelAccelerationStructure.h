@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
@@ -34,8 +33,6 @@ namespace simul
 			ID3D12Resource* accelerationStructure = nullptr;
 			ID3D12Resource* scratchResource = nullptr;
 			ID3D12Resource* instanceDescsResource = nullptr;
-
-		
 		};
 	}
 }
