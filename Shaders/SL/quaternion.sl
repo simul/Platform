@@ -26,6 +26,18 @@ vec4 quat_conj(vec4 q)
 { 
   return vec4(-q.x, -q.y, -q.z, q.w); 
 }
+
+vec4 quat_inverse(vec4 q)
+{ 
+	float len = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+	if (len == 0.0f)
+	{
+		// Invalid argument
+		return vec4(0, 0, 0, 0);
+	}
+	float invLen = 1.0f / len;
+	return vec4(-q.x * invLen, -q.y * invLen, -q.z * invLen, q.w * invLen);
+}
   
 vec4 quat_mult(vec4 q1, vec4 q2)
 { 
