@@ -742,9 +742,11 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	// We will only recompile if we are in windows
 	// SFX will handle the "if changed"
 	auto buildMode = r->GetShaderBuildMode();
+	if ((buildMode & crossplatform::BUILD_IF_CHANGED) == 0)
+		return;
+	
 	bool result=false;
-	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
-		while(!result)
+	while(!result)
 	{
 		char* SIMUL = nullptr;
 		char* b = nullptr;
