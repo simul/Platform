@@ -105,7 +105,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 
 void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext&)
 {
-	SIMUL_BREAK_ONCE("Nacho has to check this");
+	//SIMUL_BREAK_ONCE("Nacho has to check this");
 }
 
 void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext)
