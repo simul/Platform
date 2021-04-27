@@ -43,8 +43,6 @@
 #include "Platform/Shaders/Sl/camera_constants.sl"
 #include "Platform/CrossPlatform/BaseAccelerationStructure.h"
 #include "Platform/CrossPlatform/AccelerationStructureManager.h"
-#include "Platform/DirectX12/TopLevelAccelerationStructure.h"
-#include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
 
 #include "Shaders/raytrace.sl"
 #ifdef _MSC_VER
