@@ -12,7 +12,8 @@ class PlatformType(Enum):
 	PS4 = 1
 	PS5 = 2
 	XBOX_ONE = 3
-	XBOX_SERIES = 4
+	XBOX_ONE_GDK = 4
+	XBOX_SERIES = 5
 
 def GetPlatformType(PlatformName):
 	platform = PlatformType.UNKNOWN
@@ -26,6 +27,8 @@ def GetPlatformType(PlatformName):
 		platform = PlatformType.PS5
 	elif PlatformName == "XBOXONE" or PlatformName == "DURANGO" or PlatformName == "XBOXONES" or PlatformName == "XBOXONEX": 
 		platform = PlatformType.XBOX_ONE
+	elif PlatformName == "XBOXONEGDK" or PlatformName == "GAMING.XBOX.XBOXONE.X64" or PlatformName == "XBOXSERIESSGDK" or PlatformName == "XBOXSERIESXGDK":
+		platform = PlatformType.XBOX_ONE_GDK
 	elif PlatformName == "SPECTRUM" or PlatformName == "GAMING.XBOX.SCARLETT.X64" or PlatformName == "XBOXSERIESS" or PlatformName == "XBOXSERIESX" or PlatformName == "SCARLETT":
 		platform = PlatformType.XBOX_SERIES
 	else:
@@ -162,7 +165,7 @@ def main(argv):
 		PlatformName=PlatformName.strip()
 
 	ePlatform = GetPlatformType(PlatformName)
-
+	
 	if ePlatform == PlatformType.UNKNOWN:
 		print("ERROR: Unknown Console type.")
 		sys.exit(0)
@@ -174,7 +177,12 @@ def main(argv):
 		BuildDir=BuildDir.strip()
 
 	#Get ThisPlatformProperties info
-	ThisPlatformProperties = read_config_file(PlatformName, "ThisPlatform.properties")
+	ThisPlatformPropertiesFile = "ThisPlatform.properties"
+	if ePlatform == PlatformType.XBOX_ONE_GDK:
+		PlatformName = "XboxOne"
+		ThisPlatformPropertiesFile = "ThisPlatformGDK.properties"
+	
+	ThisPlatformProperties = read_config_file(PlatformName, ThisPlatformPropertiesFile)
 	PLATFORM_NAME = ThisPlatformProperties.get("PLATFORM_NAME")
 	PLATFORM_NAME_ALT = ThisPlatformProperties.get("PLATFORM_NAME_ALT")
 	PLATFORM_NAME_VS = ThisPlatformProperties.get("PLATFORM_NAME_VS")
@@ -191,7 +199,7 @@ def main(argv):
 			vs_ver_list_is_ok = True
 			
 	if not vs_ver_list_is_ok:
-		print("ERROR: Property VISUAL_STUDIO_VERSION defined in " + PlatformName + "/ThisPlatform.properties is not in the form \"Visual Studio <VER> <YEAR>\".")
+		print("ERROR: Property VISUAL_STUDIO_VERSION defined in " + PlatformName + "/" + ThisPlatformPropertiesFile + "is not in the form \"Visual Studio <VER> <YEAR>\".")
 		print("Provided value: " +  VISUAL_STUDIO_VERSION)
 		sys.exit(0)
 
@@ -215,7 +223,7 @@ def main(argv):
 		defines.append("-D " + wrap_dq("COMMODORE_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
 	if ePlatform == PlatformType.XBOX_ONE:
 		defines.append("-D REQUIRED_XB1_TOOLCHAIN_VERSION="+SDK_VERSION)
-	if ePlatform == PlatformType.XBOX_SERIES:
+	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK:
 		defines.append("-D REQUIRED_GDK_TOOLCHAIN_VERSION="+SDK_VERSION)
 	
 	defines.append("-D SIMUL_SOURCE_BUILD=1")
