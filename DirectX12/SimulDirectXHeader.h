@@ -13,7 +13,7 @@
 #include <DirectXMath.h>
 
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
-	#ifdef _GAMING_XBOX_SCARLETT
+	#if defined(_GAMING_XBOX_SCARLETT) ||  defined(_GAMING_XBOX_XBOXONE)
 		#include "ThisPlatform/Direct3D12.h"
 	#else
 		#ifndef _GAMING_XBOX //Deprecated from the GDK

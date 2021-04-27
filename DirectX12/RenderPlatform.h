@@ -134,7 +134,7 @@ namespace simul
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the device for raytracing, or nullptr if unavailable.
-#if !defined(_XBOX_ONE)
+#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
 			ID3D12Device5*					AsD3D12Device5();
 #endif
 			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
