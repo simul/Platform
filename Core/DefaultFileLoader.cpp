@@ -13,13 +13,14 @@
 #include <sys/param.h>
 #include <unistd.h>
 #endif
+#include <filesystem>
 #include <stdio.h> // for fopen, seek, fclose
 #include <stdlib.h> // for malloc, free
 #include <time.h>
 typedef struct stat Stat;
 using namespace simul;
 using namespace base;
-
+namespace fs = std::filesystem;
 
 static int do_mkdir(const char *path_utf8)
 {
@@ -77,12 +78,37 @@ static int mkpath(const std::string &filename_utf8)
 DefaultFileLoader::DefaultFileLoader()
 {
 }
+
+std::vector<std::string> FileLoader::ListDirectory(const std::string &path) const
+{
+	std::vector<std::string> dir;
+	try
+	{
+		if(!fs::exists(path))
+		{
+			SIMUL_COUT<<"path does not exist: "<<path.c_str()<<std::endl;
+			return dir;
+		}
+		if(!fs::is_directory(path))
+		{
+			SIMUL_COUT<<"path is not directory: "<<path.c_str()<<std::endl;
+			return dir;
+		}
+		for (const auto & entry : fs::directory_iterator(path))
+			dir.push_back(entry.path().string());
+	}
+	catch(...)
+	{
+		SIMUL_COUT<<"ListDirectory failed for path "<<path.c_str()<<std::endl;
+	}
+	return dir;
+}
+
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #endif
 bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 {
-	
 	enum access_mode
 	{
 		NO_FILE=-1,EXIST=0,WRITE=2,READ=4
@@ -109,6 +135,8 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 #elif NN_NINTENDO_SDK
 	// TO-DO: this
 	bool bExists = false;
+#elif __COMMODORE__
+	bool bExists = fs::exists(filename_utf8);
 #else
     Stat st;
     bool bExists=(stat(filename_utf8, &st)==0);
@@ -176,7 +204,15 @@ int FileLoader::FindIndexInPathStack(const char *filename_utf8, const char* cons
 	int index=0;
 	for(;i>=0;i--)
 	{
-		std::string f=std::string(path_stack_utf8[i])+std::string("/")+filename_utf8;
+		std::string f=std::string(path_stack_utf8[i]);
+		/*std::vector<std::string> dir=ListDirectory(f);
+		for(auto s:dir)
+		{
+			SIMUL_COUT<<s.c_str()<<std::endl;
+		}*/
+		if(f.length()>0&&f.back()!='/'&&f.back()!='\\')
+			f+=std::string("/");
+		f+=filename_utf8;
 		if(FileExists(f.c_str()))
 		{
 			double filedate=GetFileDate(f.c_str());
@@ -314,7 +350,7 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	double daynum=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon+1,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
 	return daynum;
 #else
-    return 0;
+    return (double)(fs::last_write_time(filename_utf8).time_since_epoch().count())/(3600.0*24.0*1000000.0);
 #endif
 }
 

@@ -100,6 +100,7 @@ namespace simul
 			GameCoreScarlett		= 25,	// Game Core Scarlett graphics API using Direct3D 12.
 			Commodore				= 45,	// Commodore 64
 			Spectrum				= 25,	// ZX Spectrum
+			PS5						= 26,	
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		enum RenderingFeatures:uint32_t

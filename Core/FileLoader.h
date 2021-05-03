@@ -29,6 +29,7 @@ namespace simul
 			virtual void ReleaseFileContents(void* pointer)=0;
 			//! Save the chunk of memory to storage.
 			virtual bool Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)=0;
+			virtual std::vector<std::string> ListDirectory(const std::string &path) const;
 
 			void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8, const std::vector<std::string>& paths, bool open_as_text);
 
