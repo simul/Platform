@@ -85,19 +85,20 @@ namespace simul
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
 		{
-			Unknown                 = -1,
-			OpenGL				    = 0,    // Desktop OpenGL
-			D3D11				    = 2,    // Direct3D 11
-			Null				    = 4,    // null means don't render, as opposed to Unknown which means uninitialized.
-			PS4					    = 13,   // PlayStation 4
-			XboxOne				    = 14,   // Xbox One        
-			Metal				    = 16,   // iOS Metal
-			D3D12				    = 18,   // Direct3D 12
+			Unknown					= -1,
+			OpenGL					= 0,	// Desktop OpenGL
+			D3D11					= 2,	// Direct3D 11
+			Null					= 4,	// null means don't render, as opposed to Unknown which means uninitialized.
+			PS4						= 13,	// PlayStation 4
+			XboxOne					= 14,	// Xbox One        
+			Metal					= 16,	// iOS Metal
+			D3D12					= 18,	// Direct3D 12
 			Vulkan					= 21,	// Vulkan
 			Switch					= 22,	// Nintendo Switch NVN API
 			XboxOneD3D12			= 23,	// XboxOne Direct3D 12
 			GameCoreXboxOne			= 24,	// Game Core Xbox One graphics API using Direct3D 12.
-			GameCoreScarlett		= 25,	// Game Core Scarlett graphics API using Direct3D 12.
+			GameCoreXboxSeries		= 25,	// Game Core Xbox Series graphics API using Direct3D 12.
+			GameCoreScarlett [[deprecated("Use GameCoreXboxSeries instead.")]] = 25, // Game Core Scarlett graphics API using Direct3D 12. 
 			Commodore				= 45,	// Commodore 64
 			Spectrum				= 25,	// ZX Spectrum
 			PS5						= 26,	
