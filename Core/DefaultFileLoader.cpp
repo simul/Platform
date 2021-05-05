@@ -13,14 +13,24 @@
 #include <sys/param.h>
 #include <unistd.h>
 #endif
-#include <filesystem>
 #include <stdio.h> // for fopen, seek, fclose
 #include <stdlib.h> // for malloc, free
 #include <time.h>
 typedef struct stat Stat;
 using namespace simul;
 using namespace base;
+
+#if __ORBIS__
+#define SIMUL_FILESYSTEM 0
+#elif _XBOX_ONE
+#define SIMUL_FILESYSTEM 1
+#include <filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#define SIMUL_FILESYSTEM 1
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 static int do_mkdir(const char *path_utf8)
 {
@@ -82,6 +92,7 @@ DefaultFileLoader::DefaultFileLoader()
 std::vector<std::string> FileLoader::ListDirectory(const std::string &path) const
 {
 	std::vector<std::string> dir;
+#if SIMUL_FILESYSTEM
 	try
 	{
 		if(!fs::exists(path))
@@ -101,6 +112,8 @@ std::vector<std::string> FileLoader::ListDirectory(const std::string &path) cons
 	{
 		SIMUL_COUT<<"ListDirectory failed for path "<<path.c_str()<<std::endl;
 	}
+#else
+#endif
 	return dir;
 }
 
@@ -349,8 +362,10 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	// Note: bizarrely, the tm structure has MONTHS starting at ZERO, but DAYS start at 1.
 	double daynum=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon+1,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
 	return daynum;
-#else
+#elif SIMUL_FILESYSTEM
     return (double)(fs::last_write_time(filename_utf8).time_since_epoch().count())/(3600.0*24.0*1000000.0);
+#else
+	return 0;
 #endif
 }
 
