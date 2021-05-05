@@ -20,6 +20,11 @@ include("CMake/Variables.cmake")
 include("CMake/Include.cmake")
 include("CMake/Shader.cmake")
 
+#For GDK, specify C++17 before adding subdirectories.
+if(GDK)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+endif()
+
 add_subdirectory(Core)
 add_subdirectory(Math)
 add_subdirectory(CrossPlatform)
