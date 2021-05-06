@@ -101,7 +101,8 @@ namespace simul
 			GameCoreScarlett [[deprecated("Use GameCoreXboxSeries instead.")]] = 25, // Game Core Scarlett graphics API using Direct3D 12. 
 			Commodore				= 45,	// Commodore 64
 			Spectrum				= 25,	// ZX Spectrum
-			PS5						= 26,	
+			PS5						= 26,	// PlayStation 5
+			PS5NGGC					= 27,	// PlayStation 5 NGGC
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		enum RenderingFeatures:uint32_t
