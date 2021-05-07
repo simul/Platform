@@ -65,22 +65,6 @@ if(SIMUL_SOURCE_BUILD)
 	endif()
 	#message(STATUS JSON_FILE ${JSON_FILE} )
 	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
-	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
-
-	# ROOT SIG BLOB!
-	if(XBOXONE OR GDK)
-		set(out_RootSignatureFolder "${CMAKE_CURRENT_BINARY_DIR}/../XboxOne/shaderbin")
-	else()
-		set(out_RootSignatureFolder "${CMAKE_CURRENT_BINARY_DIR}/shaderbin")
-	endif()
-	# Create the target directory for the cso file:
-	file(MAKE_DIRECTORY ${out_RootSignatureFolder})
-	add_custom_command(TARGET DirectX12CoreShaders
-					COMMAND ${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"Sfx" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
-					MAIN_DEPENDENCY ${in_RootSignature}
-					WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-					COMMENT "${SIMUL_PLATFORM_DIR}/External/DirectX/DXCompiler/dxc.exe /T rootsig_1_0 /E\"GFXRS\" /I\"Sfx\" /Fo\"${out_RootSignatureFolder}/GFX.cso\" /nologo ${in_RootSignature}"
-					)
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	add_dependencies(SimulDirectX12_MT DirectX12CoreShaders )
