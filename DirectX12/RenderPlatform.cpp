@@ -586,10 +586,8 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	}
 #endif
 
-	// Load the RootSignature blobs
-	//LoadRootSignature("//GFX.cso");
+	// Load the RootSignature blobs - Graphics
 	{
-		//SIMUL_BREAK_ONCE("Could not load the RootSignature.");
 		//mGRootSignature			=LoadRootSignature("//GFX.cso");
 		ID3DBlob *blob=nullptr;
 		ID3DBlob *error=nullptr;
@@ -637,11 +635,12 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		
 		mGRootSignature->SetName(L"Graphics Root Signature");
 	}
-	// Load the RootSignature blobs
-	if(!(mCRootSignature			=LoadRootSignature("//GFX.cso")))
+	// Load the RootSignature blobs - Compute
+	/*if(!(mCRootSignature			=LoadRootSignature("//GFX.cso"))) // Disabled as we use the Graphics one for Compute passes - AJR.
 	{
 		SIMUL_BREAK_ONCE("Could not load the RootSignature.");
-	}
+	}*/
+	// Load the RootSignature blobs - Raytracing Global
 	{
 		ID3DBlob *blob=nullptr;
 		ID3DBlob *error=nullptr;
