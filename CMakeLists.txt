@@ -77,6 +77,10 @@ if(GDK)
 	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
+if(PLATFORM_WINGDK)
+	add_subdirectory(DirectX11)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
 endif()

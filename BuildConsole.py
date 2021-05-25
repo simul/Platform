@@ -14,6 +14,7 @@ class PlatformType(Enum):
 	XBOX_ONE = 3
 	XBOX_ONE_GDK = 4
 	XBOX_SERIES = 5
+	WIN_GDK = 6
 
 def GetPlatformType(PlatformName):
 	platform = PlatformType.UNKNOWN
@@ -31,6 +32,8 @@ def GetPlatformType(PlatformName):
 		platform = PlatformType.XBOX_ONE_GDK
 	elif PlatformName == "SPECTRUM" or PlatformName == "GAMING.XBOX.SCARLETT.X64" or PlatformName == "XBOXSERIESS" or PlatformName == "XBOXSERIESX" or PlatformName == "SCARLETT":
 		platform = PlatformType.XBOX_SERIES
+	elif PlatformName == "WINGDK" or PlatformName == "GAMING.DESKTOP.X64" or PlatformName == "WINGDK":
+		platform = PlatformType.WIN_GDK
 	else:
 		platform = PlatformType.UNKNOWN
 
@@ -181,6 +184,9 @@ def main(argv):
 	if ePlatform == PlatformType.XBOX_ONE_GDK:
 		PlatformName = "XboxOne"
 		ThisPlatformPropertiesFile = "ThisPlatformGDK.properties"
+	if ePlatform == PlatformType.WIN_GDK:
+		PlatformName = "Windows"
+		ThisPlatformPropertiesFile = "ThisPlatformGDK.properties"
 	
 	ThisPlatformProperties = read_config_file(PlatformName, ThisPlatformPropertiesFile)
 	PLATFORM_NAME = ThisPlatformProperties.get("PLATFORM_NAME")
@@ -223,7 +229,7 @@ def main(argv):
 		defines.append("-D " + wrap_dq("COMMODORE_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
 	if ePlatform == PlatformType.XBOX_ONE:
 		defines.append("-D REQUIRED_XB1_TOOLCHAIN_VERSION="+SDK_VERSION)
-	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK:
+	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK or PlatformType.WIN_GDK:
 		defines.append("-D REQUIRED_GDK_TOOLCHAIN_VERSION="+SDK_VERSION)
 	
 	defines.append("-D SIMUL_SOURCE_BUILD=1")

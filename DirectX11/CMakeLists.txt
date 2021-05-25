@@ -27,7 +27,7 @@ source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 
 if(XBOXONE)
 	set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/Sfx/DirectX11.json" )
-elseif(GDK)
+elseif(GDK AND NOT PLATFORM_WINGDK)
 	set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/Sfx/DirectX11.json" )
 else()
 	set( JSON_FILE "${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/DirectX11.json" )
@@ -36,14 +36,13 @@ add_sfx_shader_project( DirectX11CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURR
 
 
 add_static_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-if(SIMUL_SOURCE_BUILD)
+if(SIMUL_SOURCE_BUILD AND NOT PLATFORM_WINGDK)
 	target_compile_definitions(SimulDirectX11_MT PRIVATE SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1 PLATFORM_D3D11_SFX=1 PLATFORM_TYPED_UAV_FORMATS=1)
 
 	target_include_directories(SimulDirectX11_MT PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 	target_include_directories(SimulDirectX11_MT PRIVATE "${SIMUL_PLATFORM_DIR}/DirectX11" )
 	LibraryDefaults(SimulDirectX11_MT)
-	add_dependencies(SimulDirectX11_MT directxtex_MT )
-	
+		add_dependencies(SimulDirectX11_MT directxtex_MT )
 	if(SIMUL_BUILD_SHADERS)
 		add_dependencies( SimulDirectX11_MT DirectX11CoreShaders )
 	endif()

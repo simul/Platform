@@ -3,7 +3,7 @@
 using namespace simul::core;
 #ifdef _MSC_VER
 	#include <time.h>
-	#if defined (WIN32) || defined (WIN64)
+	#if defined (WIN32) || defined (WIN64) || defined(WINAPI_FAMILY_DESKTOP_APP) //WinGDK
 		#include <windows.h>
 		#include <mmsystem.h>
 	#elif defined (_XBOX_ONE)
