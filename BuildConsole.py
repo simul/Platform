@@ -32,7 +32,7 @@ def GetPlatformType(PlatformName):
 		platform = PlatformType.XBOX_ONE_GDK
 	elif PlatformName == "SPECTRUM" or PlatformName == "GAMING.XBOX.SCARLETT.X64" or PlatformName == "XBOXSERIESS" or PlatformName == "XBOXSERIESX" or PlatformName == "SCARLETT":
 		platform = PlatformType.XBOX_SERIES
-	elif PlatformName == "WINGDK" or PlatformName == "GAMING.DESKTOP.X64" or PlatformName == "WINGDK":
+	elif PlatformName == "WINGDK" or PlatformName == "GAMING.DESKTOP.X64":
 		platform = PlatformType.WIN_GDK
 	else:
 		platform = PlatformType.UNKNOWN
