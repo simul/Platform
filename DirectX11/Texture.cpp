@@ -1567,9 +1567,9 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 			viewport.MaxDepth	=1.0f;
 			last_context->RSSetViewports(1, &viewport);
 		}
-		targetsAndViewport.m_rt[0] = (renderTargetViews[array_index][mip]);
 	}
 
+	targetsAndViewport.m_rt[0]=(renderTargetViews[array_index][mip]);
 	targetsAndViewport.m_dt=nullptr;
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
 	targetsAndViewport.viewport.w=(int)viewport.Width;
