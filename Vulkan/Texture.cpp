@@ -945,7 +945,7 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	clear_value.depth=depthClear;
 	clear_value.stencil=stencilClear;
 	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
-	SetLayout(deviceContext,vk::ImageLayout::eDepthAttachmentOptimalKHR);
+	SetLayout(deviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
