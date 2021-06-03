@@ -933,19 +933,22 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	renderPlatform->GetDebugEffect()->Unapply(deviceContext);
 	deactivateRenderTarget(deviceContext);
 	*/
+	vk::ImageLayout prev_image_layout=currentImageLayout;
 	SetLayout(deviceContext,vk::ImageLayout::eTransferDstOptimal);
+
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-	vk::Image &image=mImage;
 	vk::ImageLayout image_layout=currentImageLayout;
 	std::vector<vk::ImageSubresourceRange> image_subresource_ranges;
 	// if stencil, may need |vk::ImageAspectFlagBits::eStencil
 	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
 	image_subresource_ranges.push_back(imageSubresourceRange);
+
 	vk::ClearDepthStencilValue clear_value;
 	clear_value.depth=depthClear;
 	clear_value.stencil=stencilClear;
+
 	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
-	SetLayout(deviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	SetLayout(deviceContext, prev_image_layout);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
