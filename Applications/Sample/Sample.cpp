@@ -29,6 +29,7 @@
 #include "Platform/OpenGL/Texture.h"
 #endif 
 #include "Platform/CrossPlatform/RenderDocLoader.h"
+#include "Platform/CrossPlatform/WinPixGpuCapturerLoader.h"
 #include "Platform/CrossPlatform/HDRRenderer.h"
 #include "Platform/CrossPlatform/SphericalHarmonics.h"
 #include "Platform/CrossPlatform/View.h"
@@ -779,9 +780,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		ShowWindow(hWnd, nCmdShow);
 		UpdateWindow(hWnd);
 	}
+	//simul::crossplatform::RenderDocLoader::Load();
+	simul::crossplatform::WinPixGpuCapturerLoader::Load();
+	
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
 	graphicsDeviceInterface->Initialize(commandLineParams("debug"),false,false);
-	//simul::crossplatform::RenderDocLoader::Load();
 
 	renderer=new PlatformRenderer();
 	displaySurfaceManager.Initialize(renderer->renderPlatform);
