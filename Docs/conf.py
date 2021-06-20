@@ -53,3 +53,5 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 breathe_default_project = "Platform"
+
+master_doc = 'platform'
