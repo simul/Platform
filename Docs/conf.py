@@ -55,6 +55,8 @@ html_static_path = ['_static']
 breathe_default_project = "Platform"
 import os
 working_dir=os.getcwd()
+print(working_dir)
 if working_dir.split('/')[-1]=="Docs":
+	print("going up one")
 	os.chdir('..')
 master_doc = 'platform'
