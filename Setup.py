@@ -40,10 +40,10 @@ def cmake(src,build_path,flags):
 	sln=find('*.sln','.')[0]
 	print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
-	process.poll()
+	pid.poll()
 	print(MSBUILD+'/p:Configuration=Debug'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
-	process.poll()
+	pid.poll()
 	os.chdir(wd)
 
 def GetMSBuild():

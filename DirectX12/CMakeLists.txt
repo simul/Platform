@@ -43,11 +43,13 @@ add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINI
 
 add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS ${DX12_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
  
+option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)
 	target_compile_definitions(SimulDirectX12_MD PRIVATE ${DX12_DEFS})
 	set_target_properties(SimulDirectX12_MD PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
 	target_include_directories(SimulDirectX12_MD PUBLIC "${SIMUL_PLATFORM_DIR}/DirectX12")
 	target_include_directories(SimulDirectX12_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
+	target_include_directories(SimulDirectX12_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/assimp/build_md/include" )
 	LibraryDefaults(SimulDirectX12_MD)
 
 	if(XBOXONE)

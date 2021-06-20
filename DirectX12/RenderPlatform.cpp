@@ -687,15 +687,6 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		rootParameters[0].InitAsDescriptorTable(3, cbvSrvUavDescriptorRanges);
 		rootParameters[1].InitAsDescriptorTable(1, &samplerDescriptorRange);
 		rootParameters[2].InitAsShaderResourceView(25);
-		//rootParameters[5].InitAsUnorderedAccessView(0);
-	/*	rootParameters[4].InitAsUnorderedAccessView(0);
-		rootParameters[5].InitAsUnorderedAccessView(1);
-		rootParameters[6].InitAsShaderResourceView(0);*/
-	/*	rootParameters[0].InitAsDescriptorTable(1, &cbvDescriptorRange);
-		rootParameters[1].InitAsDescriptorTable(1, &srvDescriptorRange);
-		rootParameters[2].InitAsDescriptorTable(1, &uavDescriptorRange);
-		rootParameters[3].InitAsDescriptorTable(1, &samplerDescriptorRange);
-		rootParameters[4].InitAsDescriptorTable(1, &sceneBuffersDescriptorRange);*/
 		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
 		//rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
 		//rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
