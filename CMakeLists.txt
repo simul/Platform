@@ -87,6 +87,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
 endif()
 
+if(PLATFORM_BUILD_DOCS)
+	add_subdirectory(Docs)
+endif()
+
 if(SIMUL_SUPPORT_PS4)
 	add_subdirectory(PS4/Render)
 endif()
