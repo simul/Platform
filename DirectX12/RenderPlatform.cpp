@@ -23,7 +23,9 @@
 #include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
-    #include "pix3.h"
+    //#include "Platform/External/PIX/Include/pix3.h"
+	//#pragma comment(lib, "WinPixEventRuntime.lib")
+	static HMODULE hWinPixEventRuntime;
 #endif
 using namespace simul;
 using namespace dx12;
@@ -84,11 +86,25 @@ RenderPlatform::RenderPlatform():
     mCurBarriers    = 0;
     mTotalBarriers  = 16; 
     mPendingBarriers.resize(mTotalBarriers);
+
+#ifdef SIMUL_ENABLE_PIX
+	if (hWinPixEventRuntime == 0)
+		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
+#endif
 }
 
 RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
+#ifdef SIMUL_ENABLE_PIX
+	if (hWinPixEventRuntime != 0)
+	{
+		if (!FreeLibrary(hWinPixEventRuntime))
+		{
+			SIMUL_BREAK_ONCE("D3D12: Failed to Free Library. File: WinPixEventRuntime.dll.")
+		}
+	}
+#endif
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const
@@ -903,17 +919,33 @@ void RenderPlatform::RecompileShaders()
 	crossplatform::RenderPlatform::RecompileShaders();
 }
 
-void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
+void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 #ifdef SIMUL_ENABLE_PIX
-	PIXBeginEvent( 0, name, name );
+	typedef HRESULT(WINAPI* PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList*, UINT64, _In_ PCSTR);
+	if (hWinPixEventRuntime != 0)
+	{
+		PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
+		if (PIXBeginEventOnCommandList)
+		{
+			PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
+		}
+	}
 #endif
 }
 
-void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
+void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
 #ifdef SIMUL_ENABLE_PIX
-	PIXEndEvent();
+	typedef HRESULT(WINAPI* PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList*);
+	if (hWinPixEventRuntime != 0)
+	{
+		PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
+		if (PIXEndEventOnCommandList)
+		{
+			PIXEndEventOnCommandList(deviceContext.asD3D12Context());
+		}
+	}
 #endif
 }
 
