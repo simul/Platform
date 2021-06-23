@@ -23,9 +23,15 @@
 #include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
-    //#include "Platform/External/PIX/Include/pix3.h"
-	//#pragma comment(lib, "WinPixEventRuntime.lib")
-	static HMODULE hWinPixEventRuntime;
+	#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO) || defined(_GAMING_XBOX) || defined(_GAMING_XBOX_SCARLETT)
+		#define SIMUL_PIX_XBOX
+	#endif
+	#if defined(SIMUL_PIX_XBOX) //Xbox
+	    #include <pix3.h>
+		#pragma comment(lib, "pixevt.lib")
+	#else // Windows
+		static HMODULE hWinPixEventRuntime;
+	#endif
 #endif
 using namespace simul;
 using namespace dx12;
@@ -87,7 +93,7 @@ RenderPlatform::RenderPlatform():
     mTotalBarriers  = 16; 
     mPendingBarriers.resize(mTotalBarriers);
 
-#ifdef SIMUL_ENABLE_PIX
+#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
 #endif
@@ -96,7 +102,7 @@ RenderPlatform::RenderPlatform():
 RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
-#ifdef SIMUL_ENABLE_PIX
+#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
 	if (hWinPixEventRuntime != 0)
 	{
 		if (!FreeLibrary(hWinPixEventRuntime))
@@ -912,31 +918,39 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name)
 {
-#ifdef SIMUL_ENABLE_PIX
-	typedef HRESULT(WINAPI* PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList*, UINT64, _In_ PCSTR);
-	if (hWinPixEventRuntime != 0)
-	{
-		PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
-		if (PIXBeginEventOnCommandList)
+#if defined(SIMUL_ENABLE_PIX)
+	#if defined(SIMUL_PIX_XBOX)
+		PIXBeginEvent(deviceContext.asD3D12Context(), 0, name);
+	#else
+		typedef HRESULT(WINAPI* PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList*, UINT64, _In_ PCSTR);
+		if (hWinPixEventRuntime != 0)
 		{
-			PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
+			PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
+			if (PIXBeginEventOnCommandList)
+			{
+				PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
+			}
 		}
-	}
+	#endif
 #endif
 }
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
-#ifdef SIMUL_ENABLE_PIX
-	typedef HRESULT(WINAPI* PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList*);
-	if (hWinPixEventRuntime != 0)
-	{
-		PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
-		if (PIXEndEventOnCommandList)
+#if defined(SIMUL_ENABLE_PIX)
+	#if defined(SIMUL_PIX_XBOX)
+		PIXEndEvent(deviceContext.asD3D12Context());
+	#else
+		typedef HRESULT(WINAPI* PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList*);
+		if (hWinPixEventRuntime != 0)
 		{
-			PIXEndEventOnCommandList(deviceContext.asD3D12Context());
+			PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
+			if (PIXEndEventOnCommandList)
+			{
+				PIXEndEventOnCommandList(deviceContext.asD3D12Context());
+			}
 		}
-	}
+	#endif
 #endif
 }
 
