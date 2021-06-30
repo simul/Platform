@@ -30,6 +30,9 @@ add_subdirectory(Math)
 add_subdirectory(CrossPlatform)
 add_subdirectory(Applications/Sfx)
 
+if(PLATFORM_SUPPORT_ANGLE)
+	add_subdirectory(Angle)
+endif()
 
 if(PLATFORM_SUPPORT_VULKAN)
 	if(SIMUL_BUILD_SAMPLES AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux" )

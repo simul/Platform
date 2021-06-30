@@ -16,6 +16,7 @@ else()
 	set(PLATFORM_SUPPORT_VULKAN OFF )
 endif()
 
+option(PLATFORM_SUPPORT_ANGLE "Use Google's Angle API?" OFF)
 option(PLATFORM_LOAD_RENDERDOC "Always load the renderdoc dll?" OFF )
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
