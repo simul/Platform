@@ -5,10 +5,11 @@ cmake_minimum_required( VERSION 3.2 )
 
 file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
+file(GLOB DOCS "*.rst" )
 
 # Setup and build the static library.
-add_static_library( Core SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_static_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 
 # Setup and build the dynamic library.
-add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} DEFINITIONS PLATFORM_CORE_DLL=1 FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_CORE_DLL=1 FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
   

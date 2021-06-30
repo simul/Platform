@@ -23,7 +23,15 @@
 #include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
-    #include "pix3.h"
+	#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO) || defined(_GAMING_XBOX) || defined(_GAMING_XBOX_SCARLETT)
+		#define SIMUL_PIX_XBOX
+	#endif
+	#if defined(SIMUL_PIX_XBOX) //Xbox
+	    #include <pix3.h>
+		#pragma comment(lib, "pixevt.lib")
+	#else // Windows
+		static HMODULE hWinPixEventRuntime;
+	#endif
 #endif
 using namespace simul;
 using namespace dx12;
@@ -84,11 +92,25 @@ RenderPlatform::RenderPlatform():
     mCurBarriers    = 0;
     mTotalBarriers  = 16; 
     mPendingBarriers.resize(mTotalBarriers);
+
+#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
+	if (hWinPixEventRuntime == 0)
+		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
+#endif
 }
 
 RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
+#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
+	if (hWinPixEventRuntime != 0)
+	{
+		if (!FreeLibrary(hWinPixEventRuntime))
+		{
+			SIMUL_BREAK_ONCE("D3D12: Failed to Free Library. File: WinPixEventRuntime.dll.")
+		}
+	}
+#endif
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const
@@ -687,15 +709,6 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		rootParameters[0].InitAsDescriptorTable(3, cbvSrvUavDescriptorRanges);
 		rootParameters[1].InitAsDescriptorTable(1, &samplerDescriptorRange);
 		rootParameters[2].InitAsShaderResourceView(25);
-		//rootParameters[5].InitAsUnorderedAccessView(0);
-	/*	rootParameters[4].InitAsUnorderedAccessView(0);
-		rootParameters[5].InitAsUnorderedAccessView(1);
-		rootParameters[6].InitAsShaderResourceView(0);*/
-	/*	rootParameters[0].InitAsDescriptorTable(1, &cbvDescriptorRange);
-		rootParameters[1].InitAsDescriptorTable(1, &srvDescriptorRange);
-		rootParameters[2].InitAsDescriptorTable(1, &uavDescriptorRange);
-		rootParameters[3].InitAsDescriptorTable(1, &samplerDescriptorRange);
-		rootParameters[4].InitAsDescriptorTable(1, &sceneBuffersDescriptorRange);*/
 		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
 		//rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
 		//rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
@@ -903,17 +916,41 @@ void RenderPlatform::RecompileShaders()
 	crossplatform::RenderPlatform::RecompileShaders();
 }
 
-void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
+void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name)
 {
-#ifdef SIMUL_ENABLE_PIX
-	PIXBeginEvent( 0, name, name );
+#if defined(SIMUL_ENABLE_PIX)
+	#if defined(SIMUL_PIX_XBOX)
+		PIXBeginEvent(deviceContext.asD3D12Context(), 0, name);
+	#else
+		typedef HRESULT(WINAPI* PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList*, UINT64, _In_ PCSTR);
+		if (hWinPixEventRuntime != 0)
+		{
+			PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
+			if (PIXBeginEventOnCommandList)
+			{
+				PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
+			}
+		}
+	#endif
 #endif
 }
 
-void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
+void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
-#ifdef SIMUL_ENABLE_PIX
-	PIXEndEvent();
+#if defined(SIMUL_ENABLE_PIX)
+	#if defined(SIMUL_PIX_XBOX)
+		PIXEndEvent(deviceContext.asD3D12Context());
+	#else
+		typedef HRESULT(WINAPI* PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList*);
+		if (hWinPixEventRuntime != 0)
+		{
+			PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
+			if (PIXEndEventOnCommandList)
+			{
+				PIXEndEventOnCommandList(deviceContext.asD3D12Context());
+			}
+		}
+	#endif
 #endif
 }
 
