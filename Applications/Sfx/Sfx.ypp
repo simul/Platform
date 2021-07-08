@@ -3035,6 +3035,7 @@ shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
 					ostringstream errMsg;
 					errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 					errSem(errMsg.str(), $5.lineno);
+					exit(1);
 				}
 			}
 			$$.strs[1]=profileName;

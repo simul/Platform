@@ -104,7 +104,6 @@ void SphereRenderer::DrawMultipleCrossSections(GraphicsDeviceContext& deviceCont
 
 void SphereRenderer::DrawLatLongSphere(GraphicsDeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
 {
-	//viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 &view=deviceContext.viewStruct.view;
 	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 	math::Matrix4x4 wvp,world;

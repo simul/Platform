@@ -23,7 +23,15 @@
 #include "DisplaySurface.h"
 #include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
-    #include "pix3.h"
+	#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO) || defined(_GAMING_XBOX) || defined(_GAMING_XBOX_SCARLETT)
+		#define SIMUL_PIX_XBOX
+	#endif
+	#if defined(SIMUL_PIX_XBOX) //Xbox
+	    #include <pix3.h>
+		#pragma comment(lib, "pixevt.lib")
+	#else // Windows
+		static HMODULE hWinPixEventRuntime;
+	#endif
 #endif
 using namespace simul;
 using namespace dx12;
@@ -72,7 +80,6 @@ RenderPlatform::RenderPlatform():
 	,mDepthStencilHeap(nullptr)
 	,mNullHeap(nullptr)
 	,mGRootSignature(nullptr)
-	,mCRootSignature(nullptr)
 	,mDummy2D(nullptr)
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
@@ -84,11 +91,25 @@ RenderPlatform::RenderPlatform():
     mCurBarriers    = 0;
     mTotalBarriers  = 16; 
     mPendingBarriers.resize(mTotalBarriers);
+
+#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
+	if (hWinPixEventRuntime == 0)
+		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
+#endif
 }
 
 RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
+#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
+	if (hWinPixEventRuntime != 0)
+	{
+		if (!FreeLibrary(hWinPixEventRuntime))
+		{
+			SIMUL_BREAK_ONCE("D3D12: Failed to Free Library. File: WinPixEventRuntime.dll.")
+		}
+	}
+#endif
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const
@@ -635,7 +656,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mGRootSignature->SetName(L"Graphics Root Signature");
 	}
 	// Load the RootSignature blobs - Compute
-	//mCRootSignature = mGRootSignature // Disabled as we use the Graphics one for Compute passes - AJR.
+
 	// Load the RootSignature blobs - Raytracing Global
 	{
 		ID3DBlob *blob=nullptr;
@@ -851,7 +872,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy2D);
 	SAFE_DELETE(mDummy3D);
 	SAFE_RELEASE(mGRootSignature);
-	SAFE_RELEASE(mCRootSignature);
 	SAFE_RELEASE(mGRaytracingLocalSignature);
 	SAFE_RELEASE(mGRaytracingGlobalSignature);
 	
@@ -894,17 +914,41 @@ void RenderPlatform::RecompileShaders()
 	crossplatform::RenderPlatform::RecompileShaders();
 }
 
-void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &,const char *name)
+void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name)
 {
-#ifdef SIMUL_ENABLE_PIX
-	PIXBeginEvent( 0, name, name );
+#if defined(SIMUL_ENABLE_PIX)
+	#if defined(SIMUL_PIX_XBOX)
+		PIXBeginEvent(deviceContext.asD3D12Context(), 0, name);
+	#else
+		typedef HRESULT(WINAPI* PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList*, UINT64, _In_ PCSTR);
+		if (hWinPixEventRuntime != 0)
+		{
+			PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
+			if (PIXBeginEventOnCommandList)
+			{
+				PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
+			}
+		}
+	#endif
 #endif
 }
 
-void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
+void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
-#ifdef SIMUL_ENABLE_PIX
-	PIXEndEvent();
+#if defined(SIMUL_ENABLE_PIX)
+	#if defined(SIMUL_PIX_XBOX)
+		PIXEndEvent(deviceContext.asD3D12Context());
+	#else
+		typedef HRESULT(WINAPI* PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList*);
+		if (hWinPixEventRuntime != 0)
+		{
+			PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
+			if (PIXEndEventOnCommandList)
+			{
+				PIXEndEventOnCommandList(deviceContext.asD3D12Context());
+			}
+		}
+	#endif
 #endif
 }
 
@@ -1732,11 +1776,6 @@ ResourceBindingLimits RenderPlatform::GetResourceBindingLimits() const
 ID3D12RootSignature* RenderPlatform::GetGraphicsRootSignature() const
 {
 	return mGRootSignature;
-}
-
-ID3D12RootSignature* RenderPlatform::GetComputeRootSignature() const
-{
-	return mCRootSignature;
 }
 
 ID3D12RootSignature* RenderPlatform::GetRaytracingLocalRootSignature() const
