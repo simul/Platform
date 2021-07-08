@@ -955,7 +955,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if((buildMode & crossplatform::TRY_AGAIN_ON_FAIL) == 0)
 				break;
 		}
-	}
+	} 
 #endif
 }
 

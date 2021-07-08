@@ -34,7 +34,7 @@ shader v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 	elevation *= -1;
 	#endif
 	float cos_el		=cos(elevation);
-	vec3 pos			=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
+	vec3 pos			=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
     OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
 	#ifdef SFX_OPENGL
 	OUT.hPosition.y *= -1;
@@ -72,7 +72,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
 		float elevation		=.999*(float(latitude_strip)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el		=cos(elevation);
-		pos					=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
+		pos					=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
 		float b				=latitude_strip==(uint)latitudes/2?1.0:0.2;
 		OUT.colour			=multiplier*vec4(1.0,1.0,1.0,longitude>0&&longitude<(uint)longitudes?b:0.0); //Latitude Colour
 	}
@@ -84,7 +84,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float azimuth			=2.0*3.1415926536*float(longitude_strip)/float(longitudes);
 		float elevation			=.999*(float(latitude)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el			=cos(elevation);
-		pos						=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
+		pos						=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
 		float b					=longitude_strip==0?1.0:0.2;
 		OUT.colour				=multiplier*vec4(1.0,1.0,1.0,latitude>0&&latitude<latitudes?b:0.0); //Longitude Colour
 	//	OUT.colour			*=saturate(elevation/1.7);

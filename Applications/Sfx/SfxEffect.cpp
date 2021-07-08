@@ -244,6 +244,8 @@ void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration 
 
 void Effect::AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const
 {
+	if(!f)
+		return;
 	for (auto i : f->globals)
 	{
 		s.insert(i);
@@ -696,6 +698,8 @@ ShaderInstance *Effect::AddShaderInstance(const std::string &shaderInstanceName,
 	if(i!=m_shaderInstances.end())
 		return i->second;
 	Function *function=gEffect->GetFunction(functionName,0);
+	if(!function)
+		return nullptr;
 	std::set<Declaration *> declarations;
 	std::set<string> globals;
 	gEffect->AccumulateGlobalsAsStrings(function,globals);
