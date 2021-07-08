@@ -146,6 +146,13 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
 	// The quaternion rotates from that position.
 	OUT.hPosition		= mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour*=0;
+
 	return OUT;
 }
 
@@ -168,6 +175,13 @@ shader v2f VS_DrawFilledQuadOnSphere(idOnly IN)
 	OUT.colour = multiplier;
 	pos = radius * rotate_by_quaternion(quaternion, pos);
 	OUT.hPosition = mul(debugWorldViewProj, vec4(pos.xyz, 1.0));
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour*=0;
+
 	return OUT;
 }
 
@@ -184,6 +198,13 @@ shader v2f VS_DrawCircleOnSphere(idOnly IN)
 	// The quaternion rotates from that position.
 	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
 	OUT.texCoords		= vec2(0,0);
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour*=0;
+
 	return OUT;
 }
 
@@ -197,6 +218,13 @@ shader v2f VS_DrawArcOnSphere(idOnly IN)
 	pos				=radius*rotate_by_quaternion(q,pos);
 	OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
 	OUT.texCoords	= vec2(0, 0);
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour*=0;
+
 	return OUT;
 }
 
@@ -214,12 +242,19 @@ shader v2f VS_DrawFilledCircleOnSphere(idOnly IN)
 	// The quaternion rotates from that position.
 	OUT.hPosition = mul(debugWorldViewProj, vec4(pos.xyz, 1.0));
 	OUT.texCoords = vec2(0, 0);
+
+		vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour*=0;
+
 	return OUT;
 }
 
-shader posTexVertexOutput VS_DrawTextureOnSphere(idOnly IN) 
+shader posTexColVertexOutput VS_DrawTextureOnSphere(idOnly IN) 
 {
-    posTexVertexOutput OUT;
+    posTexColVertexOutput OUT;
 	vec3 poss[4];
 	poss[0]			=vec3( 1.0,-1.0,1.0);
 	poss[1]			=vec3( 1.0, 1.0,1.0);
@@ -238,10 +273,19 @@ shader posTexVertexOutput VS_DrawTextureOnSphere(idOnly IN)
 	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
 	// The quaternion rotates from that position.
 	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour=vec4(0,0,0,0);
+	else
+		OUT.colour=vec4(1,1,1,1);
+
 	return OUT;
 }
 
-shader posTexVertexOutput VS_DrawCurvedTextureOnSphere(idOnly IN)
+shader posTexColVertexOutput VS_DrawCurvedTextureOnSphere(idOnly IN)
 {
 	const uint divisions = 8;
 	const uint range = 2;
@@ -273,7 +317,7 @@ shader posTexVertexOutput VS_DrawCurvedTextureOnSphere(idOnly IN)
 	}
 
 	vec3 pos;
-	posTexVertexOutput OUT;
+	posTexColVertexOutput OUT;
 	uint vert = IN.vertex_id;
 	{
 		pos = poss[vert];
@@ -286,16 +330,24 @@ shader posTexVertexOutput VS_DrawCurvedTextureOnSphere(idOnly IN)
 	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
 	// The quaternion rotates from that position.
 	OUT.hPosition = mul(debugWorldViewProj, vec4(pos.xyz, 1.0));
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour=vec4(0,0,0,0);
+	else
+		OUT.colour=vec4(1,1,1,1);
+
 	return OUT;
 }
 
-shader vec4 PS_DrawTextureOnSphere(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_DrawTextureOnSphere(posTexColVertexOutput IN) : SV_TARGET
 {
 	vec2 texc	=IN.texCoords.xy;
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
-	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
-	//res.rgb=IN.texCoords.xyy;
+	vec4 res	=IN.colour*multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
 	return res;
 }
 
@@ -319,7 +371,6 @@ shader vec4 PS_DrawChequeredQuadOnSphere(v2f IN) : SV_TARGET
 	uint2 u2=uint2(p);
 	float highlight=float((u2.x+u2.y)%2);
 	c.a*=highlight;
-//	c.rgb=IN.texCoords.xyy;
 	return c;
 }
 

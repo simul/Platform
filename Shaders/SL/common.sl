@@ -100,6 +100,13 @@ struct posTexVertexOutput
 	vec2 texCoords	: TEXCOORD0;		
 };
 
+struct posTexColVertexOutput
+{
+	vec4 hPosition	: SV_POSITION;
+	vec2 texCoords	: TEXCOORD0;		
+	vec4 colour		: TEXCOORD1;		
+};
+
 struct positionColourVertexInput
 {
 	vec3 position	: POSITION;
