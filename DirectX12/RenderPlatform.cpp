@@ -80,7 +80,6 @@ RenderPlatform::RenderPlatform():
 	,mDepthStencilHeap(nullptr)
 	,mNullHeap(nullptr)
 	,mGRootSignature(nullptr)
-	,mCRootSignature(nullptr)
 	,mDummy2D(nullptr)
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
@@ -657,7 +656,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mGRootSignature->SetName(L"Graphics Root Signature");
 	}
 	// Load the RootSignature blobs - Compute
-	//mCRootSignature = mGRootSignature // Disabled as we use the Graphics one for Compute passes - AJR.
+
 	// Load the RootSignature blobs - Raytracing Global
 	{
 		ID3DBlob *blob=nullptr;
@@ -873,7 +872,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy2D);
 	SAFE_DELETE(mDummy3D);
 	SAFE_RELEASE(mGRootSignature);
-	SAFE_RELEASE(mCRootSignature);
 	SAFE_RELEASE(mGRaytracingLocalSignature);
 	SAFE_RELEASE(mGRaytracingGlobalSignature);
 	
@@ -1778,11 +1776,6 @@ ResourceBindingLimits RenderPlatform::GetResourceBindingLimits() const
 ID3D12RootSignature* RenderPlatform::GetGraphicsRootSignature() const
 {
 	return mGRootSignature;
-}
-
-ID3D12RootSignature* RenderPlatform::GetComputeRootSignature() const
-{
-	return mCRootSignature;
 }
 
 ID3D12RootSignature* RenderPlatform::GetRaytracingLocalRootSignature() const

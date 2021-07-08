@@ -254,7 +254,6 @@ namespace simul
 			
 			ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
-			ID3D12RootSignature*					GetComputeRootSignature()const;
 			ID3D12RootSignature*					GetRaytracingLocalRootSignature() const;
 			ID3D12RootSignature*					GetRaytracingGlobalRootSignature() const;
 			
@@ -303,8 +302,6 @@ namespace simul
 			dx12::Heap*					mNullHeap;
 			//! Shared root signature for graphics
 			ID3D12RootSignature*		mGRootSignature=nullptr;
-			//! Shared root signature for compute
-			ID3D12RootSignature*		mCRootSignature=nullptr;
 			//! For raytracing
 			ID3D12RootSignature*		mGRaytracingLocalSignature=nullptr;
 			ID3D12RootSignature*		mGRaytracingGlobalSignature=nullptr;

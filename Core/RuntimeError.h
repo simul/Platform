@@ -77,6 +77,10 @@ namespace simul
 	}
 }
 
+#define SIMUL_INTERNAL_COUT\
+	if(simul::base::SimulInternalChecks)\
+		std::cout << __FILE__ << "(" << __LINE__ << "): info: "
+
 #define SIMUL_INTERNAL_CERR\
 	if(simul::base::SimulInternalChecks)\
 		std::cerr << __FILE__ << "(" << __LINE__ << "): warning: "

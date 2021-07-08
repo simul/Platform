@@ -453,7 +453,11 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	auto* device = curRenderPlat->AsD3D12Device();
 	D3D12_COMPUTE_PIPELINE_STATE_DESC cpsoDesc = {};
 	cpsoDesc.CS = { c->shader12.data(), c->shader12.size() };
+#ifdef _GAMING_XBOX_XBOXONE
+	cpsoDesc.pRootSignature = nullptr;
+#else
 	cpsoDesc.pRootSignature = curRenderPlat->GetGraphicsRootSignature();
+#endif
 	cpsoDesc.NodeMask = 0;
 	HRESULT res = device->CreateComputePipelineState(&cpsoDesc, SIMUL_PPV_ARGS(&mComputePso));
 	SIMUL_ASSERT(res == S_OK);
@@ -466,6 +470,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	}
 	else
 	{
+		__debugbreak();
 		SIMUL_INTERNAL_CERR << "Failed to create compute PSO.\n";
 		SIMUL_BREAK_ONCE("Failed to create compute PSO")
 	}

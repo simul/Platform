@@ -794,7 +794,7 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 		{
 			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
 			unfinishedTextures.insert(tex);
-			SIMUL_COUT<<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
+			SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
 		}
 		tex->SetName(fileNameUtf8);
 	}
