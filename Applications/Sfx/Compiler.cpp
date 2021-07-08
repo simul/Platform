@@ -361,13 +361,13 @@ string FillInVariablesSM51(const string &src,ShaderInstance *shader)
 		switch (shader->shaderType)
 		{
 		case ShaderType::VERTEX_SHADER:
-			sm = "vs_6_0";
+			sm = "vs_5_1";
 			break;
 		case ShaderType::FRAGMENT_SHADER:
-			sm = "ps_6_0";
+			sm = "ps_5_1";
 			break;
 		case ShaderType::COMPUTE_SHADER:
-			sm = "cs_6_0";
+			sm = "cs_5_1";
 			break;
 		default:
 			sm = "null_null";
