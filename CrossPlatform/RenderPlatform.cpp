@@ -411,7 +411,6 @@ void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
 {
 }
 
-
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
@@ -478,23 +477,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				int W=(w+4-1)/4;
 				int L=(l+4-1)/4;
 				int D=(d+4-1)/4;
-			/*	if (texture->dim == 2 && texture->NumFaces() > 1)
-				{
-					W=(w+8-1)/8;
-					L=(l+8-1)/8;
-					D = d;
-					techname = "compute_clear_2d_array";
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
-					{
-						techname="compute_clear_2d_array_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i,j);
-					}
-					else
-					{
-						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i,j);
-					}
-				}
-				else*/
+		
 				if(texture->dim==2)
 				{
 					W=(w+8-1)/8;

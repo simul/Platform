@@ -901,7 +901,7 @@ BlendState DontWriteColour
 	BlendEnable[0]	=FALSE;
 	RenderTargetWriteMask[0]=0;
 };
-
+ 
 technique clear_depth
 {
     pass p0

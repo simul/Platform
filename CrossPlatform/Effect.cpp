@@ -386,21 +386,6 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 {
 	const ShaderResource &i=GetShaderResource(name);
 	SetUnorderedAccessView(deviceContext,i,t,index,mip);
-/*	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	// Make sure no slot clash between uav's and srv's:
-	int slot = GetSlot(name);
-	{
-		int dim = GetDimensions(name);
-		crossplatform::TextureAssignment &ta=cs->rwTextureAssignmentMap[slot];
-		ta.resourceType=GetResourceType(name);
-		ta.texture=t;
-		ta.dimensions=dim;
-
-		ta.uav=true;
-		ta.mip=mip;
-		ta.index=index;
-	}
-	cs->rwTextureAssignmentMapValid=false;*/
 }
 
 const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
@@ -427,10 +412,6 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		if(s<0)
 		{
 			res.valid = false;
-			#if SIMUL_INTERNAL_CHECKS
-			//SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
-			#endif
-			//SIMUL_BREAK_ONCE("Invalid Shader resource")
 			return res;
 		}
 		slot=s;
