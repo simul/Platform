@@ -19,7 +19,7 @@ namespace simul
 		struct DeviceContext;
 		class RenderPlatform;
 		//! A base class for API-dependent framebuffer classes.
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
+		class SIMUL_CROSSPLATFORM_EXPORT BaseFramebuffer
 		{
 		public:
 			BaseFramebuffer(const char *n);

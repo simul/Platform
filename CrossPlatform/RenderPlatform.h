@@ -103,6 +103,7 @@ namespace simul
 			Spectrum				= 25,	// ZX Spectrum
 			PS5						= 26,	// PlayStation 5
 			PS5NGGC					= 27,	// PlayStation 5 NGGC
+			GLES					= 28,
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		enum RenderingFeatures:uint32_t

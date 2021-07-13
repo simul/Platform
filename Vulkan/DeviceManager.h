@@ -21,7 +21,7 @@ namespace simul
 		extern void InitQueueProperties(const vk::PhysicalDevice& gpu, std::vector<vk::QueueFamilyProperties>& queue_props);
 		class RenderPlatform;
 		class DeviceManagerInternal;
-		SIMUL_VULKAN_EXPORT_CLASS DeviceManager
+		class SIMUL_VULKAN_EXPORT DeviceManager
 			: public crossplatform::GraphicsDeviceInterface
 		{
 		public:

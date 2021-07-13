@@ -24,7 +24,7 @@ class Vector3;
 class Quaternion;
 
 /// A resizeable vector class
-SIMUL_MATH_EXPORT_CLASS Vector
+class SIMUL_MATH_EXPORT Vector
 {
 protected:
 	float *Values;

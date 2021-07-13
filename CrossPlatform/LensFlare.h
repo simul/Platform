@@ -16,7 +16,7 @@ namespace simul
 	namespace crossplatform
 	{
 		//! A helpful class to calculate lens flares.
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS LensFlare
+		class SIMUL_CROSSPLATFORM_EXPORT LensFlare
 		{
 		public:
 			LensFlare();

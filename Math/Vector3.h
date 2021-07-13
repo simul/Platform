@@ -1,11 +1,9 @@
-#ifndef Vector3H
-#define Vector3H
+#pragma once
 #include "Platform/Math/Align.h"
 #include "Platform/Math/Export.h"
 #include <iostream>
 
 #ifdef _MSC_VER
-	
 	#pragma warning(push)
 	#pragma warning(disable:4201)	// Disable the warning for nameless struct {float x,y,z,w;} in union
 #endif
@@ -21,8 +19,9 @@ namespace simul
 		class Quaternion;
 
 
-		/// A 3-element vector class
-		SIMUL_MATH_EXPORT_CLASS Vector3
+		/*! A 3-element vector class
+		* */
+		class SIMUL_MATH_EXPORT Vector3
 		{
 		public:
 			union
@@ -218,5 +217,4 @@ namespace simul
 }
 #ifdef _MSC_VER
 	#pragma warning(pop)
-#endif
 #endif

@@ -19,7 +19,7 @@ namespace simul
 		/// Rotation is stored as a quaternion q.
 		/// To transform use #LocalToGlobalPosition, #GlobalToLocalPosition,
 		/// #LocalToGlobalDirection and #GlobalToLocalDirection.
-		SIMUL_MATH_EXPORT_CLASS SimulOrientation
+		class SIMUL_MATH_EXPORT SimulOrientation
 		{
 		private:
 			simul::math::Quaternion q;	

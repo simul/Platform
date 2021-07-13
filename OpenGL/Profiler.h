@@ -16,7 +16,7 @@ namespace simul
 			unsigned long* timestamp;
 		};
 
-		SIMUL_OPENGL_EXPORT_CLASS Profiler : public simul::crossplatform::GpuProfiler
+		class SIMUL_OPENGL_EXPORT Profiler: public simul::crossplatform::GpuProfiler
 		{
 		public:
 			static Profiler&	GetGlobalProfiler();

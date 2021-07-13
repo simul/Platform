@@ -14,7 +14,7 @@ class Vector3;
 /// VirtualVector is derived from Vector but does not manage its own data. Instead
 /// the #PointTo method is used to give vector functionality to floating point data
 /// anywhere in memory (as long as any alignment conditions are satisfied.)
-SIMUL_MATH_EXPORT_CLASS VirtualVector : public Vector
+class SIMUL_MATH_EXPORT VirtualVector: public Vector
 {
 public:
 	VirtualVector(void);

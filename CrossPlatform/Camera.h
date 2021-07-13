@@ -166,7 +166,7 @@ namespace simul
  																					float nearVal,
  																					float farVal);
 		//! A camera class. The orientation has the z-axis facing backwards, the x-axis right and the y-axis up.
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS Camera :
+		class SIMUL_CROSSPLATFORM_EXPORT Camera :
 			public simul::geometry::OrientationInterface,
 			public simul::crossplatform::CameraInterface
 		{

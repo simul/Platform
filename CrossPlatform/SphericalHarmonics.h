@@ -14,7 +14,7 @@ namespace simul
 	namespace crossplatform
 	{
 		/// A class that calculates spherical harmonics from a cubemap, and stores the results in a structured buffer.
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS SphericalHarmonics
+		class SIMUL_CROSSPLATFORM_EXPORT SphericalHarmonics
 		{
 		public:
 			SphericalHarmonics();

@@ -8,7 +8,7 @@ namespace simul
 	namespace math
 	{
 		//! A 3D Perlin noise class.
-		SIMUL_MATH_EXPORT_CLASS Noise1D
+		class SIMUL_MATH_EXPORT Noise1D
 		{
 			unsigned frequency;
 			float *noise_buffer;

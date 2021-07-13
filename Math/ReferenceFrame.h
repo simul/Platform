@@ -13,7 +13,7 @@ namespace simul
 		/// The reference frame holds position, rotation, and linear and angular velocity.
 		/// Velocity is a simul::math::Vector3 which can be accessed using #GetVelocity().
 		/// Angular velocity is a simul::math::Vector3 which can be accessed using #GetAngularVelocity().
-		SIMUL_MATH_EXPORT_CLASS SimulReferenceFrame : public SimulOrientation
+		class SIMUL_MATH_EXPORT SimulReferenceFrame: public SimulOrientation
 		{
 		public:
 			SimulReferenceFrame();

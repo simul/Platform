@@ -20,10 +20,8 @@ namespace simul
 
 ///  \brief A Matrix class.
 ///
-///  The Matrix class can be used for generic matrices of any size. It
-/// has three implementations - one in pure C++, one in Intel assembler for
-/// SSE-capable Pentium III+, and one for PS2.
-		SIMUL_MATH_EXPORT_CLASS Matrix
+///  The Matrix class can be used for generic matrices of any size.
+		class SIMUL_MATH_EXPORT Matrix
 		{
 		public:
 			class BadSize
@@ -40,7 +38,7 @@ namespace simul
 			unsigned BufferSize;
 			unsigned W16;
 		public:
-			unsigned Height;						///< The number of rows.
+			unsigned Height;					///< The number of rows.
 			unsigned Width;						///< Number of columns.
 		#ifdef CANNOT_ALIGN    
 			float *V;

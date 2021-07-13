@@ -18,7 +18,7 @@ namespace simul
 	namespace opengl
 	{
 		class RenderPlatform;
-		SIMUL_OPENGL_EXPORT_CLASS DeviceManager
+		class SIMUL_OPENGL_EXPORT DeviceManager
 			: public crossplatform::GraphicsDeviceInterface
 		{
 		public:

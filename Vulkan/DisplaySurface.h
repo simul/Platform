@@ -20,7 +20,7 @@ namespace simul
 			vk::ImageView view;
 			vk::Framebuffer framebuffer;
 		} ;
-        SIMUL_VULKAN_EXPORT_CLASS DisplaySurface : public crossplatform::DisplaySurface
+        class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
         {
         public:
             DisplaySurface();

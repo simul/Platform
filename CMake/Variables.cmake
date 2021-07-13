@@ -8,6 +8,7 @@ option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already 
 option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
 option( SIMUL_BUILD_SAMPLES "Build executable samples?" ON )
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
+set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 
 set( PLATFORM_DEBUG_DISABLE 0 CACHE STRING "Set disable-level for debugging. Zero for full functionality." )
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -17,6 +18,9 @@ else()
 endif()
 
 option(PLATFORM_SUPPORT_ANGLE "Use Google's Angle API?" OFF)
+set( PLATFORM_ANGLE_LIB_DIR "" CACHE PATH "Set the output location of Angle libraries.")
+set( PLATFORM_ANGLE_DIR "" CACHE PATH "Set the output location of Angle libraries.")
+
 option(PLATFORM_LOAD_RENDERDOC "Always load the renderdoc dll?" OFF )
 option(PLATFORM_BUILD_DOCS "Whether to build html documentation with Doxygen and Sphinx" OFF )
  

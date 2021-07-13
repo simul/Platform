@@ -26,7 +26,7 @@ namespace simul
 
 		/// A fixed-size 4 by 4 matrix class.
 		/// It is used mainly for transformations - see SimulOrientation.
-		SIMUL_MATH_EXPORT_CLASS Matrix4x4
+		class SIMUL_MATH_EXPORT Matrix4x4
 		{
 		public:
 			union

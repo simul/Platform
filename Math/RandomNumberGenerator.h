@@ -6,7 +6,7 @@ namespace simul
 {
 	namespace math
 	{
-		SIMUL_MATH_EXPORT_CLASS RandomNumberGenerator
+		class SIMUL_MATH_EXPORT RandomNumberGenerator
 		{
 			void *gnr;
 			int last_seed;

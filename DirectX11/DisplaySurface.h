@@ -10,7 +10,7 @@ namespace simul
 {
     namespace dx11
     {
-        SIMUL_DIRECTX11_EXPORT_CLASS DisplaySurface : public crossplatform::DisplaySurface
+        class SIMUL_DIRECTX11_EXPORT DisplaySurface: public crossplatform::DisplaySurface
         {
         public:
             DisplaySurface();

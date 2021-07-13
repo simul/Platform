@@ -76,7 +76,7 @@ namespace simul
 
 				const char *text=simul::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
 		*/
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS GpuProfiler:public GpuProfilingInterface
+		class SIMUL_CROSSPLATFORM_EXPORT GpuProfiler:public GpuProfilingInterface
 		{
 		public:
 			GpuProfiler();

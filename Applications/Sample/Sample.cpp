@@ -91,6 +91,17 @@ void GlfwErrorCallback(int errcode, const char* info)
 }
 
 #endif
+#ifdef SAMPLE_USE_GLES
+gles::DeviceManager deviceManager;
+crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface = &deviceManager;
+
+
+void GlfwErrorCallback(int errcode, const char* info)
+{
+	std::cout << "[GLFW ERROR] " << info << std::endl;
+}
+
+#endif
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 crossplatform::CommandLineParams commandLineParams;
 

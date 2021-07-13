@@ -21,7 +21,7 @@ namespace simul
 		public:
 			virtual float Filter(float) const = 0;
 		};
-		SIMUL_MATH_EXPORT_CLASS NoiseInterface
+		class SIMUL_MATH_EXPORT NoiseInterface
 			:public simul::base::MemoryUsageInterface
 		{
 		public:

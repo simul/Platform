@@ -12,7 +12,7 @@ namespace simul
 	{
 		extern void SIMUL_MATH_EXPORT_FN Slerp(Quaternion &ret,const Quaternion &q1,const Quaternion &q2,float l);  
 		/// Quaternion class to represent rotations.
-		SIMUL_MATH_EXPORT_CLASS Quaternion
+		class SIMUL_MATH_EXPORT Quaternion
 		{
 		public:
 			float x,y,z,s;
