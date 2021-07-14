@@ -460,7 +460,7 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 }
 
 #include "Platform/Core/StringFunctions.h"
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
 {
 	mExternalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	if (rendertarget)
@@ -481,28 +481,28 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	textureCreate.setDepthStencil = depthstencil;
 	textureCreate.need_srv = need_srv;
 	textureCreate.numOfSamples = numOfSamples;
-	InitFromExternalTexture(r,&textureCreate);
+	return InitFromExternalTexture(r,&textureCreate);
 }
 
-void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const crossplatform::TextureCreate *textureCreate)
+bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const crossplatform::TextureCreate *textureCreate)
 {
-		//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
+	//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
 	if (IsSame(textureCreate->w, textureCreate->l, textureCreate->d, textureCreate->arraysize, textureCreate->mips, textureCreate->f
 		, textureCreate->numOfSamples, textureCreate->computable, textureCreate->make_rt, textureCreate->setDepthStencil
 		, textureCreate->need_srv
 		, textureCreate->cubemap))
 	{
 		if (textureCreate->external_texture == (void*)mImage)
-			return;
+			return true;
 	}
 	renderPlatform = r;
 	depth =1;
 	if (textureCreate->w == 0)
-		return;
+		return false;
 	if (textureCreate->external_texture == 0)
-		return;
+		return false;
 	if (textureCreate->f == crossplatform::UNKNOWN)
-		return;
+		return false;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform = r;
 	void **image = (void **)&mImage;
@@ -534,6 +534,7 @@ void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	}
 	external_texture = true;
 	SetVulkanName(renderPlatform, &mImage, name.c_str());
+	return true;
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m,

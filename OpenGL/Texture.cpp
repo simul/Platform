@@ -290,7 +290,7 @@ void Texture::MakeHandleResident(GLuint64 thandle)
 	residentHandles.insert(thandle);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -315,6 +315,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 		depth		= 1;
 		mNumSamples = numOfSamples;
 	}
+	return true;
 }
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,

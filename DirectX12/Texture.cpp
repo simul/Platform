@@ -770,9 +770,9 @@ bool Texture::HasRenderTargets() const
 	return (renderTargetViews12 != nullptr);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt, bool setDepthStencil,bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt, bool setDepthStencil,bool need_srv, int numOfSamples)
 {
-	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt,setDepthStencil,need_srv);
+	return InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt,setDepthStencil,need_srv);
 }
 
 void Texture::SetName(const char *n)
@@ -792,7 +792,7 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 	AssumeLayout(mExternalLayout);
 }
 
-void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
+bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
 {
 	//Check that the texture and srv pointers are valid.
 	if (t)
@@ -802,6 +802,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		{
 			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << t << std::dec << std::endl;
 			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+			return false;
 		}
 		SAFE_RELEASE(_t);
 	}
@@ -812,12 +813,12 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	// If it's the same as before, return.
 	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
 	{
-		return;
+		return true;
 	}
 	// If it's the same texture, and we created our own srv, that's fine, return.
 	if (mTextureDefault != NULL && mTextureDefault == t && mainShaderResourceView12.ptr != -1 && srv == NULL)
 	{
-		return;
+		return true;
 	}
 
 	FreeSRVTables();
@@ -903,7 +904,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
             else
             {
                 SIMUL_CERR << "This external texture can not be created as a render target. The flags do not support it.\n";
-                return;
+                return false;
             }
 		}
 
@@ -935,10 +936,12 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	}
 	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 	dim			= 2;
+	return true;
 }
 
-void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
+bool Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
 {
+	return false;
 }
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)

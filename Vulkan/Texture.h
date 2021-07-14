@@ -53,8 +53,8 @@ namespace simul
 			void			LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
 			bool			IsValid() const override;
 			void			InvalidateDeviceObjects() override;
-			virtual void	InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			virtual void	InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const crossplatform::TextureCreate *textureCreate) override;
+			virtual bool	InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
+			virtual bool	InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const crossplatform::TextureCreate *textureCreate) override;
 			
 			bool			ensureTexture2DSizeAndFormat(   crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 															crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
