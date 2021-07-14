@@ -6,8 +6,10 @@ file(GLOB CMAKE "*.cmake" )
 file(GLOB SOURCES Sample.cpp  )
 file(GLOB HEADERS "*.h" )
 file(GLOB shaders "Shaders/*.sfx" "Shaders/*.sl")
- 
-set(SAMPLE_API SAMPLE_USE_GLES)  
+
+#set(SAMPLE_API SAMPLE_USE_GLES)  
+set(SAMPLE_API SAMPLE_USE_D3D12)  
+
 source_group("Shaders" src FILES ${shaders} )
  
 add_static_executable(Sample_MT WIN32 SOURCES ${SOURCES} ${HEADERS} ${shaders} DEFINITIONS ${SAMPLE_API} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
