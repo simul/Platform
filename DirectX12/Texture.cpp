@@ -794,6 +794,18 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
 {
+	//Check that the texture and srv pointers are valid.
+	if (t)
+	{
+		ID3D12Resource* _t;
+		if (t->QueryInterface(__uuidof(ID3D12Resource), (void**)&_t) != S_OK)
+		{
+			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << t << std::dec << std::endl;
+			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+		}
+		SAFE_RELEASE(_t);
+	}
+
 	auto &deviceContext=renderPlatform->GetImmediateContext();
 	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
 	renderPlatform				= r;

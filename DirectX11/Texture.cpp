@@ -466,8 +466,28 @@ bool Texture::HasRenderTargets() const
 
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T,void *SRV,int w,int l,crossplatform::PixelFormat f,bool make_rt, bool setDepthStencil,bool need_srv,int numOfSamples)
 {
-	ID3D11Texture2D *t=(ID3D11Texture2D *)T;
-	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView *)SRV;
+	ID3D11Texture2D* t = reinterpret_cast<ID3D11Texture2D*>(T);
+	ID3D11ShaderResourceView* srv = reinterpret_cast<ID3D11ShaderResourceView*>(SRV);
+	//Check that the texture and srv pointers are valid.
+	if (t)
+	{
+		ID3D11Texture2D* _t;
+		if (t->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&_t) != S_OK)
+		{
+			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << t << std::dec << std::endl;
+			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+		}
+		SAFE_RELEASE(_t);
+	}
+	if (srv)
+	{
+		ID3D11ShaderResourceView* _srv;
+		if (srv->QueryInterface(__uuidof(ID3D11ShaderResourceView), (void**)&_srv) != S_OK)
+		{
+			SIMUL_CERR << "Can't use external shader resource view: 0x" << std::hex << srv << std::dec << std::endl;
+		}
+		SAFE_RELEASE(_srv);
+	}
 	make_rt&=(!setDepthStencil);
 	// If it's the same as before, return.
 	if ((texture == t && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (make_rt ==( renderTargetViews != NULL)))
@@ -608,6 +628,26 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 
 void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
 {
+	//Check that the texture and srv pointers are valid.
+	if (ta)
+	{
+		ID3D11Texture3D* _ta;
+		if (reinterpret_cast<ID3D11Texture3D*>(ta)->QueryInterface(__uuidof(ID3D11Texture3D), (void**)&_ta) != S_OK)
+		{
+			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << ta << std::dec << std::endl;
+			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+		}
+		SAFE_RELEASE(_ta);
+	}
+	if (srv)
+	{
+		ID3D11ShaderResourceView* _srv;
+		if (reinterpret_cast<ID3D11ShaderResourceView*>(srv)->QueryInterface(__uuidof(ID3D11ShaderResourceView), (void**)&_srv) != S_OK)
+		{
+			SIMUL_CERR << "Can't use external shader resource view: 0x" << std::hex << srv << std::dec << std::endl;
+		}
+		SAFE_RELEASE(_srv);
+	}
 	// If it's the same as before, return.
 	if ((texture == ta && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (make_uav ==( mipUnorderedAccessViews != NULL)))
 		return;
