@@ -277,7 +277,7 @@ namespace simul
 			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent. Returns true if successful.
 			virtual bool InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
 			virtual bool InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
-			virtual bool InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
+			virtual bool InitFromExternalTexture3D(crossplatform::RenderPlatform*, void*, void*, bool = false) { return false; }
 			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*);
 			[[deprecated]]
 			/// Deprecated, use the alternate version that specified mips.

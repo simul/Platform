@@ -794,13 +794,13 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 
 bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt, bool setDepthStencil,bool need_srv)
 {
-	//Check that the texture and srv pointers are valid.
+	//Check that the texture pointer is valid.
 	if (t)
 	{
 		ID3D12Resource* _t;
 		if (t->QueryInterface(__uuidof(ID3D12Resource), (void**)&_t) != S_OK)
 		{
-			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << t << std::dec << std::endl;
+			SIMUL_CERR << "Can't initialise from external texture: 0x" << std::hex << t << std::dec << std::endl;
 			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
 			return false;
 		}

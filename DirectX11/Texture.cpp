@@ -474,7 +474,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		ID3D11Texture2D* _t;
 		if (t->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&_t) != S_OK)
 		{
-			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << t << std::dec << std::endl;
+			SIMUL_CERR << "Can't initialise from external texture: 0x" << std::hex << t << std::dec << std::endl;
 			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
 			return false;
 		}
@@ -637,7 +637,7 @@ bool Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		ID3D11Texture3D* _ta;
 		if (reinterpret_cast<ID3D11Texture3D*>(ta)->QueryInterface(__uuidof(ID3D11Texture3D), (void**)&_ta) != S_OK)
 		{
-			SIMUL_CERR << "Can't initial from external texture: 0x" << std::hex << ta << std::dec << std::endl;
+			SIMUL_CERR << "Can't initialise from external texture: 0x" << std::hex << ta << std::dec << std::endl;
 			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
 			return false;
 		}
