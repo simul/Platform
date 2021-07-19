@@ -81,51 +81,51 @@ bool Query::GetData(crossplatform::DeviceContext&, void* data, size_t sz)
 }
 
 PlatformConstantBuffer::PlatformConstantBuffer():
-    mUBOId(0),
-    mBindingSlot(-1)
+	mUBOId(0),
+	mBindingSlot(-1)
 {
 }
 
 PlatformConstantBuffer::~PlatformConstantBuffer()
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 }
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void *addr)
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 
-    glCreateBuffers(1, &mUBOId);
-    glBindBuffer(GL_UNIFORM_BUFFER, mUBOId);
-    glBufferData(GL_UNIFORM_BUFFER, sz, addr, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glCreateBuffers(1, &mUBOId);
+	glBindBuffer(GL_UNIFORM_BUFFER, mUBOId);
+	glBufferData(GL_UNIFORM_BUFFER, sz, addr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
-    if (mUBOId != 0)
-    {
-        glDeleteBuffers(1, &mUBOId);
-        mUBOId = 0;
-    }
+	if (mUBOId != 0)
+	{
+		glDeleteBuffers(1, &mUBOId);
+		mUBOId = 0;
+	}
 }
 
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex)
 {
-    mBindingSlot = bindingIndex;
+	mBindingSlot = bindingIndex;
 }
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext& deviceContext,size_t size,void* addr)
 {
 	if(mBindingSlot<0)
 		return;
-    // Update the UBO data:
-    glBindBuffer(GL_UNIFORM_BUFFER, mUBOId);
-    glBufferSubData(GL_UNIFORM_BUFFER,0,size,addr);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	// Update the UBO data:
+	glBindBuffer(GL_UNIFORM_BUFFER, mUBOId);
+	glBufferSubData(GL_UNIFORM_BUFFER,0,size,addr);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // Bind to the slot:
-    glBindBufferBase(GL_UNIFORM_BUFFER, mBindingSlot, mUBOId);
+	// Bind to the slot:
+	glBindBufferBase(GL_UNIFORM_BUFFER, mBindingSlot, mUBOId);
 }
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceContext)
@@ -133,95 +133,95 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceC
 }
 
 PlatformStructuredBuffer::PlatformStructuredBuffer():
-    mTotalSize(0),
-    mBinding(-1)
+	mTotalSize(0),
+	mBinding(-1)
 {
-    for (int i = 0; i < mNumBuffers; i++)
-    {
-        mGPUBuffer[i]   = 0;
-    }
+	for (int i = 0; i < mNumBuffers; i++)
+	{
+		mGPUBuffer[i]   = 0;
+	}
 }
 
 PlatformStructuredBuffer::~PlatformStructuredBuffer()
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 }
 
 #define SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER 1
 
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n,crossplatform::BufferUsageHint b)
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 	bufferUsageHint = b;
-    mTotalSize      = (size_t)ct * (size_t)unit_size;
-    this->cpu_read  = cpu_read;
-    GLenum flags = GL_MAP_WRITE_BIT;
-    if (cpu_read)
-    {
-        flags |= GL_MAP_READ_BIT;
-    }
-    
-#if SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
-    if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
-    {
-        flags |= GL_MAP_PERSISTENT_BIT;
-    }
-    #endif
-    
-    // Create the SSBO:
-    if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
-    {
-        glGenBuffers(1, &mGPUBuffer[0]);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[0]);
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        mGPUBuffer[1] = mGPUBuffer[2] = 0;
-    }
-    else
-    {
-        glGenBuffers(mNumBuffers, &mGPUBuffer[0]);
-        
-        for (int i = 0; i < mNumBuffers; i++)
-        {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
-            glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        }
-    }
+	mTotalSize      = (size_t)ct * (size_t)unit_size;
+	this->cpu_read  = cpu_read;
+	GLenum flags = GL_MAP_WRITE_BIT;
+	if (cpu_read)
+	{
+		flags |= GL_MAP_READ_BIT;
+	}
+	
+	#if SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
+	if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+	{
+		flags |= GL_MAP_PERSISTENT_BIT;
+	}
+	#endif
+	
+	// Create the SSBO:
+	if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+	{
+		glGenBuffers(1, &mGPUBuffer[0]);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[0]);
+		glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		mGPUBuffer[1] = mGPUBuffer[2] = 0;
+	}
+	else
+	{
+		glGenBuffers(mNumBuffers, &mGPUBuffer[0]);
+		
+		for (int i = 0; i < mNumBuffers; i++)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[i]);
+			glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, init_data, flags);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		}
+	}
 }
 
 void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceContext)
 {
 #if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
-    int idx = GetIndex(deviceContext);
+	int idx = GetIndex(deviceContext);
 
-    if (IsBufferMapped(idx))
-    {
-        GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
-        if (unmap_success != GL_TRUE)
-        {
-            SIMUL_COUT << "The structured buffer at binding " << mBinding << " did not unmap successfully.";
-            SIMUL_BREAK_ONCE("");
-        }
-    }
+	if (IsBufferMapped(idx))
+	{
+		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
+		if (unmap_success != GL_TRUE)
+		{
+			SIMUL_COUT << "The structured buffer at binding " << mBinding << " did not unmap successfully.";
+			SIMUL_BREAK_ONCE("");
+		}
+	}
 
-    return glMapNamedBuffer(mGPUBuffer[idx], GL_WRITE_ONLY);
+	return glMapNamedBuffer(mGPUBuffer[idx], GL_WRITE_ONLY);
 #else
-    if (!mMappedWritePtr)
-    {
-        if (IsBufferMapped(0))
-            glUnmapNamedBuffer(mGPUBuffer[0]);
+	if (!mMappedWritePtr)
+	{
+		if (IsBufferMapped(0))
+			glUnmapNamedBuffer(mGPUBuffer[0]);
 
-        mMappedWritePtr = glMapNamedBuffer(mGPUBuffer[0], GL_WRITE_ONLY);
-    }
-    return mMappedWritePtr;
+		mMappedWritePtr = glMapNamedBuffer(mGPUBuffer[0], GL_WRITE_ONLY);
+	}
+	return mMappedWritePtr;
 #endif
 }
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    if (!cpu_read)
-        return nullptr;
+	if (!cpu_read)
+		return nullptr;
 
 	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
 	{
@@ -239,18 +239,18 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 			return nullptr;
 		}*/
 		
-        GLenum res = GL_ALREADY_SIGNALED; // glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
+		GLenum res = GL_ALREADY_SIGNALED; // glClientWaitSync(mFences[idx], GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeOut);
 		if (res == GL_ALREADY_SIGNALED || res == GL_CONDITION_SATISFIED)
 		{
-            if(!IsBufferMapped(idx))
-            {
-                mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
-                return mCurReadMap;
-            }
-            else
-            {
-                return mCurReadMap;
-            }
+			if(!IsBufferMapped(idx))
+			{
+				mCurReadMap = glMapNamedBuffer(mGPUBuffer[idx], GL_READ_ONLY);
+				return mCurReadMap;
+			}
+			else
+			{
+				return mCurReadMap;
+			}
 		}
 		else
 		{
@@ -267,13 +267,13 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    if (!cpu_read)
-        return;
+	if (!cpu_read)
+		return;
 
-    int idx = GetIndex(deviceContext);
-    if (IsBufferMapped(idx))
-    {
-        mCurReadMap = nullptr;
+	int idx = GetIndex(deviceContext);
+	if (IsBufferMapped(idx))
+	{
+		mCurReadMap = nullptr;
 		GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]); 
 		if (unmap_success != GL_TRUE)
 		{
@@ -288,7 +288,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 			glBufferStorage(GL_SHADER_STORAGE_BUFFER, mTotalSize, nullptr, cpu_read ? GL_MAP_WRITE_BIT | GL_MAP_READ_BIT : GL_MAP_WRITE_BIT);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		}
-    }
+	}
 }
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
@@ -297,55 +297,55 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
 {
-    if (data)
-    {
-        //void* pDataGPU = glMapNamedBuffer(mGPUBuffer, GL_WRITE_ONLY);
-        //memcpy(pDataGPU, data, mTotalSize);
-        //glUnmapNamedBuffer(mGPUBuffer);
-    }
+	if (data)
+	{
+		//void* pDataGPU = glMapNamedBuffer(mGPUBuffer, GL_WRITE_ONLY);
+		//memcpy(pDataGPU, data, mTotalSize);
+		//glUnmapNamedBuffer(mGPUBuffer);
+	}
 }
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
 {
-    Apply(deviceContext, nullptr, shaderResource);
+	Apply(deviceContext, nullptr, shaderResource);
 }
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
 {
-    ApplyAsUnorderedAccessView(deviceContext, nullptr, shaderResource);
+	ApplyAsUnorderedAccessView(deviceContext, nullptr, shaderResource);
 }
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
 // mLastIdx is the one we last used to write to.
-    int idx = mLastIdx;
-    if (mBinding != shaderResource.slot)
-    {
-        mBinding = shaderResource.slot;
-    }
-    //Will unmap write only buffers, unless the buffer is persistently mapped.
-    //Otherwise: Read only should be unmapped by CloseReadBuffer().
-    #if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
-    if (IsBufferMapped(idx)) 
-    {
-        glUnmapNamedBuffer(mGPUBuffer[idx]);
-    }
-    #endif
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
+	int idx = mLastIdx;
+	if (mBinding != shaderResource.slot)
+	{
+		mBinding = shaderResource.slot;
+	}
+	//Will unmap write only buffers, unless the buffer is persistently mapped.
+	//Otherwise: Read only should be unmapped by CloseReadBuffer().
+	#if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
+	if (IsBufferMapped(idx)) 
+	{
+		glUnmapNamedBuffer(mGPUBuffer[idx]);
+	}
+	#endif
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
 }
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
 {
-    mLastIdx = GetIndex(deviceContext);
+	mLastIdx = GetIndex(deviceContext);
 	Apply(deviceContext,effect,shaderResource);
 }
 
 void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceContext)
 {
-    // Insert a fence:
-    if (cpu_read)
-    {
-        int idx     = mLastIdx;
+	// Insert a fence:
+	if (cpu_read)
+	{
+		int idx     = mLastIdx;
 		
 		if (glIsSync(mFences[idx]))
 		{
@@ -355,8 +355,8 @@ void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceCont
 		else
 			mFences[idx] = nullptr;
 
-        //mFences[idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    }
+		//mFences[idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	}
 }
 
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContext)
@@ -365,9 +365,9 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContex
 
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
-    if (mGPUBuffer[0] != 0)
-    {
-        glDeleteBuffers(mNumBuffers, &mGPUBuffer[0]);
+	if (mGPUBuffer[0] != 0)
+	{
+		glDeleteBuffers(mNumBuffers, &mGPUBuffer[0]);
 		for (int i = 0; i < mNumBuffers; i++)
 		{
 			mGPUBuffer[i] = 0;
@@ -380,7 +380,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 			else
 				mFences[i] = nullptr;
 		}
-    }
+	}
 }
 
 Effect::Effect()
@@ -391,10 +391,10 @@ void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 {
 #define OPENGL_SHADER_DEBUG
 #if defined(OPENGL_SHADER_DEBUG)
-    crossplatform::ShaderBuildMode buildMode = r->GetShaderBuildMode();
-    r->SetShaderBuildMode(crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
-    crossplatform::Effect::EnsureEffect(r, filename_utf8);
-    r->SetShaderBuildMode(buildMode);
+	crossplatform::ShaderBuildMode buildMode = r->GetShaderBuildMode();
+	r->SetShaderBuildMode(crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
+	crossplatform::Effect::EnsureEffect(r, filename_utf8);
+	r->SetShaderBuildMode(buildMode);
 #endif
 
 	crossplatform::Effect::Load(r, filename_utf8,defines);
@@ -412,21 +412,21 @@ EffectTechnique* Effect::CreateTechnique()
 
 crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
 {
-    return techniques_by_index[index];
+	return techniques_by_index[index];
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index, int mip)
 {
-    auto res = GetShaderResource(name);
-    SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+	auto res = GetShaderResource(name);
+	SetUnorderedAccessView(deviceContext, res, tex, index, mip);
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
 {
-    if (!name.valid)
-        return;
+	if (!name.valid)
+		return;
 
-    opengl::Texture* gTex = (opengl::Texture*)tex;
+	opengl::Texture* gTex = (opengl::Texture*)tex;
 	if (gTex)
 	{
 		GLuint imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
@@ -440,105 +440,105 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		}
 	}
-    else
-    {
-        // Unbind it:
-        if(name.slot>=0&&name.slot<GL_MAX_IMAGE_UNITS)
-            glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
-    }
+	else
+	{
+		// Unbind it:
+		if(name.slot>=0&&name.slot<GL_MAX_IMAGE_UNITS)
+			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+	}
 }
 
 void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)
 {
-    RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-    s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
+	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
 
-    crossplatform::Effect::SetConstantBuffer(deviceContext, s);
+	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass)
 {
-    crossplatform::Effect::Apply(deviceContext, effectTechnique, pass);
-    deviceContext.contextState.currentEffectPass->Apply(deviceContext, true);
+	crossplatform::Effect::Apply(deviceContext, effectTechnique, pass);
+	deviceContext.contextState.currentEffectPass->Apply(deviceContext, true);
 }
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,const char* pass)
 {
-    crossplatform::Effect::Apply(deviceContext, effectTechnique, pass);
-    deviceContext.contextState.currentEffectPass->Apply(deviceContext, true);
+	crossplatform::Effect::Apply(deviceContext, effectTechnique, pass);
+	deviceContext.contextState.currentEffectPass->Apply(deviceContext, true);
 }
 
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)
 {
-    crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-    auto *p=cs->currentEffectPass;
-    crossplatform::Effect::Unapply(deviceContext);
-    cs->textureAssignmentMapValid = false;
-    cs->rwTextureAssignmentMapValid = false;
-    crossplatform::Effect::Apply(deviceContext, p);
+	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+	auto *p=cs->currentEffectPass;
+	crossplatform::Effect::Unapply(deviceContext);
+	cs->textureAssignmentMapValid = false;
+	cs->rwTextureAssignmentMapValid = false;
+	crossplatform::Effect::Apply(deviceContext, p);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext& deviceContext)
 {
-    crossplatform::Effect::Unapply(deviceContext);
+	crossplatform::Effect::Unapply(deviceContext);
 }
 
 void Effect::UnbindTextures(crossplatform::DeviceContext& deviceContext)
 {
-    crossplatform::Effect::UnbindTextures(deviceContext);
+	crossplatform::Effect::UnbindTextures(deviceContext);
 }
 
 Shader::Shader():
-    ShaderId(0)
+	ShaderId(0)
 {
 }
 
 Shader::~Shader()
 {
-    Release();
+	Release();
 }
 
 void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t)
 {
-    Release();
+	Release();
 
-    type = t;
-    // Start creating the gl shader:
-    GLenum type = GL_NONE;
-    switch (t)
-    {
-    case simul::crossplatform::SHADERTYPE_VERTEX:
-        type = GL_VERTEX_SHADER;
-        break;
-    case simul::crossplatform::SHADERTYPE_HULL:
+	type = t;
+	// Start creating the gl shader:
+	GLenum type = GL_NONE;
+	switch (t)
+	{
+	case simul::crossplatform::SHADERTYPE_VERTEX:
+		type = GL_VERTEX_SHADER;
+		break;
+	case simul::crossplatform::SHADERTYPE_HULL:
 		type = GL_TESS_CONTROL_SHADER;
 		break;
-    case simul::crossplatform::SHADERTYPE_DOMAIN:
+	case simul::crossplatform::SHADERTYPE_DOMAIN:
 		type = GL_TESS_EVALUATION_SHADER;
 		break;
-    case simul::crossplatform::SHADERTYPE_GEOMETRY:
+	case simul::crossplatform::SHADERTYPE_GEOMETRY:
 		type = GL_GEOMETRY_SHADER;
 		break;
-    case simul::crossplatform::SHADERTYPE_PIXEL:
-        type = GL_FRAGMENT_SHADER;
-        break;
-    case simul::crossplatform::SHADERTYPE_COMPUTE:
-        type = GL_COMPUTE_SHADER;
-        break;
-    case simul::crossplatform::SHADERTYPE_COUNT:
-    default:
-        break;
-    }
+	case simul::crossplatform::SHADERTYPE_PIXEL:
+		type = GL_FRAGMENT_SHADER;
+		break;
+	case simul::crossplatform::SHADERTYPE_COMPUTE:
+		type = GL_COMPUTE_SHADER;
+		break;
+	case simul::crossplatform::SHADERTYPE_COUNT:
+	default:
+		break;
+	}
 	
-    const GLchar* glData    = (const GLchar*)fileData;
-    GLuint shaderId         = glCreateShader(type);
+	const GLchar* glData    = (const GLchar*)fileData;
+	GLuint shaderId         = glCreateShader(type);
 	GLint sz				= (GLint)DataSize;
 	
 	src						= std::string(glData, sz);
 	name					= filename_utf8;
-    
+	
 	glShaderSource(shaderId, 1, &glData, &sz);
-    glCompileShader(shaderId);
+	glCompileShader(shaderId);
 
 	// Check compile status:
 	GLint isCompiled = 0;
@@ -551,23 +551,23 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		glGetShaderInfoLog(shaderId, maxLength, &maxLength, infoLog.data());
 
 		SIMUL_CERR << "Failed to compile the shader: " << filename_utf8 << "\n";
-        if(infoLog.data() && infoLog.size())
-		    SIMUL_COUT << infoLog.data() << std::endl;
+		if(infoLog.data() && infoLog.size())
+			SIMUL_COUT << infoLog.data() << std::endl;
 		SIMUL_BREAK_ONCE("");
 	}
-    else
-    {
-        ShaderId = shaderId;
-    }
+	else
+	{
+		ShaderId = shaderId;
+	}
 }
 
 void Shader::Release()
 {
-    if (ShaderId != 0)
-    {
-        glDeleteShader(ShaderId);
-        ShaderId = 0;
-    }
+	if (ShaderId != 0)
+	{
+		glDeleteShader(ShaderId);
+		ShaderId = 0;
+	}
 }
 
 crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
@@ -578,7 +578,7 @@ crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 }
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
-    crossplatform::EffectPass(r,e)
+	crossplatform::EffectPass(r,e)
 	,mProgramId(0)
 {
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
@@ -593,134 +593,134 @@ EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e
 
 EffectPass::~EffectPass()
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 }
 
 void EffectPass::InvalidateDeviceObjects()
 {
-    if (mProgramId != 0)
-    {
-        glDeleteProgram(mProgramId);
-        mProgramId = 0;
-    }
+	if (mProgramId != 0)
+	{
+		glDeleteProgram(mProgramId);
+		mProgramId = 0;
+	}
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
-    {
+	{
 		if (mHandlesUBO[i])
 			delete mHandlesUBO[i];
 		for (int j = 0; j < 32; j++)
 		{
 			mTexturesUBOMapping[i][j] = -1;
 		}
-    }
-    mUsedTextures.clear();
+	}
+	mUsedTextures.clear();
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) 
 {
-    // Create the program:
-    if (mProgramId == 0)
-    {
-        InvalidateDeviceObjects();
-        crossplatform::ContextState* cs     = deviceContext.renderPlatform->GetContextState(deviceContext);
-       // name                            = cs->currentEffectPass->name;
+	// Create the program:
+	if (mProgramId == 0)
+	{
+		InvalidateDeviceObjects();
+		crossplatform::ContextState* cs     = deviceContext.renderPlatform->GetContextState(deviceContext);
+	   // name                            = cs->currentEffectPass->name;
 
-        opengl::Shader* v   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
-        opengl::Shader* f   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
-        opengl::Shader* c   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
-        mProgramId          = glCreateProgram();
-        glObjectLabel(GL_PROGRAM, mProgramId, -1, name.c_str());
+		opengl::Shader* v   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
+		opengl::Shader* f   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
+		opengl::Shader* c   = (opengl::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+		mProgramId          = glCreateProgram();
+		glObjectLabel(GL_PROGRAM, mProgramId, -1, name.c_str());
 
-        int attachedShaders = 0;
-        // GFX:
-        if (v && f)
-        {
-            glAttachShader(mProgramId, v->ShaderId);
-            glAttachShader(mProgramId, f->ShaderId);
-        }
-        // Compute:
-        else
-        {
-            glAttachShader(mProgramId, c->ShaderId);
-        }
-        glGetProgramiv(mProgramId, GL_ATTACHED_SHADERS, &attachedShaders);
+		int attachedShaders = 0;
+		// GFX:
+		if (v && f)
+		{
+			glAttachShader(mProgramId, v->ShaderId);
+			glAttachShader(mProgramId, f->ShaderId);
+		}
+		// Compute:
+		else
+		{
+			glAttachShader(mProgramId, c->ShaderId);
+		}
+		glGetProgramiv(mProgramId, GL_ATTACHED_SHADERS, &attachedShaders);
 
-        //Link program:
-        if ((v && f && attachedShaders == 2) || (c && attachedShaders == 1))
-        {
-            glLinkProgram(mProgramId);
-            glValidateProgram(mProgramId);
-        }
-        else
-        {
-            SIMUL_CERR << "Failed to attach shader to the program for pass: " << this->name.c_str() << "\n";
-            SIMUL_BREAK("");
-        }
+		//Link program:
+		if ((v && f && attachedShaders == 2) || (c && attachedShaders == 1))
+		{
+			glLinkProgram(mProgramId);
+			glValidateProgram(mProgramId);
+		}
+		else
+		{
+			SIMUL_CERR << "Failed to attach shader to the program for pass: " << this->name.c_str() << "\n";
+			SIMUL_BREAK("");
+		}
 		
-        // Check link and validate status:
+		// Check link and validate status:
 
-        GLint isLinked = 0;
-        glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
-        GLint isValid = 0;
-        glGetProgramiv(mProgramId, GL_VALIDATE_STATUS, &isValid);
+		GLint isLinked = 0;
+		glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
+		GLint isValid = 0;
+		glGetProgramiv(mProgramId, GL_VALIDATE_STATUS, &isValid);
 
-        if (isLinked == 0 || isValid == 0)
-        {
-            GLint maxLength = 0;
-            glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
-            std::vector<GLchar> infoLog(maxLength);
-            glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);
-            
-            if (!isLinked)
-            {
-                SIMUL_CERR << "Failed to link the program for pass: " << this->name.c_str() << "\n";
-            }
-            if (!isValid)
-            {
-                SIMUL_CERR << "Failed to validate the program for pass: " << this->name.c_str() << "\n";
-            }
-            SIMUL_COUT << infoLog.data() << std::endl;
-            SIMUL_BREAK_ONCE("");
+		if (isLinked == 0 || isValid == 0)
+		{
+			GLint maxLength = 0;
+			glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
+			std::vector<GLchar> infoLog(maxLength);
+			glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);
+			
+			if (!isLinked)
+			{
+				SIMUL_CERR << "Failed to link the program for pass: " << this->name.c_str() << "\n";
+			}
+			if (!isValid)
+			{
+				SIMUL_CERR << "Failed to validate the program for pass: " << this->name.c_str() << "\n";
+			}
+			SIMUL_COUT << infoLog.data() << std::endl;
+			SIMUL_BREAK_ONCE("");
 
-            InvalidateDeviceObjects();
-            return;
-        }
+			InvalidateDeviceObjects();
+			return;
+		}
 
-        // Perform sfxo slot mapping to the _TextureHandles_ UBO offsets:
-        MapTexturesToUBO(cs->currentEffect);
+		// Perform sfxo slot mapping to the _TextureHandles_ UBO offsets:
+		MapTexturesToUBO(cs->currentEffect);
 
-        // Detach the shaders:
-        if (v && f)
-        {
-            glDetachShader(mProgramId, v->ShaderId);
-            glDetachShader(mProgramId, f->ShaderId);
-        }
-        else
-        {
-            glDetachShader(mProgramId, c->ShaderId);
-        }
-    }
+		// Detach the shaders:
+		if (v && f)
+		{
+			glDetachShader(mProgramId, v->ShaderId);
+			glDetachShader(mProgramId, f->ShaderId);
+		}
+		else
+		{
+			glDetachShader(mProgramId, c->ShaderId);
+		}
+	}
 
-    // Activate the program!
-    GLint curProgram = -1;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &curProgram);
-    if (curProgram != mProgramId)
-    {
-        glUseProgram(mProgramId);
-    }
+	// Activate the program!
+	GLint curProgram = -1;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &curProgram);
+	if (curProgram != mProgramId)
+	{
+		glUseProgram(mProgramId);
+	}
 
-    // If valid, activate render states:
-    if (blendState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
-    }
-    if (depthStencilState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
-    }
-    if (rasterizerState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
-    }
+	// If valid, activate render states:
+	if (blendState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
+	}
+	if (depthStencilState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
+	}
+	if (rasterizerState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
+	}
 }
 
 void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
@@ -734,55 +734,58 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 	if(!any)
 		return;
 
-    crossplatform::ContextState* cs = deviceContext.renderPlatform->GetContextState(deviceContext);
-    auto rPlat = (opengl::RenderPlatform*)deviceContext.renderPlatform;
+	crossplatform::ContextState* cs = deviceContext.renderPlatform->GetContextState(deviceContext);
+	auto rPlat = (opengl::RenderPlatform*)deviceContext.renderPlatform;
 
-    /*
-        For each applied texture, get the view and apply it to
-        the _TextureHandles_ UBO:
+	/*
+		For each applied texture, get the view and apply it to
+		the _TextureHandles_ UBO:
 
-        uniform _TextureHandles_
-        {
-            uint64  cloudVolume[16];
-            uint64  nextUpdate[16];
-            etc.
-        }
-                    cloudVolume[0]               --->   texture only, used in texelFetch and textureSize operations
-                                                        we just set it for every applied texture
-                    cloudVolume[samplerSlot + 1] --->   this is the texture + sampling state from 'samplerSlot'
-    */
-    for (unsigned int i = 0; i < (unsigned)numResourceSlots; i++)
-    {
-        // Find the texture in the texture assignment:
-        int slot                = resourceSlots[i];
-        auto ta                 = cs->textureAssignmentMap[slot];
-        opengl::Texture* tex    = (opengl::Texture*)ta.texture;
-        
-        // ... Or we may be selecting it conditionally
-        if (!tex)
-        {
-            if (ta.dimensions == 3)
-            {
-                tex = rPlat->GetDummy3D();
-            }
-            else
-            {
-                tex = rPlat->GetDummy2D();
-            }
-        }
-
-		//Used for Debug with RenderDoc, as it don't load these extension/functions -AJR
-		if (!GLAD_GL_ARB_bindless_texture)
+		uniform _TextureHandles_
 		{
-			glGetTextureHandleARB = (PFNGLGETTEXTUREHANDLEARBPROC)wglGetProcAddress("glGetTextureHandleARB");
-			glGetTextureSamplerHandleARB = (PFNGLGETTEXTURESAMPLERHANDLEARBPROC)wglGetProcAddress("glGetTextureSamplerHandleARB");
-			glMakeTextureHandleResidentARB = (PFNGLMAKETEXTUREHANDLERESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleResidentARB");
-			glMakeTextureHandleNonResidentARB = (PFNGLMAKETEXTUREHANDLENONRESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleNonResidentARB");
+			uint64  cloudVolume[16];
+			uint64  nextUpdate[16];
+			etc.
+		}
+					cloudVolume[0]               --->   texture only, used in texelFetch and textureSize operations
+														we just set it for every applied texture
+					cloudVolume[samplerSlot + 1] --->   this is the texture + sampling state from 'samplerSlot'
+	*/
+	for (unsigned int i = 0; i < (unsigned)numResourceSlots; i++)
+	{
+		// Find the texture in the texture assignment:
+		int slot                = resourceSlots[i];
+		auto ta                 = cs->textureAssignmentMap[slot];
+		opengl::Texture* tex    = (opengl::Texture*)ta.texture;
+		
+		// ... Or we may be selecting it conditionally
+		if (!tex)
+		{
+			if (ta.dimensions == 3)
+			{
+				tex = rPlat->GetDummy3D();
+			}
+			else
+			{
+				tex = rPlat->GetDummy2D();
+			}
 		}
 
-        // We first bind the texture handle alone (for fetch and get size operations)
-        GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-        GLuint64 thandle    = glGetTextureHandleARB(tview);
+		//As RenderDoc don't load these extension/functions, we need to load them manually. - AJR
+		{
+			if (!glGetTextureHandleARB)
+				glGetTextureHandleARB = (PFNGLGETTEXTUREHANDLEARBPROC)wglGetProcAddress("glGetTextureHandleARB");
+			if (!glGetTextureSamplerHandleARB)
+				glGetTextureSamplerHandleARB = (PFNGLGETTEXTURESAMPLERHANDLEARBPROC)wglGetProcAddress("glGetTextureSamplerHandleARB");
+			if (!glMakeTextureHandleResidentARB)
+				glMakeTextureHandleResidentARB = (PFNGLMAKETEXTUREHANDLERESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleResidentARB");
+			if (!glMakeTextureHandleNonResidentARB)
+				glMakeTextureHandleNonResidentARB = (PFNGLMAKETEXTUREHANDLENONRESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleNonResidentARB");
+		}
+
+		// We first bind the texture handle alone (for fetch and get size operations)
+		GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
+		GLuint64 thandle    = glGetTextureHandleARB(tview);
 		tex->MakeHandleResident(thandle);
 		for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
 		{
@@ -791,30 +794,30 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 				mHandlesUBO[j]->Update(thandle, uboOffset);
 		}
 
-        // Texture + sampler
-        for (int i = 0; i < numSamplerResourceSlots; i++)
-        {
-            int sslot = samplerResourceSlots[i];
-            if (usesSamplerSlot(sslot))
-            {
-                if (sslot >= 23)
-                {
-                    SIMUL_BREAK("");
-                }
-                auto effectSamp                     = (opengl::SamplerState*)cs->currentEffect->GetSamplers()[sslot];
-                opengl::SamplerState* samplerState  = effectSamp;
-                // Check for sampler overrides:
-                if (cs->samplerStateOverrides.size() > 0 && cs->samplerStateOverrides.HasValue(sslot))
-                {
-                    samplerState = (opengl::SamplerState*)cs->samplerStateOverrides[sslot];
-                    // If invalid, provide an effect sampler state:
-                    if (!samplerState)
-                    {
-                        samplerState = effectSamp;
-                    }
-                }
-                GLuint sview        =samplerState->asGLuint();
-                GLuint64 chandle    =glGetTextureSamplerHandleARB(tview, sview);
+		// Texture + sampler
+		for (int i = 0; i < numSamplerResourceSlots; i++)
+		{
+			int sslot = samplerResourceSlots[i];
+			if (usesSamplerSlot(sslot))
+			{
+				if (sslot >= 23)
+				{
+					SIMUL_BREAK("");
+				}
+				auto effectSamp                     = (opengl::SamplerState*)cs->currentEffect->GetSamplers()[sslot];
+				opengl::SamplerState* samplerState  = effectSamp;
+				// Check for sampler overrides:
+				if (cs->samplerStateOverrides.size() > 0 && cs->samplerStateOverrides.HasValue(sslot))
+				{
+					samplerState = (opengl::SamplerState*)cs->samplerStateOverrides[sslot];
+					// If invalid, provide an effect sampler state:
+					if (!samplerState)
+					{
+						samplerState = effectSamp;
+					}
+				}
+				GLuint sview        =samplerState->asGLuint();
+				GLuint64 chandle    =glGetTextureSamplerHandleARB(tview, sview);
 				tex->MakeHandleResident(chandle);
 				for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
 				{
@@ -822,9 +825,9 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 					if(mHandlesUBO[j]!=nullptr&&uboOffset!=-1)
 						mHandlesUBO[j]->Update(chandle, uboOffset + (2 * sizeof(GLuint64) * (sslot + 1)));
 				}
-            }
-        }
-    }
+			}
+		}
+	}
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
 	{
 		if(mHandlesUBO[i])
@@ -834,12 +837,12 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 
 GLuint EffectPass::GetGLId()
 {
-    return mProgramId;
+	return mProgramId;
 }
 
 void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 {
-    char kTexHandleUbo []  = "_TextureHandles_X";
+	char kTexHandleUbo []  = "_TextureHandles_X";
 	char ext[]={'v','h','d','g','p','c'};
 	// Different buffer object for each shader type.
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
@@ -908,7 +911,7 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 					if(texSlot<0)
 						continue;
 					mTexturesUBOMapping[i][texSlot]    = baseOffset;
-                
+				
 					if ((baseOffset % (2 * sizeof(GLuint64) * 24)) != 0)
 					{
 						SIMUL_BREAK("This can not happen");
@@ -916,39 +919,39 @@ void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 				}
 			}
 		}
-    }
+	}
 }
 
 TexHandlesUBO::TexHandlesUBO():
-    mId(0)
+	mId(0)
 {
 }
 
 
 TexHandlesUBO::~TexHandlesUBO()
 {
-    Release();
+	Release();
 }
 
 void TexHandlesUBO::Init(size_t count, GLuint program, int index, int slot)
 {
-    Release();
+	Release();
 
-    // Generate the UBO:
-    glGenBuffers(1, &mId);
-    glBindBuffer(GL_UNIFORM_BUFFER, mId);
+	// Generate the UBO:
+	glGenBuffers(1, &mId);
+	glBindBuffer(GL_UNIFORM_BUFFER, mId);
 	size=(int)count;
-    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(GLuint64) * count, nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // Setup the binding (the handles UBO is declared without layout):
-    glUniformBlockBinding(program, index, slot);
-    mSlot = slot;
+	// Setup the binding (the handles UBO is declared without layout):
+	glUniformBlockBinding(program, index, slot);
+	mSlot = slot;
 }
 
 void TexHandlesUBO::Bind(GLuint program)
 {
-    glBindBufferBase(GL_UNIFORM_BUFFER, mSlot, mId);
+	glBindBufferBase(GL_UNIFORM_BUFFER, mSlot, mId);
 }
 
 void TexHandlesUBO::Update(GLuint64 value, size_t offset)
@@ -956,19 +959,19 @@ void TexHandlesUBO::Update(GLuint64 value, size_t offset)
 	if(offset/(2 * sizeof(GLuint64))>=size)
 		SIMUL_BREAK("");
 
-    GLuint64 _value[2] = { 0 , 0 };
-    _value[0] = value;
+	GLuint64 _value[2] = { 0 , 0 };
+	_value[0] = value;
 
-    glBindBuffer(GL_UNIFORM_BUFFER, mId);
-    glBufferSubData(GL_UNIFORM_BUFFER, offset, 2 * sizeof(GLuint64), &_value);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBuffer(GL_UNIFORM_BUFFER, mId);
+	glBufferSubData(GL_UNIFORM_BUFFER, offset, 2 * sizeof(GLuint64), &_value);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void TexHandlesUBO::Release()
 {
-    if (mId != 0)
-    {
-        glDeleteBuffers(1, &mId);
-        mId = 0;
-    }
+	if (mId != 0)
+	{
+		glDeleteBuffers(1, &mId);
+		mId = 0;
+	}
 }
