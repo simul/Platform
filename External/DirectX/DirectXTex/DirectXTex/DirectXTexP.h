@@ -115,6 +115,8 @@
 #include <stdlib.h>
 #include <search.h>
 
+#include <locale.h>
+
 #include <Ole2.h>
 
 #include "DirectXTex.h"

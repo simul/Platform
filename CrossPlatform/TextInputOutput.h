@@ -144,6 +144,7 @@ namespace simul
 			bool good;
 			simul::base::FileLoader *fileLoader;
 			simul::base::MemoryInterface *memoryInterface;
+			_locale_t cstdLocale;
 		};
 		
 		//NOTE: Copy constructor is unimplemented, and the default is shallow.

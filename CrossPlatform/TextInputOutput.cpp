@@ -24,8 +24,10 @@ TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	:good(true)
 	,fileLoader(nullptr)
 	,memoryInterface(m)
+	,cstdLocale(nullptr)
 {
 	fileLoader=base::FileLoader::GetFileLoader();
+	cstdLocale = _create_locale(LC_ALL, "C");
 }
 
 TextFileInput::~TextFileInput()
@@ -38,6 +40,7 @@ TextFileInput::~TextFileInput()
 			del(array[j],memoryInterface);
 		}
 	}
+	_free_locale(cstdLocale);
 }
 
 static string StripOuterWhitespace(string str)
@@ -314,14 +317,14 @@ double TextFileInput::Get(const char *name,double dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
-	return atof(properties[name].c_str());
+	return _atof_l(properties[name].c_str(),cstdLocale);
 }
 
 float TextFileInput::Get(const char *name,float dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
-	return (float)atof(properties[name].c_str());
+	return (float)_atof_l(properties[name].c_str(),cstdLocale);
 }
 
 int3 TextFileInput::Get(const char *name,int3 dflt)
@@ -353,7 +356,7 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)atof(s.c_str());
+		val[i]=(float)_atof_l(s.c_str(),cstdLocale);
 		pos=comma_pos+1;
 	}
 	vec2 ret=(const float *)val;
@@ -371,7 +374,7 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)atof(s.c_str());
+		val[i]=(float)_atof_l(s.c_str(),cstdLocale);
 		pos=comma_pos+1;
 	}
 	vec3 ret=val;
@@ -389,7 +392,7 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)atof(s.c_str());
+		val[i]=(float)_atof_l(s.c_str(),cstdLocale);
 		pos=comma_pos+1;
 	}
 	vec4 ret=val;
@@ -407,7 +410,7 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(double)atof(s.c_str());
+		val[i]=(double)_atof_l(s.c_str(),cstdLocale);
 		pos=comma_pos+1;
 	}
 	Quaterniond ret=val;

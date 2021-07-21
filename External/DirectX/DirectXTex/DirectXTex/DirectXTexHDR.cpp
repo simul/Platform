@@ -175,7 +175,9 @@ namespace
                 char buff[32] = {};
                 strncpy_s(buff, info, std::min<size_t>(31, len));
 
-                auto newExposure = static_cast<float>(atof(buff));
+                _locale_t cstdLocale = _create_locale(LC_ALL, "C");
+                auto newExposure = static_cast<float>(_atof_l(buff, cstdLocale));
+                _free_locale(cstdLocale);
                 if ((newExposure >= 1e-12f) && (newExposure <= 1e12f))
                 {
                     // Note that we ignore strange exposure values (like EXPOSURE=0)

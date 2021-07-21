@@ -553,7 +553,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 										}
 <IN_SHADER>{FLOAT_BLCK}					{
 											sfxlval.lineno=yylineno;
-											sfxlval.fnum=(float)atof(yytext);
+											_locale_t cstdLocale=_create_locale(LC_ALL,"C");
+											sfxlval.fnum=(float)_atof_l(yytext,cstdLocale);
+											_free_locale(cstdLocale);
 											stdReturn(P_FLOAT);
 										}
 <IN_SHADER>{NUM_BLCK}					{
@@ -915,7 +917,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE>{FLOAT_BLCK}	{
 													sfxlval.lineno=yylineno;
-													sfxlval.fnum=(float)atof(yytext);
+													_locale_t cstdLocale = _create_locale(LC_ALL,"C");
+													sfxlval.fnum = (float)_atof_l(yytext, cstdLocale);
+													_free_locale(cstdLocale);
 													stdReturn(P_FLOAT);
 												}
 <IN_TEXTURE_DECL>":"				{
@@ -974,7 +978,18 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn(NUM);
 												}
 											}
-<INITIAL>{FLOAT_BLCK}						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.strs[0]=yytext; sfxlval.fnum=(float)atof(yytext); stdReturn(P_FLOAT);}
+<INITIAL>{FLOAT_BLCK}						{
+												if(gLexPassthrough) 
+													gEffect->m_sharedCode<<yytext; 
+												else 
+												{
+													sfxlval.strs[0]=yytext;
+													_locale_t cstdLocale = _create_locale(LC_ALL,"C");
+													sfxlval.fnum = (float)_atof_l(yytext, cstdLocale);
+													_free_locale(cstdLocale);
+													stdReturn(P_FLOAT);
+												}
+											}
 <INITIAL>"in"|"out"|"inout"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(STORAGEQ);}
 
 <INITIAL>"TriangleBuffer"|"TriangleStream"	{
