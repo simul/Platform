@@ -144,6 +144,10 @@ namespace simul
 			bool good;
 			simul::base::FileLoader *fileLoader;
 			simul::base::MemoryInterface *memoryInterface;
+
+#if !defined(_MSC_VER)
+			typedef void* _locale_t;
+#endif
 			_locale_t cstdLocale;
 		};
 		
