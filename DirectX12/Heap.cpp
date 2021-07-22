@@ -95,6 +95,18 @@ namespace simul
 			return h;
 		}
 
+		void Heap::Reset()
+		{
+			if (mHeap)
+			{
+				mCpuHandle = mHeap->GetCPUDescriptorHandleForHeapStart();
+				mGpuHandle = mHeap->GetGPUDescriptorHandleForHeapStart();
+				mCnt = 0;
+			}
+			else
+				SIMUL_BREAK("Trying to reset Heap when not set");
+		}
+
 		void Heap::Release()
 		{
 			if (mHeap)
