@@ -20,16 +20,6 @@ using std::string;
 #include <windows.h>
 #endif
 
-#if !defined(_MSC_VER) && _HAS_CPP17 == 1
-#include <charconv>
-static double _atof_l(const char* name, void* locale)
-{
-	double value;
-	std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
-	return value;
-}
-#endif
-
 TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	:good(true)
 	,fileLoader(nullptr)
@@ -37,9 +27,7 @@ TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	,cstdLocale(nullptr)
 {
 	fileLoader=base::FileLoader::GetFileLoader();
-#if defined(_MSC_VER)
 	cstdLocale = _create_locale(LC_ALL, "C");
-#endif
 }
 
 TextFileInput::~TextFileInput()
@@ -52,9 +40,7 @@ TextFileInput::~TextFileInput()
 			del(array[j],memoryInterface);
 		}
 	}
-#if defined(_MSC_VER)
 	_free_locale(cstdLocale);
-#endif
 }
 
 static string StripOuterWhitespace(string str)
