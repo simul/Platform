@@ -53,17 +53,17 @@ inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #include <charconv>
 typedef void* _locale_t;
 
-static inline _locale_t _create_locale(int _Category, char const* _Locale)
+inline _locale_t _create_locale(int _Category, char const* _Locale)
 {
 	return nullptr;
 }
 
-static inline void _free_locale(_locale_t _Locale)
+inline void _free_locale(_locale_t _Locale)
 {
 	return;
 }
 
-static inline double _atof_l(const char* name, _locale_t locale)
+inline double _atof_l(const char* name, _locale_t locale)
 {
 	double value;
 	std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
