@@ -8,7 +8,9 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#if _HAS_CXX17
 #include <charconv>
+#endif
 using namespace simul;
 using namespace crossplatform;
 using std::string;
@@ -317,6 +319,7 @@ double TextFileInput::Get(const char *name,double dflt)
 		return dflt;
 
 	string propNameStr = properties[name];
+#if _HAS_CXX17
 	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), std::isspace), propNameStr.end());
 	const char* propName = propNameStr.c_str();
 	double value;
@@ -325,6 +328,9 @@ double TextFileInput::Get(const char *name,double dflt)
 		return dflt;
 	else
 		return value;
+#else
+	return atof(propNameStr.c_str());
+#endif 
 }
 
 float TextFileInput::Get(const char *name,float dflt)
@@ -333,6 +339,7 @@ float TextFileInput::Get(const char *name,float dflt)
 		return dflt;
 
 	string propNameStr = properties[name];
+#if _HAS_CXX17
 	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), std::isspace), propNameStr.end());
 	const char* propName = propNameStr.c_str();
 	float value;
@@ -341,6 +348,9 @@ float TextFileInput::Get(const char *name,float dflt)
 		return dflt;
 	else
 		return value;
+	#else
+	return (float)atof(propNameStr.c_str());
+#endif 
 }
 
 int3 TextFileInput::Get(const char *name,int3 dflt)
@@ -372,6 +382,7 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+	#if _HAS_CXX17
 		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -379,7 +390,10 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 		if (res.ec != std::errc())
 			val[i] = 0.0f;
 		else
-			val[i] = value;
+			val[i] = value
+	#else
+		val[i]=(float)atof(s.c_str());
+	#endif
 		pos=comma_pos+1;
 	}
 	vec2 ret=(const float *)val;
@@ -397,6 +411,7 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+	#if _HAS_CXX17
 		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -405,6 +420,9 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 			val[i] = 0.0f;
 		else
 			val[i] = value;
+	#else
+		val[i]=(float)atof(s.c_str());
+	#endif
 		pos=comma_pos+1;
 	}
 	vec3 ret=val;
@@ -422,6 +440,7 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+	#if _HAS_CXX17
 		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -430,6 +449,9 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 			val[i] = 0.0f;
 		else
 			val[i] = value;
+	#else
+		val[i]=(float)atof(s.c_str());
+	#endif
 		pos=comma_pos+1;
 	}
 	vec4 ret=val;
@@ -447,6 +469,7 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+	#if _HAS_CXX17
 		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
 		const char* s_cstr = s.c_str();
 		double value;
@@ -455,6 +478,9 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 			val[i] = 0.0;
 		else
 			val[i] = value;
+	#else
+		val[i]=atof(s.c_str());
+	#endif
 		pos=comma_pos+1;
 	}
 	Quaterniond ret=val;

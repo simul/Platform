@@ -112,7 +112,9 @@
 
 #include <vector>
 #include <string>
+#if _HAS_CXX17
 #include <charconv>
+#endif
 
 #include <stdlib.h>
 #include <search.h>
