@@ -390,7 +390,7 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 		if (res.ec != std::errc())
 			val[i] = 0.0f;
 		else
-			val[i] = value
+			val[i] = value;
 	#else
 		val[i]=(float)atof(s.c_str());
 	#endif
