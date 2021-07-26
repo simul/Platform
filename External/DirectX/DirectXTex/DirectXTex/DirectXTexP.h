@@ -111,11 +111,10 @@
 #include <memory>
 
 #include <vector>
+#include <charconv>
 
 #include <stdlib.h>
 #include <search.h>
-
-#include <locale.h>
 
 #include <Ole2.h>
 

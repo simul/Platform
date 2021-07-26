@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <charconv>
 using namespace simul;
 using namespace crossplatform;
 using std::string;
@@ -24,10 +25,8 @@ TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	:good(true)
 	,fileLoader(nullptr)
 	,memoryInterface(m)
-	,cstdLocale(nullptr)
 {
 	fileLoader=base::FileLoader::GetFileLoader();
-	cstdLocale = _create_locale(LC_ALL, "C");
 }
 
 TextFileInput::~TextFileInput()
@@ -40,7 +39,6 @@ TextFileInput::~TextFileInput()
 			del(array[j],memoryInterface);
 		}
 	}
-	_free_locale(cstdLocale);
 }
 
 static string StripOuterWhitespace(string str)
@@ -317,14 +315,26 @@ double TextFileInput::Get(const char *name,double dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
-	return _atof_l(properties[name].c_str(),cstdLocale);
+
+	double value;
+	std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+	if (res.ec != std::errc())
+		return dflt;
+	else
+		return value;
 }
 
 float TextFileInput::Get(const char *name,float dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
-	return (float)_atof_l(properties[name].c_str(),cstdLocale);
+
+	float value;
+	std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+	if (res.ec != std::errc())
+		return dflt;
+	else
+		return value;
 }
 
 int3 TextFileInput::Get(const char *name,int3 dflt)
@@ -356,7 +366,12 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)_atof_l(s.c_str(),cstdLocale);
+		float value;
+		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		if (res.ec != std::errc())
+			val[i]=0.0f;
+		else
+			val[i]=value;
 		pos=comma_pos+1;
 	}
 	vec2 ret=(const float *)val;
@@ -374,7 +389,12 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)_atof_l(s.c_str(),cstdLocale);
+		float value;
+		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0f;
+		else
+			val[i] = value;
 		pos=comma_pos+1;
 	}
 	vec3 ret=val;
@@ -392,7 +412,12 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)_atof_l(s.c_str(),cstdLocale);
+		float value;
+		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0f;
+		else
+			val[i] = value;
 		pos=comma_pos+1;
 	}
 	vec4 ret=val;
@@ -410,7 +435,12 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(double)_atof_l(s.c_str(),cstdLocale);
+		double value;
+		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0;
+		else
+			val[i] = value;
 		pos=comma_pos+1;
 	}
 	Quaterniond ret=val;

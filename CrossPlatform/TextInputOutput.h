@@ -4,7 +4,6 @@
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/MemoryInterface.h"
-#include "Platform/Core/StringFunctions.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -145,7 +144,6 @@ namespace simul
 			bool good;
 			simul::base::FileLoader *fileLoader;
 			simul::base::MemoryInterface *memoryInterface;
-			_locale_t cstdLocale;
 		};
 		
 		//NOTE: Copy constructor is unimplemented, and the default is shallow.
