@@ -316,8 +316,11 @@ double TextFileInput::Get(const char *name,double dflt)
 	if(properties.find(name)==properties.end())
 		return dflt;
 
+	string propNameStr = properties[name];
+	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), std::isspace), propNameStr.end());
+	const char* propName = propNameStr.c_str();
 	double value;
-	std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+	std::from_chars_result res = std::from_chars(propName, propName + strlen(propName), value);
 	if (res.ec != std::errc())
 		return dflt;
 	else
@@ -329,8 +332,11 @@ float TextFileInput::Get(const char *name,float dflt)
 	if(properties.find(name)==properties.end())
 		return dflt;
 
+	string propNameStr = properties[name];
+	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), std::isspace), propNameStr.end());
+	const char* propName = propNameStr.c_str();
 	float value;
-	std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+	std::from_chars_result res = std::from_chars(propName, propName + strlen(propName), value);
 	if (res.ec != std::errc())
 		return dflt;
 	else
@@ -366,12 +372,14 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+		const char* s_cstr = s.c_str();
 		float value;
-		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
 		if (res.ec != std::errc())
-			val[i]=0.0f;
+			val[i] = 0.0f;
 		else
-			val[i]=value;
+			val[i] = value;
 		pos=comma_pos+1;
 	}
 	vec2 ret=(const float *)val;
@@ -389,8 +397,10 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+		const char* s_cstr = s.c_str();
 		float value;
-		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
 		if (res.ec != std::errc())
 			val[i] = 0.0f;
 		else
@@ -412,8 +422,10 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+		const char* s_cstr = s.c_str();
 		float value;
-		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
 		if (res.ec != std::errc())
 			val[i] = 0.0f;
 		else
@@ -435,8 +447,10 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+		const char* s_cstr = s.c_str();
 		double value;
-		std::from_chars_result res = std::from_chars(name, name + strlen(name), value);
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
 		if (res.ec != std::errc())
 			val[i] = 0.0;
 		else

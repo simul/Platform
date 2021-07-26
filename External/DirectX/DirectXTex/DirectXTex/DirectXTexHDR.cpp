@@ -175,8 +175,11 @@ namespace
                 char buff[32] = {};
                 strncpy_s(buff, info, std::min<size_t>(31, len));
 
+                std::string buffStr = buff;
+                buffStr.erase(std::remove_if(buffStr.begin(), buffStr.end(), std::isspace), buffStr.end());
+                const char* buffCStr = buffStr.c_str();
                 float newExposure = 1.0f;
-                std::from_chars_result res = std::from_chars(buff, buff + sizeof(buff), newExposure);
+                std::from_chars_result res = std::from_chars(buffCStr, buffCStr + sizeof(buffCStr), newExposure);
                 if ((newExposure >= 1e-12f) && (newExposure <= 1e12f))
                 {
                     // Note that we ignore strange exposure values (like EXPOSURE=0)

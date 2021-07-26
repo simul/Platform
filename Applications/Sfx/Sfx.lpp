@@ -555,7 +555,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>{FLOAT_BLCK}					{
 											sfxlval.lineno=yylineno;
 											float value;
-											std::from_chars(yytext,yytext+strlen(yytext),value);
+											std::string yytextStr=yytext;
+											yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+											const char* yytextCStr=yytextStr.c_str();
+											std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
 											sfxlval.fnum=value;
 											stdReturn(P_FLOAT);
 										}
@@ -919,7 +922,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER_COMPILE,IN_RENDER_STATE>{FLOAT_BLCK}	{
 													sfxlval.lineno=yylineno;
 													float value;
-													std::from_chars(yytext,yytext+strlen(yytext),value);
+													std::string yytextStr=yytext;
+													yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+													const char* yytextCStr=yytextStr.c_str();
+													std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
 													sfxlval.fnum=value;
 													stdReturn(P_FLOAT);
 												}
@@ -986,7 +992,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												{
 													sfxlval.strs[0]=yytext;
 													float value;
-													std::from_chars(yytext,yytext+strlen(yytext),value);
+													std::string yytextStr=yytext;
+													yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+													const char* yytextCStr=yytextStr.c_str();
+													std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
 													sfxlval.fnum=value;
 													stdReturn(P_FLOAT);
 												}
