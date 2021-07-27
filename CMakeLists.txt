@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
+
+#Specify C++ 17 in the CMAKE_CXX_FLAGS at the start the file.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+
 if(SIMUL_PLATFORM_DIR)
 	set(PLATFORM_SOURCE_DIR ${SIMUL_PLATFORM_DIR})
 	set(PLATFORM_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -22,10 +26,6 @@ include("CMake/Include.cmake")
 include("CMake/Shader.cmake")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake" ${CMAKE_MODULE_PATH})
-#For GDK, specify C++17 before adding subdirectories.
-if(GDK)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-endif()
 
 add_subdirectory(Core)
 add_subdirectory(Math)

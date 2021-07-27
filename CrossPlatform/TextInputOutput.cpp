@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#if _HAS_CXX17
+#ifndef _DURANGO
 #include <charconv>
 #endif
 using namespace simul;
@@ -319,8 +319,8 @@ double TextFileInput::Get(const char *name,double dflt)
 		return dflt;
 
 	string propNameStr = properties[name];
-#if _HAS_CXX17
-	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), std::isspace), propNameStr.end());
+#ifndef _DURANGO
+	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), [](unsigned char x) {return std::isspace(x); }), propNameStr.end());
 	const char* propName = propNameStr.c_str();
 	double value;
 	std::from_chars_result res = std::from_chars(propName, propName + strlen(propName), value);
@@ -339,8 +339,8 @@ float TextFileInput::Get(const char *name,float dflt)
 		return dflt;
 
 	string propNameStr = properties[name];
-#if _HAS_CXX17
-	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), std::isspace), propNameStr.end());
+#ifndef _DURANGO
+	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), [](unsigned char x) {return std::isspace(x); }), propNameStr.end());
 	const char* propName = propNameStr.c_str();
 	float value;
 	std::from_chars_result res = std::from_chars(propName, propName + strlen(propName), value);
@@ -382,8 +382,8 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if _HAS_CXX17
-		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+	#ifndef _DURANGO
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
 		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
@@ -411,8 +411,8 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if _HAS_CXX17
-		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+	#ifndef _DURANGO
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
 		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
@@ -440,8 +440,8 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if _HAS_CXX17
-		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+	#ifndef _DURANGO
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
 		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
@@ -469,8 +469,8 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if _HAS_CXX17
-		s.erase(std::remove_if(s.begin(), s.end(), std::isspace), s.end());
+	#ifndef _DURANGO
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		double value;
 		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
