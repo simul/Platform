@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	message (STATUS "C++14")
+else()
 	#Specify C++ 17 in the CMAKE_CXX_FLAGS at the start the file.
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
 	message (STATUS "C++17")
-else()
-	message (STATUS "C++14")
 endif()
 
 if(SIMUL_PLATFORM_DIR)
