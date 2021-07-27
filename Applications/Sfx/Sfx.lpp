@@ -43,6 +43,7 @@ the last is C code to be copied verbatim to the output.
     #include <sstream>
 	#include <stdarg.h>
 	#include <charconv>
+	#include <algorithm>
 
     #include "Sfx.h"
     #include "SfxClasses.h"
