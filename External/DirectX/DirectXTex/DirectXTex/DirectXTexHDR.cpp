@@ -174,7 +174,7 @@ namespace
 
                 char buff[32] = {};
                 strncpy_s(buff, info, std::min<size_t>(31, len));
-            #if _HAS_CXX17
+            #ifndef _DURANGO
                 std::string buffStr = buff;
                 buffStr.erase(std::remove_if(buffStr.begin(), buffStr.end(), std::isspace), buffStr.end());
                 const char* buffCStr = buffStr.c_str();

@@ -112,7 +112,7 @@
 
 #include <vector>
 #include <string>
-#if _HAS_CXX17
+#ifndef _DURANGO
 #include <charconv>
 #endif
 
