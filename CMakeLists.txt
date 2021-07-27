@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 
-#Specify C++ 17 in the CMAKE_CXX_FLAGS at the start the file.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+if (MSVC)
+	#Specify C++ 17 in the CMAKE_CXX_FLAGS at the start the file.
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+endif()
 
 if(SIMUL_PLATFORM_DIR)
 	set(PLATFORM_SOURCE_DIR ${SIMUL_PLATFORM_DIR})
