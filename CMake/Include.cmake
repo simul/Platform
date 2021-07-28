@@ -1,5 +1,13 @@
 include_guard()
 
+#Specify C++ 17 in the CMAKE_CXX_FLAGS after project() and before add_subdirectory().
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	message (STATUS "CMAKE_SYSTEM_NAME is ${CMAKE_SYSTEM_NAME}. No compiler argument specification for C++17 set.")
+else()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+	message (STATUS "CMAKE_SYSTEM_NAME is ${CMAKE_SYSTEM_NAME}. Compiler argument specification for C++17 set.")
+endif()
+
 set( CMAKE_CXX_STANDARD 17 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 set( CMAKE_CXX_EXTENSIONS ON )

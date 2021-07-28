@@ -1,13 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	message (STATUS "C++14")
-else()
-	#Specify C++ 17 in the CMAKE_CXX_FLAGS at the start the file.
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-	message (STATUS "C++17")
-endif()
-
 if(SIMUL_PLATFORM_DIR)
 	set(PLATFORM_SOURCE_DIR ${SIMUL_PLATFORM_DIR})
 	set(PLATFORM_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -18,6 +10,7 @@ project(Platform)
 	set(PLATFORM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 	set(PLATFORM_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 endif()
+
 set(SIMUL_PLATFORM_DIR ${CMAKE_CURRENT_LIST_DIR})  
 if(PLATFORM_USE_ASSIMP)
 	set( ASSIMP_LIBNAME assimp-vc142-mt$<$<CONFIG:Debug>:d> )
