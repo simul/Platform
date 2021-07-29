@@ -38,7 +38,7 @@ HitGroupRecordAddress
 HitGroupRecordAddress = HGT.StartAddress + HGT.Stride * (RayHGIdx + (GeoHGStride * GeoHGIdx) + InstanceHGIdx);
 */
 
-SIMUL_CONSTANT_BUFFER(TraceRayParameters, 1)
+SIMUL_CONSTANT_BUFFER(TraceRayParameters, 2)
 	
 uniform uint instanceInclusionMask;								//Inclusion Mask for instances
 uniform uint rayContributionToHitGroupIndex;					//HitGroup Index for Ray into the SBT.
