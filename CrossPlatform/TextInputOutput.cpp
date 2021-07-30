@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#ifndef _DURANGO
+#if PLATFORM_STD_CHARCONV
 #include <charconv>
 #endif
 using namespace simul;

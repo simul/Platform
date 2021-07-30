@@ -20,16 +20,16 @@ typedef struct stat Stat;
 using namespace simul;
 using namespace base;
 
-#if __ORBIS__
+#if PLATFORM_STD_FILESYSTEM==0
 #define SIMUL_FILESYSTEM 0
-#elif _XBOX_ONE
-#define SIMUL_FILESYSTEM 1
-#include <filesystem>
-namespace fs = std::experimental::filesystem;
-#else
+#elif PLATFORM_STD_FILESYSTEM==1
 #define SIMUL_FILESYSTEM 1
 #include <filesystem>
 namespace fs = std::filesystem;
+#else
+#define SIMUL_FILESYSTEM 1
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 #endif
 
 static int do_mkdir(const char *path_utf8)
