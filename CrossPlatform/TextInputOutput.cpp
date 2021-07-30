@@ -319,7 +319,7 @@ double TextFileInput::Get(const char *name,double dflt)
 		return dflt;
 
 	string propNameStr = properties[name];
-#ifndef _DURANGO
+#if PLATFORM_STD_CHARCONV
 	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), [](unsigned char x) {return std::isspace(x); }), propNameStr.end());
 	const char* propName = propNameStr.c_str();
 	double value;
@@ -339,7 +339,7 @@ float TextFileInput::Get(const char *name,float dflt)
 		return dflt;
 
 	string propNameStr = properties[name];
-#ifndef _DURANGO
+#if PLATFORM_STD_CHARCONV
 	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), [](unsigned char x) {return std::isspace(x); }), propNameStr.end());
 	const char* propName = propNameStr.c_str();
 	float value;
@@ -382,7 +382,7 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#ifndef _DURANGO
+	#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -411,7 +411,7 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#ifndef _DURANGO
+	#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -440,7 +440,7 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#ifndef _DURANGO
+	#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -469,7 +469,7 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#ifndef _DURANGO
+	#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		double value;
