@@ -169,8 +169,8 @@ void Effect::Compile(const char *filename_utf8)
 	command+=filenameInUseUtf8.c_str();
 	base::find_and_replace(command,"{SIMUL}",SIMUL);
 
-	base::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	base::RunCommandLine(command.c_str(),  cc);
+	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
+	platform::core::RunCommandLine(command.c_str(),  cc);
 }
 
 Effect::~Effect()

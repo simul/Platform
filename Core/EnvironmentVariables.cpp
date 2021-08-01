@@ -21,6 +21,8 @@
 #endif
 
 using namespace simul::base;
+using namespace platform;
+using namespace core;
 
 namespace simul
 {

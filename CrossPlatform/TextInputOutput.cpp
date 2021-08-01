@@ -238,7 +238,7 @@ void TextFileInput::Load(const char *filename_utf8)
 			return;
 		}
 #ifdef _MSC_VER
-		std::ifstream ifs(simul::base::Utf8ToWString(filename_utf8).c_str());
+		std::ifstream ifs(platform::core::Utf8ToWString(filename_utf8).c_str());
 #else
 		std::ifstream ifs(filename_utf8);
 #endif
@@ -568,7 +568,7 @@ void TextFileOutput::Save(const char *filename_utf8)
 	if(!filename_utf8)
 		return;
 #ifdef _MSC_VER
-	std::ofstream ofs(simul::base::Utf8ToWString(filename_utf8).c_str());
+	std::ofstream ofs(platform::core::Utf8ToWString(filename_utf8).c_str());
 #else
 	std::ofstream ofs(filename_utf8);
 #endif

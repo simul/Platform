@@ -9,7 +9,7 @@ using namespace base;
 #ifdef WIN64
 #include <Windows.h>
 
-bool simul::base::RunCommandLine(const char *command_utf8,  OutputDelegate outputDelegate)
+bool platform::core::RunCommandLine(const char *command_utf8,  OutputDelegate outputDelegate)
 {
 	bool pipe_compiler_output=true;
 	STARTUPINFOW si;

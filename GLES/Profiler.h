@@ -2,9 +2,9 @@
 #include "Platform/GLES/Export.h"
 #include "Platform/Core/Timer.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
-
+#ifdef _MSC_VER
 #pragma warning(disable:4251)
-
+#endif
 namespace simul
 {
 	namespace gles

@@ -15,7 +15,10 @@
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/GLES/Texture.h"
 #include "Platform/GLES/DisplaySurface.h"
-
+#include <GLES3/gl3.h>
+#include <GLES3/gl32.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GLES3/gl2ext.h>
 using namespace simul;
 using namespace gles;
 
@@ -45,23 +48,17 @@ const char* RenderPlatform::GetName()const
 
 void RenderPlatform::RestoreDeviceObjects(void* hrc)
 {
-    if (!gladLoadGL())
-    {
-        std::cout << "[ERROR] Could not initialize glad.\n";
-        return;
-    }
-
     // Generate and bind a dummy vao:
     glGenVertexArrays(1, &mNullVAO);
     glBindVertexArray(mNullVAO);
 
     // Query limits:
-    glGetIntegerv(GL_MAX_VIEWPORTS, &mMaxViewports);
+    //glGetIntegerv(GL_MAX_VIEWPORTS, &mMaxViewports);
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &mMaxColorAttatch);
 
     // Lets configure GLES:
     //  glClipControl() needs GLES >= 4.5
-    glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+   // glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
     
 
     crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
@@ -319,10 +316,6 @@ GLuint RenderPlatform::ToGLInternalFormat(crossplatform::PixelFormat p)
 		return GL_R32F;
 	case R_16_FLOAT:
 		return GL_R16F;
-	case LUM_32_FLOAT:
-		return GL_LUMINANCE32F_ARB;
-	case INT_32_FLOAT:
-		return GL_INTENSITY32F_ARB;
 	case RGBA_8_UNORM:
 	case BGRA_8_UNORM:
 		return GL_RGBA8;
@@ -372,10 +365,6 @@ crossplatform::PixelFormat RenderPlatform::FromGLInternalFormat(GLuint p)
 			return R_32_FLOAT;
 		case GL_R16F:
 			return R_16_FLOAT;
-		case GL_LUMINANCE32F_ARB:
-			return LUM_32_FLOAT;
-		case GL_INTENSITY32F_ARB:
-			return INT_32_FLOAT;
 		case GL_RGBA8:
 			return RGBA_8_UNORM;
 		case GL_SRGB8_ALPHA8:
@@ -439,7 +428,7 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	case RGBA_8_UNORM:
 		return GL_RGBA;
 	case BGRA_8_UNORM:
-		return GL_BGRA;
+		return GL_RGBA;
 	case RGBA_8_UNORM_SRGB:
 		return GL_SRGB8_ALPHA8;
 	case RGBA_8_SNORM:
@@ -518,7 +507,7 @@ void RenderPlatform::ClearResidentTextures()
 	for(auto t:mResidentTextures)
 	{
 		std::cout<<t<<std::endl;
-		glMakeTextureHandleNonResidentARB(t);
+		glMakeTextureHandleNonResidentNV(t);
 	}
 	mResidentTextures.clear();
 }
@@ -537,7 +526,7 @@ void RenderPlatform::MakeTextureResident(GLuint64 handle)
     if (mResidentTextures.find(handle) == mResidentTextures.end())
     {
         mResidentTextures.insert(handle);
-        glMakeTextureHandleResidentARB(handle);
+        glMakeTextureHandleNonResidentNV(handle);
     }
 }
 
@@ -731,13 +720,13 @@ static GLenum toGlBlendOp(crossplatform::BlendOption o)
 	case crossplatform::BLEND_INV_BLEND_FACTOR:
 		return 0;
 	case crossplatform::BLEND_SRC1_COLOR:
-		return GL_SRC1_COLOR;
+		return GL_SRC1_COLOR_EXT;
 	case crossplatform::BLEND_INV_SRC1_COLOR:
-		return GL_ONE_MINUS_SRC1_COLOR;
+		return GL_ONE_MINUS_SRC1_COLOR_EXT;
 	case crossplatform::BLEND_SRC1_ALPHA:
-		return GL_SRC1_ALPHA;
+		return GL_SRC1_ALPHA_EXT;
 	case crossplatform::BLEND_INV_SRC1_ALPHA:
-		return GL_ONE_MINUS_SRC1_ALPHA;
+		return GL_ONE_MINUS_SRC1_ALPHA_EXT;
 	default:
 		break;
 	};
@@ -931,8 +920,8 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceCo
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
     for (int i = 0; i < num; i++)
     {
-        glViewportIndexedf(i, (GLfloat)vps[i].x, (GLfloat)vps[i].y, (GLfloat)vps[i].w, (GLfloat)vps[i].h);
-        glScissorIndexed(i,     (GLint)vps[i].x, (GLint)vps[i].y,   (GLsizei)vps[i].w, (GLsizei)vps[i].h);
+        glViewportIndexedfNV(i, (GLfloat)vps[i].x, (GLfloat)vps[i].y, (GLfloat)vps[i].w, (GLfloat)vps[i].h);
+        glScissorIndexedNV(i,     (GLint)vps[i].x, (GLint)vps[i].y,   (GLsizei)vps[i].w, (GLsizei)vps[i].h);
     }
 }
 

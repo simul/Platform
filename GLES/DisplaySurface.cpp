@@ -31,8 +31,10 @@ static const char *GetErr()
 
 DisplaySurface::DisplaySurface()
 	:pixelFormat(crossplatform::UNKNOWN)
+	#ifdef _MSC_VER
 	,hDC(nullptr)
 	,hRC(nullptr)
+	#endif
 {
 }
 
@@ -153,14 +155,16 @@ void DisplaySurface::InvalidateDeviceObjects()
 
 void DisplaySurface::InitSwapChain()
 {
-	RECT rect;
-
 #if defined(WINVER) 
+	RECT rect;
 	GetWindowRect((HWND)mHwnd, &rect);
-#endif
 
 	int screenWidth  = abs(rect.right - rect.left);
 	int screenHeight = abs(rect.bottom - rect.top);
+#else
+	int screenWidth  = 640;
+	int screenHeight = 480;
+#endif
 
 	viewport.h		  = screenHeight;
 	viewport.w		  = screenWidth;
@@ -176,10 +180,6 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	deferredContext.platform_context=immediateContext.platform_context;
 	deferredContext.renderPlatform=renderPlatform;
 	
-	HGLRC hglrc	=wglGetCurrentContext();
-	if(!wglMakeCurrent(hDC,hRC))
-		return;
-
 	renderPlatform->StoreRenderState(deferredContext);
 
 	glViewport(0, 0, viewport.w, viewport.h);   
@@ -187,8 +187,6 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h,frameNumber);
 
 	renderPlatform->RestoreRenderState(deferredContext);
-	SwapBuffers(hDC); 
-	wglMakeCurrent(hDC,hglrc);
 }
 
 void DisplaySurface::EndFrame()
@@ -200,12 +198,11 @@ void DisplaySurface::EndFrame()
 
 void DisplaySurface::Resize()
 {
-	RECT rect;
 	InitSwapChain();
 #if defined(WINVER) 
+	RECT rect;
 	if (!GetWindowRect((HWND)mHwnd, &rect))
 		return;
-#endif
 	UINT W = abs(rect.right - rect.left);
 	UINT H = abs(rect.bottom - rect.top);
 	if (viewport.w == W&&viewport.h == H)
@@ -217,4 +214,5 @@ void DisplaySurface::Resize()
 	viewport.y		  = 0;
 
 	renderer->ResizeView(mViewId,W,H);
+#endif
 }

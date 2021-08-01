@@ -6,8 +6,9 @@
 #include "Platform/Core/RuntimeError.h"
 #include <EGL/egl.h>
 #define GL_GLEXT_PROTOTYPES
-#include <GLES2/gl2ext.h>
-//#include <util/gles_loader_autogen.h>
+#include <GLES3/gl3.h>
+#include <GLES3/gl32.h>
+#include <GLES3/gl2ext.h>
 
 using namespace simul;
 using namespace gles;
@@ -62,7 +63,7 @@ void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 {
     //mBufferID
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBufferID);
-    return glMapBufferOES(GL_ELEMENT_ARRAY_BUFFER, GL_READ_WRITE);
+    return glMapBufferOES(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 }
 
 void Buffer::Unmap(crossplatform::DeviceContext& deviceContext)

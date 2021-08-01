@@ -42,6 +42,7 @@
 
 using namespace simul;
 using namespace dx11;
+using namespace platform::core;
 
 struct Vertex3_t
 {
@@ -164,9 +165,9 @@ void RenderPlatform::StoredState::Clear()
 
 RenderPlatform::RenderPlatform()
 	:device(NULL)
-	,storedStateCursor(0)
-	,pUserDefinedAnnotation(NULL)
 	,fence(0)
+	,pUserDefinedAnnotation(NULL)
+	,storedStateCursor(0)
 {
 	storedStates.resize(4);
 }
@@ -249,7 +250,7 @@ void RenderPlatform::BeginEvent	(crossplatform::DeviceContext &,const char *name
 	if(n==name_map.end())
 	{
 		static std::vector<std::wstring> wstrs;
-		std::wstring wn=base::Utf8ToWString(name);
+		std::wstring wn=platform::core::Utf8ToWString(name);
 		// make sure the string is permanently stored:
 		wstrs.push_back(wn);
 		// and this pointer will remain valid until shutdown.

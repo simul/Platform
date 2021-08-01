@@ -1,21 +1,20 @@
-#ifndef SIMUL_PLATFORM_COMMANDLINEPARAMS_H
-#define SIMUL_PLATFORM_COMMANDLINEPARAMS_H
+#pragma once
 #include <string>
 #include <vector>
 #include "Platform/Core/StringToWString.h"
-#include "Platform/CrossPlatform/Export.h"
+#include "Platform/Core/Export.h"
 
 #if defined(UNIX)
 	#include <string.h>
 	#define _strcpy(d,n,s) (strncpy(d,s,n))
 	#define strcpy_s(d, n, s) (strncpy(d,s,n));
 #endif
-namespace simul
+namespace platform
 {
-	namespace crossplatform
+	namespace core
 	{
 		/// A simple structure to store the command-line parameters for an executable.
-		struct SIMUL_CROSSPLATFORM_EXPORT CommandLineParams
+		struct PLATFORM_CORE_EXPORT CommandLineParams
 		{
 			CommandLineParams()
 				:quitafterframe(0)
@@ -37,7 +36,7 @@ namespace simul
 			std::vector<std::string> strings;
 		};
 		/// Convert the inputs to an executable into a CommandLineParams struct.
-		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const char **szArgList)
+		inline void GetCommandLineParams(CommandLineParams &commandLineParams,int argCount,const char **szArgList)
 		{
 			if (szArgList)
 			{
@@ -94,12 +93,12 @@ namespace simul
 		}
 		
 		/// Convert the inputs to an executable into a CommandLineParams struct.
-		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const wchar_t **szArgList)
+		inline void GetCommandLineParams(CommandLineParams &commandLineParams,int argCount,const wchar_t **szArgList)
 		{
 			char **args=new char *[argCount];
 			for(int i=0;i<argCount;i++)
 			{
-				std::string str=base::WStringToString(szArgList[i]);
+				std::string str=core::WStringToString(szArgList[i]);
 				int len=(int)str.length();
 				args[i]=new char[len+1];
 				strcpy_s(args[i],len+1,str.c_str());
@@ -112,4 +111,3 @@ namespace simul
 		}
 	}
 }
-#endif

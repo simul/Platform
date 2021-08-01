@@ -47,7 +47,9 @@ namespace simul
 		protected:
 			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
 			GLFWwindow* offscreen_context;
+			#ifdef _MSC_VER
 			HGLRC           hRC;
+			#endif
 		};
 	}
 }

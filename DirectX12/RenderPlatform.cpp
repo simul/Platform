@@ -603,7 +603,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		SIMUL_ASSERT(res == S_OK);
 
 		std::string str = base::QuickFormat(" mQueue " );
-		m12Queue->SetName(simul::base::StringToWString(str).c_str());
+		m12Queue->SetName(platform::core::StringToWString(str).c_str());
 	}
 #endif
 
@@ -759,7 +759,7 @@ ID3D12RootSignature *RenderPlatform::LoadRootSignature(const char *filename)
 	SIMUL_ASSERT(res == S_OK);
      if (rs)
 	{
-		rs->SetName(base::StringToWString(filename).c_str());
+		rs->SetName(platform::core::StringToWString(filename).c_str());
 	}
      // If we call this (D3D12CreateRootSignatureDeserializer) d3d12.dll won't be delay loaded 
 #if 0

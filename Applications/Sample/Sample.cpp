@@ -38,7 +38,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/CommandLineParams.h"
+#include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
@@ -103,7 +103,7 @@ void GlfwErrorCallback(int errcode, const char* info)
 
 #endif
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
-crossplatform::CommandLineParams commandLineParams;
+platform::core::CommandLineParams commandLineParams;
 
 //! An example of how to use simul::dx11::SimulWeatherRendererDX12 in context.
 class PlatformRenderer:public crossplatform::PlatformRendererInterface

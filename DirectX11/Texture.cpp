@@ -32,7 +32,9 @@ void SamplerState::InvalidateDeviceObjects()
 
 
 Texture::Texture()
-	:texture(NULL)
+	:stagingBuffer(NULL)
+	,last_context(NULL)
+	,texture(NULL)
 	,external_copy_source(nullptr)
 	,mainShaderResourceView(NULL)
 	,arrayShaderResourceView(nullptr)
@@ -42,9 +44,7 @@ Texture::Texture()
 	,mipUnorderedAccessViews(NULL)
 	,layerMipUnorderedAccessViews(NULL)
 	,depthStencilView(NULL)
-	,stagingBuffer(NULL)
 	,renderTargetViews(NULL)
-	,last_context(NULL)
 {
 	memset(&mapped,0,sizeof(mapped));
 }

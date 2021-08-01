@@ -14,9 +14,10 @@
 #include "Platform/Core/DefaultFileLoader.h"
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/Timer.h"
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #define GL_GLEXT_PROTOTYPES
-#include <GLES2/gl2ext.h>
+#include <GLES3/gl2ext.h>
+#include <GLES3/gl32.h>
 
 using namespace simul;
 using namespace gles;
@@ -167,22 +168,24 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 {
     InvalidateDeviceObjects();
 }
-
+#ifdef _MSC_VER
 #define SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER 1
-
+#else
+#define SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER 0
+#endif
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n,crossplatform::BufferUsageHint b)
 {
     InvalidateDeviceObjects();
 	bufferUsageHint = b;
     mTotalSize      = (size_t)ct * (size_t)unit_size;
     this->cpu_read  = cpu_read;
+    
+#if SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
     GLenum flags = GL_MAP_WRITE_BIT;
     if (cpu_read)
     {
         flags |= GL_MAP_READ_BIT;
     }
-    
-#if SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
     if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
     {
      //   flags |= GL_MAP_PERSISTENT_BIT; not supported GLES2
@@ -218,9 +221,10 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 #if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
     int idx = GetIndex(deviceContext);
 
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[idx]);
     if (IsBufferMapped(idx))
     {
-        GLboolean unmap_success = glUnmapNamedBuffer(mGPUBuffer[idx]);
+        GLboolean unmap_success = glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         if (unmap_success != GL_TRUE)
         {
             SIMUL_COUT << "The structured buffer at binding " << mBinding << " did not unmap successfully.";
@@ -228,7 +232,7 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
         }
     }
 
-    return glMapNamedBuffer(mGPUBuffer[idx], GL_WRITE_ONLY);
+    return glMapBufferOES(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
 #else
     if (!mMappedWritePtr)
     {
@@ -251,7 +255,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
     if (!cpu_read)
         return nullptr;
 
-	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
+    if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
 	{
 		// We want to map from the oldest buffer:
 		int idx = GetIndex(deviceContext, 1);
@@ -358,7 +362,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
     #if !SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
     if (IsBufferMapped(idx)) 
     {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[idx])
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[idx]);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     }
     #endif
@@ -788,25 +792,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
             }
         }
 
-		//Used for Debug with RenderDoc, as it don't load these extension/functions -AJR
-	/*	if (!GLAD_GL_ARB_bindless_texture)
-		{
-			glGetTextureHandleARB = (PFNGLGETTEXTUREHANDLEARBPROC)wglGetProcAddress("glGetTextureHandleARB");
-			glGetTextureSamplerHandleARB = (PFNGLGETTEXTURESAMPLERHANDLEARBPROC)wglGetProcAddress("glGetTextureSamplerHandleARB");
-			glMakeTextureHandleResidentARB = (PFNGLMAKETEXTUREHANDLERESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleResidentARB");
-			glMakeTextureHandleNonResidentARB = (PFNGLMAKETEXTUREHANDLENONRESIDENTARBPROC)wglGetProcAddress("glMakeTextureHandleNonResidentARB");
-		}*/
-
         // We first bind the texture handle alone (for fetch and get size operations)
-        GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
-        GLuint64 thandle    = glGetTextureHandleOES(tview);
-		tex->MakeHandleResident(thandle);
-		for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
-		{
-			const int &uboOffset=mTexturesUBOMapping[j][slot];
-			if(mHandlesUBO[j]!=nullptr&&uboOffset!=-1)
-				mHandlesUBO[j]->Update(thandle, uboOffset);
-		}
 
         // Texture + sampler
         for (int i = 0; i < numSamplerResourceSlots; i++)
@@ -831,14 +817,6 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
                     }
                 }
                 GLuint sview        =samplerState->asGLuint();
-                GLuint64 chandle    =glGetTextureSamplerHandleARB(tview, sview);
-				tex->MakeHandleResident(chandle);
-				for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
-				{
-					const int &uboOffset=mTexturesUBOMapping[j][slot];
-					if(mHandlesUBO[j]!=nullptr&&uboOffset!=-1)
-						mHandlesUBO[j]->Update(chandle, uboOffset + (2 * sizeof(GLuint64) * (sslot + 1)));
-				}
             }
         }
     }

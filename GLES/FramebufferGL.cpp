@@ -5,6 +5,9 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/GLES/RenderPlatform.h"
+#include <GLES3/gl3.h>
+#include <GLES3/gl32.h>
+#include <GLES3/gl2ext.h>
 
 #ifdef _MSC_VER
     #include <windows.h>
@@ -149,7 +152,7 @@ bool FramebufferGL::CreateBuffers()
 	mFBOId.resize((size_t)mips*(size_t)faces);
     // Generate GL FBO:
     glGenFramebuffers((GLsizei)mFBOId.size(), mFBOId.data());
-	auto &f=mFBOId.begin();
+    std::vector<GLuint>::const_iterator f=mFBOId.begin();
 	for(int i=0;i<mips;i++)
 	for(int j=0;j<faces;j++)
 	{
@@ -246,7 +249,7 @@ void FramebufferGL::Clear(crossplatform::GraphicsDeviceContext &deviceContext, f
     if (buffer_depth_texture)
     {
         glDepthMask(GL_TRUE);
-        glClearDepth(d);
+        glClearDepthf(d);
         settings |= GL_DEPTH_BUFFER_BIT;
     }
     glClear(settings);

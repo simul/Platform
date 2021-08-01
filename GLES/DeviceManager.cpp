@@ -11,7 +11,9 @@
 #include <stdint.h> // for uintptr_t
 #include <iomanip>
 #include "GLFW/glfw3.h"
+#ifdef _MSC_VER
 #define GLFW_EXPOSE_NATIVE_WGL
+#endif
 #include <GLFW/glfw3native.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -26,9 +28,6 @@ using namespace gles;
 using namespace simul;
 using namespace gles;
 using namespace std;
-
-#pragma comment(lib, "glfw3")
-#pragma comment(lib, "opengl32")
 
 static std::vector<std::string> debugMsgGroups;
 static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei lenght, const char* message, const void* userParam)
@@ -152,7 +151,9 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 DeviceManager::DeviceManager()
 	://renderPlatformOpenGL(NULL)
 	offscreen_context(nullptr)
+    #ifdef _MSC_VER
 	,hRC(nullptr)
+    #endif
 {
 	//if(!renderPlatformOpenGL)
 		//renderPlatformOpenGL		=new gles::RenderPlatform;
@@ -173,7 +174,9 @@ glfw owns hRC
 		SIMUL_CERR<<"wglDeleteContext Failed."<<std::endl;
 		r*eturn;
 	}*/
-	hRC=nullptr;                           // Set DC To NULL
+    #ifdef _MSC_VER
+	hRC=nullptr;    
+    #endif                       // Set DC To NULL
 ERRNO_CHECK
 	//simul::gles::Profiler::GetGlobalProfiler().Uninitialize();
 	//glfwMakeContextCurrent(nullptr);
@@ -194,9 +197,10 @@ static void GlfwErrorCallback(int errcode, const char* info)
 {
     SIMUL_CERR << " "<<errcode<<": " << info << std::endl;
 }
+
 bool	DeviceManager::IsActive() const
 {
-	return hRC != 0;
+	return true;
 }
 
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
@@ -231,7 +235,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
     glfwSetWindowUserPointer(offscreen_context, this);
    
     glfwMakeContextCurrent(offscreen_context);
+    #ifdef _MSC_VER
 	hRC=glfwGetWGLContext(offscreen_context);
+    #endif
 	glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 	/*
     if (!angle::())
@@ -248,8 +254,10 @@ void DeviceManager::InitDebugging()
         SIMUL_COUT << "[INFO] The GLES device will run with GL_DEBUG_OUTPUT. \n";
     }
    
+    #ifdef _MSC_VER
     // Setup the debug callback
 	glDebugMessageCallback((GLDEBUGPROC)GLDebugCallback, this);
+    #endif
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 }
@@ -261,12 +269,20 @@ void	DeviceManager::Shutdown()
 
 void*	DeviceManager::GetDevice() 
 {
+    #ifdef _MSC_VER
 	return (void*)    hRC;
+    #else
+    return nullptr;
+    #endif
 }
 
 void*	DeviceManager::GetDeviceContext() 
 {
-	return (void*)    hRC;
+    #ifdef _MSC_VER
+    return (void*)    hRC;
+    #else
+    return nullptr;
+    #endif
 }
 
 int		DeviceManager::GetNumOutputs() 

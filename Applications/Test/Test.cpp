@@ -41,7 +41,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/CommandLineParams.h"
+#include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
@@ -79,7 +79,7 @@ opengl::DeviceManager gl_deviceManager;
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 
-crossplatform::CommandLineParams commandLineParams;
+platform::core::CommandLineParams commandLineParams;
 
 HWND hWnd = nullptr;
 HINSTANCE hInst;
@@ -96,6 +96,7 @@ int kOverrideHeight = 900;
 
 enum class TestType
 {
+	UNKNOWN,
 	CLEAR_COLOUR,
 	QUAD_COLOUR,
 	TEXT,
@@ -460,7 +461,7 @@ public:
 		crossplatform::ShaderResource res = test->GetShaderResource("rwImage");
 
 		crossplatform::Texture* texture = renderPlatform->CreateTexture();
-		texture->ensureTexture2DSizeAndFormat(renderPlatform, 512, 512, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+		texture->ensureTexture2DSizeAndFormat(renderPlatform, 512, 512,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 		renderPlatform->ApplyPass(deviceContext, checkerboard->GetPass(0));
 		renderPlatform->SetUnorderedAccessView(deviceContext, res, texture);
@@ -505,7 +506,7 @@ public:
 		{
 			pass = false;
 		}
-		for (uint i = 2; i < rwSB.count; i++)
+		for (int i = 2; i < rwSB.count; i++)
 		{
 			uint a = ptr[i - 2];
 			uint b = ptr[i - 1];
@@ -542,7 +543,7 @@ public:
 			return;
 
 		crossplatform::Texture* texture = renderPlatform->CreateTexture();
-		texture->ensureTexture2DSizeAndFormat(renderPlatform, w, h, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+		texture->ensureTexture2DSizeAndFormat(renderPlatform, w, h, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* tvtestcard = test->GetTechniqueByName("test_tvtestcard");
@@ -611,16 +612,16 @@ TestType GetTestTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
 		}
 	}
 	if(!testFound)
-		{
-			SIMUL_COUT << "Unknown TestType. This should be a specified on the command line arguments\n";
-			SIMUL_COUT << "Defaulting to TestType::CLEAR_COLOUR.\n";
-			return TestType::CLEAR_COLOUR;
-		}
+	{
+		SIMUL_COUT << "Unknown TestType. This should be a specified on the command line arguments\n";
+		SIMUL_COUT << "Defaulting to TestType::CLEAR_COLOUR.\n";
+		return TestType::CLEAR_COLOUR;
+	}
+	return TestType::UNKNOWN;
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent;
 	switch (message)
 	{
 		/*case WM_MOUSEWHEEL:
@@ -655,12 +656,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				renderer->OnKeyboard((unsigned)wParam, false);
 			break;
 		case WM_COMMAND:
+		{
+	int wmId, wmEvent;
 			wmId = LOWORD(wParam);
 			wmEvent = HIWORD(wParam);
 			// Parse the menu selections:
 			//switch (wmId)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 			break;
+			}
 		case WM_SIZE:
 			if (renderer)
 			{

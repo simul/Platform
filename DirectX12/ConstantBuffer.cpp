@@ -202,9 +202,9 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 		while (n)
 		{
 			if (n->pCommandQueueDebugNameW)
-				std::cerr << simul::base::WStringToUtf8(n->pCommandQueueDebugNameW).c_str() << std::endl;
+				std::cerr << platform::core::WStringToUtf8(n->pCommandQueueDebugNameW).c_str() << std::endl;
 			if (n->pCommandListDebugNameW)
-				std::cerr << simul::base::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
+				std::cerr << platform::core::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
 			n = n->pNext;
 		}
 #endif

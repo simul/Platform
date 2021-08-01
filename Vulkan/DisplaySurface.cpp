@@ -8,8 +8,10 @@
 #include <linux/input.h>
 #endif
 #include <vulkan/vulkan.hpp>
+// Careless implementation by Vulkan requires this:
+#undef NOMINMAX
 #include <vulkan/vk_sdk_platform.h>
-
+#define NOMINMAX
 
 using namespace simul;
 using namespace vulkan;

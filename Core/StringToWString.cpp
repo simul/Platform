@@ -1,6 +1,5 @@
 #ifdef _MSC_VER
 #include <windows.h>
-#pragma optimize("",off)
 #pragma warning(disable:4748)
 #endif
 
@@ -8,9 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-namespace simul
+
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		std::wstring StringToWString(const std::string &text)
 		{

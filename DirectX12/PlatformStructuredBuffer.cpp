@@ -69,7 +69,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     );
     SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGPUBuffer, mTotalSize)
-    std::wstring wstr=base::StringToWString(name);
+    std::wstring wstr=platform::core::StringToWString(name);
     mGPUBuffer->SetName((wstr+L" GPU_SB").c_str());
 
     // Upload heap:

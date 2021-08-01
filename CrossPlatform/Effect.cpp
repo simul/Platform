@@ -16,6 +16,8 @@
 using namespace simul;
 using namespace crossplatform;
 using namespace std;
+using namespace platform;
+using namespace core;
 
 
 ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(nullptr)
@@ -729,22 +731,6 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	bool result=false;
 	while(!result)
 	{
-		char* SIMUL = nullptr;
-		char* b = nullptr;
-	#if defined (_CRT_SECURE_NO_WARNINGS)
-		SIMUL = std::getenv("SIMUL");
-		b = std::getenv("SIMUL_BUILD");
-	#else
-		size_t SIMUL_size;
-		size_t b_size;
-		_dupenv_s(&SIMUL, &SIMUL_size, "SIMUL");
-		_dupenv_s(&b, &b_size, "SIMUL_BUILD");
-	#endif
-		std::string SIMUL_BUILD = b?b:(SIMUL?SIMUL:"");
-		if (SIMUL_BUILD.empty())
-		{
-			SIMUL_BUILD= STRINGIFY(CMAKE_BINARY_DIR);
-		}
 		std::string filenameUtf8=std::string(filename_utf8)+ ".sfx";
 		const auto &paths=r->GetShaderPathsUtf8();
 		int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filenameUtf8.c_str(), paths);
@@ -857,7 +843,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		);
 		if (processInfo.hProcess == nullptr)
 		{
-			std::cerr << "Error: Could not find the executable for " << base::WStringToUtf8(sfxPath).c_str() << std::endl;
+			std::cerr << "Error: Could not find the executable for " << core::WStringToUtf8(sfxPath).c_str() << std::endl;
 			return;
 		}
 		string output_str;
