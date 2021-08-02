@@ -228,9 +228,10 @@ namespace simul
 		class EffectTechnique;
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
+		struct ComputeDeviceContext;
 		enum class DeviceContextType
 		{
-			COMPUTE,COPY,GRAPHICS
+			GRAPHICS, COMPUTE, COPY
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
@@ -238,12 +239,17 @@ namespace simul
 			long long completed_frame=0;
 			long long frame_number=0;
 			void *platform_context=nullptr;
+			void *platform_context_queue=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
 			crossplatform::ContextState contextState;
 #ifdef _DEBUG
 			int ApiCallCounter=0;
 #endif
-			virtual GraphicsDeviceContext *AsGraphicsDeviceContext()
+			virtual GraphicsDeviceContext* AsGraphicsDeviceContext()
+			{ 
+				return nullptr;
+			}
+			virtual ComputeDeviceContext* AsComputeDeviceContext()
 			{
 				return nullptr;
 			}
@@ -268,15 +274,7 @@ namespace simul
 				return (ID3D12GraphicsCommandList*)platform_context;
 			}
 		};
-		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
-		{
-			ComputeDeviceContext()
-			{
-				deviceContextType=DeviceContextType::COMPUTE;
-			}
-
-		};
-
+		
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
 		//! The DeviceContext also carries a pointer to the platform-specific RenderPlatform.
 		//! DeviceContext is context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
@@ -307,6 +305,19 @@ namespace simul
 				,Texture *depth_target=nullptr
 			);
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
+		};
+
+		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
+		{
+			ComputeDeviceContext()
+			{
+				deviceContextType = DeviceContextType::COMPUTE;
+			}
+			ComputeDeviceContext* AsComputeDeviceContext() override
+			{
+				return this;
+			}
+
 		};
 	}
 }

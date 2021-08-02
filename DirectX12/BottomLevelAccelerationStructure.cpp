@@ -154,7 +154,7 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 				geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
 				geometryDesc.AABBs.AABBs.StartAddress = ppAABBResources[i]->GetGPUVirtualAddress() + (i * sizeof(D3D12_RAYTRACING_AABB));
 				geometryDesc.AABBs.AABBs.StrideInBytes = sizeof(D3D12_RAYTRACING_AABB);
-				geometryDesc.AABBs.AABBCount = 1;
+				geometryDesc.AABBs.AABBCount = aabbBuffer->count;
 				geometryDescs.push_back(geometryDesc);
 			}
 		};

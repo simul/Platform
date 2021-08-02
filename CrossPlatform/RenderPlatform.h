@@ -119,6 +119,8 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT Fence
 		{
+			enum class Signaller : uint32_t { CPU, GPU };
+			typedef Signaller Waiter;
 			virtual void RestoreDeviceObjects(RenderPlatform *r)
 			{
 			}
@@ -252,8 +254,16 @@ namespace simul
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
+			//! Execute the currently applied raytracing shaders.
 			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
-			virtual void Signal				(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
+			//! Add a signal command to the CPU thread or GPU queue. Parameter: value - The value to set the fence to.
+			virtual void Signal				(DeviceContext &deviceContext, Fence::Signaller signaller, Fence *fence, unsigned long long value){}
+			//! Add a wait command to the CPU thread or GPU queue. Parameter: value - The value that the waiter is waiting for the fence to reach or exceed. 
+			virtual void Wait				(DeviceContext &deviceContext, Fence::Waiter waiter, Fence *fence, unsigned long long value){}
+			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
+			virtual void ExecuteCommands	(DeviceContext &deviceContext){};
+			//! Restart the commands for rendering after calling ExcuteCommands(). 
+			virtual void RestartCommands	(DeviceContext &deviceContext){};
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.

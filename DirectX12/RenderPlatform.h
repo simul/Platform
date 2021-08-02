@@ -95,7 +95,8 @@ namespace simul
 		{
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
-			ID3D12Fence* AsD3d12Fence()
+			Fence(crossplatform::RenderPlatform* r);
+			ID3D12Fence* AsD3D12Fence()
 			{
 				return d3d12Fence;
 			}
@@ -186,7 +187,10 @@ namespace simul
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
 			void									DispatchRays	(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr) override;
-			void									Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value);
+			void									Signal			(crossplatform::DeviceContext& deviceContext, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence, unsigned long long value) override;
+			void									Wait			(crossplatform::DeviceContext& deviceContext, crossplatform::Fence::Waiter waiter, crossplatform::Fence* fence, unsigned long long value) override;
+			void									ExecuteCommands (crossplatform::DeviceContext& deviceContext) override;
+			void									RestartCommands (crossplatform::DeviceContext& deviceContext) override;
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			

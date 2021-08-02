@@ -1173,10 +1173,104 @@ void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext, c
 #endif
 }
 
-void RenderPlatform::Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value)
+void RenderPlatform::Signal(crossplatform::DeviceContext& deviceContext, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence, unsigned long long value)
 {
-	dx12::Fence *f=fence;
-	m12Queue->Signal(f->AsD3d12Fence(),value);
+	dx12::Fence* f = (dx12::Fence*)fence;
+	if (!f)
+	{
+		SIMUL_BREAK_ONCE("D3D12: Fence is nullptr.");
+		return;
+	}
+
+	if (signaller == crossplatform::Fence::Signaller::CPU)
+	{
+		f->AsD3D12Fence()->Signal(value);
+	}
+	else if (signaller == crossplatform::Fence::Signaller::GPU)
+	{
+		ID3D12CommandQueue* deviceContextQueue = (ID3D12CommandQueue*)deviceContext.platform_context_queue;
+		if (!deviceContextQueue)
+			deviceContextQueue = m12Queue;
+
+		deviceContextQueue->Signal(f->AsD3D12Fence(), value);
+	}
+	else
+	{
+		SIMUL_BREAK_ONCE("D3D12: Unknown Signaller.");
+	}
+}
+
+void RenderPlatform::Wait(crossplatform::DeviceContext& deviceContext, crossplatform::Fence::Waiter waiter, crossplatform::Fence* fence, unsigned long long value)
+{
+	dx12::Fence* f = (dx12::Fence*)fence;
+	if (!f)
+	{
+		SIMUL_BREAK_ONCE("D3D12: Fence is nullptr.");
+		return;
+	}
+
+	if (waiter == crossplatform::Fence::Signaller::CPU)
+	{
+		if (f->AsD3D12Fence()->GetCompletedValue() < value)
+		{
+			HANDLE mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			f->AsD3D12Fence()->SetEventOnCompletion(value, mWindowEvent);
+			WaitForSingleObject(mWindowEvent, INFINITE);
+		}
+	}
+	else if (waiter == crossplatform::Fence::Signaller::GPU)
+	{
+		ID3D12CommandQueue* deviceContextQueue = (ID3D12CommandQueue*)deviceContext.platform_context_queue;
+		if (!deviceContextQueue)
+			deviceContextQueue = m12Queue;
+
+		deviceContextQueue->Wait(f->AsD3D12Fence(), value);
+	}
+	else
+	{
+		SIMUL_BREAK_ONCE("D3D12: Unknown Waiter.");
+	}
+}
+
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
+{
+	ID3D12CommandQueue* deviceContextQueue = (ID3D12CommandQueue*)deviceContext.platform_context_queue;
+	if (!deviceContextQueue)
+		deviceContextQueue = m12Queue;
+
+	ID3D12GraphicsCommandList* const commandList = deviceContext.asD3D12Context();
+	commandList->Close();
+	deviceContextQueue->ExecuteCommandLists(1, (ID3D12CommandList* const *)&commandList);
+}
+
+void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext)
+{
+	D3D12_COMMAND_LIST_TYPE type;
+	switch (deviceContext.deviceContextType)
+	{
+	default:
+	case crossplatform::DeviceContextType::GRAPHICS:
+		type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+		break;
+	case crossplatform::DeviceContextType::COMPUTE:
+		type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+		break;
+	case crossplatform::DeviceContextType::COPY:
+		type = D3D12_COMMAND_LIST_TYPE_COPY;
+		break;
+	}
+
+	ID3D12CommandAllocator* commandAllocator;
+	m12Device->CreateCommandAllocator(type, SIMUL_PPV_ARGS(&commandAllocator));
+	if(commandAllocator)
+	{
+		commandAllocator->Reset();
+		deviceContext.asD3D12Context()->Reset(commandAllocator, nullptr);
+	}
+	else
+	{
+	SIMUL_BREAK_ONCE("D3D12: Failed to Create CommandAllocator.");
+	}
 }
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
@@ -2055,9 +2149,14 @@ void Fence::InvalidateDeviceObjects()
 	SAFE_RELEASE(d3d12Fence);
 }
 
-crossplatform::Fence *RenderPlatform::CreateFence( )
+Fence::Fence(crossplatform::RenderPlatform* r)
 {
-	dx12::Fence* q = new dx12::Fence();
+	RestoreDeviceObjects(r);
+}
+
+crossplatform::Fence *RenderPlatform::CreateFence()
+{
+	dx12::Fence* q = new dx12::Fence(this);
 	return q;
 }
 

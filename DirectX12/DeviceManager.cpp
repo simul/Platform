@@ -435,6 +435,7 @@ void DeviceManager::GetComputeContext(crossplatform::DeviceContext &computeConte
 	mComputeContexts[computeFrame].fenceValue=computeContext.frame_number;
 	m_computeCommandQueue->Signal(mComputeContexts[computeFrame].IFence, 0);
 	computeContext.platform_context=mComputeContexts[computeFrame].ICommandList;
+	computeContext.platform_context_queue=(void*)m_computeCommandQueue.Get();
 }
 
 void* DeviceManager::GetImmediateContext()
