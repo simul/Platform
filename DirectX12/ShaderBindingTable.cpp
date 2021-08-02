@@ -43,7 +43,7 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 
 			auto AddShaderRecord = [&](const std::string& name, crossplatform::ShaderRecord::Type type) -> void
 			{
-				std::wstring wstr_name = base::StringToWString(name);
+				std::wstring wstr_name = platform::core::StringToWString(name);
 				crossplatform::ShaderRecord::Handle handle = const_cast<void*>(rayTracingPipelineProperties->GetShaderIdentifier(wstr_name.c_str())); //Xbox retruns this as type: const void*, not void*.
 				result[type].push_back(handle);
 			};
@@ -68,7 +68,7 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 			}
 			if (d3d12Pass->raytraceHitGroups.empty())
 			{
-				AddShaderRecord(base::WStringToString(std::wstring(d3d12Pass->hitGroupExportName)), crossplatform::ShaderRecord::Type::HIT_GROUP);
+				AddShaderRecord(platform::core::WStringToString(std::wstring(d3d12Pass->hitGroupExportName)), crossplatform::ShaderRecord::Type::HIT_GROUP);
 			}
 
 			//Callable shaders

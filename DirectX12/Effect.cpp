@@ -754,18 +754,18 @@ void EffectPass::CreateRaytracePso()
 		dx12::Shader* s = (dx12::Shader*)shaders[i];
 		if (!s)
 			continue;
-		wnames[s] = base::StringToWString(s->entryPoint);
+		wnames[s] = platform::core::StringToWString(s->entryPoint);
 	}
 	for (auto& hg : raytraceHitGroups)
 	{
-		wnames[&hg] = base::StringToWString(hg.first);
+		wnames[&hg] = platform::core::StringToWString(hg.first);
 		crossplatform::Shader* sh[] = { hg.second.closestHit,hg.second.anyHit,hg.second.intersection };
 		D3D12_HIT_GROUP_DESC& hitGroupDesc = hitGroupDescs[&hg];
 		for (int i = 0; i < 3; i++)
 		{
 			if (sh[i])
 			{
-				wnames[sh[i]] = base::StringToWString(sh[i]->entryPoint);
+				wnames[sh[i]] = platform::core::StringToWString(sh[i]->entryPoint);
 			}
 		}
 	}
@@ -774,14 +774,14 @@ void EffectPass::CreateRaytracePso()
 		dx12::Shader* s = (dx12::Shader*)miss.second;
 		if (!s)
 			continue;
-		wnames[s] = base::StringToWString(s->entryPoint);
+		wnames[s] = platform::core::StringToWString(s->entryPoint);
 	}
 	for (auto& callable : callableShaders)
 	{
 		dx12::Shader* s = (dx12::Shader*)callable.second;
 		if (!s)
 			continue;
-		wnames[s] = base::StringToWString(s->entryPoint);
+		wnames[s] = platform::core::StringToWString(s->entryPoint);
 	}
 
 	subObjects.reserve(20);
