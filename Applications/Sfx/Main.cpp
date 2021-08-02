@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 
 	SfxOptions sfxOptions;
 	std::string SIMUL=GetEnv("SIMUL");
-	std::string SIMUL_BUILD= GetEnv("SIMUL_BUILD");
+	std::string SIMUL_BUILD= "";
 	std::map<std::string, std::string> environment;
 	if (SIMUL_BUILD == "" || SIMUL_BUILD == "1")
 		SIMUL_BUILD = SIMUL;

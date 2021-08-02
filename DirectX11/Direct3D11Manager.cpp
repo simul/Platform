@@ -589,7 +589,7 @@ crossplatform::Output Direct3D11Manager::GetOutput(int i)
 
        if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
        {
-           o.monitorName=base::WStringToUtf8(dispDev.DeviceName);
+           o.monitorName=platform::core::WStringToUtf8(dispDev.DeviceName);
            o.desktopX	=monitor.rcMonitor.left;
            o.desktopY	=monitor.rcMonitor.top;
        }

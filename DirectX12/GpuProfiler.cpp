@@ -7,6 +7,9 @@
 #include <stdint.h>
 #include <algorithm>
 
+using namespace platform;
+using namespace core;
+
 using namespace simul;
 using namespace dx12;
 
@@ -123,7 +126,7 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 		std::string name("mTimestampQueryReadBuffer[");
 		name += ('0' + mTimestampQueryCurrFrame);
 		name += "]";
-		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(base::StringToWString(name).c_str());
+		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(StringToWString(name).c_str());
 		mTimestampQueryHeapOffset=0;
 	}
 	*offset=mTimestampQueryHeapOffset;

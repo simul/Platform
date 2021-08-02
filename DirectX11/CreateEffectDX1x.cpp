@@ -186,7 +186,7 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 		if(str.length())
 			str+="/";
 		str+=filename;
-		std::wstring wstr	=simul::base::Utf8ToWString(str);
+		std::wstring wstr	=platform::core::Utf8ToWString(str);
 		res					= D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(), &loadInfo, NULL, ( ID3D11Resource** )&tex, &res );
 
 		if(res == S_OK)

@@ -294,7 +294,7 @@ crossplatform::Output DeviceManager::GetOutput(int i)
        if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
        {
 #ifdef _UNICODE
-           o.monitorName=base::WStringToUtf8(dispDev.DeviceName);
+           o.monitorName=platform::core::WStringToUtf8(dispDev.DeviceName);
 #else
            o.monitorName=dispDev.DeviceName;
 #endif

@@ -19,17 +19,19 @@
 typedef struct stat Stat;
 using namespace simul;
 using namespace base;
+using namespace platform;
+using namespace core;
 
-#if __ORBIS__
+#if PLATFORM_STD_FILESYSTEM==0
 #define SIMUL_FILESYSTEM 0
-#elif _XBOX_ONE
-#define SIMUL_FILESYSTEM 1
-#include <filesystem>
-namespace fs = std::experimental::filesystem;
-#else
+#elif PLATFORM_STD_FILESYSTEM==1
 #define SIMUL_FILESYSTEM 1
 #include <filesystem>
 namespace fs = std::filesystem;
+#else
+#define SIMUL_FILESYSTEM 1
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 #endif
 
 static int do_mkdir(const char *path_utf8)
@@ -40,7 +42,7 @@ static int do_mkdir(const char *path_utf8)
 #ifndef NN_NINTENDO_SDK
 #ifdef _MSC_VER
     struct _stat64i32            st;
-	std::wstring wstr=simul::base::Utf8ToWString(path_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(path_utf8);
     if (_wstat(wstr.c_str(), &st) != 0)
 #else
     Stat            st;
@@ -127,7 +129,7 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 		NO_FILE=-1,EXIST=0,WRITE=2,READ=4
 	};
 #ifdef _MSC_VER
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	access_mode res=(access_mode)_waccess(wstr.c_str(),READ);
 	bool bExists = (res!=NO_FILE);
 	if(errno==EACCES)
@@ -244,7 +246,7 @@ int FileLoader::FindIndexInPathStack(const char *filename_utf8, const char* cons
 
 bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)
 {
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 	// Ensure the directory exists:
 	{
@@ -298,7 +300,7 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 		return;
 	}
 	
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 #ifdef _MSC_VER
 	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r":L"rb")
@@ -339,7 +341,7 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	if(!FileExists(filename_utf8))
 		return 0.0;
 
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 #ifdef _MSC_VER
 	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r, ccs=UTF-8":

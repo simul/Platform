@@ -6,7 +6,10 @@ option( SIMUL_INTERNAL_CHECKS "Enable Simul internal debugging checks?" OFF )
 
 option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
 option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
-option( SIMUL_BUILD_SAMPLES "Build executable samples?" ON )
+option( SIMUL_BUILD_SAMPLES "Deprecated, use PLATFORM_BUILD_SAMPLES instead." ON )
+mark_as_advanced(SIMUL_BUILD_SAMPLES)
+option(PLATFORM_BUILD_SAMPLES "Build executable samples?" ${SIMUL_BUILD_SAMPLES})
+
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 
@@ -81,7 +84,7 @@ else()
 	set(SIMUL_SFX_EXECUTABLE "${CMAKE_SOURCE_DIR}/build/bin/Release/Sfx.exe" CACHE STRING "" )
 endif()
 
-mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS)
+mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS )
 
 # Defaults for glfw
 set(GLFW_BUILD_TESTS OFF )

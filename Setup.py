@@ -2,6 +2,18 @@ import os
 import shlex, subprocess
 import sys
 import configparser
+import pkg_resources
+import distutils.core
+
+required = {'gitpython'}
+installed = {pkg.key for pkg in pkg_resources.working_set}
+missing = required - installed
+
+if missing:
+    python = sys.executable
+    subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
+
+
 from pathlib import Path
 import os, fnmatch
 from git import Repo
@@ -44,6 +56,13 @@ def cmake(src,build_path,flags):
 	print(MSBUILD+'/p:Configuration=Debug'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
 	pid.poll()
+	#copy outputs if executable e.g. dll's:
+	if os.path.exists("bin"):
+		main_build=wd+"/build"
+		if not os.path.exists(main_build):
+			os.makedirs(main_build)
+		distutils.dir_util.copy_tree("bin", main_build+"/bin", update=1)
+
 	os.chdir(wd)
 
 def GetMSBuild():

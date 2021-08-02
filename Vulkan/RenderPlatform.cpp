@@ -234,8 +234,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 		vulkanDevice->destroyPipelineCache(i,nullptr);
 	}
 	releasePipelineCaches.clear();
-
-
 	for (auto i : releasePipelineLayouts)
 	{
 		vulkanDevice->destroyPipelineLayout(i,nullptr);

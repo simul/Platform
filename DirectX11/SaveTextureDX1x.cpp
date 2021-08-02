@@ -26,7 +26,7 @@ namespace simul
 			bool as_dds=false;
 			if(fn_utf8.find(".dds")<fn_utf8.length())
 				as_dds=true;
-			std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
+			std::wstring wfilename=platform::core::Utf8ToWString(fn_utf8);
 			ID3D11DeviceContext*			m_pImmediateContext;
 			pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 			//int flags=0;

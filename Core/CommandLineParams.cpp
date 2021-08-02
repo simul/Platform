@@ -1,7 +1,7 @@
-#include "Platform/CrossPlatform/CommandLineParams.h"
-using namespace simul;
+#include "Platform/Core/CommandLineParams.h"
+using namespace platform;
+using namespace core;
 
-using namespace crossplatform;
 bool CommandLineParams::operator()(const char *s)
 {
 	for(int i=0;i<strings.size();i++)

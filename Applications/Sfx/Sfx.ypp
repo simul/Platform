@@ -2891,12 +2891,9 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
  {
  }
 
- ray_tracing_pipeline_config_list:
+ ray_tracing_pipeline_config_list: %empty
  {
  } | set_ray_tracing_pipeline_config ray_tracing_pipeline_config_list
- {
- }
- | %empty
  {
  }
 

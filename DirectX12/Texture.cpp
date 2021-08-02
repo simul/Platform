@@ -29,10 +29,10 @@ void SamplerState::InvalidateDeviceObjects()
 }
 
 Texture::Texture():
-	mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ),
-	mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
 	mTextureDefault(nullptr),
 	mTextureUpload(nullptr),
+	mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ),
+	mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
 	mLoadedFromFile(false),
 	layerShaderResourceViews12(nullptr),
 	mainMipShaderResourceViews12(nullptr),
@@ -741,9 +741,9 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 
 		// Checks
 		if (texel_index != 0)
-			SIMUL_BREAK_INTERNAL("Nacho has to implement this");
+			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
 		if (srcSlice != (texelSize * (width * length)))
-			SIMUL_BREAK_INTERNAL("Nacho has to implement this");
+			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
 
 		// Transition main texture to copy dest
 		renderPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, GetCurrentState(deviceContext), D3D12_RESOURCE_STATE_COPY_DEST,true);
@@ -780,7 +780,7 @@ void Texture::SetName(const char *n)
 	crossplatform::Texture::SetName(n);
 	if(!mTextureDefault)
 		return;
-	std::wstring ws=simul::base::Utf8ToWString(n);
+	std::wstring ws=platform::core::Utf8ToWString(n);
 	mTextureDefault->SetName(ws.c_str());
 }
 
@@ -1072,8 +1072,13 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		InitSRVTables(1, m);
 
 		if (name.length() == 0)
-			SIMUL_BREAK_INTERNAL("Unnamed texture");
+			SIMUL_BREAK_INTERNAL("Unnamed texture")
+
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name+" Texture3DSrvHeap").c_str(), false);
+		if(mTextureSrvHeap.GetCount()==0)
+		{
+			mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name+" Texture3DSrvHeap").c_str(), false);
+		}
 		r->AsD3D12Device()->CreateShaderResourceView(mTextureDefault,&srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();

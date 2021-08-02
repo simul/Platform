@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/Texture.h"
 
 #include <set>
-
+#include <GLES3/gl3.h>
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4251)
@@ -48,7 +48,7 @@ namespace simul
 			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
 			bool            IsValid() const override;
 			void            InvalidateDeviceObjects() override;
-			virtual void    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
+			bool 			InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
 			bool            ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,int m,
                                                          crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
                                                          vec4 clear = vec4(0.0f, 0.0f, 0.0f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
@@ -69,9 +69,6 @@ namespace simul
             GLuint          AsOpenGLView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
             GLuint          GetGLMainView();
 
-			/// This is used to make a handle (created from the GL texture view, or from the view and a sampler state) resident, and also for the texture to keep track of its own
-			/// handles so they can be made unresident when it is deleted.
-			void			MakeHandleResident(GLuint64 h);
         private:
             void			LoadTextureData(LoadedTexture &,const char* path);
             bool            IsSame(int w, int h, int d, int arraySize, int m, int msaa);
