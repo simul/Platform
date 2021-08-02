@@ -53,7 +53,7 @@ const char *PlatformD3D12GetErrorText(HRESULT hr)
 	DWORD res=FormatMessageW(
 			FORMAT_MESSAGE_FROM_SYSTEM ,//| FORMAT_MESSAGE_IGNORE_INSERTS
 			NULL, hr, 0, (wchar_t*)wstr.data(),100, NULL);
-	str=base::WStringToUtf8(wstr);
+	str=platform::core::WStringToUtf8(wstr);
 #else
 	char buf[101];
 	buf[100] = 0;
