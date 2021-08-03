@@ -148,11 +148,11 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 			if(infoQueue)
 			{
 				// Set break on_x settings
-#if SIMUL_D3D12_ENABLE_PIX
+#if SIMUL_ENABLE_PIX
 				static bool breakOnWarning = false;
 #else
 				static bool breakOnWarning = true;
-#endif // SIMUL_D3D12_ENABLE_PIX
+#endif // SIMUL_ENABLE_PIX
 
 				SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 				if (breakOnWarning)
