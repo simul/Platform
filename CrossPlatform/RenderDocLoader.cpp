@@ -31,7 +31,7 @@ void RenderDocLoader::Load()
 	ERRNO_BREAK
 	LPWSTR programFilesPath;
 	SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, 0, &programFilesPath);
-	s_RenderDocFullpath = base::WStringToString(programFilesPath);
+	s_RenderDocFullpath = platform::core::WStringToString(programFilesPath);
 	s_RenderDocFullpath /= "RenderDoc/renderdoc.dll";
 	s_HModuleRenderDoc = LoadLibraryA(s_RenderDocFullpath.generic_string().c_str());
 	errno=0;
