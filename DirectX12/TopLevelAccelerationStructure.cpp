@@ -95,7 +95,8 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 		instanceDesc.AccelerationStructure = d3d12BLAS->AsD3D12ShaderResource(deviceContext)->GetGPUVirtualAddress();
 		instanceDescs.push_back(instanceDesc);
 	}
-	AllocateUploadBuffer(device, instanceDescs.data(), (instanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC)), &instanceDescsResource, L"InstanceDescsResource");
+	if (!instanceDescsResource)
+		AllocateUploadBuffer(device, instanceDescs.data(), (instanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC)), &instanceDescsResource, L"InstanceDescsResource");
 
 	instanceCount = static_cast<uint32_t>(instanceDescs.size());
 
@@ -116,8 +117,10 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 	// and must have resource flag D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS. The ALLOW_UNORDERED_ACCESS requirement simply acknowledges both: 
 	//  - the system will be doing this type of access in its implementation of acceleration structure builds behind the scenes.
 	//  - from the app point of view, synchronization of writes/reads to acceleration structures is accomplished using UAV barriers.
-	AllocateUAVBuffer(device, prebuildInfo.ScratchDataSizeInBytes, &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
-	AllocateUAVBuffer(device, prebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, L"TopLevelAccelerationStructure");
+	if (!scratchResource)
+		AllocateUAVBuffer(device, prebuildInfo.ScratchDataSizeInBytes, &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"TopLevelAccelerationStructure - ScratchResource");
+	if (!accelerationStructure)
+		AllocateUAVBuffer(device, prebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, L"TopLevelAccelerationStructure - ResultResource");
 
 	// Top Level Acceleration Structure desc
 	buildDesc.DestAccelerationStructureData = accelerationStructure->GetGPUVirtualAddress();

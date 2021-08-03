@@ -77,17 +77,20 @@ namespace simul
 			bool							IRecording=false;
 			bool							bActive=false;
 		};
-		struct D3D12ComputeContext
+		
+		//Defined in DirectX12/DeviceManager.cpp
+		struct D3D12ComputeContext 
 		{
-			void RestoreDeviceObjects(ID3D12DeviceType*			mDevice);
+			void RestoreDeviceObjects(ID3D12DeviceType* mDevice);
 			void InvalidateDeviceObjects();
 			void StartFrame();
 			void EndFrame();
-			ID3D12GraphicsCommandListType	*ICommandList;
-			ID3D12CommandAllocator			*IAllocator;
-			ID3D12Fence						*IFence;
-			UINT64 fenceValue=0;
-			bool active=false;
+
+			ID3D12GraphicsCommandListType*	ICommandList;
+			ID3D12CommandAllocator*			IAllocator;
+			ID3D12Fence*					IFence;
+			UINT64 fenceValue = 0;
+			bool active = false;
 		};
 		class Heap;
 		class Material;
