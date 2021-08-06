@@ -5,7 +5,6 @@
 #include "RenderPlatform.h"
 #include "Platform/Core/RuntimeError.h"
 #include <EGL/egl.h>
-#define GL_GLEXT_PROTOTYPES
 #include <GLES3/gl3.h>
 #include <GLES3/gl32.h>
 #include <GLES3/gl2ext.h>
@@ -63,7 +62,7 @@ void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 {
     //mBufferID
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBufferID);
-    return glMapBufferOES(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    return glMapBufferOES(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY_OES);
 }
 
 void Buffer::Unmap(crossplatform::DeviceContext& deviceContext)

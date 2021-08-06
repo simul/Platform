@@ -4,10 +4,10 @@
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/StringFunctions.h"
 #include <algorithm>
-#include <GLES3/gl3.h>
-#include <GLES3/gl32.h>
-#define GL_GLEXT_PROTOTYPES
-#include <GLES3/gl2ext.h>
+#define GLFW_INCLUDE_ES31
+#include <GLFW/glfw3.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
 using namespace simul;
 using namespace gles;
@@ -154,7 +154,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	//if(gen_mips)
 		GenerateMips(dc);
 
-	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
+	glObjectLabelKHR(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
@@ -207,7 +207,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	crossplatform::GraphicsDeviceContext dc;
 	GenerateMips(dc);
 
-	glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
+	glObjectLabelKHR(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
 
 	InitViews(mips, arraySize, true);
 	for (unsigned int i = 0; i < loadedTextures.size(); i++)
@@ -279,14 +279,15 @@ void Texture::InvalidateDeviceObjects()
 	mTextureID = 0;
 }
 
-bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
 {
-	float qw, qh;
+	float qw=w, qh=l;
 	GLuint gt=GLuint(uintptr_t(t));
-	glGetTexLevelParameterfv(gt, 0, GL_TEXTURE_WIDTH, &qw);
-	glGetTexLevelParameterfv(gt, 0, GL_TEXTURE_HEIGHT, &qh);
+	// GLES Doesn't support querying texture size:
+	//	glGetTextureLevelParameterfv(gt, 0, GL_TEXTURE_WIDTH, &qw);
+	//glGetTextureLevelParameterfv(gt, 0, GL_TEXTURE_HEIGHT, &qh);
 
-	if (mTextureID == 0 || mTextureID != gt || qw != width || qh != length)
+	if (mTextureID == 0 || mTextureID != gt )//|| qw != width || qh != length)
 	{
 		renderPlatform=r;
 		InitViews(1, 1, false);
@@ -304,7 +305,6 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 		depth		= 1;
 		mNumSamples = numOfSamples;
 	}
-	return true;
 }
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,
@@ -332,12 +332,13 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		glBindTexture(target, mTextureID);
 		if (num_samples == 1)
 		{
-			glTexStorage2D(mTextureID, 1, mInternalGLFormat, w, l);
+			glTexImage2D( target, 0, mInternalGLFormat, w, l,0,mGLFormat,GL_RGBA,nullptr);
 			SetDefaultSampling(mTextureID);
 		}
 		else
 		{
-			glTexStorage2DMultisample(mTextureID, num_samples, mInternalGLFormat, w, l, GL_TRUE);
+			glTexImage2D(target, 0, mInternalGLFormat, w, l, 0, mGLFormat, GL_RGBA, nullptr);
+			//glTexStorageMem2DMultisampleEXT( target, num_samples, mInternalGLFormat, w, l, GL_TRUE,0,0);
 		}
 		glBindTexture(target, 0);
 		SetName(name.c_str());
@@ -354,7 +355,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 			glGenTextures(mips, mMainMipViews.data());
 			for (int mip = 0; mip < mips; mip++)
 			{
-				glTextureViewOES(mMainMipViews[mip], target, mTextureID, mInternalGLFormat, mip, 1, 0, arraySize);
+			//	glTextureViewEXT(mMainMipViews[mip], target, mTextureID, mInternalGLFormat, mip, 1, 0, arraySize);
 
 				// Debug name:
 				viewName = name + "_mip_" + std::to_string(mip);
@@ -368,7 +369,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 				glGenTextures(mips, mLayerMipViews[i].data());
 				for (int mip = 0; mip < mips; mip++)
 				{
-					glTextureViewOES(mLayerMipViews[i][mip], target, mTextureID, mInternalGLFormat, mip, 1, i, 1);
+				//	glTextureViewEXT(mLayerMipViews[i][mip], target, mTextureID, mInternalGLFormat, mip, 1, i, 1);
 					viewName = name + "_layer_" + std::to_string(i) + "_mip_" + std::to_string(mip);
 					SetGLName(viewName.c_str(), mLayerMipViews[i][mip]);
 				}
@@ -414,7 +415,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		
 		glGenTextures(1, &mCubeArrayView);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, mCubeArrayView);
-		glTexStorage3D(mCubeArrayView, mips, mInternalGLFormat, width, length, totalCount);
+		//glTextureStorage3DEXT(mCubeArrayView, GL_TEXTURE_2D_ARRAY, mips, mInternalGLFormat, width, length, totalCount);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, mInternalGLFormat, width, length, totalCount,0,mGLFormat,GL_RGBA,nullptr);
 		SetDefaultSampling(mCubeArrayView);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 		SetGLName((name + "_arrayview").c_str(), mCubeArrayView);
@@ -426,15 +428,16 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			// We need to set the proper target:
 			if (cubemap)
 			{
-				glGenTextures(1, &mTextureID);
-				glTextureViewOES
+				mTextureID = mCubeArrayView;
+			/*	glGenTextures(1, &mTextureID);
+				glTextureViewEXT
 				(
 					mTextureID, 
 					num <= 1 ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_CUBE_MAP_ARRAY, 
 					mCubeArrayView, mInternalGLFormat,
 					0, nmips, 
 					0, totalCount
-				);
+				);*/
 
 				SetGLName((name + "_cubeview").c_str(), mTextureID);
 			}
@@ -451,7 +454,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			glGenTextures(totalCount, mLayerViews.data());
 			for (int i = 0; i < totalCount; i++)
 			{
-				glTextureViewOES(mLayerViews[i], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, 0, mips, i, 1);
+			//	glTextureViewEXT(mLayerViews[i], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, 0, mips, i, 1);
 				
 				// Debug name:
 				viewName = name + "_layer_" + std::to_string(i);
@@ -464,10 +467,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			if (cubemap)
 			{
 				glGenTextures(nmips, mMainMipViews.data());
-				GLenum target = num > 1 ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
+				SIMUL_ASSERT(num ==1);
+				GLenum target =  GL_TEXTURE_CUBE_MAP;
+				//GLenum target = num > 1 ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
 				for (int mip = 0; mip < mips; mip++)
 				{
-					glTextureViewOES(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
+				//	glTextureViewEXT(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
 					
 					// Debug name:
 					viewName = name + "_mip_" + std::to_string(mip);
@@ -479,7 +484,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 				glGenTextures(mips, mMainMipViews.data());
 				for (int mip = 0; mip < mips; mip++)
 				{
-					glTextureViewOES(mMainMipViews[mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
+				//	glTextureViewEXT(mMainMipViews[mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
 
 					// Debug name:
 					viewName = name + "_mip_" + std::to_string(mip);
@@ -495,7 +500,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 				glGenTextures(mips, mLayerMipViews[i].data());
 				for (int mip = 0; mip < mips; mip++)
 				{
-					glTextureViewOES(mLayerMipViews[i][mip], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
+				//	glTextureViewEXT(mLayerMipViews[i][mip], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
 
 					// Debug name:
 					viewName = name + "_layer_" + std::to_string(i) + "_mip_" + std::to_string(mip);
@@ -530,7 +535,8 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 
 		glGenTextures(1, &mTextureID);
 		glBindTexture(GL_TEXTURE_3D, mTextureID);
-		glTexStorage3D(GL_TEXTURE_3D, mips, mInternalGLFormat, width, length, depth);
+		//glTextureStorage3DEXT(mTextureID, GL_TEXTURE_3D,mips, mInternalGLFormat, width, length, depth);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, mInternalGLFormat, width, length, d, 0, mGLFormat, GL_RGBA, nullptr);
 		SetDefaultSampling(mTextureID);
 		glBindTexture(GL_TEXTURE_3D, 0);
 		SetName(name.c_str());
@@ -549,7 +555,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 			glGenTextures(mips, mMainMipViews.data());
 			for (int mip = 0; mip < mips; mip++)
 			{
-				glTextureViewOES(mMainMipViews[mip], GL_TEXTURE_3D, mTextureID, mInternalGLFormat, mip, 1, 0, 1);
+			//	glTextureViewEXT(mMainMipViews[mip], GL_TEXTURE_3D, mTextureID, mInternalGLFormat, mip, 1, 0, 1);
 
 				// Debug name:
 				viewName = name + "_mip_" + std::to_string(mip);
@@ -581,7 +587,7 @@ void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if (IsValid())
 	{
-		glGenerateMipmap(mTextureID);
+		//glGenerateTextureMipmap(mTextureID);
 	}
 }
 
@@ -589,12 +595,11 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 {
 	if (dim == 2)
 	{
-		glBindTexture(GL_TEXTURE_2D,mTextureID);
-		glTexSubImage2D(mTextureID, 0, 0, 0, width, length, RenderPlatform::ToGLFormat(pixelFormat), RenderPlatform::DataType(pixelFormat), src);
+	//	glTextureSubImage2D(mTextureID, 0, 0, 0, width, length, RenderPlatform::ToGLFormat(pixelFormat), RenderPlatform::DataType(pixelFormat), src);
 	}
 	else if (dim == 3)
 	{
-		glTexSubImage3D(mTextureID, 0, 0, 0, 0, width, length, depth, RenderPlatform::ToGLFormat(pixelFormat), RenderPlatform::DataType(pixelFormat), src);
+	//	glTextureSubImage3D(mTextureID, 0, 0, 0, 0, width, length, depth, RenderPlatform::ToGLFormat(pixelFormat), RenderPlatform::DataType(pixelFormat), src);
 	}
 }
 
@@ -856,20 +861,19 @@ void Texture::CreateFBOs(int sampleCount)
 void Texture::SetDefaultSampling(GLuint texId)
 {
 	// Wrapping:
-	glBindTexture(GL_TEXTURE_2D,texId);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	
-	// Filter:
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTextureParameteri(texId, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//glTextureParameteri(texId, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTextureParameteri(texId, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	//
+	//// Filter:
+	//glTextureParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTextureParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void Texture::SetGLName(const char* n, GLuint id)
 {
 	if (mTextureID != 0)
 	{
-		glObjectLabel(GL_TEXTURE, id, -1, n);
+		glObjectLabelKHR(GL_TEXTURE, id, -1, n);
 	}
 }

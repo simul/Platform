@@ -407,8 +407,8 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
 							wstring tempFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
 {
-	// Check if we are generating GLSL 
-	bool isGlSL = sfxConfig.sourceExtension == "glsl";
+	if (sfxConfig.compiler.empty())
+		return L"";
 	wstring command;
 	
 	string stageName = "NO_STAGES_IN_JSON";
@@ -492,7 +492,10 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	}
 	// Input argument
 	// The switch compiler needs an extension
-/*	if (isGlSL)
+/*	
+	// Check if we are generating GLSL 
+	bool isGlSL = sfxConfig.sourceExtension == "glsl";
+	if (isGlSL)
 	{
 		switch (t)
 		{
@@ -764,11 +767,11 @@ int Compile(ShaderInstance *shader
 	mkpath(targetDir);
 	mkpath(StringToWString(sfxOptions.intermediateDirectory)+L"/");
 	
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 	ofstream ofs(tempFilename.c_str());
-	#else
+#else
 	ofstream ofs(WStringToUtf8(tempFilename).c_str());
-	#endif
+#endif
 	ofs.write(strSrc, strlen(strSrc));
 	ofs.close();
 
@@ -831,6 +834,11 @@ int Compile(ShaderInstance *shader
 #else
 			std::ifstream if_c(WStringToUtf8(tempFilename).c_str(), std::ios_base::binary);
 #endif
+			if(!if_c.good())
+			{
+				SFX_BREAK("Failed to load generated shader source");
+				exit(1002);
+			}
 			std::streampos startp = combinedBinary.tellp();
 			combinedBinary << if_c.rdbuf();
 			std::streampos endp = combinedBinary.tellp();

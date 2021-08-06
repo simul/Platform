@@ -20,7 +20,13 @@ else()
 	set(PLATFORM_SUPPORT_VULKAN OFF )
 endif()
 
-option(PLATFORM_SUPPORT_ANGLE "Use Google's Angle API?" OFF)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+	set(PLATFORM_COMPILE_DEVICE_MANAGER OFF)
+else()
+	option(PLATFORM_COMPILE_DEVICE_MANAGER "" ON)
+endif()
+
+option(PLATFORM_SUPPORT_GLES "Use Google's Angle API?" OFF)
 set( PLATFORM_ANGLE_LIB_DIR "" CACHE PATH "Set the output location of Angle libraries.")
 set( PLATFORM_ANGLE_DIR "" CACHE PATH "Set the output location of Angle libraries.")
 
@@ -28,6 +34,7 @@ option(PLATFORM_LOAD_RENDERDOC "Always load the renderdoc dll?" OFF )
 option(PLATFORM_BUILD_DOCS "Whether to build html documentation with Doxygen and Sphinx" OFF )
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	set(PLATFORM_SUPPORT_ANGLE ${PLATFORM_SUPPORT_GLES})
 	set( WINDOWS ON )
 	option(PLATFORM_SUPPORT_OPENGL "" ON)
 	option(PLATFORM_SUPPORT_D3D11 "" ON )
