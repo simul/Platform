@@ -99,7 +99,9 @@ void Query::Begin(crossplatform::DeviceContext& deviceContext)
 void Query::End(crossplatform::DeviceContext& deviceContext)
 {
 	if (!mQueryPool)
+	{
 		RestoreDeviceObjects(deviceContext.renderPlatform); (deviceContext.renderPlatform);
+	}
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
 	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
