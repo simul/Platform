@@ -348,7 +348,7 @@ float TextFileInput::Get(const char *name,float dflt)
 		return dflt;
 	else
 		return value;
-	#else
+#else
 	return (float)atof(propNameStr.c_str());
 #endif 
 }
@@ -382,7 +382,7 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if PLATFORM_STD_CHARCONV
+#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -391,9 +391,9 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 			val[i] = 0.0f;
 		else
 			val[i] = value;
-	#else
+#else
 		val[i]=(float)atof(s.c_str());
-	#endif
+#endif
 		pos=comma_pos+1;
 	}
 	vec2 ret=(const float *)val;
@@ -411,7 +411,7 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if PLATFORM_STD_CHARCONV
+#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -420,9 +420,9 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 			val[i] = 0.0f;
 		else
 			val[i] = value;
-	#else
+#else
 		val[i]=(float)atof(s.c_str());
-	#endif
+#endif
 		pos=comma_pos+1;
 	}
 	vec3 ret=val;
@@ -440,7 +440,7 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if PLATFORM_STD_CHARCONV
+#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		float value;
@@ -449,9 +449,9 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 			val[i] = 0.0f;
 		else
 			val[i] = value;
-	#else
+#else
 		val[i]=(float)atof(s.c_str());
-	#endif
+#endif
 		pos=comma_pos+1;
 	}
 	vec4 ret=val;
@@ -469,7 +469,7 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-	#if PLATFORM_STD_CHARCONV
+#if PLATFORM_STD_CHARCONV
 		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
 		const char* s_cstr = s.c_str();
 		double value;
@@ -478,9 +478,9 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 			val[i] = 0.0;
 		else
 			val[i] = value;
-	#else
+#else
 		val[i]=atof(s.c_str());
-	#endif
+#endif
 		pos=comma_pos+1;
 	}
 	Quaterniond ret=val;

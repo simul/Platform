@@ -21,7 +21,7 @@ add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} DEFINITIONS SIMUL_
 if(SIMUL_SOURCE_BUILD)
 target_link_directories(SimulVulkan_MT PUBLIC ${VULKAN_SDK_DIR}/Lib)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(PLATFORM_WINDOWS)
 	target_compile_definitions(SimulVulkan_MT PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
 endif()
 
@@ -36,7 +36,7 @@ if(SIMUL_SOURCE_BUILD)
 target_link_directories(SimulVulkan_MD PUBLIC ${VULKAN_SDK_DIR}/Lib)
 target_compile_definitions(SimulVulkan_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_VULKAN_DLL=1  VK_PROTOTYPES )
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(PLATFORM_WINDOWS)
 	target_compile_definitions(SimulVulkan_MD PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
 endif()
 
@@ -53,7 +53,7 @@ endif()
 
 target_link_libraries(SimulVulkan_MD SimulCrossPlatform_MD SimulMath_MD Core_MD )
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(PLATFORM_WINDOWS)
 target_link_libraries(SimulVulkan_MD  vulkan-1)
 else()
 	target_link_directories( SimulVulkan_MD PRIVATE ${VULKAN_SDK_DIR}/x86_64/lib/ /usr/lib/x86_64-linux-gnu )
