@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.9)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(PLATFORM_WINDOWS)
 	file(GLOB CMAKE 	"*.cmake" )
 	file(GLOB SOURCES 	Compiler.cpp
 						FileLoader.cpp
@@ -37,7 +37,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_include_directories(Sfx PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles" )
 	
 	set( SFX_TEST_PLATFORM "DirectX11" CACHE STRING "Which platform to use when debugging the Sfx executable" )
-	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4) 
+	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4 GLES) 
 
 	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE FILEPATH "Which file to use when debugging Sfx")
 	set(SFX_TEST_DEFINES "-E\"EXAMPLE_DEFINE=example\"" CACHE STRING "")

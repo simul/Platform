@@ -9,6 +9,8 @@
     #pragma warning(push)
     #pragma warning(disable:4251)
 #endif
+typedef unsigned int GLenum;
+typedef unsigned long long GLuint64;
 
 namespace simul
 {
@@ -68,7 +70,6 @@ namespace simul
 
             GLuint          AsOpenGLView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
             GLuint          GetGLMainView();
-
         private:
             void			LoadTextureData(LoadedTexture &,const char* path);
             bool            IsSame(int w, int h, int d, int arraySize, int m, int msaa);
@@ -91,7 +92,6 @@ namespace simul
             std::vector<std::vector<GLuint>>    mLayerMipViews;
 		
             std::vector<std::vector<GLuint>>    mTextureFBOs;
-			std::set<GLuint64>					residentHandles;
 
 			int									mNumSamples = 1;
         };
