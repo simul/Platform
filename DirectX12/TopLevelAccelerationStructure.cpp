@@ -130,6 +130,9 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 
 	commandList4->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 	commandList4->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(accelerationStructure));
+
+	SAFE_RELEASE(commandList4);
+	SAFE_RELEASE(device5);
 #endif
 	initialized = true;
 }

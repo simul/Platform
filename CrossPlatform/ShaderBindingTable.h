@@ -61,6 +61,8 @@ namespace simul
 		public:
 			ShaderBindingTable();
 			virtual ~ShaderBindingTable() = default;
+			virtual void RestoreDeviceObjects(RenderPlatform* r) {};
+			virtual void InvalidateDeviceObjects() {};
 
 			void DefaultInitFromEffectPass(RenderPlatform* renderPlatform, EffectPass* pass);
 

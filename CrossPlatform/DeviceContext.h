@@ -239,7 +239,7 @@ namespace simul
 			long long completed_frame=0;
 			long long frame_number=0;
 			void *platform_context=nullptr;
-			void *platform_context_queue=nullptr;
+			void *platform_context_allocator=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
 			crossplatform::ContextState contextState;
 #ifdef _DEBUG
@@ -316,6 +316,13 @@ namespace simul
 			ComputeDeviceContext* AsComputeDeviceContext() override
 			{
 				return this;
+			}
+			//Some function expect completed_frame and frame_number to increment.
+			//This copy the frame numbers from the normal DeviceContext to simulate this.
+			void UpdateFrameNumbers(DeviceContext& deviceContext)
+			{
+				this->completed_frame = deviceContext.completed_frame;
+				this->frame_number = deviceContext.frame_number;
 			}
 
 		};

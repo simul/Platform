@@ -14,6 +14,8 @@ namespace simul
 		public:
 			ShaderBindingTable();
 			~ShaderBindingTable();
+			void RestoreDeviceObjects(crossplatform::RenderPlatform* r) override;
+			void InvalidateDeviceObjects() override;
 
 			std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass) override;
 			void BuildShaderBindingTableResources(crossplatform::RenderPlatform* renderPlatform) override;

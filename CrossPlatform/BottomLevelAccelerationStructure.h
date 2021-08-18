@@ -28,6 +28,8 @@ namespace simul
 		public:
 			BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r);
 			virtual ~BottomLevelAccelerationStructure();
+			void RestoreDeviceObjects() override {};
+			void InvalidateDeviceObjects() override {};
 
 			void SetMesh(crossplatform::Mesh* mesh);
 			void SetAABB(crossplatform::StructuredBuffer<Raytracing_AABB>* aabbBuffer);

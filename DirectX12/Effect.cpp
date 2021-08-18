@@ -81,8 +81,8 @@ void EffectPass::InvalidateDeviceObjects()
 {
 	// TO-DO:  memory leaks here??
 	auto pl = (dx12::RenderPlatform*)renderPlatform;
-	pl->PushToReleaseManager(mComputePso, "Compute PSO");
-	mComputePso = nullptr;
+	
+	//Graphics
 	for (auto& ele : mGraphicsPsoMap)
 	{
 		pl->PushToReleaseManager(ele.second.pipelineState, "Graphics PSO");
@@ -95,6 +95,13 @@ void EffectPass::InvalidateDeviceObjects()
 	}
 	mTargetsMap.clear();
 
+	//Compute
+	pl->PushToReleaseManager(mComputePso, "Compute PSO");
+	mComputePso = nullptr;
+
+	//Raytrace
+	pl->PushToReleaseManager(mRaytracePso, "Raytrace SO");
+	mRaytracePso = nullptr;
 	SAFE_DELETE(shaderBindingTable);
 }
 
@@ -988,7 +995,14 @@ void EffectPass::CreateRaytracePso()
 
 	// Create the state object.
 	HRESULT res = pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
+
+	mTechName = this->name;
+	std::wstring w_name = L"RaytraceSO_";
+	w_name += std::wstring(mTechName.begin(), mTechName.end());
+	mRaytracePso->SetName(w_name.c_str());
 	V_CHECK(res);
+
+	SAFE_RELEASE(pDevice5);
 #endif
 }
 

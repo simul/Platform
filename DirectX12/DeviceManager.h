@@ -35,13 +35,9 @@ namespace simul
 			void*					GetDevice();
 			void*					GetDeviceContext();
 			
-			void					GetComputeContext(crossplatform::DeviceContext &);
-			void					EndAsynchronousFrame();
-
 			void*					GetImmediateContext();
 			void					FlushImmediateCommandList();
 
-			void*					GetCommandQueue();
 			int						GetNumOutputs();
 			crossplatform::Output	GetOutput(int i);
 			void					ReportMessageFilterState();
@@ -52,17 +48,6 @@ namespace simul
 			OutputMap				mOutputs;
 			//! The D3D device
 			ID3D12DeviceType*		mDevice;
-			//! Used to submit Graphics commands to the GPU
-			ID3D12CommandQueue*		mGraphicsQueue=nullptr;
-			//! Used to submit Compute commands to the GPU
-			ID3D12CommandQueue*		mComputeQueue;
-			//! Used to submit Copy commands to the GPU
-			ID3D12CommandQueue*		mCopyQueue;
-
-			// Compute objects.
-			static const int		mFrameCount = 4;
-			int						mComputeFrame = 0;
-			D3D12ComputeContext		mComputeContexts[mFrameCount];
 		};
 	}
 }

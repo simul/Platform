@@ -213,6 +213,10 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 	
 	barriers.push_back(CD3DX12_RESOURCE_BARRIER::UAV(accelerationStructure));
 	commandList4->ResourceBarrier((UINT)barriers.size(), barriers.data());
+	
+	SAFE_RELEASE(commandList4);
+	SAFE_RELEASE(device5);
 #endif
+
 	initialized = true;
 }

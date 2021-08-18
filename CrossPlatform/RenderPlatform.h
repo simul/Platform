@@ -119,8 +119,10 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT Fence
 		{
+			virtual ~Fence() = default;
 			enum class Signaller : uint32_t { CPU, GPU };
 			typedef Signaller Waiter;
+			uint64_t value;
 			virtual void RestoreDeviceObjects(RenderPlatform *r)
 			{
 			}
@@ -205,14 +207,7 @@ namespace simul
 			//! Gets an object containing immediate-context API-specific values.
 			GraphicsDeviceContext &GetImmediateContext();
 			//! Gets an object containing the current global compute context.
-			ComputeDeviceContext &GetComputeDeviceContext()
-			{
-				return computeContext;
-			}
-			void SetComputeDeviceContext(const ComputeDeviceContext &c)
-			{
-				computeContext=c;
-			}
+			ComputeDeviceContext &GetComputeDeviceContext() { return computeContext; }
 			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath	(const char *pathUtf8);
 			//! Remove a path from the top of the texture path stack.
@@ -256,10 +251,12 @@ namespace simul
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Execute the currently applied raytracing shaders.
 			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
-			//! Add a signal command to the CPU thread or GPU queue. Parameter: value - The value to set the fence to.
-			virtual void Signal				(DeviceContext &deviceContext, Fence::Signaller signaller, Fence *fence, unsigned long long value){}
-			//! Add a wait command to the CPU thread or GPU queue. Parameter: value - The value that the waiter is waiting for the fence to reach or exceed. 
-			virtual void Wait				(DeviceContext &deviceContext, Fence::Waiter waiter, Fence *fence, unsigned long long value){}
+			//! Add a signal command to the CPU thread or GPU queue.
+			virtual void Signal				(DeviceContextType &type, Fence::Signaller signaller, Fence *fence){}
+			//! Add a wait command to the CPU thread or GPU queue. 
+			virtual void Wait				(DeviceContextType &type, Fence::Waiter waiter, Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX){}
+			//! Check the status of the fence. Returns true is fence is completed.
+			virtual bool GetFenceStatus		(crossplatform::Fence* fence) { return false; }
 			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
 			virtual void ExecuteCommands	(DeviceContext &deviceContext){};
 			//! Restart the commands for rendering after calling ExcuteCommands(). 
@@ -350,7 +347,7 @@ namespace simul
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc);
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.
 			virtual Query					*CreateQuery					(QueryType q)=0;
-			virtual Fence					*CreateFence(){return nullptr;}
+			virtual Fence					*CreateFence(const char* name){return nullptr;}
 			/// Get or create an API-specific shader object.
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
 			virtual Shader					*EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
