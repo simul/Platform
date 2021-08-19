@@ -98,10 +98,11 @@ void EffectPass::InvalidateDeviceObjects()
 	//Compute
 	pl->PushToReleaseManager(mComputePso, "Compute PSO");
 	mComputePso = nullptr;
-
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	//Raytrace
 	pl->PushToReleaseManager(mRaytracePso, "Raytrace SO");
 	mRaytracePso = nullptr;
+#endif
 	SAFE_DELETE(shaderBindingTable);
 }
 
