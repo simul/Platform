@@ -411,7 +411,7 @@ public:
 		//hdrTexture=nullptr;
 	}
 
-	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame) override
+	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
 	{
 		// Device context structure
 		simul::crossplatform::GraphicsDeviceContext	deviceContext;

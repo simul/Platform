@@ -334,7 +334,7 @@ public:
 	void RemoveView(int id) override {};
 	void ResizeView(int view_id, int W, int H) override {};
 
-	void Render(int view_id, void* context, void* colorBuffer, int w, int h, long long frame) override
+	void Render(int view_id, void* context, void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
 	{
 		if (w * h == 0) //FramebufferGL can't deal with a viewport of {0,0,0,0}!
 			return;
