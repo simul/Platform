@@ -793,7 +793,7 @@ ID3D12CommandQueue* RenderPlatform::CreateCommandQueue(ID3D12Device* device, D3D
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	queueDesc.NodeMask = 0;
 
-	HRESULT res = device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&queue));
+	HRESULT res = device->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&queue));
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_ASSERT(queue != nullptr);
 
