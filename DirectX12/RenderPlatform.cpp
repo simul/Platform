@@ -1348,7 +1348,6 @@ void RenderPlatform::AsyncResetCommandAllocator()
 		static uint64_t count = 0;
 		std::string fenceName = "Fence: RestartCommands" + std::to_string(count);
 		crossplatform::Fence* fence = CreateFence(fenceName.c_str());
-		SIMUL_ASSERT(fence);
 		Signal(deviceContextType, crossplatform::Fence::Signaller::GPU, fence);
 		Wait(deviceContextType, crossplatform::Fence::Signaller::CPU, fence);
 		SAFE_DELETE(fence);
