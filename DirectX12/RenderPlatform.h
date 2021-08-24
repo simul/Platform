@@ -74,18 +74,18 @@ namespace simul
 	{
 		struct ImmediateContext
 		{
-			ID3D12GraphicsCommandListType*	ICommandList;
-			ID3D12CommandAllocator*			IAllocator;
-			bool							IRecording=false;
-			bool							bActive=false;
+			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
+			ID3D12CommandAllocator*			IAllocator		=nullptr;
+			bool							IRecording		=false;
+			bool							bActive			=false;
 		};
 		struct D3D12ComputeContext 
 		{
 			void RestoreDeviceObjects(ID3D12Device* mDevice);
 			void InvalidateDeviceObjects();
 
-			ID3D12GraphicsCommandListType*	ICommandList;
-			ID3D12CommandAllocator*			IAllocator;
+			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
+			ID3D12CommandAllocator*			IAllocator		=nullptr;
 		};
 		class Heap;
 		class Material;
