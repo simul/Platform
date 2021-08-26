@@ -46,3 +46,4 @@ add_custom_target(Sphinx ALL
 					COMMENT "Generating documentation with Sphinx"
 					SOURCES ${RST})
 set_target_properties( Sphinx PROPERTIES FOLDER Docs)
+add_dependencies(Sphinx Doxygen)
