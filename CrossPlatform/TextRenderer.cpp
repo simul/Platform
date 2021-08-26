@@ -185,9 +185,8 @@ void TextRenderer::RecompileShaders()
 void TextRenderer::Recompile()
 {
 	recompile = false;
-	std::map<std::string,std::string> defines;
 	SAFE_DELETE(effect);
-	effect=renderPlatform->CreateEffect("font",defines);
+	effect=renderPlatform->CreateEffect("font");
 	constantBuffer.LinkToEffect(effect,"TextConstants");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");

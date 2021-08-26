@@ -48,7 +48,6 @@ namespace simul
 		class Effect;
 		class EffectTechnique;
 		class TextRenderer;
-		struct EffectDefineOptions;
 		struct Viewport;
 		class Light;
 		class Texture;
@@ -303,7 +302,7 @@ namespace simul
 			/// Create a platform agnostic raytracing acceleration structure maanger.
 			AccelerationStructureManager*	CreateAccelerationStructureManager();
 			/// Create a platform agnostic raytracing shader binding table.
-			virtual ShaderBindingTable*				CreateShaderBindingTable();
+			virtual ShaderBindingTable*		CreateShaderBindingTable();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.
@@ -321,16 +320,12 @@ namespace simul
 			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
 			/// as the Effects system assumes that SamplerState names are unique.
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
-			/// Create a platform-specific effect instance.
-			Effect							*CreateEffect					(const char *filename_utf8);
-			///  Create a platform-specific effect pass.
-			//virtual EffectPass				*CreateEffectPass();
 			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
 			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
-			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			virtual Effect					*CreateEffect					(const char *filename_utf8);
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
@@ -391,8 +386,8 @@ namespace simul
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			///
 			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
-			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
-			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+			/// This function is called to ensure that the named shader is compiled.
+			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8);
 
 			/// <summary>
 			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
@@ -512,7 +507,6 @@ namespace simul
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
-			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
 
 		/// Draw a horizontal grid in 3D.

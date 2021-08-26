@@ -1529,7 +1529,7 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceCo
 	}
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
+void RenderPlatform::EnsureEffectIsBuilt(const char *)
 {
 }
 

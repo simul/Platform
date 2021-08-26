@@ -180,10 +180,10 @@ Effect::~Effect()
 	platform_effect=0;
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
+void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
 	EnsureEffect(r, filename_utf8);
- 	crossplatform::Effect::Load(r, filename_utf8, defines);
+ 	crossplatform::Effect::Load(r, filename_utf8);
 }
 
 EffectTechnique* Effect::CreateTechnique()

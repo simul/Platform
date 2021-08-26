@@ -271,9 +271,9 @@ crossplatform::Effect* RenderPlatform::CreateEffect()
 	return e;
 }
 
-crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8)
 {
-	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8,defines);
+	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8);
 	return e;
 }
 
@@ -919,7 +919,7 @@ void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &,crosspla
     mCurTopology = toGLTopology(t);
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
+void RenderPlatform::EnsureEffectIsBuilt(const char *)
 {
 }
 

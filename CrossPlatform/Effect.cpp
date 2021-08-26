@@ -425,32 +425,6 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	return res;
 }
 
-EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1)
-{
-	EffectDefineOptions o;
-	o.name=name;
-	o.options.push_back(std::string(option1));
-	return o;
-}
-
-EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1,const char *option2)
-{
-	EffectDefineOptions o;
-	o.name=name;
-	o.options.push_back(std::string(option1));
-	o.options.push_back(std::string(option2));
-	return o;
-}
-EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3)
-{
-	EffectDefineOptions o;
-	o.name=name;
-	o.options.push_back(std::string(option1));
-	o.options.push_back(std::string(option2));
-	o.options.push_back(std::string(option3));
-	return o;
-}
-
 EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const string &techname_,const string &passname)
 {
 	EffectTechnique *tech=nullptr;
@@ -926,7 +900,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 #endif
 }
 
-void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
+void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
 	renderPlatform=r;
 
@@ -958,10 +932,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 #endif
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{
-		//#if defined(__ORBIS__)||defined(__COMMODORE__)
-		// Some engines force filenames to lower case because reasons:
 		std::transform(binFilenameUtf8.begin(), binFilenameUtf8.end(), binFilenameUtf8.begin(), ::tolower);
-		//#endif
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
 			string err=base::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
@@ -981,7 +952,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 			{
 				binFilenameUtf8 =filename_utf8;
-		// The sfxo does not exist, so we can't load this effect.
+				// The sfxo does not exist, so we can't load this effect.
 				return;
 			}
 		}

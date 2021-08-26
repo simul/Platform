@@ -207,9 +207,6 @@ namespace simul
 			virtual ~RenderState(){}
 			virtual void InvalidateDeviceObjects() {}
 		};
-		struct RayDispatch
-		{
-		};
 		class SIMUL_CROSSPLATFORM_EXPORT Shader
 		{
 		public:
@@ -507,18 +504,8 @@ namespace simul
 			EffectTechnique *GetTechniqueByName(const char *name);
 			EffectTechnique *GetTechniqueByIndex(int index);
 		};
-		/// A crossplatform structure for a \#define and its possible values.
-		/// This allows all of the macro combinations to be built to binary.
-		struct SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions
-		{
-			std::string name;
-			std::vector<std::string> options;
-		};
 		class Buffer;
 
-		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1);
-		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
-		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		typedef std::unordered_map<const char *,EffectTechniqueGroup *> GroupCharMap;
 		/// The cross-platform base class for shader effects.
@@ -568,12 +555,7 @@ namespace simul
 				return filename.c_str();
 			}
 			void InvalidateDeviceObjects();
-			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
-			void Load(RenderPlatform *r,const char *filename_utf8)
-			{
-				std::map<std::string,std::string> defines;
-				Load(r,filename_utf8,defines);
-			}
+			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8);
 			virtual void Compile(const char *);
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const

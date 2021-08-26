@@ -162,7 +162,7 @@ namespace simul
 			Effect();
 			virtual ~Effect();
 
-			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8) override;
 			void PostLoad() override;
 			void InvalidateDeviceObjects();
 			crossplatform::EffectTechnique* GetTechniqueByName(const char *name);

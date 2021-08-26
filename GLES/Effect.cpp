@@ -423,7 +423,7 @@ Effect::Effect()
 {
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
+void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
 #define GLES_SHADER_DEBUG
 #if defined(GLES_SHADER_DEBUG)
@@ -433,7 +433,7 @@ void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
     r->SetShaderBuildMode(buildMode);
 #endif
 
-	crossplatform::Effect::Load(r, filename_utf8,defines);
+	crossplatform::Effect::Load(r, filename_utf8);
 }
 
 Effect::~Effect()
