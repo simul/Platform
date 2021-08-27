@@ -898,6 +898,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		}
 		return result;
 	}
+	return true;
 #else
 	return true;
 #endif
