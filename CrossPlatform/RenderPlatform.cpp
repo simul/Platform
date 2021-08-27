@@ -1230,7 +1230,13 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	crossplatform::Effect *e=CreateEffect();
 	effects[fn] = e;
 	e->SetName(filename_utf8);
-	e->Load(this,filename_utf8);
+	bool success = e->Load(this,filename_utf8);
+	if (!success)
+	{
+		SIMUL_BREAK(base::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
+		delete e;
+		return nullptr;
+	}
 	return e;
 }
 

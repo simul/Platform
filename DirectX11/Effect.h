@@ -86,7 +86,7 @@ namespace simul
 		public:
 			Effect();
 			virtual ~Effect();
-			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8) override;
+			bool Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8) override;
 
 			void PostLoad() override;
 

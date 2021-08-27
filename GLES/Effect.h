@@ -183,7 +183,7 @@ namespace simul
 		public:
 											Effect();
 											~Effect();
-			void							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8);
+			bool							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8);
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
 			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
