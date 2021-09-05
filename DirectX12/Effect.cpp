@@ -1081,12 +1081,14 @@ Effect::~Effect()
 	InvalidateDeviceObjects();
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
+bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
 	renderPlatform = r;
-	EnsureEffect(r, filename_utf8);
-
-	crossplatform::Effect::Load(r, filename_utf8);
+	bool success = true;
+	if (EnsureEffect(r, filename_utf8))
+		success = crossplatform::Effect::Load(r, filename_utf8);
+	else
+		return false;
 
 	// Init the samplers heap:
 	SAFE_DELETE(mSamplersHeap);
@@ -1118,6 +1120,8 @@ void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 	// Make the handles point at the start of the heap, careful, as if we write to those
 	// handles we will override this values
 	mSamplersHeap->Reset();
+
+	return success;
 }
 
 void Effect::PostLoad()

@@ -423,17 +423,12 @@ Effect::Effect()
 {
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
+bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-#define GLES_SHADER_DEBUG
-#if defined(GLES_SHADER_DEBUG)
-    crossplatform::ShaderBuildMode buildMode = r->GetShaderBuildMode();
-    r->SetShaderBuildMode(crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
-    crossplatform::Effect::EnsureEffect(r, filename_utf8);
-    r->SetShaderBuildMode(buildMode);
-#endif
-
-	crossplatform::Effect::Load(r, filename_utf8);
+    if (EnsureEffect(r, filename_utf8))
+        return crossplatform::Effect::Load(r, filename_utf8);
+    else
+        return false;
 }
 
 Effect::~Effect()
