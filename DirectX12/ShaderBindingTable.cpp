@@ -17,6 +17,15 @@ ShaderBindingTable::ShaderBindingTable()
 
 ShaderBindingTable::~ShaderBindingTable()
 {
+	InvalidateDeviceObjects();
+}
+
+void ShaderBindingTable::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
+{
+}
+
+void ShaderBindingTable::InvalidateDeviceObjects()
+{
 	for (auto& sbtRes : SBTResources)
 	{
 		SAFE_RELEASE(sbtRes.second);
@@ -80,6 +89,8 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 			{
 				AddShaderRecord(d3d12Pass->shaders[crossplatform::SHADERTYPE_CALLABLE]->entryPoint, crossplatform::ShaderRecord::Type::CALLABLE);
 			}
+
+			SAFE_RELEASE(rayTracingPipelineProperties);
 		}
 	}
 #endif

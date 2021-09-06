@@ -281,18 +281,16 @@ void RenderPlatform::RecompileShaders()
 	
 	Destroy(debugEffect);
 	
-	std::map<std::string, std::string> defines;
-	debugEffect=CreateEffect("debug",defines);
+	debugEffect=CreateEffect("debug");
 
 	Destroy(solidEffect);
-	
-	solidEffect=CreateEffect("solid",defines);
+	solidEffect=CreateEffect("solid");
 	
 	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy",defines);
+	copyEffect=CreateEffect("copy");
 	
 	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip",defines);
+	mipEffect=CreateEffect("mip");
 	
 	
 	textRenderer->RecompileShaders();
@@ -1187,26 +1185,6 @@ crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()
 	return gpuProfiler;
 }
 
-void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)
-{
-	if(options.size())
-	{
-		std::vector<crossplatform::EffectDefineOptions> opts=options;
-		opts.pop_back();
-		crossplatform::EffectDefineOptions opt=options.back();
-		for(int i=0;i<(int)opt.options.size();i++)
-		{
-			std::map<std::string,std::string> defs=defines;
-			defs[opt.name]=opt.options[i];
-			EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defs);
-		}
-	}
-	else
-	{
-		crossplatform::Effect *e=CreateEffect(filename_utf8,defines);
-		delete e;
-	}
-}
 
 SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc)
 {
@@ -1237,26 +1215,6 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	return ss;
 }
 
-Effect *RenderPlatform::GetEffect(const char *filename_utf8)
-{
-	auto i = effects.find(filename_utf8);
-	if (i == effects.end())
-		return nullptr;
-	return i->second;
-}
-
-Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
-{
-	std::map<std::string,std::string> defines;
-	Effect *e=CreateEffect(filename_utf8,defines);
-	return e;
-}
-
-/*Effect* RenderPlatform::CreateEffectPass()
-{
-	EffectPass* e = new EffectPass(this,effect);
-	return e;
-}*/
 void RenderPlatform::Destroy(Effect *&e)
 {
 	if (e)
@@ -1266,14 +1224,28 @@ void RenderPlatform::Destroy(Effect *&e)
 	}
 }
 
-crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 {
 	std::string fn(filename_utf8);
 	crossplatform::Effect *e=CreateEffect();
 	effects[fn] = e;
 	e->SetName(filename_utf8);
-	e->Load(this,filename_utf8,defines);
+	bool success = e->Load(this,filename_utf8);
+	if (!success)
+	{
+		SIMUL_BREAK(base::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
+		delete e;
+		return nullptr;
+	}
 	return e;
+}
+
+Effect* RenderPlatform::GetEffect(const char* filename_utf8)
+{
+	auto i = effects.find(filename_utf8);
+	if (i == effects.end())
+		return nullptr;
+	return i->second;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)
@@ -1331,11 +1303,10 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,con
 	return s;
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts)
+void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8)
 {
-	const std::map<std::string,std::string> defines;
-	static bool enabled=true;
-	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+	crossplatform::Effect* e = CreateEffect(filename_utf8);
+	delete e;
 }
 
 void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)

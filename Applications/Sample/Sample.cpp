@@ -28,6 +28,11 @@
 #include "Platform/OpenGL/DeviceManager.h"
 #include "Platform/OpenGL/Texture.h"
 #endif 
+#ifdef SAMPLE_USE_GLES
+#include "Platform/GLES/RenderPlatform.h"
+#include "Platform/GLES/DeviceManager.h"
+#include "Platform/GLES/Texture.h"
+#endif 
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 #include "Platform/CrossPlatform/WinPixGpuCapturerLoader.h"
 #include "Platform/CrossPlatform/HDRRenderer.h"
@@ -167,6 +172,9 @@ public:
 #ifdef SAMPLE_USE_OPENGL
 		renderPlatform =new opengl::RenderPlatform();
 #endif
+#ifdef SAMPLE_USE_GLES
+		renderPlatform = new gles::RenderPlatform();
+#endif
 		depthTexture=renderPlatform->CreateTexture();
 
 		hDRRenderer		=new crossplatform::HdrRenderer();
@@ -301,8 +309,8 @@ public:
 		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,kOverrideWidth,kOverrideHeight,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
 		bl_accelerationStructure->SetMesh(environmentMesh);
 		bl_accelerationStructureExample->SetMesh(exampleMesh);
-		math::Matrix4x4 translation = math::Matrix4x4::RotationX(3.1415926536);
-		math::Matrix4x4 translation2 = math::Matrix4x4::RotationX(3.1415926536);
+		math::Matrix4x4 translation = math::Matrix4x4::RotationX(3.1415926536f);
+		math::Matrix4x4 translation2 = math::Matrix4x4::RotationX(3.1415926536f);
 
 		//No direct translate function that won't overwrite or mess with current values
 		translation.m30 += 0.f; //math::Matrix4x4::Translation(0.0f, 1.0f, 2.0f);
@@ -403,7 +411,7 @@ public:
 		//hdrTexture=nullptr;
 	}
 
-	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame) override
+	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
 	{
 		// Device context structure
 		simul::crossplatform::GraphicsDeviceContext	deviceContext;
@@ -443,7 +451,7 @@ public:
 		lights[0].direction.z = -1.0;
 		lights[0].direction = normalize(lights[0].direction);
 
-		math::Matrix4x4 translation2 = math::Matrix4x4::RotationX(3.1415926536);
+		math::Matrix4x4 translation2 = math::Matrix4x4::RotationX(3.1415926536f);
 		translation2.m30 += sin(real_time); 
 		translation2.m31 += 0.f;
 		translation2.m32 += 2.0f;

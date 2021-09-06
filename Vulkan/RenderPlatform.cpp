@@ -164,38 +164,21 @@ vk::PhysicalDevice *RenderPlatform::GetVulkanGPU()
 	return vulkanGpu;
 }
 
-void RenderPlatform::InvalidateDeviceObjects()
+void RenderPlatform::ClearReleaseManager()
 {
-	if(!vulkanDevice)
-		return;
-	for(auto &i:mFramebuffers)
+	for (auto i : releaseBuffers)
 	{
-		vulkanDevice->destroyFramebuffer(i.second);
-	}
-	mFramebuffers.clear();
-	for(auto &i:mFramebufferRenderPasses)
-	{
-		vulkanDevice->destroyRenderPass(i.second);
-	}
-	mFramebufferRenderPasses.clear();
-	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	SAFE_DELETE(mDummy3D);
-	SAFE_DELETE(mDummy2D);
-	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
-	
-	for(auto i:releaseBuffers)
-	{
-		vulkanDevice->destroyBuffer 		(i);
+		vulkanDevice->destroyBuffer(i);
 	}
 	releaseBuffers.clear();
-	for(auto i:releaseBufferViews)
+	for (auto i : releaseBufferViews)
 	{
-		vulkanDevice->destroyBufferView 	(i);
+		vulkanDevice->destroyBufferView(i);
 	}
 	releaseBufferViews.clear();
-	for(auto i:releaseMemories)
+	for (auto i : releaseMemories)
 	{
-		vulkanDevice->freeMemory 	(i);
+		vulkanDevice->freeMemory(i);
 	}
 	releaseMemories.clear();
 
@@ -226,17 +209,17 @@ void RenderPlatform::InvalidateDeviceObjects()
 	releaseSamplers.clear();
 	for (auto i : releasePipelines)
 	{
-		vulkanDevice->destroyPipeline(i,nullptr);
+		vulkanDevice->destroyPipeline(i, nullptr);
 	}
 	releasePipelines.clear();
 	for (auto i : releasePipelineCaches)
 	{
-		vulkanDevice->destroyPipelineCache(i,nullptr);
+		vulkanDevice->destroyPipelineCache(i, nullptr);
 	}
 	releasePipelineCaches.clear();
 	for (auto i : releasePipelineLayouts)
 	{
-		vulkanDevice->destroyPipelineLayout(i,nullptr);
+		vulkanDevice->destroyPipelineLayout(i, nullptr);
 	}
 	releasePipelineLayouts.clear();
 	for (auto i : releaseDescriptorSetLayouts)
@@ -251,9 +234,33 @@ void RenderPlatform::InvalidateDeviceObjects()
 	releaseDescriptorSets.clear();
 	for (auto i : releaseDescriptorPools)
 	{
-		vulkanDevice->destroyDescriptorPool(i,nullptr);
+		vulkanDevice->destroyDescriptorPool(i, nullptr);
 	}
 	releaseDescriptorPools.clear();
+
+	resourcesToBeReleased = false;
+}
+
+void RenderPlatform::InvalidateDeviceObjects()
+{
+	if(!vulkanDevice)
+		return;
+	for(auto &i:mFramebuffers)
+	{
+		vulkanDevice->destroyFramebuffer(i.second);
+	}
+	mFramebuffers.clear();
+	for(auto &i:mFramebufferRenderPasses)
+	{
+		vulkanDevice->destroyRenderPass(i.second);
+	}
+	mFramebufferRenderPasses.clear();
+	crossplatform::RenderPlatform::InvalidateDeviceObjects();
+	SAFE_DELETE(mDummy3D);
+	SAFE_DELETE(mDummy2D);
+	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
+	
+	ClearReleaseManager();
 
 	vulkanDevice=nullptr; 
 }
@@ -268,59 +275,73 @@ void RenderPlatform::RecompileShaders()
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
 {
 	releaseBuffers.insert(b);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::BufferView &v)
 {
 	releaseBufferViews.insert(v);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
 {
 	releaseMemories.insert(m);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::ImageView& i)
 {
 	releaseImageViews.insert(i);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::Framebuffer& f)
 {
 	releaseFramebuffers.insert(f);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::RenderPass& r)
 {
 	releaseRenderPasses.insert(r);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::Pipeline& r)
 {
 	releasePipelines.insert(r);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::PipelineCache& r)
 {
 	releasePipelineCaches.insert(r);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::Image& i)
 {
 	releaseImages.insert(i);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::Sampler& i)
 {
 	releaseSamplers.insert(i);
+	resourcesToBeReleased = true;
 }
 
 void RenderPlatform::PushToReleaseManager(vk::PipelineLayout& i)
 {
 	releasePipelineLayouts.insert(i);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::DescriptorSet& i)
 {
 	releaseDescriptorSets.insert(i);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::DescriptorSetLayout& i)
 {
 	releaseDescriptorSetLayouts.insert(i);
+	resourcesToBeReleased = true;
 }
 void RenderPlatform::PushToReleaseManager(vk::DescriptorPool& i)
 {
 	releaseDescriptorPools.insert(i);
+	resourcesToBeReleased = true;
 }
 
 void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -537,6 +558,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;
 		mCurIdx = mCurIdx % kNumIdx;
+
+		//Make sure that any resources set for deletion are removed
+		if(resourcesToBeReleased)
+			ClearReleaseManager();
 
 		// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
 		//mFrameHeap[mCurIdx].Reset();
@@ -1504,7 +1529,7 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceCo
 	}
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
+void RenderPlatform::EnsureEffectIsBuilt(const char *)
 {
 }
 

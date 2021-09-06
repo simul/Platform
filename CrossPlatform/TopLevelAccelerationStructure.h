@@ -38,6 +38,8 @@ namespace simul
 		public:
 			TopLevelAccelerationStructure(crossplatform::RenderPlatform* r);
 			virtual ~TopLevelAccelerationStructure();
+			void RestoreDeviceObjects() override {};
+			void InvalidateDeviceObjects() override {};
 
 			void SetInstanceDescs(const InstanceDescs& instanceDescs);
 			InstanceDescs* GetInstanceDescs();

@@ -212,13 +212,17 @@ EffectTechnique *Effect::CreateTechnique()
 	return new dx11::EffectTechnique(renderPlatform,this);
 }
 
-void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+bool Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8)
 {
 	renderPlatform=r;
 	if(!renderPlatform)
-		return;
-	EnsureEffect(r, filename_utf8);
-	crossplatform::Effect::Load(r, filename_utf8, defines);
+		return false;
+
+	if (EnsureEffect(r, filename_utf8))
+		return crossplatform::Effect::Load(r, filename_utf8);
+	else
+		return false;
+
 }
 
 void Effect::PostLoad()

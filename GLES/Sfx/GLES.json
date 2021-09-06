@@ -1,6 +1,6 @@
 {
 	"compiler": "",
-	"api": "OpenGL",
+	"api": "GLES",
 	"defaultOptions": "",
 	"outputExtension": "glsl",
 	"sourceExtension": "glsl",

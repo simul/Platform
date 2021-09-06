@@ -47,7 +47,7 @@ namespace simul
 			}
 			virtual const char *GetSfxConfigFilename() const override
 			{
-				return "GLSL/GLSL.json";
+				return "Sfx/GLES.json";
 			}
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
@@ -81,7 +81,7 @@ namespace simul
 			crossplatform::BaseFramebuffer*         CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*            CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*                  CreateEffect() override;
-			crossplatform::Effect*                  CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines) override;
+			crossplatform::Effect*                  CreateEffect(const char *filename_utf8) override;
 			crossplatform::PlatformConstantBuffer*  CreatePlatformConstantBuffer() override;
 			crossplatform::PlatformStructuredBuffer*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*                  CreateBuffer() override;
@@ -102,7 +102,7 @@ namespace simul
 			void									SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext, const crossplatform::Buffer *buffer) override;
 			
 			void									SetTopology(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Topology t) override;
-			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options) override;
+			void									EnsureEffectIsBuilt				(const char *filename_utf8) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;

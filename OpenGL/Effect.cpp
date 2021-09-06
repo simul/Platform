@@ -387,17 +387,13 @@ Effect::Effect()
 {
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
+bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-#define OPENGL_SHADER_DEBUG
-#if defined(OPENGL_SHADER_DEBUG)
-	crossplatform::ShaderBuildMode buildMode = r->GetShaderBuildMode();
-	r->SetShaderBuildMode(crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
-	crossplatform::Effect::EnsureEffect(r, filename_utf8);
-	r->SetShaderBuildMode(buildMode);
-#endif
+	if (EnsureEffect(r, filename_utf8))
+		return crossplatform::Effect::Load(r, filename_utf8);
+	else
+		return false;
 
-	crossplatform::Effect::Load(r, filename_utf8,defines);
 }
 
 Effect::~Effect()

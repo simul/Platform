@@ -59,6 +59,7 @@ namespace simul
 			void PushToReleaseManager(vk::DescriptorSet& i);
 			void PushToReleaseManager(vk::DescriptorSetLayout& i);
 			void PushToReleaseManager(vk::DescriptorPool& i);
+			void ClearReleaseManager();
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
 			{
@@ -110,7 +111,7 @@ namespace simul
 			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &) override;
 			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
 
-			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options) override;
+			void									EnsureEffectIsBuilt(const char *filename_utf8) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;
@@ -173,6 +174,7 @@ namespace simul
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;
+			bool											resourcesToBeReleased=false;
 			std::set<vk::Buffer>							releaseBuffers;
 			std::set<vk::BufferView>						releaseBufferViews;
 			std::set<vk::DeviceMemory>						releaseMemories;
@@ -186,7 +188,7 @@ namespace simul
 
 			std::set<vk::PipelineLayout>					releasePipelineLayouts;
 			std::set<vk::DescriptorSet>						releaseDescriptorSets;
-			std::set<vk::DescriptorSetLayout>						releaseDescriptorSetLayouts;
+			std::set<vk::DescriptorSetLayout>				releaseDescriptorSetLayouts;
 			std::set<vk::DescriptorPool>					releaseDescriptorPools;
 
 			vulkan::Texture*								mDummy2D=nullptr;

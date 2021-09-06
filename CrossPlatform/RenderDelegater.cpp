@@ -54,7 +54,7 @@ void RenderDelegater::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDele
 	shutdownDeviceDelegates.push_back(d);
 }
 
-void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h, long long f)
+void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h, long long f, void* context_allocator)
 {
 	//if(!rendertarget)
 	//	return;
@@ -62,6 +62,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	crossplatform::GraphicsDeviceContext deviceContext;
 	viewSize[view_id]					= int2(w,h);
 	deviceContext.platform_context		= context;
+	deviceContext.platform_context_allocator = context_allocator;
 	deviceContext.renderPlatform		= renderPlatform;
 	deviceContext.viewStruct.view_id	= view_id;
 	deviceContext.frame_number			= f;

@@ -8,10 +8,9 @@ using namespace dx12;
 
 DisplaySurface::DisplaySurface():
 	mDeviceRef(nullptr),
-//	mQueue(nullptr),
 	mSwapChain(nullptr),
-	mRTHeap(nullptr)
-	,mCommandList(nullptr)
+	mRTHeap(nullptr),
+	mCommandList(nullptr)
 {
 	for (int i = 0; i < FrameCount; i++)
 	{
@@ -87,17 +86,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	res							= CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
 	SIMUL_ASSERT(res == S_OK);
 
-	// Create a command queue
-#if 0
-	D3D12_COMMAND_QUEUE_DESC queueDesc  = {};
-	queueDesc.Type					  = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	queueDesc.Flags					 = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	res = mDeviceRef->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mQueue));
-	SIMUL_ASSERT(res == S_OK);
-
-	std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",handle,screenWidth,screenHeight);
-	mQueue->SetName(simul::base::StringToWString(str).c_str());
-#endif
 	// Create swapchain
 	IDXGISwapChain1* swapChain	= nullptr;
 	res							= factory->CreateSwapChainForHwnd
@@ -156,7 +144,6 @@ void DisplaySurface::InvalidateDeviceObjects()
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
-	//SAFE_RELEASE(mQueue);
 	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 	SAFE_RELEASE(mCommandList);
 }
@@ -200,7 +187,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	if (renderer)
 	{
-		renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom,frameNumber);
+		renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom, frameNumber, mCommandAllocators[curIdx]);
 	}
 
 	// Get ready to present
@@ -254,6 +241,7 @@ void DisplaySurface::CreateSyncObjects()
 	{
 		mFenceValues[i] = 0;
 		mDeviceRef->CreateFence(mFenceValues[i], D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&mGPUFences[i]));
+		mGPUFences[i]->SetName(L"DisplaySurfaceSwapchainSync");
 	}
 }
 

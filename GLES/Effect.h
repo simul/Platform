@@ -13,26 +13,6 @@ namespace simul
 {
 	namespace gles
 	{
-		//! Used internally to bind texture handles:
-		class TexHandlesUBO
-		{
-		public:
-						TexHandlesUBO();
-						~TexHandlesUBO();
-			void		Init(size_t count, GLuint program, int index, int slot);
-			void		Bind(GLuint program);
-			void		Update(unsigned long long value,size_t offset);
-
-			
-
-		private:
-			void	Release();
-
-			GLuint	mId;
-			int	 mSlot;
-
-			int size;
-		};
 
 		// Opengl Query implementation
 		struct SIMUL_GLES_EXPORT Query:public crossplatform::Query
@@ -169,8 +149,6 @@ namespace simul
 			void MapTexturesToUBO(crossplatform::Effect* curEffect);
 
 			GLuint											mProgramId;
-			int											 mTexturesUBOMapping[crossplatform::ShaderType::SHADERTYPE_COUNT][32];
-			TexHandlesUBO*									mHandlesUBO[crossplatform::ShaderType::SHADERTYPE_COUNT];
 			std::vector<std::string> mUsedTextures;
 		};
 
@@ -205,7 +183,7 @@ namespace simul
 		public:
 											Effect();
 											~Effect();
-			void							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines);
+			bool							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8);
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
 			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;

@@ -35,7 +35,7 @@ namespace simul
 			virtual int		AddView						();
 			virtual void	RemoveView					(int);
 			virtual void	ResizeView					(int view_id,int w,int h);
-			virtual void	Render						(int,void* context,void* rendertarget,int w,int h,long long f);
+			virtual void	Render						(int,void* context,void* rendertarget,int w,int h,long long f, void* context_allocator = nullptr);
 			virtual void	OnLostDevice				();
 			void			SetRenderDelegate			(int view_id,crossplatform::RenderDelegate d);
 			void			RegisterShutdownDelegate	(crossplatform::ShutdownDeviceDelegate d);

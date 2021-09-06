@@ -12,6 +12,8 @@
 #include "ThisPlatform/Direct3D12.h"
 #include <vector>
 #include <queue>
+#include <mutex>
+#include <thread>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -72,22 +74,18 @@ namespace simul
 	{
 		struct ImmediateContext
 		{
-			ID3D12GraphicsCommandListType*	ICommandList;
-			ID3D12CommandAllocator*			IAllocator;
-			bool							IRecording=false;
-			bool							bActive=false;
+			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
+			ID3D12CommandAllocator*			IAllocator		=nullptr;
+			bool							IRecording		=false;
+			bool							bActive			=false;
 		};
-		struct D3D12ComputeContext
+		struct D3D12ComputeContext 
 		{
-			void RestoreDeviceObjects(ID3D12DeviceType*			mDevice);
+			void RestoreDeviceObjects(ID3D12Device* mDevice);
 			void InvalidateDeviceObjects();
-			void StartFrame();
-			void EndFrame();
-			ID3D12GraphicsCommandListType	*ICommandList;
-			ID3D12CommandAllocator			*IAllocator;
-			ID3D12Fence						*IFence;
-			UINT64 fenceValue=0;
-			bool active=false;
+
+			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
+			ID3D12CommandAllocator*			IAllocator		=nullptr;
 		};
 		class Heap;
 		class Material;
@@ -96,6 +94,7 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
 			Fence(crossplatform::RenderPlatform* r);
+			~Fence();
 			ID3D12Fence* AsD3D12Fence()
 			{
 				return d3d12Fence;
@@ -129,18 +128,28 @@ namespace simul
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
-			void							SetD3D12ComputeContext(D3D12ComputeContext* ctx);
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
-			//! Returns the device for raytracing, or nullptr if unavailable.
+			//! Returns the device for raytracing, or nullptr if unavailable. You must call Release() on this pointer, as it is created via QueryInterface().
 #if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
 			ID3D12Device5*					AsD3D12Device5();
 #endif
-			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
-			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
-			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
+			//! Returns the queue created during RestoreDeviceObjects
+			ID3D12CommandQueue* GetCommandQueue(crossplatform::DeviceContextType type = crossplatform::DeviceContextType::GRAPHICS) 
+			{ 
+				switch (type)
+				{
+				default:
+				case simul::crossplatform::DeviceContextType::GRAPHICS:
+					return mGraphicsQueue;
+				case simul::crossplatform::DeviceContextType::COMPUTE:
+					return mComputeQueue;
+				case simul::crossplatform::DeviceContextType::COPY:
+					return mCopyQueue;
+				}
+			}
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
@@ -169,6 +178,9 @@ namespace simul
 			//! Returns the current applied primitive topology
 			D3D_PRIMITIVE_TOPOLOGY			GetCurrentPrimitiveTopology() { return mStoredTopology; }
 
+			static ID3D12CommandQueue* CreateCommandQueue(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type, const char* name);
+			static void FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue* queue);
+
 			//! Platform-dependent function called when initializing the render platform.
 			void							RestoreDeviceObjects(void* device);
 			//! Platform-dependent function called when uninitializing the render platform.
@@ -187,8 +199,9 @@ namespace simul
 			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
 			void									DispatchRays	(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr) override;
-			void									Signal			(crossplatform::DeviceContext& deviceContext, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence, unsigned long long value) override;
-			void									Wait			(crossplatform::DeviceContext& deviceContext, crossplatform::Fence::Waiter waiter, crossplatform::Fence* fence, unsigned long long value) override;
+			void									Signal			(crossplatform::DeviceContextType& type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence) override;
+			void									Wait			(crossplatform::DeviceContextType& type, crossplatform::Fence::Waiter waiter, crossplatform::Fence* fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
+			bool									GetFenceStatus	(crossplatform::Fence* fence) override;
 			void									ExecuteCommands (crossplatform::DeviceContext& deviceContext) override;
 			void									RestartCommands (crossplatform::DeviceContext& deviceContext) override;
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
@@ -207,7 +220,7 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;			
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
-			crossplatform::Fence					*CreateFence() override;
+			crossplatform::Fence					*CreateFence(const char* name) override;
 			crossplatform::Shader					*CreateShader() override;
 			crossplatform::BottomLevelAccelerationStructure*CreateBottomLevelAccelerationStructure() override;
 			crossplatform::TopLevelAccelerationStructure*CreateTopLevelAccelerationStructure() override;
@@ -281,8 +294,6 @@ namespace simul
 			
 		protected:
 			crossplatform::Texture* createTexture() override;
-			crossplatform::Fence* generalFence=nullptr;
-			unsigned long long generalFenceVal=1;
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
 			void BeginD3D12Frame();
@@ -290,9 +301,12 @@ namespace simul
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device=nullptr;
-			//! Reference to the command queue
-			ID3D12CommandQueue*			m12Queue;
-			ID3D12CommandQueue*			mComputeQueue=nullptr;
+			//! Reference to the graphics command queue
+			ID3D12CommandQueue*			mGraphicsQueue;
+			//! Reference to the compute command queue
+			ID3D12CommandQueue*			mComputeQueue;
+			//! Reference to the copy command queue
+			ID3D12CommandQueue*			mCopyQueue;
 			//! Reference to a command list
 			ID3D12GraphicsCommandList*	mImmediateCommandList;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
@@ -344,6 +358,12 @@ namespace simul
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
 			ID3D12RootSignature *LoadRootSignature(const char *filename);
+
+			D3D12ComputeContext m12ComputeContext;
+			std::deque<std::pair<crossplatform::DeviceContextType, ID3D12CommandAllocator*>> mUsedAllocators;
+			std::thread mThreadReleaseAllocators;
+			std::mutex mMutexReleaseAllocators;
+			void AsyncResetCommandAllocator();
 		};
 	}
 }

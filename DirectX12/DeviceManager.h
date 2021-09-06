@@ -13,8 +13,6 @@
 #pragma warning(push)
 #pragma warning(disable:4251)
 
-//! Number of backbuffers
-static const UINT			FrameCount = 3;
 #define cp_hwnd HWND
 
 namespace simul
@@ -28,40 +26,28 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT DeviceManager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
-										DeviceManager();
-										~DeviceManager();
+									DeviceManager();
+									~DeviceManager();
 			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
-			void						Initialize(bool use_debug=false,bool instrument= false, bool default_driver = false);
-			bool						IsActive() const;
-			void						Shutdown();
-			void*						GetDevice();
-			void*						GetDeviceContext();
-			void						GetComputeContext(crossplatform::DeviceContext &);
+			void					Initialize(bool use_debug = false, bool instrument = false, bool default_driver = false);
+			bool					IsActive() const;
+			void					Shutdown();
+			void*					GetDevice();
+			void*					GetDeviceContext();
+			
+			void*					GetImmediateContext();
+			void					FlushImmediateCommandList();
 
-            void*                       GetImmediateContext();
-            void                        FlushImmediateCommandList();
+			int						GetNumOutputs();
+			crossplatform::Output	GetOutput(int i);
+			void					ReportMessageFilterState();
 
-			void*						GetCommandQueue();
-			int							GetNumOutputs();
-			crossplatform::Output		GetOutput(int i);
-			void						ReportMessageFilterState();
-			void						EndAsynchronousFrame();
 		protected:
-
-			int computeFrame=0;
-			int lastFrameIndex=FrameCount-1;
-            ImmediateContext            mIContext;
+			ImmediateContext		mIContext;
 			//! Map of displays
-			OutputMap					mOutputs;
+			OutputMap				mOutputs;
 			//! The D3D device
-			ID3D12DeviceType*			mDevice;
-			//! Used to submit commands to the GPU
-			ID3D12CommandQueue*			mGraphicsQueue=nullptr;
-			// Compute objects.
-			static const int FrameCount=4;
-			Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_computeCommandQueue;
-			Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_copyCommandQueue;
-			D3D12ComputeContext				 mComputeContexts[FrameCount];
+			ID3D12DeviceType*		mDevice;
 		};
 	}
 }

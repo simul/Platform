@@ -48,7 +48,6 @@ namespace simul
 		class Effect;
 		class EffectTechnique;
 		class TextRenderer;
-		struct EffectDefineOptions;
 		struct Viewport;
 		class Light;
 		class Texture;
@@ -119,8 +118,10 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT Fence
 		{
+			virtual ~Fence() = default;
 			enum class Signaller : uint32_t { CPU, GPU };
 			typedef Signaller Waiter;
+			uint64_t value;
 			virtual void RestoreDeviceObjects(RenderPlatform *r)
 			{
 			}
@@ -205,14 +206,7 @@ namespace simul
 			//! Gets an object containing immediate-context API-specific values.
 			GraphicsDeviceContext &GetImmediateContext();
 			//! Gets an object containing the current global compute context.
-			ComputeDeviceContext &GetComputeDeviceContext()
-			{
-				return computeContext;
-			}
-			void SetComputeDeviceContext(const ComputeDeviceContext &c)
-			{
-				computeContext=c;
-			}
+			ComputeDeviceContext &GetComputeDeviceContext() { return computeContext; }
 			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath	(const char *pathUtf8);
 			//! Remove a path from the top of the texture path stack.
@@ -256,10 +250,12 @@ namespace simul
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Execute the currently applied raytracing shaders.
 			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
-			//! Add a signal command to the CPU thread or GPU queue. Parameter: value - The value to set the fence to.
-			virtual void Signal				(DeviceContext &deviceContext, Fence::Signaller signaller, Fence *fence, unsigned long long value){}
-			//! Add a wait command to the CPU thread or GPU queue. Parameter: value - The value that the waiter is waiting for the fence to reach or exceed. 
-			virtual void Wait				(DeviceContext &deviceContext, Fence::Waiter waiter, Fence *fence, unsigned long long value){}
+			//! Add a signal command to the CPU thread or GPU queue.
+			virtual void Signal				(DeviceContextType &type, Fence::Signaller signaller, Fence *fence){}
+			//! Add a wait command to the CPU thread or GPU queue. 
+			virtual void Wait				(DeviceContextType &type, Fence::Waiter waiter, Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX){}
+			//! Check the status of the fence. Returns true is fence is completed.
+			virtual bool GetFenceStatus		(crossplatform::Fence* fence) { return false; }
 			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
 			virtual void ExecuteCommands	(DeviceContext &deviceContext){};
 			//! Restart the commands for rendering after calling ExcuteCommands(). 
@@ -306,7 +302,7 @@ namespace simul
 			/// Create a platform agnostic raytracing acceleration structure maanger.
 			AccelerationStructureManager*	CreateAccelerationStructureManager();
 			/// Create a platform agnostic raytracing shader binding table.
-			virtual ShaderBindingTable*				CreateShaderBindingTable();
+			virtual ShaderBindingTable*		CreateShaderBindingTable();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.
@@ -324,16 +320,12 @@ namespace simul
 			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
 			/// as the Effects system assumes that SamplerState names are unique.
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
-			/// Create a platform-specific effect instance.
-			Effect							*CreateEffect					(const char *filename_utf8);
-			///  Create a platform-specific effect pass.
-			//virtual EffectPass				*CreateEffectPass();
 			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
 			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
-			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			virtual Effect					*CreateEffect					(const char *filename_utf8);
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
@@ -350,7 +342,7 @@ namespace simul
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc);
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.
 			virtual Query					*CreateQuery					(QueryType q)=0;
-			virtual Fence					*CreateFence(){return nullptr;}
+			virtual Fence					*CreateFence(const char* name){return nullptr;}
 			/// Get or create an API-specific shader object.
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
 			virtual Shader					*EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
@@ -394,8 +386,8 @@ namespace simul
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			///
 			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
-			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
-			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+			/// This function is called to ensure that the named shader is compiled.
+			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8);
 
 			/// <summary>
 			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
@@ -515,7 +507,6 @@ namespace simul
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
-			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
 
 		/// Draw a horizontal grid in 3D.
