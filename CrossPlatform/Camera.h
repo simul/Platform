@@ -70,6 +70,7 @@ namespace simul
 				LEFT_BUTTON		            = 0x01
 				,MIDDLE_BUTTON	            = 0x02
 				,RIGHT_BUTTON	            = 0x04
+				,ALL_BUTTONS	            = LEFT_BUTTON|MIDDLE_BUTTON| RIGHT_BUTTON
 				,WHEEL			            = 0x08
 				,LEFT_BUTTON_RELEASED       = 0x10
 				,MIDDLE_BUTTON_RELEASED     = 0x20
