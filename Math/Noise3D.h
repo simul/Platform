@@ -1,5 +1,6 @@
 #ifndef SIMUL_MATH_NOISE3D_H
 #define SIMUL_MATH_NOISE3D_H
+
 #include "Platform/Math/Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/Core/MemoryUsageInterface.h"
