@@ -186,8 +186,9 @@ void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 	mImmediateAllocator					= ctx->IAllocator;
 	immediateContext.platform_context	= mImmediateCommandList;
 	immediateContext.renderPlatform		= this;
-	bImmediateContextActive=ctx->bActive;
-	bExternalImmediate=ctx->bActive;
+	bImmediateContextActive = ctx->bActive;
+	bExternalImmediate = ctx->bActive;
+	bImmediateContextRecording = ctx->IRecording;
 }
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
@@ -1062,8 +1063,11 @@ void RenderPlatform::BeginD3D12Frame()
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
-	if(!bImmediateContextActive&&!bExternalImmediate)
+	if (!bImmediateContextActive && !bExternalImmediate && !bImmediateContextRecording)
+	{
 		commandList->Reset(mImmediateAllocator, nullptr);
+		bImmediateContextRecording = true;
+	}
 	bImmediateContextActive=true;
 	// Create dummy textures
 	static bool createDummy = true;
@@ -1106,8 +1110,11 @@ void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContex
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	if(commandList&&bImmediateContextActive&&!bExternalImmediate)
+	if (commandList && bImmediateContextActive && !bExternalImmediate)
+	{
 		commandList->Close();
+		bImmediateContextRecording = false;
+	}
 	bImmediateContextActive=false;
 }
 
