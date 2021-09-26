@@ -192,7 +192,7 @@ void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
 {
-	return mImmediateCommandList;
+	return mCurrentCommandList ? mCurrentCommandList : mImmediateCommandList;
 }
 
 ID3D12Device* RenderPlatform::AsD3D12Device()
@@ -1064,9 +1064,9 @@ void RenderPlatform::BeginD3D12Frame()
 
 	if (!bImmediateContextActive && !bExternalImmediate)
 	{
-		commandList->Reset(mImmediateAllocator, nullptr);
+		ResetImmediateCommandList();
 	}
-	bImmediateContextActive=true;
+
 	// Create dummy textures
 	static bool createDummy = true;
 	if (createDummy)
@@ -1340,9 +1340,31 @@ bool RenderPlatform::GetFenceStatus(crossplatform::Fence* fence)
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
 {
 	ID3D12GraphicsCommandList* const commandList = deviceContext.asD3D12Context();
-	commandList->Close();
+	ExecuteCommandList(GetCommandQueue(deviceContext.deviceContextType), commandList);
+}
 
-	GetCommandQueue(deviceContext.deviceContextType)->ExecuteCommandLists(1, (ID3D12CommandList* const *)&commandList);
+void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList)
+{
+	commandList->Close();
+	commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
+}
+
+void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue)
+{
+	if (bImmediateContextActive)
+	{
+		ExecuteCommandList(commandQueue, mImmediateCommandList);
+		bImmediateContextActive = false;
+	}
+}
+
+void RenderPlatform::ResetImmediateCommandList()
+{
+	if (!bImmediateContextActive)
+	{
+		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
+		bImmediateContextActive = true;
+	}
 }
 
 void RenderPlatform::AsyncResetCommandAllocator()
