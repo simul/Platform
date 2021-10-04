@@ -1366,6 +1366,8 @@ void RenderPlatform::AsyncResetCommandAllocator()
 			}
 			mMutexReleaseAllocators.unlock();
 		}
+
+		std::this_thread::yield();
 	}
 
 	//Clean up after ~RenderPlaform();
