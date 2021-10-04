@@ -95,7 +95,7 @@ if(PLATFORM_BUILD_DOCS)
 	add_subdirectory(Docs)
 endif()
 
-if(SIMUL_SUPPORT_PS4)
+if(PLATFORM_PS4)
 	add_subdirectory(PS4/Render)
 endif()
 

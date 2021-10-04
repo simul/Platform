@@ -130,7 +130,7 @@ Effect::Effect()
 {
 }
 
-void Effect::Compile(const char *filename_utf8)
+bool Effect::Compile(const char *filename_utf8)
 {
 	/* SIMUL/Tools/bin/Sfx.exe  -I"SIMUL\Platform\Vulkan\GLSL;SIMUL\Platform\CrossPlatform\SL"
 											-O"SIMUL\Platform\Vulkan\shaderbin"
@@ -147,7 +147,7 @@ void Effect::Compile(const char *filename_utf8)
 	{
 		filenameInUseUtf8=filename_fx;
 		SIMUL_CERR<<"Failed to find shader source file "<<filename_utf8<<std::endl;
-		return;
+		return false;
 	}
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
@@ -172,7 +172,7 @@ void Effect::Compile(const char *filename_utf8)
 	base::find_and_replace(command,"{SIMUL}",SIMUL);
 
 	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	platform::core::RunCommandLine(command.c_str(),  cc);
+	return platform::core::RunCommandLine(command.c_str(),  cc);
 }
 
 Effect::~Effect()
@@ -180,10 +180,12 @@ Effect::~Effect()
 	platform_effect=0;
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
+bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-	EnsureEffect(r, filename_utf8);
- 	crossplatform::Effect::Load(r, filename_utf8);
+	if (EnsureEffect(r, filename_utf8))
+		return crossplatform::Effect::Load(r, filename_utf8);
+	else
+		return false;
 }
 
 EffectTechnique* Effect::CreateTechnique()

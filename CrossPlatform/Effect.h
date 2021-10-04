@@ -60,12 +60,12 @@ namespace simul
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
-			NEVER_BUILD=0
-			,ALWAYS_BUILD=1
-			,BUILD_IF_CHANGED=2
-			, BREAK_ON_FAIL = 8			// 0x1000
-			, TRY_AGAIN_ON_FAIL = 12	// 0x11000 - includes break.
-			, DEBUG_SHADERS=16
+			NEVER_BUILD			= 0x00000000,
+			ALWAYS_BUILD		= 0x00000001,
+			BUILD_IF_CHANGED	= 0x00000002,
+			BREAK_ON_FAIL		= 0x00000008,	// 0b1000
+			TRY_AGAIN_ON_FAIL	= 0x0000000C,	// 0b1100 - includes break.
+			DEBUG_SHADERS		= 0x00000010,
 		};
 		inline ShaderBuildMode operator|(ShaderBuildMode a, ShaderBuildMode b)
 		{
@@ -555,8 +555,8 @@ namespace simul
 				return filename.c_str();
 			}
 			void InvalidateDeviceObjects();
-			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8);
-			virtual void Compile(const char *);
+			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
+			virtual bool Compile(const char *);
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{
@@ -614,8 +614,8 @@ namespace simul
 
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
-			/// Ensure it's built and up-to-date.
-			void EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
+			/// Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
+			bool EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{

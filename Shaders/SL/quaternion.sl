@@ -123,3 +123,11 @@ vec4 slerp(vec4 q1,vec4 q2,float interp)
 	ret = normalize(ret);
 	return ret;
 }
+
+vec4 quat_from_vector_endpoints(vec3 start, vec3 end)
+{
+	vec4 q_start = vec4(0.0, normalize(start));
+	vec4 q_end	= vec4(0.0, normalize(end));
+
+	return quat_mult(q_end, quat_conj(q_start));
+}

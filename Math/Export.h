@@ -1,7 +1,4 @@
-#ifndef SIMUL_MATH_EXPORT_H
-#define SIMUL_MATH_EXPORT_H
-
-#include "Platform/Core/DebugMemory.h"
+#pragma once
 
 #if defined(_MSC_VER)
     //  Microsoft
@@ -55,5 +52,3 @@
 #endif
 #define SIMUL_MATH_EXPORT_CLASS		class SIMUL_MATH_EXPORT
 #define SIMUL_MATH_EXPORT_STRUCT	struct SIMUL_MATH_EXPORT
-
-#endif
