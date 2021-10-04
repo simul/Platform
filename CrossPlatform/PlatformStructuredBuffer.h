@@ -99,7 +99,7 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 			}
-#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
+#if !defined( _MSC_VER) && !defined( _GAMING_XBOX )
 
 			void RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr)
 			{
