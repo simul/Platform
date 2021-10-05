@@ -220,26 +220,30 @@ namespace simul
 	#define ERRNO_CLEAR \
 		errno=0;
 
-#ifndef UNIX
-	#define ERRNO_CHECK \
-		if(errno!=0)\
-		{\
-			char errno_e[101];\
-			strerror_r(errno,errno_e,100);\
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<errno_e<<std::endl;\
-			errno=0;\
-		}
-#else
-	#define ERRNO_CHECK \
-		if(errno!=0)\
-		{\
-			char buffer[256];\
-			int err=errno;\
-			char * errorMsg = (char*)strerror_r( errno, buffer, 256 ); \
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<(errorMsg?errorMsg:"")<<std::endl; \
-			errno=0;\
-		}
-#endif
+	#if SIMUL_INTERNAL_CHECKS
+		#ifndef UNIX
+			#define ERRNO_CHECK \
+			if(errno!=0)\
+			{\
+				char errno_e[101];\
+				strerror_r(errno,errno_e,100);\
+				std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<errno_e<<std::endl;\
+				errno=0;\
+			}
+		#else
+			#define ERRNO_CHECK \
+			if(errno!=0)\
+			{\
+				char buffer[256];\
+				int err=errno;\
+				char * errorMsg = (char*)strerror_r( errno, buffer, 256 ); \
+				std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<(errorMsg?errorMsg:"")<<std::endl; \
+				errno=0;\
+			}
+		#endif
+	#else
+		#define ERRNO_CHECK {errno = 0; }
+	#endif
 #endif
 /// This errno check is always enabled, wherease ERRNO_CHECK can be disabled for production.
 	#define ALWAYS_ERRNO_CHECK \
@@ -253,7 +257,8 @@ namespace simul
 			SIMUL_THROW(errno_e);\
 		}
 /// This errno check is only used to find specific bugs, then removed from the code.
-#define ERRNO_BREAK \
+#if SIMUL_INTERNAL_CHECKS
+	#define ERRNO_BREAK \
 		if(errno!=0)\
 		{\
 			char errno_e[401];\
@@ -263,7 +268,9 @@ namespace simul
 			BREAK_IF_DEBUGGING	\
 			errno=0;\
 		}
-
+#else
+	#define ERRNO_BREAK {errno = 0; }
+#endif
 #ifdef _MSC_VER
     #pragma warning(pop)
 #endif
