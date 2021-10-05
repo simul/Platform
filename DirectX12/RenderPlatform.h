@@ -128,6 +128,13 @@ namespace simul
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
+
+			//! Sets the reference to the current command list in use by the application.
+			void SetCurrentCommandList(ID3D12GraphicsCommandList* commandList)
+			{
+				mCurrentCommandList = commandList;
+			}
+
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
@@ -267,6 +274,11 @@ namespace simul
 			//! We cache the current number of samples
 			void									SetCurrentSamples(int samples, int quality = 0);
 			bool									IsMSAAEnabled();
+
+			void ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList);
+			void ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue);
+			void ResetImmediateCommandList();
+
 			DXGI_SAMPLE_DESC						GetMSAAInfo();
 			
 			ResourceBindingLimits					GetResourceBindingLimits()const;
@@ -307,8 +319,10 @@ namespace simul
 			ID3D12CommandQueue*			mComputeQueue;
 			//! Reference to the copy command queue
 			ID3D12CommandQueue*			mCopyQueue;
-			//! Reference to a command list
+			//! Reference to the immediate command list
 			ID3D12GraphicsCommandList*	mImmediateCommandList;
+			//! Reference to the current command list
+			ID3D12GraphicsCommandList* mCurrentCommandList;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;

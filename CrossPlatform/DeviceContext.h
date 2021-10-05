@@ -318,7 +318,7 @@ namespace simul
 				return this;
 			}
 			//Some function expect completed_frame and frame_number to increment.
-			//This copy the frame numbers from the normal DeviceContext to simulate this.
+			//This copies the frame numbers from the normal DeviceContext to simulate this.
 			void UpdateFrameNumbers(DeviceContext& deviceContext)
 			{
 				this->completed_frame = deviceContext.completed_frame;

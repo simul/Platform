@@ -131,8 +131,9 @@ RenderPlatform::RenderPlatform():
 	,mComputeQueue(nullptr)
 	,mCopyQueue(nullptr)
 	,mImmediateCommandList(nullptr)
+	,mCurrentCommandList(nullptr)
 	,mFrameHeap(nullptr)
-    ,mFrameOverrideSamplerHeap(nullptr)
+	,mFrameOverrideSamplerHeap(nullptr)
 	,mSamplerHeap(nullptr) 
 	,mRenderTargetHeap(nullptr)
 	,mDepthStencilHeap(nullptr)
@@ -186,13 +187,13 @@ void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 	mImmediateAllocator					= ctx->IAllocator;
 	immediateContext.platform_context	= mImmediateCommandList;
 	immediateContext.renderPlatform		= this;
-	bImmediateContextActive=ctx->bActive;
-	bExternalImmediate=ctx->bActive;
+	bImmediateContextActive = ctx->bActive;
+	bExternalImmediate = ctx->bActive;
 }
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
 {
-	return mImmediateCommandList;
+	return mCurrentCommandList ? mCurrentCommandList : mImmediateCommandList;
 }
 
 ID3D12Device* RenderPlatform::AsD3D12Device()
@@ -1062,9 +1063,11 @@ void RenderPlatform::BeginD3D12Frame()
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
-	if(!bImmediateContextActive&&!bExternalImmediate)
-		commandList->Reset(mImmediateAllocator, nullptr);
-	bImmediateContextActive=true;
+	if (!bImmediateContextActive && !bExternalImmediate)
+	{
+		ResetImmediateCommandList();
+	}
+
 	// Create dummy textures
 	static bool createDummy = true;
 	if (createDummy)
@@ -1106,8 +1109,10 @@ void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContex
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	if(commandList&&bImmediateContextActive&&!bExternalImmediate)
+	if (commandList && bImmediateContextActive && !bExternalImmediate)
+	{
 		commandList->Close();
+	}
 	bImmediateContextActive=false;
 }
 
@@ -1336,9 +1341,31 @@ bool RenderPlatform::GetFenceStatus(crossplatform::Fence* fence)
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
 {
 	ID3D12GraphicsCommandList* const commandList = deviceContext.asD3D12Context();
-	commandList->Close();
+	ExecuteCommandList(GetCommandQueue(deviceContext.deviceContextType), commandList);
+}
 
-	GetCommandQueue(deviceContext.deviceContextType)->ExecuteCommandLists(1, (ID3D12CommandList* const *)&commandList);
+void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList)
+{
+	commandList->Close();
+	commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
+}
+
+void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue)
+{
+	if (bImmediateContextActive)
+	{
+		ExecuteCommandList(commandQueue, mImmediateCommandList);
+		bImmediateContextActive = false;
+	}
+}
+
+void RenderPlatform::ResetImmediateCommandList()
+{
+	if (!bImmediateContextActive)
+	{
+		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
+		bImmediateContextActive = true;
+	}
 }
 
 void RenderPlatform::AsyncResetCommandAllocator()
@@ -1366,6 +1393,8 @@ void RenderPlatform::AsyncResetCommandAllocator()
 			}
 			mMutexReleaseAllocators.unlock();
 		}
+
+		std::this_thread::yield();
 	}
 
 	//Clean up after ~RenderPlaform();

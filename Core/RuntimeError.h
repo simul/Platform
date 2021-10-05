@@ -151,7 +151,7 @@ namespace simul
 		BREAK_IF_DEBUGGING\
 	}
 #else
-#define SIMUL_BREAK_INTERNAL(msg)
+#define SIMUL_BREAK_INTERNAL(msg) {}
 #endif
 
 #define SIMUL_ASSERT_WARN(val,message)\
