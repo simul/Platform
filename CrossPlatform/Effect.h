@@ -685,7 +685,7 @@ namespace simul
 				return T::bindingIndex;
 			}
 			//! Create the buffer object.
-#if !defined( _MSC_VER) && !defined( _GAMING_XBOX )
+#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
 			void RestoreDeviceObjects(RenderPlatform* p)
 			{
 				InvalidateDeviceObjects();
