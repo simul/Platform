@@ -210,9 +210,10 @@ void Buffer::Unmap(crossplatform::DeviceContext &)
 		barrier2.Transition.StateAfter = barrier1.Transition.StateBefore;
 
 		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier2);
+
+		delete[] mGpuMappedPtr;
+		mGpuMappedPtr = nullptr;
 	}
-	delete [] mGpuMappedPtr;
-	mGpuMappedPtr=nullptr;
 }
 
 D3D12_VERTEX_BUFFER_VIEW* Buffer::GetVertexBufferView()

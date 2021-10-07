@@ -1402,6 +1402,122 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	return !ok;
 }
 
+bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
+{
+	// Define pixel formats of this texture
+	renderPlatform = r;
+	pixelFormat = f;
+	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT texture2dFormat = dxgi_format;
+	DXGI_FORMAT srvFormat = dxgi_format;
+	if (texture2dFormat == DXGI_FORMAT_D32_FLOAT)
+	{
+		texture2dFormat = DXGI_FORMAT_R32_TYPELESS;
+		srvFormat = DXGI_FORMAT_R32_FLOAT;
+	}
+	if (texture2dFormat == DXGI_FORMAT_D16_UNORM)
+	{
+		texture2dFormat = DXGI_FORMAT_R16_TYPELESS;
+		srvFormat = DXGI_FORMAT_R16_UNORM;
+	}
+	if (texture2dFormat == DXGI_FORMAT_D24_UNORM_S8_UINT)
+	{
+		texture2dFormat = DXGI_FORMAT_R24G8_TYPELESS;
+		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	dim = 2;
+	HRESULT res = S_FALSE;
+
+	int mipLevels = 0;
+
+	bool ok = true;
+	if (mTextureDefault)
+	{
+		auto desc = mTextureDefault->GetDesc();
+		if (desc.Width != w || desc.Height != l || desc.MipLevels != mipLevels || desc.Format != texture2dFormat)
+		{
+			ok = false;
+		}
+		else if (!(desc.Flags & D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY))
+		{
+			ok = false;
+		}
+	}
+	else
+	{
+		ok = false;
+	}
+
+	if (!ok)
+	{
+		if (w * l <= 0)
+			return false;
+		auto& deviceContext = renderPlatform->GetImmediateContext();
+		width = w;
+		length = l;
+
+		InvalidateDeviceObjects();
+		
+
+		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
+		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+		if (texType == crossplatform::VideoTextureType::ENCODE)
+		{
+			initialState = D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
+		}
+		else if (texType == crossplatform::VideoTextureType::DECODE)
+		{
+			initialState = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+			textureFlags = D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY;
+		}
+		else if (texType == crossplatform::VideoTextureType::PROCESS)
+		{
+			initialState = D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
+		}
+
+		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
+		(
+			texture2dFormat,
+			width,
+			length,
+			1,
+			mipLevels,
+			1,
+			1,
+			textureFlags
+		);
+
+		// Clean resources
+		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+		mTextureDefault = nullptr;
+			
+		// Create the texture resource
+		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&textureDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			SIMUL_PPV_ARGS(&mTextureDefault)
+		);
+		SIMUL_ASSERT(res == S_OK);
+		size_t texSize = w * l * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
+		SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
+			std::wstring n = L"GPU_";
+		n += std::wstring(name.begin(), name.end());
+		mTextureDefault->SetName(n.c_str());
+
+		AssumeLayout(initialState);
+		InitStateTable(1, mipLevels);	
+	}
+
+	mips = 1;
+	arraySize = 1;
+	return true;
+}
+
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	bool ok			= true;

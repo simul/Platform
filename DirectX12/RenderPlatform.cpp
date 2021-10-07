@@ -1664,6 +1664,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_D16_UNORM;
 	case D_24_UNORM_S_8_UINT:
 		return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	case NV12:
+		return DXGI_FORMAT_NV12;
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 	};
