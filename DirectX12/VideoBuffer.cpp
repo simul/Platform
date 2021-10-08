@@ -90,6 +90,7 @@ void VideoBuffer::Unmap(crossplatform::DeviceContext& deviceContext)
 void VideoBuffer::Update(const void* data, uint32_t dataSize)
 {
 	D3D12_RESOURCE_STATES stateBefore = D3D12_RESOURCE_STATE_COMMON;
+	#if !defined(_DURANGO)
 	switch (mBufferType)
 	{
 	case crossplatform::VideoBufferType::DECODE_READ:
@@ -102,6 +103,7 @@ void VideoBuffer::Update(const void* data, uint32_t dataSize)
 		stateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
 		break;
 	}
+	#endif
 
 	if (mHasData)
 	{
