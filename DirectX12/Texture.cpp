@@ -1438,10 +1438,12 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		{
 			ok = false;
 		}
+		#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 		else if (!(desc.Flags & D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY))
 		{
 			ok = false;
 		}
+		#endif
 	}
 	else
 	{
@@ -1468,7 +1470,9 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		else if (texType == crossplatform::VideoTextureType::DECODE)
 		{
 			initialState = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+		#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 			textureFlags = D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY;
+		#endif
 		}
 		else if (texType == crossplatform::VideoTextureType::PROCESS)
 		{

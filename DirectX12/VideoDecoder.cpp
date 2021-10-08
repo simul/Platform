@@ -8,7 +8,9 @@
 #include "Platform/DirectX12/Heap.h"
 #include "Platform/DirectX12/VideoBuffer.h"
 #include "Platform/DirectX12/Texture.h"
+#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 #include <d3d12video.h>
+#endif
 #include <algorithm>
 
 using namespace simul;
@@ -31,42 +33,7 @@ VideoDecoder::~VideoDecoder()
 	Shutdown();
 }
 
-cp::VideoDecoderResult VideoDecoder::Init()
-{
-	auto r = CreateVideoDevice();
-	if (DEC_FAILED(r))
-	{
-		return r;
-	}
-
-	r = CheckSupport(mVideoDevice, mDecoderParams);
-	if (DEC_FAILED(r))
-	{
-		return r;
-	}
-	
-	r = CreateVideoDecoder();
-	if (DEC_FAILED(r))
-	{
-		Shutdown();
-		return r;
-	}
-
-	r = CreateCommandObjects();
-	if (DEC_FAILED(r))
-	{
-		Shutdown();
-		return r;
-	}
-
-	return cp::VideoDecoderResult::Ok;
-}
-
-cp::VideoDecoderResult VideoDecoder::RegisterSurface(void* surface)
-{
-	return cp::VideoDecoder::RegisterSurface(surface);
-}
-
+#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t bufferSize, const cp::VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
 {
 	mInputBuffer->Update(buffer, bufferSize);
@@ -346,3 +313,40 @@ cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device,
 
 	return cp::VideoDecoderResult::Ok;
 }
+cp::VideoDecoderResult VideoDecoder::Init()
+{
+	auto r = CreateVideoDevice();
+	if (DEC_FAILED(r))
+	{
+		return r;
+	}
+
+	r = CheckSupport(mVideoDevice, mDecoderParams);
+	if (DEC_FAILED(r))
+	{
+		return r;
+	}
+	
+	r = CreateVideoDecoder();
+	if (DEC_FAILED(r))
+	{
+		Shutdown();
+		return r;
+	}
+
+	r = CreateCommandObjects();
+	if (DEC_FAILED(r))
+	{
+		Shutdown();
+		return r;
+	}
+
+	return cp::VideoDecoderResult::Ok;
+}
+
+cp::VideoDecoderResult VideoDecoder::RegisterSurface(void* surface)
+{
+	return cp::VideoDecoder::RegisterSurface(surface);
+}
+#else
+#endif
