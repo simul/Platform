@@ -104,6 +104,11 @@ namespace simul
 			{
 				return dim;
 			}
+			D3D12_RESOURCE_STATES GetState()
+			{
+				return mResourceState;
+			}
+
 			int GetSampleCount()const;
 
 			//! Returns the current state of the resource or subresource if provided.

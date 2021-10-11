@@ -42,8 +42,10 @@ namespace simul
 			uint32_t bitRate = 0;
 			uint32_t frameRate = 60;
 			VideoCodec codec = VideoCodec::HEVC;
-			PixelFormat inputFormat = PixelFormat::NV12;
-			PixelFormat outputFormat = PixelFormat::RGBA_8_UNORM;
+			// Native format stream is decoded to.
+			PixelFormat decodeFormat = PixelFormat::NV12;
+			// Format of the surface the native format is converted to if they are different. 
+			PixelFormat surfaceFormat = PixelFormat::RGBA_8_UNORM;
 			uint32_t width = 1920;
 			uint32_t height = 1080;
 			uint32_t minWidth = 1200;
@@ -73,7 +75,7 @@ namespace simul
 			VideoDecoder();
 			virtual ~VideoDecoder();
 			VideoDecoderResult Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams);
-			virtual VideoDecoderResult RegisterSurface(void* surface);
+			virtual VideoDecoderResult RegisterSurface(Texture* surface);
 			VideoDecoderResult Decode(const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0);
 			virtual VideoDecoderResult UnregisterSurface();
 			virtual VideoDecoderResult Shutdown();
@@ -81,17 +83,23 @@ namespace simul
 		protected:
 			virtual VideoDecoderResult Init() = 0;
 			virtual VideoDecoderResult DecodeFrame(const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) = 0;
-			virtual VideoBuffer* CreateVideoBuffer() = 0;
-			virtual Texture* CreateVideoTexture() = 0;
+			virtual void* GetGraphicsContext() const = 0;
+			virtual VideoBuffer* CreateVideoBuffer() const = 0;
+			virtual Texture* CreateDecoderTexture() const = 0;
+			virtual void Signal(void* context, Fence* fence) = 0;
+			virtual void WaitOnFence(void* context, Fence* fence) = 0;
+			bool IsIDR(const uint8_t* data, size_t size) const;
+
 			RenderPlatform* mRenderPlatform;
 			VideoDecoderParams mDecoderParams;
-			void* mSurface;
+			Texture* mSurface;
 			VideoBuffer* mInputBuffer;
-			static constexpr uint32_t mMaxReferenceFrames = 6;
-			static constexpr uint32_t mNumTextures = mMaxReferenceFrames + 1;
-			Texture* mTextures[mNumTextures];
+			uint32_t mMaxReferenceFrames;
+			std::vector<Texture*> mTextures;
 			uint32_t mNumReferenceFrames;
 			uint32_t mCurrentTextureIndex;
+			//static constexpr uint32_t FrameCount = 4;
+			Fence* mDecodeFence;
 		};
 	}
 
