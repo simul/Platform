@@ -8,6 +8,7 @@
 #include "Platform/DirectX12/GpuProfiler.h"
 #include "Platform/DirectX12/Heap.h"
 #include "Platform/DirectX12/VideoBuffer.h"
+#include "Platform/DirectX12/Texture.h"
 #include <d3d12video.h>
 #include <algorithm>
 
@@ -374,4 +375,41 @@ void DecoderTexture::ChangeState(ID3D12VideoDecodeCommandListType* commandList, 
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTextureDefault, stateBefore, stateAfter));
 	mResourceState = stateAfter;
 }
+
+cp::VideoDecoderResult VideoDecoder::Init()
+{
+	auto r = CreateVideoDevice();
+	if (DEC_FAILED(r))
+	{
+		return r;
+	}
+
+	r = CheckSupport(mVideoDevice, mDecoderParams);
+	if (DEC_FAILED(r))
+	{
+		return r;
+	}
+	
+	r = CreateVideoDecoder();
+	if (DEC_FAILED(r))
+	{
+		Shutdown();
+		return r;
+	}
+
+	r = CreateCommandObjects();
+	if (DEC_FAILED(r))
+	{
+		Shutdown();
+		return r;
+	}
+
+	return cp::VideoDecoderResult::Ok;
+}
+
+cp::VideoDecoderResult VideoDecoder::RegisterSurface(void* surface)
+{
+	return cp::VideoDecoder::RegisterSurface(surface);
+}
+
 #endif
