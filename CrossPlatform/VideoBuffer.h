@@ -1,5 +1,5 @@
 #pragma once
- 
+#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
@@ -46,13 +46,13 @@ namespace simul
 				return mBufferType;
 			}
 			//! Set up as a buffer for video encoding/decoding read operations.
-			virtual void EnsureBuffer(crossplatform::RenderPlatform* r, VideoBufferType bufferType, const void* data, uint32_t dataSize) = 0;
+			virtual void EnsureBuffer(crossplatform::RenderPlatform* r, void* context, VideoBufferType bufferType, const void* data, uint32_t dataSize) = 0;
 			//! Get a pointer to the data for updating. Must call Unmap after any changes.
-			virtual void* Map(crossplatform::DeviceContext& deviceContext, uint32_t newBufferSize = 0) = 0;
+			virtual void* Map(void* context) = 0;
 			//! Return the modified data to the device object.
-			virtual void Unmap(crossplatform::DeviceContext& deviceContext) = 0;
+			virtual void Unmap(void* context) = 0;
 			//! Update the data in the buffer.
-			virtual void Update(const void* data, uint32_t dataSize) = 0;
+			virtual void Update(void* context, const void* data, uint32_t dataSize) = 0;
 
 		protected:
 			VideoBufferType mBufferType;
@@ -60,3 +60,4 @@ namespace simul
 		};
 	}
 }
+#endif

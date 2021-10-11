@@ -1404,6 +1404,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
 {
+#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 	// Define pixel formats of this texture
 	renderPlatform = r;
 	pixelFormat = f;
@@ -1428,7 +1429,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 	dim = 2;
 	HRESULT res = S_FALSE;
 
-	int mipLevels = 0;
+	int mipLevels = 1;
 
 	bool ok = true;
 	if (mTextureDefault)
@@ -1438,7 +1439,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		{
 			ok = false;
 		}
-		else if (!(desc.Flags & D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY))
+		else if (!(desc.Flags & (D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE)))
 		{
 			ok = false;
 		}
@@ -1459,7 +1460,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		InvalidateDeviceObjects();
 		
 
-		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
+		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
 		if (texType == crossplatform::VideoTextureType::ENCODE)
 		{
@@ -1468,7 +1469,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		else if (texType == crossplatform::VideoTextureType::DECODE)
 		{
 			initialState = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
-			textureFlags = D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY;
+			textureFlags |= D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY;
 		}
 		else if (texType == crossplatform::VideoTextureType::PROCESS)
 		{
@@ -1498,7 +1499,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
+			initialState,
 			nullptr,
 			SIMUL_PPV_ARGS(&mTextureDefault)
 		);
@@ -1516,6 +1517,9 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 	mips = 1;
 	arraySize = 1;
 	return true;
+#else
+	return false;
+#endif
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
