@@ -4,7 +4,9 @@
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/GpuProfiler.h"
-#include <d3d12video.h>
+#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+#include <d3d12video.h> //This header is not compatible with Xbox consoles - AJR.
+#endif 
 #include <algorithm>
 
 using namespace simul;

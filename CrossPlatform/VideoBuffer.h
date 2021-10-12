@@ -1,5 +1,5 @@
 #pragma once
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
@@ -60,4 +60,3 @@ namespace simul
 		};
 	}
 }
-#endif
