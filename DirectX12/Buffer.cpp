@@ -174,16 +174,11 @@ void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	const CD3DX12_RANGE range(0, 0);
 	mGpuMappedPtr = new UINT8[mBufferSize];
-/*	HRESULT hr=mGpuHeap->Map(0, nullptr, reinterpret_cast<void**>(&mGpuMappedPtr));
-	if (hr != S_OK)
-		return nullptr;*/
 	return (void*)mGpuMappedPtr;
 }
 
 void Buffer::Unmap(crossplatform::DeviceContext &)
 {
-	//const CD3DX12_RANGE range(0, 0);
-	//mGpuHeap->Unmap(0, nullptr);// &range);
 	if(mGpuMappedPtr)
 	{
 		D3D12_SUBRESOURCE_DATA subresourceData = {};

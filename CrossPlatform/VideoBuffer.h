@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
