@@ -101,6 +101,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			if (hardwareAdapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
 			{
 				curAdapterIdx++;
+				SAFE_RELEASE(hardwareAdapter);
 				continue;
 			}
 
@@ -134,7 +135,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			}
 			curAdapterIdx++;
 		}
-		res = D3D12CreateDevice(hardwareAdapter,featureLevel, SIMUL_PPV_ARGS(&mDevice));
+		res = D3D12CreateDevice(hardwareAdapter, featureLevel, SIMUL_PPV_ARGS(&mDevice));
 		mDevice->SetName (L"D3D12 Device");
 		SIMUL_ASSERT(res == S_OK);
 
@@ -199,7 +200,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		// Enumerate mOutputs(monitors)
 		IDXGIOutput* output = nullptr;
 		int outputIdx		= 0;
-		while (hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
+		while (res = hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
 		{
 			mOutputs[outputIdx] = output;
 			SIMUL_ASSERT(res == S_OK);

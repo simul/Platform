@@ -128,9 +128,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mRecordingCommands = true;
 
 	// Provide a cmd list so we can start recording commands
-	auto dx12plat = (dx12::RenderPlatform*)renderPlatform;
-	//dx12plat->SetCommandList(mCommandList);
-	dx12plat->DefaultOutputFormat = outFmt;
+	dx12RenderPlatform->SetCurrentCommandList(mCommandList);
+	dx12RenderPlatform->DefaultOutputFormat = outFmt;
 }
 
 void DisplaySurface::InvalidateDeviceObjects()

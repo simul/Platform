@@ -102,6 +102,12 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 #ifndef SAFE_DELETE
     #define SAFE_DELETE(p)          { if(p) { delete p; p=nullptr;} }
 #endif
+#ifndef SAFE_DELETE_ARRAY
+	#define SAFE_DELETE_ARRAY(p)          { if(p) { delete[] p; p=nullptr;} }
+#endif
+#ifndef SAFE_DELETE_ARRAY_MEMBERS
+	#define SAFE_DELETE_ARRAY_MEMBERS(p,n)	{ if(p) for(int i=0;i<n;i++) if(p[i]) { delete (p[i]); (p[i])=nullptr; } }
+#endif
 
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
     #define  SIMUL_PPV_ARGS IID_GRAPHICS_PPV_ARGS
