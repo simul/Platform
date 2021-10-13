@@ -116,7 +116,7 @@ RayPlaneIntersectionResult GetRayPlaneIntersection(vec3 rayOrigin, vec3 rayDirec
 	result.intersection = (denom != 0);
 	
 	if (result.intersection)
-		result.T = dot(position - rayDirection, normal) / denom;
+		result.T = dot(position - rayOrigin, normal) / denom;
 	else
 		result.T = 0.0;
 	
@@ -158,6 +158,7 @@ AABBIntersectionResult GetAABBIntersection(Raytracing_AABB aabb, vec3 rayOrigin,
 			}
 		}
 	}
+	return result;
 }
 
 #endif
