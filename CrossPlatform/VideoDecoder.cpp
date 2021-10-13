@@ -16,6 +16,7 @@ VideoDecoder::VideoDecoder()
 	, mCurrentTextureIndex(0)
 	, mMaxReferenceFrames(0)
 	, mDecodeFence(nullptr)
+	, mFeaturesSupported(false)
 {
 
 }
@@ -29,6 +30,7 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 {
 	mRenderPlatform = renderPlatform;
 	mDecoderParams = decoderParams;
+	mFeaturesSupported = false;
 
 	if (DEC_FAILED(Init()))
 	{
@@ -36,7 +38,7 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	}
 
 	mInputBuffer = CreateVideoBuffer();
-	mInputBuffer->EnsureBuffer(mRenderPlatform, GetGraphicsContext(), VideoBufferType::DECODE_READ, nullptr, 250000);
+	mInputBuffer->EnsureBuffer(mRenderPlatform, GetGraphicsContext(), GetDecodeContext(), VideoBufferType::DECODE_READ, nullptr, 250000);
 
 	// This could vary depending on the codec.
 	mMaxReferenceFrames = 6;

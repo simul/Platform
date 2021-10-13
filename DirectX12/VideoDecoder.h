@@ -1,5 +1,4 @@
 #pragma once
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 #include "Export.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/VideoDecoder.h"
@@ -43,7 +42,8 @@ namespace simul
 		protected:
 			cp::VideoDecoderResult Init() override;
 			cp::VideoDecoderResult DecodeFrame(const void* buffer, size_t bufferSize, const cp::VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) override;
-			void* GetGraphicsContext() const;
+			void* GetGraphicsContext() const override;
+			void* GetDecodeContext() const override;
 			cp::VideoBuffer* CreateVideoBuffer() const override;
 			cp::Texture* CreateDecoderTexture() const override;
 
@@ -63,4 +63,3 @@ namespace simul
 		};
 	}
 }
-#endif

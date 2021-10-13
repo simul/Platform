@@ -45,7 +45,6 @@ namespace simul
 			uint32_t mIndex;
 			bool mCommandQueueOwner;
 			bool mCommandListRecording;
-			bool mFirstReset;
 			HANDLE	mWindowEvent;
 		};
 	}

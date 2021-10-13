@@ -1404,7 +1404,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
 {
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+#if SIMUL_D3D12_VIDEO_SUPPORTED
 	// Define pixel formats of this texture
 	renderPlatform = r;
 	pixelFormat = f;

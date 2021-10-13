@@ -1,8 +1,7 @@
 #pragma once
-#include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/Export.h"
+#include "SimulDirectXHeader.h"
 #include "Platform/CrossPlatform/VideoBuffer.h"
-
 
 #pragma warning(disable:4251)
 
@@ -17,10 +16,10 @@ namespace simul
 			VideoBuffer();
 			~VideoBuffer();
 			void InvalidateDeviceObjects();
-			void EnsureBuffer(crossplatform::RenderPlatform* r, void* context, crossplatform::VideoBufferType bufferType, const void* data, uint32_t dataSize) override;
-			void* Map(void* context) override;
-			void Unmap(void* context) override;
-			void Update(void* context, const void* data, uint32_t dataSize) override;
+			void EnsureBuffer(crossplatform::RenderPlatform* r, void* graphicsContext, void* videoContext, crossplatform::VideoBufferType bufferType, const void* data, uint32_t dataSize) override;
+			void* Map(void* graphicsContext, void* videoContext) override;
+			void Unmap(void* graphicsContext, void* videoContext) override;
+			void Update(void* graphicsContext, void* videoContext, const void* data, uint32_t dataSize) override;
 			ID3D12Resource * const AsD3D12Buffer()  const override
 			{
 				return mGpuHeap;
@@ -35,7 +34,6 @@ namespace simul
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;
 			crossplatform::RenderPlatform* renderPlatform = nullptr;
-			unsigned char *				mappedData=nullptr;
 		};
 	}
 };

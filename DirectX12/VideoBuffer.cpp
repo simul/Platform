@@ -1,7 +1,7 @@
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
-#include "SimulDirectXHeader.h"
 #include "VideoBuffer.h"
+#include "SimulDirectXHeader.h"
 #include "RenderPlatform.h"
+#include <d3d12video.h>
 
 using namespace simul;
 using namespace dx12;
@@ -10,6 +10,7 @@ VideoBuffer::VideoBuffer()
 	: mGpuHeap(nullptr)
 	, mIntermediateHeap(nullptr)
 	, mBufferSize(0)
+	, mGpuMappedPtr(nullptr)
 {
 
 }
@@ -28,7 +29,7 @@ void VideoBuffer::InvalidateDeviceObjects()
 	mGpuHeap = nullptr;
 }
 
-void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, void* context, crossplatform::VideoBufferType bufferType, const void* data, uint32_t dataSize)
+void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, void* graphicsContext, void* videoContext, crossplatform::VideoBufferType bufferType, const void* data, uint32_t dataSize)
 {
 	HRESULT res = S_FALSE;
 	mBufferSize = dataSize;
@@ -66,31 +67,31 @@ void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, void* context, 
 
 	if (data)
 	{
-		Update(context, data, dataSize);
+		Update(graphicsContext, videoContext, data, dataSize);
 	}
 }
 
-void* VideoBuffer::Map(void* context)
+void* VideoBuffer::Map(void* graphicsContext, void* videoContext)
 {
 	const CD3DX12_RANGE range(0, 0);
 	mGpuMappedPtr = new UINT8[mBufferSize];
 	return (void*)mGpuMappedPtr;
 }
 
-void VideoBuffer::Unmap(void* context)
+void VideoBuffer::Unmap(void* graphicsContext, void* videoContext)
 {
 	if(mGpuMappedPtr)
 	{
-		Update(context, mGpuMappedPtr, mBufferSize);
+		Update(graphicsContext, videoContext, mGpuMappedPtr, mBufferSize);
 		delete[] mGpuMappedPtr;
 		mGpuMappedPtr = nullptr;
 	}
 }
 
-void VideoBuffer::Update(void* context, const void* data, uint32_t dataSize)
+void VideoBuffer::Update(void* graphicsContext, void* videoContext, const void* data, uint32_t dataSize)
 {
 	D3D12_RESOURCE_STATES stateBefore = D3D12_RESOURCE_STATE_COMMON;
-	#if !defined(_DURANGO)
+
 	switch (mBufferType)
 	{
 	case crossplatform::VideoBufferType::DECODE_READ:
@@ -103,9 +104,8 @@ void VideoBuffer::Update(void* context, const void* data, uint32_t dataSize)
 		stateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
 		break;
 	}
-	#endif
 
-	ID3D12GraphicsCommandList* commandList = (ID3D12GraphicsCommandList*)context;
+	ID3D12GraphicsCommandList* graphicsCommandList = (ID3D12GraphicsCommandList*)graphicsContext;
 	if (mHasData)
 	{
 		D3D12_RESOURCE_BARRIER barrier1;
@@ -115,7 +115,7 @@ void VideoBuffer::Update(void* context, const void* data, uint32_t dataSize)
 		barrier1.Transition.Subresource = 0;
 		barrier1.Transition.StateBefore = stateBefore;
 		barrier1.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-		commandList->ResourceBarrier(1, &barrier1);
+		graphicsCommandList->ResourceBarrier(1, &barrier1);
 	}
 	else
 	{
@@ -127,7 +127,7 @@ void VideoBuffer::Update(void* context, const void* data, uint32_t dataSize)
 	subresourceData.RowPitch = dataSize;
 	subresourceData.SlicePitch = subresourceData.RowPitch;
 
-	UpdateSubresources(commandList, mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+	UpdateSubresources(graphicsCommandList, mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
 	D3D12_RESOURCE_BARRIER barrier2;
 	barrier2.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -136,6 +136,18 @@ void VideoBuffer::Update(void* context, const void* data, uint32_t dataSize)
 	barrier2.Transition.Subresource = 0;
 	barrier2.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier2.Transition.StateAfter = stateBefore;
-	commandList->ResourceBarrier(1, &barrier2);
+
+	switch (mBufferType)
+	{
+	case crossplatform::VideoBufferType::DECODE_READ:
+		((ID3D12VideoDecodeCommandList*)videoContext)->ResourceBarrier(1, &barrier2);
+		break;
+	case crossplatform::VideoBufferType::ENCODE_READ:
+		((ID3D12VideoEncodeCommandList*)videoContext)->ResourceBarrier(1, &barrier2);
+		break;
+	case crossplatform::VideoBufferType::PROCESS_READ:
+		((ID3D12VideoProcessCommandList*)videoContext)->ResourceBarrier(1, &barrier2);
+		break;
+	}
+	
 }
-#endif
