@@ -412,7 +412,7 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 #endif
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-
+	
 #if SIMUL_DEBUG_BARRIERS
 	for(size_t i = 0; i < mCurBarriers; i++)
 		commandList->ResourceBarrier(1, &mPendingBarriers[i]);
@@ -1063,10 +1063,8 @@ void RenderPlatform::BeginD3D12Frame()
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
-	if (!bImmediateContextActive && !bExternalImmediate)
-	{
-		ResetImmediateCommandList();
-	}
+	
+	ResetImmediateCommandList();
 
 	// Create dummy textures
 	static bool createDummy = true;
@@ -1350,7 +1348,11 @@ void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext
 
 void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList)
 {
-	commandList->Close();
+	HRESULT r = commandList->Close();
+	if (FAILED(r))
+	{
+		SIMUL_BREAK("Failed to close command list");
+	}
 	commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
 }
 
@@ -1365,11 +1367,11 @@ void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueu
 
 void RenderPlatform::ResetImmediateCommandList()
 {
-	if (!bImmediateContextActive)
+	if (!bImmediateContextActive && !bExternalImmediate)
 	{
 		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
-		bImmediateContextActive = true;
 	}
+	bImmediateContextActive = true;
 }
 
 void RenderPlatform::AsyncResetCommandAllocator()
@@ -1668,6 +1670,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_D16_UNORM;
 	case D_24_UNORM_S_8_UINT:
 		return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	case NV12:
+		return DXGI_FORMAT_NV12;
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 	};

@@ -231,7 +231,9 @@ namespace simul
 		struct ComputeDeviceContext;
 		enum class DeviceContextType
 		{
-			GRAPHICS, COMPUTE, COPY
+			GRAPHICS, 
+			COMPUTE, 
+			COPY
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
