@@ -84,6 +84,7 @@ namespace simul
 			virtual VideoDecoderResult Init() = 0;
 			virtual VideoDecoderResult DecodeFrame(const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) = 0;
 			virtual void* GetGraphicsContext() const = 0;
+			virtual void* GetDecodeContext() const = 0;
 			virtual VideoBuffer* CreateVideoBuffer() const = 0;
 			virtual Texture* CreateDecoderTexture() const = 0;
 			virtual void Signal(void* context, Fence* fence) = 0;
@@ -100,6 +101,7 @@ namespace simul
 			uint32_t mCurrentTextureIndex;
 			//static constexpr uint32_t FrameCount = 4;
 			Fence* mDecodeFence;
+			bool mFeaturesSupported;
 		};
 	}
 

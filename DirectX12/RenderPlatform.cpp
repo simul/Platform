@@ -1358,7 +1358,7 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 
 void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue)
 {
-	if (bImmediateContextActive)
+	if (bImmediateContextActive && !bExternalImmediate)
 	{
 		ExecuteCommandList(commandQueue, mImmediateCommandList);
 		bImmediateContextActive = false;
@@ -1370,8 +1370,8 @@ void RenderPlatform::ResetImmediateCommandList()
 	if (!bImmediateContextActive && !bExternalImmediate)
 	{
 		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
+		bImmediateContextActive = true;
 	}
-	bImmediateContextActive = true;
 }
 
 void RenderPlatform::AsyncResetCommandAllocator()

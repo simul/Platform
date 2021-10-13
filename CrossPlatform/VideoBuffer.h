@@ -46,13 +46,13 @@ namespace simul
 				return mBufferType;
 			}
 			//! Set up as a buffer for video encoding/decoding read operations.
-			virtual void EnsureBuffer(crossplatform::RenderPlatform* r, void* context, VideoBufferType bufferType, const void* data, uint32_t dataSize) = 0;
+			virtual void EnsureBuffer(crossplatform::RenderPlatform* r, void* graphicsContext, void* videoContext, VideoBufferType bufferType, const void* data, uint32_t dataSize) = 0;
 			//! Get a pointer to the data for updating. Must call Unmap after any changes.
-			virtual void* Map(void* context) = 0;
+			virtual void* Map(void* graphicsContext, void* videoContext) = 0;
 			//! Return the modified data to the device object.
-			virtual void Unmap(void* context) = 0;
+			virtual void Unmap(void* graphicsContext, void* videoContext) = 0;
 			//! Update the data in the buffer.
-			virtual void Update(void* context, const void* data, uint32_t dataSize) = 0;
+			virtual void Update(void* graphicsContext, void* videoContext, const void* data, uint32_t dataSize) = 0;
 
 		protected:
 			VideoBufferType mBufferType;
