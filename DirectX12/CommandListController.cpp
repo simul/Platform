@@ -107,7 +107,7 @@ void CommandListController::ResetCommandList()
 	auto res = mAllocators[mIndex]->Reset();
 	SIMUL_ASSERT(res == S_OK);
 
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+#if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
