@@ -194,7 +194,13 @@ void Texture::InvalidateDeviceObjects()
 
 	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 	// We dont want to release the resources of the external texture
-	if (!mInitializedFromExternal)
+	// BUT: we DO want to decrement the refcount, because we added a ref when it was initialized.
+	if (mInitializedFromExternal)
+	{
+		if (mTextureDefault)
+			rPlat->PushToReleaseManager(mTextureDefault, (name + "_Default(External)").c_str());
+	}
+	else
 	{
 		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
 		// release manager
@@ -820,7 +826,12 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	{
 		return true;
 	}
-
+	if (mTextureDefault)
+	{
+		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+	}
+	t->AddRef();
 	FreeSRVTables();
 	mTextureDefault				= t;
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
