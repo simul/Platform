@@ -5,6 +5,7 @@
 #include "Platform/DirectX12/Texture.h"
 #include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/CommandListController.h"
+#include <unordered_map>
 
 struct ID3D12VideoDevice2;
 struct ID3D12VideoDecoder1;
@@ -26,6 +27,7 @@ namespace simul
 		public:
 			void ChangeState(ID3D12VideoDecodeCommandListType* commandList, bool write = false);
 		};
+
 		//! A class to implement common video encodng/decoding functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT VideoDecoder: public cp::VideoDecoder
 		{
@@ -38,6 +40,11 @@ namespace simul
 			cp::VideoDecoderResult Shutdown() override;
 
 			static cp::VideoDecoderResult CheckSupport(ID3D12VideoDeviceType* deviceHandle, const cp::VideoDecoderParams& decoderParams);
+
+			//
+			// Map of possible input and output VP formats
+			// 
+			static const std::unordered_map<DXGI_FORMAT, DXGI_COLOR_SPACE_TYPE> VideoFormats;
 
 		protected:
 			cp::VideoDecoderResult Init() override;
