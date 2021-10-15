@@ -831,6 +831,11 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
 	}
+	if (!t)
+	{
+		return false;
+	}
+
 	t->AddRef();
 	FreeSRVTables();
 	mTextureDefault				= t;
