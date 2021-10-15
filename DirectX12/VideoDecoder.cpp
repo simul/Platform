@@ -15,6 +15,20 @@
 using namespace simul;
 using namespace dx12;
 
+const std::unordered_map<DXGI_FORMAT, DXGI_COLOR_SPACE_TYPE> VideoDecoder::VideoFormats
+{
+	{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 },
+	{ DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 },
+	{ DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 },
+	{ DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020 },
+	{ DXGI_FORMAT_P016, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020 },
+	{ DXGI_FORMAT_420_OPAQUE, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_YUY2, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_AYUV, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 }
+};
+
 VideoDecoder::VideoDecoder()
 	: mVideoDevice(nullptr)
 	, mDecoder(nullptr)
@@ -101,10 +115,11 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t buff
 	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
 	if (mDecoderParams.decodeFormat != mDecoderParams.surfaceFormat)
 	{
+		DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
+		DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.surfaceFormat);
 		convArgs.Enable = true;
-		// TODO: Don't hardcode color spaces.
-		convArgs.DecodeColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709;
-		convArgs.OutputColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		convArgs.DecodeColorSpace = VideoFormats.find(dxgiDecodeFormat)->second;
+		convArgs.OutputColorSpace = VideoFormats.find(dxgiSurfaceFormat)->second;
 		((DecoderTexture*)mTextures[mCurrentTextureIndex])->ChangeState(decodeCommandList, true);
 		convArgs.pReferenceTexture2D = mTextures[mCurrentTextureIndex]->AsD3D12Resource();
 		convArgs.ReferenceSubresource = 0;
@@ -384,9 +399,9 @@ cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device,
 	cs.DecodeSample.Width = ds.Width;
 	cs.DecodeSample.Height = ds.Height;
 	cs.DecodeSample.Format.Format = ds.DecodeFormat;
-	cs.DecodeSample.Format.ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709;
+	cs.DecodeSample.Format.ColorSpace = VideoFormats.find(ds.DecodeFormat)->second;
 	cs.OutputFormat.Format = RenderPlatform::ToDxgiFormat(decoderParams.decodeFormat);
-	cs.OutputFormat.ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+	cs.OutputFormat.ColorSpace = VideoFormats.find(cs.OutputFormat.Format)->second; //DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
 	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_CONVERSION_SUPPORT, &cs, sizeof(cs))))
 	{
