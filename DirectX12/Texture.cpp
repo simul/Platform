@@ -1426,21 +1426,17 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 	pixelFormat = f;
 	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat = dxgi_format;
-	DXGI_FORMAT srvFormat = dxgi_format;
 	if (texture2dFormat == DXGI_FORMAT_D32_FLOAT)
 	{
 		texture2dFormat = DXGI_FORMAT_R32_TYPELESS;
-		srvFormat = DXGI_FORMAT_R32_FLOAT;
 	}
 	if (texture2dFormat == DXGI_FORMAT_D16_UNORM)
 	{
 		texture2dFormat = DXGI_FORMAT_R16_TYPELESS;
-		srvFormat = DXGI_FORMAT_R16_UNORM;
 	}
 	if (texture2dFormat == DXGI_FORMAT_D24_UNORM_S8_UINT)
 	{
 		texture2dFormat = DXGI_FORMAT_R24G8_TYPELESS;
-		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
 	dim = 2;
 	HRESULT res = S_FALSE;

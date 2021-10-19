@@ -11,7 +11,6 @@ using namespace crossplatform;
 VideoDecoder::VideoDecoder()
 	: mRenderPlatform(nullptr)
 	, mInputBuffer(nullptr)
-	, mSurface(nullptr)
 	, mNumReferenceFrames(0)
 	, mCurrentTextureIndex(0)
 	, mMaxReferenceFrames(0)
@@ -38,10 +37,11 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	}
 
 	mInputBuffer = CreateVideoBuffer();
-	mInputBuffer->EnsureBuffer(mRenderPlatform, GetGraphicsContext(), GetDecodeContext(), VideoBufferType::DECODE_READ, nullptr, 250000);
+	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, 250000);
 
 	// This could vary depending on the codec.
 	mMaxReferenceFrames = 6;
+	mCurrentTextureIndex = 0;
 
 	mTextures.resize(mMaxReferenceFrames);
 
@@ -56,31 +56,19 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	return VideoDecoderResult::Ok;
 }
 
-VideoDecoderResult VideoDecoder::RegisterSurface(Texture* surface)
-{
-	mSurface = surface;
-	return VideoDecoderResult::Ok;
-}
-
-VideoDecoderResult VideoDecoder::Decode(const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
+VideoDecoderResult VideoDecoder::Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
 {
 	// If the frame is an IDR, the reference frames must be flushed.
 	if (IsIDR(static_cast<const uint8_t*>(buffer), bufferSize))
 	{
 		mNumReferenceFrames = 0;
 	}
-	DecodeFrame(buffer, bufferSize, decodeArgs, decodeArgCount);
+	DecodeFrame(outputTexture, buffer, bufferSize, decodeArgs, decodeArgCount);
 	if (mNumReferenceFrames < mMaxReferenceFrames)
 	{
 		mNumReferenceFrames++;
 	}
 	mCurrentTextureIndex = (mCurrentTextureIndex + 1) % mTextures.size();
-	return VideoDecoderResult::Ok;
-}
-
-VideoDecoderResult VideoDecoder::UnregisterSurface()
-{
-	mSurface = nullptr;
 	return VideoDecoderResult::Ok;
 }
 
