@@ -1091,7 +1091,7 @@ void RenderPlatform::BeginD3D12Frame()
 				if (ptr)
 				{
 					ID3D12DeviceChild* chkptr = nullptr;
-					HRESULT res = ptr->QueryInterface<ID3D12DeviceChild>(&chkptr);
+					HRESULT res = ptr->QueryInterface(__uuidof(ID3D12DeviceChild), (void**)&chkptr);
 					if (!chkptr || res != S_OK)
 					{
 						std::string lastErrorStr = "";
