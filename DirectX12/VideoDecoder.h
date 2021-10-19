@@ -34,11 +34,7 @@ namespace simul
 		public:
 			VideoDecoder();
 			~VideoDecoder();
-			cp::VideoDecoderResult RegisterSurface(cp::Texture* surface) override;
-			
-			cp::VideoDecoderResult UnregisterSurface() override;
 			cp::VideoDecoderResult Shutdown() override;
-
 			static cp::VideoDecoderResult CheckSupport(ID3D12VideoDeviceType* deviceHandle, const cp::VideoDecoderParams& decoderParams);
 
 			//
@@ -48,7 +44,7 @@ namespace simul
 
 		protected:
 			cp::VideoDecoderResult Init() override;
-			cp::VideoDecoderResult DecodeFrame(const void* buffer, size_t bufferSize, const cp::VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) override;
+			cp::VideoDecoderResult DecodeFrame(cp::Texture* outputTexture, const void* buffer, size_t bufferSize, const cp::VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) override;
 			void* GetGraphicsContext() const override;
 			void* GetDecodeContext() const override;
 			cp::VideoBuffer* CreateVideoBuffer() const override;
