@@ -16,10 +16,9 @@ namespace simul
 			VideoBuffer();
 			~VideoBuffer();
 			void InvalidateDeviceObjects();
-			void EnsureBuffer(crossplatform::RenderPlatform* r, void* graphicsContext, void* videoContext, crossplatform::VideoBufferType bufferType, const void* data, uint32_t dataSize) override;
-			void* Map(void* graphicsContext, void* videoContext) override;
-			void Unmap(void* graphicsContext, void* videoContext) override;
-			void Update(void* graphicsContext, void* videoContext, const void* data, uint32_t dataSize) override;
+			void EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::VideoBufferType bufferType, uint32_t dataSize) override;
+			void ChangeState(void* videoContext, bool toUpdateState) override;
+			void Update(void* graphicsContext, const void* data, uint32_t dataSize) override;
 			ID3D12Resource * const AsD3D12Buffer()  const override
 			{
 				return mGpuHeap;
@@ -34,6 +33,7 @@ namespace simul
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;
 			crossplatform::RenderPlatform* renderPlatform = nullptr;
+			D3D12_RESOURCE_STATES mState;
 		};
 	}
 };

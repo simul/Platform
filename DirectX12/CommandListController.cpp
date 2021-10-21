@@ -110,9 +110,9 @@ void CommandListController::ResetCommandList()
 #if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
 		((ID3D12VideoEncodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
 		((ID3D12VideoProcessCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
 	else
 #endif
@@ -138,9 +138,9 @@ void CommandListController::CloseCommandList()
 #if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Close();
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
 		((ID3D12VideoEncodeCommandList*)mCommandList)->Close();
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
 		((ID3D12VideoProcessCommandList*)mCommandList)->Close();
 	else
 #endif

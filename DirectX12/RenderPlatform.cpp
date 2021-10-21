@@ -1090,6 +1090,32 @@ void RenderPlatform::BeginD3D12Frame()
 				ID3D12DeviceChild* ptr = resource.second.second;
 				if (ptr)
 				{
+					ID3D12DeviceChild* chkptr = nullptr;
+					HRESULT res = ptr->QueryInterface(__uuidof(ID3D12DeviceChild), (void**)&chkptr);
+					if (!chkptr || res != S_OK)
+					{
+						std::string lastErrorStr = "";
+						DWORD err = GetLastError();
+						char* msg = nullptr;
+						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+							nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr);
+						if (msg != nullptr && msgSize > 0)
+						{
+							lastErrorStr = std::string(msg, msgSize);
+							LocalFree(msg);
+						}
+
+						SIMUL_CERR << "Fatal error in Release Manager." << std::endl;
+						SIMUL_CERR << resource.second.first << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
+						SIMUL_CERR << "QueryInterface<ID3D12DeviceChild> failed to valid the resource." << std::endl;
+						SIMUL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
+						SIMUL_BREAK("Fatal error in Release Manager.");
+					}
+					else
+					{
+						SAFE_RELEASE(chkptr);
+					}
+
 					remainRefs = ptr->Release();
 				}
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS

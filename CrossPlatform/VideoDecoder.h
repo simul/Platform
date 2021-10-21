@@ -44,8 +44,8 @@ namespace simul
 			VideoCodec codec = VideoCodec::HEVC;
 			// Native format stream is decoded to.
 			PixelFormat decodeFormat = PixelFormat::NV12;
-			// Format of the surface the native format is converted to if they are different. 
-			PixelFormat surfaceFormat = PixelFormat::RGBA_8_UNORM;
+			// Format of the output texture the native format is converted to. 
+			PixelFormat outputFormat = PixelFormat::NV12;
 			uint32_t width = 1920;
 			uint32_t height = 1080;
 			uint32_t minWidth = 1200;
@@ -75,14 +75,12 @@ namespace simul
 			VideoDecoder();
 			virtual ~VideoDecoder();
 			VideoDecoderResult Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams);
-			virtual VideoDecoderResult RegisterSurface(Texture* surface);
-			VideoDecoderResult Decode(const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0);
-			virtual VideoDecoderResult UnregisterSurface();
+			VideoDecoderResult Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0);
 			virtual VideoDecoderResult Shutdown();
 
 		protected:
 			virtual VideoDecoderResult Init() = 0;
-			virtual VideoDecoderResult DecodeFrame(const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) = 0;
+			virtual VideoDecoderResult DecodeFrame(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0) = 0;
 			virtual void* GetGraphicsContext() const = 0;
 			virtual void* GetDecodeContext() const = 0;
 			virtual VideoBuffer* CreateVideoBuffer() const = 0;
@@ -93,13 +91,11 @@ namespace simul
 
 			RenderPlatform* mRenderPlatform;
 			VideoDecoderParams mDecoderParams;
-			Texture* mSurface;
 			VideoBuffer* mInputBuffer;
 			uint32_t mMaxReferenceFrames;
 			std::vector<Texture*> mTextures;
 			uint32_t mNumReferenceFrames;
 			uint32_t mCurrentTextureIndex;
-			//static constexpr uint32_t FrameCount = 4;
 			Fence* mDecodeFence;
 			bool mFeaturesSupported;
 		};
