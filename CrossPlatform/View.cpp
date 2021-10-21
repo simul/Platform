@@ -179,6 +179,11 @@ void ViewManager::CleanUp(int current_frame,int max_age)
 {
 	for (auto i:views)
 	{
+		if(i.second->last_framenumber==-1)
+		{
+			i.second->last_framenumber=current_frame;
+			continue;
+		}
 		int age=current_frame-i.second->last_framenumber;
 		if(age>max_age)
 		{
