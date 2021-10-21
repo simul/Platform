@@ -937,7 +937,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
                 depthDesc.Flags                         = D3D12_DSV_FLAG_NONE;
                 depthDesc.Texture2D                     = dsv;
 
-                mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "Texture2DDSVHeap",false);
+                mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, (name+" Texture2DDSVHeap").c_str(),false);
                 renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &depthDesc, mTextureDsHeap.CpuHandle());
                 depthStencilView12 = mTextureDsHeap.CpuHandle();
                 mTextureDsHeap.Offset();
