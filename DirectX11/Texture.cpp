@@ -625,6 +625,10 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 		}
 		SAFE_RELEASE(ppd);
 	}
+	else
+	{
+		return false;
+	}
 	dim=2;
 	return true;
 }

@@ -1,4 +1,3 @@
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
 #include "Platform/DirectX12/VideoDecoder.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringToWString.h"
@@ -11,9 +10,24 @@
 #include "Platform/DirectX12/Texture.h"
 #include <d3d12video.h>
 #include <algorithm>
+#include <dxva.h>
 
 using namespace simul;
 using namespace dx12;
+
+const std::unordered_map<DXGI_FORMAT, DXGI_COLOR_SPACE_TYPE> VideoDecoder::VideoFormats
+{
+	{ DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 },
+	{ DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 },
+	{ DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 },
+	{ DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020 },
+	{ DXGI_FORMAT_P016, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020 },
+	{ DXGI_FORMAT_420_OPAQUE, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_YUY2, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_AYUV, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 },
+	{ DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 }
+};
 
 VideoDecoder::VideoDecoder()
 	: mVideoDevice(nullptr)
@@ -42,6 +56,8 @@ cp::VideoDecoderResult VideoDecoder::Init()
 		return r;
 	}
 
+	mFeaturesSupported = true;
+
 	r = CreateVideoDecoder();
 	if (DEC_FAILED(r))
 	{
@@ -59,53 +75,49 @@ cp::VideoDecoderResult VideoDecoder::Init()
 	return cp::VideoDecoderResult::Ok;
 }
 
-cp::VideoDecoderResult VideoDecoder::RegisterSurface(cp::Texture* surface)
+cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, const void* buffer, size_t bufferSize, const cp::VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
 {
-	return cp::VideoDecoder::RegisterSurface(surface);
-}
-
-cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t bufferSize, const cp::VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
-{
+	if (!mFeaturesSupported)
+	{
+		SIMUL_CERR << "Driver does not support this decoding configuration!";
+		return cp::VideoDecoderResult::UnsupportedFeatures;
+	}
 	RenderPlatform* dx12Platform = (RenderPlatform*)mRenderPlatform;
-	// We use a graphics command list for updating the buffer and a decode command list 
-	// for the decoidng operation.
+	ID3D12VideoDecodeCommandListType* decodeCommandList = (ID3D12VideoDecodeCommandListType*)mDecodeCLC.GetCommandList();
+	ID3D12GraphicsCommandList* graphicsCommandList = (ID3D12GraphicsCommandList*)mGraphicsCLC.GetCommandList();
+	Texture* dx12OutputTexture = (Texture*)outputTexture;
+	ID3D12Resource* outputResource = dx12OutputTexture->AsD3D12Resource();
+
 	mGraphicsCLC.ResetCommandList();
-	mInputBuffer->Update(mGraphicsCLC.GetCommandList(), buffer, bufferSize);
+	mDecodeCLC.ResetCommandList();
+
+	mInputBuffer->Update(graphicsCommandList, buffer, bufferSize);
+		
 	mGraphicsCLC.ExecuteCommandList();
 	Signal(mGraphicsCLC.GetCommandQueue(), mDecodeFence);
 
-	mDecodeCLC.ResetCommandList();
-
-	ID3D12VideoDecodeCommandListType* decodeCommandList = (ID3D12VideoDecodeCommandListType*)mDecodeCLC.GetCommandList();
-
-	Texture* dx12Surface = (Texture*)mSurface;
-	ID3D12Resource* surfaceResource = dx12Surface->AsD3D12Resource();
 	D3D12_VIDEO_DECODE_OUTPUT_STREAM_ARGUMENTS outputArgs;
-	// TODO: Support non-conversion.
-
-	D3D12_RESOURCE_STATES surfaceStateBefore = dx12Surface->GetState();
-	D3D12_RESOURCE_STATES surfaceStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
-	// Change surface texture state.
-	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(surfaceResource, surfaceStateBefore, surfaceStateAfter));
-
-	outputArgs.pOutputTexture2D = surfaceResource;
 	outputArgs.OutputSubresource = 0;
 
+	// This texture will either hold the native output regardless of whether conversion is enabled.
+	((DecoderTexture*)mTextures[mCurrentTextureIndex])->ChangeState(decodeCommandList, true);
+
+	D3D12_RESOURCE_STATES outputTextureStateBefore = dx12OutputTexture->GetState();
+	D3D12_RESOURCE_STATES outputTextureStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+	// Change surface texture state.
+	//decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter, 0));
+
 	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
-	if (mDecoderParams.decodeFormat != mDecoderParams.surfaceFormat)
-	{
-		convArgs.Enable = true;
-		// TODO: Don't hardcode color spaces.
-		convArgs.DecodeColorSpace = DXGI_COLOR_SPACE_TYPE::DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709;
-		convArgs.OutputColorSpace = DXGI_COLOR_SPACE_TYPE::DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-		((DecoderTexture*)mTextures[mCurrentTextureIndex])->ChangeState(decodeCommandList, true);
-		convArgs.pReferenceTexture2D = mTextures[mCurrentTextureIndex]->AsD3D12Resource();
-		convArgs.ReferenceSubresource = 0;
-	}
-	else
-	{
-		convArgs.Enable = false;
-	}
+	
+	outputArgs.pOutputTexture2D = outputResource;
+	DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
+	DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.outputFormat);
+	// We always enable conversion because the output texture should always 
+	convArgs.Enable = true;
+	convArgs.DecodeColorSpace = VideoFormats.find(dxgiDecodeFormat)->second;
+	convArgs.OutputColorSpace = VideoFormats.find(dxgiSurfaceFormat)->second;
+	convArgs.pReferenceTexture2D = mTextures[mCurrentTextureIndex]->AsD3D12Resource();
+	convArgs.ReferenceSubresource = 0;
 
 	D3D12_VIDEO_DECODE_INPUT_STREAM_ARGUMENTS inputArgs;
 	inputArgs.CompressedBitstream.Size = bufferSize;
@@ -113,17 +125,26 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t buff
 	inputArgs.CompressedBitstream.pBuffer = mInputBuffer->AsD3D12Buffer();
 	inputArgs.pHeap = mHeap;
 
-	// D3D12 accepts a maximum of 10 arguments. 
+	// DXVA accepts a maximum of 10 arguments. 
 	inputArgs.NumFrameArguments = std::min<uint32_t>(decodeArgCount, 10);
 	for (uint32_t i = 0; i < inputArgs.NumFrameArguments; ++i)
 	{
 		auto& frameArgs = inputArgs.FrameArguments[i];
 		frameArgs.pData = decodeArgs[i].data;
+		//DXVA_PicParams_HEVC* test = static_cast<DXVA_PicParams_HEVC*>(frameArgs.pData);
 		frameArgs.Size = decodeArgs[i].size;
 		switch (decodeArgs[i].type)
 		{
 		case cp::VideoDecodeArgumentType::PictureParameters:
 			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE::D3D12_VIDEO_DECODE_ARGUMENT_TYPE_PICTURE_PARAMETERS;
+			if (mDecoderParams.codec == cp::VideoCodec::H264)
+			{
+				frameArgs.Size = sizeof(DXVA_PicParams_H264);
+			}
+			else if (mDecoderParams.codec == cp::VideoCodec::HEVC)
+			{
+				frameArgs.Size = sizeof(DXVA_PicParams_HEVC);
+			}
 			break;
 		case cp::VideoDecodeArgumentType::MaxValid:
 			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE::D3D12_VIDEO_DECODE_ARGUMENT_TYPE_MAX_VALID;
@@ -135,17 +156,16 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t buff
 			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE::D3D12_VIDEO_DECODE_ARGUMENT_TYPE_INVERSE_QUANTIZATION_MATRIX;
 			break;
 		default:
-			SIMUL_CERR_ONCE << "Invalid video decode argument type!";
+			SIMUL_CERR << "Invalid video decode argument type!";
 			return cp::VideoDecoderResult::InvalidDecodeArgumentType;
 		}
 	}
 
 	inputArgs.ReferenceFrames.NumTexture2Ds = mNumReferenceFrames;
+	std::vector<ID3D12Resource*> refTexs(mNumReferenceFrames);
+	std::vector<ID3D12VideoDecoderHeap*> heaps(mNumReferenceFrames);
 	if (mNumReferenceFrames)
 	{
-		std::vector<ID3D12Resource*> refTexs(mNumReferenceFrames);
-		std::vector<ID3D12VideoDecoderHeap*> heaps;
-
 		int index = 0;
 		int i = mCurrentTextureIndex - 1;
 		size_t numTextures = mTextures.size();
@@ -164,13 +184,18 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t buff
 		inputArgs.ReferenceFrames.ppHeaps = heaps.data();
 	}
 
+	// Set to required state for decoding.
+	mInputBuffer->ChangeState(decodeCommandList, false);
+
 	decodeCommandList->DecodeFrame(mDecoder, &outputArgs, &inputArgs);
 
+	mInputBuffer->ChangeState(decodeCommandList, true);
+
 	// Change surface texture state back.
-	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(surfaceResource, surfaceStateAfter, surfaceStateBefore));
+	//decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateAfter, outputTextureStateBefore));
 
 	// Ensure gpu waits for the buffer to be uploaded before decoding.
-	WaitOnFence(mGraphicsCLC.GetCommandQueue(), mDecodeFence);
+	WaitOnFence(mDecodeCLC.GetCommandQueue(), mDecodeFence);
 
 	mDecodeCLC.ExecuteCommandList();
 	
@@ -181,15 +206,9 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(const void* buffer, size_t buff
 	return cp::VideoDecoderResult::Ok;
 }
 
-cp::VideoDecoderResult VideoDecoder::UnregisterSurface()
-{
-	return cp::VideoDecoder::UnregisterSurface();
-}
-
 cp::VideoDecoderResult VideoDecoder::Shutdown()
 {
 	cp::VideoDecoder::Shutdown();
-	UnregisterSurface();
 	SAFE_DELETE(mInputBuffer);
 	mGraphicsCLC.Release();
 	mDecodeCLC.Release();
@@ -307,47 +326,76 @@ void* VideoDecoder::GetGraphicsContext() const
 	return mGraphicsCLC.GetCommandList();
 }
 
+void* VideoDecoder::GetDecodeContext() const
+{
+	return mDecodeCLC.GetCommandList();
+}
+
 cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device, const cp::VideoDecoderParams& decoderParams)
 {
-	D3D12_FEATURE_DATA_VIDEO_DECODE_SUPPORT fd;
-	fd.BitRate = decoderParams.bitRate;
-	fd.DecodeFormat = RenderPlatform::ToDxgiFormat(decoderParams.decodeFormat);
-	fd.NodeIndex = 0;
-	fd.Width = decoderParams.width;
-	fd.Height = decoderParams.height;
-	fd.Configuration.BitstreamEncryption = D3D12_BITSTREAM_ENCRYPTION_TYPE_NONE;
-	fd.Configuration.InterlaceType = D3D12_VIDEO_FRAME_CODED_INTERLACE_TYPE_NONE;
-	fd.DecodeTier = D3D12_VIDEO_DECODE_TIER::D3D12_VIDEO_DECODE_TIER_2;
+	D3D12_FEATURE_DATA_VIDEO_DECODE_SUPPORT ds;
+	ds.BitRate = decoderParams.bitRate;
+	ds.DecodeFormat = RenderPlatform::ToDxgiFormat(decoderParams.decodeFormat);
+	ds.NodeIndex = 0;
+	ds.Width = decoderParams.width;
+	ds.Height = decoderParams.height;
+	ds.Configuration.BitstreamEncryption = D3D12_BITSTREAM_ENCRYPTION_TYPE_NONE;
+	ds.Configuration.InterlaceType = D3D12_VIDEO_FRAME_CODED_INTERLACE_TYPE_NONE;
+	ds.DecodeTier = D3D12_VIDEO_DECODE_TIER::D3D12_VIDEO_DECODE_TIER_2;
 
 	switch (decoderParams.codec)
 	{
 	case cp::VideoCodec::H264:
-		fd.Configuration.DecodeProfile = D3D12_VIDEO_DECODE_PROFILE_H264;
+		ds.Configuration.DecodeProfile = D3D12_VIDEO_DECODE_PROFILE_H264;
 		break;
 	case cp::VideoCodec::HEVC:
-		fd.Configuration.DecodeProfile = D3D12_VIDEO_DECODE_PROFILE_HEVC_MAIN;
+		ds.Configuration.DecodeProfile = D3D12_VIDEO_DECODE_PROFILE_HEVC_MAIN;
 		break;
 	default:
 		SIMUL_CERR_ONCE << "Invalid video codec provided!";
 		return cp::VideoDecoderResult::InvalidCodec;
 	}
 
-	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_SUPPORT, &fd, sizeof(fd))))
+	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_SUPPORT, &ds, sizeof(ds))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred checking feature support of the video device.";
+		SIMUL_CERR_ONCE << "Error occurred checking decode feature support of the video device.";
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 
-	if (fd.SupportFlags != D3D12_VIDEO_DECODE_SUPPORT_FLAG_SUPPORTED)
+	if (ds.SupportFlags != D3D12_VIDEO_DECODE_SUPPORT_FLAG_SUPPORTED)
 	{
 		SIMUL_CERR_ONCE << "The video device does not have all the required features for this decoding operation.";
 		return cp::VideoDecoderResult::UnsupportedFeatures;
 	}
 
-	if (fd.ConfigurationFlags == D3D12_VIDEO_DECODE_CONFIGURATION_FLAG_HEIGHT_ALIGNMENT_MULTIPLE_32_REQUIRED)
+	if (ds.ConfigurationFlags == D3D12_VIDEO_DECODE_CONFIGURATION_FLAG_HEIGHT_ALIGNMENT_MULTIPLE_32_REQUIRED)
 	{
 		SIMUL_CERR_ONCE << "Height of output must be a multiple of 32!";
 		return cp::VideoDecoderResult::UnsupportedDimensions;
+	}
+
+	D3D12_FEATURE_DATA_VIDEO_DECODE_CONVERSION_SUPPORT cs;
+	cs.BitRate = ds.BitRate;
+	cs.FrameRate = ds.FrameRate;
+	cs.NodeIndex = ds.NodeIndex;
+	cs.Configuration = ds.Configuration;
+	cs.DecodeSample.Width = ds.Width;
+	cs.DecodeSample.Height = ds.Height;
+	cs.DecodeSample.Format.Format = ds.DecodeFormat;
+	cs.DecodeSample.Format.ColorSpace = VideoFormats.find(ds.DecodeFormat)->second;
+	cs.OutputFormat.Format = RenderPlatform::ToDxgiFormat(decoderParams.outputFormat);
+	cs.OutputFormat.ColorSpace = VideoFormats.find(cs.OutputFormat.Format)->second; 
+
+	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_CONVERSION_SUPPORT, &cs, sizeof(cs))))
+	{
+		SIMUL_CERR_ONCE << "Error occurred checking decode conversion support of the video device.";
+		return cp::VideoDecoderResult::VideoAPIError;
+	}
+
+	if (cs.SupportFlags != D3D12_VIDEO_DECODE_CONVERSION_SUPPORT_FLAG_SUPPORTED)
+	{
+		SIMUL_CERR_ONCE << "The driver does not support conversion with the provided formats!";
+		return cp::VideoDecoderResult::UnsupportedFeatures;
 	}
 
 	return cp::VideoDecoderResult::Ok;
@@ -375,5 +423,3 @@ void DecoderTexture::ChangeState(ID3D12VideoDecodeCommandListType* commandList, 
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTextureDefault, stateBefore, stateAfter));
 	mResourceState = stateAfter;
 }
-
-#endif

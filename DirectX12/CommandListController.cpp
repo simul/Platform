@@ -4,9 +4,9 @@
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/GpuProfiler.h"
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
-#include <d3d12video.h> //This header is not compatible with Xbox consoles - AJR.
-#endif 
+#if SIMUL_D3D12_VIDEO_SUPPORTED
+#include <d3d12video.h>
+#endif
 #include <algorithm>
 
 using namespace simul;
@@ -21,7 +21,6 @@ CommandListController::CommandListController()
 	, mIndex(0)
 	, mCommandQueueOwner(false)
 	, mCommandListRecording(false)
-	, mFirstReset(true)
 	, mWindowEvent(nullptr)
 {
 
@@ -50,13 +49,11 @@ void CommandListController::Initialize(RenderPlatform* renderPlatform, D3D12_COM
 
 	mNumAllocators = numAllocators;
 	mIndex = 0;
-	mCommandListRecording = false;
-	mFirstReset = true;
 
 	mAllocators = new ID3D12CommandAllocator*[mNumAllocators];
 	mFences = new Fence*[mNumAllocators];
 
-	for (int i = 0; i < mNumAllocators; ++i)
+	for (uint32_t i = 0; i < mNumAllocators; ++i)
 	{
 		V_CHECK(device->CreateCommandAllocator(commandListType, SIMUL_PPV_ARGS(&mAllocators[i])));
 		std::string resourceName = commandName + "Allocator" + std::to_string(i);
@@ -68,6 +65,8 @@ void CommandListController::Initialize(RenderPlatform* renderPlatform, D3D12_COM
 	
 	V_CHECK(device->CreateCommandList(0, commandListType, mAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList)));
 	
+	mCommandListRecording = true;
+
 	std::string commandListName = commandName + "CommandList";
 	mCommandList->SetName(platform::core::StringToWString(commandListName).c_str());
 
@@ -76,7 +75,10 @@ void CommandListController::Initialize(RenderPlatform* renderPlatform, D3D12_COM
 
 void CommandListController::Release()
 {
-	CloseCommandList();
+	if (mCommandListRecording)
+	{
+		//CloseCommandList();
+	}
 	SAFE_DELETE_ARRAY_MEMBERS(mFences, mNumAllocators);
 	SAFE_DELETE_ARRAY(mFences);
 	SAFE_RELEASE(mCommandList);
@@ -93,28 +95,24 @@ void CommandListController::ResetCommandList()
 		return;
 	}
 
-	// No need to sync if the command list has not executed yet using the current allocator.
-	if (!mFirstReset)
+	// If the GPU is behind, wait:
+	if (mFences[mIndex]->AsD3D12Fence()->GetCompletedValue() < mFences[mIndex]->value)
 	{
-		// If the GPU is behind, wait:
-		if (mFences[mIndex]->AsD3D12Fence()->GetCompletedValue() < mFences[mIndex]->value)
-		{
-			mFences[mIndex]->AsD3D12Fence()->SetEventOnCompletion(mFences[mIndex]->value, mWindowEvent);
-			WaitForSingleObject(mWindowEvent, INFINITE);
-		}
-		// ExecuteCommandList will Signal this value:
-		mFences[mIndex]->value++;
-
-		auto res = mAllocators[mIndex]->Reset();
-		SIMUL_ASSERT(res == S_OK);
+		mFences[mIndex]->AsD3D12Fence()->SetEventOnCompletion(mFences[mIndex]->value, mWindowEvent);
+		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
+	// ExecuteCommandList will Signal this value:
+	mFences[mIndex]->value++;
 
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+	auto res = mAllocators[mIndex]->Reset();
+	SIMUL_ASSERT(res == S_OK);
+
+#if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
 		((ID3D12VideoEncodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
 		((ID3D12VideoProcessCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
 	else
 #endif
@@ -132,26 +130,17 @@ void CommandListController::ExecuteCommandList()
 		mCommandQueue->Signal(mFences[mIndex]->AsD3D12Fence(), mFences[mIndex]->value);
 
 		mIndex = (mIndex + 1) % mNumAllocators;
-		if (!mIndex)
-		{
-			mFirstReset = false;
-		}
 	}
 }
 
 void CommandListController::CloseCommandList()
 {
-	if (!mCommandListRecording)
-	{
-		return;
-	}
-
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+#if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Close();
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
 		((ID3D12VideoEncodeCommandList*)mCommandList)->Close();
-	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
+	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
 		((ID3D12VideoProcessCommandList*)mCommandList)->Close();
 	else
 #endif

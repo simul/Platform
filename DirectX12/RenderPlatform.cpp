@@ -1090,6 +1090,31 @@ void RenderPlatform::BeginD3D12Frame()
 				ID3D12DeviceChild* ptr = resource.second.second;
 				if (ptr)
 				{
+					ID3D12DeviceChild* chkptr = nullptr;
+					HRESULT res = ptr->QueryInterface(__uuidof(ID3D12DeviceChild), (void**)&chkptr);
+					if (!chkptr || res != S_OK)
+					{
+						std::string lastErrorStr = "";
+						DWORD err = GetLastError();
+						char msg[128 * 1024];
+						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+							nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr);
+						if (msg != nullptr && msgSize > 0)
+						{
+							lastErrorStr = std::string(msg, msgSize);
+						}
+
+						SIMUL_CERR << "Fatal error in Release Manager." << std::endl;
+						SIMUL_CERR << resource.second.first << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
+						SIMUL_CERR << "QueryInterface<ID3D12DeviceChild> failed to valid the resource." << std::endl;
+						SIMUL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
+						SIMUL_BREAK("Fatal error in Release Manager.");
+					}
+					else
+					{
+						SAFE_RELEASE(chkptr);
+					}
+
 					remainRefs = ptr->Release();
 				}
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
@@ -1358,7 +1383,7 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 
 void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue)
 {
-	if (bImmediateContextActive)
+	if (bImmediateContextActive && !bExternalImmediate)
 	{
 		ExecuteCommandList(commandQueue, mImmediateCommandList);
 		bImmediateContextActive = false;
@@ -1370,8 +1395,8 @@ void RenderPlatform::ResetImmediateCommandList()
 	if (!bImmediateContextActive && !bExternalImmediate)
 	{
 		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
+		bImmediateContextActive = true;
 	}
-	bImmediateContextActive = true;
 }
 
 void RenderPlatform::AsyncResetCommandAllocator()

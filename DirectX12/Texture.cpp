@@ -194,7 +194,13 @@ void Texture::InvalidateDeviceObjects()
 
 	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 	// We dont want to release the resources of the external texture
-	if (!mInitializedFromExternal)
+	// BUT: we DO want to decrement the refcount, because we added a ref when it was initialized.
+	if (mInitializedFromExternal)
+	{
+		if (mTextureDefault)
+			rPlat->PushToReleaseManager(mTextureDefault, (name + "_Default(External)").c_str());
+	}
+	else
 	{
 		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
 		// release manager
@@ -820,7 +826,17 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	{
 		return true;
 	}
+	if (mTextureDefault)
+	{
+		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+	}
+	if (!t)
+	{
+		return false;
+	}
 
+	t->AddRef();
 	FreeSRVTables();
 	mTextureDefault				= t;
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
@@ -921,7 +937,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
                 depthDesc.Flags                         = D3D12_DSV_FLAG_NONE;
                 depthDesc.Texture2D                     = dsv;
 
-                mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "Texture2DDSVHeap",false);
+                mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, (name+" Texture2DDSVHeap").c_str(),false);
                 renderPlatform->AsD3D12Device()->CreateDepthStencilView(mTextureDefault, &depthDesc, mTextureDsHeap.CpuHandle());
                 depthStencilView12 = mTextureDsHeap.CpuHandle();
                 mTextureDsHeap.Offset();
@@ -1404,27 +1420,23 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
 {
-#if !(defined(_DURANGO) || defined(_GAMING_XBOX))
+#if SIMUL_D3D12_VIDEO_SUPPORTED
 	// Define pixel formats of this texture
 	renderPlatform = r;
 	pixelFormat = f;
 	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat = dxgi_format;
-	DXGI_FORMAT srvFormat = dxgi_format;
 	if (texture2dFormat == DXGI_FORMAT_D32_FLOAT)
 	{
 		texture2dFormat = DXGI_FORMAT_R32_TYPELESS;
-		srvFormat = DXGI_FORMAT_R32_FLOAT;
 	}
 	if (texture2dFormat == DXGI_FORMAT_D16_UNORM)
 	{
 		texture2dFormat = DXGI_FORMAT_R16_TYPELESS;
-		srvFormat = DXGI_FORMAT_R16_UNORM;
 	}
 	if (texture2dFormat == DXGI_FORMAT_D24_UNORM_S8_UINT)
 	{
 		texture2dFormat = DXGI_FORMAT_R24G8_TYPELESS;
-		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
 	dim = 2;
 	HRESULT res = S_FALSE;
