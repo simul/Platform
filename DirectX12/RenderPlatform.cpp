@@ -1095,15 +1095,17 @@ void RenderPlatform::BeginD3D12Frame()
 					if (!chkptr || res != S_OK)
 					{
 						std::string lastErrorStr = "";
+					#if !defined(_DURANGO)
 						DWORD err = GetLastError();
-						char msg[128 * 1024];
-						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+						char* msg = nullptr;
+						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 							nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr);
 						if (msg != nullptr && msgSize > 0)
 						{
 							lastErrorStr = std::string(msg, msgSize);
+							LocalFree(msg);
 						}
-
+					#endif
 						SIMUL_CERR << "Fatal error in Release Manager." << std::endl;
 						SIMUL_CERR << resource.second.first << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
 						SIMUL_CERR << "QueryInterface<ID3D12DeviceChild> failed to valid the resource." << std::endl;
