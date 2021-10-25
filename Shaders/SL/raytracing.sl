@@ -126,38 +126,53 @@ RayPlaneIntersectionResult GetRayPlaneIntersection(vec3 rayOrigin, vec3 rayDirec
 struct AABBIntersectionResult
 {
 	vec3 position;
-	Raytracing_AABB_FaceIndex face;
 	float rayLength;
+	Raytracing_AABB_FaceIndex face;
 };
-AABBIntersectionResult GetAABBIntersection(Raytracing_AABB aabb, vec3 rayOrigin, vec3 rayDirection)
+struct AABBIntersectionResults
 {
-	AABBIntersectionResult result;
+	AABBIntersectionResult primary;
+	AABBIntersectionResult secondary;
+};
+
+AABBIntersectionResults GetAABBIntersection(Raytracing_AABB aabb, vec3 rayOrigin, vec3 rayDirection)
+{
+	AABBIntersectionResults result;
 	
-	bool possiblePrimaryIntersectionPlanes[6];
+	bool primary = false;
+	bool secondary = false;
 	for (uint i = 0; i < 6; i++)
 	{
 		vec3 N = GetRaytracing_AABB_FaceNormal(Raytracing_AABB_FaceIndex(i));
-		float dotResult = dot(N, rayDirection);
-		possiblePrimaryIntersectionPlanes[i] = dotResult > 0 ? false : true;
-	}
-	for (uint j = 0; j < 6; j++)
-	{
-		if (possiblePrimaryIntersectionPlanes[j])
-		{
-			RayPlaneIntersectionResult rpiResult;
-			vec3 N = GetRaytracing_AABB_FaceNormal(Raytracing_AABB_FaceIndex(j));
-			vec3 P = GetRaytracing_AABB_FaceMidpoint(aabb, Raytracing_AABB_FaceIndex(j));
-			rpiResult = GetRayPlaneIntersection(rayOrigin, rayDirection, N, P);
+		vec3 P = GetRaytracing_AABB_FaceMidpoint(aabb, Raytracing_AABB_FaceIndex(i));
+		RayPlaneIntersectionResult rpiResult = GetRayPlaneIntersection(rayOrigin, rayDirection, N, P);
 
-			if (rpiResult.intersection)
+		if (rpiResult.intersection)
+		{
+			bool primaryIntersection = dot(N, rayDirection) > 0 ? false : true;
+			if (primaryIntersection)
 			{
-				result.position = GetCurrentRayPostion(rayOrigin, rayDirection, rpiResult.T);
-				result.rayLength = rpiResult.T;
-				result.face = Raytracing_AABB_FaceIndex(j);
-				return result;
+			
+				result.primary.position = GetCurrentRayPostion(rayOrigin, rayDirection, rpiResult.T);
+				result.primary.rayLength = rpiResult.T;
+				result.primary.face = Raytracing_AABB_FaceIndex(i);
+				primary = true;
 			}
+			else
+			{
+				result.secondary.position = GetCurrentRayPostion(rayOrigin, rayDirection, rpiResult.T);
+				result.secondary.rayLength = rpiResult.T;
+				result.secondary.face = Raytracing_AABB_FaceIndex(i);
+				secondary = true;
+			}	
 		}
-	}
+
+		if (primary && secondary)
+		{
+			return result;
+		}
+
+		}
 	return result;
 }
 
