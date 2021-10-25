@@ -126,8 +126,22 @@ vec4 slerp(vec4 q1,vec4 q2,float interp)
 
 vec4 quat_from_vector_endpoints(vec3 start, vec3 end)
 {
-	vec4 q_start = vec4(0.0, normalize(start));
-	vec4 q_end	= vec4(0.0, normalize(end));
+	vec4 q_start = vec4(normalize(start), 0.0);
+	vec4 q_end	= vec4(normalize(end), 0.0);
 
-	return quat_mult(q_end, quat_conj(q_start));
+	//Encodes the dot and cross products of the vectors
+	//https://stackoverflow.com/a/67343721https://stackoverflow.com/a/67343721
+	vec4 q = quat_mult(q_start, q_end);
+	if (q.w == 1.0) 
+	{
+		//Dot product was -1.0, there are therefore infinte 'shortest arcs' from start to end.
+		//Generate a perpendicular vector for vector component of the quaternion.
+		//Based on the cross product.
+		//https://qr.ae/pGVZDX
+		q.x = start.y - start.z;
+		q.y = start.z - start.x;
+		q.z = -start.x - start.y;
+	}
+	q.w = 1.0 - q.w;
+	return normalise(q);
 }
