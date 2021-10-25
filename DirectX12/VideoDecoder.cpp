@@ -166,7 +166,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	std::vector<ID3D12VideoDecoderHeap*> heaps(mNumReferenceFrames);
 	if (mNumReferenceFrames)
 	{
-		int index = 0;
+		size_t index = 0;
 		int i = mCurrentTextureIndex - 1;
 		size_t numTextures = mTextures.size();
 		while (index < mNumReferenceFrames)

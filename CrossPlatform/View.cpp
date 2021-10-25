@@ -175,6 +175,7 @@ const ViewManager::ViewMap &ViewManager::GetViews() const
 {
 	return views;
 }
+
 void ViewManager::CleanUp(int current_frame,int max_age)
 {
 	for (auto i:views)
@@ -192,6 +193,7 @@ void ViewManager::CleanUp(int current_frame,int max_age)
 		}
 	}
 }
+
 void ViewManager::Clear()
 {
 	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
