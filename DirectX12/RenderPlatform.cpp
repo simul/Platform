@@ -1096,13 +1096,12 @@ void RenderPlatform::BeginD3D12Frame()
 					{
 						std::string lastErrorStr = "";
 						DWORD err = GetLastError();
-						char* msg = nullptr;
-						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+						char msg[128 * 1024];
+						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 							nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr);
 						if (msg != nullptr && msgSize > 0)
 						{
 							lastErrorStr = std::string(msg, msgSize);
-							LocalFree(msg);
 						}
 
 						SIMUL_CERR << "Fatal error in Release Manager." << std::endl;

@@ -53,7 +53,7 @@ void CommandListController::Initialize(RenderPlatform* renderPlatform, D3D12_COM
 	mAllocators = new ID3D12CommandAllocator*[mNumAllocators];
 	mFences = new Fence*[mNumAllocators];
 
-	for (int i = 0; i < mNumAllocators; ++i)
+	for (uint32_t i = 0; i < mNumAllocators; ++i)
 	{
 		V_CHECK(device->CreateCommandAllocator(commandListType, SIMUL_PPV_ARGS(&mAllocators[i])));
 		std::string resourceName = commandName + "Allocator" + std::to_string(i);
