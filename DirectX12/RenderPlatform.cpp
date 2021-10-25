@@ -1080,9 +1080,9 @@ void RenderPlatform::BeginD3D12Frame()
 	unsigned int kMaxAge = 8;
 	if (!mResourceBin.empty())
 	{
-		for (decltype(mResourceBin)::reverse_iterator& it = mResourceBin.rbegin(); it != mResourceBin.rend(); it++)
+		for (int64_t i = int64_t(mResourceBin.size() - 1); i >= 0; i--)
 		{
-			std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>& resource = *it;
+			std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>& resource = mResourceBin[static_cast<size_t>(i)];
 			resource.first++;
 			if (resource.first >= kMaxAge)
 			{
@@ -1092,7 +1092,7 @@ void RenderPlatform::BeginD3D12Frame()
 				{
 					ID3D12DeviceChild* chkptr = nullptr;
 					HRESULT res = ptr->QueryInterface(__uuidof(ID3D12DeviceChild), (void**)&chkptr);
-					if (!chkptr || res != S_OK)
+					if (!chkptr || res != S_OK) //The chkptr failed, so we can not release the main ptr. Just remove it from the container at the end of the current iteration of the loop.
 					{
 						std::string lastErrorStr = "";
 					#if !defined(_DURANGO)
@@ -1112,12 +1112,11 @@ void RenderPlatform::BeginD3D12Frame()
 						SIMUL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
 						SIMUL_BREAK("Fatal error in Release Manager.");
 					}
-					else
+					else //The chkptr succeeded, release both pointers and update the remainRefs variable. The main ptr will be remove from the container at the end of the current iteration of the loop.
 					{
 						SAFE_RELEASE(chkptr);
+						remainRefs = ptr->Release();
 					}
-
-					remainRefs = ptr->Release();
 				}
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 				if (remainRefs > 0)
@@ -1128,7 +1127,7 @@ void RenderPlatform::BeginD3D12Frame()
 				if (GetMemoryInterface())
 					GetMemoryInterface()->UntrackVideoMemory(ptr);
 
-				mResourceBin.erase(std::next(it).base()); //Must use a forward iterator! Hence the increment and case to base type - AJR.
+				mResourceBin.erase(mResourceBin.begin() + i);
 			}
 		}
 	}
