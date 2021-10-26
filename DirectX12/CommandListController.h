@@ -4,10 +4,6 @@
 #include "Platform/Core/RuntimeError.h"
 #include "SimulDirectXHeader.h"
 
-struct ID3D12VideoDecodeCommandList2;
-
-typedef ID3D12VideoDecodeCommandList2 ID3D12VideoDecodeCommandListType;
-
 namespace simul
 {
 	namespace dx12

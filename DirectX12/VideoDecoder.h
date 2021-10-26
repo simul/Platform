@@ -5,13 +5,8 @@
 #include "Platform/DirectX12/Texture.h"
 #include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/CommandListController.h"
+#include <d3d12video.h>
 #include <unordered_map>
-
-struct ID3D12VideoDevice2;
-struct ID3D12VideoDecoder1;
-struct ID3D12VideoDecoderHeap1;
-struct ID3D12VideoProcessor1;
-struct ID3D12VideoDecodeCommandList2;
 
 typedef ID3D12VideoDevice2 ID3D12VideoDeviceType;
 typedef ID3D12VideoDecodeCommandList2 ID3D12VideoDecodeCommandListType;
@@ -25,8 +20,14 @@ namespace simul
 		class DecoderTexture : public Texture
 		{
 		public:
-			void ChangeState(ID3D12VideoDecodeCommandListType* commandList, bool write = false);
+			void ChangeState(ID3D12VideoDecodeCommandList* commandList, bool write = false);
 		};
+
+		/*struct FrameArguments
+		{
+			UINT numFrameArguments;
+			D3D12_VIDEO_DECODE_FRAME_ARGUMENT frameArguments[10];
+		};*/
 
 		//! A class to implement common video encodng/decoding functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT VideoDecoder: public cp::VideoDecoder
@@ -63,6 +64,10 @@ namespace simul
 			ID3D12VideoDecoderHeap1* mHeap;
 			CommandListController mGraphicsCLC;
 			CommandListController mDecodeCLC;
+			std::vector<ID3D12Resource*> mRefTextures;
+			std::vector<UINT> mRefSubresources;
+			std::vector<ID3D12VideoDecoderHeap*> mRefHeaps;
+			static constexpr uint32_t mMaxInputArgs = 10;
 		};
 	}
 }
