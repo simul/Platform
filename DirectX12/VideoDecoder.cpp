@@ -8,7 +8,6 @@
 #include "Platform/DirectX12/Heap.h"
 #include "Platform/DirectX12/VideoBuffer.h"
 #include "Platform/DirectX12/Texture.h"
-#include <d3d12video.h>
 #include <algorithm>
 #include <dxva.h>
 
@@ -72,6 +71,15 @@ cp::VideoDecoderResult VideoDecoder::Init()
 		return r;
 	}
 
+	/*mRefFrameTextureBuffers.resize(mMaxInputArgBuffers);
+	mRefFrameHeapBuffers.resize(mMaxInputArgBuffers);
+
+	for (int i = 0; i < mMaxInputArgBuffers; ++i)
+	{
+		mRefFrameTextureBuffers[i].resize(mMaxReferenceFrames);
+		mRefFrameHeapBuffers[i].resize(mMaxReferenceFrames);
+	}*/
+
 	return cp::VideoDecoderResult::Ok;
 }
 
@@ -112,7 +120,8 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	outputArgs.pOutputTexture2D = outputResource;
 	DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
 	DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.outputFormat);
-	// We always enable conversion because the output texture should always 
+	// Conversion is always enabled because the output texture is expected to be in
+	// same colour space as the input texture.
 	convArgs.Enable = true;
 	convArgs.DecodeColorSpace = VideoFormats.find(dxgiDecodeFormat)->second;
 	convArgs.OutputColorSpace = VideoFormats.find(dxgiSurfaceFormat)->second;
@@ -126,12 +135,19 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	inputArgs.pHeap = mHeap;
 
 	// DXVA accepts a maximum of 10 arguments. 
-	inputArgs.NumFrameArguments = std::min<uint32_t>(decodeArgCount, 10);
+	inputArgs.NumFrameArguments = std::min<uint32_t>(decodeArgCount, mMaxInputArgs);
+	bool picParams = false;
 	for (uint32_t i = 0; i < inputArgs.NumFrameArguments; ++i)
 	{
 		auto& frameArgs = inputArgs.FrameArguments[i];
+
+		if (!decodeArgs[i].data || !decodeArgs[i].size)
+		{
+			SIMUL_CERR << "Invalid data in frame argument!";
+			return cp::VideoDecoderResult::InvalidDecodeArgumentType;
+		}
 		frameArgs.pData = decodeArgs[i].data;
-		//DXVA_PicParams_HEVC* test = static_cast<DXVA_PicParams_HEVC*>(frameArgs.pData);
+		DXVA_PicParams_HEVC* test = static_cast<DXVA_PicParams_HEVC*>(frameArgs.pData);
 		frameArgs.Size = decodeArgs[i].size;
 		switch (decodeArgs[i].type)
 		{
@@ -145,6 +161,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 			{
 				frameArgs.Size = sizeof(DXVA_PicParams_HEVC);
 			}
+			picParams = true;
 			break;
 		case cp::VideoDecodeArgumentType::MaxValid:
 			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE::D3D12_VIDEO_DECODE_ARGUMENT_TYPE_MAX_VALID;
@@ -161,27 +178,37 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		}
 	}
 
+	if (!picParams)
+	{
+		SIMUL_CERR << "No picture parameters in frame arguments!";
+		return cp::VideoDecoderResult::InvalidDecodeArgumentType;
+	}
+
 	inputArgs.ReferenceFrames.NumTexture2Ds = mNumReferenceFrames;
-	std::vector<ID3D12Resource*> refTexs(mNumReferenceFrames);
-	std::vector<ID3D12VideoDecoderHeap*> heaps(mNumReferenceFrames);
+
 	if (mNumReferenceFrames)
 	{
-		int index = 0;
+		mRefTextures.resize(mNumReferenceFrames);
+		mRefSubresources.resize(mNumReferenceFrames);
+		mRefHeaps.resize(mNumReferenceFrames);
+
+		size_t index = 0;
 		int i = mCurrentTextureIndex - 1;
 		size_t numTextures = mTextures.size();
 		while (index < mNumReferenceFrames)
 		{
 			((DecoderTexture*)mTextures[i])->ChangeState(decodeCommandList, false);
-			refTexs[index] = mTextures[i]->AsD3D12Resource();
-			heaps[index] = mHeap;
+			mRefTextures[index] = mTextures[i]->AsD3D12Resource();
+			mRefSubresources[index] = 0;
+			mRefHeaps[index] = mHeap;
 			++index;
 			// Wrap back around like a circular buffer.
 			i = (i - 1) % numTextures;
 		}
-		inputArgs.ReferenceFrames.ppTexture2Ds = refTexs.data();
+		inputArgs.ReferenceFrames.ppTexture2Ds = mRefTextures.data();
 		// Specifies 0 used for each texture.
-		inputArgs.ReferenceFrames.pSubresources = NULL;
-		inputArgs.ReferenceFrames.ppHeaps = heaps.data();
+		inputArgs.ReferenceFrames.pSubresources = mRefSubresources.data();
+		inputArgs.ReferenceFrames.ppHeaps = mRefHeaps.data();
 	}
 
 	// Set to required state for decoding.
@@ -216,6 +243,10 @@ cp::VideoDecoderResult VideoDecoder::Shutdown()
 	SAFE_RELEASE(mDecoder);
 	SAFE_RELEASE(mVideoDevice);
 
+	mRefTextures.clear();
+	mRefSubresources.clear();
+	mRefHeaps.clear();
+
 	return cp::VideoDecoderResult::Ok;
 }
 
@@ -239,7 +270,7 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDevice()
 	IDXGIFactory4* factory = nullptr;
 	if (FAILED(CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred trying to create D3D12 factory.";
+		SIMUL_CERR << "Error occurred trying to create D3D12 factory.";
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 	LUID luid = device->GetAdapterLuid();
@@ -247,14 +278,14 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDevice()
 	factory->EnumAdapterByLuid(luid, SIMUL_PPV_ARGS(&hardwareAdapter));
 	if (FAILED(factory->EnumAdapterByLuid(luid, SIMUL_PPV_ARGS(&hardwareAdapter))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred trying to get adapter.";
+		SIMUL_CERR << "Error occurred trying to get adapter.";
 		SAFE_RELEASE(factory);
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 	SAFE_RELEASE(factory);
 	if (FAILED(D3D12CreateDevice(hardwareAdapter, D3D_FEATURE_LEVEL_12_1, SIMUL_PPV_ARGS(&mVideoDevice))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred trying to create video device.";
+		SIMUL_CERR << "Error occurred trying to create video device.";
 		SAFE_RELEASE(hardwareAdapter);
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
@@ -279,7 +310,7 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDecoder()
 
 	if (FAILED(mVideoDevice->CreateVideoDecoder1(&dDesc, nullptr, SIMUL_PPV_ARGS(&mDecoder))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred trying to create the video decoder.";
+		SIMUL_CERR << "Error occurred trying to create the video decoder.";
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 
@@ -295,7 +326,7 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDecoder()
 
 	if (FAILED(mVideoDevice->CreateVideoDecoderHeap1(&hDesc, nullptr, SIMUL_PPV_ARGS(&mHeap))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred trying to create the video decoder heap.";
+		SIMUL_CERR << "Error occurred trying to create the video decoder heap.";
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 
@@ -352,25 +383,25 @@ cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device,
 		ds.Configuration.DecodeProfile = D3D12_VIDEO_DECODE_PROFILE_HEVC_MAIN;
 		break;
 	default:
-		SIMUL_CERR_ONCE << "Invalid video codec provided!";
+		SIMUL_CERR << "Invalid video codec provided!";
 		return cp::VideoDecoderResult::InvalidCodec;
 	}
 
 	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_SUPPORT, &ds, sizeof(ds))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred checking decode feature support of the video device.";
+		SIMUL_CERR << "Error occurred checking decode feature support of the video device.";
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 
 	if (ds.SupportFlags != D3D12_VIDEO_DECODE_SUPPORT_FLAG_SUPPORTED)
 	{
-		SIMUL_CERR_ONCE << "The video device does not have all the required features for this decoding operation.";
+		SIMUL_CERR << "The video device does not have all the required features for this decoding operation.";
 		return cp::VideoDecoderResult::UnsupportedFeatures;
 	}
 
 	if (ds.ConfigurationFlags == D3D12_VIDEO_DECODE_CONFIGURATION_FLAG_HEIGHT_ALIGNMENT_MULTIPLE_32_REQUIRED)
 	{
-		SIMUL_CERR_ONCE << "Height of output must be a multiple of 32!";
+		SIMUL_CERR << "Height of output must be a multiple of 32!";
 		return cp::VideoDecoderResult::UnsupportedDimensions;
 	}
 
@@ -388,20 +419,20 @@ cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device,
 
 	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_CONVERSION_SUPPORT, &cs, sizeof(cs))))
 	{
-		SIMUL_CERR_ONCE << "Error occurred checking decode conversion support of the video device.";
+		SIMUL_CERR << "Error occurred checking decode conversion support of the video device.";
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 
 	if (cs.SupportFlags != D3D12_VIDEO_DECODE_CONVERSION_SUPPORT_FLAG_SUPPORTED)
 	{
-		SIMUL_CERR_ONCE << "The driver does not support conversion with the provided formats!";
+		SIMUL_CERR << "The driver does not support conversion with the provided formats!";
 		return cp::VideoDecoderResult::UnsupportedFeatures;
 	}
 
 	return cp::VideoDecoderResult::Ok;
 }
 
-void DecoderTexture::ChangeState(ID3D12VideoDecodeCommandListType* commandList, bool write)
+void DecoderTexture::ChangeState(ID3D12VideoDecodeCommandList* commandList, bool write)
 {
 	D3D12_RESOURCE_STATES stateBefore = mResourceState;
 	D3D12_RESOURCE_STATES stateAfter;
