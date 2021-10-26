@@ -1115,8 +1115,8 @@ void RenderPlatform::BeginD3D12Frame()
 					else //The chkptr succeeded, release both pointers and update the remainRefs variable. The main ptr will be remove from the container at the end of the current iteration of the loop.
 					{
 						SAFE_RELEASE(chkptr);
-					remainRefs = ptr->Release();
-				}
+						remainRefs = ptr->Release();
+					}
 				}
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 				if (remainRefs > 0)
