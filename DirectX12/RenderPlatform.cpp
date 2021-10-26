@@ -1106,11 +1106,11 @@ void RenderPlatform::BeginD3D12Frame()
 							LocalFree(msg);
 						}
 					#endif
-						SIMUL_CERR << "Fatal error in Release Manager." << std::endl;
-						SIMUL_CERR << resource.second.first << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
-						SIMUL_CERR << "QueryInterface<ID3D12DeviceChild> failed to valid the resource." << std::endl;
-						SIMUL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
-						SIMUL_BREAK("Fatal error in Release Manager.");
+						SIMUL_INTERNAL_CERR << "Fatal error in Release Manager." << std::endl;
+						SIMUL_INTERNAL_CERR << resource.second.first << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
+						SIMUL_INTERNAL_CERR << "QueryInterface<ID3D12DeviceChild> failed to validate the resource." << std::endl;
+						SIMUL_INTERNAL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
+						SIMUL_BREAK_INTERNAL("Fatal error in Release Manager.");
 					}
 					else //The chkptr succeeded, release both pointers and update the remainRefs variable. The main ptr will be remove from the container at the end of the current iteration of the loop.
 					{
