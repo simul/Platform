@@ -1090,6 +1090,7 @@ void RenderPlatform::BeginD3D12Frame()
 				ID3D12DeviceChild* ptr = resource.second.second;
 				if (ptr)
 				{
+#if 0
 					ID3D12DeviceChild* chkptr = nullptr;
 					HRESULT res = ptr->QueryInterface(__uuidof(ID3D12DeviceChild), (void**)&chkptr);
 					if (!chkptr || res != S_OK) //The chkptr failed, so we can not release the main ptr. Just remove it from the container at the end of the current iteration of the loop.
@@ -1117,6 +1118,9 @@ void RenderPlatform::BeginD3D12Frame()
 						SAFE_RELEASE(chkptr);
 						remainRefs = ptr->Release();
 					}
+#else
+					remainRefs = ptr->Release();
+#endif
 				}
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 				if (remainRefs > 0)
