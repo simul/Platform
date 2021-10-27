@@ -378,7 +378,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			appliedTopology = cs->topology;
 		if (appliedTopology == crossplatform::Topology::UNDEFINED)
 			appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
-		hashval = MakeRenderPassHash(pixelFormat, appliedTopology, blendState, depthStencilState, rasterizerState);
+		hashval = MakeRenderPassHash(pixelFormat, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState);
 		const auto &p=mRenderPasses.find(hashval);
 		if(p==mRenderPasses.end())
 		{
@@ -813,15 +813,17 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		colorBlendInfo.setAttachmentCount(num_RT).setPAttachments(colorBlendAttachments.data());
 		
 		// from the vertex shader's layout:
-		
+		const auto *layout=deviceContext.contextState.currentLayout;
+		if(!layout)
+			layout=&v->layout;
 		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
-		const auto &layoutDesc=v->layout.GetDesc();
+		const auto &layoutDesc=layout->GetDesc();
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
 		if(layoutDesc.size())
 		{
 			vk::VertexInputBindingDescription bindingDescription ;
 			bindingDescription.setBinding (0);
-			bindingDescription.setStride( v->layout.GetStructSize());
+			bindingDescription.setStride(layout->GetStructSize());
 			bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
 
 			if(layoutDesc.size())
@@ -902,16 +904,25 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 {
 }
 
-RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology)
+RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout)
 {
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,blendState,depthStencilState,rasterizerState);
+	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,layout,blendState,depthStencilState,rasterizerState);
 	return hashval;
 }
 
 RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology,
+	const crossplatform::Layout *layout,
 	const crossplatform::RenderState *blendState, const crossplatform::RenderState *depthStencilState, const crossplatform::RenderState *rasterizerState)
 {
 	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)topology;
+	if(layout)
+	{
+		const auto &lDesc=layout->GetDesc();
+		for(const auto &l:lDesc)
+		{
+			hashval+=((unsigned long long)l.format)*3279;
+		}
+	}
 	if(blendState)
 	{
 		hashval+=blendState->desc.blend.AlphaToCoverageEnable?2048:0;
@@ -943,6 +954,7 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 	}
 	return hashval;
 }
+
 vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext)
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
@@ -951,7 +963,7 @@ vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceCon
 	auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 	if(rp)
 		return *rp;
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology);
+	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,cs->currentLayout);
 	const auto &p=mRenderPasses.find(hashval);
 	if(p==mRenderPasses.end())
 	{

@@ -1705,7 +1705,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	}
 	vulkan::EffectPass*vp=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
 	RenderPassHash hashval=MakeTargetHash(tv);
-	hashval+=5*(deviceContext.contextState.currentEffectPass?vp->GetHash(colourPF[0],deviceContext.contextState.topology):0);
+	hashval+=5*(deviceContext.contextState.currentEffectPass?vp->GetHash(colourPF[0],deviceContext.contextState.topology, deviceContext.contextState.currentLayout):0);
 	std::map<unsigned long long,vk::Framebuffer>::iterator h=mFramebuffers.find(hashval);
 	if(h==mFramebuffers.end()||!h->second ||mFramebuffers.empty())
 	{
