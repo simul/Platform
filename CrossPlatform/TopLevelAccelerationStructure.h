@@ -44,7 +44,7 @@ namespace simul
 			void SetInstanceDescs(const InstanceDescs& instanceDescs);
 			InstanceDescs* GetInstanceDescs();
 
-			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) { initialized = true; }
+			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) override { initialized = true; }
 			
 			inline int GetID() { return ID; }
 		};

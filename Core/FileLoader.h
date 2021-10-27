@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 #include "Platform/Core/Export.h"
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		//! An interface to derive from so you can provide your own file load/save functions.
 		//! Use SetFileLoader to define the object that Simul will use for file handling.

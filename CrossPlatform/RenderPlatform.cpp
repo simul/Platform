@@ -541,7 +541,7 @@ void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *
 		t->activateRenderTarget(deviceContext,array_idx,m1);
 		SetTexture(deviceContext,_imageTexture,t,array_idx,0);
 		DrawQuad(deviceContext);
-		//Print(deviceContext,0,0,base::QuickFormat("%d",m1),white,semiblack);
+		//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
 		t->deactivateRenderTarget(deviceContext);
 	}
 	UnapplyPass(deviceContext);
@@ -1233,7 +1233,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
-		SIMUL_BREAK(base::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
+		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
 		delete e;
 		return nullptr;
 	}
@@ -1265,7 +1265,7 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
-	simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
+	platform::core::FileLoader* fileLoader = platform::core::FileLoader::GetFileLoader();
 	
 	std::string shaderSourcePath = fileLoader->FindFileInPathStack(filenameUtf8, GetShaderBinaryPathsUtf8());
 

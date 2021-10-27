@@ -141,7 +141,7 @@ bool Effect::Compile(const char *filename_utf8)
 	std::string filename_fx(filename_utf8);
 	if(filename_fx.find(".")>=filename_fx.length())
 		filename_fx+=".sfx";
-	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
+	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
 	filenameInUseUtf8=filename_fx;
 	if(index==-2||index>=(int)renderPlatform->GetShaderPathsUtf8().size())
 	{
@@ -169,7 +169,7 @@ bool Effect::Compile(const char *filename_utf8)
 												" -P\"{SIMUL}/Platform/Vulkan/GLSL/GLSL.json\""
 												" -m\"" + shaderbin + "\" ";
 	command+=filenameInUseUtf8.c_str();
-	base::find_and_replace(command,"{SIMUL}",SIMUL);
+	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
 
 	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
 	return platform::core::RunCommandLine(command.c_str(),  cc);

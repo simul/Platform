@@ -48,9 +48,9 @@ inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 
 #endif
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 
 		extern PLATFORM_CORE_EXPORT std::vector<std::string> SplitPath(const std::string& fullPath);

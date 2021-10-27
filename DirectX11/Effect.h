@@ -8,6 +8,8 @@
 #include "Platform/DirectX11/ConstantBuffer.h"
 
 #pragma warning(disable:4251)
+#pragma warning(default:4263)
+#pragma warning(default:4266)
 
 struct ID3D11Buffer;
 namespace simul

@@ -100,7 +100,7 @@ namespace simul
 		public:
 			TextFileInput(simul::base::MemoryInterface *m=NULL);
 			virtual ~TextFileInput();
-			void SetFileLoader(simul::base::FileLoader *f);
+			void SetFileLoader(platform::core::FileLoader *f);
 			void Load(const char *filename);
 			void Load(const std::string &text);
 			bool Good();
@@ -142,7 +142,7 @@ namespace simul
 			std::map<std::string,Array> arrays;
 		private:
 			bool good;
-			simul::base::FileLoader *fileLoader;
+			platform::core::FileLoader *fileLoader;
 			simul::base::MemoryInterface *memoryInterface;
 		};
 		

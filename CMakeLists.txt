@@ -107,3 +107,8 @@ endif()
 if(PLATFORM_COMMODORE)
 	add_subdirectory(Commodore)
 endif()
+
+if(PLATFORM_IMGUI)
+	add_subdirectory(Imgui)
+	add_subdirectory(Applications/GuiSample)
+endif()

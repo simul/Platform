@@ -191,6 +191,8 @@ namespace simul
 			Layout *currentLayout=nullptr;
 			Topology topology;
 			int apply_count = 0;
+			bool contextActive=true;
+			bool externalContext=false;
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -209,6 +211,8 @@ namespace simul
 				textureSlotsForSB=0;
 				bufferSlots=0;
 				topology = Topology::UNDEFINED;
+				contextActive = true;
+				externalContext = false;
 			}
 			bool effectPassValid;
 			bool vertexBuffersValid;
@@ -255,23 +259,23 @@ namespace simul
 			{
 				return nullptr;
 			}
-			inline ID3D11DeviceContext *asD3D11DeviceContext()
+			ID3D11DeviceContext *asD3D11DeviceContext()
 			{
 				return (ID3D11DeviceContext*)platform_context;
 			}
-			inline IDirect3DDevice9 *asD3D9Device()
+			IDirect3DDevice9 *asD3D9Device()
 			{
 				return (IDirect3DDevice9*)platform_context;
 			}
-			inline sce::Gnmx::LightweightGfxContext *asGfxContext()
+			sce::Gnmx::LightweightGfxContext *asGfxContext()
 			{
 				return (sce::Gnmx::LightweightGfxContext*)platform_context;
 			}
-			inline nvn::CommandBuffer* asNVNContext()
+			nvn::CommandBuffer* asNVNContext()
 			{
 				return (nvn::CommandBuffer*)platform_context;
 			}
-			inline ID3D12GraphicsCommandList* asD3D12Context()
+			ID3D12GraphicsCommandList* asD3D12Context()
 			{
 				return (ID3D12GraphicsCommandList*)platform_context;
 			}

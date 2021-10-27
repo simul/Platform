@@ -99,7 +99,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	mGraphicsCLC.ResetCommandList();
 	mDecodeCLC.ResetCommandList();
 
-	mInputBuffer->Update(graphicsCommandList, buffer, bufferSize);
+	mInputBuffer->Update(graphicsCommandList, buffer, (uint32_t)bufferSize);
 		
 	mGraphicsCLC.ExecuteCommandList();
 	Signal(mGraphicsCLC.GetCommandQueue(), mDecodeFence);

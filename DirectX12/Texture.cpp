@@ -67,7 +67,7 @@ void Texture::ClearFileContents()
 {
 	for(auto &f: fileContents)
 	{
-		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(f.ptr);
+		platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(f.ptr);
 	}
 	fileContents.clear();
 }
@@ -238,15 +238,15 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// Find the path to the file
 	std::string strPath;
 	strPath = pFilePathUtf8;
-	int idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
+	int idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
 	if (idx<-1 || idx >= (int)pathsUtf8.size())
 	{
 		std::string file;
-		std::vector<std::string> split_path=base::SplitPath( filename_utf8);
+		std::vector<std::string> split_path= platform::core::SplitPath( filename_utf8);
 		if(split_path.size()>1)
 		{
 			strPath=split_path[1];
-			idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
+			idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
 		}
 		errno = 0;
 		if (idx < -1 || idx >= (int)pathsUtf8.size())
@@ -260,7 +260,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	 auto &f=fileContents[0];
 	// Load the data
 	f.flags		= DirectX::WIC_FLAGS_NONE;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(f.ptr,f.bytes, strPath.c_str(), false);
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(f.ptr,f.bytes, strPath.c_str(), false);
 	wicContents.resize(1);
 	auto &wic=wicContents[0];
 	if(!wic.metadata)
@@ -328,6 +328,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	renderPlatformDx12->PushToReleaseManager(mTextureUpload, "mTextureUpload");
 	mTextureDefault = nullptr;
 	mTextureUpload = nullptr;
+	size_t num_loaded=0;
 	// Convert into WIC 
 	for(int i=0;i<wicContents.size();i++)
 	{
@@ -365,7 +366,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 			n+=std::wstring(name.begin(), name.end());
 			mTextureDefault->SetName(n.c_str());
 		}
+		num_loaded++;
 	}
+	if(num_loaded)
+	{
 	// Create an upload heap
 	// only single mip in the upload.
 	textureDesc.MipLevels=1;
@@ -436,7 +440,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	CreateSRVTables(arraySize, mips, cubemap);
 	InitRTVTables(totalNum, mips);
 	CreateRTVTables(totalNum, mips);
-	
+	}
 	textureLoadComplete=true;
 	shouldGenerateMips=false;
 	if (mips > 1)
@@ -473,7 +477,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	strPaths.resize(arraySize);
 	for (int i = 0; i < arraySize; i++)
 	{
-		int idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(texture_files[i].c_str(), pathsUtf8);
+		int idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(texture_files[i].c_str(), pathsUtf8);
 		if (idx<-1 || idx >= (int)pathsUtf8.size())
 			return;
 		strPaths[i] = texture_files[i];
@@ -487,7 +491,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	for (int i = 0; i < arraySize; i++)
 	{
 		auto curContents = &fileContents[i];
-		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(curContents->ptr, curContents->bytes, strPaths[i].c_str(), false);
+		platform::core::FileLoader::GetFileLoader()->AcquireFileContents(curContents->ptr, curContents->bytes, strPaths[i].c_str(), false);
 	}
 	// Convert into WIC 
 	wicContents.resize(arraySize);
@@ -1340,7 +1344,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		{
 			SIMUL_BREAK_INTERNAL("Unnamed texture");
 		}
-		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
@@ -1351,7 +1355,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 				m = 1;
 			FreeUAVTables();
 			InitUAVTables(1, m);
-			mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("Texture2DUavHeap %s",name.c_str()), false);
+			mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("Texture2DUavHeap %s",name.c_str()), false);
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 			uavDesc.Format								= texture2dFormat;
@@ -1378,7 +1382,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		{
 			FreeRTVTables();
 			InitRTVTables(1, m);
-			mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1 * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, base::QuickFormat("Texture2DRTHeap %s",name.c_str()), false);
+			mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1 * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, platform::core::QuickFormat("Texture2DRTHeap %s",name.c_str()), false);
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtDesc	= {};
 			rtDesc.Format							= texture2dFormat;
@@ -1393,7 +1397,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 		if (depthstencil && (!ok))
 		{
-			mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, base::QuickFormat("Texture2DDSVHeap %s",name.c_str()), false);
+			mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, platform::core::QuickFormat("Texture2DDSVHeap %s",name.c_str()), false);
 	
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsDesc	= {};
 			dsDesc.Format							= dxgi_format;

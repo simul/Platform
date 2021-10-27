@@ -308,7 +308,7 @@ namespace simul
 			crossplatform::Texture* createTexture() override;
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
-			void BeginD3D12Frame();
+			void BeginD3D12Frame(crossplatform::GraphicsDeviceContext& deviceContext);
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
@@ -366,8 +366,6 @@ namespace simul
 
 			crossplatform::TargetsAndViewport mTargets;
 			ID3D12CommandAllocator*	 mImmediateAllocator=nullptr;
-			bool bImmediateContextActive=false;
-			bool bExternalImmediate=false;
 			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif

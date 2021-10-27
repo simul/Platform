@@ -477,7 +477,7 @@ void EffectPass::Initialize()
 			vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount*count_per_frame).setPoolSizeCount(p).setPPoolSizes(poolSizes);
 
 		result = vulkanDevice->createDescriptorPool(&descriptor_pool, nullptr, &mDescriptorPool);
-		SetVulkanName(renderPlatform,&mDescriptorPool,base::QuickFormat("%s Descriptor pool",name.c_str()));
+		SetVulkanName(renderPlatform,&mDescriptorPool,platform::core::QuickFormat("%s Descriptor pool",name.c_str()));
 		delete [] poolSizes;
 		vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
 		vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
@@ -603,13 +603,13 @@ void EffectPass::Initialize()
 	result = vulkanDevice->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
 	SetVulkanName(renderPlatform,&mDescLayout,this->name+" descriptor set Layout");
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&mDescLayout,base::QuickFormat("%s Descriptor layout",name.c_str()));
+	SetVulkanName(renderPlatform,&mDescLayout,platform::core::QuickFormat("%s Descriptor layout",name.c_str()));
 
 	auto pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(&mDescLayout);
 
 	result = vulkanDevice->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&mPipelineLayout,base::QuickFormat("%s EffectPass Pipeline layout",name.c_str()));
+	SetVulkanName(renderPlatform,&mPipelineLayout,platform::core::QuickFormat("%s EffectPass Pipeline layout",name.c_str()));
 }
 
 void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
@@ -633,7 +633,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 		alloc_info=alloc_info.setDescriptorPool(mDescriptorPool);
 		auto result = vulkanDevice->allocateDescriptorSets(&alloc_info,&descriptorSet);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
+		SetVulkanName(renderPlatform,&descriptorSet,platform::core::QuickFormat("%s Descriptor set",name.c_str()));
 	}
 	else
 	{
@@ -651,7 +651,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
 	vk::Result result = vulkanDevice->createPipelineCache(&pipelineCacheInfo, nullptr, &renderPassPipeline->mPipelineCache);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&renderPassPipeline->mPipelineCache,base::QuickFormat("%s EffectPass mPipelineCache",name.c_str()));
+	SetVulkanName(renderPlatform,&renderPassPipeline->mPipelineCache,platform::core::QuickFormat("%s EffectPass mPipelineCache",name.c_str()));
 
     vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
     vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
@@ -665,7 +665,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																		.setStage(shaderStageInfo);
 		//computePipelineCreateInfo	.setFlags(vk::PipelineCreateFlagBits::eDispatchBase);
 		SIMUL_VK_CHECK(vulkanDevice->createComputePipelines(renderPassPipeline->mPipelineCache,1,&computePipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline));
-		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass compute mPipeline",name.c_str()));
+		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,platform::core::QuickFormat("%s EffectPass compute mPipeline",name.c_str()));
 	}
 	else
 	{
@@ -724,7 +724,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 
 			result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
-			SetVulkanName(renderPlatform,&renderPassPipeline->mRenderPass,base::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
+			SetVulkanName(renderPlatform,&renderPassPipeline->mRenderPass,platform::core::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
 		}
 		
 		vk::PipelineShaderStageCreateInfo shaderStageInfo[2] = {
@@ -861,7 +861,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																		.setLayout(mPipelineLayout)
 																		.setRenderPass((rp&&(*rp))?*rp:renderPassPipeline->mRenderPass);
 		SIMUL_VK_CHECK(vulkanDevice->createGraphicsPipelines(renderPassPipeline->mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline));
-		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
+		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,platform::core::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
 		if(vertexInputs)
 			delete [] vertexInputs;
 	}

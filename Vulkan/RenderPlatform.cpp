@@ -86,7 +86,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 	// But it doesn't. So instead we just list the objects and names.
 #if 1//def _DEBUG
-	if(simul::base::SimulInternalChecks)
+	if(platform::core::SimulInternalChecks)
 	{
 		uint64_t *u=(uint64_t*)ds;
 		RenderPlatform::ResourceMap[*u]=name;
@@ -697,7 +697,7 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 	if(name)
 	{
 		SetVulkanName(this,&(buffer),name);
-		SetVulkanName(this,&(bufferMemory),base::QuickFormat("%s memory",name));
+		SetVulkanName(this,&(bufferMemory),platform::core::QuickFormat("%s memory",name));
 	}
 #endif
 }
@@ -1899,7 +1899,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPDependencies(nullptr);
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
-	SetVulkanName(this,&renderPass,base::QuickFormat("RenderPass"));
+	SetVulkanName(this,&renderPass,platform::core::QuickFormat("RenderPass"));
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);

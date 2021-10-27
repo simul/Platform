@@ -53,11 +53,12 @@ void D3D12ComputeContext::RestoreDeviceObjects(ID3D12Device* mDevice)
 	InvalidateDeviceObjects();
 	V_CHECK(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, SIMUL_PPV_ARGS(&IAllocator)));
 	V_CHECK(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, IAllocator, nullptr, SIMUL_PPV_ARGS(&ICommandList)));
+	IAllocator->SetName(platform::core::StringToWString("D3D12ComputeContext Allocator").c_str());
 }
 
 void D3D12ComputeContext::InvalidateDeviceObjects()
 {
-	//SAFE_RELEASE(IAllocator);
+	SAFE_RELEASE(IAllocator);
 	SAFE_RELEASE(ICommandList);
 }
 
@@ -187,8 +188,8 @@ void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 	mImmediateAllocator					= ctx->IAllocator;
 	immediateContext.platform_context	= mImmediateCommandList;
 	immediateContext.renderPlatform		= this;
-	bImmediateContextActive = ctx->bActive;
-	bExternalImmediate = ctx->bActive;
+	immediateContext.contextState.contextActive =ctx->bActive;
+	immediateContext.contextState.externalContext=ctx->bActive;
 }
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
@@ -558,7 +559,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 1;
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,base::QuickFormat("FrameHeap %d",i));
+		mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,platform::core::QuickFormat("FrameHeap %d",i));
 		mFrameOverrideSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "FrameOverrideSamplerHeap");
 	}
 	
@@ -821,7 +822,7 @@ void RenderPlatform::FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue*
 ID3D12RootSignature *RenderPlatform::LoadRootSignature(const char *filename)
 {
 	ID3D12RootSignature *rs=nullptr;
-	auto fileLoader = base::FileLoader::GetFileLoader();
+	auto fileLoader = platform::core::FileLoader::GetFileLoader();
 	std::vector<uint8_t> rblob;
 	void* fileContents			= nullptr;
 	unsigned int loadedBytes	= 0;
@@ -1051,13 +1052,12 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	crossplatform::RenderPlatform::BeginFrame(deviceContext);
-	BeginD3D12Frame();
+	BeginD3D12Frame(deviceContext);
 }
 
-void RenderPlatform::BeginD3D12Frame()
+void RenderPlatform::BeginD3D12Frame(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	// Store a reference to the device context
-	auto &deviceContext=GetImmediateContext();
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
@@ -1141,12 +1141,10 @@ void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContex
 {
 	crossplatform::RenderPlatform::EndFrame(deviceContext);
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	if (commandList && bImmediateContextActive && !bExternalImmediate)
-	{
+	if(commandList&& deviceContext.contextState.contextActive &&!deviceContext.contextState.externalContext)
 		commandList->Close();
+	deviceContext.contextState.contextActive = false;
 	}
-	bImmediateContextActive=false;
-}
 
 void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
 {
@@ -1388,19 +1386,19 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 
 void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue)
 {
-	if (bImmediateContextActive && !bExternalImmediate)
+	if(immediateContext.contextState.contextActive&& !immediateContext.contextState.externalContext)
 	{
 		ExecuteCommandList(commandQueue, mImmediateCommandList);
-		bImmediateContextActive = false;
+		immediateContext.contextState.contextActive = false;
 	}
 }
 
 void RenderPlatform::ResetImmediateCommandList()
 {
-	if (!bImmediateContextActive && !bExternalImmediate)
+	if (!immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
 	{
 		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
-		bImmediateContextActive = true;
+		immediateContext.contextState.contextActive = true;
 	}
 }
 
@@ -1457,7 +1455,7 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext
 		type = D3D12_COMMAND_LIST_TYPE_COPY;
 		break;
 	}
-
+	SIMUL_BREAK("Resource leaks here:");
 	ID3D12GraphicsCommandList*& commandList = reinterpret_cast<ID3D12GraphicsCommandList*&>(deviceContext.platform_context);
 	ID3D12CommandAllocator*& commandAllocator = reinterpret_cast<ID3D12CommandAllocator*&>(deviceContext.platform_context_allocator);
 
@@ -1474,6 +1472,7 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext
 			}
 		}
 		m12Device->CreateCommandAllocator(type, SIMUL_PPV_ARGS(&commandAllocator));
+		commandAllocator->SetName(platform::core::StringToWString("deviceContext.platform_context_allocator").c_str());
 	}
 	else
 	{
@@ -2694,7 +2693,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
-		BeginD3D12Frame();
+
+		BeginD3D12Frame(*deviceContext.AsGraphicsDeviceContext());
 
 		mLastFrame = deviceContext.frame_number;
 		mCurIdx++;

@@ -9,6 +9,7 @@
 #include <algorithm>
 
 using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 SamplerState::SamplerState()
@@ -775,7 +776,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],base::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
 	
 			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
 			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
@@ -855,9 +856,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	this->computable=computable;
 	this->renderTarget=rendertarget;
 	if(ascubemap)
-		SetName(base::QuickFormat("%s Cubemap %d of %d x %d",name.c_str(),num,w,l));
+		SetName(platform::core::QuickFormat("%s Cubemap %d of %d x %d",name.c_str(),num,w,l));
 	else
-		SetName(base::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));
+		SetName(platform::core::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));
 	return true;
 }
 
@@ -1013,17 +1014,17 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 {
 	const auto & pathsUtf8= renderPlatform->GetTexturePathsUtf8();
-	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(path,pathsUtf8);
+	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(path,pathsUtf8);
 	std::string filenameInUseUtf8=path;
 	if(index==-2||index>=(int)pathsUtf8.size())
 	{
 		errno=0;
 		std::string file;
-		std::vector<std::string> split_path = base::SplitPath(path);
+		std::vector<std::string> split_path = core::SplitPath(path);
 		if (split_path.size() > 1)
 		{
 			file = split_path[1];
-			index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
+			index = core::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
 		}
 		if (index < -1 || index >= (int)pathsUtf8.size())
 		{
@@ -1038,7 +1039,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	int x,y,n;
 	void* buffer=nullptr;
 	unsigned size=0;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buffer,size,filenameInUseUtf8.c_str(),false);
+	core::FileLoader::GetFileLoader()->AcquireFileContents(buffer,size,filenameInUseUtf8.c_str(),false);
 
 	if (!buffer)
 	{
@@ -1047,7 +1048,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	}
 	void* data = nullptr;
 	TranslateLoadedTextureData(data,buffer,size,x,y,n,4);
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
+	core::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
 }
 

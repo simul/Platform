@@ -691,7 +691,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	SIMUL_ASSERT(res == S_OK);
 	if (pso.pipelineState)
 	{
-		std::string psoName = ((mTechName + " PSO for ") + base::QuickFormat("%d", finalRt ? finalRt->RTFormats[0] : 0));
+		std::string psoName = ((mTechName + " PSO for ") + platform::core::QuickFormat("%d", finalRt ? finalRt->RTFormats[0] : 0));
 		pso.pipelineState->SetName(std::wstring(psoName.begin(), psoName.end()).c_str());
 	}
 
