@@ -162,6 +162,10 @@ function(set_target_runtime targname rt)
 endfunction()
 
 function(LibraryDefaults targname)
+	# Need to see why this is not defined.
+	if(NOT DEFINED PLATFORM_CPP_VERSION)
+		set(PLATFORM_CPP_VERSION 17)
+	endif()
 	if(SIMUL_INTERNAL_CHECKS)
 		target_compile_definitions(${targname} PRIVATE SIMUL_INTERNAL_CHECKS=1 )
 	else()

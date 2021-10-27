@@ -132,7 +132,6 @@ RenderPlatform::RenderPlatform():
 	,mComputeQueue(nullptr)
 	,mCopyQueue(nullptr)
 	,mImmediateCommandList(nullptr)
-	,mCurrentCommandList(nullptr)
 	,mFrameHeap(nullptr)
 	,mFrameOverrideSamplerHeap(nullptr)
 	,mSamplerHeap(nullptr) 
@@ -194,7 +193,7 @@ void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
 {
-	return mCurrentCommandList ? mCurrentCommandList : mImmediateCommandList;
+	return mImmediateCommandList;
 }
 
 ID3D12Device* RenderPlatform::AsD3D12Device()

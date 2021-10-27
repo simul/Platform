@@ -129,12 +129,6 @@ namespace simul
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
 
-			//! Sets the reference to the current command list in use by the application.
-			void SetCurrentCommandList(ID3D12GraphicsCommandList* commandList)
-			{
-				mCurrentCommandList = commandList;
-			}
-
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
@@ -321,8 +315,6 @@ namespace simul
 			ID3D12CommandQueue*			mCopyQueue;
 			//! Reference to the immediate command list
 			ID3D12GraphicsCommandList*	mImmediateCommandList;
-			//! Reference to the current command list
-			ID3D12GraphicsCommandList* mCurrentCommandList;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
