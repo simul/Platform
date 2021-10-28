@@ -143,5 +143,5 @@ vec4 quat_from_vector_endpoints(vec3 start, vec3 end)
 		q.z = -start.x - start.y;
 	}
 	q.w = 1.0 - q.w;
-	return normalise(q);
+	return normalize(q);
 }
