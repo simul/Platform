@@ -1,16 +1,10 @@
 cmake_minimum_required(VERSION 2.9)
 
-file(GLOB CMAKE
-    "*.cmake"
-)
+file(GLOB CMAKE  "*.cmake")
 
-file(GLOB SOURCES
-	"*.cpp" "glad.c"
-)
+file(GLOB SOURCES	"*.cpp")
 
-file(GLOB HEADERS
-    "*.h"
-)
+file(GLOB HEADERS "*.h")
 
 file(GLOB SHADERS
 	"${SIMUL_PLATFORM_DIR}/Shaders/Sfx/*.sfx" 

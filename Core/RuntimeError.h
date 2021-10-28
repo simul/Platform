@@ -41,9 +41,9 @@
 #define SIMUL_CERR\
 	std::cerr<<__FILE__<<"("<<std::dec<<__LINE__<<"): warning: "
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		#ifndef _MSC_VER	
 		extern PLATFORM_CORE_EXPORT void DebugBreak();
@@ -78,11 +78,11 @@ namespace simul
 }
 
 #define SIMUL_INTERNAL_COUT\
-	if(simul::base::SimulInternalChecks)\
+	if(platform::core::SimulInternalChecks)\
 		std::cout << __FILE__ << "(" << __LINE__ << "): info: "
 
 #define SIMUL_INTERNAL_CERR\
-	if(simul::base::SimulInternalChecks)\
+	if(platform::core::SimulInternalChecks)\
 		std::cerr << __FILE__ << "(" << __LINE__ << "): warning: "
 
 #define SIMUL_CERR_ONCE\
@@ -92,7 +92,7 @@ namespace simul
 
 #define SIMUL_INTERNAL_CERR_ONCE\
 	static bool SIMUL_CERR_ONCE_done=false;\
-	if(simul::base::SimulInternalChecks&&!SIMUL_CERR_ONCE_done)\
+	if(platform::core::SimulInternalChecks&&!SIMUL_CERR_ONCE_done)\
 		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning: "<<(SIMUL_CERR_ONCE_done=true)<<": "
 
 #define SIMUL_CERR_ONCE_PER(inst)\
@@ -107,7 +107,7 @@ namespace simul
 		if(!done)\
 			SIMUL_CERR<<err<<std::endl;\
 		done=true;\
-		throw simul::base::RuntimeError(err);\
+		throw platform::core::RuntimeError(err);\
 	}		
 #else
 	#define SIMUL_THROW(err)\
@@ -193,16 +193,16 @@ namespace simul
 #ifdef _MSC_VER
 	#define BREAK_IF_DEBUGGING\
 		{\
-			if(simul::base::DebugBreaksEnabled()&&IsDebuggerPresent())\
+			if(platform::core::DebugBreaksEnabled()&&IsDebuggerPresent())\
 				DebugBreak();\
 		}
 #else
 	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
-		#define BREAK_IF_DEBUGGING if(simul::base::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
+		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
 	#else
 		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
 		// Therefore we use this workaround.
-		#define BREAK_IF_DEBUGGING simul::base::DebugBreak();
+		#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
 	#endif
 #endif
 

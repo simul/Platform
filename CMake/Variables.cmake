@@ -12,6 +12,7 @@ option(PLATFORM_BUILD_SAMPLES "Build executable samples?" ${SIMUL_BUILD_SAMPLES}
 
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
+set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
 
 set( PLATFORM_DEBUG_DISABLE 0 CACHE STRING "Set disable-level for debugging. Zero for full functionality." )
 
@@ -27,15 +28,13 @@ else()
 	option(PLATFORM_COMPILE_DEVICE_MANAGER "" ON)
 endif()
 
-option(PLATFORM_SUPPORT_GLES "Use Google's Angle API?" OFF)
-set( PLATFORM_ANGLE_LIB_DIR "" CACHE PATH "Set the output location of Angle libraries.")
-set( PLATFORM_ANGLE_DIR "" CACHE PATH "Set the output location of Angle libraries.")
+option(PLATFORM_SUPPORT_WEBGPU "Use WebGPU API with Emscripten?" OFF)
+option(PLATFORM_IMGUI "" OFF)
 
 option(PLATFORM_LOAD_RENDERDOC "Always load the renderdoc dll?" OFF )
 option(PLATFORM_BUILD_DOCS "Whether to build html documentation with Doxygen and Sphinx" OFF )
  
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(PLATFORM_SUPPORT_ANGLE ${PLATFORM_SUPPORT_GLES})
 	set( WINDOWS ON )
 	set(PLATFORM_WINDOWS ON)
 	option(PLATFORM_SUPPORT_OPENGL "" ON)

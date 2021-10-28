@@ -11,9 +11,9 @@ using namespace crossplatform;
 VideoDecoder::VideoDecoder()
 	: mRenderPlatform(nullptr)
 	, mInputBuffer(nullptr)
+	, mMaxReferenceFrames(0)
 	, mNumReferenceFrames(0)
 	, mCurrentTextureIndex(0)
-	, mMaxReferenceFrames(0)
 	, mDecodeFence(nullptr)
 	, mFeaturesSupported(false)
 {

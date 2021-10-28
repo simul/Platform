@@ -22,7 +22,7 @@
 #endif
 #if SAMPLE_USE_D3D11
 #include "Platform/DirectX11/RenderPlatform.h"
-#include "Platform/DirectX11/Direct3D11Manager.h"
+#include "Platform/DirectX11/DeviceManager.h"
 #endif
 #if SAMPLE_USE_VULKAN
 #include "Platform/Vulkan/RenderPlatform.h"
@@ -64,7 +64,7 @@ using namespace simul;
 
 //Per API device managers 
 #if SAMPLE_USE_D3D11
-dx11::Direct3D11Manager dx11_deviceManager;
+dx11::DeviceManager dx11_deviceManager;
 #endif
 #if SAMPLE_USE_D3D12
 dx12::DeviceManager dx12_deviceManager;

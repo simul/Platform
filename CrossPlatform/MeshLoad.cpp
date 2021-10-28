@@ -241,9 +241,9 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 		m->Get("?mat.name",0,0,name);
 		if(name.length==0)
 		{
-			name=base::QuickFormat("%s %d",short_filename.c_str(),i);
+			name=platform::core::QuickFormat("%s %d",short_filename.c_str(),i);
 		}
-		Material *M=renderPlatform->GetOrCreateMaterial(base::QuickFormat("%s", name.C_Str()));
+		Material *M=renderPlatform->GetOrCreateMaterial(platform::core::QuickFormat("%s", name.C_Str()));
 		materials.push_back(M);
 		ConvertMaterial(renderPlatform,M,m);
 	}

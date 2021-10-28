@@ -17,8 +17,8 @@ namespace simul
 										Buffer();
 										~Buffer();
 			void						InvalidateDeviceObjects();
-			void						EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false);
-			void						EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data);
+			void						EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false) override;
+			void						EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data, bool cpu_access = false) override;
 			void						*Map(crossplatform::DeviceContext &deviceContext) override;
 			void						Unmap(crossplatform::DeviceContext &deviceContext) override;
 			ID3D12Resource * const AsD3D12Buffer()  const override

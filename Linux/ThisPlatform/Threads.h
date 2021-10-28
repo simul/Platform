@@ -1,6 +1,8 @@
 #pragma once
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
+#include <cerrno>
 #define THREAD_TYPE pthread_t
 
 inline int strcpy_s(char* dst, size_t size, const char* src)

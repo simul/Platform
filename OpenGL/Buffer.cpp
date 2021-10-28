@@ -44,7 +44,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* renderPlatform,in
     mBufferLayout = (crossplatform::Layout*)layout;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_indices,int index_size_bytes,const void* data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_indices,int index_size_bytes,const void* data, bool cpu_access)
 {
     InvalidateDeviceObjects();
 

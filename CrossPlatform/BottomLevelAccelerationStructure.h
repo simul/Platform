@@ -34,7 +34,7 @@ namespace simul
 			void SetMesh(crossplatform::Mesh* mesh);
 			void SetAABB(crossplatform::StructuredBuffer<Raytracing_AABB>* aabbBuffer);
 
-			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) { initialized = true; }
+			virtual void BuildAccelerationStructureAtRuntime(DeviceContext& deviceContext) override { initialized = true; }
 			
 			inline const uint32_t& GetGeometryCount() const { return geometryCount; }
 			inline uint32_t GetGeometryCount() { return geometryCount; }

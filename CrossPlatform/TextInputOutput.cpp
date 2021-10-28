@@ -12,6 +12,7 @@
 #include <charconv>
 #endif
 using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 using std::string;
 #ifndef _MSC_VER
@@ -28,7 +29,7 @@ TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	,fileLoader(nullptr)
 	,memoryInterface(m)
 {
-	fileLoader=base::FileLoader::GetFileLoader();
+	fileLoader= platform::core::FileLoader::GetFileLoader();
 }
 
 TextFileInput::~TextFileInput()
@@ -207,7 +208,7 @@ void TextFileInput::Load(const std::string &text)
 	}
 }
 
-void TextFileInput::SetFileLoader(simul::base::FileLoader *f)
+void TextFileInput::SetFileLoader(platform::core::FileLoader *f)
 {
 	fileLoader=f;
 }
@@ -593,30 +594,30 @@ void TextFileOutput::Save(std::ostream &ofs,int tab,bool bookEnd)
 	const char *t0=tabstr0.c_str();
 	const char *t1=tabstr1.c_str();
 	if(properties.size()>1||arrays.size()>0||bookEnd)
-		write(ofs,base::stringFormat("%s{\n",t0));
+		write(ofs,core::stringFormat("%s{\n",t0));
 	for(std::map<std::string,std::string>::iterator i=properties.begin();i!=properties.end();i++)
 	{
 		std::string &str=i->second;
-		write(ofs,base::stringFormat("%s\"%s\": \"%s\"\n",t1,i->first.c_str(),str.c_str()));
+		write(ofs,core::stringFormat("%s\"%s\": \"%s\"\n",t1,i->first.c_str(),str.c_str()));
 	}
 	for(std::map<std::string,TextFileOutput>::iterator i=subElements.begin();i!=subElements.end();i++)
 	{
-		write(ofs,base::stringFormat("%s\"%s\":\n",t1,i->first.c_str()));
+		write(ofs,core::stringFormat("%s\"%s\":\n",t1,i->first.c_str()));
 		TextFileOutput &s=i->second;
 		s.Save(ofs,tab+1);
 	}
 	for(std::map<std::string,Array>::iterator i=arrays.begin();i!=arrays.end();i++)
 	{
-		write(ofs,base::stringFormat("%s\"%s\":\n%s[\n",t1,i->first.c_str(),t1));
+		write(ofs,core::stringFormat("%s\"%s\":\n%s[\n",t1,i->first.c_str(),t1));
 		Array &array=i->second;
 		for(size_t j=0;j<array.size();j++)
 		{
 			((TextFileOutput*)array[j])->Save(ofs,tab+1);
 		}
-		write(ofs,base::stringFormat("%s]\n",t1));
+		write(ofs,core::stringFormat("%s]\n",t1));
 	}
 	if(properties.size()>1||arrays.size()>0||bookEnd)
-		write(ofs,base::stringFormat("%s}\n",t0));
+		write(ofs,core::stringFormat("%s}\n",t0));
 }
 
 bool TextFileOutput::Good()
@@ -626,62 +627,62 @@ bool TextFileOutput::Good()
 
 void TextFileOutput::Set(const char *name,const char *value)
 {
-	properties[name]=base::stringFormat("%s",value);
+	properties[name]=core::stringFormat("%s",value);
 }
 
 void TextFileOutput::Set(const char *name,bool value)
 {
-	properties[name]=base::stringFormat("%s",value?"true":"false");
+	properties[name]=core::stringFormat("%s",value?"true":"false");
 }
 
 void TextFileOutput::Set(const char *name,int value)
 {
-	properties[name]=base::stringFormat("%d",value);
+	properties[name]=core::stringFormat("%d",value);
 }
 
 void TextFileOutput::Set(const char* name, long long value)
 {
-	properties[name] = base::stringFormat("%lld", value);
+	properties[name] = core::stringFormat("%lld", value);
 }
 
 void TextFileOutput::Set(const char* name, unsigned long long value)
 {
-	properties[name] = base::stringFormat("%llu", value);
+	properties[name] = core::stringFormat("%llu", value);
 }
 
 void TextFileOutput::Set(const char *name,double value)
 {
-	properties[name]=base::stringFormat("%16.16g",value);
+	properties[name]=core::stringFormat("%16.16g",value);
 }
 
 void TextFileOutput::Set(const char *name,float value)
 {
-	properties[name]=base::stringFormat("%16.16g",value);
+	properties[name]=core::stringFormat("%16.16g",value);
 }
 
 void TextFileOutput::Set(const char *name,int3 value)
 {
-	properties[name]=base::stringFormat("%d,%d,%d",value.x,value.y,value.z);
+	properties[name]=core::stringFormat("%d,%d,%d",value.x,value.y,value.z);
 }
 
 void TextFileOutput::Set(const char *name,vec2 value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g",value.x,value.y);
+	properties[name]=core::stringFormat("%16.16g,%16.16g",value.x,value.y);
 }
 
 void TextFileOutput::Set(const char *name,vec3 value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g",value.x,value.y,value.z);
+	properties[name]=core::stringFormat("%16.16g,%16.16g,%16.16g",value.x,value.y,value.z);
 }
 
 void TextFileOutput::Set(const char *name,vec4 value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.w);
+	properties[name]=core::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.w);
 }
 
 void TextFileOutput::Set(const char *name,Quaterniond value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.s);
+	properties[name]=core::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.s);
 }
 
 

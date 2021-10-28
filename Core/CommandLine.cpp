@@ -3,8 +3,8 @@
 #include "StringToWString.h"
 #include "RuntimeError.h"
 
-using namespace simul;
-using namespace base;
+using namespace platform;
+using namespace core;
 
 #ifdef WIN64
 #include <Windows.h>

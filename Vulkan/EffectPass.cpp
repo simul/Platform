@@ -378,7 +378,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			appliedTopology = cs->topology;
 		if (appliedTopology == crossplatform::Topology::UNDEFINED)
 			appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
-		hashval = MakeRenderPassHash(pixelFormat, appliedTopology, blendState, depthStencilState, rasterizerState);
+		hashval = MakeRenderPassHash(pixelFormat, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState);
 		const auto &p=mRenderPasses.find(hashval);
 		if(p==mRenderPasses.end())
 		{
@@ -477,7 +477,7 @@ void EffectPass::Initialize()
 			vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount*count_per_frame).setPoolSizeCount(p).setPPoolSizes(poolSizes);
 
 		result = vulkanDevice->createDescriptorPool(&descriptor_pool, nullptr, &mDescriptorPool);
-		SetVulkanName(renderPlatform,&mDescriptorPool,base::QuickFormat("%s Descriptor pool",name.c_str()));
+		SetVulkanName(renderPlatform,&mDescriptorPool,platform::core::QuickFormat("%s Descriptor pool",name.c_str()));
 		delete [] poolSizes;
 		vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
 		vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
@@ -603,13 +603,13 @@ void EffectPass::Initialize()
 	result = vulkanDevice->createDescriptorSetLayout(&descriptor_layout, nullptr, &mDescLayout);
 	SetVulkanName(renderPlatform,&mDescLayout,this->name+" descriptor set Layout");
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&mDescLayout,base::QuickFormat("%s Descriptor layout",name.c_str()));
+	SetVulkanName(renderPlatform,&mDescLayout,platform::core::QuickFormat("%s Descriptor layout",name.c_str()));
 
 	auto pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(&mDescLayout);
 
 	result = vulkanDevice->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&mPipelineLayout,base::QuickFormat("%s EffectPass Pipeline layout",name.c_str()));
+	SetVulkanName(renderPlatform,&mPipelineLayout,platform::core::QuickFormat("%s EffectPass Pipeline layout",name.c_str()));
 }
 
 void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
@@ -633,7 +633,7 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 		alloc_info=alloc_info.setDescriptorPool(mDescriptorPool);
 		auto result = vulkanDevice->allocateDescriptorSets(&alloc_info,&descriptorSet);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform,&descriptorSet,base::QuickFormat("%s Descriptor set",name.c_str()));
+		SetVulkanName(renderPlatform,&descriptorSet,platform::core::QuickFormat("%s Descriptor set",name.c_str()));
 	}
 	else
 	{
@@ -651,7 +651,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
 	vk::Result result = vulkanDevice->createPipelineCache(&pipelineCacheInfo, nullptr, &renderPassPipeline->mPipelineCache);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&renderPassPipeline->mPipelineCache,base::QuickFormat("%s EffectPass mPipelineCache",name.c_str()));
+	SetVulkanName(renderPlatform,&renderPassPipeline->mPipelineCache,platform::core::QuickFormat("%s EffectPass mPipelineCache",name.c_str()));
 
     vulkan::Shader* v   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
     vulkan::Shader* f   = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
@@ -665,7 +665,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																		.setStage(shaderStageInfo);
 		//computePipelineCreateInfo	.setFlags(vk::PipelineCreateFlagBits::eDispatchBase);
 		SIMUL_VK_CHECK(vulkanDevice->createComputePipelines(renderPassPipeline->mPipelineCache,1,&computePipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline));
-		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass compute mPipeline",name.c_str()));
+		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,platform::core::QuickFormat("%s EffectPass compute mPipeline",name.c_str()));
 	}
 	else
 	{
@@ -724,7 +724,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 
 			result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
-			SetVulkanName(renderPlatform,&renderPassPipeline->mRenderPass,base::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
+			SetVulkanName(renderPlatform,&renderPassPipeline->mRenderPass,platform::core::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
 		}
 		
 		vk::PipelineShaderStageCreateInfo shaderStageInfo[2] = {
@@ -813,15 +813,17 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		colorBlendInfo.setAttachmentCount(num_RT).setPAttachments(colorBlendAttachments.data());
 		
 		// from the vertex shader's layout:
-		
+		const auto *layout=deviceContext.contextState.currentLayout;
+		if(!layout)
+			layout=&v->layout;
 		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
-		const auto &layoutDesc=v->layout.GetDesc();
+		const auto &layoutDesc=layout->GetDesc();
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
 		if(layoutDesc.size())
 		{
 			vk::VertexInputBindingDescription bindingDescription ;
 			bindingDescription.setBinding (0);
-			bindingDescription.setStride( v->layout.GetStructSize());
+			bindingDescription.setStride(layout->GetStructSize());
 			bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
 
 			if(layoutDesc.size())
@@ -861,7 +863,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																		.setLayout(mPipelineLayout)
 																		.setRenderPass((rp&&(*rp))?*rp:renderPassPipeline->mRenderPass);
 		SIMUL_VK_CHECK(vulkanDevice->createGraphicsPipelines(renderPassPipeline->mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline));
-		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,base::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
+		SetVulkanName(renderPlatform,&renderPassPipeline->mPipeline,platform::core::QuickFormat("%s EffectPass renderPass Pipeline",name.c_str()));
 		if(vertexInputs)
 			delete [] vertexInputs;
 	}
@@ -902,16 +904,25 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 {
 }
 
-RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology)
+RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout)
 {
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,blendState,depthStencilState,rasterizerState);
+	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,layout,blendState,depthStencilState,rasterizerState);
 	return hashval;
 }
 
 RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology,
+	const crossplatform::Layout *layout,
 	const crossplatform::RenderState *blendState, const crossplatform::RenderState *depthStencilState, const crossplatform::RenderState *rasterizerState)
 {
 	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)topology;
+	if(layout)
+	{
+		const auto &lDesc=layout->GetDesc();
+		for(const auto &l:lDesc)
+		{
+			hashval+=((unsigned long long)l.format)*3279;
+		}
+	}
 	if(blendState)
 	{
 		hashval+=blendState->desc.blend.AlphaToCoverageEnable?2048:0;
@@ -943,6 +954,7 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 	}
 	return hashval;
 }
+
 vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext)
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
@@ -951,7 +963,7 @@ vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceCon
 	auto *rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 	if(rp)
 		return *rp;
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology);
+	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,cs->currentLayout);
 	const auto &p=mRenderPasses.find(hashval);
 	if(p==mRenderPasses.end())
 	{

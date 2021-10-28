@@ -97,7 +97,7 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 	ERRNO_BREAK
 	ID3D11Texture2D* tex=NULL;
 	std::string str;
-	int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
+	int idx= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
 	if(idx<-1||idx>=(int)texturePathsUtf8.size())
 	{
 		SIMUL_CERR<<"Texture file not found: "<<filename<<std::endl;
@@ -108,7 +108,7 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 		str=(texturePathsUtf8[idx]+"/")+str;
 	void *ptr=NULL;
 	unsigned bytes=0;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,bytes,str.c_str(),false);
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(ptr,bytes,str.c_str(),false);
 #if WINVER<0x602
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory(&loadInfo,sizeof(D3DX11_IMAGE_LOAD_INFO));
@@ -150,7 +150,7 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 	//	std::cout << numrefs << std::endl;
 	}
 #endif
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 	return tex;
 }
 

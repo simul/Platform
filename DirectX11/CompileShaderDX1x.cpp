@@ -31,7 +31,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		{
 		case D3D_INCLUDE_LOCAL:
 		{
-			int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+			int index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
 			if(index<0)
 				finalPathUtf8=pFileNameUtf8;
 			else if(index<m_pathsUtf8.size())
@@ -47,7 +47,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		void *buf=NULL;
 		unsigned fileSize=0;
 ERRNO_CHECK
-		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		platform::core::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
@@ -74,7 +74,7 @@ ERRNO_CHECK
 
 HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 {
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
 
@@ -95,7 +95,7 @@ ERRNO_CHECK
 		{
 		case D3D_INCLUDE_LOCAL:
 		{
-			int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+			int index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
 			if(index<0)
 				finalPathUtf8=pFileNameUtf8;
 			else if(index<m_pathsUtf8.size())
@@ -116,7 +116,7 @@ ERRNO_CHECK
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
+		double dateTimeJdn= platform::core::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
 		if(dateTimeJdn>newest)
 			newest=dateTimeJdn;
 		if(dateTimeJdn>lastCompileTime)
@@ -124,7 +124,7 @@ ERRNO_CHECK
 			// Early-out if we're testing against a specific compile time.
 			return E_FAIL;
 		}
-		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		platform::core::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
@@ -148,6 +148,6 @@ ERRNO_CHECK
 
 HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
 {
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }

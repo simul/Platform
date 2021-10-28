@@ -7,7 +7,7 @@ namespace simul
 	namespace base
 	{
 		//! The default derived file loader
-		class PLATFORM_CORE_EXPORT DefaultFileLoader:public simul::base::FileLoader
+		class PLATFORM_CORE_EXPORT DefaultFileLoader:public platform::core::FileLoader
 		{
 		public:
 			DefaultFileLoader();

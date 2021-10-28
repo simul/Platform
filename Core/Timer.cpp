@@ -1,6 +1,6 @@
 #include "Platform/Core/Timer.h"
 #include <math.h>
-using namespace simul::core;
+using namespace platform::core;
 #ifdef _MSC_VER
 	#include <time.h>
 	#if defined (WIN32) || defined (WIN64) || defined(WINAPI_FAMILY_DESKTOP_APP) //WinGDK

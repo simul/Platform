@@ -1,4 +1,4 @@
-#include "Platform/DirectX11/Direct3D11Manager.h"
+#include "Platform/DirectX11/DeviceManager.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX11/MacrosDx1x.h"
@@ -360,7 +360,7 @@ void Window::Release()
 	SAFE_RELEASE(m_rasterState);
 }
 
-Direct3D11Manager::Direct3D11Manager()
+DeviceManager::DeviceManager()
 	:d3dDevice(0)
 	,d3dDeviceContext(0)
 	,d3dDebug(NULL)
@@ -369,17 +369,17 @@ Direct3D11Manager::Direct3D11Manager()
 }
 
 
-Direct3D11Manager::~Direct3D11Manager()
+DeviceManager::~DeviceManager()
 {
 	Shutdown();
 }
 
-bool Direct3D11Manager::IsActive() const
+bool DeviceManager::IsActive() const
 {
 	return d3dDevice != nullptr;
 }
 
-void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_driver)
+void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_driver)
 {
 	HRESULT result;
 	DXGI_ADAPTER_DESC adapterDesc;
@@ -554,12 +554,12 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 	SIMUL_ASSERT(result==S_OK);
 }
 
-int Direct3D11Manager::GetNumOutputs()
+int DeviceManager::GetNumOutputs()
 {
 	return (int)outputs.size();
 }
 
-crossplatform::Output Direct3D11Manager::GetOutput(int i)
+crossplatform::Output DeviceManager::GetOutput(int i)
 {
 	crossplatform::Output o;
 
@@ -630,7 +630,7 @@ crossplatform::Output Direct3D11Manager::GetOutput(int i)
 	return o;
 }
 
-void Direct3D11Manager::Shutdown()
+void DeviceManager::Shutdown()
 {
 	// Release the adapter.
 	SAFE_RELEASE(adapter);
@@ -679,7 +679,7 @@ void Direct3D11Manager::Shutdown()
 }
 
 
-void Direct3D11Manager::ReportMessageFilterState()
+void DeviceManager::ReportMessageFilterState()
 {
 	if(!infoQueue)
 		return;
@@ -695,12 +695,12 @@ void Direct3D11Manager::ReportMessageFilterState()
 	}
 }
 
-void* Direct3D11Manager::GetDevice()
+void* DeviceManager::GetDevice()
 {
 	return d3dDevice;
 }
 
-void* Direct3D11Manager::GetDeviceContext()
+void* DeviceManager::GetDeviceContext()
 {
 	return d3dDeviceContext;
 }

@@ -86,7 +86,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 
 	// But it doesn't. So instead we just list the objects and names.
 #if 1//def _DEBUG
-	if(simul::base::SimulInternalChecks)
+	if(platform::core::SimulInternalChecks)
 	{
 		uint64_t *u=(uint64_t*)ds;
 		RenderPlatform::ResourceMap[*u]=name;
@@ -697,7 +697,7 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 	if(name)
 	{
 		SetVulkanName(this,&(buffer),name);
-		SetVulkanName(this,&(bufferMemory),base::QuickFormat("%s memory",name));
+		SetVulkanName(this,&(bufferMemory),platform::core::QuickFormat("%s memory",name));
 	}
 #endif
 }
@@ -1705,7 +1705,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	}
 	vulkan::EffectPass*vp=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
 	RenderPassHash hashval=MakeTargetHash(tv);
-	hashval+=5*(deviceContext.contextState.currentEffectPass?vp->GetHash(colourPF[0],deviceContext.contextState.topology):0);
+	hashval+=5*(deviceContext.contextState.currentEffectPass?vp->GetHash(colourPF[0],deviceContext.contextState.topology, deviceContext.contextState.currentLayout):0);
 	std::map<unsigned long long,vk::Framebuffer>::iterator h=mFramebuffers.find(hashval);
 	if(h==mFramebuffers.end()||!h->second ||mFramebuffers.empty())
 	{
@@ -1899,7 +1899,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPDependencies(nullptr);
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
-	SetVulkanName(this,&renderPass,base::QuickFormat("RenderPass"));
+	SetVulkanName(this,&renderPass,platform::core::QuickFormat("RenderPass"));
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);

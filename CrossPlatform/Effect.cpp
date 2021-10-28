@@ -706,14 +706,14 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 		{
 			std::string filenameUtf8 = std::string(filename_utf8) + ".sfx";
 			const auto& paths = r->GetShaderPathsUtf8();
-			int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filenameUtf8.c_str(), paths);
+			int index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filenameUtf8.c_str(), paths);
 			if (index < 0)
 				return true;// (index == -2 ? false : true); TODO: Deal missing .sfx files - AJR.
 			if (index < paths.size())
 				filenameUtf8 = paths[index] + filenameUtf8;
 			std::string platformName = r->GetName();
 
-			base::find_and_replace(platformName, " ", "");
+			platform::core::find_and_replace(platformName, " ", "");
 			std::string sourcePlatformPath = (STRINGIFY(PLATFORM_SOURCE_DIR));
 			std::string sourceCurrentPlatformPath = (std::string(STRINGIFY(PLATFORM_SOURCE_DIR)) + "\\") + platformName;
 			std::string buildPlatformPath = (std::string(STRINGIFY(PLATFORM_BUILD_DIR)) + "\\") + platformName;
@@ -738,7 +738,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 
 				cmdLine += " -w";
 				//cmdLine += " -L";
-				if (simul::base::SimulInternalChecks)
+				if (platform::core::SimulInternalChecks)
 					cmdLine += " -V";
 				// Includes
 				cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\HLSL;" + sourceCurrentPlatformPath + "\\GLSL;" + sourceCurrentPlatformPath + "\\Sfx;";
@@ -923,7 +923,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 
 	if (binFilenameUtf8.find(".sfxo") == std::string::npos)
 		binFilenameUtf8 += ".sfxo";
-	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(binFilenameUtf8.c_str(), binaryPaths);
+	int index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(binFilenameUtf8.c_str(), binaryPaths);
 	std::string filepathUtf8;
 	if (index < 0 || index >= binaryPaths.size())
 		filepathUtf8 = "";
@@ -931,15 +931,13 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		filepathUtf8 = binaryPaths[index];
 
 	binFilenameUtf8 = filepathUtf8 + binFilenameUtf8;
-#ifdef __ORBIS__
-	base::find_and_replace(binFilenameUtf8,"\\","/");
-#endif
-	if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
+	platform::core::find_and_replace(binFilenameUtf8,"\\","/");
+	if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{
 		std::transform(binFilenameUtf8.begin(), binFilenameUtf8.end(), binFilenameUtf8.begin(), ::tolower);
-		if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
+		if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
-			string err=base::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
+			string err= platform::core::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
 			SIMUL_BREAK_ONCE(err.c_str());
 			static bool already = false;
 			if (!already)
@@ -953,7 +951,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			}
 			// We now attempt to build the shader from source.
 			Compile(filename_utf8);
-			if(!simul::base::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
+			if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 			{
 				binFilenameUtf8 =filename_utf8;
 				// The sfxo does not exist, so we can't load this effect.
@@ -965,9 +963,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	unsigned int num_bytes;
 
 	std::string sfxbFilenameUtf8 = binFilenameUtf8;
-	base::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
+	platform::core::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
 	
 	void *bin_ptr=nullptr;
 	unsigned int bin_num_bytes=0;
@@ -1004,7 +1002,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		#else
 		string line		=str.substr(pos,next-pos-1);
 		#endif
-		base::ClipWhitespace(line);
+		platform::core::ClipWhitespace(line);
 		if (!platformChecked)
 		{
 			if (line.substr(0, 3) != std::string("SFX"))
@@ -1024,7 +1022,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			}
 			platformChecked = true;
 		}
-		vector<string> words=simul::base::split(line,' ');
+		vector<string> words= platform::core::split(line,' ');
 		pos				=next;
 		int sp=(int)line.find(" ");
 		int open_brace= (int)line.find("{");
@@ -1130,22 +1128,22 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				crossplatform::RenderStateDesc desc;
 				desc.name=name;
 				desc.type=crossplatform::BLEND;
-				desc.blend.AlphaToCoverageEnable=toBool(simul::base::toNext(props,',', pos_b));
+				desc.blend.AlphaToCoverageEnable=toBool(platform::core::toNext(props,',', pos_b));
 				pos_b++;
-				string enablestr=simul::base::toNext(props,')', pos_b);
-				vector<string> en=base::split(enablestr,',');
+				string enablestr=platform::core::toNext(props,')', pos_b);
+				vector<string> en= platform::core::split(enablestr,',');
 
 				desc.blend.numRTs= (int)en.size();
 				pos_b++;
-				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_b));
-				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_b));
-				crossplatform::BlendOption SrcBlend			=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_b));
-				crossplatform::BlendOption DestBlend		=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_b));
-				crossplatform::BlendOption SrcBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_b));
-				crossplatform::BlendOption DestBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_b));
+				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(platform::core::toNext(props,',', pos_b));
+				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(platform::core::toNext(props,',', pos_b));
+				crossplatform::BlendOption SrcBlend			=(crossplatform::BlendOption)toInt(platform::core::toNext(props,',', pos_b));
+				crossplatform::BlendOption DestBlend		=(crossplatform::BlendOption)toInt(platform::core::toNext(props,',', pos_b));
+				crossplatform::BlendOption SrcBlendAlpha	=(crossplatform::BlendOption)toInt(platform::core::toNext(props,',', pos_b));
+				crossplatform::BlendOption DestBlendAlpha	=(crossplatform::BlendOption)toInt(platform::core::toNext(props,',', pos_b));
 				pos_b++;
-				string maskstr=base::toNext(props,')',pos_b);
-				vector<string> ma=base::split(maskstr,',');
+				string maskstr= platform::core::toNext(props,')',pos_b);
+				vector<string> ma= platform::core::split(maskstr,',');
 
 				for(int i=0;i<desc.blend.numRTs;i++)
 				{
@@ -1183,7 +1181,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				string name		 = words[1];
 				desc.name			=name.c_str();
 				desc.type		   = crossplatform::RTFORMAT;
-				vector<string> props = simul::base::split(words[2], ',');
+				vector<string> props = platform::core::split(words[2], ',');
 				if (props.size() != 8)
 				{
 					SIMUL_CERR << "Invalid number of formats for: " << name << std::endl;
@@ -1215,7 +1213,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					8 ScissorEnable
 					9 SlopeScaledDepthBias
 				*/
-				vector<string> props=simul::base::split(words[2],',');
+				vector<string> props=platform::core::split(words[2],',');
 				//desc.rasterizer.antialias		 	=toInt(props[0]);
 				desc.rasterizer.cullFaceMode		=toCullFadeMode(props[1]);
 				desc.rasterizer.frontFace		   	=toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
@@ -1234,9 +1232,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				crossplatform::RenderStateDesc desc;
 				desc.name=name.c_str();
 				desc.type=crossplatform::DEPTH;
-				desc.depth.test=toBool(simul::base::toNext(props,',',pos_d));
-				desc.depth.write=toInt(simul::base::toNext(props,',',pos_d))!=0;
-				desc.depth.comparison=(crossplatform::DepthComparison)toInt(simul::base::toNext(props,',',pos_d));
+				desc.depth.test=toBool(platform::core::toNext(props,',',pos_d));
+				desc.depth.write=toInt(platform::core::toNext(props,',',pos_d))!=0;
+				desc.depth.comparison=(crossplatform::DepthComparison)toInt(platform::core::toNext(props,',',pos_d));
 				crossplatform::RenderState *ds=renderPlatform->CreateRenderState(desc);
 				depthStencilStates[name]=ds;
 			}
@@ -1250,7 +1248,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				int reg=atoi(register_num.c_str());
 				simul::crossplatform::SamplerStateDesc desc;
 				string state=line.substr(comma+1,line.length()-comma-1);
-				vector<string> st=simul::base::split(state,',');
+				vector<string> st=platform::core::split(state,',');
 				desc.filtering=stringToFilter(st[0]);
 				desc.x=stringToWrapping(st[1]);
 				desc.y=stringToWrapping(st[2]);
@@ -1327,8 +1325,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				string uses;
 				if(cm<line.length())
 					uses=line.substr(cm+1,line.length()-cm-1);
-				base::ClipWhitespace(uses);
-				base::ClipWhitespace(type);
+				platform::core::ClipWhitespace(uses);
+				platform::core::ClipWhitespace(type);
 				//base::ClipWhitespace(filename_entry);
 
 				std::regex re_file_entry("([a-z0-9A-Z_]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
@@ -1357,10 +1355,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 							inline_length = std::stoul(inline_length_str, nullptr, 16);
 							if (!bin_ptr)
 							{
-								simul::base::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, sfxbFilenameUtf8.c_str(), true);
+								platform::core::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, sfxbFilenameUtf8.c_str(), true);
 								if (!bin_ptr)
 								{
-									SIMUL_BREAK(base::QuickFormat("Failed to load combined shader binary: %s\n", sfxbFilenameUtf8.c_str()));
+									SIMUL_BREAK(platform::core::QuickFormat("Failed to load combined shader binary: %s\n", sfxbFilenameUtf8.c_str()));
 								}
 							}
 						}
@@ -1523,7 +1521,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					else
 					{
-						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
+						SIMUL_BREAK(platform::core::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
 						continue;
 					}
 					Shader *s = nullptr;
@@ -1582,7 +1580,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					else if(filenamestr.length()>0)
 					{
-						SIMUL_BREAK_ONCE(base::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
+						SIMUL_BREAK_ONCE(platform::core::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
 					}
 					// Set what the shader uses.
 
@@ -1722,9 +1720,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		next	=(int)str.find('\n',pos+1);
 	}
 	SIMUL_ASSERT(level==OUTSIDE);
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 	if (bin_ptr)
-		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(bin_ptr);
+		platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(bin_ptr);
 	PostLoad();
 
 	return true;

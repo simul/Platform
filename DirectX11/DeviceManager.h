@@ -12,12 +12,12 @@ namespace simul
 	namespace dx11
 	{
 
-		//! Direct3D11Manager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
-		class SIMUL_DIRECTX11_EXPORT Direct3D11Manager: public crossplatform::GraphicsDeviceInterface
+		//! DeviceManager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
+		class SIMUL_DIRECTX11_EXPORT DeviceManager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
-			Direct3D11Manager();
-			~Direct3D11Manager();
+			DeviceManager();
+			~DeviceManager();
 			void Initialize(bool use_debug=false,bool instrument=false,bool default_driver=false);
 			bool IsActive() const;
 			void Shutdown();

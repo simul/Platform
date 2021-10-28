@@ -15,7 +15,7 @@
 #endif
 #ifdef SAMPLE_USE_D3D11
 #include "Platform/DirectX11/RenderPlatform.h"
-#include "Platform/DirectX11/Direct3D11Manager.h"
+#include "Platform/DirectX11/DeviceManager.h"
 #include "Platform/DirectX11/Texture.h"
 #endif
 #ifdef SAMPLE_USE_VULKAN
@@ -81,7 +81,7 @@ dx12::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface *graphicsDeviceInterface=&deviceManager;
 #endif
 #ifdef SAMPLE_USE_D3D11
-dx11::Direct3D11Manager deviceManager;
+dx11::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface *graphicsDeviceInterface=&deviceManager;
 #endif
 #ifdef SAMPLE_USE_OPENGL
@@ -443,7 +443,7 @@ public:
 		}
 
 		// Pre-Render Update
-		static simul::core::Timer timer;
+		static platform::core::Timer timer;
 		float real_time = timer.UpdateTimeSum() / 1000.0f;
 
 		lights[0].direction.x = .05f * sin(real_time * 1.64f);
