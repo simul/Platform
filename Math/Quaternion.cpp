@@ -480,45 +480,6 @@ namespace simul
 		}
 		void MatrixToQuaternion(Quaternion &q,const Matrix4x4 &M)
 		{
-#if 0
-			Matrix4x4 T;
-			M.Transpose(T);
-		//    Calculate the trace of the matrix T from the equation:
-			float Tr=T(0,0)+T(1,1)+T(2,2);
-		//    If the trace of the matrix is greater than zero
-			if(Tr>0)
-			{           
-				float Size	=0.5f/sqrt(Tr+1.0f);
-				q.s			=0.25f/Size;
-				q.x			=(T.m21	-T.m12)*Size;
-				q.y			=(T.m02	-T.m20)*Size;
-				q.z			=(T.m10	-T.m01)*Size;
-			}
-			else if ((T.m00 >T.m11)&(T.m00 >T.m22))
-			{ 
-			  float S = sqrt(1.0 + T.m00 - T.m11 - T.m22) * 2; // S=4*qx 
-			  q.s = (T.m21 - T.m12) / S;
-			  q.x = 0.25 * S;
-			  q.y = (T.m01 +T.m10) / S; 
-			  q.z = (T.m02 +T.m20) / S; 
-			}  
-			else if (T.m11 >T.m22)
-			{ 
-			  float S = sqrt(1.0 +T. m11 - T.m00 -T.m22) * 2; // S=4*qy
-			  q.s = (T.m02 - T.m20) / S;
-			  q.x = (T.m01 + T.m10) / S; 
-			  q.y = 0.25 * S;
-			  q.z = (T.m12 + T.m21) / S; 
-			}
-			else
-			{ 
-			  float S = sqrt(1.0 + T.m22 - T.m00 -T.m11) * 2; // S=4*qz
-			  q.s = (T.m10 - T.m01) / S;
-			  q.x = (T.m02 + T.m20) / S;
-			  q.y = (T.m12 + T.m21) / S;
-			  q.z = 0.25 * S;
-			}
-#else
 			Matrix4x4 T;
 			M.Transpose(T);
 		//    Calculate the trace of the matrix T from the equation:
@@ -558,7 +519,6 @@ namespace simul
 				q.z = -r[2];
 				q.s = r[3];
 			}
-#endif
 			q.MakeUnit();
 		}
 

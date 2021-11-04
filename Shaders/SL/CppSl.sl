@@ -399,44 +399,44 @@
 			float M[3][3];
 		};
 	};
-	struct mat4
+	template<typename T> struct tmatrix4
 	{
 		union
 		{
 			float m[16];
 			struct
 			{
-				float        _11, _12, _13, _14;
-				float        _21, _22, _23, _24;
-				float        _31, _32, _33, _34;
-				float        _41, _42, _43, _44;
+				T        _11, _12, _13, _14;
+				T        _21, _22, _23, _24;
+				T        _31, _32, _33, _34;
+				T        _41, _42, _43, _44;
 			};
 			struct
 			{
-				float        _m00, _m01, _m02, _m03;
-				float        _m10, _m11, _m12, _m13;
-				float        _m20, _m21, _m22, _m23;
-				float        _m30, _m31, _m32, _m33;
+				T        _m00, _m01, _m02, _m03;
+				T        _m10, _m11, _m12, _m13;
+				T        _m20, _m21, _m22, _m23;
+				T        _m30, _m31, _m32, _m33;
 			};
-			float M[4][4];
+			T M[4][4];
 		};
-		operator const float *()
+		operator const T *()
 		{
 			return m;
 		}
-		void operator=(const float *v)
+		void operator=(const T *v)
 		{
 			for(int i=0;i<16;i++)
 				m[i]=v[i];
 		}
-		inline static void mul(mat4 &r,const mat4 &a,const mat4 &b)
+		inline static void mul(tmatrix4<T> &r,const tmatrix4<T> &a,const tmatrix4<T> &b)
 		{
 			for(int i=0;i<4;i++)
 			{
 				for(int j=0;j<4;j++)
 				{
-					const float *m1row=&a.m[i*4+0];
-					float t=0.f;
+					const T *m1row=&a.m[i*4+0];
+					T t=0.f;
 					int k=0;
 					t+=m1row[k]*b.m[k*4+j];	++k;
 					t+=m1row[k]*b.m[k*4+j];	++k;
@@ -446,7 +446,7 @@
 				}
 			}
 		}
-		void operator*=(float c)
+		void operator*=(T c)
 		{
 			for(int i=0;i<16;i++)
 				m[i]*=c;
@@ -457,29 +457,30 @@
 				for(int j=0;j<4;j++)
 					if(i<j)
 					{
-						float temp=m[i*4+j];
+						T temp=m[i*4+j];
 						m[i*4+j]=m[j*4+i];
 						m[j*4+i]=temp;
 					}
 		}
-		static inline mat4 identity()
+		static inline tmatrix4<T> identity()
 		{
-			mat4 m;
+			tmatrix4<T> m;
 			for(int i=0;i<4;i++)
 				for(int j=0;j<4;j++)
 					m.M[i][j]=0.0f;
 			m._11=m._22=m._33=m._44=1.0f;
 			return m;
 		}
-		static inline mat4 translation(vec3 tr)
+		static inline tmatrix4<T> translation(vec3 tr)
 		{
-			mat4 m=identity();
+			tmatrix4<T> m=identity();
 			m._14 = tr.x;
 			m._24 = tr.y;
 			m._34 =tr.z;
 			return m;
 		}
 	};
+	typedef tmatrix4<float> mat4;
 	inline mat4 mul(const mat4& a, const mat4& b)
 	{
 		mat4 r;

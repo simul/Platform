@@ -20,7 +20,7 @@ else()
 endif()
 
 set(INCLUDE_DIRS ${INCLUDE_DIRS} "${SIMUL_PLATFORM_DIR}/External/stb")
-
+ 
 set(PLATFORM_STD_CHARCONV ON)
 if(XBOXONE)
 	set(PLATFORM_STD_CHARCONV OFF)

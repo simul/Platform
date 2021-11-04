@@ -40,6 +40,10 @@ Quaternionf simul::crossplatform::ConvertRotation(AxesStandard fromStandard, Axe
 		{
 			q = Quaternionf(-rotation.x, -rotation.z, -rotation.y, rotation.s );
 		}
+		else if (toStandard == AxesStandard::OpenGL)
+		{
+			q = Quaternionf(-rotation.x, rotation.z, -rotation.y, rotation.s);
+		}
 	}
 	else if (fromStandard == AxesStandard::OpenGL)
 	{
@@ -121,6 +125,11 @@ int8_t simul::crossplatform::ConvertAxis(AxesStandard fromStandard, AxesStandard
 			static int8_t en_uy[] = { 0, 2, 1 };
 			return en_uy[axis];
 		}
+		else if (toStandard == AxesStandard::OpenGL)
+		{
+			static int8_t e_gl[] = { 0, 2, 4 };
+			return e_gl[axis];
+		}
 	}
 	else if (fromStandard == AxesStandard::OpenGL)
 	{
@@ -179,6 +188,10 @@ vec3 simul::crossplatform::ConvertScale(AxesStandard fromStandard, AxesStandard 
 			s = { scale.y, scale.x,scale.z };
 		}
 		else if (toStandard == AxesStandard::Unity)
+		{
+			s = { scale.x, scale.z, scale.y };
+		}
+		else if (toStandard == AxesStandard::OpenGL)
 		{
 			s = { scale.x, scale.z, scale.y };
 		}
@@ -256,6 +269,10 @@ vec3 simul::crossplatform::ConvertPosition(AxesStandard fromStandard, AxesStanda
 		else if (toStandard == AxesStandard::Unity)
 		{
 			p = { position.x, position.z, position.y };
+		}
+		else if (toStandard == AxesStandard::OpenGL)
+		{
+			p = { position.x, position.z, -position.y };
 		}
 	}
 	else if (fromStandard == AxesStandard::OpenGL)
