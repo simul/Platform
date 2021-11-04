@@ -867,7 +867,8 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 					,MouseCameraState &state
 					,MouseCameraInput &input
 					,float max_height
-					,bool lock_height)
+					,bool lock_height
+					,int rotateButton)
 {
 	simul::math::Vector3 pos=cam->GetPosition();
 
@@ -905,7 +906,7 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	int dy=input.MouseY-input.LastMouseY;
 	float mouseDeltaX=0.f,mouseDeltaY=0.f;
 	static float rr=750.0f;
-	if(input.MouseButtons&(MouseCameraInput::LEFT_BUTTON|MouseCameraInput::RIGHT_BUTTON))
+	if(input.MouseButtons&(rotateButton))
 	{
 		mouseDeltaX =dx/rr;
 		mouseDeltaY =dy/rr;

@@ -480,6 +480,12 @@
 			return m;
 		}
 	};
+	inline mat4 mul(const mat4& a, const mat4& b)
+	{
+		mat4 r;
+		mat4::mul(r, a, b);
+		return r;
+	}
 	inline vec3 operator*(const mat4 &m,const vec3 &v)
 	{
 		vec3 r;
@@ -588,6 +594,10 @@
 			y*=v[1];
 			z*=v[2];
 			w*=v[3];
+		}
+		const tvector3<T> &xyz()
+		{
+			return *(reinterpret_cast<tvector3<T>*>(this));
 		}
 	};
 	typedef tvector4<float> vec4;

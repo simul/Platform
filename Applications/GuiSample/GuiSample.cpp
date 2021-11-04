@@ -239,7 +239,7 @@ bool CreateDevice(HWND hWnd)
 #define STRING_OF_MACRO1(x) #x
 #define STRING_OF_MACRO(x) STRING_OF_MACRO1(x)
     // Shader binaries: we want to use a shared common directory under Simul/Media. But if we're running from some other place, we'll just create a "shaderbin" directory.
-    std::string cmake_binary_dir = STRING_OF_MACRO(CMAKE_BINARY_DIR);
+    std::string cmake_binary_dir = STRING_OF_MACRO(PLATFORM_BUILD_DIR);
     std::string cmake_source_dir = STRING_OF_MACRO(CMAKE_SOURCE_DIR);
     if (cmake_binary_dir.length())
     {
