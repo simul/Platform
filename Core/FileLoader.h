@@ -20,7 +20,7 @@ namespace platform
 			//! Set the file handling object: call this before any file operations, if at all.
 			static void SetFileLoader(FileLoader *f);
 			//! Put the file's entire contents into memory, by allocating sufficiently many bytes, and setting the pointer.
-			//! The memory should later be freed by a call to \ref ReleaseFileContents.
+			//! The memory should later be freed by a call to ReleaseFileContents.
 			//! The filename should be unicode UTF8-encoded.
 			virtual void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text)=0;
 			//! Get the file date as a julian day number. Return zero if the file doesn't exist.

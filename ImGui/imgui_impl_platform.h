@@ -24,9 +24,18 @@ namespace simul
 }
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r);
 IMGUI_IMPL_API void     ImGui_ImplPlatform_Shutdown();
-IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame();
-IMGUI_IMPL_API void     ImGui_ImplPlatform_RenderDrawData(simul::crossplatform::GraphicsDeviceContext& deviceContext, ImDrawData* draw_data);
+IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame(bool in3d=false, int ui_pixel_width=400, int ui_pixel_height=300,const float *menupos=nullptr);
+IMGUI_IMPL_API void     ImGui_ImplPlatform_RenderDrawData(simul::crossplatform::GraphicsDeviceContext& deviceContext, ImDrawData* draw_data, bool three_d);
 
 // Use if you want to reset your rendering device without losing Dear ImGui state.
 IMGUI_IMPL_API void     ImGui_ImplPlatform_InvalidateDeviceObjects();
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_CreateDeviceObjects();
+
+IMGUI_IMPL_API void		ImGui_ImplPlatform_RecompileShaders();
+
+//! translate the screen mouse position into 3D
+IMGUI_IMPL_API void		ImGui_ImplPlatform_Update3DMousePos();
+//! Set the mouse position and screen size, per-frame.
+IMGUI_IMPL_API void		ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H);
+
+IMGUI_IMPL_API void ImGui_ImplPlatform_DebugInfo();
