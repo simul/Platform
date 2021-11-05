@@ -1332,6 +1332,41 @@ bool Effect::IsDeclared(const string &name)
 	return false;
 }
 
+bool Effect::IsConstantBufferMemberAlignmentValid(const Declaration* d)
+{
+	const Struct* structure = (const Struct*)d;
+	int offset = 0;
+	for (const StructMember& member : structure->m_structMembers)
+	{
+		std::regex digits("\\d");
+		std::smatch match;
+		int size = 4;
+		if (std::regex_search(member.type, match, digits))
+		{
+			size *= atoi(match[0].str().c_str());
+		}
+		if (member.type.find(match[0].str() + "x" + match[0].str()) != std::string::npos
+			|| member.type.find("mat") != std::string::npos)
+		{
+			size *= atoi(match[0].str().c_str());
+		}
+
+		//std::cout << offset << ": " << structure->name << "::" << member.name << "\n";
+
+		if (((offset % 16) && (size > 8))
+			|| ((offset % 8) && (size == 8)))
+		{
+			std::cerr << fileList[d->file_number] << "(" << d->line_number << ") : error : Constant Buffer has misaligned members. ";
+			std::cerr << d->name << "::" << member.name << " can not be at an offset of " << offset << " with a size of " << size << "." << std::endl;
+			return false;
+		}
+
+		offset += size;
+	}
+
+	return true;
+}
+
 string Effect::GetTypeOfParameter(std::vector<sfxstype::variable>& parameters, string keyName)
 {
 	for (auto p : parameters)
@@ -1374,6 +1409,11 @@ DeclaredConstantBuffer* Effect::DeclareTemplatizedConstantBuffer(const string &n
 	t->slot				=slot;
 	t->space			=space;
 	declarations[name] = (t);
+	if (!IsConstantBufferMemberAlignmentValid(declarations[structureType]))
+	{
+		delete t;
+		return nullptr;
+	}
 	return t;
 }
 

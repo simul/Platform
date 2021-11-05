@@ -150,6 +150,7 @@ namespace sfx
 		void DeclareConstantBuffer(const std::string &name, int slot,const Struct &ts,const std::string &original);
 		void DeclareVariable(const Variable *v);
 		bool IsDeclared(const std::string &name);
+		bool IsConstantBufferMemberAlignmentValid(const Declaration* d);
 		std::string GetTypeOfParameter(std::vector<sfxstype::variable>& parameters, std::string keyName);
 		std::string GetDeclaredType(const std::string &str) const;
 		int GetRWTextureNumber(std::string n, int specified_slot=-1);
