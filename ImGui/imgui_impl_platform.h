@@ -24,8 +24,8 @@ namespace simul
 }
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r);
 IMGUI_IMPL_API void     ImGui_ImplPlatform_Shutdown();
-IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame(bool in3d=false, int ui_pixel_width=400, int ui_pixel_height=300,const float *menupos=nullptr);
-IMGUI_IMPL_API void     ImGui_ImplPlatform_RenderDrawData(simul::crossplatform::GraphicsDeviceContext& deviceContext, ImDrawData* draw_data, bool three_d);
+IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame(bool in3d=false, int ui_pixel_width=400, int ui_pixel_height=300,const float *menupos=nullptr,float width_m=2.0f);
+IMGUI_IMPL_API void     ImGui_ImplPlatform_RenderDrawData(simul::crossplatform::GraphicsDeviceContext& deviceContext, ImDrawData* draw_data);
 
 // Use if you want to reset your rendering device without losing Dear ImGui state.
 IMGUI_IMPL_API void     ImGui_ImplPlatform_InvalidateDeviceObjects();

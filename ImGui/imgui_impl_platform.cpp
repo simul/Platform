@@ -33,7 +33,7 @@ struct ImGui_ImplPlatform_Data
 	RenderState*			pDepthStencilState = nullptr;
 	int						VertexBufferSize=0;
 	int						IndexBufferSize=0;
-
+	float					width_m=2.0f;
 	// pos/orientation of 3D UI:
 	vec3 centre;
 	vec3 normal;
@@ -99,7 +99,7 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 }
 
 // Render function
-void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDrawData* draw_data,bool in3d)
+void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDrawData* draw_data)
 {
 	// Avoid rendering when minimized
 	if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
@@ -151,7 +151,6 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	}
 	bd->pVB->Unmap(deviceContext);
 	bd->pIB->Unmap(deviceContext);
-	bd->is3d=in3d;
 	// Setup orthographic projection matrix into our constant buffer
 	// Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
 	{
@@ -166,13 +165,12 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			{ 0.0f,			 0.0f,			0.5f,	   0.0f },
 			{ (R+L)/(L-R),	(T+B)/(B-T),	0.5f,	   1.0f },
 		};
-		if(in3d)
+		if(bd->is3d)
 		{
 			// The intention here is first to transform the pixel-space xy positions into metres in object space,
 			// then we can multiply by viewProj.
-			static float width_m=2.0f;
-			float height_m = float(B - T) / float(R - L) * width_m;
-			float X = width_m / (R - L);
+			float height_m = float(B - T) / float(R - L) * bd->width_m;
+			float X = bd->width_m / (R - L);
 			// 400*width_m/400 = width_m
 			// -width_m/2=width_m/2
 			float Y = height_m / (B - T);
@@ -192,14 +190,14 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			bd->normal = bd->local_to_world*bd->normal;
 			bd->imgui_to_local=
 			{
-				 X,		0,		0,		-width_m / 2.0f,
+				 X,		0,		0,		-bd->width_m / 2.0f,
 				 0,		-Y,		0,		height_m / 2.0f,
 				 0,		0,		1.0f,	0,
 				 0,		0,		0,		1.0f
 			};
 			bd->imgui_to_world =
 			{
-				 X,		0,			0.0f,	bd->centre.x - width_m / 2.0f,
+				 X,		0,			0.0f,	bd->centre.x - bd->width_m / 2.0f,
 				 0,		Y* cos_t,	0.0f,	bd->centre.y - height_m / 2.0f,
 				 0.0f,	Y* sin_t,	1.0f,	bd->centre.z,
 				 0.0f,	0.0f,		0.0f,	1.0f
@@ -272,7 +270,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 		global_idx_offset += cmd_list->IdxBuffer.Size;
 		global_vtx_offset += cmd_list->VtxBuffer.Size;
 	}
-	 bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
+	if(!bd->is3d)
+		bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
 }
 
 static void ImGui_ImplPlatform_CreateFontsTexture()
@@ -388,11 +387,13 @@ void ImGui_ImplPlatform_Shutdown()
 	bd=nullptr;
 }
 
-void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos)
+void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos,float width_m)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplPlatform_Init()?");
-
+	
+	bd->is3d=in3d;
+	bd->width_m=width_m;
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateDeviceObjects();
 
