@@ -2154,6 +2154,18 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					find_and_replace(function->content, s->name, "1 + " + std::to_string(s->register_number));
 				}
 			}
+
+			//Convert constant buffer accesses from templatized to global style in main function:
+			if (sfxConfig.sourceExtension.compare("pssl") == 0)
+			{
+				for (auto& decl : declarations)
+				{
+					if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+					{
+						find_and_replace(function->content, decl.second->name + ".", decl.second->name + "_");
+					}
+				}
+			}
 		}
 	}
 	std::set<const Variable*> vars;
@@ -2188,6 +2200,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 				find_and_replace(newCont, s->name, "1 + " + std::to_string(s->register_number));
 			}
 		}
+		//Convert constant buffer accesses from templatized to global style in non-main functions:
 		if (sfxConfig.sourceExtension.compare("pssl") == 0)
 		{
 			for (auto& decl : declarations)
