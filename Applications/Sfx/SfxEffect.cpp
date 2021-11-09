@@ -1940,7 +1940,11 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 
 						Struct* s = (Struct*)declarations[d->structureType];
 						for (auto& member : s->m_structMembers)
-							member.name = c->name + "_" + member.name;
+						{
+							//Don't append to start for each shader instance, only needs to be done once.
+							if (member.name.find(c->name + "_") == std::string::npos) 
+								member.name = c->name + "_" + member.name;
+						}
 					}
 					else
 					{
