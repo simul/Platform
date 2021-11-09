@@ -53,12 +53,12 @@ namespace simul
 				z = q[2];
 				s = q[3];
 			}
-			Quaternion(const Quaternion &q)
+			template<typename U> Quaternion(const Quaternion<U> &q)
 			{
-				s = q.s;
-				x = q.x;
-				y = q.y;
-				z = q.z;
+				s = T(q.s);
+				x = T(q.x);
+				y = T(q.y);
+				z = T(q.z);
 			}
 
 			Quaternion(T angle_radians, const tvector3<T>& vv)

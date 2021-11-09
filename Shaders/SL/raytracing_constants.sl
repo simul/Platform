@@ -25,10 +25,10 @@
 //HitGroupRecordAddress Calculation:
 //
 //HitGroupRecordAddress
-//= D3D12_DISPATCH_RAYS_DESC.HitGroupTable.StartAddress					[from: DispatchRays()] 
+//= D3D12_DISPATCH_RAYS_DESC.HitGroupTable.StartAddress						[from: DispatchRays()] 
 //+ D3D12_DISPATCH_RAYS_DESC.HitGroupTable.StrideInBytes					[from: DispatchRays()] 
 //* ( RayContributionToHitGroupIndex										[from: TraceRay()] 
-//+ ( MultiplierForGeometryContributionToHitGroupIndex					[from: TraceRay()] 
+//+ ( MultiplierForGeometryContributionToHitGroupIndex						[from: TraceRay()] 
 //* GeometryContributionToHitGroupIndex )									[system generated index of geometry in bottom-level acceleration structure (0,1,2,3..)]
 //+ D3D12_RAYTRACING_INSTANCE_DESC.InstanceContributionToHitGroupIndex )	[from: instance]
 //
@@ -56,15 +56,13 @@ struct Raytracing_AABB
 //Negative Z = 5
 #define Raytracing_AABB_FaceIndex uint
 
-//Constant Bufffers
+//Constant Bufffer Structs
 
-SIMUL_CONSTANT_BUFFER(TraceRayParameters, 2)
-	
-uniform uint instanceInclusionMask;								//Inclusion Mask for instances
-uniform uint rayContributionToHitGroupIndex;					//HitGroup Index for Ray into the SBT.
-uniform uint multiplierForGeometryContributionToHitGroupIndex;	//HitGroup Stride for Geometry into the SBT.
-uniform uint missShaderIndex;									//MissShader Index into the SBT.
-
-SIMUL_CONSTANT_BUFFER_END
+SIMUL_TEMPLATIZED_CONSTANT_BUFFER(TraceRayParameters, 0)
+	uint instanceInclusionMask;								//Inclusion Mask for instances
+	uint rayContributionToHitGroupIndex;					//HitGroup Index for Ray into the SBT.
+	uint multiplierForGeometryContributionToHitGroupIndex;	//HitGroup Stride for Geometry into the SBT.
+	uint missShaderIndex;									//MissShader Index into the SBT.
+SIMUL_TEMPLATIZED_CONSTANT_BUFFER_END(TraceRayParameters, traceRayParameters, 0)
 
 #endif

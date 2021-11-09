@@ -832,6 +832,9 @@ prog : prog tok
 			WriteLineNumber(ostr,current_filename,sfxget_lineno()+(last_linenumber-global_linenumber));
 		}
 		gEffect->DeclareConstantBuffer(bufferName,buffer_number,buildStruct,ostr.str());
+		if (!gEffect->IsConstantBufferMemberAlignmentValid(gEffect->GetDeclaration(bufferName)))
+			sfxError = true;
+
 		// Set to default:
 		buildStruct					=Struct();
 	}
