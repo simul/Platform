@@ -88,6 +88,7 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	RecompileShaders();
 }
 
+#if !defined(__ORBIS__)
 static std::string string_format(const std::string fmt, ...)
 {
     int size = 100;
@@ -111,6 +112,7 @@ static std::string string_format(const std::string fmt, ...)
     }
     return str;
 }
+#endif
 
 template<typename t> t max3(t a,t b,t c)
 {
