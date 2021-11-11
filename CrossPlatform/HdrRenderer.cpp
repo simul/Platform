@@ -88,7 +88,7 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	RecompileShaders();
 }
 
-#if !defined(__ORBIS__)
+#if !defined(__ORBIS__) && !defined(__PROSPERO__)
 static std::string string_format(const std::string fmt, ...)
 {
     int size = 100;
