@@ -572,7 +572,7 @@
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
 %token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
-%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
+%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING /*SHADER_LINE SHADER_TYPE*/ COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D TEMPLATIZED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
 %token REGULARBUFFER RW_REGULARBUFFER STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
@@ -1290,7 +1290,7 @@ initializer_list : initializer
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
 
-/* multiple statements in braces*/
+// multiple statements in braces
 compound_statement : '{' statement_list '}'
 	{
 		string statement_list=$2.strs[0];
@@ -2277,7 +2277,7 @@ shader_and_layout : SHADER shader_fx
 	
 lex_fx : %empty
 	{ 
-		/* Switch lex to fx scanning */
+		//Switch lex to fx scanning
 		read_shader=false;
 		read_function = false;
 		gLexPassthrough=false;
@@ -2306,13 +2306,13 @@ number_or_filename : NUM
 
 lex_passthrough : %empty
 	{ 
-		/* Switch lex to passthrough mode */
+		//Switch lex to passthrough mode
 		gLexPassthrough=false;
 	};
 
 read_block : %empty
 	{ 
-		/* Read next block */
+		//Read next block
 		$$.strs[0]= sfxreadblock('{', '}');
 		$$.lineno= sfxget_lineno();
 	}
@@ -2992,19 +2992,19 @@ shader_compile : CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
 			// slightly modify declaration to match PSSL streamout format:
 			// declar already contains enclosing quotes:
 			find_and_replace(declar,"\"POSITION","\"S_POSITION");
-			/*
-			Not properly documented: here is the old documentation from SDK2.5:
-			-gsstream <buff number>, <stride>,<entry_spec>[,<entry_spec>]
-				GS stream definition. You can provide the following parameters:
-				- buff_number: The stream being defined.
-				- stride: Number of bytes in the array stride.
-				- entry_spec: Each component to use in the output stream, identified by the semantic with swizzle mask:
-				  elem_offset_0:elem_stream_0:elem_semantic_0.xyzw
-				The entry spec can be repeated to define multiple components for the stream.
-				For example,
-				-gsstream 0,32,0:0:POSITION.xyzw,16:0:NORMAL.xyz
-				initializes stream out 0, with an array stride of 32 bytes. The first entry at offset 0 is the x, y, z, and w components of POSITION from GS stream 0. The second entry at offset 16 is the x, y, and z components of NORMAL, also from GS stream 0.
-			*/
+			//
+			//Not properly documented: here is the old documentation from SDK2.5:
+			//-gsstream <buff number>, <stride>,<entry_spec>[,<entry_spec>]
+			//	GS stream definition. You can provide the following parameters:
+			//	- buff_number: The stream being defined.
+			//	- stride: Number of bytes in the array stride.
+			//	- entry_spec: Each component to use in the output stream, identified by the semantic with swizzle mask:
+			//	  elem_offset_0:elem_stream_0:elem_semantic_0.xyzw
+			//	The entry spec can be repeated to define multiple components for the stream.
+			//	For example,
+			//	-gsstream 0,32,0:0:POSITION.xyzw,16:0:NORMAL.xyz
+			//	initializes stream out 0, with an array stride of 32 bytes. The first entry at offset 0 is the x, y, z, and w components of POSITION from GS stream 0. The second entry at offset 16 is the x, y, and z components of NORMAL, also from GS stream 0.
+			//
 			int stream_num=0;
 			int byte_stride=24;
 			string ps4_declar=declar;//QuickFormat("%d,%d,":,stream_num,byte_stride)+declar;
@@ -3356,7 +3356,7 @@ ShaderResourceType ToShaderResourceType(int t)
 	case RW_TEXTURE1D:
 		return ShaderResourceType::RW_TEXTURE_1D;
 	case RW_TEXTURE2D:
-		return ShaderResourceType::RW_TEXTURE_2D; 
+		return ShaderResourceType::RW_TEXTURE_2D;
 	case RW_TEXTURE3D:
 		return ShaderResourceType::RW_TEXTURE_3D;
 	case RW_TEXTURE2D_ARRAY:
@@ -3516,12 +3516,12 @@ ShaderResourceType GetShaderResourceType(const Function &function, const string 
 	for (vector<sfxstype::variable>::const_iterator i = function.parameters.begin(); i != function.parameters.end(); i++)
 	{
 		if (textureName == i->identifier)
-		{}
+		{
 			return (ShaderResourceType)i->shaderResourceType;
 		}
 	}
 	auto j = gEffect->GetDeclarations().find(textureName);
-	if (j != gEffect->GetDeclarations().end()&&j->second->declarationType==DeclarationType::TEXTURE)
+	if (j != gEffect->GetDeclarations().end() && j->second->declarationType == DeclarationType::TEXTURE)
 		return ((DeclaredTexture*)j->second)->shaderResourceType;
 	return ShaderResourceType::UNKNOWN;
 }

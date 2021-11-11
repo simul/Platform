@@ -1,4 +1,4 @@
-\%define api.prefix {prepro_}
+%define api.prefix {prepro_}
 %debug
 %define parse.error verbose
 %{
@@ -19,6 +19,7 @@
 	#include <iostream>		// For std::cout and cerr
 	#include <sstream>		// For std::ostringstream
 	#include <vector>		// For std::vector
+	#include <string>		// For std::string
 	#include "Preprocessor.h"
 	extern void prepro_error(const char *s);
 	extern void prepro_warning(const char *s);
@@ -36,6 +37,7 @@
 	vector<bool> activeBlockStack;
 	vector<string> blockTestStack;
 	extern int preproBracket;
+	double latest_datetime = 0.0;
 	void ClearParserState()
 	{
 		activeBlockStack.clear();
@@ -146,6 +148,13 @@
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ SYMBOL
 %token DOUBLE_HASH
+
+/*% union
+{
+	std::string string;
+};
+
+%type<string> symbol*/
 
 %%
 prog : prog prepr
