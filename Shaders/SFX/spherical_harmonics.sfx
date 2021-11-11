@@ -52,7 +52,7 @@ shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	int n = 0;
 	for (int j = 0; j<MAX_SH_COEFFICIENTS; j++)
 	{
-		if (j >= numCoefficients)
+		if (j >= int(numCoefficients))
 			break;
 		int2 p		=lm[j];
 		float co	=SH(p.x,p.y,theta,phi);

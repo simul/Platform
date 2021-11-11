@@ -1841,6 +1841,27 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			Struct *s=(Struct*)d;
 			string str = sfxConfig.structDeclaration;
 
+			//Check if struct is used in templatized ConstantBuffer
+			//HLSL SM5.1 has the struct declared before ConstantBuffer<>
+			//GLSL 420 has the struct declared with layout(std140, binding = X) uniform
+			//PSSL Doesn't support templatized ConstantBuffer, we need to convert it back to a global constant buffer.
+			if (sfxConfig.constantBufferDeclaration.length() || sfxConfig.sourceExtension.compare("pssl") == 0)
+			{ 
+				bool structIsUsedInTemplatizedConstantBuffer = false;
+				for (auto& decl : declarations)
+				{
+					if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+					{
+						if (decl.second->structureType.compare(d->name) == 0)
+						{
+							structIsUsedInTemplatizedConstantBuffer = true;
+						}
+					}
+				}
+				if (structIsUsedInTemplatizedConstantBuffer)
+					break; //Struct should now be declared with the templatized ConstantBuffer.
+			}
+
 			if (sfxConfig.pixelOutputDeclaration.empty() || sfxConfig.pixelOutputDeclarationDSB.empty())
 			{
 				for (auto& member : s->m_structMembers)
@@ -1910,8 +1931,57 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			{
 				// templatized.
 				DeclaredConstantBuffer *c = (DeclaredConstantBuffer*)d;
-				string str=d->original;
+				string str = sfxConfig.constantBufferDeclaration;
+				if (str.empty())
+				{
+					if (sfxConfig.sourceExtension.compare("pssl") == 0)
+					{
+						str = "ConstantBuffer {name} : register(b{slot})\n{\n[\t{type} {name};]};";
+
+						Struct* s = (Struct*)declarations[d->structureType];
+						for (auto& member : s->m_structMembers)
+						{
+							//Don't append to start for each shader instance, only needs to be done once.
+							if (member.name.find(c->name + "_") == std::string::npos) 
+								member.name = c->name + "_" + member.name;
+						}
+					}
+					else
+					{
+						str = d->original;
+						find_and_replace(str, "{slot}", ToString(c->slot));
+						os << str.c_str() << endl;
+						return;
+					}
+				}
+				else
+				{
+					str.insert(str.find_last_of(';'), "{instance_name}");
+				}
+
+				Struct* s = (Struct*)declarations[d->structureType];
+				string members;
+				// in square brackets [] is the definition for ONE member.
+				std::regex re_member("\\[(.*)\\]");
+				std::smatch match;
+				string structMemberDeclaration;
+				if (std::regex_search(str, match, re_member))
+				{
+					structMemberDeclaration = match[1].str();
+					str.replace(match[0].first, match[0].first + match[0].length(), "{members}");
+				}
+				for (int i = 0; i < s->m_structMembers.size(); i++)
+				{
+					string m = structMemberDeclaration;
+					find_and_replace(m, "{type}", s->m_structMembers[i].type);
+					find_and_replace(m, "{name}", s->m_structMembers[i].name);
+					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
+					members += m + "\n";
+				}
+				find_and_replace(str, "{members}", members);
+				find_and_replace(str, "{name}", s->name);
 				find_and_replace(str, "{slot}", ToString(c->slot));
+				find_and_replace(str, "{instance_name}", d->name);
 				os << str.c_str() << endl;
 			}
 			else
@@ -1941,10 +2011,6 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				{
 					string m = structMemberDeclaration;
 					string type=s->m_structMembers[i].type;
-					if(type==string("mat4"))
-					{
-					//	type="layout(row_major) mat4";
-					}
 					find_and_replace(m, "{type}", type);
 					find_and_replace(m, "{name}", s->m_structMembers[i].name);
 					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
@@ -1964,6 +2030,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				os << str.c_str() << endl;
 			}
 		}
+		break;
 		default:
 		break;
 	};
@@ -2087,6 +2154,18 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					find_and_replace(function->content, s->name, "1 + " + std::to_string(s->register_number));
 				}
 			}
+
+			//Convert constant buffer accesses from templatized to global style in main function:
+			if (sfxConfig.sourceExtension.compare("pssl") == 0)
+			{
+				for (auto& decl : declarations)
+				{
+					if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+					{
+						find_and_replace(function->content, decl.second->name + ".", decl.second->name + "_");
+					}
+				}
+			}
 		}
 	}
 	std::set<const Variable*> vars;
@@ -2119,6 +2198,17 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			for (const auto s : samplerStates)
 			{
 				find_and_replace(newCont, s->name, "1 + " + std::to_string(s->register_number));
+			}
+		}
+		//Convert constant buffer accesses from templatized to global style in non-main functions:
+		if (sfxConfig.sourceExtension.compare("pssl") == 0)
+		{
+			for (auto& decl : declarations)
+			{
+				if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+				{
+					find_and_replace(newCont, decl.second->name + ".", decl.second->name + "_");
+				}
 			}
 		}
 

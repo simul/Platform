@@ -33,7 +33,7 @@ struct ImGui_ImplPlatform_Data
 	RenderState*			pDepthStencilState = nullptr;
 	int						VertexBufferSize=0;
 	int						IndexBufferSize=0;
-
+	float					width_m=2.0f;
 	// pos/orientation of 3D UI:
 	vec3 centre;
 	vec3 normal;
@@ -99,7 +99,7 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 }
 
 // Render function
-void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDrawData* draw_data,bool in3d)
+void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDrawData* draw_data)
 {
 	// Avoid rendering when minimized
 	if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
@@ -151,7 +151,6 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	}
 	bd->pVB->Unmap(deviceContext);
 	bd->pIB->Unmap(deviceContext);
-	bd->is3d=in3d;
 	// Setup orthographic projection matrix into our constant buffer
 	// Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
 	{
@@ -166,13 +165,12 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			{ 0.0f,			 0.0f,			0.5f,	   0.0f },
 			{ (R+L)/(L-R),	(T+B)/(B-T),	0.5f,	   1.0f },
 		};
-		if(in3d)
+		if(bd->is3d)
 		{
 			// The intention here is first to transform the pixel-space xy positions into metres in object space,
 			// then we can multiply by viewProj.
-			static float width_m=2.0f;
-			float height_m = float(B - T) / float(R - L) * width_m;
-			float X = width_m / (R - L);
+			float height_m = float(B - T) / float(R - L) * bd->width_m;
+			float X = bd->width_m / (R - L);
 			// 400*width_m/400 = width_m
 			// -width_m/2=width_m/2
 			float Y = height_m / (B - T);
@@ -192,14 +190,14 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			bd->normal = bd->local_to_world*bd->normal;
 			bd->imgui_to_local=
 			{
-				 X,		0,		0,		-width_m / 2.0f,
+				 X,		0,		0,		-bd->width_m / 2.0f,
 				 0,		-Y,		0,		height_m / 2.0f,
 				 0,		0,		1.0f,	0,
 				 0,		0,		0,		1.0f
 			};
 			bd->imgui_to_world =
 			{
-				 X,		0,			0.0f,	bd->centre.x - width_m / 2.0f,
+				 X,		0,			0.0f,	bd->centre.x - bd->width_m / 2.0f,
 				 0,		Y* cos_t,	0.0f,	bd->centre.y - height_m / 2.0f,
 				 0.0f,	Y* sin_t,	1.0f,	bd->centre.z,
 				 0.0f,	0.0f,		0.0f,	1.0f
@@ -272,7 +270,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 		global_idx_offset += cmd_list->IdxBuffer.Size;
 		global_vtx_offset += cmd_list->VtxBuffer.Size;
 	}
-	 bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
+	if(!bd->is3d)
+		bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
 }
 
 static void ImGui_ImplPlatform_CreateFontsTexture()
@@ -388,11 +387,13 @@ void ImGui_ImplPlatform_Shutdown()
 	bd=nullptr;
 }
 
-void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos)
+void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos,float width_m)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplPlatform_Init()?");
-
+	
+	bd->is3d=in3d;
+	bd->width_m=width_m;
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateDeviceObjects();
 
@@ -404,6 +405,8 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 		io.DisplaySize = ImVec2((float)ui_pixel_width, (float)ui_pixel_height);
 		if(pos)
 			bd->centre=pos;
+    // Override what win32 did with this
+		ImGui_ImplPlatform_Update3DMousePos();
 	}
 }
 
@@ -416,6 +419,8 @@ void ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H)
 	bd->mouse={x,y};
 	bd->screen={W,H};
 }
+
+
 
 void ImGui_ImplPlatform_Update3DMousePos()
 {
@@ -431,20 +436,22 @@ void ImGui_ImplPlatform_Update3DMousePos()
 
 	// Set Dear ImGui mouse position from OS position
 
-	vec3 diff = bd->centre - bd->view_pos;
+	vec3 diff			= bd->centre - bd->view_pos;
 	// from the Windows mouse pos obtain a direction.
-	vec4 view_dir = { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
+	vec4 view_dir		= { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
 	// Transform this into a worldspace direction.
-	vec3 view_w=(view_dir* bd->invViewProj).xyz();
-	view_w = normalize(view_w);
+	vec3 view_w			= (view_dir* bd->invViewProj).xyz();
+	view_w				= normalize(view_w);
 	// Take the vector in this direction from view_pos, Intersect it with the UI surface.
-	float dist=dot(diff, bd->normal)/dot(view_w,bd->normal);
-	vec3 intersection_w= bd->view_pos+view_w*dist;
+	float dist			= dot(diff, bd->normal)/dot(view_w,bd->normal);
+	vec3 intersection_w	= bd->view_pos+view_w*dist;
+
 	// Transform the intersection point into object-space then into UI-space.
-	vec3 client_pos =(bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz();
+	vec3 client_pos		= (bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz();
 	// Finally, set this as the mouse pos.
-	io.MousePos		= ImVec2(client_pos.x,client_pos.y);
+	io.MousePos			= ImVec2(client_pos.x,client_pos.y);
 }
+
 void ImGui_ImplPlatform_DebugInfo()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
