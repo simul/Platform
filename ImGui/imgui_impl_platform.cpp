@@ -405,6 +405,8 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 		io.DisplaySize = ImVec2((float)ui_pixel_width, (float)ui_pixel_height);
 		if(pos)
 			bd->centre=pos;
+    // Override what win32 did with this
+		ImGui_ImplPlatform_Update3DMousePos();
 	}
 }
 
@@ -417,6 +419,8 @@ void ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H)
 	bd->mouse={x,y};
 	bd->screen={W,H};
 }
+
+
 
 void ImGui_ImplPlatform_Update3DMousePos()
 {
@@ -432,20 +436,22 @@ void ImGui_ImplPlatform_Update3DMousePos()
 
 	// Set Dear ImGui mouse position from OS position
 
-	vec3 diff = bd->centre - bd->view_pos;
+	vec3 diff			= bd->centre - bd->view_pos;
 	// from the Windows mouse pos obtain a direction.
-	vec4 view_dir = { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
+	vec4 view_dir		= { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
 	// Transform this into a worldspace direction.
-	vec3 view_w=(view_dir* bd->invViewProj).xyz();
-	view_w = normalize(view_w);
+	vec3 view_w			= (view_dir* bd->invViewProj).xyz();
+	view_w				= normalize(view_w);
 	// Take the vector in this direction from view_pos, Intersect it with the UI surface.
-	float dist=dot(diff, bd->normal)/dot(view_w,bd->normal);
-	vec3 intersection_w= bd->view_pos+view_w*dist;
+	float dist			= dot(diff, bd->normal)/dot(view_w,bd->normal);
+	vec3 intersection_w	= bd->view_pos+view_w*dist;
+
 	// Transform the intersection point into object-space then into UI-space.
-	vec3 client_pos =(bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz();
+	vec3 client_pos		= (bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz();
 	// Finally, set this as the mouse pos.
-	io.MousePos		= ImVec2(client_pos.x,client_pos.y);
+	io.MousePos			= ImVec2(client_pos.x,client_pos.y);
 }
+
 void ImGui_ImplPlatform_DebugInfo()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
