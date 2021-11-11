@@ -255,355 +255,357 @@ ID_BLCK [a-zA-Z_:][a-zA-Z0-9_:]*
 NUM_BLCK 0|([1-9][0-9]*)
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
-%%
-<INITIAL>"/*"								{
-												BEGIN IN_MULTILINE_COMMENT;
-												if (inActiveBlock())
-													Write();
-											}
-<IN_MULTILINE_COMMENT>"*/"					{
-												if (inActiveBlock())
-													Write();
-												BEGIN INITIAL;
-											}
-<IN_MULTILINE_COMMENT>[^"*"]+				{
-												if (inActiveBlock())
-													Write();
-											}
-<IN_MULTILINE_COMMENT>"*"					{
-											if (inActiveBlock())
-												Write();
-											}
-<INITIAL>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
-							if (inActiveBlock())
-								Write();/* Single line comment (with possible continuation)*/
-											}
-<INITIAL>"#"if {
-					BEGIN IF_STATEMENT;
-					prepro_lval.str=yytext;
-					stdReturn(IF);
-				}
-<INITIAL>"#"ifndef {
-						BEGIN PREPRO;
-						prepro_lval.str=yytext;
-						stdReturn(IFNDEF);
-					}
-<INITIAL>"#"ifdef {
-					BEGIN PREPRO;
-					prepro_lval.str=yytext;
-					stdReturn(IFDEF);
-				}
-<INITIAL>"#"else {
-					BEGIN PREPRO;
-					prepro_lval.str=yytext;
-					stdReturn(ELSE);
-				}
-<INITIAL>"#"endif {
-					BEGIN PREPRO;
-					prepro_lval.str=yytext;
-				stdReturn(ENDIF);
-				}
-<INITIAL>^"#"include[ \t]*[\"<] {
-								BEGIN IFILE; /*match #include statement up through the quote or <*/
-								}
-<IFILE>[^ \t\n\">]+ {
-						int c=0;
-						string add;
-						/*handle filename up to the closing quote, >, or end of line*/
-						{
-							while((c = yyinput()) && c != '\n'&&c>=0)
-							{
-								add+=c;
-							}
-						}
-						const char *fn=yytext;
-						if(!newfile(fn))
-						{
-							ClearMacros();
-							yyterminate(); /* no such file */
-						}
-						BEGIN INITIAL;
-					}
-<IFILE>.|\n {
-				std::cerr<<"%4d bad include line "<<yylineno<<std::endl;
-				ClearMacros();
-				yyterminate();
-			}
-<INITIAL>{ID_BLCK}	{
-						prepro_lval.str = yytext;
-						if(IsDefined(prepro_lval.str.c_str()))
-						{
-							if(HasParameters(prepro_lval.str.c_str()))
-							{
-								BEGIN START_INSERTING_MACRO;
-								stdReturn(MACRO_NAME);
-							}
-							string str=ProcessMacro(prepro_lval.str,vector<string>());
-							if (inActiveBlock())
-							{
-								//Write(str.c_str());
-								const char *p = str.c_str();
-								const char *q = p + strlen(p);
-								while(q > p)
-									unput(*--q);
-							}
-						}
-						else
-						{
-							if (inActiveBlock())
-								Write();
-						}
-					}
-<PREPRO>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						stdReturn(IDENTIFIER);
-					}
-<START_INSERTING_MACRO>"("	{
-								prepro_lval.str = yytext;
-								BEGIN INSERTING_MACRO;
-								preproBracket=1;
-								stdReturn('(');
-							}
-<START_INSERTING_MACRO>.	{		// anything but open-bracket? this wasn't a macro.
-								if (inActiveBlock())
-								{
-									prepro_lval.str = yytext;
-									Write(prepro_lval.str.c_str());
-									Write();
-								}
-								BEGIN INITIAL;
-							}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>{ID_BLCK}	{
-								prepro_lval.str = yytext;
-								stdReturn(IDENTIFIER);
-							}
+%%		
+<INITIAL>"/*"										{
+														BEGIN IN_MULTILINE_COMMENT;
+														if (inActiveBlock())
+															Write();
+													}
+<IN_MULTILINE_COMMENT>"*/"							{
+														if (inActiveBlock())
+															Write();
+														BEGIN INITIAL;
+													}
+<IN_MULTILINE_COMMENT>[^"*"]+						{
+														if (inActiveBlock())
+															Write();
+													}
+<IN_MULTILINE_COMMENT>"*"							{
+														if (inActiveBlock())
+															Write();
+													}
+<INITIAL>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n			{
+														if (inActiveBlock())
+															Write();/* Single line comment (with possible continuation)*/
+													}
+<INITIAL>"#"if										{
+														BEGIN IF_STATEMENT;
+														prepro_lval.str=yytext;
+														stdReturn(IF);
+													}
+<INITIAL>"#"ifndef									{
+														BEGIN PREPRO;
+														prepro_lval.str=yytext;
+														stdReturn(IFNDEF);
+													}
+<INITIAL>"#"ifdef									{
+														BEGIN PREPRO;
+														prepro_lval.str=yytext;
+														stdReturn(IFDEF);
+													}
+<INITIAL>"#"else									{
+														BEGIN PREPRO;
+														prepro_lval.str=yytext;
+														stdReturn(ELSE);
+													}
+<INITIAL>"#"endif									{
+														BEGIN PREPRO;
+														prepro_lval.str=yytext;
+														stdReturn(ENDIF);
+													}
+<INITIAL>^"#"include[ \t]*[\"<] 					{
+													 BEGIN IFILE; /*match #include statement up through the quote or <*/
+													}
+<IFILE>[^ \t\n\">]+									{
+														int c=0;
+														string add;
+														/*handle filename up to the closing quote, >, or end of line*/
+														{
+															while((c = yyinput()) && c != '\n'&&c>=0)
+															{
+																add+=c;
+															}
+														}
+														const char *fn=yytext;
+														if(!newfile(fn))
+														{
+															ClearMacros();
+															yyterminate(); /* no such file */
+														}
+														BEGIN INITIAL;
+													}
+<IFILE>.|\n											{
+														std::cerr<<"%4d bad include line "<<yylineno<<std::endl;
+														ClearMacros();
+														yyterminate();
+													}
+<INITIAL>{ID_BLCK}									{
+														prepro_lval.str = yytext;
+														if(IsDefined(prepro_lval.str.c_str()))
+														{
+															if(HasParameters(prepro_lval.str.c_str()))
+															{
+																BEGIN START_INSERTING_MACRO;
+																stdReturn(MACRO_NAME);
+															}
+															string str=ProcessMacro(prepro_lval.str,vector<string>());
+															if (inActiveBlock())
+															{
+																//Write(str.c_str());
+																const char *p = str.c_str();
+																const char *q = p + strlen(p);
+																while(q > p)
+																	unput(*--q);
+															}
+														}
+														else
+														{
+															if (inActiveBlock())
+																Write();
+														}
+													}
+<PREPRO>{ID_BLCK}									{
+														prepro_lval.str=yytext;
+														stdReturn(IDENTIFIER);
+													}
+<START_INSERTING_MACRO>"("							{
+														prepro_lval.str = yytext;
+														BEGIN INSERTING_MACRO;
+														preproBracket=1;
+														stdReturn('(');
+													}
+<START_INSERTING_MACRO>.							{		// anything but open-bracket? this wasn't a macro.
+														if (inActiveBlock())
+														{
+															prepro_lval.str = yytext;
+															Write(prepro_lval.str.c_str());
+															Write();
+														}
+														BEGIN INITIAL;
+													}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>{ID_BLCK}		{
+														prepro_lval.str = yytext;
+														stdReturn(IDENTIFIER);
+													}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>{FLOAT_BLCK}	{
-								prepro_lval.str = yytext;
-								stdReturn(NUMBER);
-							}
+														prepro_lval.str = yytext;
+														stdReturn(NUMBER);
+													}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>{NUM_BLCK}	{
-								prepro_lval.str = yytext;
-								stdReturn(NUMBER);
-							}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>","	{
-								prepro_lval.str = yytext;
-								stdReturn(',');
-							}
-<IN_MACRO_DEFINITION,IF_STATEMENT>")"	{
-								prepro_lval.str = yytext;
-								stdReturn(')');
-							}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+]	{
-	prepro_lval.str = yytext;
- 	stdReturn(prepro_lval.str[0]);
-}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>[-=!~]	{
-	prepro_lval.str = yytext;
- 	stdReturn(prepro_lval.str[0]);
-}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>[\.]	{
-	prepro_lval.str = yytext;
- 	stdReturn(prepro_lval.str[0]);
-}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>"{"	{
-								prepro_lval.str=yytext;
-								stdReturn('{');
-							}
-<IN_MACRO_DEFINITION>"}"	{
-								prepro_lval.str=yytext;
-								stdReturn('}');
-							}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>"["	{
-							stdReturn('[');
-						}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>"]"	{
-							stdReturn(']');
-						}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>"<"	{
-							stdReturn('<');
-						}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>">"	{
-							stdReturn('>');
-						}
-<IN_MACRO_DEFINITION>"##"	{
-							stdReturn(DOUBLE_HASH);
-}
-<INSERTING_MACRO>"("	{
-							prepro_lval.str = yytext;
-							preproBracket++;
-							stdReturn('(');
-						}
-<INSERTING_MACRO>")"	{
-							prepro_lval.str = yytext;
-							preproBracket--;
-							if(preproBracket<=0)
-							{
-								BEGIN INITIAL;
-							}
-							stdReturn(')');
-						}
-<INSERTING_MACRO>"*="		stdReturn(TIMES_EQUALS);
-<INSERTING_MACRO>"/="		stdReturn(OVER_EQUALS);
-<INSERTING_MACRO>"%="		stdReturn(PERCENT_EQUALS);
-<INSERTING_MACRO>"+="		stdReturn(PLUS_EQUALS);
-<INSERTING_MACRO>"-="		stdReturn(MINUS_EQUALS);
-<INSERTING_MACRO>"<<="		stdReturn(LEFT_SHIFT_EQUALS);
-<INSERTING_MACRO>">>="		stdReturn(RIGHT_SHIFT_EQUALS);
-<INSERTING_MACRO>"&="		stdReturn(AND_EQUALS);
-<INSERTING_MACRO>"^="		stdReturn(XOR_EQUALS);
-<INSERTING_MACRO>"|="		stdReturn(OR_EQUALS);
-<INSERTING_MACRO>"||"		stdReturn(OR);
-<INSERTING_MACRO>"&&"		stdReturn(AND);
+													prepro_lval.str = yytext;
+													stdReturn(NUMBER);
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>","		{
+													prepro_lval.str = yytext;
+													stdReturn(',');
+												}
+<IN_MACRO_DEFINITION,IF_STATEMENT>")"			{
+													prepro_lval.str = yytext;
+													stdReturn(')');
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+]		{
+													prepro_lval.str = yytext;
+													stdReturn(prepro_lval.str[0]);
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[-=!~]		{
+													prepro_lval.str = yytext;
+													stdReturn(prepro_lval.str[0]);
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[\.]		{
+													prepro_lval.str = yytext;
+													stdReturn(prepro_lval.str[0]);
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"{"		{
+													prepro_lval.str=yytext;
+													stdReturn('{');
+												}
+<IN_MACRO_DEFINITION>"}"						{
+													prepro_lval.str=yytext;
+													stdReturn('}');
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"["		{
+													stdReturn('[');
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"]"		{
+													stdReturn(']');
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"<"		{
+													stdReturn('<');
+												}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>">"		{
+													stdReturn('>');
+												}
+<IN_MACRO_DEFINITION>"##"						{
+													stdReturn(DOUBLE_HASH);
+												}
+<INSERTING_MACRO>"("							{
+													prepro_lval.str = yytext;
+													preproBracket++;
+													stdReturn('(');
+												}
+<INSERTING_MACRO>")"							{
+													prepro_lval.str = yytext;
+													preproBracket--;
+													if(preproBracket<=0)
+													{
+														BEGIN INITIAL;
+													}
+													stdReturn(')');
+												}
+<INSERTING_MACRO>"*="							stdReturn(TIMES_EQUALS);
+<INSERTING_MACRO>"/="							stdReturn(OVER_EQUALS);
+<INSERTING_MACRO>"%="							stdReturn(PERCENT_EQUALS);
+<INSERTING_MACRO>"+="							stdReturn(PLUS_EQUALS);
+<INSERTING_MACRO>"-="							stdReturn(MINUS_EQUALS);
+<INSERTING_MACRO>"<<="							stdReturn(LEFT_SHIFT_EQUALS);
+<INSERTING_MACRO>">>="							stdReturn(RIGHT_SHIFT_EQUALS);
+<INSERTING_MACRO>"&="							stdReturn(AND_EQUALS);
+<INSERTING_MACRO>"^="							stdReturn(XOR_EQUALS);
+<INSERTING_MACRO>"|="							stdReturn(OR_EQUALS);
+<INSERTING_MACRO>"||"							stdReturn(OR);
+<INSERTING_MACRO>"&&"							stdReturn(AND);
 
-<INSERTING_MACRO>"<="		stdReturn(LESS_EQ);
-<INSERTING_MACRO>">="		stdReturn(GRTR_EQ);
+<INSERTING_MACRO>"<="							stdReturn(LESS_EQ);
+<INSERTING_MACRO>">="							stdReturn(GRTR_EQ);
 
-<INSERTING_MACRO>"<<"		stdReturn(LEFT_SHIFT);
-<INSERTING_MACRO>">>"		stdReturn(RIGHT_SHIFT);
+<INSERTING_MACRO>"<<"							stdReturn(LEFT_SHIFT);
+<INSERTING_MACRO>">>"							stdReturn(RIGHT_SHIFT);
 
-<INSERTING_MACRO>"++"		stdReturn(PLUS_PLUS);
-<INSERTING_MACRO>"--"		stdReturn(MINUS_MINUS);
-<INSERTING_MACRO>"=="		stdReturn(EQ_EQ);
-<INSERTING_MACRO>"!="		stdReturn(NOT_EQ);
-<IF_STATEMENT>"defined" {
-							prepro_lval.str=yytext;
-							stdReturn(DEFINED);
-					}
-<IF_STATEMENT,IN_MACRO_DEFINITION>"||"	{
-						prepro_lval.str=yytext;
-						stdReturn(OR);
-					}
-<IF_STATEMENT,IN_MACRO_DEFINITION>"&&"	{
-											prepro_lval.str=yytext;
-											stdReturn(AND);
-					}
-<IF_STATEMENT,IN_MACRO_DEFINITION>"("	{
-											prepro_lval.str=yytext;
-											stdReturn('(');
-										} 
-<IF_STATEMENT,DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}		{
-						prepro_lval.str=yytext;
-						stdReturn(IDENTIFIER);
-					}
-<IF_STATEMENT,IN_MACRO_DEFINITION>{NUM_BLCK} {
-							prepro_lval.str=yytext;
-							prepro_lval.num=atoi(prepro_lval.str.c_str());
-							stdReturn(NUMBER);
-					}
-<DEFINING,DEFINING2,DEFINING3>{NUM_BLCK} {
-	prepro_lval.str = yytext;
-	prepro_lval.num = atoi(prepro_lval.str.c_str());
-	stdReturn(NUMBER);
-}
-<DEFINING,DEFINING3>[ \t] {
-}
-<IN_MACRO_DEFINITION>[ \t]	{
-							prepro_lval.str=yytext;
-							stdReturn(WHITESPACE);
-						}
-<IF_STATEMENT>"!" {
-						prepro_lval.str=yytext;
-						stdReturn(BOOLEAN_NOT);
-					}
-<IF_STATEMENT>"==" {
-						prepro_lval.str=yytext;
-						stdReturn(IS_EQUAL);
-					}
-<IF_STATEMENT>\n {
-						prepro_lval.str=yytext;
-						BEGIN INITIAL;
-						stdReturn(EOL);
-					}
-<IF_STATEMENT>"//"[^\n]+ {
-						prepro_lval.str=yytext;
-						BEGIN INITIAL;
-						stdReturn(EOL);
-					}
-<INITIAL>"#"define {
-						prepro_lval.str=yytext;
-						BEGIN DEFINING;
-						stdReturn(DEFINE);
-}
-<INITIAL>"#"refine	{
-	prepro_lval.str = yytext;
-	BEGIN DEFINING;
-	stdReturn(DEFINE);
-}
-<DEFINING>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						BEGIN DEFINING2;
-						stdReturn(IDENTIFIER);
-					}
-<DEFINING2>"("		{
-						BEGIN DEFINING3;
-						prepro_lval.str=yytext;
-						stdReturn('(');
-					} 
-<DEFINING3>","		{
-						prepro_lval.str=yytext;
-						stdReturn(',');
-					}
-<DEFINING3>")"		{
-						prepro_lval.str=yytext;
-						BEGIN DEFINING4;
-						stdReturn(')');
-					}
-<DEFINING2,DEFINING4>[ \t]+	{
-						prepro_lval.str=yytext;
-						BEGIN IN_MACRO_DEFINITION;			// The ACTUAL macro definition follows,
+<INSERTING_MACRO>"++"							stdReturn(PLUS_PLUS);
+<INSERTING_MACRO>"--"							stdReturn(MINUS_MINUS);
+<INSERTING_MACRO>"=="							stdReturn(EQ_EQ);
+<INSERTING_MACRO>"!="							stdReturn(NOT_EQ);
+<IF_STATEMENT>"defined"							{
+													prepro_lval.str=yytext;
+													stdReturn(DEFINED);
+												}
+<IF_STATEMENT,IN_MACRO_DEFINITION>"||"			{
+													prepro_lval.str=yytext;
+													stdReturn(OR);
+												}
+<IF_STATEMENT,IN_MACRO_DEFINITION>"&&"			{
+													prepro_lval.str=yytext;
+													stdReturn(AND);
+												}
+<IF_STATEMENT,IN_MACRO_DEFINITION>"("			{
+													prepro_lval.str=yytext;
+													stdReturn('(');
+												} 
+<IF_STATEMENT,DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}	{
+															prepro_lval.str=yytext;
+															stdReturn(IDENTIFIER);
+														}
+<IF_STATEMENT,IN_MACRO_DEFINITION>{NUM_BLCK}	{
+														prepro_lval.str=yytext;
+														prepro_lval.num=atoi(prepro_lval.str.c_str());
+														stdReturn(NUMBER);
+												}
+<DEFINING,DEFINING2,DEFINING3>{NUM_BLCK}		{
+													prepro_lval.str = yytext;
+													prepro_lval.num = atoi(prepro_lval.str.c_str());
+													stdReturn(NUMBER);
+												}
+<DEFINING,DEFINING3>[ \t]						{
+												}
+<IN_MACRO_DEFINITION>[ \t]						{
+													prepro_lval.str=yytext;
+													stdReturn(WHITESPACE);
+												}
+<IF_STATEMENT>"!"								{
+													prepro_lval.str=yytext;
+													stdReturn(BOOLEAN_NOT);
+												}
+<IF_STATEMENT>"=="								{
+													prepro_lval.str=yytext;
+													stdReturn(IS_EQUAL);
+												}
+<IF_STATEMENT>\n								{
+													prepro_lval.str=yytext;
+													BEGIN INITIAL;
+													stdReturn(EOL);
+												}
+<IF_STATEMENT>"//"[^\n]+						{
+													prepro_lval.str=yytext;
+													BEGIN INITIAL;
+													stdReturn(EOL);
+												}
+<INITIAL>"#"define								{
+													prepro_lval.str=yytext;
+													BEGIN DEFINING;
+													stdReturn(DEFINE);
+												}
+<INITIAL>"#"refine								{
+													prepro_lval.str = yytext;
+													BEGIN DEFINING;
+													stdReturn(DEFINE);
+												}
+<DEFINING>{ID_BLCK}								{
+													prepro_lval.str=yytext;
+													BEGIN DEFINING2;
+													stdReturn(IDENTIFIER);
+												}
+<DEFINING2>"("									{
+													BEGIN DEFINING3;
+													prepro_lval.str=yytext;
+													stdReturn('(');
+												} 
+<DEFINING3>","									{
+													prepro_lval.str=yytext;
+													stdReturn(',');
+												}
+<DEFINING3>")"									{
+													prepro_lval.str=yytext;
+													BEGIN DEFINING4;
+													stdReturn(')');
+												}
+<DEFINING2,DEFINING4>[ \t]+						{
+													prepro_lval.str=yytext;
+													BEGIN IN_MACRO_DEFINITION;
+													// The ACTUAL macro definition follows,
 													// e.g. in #define texture_clamp(tex,texc) texture(tex,texc)
 													// this would be texture(tex,texc)
-					// so in the IN_MACRO_DEFINITION, we should recognize ID_BLCK, brackets, NUM_BLCK, all the standard stuff.
-						// We won't use this whitespace though.
-						stdReturn(WHITESPACE);
-					}
+													// so in the IN_MACRO_DEFINITION, we should recognize ID_BLCK, brackets, NUM_BLCK, all the standard stuff.
+													// We won't use this whitespace though.
+													stdReturn(WHITESPACE);
+												}
 <PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT>\n	{
-						prepro_lval.str=yytext;
-				BEGIN INITIAL;
-				stdReturn(EOL);
-			}
-<DEFINING,DEFINING2,PREPRO><<EOF>> {
-			BEGIN INITIAL;
-			if(!popfile())
-			{
-				ClearMacros();
-				yyterminate();
-			}
-		}
-<INITIAL><<EOF>> {
-			if(!popfile())
-			{
-				ClearMacros();
-				yyterminate();
-			}
-		}
-<INITIAL>^. {
-		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
-	}
-<INITIAL>^\n {
-		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
-	}
+																				prepro_lval.str=yytext;
+																				BEGIN INITIAL;
+																				stdReturn(EOL);
+																			}
+<DEFINING,DEFINING2,PREPRO><<EOF>>				{
+													BEGIN INITIAL;
+													if(!popfile())
+													{
+														ClearMacros();
+														yyterminate();
+													}
+												}
+<INITIAL><<EOF>>								{
+													if(!popfile())
+													{
+														ClearMacros();
+														yyterminate();
+													}
+												}
+<INITIAL>^.										{
+													current_state=YY_START;
+													if(inActiveBlock())
+														Write();
+												}
+<INITIAL>^\n									{
+													current_state=YY_START;
+													if(inActiveBlock())
+														Write();
+												}
 
-<INITIAL>\n {
-		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
-	}
-<INITIAL>. {	current_state=YY_START;
-				if(inActiveBlock())
-					Write();
-}
-<INITIAL,PREPRO,DEFINING,IN_MACRO_DEFINITION,INSERTING_MACRO,IF_STATEMENT>" " {
-	Write();
-	 }
-<IN_MACRO_DEFINITION>[#\\] {
-	if (inActiveBlock())
-		Write(); 
-}
+<INITIAL>\n 									{
+													current_state=YY_START;
+													if(inActiveBlock())
+														Write();
+												}
+<INITIAL>.										{	
+													current_state=YY_START;
+													if(inActiveBlock())
+														Write();
+												}
+<INITIAL,PREPRO,DEFINING,IN_MACRO_DEFINITION,INSERTING_MACRO,IF_STATEMENT>" "	{
+																					Write();
+																				}
+<IN_MACRO_DEFINITION>[#\\]						{
+													if (inActiveBlock())
+														Write(); 
+												}
 
 %%
 void Preprocess(int argc, char **argv)
@@ -616,8 +618,6 @@ int newfile(const char *fn)
 	std::string fullPathName;
 	double datetime=0.0;
 	FILE *f = prepro_open(fn,fullPathName,datetime);
-
-	//GetFileDate(const char* filename_utf8)
 
 	/* die if no file or no room */
 	if(!f)
