@@ -242,8 +242,11 @@ function(LibraryDefaults targname)
 		target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/Windows")
 		add_definitions( -DNOMINMAX )
 		add_definitions( -DWIN64 )
-		# Maybe an arg could be passed to use /WX?
+		# Maybe an arg could be passed to use /WX? Or maybe we just fix our damn warnings.
 		target_compile_options( ${targname} PRIVATE /W3 /wd4011 /wd4514 /wd4251 /w15038 )
+		if(PLATFORM_WARNINGS_AS_ERRORS)
+			target_compile_options( ${targname} PRIVATE /WX )
+		endif()
 		target_link_options( ${targname} PRIVATE /DEBUG )
 		add_definitions( -DUNICODE -D_UNICODE -DSIMUL_BUILD_NUMBER=$ENV{SIMUL_BUILD_NUMBER} )
 		target_compile_definitions(${targname} PRIVATE PLATFORM_NO_OPTIMIZATION )
