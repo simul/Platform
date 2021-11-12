@@ -145,6 +145,15 @@ namespace platform
 	}
 
 #if SIMUL_INTERNAL_CHECKS
+#define SIMUL_BREAK_ONCE_INTERNAL(msg)\
+	{\
+		static bool done=false;\
+		if(!done) \
+		{\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
+			BREAK_IF_DEBUGGING\
+		}\
+	}
 #define SIMUL_BREAK_INTERNAL(msg)\
 	{\
 		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
@@ -152,6 +161,7 @@ namespace platform
 	}
 #else
 #define SIMUL_BREAK_INTERNAL(msg) {}
+#define SIMUL_BREAK_ONCE_INTERNAL(msg) {}
 #endif
 
 #define SIMUL_ASSERT_WARN(val,message)\
