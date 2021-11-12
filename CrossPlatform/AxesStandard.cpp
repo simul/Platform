@@ -77,12 +77,12 @@ Quaternionf simul::crossplatform::ConvertRotation(AxesStandard fromStandard, Axe
 
 int8_t simul::crossplatform::ConvertAxis(AxesStandard fromStandard, AxesStandard toStandard, int8_t axis)
 {
-	int8_t a = (axis) % 3;
+	//int8_t a = (axis) % 3;
 	//int8_t sn=(axis>=3)?-1:1;
 	static int8_t ue_e[] = { 1, 0, 2 };
-	static int8_t gl_2[] = { 1, 2, 3 };
+	//static int8_t gl_2[] = { 1, 2, 3 };
 
-	static int8_t unt[] = { 0, 2, 1 };
+	//static int8_t unt[] = { 0, 2, 1 };
 	static int8_t ue_gl[] = { 1, 2, 3 };
 
 	static int8_t uy_gl[] = { 0, 1, 5 };
@@ -224,10 +224,22 @@ mat4 simul::crossplatform::ConvertMatrix(AxesStandard fromStandard, AxesStandard
 	ax[1]=ax[1]%3;
 	ax[2]=ax[2]%3;
 	mat4 n;
-	n={  m.m[ax[0]*4+ax[0]]				,m.m[ax[0]*4+ax[1]]*s[0]*s[1]	,m.m[ax[0]*4+ax[2]]*s[0]*s[2]	,m.m[ax[0]*4+3] * s[0]
-		,m.m[ax[1]*4+ax[0]]*s[1]*s[0]	,m.m[ax[1]*4+ax[1]]				,m.m[ax[1]*4+ax[2]]*s[1]*s[2]	,m.m[ax[1]*4+3] * s[1]
-		,m.m[ax[2]*4+ax[0]]*s[2]*s[0]	,m.m[ax[2]*4+ax[1]]*s[2]*s[1]	,m.m[ax[2]*4+ax[2]]				,m.m[ax[2]*4+3] * s[2]
-		,m.m[   3 *4+ax[0]]*s[0]		,m.m[   3 *4+ax[1]]*s[1]		,m.m[   3 *4+ax[2]]*s[2]		,m.m[   3 *4+3]};
+	n._11 = m.m[ax[0]*4+ax[0]];
+	n._12 = m.m[ax[0]*4+ax[1]]*s[0]*s[1];
+	n._13 = m.m[ax[0]*4+ax[2]]*s[0]*s[2];
+	n._14 = m.m[ax[0]*4+3]*s[0];
+	n._21 = m.m[ax[1]*4+ax[0]]*s[1]*s[0];
+	n._22 = m.m[ax[1]*4+ax[1]];
+	n._23 = m.m[ax[1]*4+ax[2]]*s[1]*s[2];
+	n._24 = m.m[ax[1]*4+3]*s[1];
+	n._31 = m.m[ax[2]*4+ax[0]]*s[2]*s[0];
+	n._32 = m.m[ax[2]*4+ax[1]]*s[2]*s[1];
+	n._33 = m.m[ax[2]*4+ax[2]];
+	n._34 = m.m[ax[2]*4+3]*s[2];
+	n._41 = m.m[   3 *4+ax[0]]*s[0];
+	n._42 = m.m[   3 *4+ax[1]]*s[1];
+	n._43 = m.m[   3 *4+ax[2]]*s[2];
+	n._44 = m.m[   3 *4+3];
 	return n;
 }
 

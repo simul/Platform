@@ -14,51 +14,51 @@ the last is C code to be copied verbatim to the output.
 
 %{
 	#define YYDEBUG 1
-    #ifdef _MSC_VER
-    // MS's C++ compiler is more strict than gcc
+	#ifdef _MSC_VER
+	// MS's C++ compiler is more strict than gcc
 
-    // No unistd.h
-    #define YY_NO_UNISTD_H
+	// No unistd.h
+	#define YY_NO_UNISTD_H
 
-    // Direct IO functions (read and such)
-    #include <io.h>
+	// Direct IO functions (read and such)
+	#include <io.h>
 
-    // Disable the warning for yywrap
-    #pragma warning( disable: 4003 )
+	// Disable the warning for yywrap
+	#pragma warning( disable: 4003 )
 		// Disable the warning about deprecated naming of _read and friends
-    #pragma warning( disable: 4996 )
+	#pragma warning( disable: 4996 )
 
-    #endif
+	#endif
 
-    #ifdef _M_X64
-    // flex is (still) incompatible with x64
-    // it makes some casts from pointers to integers (pointer casts seem to be fixed in the latest version) and from size_t to integers
-    // it should work though, nothing too serious
-    #pragma warning( disable:4267 )
-    #pragma warning( disable:4244 )
-    #endif
+	#ifdef _M_X64
+	// flex is (still) incompatible with x64
+	// it makes some casts from pointers to integers (pointer casts seem to be fixed in the latest version) and from size_t to integers
+	// it should work though, nothing too serious
+	#pragma warning( disable:4267 )
+	#pragma warning( disable:4244 )
+	#endif
 
-    #include <iostream>
-    #include <string>
-    #include <sstream>
+	#include <iostream>
+	#include <string>
+	#include <sstream>
 	#include <stdarg.h>
 	#include <charconv>
 	#include <algorithm>
 
-    #include "Sfx.h"
-    #include "SfxClasses.h"
-    #include "SfxEffect.h"
+	#include "Sfx.h"
+	#include "SfxClasses.h"
+	#include "SfxEffect.h"
 
-    // tokens from parser generator
-    #include "SfxLALRParser.hpp"
-    #include "StringFunctions.h"
+	// tokens from parser generator
+	#include "SfxLALRParser.hpp"
+	#include "StringFunctions.h"
 
-    static void errLex(const char* tok);
+	static void errLex(const char* tok);
 
 	void sfxPushState(int s);
 	void sfxPopState();
-    using namespace std;
-    using namespace sfx;
+	using namespace std;
+	using namespace sfx;
 	static int brace=0;
 
 	void sfxWrite(const char *txt)
@@ -119,141 +119,139 @@ the last is C code to be copied verbatim to the output.
 #define modReturn return modReturn_
 %}
 %x renderstate_mode IN_SHADER IN_SHADER_COMPILE IN_LINE IN_RENDER_STATE IN_TEXTURE_DECL IN_LAYOUT IN_STRUCT IN_MULTILINE_COMMENT
-ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*																						
+ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*																	
 NUM_BLCK ([0-9][0-9]*)[uU]?
 HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*[uU]?
 STR_BLCK \"[^"\n]*\"																								
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
-																													
-/* The %% means that we are done with the CONTROL section, and now move onto the token definitions*/				
-/*"sampler"							sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(SAMPLER);			
+
+/* The %% means that we are done with the CONTROL section, and now move onto the token definitions*/
+/*"sampler"							sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(SAMPLER);
 "CS_LAYOUT"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.strs[0]		=yytext;stdReturn(LAYOUT);}*/
 %%
-<INITIAL>"#"define[^\n]+	{																						
-							/*handle up to end of line*/															
-																													
-									int c;																			
-									while((c = yyinput()) && c != '\n') ;											
-																												
-									if(gLexPassthrough)
-										gEffect->m_sharedCode<<yytext<<"\n";
-							}
-<INITIAL>"#pragma"[^\n]+	{
-								int c;
-								while((c = yyinput()) && c != '\n');
-								//if(gLexPassthrough)
-									gEffect->m_sharedCode<<yytext<<"\n";
-							}
+<INITIAL>"#"define[^\n]+						{
+													/*handle up to end of line*/
+													int c;
+													while((c = yyinput()) && c != '\n');
+
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext<<"\n";
+												}
+<INITIAL>"#pragma"[^\n]+						{
+													int c;
+													while((c = yyinput()) && c != '\n');
+
+													gEffect->m_sharedCode<<yytext<<"\n";
+												}
 <INITIAL,IN_SHADER>"program"					sfxlval.boolean=false; stdReturn(PROGRAM);
-<INITIAL,IN_SHADER>"stages"					sfxlval.boolean=true; stdReturn(PROGRAM);
-<INITIAL,IN_SHADER>"technique"				{
-										sfxlval.boolean=false;
-										stdReturn(TECHNIQUE);
-									}
-<INITIAL>"unorm"					{
-										stdReturn(UNORM);
-									}
-<INITIAL>"snorm"					{
-										stdReturn(SNORM);
-									}
-<INITIAL,IN_SHADER>"pass"			{
-										sfxlval.boolean=false;
-										stdReturn(PASS);
-									}
-<INITIAL,IN_SHADER>"raytrace_pass"	{
-										stdReturn(RAYTRACE_PASS);
-									}
-<IN_SHADER>"RayGeneration"			{
-										stdReturn(SET_RAY_GENERATION);
-									}
-<IN_SHADER>"HitGroup"				{
-										stdReturn(SET_HIT_GROUP);
-									}
-<IN_SHADER>"ClosestHit"				{
-										stdReturn(SET_CLOSEST_HIT);
-									}
-<IN_SHADER>"AnyHit"					{
-										stdReturn(SET_ANY_HIT);
-									}
-<IN_SHADER>"Intersection"			{
-										stdReturn(SET_INTERSECTION);
-									}
-<IN_SHADER>"Miss"					{
-										stdReturn(SET_MISS);
-									}
-<IN_SHADER>"Callable"				{
-										stdReturn(SET_CALLABLE);
-									}
-<IN_SHADER>"MissShaders"			{
-										stdReturn(SET_MISS_SHADERS);
-									}
-<IN_SHADER>"CallableShaders"		{
-										stdReturn(SET_CALLABLE_SHADERS);
-									}
-<IN_SHADER>"RayTracingShaderConfig"	{
-										stdReturn(SET_RAY_TRACING_SHADER_CONFIG);
-									}
+<INITIAL,IN_SHADER>"stages"						sfxlval.boolean=true; stdReturn(PROGRAM);
+<INITIAL,IN_SHADER>"technique"					{
+													sfxlval.boolean=false;
+													stdReturn(TECHNIQUE);
+												}
+<INITIAL>"unorm"								{
+													stdReturn(UNORM);
+												}
+<INITIAL>"snorm"								{
+													stdReturn(SNORM);
+												}
+<INITIAL,IN_SHADER>"pass"						{
+													sfxlval.boolean=false;
+													stdReturn(PASS);
+												}
+<INITIAL,IN_SHADER>"raytrace_pass"				{
+													stdReturn(RAYTRACE_PASS);
+												}
+<IN_SHADER>"RayGeneration"						{
+													stdReturn(SET_RAY_GENERATION);
+												}
+<IN_SHADER>"HitGroup"							{
+													stdReturn(SET_HIT_GROUP);
+												}
+<IN_SHADER>"ClosestHit"							{
+													stdReturn(SET_CLOSEST_HIT);
+												}
+<IN_SHADER>"AnyHit"								{
+													stdReturn(SET_ANY_HIT);
+												}
+<IN_SHADER>"Intersection"						{
+													stdReturn(SET_INTERSECTION);
+												}
+<IN_SHADER>"Miss"								{
+													stdReturn(SET_MISS);
+												}
+<IN_SHADER>"Callable"							{
+													stdReturn(SET_CALLABLE);
+												}
+<IN_SHADER>"MissShaders"						{
+													stdReturn(SET_MISS_SHADERS);
+												}
+<IN_SHADER>"CallableShaders"					{
+													stdReturn(SET_CALLABLE_SHADERS);
+												}
+<IN_SHADER>"RayTracingShaderConfig"				{
+													stdReturn(SET_RAY_TRACING_SHADER_CONFIG);
+												}
 <IN_SHADER>"RayTracingPipelineConfig"			{
-										stdReturn(SET_RAY_TRACING_PIPELINE_CONFIG);
-									}
-<IN_SHADER>"MaxPayloadSize"			{
-										stdReturn(SET_MAX_PAYLOAD_SIZE);
-									}
-<IN_SHADER>"MaxAttributeSize"		{
-										stdReturn(SET_MAX_ATTRIBUTE_SIZE);
-									}
-<IN_SHADER>"MaxTraceRecursionDepth"	{
-										stdReturn(SET_MAX_TRACE_RECURSION_DEPTH);
-									}
+													stdReturn(SET_RAY_TRACING_PIPELINE_CONFIG);
+												}
+<IN_SHADER>"MaxPayloadSize"						{
+													stdReturn(SET_MAX_PAYLOAD_SIZE);
+												}
+<IN_SHADER>"MaxAttributeSize"					{
+													stdReturn(SET_MAX_ATTRIBUTE_SIZE);
+												}
+<IN_SHADER>"MaxTraceRecursionDepth"				{
+													stdReturn(SET_MAX_TRACE_RECURSION_DEPTH);
+												}
 <IN_SHADER,IN_SHADER_COMPILE>"CompileShader"	{
 												sfxlval.lineno=yylineno;
 												stdReturn(COMPILE_SHADER_INSTANCE);
-									}
-									     
-<INITIAL,IN_SHADER>"group"			{
-										sfxlval.boolean=false;
-										stdReturn(GROUP);
-									}
+												}
+<INITIAL,IN_SHADER>"group"						{
+													sfxlval.boolean=false;
+													stdReturn(GROUP);
+												}
 <INITIAL,IN_SHADER>"fxgroup"					{
-										sfxlval.boolean=false;
-										stdReturn(GROUP);
-									}
-<INITIAL,IN_SHADER>"shader"					{
-										sfxlval.lineno=yylineno;
-										sfxlval.strs[0]=yytext;
-										stdReturn(SHADER);
-									}
-<INITIAL,IN_SHADER>"const"			{
-										stdReturn(CONST);
-									}
-<INITIAL>"struct"					{
-										stdReturn(STRUCT);
-									}
-<INITIAL>"cbuffer"					{
-										modReturn(CONSTANT_BUFFER, "cbuffer");
-									}
-<INITIAL>"register"					{
-										stdReturn(REGISTER);
-									}
-<INITIAL>"interface"				{
-										sfxlval.lineno = yylineno;
-										stdReturn(INTERFACE);
-									}
-<INITIAL,IN_RENDER_STATE>"#line"	{
-										sfxlval.lineno=yylineno;
-										sfxlval.strs[0]=yytext;
-										yy_push_state(IN_LINE);
-										stdReturn(LINE);
-									}
-<INITIAL,IN_SHADER>"patch"|"centroid"	{
-										if(gLexPassthrough)
-											gEffect->m_sharedCode<<yytext;
-										else
-										{
-											sfxlval.strs[0]=yytext;
-											stdReturn(STORAGET);
-										}
-									}
+													sfxlval.boolean=false;
+													stdReturn(GROUP);
+												}
+<INITIAL,IN_SHADER>"shader"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(SHADER);
+												}
+<INITIAL,IN_SHADER>"const"						{
+													stdReturn(CONST);
+												}
+<INITIAL>"struct"								{
+													stdReturn(STRUCT);
+												}
+<INITIAL>"cbuffer"								{
+													modReturn(CONSTANT_BUFFER, "cbuffer");
+												}
+<INITIAL>"register"								{
+													stdReturn(REGISTER);
+												}
+<INITIAL>"interface"							{
+													sfxlval.lineno = yylineno;
+													stdReturn(INTERFACE);
+												}
+<INITIAL,IN_RENDER_STATE>"#line"				{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													yy_push_state(IN_LINE);
+													stdReturn(LINE);
+												}
+<INITIAL,IN_SHADER>"patch"|"centroid"			{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.strs[0]=yytext;
+														stdReturn(STORAGET);
+													}
+												}
 <IN_RENDER_STATE,IN_TEXTURE_DECL>"register"		stdReturn(REGISTER);
 
 <INITIAL,IN_SHADER>^"RenderTargetFormatState"	{
@@ -291,7 +289,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													SetLexStartState(IN_RENDER_STATE);
 													stdReturn(RENDER_STATE_DECL);
 												}
-<INITIAL,IN_SHADER>^"SamplerComparisonState" {
+<INITIAL,IN_SHADER>^"SamplerComparisonState"	{
 													sfxlval.strs[0]=yytext;
 													sfxlval.lineno=yylineno;
 													renderStateType=SAMPLER_STATE;
@@ -299,84 +297,84 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn(RENDER_STATE_DECL);
 												}
 
-<INITIAL>"Texture2DMS"			{
+<INITIAL>"Texture2DMS"							{
 													stdReturn(TEXTURE2DMS);
 												}
-<INITIAL>"MS_Texture2D"		{
+<INITIAL>"MS_Texture2D"							{
 													stdReturn(TEXTURE2DMS);
 												}
-<INITIAL>"Texture2D_Array"		{
+<INITIAL>"Texture2D_Array"						{
 													stdReturn(TEXTURE2D_ARRAY);
 												}
-<INITIAL>"Texture2DArray"		{
+<INITIAL>"Texture2DArray"						{
 													stdReturn(TEXTURE2D_ARRAY);
 												}
-<INITIAL>"Texture2D"			{
+<INITIAL>"Texture2D"							{
 													stdReturn(TEXTURE2D);
 												}
-<INITIAL>"TextureCube"			{
+<INITIAL>"TextureCube"							{
 													stdReturn(TEXTURECUBE);
 												}
-<INITIAL>"TextureCube_Array"	{
+<INITIAL>"TextureCube_Array"					{
 													stdReturn(TEXTURECUBE_ARRAY);
 												}
-<INITIAL>"TextureCubeArray"	{
+<INITIAL>"TextureCubeArray"						{
 													stdReturn(TEXTURECUBE_ARRAY);
 												}
 <INITIAL>"Texture3D"							{
 													stdReturn(TEXTURE3D);
 												}
-<INITIAL>"Texture3D_Array"					{
+<INITIAL>"Texture3D_Array"						{
 													stdReturn(TEXTURE3D_ARRAY);
 												}
-<INITIAL>"RegularBuffer"					{
+<INITIAL>"RegularBuffer"						{
 													stdReturn(REGULARBUFFER);
 												}
-<INITIAL>"RW_Texture2D"		{
+<INITIAL>"RW_Texture2D"							{
 													stdReturn(RW_TEXTURE2D);
 												}
 <INITIAL>"RWTexture2D"							{
 													stdReturn(RW_TEXTURE2D);
 												}
-<INITIAL>"ConstantBuffer"		{
+<INITIAL>"ConstantBuffer"						{
 													stdReturn(TEMPLATIZED_CONSTANT_BUFFER);
 												}
 <INITIAL>"RaytracingAccelerationStructure"		{
 													stdReturn(RAYTRACE_ACCELERATION_STRUCT);
 												}
-<INITIAL>"RW_Texture2D_Array"			{
+<INITIAL>"RW_Texture2D_Array"					{
 													stdReturn(RW_TEXTURE2D_ARRAY);
 												}
-<INITIAL>"RWTexture2DArray"				{
+<INITIAL>"RWTexture2DArray"						{
 													stdReturn(RW_TEXTURE2D_ARRAY);
 												}
-<INITIAL>"RW_Texture3D"					{
+<INITIAL>"RW_Texture3D"							{
 													stdReturn(RW_TEXTURE3D);
 												}
-<INITIAL>"RWTexture3D"					{
+<INITIAL>"RWTexture3D"							{
 													stdReturn(RW_TEXTURE3D);
 												}
 <INITIAL>"RW_Texture3D_Array"					{
 													stdReturn(RW_TEXTURE3D_ARRAY);
 												}
-<INITIAL>"RWTexture3DArray"				{
+<INITIAL>"RWTexture3DArray"						{
 													stdReturn(RW_TEXTURE3D_ARRAY);
 												}
-<INITIAL>"RW_RegularBuffer"				{
+<INITIAL>"RW_RegularBuffer"						{
 													stdReturn(RW_REGULARBUFFER);
 												}
 
-<INITIAL,IN_SHADER>"SetVertexShader"						{
+<INITIAL,IN_SHADER>"SetVertexShader"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
-														sfxlval.sType=VERTEX_SHADER; 		
+														sfxlval.sType=VERTEX_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetHullShader"						{
+<INITIAL,IN_SHADER>"SetHullShader"				{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
@@ -386,77 +384,77 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetDomainShader"						{
+<INITIAL,IN_SHADER>"SetDomainShader"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
-														sfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
+														sfxlval.sType=TESSELATION_EVALUATION_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetGeometryShader"					{
+<INITIAL,IN_SHADER>"SetGeometryShader"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
-														sfxlval.sType=GEOMETRY_SHADER; 		
+														sfxlval.sType=GEOMETRY_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetPixelShader"						{
+<INITIAL,IN_SHADER>"SetPixelShader"				{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
-														sfxlval.sType=FRAGMENT_SHADER; 			
+														sfxlval.sType=FRAGMENT_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetFragmentShader"					{
+<INITIAL,IN_SHADER>"SetFragmentShader"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
-														sfxlval.sType=FRAGMENT_SHADER; 		
+														sfxlval.sType=FRAGMENT_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetRayGenerationShader"			{
-														sfxlval.sType=RAY_GENERATION_SHADER;	 	
-														SetLexStartState(IN_SHADER_COMPILE);
-														stdReturn(SHADER_COMMAND);
-													}
-<INITIAL,IN_SHADER>"SetClosestHitShader"			{
-														sfxlval.sType=CLOSEST_HIT_SHADER;	 	
-														SetLexStartState(IN_SHADER_COMPILE);
-														stdReturn(SHADER_COMMAND);
-													}
+<INITIAL,IN_SHADER>"SetRayGenerationShader"		{
+													sfxlval.sType=RAY_GENERATION_SHADER;
+													SetLexStartState(IN_SHADER_COMPILE);
+													stdReturn(SHADER_COMMAND);
+												}
+<INITIAL,IN_SHADER>"SetClosestHitShader"		{
+													sfxlval.sType=CLOSEST_HIT_SHADER;
+													SetLexStartState(IN_SHADER_COMPILE);
+													stdReturn(SHADER_COMMAND);
+												}
 <INITIAL,IN_SHADER>"SetAnyHitShader"			{
-														sfxlval.sType=ANY_HIT_SHADER;	 	
+														sfxlval.sType=ANY_HIT_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
-													}
-<INITIAL,IN_SHADER>"SetMissShader"			{
-														sfxlval.sType=MISS_SHADER;	 	
+												}
+<INITIAL,IN_SHADER>"SetMissShader"				{
+														sfxlval.sType=MISS_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
-													}
+												}
 <INITIAL,IN_SHADER>"SetComputeShader"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
-														sfxlval.sType=COMPUTE_SHADER;	 	
+														sfxlval.sType=COMPUTE_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetRasterizerState"					{
+<INITIAL,IN_SHADER>"SetRasterizerState"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
@@ -523,106 +521,105 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(SET_RTFORMAT_COMMAND);
 													}
 												}
-<INITIAL>"VertexShader"						{sfxlval.lineno=yylineno;	sfxlval.sType=VERTEX_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
-<INITIAL>"GeometryShader"					{sfxlval.lineno=yylineno;	sfxlval.sType=GEOMETRY_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
-<INITIAL>"PixelShader"						{sfxlval.lineno=yylineno;	sfxlval.sType=FRAGMENT_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
-<INITIAL>"FragmentShader"					{sfxlval.lineno=yylineno;	sfxlval.sType=FRAGMENT_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
-<INITIAL>"ComputeShader"					{sfxlval.lineno=yylineno;	sfxlval.sType=COMPUTE_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
+<INITIAL>"VertexShader"							{ sfxlval.lineno=yylineno;	sfxlval.sType=VERTEX_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"GeometryShader"						{ sfxlval.lineno=yylineno;	sfxlval.sType=GEOMETRY_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"PixelShader"							{ sfxlval.lineno=yylineno;	sfxlval.sType=FRAGMENT_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"FragmentShader"						{ sfxlval.lineno=yylineno;	sfxlval.sType=FRAGMENT_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"ComputeShader"						{ sfxlval.lineno=yylineno;	sfxlval.sType=COMPUTE_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
 
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 													// Write an empty statement: preserve line numbers
 													sfxlval.strs[0] = yytext;
-													//gSkip();
 												}
 
-<IN_SHADER>"/*"							{
-											sfxPushState(IN_MULTILINE_COMMENT);
-											if (gLexPassthrough)
-												sfxWrite(yytext);
-										}
-<IN_MULTILINE_COMMENT>"*/"				{
-											if (gLexPassthrough)
-												sfxWrite(yytext);
-											sfxPopState();
-										}
-<IN_MULTILINE_COMMENT>[^"*"]+			 {
-											if (gLexPassthrough)
-												sfxWrite(yytext);
-										}
-<IN_MULTILINE_COMMENT>"*"				{
-											if (gLexPassthrough)
-												sfxWrite(yytext);
-										}
-<IN_SHADER>{FLOAT_BLCK}					{
-											sfxlval.lineno=yylineno;
-											float value;
-											std::string yytextStr=yytext;
-											yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
-											const char* yytextCStr=yytextStr.c_str();
-											std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
-											sfxlval.fnum=value;
-											stdReturn(P_FLOAT);
-										}
-<IN_SHADER>{NUM_BLCK}					{
-											sfxlval.lineno=yylineno;
-											sfxlval.num=atoi(yytext);
-											sfxlval.strs[0]=yytext;
-											stdReturn(NUM);
-										}
-<INITIAL,IN_SHADER>{HEX_BLCK}			{
-											sfxlval.lineno	=yylineno;
-											sfxlval.unum	=strtoul(yytext,NULL,16);
-											sfxlval.strs[0]	=yytext;
-											stdReturn(NUM);
-										}
-<IN_SHADER>"saturate"					{
-											stdReturn(SATURATE);
-										}
+<IN_SHADER>"/*"									{
+													sfxPushState(IN_MULTILINE_COMMENT);
+													if (gLexPassthrough)
+														sfxWrite(yytext);
+												}
+<IN_MULTILINE_COMMENT>"*/"						{
+													if (gLexPassthrough)
+														sfxWrite(yytext);
+													sfxPopState();
+												}
+<IN_MULTILINE_COMMENT>[^"*"]+					{
+													if (gLexPassthrough)
+														sfxWrite(yytext);
+												}
+<IN_MULTILINE_COMMENT>"*"						{
+													if (gLexPassthrough)
+														sfxWrite(yytext);
+												}
+<IN_SHADER>{FLOAT_BLCK}							{
+													sfxlval.lineno=yylineno;
+													float value;
+													std::string yytextStr=yytext;
+													yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+													const char* yytextCStr=yytextStr.c_str();
+													std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
+													sfxlval.fnum=value;
+													stdReturn(P_FLOAT);
+												}
+<IN_SHADER>{NUM_BLCK}							{
+													sfxlval.lineno=yylineno;
+													sfxlval.num=atoi(yytext);
+													sfxlval.strs[0]=yytext;
+													stdReturn(NUM);
+												}
+<INITIAL,IN_SHADER>{HEX_BLCK}					{
+													sfxlval.lineno	=yylineno;
+													sfxlval.unum	=strtoul(yytext,NULL,16);
+													sfxlval.strs[0]	=yytext;
+													stdReturn(NUM);
+												}
+<IN_SHADER>"saturate"							{
+													stdReturn(SATURATE);
+												}
 <INITIAL,IN_SHADER>"inline"|"const"|"static"|"STATIC"	{
-										}
-<IN_SHADER>"asfloat"					{
-											modReturn(IDENTIFIER,"uintBitsToFloat");
-										}
-<IN_SHADER>"asint"						{
-											modReturn(IDENTIFIER,"floatBitsToInt");
-										}
-<IN_SHADER>"asuint"						{
-											modReturn(IDENTIFIER,"floatBitsToUint");
-										}
-<IN_SHADER>"f32tof16"					{
-											modReturn(IDENTIFIER,"floatBitsToUint");
-										}
-<IN_SHADER>"f16tof32"					{
-											modReturn(IDENTIFIER,"uintBitsToFloat");
-										}
-<IN_SHADER>"lerp"						{
-											modReturn(IDENTIFIER,"lerp");
-										}
-<IN_SHADER>"atan2"						{
-											modReturn(IDENTIFIER,"atan2");
-										}
-<IN_SHADER>"int2"						{
-											modReturn(IDENTIFIER,"int2");
-										}
-<IN_SHADER>"int3"						{
-											modReturn(IDENTIFIER,"int3");
-										}
-<IN_SHADER>"int4"						{
-											modReturn(IDENTIFIER,"int4");
-										}
-<IN_SHADER>"uint2"						{
-											modReturn(IDENTIFIER,"uint2");
-										}
-<IN_SHADER>"uint3"						{
-											modReturn(IDENTIFIER,"uint3");
-										}
-<IN_SHADER>"uvec3"						{
-											modReturn(IDENTIFIER,"uint3");
-										}
-<IN_SHADER>"uint4"						{
-											modReturn(IDENTIFIER,"uint4");
-										}
-<IN_SHADER>"fract"						{
+														}
+<IN_SHADER>"asfloat"							{
+													modReturn(IDENTIFIER,"uintBitsToFloat");
+												}
+<IN_SHADER>"asint"								{
+													modReturn(IDENTIFIER,"floatBitsToInt");
+												}
+<IN_SHADER>"asuint"								{
+													modReturn(IDENTIFIER,"floatBitsToUint");
+												}
+<IN_SHADER>"f32tof16"							{
+													modReturn(IDENTIFIER,"floatBitsToUint");
+												}
+<IN_SHADER>"f16tof32"							{
+													modReturn(IDENTIFIER,"uintBitsToFloat");
+												}
+<IN_SHADER>"lerp"								{
+													modReturn(IDENTIFIER,"lerp");
+												}
+<IN_SHADER>"atan2"								{
+													modReturn(IDENTIFIER,"atan2");
+												}
+<IN_SHADER>"int2"								{
+													modReturn(IDENTIFIER,"int2");
+												}
+<IN_SHADER>"int3"								{
+													modReturn(IDENTIFIER,"int3");
+												}
+<IN_SHADER>"int4"								{
+													modReturn(IDENTIFIER,"int4");
+												}
+<IN_SHADER>"uint2"								{
+													modReturn(IDENTIFIER,"uint2");
+												}
+<IN_SHADER>"uint3"								{
+													modReturn(IDENTIFIER,"uint3");
+												}
+<IN_SHADER>"uvec3"								{
+													modReturn(IDENTIFIER,"uint3");
+												}
+<IN_SHADER>"uint4"								{
+													modReturn(IDENTIFIER,"uint4");
+												}
+<IN_SHADER>"fract"								{
 													modReturn(IDENTIFIER,"frac");
 												}
 
@@ -636,17 +633,17 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.lineno=yylineno;
 													sfxlval.strs[0]=yytext;
 													stdReturn(LOAD);
-												}   
+												}
 <IN_SHADER>"Sample"								{
 													sfxlval.lineno=yylineno;
 													sfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE);
-												}   
+												}
 <IN_SHADER>"SampleLevel"						{
 													sfxlval.lineno=yylineno;
 													sfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE_LOD);
-												}   
+												}
 <IN_SHADER>"break"								stdReturn(BREAK);
 <IN_SHADER>"continue"							stdReturn(CONTINUE);
 <IN_SHADER>"do"									stdReturn(DO);
@@ -674,242 +671,242 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"?"									{
 													stdReturn('?');
 												}
-<IN_SHADER>"["			{
-							stdReturn('[');
-						}
-<IN_SHADER>"]"			{
-							stdReturn(']');
-						}
-<IN_SHADER>"*="			stdReturn(TIMES_EQUALS);
-<IN_SHADER>"/="			stdReturn(OVER_EQUALS);
-<IN_SHADER>"%="			stdReturn(PERCENT_EQUALS);
-<IN_SHADER>"+="			stdReturn(PLUS_EQUALS);
-<IN_SHADER>"-="			stdReturn(MINUS_EQUALS);
-<IN_SHADER>"<<="		stdReturn(LEFT_SHIFT_EQUALS);
-<IN_SHADER>">>="		stdReturn(RIGHT_SHIFT_EQUALS);
-<IN_SHADER>"&="			stdReturn(AND_EQUALS);
-<IN_SHADER>"^="			stdReturn(XOR_EQUALS);
-<IN_SHADER>"|="			stdReturn(OR_EQUALS);
-<IN_SHADER>"||"			stdReturn(OR);
-<IN_SHADER>"&&"			stdReturn(AND);
+<IN_SHADER>"["									{
+													stdReturn('[');
+												}
+<IN_SHADER>"]"									{
+													stdReturn(']');
+												}
+<IN_SHADER>"*="									stdReturn(TIMES_EQUALS);
+<IN_SHADER>"/="									stdReturn(OVER_EQUALS);
+<IN_SHADER>"%="									stdReturn(PERCENT_EQUALS);
+<IN_SHADER>"+="									stdReturn(PLUS_EQUALS);
+<IN_SHADER>"-="									stdReturn(MINUS_EQUALS);
+<IN_SHADER>"<<="								stdReturn(LEFT_SHIFT_EQUALS);
+<IN_SHADER>">>="								stdReturn(RIGHT_SHIFT_EQUALS);
+<IN_SHADER>"&="									stdReturn(AND_EQUALS);
+<IN_SHADER>"^="									stdReturn(XOR_EQUALS);
+<IN_SHADER>"|="									stdReturn(OR_EQUALS);
+<IN_SHADER>"||"									stdReturn(OR);
+<IN_SHADER>"&&"									stdReturn(AND);
 
-<IN_SHADER>"<="			stdReturn(LESS_EQ);
-<IN_SHADER>">="			stdReturn(GRTR_EQ);
+<IN_SHADER>"<="									stdReturn(LESS_EQ);
+<IN_SHADER>">="									stdReturn(GRTR_EQ);
 
-<IN_SHADER>"<<"			stdReturn(LEFT_SHIFT);
-<IN_SHADER>">>"			stdReturn(RIGHT_SHIFT);
+<IN_SHADER>"<<"									stdReturn(LEFT_SHIFT);
+<IN_SHADER>">>"									stdReturn(RIGHT_SHIFT);
 
-<IN_SHADER>"++"			stdReturn(PLUS_PLUS);
-<IN_SHADER>"--"			stdReturn(MINUS_MINUS);
-<IN_SHADER>"=="			stdReturn(EQ_EQ);
-<IN_SHADER>"!="			stdReturn(NOT_EQ);
-<IN_SHADER>"~"			{
-							stdReturn('~');
-						}
-<IN_SHADER>"!"			{
-							stdReturn('!');
-						}
-<IN_SHADER>"+"			{
-							stdReturn('+');
-						}
-<IN_SHADER>"-"			{
-							stdReturn('-');
-						}   
-<IN_SHADER>"("			{
-							stdReturn('(');
-						}   
-<IN_SHADER>")"			{
-							stdReturn(')');
-						}   
-<IN_SHADER>"="			{
-							stdReturn('=');
-						}   
-<IN_SHADER>";"			{
-							stdReturn(';');
-						}   
-<IN_SHADER,IN_STRUCT>"*"			{
-							stdReturn('*');
-						}    
-<IN_SHADER,IN_STRUCT>"^"			{
-							stdReturn('^');
-						}    
-<IN_SHADER>"%"			{
-							stdReturn('%');
-						}    
-<IN_SHADER>"/"			{
-							stdReturn('/');
-						}
-<IN_SHADER>"&"			{
-							stdReturn('&');
-						}    
-<IN_SHADER>"|"			{
-							stdReturn('|');
-						}
-<IN_SHADER>"{"						{
-										sfxlval.strs[0]=yytext;
-										brace++;
-										stdReturn('{');
-									}
-<IN_SHADER>"}"						{
-										sfxlval.strs[0]=yytext;
-										brace--;
-										if(!brace)
-										{
-											SetLexStartState(INITIAL);
-										}
-										stdReturn('}');
-									//	stdReturn(SHADER_LINE);
-									}
-<INITIAL,IN_SHADER>"uniform"			{
-											stdReturn(UNIFORM);
-										}
-<INITIAL,IN_SHADER>"flat"			{
-											stdReturn(FLAT);
-										}
-<INITIAL,IN_SHADER>"groupshared"		{
-											stdReturn(GROUPSHARED);
-										}
-<INITIAL>"sampler1D"|"Texture1D"		{
-											modReturn(TEXTURE1D,"Texture1D");
-										}
-<INITIAL>(?i:"sampler3D"|"Texture3D")	{
-											modReturn(TEXTURE3D,"Texture3D");
-										}
-<INITIAL>(?i:"sampler2D"|"Texture2D")	{
-											modReturn(TEXTURE2D, "Texture2D");
-										}
-<INITIAL>"usampler2D"					{
-											modReturn(TEXTURE2D, "Texture2D");
-										}
-<INITIAL>"usampler3D"					{
-											modReturn(TEXTURE3D,"Texture3D");
-										}
-<INITIAL>"TextureCUBE"|"TextureCube"|"samplerCube"			{
-											modReturn(TEXTURECUBE,"TextureCube");
-										}
-<INITIAL>"Texture2DMS"|"sampler2DMS"	{
-											modReturn(TEXTURE2DMS,"Texture2DMS");
-										}
-<INITIAL>"RWTexture3D"|"image3D"		{
-											modReturn(RW_TEXTURE3D,"RWTexture3D");
-										}
-<INITIAL>"RWTexture2D"|"image2D"		{
-											modReturn(RW_TEXTURE2D,"RWTexture2D");
-										}  
-<INITIAL>"RWTexture1D"|"image1D"		{
-											modReturn(RW_TEXTURE1D,"RWTexture1D");
-										}  
-<INITIAL>"StructuredBuffer"				{
-											stdReturn(STRUCTUREDBUFFER);
-										}
-<INITIAL>"RWStructuredBuffer"			{
-											stdReturn(RW_STRUCTUREDBUFFER); 
-										}
-<IN_SHADER>"#line"						{
-											sfxlval.lineno=yylineno;
-											sfxlval.strs[0]=yytext;
-											yy_push_state(IN_LINE);
-											stdReturn(LINE);
-										}
-<IN_SHADER>{ID_BLCK}					{
-											sfxlval.lineno = yylineno;
-											sfxlval.strs[0] = yytext;
-											stdReturn(IDENTIFIER);
-										}
-<IN_SHADER>[\t ]*						{
-											//	stdReturn(SHADER_LINE);
-										}// Without this line, the yylineno would get out of whack.
-<IN_SHADER>\n								{				
-											//	sfxlval.strs[0] = yytext;
-												//stdReturn(SHADER_LINE);
-											}// Without this line, the yylineno would get out of whack.
+<IN_SHADER>"++"									stdReturn(PLUS_PLUS);
+<IN_SHADER>"--"									stdReturn(MINUS_MINUS);
+<IN_SHADER>"=="									stdReturn(EQ_EQ);
+<IN_SHADER>"!="									stdReturn(NOT_EQ);
+<IN_SHADER>"~"									{
+													stdReturn('~');
+												}
+<IN_SHADER>"!"									{
+													stdReturn('!');
+												}
+<IN_SHADER>"+"									{
+													stdReturn('+');
+												}
+<IN_SHADER>"-"									{
+													stdReturn('-');
+												}
+<IN_SHADER>"("									{
+													stdReturn('(');
+												}
+<IN_SHADER>")"									{
+													stdReturn(')');
+												}
+<IN_SHADER>"="									{
+													stdReturn('=');
+												}
+<IN_SHADER>";"									{
+													stdReturn(';');
+												}
+<IN_SHADER,IN_STRUCT>"*"						{
+													stdReturn('*');
+												}
+<IN_SHADER,IN_STRUCT>"^"						{
+													stdReturn('^');
+												}
+<IN_SHADER>"%"									{
+													stdReturn('%');
+												}
+<IN_SHADER>"/"									{
+													stdReturn('/');
+												}
+<IN_SHADER>"&"									{
+													stdReturn('&');
+												}
+<IN_SHADER>"|"									{
+													stdReturn('|');
+												}
+<IN_SHADER>"{"									{
+													sfxlval.strs[0]=yytext;
+													brace++;
+													stdReturn('{');
+												}
+<IN_SHADER>"}"									{
+													sfxlval.strs[0]=yytext;
+													brace--;
+													if(!brace)
+													{
+														SetLexStartState(INITIAL);
+													}
+													stdReturn('}');
+												}
+<INITIAL,IN_SHADER>"uniform"					{
+													stdReturn(UNIFORM);
+												}
+<INITIAL,IN_SHADER>"flat"						{
+													stdReturn(FLAT);
+												}
+<INITIAL,IN_SHADER>"groupshared"				{
+													stdReturn(GROUPSHARED);
+												}
+<INITIAL>"sampler1D"|"Texture1D"				{
+													modReturn(TEXTURE1D,"Texture1D");
+												}
+<INITIAL>(?i:"sampler3D"|"Texture3D")			{
+													modReturn(TEXTURE3D,"Texture3D");
+												}
+<INITIAL>(?i:"sampler2D"|"Texture2D")			{
+													modReturn(TEXTURE2D, "Texture2D");
+												}
+<INITIAL>"usampler2D"							{
+													modReturn(TEXTURE2D, "Texture2D");
+												}
+<INITIAL>"usampler3D"							{
+													modReturn(TEXTURE3D,"Texture3D");
+												}
+<INITIAL>"TextureCUBE"|"TextureCube"|"samplerCube"	{
+													modReturn(TEXTURECUBE,"TextureCube");
+												}
+<INITIAL>"Texture2DMS"|"sampler2DMS"			{
+													modReturn(TEXTURE2DMS,"Texture2DMS");
+												}
+<INITIAL>"RWTexture3D"|"image3D"				{
+													modReturn(RW_TEXTURE3D,"RWTexture3D");
+												}
+<INITIAL>"RWTexture2D"|"image2D"				{
+													modReturn(RW_TEXTURE2D,"RWTexture2D");
+												}
+<INITIAL>"RWTexture1D"|"image1D"				{
+													modReturn(RW_TEXTURE1D,"RWTexture1D");
+												}
+<INITIAL>"StructuredBuffer"						{
+													stdReturn(STRUCTUREDBUFFER);
+												}
+<INITIAL>"RWStructuredBuffer"					{
+													stdReturn(RW_STRUCTUREDBUFFER);
+												}
+<IN_SHADER>"#line"								{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													yy_push_state(IN_LINE);
+													stdReturn(LINE);
+												}
+<IN_SHADER>{ID_BLCK}							{
+													sfxlval.lineno = yylineno;
+													sfxlval.strs[0] = yytext;
+													stdReturn(IDENTIFIER);
+												}
+<IN_SHADER>[\t ]*								{
+													//stdReturn(SHADER_LINE);
+												}// Without this line, the yylineno would get out of whack.
+<IN_SHADER>\n									{				
+													//sfxlval.strs[0] = yytext;
+													//stdReturn(SHADER_LINE);
+												}// Without this line, the yylineno would get out of whack.
+
+<IN_SHADER_COMPILE>"ConstructGSWithSO"			{
+													sfxlval.lineno=yylineno;
+													stdReturn(CONSTRUCT_GS);
+												}
+<IN_SHADER_COMPILE>{STR_BLCK}					{
+													sfxlval.strs[0]=yytext;
+													stdReturn(QUOTED_STRING);
+												}
+<IN_RENDER_STATE>"Filter"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(FILTER);
+												}
+<IN_RENDER_STATE>"AddressU"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(ADDRESS_U);
+												}
+<IN_RENDER_STATE>"AddressV"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(ADDRESS_V);
+												}
+<IN_RENDER_STATE>"AddressW"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(ADDRESS_W);
+												}
+<IN_RENDER_STATE>"Wrap"|"WRAP"					{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(ADDRESS_WRAP);
+												}
+<IN_RENDER_STATE>"Clamp"|"CLAMP"				{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(ADDRESS_CLAMP);
+												}
+<IN_RENDER_STATE>"Mirror"|"MIRROR"				{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(ADDRESS_MIRROR);
+												}
+<IN_RENDER_STATE>"MIN_MAG_MIP_LINEAR"			{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(FILTER_MIN_MAG_MIP_LINEAR);
+												}
+<IN_RENDER_STATE>"MIN_MAG_MIP_POINT"			{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(FILTER_MIN_MAG_MIP_POINT);
+												}
+<IN_RENDER_STATE>"ANISOTROPIC"					{
+													stdReturn(FILTER_ANISOTROPIC);
+												}
+<IN_RENDER_STATE>"NEVER"						{
+													stdReturn(D_NEVER);
+												}
+<IN_RENDER_STATE>"ALWAYS"						{
+													stdReturn(D_ALWAYS);
+												}
+<IN_RENDER_STATE>"LESS"							{
+													stdReturn(D_LESS);
+												}
+<IN_RENDER_STATE>"EQUAL"						{
+													stdReturn(D_EQUAL);
+												}
+<IN_RENDER_STATE>"LESS_EQUAL"					{
+													stdReturn(D_LESS_EQUAL);
+												}
+<IN_RENDER_STATE>"GREATER"						{
+													stdReturn(D_GREATER);
+												}
+<IN_RENDER_STATE>"NOT_EQUAL"					{
+													stdReturn(D_NOT_EQUAL);
+												}
+<IN_RENDER_STATE>"GREATER_EQUAL"				{
+													stdReturn(D_GREATER_EQUAL);
+												}
+<IN_RENDER_STATE>"Comparison"					{
+													stdReturn(COMPARISON);
+												}
 
 
-<IN_SHADER_COMPILE>"ConstructGSWithSO"		{
-												sfxlval.lineno=yylineno;
-												stdReturn(CONSTRUCT_GS);
-											}
-<IN_SHADER_COMPILE>{STR_BLCK}				{		
-												sfxlval.strs[0]=yytext;
-												stdReturn(QUOTED_STRING);
-											}
-<IN_RENDER_STATE>"Filter"					{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(FILTER);
-											}
-<IN_RENDER_STATE>"AddressU"					{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(ADDRESS_U);
-											}
-<IN_RENDER_STATE>"AddressV"					{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(ADDRESS_V);
-											}
-<IN_RENDER_STATE>"AddressW"					{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(ADDRESS_W);
-											}
-<IN_RENDER_STATE>"Wrap"|"WRAP"				{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(ADDRESS_WRAP);
-											}
-<IN_RENDER_STATE>"Clamp"|"CLAMP"			{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(ADDRESS_CLAMP);
-											}
-<IN_RENDER_STATE>"Mirror"|"MIRROR"			{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(ADDRESS_MIRROR);
-											}
-<IN_RENDER_STATE>"MIN_MAG_MIP_LINEAR"		{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(FILTER_MIN_MAG_MIP_LINEAR);
-											}
-<IN_RENDER_STATE>"MIN_MAG_MIP_POINT"		{
-												sfxlval.lineno=yylineno;
-												sfxlval.strs[0]=yytext;
-												stdReturn(FILTER_MIN_MAG_MIP_POINT);
-											}
-<IN_RENDER_STATE>"ANISOTROPIC"				{
-												stdReturn(FILTER_ANISOTROPIC);
-											}
-<IN_RENDER_STATE>"NEVER"					{
-												stdReturn(D_NEVER);
-											}
-<IN_RENDER_STATE>"ALWAYS"					{
-												stdReturn(D_ALWAYS);
-											}
-<IN_RENDER_STATE>"LESS"						{
-												stdReturn(D_LESS);
-											}
-<IN_RENDER_STATE>"EQUAL"					{
-												stdReturn(D_EQUAL);
-											}
-<IN_RENDER_STATE>"LESS_EQUAL"				{
-												stdReturn(D_LESS_EQUAL);
-											}
-<IN_RENDER_STATE>"GREATER"					{
-												stdReturn(D_GREATER);
-											}
-<IN_RENDER_STATE>"NOT_EQUAL"				{
-												stdReturn(D_NOT_EQUAL);
-											}
-<IN_RENDER_STATE>"GREATER_EQUAL"			{
-												stdReturn(D_GREATER_EQUAL);
-											}
-<IN_RENDER_STATE>"Comparison"				{
-												stdReturn(COMPARISON);
-	
-}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>{ID_BLCK}				{
+
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>{ID_BLCK}	{
 												sfxlval.lineno=yylineno;
 												sfxlval.strs[0]=yytext;
 												stdReturn(IDENTIFIER);
@@ -930,263 +927,261 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.fnum=value;
 													stdReturn(P_FLOAT);
 												}
-<IN_TEXTURE_DECL>":"				{
-										stdReturn(':');
-									}
-<INITIAL>"<"		{
-										if(gLexPassthrough)
-											gEffect->m_sharedCode<<yytext;
-										else
-											stdReturn('<');
-									}
-<INITIAL>">"		{
-										if(gLexPassthrough)
-											gEffect->m_sharedCode<<yytext;
-										else
-											stdReturn('>');
-									}
-<IN_TEXTURE_DECL>"<"		{
-										stdReturn('<');
-									}
-<IN_TEXTURE_DECL>">"		{
-										stdReturn('>');
-									}
-<IN_LAYOUT,IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>"("						stdReturn('(');
-<IN_LAYOUT,IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>")"						stdReturn(')');
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"["						stdReturn('[');
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"]"						stdReturn(']');
-<IN_LAYOUT,IN_SHADER_COMPILE,IN_RENDER_STATE>","				stdReturn(',');
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"="						stdReturn('=');
-<IN_SHADER_COMPILE,IN_TEXTURE_DECL>";"		{
+<IN_TEXTURE_DECL>":"							{
+													stdReturn(':');
+												}
+<INITIAL>"<"									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+														stdReturn('<');
+												}
+<INITIAL>">"									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+														stdReturn('>');
+												}
+<IN_TEXTURE_DECL>"<"							{
+													stdReturn('<');
+												}
+<IN_TEXTURE_DECL>">"							{
+													stdReturn('>');
+												}
+<IN_LAYOUT,IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>"("	stdReturn('(');
+<IN_LAYOUT,IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>")"	stdReturn(')');
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"["			stdReturn('[');
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"]"			stdReturn(']');
+<IN_LAYOUT,IN_SHADER_COMPILE,IN_RENDER_STATE>"," stdReturn(',');
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"="			stdReturn('=');
+<IN_SHADER_COMPILE,IN_TEXTURE_DECL>";"			{
 												SetLexStartState(INITIAL);
 												stdReturn(';');
-											}
+												}
 <IN_RENDER_STATE>";"							{
 													if(!brace)
 														SetLexStartState(INITIAL);
 													stdReturn(';');
 												}
-<INITIAL>{STR_BLCK}				{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													sfxlval.strs[0]=yytext;
-													stdReturn(QUOTED_STRING);
+<INITIAL>{STR_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.strs[0]=yytext;
+														stdReturn(QUOTED_STRING);
+													}
 												}
-								}
+<INITIAL>{NUM_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.num		=atoi(yytext);
+														sfxlval.strs[0]	=yytext;
+														stdReturn(NUM);
+													}
+												}
+<INITIAL>{FLOAT_BLCK}							{
+													if(gLexPassthrough) 
+														gEffect->m_sharedCode<<yytext; 
+													else 
+													{
+														sfxlval.strs[0]=yytext;
+														float value;
+														std::string yytextStr=yytext;
+														yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+														const char* yytextCStr=yytextStr.c_str();
+														std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
+														sfxlval.fnum=value;
+														stdReturn(P_FLOAT);
+													}
+												}
+<INITIAL>"in"|"out"|"inout"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(STORAGEQ);}
 
-<INITIAL>{NUM_BLCK}							{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													sfxlval.num		=atoi(yytext);
-													sfxlval.strs[0]	=yytext;
-													stdReturn(NUM);
+<INITIAL>"TriangleBuffer"|"TriangleStream"		{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														modReturn(IDENTIFIER,"TriangleStream");
+													}
 												}
-											}
-<INITIAL>{FLOAT_BLCK}						{
-												if(gLexPassthrough) 
-													gEffect->m_sharedCode<<yytext; 
-												else 
-												{
-													sfxlval.strs[0]=yytext;
-													float value;
-													std::string yytextStr=yytext;
-													yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
-													const char* yytextCStr=yytextStr.c_str();
-													std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
-													sfxlval.fnum=value;
-													stdReturn(P_FLOAT);
+<INITIAL>"PointBuffer"|"PointStream"			{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														modReturn(IDENTIFIER,"PointStream");
+													}
 												}
-											}
-<INITIAL>"in"|"out"|"inout"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(STORAGEQ);}
-
-<INITIAL>"TriangleBuffer"|"TriangleStream"	{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													modReturn(IDENTIFIER,"TriangleStream");
+<INITIAL>"LineBuffer"|"LineStream"				{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														modReturn(IDENTIFIER,"LineBuffer");
+													}
 												}
-											}
-<INITIAL>"PointBuffer"|"PointStream"		{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													modReturn(IDENTIFIER,"PointStream");
+<INITIAL>"point"|"Point"						{
+													if(gLexPassthrough)
+													{
+														gEffect->m_sharedCode<<yytext;
+													}
+													else
+													{
+														modReturn(STORAGEQ,"point");
+													}
 												}
-											}
-<INITIAL>"LineBuffer"|"LineStream"		{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													modReturn(IDENTIFIER,"LineBuffer");
+<INITIAL>"line"|"Line"							{
+													if (gLexPassthrough)
+													{
+														gEffect->m_sharedCode << yytext;
+													}
+													else
+													{
+														modReturn(STORAGEQ,"line");
+													}
 												}
-											}
-<INITIAL>"point"|"Point"					{
-												if(gLexPassthrough)
-												{
-													gEffect->m_sharedCode<<yytext;
+<INITIAL>"lineadj"|"AdjacentLine"				{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														modReturn(STORAGEQ,"lineadj");
+													}
 												}
-												else
-												{
-													modReturn(STORAGEQ,"point");
+<INITIAL>"triangle"|"Triangle"					{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														modReturn(STORAGEQ,"triangle");
+													}
 												}
-											}
-<INITIAL>"line"|"Line"						{
-												if (gLexPassthrough)
-												{
-													gEffect->m_sharedCode << yytext;
-												}
-												else
-												{
-													modReturn(STORAGEQ,"line");
-												}
-											}
-<INITIAL>"lineadj"|"AdjacentLine"			{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													modReturn(STORAGEQ,"lineadj");
-												}
-											}
-<INITIAL>"triangle"|"Triangle"				{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													modReturn(STORAGEQ,"triangle");
-												}
-											}
 <INITIAL>"triangleadj"|"AdjacentTriangle"		{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													modReturn(STORAGEQ,"triangleadj");
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														modReturn(STORAGEQ,"triangleadj");
+													}
 												}
-											}
-<INITIAL>"gl_FragDepth"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
-<INITIAL>"true"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.num=1; stdReturn(NUM);}
-<INITIAL>"false"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.num=0; stdReturn(NUM);}
-<INITIAL>{ID_BLCK}							{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													sfxlval.lineno=yylineno;
-													sfxlval.strs[0]=yytext;
-													stdReturn(IDENTIFIER);
+<INITIAL>"gl_FragDepth"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
+<INITIAL>"true"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.num=1; stdReturn(NUM);}
+<INITIAL>"false"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.num=0; stdReturn(NUM);}
+<INITIAL>{ID_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.lineno=yylineno;
+														sfxlval.strs[0]=yytext;
+														stdReturn(IDENTIFIER);
+													}
 												}
-											}
-<INITIAL>"("								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn('(');}
-<INITIAL>")"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn(')');}
-<INITIAL>"{"								{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													brace++;
-													SetLexStartState(IN_SHADER);
-													sfxlval.strs[0]=yytext;
-													stdReturn('{');
+<INITIAL>"("									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn('(');}
+<INITIAL>")"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn(')');}
+<INITIAL>"{"									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														brace++;
+														SetLexStartState(IN_SHADER);
+														sfxlval.strs[0]=yytext;
+														stdReturn('{');
+													}
 												}
-											}
-<INITIAL>"}"								{
-												brace--;
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													sfxlval.strs[0]=yytext;
-													stdReturn('}');
+<INITIAL>"}"									{
+													brace--;
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.strs[0]=yytext;
+														stdReturn('}');
+													}
 												}
-											}
-<INITIAL>^[\t ]*"["								{
-												SetLexStartState(IN_LAYOUT);
-												stdReturn('[');
-											}
-<IN_LAYOUT>"]"								{
-												SetLexStartState(INITIAL);
-												stdReturn(']');
-											}
-<INITIAL>"["								{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
+<INITIAL>^[\t ]*"["									{
+													SetLexStartState(IN_LAYOUT);
 													stdReturn('[');
-											}
-<INITIAL>"]"								{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-													stdReturn(']');
-											}
-<IN_LAYOUT>"numthreads"						{
-												stdReturn(NUM_THREADS);
-											}
-<IN_LAYOUT>"NUM_THREADS"					{
-												stdReturn(NUM_THREADS);
-											}
-<IN_LAYOUT>"maxvertexcount"					{
-												modReturn(MAX_VERTEX_COUNT, "MaxVertexCount");
-											}
-<IN_LAYOUT>"MAX_VERTEX_COUNT"				{
-												modReturn(MAX_VERTEX_COUNT, "MaxVertexCount");
-											}
-<INITIAL>","								{
-												if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn(',');}
-											}
-<INITIAL>"="								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn('=');}
-<INITIAL>";"								if (gLexPassthrough) gEffect->m_sharedCode << yytext; else { stdReturn(';'); }
-<INITIAL,IN_RENDER_STATE>":"				{
-												if (gLexPassthrough)
-													gEffect->m_sharedCode << yytext;
-												else
-												{
-													stdReturn(':');
 												}
-											}
+<IN_LAYOUT>"]"									{
+													SetLexStartState(INITIAL);
+													stdReturn(']');
+												}
+<INITIAL>"["									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+														stdReturn('[');
+												}
+<INITIAL>"]"									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+														stdReturn(']');
+												}
+<IN_LAYOUT>"numthreads"							{
+													stdReturn(NUM_THREADS);
+												}
+<IN_LAYOUT>"NUM_THREADS"						{
+													stdReturn(NUM_THREADS);
+												}
+<IN_LAYOUT>"maxvertexcount"						{
+													modReturn(MAX_VERTEX_COUNT, "MaxVertexCount");
+												}
+<IN_LAYOUT>"MAX_VERTEX_COUNT"					{
+													modReturn(MAX_VERTEX_COUNT, "MaxVertexCount");
+												}
+<INITIAL>","									{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn(',');}
+												}
+<INITIAL>"="									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn('=');}
+<INITIAL>";"									if (gLexPassthrough) gEffect->m_sharedCode << yytext; else { stdReturn(';'); }
+<INITIAL,IN_RENDER_STATE>":"					{
+													if (gLexPassthrough)
+														gEffect->m_sharedCode << yytext;
+													else
+													{
+														stdReturn(':');
+													}
+												}
 <INITIAL,IN_RENDER_STATE>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 																if (gLexPassthrough) gEffect->m_sharedCode << yytext; // Single line comment (with possible continuation)
 															}
 <INITIAL,IN_RENDER_STATE>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/	{
 																if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Multiline comment
 															}
-<INITIAL>[\t\n ]							if (gLexPassthrough) gEffect->m_sharedCode << yytext;
-<IN_RENDER_STATE>[\t\n ]					{}// Without this line, the yylineno would get out of whack.
-<INITIAL>.							{
-										if(gLexPassthrough)
-											gEffect->m_sharedCode<<yytext;
-										else
-										{
-											errLex(yytext);
-										}
-									}
+<INITIAL>[\t\n ]								if (gLexPassthrough) gEffect->m_sharedCode << yytext;
+<IN_RENDER_STATE>[\t\n ]						{}// Without this line, the yylineno would get out of whack.
+<INITIAL>.										{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														errLex(yytext);
+													}
+												}
+<IN_RENDER_STATE>"{"							{
+													sfxlval.strs[0]=yytext;
+													brace++;
+													return '{';
+												}
+<IN_RENDER_STATE>"}"							{
+													sfxlval.strs[0]=yytext;
+													brace--;
+													return '}';
+												}
+<IN_LINE>{STR_BLCK}								{		
+													sfxlval.strs[0]=yytext;
+													stdReturn(QUOTED_STRING);
 
-<IN_RENDER_STATE>"{"				{
-										sfxlval.strs[0]=yytext;
-										brace++;
-										return '{';
-									}
-<IN_RENDER_STATE>"}"				{
-										sfxlval.strs[0]=yytext;
-										brace--;
-										return '}';
-									}
-<IN_LINE>{STR_BLCK}					{		
-										sfxlval.strs[0]=yytext;
-										stdReturn(QUOTED_STRING);
-													
-									}
-<IN_LAYOUT,IN_LINE>{NUM_BLCK}		{
-										sfxlval.num=atoi(yytext);
-										sfxlval.strs[0]=yytext;
-										stdReturn(NUM);
-									}
-<IN_LINE>\n							{
-										yy_pop_state();
-										stdReturn(EOL);
-									}
+												}
+<IN_LAYOUT,IN_LINE>{NUM_BLCK}					{
+													sfxlval.num=atoi(yytext);
+													sfxlval.strs[0]=yytext;
+													stdReturn(NUM);
+												}
+<IN_LINE>\n										{
+													yy_pop_state();
+													stdReturn(EOL);
+												}
 %%
 
 void sfxPushState(int s)
@@ -1207,40 +1202,40 @@ void sfxPopAllStates()
 }
 void errLex(const char* tok)
 {
-    ostringstream errMsg;
-    
-    errMsg<<"Unkown token.";// '"<<tok<<"'";
+	ostringstream errMsg;
+	
+	errMsg<<"Unkown token.";// '"<<tok<<"'";
 	sfxerror(errMsg.str().c_str());
 }
 
 string sfxreadblock(unsigned char openChar, unsigned char closeChar)
 {
-    string str;
-    int braceBalance=0;
-    unsigned char c;
-    bool done=false;
-    do {
-        c=(unsigned char)yyinput();
-        str+=c;
-        if(c==0)
+	string str;
+	int braceBalance=0;
+	unsigned char c;
+	bool done=false;
+	do {
+		c=(unsigned char)yyinput();
+		str+=c;
+		if(c==0)
 		{
-            throw "Brace balance error\n";
+			throw "Brace balance error\n";
 		}
-        else if(c==openChar)
+		else if(c==openChar)
 		{
-            braceBalance++;
+			braceBalance++;
 		}
-        else if(c==closeChar) {
-            braceBalance--;
-            if(braceBalance<0)
+		else if(c==closeChar) {
+			braceBalance--;
+			if(braceBalance<0)
 			{
-                throw "Brace balance error\n";
+				throw "Brace balance error\n";
 			}
-            else if(braceBalance==0)
-                done=true;
-        }
-    } while(!done);
-    return str;
+			else if(braceBalance==0)
+				done=true;
+		}
+	} while(!done);
+	return str;
 }
 
 const char *GetStartModeText()

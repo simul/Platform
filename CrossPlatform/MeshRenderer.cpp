@@ -104,8 +104,6 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	//solidConstants.roughness = material->roughness.value;
 	//solidConstants.metal = material->metal.value;
 
-	int lightCount=0;
-	int reverseDepth=1;
 	vec2 vec2_unit(1.0f,1.0f);
 	vec4 vec4_unit(1.0f, 1.0f, 1.0f, 1.0f);
 	vec4 vec3_unit(1.0f,  1.0f, 1.0f);

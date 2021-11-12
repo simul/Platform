@@ -21,7 +21,7 @@
 #endif
 
 extern const char *PlatformD3D12GetErrorText(HRESULT hr);
-#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
+//#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
 #ifndef V_CHECK
 	#define V_CHECK(x)\
 	{\

@@ -537,7 +537,7 @@ void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *
 	vec4 semiblack(0, 0, 0, 0.5);
 	for(int i=0;i<t->mips-1;i++)
 	{
-		int m0=i,m1=i+1;
+		int m1=i+1;
 		t->activateRenderTarget(deviceContext,array_idx,m1);
 		SetTexture(deviceContext,_imageTexture,t,array_idx,0);
 		DrawQuad(deviceContext);

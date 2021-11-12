@@ -20,7 +20,7 @@ SIMUL_CONSTANT_BUFFER(SphericalHarmonicsConstants,10)
 	uniform uint3 lookupOffset;	// 2D offset and cube face.
 	uniform int randomSeed;
 	uniform uint2 lookupSize;	// 2D size
-	uniform int numCoefficients;
+	uniform uint numCoefficients;
 	uniform int padshc;
 SIMUL_CONSTANT_BUFFER_END
 
