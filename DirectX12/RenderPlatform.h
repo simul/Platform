@@ -364,10 +364,7 @@ namespace simul
 			ID3D12RootSignature *LoadRootSignature(const char *filename);
 
 			D3D12ComputeContext m12ComputeContext;
-			std::deque<std::pair<crossplatform::DeviceContextType, ID3D12CommandAllocator*>> mUsedAllocators;
-			std::thread mThreadReleaseAllocators;
-			std::mutex mMutexReleaseAllocators;
-			void AsyncResetCommandAllocator();
+			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
 		};
 	}
 }

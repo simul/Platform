@@ -98,9 +98,6 @@ crossplatform::Fence* RenderPlatform::CreateFence(const char* name)
 //RenderPlatform//
 //////////////////
 
-static bool thread_active = true;
-
-
 const char *PlatformD3D12GetErrorText(HRESULT hr)
 {
 	static std::string str;
@@ -155,7 +152,6 @@ RenderPlatform::RenderPlatform():
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
 #endif
-	mThreadReleaseAllocators = std::thread(&RenderPlatform::AsyncResetCommandAllocator, this);
 }
 
 RenderPlatform::~RenderPlatform()
@@ -170,9 +166,6 @@ RenderPlatform::~RenderPlatform()
 		}
 	}
 #endif
-	thread_active = false;
-	while (!mThreadReleaseAllocators.joinable()) {}
-	mThreadReleaseAllocators.join();
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const
@@ -1401,86 +1394,72 @@ void RenderPlatform::ResetImmediateCommandList()
 	}
 }
 
-void RenderPlatform::AsyncResetCommandAllocator()
-{
-	auto ReleaseAllocator = [&](crossplatform::DeviceContextType deviceContextType, ID3D12CommandAllocator* alloc)
-	{
-		static uint64_t count = 0;
-		std::string fenceName = "Fence: RestartCommands" + std::to_string(count);
-		crossplatform::Fence* fence = CreateFence(fenceName.c_str());
-		Signal(deviceContextType, crossplatform::Fence::Signaller::GPU, fence);
-		Wait(deviceContextType, crossplatform::Fence::Signaller::CPU, fence);
-		SAFE_DELETE(fence);
-		SAFE_RELEASE(alloc);
-
-	};
-
-	while (thread_active)
-	{
-		if (mMutexReleaseAllocators.try_lock())
-		{
-			if (!mUsedAllocators.empty())
-			{
-				ReleaseAllocator(mUsedAllocators.front().first, mUsedAllocators.front().second);
-				mUsedAllocators.pop_front();
-			}
-			mMutexReleaseAllocators.unlock();
-		}
-
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-
-	//Clean up after ~RenderPlaform();
-	while (!mUsedAllocators.empty())
-	{
-		ReleaseAllocator(mUsedAllocators.front().first, mUsedAllocators.front().second);
-		mUsedAllocators.pop_front();
-	}
-}
-
 void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext)
 {
-	D3D12_COMMAND_LIST_TYPE type;
-	switch (deviceContext.deviceContextType)
-	{
-	default:
-	case crossplatform::DeviceContextType::GRAPHICS:
-		type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		break;
-	case crossplatform::DeviceContextType::COMPUTE:
-		type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-		break;
-	case crossplatform::DeviceContextType::COPY:
-		type = D3D12_COMMAND_LIST_TYPE_COPY;
-		break;
-	}
-	SIMUL_BREAK("Resource leaks here:");
 	ID3D12GraphicsCommandList*& commandList = reinterpret_cast<ID3D12GraphicsCommandList*&>(deviceContext.platform_context);
 	ID3D12CommandAllocator*& commandAllocator = reinterpret_cast<ID3D12CommandAllocator*&>(deviceContext.platform_context_allocator);
 
-	if (type == D3D12_COMMAND_LIST_TYPE_COMPUTE)
+	if (deviceContext.deviceContextType == crossplatform::DeviceContextType::COMPUTE)
 	{
-		bool this_thread_lock = true;
-		while (this_thread_lock)
+		//Push back old CommandAllocator and its sync fence.
+		static uint64_t count = 0;
+		std::string fenceName = "Fence: RestartCommands DeviceContextType::COMPUTE" + std::to_string(count);
+		crossplatform::Fence* fence = CreateFence(fenceName.c_str());
+		Signal(deviceContext.deviceContextType, crossplatform::Fence::Signaller::GPU, fence);
+		mUsedAllocators.push_back({ fence, commandAllocator });
+
+		//Create new CommandAllocator
+		D3D12_COMMAND_LIST_TYPE type;
+		switch (deviceContext.deviceContextType)
 		{
-			if (mMutexReleaseAllocators.try_lock())
-			{
-				mUsedAllocators.push_back({ deviceContext.deviceContextType, commandAllocator });
-				mMutexReleaseAllocators.unlock();
-				this_thread_lock = false;
-			}
+		default:
+		case crossplatform::DeviceContextType::GRAPHICS:
+			type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+			break;
+		case crossplatform::DeviceContextType::COMPUTE:
+			type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+			break;
+		case crossplatform::DeviceContextType::COPY:
+			type = D3D12_COMMAND_LIST_TYPE_COPY;
+			break;
 		}
 		m12Device->CreateCommandAllocator(type, SIMUL_PPV_ARGS(&commandAllocator));
-		commandAllocator->SetName(platform::core::StringToWString("deviceContext.platform_context_allocator").c_str());
+		std::string commandAllocatorName = "CommandAllocator: RestartCommands" + std::to_string(count++);
+		commandAllocator->SetName(platform::core::StringToWString(commandAllocatorName).c_str());
+		
+		//Update D3D12ComputeContext, so that when D3D12ComputeContext::InvalidateDeviceObject() is called IAllocator is valid. 
+		m12ComputeContext.IAllocator = commandAllocator;
+
+		//Try to free old CommandAllocators
+		for (auto it = mUsedAllocators.begin(); it != mUsedAllocators.end(); /*Don't increment here*/)
+		{
+			crossplatform::Fence*& fence = it->first;
+			ID3D12CommandAllocator*& commandAllocator = it->second;
+			if (GetFenceStatus(fence))
+			{
+				SAFE_RELEASE(commandAllocator);
+				SAFE_DELETE(fence);
+				it = mUsedAllocators.erase(it); //Erase at this element, assign the next element to 'it'
+			}
+			else
+			{
+				it++; //Do increment here, if not re-assigned by std::vector::erase().
+			}
+		}
 	}
-	else
+	else if (deviceContext.deviceContextType == crossplatform::DeviceContextType::GRAPHICS)
 	{
+		//TODO: This will kill performance if overused! Do heavy GPU->CPU synchronisation - AJR
 		static uint64_t count = 0;
-		std::string fenceName = "Fence: RestartCommands" + std::to_string(count);
+		std::string fenceName = "Fence: RestartCommands DeviceContextType::GRAPHICS" + std::to_string(count++);
 		crossplatform::Fence* fence = CreateFence(fenceName.c_str());
 		Signal(deviceContext.deviceContextType, crossplatform::Fence::Signaller::GPU, fence);
 		Wait(deviceContext.deviceContextType, crossplatform::Fence::Signaller::CPU, fence);
 		SAFE_DELETE(fence);
+	}
+	else
+	{
+		SIMUL_BREAK("D3D12: DeviceContextType::UNKNOWN/DeviceContextType::COPY not supported.");
 	}
 
 	if (commandList && commandAllocator)
@@ -1491,7 +1470,7 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext
 		}
 		if (FAILED(commandList->Reset(commandAllocator, nullptr)))
 		{
-			SIMUL_BREAK("D3D12: Failed to Reset the CommandAllocator.");
+			SIMUL_BREAK("D3D12: Failed to Reset the CommandList.");
 		}
 	}
 	else
