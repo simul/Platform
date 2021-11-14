@@ -90,6 +90,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 
 RenderPlatform::~RenderPlatform()
 {
+	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
 
@@ -268,6 +269,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(t.second);
 	}
 	textures.clear();
+	last_begin_frame_number=0;
 }
 
 void RenderPlatform::RecompileShaders()
@@ -392,7 +394,7 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
+void RenderPlatform::BeginFrame(DeviceContext &deviceContext)
 {
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
@@ -403,9 +405,11 @@ void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 	// as loading a texture SOMETIMES in D3D12, cause the mip to not generate.
 	FinishGeneratingTextureMips(deviceContext);
 	FinishLoadingTextures(deviceContext);
+	allocator.CheckForReleases();
+	last_begin_frame_number=deviceContext.frame_number;
 }
 
-void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
+void RenderPlatform::EndFrame(DeviceContext &dev)
 {
 }
 
@@ -584,6 +588,7 @@ void RenderPlatform::SetMemoryInterface(simul::base::MemoryInterface *m)
 {
 	// TODO: shutdown old memory, test for leaks at RenderPlatform shutdown.
 	memoryInterface=m;
+	allocator.SetExternalAllocator(m);
 }
 
 crossplatform::Effect *RenderPlatform::GetDebugEffect()
@@ -1114,7 +1119,14 @@ void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *
 	int lines=Print(deviceContext, deviceContext.framePrintX,deviceContext.framePrintY,text,colr,bkg);
 	deviceContext.framePrintY+=lines*textRenderer->GetDefaultTextHeight();
 }
-		
+
+bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool )
+{
+	if(deviceContext.frame_number!=last_begin_frame_number)
+		BeginFrame(deviceContext);
+	return true;
+}
+
 crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &,int)
 {
 	crossplatform::Viewport v;

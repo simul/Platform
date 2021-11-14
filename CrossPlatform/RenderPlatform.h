@@ -13,6 +13,7 @@
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 #include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Allocator.h"
 
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
@@ -148,8 +149,9 @@ namespace simul
 		protected:
 			RenderingFeatures renderingFeatures=RenderingFeatures::None;
 			int ApiCallLimit=0;
+			long long last_begin_frame_number=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
-			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
+			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true);
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
 		public:
 			/// Get the current state to be applied to the given context at the next draw or dispatch.
@@ -236,8 +238,8 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void BeginFrame			(GraphicsDeviceContext &);
-			virtual void EndFrame			(GraphicsDeviceContext &);
+			virtual void BeginFrame			(DeviceContext &);
+			virtual void EndFrame			(DeviceContext &);
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
@@ -432,6 +434,12 @@ namespace simul
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+
+			//! Get the memory allocator - used in particular where API's allocate memory directly.
+			base::MemoryInterface *GetAllocator()
+			{
+				return &allocator;
+			}
 			std::map<std::string, crossplatform::Material*> &GetMaterials()
 			{
 				return materials;
@@ -458,6 +466,7 @@ namespace simul
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
+			Allocator allocator;
 			void FinishLoadingTextures(DeviceContext& deviceContext);
 			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
 			std::set<Texture*> unfinishedTextures;
