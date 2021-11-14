@@ -394,7 +394,7 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(DeviceContext &deviceContext)
+void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 {
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
@@ -409,7 +409,7 @@ void RenderPlatform::BeginFrame(DeviceContext &deviceContext)
 	last_begin_frame_number=deviceContext.frame_number;
 }
 
-void RenderPlatform::EndFrame(DeviceContext &dev)
+void RenderPlatform::EndFrame(GraphicsDeviceContext&dev)
 {
 }
 
@@ -1122,8 +1122,8 @@ void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool )
 {
-	if(deviceContext.frame_number!=last_begin_frame_number)
-		BeginFrame(deviceContext);
+	if(deviceContext.frame_number!=last_begin_frame_number&&deviceContext.AsGraphicsDeviceContext())
+		BeginFrame(*(deviceContext.AsGraphicsDeviceContext()));
 	return true;
 }
 
