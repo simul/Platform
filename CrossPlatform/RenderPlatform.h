@@ -78,9 +78,11 @@ namespace simul
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
-            Readable        = 0,
-            Writeable       = 1,
-            UnorderedAccess = 2
+            Readable         = 0,
+            ReadableGraphics = Readable,
+            ReadableCompute  = 1,
+            Writeable        = 2,
+            UnorderedAccess  = 3
         };
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
@@ -247,7 +249,7 @@ namespace simul
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {};
 			//! Copy a given texture to another.
-			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
+			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *dst,crossplatform::Texture *src){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Execute the currently applied raytracing shaders.

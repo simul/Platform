@@ -1144,9 +1144,11 @@ void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceCont
 
 	switch (transition)
 	{
-		case simul::crossplatform::Readable: 
+		case simul::crossplatform::ReadableGraphics:
+		case simul::crossplatform::ReadableCompute:
 		{
-			t12->AsD3D12ShaderResourceView(deviceContext,true, crossplatform::ShaderResourceType::TEXTURE_2D); 
+			bool pixelShader = (transition == simul::crossplatform::ReadableGraphics);
+			t12->AsD3D12ShaderResourceView(deviceContext,true, crossplatform::ShaderResourceType::TEXTURE_2D, -1, -1, pixelShader);
 			break;
 		}
 		case simul::crossplatform::Writeable:
