@@ -817,6 +817,20 @@ Matrix4x4 Matrix4x4::Translation(const float *x)
 	return Translation(x[0],x[1],x[2]);
 }
 
+Matrix4x4 Matrix4x4::Scale(float x,float y,float z)
+{
+	Matrix4x4 result = Matrix4x4::IdentityMatrix();
+	result(0,0) = x;
+	result(1,1) = y;
+	result(2,2) = z;
+	return result;
+}
+
+Matrix4x4 Matrix4x4::Scale(const float *x)
+{
+	return Scale(x[0],x[1],x[2]);
+}
+
 void Matrix4x4::SimpleInverse(Matrix4x4 &Inv) const
 {
 	const Vector3 *XX=reinterpret_cast<const Vector3*>(RowPointer(0));
