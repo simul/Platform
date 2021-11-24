@@ -12,7 +12,7 @@ option(PLATFORM_BUILD_SAMPLES "Build executable samples?" ${SIMUL_BUILD_SAMPLES}
 option(PLATFORM_WARNINGS_AS_ERRORS "Should Platform treat C++ compile warnings as errors. " OFF)
 mark_as_advanced(PLATFORM_WARNINGS_AS_ERRORS)
 
-set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
+
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
 
@@ -65,7 +65,11 @@ else()
 endif()
 
 if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
-	option(PLATFORM_SUPPORT_VULKAN "" ON)
+	if("${VULKAN_SDK_DIR}" STREQUAL "")
+		set(PLATFORM_SUPPORT_VULKAN OFF )
+	else()
+		option(PLATFORM_SUPPORT_VULKAN "" ON)
+	endif()
 else()
 	set(PLATFORM_SUPPORT_VULKAN OFF )
 endif()
