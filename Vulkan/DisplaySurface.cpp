@@ -13,6 +13,10 @@
 #include <vulkan/vk_sdk_platform.h>
 #define NOMINMAX
 
+#ifndef _countof
+#define _countof(a) (sizeof(a)/sizeof(*(a)))
+#endif
+
 using namespace simul;
 using namespace vulkan;
 
