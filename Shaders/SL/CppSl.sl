@@ -498,9 +498,9 @@
 		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
 		return r;
 	}
-	inline vec3 operator*(float m,vec3 v)
+	template<typename T> tvector3<T> operator*(T m, tvector3<T> v)
 	{
-		vec3 r;
+		tvector3<T> r;
 		r.x=m*v.x;
 		r.y=m*v.y;
 		r.z=m*v.z;
@@ -508,7 +508,16 @@
 	}
 	template<typename T> struct tvector4
 	{
-		T x,y,z,w;
+		union
+		{
+			struct {
+				T x, y, z, w;
+			};
+			struct {
+				tvector3<T> xyz;
+				float w_;
+			};
+		};
 		tvector4(T x=0,T y=0,T z=0,T w=0)
 		{
 			this->x=x;
@@ -598,10 +607,6 @@
 			y*=v[1];
 			z*=v[2];
 			w*=v[3];
-		}
-		const tvector3<T> &xyz()
-		{
-			return *(reinterpret_cast<tvector3<T>*>(this));
 		}
 	};
 	typedef tvector4<float> vec4;
