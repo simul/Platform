@@ -30,13 +30,14 @@ struct ImGui_ImplPlatform_Data
 	Texture*				pFontTextureView = nullptr;
 	RenderState*			pRasterizerState = nullptr;
 	RenderState*			pBlendState = nullptr;
-	RenderState*			pDepthStencilState = nullptr;
 	int						VertexBufferSize=0;
 	int						IndexBufferSize=0;
 	float					width_m=2.0f;
 	// pos/orientation of 3D UI:
 	vec3 centre;
 	vec3 normal;
+	float azimuth = 0.0f;
+	float tilt = 3.1415926536f / 4.0f;
 
 	mat4 imgui_to_world;
 	mat4 local_to_world;
@@ -171,23 +172,20 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			// then we can multiply by viewProj.
 			float height_m = float(B - T) / float(R - L) * bd->width_m;
 			float X = bd->width_m / (R - L);
-			// 400*width_m/400 = width_m
-			// -width_m/2=width_m/2
 			float Y = height_m / (B - T);
-			static float tilt =  3.1415926536f /4.0f;
-			float cos_t = cos(tilt);
-			float sin_t = sin(tilt);
+			float cos_t = cos(bd->tilt);
+			float sin_t = sin(bd->tilt);
+			float cos_a = cos(bd->azimuth);
+			float sin_a = sin(bd->azimuth);
 			static float x=0,y=1.f,h = 2.f;
-			//bd->centre={x,y,h};
-			bd->normal={0,0,1.0f};
 			bd->local_to_world =
 			{
-				 1.0f,	0,		0.0f,	bd->centre.x,
-				 0,		cos_t,	-sin_t,	bd->centre.y,
-				 0.0f,	sin_t,	cos_t,	bd->centre.z,
-				 0.0f,	0.0f,	0.0f,	1.0f
+				 cos_a,	-sin_a,			0.0f,	bd->centre.x,
+				 sin_a,	cos_a*cos_t,	-sin_t,	bd->centre.y,
+				 0.0f,	sin_t,			cos_t,	bd->centre.z,
+				 0.0f,	0.0f,			0.0f,	1.0f
 			};
-			bd->normal = bd->local_to_world*bd->normal;
+			bd->normal = bd->local_to_world*vec3(0,0,1.0f);
 			bd->imgui_to_local=
 			{
 				 X,		0,		0,		-bd->width_m / 2.0f,
@@ -303,12 +301,17 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT,   0, (UINT)IM_OFFSETOF(ImDrawVert, uv),  false, 0 },
 		{ "COLOR"   , 0, crossplatform::RGBA_8_UNORM, 0, (UINT)IM_OFFSETOF(ImDrawVert, col), false, 0 },
 	};
-	bd->pInputLayout=bd->renderPlatform->CreateLayout(3,local_layout,true);
-
-	bd->effect= bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass(0);
-	ImGui_ImplPlatform_CreateFontsTexture();
+	if (!bd->pInputLayout)
+		bd->pInputLayout=bd->renderPlatform->CreateLayout(3,local_layout,true);
+#if 1
+	if (!bd->effect)
+		bd->effect= bd->renderPlatform->CreateEffect("imgui");
+	if(!bd->effectPass)
+		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass(0);
+	if (!bd->pFontTextureView)
+		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
+#endif
 	return true;
 }
 
@@ -327,21 +330,13 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 		ImGui::GetIO().Fonts->SetTexID(NULL);
 		// We copied data->pFontTextureView to io.Fonts->TexID so let's clear that as well.
 	}
-	if (bd->pIB)					
-		bd->pIB->InvalidateDeviceObjects();
-	if (bd->pVB)
-		bd->pVB->InvalidateDeviceObjects();
-	if (bd->pBlendState)
-		bd->pBlendState->InvalidateDeviceObjects();
-	if (bd->pDepthStencilState)	 
-		bd->pDepthStencilState->InvalidateDeviceObjects();
-	if (bd->pRasterizerState)	   
-		bd->pRasterizerState->InvalidateDeviceObjects();
+	SAFE_DELETE(bd->pIB);
+	SAFE_DELETE(bd->pVB);
+	SAFE_DELETE(bd->pBlendState);
+	SAFE_DELETE(bd->pRasterizerState);
 	bd->constantBuffer.InvalidateDeviceObjects();
-	if (bd->pInputLayout)
-		bd->pInputLayout->InvalidateDeviceObjects();
-	if (bd->effect)
-		bd->effect->InvalidateDeviceObjects();
+	SAFE_DELETE(bd->pInputLayout);
+	SAFE_DELETE(bd->effect);
 }
 void	ImGui_ImplPlatform_RecompileShaders()
 {
@@ -358,11 +353,14 @@ void	ImGui_ImplPlatform_RecompileShaders()
 
 bool	ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r)
 {
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if (bd)
+		return true;
 	ImGuiIO& io = ImGui::GetIO();
 	IM_ASSERT(io.BackendRendererUserData == NULL && "Already initialized a renderer backend!");
 
 	// Setup backend capabilities flags
-	ImGui_ImplPlatform_Data* bd = IM_NEW(ImGui_ImplPlatform_Data)();
+	bd = IM_NEW(ImGui_ImplPlatform_Data)();
 	io.BackendRendererUserData = (void*)bd;
 	io.BackendRendererName = "imgui_impl_dx11";
 	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
@@ -378,22 +376,23 @@ void ImGui_ImplPlatform_Shutdown()
 	if(!bd)
 		return;
 	IM_ASSERT(bd != NULL && "No renderer backend to shutdown, or already shutdown?");
+	ImGui_ImplPlatform_InvalidateDeviceObjects();
 	ImGuiIO& io = ImGui::GetIO();
 	io.BackendRendererName = NULL;
 	io.BackendRendererUserData = NULL;
-
-	ImGui_ImplPlatform_InvalidateDeviceObjects();
 	IM_DELETE(bd);
 	bd=nullptr;
 }
 
-void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos,float width_m)
+void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos, float az, float tilt,float width_m)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplPlatform_Init()?");
 	
 	bd->is3d=in3d;
 	bd->width_m=width_m;
+	bd->azimuth = az;
+	bd->tilt = tilt;
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateDeviceObjects();
 
@@ -426,7 +425,6 @@ void ImGui_ImplPlatform_Update3DMousePos()
 	if(!bd->screen.x||!bd->screen.y)
 		return;
 	ImGuiIO& io = ImGui::GetIO();
-	IM_ASSERT(bd->hWnd != 0);
 
 	const ImVec2 mouse_pos_prev = io.MousePos;
 
@@ -434,18 +432,79 @@ void ImGui_ImplPlatform_Update3DMousePos()
 
 	vec3 diff = bd->centre - bd->view_pos;
 	// from the Windows mouse pos obtain a direction.
-	vec4 view_dir = { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
+	vec4 view_dir	= { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
 	// Transform this into a worldspace direction.
-	vec3 view_w=(view_dir* bd->invViewProj).xyz();
+	vec3 view_w		=(view_dir*bd->invViewProj).xyz;
 	view_w = normalize(view_w);
 	// Take the vector in this direction from view_pos, Intersect it with the UI surface.
 	float dist=dot(diff, bd->normal)/dot(view_w,bd->normal);
 	vec3 intersection_w= bd->view_pos+view_w*dist;
 	// Transform the intersection point into object-space then into UI-space.
-	vec3 client_pos =(bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz();
+	vec3 client_pos =(bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz;
 	// Finally, set this as the mouse pos.
 	io.MousePos		= ImVec2(client_pos.x,client_pos.y);
 }
+
+void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press)
+{
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if (!bd->is3d)
+		return;
+	if (!bd->screen.x || !bd->screen.y)
+		return;
+	ImGuiIO& io = ImGui::GetIO();
+
+	const ImVec2 mouse_pos_prev = io.MousePos;
+	static ImVec2 last_pos = { 0,0 };
+	static float control_surface_thickness = 0.02f;
+	float lowest = 1e10f;
+	bool any = false;
+	static std::vector<bool> clicked;
+	if (clicked.size() != position_press.size())
+	{
+		clicked.resize(position_press.size());
+		for (size_t i = 0; i < position_press.size(); i++)
+			clicked[i] = false;
+	}
+	for (size_t i = 0; i < position_press.size(); i++)
+	{
+		// Set Dear ImGui mouse position from OS position
+		vec3 pos = position_press[i].xyz;
+		float press = position_press[i].w;
+		// resolve position onto the control surface:
+		vec3 client_pos = (bd->world_to_imgui * vec4(pos, 1.0f)).xyz;
+		// Too far beneath the surface.
+		if (!clicked[i])
+		{
+			if (client_pos.z < -control_surface_thickness || client_pos.z > control_surface_thickness)
+				continue;
+			if (client_pos.x<0 || client_pos.y<0 || client_pos.x>io.DisplaySize.x || client_pos.y>io.DisplaySize.y)
+				continue;
+		}
+		if (client_pos.z <= control_surface_thickness)
+		{
+			io.MouseDown[0] = true;
+			any = true;
+		}
+		if (client_pos.z < lowest)
+		{
+			lowest = client_pos.z;
+			// Finally, set this as the mouse pos.
+			io.MousePos = ImVec2(client_pos.x, client_pos.y);
+		}
+		if (clicked[i] && client_pos.z > control_surface_thickness)
+		{
+			io.MousePos = ImVec2(client_pos.x, client_pos.y);
+		}
+	}
+	if (io.MouseDown[0] && !any)
+	{
+		io.MouseDown[0] = false;
+		io.MousePos= last_pos;
+	}
+	last_pos = io.MousePos;
+}
+
 void ImGui_ImplPlatform_DebugInfo()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
