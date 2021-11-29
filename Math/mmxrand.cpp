@@ -110,13 +110,13 @@ void MMXTwister::DoTheTwistC()
 	for (i = N - M; i--; )
 	{
 		*p = twist(p[M], p[0], p[1]);
-		*p++;
+		*p = *p + 1;
 	}
 	unsigned int *q = m_state;
 	for (i = M; --i; )
 	{
 		*p = twist(*q++, p[0], p[1]);
-		*p++;
+		*p = *p + 1;
 	}
 	*p = twist( *q, p[0], m_state[0] );
 }

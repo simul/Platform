@@ -314,7 +314,10 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 {
 	if(!groupCharMap.size())
+	{
+		SIMUL_CERR_ONCE << "groupCharMap size was 0 when getting technique: " << name << ".\n";
 		return nullptr;
+	}
 	return groupCharMap[0]->GetTechniqueByName(name);
 }
 
@@ -352,13 +355,13 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 	return nullptr;
 }
 
-void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &name	,SamplerState *s)
+void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &shaderResource,SamplerState *s)
 {
-	if(name.slot>128)
+	if(shaderResource.slot>31||shaderResource.slot<0)
 		return;
 	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
 
-	cs->samplerStateOverrides[name.slot] = s;
+	cs->samplerStateOverrides[shaderResource.slot] = s;
 	cs->samplerStateOverridesValid = false;
 }
 
@@ -414,6 +417,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		if(s<0)
 		{
 			res.valid = false;
+			SIMUL_CERR_ONCE << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
 			return res;
 		}
 		slot=s;
@@ -907,7 +911,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
 	renderPlatform=r;
-
+	filename=filename_utf8;
 	// Clear the effect
 	InvalidateDeviceObjects();
 	for(auto i:textureDetailsMap)
@@ -966,7 +970,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	platform::core::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
 	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
-	
+	filenameInUseUtf8=binFilenameUtf8;
 	void *bin_ptr=nullptr;
 	unsigned int bin_num_bytes=0;
 

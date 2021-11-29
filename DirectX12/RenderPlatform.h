@@ -21,7 +21,7 @@
 #endif
 
 extern const char *PlatformD3D12GetErrorText(HRESULT hr);
-#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
+//#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
 #ifndef V_CHECK
 	#define V_CHECK(x)\
 	{\
@@ -197,7 +197,7 @@ namespace simul
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
-			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
+			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *dst,crossplatform::Texture *src);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
 			void									DispatchRays	(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr) override;
 			void									Signal			(crossplatform::DeviceContextType& type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence) override;
@@ -364,10 +364,7 @@ namespace simul
 			ID3D12RootSignature *LoadRootSignature(const char *filename);
 
 			D3D12ComputeContext m12ComputeContext;
-			std::deque<std::pair<crossplatform::DeviceContextType, ID3D12CommandAllocator*>> mUsedAllocators;
-			std::thread mThreadReleaseAllocators;
-			std::mutex mMutexReleaseAllocators;
-			void AsyncResetCommandAllocator();
+			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
 		};
 	}
 }
