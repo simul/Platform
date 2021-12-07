@@ -6,8 +6,8 @@
 #include "backends/imgui_impl_win32.h"
 #include "Platform/ImGui/imgui_impl_platform.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Platform/Vulkan/DeviceManager.h"
-#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/DirectX12/DeviceManager.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/Core/Timer.h"
 #include <tchar.h>
@@ -18,7 +18,7 @@ VisualStudioDebugOutput debug_buffer(true, NULL, 128);
 
 using namespace simul;
 // Data
-vulkan::DeviceManager deviceManager;
+dx12::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface = &deviceManager;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 platform::core::CommandLineParams commandLineParams;
@@ -233,7 +233,7 @@ int main(int, char**)
 
 bool CreateDevice(HWND hWnd)
 {
-    platformRenderer.renderPlatform = new vulkan::RenderPlatform();
+    platformRenderer.renderPlatform = new dx12::RenderPlatform();
     graphicsDeviceInterface->Initialize(true, false, false);//commandLineParams("debug")
 
 #define STRING_OF_MACRO1(x) #x

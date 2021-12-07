@@ -13,8 +13,15 @@ add_dynamic_executable(GuiSample_MD WIN32 SOURCES ${SOURCES} ${HEADERS} ${CMAKE}
 
 target_link_libraries(GuiSample_MD ImGui_MD)
 
+if(PLATFORM_SUPPORT_D3D12)
+	add_dependencies( GuiSample_MD DirectX12CoreShaders )
+	add_dependencies( GuiSample_MT DirectX12CoreShaders )
+	target_link_libraries(GuiSample_MD SimulDirectX12_MD )
+	target_link_libraries(GuiSample_MT SimulDirectX12_MT )
+endif()
 if(PLATFORM_SUPPORT_VULKAN)
 	add_dependencies( GuiSample_MD VulkanCoreShaders )
+	add_dependencies( GuiSample_MT VulkanCoreShaders )
 	target_link_libraries(GuiSample_MD SimulVulkan_MD )
 	target_link_libraries(GuiSample_MT SimulVulkan_MT )
 endif()
