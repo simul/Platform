@@ -61,13 +61,19 @@ RasterizerState ImGuiRasterizer
     ScissorEnable = true;
 };
 
+DepthStencilState WriteReverseDepth
+{
+    DepthEnable = TRUE;
+    DepthWriteMask = ALL;
+    DepthFunc = ALWAYS;
+};
 technique main
 {
     pass p0
     {
         SetRasterizerState(ImGuiRasterizer);
         SetTopology(TriangleList);
-        SetDepthStencilState(WriteDepth, 0);
+        SetDepthStencilState(WriteReverseDepth, 0);
         SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
         SetGeometryShader(NULL);
         SetVertexShader(CompileShader(vs_5_0, VS_Main()));

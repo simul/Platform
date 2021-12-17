@@ -182,7 +182,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
 	int num_coefficients=bands*bands;
 	static int BLOCK_SIZE=16;
-	static int sqrt_jitter_samples					=4;
+	static int sqrt_jitter_samples=4;
 	if(!sphericalHarmonics.count)
 	{
 		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true,true,nullptr,"spherical Harmonics");
@@ -239,20 +239,22 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
-	sphericalHarmonicsEffect->SetTexture(deviceContext,_cubemapTexture,buffer_texture);
-	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, _samplesBuffer);
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect,_targetBuffer);
+	{
+		sphericalHarmonicsEffect->SetTexture(deviceContext,_cubemapTexture,buffer_texture);
+		sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, _samplesBuffer);
+		sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect,_targetBuffer);
 
-	static bool sh_by_samples=false;
-	sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
-	sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
-	int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
+		static bool sh_by_samples=false;
+		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
+		sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
+		int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
 	
-	renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
-	sphericalHarmonicsConstants.Unbind(deviceContext);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
-	sphericalHarmonics.CopyToReadBuffer(deviceContext);
-	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
+		renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
+		sphericalHarmonicsConstants.Unbind(deviceContext);
+		sphericalHarmonicsEffect->Unapply(deviceContext);
+		sphericalHarmonics.CopyToReadBuffer(deviceContext);
+		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
+	}
 	static bool test2=false;
 	if(test2)
 	{

@@ -314,7 +314,10 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 {
 	if(!groupCharMap.size())
+	{
+		SIMUL_CERR_ONCE << "groupCharMap size was 0 when getting technique: " << name << ".\n";
 		return nullptr;
+	}
 	return groupCharMap[0]->GetTechniqueByName(name);
 }
 
