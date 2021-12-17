@@ -63,19 +63,18 @@ By default for Windows, a Visual Studio solution Platform.sln will be created an
 Use the CMake cross-compiling toolchain file in Platform/[PlatformName]/CMake.
 Ensure that the x64 version is built first. In particular, other platforms use the Sfx effect compiler which is created at Platform/build/bin/Release/Sfx.exe.
 
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Reference:
    
-   core.rst
-   math.rst
-   crossplatform.rst
+   /API/apiindex.rst
+   /Reference/reference.rst
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
 
