@@ -156,8 +156,8 @@ namespace sfx
 	} ;
 	enum DepthComparison
 	{
-		DEPTH_ALWAYS,
 		DEPTH_NEVER,
+		DEPTH_ALWAYS,
 		DEPTH_LESS,
 		DEPTH_EQUAL,
 		DEPTH_LESS_EQUAL,

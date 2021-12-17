@@ -250,7 +250,7 @@ AABBIntersectionResults GetAABBIntersection(Raytracing_AABB aabb, vec3 rayOrigin
 			return result;
 		}
 
-		}
+	}
 	return result;
 }
 
