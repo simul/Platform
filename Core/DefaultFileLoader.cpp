@@ -22,6 +22,10 @@ using namespace base;
 using namespace platform;
 using namespace core;
 
+if __ANDROID__
+AAssetManager* DefaultFileLoader::s_AssetManager = nullptr;
+#endif
+
 #if PLATFORM_STD_FILESYSTEM==0
 #define SIMUL_FILESYSTEM 0
 #elif PLATFORM_STD_FILESYSTEM==1
@@ -152,6 +156,11 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 	bool bExists = false;
 #elif __COMMODORE__
 	bool bExists = fs::exists(filename_utf8);
+#elif __ANDROID__
+	AAsset* asset = AAssetManager_open(s_AssetManager, filename_utf8, AASSET_MODE_UNKNOWN);
+	bool bExists = (asset != nullptr);
+	if (asset)
+		AAsset_close(asset);
 #else
     Stat st;
     bool bExists=(stat(filename_utf8, &st)==0);

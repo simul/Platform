@@ -320,7 +320,12 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
 			}
-
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+			if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				platformSurfaceExtFound = 1;
+				extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
+			}
 #endif
 			assert(enabled_extension_count < 64);
 		}
@@ -380,6 +385,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"vkCreateInstance Failure");
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
 		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_MVK_MACOS_SURFACE_EXTENSION_NAME
+			" extension.\n\nDo you have a compatible "
+			"Vulkan installable client driver (ICD) installed?\nPlease "
+			"look at the Getting Started guide for additional "
+			"information.\n"
+			"vkCreateInstance Failure");
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_ANDROID_SURFACE_EXTENSION_NAME
 			" extension.\n\nDo you have a compatible "
 			"Vulkan installable client driver (ICD) installed?\nPlease "
 			"look at the Getting Started guide for additional "
@@ -576,7 +588,7 @@ void DeviceManager::SetupDebugCallback()
 {
 	#if 1//def _DEBUG
 /* Load VK_EXT_debug_report entry points in debug builds */
-		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	 (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
+		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
 		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>			(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
 		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
 
@@ -611,6 +623,12 @@ void DeviceManager::CreateDevice()
 	}
 	
 	//Query Physical Device Features for compatibility
+	bool gpu_feature_checks = true;
+	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+		gpu_feature_checks = false;
+	#endif
+
+	if (gpu_feature_checks)
 	{
 		if(!deviceManagerInternal->gpu_features.vertexPipelineStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"vertexPipelineStoresAndAtomics\". Unable to proceed.\n");
@@ -620,9 +638,6 @@ void DeviceManager::CreateDevice()
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"dualSrcBlend\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.samplerAnisotropy)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"samplerAnisotropy\". Unable to proceed.\n");
-			// No, we really don't need this:
-	//	if(!deviceManagerInternal->gpu_features.shaderFloat64)
-	//		SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
@@ -635,13 +650,6 @@ void DeviceManager::CreateDevice()
 							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
 							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
 							.setQueueCreateInfoCount((uint32_t)queues.size());
-	/*
-	if (separate_present_queue) {
-		queues[1].setQueueFamilyIndex(present_queue_family_index);
-		queues[1].setQueueCount(1);
-		queues[1].setPQueuePriorities(priorities);
-		deviceInfo.setQueueCreateInfoCount(2);
-	}*/
 
 	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
 	device_initialized=result == vk::Result::eSuccess;
