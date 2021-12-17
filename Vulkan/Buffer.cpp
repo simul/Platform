@@ -9,6 +9,13 @@
 using namespace simul;
 using namespace vulkan;
 
+#define VK_CHECK(result)\
+{\
+	if(result!=vk::Result::VK_SUCCESS)\
+	{\
+	}\
+}
+
 Buffer::Buffer()
 {
 }
@@ -106,8 +113,8 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	if(src_data)
 	{
 		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-		vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
-		if(target_data)
+		vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
+		if(result==vk::Result::eSuccess&&target_data)
 		{
 			memcpy(target_data, src_data, (size_t)bufferLoad.size);
 			vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
@@ -121,7 +128,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	loadingComplete=false;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,const void* src_data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,const void* src_data, bool cpu_access )
 {
     InvalidateDeviceObjects();
 	renderPlatform = r;

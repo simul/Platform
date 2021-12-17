@@ -82,6 +82,8 @@ namespace simul
 			,RGB10_A2_UNORM
 
 			,R_24_FLOAT_X_8
+
+			,NV12
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

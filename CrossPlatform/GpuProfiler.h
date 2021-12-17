@@ -7,6 +7,13 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
+namespace platform
+{
+	namespace core
+	{
+		struct ProfileData;
+	}
+}
 
 namespace simul
 {
@@ -16,7 +23,7 @@ namespace simul
 		struct Query;
 		struct DeviceContext;
 		//! A virtual interface base class for GPU performance measurement.
-		class SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface:public base::BaseProfilingInterface
+		class SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface:public platform::core::BaseProfilingInterface
 		{
 		public:
 			//! Platform-dependent function called when uninitializing the profiler.
@@ -31,15 +38,14 @@ namespace simul
 			//! Call this at the end of the frame to prepare the data to be read.
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext)=0;
 			//! Get the timing text per-frame.
-			virtual const char *GetDebugText(base::TextStyle st = base::PLAINTEXT) const=0;
+			virtual const char *GetDebugText(platform::core::TextStyle st = platform::core::PLAINTEXT) const=0;
 		};
 		/// Set the GPU profilerFuture use of SIMUL_GPU_PROFILE_START or SIMUL_COMBINED_PROFILE_START will use that profiler.
 		extern SIMUL_CROSSPLATFORM_EXPORT void SetGpuProfilingInterface(crossplatform::DeviceContext &context,GpuProfilingInterface *p);
 		/// Returns a pointer to the current GPU profiler.
 		extern SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context);
 		
-		struct ProfileData;
-		struct SIMUL_CROSSPLATFORM_EXPORT ProfileData:public base::ProfileData
+		struct SIMUL_CROSSPLATFORM_EXPORT ProfileData:public platform::core::ProfileData
 		{
 			simul::crossplatform::Query *DisjointQuery;
 			simul::crossplatform::Query *TimestampStartQuery;
@@ -60,7 +66,7 @@ namespace simul
 
 		* Per-frame, at the start of the frame:
 
-				simul::base::SetGpuProfilingInterface(deviceContext.platform_context,&simul::crossplatform::GpuProfiler::GetGlobalProfiler());
+				platform::core::SetGpuProfilingInterface(deviceContext.platform_context,&simul::crossplatform::GpuProfiler::GetGlobalProfiler());
 				SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
 
 		*  Wrap these around anything you want to measure:
@@ -96,9 +102,9 @@ namespace simul
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext) override;
 			/// Call this after all timeable events in a frame have completed.
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext) override;
-			virtual const char *GetDebugText(simul::base::TextStyle st = simul::base::PLAINTEXT) const override;
+			virtual const char *GetDebugText(platform::core::TextStyle st = platform::core::PLAINTEXT) const override;
 		
-			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const override;
+			const platform::core::ProfileData *GetEvent(const platform::core::ProfileData *parent,int i) const override;
 			std::string GetChildText(const char *name,std::string tab) const;
 
 			float GetTime(const std::string &name) const;
@@ -106,9 +112,9 @@ namespace simul
 		protected:
 			virtual void InitQuery(Query *);
 			void WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *p);
-			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
+			std::string Walk(platform::core::ProfileData *p, int tab, float parent_time, platform::core::TextStyle style) const;
 			__int64 currFrame;
-			simul::core::Timer timer;
+			platform::core::Timer timer;
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
 			bool enabled;

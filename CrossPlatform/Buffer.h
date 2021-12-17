@@ -52,7 +52,7 @@ namespace simul
 			//! Set up as a vertex buffer. You must pass a pointer to an already-created Layout, and don't destroy the layout until after destroying the vertex buffer.
 			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false)=0;
 			//! Set up as an index buffer.
-			virtual void EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)=0;
+			virtual void EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void * data, bool cpu_access = false)=0;
 			//! Get a pointer to the data for updating. Must call Unmap after any changes.
 			virtual void *Map(crossplatform::DeviceContext &deviceContext) =0;
 			//! Return the modified data to the device object.

@@ -5,7 +5,7 @@
 #endif
 #include "Platform/Core/Export.h"
 
-namespace simul
+namespace platform
 {
 	namespace core
 	{

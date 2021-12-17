@@ -9,8 +9,8 @@ SIMUL_CONSTANT_BUFFER(SphereConstants,7)
 	uniform vec4 quaternion;
 	uniform vec4 quaternion2;
 
-	uniform int latitudes;
-	uniform int longitudes;
+	uniform uint latitudes;
+	uniform uint longitudes;
 	uniform float radius;
 	uniform float sideview;
 

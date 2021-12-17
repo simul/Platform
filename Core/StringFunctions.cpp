@@ -10,10 +10,10 @@
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
 
-using namespace simul::base;
-namespace simul
+using namespace platform::core;
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 			#define LB_TO_NEWTONS (4.448f)
 			#define FEET_TO_METRES (12.f*2.54f/100.f)

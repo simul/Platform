@@ -13,6 +13,7 @@
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 #include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Allocator.h"
 
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
@@ -77,9 +78,11 @@ namespace simul
         //! Type of resource transition, some platforms used this (dx12)
         enum ResourceTransition
         {
-            Readable        = 0,
-            Writeable       = 1,
-            UnorderedAccess = 2
+            Readable         = 0,
+            ReadableGraphics = Readable,
+            ReadableCompute  = 1,
+            Writeable        = 2,
+            UnorderedAccess  = 3
         };
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
@@ -148,8 +151,9 @@ namespace simul
 		protected:
 			RenderingFeatures renderingFeatures=RenderingFeatures::None;
 			int ApiCallLimit=0;
+			long long last_begin_frame_number=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
-			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
+			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true);
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
 		public:
 			/// Get the current state to be applied to the given context at the next draw or dispatch.
@@ -236,8 +240,8 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void BeginFrame			(GraphicsDeviceContext &);
-			virtual void EndFrame			(GraphicsDeviceContext &);
+			virtual void BeginFrame			(GraphicsDeviceContext&);
+			virtual void EndFrame			(GraphicsDeviceContext&);
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
@@ -245,7 +249,7 @@ namespace simul
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {};
 			//! Copy a given texture to another.
-			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
+			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *dst,crossplatform::Texture *src){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Execute the currently applied raytracing shaders.
@@ -432,6 +436,12 @@ namespace simul
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+
+			//! Get the memory allocator - used in particular where API's allocate memory directly.
+			base::MemoryInterface *GetAllocator()
+			{
+				return &allocator;
+			}
 			std::map<std::string, crossplatform::Material*> &GetMaterials()
 			{
 				return materials;
@@ -458,6 +468,7 @@ namespace simul
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:
+			Allocator allocator;
 			void FinishLoadingTextures(DeviceContext& deviceContext);
 			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
 			std::set<Texture*> unfinishedTextures;
@@ -518,7 +529,7 @@ namespace simul
 		/// \param [in]	numLines	Number of gridlines to draw.
 		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::GraphicsDeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
 		// Clang works differently to VC++:
-#if defined( _MSC_VER ) || defined(_GAMING_XBOX)
+#if !defined( _MSC_VER ) || defined(_GAMING_XBOX)
 		template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)
 		{
 			InvalidateDeviceObjects();

@@ -21,7 +21,7 @@
 #endif
 
 extern const char *PlatformD3D12GetErrorText(HRESULT hr);
-#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
+//#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
 #ifndef V_CHECK
 	#define V_CHECK(x)\
 	{\
@@ -129,12 +129,6 @@ namespace simul
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
 
-			//! Sets the reference to the current command list in use by the application.
-			void SetCurrentCommandList(ID3D12GraphicsCommandList* commandList)
-			{
-				mCurrentCommandList = commandList;
-			}
-
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
@@ -203,7 +197,7 @@ namespace simul
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
-			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
+			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *dst,crossplatform::Texture *src);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
 			void									DispatchRays	(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr) override;
 			void									Signal			(crossplatform::DeviceContextType& type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence) override;
@@ -308,7 +302,7 @@ namespace simul
 			crossplatform::Texture* createTexture() override;
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//D3D12-specific things
-			void BeginD3D12Frame();
+			void BeginD3D12Frame(crossplatform::GraphicsDeviceContext& deviceContext);
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
@@ -321,8 +315,6 @@ namespace simul
 			ID3D12CommandQueue*			mCopyQueue;
 			//! Reference to the immediate command list
 			ID3D12GraphicsCommandList*	mImmediateCommandList;
-			//! Reference to the current command list
-			ID3D12GraphicsCommandList* mCurrentCommandList;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
@@ -348,7 +340,7 @@ namespace simul
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;
 
 			//! Holds resources to be deleted and its age
-			std::vector<std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
+			std::vector<std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
 			int									mTotalBarriers;
@@ -366,18 +358,13 @@ namespace simul
 
 			crossplatform::TargetsAndViewport mTargets;
 			ID3D12CommandAllocator*	 mImmediateAllocator=nullptr;
-			bool bImmediateContextActive=false;
-			bool bExternalImmediate=false;
 			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
 			ID3D12RootSignature *LoadRootSignature(const char *filename);
 
 			D3D12ComputeContext m12ComputeContext;
-			std::deque<std::pair<crossplatform::DeviceContextType, ID3D12CommandAllocator*>> mUsedAllocators;
-			std::thread mThreadReleaseAllocators;
-			std::mutex mMutexReleaseAllocators;
-			void AsyncResetCommandAllocator();
+			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
 		};
 	}
 }

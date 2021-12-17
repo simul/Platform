@@ -164,7 +164,7 @@ namespace simul
 
 			bool Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8) override;
 			void PostLoad() override;
-			void InvalidateDeviceObjects();
+			void InvalidateDeviceObjects() override;
 			crossplatform::EffectTechnique* GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 

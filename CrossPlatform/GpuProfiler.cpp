@@ -11,6 +11,7 @@
 #include <algorithm>
 
 using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 using namespace std;
 static std::unordered_map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
@@ -93,12 +94,6 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 {
 	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
-	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-	// Seriously? We're doing strcmp in perf-measurement?
-	//bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	//bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
-	//if (!is_opengl && !is_vulkan && !context)
-//		return;
 
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
@@ -181,12 +176,7 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
 	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
-	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
-/*	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
-	if (!is_opengl && !is_vulkan && !context)
-		return;*/
-
+	
 	renderPlatform->EndEvent(deviceContext);
 	level--;
 	if(level>=max_level)
@@ -229,7 +219,7 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 		//profileStack.clear();
 		return;
 	}
-	base::BaseProfilingInterface::StartFrame();
+	core::BaseProfilingInterface::StartFrame();
 }
 
 void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *profile)
@@ -363,17 +353,17 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-const char *GpuProfiler::GetDebugText(base::TextStyle style) const
+const char *GpuProfiler::GetDebugText(core::TextStyle style) const
 {
 	static std::string str;
 	str=BaseProfilingInterface::GetDebugText();
 	
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
-	str += (style == base::HTML) ? "<br/>" : "\n";
+	str += (style == core::HTML) ? "<br/>" : "\n";
 	return str.c_str();
 }
 
-const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,int i) const
+const core::ProfileData *GpuProfiler::GetEvent(const core::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
 	{
@@ -387,7 +377,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	{
 		if(j==i)
 		{
-			base::ProfileData *d=it->second;
+			core::ProfileData *d=it->second;
 			d->name=it->second->unqualifiedName;
 			d->time=it->second->time;
 			return it->second;

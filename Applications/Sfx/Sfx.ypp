@@ -2,7 +2,6 @@
 %define parse.error verbose
 %define parse.trace
 
-
 %{
 	#include <iostream>
 	#include <map>
@@ -295,7 +294,6 @@
 		find_and_replace(newExpr,"{command}","texelFetch");
 		if(config->combineInShader)
 		{
-	   //	 find_and_replace(newExpr,"{texture}",samplerConstructor + "(" + textureName +")");
 			find_and_replace(newExpr,"{texture}", textureName );
 		}
 		else
@@ -344,7 +342,6 @@
 		{
 			// gvec4 texelFetch(gsampler1D sampler,int P,int lod);
 			newParams = "int(" + params + ").x,(" + params + ").x"; 
-			// newParams += ",0";
 		}
 		else if(return_size == 2)
 		{
@@ -366,12 +363,12 @@
 			mip="int("+params+".z)";
 			if(rw)
 			{
-			// gvec4 imageLoad(	gimage2DArray image,ivec3 P);
+				// gvec4 imageLoad(	gimage2DArray image,ivec3 P);
 				newParams = "ivec3(" + newParams + ").xyz";
 			}
 			else
 			{
-			// gvec4 texelFetch( gsampler2DArray sampler,ivec3 P,int lod);
+				// gvec4 texelFetch( gsampler2DArray sampler,ivec3 P,int lod);
 				newParams = ("ivec3(" + newParams + ").xyz");
 				if(with_mip)
 					newParams=(newParams+",")+mip;
@@ -411,7 +408,7 @@
 			if(config->combineInShader)
 			{
 				// Why would we be doing this??
-				find_and_replace(newExpr,"{texture}",textureName);//samplerConstructor + "(" + textureName + ")");
+				find_and_replace(newExpr,"{texture}",textureName);
 			}
 			else
 			{
@@ -575,7 +572,7 @@
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
 %token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
-%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
+%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING /*SHADER_LINE SHADER_TYPE*/ COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D TEMPLATIZED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
 %token REGULARBUFFER RW_REGULARBUFFER STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
@@ -601,10 +598,10 @@
 prog : prog tok
 	| %empty
 	{ // Initialization code
-	gEffect->m_sharedCode.str("");	// clear the stream
-	gLexPassthrough=false;
-};
-	tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
+		gEffect->m_sharedCode.str("");	// clear the stream
+		gLexPassthrough=false;
+	};
+tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 	{
 		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
 	}
@@ -678,9 +675,8 @@ prog : prog tok
 			buildDepthStencilState=DepthStencilState();
 		}
 		int true_linenumber=$7.lineno+(last_linenumber-global_linenumber);
-	//	WriteLineNumber(true_linenumber);
 	}
-	| cslayout //lex_fx '(' num_list ')' lex_passthrough
+	| cslayout
 	{
 		currentCsLayout=$1.strs[0];
 	}
@@ -701,7 +697,6 @@ prog : prog tok
 		{
 			delete i->second;
 			// TODO: Warn here about double-compiling a shader.
-//			sfxWarning("double-compiling shader ");
 		}
 		gEffect->m_shaderInstances[shaderInstanceName]=shaderInstance=cs;
 	}
@@ -832,6 +827,9 @@ prog : prog tok
 			WriteLineNumber(ostr,current_filename,sfxget_lineno()+(last_linenumber-global_linenumber));
 		}
 		gEffect->DeclareConstantBuffer(bufferName,buffer_number,buildStruct,ostr.str());
+		if (!gEffect->IsConstantBufferMemberAlignmentValid(gEffect->GetDeclaration(bufferName)))
+			sfxError = true;
+
 		// Set to default:
 		buildStruct					=Struct();
 	}
@@ -896,7 +894,7 @@ prog : prog tok
 		group=buildGroup;
 		buildGroup.m_techniques.clear();
 	}
-optional_renderstate_def: '{' render_state_list '}'
+optional_renderstate_def : '{' render_state_list '}'
 	{
 		$$.lineno = $1.lineno;
 		$$.strs[0] = $2.strs[0];
@@ -906,77 +904,77 @@ optional_renderstate_def: '{' render_state_list '}'
 		$$.strs[0] = "";
 	}
 
-technique_list: technique_list group_technique_declaration
-{
-}
-| group_technique_declaration
-{
-}
+technique_list : technique_list group_technique_declaration
+	{
+	}
+	| group_technique_declaration
+	{
+	}
 
-technique_declaration: TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
-{
-	$$.strs[0]=$3.strs[0];
-	$$.tech=$5.tech;
-	buildGroup.m_techniques[$3.strs[0]] = $5.tech;
-}
+technique_declaration : TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
+	{
+		$$.strs[0]=$3.strs[0];
+		$$.tech=$5.tech;
+		buildGroup.m_techniques[$3.strs[0]] = $5.tech;
+	}
 
-group_technique_declaration: TECHNIQUE IDENTIFIER '{' tech_def '}'
-{
-	$$.strs[0]=$2.strs[0];
-	$$.tech=$4.tech;
-	buildGroup.m_techniques[$2.strs[0]] = $4.tech;
-}
+group_technique_declaration : TECHNIQUE IDENTIFIER '{' tech_def '}'
+	{
+		$$.strs[0]=$2.strs[0];
+		$$.tech=$4.tech;
+		buildGroup.m_techniques[$2.strs[0]] = $4.tech;
+	}
 
-cslayout: '[' NUM_THREADS '(' NUM ',' NUM ',' NUM ')' ']'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+$9.strs[0]+$10.strs[0];
-}
+cslayout : '[' NUM_THREADS '(' NUM ',' NUM ',' NUM ')' ']'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+$9.strs[0]+$10.strs[0];
+	}
 
-gslayout: '[' MAX_VERTEX_COUNT '(' NUM ')' ']'
-{
+gslayout : '[' MAX_VERTEX_COUNT '(' NUM ')' ']'
+	{
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0];
-}
-
-optional_expression: expression
-{
-	$$.strs[0]=$1.strs[0];
-}
-| %empty
-{
-	$$.strs[0]="";
-}
-
-primary_exp: IDENTIFIER
-{
-	string varName=$1.strs[0];
-	ConstantBuffer *cb = nullptr;
-	$$.strs[0]=varName;
-	
-	if(gEffect->IsDeclared(varName))
-	{
-		buildFunction.declarations.insert(varName);
-		buildFunction.resources.insert(varName);
 	}
-	else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
-	{
-		buildFunction.constantBuffers.insert(cb);
-	}
-}
-| SATURATE
-{
-	$$.token=$1.token;
-	$$.strs[0]=$1.strs[0];
-}
-| constant
-{
-	$$.strs[0]=$1.strs[0];
-}
-| '(' expression ')'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
 
-resource_type: TEMPLATIZED_CONSTANT_BUFFER
+optional_expression : expression
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+	}
+
+primary_exp : IDENTIFIER
+	{
+		string varName=$1.strs[0];
+		ConstantBuffer *cb = nullptr;
+		$$.strs[0]=varName;
+
+		if(gEffect->IsDeclared(varName))
+		{
+			buildFunction.declarations.insert(varName);
+			buildFunction.resources.insert(varName);
+		}
+		else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
+		{
+			buildFunction.constantBuffers.insert(cb);
+		}
+	}
+	| SATURATE
+	{
+		$$.token=$1.token;
+		$$.strs[0]=$1.strs[0];
+	}
+	| constant
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| '(' expression ')'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+
+resource_type : TEMPLATIZED_CONSTANT_BUFFER
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.token=$1.token;
@@ -992,29 +990,25 @@ resource_type: TEMPLATIZED_CONSTANT_BUFFER
 		$$.num=2;
 		$$.token=$1.token;
 	}
-	|
-	TEXTURE2D_ARRAY
+	| TEXTURE2D_ARRAY
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
 		$$.token=$1.token;
 	}
-	|
-	TEXTURE1D
+	| TEXTURE1D
 	{
 		$$.strs[0] = $1.strs[0];
 		$$.num = 2;
 		$$.token = $1.token;
 	}
-	|
-	TEXTURE3D_ARRAY
+	| TEXTURE3D_ARRAY
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
 		$$.token=$1.token;
 	} 
-	|
-	TEXTURECUBE_ARRAY
+	| TEXTURECUBE_ARRAY
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
@@ -1044,15 +1038,13 @@ resource_type: TEMPLATIZED_CONSTANT_BUFFER
 		$$.num=2;
 		$$.token=$1.token;
 	}
-	|
-	RW_TEXTURE3D
+	| RW_TEXTURE3D
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=3;
 		$$.token=$1.token;
 	}
-	|
-	RW_TEXTURE3D_ARRAY
+	| RW_TEXTURE3D_ARRAY
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=3;
@@ -1076,284 +1068,279 @@ resource_type: TEMPLATIZED_CONSTANT_BUFFER
 		$$.num=3;
 		$$.token=$1.token;
 	}
-	|
-	TEXTURE2DMS
+	| TEXTURE2DMS
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
 		$$.token=$1.token;
 	}
-	|
-	TEXTURECUBE
+	| TEXTURECUBE
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=2;
 			$$.token=$1.token;
 	}
-	|
-	TEXTURE3D
+	| TEXTURE3D
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=3;
 		$$.token=$1.token;
 	}
 
-constant: int_or_float
-{
-	$$.strs[0] = $1.strs[0];
-	$$.num = $1.num;
-}
-| '(' int_or_float ')'
-{
-	$$.strs[0] = $2.strs[0];
-	$$.num = $2.num;
-}
+constant : int_or_float
+	{
+		$$.strs[0] = $1.strs[0];
+		$$.num = $1.num;
+	}
+	| '(' int_or_float ')'
+	{
+		$$.strs[0] = $2.strs[0];
+		$$.num = $2.num;
+	}
 
-int_or_float: NUM
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-			| P_FLOAT
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-number_exp: additive_num
-{
-	$$.strs[0]=$1.strs[0];
-}
-| '(' additive_num ')'
-{
-	$$.strs[0] = $2.strs[0];
-	$$.num = $2.num;
-}
+int_or_float : NUM
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| P_FLOAT
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+number_exp : additive_num
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| '(' additive_num ')'
+	{
+		$$.strs[0] = $2.strs[0];
+		$$.num = $2.num;
+	}
 
-additive_num: mult_num
-{
-	$$.strs[0]=$1.strs[0];
-}
-| additive_num '+' mult_num
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-| additive_num '-' mult_num
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-
-mult_num: unary_num
-{
-	$$.strs[0]=$1.strs[0];
-}
-| mult_num '*' unary_num
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-| mult_num '/' unary_num
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-| mult_num '%' unary_num
-{
-	const SfxConfig* sfxConfig	= gEffect->GetConfig();
-	if(sfxConfig->supportsPercentOperator)
+additive_num : mult_num
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| additive_num '+' mult_num
 	{
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
-	else
+	| additive_num '-' mult_num
 	{
-		$$.strs[0]=(string("typed_mod(")+$1.strs[0]+",")+$3.strs[0]+")";
-		CallingFunction("typed_mod");
-
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
-}
 
-unary_num: number
-{
-	$$.strs[0]=$1.strs[0];
-}
-| unary_operator unary_num
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-}
+mult_num : unary_num
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| mult_num '*' unary_num
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+	| mult_num '/' unary_num
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+	| mult_num '%' unary_num
+	{
+		const SfxConfig* sfxConfig	= gEffect->GetConfig();
+		if(sfxConfig->supportsPercentOperator)
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
+		else
+		{
+			$$.strs[0]=(string("typed_mod(")+$1.strs[0]+",")+$3.strs[0]+")";
+			CallingFunction("typed_mod");
 
-number: NUM
-{
-	$$.strs[0]=$1.strs[0];
-	$$.num=$1.num;
-}
+		}
+	}
 
-optional_template_type: '<' optional_unorm_snorm IDENTIFIER '>'
-{
-	$$.strs[0]=($2.strs[0]+" ")+$3.strs[0];
-	$$.strs[1]=$3.strs[0];
-}
-| %empty
-{
-	$$.strs[0]="";
-	$$.strs[1]="";
-}
+unary_num : number
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| unary_operator unary_num
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+
+number : NUM
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
+
+optional_template_type : '<' optional_unorm_snorm IDENTIFIER '>'
+	{
+		$$.strs[0]=($2.strs[0]+" ")+$3.strs[0];
+		$$.strs[1]=$3.strs[0];
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+		$$.strs[1]="";
+	}
 
 
 optional_unorm_snorm: UNORM
-{
-	$$.strs[0]=$1.strs[0];
-} | SNORM
-{
-	$$.strs[0]=$1.strs[0];
-} | %empty
-{
-	$$.strs[0]="";
-}
-
-optional_register_semantic: ':' REGISTER '(' IDENTIFIER optional_additional_identifier ')'
-{
-	$$.strs[0]=string(": register(")+$4.strs[0]+$5.strs[0]+")";
-	$$.strs[1]=$4.strs[0];
-	$$.strs[2]=$4.strs[1];
-	string idnum=$4.strs[0];
-	if(idnum.length()>1)
 	{
-		idnum=idnum.substr(1,idnum.length()-1);
-		$$.num=atoi(idnum.c_str());
+		$$.strs[0]=$1.strs[0];
+	} | SNORM
+	{
+		$$.strs[0]=$1.strs[0];
+	} | %empty
+	{
+		$$.strs[0]="";
 	}
-	else
+
+optional_register_semantic : ':' REGISTER '(' IDENTIFIER optional_additional_identifier ')'
 	{
+		$$.strs[0]=string(": register(")+$4.strs[0]+$5.strs[0]+")";
+		$$.strs[1]=$4.strs[0];
+		$$.strs[2]=$4.strs[1];
+		string idnum=$4.strs[0];
+		if(idnum.length()>1)
+		{
+			idnum=idnum.substr(1,idnum.length()-1);
+			$$.num=atoi(idnum.c_str());
+		}
+		else
+		{
+			$$.num=-1;
+		}
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+		$$.strs[1]="";
 		$$.num=-1;
 	}
-}
-| %empty
-{
-	$$.strs[0]="";
-	$$.strs[1]="";
-	$$.num=-1;
-}
 
-shader_brace_block: '{' statement_list '}'
-{
-	string content = $2.strs[0];
-	$$.strs[0]=content;
-	$$.lineno=$3.lineno;
-}
-
-statement_list: statement_list statement
-{
-	string statement_list=$1.strs[0] + "\n";
-	string statement = $2.strs[0];
-	statement_list += statement;
-	$$.strs[0]	=statement_list;
-	$$.strs[1]	=$1.strs[1]+$2.strs[1];
-}
-|
-statement
-{
-	string statement=$1.strs[0];
-	$$.strs[0]	=statement;
-	$$.strs[1]	=$1.strs[1];
-}
-| %empty
-{
-	$$.strs[0]	="";
-	$$.strs[1]	="";
-}
-
-initializer: assignment_exp
-{
-	string assignment_exp = $1.strs[0];
-	$$.strs[0]=assignment_exp;
-}
-| '{' initializer_list '}'
-{
-	vector<sfxstype> &children = $$.children;
-	children = $2.children;
-	string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0];
-	$$.strs[0] = initlist;
-}
-| '{' initializer_list ',' '}'
-{
-	vector<sfxstype> &children = $$.children;
-	children = $2.children;
-	string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0] + $4.strs[0];
-	$$.strs[0] = initlist;
-}
-
-line_statement_in_shader: LINE NUM QUOTED_STRING EOL
-{
-	last_linenumber		=$2.num;
-	current_filenumber	=$3.num;
-	global_linenumber	=$1.lineno+1;
-	$$.strs[0]			=$1.strs[0]+" ";
-	$$.strs[0]			+=$2.strs[0]+" ";
-	$$.strs[0]			+=$3.strs[0];
-	$$.strs[0]			+='\n';
-}
-
-initializer_list: initializer
-{
-	vector<sfxstype> &children = $$.children;
-	children.clear();
-	children.push_back($1);
-	$$.strs[0]=$1.strs[0];
-}
-| initializer_list ',' initializer
-{
-	vector<sfxstype> &children = $$.children;
-	children = $1.children;
-	children.push_back($3);
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-
-/* multiple statements in braces*/
-compound_statement	: '{' statement_list '}'
-{
-	string statement_list=$2.strs[0];
-	$$.strs[0]=string("\n{\n")+statement_list+"\n}\n";
-}
-
-declaration_or_function: decl_specs decl_list_or_fn
-{
-	if ($2.num == 0)
+shader_brace_block : '{' statement_list '}'
 	{
-		string type_spec = $1.strs[0];
-		Variable variable;
-		variable.original = type_spec + " ";
-		string init_declarator_list = $2.strs[0];
-		if (type_spec == "float")
-			type_spec = "";
-		stringReplaceAll(init_declarator_list, "%type%", type_spec);
-		stringReplaceAll(init_declarator_list, type_spec + type_spec, type_spec);
-		variable.init_declarator_list = init_declarator_list;
-		variable.original += init_declarator_list;
-		variable.name=$2.strs[1];
-		variable.structureType= $1.strs[1];
-		gEffect->DeclareVariable(&variable);
-		//gEffect->m_sharedCode << variable.original << std::endl;
+		string content = $2.strs[0];
+		$$.strs[0]=content;
+		$$.lineno=$3.lineno;
 	}
-	else
+
+statement_list : statement_list statement
 	{
-		string functionName				=$2.strs[0];
-		string inputs					=$2.strs[2];
-		buildFunction.returnType		=$1.strs[0];
-		buildFunction.main_linenumber	=$1.lineno;
-		buildFunction.local_linenumber	=$1.lineno + (last_linenumber - global_linenumber);
-		buildFunction.declaration		=(($1.strs[0] + " ") + $2.strs[0] + "(") + inputs + ")";
-		FinalizeFunction(buildFunction);
-		buildFunction.name				= functionName;
-		Function *f						= gEffect->DeclareFunction(functionName, buildFunction);
-		buildFunction.clear();
+		string statement_list=$1.strs[0] + "\n";
+		string statement = $2.strs[0];
+		statement_list += statement;
+		$$.strs[0]	=statement_list;
+		$$.strs[1]	=$1.strs[1]+$2.strs[1];
 	}
-}
+	| statement
+	{
+		string statement=$1.strs[0];
+		$$.strs[0]	=statement;
+		$$.strs[1]	=$1.strs[1];
+	}
+	| %empty
+	{
+		$$.strs[0]	="";
+		$$.strs[1]	="";
+	}
 
-declaration: decl_specs init_declarator_list
-{
-	$$.strs[0] =($1.strs[0] +" ") +$2.strs[0];
-	sfxstype::variable var;
-	var.type=$1.strs[0];
-	var.identifier=$2.strs[2];
-	buildFunction.locals.push_back(var);
-	$$.strs[1]=$2.strs[0];
-}
+initializer : assignment_exp
+	{
+		string assignment_exp = $1.strs[0];
+		$$.strs[0]=assignment_exp;
+	}
+	| '{' initializer_list '}'
+	{
+		vector<sfxstype> &children = $$.children;
+		children = $2.children;
+		string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0];
+		$$.strs[0] = initlist;
+	}
+	| '{' initializer_list ',' '}'
+	{
+		vector<sfxstype> &children = $$.children;
+		children = $2.children;
+		string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0] + $4.strs[0];
+		$$.strs[0] = initlist;
+	}
 
-decl_list_or_fn: init_declarator_list ';'
+line_statement_in_shader : LINE NUM QUOTED_STRING EOL
+	{
+		last_linenumber		=$2.num;
+		current_filenumber	=$3.num;
+		global_linenumber	=$1.lineno+1;
+		$$.strs[0]			=$1.strs[0]+" ";
+		$$.strs[0]			+=$2.strs[0]+" ";
+		$$.strs[0]			+=$3.strs[0];
+		$$.strs[0]			+='\n';
+	}
+
+initializer_list : initializer
+	{
+		vector<sfxstype> &children = $$.children;
+		children.clear();
+		children.push_back($1);
+		$$.strs[0]=$1.strs[0];
+	}
+	| initializer_list ',' initializer
+	{
+		vector<sfxstype> &children = $$.children;
+		children = $1.children;
+		children.push_back($3);
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+
+// multiple statements in braces
+compound_statement : '{' statement_list '}'
+	{
+		string statement_list=$2.strs[0];
+		$$.strs[0]=string("\n{\n")+statement_list+"\n}\n";
+	}
+
+declaration_or_function : decl_specs decl_list_or_fn
+	{
+		if ($2.num == 0)
+		{
+			string type_spec = $1.strs[0];
+			Variable variable;
+			variable.original = type_spec + " ";
+			string init_declarator_list = $2.strs[0];
+			if (type_spec == "float")
+				type_spec = "";
+			stringReplaceAll(init_declarator_list, "%type%", type_spec);
+			stringReplaceAll(init_declarator_list, type_spec + type_spec, type_spec);
+			variable.init_declarator_list = init_declarator_list;
+			variable.original += init_declarator_list;
+			variable.name=$2.strs[1];
+			variable.structureType= $1.strs[1];
+			gEffect->DeclareVariable(&variable);
+		}
+		else
+		{
+			string functionName				=$2.strs[0];
+			string inputs					=$2.strs[2];
+			buildFunction.returnType		=$1.strs[0];
+			buildFunction.main_linenumber	=$1.lineno;
+			buildFunction.local_linenumber	=$1.lineno + (last_linenumber - global_linenumber);
+			buildFunction.declaration		=(($1.strs[0] + " ") + $2.strs[0] + "(") + inputs + ")";
+			FinalizeFunction(buildFunction);
+			buildFunction.name				= functionName;
+			Function *f						= gEffect->DeclareFunction(functionName, buildFunction);
+			buildFunction.clear();
+		}
+	}
+
+declaration : decl_specs init_declarator_list
+	{
+		$$.strs[0] =($1.strs[0] +" ") +$2.strs[0];
+		sfxstype::variable var;
+		var.type=$1.strs[0];
+		var.identifier=$2.strs[2];
+		buildFunction.locals.push_back(var);
+		$$.strs[1]=$2.strs[0];
+	}
+
+decl_list_or_fn : init_declarator_list ';'
 	{
 		$$.strs[0] = $1.strs[0] + ";";
 		$$.strs[1]= $1.strs[1];
@@ -1367,225 +1354,224 @@ decl_list_or_fn: init_declarator_list ';'
 		$$.num = 1;
 	}
 
-function_def: IDENTIFIER p_dec_list shader_brace_block
-{
-	string functionName			=$1.strs[0];
-	buildFunction.content		=$3.strs[0];
-	buildFunction.filename		=current_filename;
-	string inputs				=$2.strs[0];
-	buildFunction.parameters	=*$2.vars;
-	delete $2.vars;
-	$$.strs[0]					=functionName;
-	$$.strs[1]					= functionName;
-	$$.strs[2]					=inputs;
-}
-
-p_dec_list: '(' param_declaration_list ')'
-{
-	ostringstream inputs;
-	GetInputs(inputs,($2.vars));
-	$$.strs[0]=inputs.str();
-	$$.vars=$2.vars;
-}
-
-init_declarator_list: init_declarator
-{
-	$$.strs[0]=$1.strs[0];
-	$$.strs[1]=$1.strs[1];
-	$$.strs[2]=$1.strs[2];
-}
-| init_declarator_list ',' init_declarator
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-	$$.strs[1] =( $1.strs[1]+',')+ $3.strs[1];
-	$$.strs[2]=$1.strs[2];
-}
-
-init_declarator: declarator
-{
-	$$.strs[0] = $1.strs[0];
-	$$.strs[1] = $1.strs[1];
-	$$.strs[2] = $1.strs[0];
-}
-| declarator '=' initializer
-{
-	// An expression of the form vec2 c=....;
-	// Pass-through normally, but most GLSL compilers cannot handle array initializers.
-	string declarator	=$1.strs[0];
-	string initializer	=$3.strs[0];
-	$$.strs[0] = $1.strs[0] + $2.strs[0] + initializer;
-	$$.strs[1] = $1.strs[1];
-	$$.strs[2] = declarator;
-}
-
-declarator: IDENTIFIER
-{
-	$$.strs[0]=$1.strs[0];
-	$$.strs[1]=$1.strs[0];
-}
-| '(' declarator ')'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-	$$.strs[1] = $1.strs[1];
-}
-| declarator '[' number_exp ']'
-{
-	$$.num=$3.num;
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
-	$$.strs[1]=$1.strs[0];
-	$$.strs[2]=$3.strs[0];
-}
-| declarator '[' ']'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-	$$.strs[1]=$1.strs[0];
-}
-
-expression: assignment_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-| expression ',' assignment_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-
-assignment_exp: conditional_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-| unary_exp assignment_operator assignment_exp
-{
-	string unary_exp			=$1.strs[0];
-	string assignment_operator	=$2.strs[0];
-	string assignment_exp		=$3.strs[0];
-	string varName				=$1.strs[1];
-	string index				=$1.strs[3];
-	// Is it actually a texture we're indexing?
-	ShaderResourceType resourceType		=GetShaderResourceType(buildFunction,varName);
-	if(resourceType==ShaderResourceType::UNKNOWN||!IsRW(resourceType))
+function_def : IDENTIFIER p_dec_list shader_brace_block
 	{
-		$$.strs[0]=unary_exp+assignment_operator+assignment_exp;
+		string functionName			=$1.strs[0];
+		buildFunction.content		=$3.strs[0];
+		buildFunction.filename		=current_filename;
+		string inputs				=$2.strs[0];
+		buildFunction.parameters	=*$2.vars;
+		delete $2.vars;
+		$$.strs[0]					=functionName;
+		$$.strs[1]					= functionName;
+		$$.strs[2]					=inputs;
 	}
-	else
+
+p_dec_list : '(' param_declaration_list ')'
 	{
-		ostringstream str;
-		if($2.token=='=')
+		ostringstream inputs;
+		GetInputs(inputs,($2.vars));
+		$$.strs[0]=inputs.str();
+		$$.vars=$2.vars;
+	}
+
+init_declarator_list : init_declarator
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]=$1.strs[1];
+		$$.strs[2]=$1.strs[2];
+	}
+	| init_declarator_list ',' init_declarator
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		$$.strs[1] =( $1.strs[1]+',')+ $3.strs[1];
+		$$.strs[2]=$1.strs[2];
+	}
+
+init_declarator : declarator
+	{
+		$$.strs[0] = $1.strs[0];
+		$$.strs[1] = $1.strs[1];
+		$$.strs[2] = $1.strs[0];
+	}
+	| declarator '=' initializer
+	{
+		// An expression of the form vec2 c=....;
+		// Pass-through normally, but most GLSL compilers cannot handle array initializers.
+		string declarator	=$1.strs[0];
+		string initializer	=$3.strs[0];
+		$$.strs[0] = $1.strs[0] + $2.strs[0] + initializer;
+		$$.strs[1] = $1.strs[1];
+		$$.strs[2] = declarator;
+	}
+
+declarator : IDENTIFIER
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]=$1.strs[0];
+	}
+	| '(' declarator ')'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		$$.strs[1] = $1.strs[1];
+	}
+	| declarator '[' number_exp ']'
+	{
+		$$.num=$3.num;
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+		$$.strs[1]=$1.strs[0];
+		$$.strs[2]=$3.strs[0];
+	}
+	| declarator '[' ']'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		$$.strs[1]=$1.strs[0];
+	}
+
+expression : assignment_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| expression ',' assignment_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+
+assignment_exp : conditional_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| unary_exp assignment_operator assignment_exp
+	{
+		string unary_exp			=$1.strs[0];
+		string assignment_operator	=$2.strs[0];
+		string assignment_exp		=$3.strs[0];
+		string varName				=$1.strs[1];
+		string index				=$1.strs[3];
+		// Is it actually a texture we're indexing?
+		ShaderResourceType resourceType		=GetShaderResourceType(buildFunction,varName);
+		if(resourceType==ShaderResourceType::UNKNOWN||!IsRW(resourceType))
 		{
-			const SfxConfig *config		=gEffect->GetConfig();
-			// Only apply this to textures not to SSBOs
-			if(	config->storeSyntax.length() > 0 && 
-				resourceType != ShaderResourceType::STRUCTURED_BUFFER &&  
-				resourceType != ShaderResourceType::RW_STRUCTURED_BUFFER
-				&&resourceType!=ShaderResourceType::UNKNOWN)
-			{
-				string s=config->storeSyntax;
-				auto toStoreDec = gEffect->declarations.find(varName);
-				//if(toStoreDec->declarationType== DeclarationType::TEXTURE|| toStoreDec->declarationType == DeclarationType::SAMPLER)
-				if(toStoreDec != gEffect->declarations.end())
-				{
-					if(toStoreDec->second->structureType == "vec4" || toStoreDec->second->structureType == "float4")
-					{
-						find_and_replace(s,"{cast}","vec4");
-					}
-					else if(toStoreDec->second->structureType == "char4")
-					{
-						find_and_replace(s,"{cast}","vec4");
-					}
-					else if(toStoreDec->second->structureType == "uchar4")
-					{
-						find_and_replace(s,"{cast}","vec4");
-					}
-					else if(toStoreDec->second->structureType == "ivec4")
-					{
-						find_and_replace(s,"{cast}","ivec4");
-					}
-					else if(toStoreDec->second->structureType == "uint")
-					{
-						find_and_replace(s,"{cast}","uvec4");
-					}
-					else if(toStoreDec->second->structureType == "float")
-					{
-						find_and_replace(s,"{cast}","vec4");
-					}
-					else if(toStoreDec->second->structureType == "half4")
-					{
-						find_and_replace(s,"{cast}","vec4");
-					}
-					else
-					{
-					// God almighty.
-						//find_and_replace(s,"{cast}","nullcast");
-						errSem(string("Unsupported structure type for image store: ") + toStoreDec->second->structureType);
-					}
-				}							   
-				else
-				{
-					find_and_replace(s,"{cast}","");
-				}
-				find_and_replace(s,"{varName}",varName);
-				find_and_replace(s,"{index}",index);
-				find_and_replace(s,"{tex_dimension}",ToString(GetTextureDimension(resourceType)));
-				find_and_replace(s,"{assignment_exp}",assignment_exp);
-				str<<s;
-			}
-			else
-			{
-				str<<unary_exp<<assignment_operator<<assignment_exp;
-			}
+			$$.strs[0]=unary_exp+assignment_operator+assignment_exp;
 		}
 		else
-			errSem(string("Unsupported operator for image store: ")+assignment_operator);
-		$$.strs[0]=str.str();
+		{
+			ostringstream str;
+			if($2.token=='=')
+			{
+				const SfxConfig *config		=gEffect->GetConfig();
+				// Only apply this to textures not to SSBOs
+				if(	config->storeSyntax.length() > 0 && 
+					resourceType != ShaderResourceType::STRUCTURED_BUFFER &&  
+					resourceType != ShaderResourceType::RW_STRUCTURED_BUFFER
+					&&resourceType!=ShaderResourceType::UNKNOWN)
+				{
+					string s=config->storeSyntax;
+					auto toStoreDec = gEffect->declarations.find(varName);
+					if(toStoreDec != gEffect->declarations.end())
+					{
+						if(toStoreDec->second->structureType == "vec4" || toStoreDec->second->structureType == "float4")
+						{
+							find_and_replace(s,"{cast}","vec4");
+						}
+						else if(toStoreDec->second->structureType == "char4")
+						{
+							find_and_replace(s,"{cast}","vec4");
+						}
+						else if(toStoreDec->second->structureType == "uchar4")
+						{
+							find_and_replace(s,"{cast}","vec4");
+						}
+						else if(toStoreDec->second->structureType == "ivec4")
+						{
+							find_and_replace(s,"{cast}","ivec4");
+						}
+						else if(toStoreDec->second->structureType == "uint")
+						{
+							find_and_replace(s,"{cast}","uvec4");
+						}
+						else if(toStoreDec->second->structureType == "float")
+						{
+							find_and_replace(s,"{cast}","vec4");
+						}
+						else if(toStoreDec->second->structureType == "half4")
+						{
+							find_and_replace(s,"{cast}","vec4");
+						}
+						else
+						{
+							// God almighty.
+							//find_and_replace(s,"{cast}","nullcast");
+							errSem(string("Unsupported structure type for image store: ") + toStoreDec->second->structureType);
+						}
+					}							   
+					else
+					{
+						find_and_replace(s,"{cast}","");
+					}
+					find_and_replace(s,"{varName}",varName);
+					find_and_replace(s,"{index}",index);
+					find_and_replace(s,"{tex_dimension}",ToString(GetTextureDimension(resourceType)));
+					find_and_replace(s,"{assignment_exp}",assignment_exp);
+					str<<s;
+				}
+				else
+				{
+					str<<unary_exp<<assignment_operator<<assignment_exp;
+				}
+			}
+			else
+				errSem(string("Unsupported operator for image store: ")+assignment_operator);
+			$$.strs[0]=str.str();
+		}
 	}
-}
 
-conditional_exp: logical_or_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-| logical_or_exp '?' expression ':' conditional_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
-}
+conditional_exp : logical_or_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| logical_or_exp '?' expression ':' conditional_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+	}
 	
-logical_or_exp: logical_and_exp
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-			| logical_or_exp OR logical_and_exp
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-				}
+logical_or_exp : logical_and_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| logical_or_exp OR logical_and_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
 
-logical_and_exp: inclusive_or_exp
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-			| logical_and_exp AND inclusive_or_exp
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-				}
+logical_and_exp : inclusive_or_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| logical_and_exp AND inclusive_or_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
 
-inclusive_or_exp: exclusive_or_exp
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-			| inclusive_or_exp '|' exclusive_or_exp
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-				}
+inclusive_or_exp : exclusive_or_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| inclusive_or_exp '|' exclusive_or_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
 
-exclusive_or_exp	: and_exp
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-			| exclusive_or_exp '^' and_exp
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-				}
+exclusive_or_exp : and_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| exclusive_or_exp '^' and_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
 
-and_exp: equality_exp
+and_exp : equality_exp
 	{
 		$$.strs[0]=$1.strs[0];
 	}
@@ -1594,20 +1580,20 @@ and_exp: equality_exp
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
 
-equality_exp		: relational_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-| equality_exp EQ_EQ relational_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-| equality_exp NOT_EQ relational_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
+equality_exp : relational_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| equality_exp EQ_EQ relational_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+	| equality_exp NOT_EQ relational_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
 
-relational_exp		: shift_expression
+relational_exp : shift_expression
 	{
 		$$.strs[0]=$1.strs[0];
 	}
@@ -1628,7 +1614,7 @@ relational_exp		: shift_expression
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
 
-shift_expression	: additive_exp
+shift_expression : additive_exp
 	{
 		$$.strs[0]=$1.strs[0];
 	}
@@ -1641,7 +1627,7 @@ shift_expression	: additive_exp
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
 
-additive_exp: mult_exp
+additive_exp : mult_exp
 	{
 		$$.strs[0]=$1.strs[0];
 	}
@@ -1654,438 +1640,432 @@ additive_exp: mult_exp
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
 
-mult_exp: cast_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-| mult_exp '*' cast_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-| mult_exp '/' cast_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-| mult_exp '%' cast_exp
-{
-	const SfxConfig* sfxConfig	= gEffect->GetConfig();
-	if(sfxConfig->supportsPercentOperator)
+mult_exp : cast_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| mult_exp '*' cast_exp
 	{
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
-	else
+	| mult_exp '/' cast_exp
 	{
-		$$.strs[0]=(string("typed_mod(")+$1.strs[0]+",")+$3.strs[0]+")";
-		CallingFunction("typed_mod");
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
-}
-
-cast_exp: unary_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-| cast unary_exp
-{
-	string typestr=$1.strs[1];
-	string conv=$2.strs[0];
-	// convert old-style cast to new style.
-	$$.strs[0] = ((typestr +"(")+conv)+")";
-}
-
-cast: '(' IDENTIFIER ')'
-{
-	// TODO: This causes spurious compile errors due to identifying variables where there should here by typenames.
-	$$.strs[0] = $1.strs[0] + $2.strs[0] + $3.strs[0];
-}
-
-unary_exp: postfix_exp
-{
-	$$.strs[0]=$1.strs[0];
-	$$.strs[1]=$1.strs[1];
-	$$.strs[2]=$1.strs[2];
-	$$.strs[3]=$1.strs[3];
-}
-| PLUS_PLUS unary_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-}
-| MINUS_MINUS unary_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-}
-| unary_operator cast_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-}
-
-unary_operator		: '&' | '*' | '+' | '-' | '~' | '!'
-{
-	$$.strs[0]=$1.strs[0];
-}
-postfix_indexed: postfix_exp '[' expression ']'
-{
-	string varName	= $1.strs[0];
-	string index	= $3.strs[0];
-	$$.strs[1]		= varName;
-	$$.strs[3]		= index;
-	$$.strs[2]		= $1.strs[2];		
-
-	// Check if it is a texture
-	ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,varName);
-	if(resourceType == ShaderResourceType::UNKNOWN)
+	| mult_exp '%' cast_exp
 	{
-		$$.strs[0]=varName+$2.strs[0]+index+$4.strs[0];
-	}
-	else
-	{
-		auto config = gEffect->GetConfig();
-		ostringstream str;
-		if(config->combineTexturesSamplers)
+		const SfxConfig* sfxConfig	= gEffect->GetConfig();
+		if(sfxConfig->supportsPercentOperator)
 		{
-			// Here we WRITE to a structured buffer: 
-			if((resourceType & ShaderResourceType::STRUCTURED_BUFFER) == ShaderResourceType::STRUCTURED_BUFFER)
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
+		else
+		{
+			$$.strs[0]=(string("typed_mod(")+$1.strs[0]+",")+$3.strs[0]+")";
+			CallingFunction("typed_mod");
+		}
+	}
+
+cast_exp : unary_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| cast unary_exp
+	{
+		string typestr=$1.strs[1];
+		string conv=$2.strs[0];
+		// convert old-style cast to new style.
+		$$.strs[0] = ((typestr +"(")+conv)+")";
+	}
+
+cast : '(' IDENTIFIER ')'
+	{
+		// TODO: This causes spurious compile errors due to identifying variables where there should here by typenames.
+		$$.strs[0] = $1.strs[0] + $2.strs[0] + $3.strs[0];
+	}
+
+unary_exp : postfix_exp
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]=$1.strs[1];
+		$$.strs[2]=$1.strs[2];
+		$$.strs[3]=$1.strs[3];
+	}
+	| PLUS_PLUS unary_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+	| MINUS_MINUS unary_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+	| unary_operator cast_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+
+unary_operator : '&' | '*' | '+' | '-' | '~' | '!'
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+postfix_indexed : postfix_exp '[' expression ']'
+	{
+		string varName	= $1.strs[0];
+		string index	= $3.strs[0];
+		$$.strs[1]		= varName;
+		$$.strs[3]		= index;
+		$$.strs[2]		= $1.strs[2];		
+
+		// Check if it is a texture
+		ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,varName);
+		if(resourceType == ShaderResourceType::UNKNOWN)
+		{
+			$$.strs[0]=varName+$2.strs[0]+index+$4.strs[0];
+		}
+		else
+		{
+			auto config = gEffect->GetConfig();
+			ostringstream str;
+			if(config->combineTexturesSamplers)
+			{
+				// Here we WRITE to a structured buffer: 
+				if((resourceType & ShaderResourceType::STRUCTURED_BUFFER) == ShaderResourceType::STRUCTURED_BUFFER)
+				{
+					str << varName << "[" << index << "]";
+				}
+				// And here we LOAD from something else ? Its probably a texture!
+				else
+				{
+					str << GetLoadExpr(varName,"0",index,resourceType,false);
+					// If and only its a RW texture (load operation), we insert it into the list
+					if(str.str().find("imageLoad") != std::string::npos)
+					{
+						buildFunction.rwTexturesLoaded.insert(varName);
+					}
+				}
+			}
+			else
 			{
 				str << varName << "[" << index << "]";
 			}
-			// And here we LOAD from something else ? Its probably a texture!
+			buildFunction.declarations.insert(varName);
+			buildFunction.resources.insert(varName);
+			$$.strs[0]=str.str();
+		}
+	}
+postfix_exp : primary_exp
+	{
+		$$.token=$1.token;
+		string varName = $1.strs[0];
+		$$.strs[0]= varName;
+		$$.strs[2]= varName;			//Command
+	}
+	| postfix_indexed
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]=$1.strs[1];
+		$$.strs[2]=$1.strs[2];
+		$$.strs[3]=$1.strs[3];
+	}
+	| get_dims_exp '(' assignment_exp ',' assignment_exp ')'
+	{
+		string textureName	=$1.strs[1];
+		string x			=$3.strs[0];
+		string y			=$5.strs[0];
+		
+		$$.strs[0]=GetSizeFunction(textureName, x, y,"");
+		buildFunction.declarations.insert(textureName);
+		buildFunction.resources.insert(textureName);
+	}
+	| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
+	{
+		string textureName	=$1.strs[1];
+		string x			=$3.strs[0];
+		string y			=$5.strs[0];
+		string z			=$7.strs[0];
+		$$.strs[0]			=GetSizeFunction( textureName, x, y,z);
+		buildFunction.declarations.insert(textureName);
+		buildFunction.resources.insert(textureName);
+	}
+	| tex_load_exp '(' argument_exp_list ')'
+	{
+		const SfxConfig* config	= gEffect->GetConfig();
+		string textureName		= $1.strs[1];
+		string command			= $1.strs[2];
+		string params			= $3.strs[0];
+		string pos,msaa_index;
+		ostringstream full_expr;
+		if($3.vars)
+		{
+			auto vars=*($3.vars);
+			delete $3.vars;
+			pos				=vars[0].identifier;
+			if(vars.size()>1)
+				msaa_index=vars[1].identifier;
+		}
+		if(config->loadSyntax.size() > 0)
+		{
+			ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
+			if(resourceType!=ShaderResourceType::UNKNOWN)
+			{
+				if(pos.size() > 0 && msaa_index.size() > 0)
+				{
+					full_expr << GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+				}
+				else
+				{
+					full_expr << GetLoadExpr(textureName,command,params,resourceType);
+				}
+			}
 			else
 			{
-				str << GetLoadExpr(varName,"0",index,resourceType,false);
-				// If and only its a RW texture (load operation), we insert it into the list
-				if(str.str().find("imageLoad") != std::string::npos)
-				{
-					buildFunction.rwTexturesLoaded.insert(varName);
-				}
+				full_expr<<"{load_expr "<<textureName<<" "<<command<<" "<<params<<" "<<pos<<" "<<msaa_index<<"}";
 			}
 		}
 		else
 		{
-			str << varName << "[" << index << "]";
+			full_expr << textureName << "." << command << "(" << params <<")";
 		}
-		buildFunction.declarations.insert(varName);
-		buildFunction.resources.insert(varName);
-		$$.strs[0]=str.str();
+		$$.strs[0] = full_expr.str();
+		buildFunction.rwTexturesLoaded.insert(textureName);
+		buildFunction.declarations.insert(textureName);
+		buildFunction.resources.insert(textureName);
 	}
-}
-postfix_exp: primary_exp
-					{
-						$$.token=$1.token;
-						string varName = $1.strs[0];
-						$$.strs[0]= varName;
-						$$.strs[2]= varName;			//Command
-					}
-					| postfix_indexed
-					{
-						$$.strs[0]=$1.strs[0];
-						$$.strs[1]=$1.strs[1];
-						$$.strs[2]=$1.strs[2];
-						$$.strs[3]=$1.strs[3];
-					}
-					| get_dims_exp '(' assignment_exp ',' assignment_exp ')'
-					{
-						string textureName	=$1.strs[1];
-						string x			=$3.strs[0];
-						string y			=$5.strs[0];
-						
-						$$.strs[0]=GetSizeFunction(textureName, x, y,"");
-						buildFunction.declarations.insert(textureName);
-						buildFunction.resources.insert(textureName);
-					}
-					| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
-					{
-						string textureName	=$1.strs[1];
-						string x			=$3.strs[0];
-						string y			=$5.strs[0];
-						string z			=$7.strs[0];
-						$$.strs[0]			=GetSizeFunction( textureName, x, y,z);
-						buildFunction.declarations.insert(textureName);
-						buildFunction.resources.insert(textureName);
-					}
-					| tex_load_exp '(' argument_exp_list ')'
-					{
-						const SfxConfig* config	= gEffect->GetConfig();
-						string textureName		= $1.strs[1];
-						string command			= $1.strs[2];
-						string params			= $3.strs[0];
-						string pos,msaa_index;
-						ostringstream full_expr;
-						if($3.vars)
-						{
-							auto vars=*($3.vars);
-							delete $3.vars;
-							pos				=vars[0].identifier;
-							if(vars.size()>1)
-								msaa_index=vars[1].identifier;
-						}
-						if(config->loadSyntax.size() > 0)
-						{
-							ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
-							if(resourceType!=ShaderResourceType::UNKNOWN)
-							{
-								if(pos.size() > 0 && msaa_index.size() > 0)
-								{
-									full_expr << GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
-								}
-								else
-								{
-									full_expr << GetLoadExpr(textureName,command,params,resourceType);
-								}
-							}
-							else
-							{
-								full_expr<<"{load_expr "<<textureName<<" "<<command<<" "<<params<<" "<<pos<<" "<<msaa_index<<"}";
-							}
-						}
-						else
-						{
-							full_expr << textureName << "." << command << "(" << params <<")";
-						}
-						$$.strs[0] = full_expr.str();
-						buildFunction.rwTexturesLoaded.insert(textureName);
-						buildFunction.declarations.insert(textureName);
-						buildFunction.resources.insert(textureName);
-					}
-					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
-					{
-						string textureName		=$1.strs[1];
-						string command			=$1.strs[2];
-						string samplerStateName	=$3.strs[0];
-						string otherParams		=$5.strs[0];
-						vector<sfxstype::variable>*	params=$5.vars;
-					
-						ostringstream full_expr;
-						const SfxConfig *config	= gEffect->GetConfig();
-						
-						// Special syntax used to sample:
-						//  e.g noise3D.Sample(clampSampler,uv); -> texture(sampler3D(noise3D | clampSampler),uv);
-						//  We must choose the proper:			  {command}({samplerType}(tex|sampler),params);
-						if( config->samplingSyntax.length() > 0)
-						{
-							ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
-							string samplerType	  = GetSamplerConstructor(type,textureName,&buildFunction);
-							string cmd			  = config->samplingSyntax;
-							find_and_replace(cmd,"{command}",command);
-							find_and_replace(cmd,"{samplerType}",samplerType);
-							string combTexSamp = "";
-							if(config->combineTexturesSamplers )
-							{
-								if(config->combineInShader)
-								{
-									combTexSamp = textureName + ", " + samplerStateName;
-								}
-								else
-								{
-									// combTexSamp = textureName + "_xfs_" + samplerStateName;
-									combTexSamp = textureName + "[" + samplerStateName + "]";
-								}
-							}
-							const SfxConfig *config	= gEffect->GetConfig();
-							find_and_replace(cmd,"{textureSampler}",combTexSamp);
-							if(!config->reverseTexCoordY||!params||params->size()<1)
-								find_and_replace(cmd,"{otherParams}",otherParams);
-							else
-							{
-								ostringstream otherParams;
-								std::string firstParam=(*params)[0].identifier;
-								otherParams<<"reverse_y_coord("<<firstParam<<")";
-								for(int i=1;i<params->size();i++)
-									otherParams<<","<<(*params)[i].identifier;
-								find_and_replace(cmd,"{otherParams}",otherParams.str());
-								const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
-								auto j=functions.find("reverse_y_coord");
-								for(auto u=j->second.begin();u!=j->second.end();u++)
-									buildFunction.functionsCalled.insert(*u);
-							}
-							full_expr << cmd;	
-						}
-						else
-						{
-							full_expr << textureName << "." << command << "(" << samplerStateName << "," << otherParams << ")";
-						}
-						buildFunction.declarations.insert(textureName);
-						buildFunction.resources.insert(textureName);
-						buildFunction.resources.insert(samplerStateName);						
-						$$.strs[0] = full_expr.str();
-					}
-					| postfix_exp '(' argument_exp_list ')'
-					{
-						string expr1=$1.strs[0];
-						string expr2=$2.strs[0];
-						string params;
-						auto vars			=*($3.vars);
-						delete $3.vars;
-						string expr4		=$4.strs[0];
-						const SfxConfig *config	= gEffect->GetConfig();
-
-						// ok this could be a function call.(((std::basic_string<char,std::char_traits<char>,std::allocator<char> >*)(&(command)))->_Bx._Buf)[0]=='d'
-						string command		=$1.strs[2];
-						const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
-						auto j=functions.find(command);
-
-						auto dec = gEffect->GetDeclarations();
-
-						if(j==functions.end())
-						{
-							params=$3.strs[0];
-						}
-						else
-						{
-							// Right, it's a function call.
-							int num=0;
-							for(auto u=j->second.begin();u!=j->second.end();u++)
-							{
-								if((*u)->parameters.size()<vars.size())
-									continue;
-								// default parameters?
-								if (vars.size() < (*u)->min_parameters)
-									continue;
-								buildFunction.functionsCalled.insert(*u);
-								num++;
-							}
-							for(auto u=j->second.begin();u!=j->second.end();u++)
-							{
-								if ((*u)->parameters.size()<vars.size())
-									continue;
-								if (vars.size() < (*u)->min_parameters)
-									continue;
-								Function &f=**u;
-								// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
-								// We figure out this mapping by looking at the vars list of the function we're calling.
-								// this is the unmodified list, so it corresponds to the call we're making.
-								for(int index=0;index<f.parameters.size();index++)
-								{
-									const sfxstype::variable &param	=f.parameters[index];
-									string declared_name			=param.identifier;
-									// That's how the parameter was declared. Is it in the original list?
-									if(index>=0&&index<vars.size())
-									{
-										const sfxstype::variable &p=vars[index];
-										if(params.size())
-											params+=",";
-
-										// Standard behaviour (HLSL, PSSL & GLSL(Switch))
-										if(!config->combineTexturesSamplers || (config->combineTexturesSamplers && config->combineInShader))
-										{
-											// Nothing to do here...
-											params += p.identifier;
-										}
-										string root_identifier=p.identifier;
-										size_t first_dot=root_identifier.find('.');
-										if(first_dot<root_identifier.length())
-											root_identifier=root_identifier.substr(0,first_dot);
-										// This is how OUR function knows this parameter.
-										buildFunction.declarations.insert(root_identifier);
-										buildFunction.resources.insert(root_identifier);
-										const Declaration *d=gEffect->GetDeclaration(p.identifier);
-
-										if(d && d->declarationType == DeclarationType::SAMPLER)
-										{
-											buildFunction.resources.insert(p.identifier);
-											if(config->combineTexturesSamplers && !config->combineInShader)
-											{   
-												// We pass the index of the array:  uint64 textureXXX[kMaxTextures]; 
-												//								  GetCloudIllum(vec3 pos, int cloudSampler);
-												//								  texture(sampler2D(textureXXX[cloudSampler]),pos);
-												auto sampDec = (SamplerState*)d;
-												params += std::string("1 + ")  + std::to_string(sampDec->register_number);
-											}
-										}
-										else if(d && d->declarationType == DeclarationType::TEXTURE)
-										{
-											if(config->combineTexturesSamplers && !config->combineInShader)
-											{
-												params += p.identifier;
-											}
-										}
-										else
-										{
-											if(config->combineTexturesSamplers && !config->combineInShader)
-											{
-												params += p.identifier;
-											}
-										}
-
-										if(param.shaderResourceType!=ShaderResourceType::UNKNOWN)
-										{
-											buildFunction.resources.insert(p.identifier);
-										}
-									}
-									else if (index >= 0)
-									{
-									}
-									else // could be a textureSampler...
-									{
-										if(params.size())
-											params+=",";
-										params+=declared_name;
-									}
-								}
-								break;
-							}
-							if(num==0)
-							{
-								errSem(string("No matching function definition found for ")+command);
-								break;
-							}
-						}
-						$$.strs[0]=expr1+expr2+params+expr4;
-					}
-					| postfix_exp '(' ')'
-					{
-						// ok this could be a function call.
-						string command=$1.strs[2];
-						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-					}
-					| postfix_exp '.' IDENTIFIER
-					{
-						string expr1=$1.strs[0];
-						if(gEffect->GetDeclaration(expr1)!=nullptr)
-							buildFunction.resources.insert(expr1);
-						string expr3=$3.strs[0];
-						$$.strs[2]=expr3;			//Command
-						$$.strs[0]=expr1+$2.strs[0]+expr3;
-					}
-					| postfix_exp PLUS_PLUS
-					{
-						$$.strs[0]=$1.strs[0]+$2.strs[0];
-					}
-					| postfix_exp MINUS_MINUS
-					{
-						$$.strs[0]=$1.strs[0]+$2.strs[0];
-					}
-assignment_operator: '='	
+	| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
+	{
+		string textureName		=$1.strs[1];
+		string command			=$1.strs[2];
+		string samplerStateName	=$3.strs[0];
+		string otherParams		=$5.strs[0];
+		vector<sfxstype::variable>*	params=$5.vars;
+	
+		ostringstream full_expr;
+		const SfxConfig *config	= gEffect->GetConfig();
+		
+		// Special syntax used to sample:
+		//  e.g noise3D.Sample(clampSampler,uv); -> texture(sampler3D(noise3D | clampSampler),uv);
+		//  We must choose the proper:			  {command}({samplerType}(tex|sampler),params);
+		if( config->samplingSyntax.length() > 0)
+		{
+			ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
+			string samplerType	  = GetSamplerConstructor(type,textureName,&buildFunction);
+			string cmd			  = config->samplingSyntax;
+			find_and_replace(cmd,"{command}",command);
+			find_and_replace(cmd,"{samplerType}",samplerType);
+			string combTexSamp = "";
+			if(config->combineTexturesSamplers )
+			{
+				if(config->combineInShader)
 				{
-					$$.strs[0]=$1.strs[0];
-					$$.token=$1.token;
+					combTexSamp = textureName + ", " + samplerStateName;
 				}
-				| TIMES_EQUALS
-							| OVER_EQUALS
-							| PERCENT_EQUALS
-							| PLUS_EQUALS
-							| MINUS_EQUALS
-							| LEFT_SHIFT_EQUALS
-							| RIGHT_SHIFT_EQUALS
-							| AND_EQUALS
-							| XOR_EQUALS
-							| OR_EQUALS
+				else
+				{
+					// combTexSamp = textureName + "_xfs_" + samplerStateName;
+					combTexSamp = textureName + "[" + samplerStateName + "]";
+				}
+			}
+			const SfxConfig *config	= gEffect->GetConfig();
+			find_and_replace(cmd,"{textureSampler}",combTexSamp);
+			if(!config->reverseTexCoordY||!params||params->size()<1)
+				find_and_replace(cmd,"{otherParams}",otherParams);
+			else
+			{
+				ostringstream otherParams;
+				std::string firstParam=(*params)[0].identifier;
+				otherParams<<"reverse_y_coord("<<firstParam<<")";
+				for(int i=1;i<params->size();i++)
+					otherParams<<","<<(*params)[i].identifier;
+				find_and_replace(cmd,"{otherParams}",otherParams.str());
+				const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
+				auto j=functions.find("reverse_y_coord");
+				for(auto u=j->second.begin();u!=j->second.end();u++)
+					buildFunction.functionsCalled.insert(*u);
+			}
+			full_expr << cmd;	
+		}
+		else
+		{
+			full_expr << textureName << "." << command << "(" << samplerStateName << "," << otherParams << ")";
+		}
+		buildFunction.declarations.insert(textureName);
+		buildFunction.resources.insert(textureName);
+		buildFunction.resources.insert(samplerStateName);						
+		$$.strs[0] = full_expr.str();
+	}
+	| postfix_exp '(' argument_exp_list ')'
+	{
+		string expr1=$1.strs[0];
+		string expr2=$2.strs[0];
+		string params;
+		auto vars			=*($3.vars);
+		delete $3.vars;
+		string expr4		=$4.strs[0];
+		const SfxConfig *config	= gEffect->GetConfig();
+		// ok this could be a function call.(((std::basic_string<char,std::char_traits<char>,std::allocator<char> >*)(&(command)))->_Bx._Buf)[0]=='d'
+		string command		=$1.strs[2];
+		const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
+		auto j=functions.find(command);
+		auto dec = gEffect->GetDeclarations();
+		if(j==functions.end())
+		{
+			params=$3.strs[0];
+		}
+		else
+		{
+			// Right, it's a function call.
+			int num=0;
+			for(auto u=j->second.begin();u!=j->second.end();u++)
+			{
+				if((*u)->parameters.size()<vars.size())
+					continue;
+				// default parameters?
+				if (vars.size() < (*u)->min_parameters)
+					continue;
+				buildFunction.functionsCalled.insert(*u);
+				num++;
+			}
+			for(auto u=j->second.begin();u!=j->second.end();u++)
+			{
+				if ((*u)->parameters.size()<vars.size())
+					continue;
+				if (vars.size() < (*u)->min_parameters)
+					continue;
+				Function &f=**u;
+				// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
+				// We figure out this mapping by looking at the vars list of the function we're calling.
+				// this is the unmodified list, so it corresponds to the call we're making.
+				for(int index=0;index<f.parameters.size();index++)
+				{
+					const sfxstype::variable &param	=f.parameters[index];
+					string declared_name			=param.identifier;
+					// That's how the parameter was declared. Is it in the original list?
+					if(index>=0&&index<vars.size())
+					{
+						const sfxstype::variable &p=vars[index];
+						if(params.size())
+							params+=",";
+						// Standard behaviour (HLSL, PSSL & GLSL(Switch))
+						if(!config->combineTexturesSamplers || (config->combineTexturesSamplers && config->combineInShader))
+						{
+							// Nothing to do here...
+							params += p.identifier;
+						}
+						string root_identifier=p.identifier;
+						size_t first_dot=root_identifier.find('.');
+						if(first_dot<root_identifier.length())
+							root_identifier=root_identifier.substr(0,first_dot);
+						// This is how OUR function knows this parameter.
+						buildFunction.declarations.insert(root_identifier);
+						buildFunction.resources.insert(root_identifier);
+						const Declaration *d=gEffect->GetDeclaration(p.identifier);
+					if(d && d->declarationType == DeclarationType::SAMPLER)
+						{
+							buildFunction.resources.insert(p.identifier);
+							if(config->combineTexturesSamplers && !config->combineInShader)
+							{
+								// We pass the index of the array:  uint64 textureXXX[kMaxTextures]; 
+								//								  GetCloudIllum(vec3 pos, int cloudSampler);
+								//								  texture(sampler2D(textureXXX[cloudSampler]),pos);
+								auto sampDec = (SamplerState*)d;
+								params += std::string("1 + ")  + std::to_string(sampDec->register_number);
+							}
+						}
+						else if(d && d->declarationType == DeclarationType::TEXTURE)
+						{
+							if(config->combineTexturesSamplers && !config->combineInShader)
+							{
+								params += p.identifier;
+							}
+						}
+						else
+						{
+							if(config->combineTexturesSamplers && !config->combineInShader)
+							{
+								params += p.identifier;
+							}
+						}
+					if(param.shaderResourceType!=ShaderResourceType::UNKNOWN)
+						{
+							buildFunction.resources.insert(p.identifier);
+						}
+					}
+					else if (index >= 0)
+					{
+					}
+					else // could be a textureSampler...
+					{
+						if(params.size())
+							params+=",";
+						params+=declared_name;
+					}
+				}
+				break;
+			}
+			if(num==0)
+			{
+				errSem(string("No matching function definition found for ")+command);
+				break;
+			}
+		}
+		$$.strs[0]=expr1+expr2+params+expr4;
+	}
+	| postfix_exp '(' ')'
+	{
+		// ok this could be a function call.
+		string command=$1.strs[2];
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+	| postfix_exp '.' IDENTIFIER
+	{
+		string expr1=$1.strs[0];
+		if(gEffect->GetDeclaration(expr1)!=nullptr)
+			buildFunction.resources.insert(expr1);
+		string expr3=$3.strs[0];
+		$$.strs[2]=expr3;			//Command
+		$$.strs[0]=expr1+$2.strs[0]+expr3;
+	}
+	| postfix_exp PLUS_PLUS
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+	| postfix_exp MINUS_MINUS
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+assignment_operator : '='
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.token=$1.token;
+	}
+	| TIMES_EQUALS
+	| OVER_EQUALS
+	| PERCENT_EQUALS
+	| PLUS_EQUALS
+	| MINUS_EQUALS
+	| LEFT_SHIFT_EQUALS
+	| RIGHT_SHIFT_EQUALS
+	| AND_EQUALS
+	| XOR_EQUALS
+	| OR_EQUALS
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.token=$1.token;
 	}
 
-sampling_command: SAMPLE
-{
-	$$.strs[0]="Sample";
-}
-| SAMPLE_LOD
-{
-	$$.strs[0]="SampleLevel";
-}
-tex_load_command: LOAD
-{
-	$$.strs[0]="Load";
-}
-decl_specs: IDENTIFIER
+sampling_command : SAMPLE
+	{
+		$$.strs[0]="Sample";
+	}
+	| SAMPLE_LOD
+	{
+		$$.strs[0]="SampleLevel";
+	}
+tex_load_command : LOAD
+	{
+		$$.strs[0]="Load";
+	}
+decl_specs : IDENTIFIER
 	{
 		$$.strs[0] = $1.strs[0];
 		$$.strs[1] = $1.strs[0];
@@ -2096,410 +2076,411 @@ decl_specs: IDENTIFIER
 		$$.strs[1] = $2.strs[0];
 	}
 
-type_spec: IDENTIFIER
-{
-	$$.strs[0] = $1.strs[0];
-}
+type_spec : IDENTIFIER
+	{
+		$$.strs[0] = $1.strs[0];
+	}
 
-tex_load_exp:	postfix_exp '.' tex_load_command
-					{
-						string texture=$1.strs[0];
-						string command=$3.strs[0];
-						$$.strs[0]="";
-						// Put the thing we're sampling into strs[1]
-						$$.strs[1]=texture;
-						// We put the command into strs[2]
-						$$.strs[2]=command;
-					}
-sampling_exp:	postfix_exp '.' sampling_command
-					{
-						string texture=$1.strs[0];
-						string command=$3.strs[0];
-						$$.strs[0]="";
-						// Put the thing we're sampling into strs[1]
-						$$.strs[1]=texture;
-						// We put the command into strs[2]
-						$$.strs[2]=command;
-					}
-get_dims_exp:	postfix_exp '.' GET_DIMS
-					{
-						string texture=$1.strs[0];
-						string command=$3.strs[0];
-						$$.strs[0]=texture+$2.strs[0]+command;
-						// Put the thing we're sampling into strs[1]
-						$$.strs[1]=texture;
-						// We put the command into strs[2]
-						$$.strs[2]=command;
-					}			
-argument_exp_list	: argument_exp_list ',' assignment_exp
-					{
-						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-						$$.vars=$1.vars;
-						YYSTYPE::variable var;
-						var.identifier	=$3.strs[0];
-						$$.vars->push_back(var);
-					}
-					| assignment_exp
-					{
-						$$.strs[0]=$1.strs[0];
-						$$.vars = new vector<YYSTYPE::variable>;
-						YYSTYPE::variable var;
-						var.identifier	=$1.strs[0];
-						$$.vars->push_back(var);
-					}
-
-
-for_init_statement: expression
-			{
-				$$.strs[0]=$1.strs[0];
-			}
-			| declaration
-			{
-				$$.strs[0]=$1.strs[0];
-			}
-			| %empty
-			{}
-statement:	COMMENT
-			{
-				$$.strs[0]=$1.strs[0];
-				$$.strs[1]="";
-			}
-			| WHITESPACE
-			{
-				$$.strs[0]=$1.strs[0];
-			}
-			| expression ';'
-			{
-				$$.strs[0]=$1.strs[0]+$2.strs[0];
-				$$.lineno=$1.lineno;
-				$$.strs[1]="";
-			}
-			|  ';'
-			{
-				$$.strs[0]=$1.strs[0];
-				$$.strs[1]="";
-			}
-			| declaration ';'
-			{
-				$$.strs[0]=$1.strs[0]+$2.strs[0];
-				$$.strs[1]="";
-			}
-			| compound_statement
-			{
-				string compound_statement=$1.strs[0];
-				$$.strs[0]=compound_statement;
-				$$.strs[1]="";
-			}
-			| IF '(' expression ')' statement
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
-					$$.strs[1]="";
-				}
-			| IF '(' expression ')' statement ELSE statement
-				{
-					string s1=$1.strs[0];
-					string s2=$2.strs[0];
-					string s3=$3.strs[0];
-					string s4=$4.strs[0];
-					string s5=$5.strs[0];
-					string s6=$6.strs[0];
-					string s7=$7.strs[0];
-					$$.strs[0]=(s1+s2+s3+s4+s5+s6+"\n")+s7;
-					$$.strs[1]="";
-				}
-			| WHILE '(' expression ')' statement
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
-					$$.strs[1]="";
-				}
-			| DO statement WHILE '(' expression ')' ';'
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
-					$$.strs[1]="";
-				}
-			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
-				{
-					string statement=$9.strs[0];
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+statement;
-					$$.strs[1]="";
-				}
-			| SWITCH '(' expression ')' '{' switch_cases '}'
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
-				}
-			| GOTO IDENTIFIER ';'
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-					$$.strs[1]="";
-				}
-			| CONTINUE ';'
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
-					$$.strs[1]="";
-				}
-			| BREAK ';'
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
-					$$.strs[1]="";
-				}
-			| RETURN optional_expression ';'
-			{
-				string optional_expression=$2.strs[0];
-				if(read_shader&&optional_expression.length()>0)
-				{
-					$$.strs[0] = ($1.strs[0] + " ") + optional_expression + $3.strs[0];
-					$$.strs[1]=optional_expression;
-				}
-				else
-				{
-					$$.strs[0]=($1.strs[0]+" ")+optional_expression+$3.strs[0];
-					$$.strs[1]=optional_expression;
-				}
-				$$.lineno=$1.lineno;
-			}
-			| line_statement_in_shader
-			{
-				$$.strs[0]=$1.strs[0];
-				$$.strs[1]="";
-				$$.lineno=$1.lineno;
-			}
+tex_load_exp : postfix_exp '.' tex_load_command
+	{
+		string texture=$1.strs[0];
+		string command=$3.strs[0];
+		$$.strs[0]="";
+		// Put the thing we're sampling into strs[1]
+		$$.strs[1]=texture;
+		// We put the command into strs[2]
+		$$.strs[2]=command;
+	}
+sampling_exp :	postfix_exp '.' sampling_command
+	{
+		string texture=$1.strs[0];
+		string command=$3.strs[0];
+		$$.strs[0]="";
+		// Put the thing we're sampling into strs[1]
+		$$.strs[1]=texture;
+		// We put the command into strs[2]
+		$$.strs[2]=command;
+	}
+get_dims_exp : postfix_exp '.' GET_DIMS
+	{
+		string texture=$1.strs[0];
+		string command=$3.strs[0];
+		$$.strs[0]=texture+$2.strs[0]+command;
+		// Put the thing we're sampling into strs[1]
+		$$.strs[1]=texture;
+		// We put the command into strs[2]
+		$$.strs[2]=command;
+	}			
+argument_exp_list : argument_exp_list ',' assignment_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		$$.vars=$1.vars;
+		YYSTYPE::variable var;
+		var.identifier	=$3.strs[0];
+		$$.vars->push_back(var);
+	}
+	| assignment_exp
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.vars = new vector<YYSTYPE::variable>;
+		YYSTYPE::variable var;
+		var.identifier	=$1.strs[0];
+		$$.vars->push_back(var);
+	}
 
 
-line_statement: LINE lex_fx NUM number_or_filename lex_passthrough
-{
-	last_linenumber=$3.num;
-	current_filenumber=$4.num;
-	current_filename=$4.strs[0];
-	if(current_filenumber<0)
-		current_filenumber=gEffect->GetFilenumber(current_filename);
-	else if(current_filename=="")
-		current_filename=gEffect->GetFilename(current_filenumber);
-	global_linenumber=$1.lineno;
-	//WriteLineNumber(gEffect->m_sharedCode,current_filename,last_linenumber);
-}
+for_init_statement : expression
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| declaration
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| %empty
+	{}
+statement : COMMENT
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]="";
+	}
+	| WHITESPACE
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| expression ';'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+		$$.lineno=$1.lineno;
+		$$.strs[1]="";
+	}
+	| ';'
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]="";
+	}
+	| declaration ';'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+		$$.strs[1]="";
+	}
+	| compound_statement
+	{
+		string compound_statement=$1.strs[0];
+		$$.strs[0]=compound_statement;
+		$$.strs[1]="";
+	}
+	| IF '(' expression ')' statement
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+		$$.strs[1]="";
+	}
+	| IF '(' expression ')' statement ELSE statement
+	{
+		string s1=$1.strs[0];
+		string s2=$2.strs[0];
+		string s3=$3.strs[0];
+		string s4=$4.strs[0];
+		string s5=$5.strs[0];
+		string s6=$6.strs[0];
+		string s7=$7.strs[0];
+		$$.strs[0]=(s1+s2+s3+s4+s5+s6+"\n")+s7;
+		$$.strs[1]="";
+	}
+	| WHILE '(' expression ')' statement
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+		$$.strs[1]="";
+	}
+	| DO statement WHILE '(' expression ')' ';'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
+		$$.strs[1]="";
+	}
+	| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
+	{
+		string statement=$9.strs[0];
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+statement;
+		$$.strs[1]="";
+	}
+	| SWITCH '(' expression ')' '{' switch_cases '}'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
+	}
+	| GOTO IDENTIFIER ';'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		$$.strs[1]="";
+	}
+	| CONTINUE ';'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+		$$.strs[1]="";
+	}
+	| BREAK ';'
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+		$$.strs[1]="";
+	}
+	| RETURN optional_expression ';'
+	{
+		string optional_expression=$2.strs[0];
+		if(read_shader&&optional_expression.length()>0)
+		{
+			$$.strs[0] = ($1.strs[0] + " ") + optional_expression + $3.strs[0];
+			$$.strs[1]=optional_expression;
+		}
+		else
+		{
+			$$.strs[0]=($1.strs[0]+" ")+optional_expression+$3.strs[0];
+			$$.strs[1]=optional_expression;
+		}
+		$$.lineno=$1.lineno;
+	}
+	| line_statement_in_shader
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]="";
+		$$.lineno=$1.lineno;
+	}
+
+
+line_statement : LINE lex_fx NUM number_or_filename lex_passthrough
+	{
+		last_linenumber=$3.num;
+		current_filenumber=$4.num;
+		current_filename=$4.strs[0];
+		if(current_filenumber<0)
+			current_filenumber=gEffect->GetFilenumber(current_filename);
+		else if(current_filename=="")
+			current_filename=gEffect->GetFilename(current_filenumber);
+		global_linenumber=$1.lineno;
+	}
 
 ignore_line_statement: LINE NUM number_or_filename
-{
-	last_linenumber=$2.num;
-	current_filenumber=$3.num;
-	current_filename=$3.strs[0];
-	if(current_filenumber<0)
-		current_filenumber=gEffect->GetFilenumber(current_filename);
-	else if(current_filename=="")
-		current_filename=gEffect->GetFilename(current_filenumber);
-	global_linenumber=$1.lineno;
-}
+	{
+		last_linenumber=$2.num;
+		current_filenumber=$3.num;
+		current_filename=$3.strs[0];
+		if(current_filenumber<0)
+			current_filenumber=gEffect->GetFilenumber(current_filename);
+		else if(current_filename=="")
+			current_filename=gEffect->GetFilename(current_filenumber);
+		global_linenumber=$1.lineno;
+	}
 
-shader_and_layout: SHADER shader_fx 
-{
-	string s1=$1.strs[0];
-	$$.strs[0]=s1;
-};
+shader_and_layout : SHADER shader_fx 
+	{
+		string s1=$1.strs[0];
+		$$.strs[0]=s1;
+	};
 	
 lex_fx : %empty
-{ /* Switch lex to fx scanning */
-	read_shader=false;
-	read_function = false;
-	gLexPassthrough=false;
-}
+	{ 
+		//Switch lex to fx scanning
+		read_shader=false;
+		read_function = false;
+		gLexPassthrough=false;
+	}
 
 shader_fx : %empty
-{
-	read_shader=true;
-	read_function = false;
-	gLexPassthrough=false;
-}
+	{
+		read_shader=true;
+		read_function = false;
+		gLexPassthrough=false;
+	}
 
 number_or_filename : NUM
-{
-	 $$.num=$1.num;
-	 $$.strs[0]="";
-}
-| QUOTED_STRING
-{
-	 // Strip the quotes. I think we are guaranteed that they will be the 0 and length-1 characters in the string.
-	 string str=$1.strs[0];
-	 str=str.substr(1,str.length()-2);
-	 $$.strs[0]=str;
-	 $$.num=-1;
-};
+	{
+		 $$.num=$1.num;
+		 $$.strs[0]="";
+	}
+	| QUOTED_STRING
+	{
+		 // Strip the quotes. I think we are guaranteed that they will be the 0 and length-1 characters in the string.
+		 string str=$1.strs[0];
+		 str=str.substr(1,str.length()-2);
+		 $$.strs[0]=str;
+		 $$.num=-1;
+	};
 
 lex_passthrough : %empty
-{ /* Switch lex to passthrough mode */
-	gLexPassthrough=false;
-}
-;
+	{ 
+		//Switch lex to passthrough mode
+		gLexPassthrough=false;
+	};
 
 read_block : %empty
-{ /* Read next block */
-	$$.strs[0]= sfxreadblock('{', '}');
-	$$.lineno= sfxget_lineno();
-}
+	{ 
+		//Read next block
+		$$.strs[0]= sfxreadblock('{', '}');
+		$$.lineno= sfxget_lineno();
+	}
 
-struct_definition: '{' struct_member_list '}'
-{
-	$$.strs[0]="{\n";
-	$$.strs[0]+=($2.strs[0]+"\n}\n");
-}
+struct_definition : '{' struct_member_list '}'
+	{
+		$$.strs[0]="{\n";
+		$$.strs[0]+=($2.strs[0]+"\n}\n");
+	}
 
-switch_cases: switch_cases switch_case
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-} | switch_case
-{
-	$$.strs[0]=$1.strs[0];
-}
+switch_cases : switch_cases switch_case
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	} 
+	| switch_case
+	{
+		$$.strs[0]=$1.strs[0];
+	}
 
-switch_case: CASE expression ':' statement_list
-{
-	$$.strs[0]=($1.strs[0]+" ")+$2.strs[0]+$3.strs[0]+$4.strs[0];
-} | DEFAULT ':' statement_list
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
+switch_case : CASE expression ':' statement_list
+	{
+		$$.strs[0]=($1.strs[0]+" ")+$2.strs[0]+$3.strs[0]+$4.strs[0];
+	} 
+	| DEFAULT ':' statement_list
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
 
-struct_member_list: struct_member_list struct_element
-{
-	string list			=$1.strs[0];
-	string new_member	=$2.strs[0];
-	$$.strs[0]=(list+"\n")+new_member;
-}
-   | struct_element
-{
-   string member	=$1.strs[0];
-$$.strs[0]=member;
-}
-struct_element: struct_memb
-{
-   string str=$1.strs[0];
-//if(write_line_number_next)
-//		str=
-$$.strs[0]	=str;
-}
-   |
-  ignore_line_statement
-{
-   $$.lineno = $1.lineno;
-$$.num = -1;
-$$.strs[0]	="";
-}
-   | COMMENT
-{
-   Skip();
-}
-   | WHITESPACE
-{
-   Skip();
-}
-optional_uniform: UNIFORM
-{
-	$$.strs[0]="uniform";
-}| UNIFORM FLAT
-{
-	$$.strs[0] = "uniform flat";
-} | FLAT
-{
-	$$.strs[0] = "flat";
-}
-| %empty
-{
-	$$.strs[0]="";
-}
-struct_memb: optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
-{
-   $$.lineno		=$4.lineno;
-   string unif		=$1.strs[0];
-   string type		=$2.strs[0];
-   string name		=$3.strs[0];
-   string sq		=$4.strs[0];
-   string sem		=$5.strs[0];
-   StructMember s;
-   s.type		=type;
-   s.semantic	=sem;
-   s.name		=name+sq;
-   buildStruct.m_structMembers.push_back(s);
-   $$.strs[0]=(unif.length()?(unif+" "):"");
-   $$.strs[0]+=(type+" ")+name;
-   $$.strs[0]+=sq;
-   $$.strs[0]+=sem.length()?(string(": ")+sem):"";
-   $$.strs[0]+=";";
-}
+struct_member_list : struct_member_list struct_element
+	{
+		string list			=$1.strs[0];
+		string new_member	=$2.strs[0];
+		$$.strs[0]=(list+"\n")+new_member;
+	}
+	| struct_element
+	{
+		string member=$1.strs[0];
+		$$.strs[0]=member;
+	}
+struct_element : struct_memb
+	{
+		string str=$1.strs[0];
+		$$.strs[0]	=str;
+	}
+	| ignore_line_statement
+	{
+		$$.lineno = $1.lineno;
+		$$.num = -1;
+		$$.strs[0]	="";
+	}
+	| COMMENT
+	{
+		Skip();
+	}
+	| WHITESPACE
+	{
+		Skip();
+	}
+optional_uniform : UNIFORM
+	{
+		$$.strs[0]="uniform";
+	}
+	| UNIFORM FLAT
+	{
+		$$.strs[0] = "uniform flat";
+	}
+	| FLAT
+	{
+		$$.strs[0] = "flat";
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+	}
+struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
+	{
+		$$.lineno		=$4.lineno;
+		string unif		=$1.strs[0];
+		string type		=$2.strs[0];
+		string name		=$3.strs[0];
+		string sq		=$4.strs[0];
+		string sem		=$5.strs[0];
+		StructMember s;
+		s.type		=type;
+		s.semantic	=sem;
+		s.name		=name+sq;
+		buildStruct.m_structMembers.push_back(s);
+		$$.strs[0]=(unif.length()?(unif+" "):"");
+		$$.strs[0]+=(type+" ")+name;
+		$$.strs[0]+=sq;
+		$$.strs[0]+=sem.length()?(string(": ")+sem):"";
+		$$.strs[0]+=";";
+	}
 
-opt_sq: '[' opt_num ']'
-{
-	$$.strs[0]=(string("[")+$2.strs[0])+"]";
-	$$.num=$2.num;
-}
-| %empty
-{
-	$$.strs[0]="";
-	$$.num=0;
-};
-opt_num: number_exp
-{
-	$$.strs[0]=$1.strs[0];
-	$$.num=$1.num;
-}
-| %empty
-{
-	$$.strs[0]="";
-	$$.num=0;
-}
-// NOTE: Need comprehensive arithemetic for declaration integers/
-| NUM '*' NUM
-{
-	$$.num=$1.num*$3.num;
-	$$.strs[0]=stringFormat("%d",$$.num);
-}
-
+opt_sq : '[' opt_num ']'
+	{
+		$$.strs[0]=(string("[")+$2.strs[0])+"]";
+		$$.num=$2.num;
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+		$$.num=0;
+	};
+opt_num : number_exp
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+		$$.num=0;
+	}
+	// NOTE: Need comprehensive arithemetic for declaration integers
+	| NUM '*' NUM
+	{
+		$$.num=$1.num*$3.num;
+		$$.strs[0]=stringFormat("%d",$$.num);
+	}
 
 optional_additional_identifier : ',' IDENTIFIER
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-}
-| %empty
-{
-	$$.strs[0]="";
-}
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0];
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+	}
 
 param_declaration_list : param_declaration_list ',' param_declaration
-{
-	$$.vars=$1.vars;
+	{
+		$$.vars=$1.vars;
 
-	YYSTYPE::variable var;
-	var.shaderResourceType=$3.shaderResourceType;
-	var.type		=$3.strs[0];
-	var.identifier	=$3.strs[1];
-	var.semantic	=$3.strs[2];
-	var.storage		=$3.strs[3];
-	var.templ		=$3.strs[4];
-	var.default_	=$3.strs[5];
-	var.num			=$3.num;
-	var.has_default	=$3.token!=0;
-	$$.vars->push_back(var);
-	$$.strs[0]		=($1.strs[0]+",")+$3.strs[0];
-}
-| param_declaration
-{
-	YYSTYPE::variable var;
-	var.shaderResourceType=$1.shaderResourceType;
-	var.type		=$1.strs[0];
-	var.identifier	=$1.strs[1];
-	var.semantic	=$1.strs[2];
-	var.storage		=$1.strs[3];
-	var.templ		=$1.strs[4];
-	var.default_	=$1.strs[5];
-	var.num			=$1.num;
-	var.has_default	=$1.token!=0;
-	$$.vars			=new vector<YYSTYPE::variable>;
-	$$.vars->push_back(var);
-	$$.strs[0]		=$1.strs[0];
-}
-| %empty
-{
-	$$.vars = new vector<YYSTYPE::variable>;
-	$$.strs[0]="";
-}
+		YYSTYPE::variable var;
+		var.shaderResourceType=$3.shaderResourceType;
+		var.type		=$3.strs[0];
+		var.identifier	=$3.strs[1];
+		var.semantic	=$3.strs[2];
+		var.storage		=$3.strs[3];
+		var.templ		=$3.strs[4];
+		var.default_	=$3.strs[5];
+		var.num			=$3.num;
+		var.has_default	=$3.token!=0;
+		$$.vars->push_back(var);
+		$$.strs[0]		=($1.strs[0]+",")+$3.strs[0];
+	}
+	| param_declaration
+	{
+		YYSTYPE::variable var;
+		var.shaderResourceType=$1.shaderResourceType;
+		var.type		=$1.strs[0];
+		var.identifier	=$1.strs[1];
+		var.semantic	=$1.strs[2];
+		var.storage		=$1.strs[3];
+		var.templ		=$1.strs[4];
+		var.default_	=$1.strs[5];
+		var.num			=$1.num;
+		var.has_default	=$1.token!=0;
+		$$.vars			=new vector<YYSTYPE::variable>;
+		$$.vars->push_back(var);
+		$$.strs[0]		=$1.strs[0];
+	}
+	| %empty
+	{
+		$$.vars = new vector<YYSTYPE::variable>;
+		$$.strs[0]="";
+	}
 
 // For geometry shader, we must be able to cope with:
 // point particleVertexOutput inp[1]
@@ -2513,167 +2494,172 @@ param_declaration_list : param_declaration_list ',' param_declaration
 // we need for the name to be able to have an array dimension.
 // and we need the type to be able to have a template.
 param_declaration : type_qualifier storage param location
-{
-	$$.strs[0]	=$3.strs[0];			// type
-	$$.strs[1]	=$3.strs[1];			// name
-	$$.strs[2]	=$4.strs[0];			// semantic
-	$$.strs[3]	=$2.strs[0];			// in/out, point, line
-	$$.strs[4]	=$3.strs[2];			// optional template for type
-	$$.strs[5] = $3.strs[3];			// optional default
-	$$.num		=$3.num;				// if an array
-	$$.token	=$3.token;
-	$$.shaderResourceType	=$3.shaderResourceType;
-}
+	{
+		$$.strs[0]	=$3.strs[0];			// type
+		$$.strs[1]	=$3.strs[1];			// name
+		$$.strs[2]	=$4.strs[0];			// semantic
+		$$.strs[3]	=$2.strs[0];			// in/out, point, line
+		$$.strs[4]	=$3.strs[2];			// optional template for type
+		$$.strs[5] = $3.strs[3];			// optional default
+		$$.num		=$3.num;				// if an array
+		$$.token	=$3.token;
+		$$.shaderResourceType	=$3.shaderResourceType;
+	}
 
 type_qualifier: CONST
-{
-	$$.strs[0]	=$1.strs[0];
-} | GROUPSHARED
-{
-	$$.strs[0] = $1.strs[0];
-} | %empty
-{
-	$$.strs[0] = "";
-}
+	{
+		$$.strs[0]	=$1.strs[0];
+	} 
+	| GROUPSHARED
+	{
+		$$.strs[0] = $1.strs[0];
+	} 
+	| %empty
+	{
+		$$.strs[0] = "";
+	}
 		
 type : IDENTIFIER optional_template_type
-{
-	$$.strs[0]=$1.strs[0];	// type
-	$$.strs[1]=$2.strs[1];	// template if present
-	$$.shaderResourceType		=(ShaderResourceType)0;
-} | resource_type optional_template_type
-{
-	$$.strs[0]=$1.strs[0];	// type
-	$$.strs[1]=$2.strs[1];	// template if present
-	$$.shaderResourceType		=ToShaderResourceType($1.token);
-}
+	{
+		$$.strs[0]=$1.strs[0];	// type
+		$$.strs[1]=$2.strs[1];	// template if present
+		$$.shaderResourceType		=(ShaderResourceType)0;
+	} 
+	| resource_type optional_template_type
+	{
+		$$.strs[0]=$1.strs[0];	// type
+		$$.strs[1]=$2.strs[1];	// template if present
+		$$.shaderResourceType		=ToShaderResourceType($1.token);
+	}
 
+param : type IDENTIFIER optional_index optional_default
+	{
+		$$.strs[0]	=$1.strs[0];	// type
+		$$.strs[1]	=$2.strs[0];	// name
+		$$.strs[2]	=$1.strs[1];	// template if present
+		$$.strs[3]	=$4.strs[0];	// default
+		$$.num		=$3.num;
+		$$.token	=$4.token;
+		$$.shaderResourceType	=$1.shaderResourceType;
+	}
 
+storage : STORAGEQ
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+	}
 
-param: type IDENTIFIER optional_index optional_default
-{
-	$$.strs[0]	=$1.strs[0];	// type
-	$$.strs[1]	=$2.strs[0];	// name
-	$$.strs[2]	=$1.strs[1];	// template if present
-	$$.strs[3]	=$4.strs[0];	// default
-	$$.num		=$3.num;
-	$$.token	=$4.token;
-	$$.shaderResourceType	=$1.shaderResourceType;
-}
+location : ':' NUM
+	{
+		$$.strs[0]="";
+		$$.num=$2.num;
+		$$.rType=REGISTER_INT;
+	}
+	| ':' IDENTIFIER
+	{
+		$$.strs[0]=$2.strs[0];
+		$$.rType=REGISTER_NAME;
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+		$$.rType=REGISTER_NONE;
+	};
 
-storage: STORAGEQ
-{
-	$$.strs[0]=$1.strs[0];
-}
-| %empty
-{
-	$$.strs[0]="";
-}
-
-location : ':' NUM {
-	$$.strs[0]="";
-	$$.num=$2.num;
-	$$.rType=REGISTER_INT;
-}
-	| ':' IDENTIFIER {
-	$$.strs[0]=$2.strs[0];
-	$$.rType=REGISTER_NAME;
-}
-	| %empty {
-	$$.strs[0]="";
-	$$.rType=REGISTER_NONE;
-}
-;
-
-optional_semantic:':' IDENTIFIER
-{
-	$$.strs[0]=$2.strs[0];
-}
-| %empty {
-	$$.strs[0]="";
-}
-;
+optional_semantic : ':' IDENTIFIER
+	{
+		$$.strs[0]=$2.strs[0];
+	}
+	| %empty 
+	{
+		$$.strs[0]="";
+	}	;
 tech_def : pass_list
-{
-	Technique *t = new Technique(*($1.passes));
-	$$.tech = t;
-	delete $1.passes;
-};
-
-pass_list: pass_list pass_def
-{
-	$$.passes = $1.passes;
-	string name = $2.strs[0];
-	Pass *p = $2.prog;
-	if (p)
 	{
-		(*$$.passes)[name] = *(p);
-	}
-	delete $2.prog;
-}
-| pass_def
-{
-	map < string, Pass > *m=new map < string, Pass >;
-	$$.passes = m;
-	string name = $1.strs[0];
-	Pass *p = $1.prog;
-	if (p)
+		Technique *t = new Technique(*($1.passes));
+		$$.tech = t;
+		delete $1.passes;
+	};
+
+pass_list : pass_list pass_def
 	{
-		Pass &newp = (*m)[name];
-		newp= *p;
+		$$.passes = $1.passes;
+		string name = $2.strs[0];
+		Pass *p = $2.prog;
+		if (p)
+		{
+			(*$$.passes)[name] = *(p);
+		}
+		delete $2.prog;
 	}
-	delete p;
-};
+	| pass_def
+	{
+		map < string, Pass > *m=new map < string, Pass >;
+		$$.passes = m;
+		string name = $1.strs[0];
+		Pass *p = $1.prog;
+		if (p)
+		{
+			Pass &newp = (*m)[name];
+			newp= *p;
+		}
+		delete p;
+	};
 
-legacy_pass_def: PASS IDENTIFIER '{' prog_def '}'
-{
-	$$.prog = $4.prog;
-	$$.strs[0] = $2.strs[0];
-}
+legacy_pass_def : PASS IDENTIFIER '{' prog_def '}'
+	{
+		$$.prog = $4.prog;
+		$$.strs[0] = $2.strs[0];
+	}
 
-pass_def: legacy_pass_def
-{
-	$$.prog = $1.prog;
-	$$.strs[0] = $1.strs[0];
-} | raytrace_pass_def
-{
-}
+pass_def : legacy_pass_def
+	{
+		$$.prog = $1.prog;
+		$$.strs[0] = $1.strs[0];
+	} 
+	| raytrace_pass_def
+	{
+	}
 
-raytrace_pass_def: RAYTRACE_PASS IDENTIFIER '{' raytrace_def '}'
-{
-	$$.prog = $4.prog;
-	$$.strs[0] = $2.strs[0];
-}
+raytrace_pass_def : RAYTRACE_PASS IDENTIFIER '{' raytrace_def '}'
+	{
+		$$.prog = $4.prog;
+		$$.strs[0] = $2.strs[0];
+	}
 
 prog_def : shaders_list
-{
-	$$.prog = new Pass(buildPassState);
-	buildPassState=PassState();
-};
+	{
+		$$.prog = new Pass(buildPassState);
+		buildPassState=PassState();
+	};
 
 raytrace_def : raytrace_shaders_list
-{
-	$$.prog = new Pass(buildPassState);
-	buildPassState=PassState();
-};
+	{
+		$$.prog = new Pass(buildPassState);
+		buildPassState=PassState();
+	};
 raytrace_shaders_list : raytrace_shaders_list raytrace_shader_def
-{
-} | raytrace_shader_def
-{
-}
+	{
+	} 
+	| raytrace_shader_def
+	{
+	}
 shaders_list : shaders_list shader_def
 	{
-			ShaderType sType	=$2.sType;
-			string name			=$2.strs[0];
-			buildPassState.shaders[sType]		=name;
+			ShaderType sType				=$2.sType;
+			string name						=$2.strs[0];
+			buildPassState.shaders[sType]	=name;
 	}
 	| shader_def
 	{
-			string name			=$1.strs[0];
-			ShaderType sType	=$1.sType;
-			$$.strs[0]			=name;
-			$$.sType			=sType;
-			buildPassState.shaders[sType]		=name;
+			string name						=$1.strs[0];
+			ShaderType sType				=$1.sType;
+			$$.strs[0]						=name;
+			$$.sType						=sType;
+			buildPassState.shaders[sType]	=name;
 	}
 	| shaders_list shader_fn
 	{
@@ -2687,15 +2673,15 @@ shaders_list : shaders_list shader_def
 		$$.strs[1]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	};
-vec4: IDENTIFIER '(' P_FLOAT ',' P_FLOAT ',' P_FLOAT ',' P_FLOAT ')'
-	  {
-		  $$.strs[0]=$1.strs[0]+"(";
-		  $$.strs[0]+=$3.strs[0]+",";
-		  $$.strs[0]+=$5.strs[0]+",";
-		  $$.strs[0]+=$7.strs[0]+",";
-		  $$.strs[0]+=$9.strs[0]+")";
-	  };
-topology:  POINTLIST_TOPOLOGY		
+vec4 : IDENTIFIER '(' P_FLOAT ',' P_FLOAT ',' P_FLOAT ',' P_FLOAT ')'
+	{
+		$$.strs[0]=$1.strs[0]+"(";
+		$$.strs[0]+=$3.strs[0]+",";
+		$$.strs[0]+=$5.strs[0]+",";
+		$$.strs[0]+=$7.strs[0]+",";
+		$$.strs[0]+=$9.strs[0]+")";
+	};
+topology :  POINTLIST_TOPOLOGY		
 	{
 		  $$.strs[0]=$1.strs[0];
 			$$.topology=POINTLIST;
@@ -2741,571 +2727,582 @@ topology:  POINTLIST_TOPOLOGY
 		$$.topology=TRIANGLESTRIP_ADJACENCY;
 	}		
 shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
-			 {
-				 buildPassState.rasterizerState.objectName=$3.strs[0];
-				 auto dec=gEffect->GetDeclaration(buildPassState.rasterizerState.objectName);
-				 if(dec)
-					 dec->ref_count++;
-				 else
-				 {
-					 errSem("Undeclared Rasterizer State",$1.lineno);
-				 }
-			 }
-			| SET_TOPOLOGY_COMMAND '(' topology ')' ';'
-			{
-				 buildPassState.topologyState.apply=true;
-				 buildPassState.topologyState.topology=$3.topology;
-			}
-			 | SET_DEPTH_COMMAND '(' IDENTIFIER ',' NUM ')' ';'
-			 {
-				 string depth_name=$3.strs[0];
-				 buildPassState.depthStencilState.objectName=depth_name;
-				 auto dec=gEffect->GetDeclaration(buildPassState.depthStencilState.objectName);
-				 if(dec)
-					 dec->ref_count++;
-				 else
-				 {
-					 errSem("Undeclared Depth Stencil State",$1.lineno);
-				 }
-				 int index=$5.num;
-			 }
-			| SET_RTFORMAT_COMMAND '(' IDENTIFIER ')' ';'
-			 {
-				 buildPassState.renderTargetFormatState.objectName=$3.strs[0];
-				 auto dec=gEffect->GetDeclaration(buildPassState.renderTargetFormatState.objectName);
-				 if(dec)
-					 dec->ref_count++;
-				 else
-				 {
-					 errSem("Undeclared Render Target Format  State",$1.lineno);
-				 }
-			 }
-			 | SET_BLEND_COMMAND '(' IDENTIFIER ',' vec4 ',' NUM ')' ';'
-			 {
-				 string blend_name=$3.strs[0];
-				 string vec4text=$5.strs[0];
-				 buildPassState.blendState.objectName=blend_name;
-				 buildPassState.blendState.sampleMask=$7.unum;
-				// buildPassState.blendState.blendFactor=
-				 auto dec=gEffect->GetDeclaration(buildPassState.blendState.objectName);
-				 if(dec)
-					 dec->ref_count++;
-				 else
-				 {
-					 errSem("Undeclared Blend State",$1.lineno);
-				 }
-				 //TODO: Implement vec4
-			//	 buildPassState.blendState.blendFactor=vec4
-			 };
+	{
+		 buildPassState.rasterizerState.objectName=$3.strs[0];
+		 auto dec=gEffect->GetDeclaration(buildPassState.rasterizerState.objectName);
+		 if(dec)
+			 dec->ref_count++;
+		 else
+		 {
+			 errSem("Undeclared Rasterizer State",$1.lineno);
+		 }
+	}
+	| SET_TOPOLOGY_COMMAND '(' topology ')' ';'
+	{
+		 buildPassState.topologyState.apply=true;
+		 buildPassState.topologyState.topology=$3.topology;
+	}
+	| SET_DEPTH_COMMAND '(' IDENTIFIER ',' NUM ')' ';'
+	{
+		string depth_name=$3.strs[0];
+		buildPassState.depthStencilState.objectName=depth_name;
+		auto dec=gEffect->GetDeclaration(buildPassState.depthStencilState.objectName);
+		if(dec)
+			dec->ref_count++;
+		else
+		{
+			errSem("Undeclared Depth Stencil State",$1.lineno);
+		}
+		int index=$5.num;
+	}
+	| SET_RTFORMAT_COMMAND '(' IDENTIFIER ')' ';'
+	{
+		buildPassState.renderTargetFormatState.objectName=$3.strs[0];
+		auto dec=gEffect->GetDeclaration(buildPassState.renderTargetFormatState.objectName);
+		if(dec)
+			dec->ref_count++;
+		else
+		{
+			errSem("Undeclared Render Target Format  State",$1.lineno);
+		}
+	}
+	| SET_BLEND_COMMAND '(' IDENTIFIER ',' vec4 ',' NUM ')' ';'
+	{
+		string blend_name=$3.strs[0];
+		string vec4text=$5.strs[0];
+		buildPassState.blendState.objectName=blend_name;
+		buildPassState.blendState.sampleMask=$7.unum;
+		// buildPassState.blendState.blendFactor=
+		auto dec=gEffect->GetDeclaration(buildPassState.blendState.objectName);
+		if(dec)
+			dec->ref_count++;
+		else
+		{
+			errSem("Undeclared Blend State",$1.lineno);
+		}
+		 //TODO: Implement vec4
+	};
 
- raytrace_shader_def: set_raytrace_shader '=' shader_compile_or_instance ';'
- {
-	$$.strs[0]=$3.strs[0];
-	buildPassState.shaders[$1.sType]=$3.strs[0];
-	// the compiled shader:
-	ShaderInstance *shaderInstance=gEffect->GetShaderInstance($3.strs[0],$1.sType);
- } | SET_HIT_GROUP IDENTIFIER '{' hit_group_shader_list '}' ';'
- {
-	 $$.strs[0] = $2.strs[0];
-	 buildPassState.raytraceHitGroups[$2.strs[0]] = buildRaytraceHitGroup;
-	 buildRaytraceHitGroup = RaytraceHitGroup();
- } | SET_MISS_SHADERS '{' miss_shader_list '}' ';'
- {
- } | SET_CALLABLE_SHADERS '{' callable_shader_list '}' ';'
- {
- } | SET_RAY_TRACING_SHADER_CONFIG '{' ray_tracing_shader_config_list '}' ';'
- {
- } | SET_RAY_TRACING_PIPELINE_CONFIG '{' ray_tracing_pipeline_config_list '}' ';'
- {
- };
+raytrace_shader_def : set_raytrace_shader '=' shader_compile_or_instance ';'
+	{
+		$$.strs[0]=$3.strs[0];
+		buildPassState.shaders[$1.sType]=$3.strs[0];
+		// the compiled shader:
+		ShaderInstance *shaderInstance=gEffect->GetShaderInstance($3.strs[0],$1.sType);
+	}
+	| SET_HIT_GROUP IDENTIFIER '{' hit_group_shader_list '}' ';'
+	{
+		 $$.strs[0] = $2.strs[0];
+		 buildPassState.raytraceHitGroups[$2.strs[0]] = buildRaytraceHitGroup;
+		 buildRaytraceHitGroup = RaytraceHitGroup();
+	} 
+	| SET_MISS_SHADERS '{' miss_shader_list '}' ';'
+	{
+	} 
+	| SET_CALLABLE_SHADERS '{' callable_shader_list '}' ';'
+	{
+	}
+	| SET_RAY_TRACING_SHADER_CONFIG '{' ray_tracing_shader_config_list '}' ';'
+	{
+	}
+	| SET_RAY_TRACING_PIPELINE_CONFIG '{' ray_tracing_pipeline_config_list '}' ';'
+	{
+	};
 
- set_raytrace_shader: SET_RAY_GENERATION
- {
-	$$.sType	=ShaderType::RAY_GENERATION_SHADER;
- } | SET_CALLABLE
- {
-	$$.sType	=ShaderType::CALLABLE_SHADER;
- } | SET_MISS
- {
-	$$.sType	=ShaderType::MISS_SHADER;
- }
+set_raytrace_shader : SET_RAY_GENERATION
+	{
+		$$.sType	=ShaderType::RAY_GENERATION_SHADER;
+	}
+	| SET_CALLABLE
+	{
+		$$.sType	=ShaderType::CALLABLE_SHADER;
+	}
+	| SET_MISS
+	{
+		$$.sType	=ShaderType::MISS_SHADER;
+	}
 
- hit_group_shader_list: set_hit_group_command
- {
- } | set_hit_group_command hit_group_shader_list
- {
- }
+hit_group_shader_list : set_hit_group_command
+	{
+	}
+	| set_hit_group_command hit_group_shader_list
+	{
+	}
 
- set_hit_group_command: set_hit_group_type '=' shader_compile_or_instance ';'
- {
-	if($1.sType==ShaderType::CLOSEST_HIT_SHADER)
-		buildRaytraceHitGroup.closestHit=$3.strs[0];
-	if($1.sType==ShaderType::ANY_HIT_SHADER)
-		buildRaytraceHitGroup.anyHit=$3.strs[0];
-	if($1.sType==ShaderType::INTERSECTION_SHADER)
-		buildRaytraceHitGroup.intersection=$3.strs[0];
-	gEffect->GetShaderInstance($3.strs[0],$1.sType);
- }
+set_hit_group_command : set_hit_group_type '=' shader_compile_or_instance ';'
+	{
+		if($1.sType==ShaderType::CLOSEST_HIT_SHADER)
+			buildRaytraceHitGroup.closestHit=$3.strs[0];
+		if($1.sType==ShaderType::ANY_HIT_SHADER)
+			buildRaytraceHitGroup.anyHit=$3.strs[0];
+		if($1.sType==ShaderType::INTERSECTION_SHADER)
+			buildRaytraceHitGroup.intersection=$3.strs[0];
+		gEffect->GetShaderInstance($3.strs[0],$1.sType);
+	}
 
- set_hit_group_type: SET_CLOSEST_HIT
- {
-	$$.sType	=ShaderType::CLOSEST_HIT_SHADER;
- } | SET_ANY_HIT
- {
-	$$.sType	=ShaderType::ANY_HIT_SHADER;
- } | SET_INTERSECTION
- {
-	$$.sType	=ShaderType::INTERSECTION_SHADER;
- }
+set_hit_group_type : SET_CLOSEST_HIT
+	{
+		$$.sType	=ShaderType::CLOSEST_HIT_SHADER;
+	}
+	| SET_ANY_HIT
+	{
+		$$.sType	=ShaderType::ANY_HIT_SHADER;
+	}
+	| SET_INTERSECTION
+	{
+		$$.sType	=ShaderType::INTERSECTION_SHADER;
+	}
 
- miss_shader_list: set_miss_shader_command
- {
- } | set_miss_shader_command miss_shader_list
- {
- }
+miss_shader_list : set_miss_shader_command
+	{
+	}
+	| set_miss_shader_command miss_shader_list
+	{
+	}
 
- set_miss_shader_command: shader_compile_or_instance ';'
- {
-	 buildPassState.missShaders.push_back($1.strs[0]);
-	 gEffect->GetShaderInstance($1.strs[0], ShaderType::MISS_SHADER);
- }
+set_miss_shader_command : shader_compile_or_instance ';'
+	{
+		buildPassState.missShaders.push_back($1.strs[0]);
+		gEffect->GetShaderInstance($1.strs[0], ShaderType::MISS_SHADER);
+	}
 
- callable_shader_list: set_callable_shader_command
- {
- } | set_callable_shader_command callable_shader_list
- {
- }
+callable_shader_list : set_callable_shader_command
+	{
+	}
+	| set_callable_shader_command callable_shader_list
+	{
+	}
 
- set_callable_shader_command: shader_compile_or_instance ';'
- {
- 	buildPassState.callableShaders.push_back($1.strs[0]);
-	gEffect->GetShaderInstance($1.strs[0], ShaderType::CALLABLE_SHADER);
- }
+set_callable_shader_command : shader_compile_or_instance ';'
+	{
+		buildPassState.callableShaders.push_back($1.strs[0]);
+		gEffect->GetShaderInstance($1.strs[0], ShaderType::CALLABLE_SHADER);
+	}
 
- ray_tracing_shader_config_list: set_ray_tracing_shader_config
- {
- } | set_ray_tracing_shader_config ray_tracing_shader_config_list
- {
- }
- | %empty
- {
- }
+ray_tracing_shader_config_list : set_ray_tracing_shader_config
+	{
+	}
+	| set_ray_tracing_shader_config ray_tracing_shader_config_list
+	{
+	}
+	| %empty
+	{
+	}
 
- ray_tracing_pipeline_config_list: %empty
- {
- } | set_ray_tracing_pipeline_config ray_tracing_pipeline_config_list
- {
- }
+ray_tracing_pipeline_config_list : %empty
+	{
+	}
+	| set_ray_tracing_pipeline_config ray_tracing_pipeline_config_list
+	{
+	}
 
-set_ray_tracing_shader_config: SET_MAX_PAYLOAD_SIZE '=' NUM ';'
- {
-	buildPassState.maxPayloadSize= $3.unum;
- } | SET_MAX_ATTRIBUTE_SIZE '=' NUM ';'
- {
-	buildPassState.maxAttributeSize = $3.unum;
- }
+set_ray_tracing_shader_config : SET_MAX_PAYLOAD_SIZE '=' NUM ';'
+	{	
+		buildPassState.maxPayloadSize= $3.unum;
+	}
+	| SET_MAX_ATTRIBUTE_SIZE '=' NUM ';'
+	{	
+		buildPassState.maxAttributeSize = $3.unum;
+	}
 
- set_ray_tracing_pipeline_config: SET_MAX_TRACE_RECURSION_DEPTH '=' NUM ';'
- {
-	buildPassState.maxTraceRecursionDepth = $3.unum;
- }
+set_ray_tracing_pipeline_config : SET_MAX_TRACE_RECURSION_DEPTH '=' NUM ';'
+	{
+		buildPassState.maxTraceRecursionDepth = $3.unum;
+	}
 
 shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
+	{
+		$$.strs[1]	="";
+		$$.strs[0]	="";
+		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
+		// the shader_variable is something like vs_main, for which we have a compile command like:
+		//		VertexShader vs_main=CompileShader(430,VS_Main());
+		// i.e. it's a combination of shadertype, profile, and function name.
+		// so these are stored in gEffect->m_compiledSHaders.
+		string shaderInstanceName=$3.strs[0];
+		ShaderInstanceMap::iterator i=gEffect->m_shaderInstances.find(shaderInstanceName);
+		if(i==gEffect->m_shaderInstances.end())
+		{
+			if(strcasecmp(shaderInstanceName.c_str(),"NULL")==0)
 			{
-				$$.strs[1]	="";
-				$$.strs[0]	="";
-				$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
-				// the shader_variable is something like vs_main, for which we have a compile command like:
-				//		VertexShader vs_main=CompileShader(430,VS_Main());
-				// i.e. it's a combination of shadertype, profile, and function name.
-				// so these are stored in gEffect->m_compiledSHaders.
-				string shaderInstanceName=$3.strs[0];
-				ShaderInstanceMap::iterator i=gEffect->m_shaderInstances.find(shaderInstanceName);
-				if(i==gEffect->m_shaderInstances.end())
-				{
-					if(strcasecmp(shaderInstanceName.c_str(),"NULL")==0)
-					{
-					}
-					else
-					{
-						ostringstream errMsg;
-						errMsg<<"Unable to find compiled shader \""<<shaderInstanceName<<'\"';
-						errSem(errMsg.str(), $3.lineno);
-					}
-				}
-				else
-				{
-					ShaderInstance *shaderInstance	=i->second;
-			
-					$$.sCommand						=$1.sCommand;
-					$$.sType						=$1.sType;
-					sfx::ShaderType shaderType=$1.sType;
-					shaderInstance->shaderType=shaderType;
-					// If it's a streamout, set it as vertex, not geometry shader.
-					if(shaderType==GEOMETRY_SHADER&&shaderInstance->shaderType==VERTEX_SHADER)
-					{
-						std::cout<<"Using streamout vertex shader for "<<i->first.c_str()<<std::endl;
-						shaderInstanceName="gsConstructed";// to be discarded later. PS4 uses the Vertex shader directly for ConstructGS
-						// so actually this will be regarded as a vertex shader, replacing the pure vertex shader.
-					}
-					$$.strs[0]=shaderInstanceName;
-				}
-			};
-
-		shader_compile_or_instance: IDENTIFIER
-		{
-		// an identifier for a shader instance could be an existing instance, or just a function name. For the latter, we create a default instance.
-			string shaderInstanceName	=$1.strs[0];
-			// Get or create:
-			gEffect->GetShaderInstance(shaderInstanceName,UNKNOWN_SHADER_TYPE);
-			$$.strs[0]					=shaderInstanceName;
-			$$.num						=0;
-			$$.lineno					=$1.lineno;
-		}
-		| shader_compile
-		{
-			string shaderInstanceName	=$1.strs[0];
-			// Get or create:
-			gEffect->GetShaderInstance(shaderInstanceName,UNKNOWN_SHADER_TYPE);
-			$$.strs[0]					=shaderInstanceName;
-			$$.num						=0;
-			$$.lineno					=$1.lineno;
-		}
-		shader_compile: CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
-		{
-			//"POSITION.xyz;TYPE0.x;VELOCITY0.xyz"
-			// For PS4, you can actually just stream straight from a vertex shader.
-			// use setVsShaderStreamoutEnable
-			// setStreamoutBufferDimensions
-			// Let's use:
-			//			#pragma argument(gsstream="...") 
-			$$.lineno										=$5.lineno;
-			string vertexShaderName							=$3.strs[0];
-			string declar									=$5.strs[0];
-			if(gEffect->m_shaderInstances.find(vertexShaderName)!=gEffect->m_shaderInstances.end())
-			{
-				ShaderInstance *compiledVertexShader	=gEffect->m_shaderInstances[vertexShaderName];
-				stringstream ss;
-				ss << vertexShaderName<<"_streamout";
-				// we duplicate the vertex shader that's mentioned:
-				ShaderInstance *compiledStreamOutVertexShader	=new ShaderInstance(*compiledVertexShader);
-
-				// slightly modify declaration to match PSSL streamout format:
-				// declar already contains enclosing quotes:
-				find_and_replace(declar,"\"POSITION","\"S_POSITION");
-				/*
-				Not properly documented: here is the old documentation from SDK2.5:
-				-gsstream <buff number>, <stride>,<entry_spec>[,<entry_spec>]
-					GS stream definition. You can provide the following parameters:
-					- buff_number: The stream being defined.
-					- stride: Number of bytes in the array stride.
-					- entry_spec: Each component to use in the output stream, identified by the semantic with swizzle mask:
-					  elem_offset_0:elem_stream_0:elem_semantic_0.xyzw
-					The entry spec can be repeated to define multiple components for the stream.
-					For example,
-					-gsstream 0,32,0:0:POSITION.xyzw,16:0:NORMAL.xyz
-					initializes stream out 0, with an array stride of 32 bytes. The first entry at offset 0 is the x, y, z, and w components of POSITION from GS stream 0. The second entry at offset 16 is the x, y, and z components of NORMAL, also from GS stream 0.
-				*/
-				int stream_num=0;
-				int byte_stride=24;
-				string ps4_declar=declar;//QuickFormat("%d,%d,":,stream_num,byte_stride)+declar;
-				compiledStreamOutVertexShader->m_preamble	+=string("\n#pragma argument (gsstream="+ps4_declar+")\n");
-				gEffect->m_shaderInstances[ss.str()]		=compiledStreamOutVertexShader;
-				$$.strs[0]									=ss.str();
 			}
-		}
-		| COMPILE_SHADER_INSTANCE '(' IDENTIFIER ',' IDENTIFIER optional_brackets ')' 
-		{
-			$$.lineno										=$5.lineno;
-			string profileName								=$3.strs[0];
-			string shaderName								=$5.strs[0];
-			string shaderInstanceName						=(shaderName+"Compiled")+profileName;
-			$$.strs[0]										=shaderInstanceName;
-			ShaderInstance *shaderInstance					=NULL;
-			if(gEffect->m_shaderInstances.find(shaderInstanceName)!=gEffect->m_shaderInstances.end())
-				shaderInstance	=gEffect->m_shaderInstances[shaderInstanceName];
 			else
 			{
-				shaderInstance=gEffect->AddShaderInstance(shaderInstanceName,shaderName,UNKNOWN_SHADER_TYPE,profileName,$3.lineno);
-				if(!shaderInstance)
-				{
-					ostringstream errMsg;
-					errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
-					errSem(errMsg.str(), $5.lineno);
-					exit(1);
-				}
+				ostringstream errMsg;
+				errMsg<<"Unable to find compiled shader \""<<shaderInstanceName<<'\"';
+				errSem(errMsg.str(), $3.lineno);
 			}
-			$$.strs[1]=profileName;
-			if(strcasecmp(shaderInstance->m_functionName.c_str(),"NULL")!=0)
+		}
+		else
+		{
+			ShaderInstance *shaderInstance	=i->second;
+	
+			$$.sCommand						=$1.sCommand;
+			$$.sType						=$1.sType;
+			sfx::ShaderType shaderType=$1.sType;
+			shaderInstance->shaderType=shaderType;
+			// If it's a streamout, set it as vertex, not geometry shader.
+			if(shaderType==GEOMETRY_SHADER&&shaderInstance->shaderType==VERTEX_SHADER)
 			{
-				Function *function=gEffect->GetFunction(shaderInstance->m_functionName,0);
-				if(!function)
-				{
-					ostringstream errMsg;
-					errMsg<<"Unable to find referenced shader \""<<shaderInstance->m_functionName<<"\" - make sure you declare it with the 'shader' directive.";
-					errSem(errMsg.str(), $3.lineno);
-				}
+				std::cout<<"Using streamout vertex shader for "<<i->first.c_str()<<std::endl;
+				shaderInstanceName="gsConstructed";// to be discarded later. PS4 uses the Vertex shader directly for ConstructGS
+				// so actually this will be regarded as a vertex shader, replacing the pure vertex shader.
 			}
-		};
+			$$.strs[0]=shaderInstanceName;
+		}
+	};
+
+shader_compile_or_instance : IDENTIFIER
+	{
+	// an identifier for a shader instance could be an existing instance, or just a function name. For the latter, we create a default instance.
+		string shaderInstanceName	=$1.strs[0];
+		// Get or create:
+		gEffect->GetShaderInstance(shaderInstanceName,UNKNOWN_SHADER_TYPE);
+		$$.strs[0]					=shaderInstanceName;
+		$$.num						=0;
+		$$.lineno					=$1.lineno;
+	}
+	| shader_compile
+	{
+		string shaderInstanceName	=$1.strs[0];
+		// Get or create:
+		gEffect->GetShaderInstance(shaderInstanceName,UNKNOWN_SHADER_TYPE);
+		$$.strs[0]					=shaderInstanceName;
+		$$.num						=0;
+		$$.lineno					=$1.lineno;
+	}
+shader_compile : CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
+	{
+		//"POSITION.xyz;TYPE0.x;VELOCITY0.xyz"
+		// For PS4, you can actually just stream straight from a vertex shader.
+		// use setVsShaderStreamoutEnable
+		// setStreamoutBufferDimensions
+		// Let's use:
+		//			#pragma argument(gsstream="...") 
+		$$.lineno										=$5.lineno;
+		string vertexShaderName							=$3.strs[0];
+		string declar									=$5.strs[0];
+		if(gEffect->m_shaderInstances.find(vertexShaderName)!=gEffect->m_shaderInstances.end())
+		{
+			ShaderInstance *compiledVertexShader	=gEffect->m_shaderInstances[vertexShaderName];
+			stringstream ss;
+			ss << vertexShaderName<<"_streamout";
+			// we duplicate the vertex shader that's mentioned:
+			ShaderInstance *compiledStreamOutVertexShader	=new ShaderInstance(*compiledVertexShader);
+			// slightly modify declaration to match PSSL streamout format:
+			// declar already contains enclosing quotes:
+			find_and_replace(declar,"\"POSITION","\"S_POSITION");
+			//
+			//Not properly documented: here is the old documentation from SDK2.5:
+			//-gsstream <buff number>, <stride>,<entry_spec>[,<entry_spec>]
+			//	GS stream definition. You can provide the following parameters:
+			//	- buff_number: The stream being defined.
+			//	- stride: Number of bytes in the array stride.
+			//	- entry_spec: Each component to use in the output stream, identified by the semantic with swizzle mask:
+			//	  elem_offset_0:elem_stream_0:elem_semantic_0.xyzw
+			//	The entry spec can be repeated to define multiple components for the stream.
+			//	For example,
+			//	-gsstream 0,32,0:0:POSITION.xyzw,16:0:NORMAL.xyz
+			//	initializes stream out 0, with an array stride of 32 bytes. The first entry at offset 0 is the x, y, z, and w components of POSITION from GS stream 0. The second entry at offset 16 is the x, y, and z components of NORMAL, also from GS stream 0.
+			//
+			int stream_num=0;
+			int byte_stride=24;
+			string ps4_declar=declar;//QuickFormat("%d,%d,":,stream_num,byte_stride)+declar;
+			compiledStreamOutVertexShader->m_preamble	+=string("\n#pragma argument (gsstream="+ps4_declar+")\n");
+			gEffect->m_shaderInstances[ss.str()]		=compiledStreamOutVertexShader;
+			$$.strs[0]									=ss.str();
+		}
+	}
+	| COMPILE_SHADER_INSTANCE '(' IDENTIFIER ',' IDENTIFIER optional_brackets ')' 
+	{
+		$$.lineno										=$5.lineno;
+		string profileName								=$3.strs[0];
+		string shaderName								=$5.strs[0];
+		string shaderInstanceName						=(shaderName+"Compiled")+profileName;
+		$$.strs[0]										=shaderInstanceName;
+		ShaderInstance *shaderInstance					=NULL;
+		if(gEffect->m_shaderInstances.find(shaderInstanceName)!=gEffect->m_shaderInstances.end())
+			shaderInstance	=gEffect->m_shaderInstances[shaderInstanceName];
+		else
+		{
+			shaderInstance=gEffect->AddShaderInstance(shaderInstanceName,shaderName,UNKNOWN_SHADER_TYPE,profileName,$3.lineno);
+			if(!shaderInstance)
+			{
+				ostringstream errMsg;
+				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
+				errSem(errMsg.str(), $5.lineno);
+				exit(1);
+			}
+		}
+		$$.strs[1]=profileName;
+		if(strcasecmp(shaderInstance->m_functionName.c_str(),"NULL")!=0)
+		{
+			Function *function=gEffect->GetFunction(shaderInstance->m_functionName,0);
+			if(!function)
+			{
+				ostringstream errMsg;
+				errMsg<<"Unable to find referenced shader \""<<shaderInstance->m_functionName<<"\" - make sure you declare it with the 'shader' directive.";
+				errSem(errMsg.str(), $3.lineno);
+			}
+		}
+	};
 
 
 render_state_list : render_state_list render_state_command
-					{
-						$$.strs[0]		=$1.strs[0];
-						$$.strs[0]		+="\n";
-						$$.strs[0]		+=$2.strs[0];
-						$$.lineno		=$2.lineno;
-					}
-					|
-					render_state_command
-					{
-						$$.strs[0]		=$1.strs[0];
-						$$.lineno		=$1.lineno;
-					};
+	{
+		$$.strs[0]		=$1.strs[0];
+		$$.strs[0]		+="\n";
+		$$.strs[0]		+=$2.strs[0];
+		$$.lineno		=$2.lineno;
+	}
+	| render_state_command
+	{
+		$$.strs[0]		=$1.strs[0];
+		$$.lineno		=$1.lineno;
+	};
 render_state_command : render_state_identifier '=' render_state_rvalue ';'
-					   {
-							$$.lineno		=$3.lineno;
-							string name		=$1.strs[0];
-							string value	=$3.strs[0];
-							$$.strs[0]		=((name+"=")+value)+";";
-							int index		=$1.num;
-							int ival		=$3.num;
-							float fval		=$3.fnum;
-							bool bval		=(ival!=0);
-							if(renderStateType==RENDERTARGETFORMAT_STATE)
-							{
-								if(is_equal(name,"TargetFormat"))
-									buildrtFormatState.formats[index]=toPixelOutputFmt(value);
-								else
-								{
-									ostringstream str;
-									str<<"Unknown render target format command: "<<name;
-									errSem(str.str().c_str());
-								}
-							}
-							if(renderStateType==SAMPLER_STATE)
-							{
-								if(is_equal(name,"Filter"))
-									buildSamplerState.Filter=(FilterMode)ival;
-								if(is_equal(name,"AddressU"))
-									buildSamplerState.AddressU=(AddressMode)ival;
-								if(is_equal(name,"AddressV"))
-									buildSamplerState.AddressV=(AddressMode)ival;
-								if(is_equal(name,"AddressW"))
-									buildSamplerState.AddressW=(AddressMode)ival;
-								if(is_equal(name,"Comparison"))
-									buildSamplerState.depthComparison=(DepthComparison)ival;
-							}
-							if(renderStateType==RASTERIZER_STATE)
-							{
-								if(is_equal(name,"FillMode"))
-									buildRasterizerState.fillMode=toFillMode(value);
-								else if(is_equal(name,"CullMode"))
-									buildRasterizerState.cullMode=toCullMode(value);
-								else if(is_equal(name,"FrontCounterClockwise"))
-									buildRasterizerState.FrontCounterClockwise=toBool(value);
-								else if(is_equal(name,"DepthBias"))
-									buildRasterizerState.DepthBias=ival;
-								else if(is_equal(name,"DepthBiasClamp"))
-									buildRasterizerState.DepthBiasClamp=fval;
-								else if(is_equal(name,"SlopeScaledDepthBias"))
-									buildRasterizerState.SlopeScaledDepthBias=fval;
-								else if(is_equal(name,"DepthClipEnable"))
-									buildRasterizerState.DepthClipEnable=toBool(value);
-								else if(is_equal(name,"ScissorEnable"))
-									buildRasterizerState.ScissorEnable=toBool(value);
-								else if(is_equal(name,"MultisampleEnable"))
-									buildRasterizerState.MultisampleEnable=toBool(value);
-								else if(is_equal(name,"AntialiasedLineEnable"))
-									buildRasterizerState.AntialiasedLineEnable=toBool(value);
-								else
-								{
-									ostringstream str;
-									str<<"Unknown rasterizer state command: "<<name;
-									errSem(str.str().c_str());
-								}
-							}
-							if(renderStateType==DEPTHSTENCIL_STATE)
-							{
-								if(is_equal(name,"DepthEnable"))
-									buildDepthStencilState.DepthTestEnable		=toBool(value);
-								else if(is_equal(name,"DepthWriteMask"))
-								{
-									if(is_equal(value,"ALL"))
-										buildDepthStencilState.DepthWriteMask	=1;
-									else if(is_equal(value,"ZERO"))
-										buildDepthStencilState.DepthWriteMask	=0;
-									else 
-										errSem("Unknown depth write mask");
-								}
-								else if(is_equal(name,"DepthFunc"))
-									buildDepthStencilState.DepthFunc=toDepthFunc(value);
-								else
-								{
-									ostringstream str;
-									str<<"Unknown DepthStencil state command: "<<name;
-									errSem(str.str().c_str());
-								}
-							}
-							if(renderStateType==BLEND_STATE)
-							{
-								if(is_equal(name,"SrcBlend"))
-									buildBlendState.SrcBlend=toBlend(value);
-								else if(is_equal(name,"DestBlend"))
-									buildBlendState.DestBlend=toBlend(value);
-								else if(is_equal(name,"BlendOp"))
-									buildBlendState.BlendOp=toBlendOp(value);
-								else if(is_equal(name,"SrcBlendAlpha"))
-									buildBlendState.SrcBlendAlpha=toBlend(value);
-								else if(is_equal(name,"DestBlendAlpha"))
-									buildBlendState.DestBlendAlpha=toBlend(value);
-								else if(is_equal(name,"BlendOpAlpha"))
-									buildBlendState.BlendOpAlpha=toBlendOp(value);
-								else if(is_equal(name,"AlphaToCoverageEnable"))
-									buildBlendState.AlphaToCoverageEnable=toBool(value);
-								else if(is_equal(name,"BlendEnable"))
-									buildBlendState.BlendEnable[index]=toBool(value);
-								else if(is_equal(name,"RenderTargetWriteMask"))
-									buildBlendState.RenderTargetWriteMask[index]=ival;
-								else
-								{
-									ostringstream str;
-									str<<"Unknown blend state command: "<<name;
-									errSem(str.str().c_str());
-								}
-							}
-						};
-					|
-						ignore_line_statement
-					{
-							$$.lineno	=$1.lineno;
-							$$.num		=-1;
-					};
+	{
+		$$.lineno		=$3.lineno;
+		string name		=$1.strs[0];
+		string value	=$3.strs[0];
+		$$.strs[0]		=((name+"=")+value)+";";
+		int index		=$1.num;
+		int ival		=$3.num;
+		float fval		=$3.fnum;
+		bool bval		=(ival!=0);
+		if(renderStateType==RENDERTARGETFORMAT_STATE)
+		{
+			if(is_equal(name,"TargetFormat"))
+				buildrtFormatState.formats[index]=toPixelOutputFmt(value);
+			else
+			{
+				ostringstream str;
+				str<<"Unknown render target format command: "<<name;
+				errSem(str.str().c_str());
+			}
+		}
+		if(renderStateType==SAMPLER_STATE)
+		{
+			if(is_equal(name,"Filter"))
+				buildSamplerState.Filter=(FilterMode)ival;
+			if(is_equal(name,"AddressU"))
+				buildSamplerState.AddressU=(AddressMode)ival;
+			if(is_equal(name,"AddressV"))
+				buildSamplerState.AddressV=(AddressMode)ival;
+			if(is_equal(name,"AddressW"))
+				buildSamplerState.AddressW=(AddressMode)ival;
+			if(is_equal(name,"Comparison"))
+				buildSamplerState.depthComparison=(DepthComparison)ival;
+		}
+		if(renderStateType==RASTERIZER_STATE)
+		{
+			if(is_equal(name,"FillMode"))
+				buildRasterizerState.fillMode=toFillMode(value);
+			else if(is_equal(name,"CullMode"))
+				buildRasterizerState.cullMode=toCullMode(value);
+			else if(is_equal(name,"FrontCounterClockwise"))
+				buildRasterizerState.FrontCounterClockwise=toBool(value);
+			else if(is_equal(name,"DepthBias"))
+				buildRasterizerState.DepthBias=ival;
+			else if(is_equal(name,"DepthBiasClamp"))
+				buildRasterizerState.DepthBiasClamp=fval;
+			else if(is_equal(name,"SlopeScaledDepthBias"))
+				buildRasterizerState.SlopeScaledDepthBias=fval;
+			else if(is_equal(name,"DepthClipEnable"))
+				buildRasterizerState.DepthClipEnable=toBool(value);
+			else if(is_equal(name,"ScissorEnable"))
+				buildRasterizerState.ScissorEnable=toBool(value);
+			else if(is_equal(name,"MultisampleEnable"))
+				buildRasterizerState.MultisampleEnable=toBool(value);
+			else if(is_equal(name,"AntialiasedLineEnable"))
+				buildRasterizerState.AntialiasedLineEnable=toBool(value);
+			else
+			{
+				ostringstream str;
+				str<<"Unknown rasterizer state command: "<<name;
+				errSem(str.str().c_str());
+			}
+		}
+		if(renderStateType==DEPTHSTENCIL_STATE)
+		{
+			if(is_equal(name,"DepthEnable"))
+				buildDepthStencilState.DepthTestEnable		=toBool(value);
+			else if(is_equal(name,"DepthWriteMask"))
+			{
+				if(is_equal(value,"ALL"))
+					buildDepthStencilState.DepthWriteMask	=1;
+				else if(is_equal(value,"ZERO"))
+					buildDepthStencilState.DepthWriteMask	=0;
+				else 
+					errSem("Unknown depth write mask");
+			}
+			else if(is_equal(name,"DepthFunc"))
+				buildDepthStencilState.DepthFunc=toDepthFunc(value);
+			else
+			{
+				ostringstream str;
+				str<<"Unknown DepthStencil state command: "<<name;
+				errSem(str.str().c_str());
+			}
+		}
+		if(renderStateType==BLEND_STATE)
+		{
+			if(is_equal(name,"SrcBlend"))
+				buildBlendState.SrcBlend=toBlend(value);
+			else if(is_equal(name,"DestBlend"))
+				buildBlendState.DestBlend=toBlend(value);
+			else if(is_equal(name,"BlendOp"))
+				buildBlendState.BlendOp=toBlendOp(value);
+			else if(is_equal(name,"SrcBlendAlpha"))
+				buildBlendState.SrcBlendAlpha=toBlend(value);
+			else if(is_equal(name,"DestBlendAlpha"))
+				buildBlendState.DestBlendAlpha=toBlend(value);
+			else if(is_equal(name,"BlendOpAlpha"))
+				buildBlendState.BlendOpAlpha=toBlendOp(value);
+			else if(is_equal(name,"AlphaToCoverageEnable"))
+				buildBlendState.AlphaToCoverageEnable=toBool(value);
+			else if(is_equal(name,"BlendEnable"))
+				buildBlendState.BlendEnable[index]=toBool(value);
+			else if(is_equal(name,"RenderTargetWriteMask"))
+				buildBlendState.RenderTargetWriteMask[index]=ival;
+			else
+			{
+				ostringstream str;
+				str<<"Unknown blend state command: "<<name;
+				errSem(str.str().c_str());
+			}
+		}
+	};
+	| ignore_line_statement
+	{
+			$$.lineno	=$1.lineno;
+			$$.num		=-1;
+	};
 render_state_identifier : IDENTIFIER optional_index
-					{
-						$$.lineno	=$1.lineno;
-						$$.strs[0]=$1.strs[0];
-						$$.num=$2.num;
-					}
-					|
-					sampler_state_identifier
-					{
-						$$.strs[0]=$1.strs[0];
-						$$.num=$1.num;
-					};
+	{
+		$$.lineno	=$1.lineno;
+		$$.strs[0]=$1.strs[0];
+		$$.num=$2.num;
+	}
+	|
+	sampler_state_identifier
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	};
 sampler_state_identifier : FILTER
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=$1.num;
-					  }
-					  | ADDRESS_U
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=$1.num;
-					  }
-					  | ADDRESS_V
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=$1.num;
-					  }
-					  | ADDRESS_W
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=$1.num;
-					  }
-					  | COMPARISON
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=$1.num;
-					  }
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
+	| ADDRESS_U
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
+	| ADDRESS_V
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
+	| ADDRESS_W
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
+	| COMPARISON
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=$1.num;
+	}
 sampler_state_value : ADDRESS_WRAP
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=WRAP;
-					  }
-					  | ADDRESS_CLAMP
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=CLAMP;
-					  }
-					  | ADDRESS_MIRROR
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num=MIRROR;
-					  }
-					  | FILTER_MIN_MAG_MIP_LINEAR
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num= FilterMode::MIN_MAG_MIP_LINEAR;
-					  }
-					  | FILTER_MIN_MAG_MIP_POINT
-					  {
-						$$.strs[0]=$1.strs[0];
-						$$.num= FilterMode::MIN_MAG_MIP_POINT;
-					  }
-					| FILTER_ANISOTROPIC
-					{
-						$$.strs[0] = $1.strs[0];
-						$$.num = FilterMode::ANISOTROPIC;
-					}
-					| depth_comparison
-					{
-						$$.strs[0] = $1.strs[0];
-						$$.num = $1.num;
-					}
-depth_comparison: D_NEVER
-					{
-						$$.num =0;
-					}
-					| D_ALWAYS
-					{
-						$$.num =1;
-					}
-					| D_LESS
-					{
-						$$.num =2;
-					}
-					| D_EQUAL
-					{
-						$$.num =3;
-					}
-					| D_LESS_EQUAL
-					{
-						$$.num =4;
-					}
-					| D_GREATER
-					{
-						$$.num =5;
-					}
-					| D_NOT_EQUAL
-					{
-						$$.num =6;
-					}
-					| D_GREATER_EQUAL
-					{
-						$$.num =7;
-					}
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=WRAP;
+	}
+	| ADDRESS_CLAMP
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=CLAMP;
+	}
+	| ADDRESS_MIRROR
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=MIRROR;
+	}
+	| FILTER_MIN_MAG_MIP_LINEAR
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num= FilterMode::MIN_MAG_MIP_LINEAR;
+	}
+	| FILTER_MIN_MAG_MIP_POINT
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num= FilterMode::MIN_MAG_MIP_POINT;
+	}
+	| FILTER_ANISOTROPIC
+	{
+		$$.strs[0] = $1.strs[0];
+		$$.num = FilterMode::ANISOTROPIC;
+	}
+	| depth_comparison
+	{
+		$$.strs[0] = $1.strs[0];
+		$$.num = $1.num;
+	}
+depth_comparison : D_NEVER
+	{
+		$$.num =0;
+	}
+	| D_ALWAYS
+	{
+		$$.num =1;
+	}
+	| D_LESS
+	{
+		$$.num =2;
+	}
+	| D_EQUAL
+	{
+		$$.num =3;
+	}
+	| D_LESS_EQUAL
+	{
+		$$.num =4;
+	}
+	| D_GREATER
+	{
+		$$.num =5;
+	}
+	| D_NOT_EQUAL
+	{
+		$$.num =6;
+	}
+	| D_GREATER_EQUAL
+	{
+		$$.num =7;
+	}
 optional_index : '[' number_exp ']'
-				 {
-					 $$.num=$2.num;
-					 $$.fnum=$2.fnum;
-				 }
-				 | %empty
-				 {
-					 $$.num=0;
-				 };
+	{
+		$$.num=$2.num;
+		$$.fnum=$2.fnum;
+	}
+	| %empty
+	{
+		$$.num=0;
+	};
 
 optional_brackets :'(' ')'
-				 {
-				 }
-				 | %empty
-				 {
-				 }
+	{
+	}
+	| %empty
+	{
+	}
 
- optional_default: '=' constant
+optional_default : '=' constant
 	{
 		$$.strs[0] = $2.strs[0];
-		 $$.token = 1;
+		$$.token = 1;
 	}
 	| %empty
 	{
@@ -3313,73 +3310,73 @@ optional_brackets :'(' ')'
 		 $$.token = 0;
 	}
 render_state_rvalue : IDENTIFIER
-					  {
-							$$.lineno=$1.lineno;
-						  $$.strs[0]=$1.strs[0];
-					  }
-					  | NUM
-					  {
-							$$.lineno=$1.lineno;
-						  $$.num=$1.num;
-						}
-					  | P_FLOAT
-					  {
-							$$.lineno=$1.lineno;
-						  $$.fnum=$1.fnum;
-					  }
-					|sampler_state_value
-					  {
-							$$.lineno=$1.lineno;
-						  $$.strs[0]=$1.strs[0];
-					  }
+	{
+			$$.lineno=$1.lineno;
+		$$.strs[0]=$1.strs[0];
+	}
+	| NUM
+	{
+		$$.lineno=$1.lineno;
+		$$.num=$1.num;
+	}
+	| P_FLOAT
+	{
+		$$.lineno=$1.lineno;
+		$$.fnum=$1.fnum;
+	}
+	| sampler_state_value
+	{
+		$$.lineno=$1.lineno;
+		$$.strs[0]=$1.strs[0];
+	}
 %%
 
 ShaderResourceType ToShaderResourceType(int t)
 {
-	  switch (t)
-	  {
-	  case TEMPLATIZED_CONSTANT_BUFFER:
-		  return ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER;
-	  case RAYTRACE_ACCELERATION_STRUCT:
-		  return ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT;
-	  case TEXTURE1D:
-		  return ShaderResourceType::TEXTURE_1D;
-	  case TEXTURE2D:
-		  return ShaderResourceType::TEXTURE_2D;
-	  case TEXTURE2DMS:
-		  return ShaderResourceType::TEXTURE_2DMS;
-	  case TEXTURE3D:
-		  return ShaderResourceType::TEXTURE_3D;
-	  case TEXTURECUBE:
-		  return ShaderResourceType::TEXTURE_CUBE;
-	  case TEXTURECUBE_ARRAY:
-		  return ShaderResourceType::TEXTURE_CUBE_ARRAY;
-	  case TEXTURE2D_ARRAY:
-		  return ShaderResourceType::TEXTURE_2D_ARRAY;
-	  case RW_TEXTURE1D:
-		  return ShaderResourceType::RW_TEXTURE_1D;
-	  case RW_TEXTURE2D:
-		  return ShaderResourceType::RW_TEXTURE_2D; 
-	  case RW_TEXTURE3D:
-		  return ShaderResourceType::RW_TEXTURE_3D;
-	  case RW_TEXTURE2D_ARRAY:
-		  return ShaderResourceType::RW_TEXTURE_2D_ARRAY;
-	  case STRUCTUREDBUFFER:
-		  return ShaderResourceType::STRUCTURED_BUFFER;
-	  case RW_STRUCTUREDBUFFER:
+	switch (t)
+	{
+	case TEMPLATIZED_CONSTANT_BUFFER:
+		return ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER;
+	case RAYTRACE_ACCELERATION_STRUCT:
+		return ShaderResourceType::RAYTRACE_ACCELERATION_STRUCT;
+	case TEXTURE1D:
+		return ShaderResourceType::TEXTURE_1D;
+	case TEXTURE2D:
+		return ShaderResourceType::TEXTURE_2D;
+	case TEXTURE2DMS:
+		return ShaderResourceType::TEXTURE_2DMS;
+	case TEXTURE3D:
+		return ShaderResourceType::TEXTURE_3D;
+	case TEXTURECUBE:
+		return ShaderResourceType::TEXTURE_CUBE;
+	case TEXTURECUBE_ARRAY:
+		return ShaderResourceType::TEXTURE_CUBE_ARRAY;
+	case TEXTURE2D_ARRAY:
+		return ShaderResourceType::TEXTURE_2D_ARRAY;
+	case RW_TEXTURE1D:
+		return ShaderResourceType::RW_TEXTURE_1D;
+	case RW_TEXTURE2D:
+		return ShaderResourceType::RW_TEXTURE_2D;
+	case RW_TEXTURE3D:
+		return ShaderResourceType::RW_TEXTURE_3D;
+	case RW_TEXTURE2D_ARRAY:
+		return ShaderResourceType::RW_TEXTURE_2D_ARRAY;
+	case STRUCTUREDBUFFER:
+		return ShaderResourceType::STRUCTURED_BUFFER;
+	case RW_STRUCTUREDBUFFER:
 		return ShaderResourceType::RW_STRUCTURED_BUFFER;
-	  case REGULARBUFFER:
-		  return ShaderResourceType::STRUCTURED_BUFFER;
-	  case RW_REGULARBUFFER:
-		  return ShaderResourceType::RW_STRUCTURED_BUFFER;
-	  default:
-		  errSem("Unknown Shader resource type!");
-		  return ShaderResourceType::UNKNOWN;
-	  };
+	case REGULARBUFFER:
+		return ShaderResourceType::STRUCTURED_BUFFER;
+	case RW_REGULARBUFFER:
+		return ShaderResourceType::RW_STRUCTURED_BUFFER;
+	default:
+		errSem("Unknown Shader resource type!");
+		return ShaderResourceType::UNKNOWN;
+	};
 }
 
- int GetTextureDimension(ShaderResourceType t, bool array_as_2d)
- {
+int GetTextureDimension(ShaderResourceType t, bool array_as_2d)
+{
 	if ((t&ShaderResourceType::TEXTURE_1D) == ShaderResourceType::TEXTURE_1D)
 		return 1;
 	if ((t&ShaderResourceType::TEXTURE_3D)== ShaderResourceType::TEXTURE_3D)
@@ -3387,7 +3384,7 @@ ShaderResourceType ToShaderResourceType(int t)
 	if ((t&ShaderResourceType::ARRAY) == ShaderResourceType::ARRAY)
 		return array_as_2d ? 2 : 3;
 	return 2;
- }
+}
 
 bool IsMSAATexture(ShaderResourceType t)
 {
@@ -3398,7 +3395,7 @@ bool IsRW(ShaderResourceType t)
 {
 	return ((t&ShaderResourceType::RW) == ShaderResourceType::RW);
 }
-  
+
 bool IsArrayTexture(ShaderResourceType t)
 {
 	return ((t&ShaderResourceType::ARRAY) == ShaderResourceType::ARRAY);
@@ -3423,7 +3420,6 @@ bool IsRWStructuredBuffer(ShaderResourceType t)
 {
 	return ((t&ShaderResourceType::RW_STRUCTURED_BUFFER) == ShaderResourceType::RW_STRUCTURED_BUFFER);
 }
-
 
 string GetSizeFunction(string textureName, string x, string y, string z)
 {
@@ -3517,24 +3513,23 @@ string GetSizeFunction(string textureName, string x, string y, string z)
 
 ShaderResourceType GetShaderResourceType(const Function &function, const string &textureName)
 {
-	  for (vector<sfxstype::variable>::const_iterator i = function.parameters.begin(); i != function.parameters.end(); i++)
-	  {
-		  if (textureName == i->identifier)
-		  {
-			  return (ShaderResourceType)i->shaderResourceType;
-		  }
-	  }
-	  auto j = gEffect->GetDeclarations().find(textureName);
-	  if (j != gEffect->GetDeclarations().end()&&j->second->declarationType==DeclarationType::TEXTURE)
-		  return ((DeclaredTexture*)j->second)->shaderResourceType;
-	  return ShaderResourceType::UNKNOWN;
+	for (vector<sfxstype::variable>::const_iterator i = function.parameters.begin(); i != function.parameters.end(); i++)
+	{
+		if (textureName == i->identifier)
+		{
+			return (ShaderResourceType)i->shaderResourceType;
+		}
+	}
+	auto j = gEffect->GetDeclarations().find(textureName);
+	if (j != gEffect->GetDeclarations().end() && j->second->declarationType == DeclarationType::TEXTURE)
+		return ((DeclaredTexture*)j->second)->shaderResourceType;
+	return ShaderResourceType::UNKNOWN;
 }
 
 extern  bool sfxError;
 void sfxReset()
 {
 	sfxError=false;
-	//yydebug = 1;
 	currentTechniqueGroup="";
 	buildGroup.m_techniques.clear();
 }
@@ -3567,9 +3562,9 @@ void errSyn(const char* e)
 	const char *st=GetStartModeText();
 	if(st)
 		errMsg<<" in "<<st;
-   // throw std::runtime_error(errMsg.str());
-   std::cerr<<errMsg.str().c_str()<<std::endl;
-   sfxError=true;
+	// throw std::runtime_error(errMsg.str());
+	std::cerr<<errMsg.str().c_str()<<std::endl;
+	sfxError=true;
 }
 
 void errSem(const string& str, int lex_linenumber)
@@ -3583,48 +3578,48 @@ void errSem(const string& str, int lex_linenumber)
 	const char *st=GetStartModeText();
 	if(st)
 		errMsg<<" in "<<st;
-   std::cerr<<errMsg.str().c_str()<<std::endl;
-   sfxError=true;
+	std::cerr<<errMsg.str().c_str()<<std::endl;
+	sfxError=true;
 }
 
-	bool IsRW(int token)
+bool IsRW(int token)
+{
+	switch(token)
 	{
-		switch(token)
-		{
-		case RW_TEXTURE3D:
-		case RW_TEXTURE1D:
-		case RW_TEXTURE2D:
-		case RW_TEXTURE2D_ARRAY:
-		case RW_TEXTURE3D_ARRAY:
-		case RW_REGULARBUFFER:
-		case RW_STRUCTUREDBUFFER:
-			return true;
-		default:
-			return false;
-		};
-	}
-	bool IsArray(int token)
+	case RW_TEXTURE3D:
+	case RW_TEXTURE1D:
+	case RW_TEXTURE2D:
+	case RW_TEXTURE2D_ARRAY:
+	case RW_TEXTURE3D_ARRAY:
+	case RW_REGULARBUFFER:
+	case RW_STRUCTUREDBUFFER:
+		return true;
+	default:
+		return false;
+	};
+}
+bool IsArray(int token)
+{
+	switch(token)
 	{
-		switch(token)
-		{
-		case TEXTURE2D_ARRAY:
-		case TEXTURE3D_ARRAY:
-		case TEXTURECUBE_ARRAY:
-		case RW_TEXTURE2D_ARRAY:
-		case RW_TEXTURE3D_ARRAY:
-			return true;
-		default:
-			return false;
-		};
-	}
-	bool IsCubemap(int token)
+	case TEXTURE2D_ARRAY:
+	case TEXTURE3D_ARRAY:
+	case TEXTURECUBE_ARRAY:
+	case RW_TEXTURE2D_ARRAY:
+	case RW_TEXTURE3D_ARRAY:
+		return true;
+	default:
+		return false;
+	};
+}
+bool IsCubemap(int token)
+{
+	switch(token)
 	{
-		switch(token)
-		{
-		case TEXTURECUBE:
-		case TEXTURECUBE_ARRAY:
-			return true;
-		default:
-			return false;
-		};
-	}
+	case TEXTURECUBE:
+	case TEXTURECUBE_ARRAY:
+		return true;
+	default:
+		return false;
+	};
+}

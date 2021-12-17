@@ -172,18 +172,19 @@ void simul::crossplatform::ModifyProjectionMatrix(float *mat,float new_near_plan
 	Matrix4x4 &M=(*m);
 	float z0=-M._43/M._33;
 	float z1=(M._43-M._44)/(M._34-M._33);
-	float nearZ=0.0f,farZ=1.0f;
+	//float nearZ=0.0f;
+	//float farZ=1.0f;
 	if(z0>z1)
 	{
-		nearZ=-z0;
-		farZ=-z1;
+		//nearZ=-z0;
+		//farZ=-z1;
 		M._33	=	new_far_plane/(new_near_plane-new_far_plane);			M._34	=-1.f;
 		M._43	=	new_near_plane*new_far_plane/(new_near_plane-new_far_plane);
 	}
 	else// reversedepth
 	{
-		nearZ=-z1;
-		farZ=-z0;
+		//nearZ=-z1;
+		//farZ=-z0;
 		if(new_far_plane>0)
 		{
 			M._33	=new_near_plane/(new_far_plane-new_near_plane);	M._34	=-1.f;
@@ -866,7 +867,8 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 					,MouseCameraState &state
 					,MouseCameraInput &input
 					,float max_height
-					,bool lock_height)
+					,bool lock_height
+					,int rotateButton)
 {
 	simul::math::Vector3 pos=cam->GetPosition();
 
@@ -904,7 +906,7 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	int dy=input.MouseY-input.LastMouseY;
 	float mouseDeltaX=0.f,mouseDeltaY=0.f;
 	static float rr=750.0f;
-	if(input.MouseButtons&(MouseCameraInput::LEFT_BUTTON|MouseCameraInput::RIGHT_BUTTON))
+	if(input.MouseButtons&(rotateButton))
 	{
 		mouseDeltaX =dx/rr;
 		mouseDeltaY =dy/rr;

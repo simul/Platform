@@ -47,12 +47,17 @@ def cmake(src,build_path,flags):
 	wd=os.getcwd()
 	Path(build_path).mkdir(True,exist_ok=True)
 	os.chdir(build_path)
-	cmakeCmd = ["cmake.exe", '-G','Visual Studio 16 2019', os.path.relpath(src, build_path)]
+	vs_versions=['Visual Studio 17 2022','Visual Studio 16 2019','Visual Studio 15 2017']
+	for vs_version in vs_versions:
+		cmakeCmd = ["cmake.exe", '-G',vs_version, os.path.relpath(src, build_path)]
 	retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
+		if retCode!=0:
+			continue
 	sln=find('*.sln','.')[0]
 	print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
 	pid.poll()
+		break
 	print(MSBUILD+'/p:Configuration=Debug'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])
 	pid.poll()
@@ -67,20 +72,33 @@ def cmake(src,build_path,flags):
 
 def GetMSBuild():
 	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
+	print('VSW '+VSW)
 	process = subprocess.Popen([VSW,'-latest','-find','MSBuild\\**\\Bin\\MSBuild.exe'], stdout=subprocess.PIPE)
 	#'-requires','Microsoft.Component.MSBuild', not useful.
 	MSB = process.stdout.readline().strip().decode('UTF-8')
 	process.poll()
+	if MSB!="":
+		return MSB
+	print("vswhere did not find MSBuild, falling back to path search:")
+	for root, dirs, files in os.walk(os.environ['ProgramFiles(x86)']):
+		if "MSBuild.exe" in files:
+			MSB=os.path.join(root, "MSBuild.exe")
+	if MSB!="":
+		return MSB
+	for root, dirs, files in os.walk(os.environ['ProgramFiles']):
+		if "MSBuild.exe" in files:
+			MSB=os.path.join(root, "MSBuild.exe")
 	print('MSB '+MSB)
 	return MSB
 
 def execute():
 	repo = Repo(os.getcwd())
-	#We can update from the main repo; doesn't require credentials in submodules
-	repo.git.submodule('update', '--init') 
-	#sms = repo.submodules
-	#for sm in sms:
-	#	sm.update()
+	#We update only the submodules in "External" - others are private and must be handled manually.
+	sms = repo.submodules
+	for sm in sms:
+		if('External' in sm.module().working_tree_dir):
+			print("updating submodule "+sm.name)
+			sm.update()
 
 	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
 	cmake('External/glfw','External/glfw/build_md',glfwflags)

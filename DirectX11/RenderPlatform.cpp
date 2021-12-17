@@ -737,6 +737,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 		case DXGI_FORMAT_R16_FLOAT:
 			format = "half";
 			break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:
 			format="float4";
 			break;
@@ -753,7 +754,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 			format="uint";
 			break;
 		default:
-			SIMUL_CERR<<"Unhandled type "<<std::endl;
+			SIMUL_CERR<<"Unhandled type "<< dec.Format<<std::endl;
 		};
 		dummy_shader+="   ";
 		dummy_shader+=format+" ";

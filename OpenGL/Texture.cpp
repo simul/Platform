@@ -104,7 +104,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	}
 
 	// Choose a format:
-	if (tdata.n == 4)
+	/*if (tdata.n == 4)
 	{
 		pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
 	}
@@ -112,10 +112,18 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	{
 		pixelFormat = crossplatform::PixelFormat::RGB_8_UNORM;
 	}
+	else if (tdata.n == 2)
+	{
+		pixelFormat = crossplatform::PixelFormat::RG_8_UNORM;
+	}
+	else if (tdata.n == 1)
+	{
+		pixelFormat = crossplatform::PixelFormat::R_8_UNORM;
+	}
 	else
 	{
 		SIMUL_BREAK("");
-	}
+	}*/
 	// TO-DO: we force textures to be 4 components (loading X8R8G8B8 returns 3 components
 	// per pixel, so thats why we just override all to RGBA_8_UNORM)
 	pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
@@ -753,17 +761,17 @@ GLuint Texture::GetGLMainView()
 {
 	lt	= {0, 0, 0, 0, nullptr};
 	const auto& pathsUtf8 = renderPlatform->GetTexturePathsUtf8();
-	int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(path, pathsUtf8);
+	int index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(path, pathsUtf8);
 	std::string filenameInUseUtf8 = path;
 	if (index == -2 || index >= (int)pathsUtf8.size())
 	{
 		errno = 0;
 		std::string file;
-		std::vector<std::string> split_path = base::SplitPath(path);
+		std::vector<std::string> split_path = platform::core::SplitPath(path);
 		if (split_path.size() > 1)
 		{
 			file = split_path[1];
-			index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
+			index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
 		}
 		if (index < -1 || index >= (int)pathsUtf8.size())
 		{
@@ -778,7 +786,7 @@ GLuint Texture::GetGLMainView()
 	int x, y, n;
 	void* buffer = nullptr;
 	unsigned size = 0;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buffer, size, filenameInUseUtf8.c_str(), false);
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(buffer, size, filenameInUseUtf8.c_str(), false);
 	//void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
 	if (!buffer)
 	{
@@ -787,7 +795,7 @@ GLuint Texture::GetGLMainView()
 	}
 	void* data = nullptr;
 	TranslateLoadedTextureData(data, buffer, size, x, y, n, 4);
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	lt.data = (unsigned char *)data;
 	lt.x = x;
 	lt.y = y;

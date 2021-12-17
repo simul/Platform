@@ -91,6 +91,15 @@ namespace simul
 			DepthComparison depthComparison;
 			int slot;			// register slot
 		};
+
+		enum class VideoTextureType
+		{
+			NONE = 0,
+			ENCODE,
+			DECODE,
+			PROCESS
+		};
+
 		/// A structure for creating or initializing textures.
 		struct TextureCreate
 		{
@@ -105,6 +114,7 @@ namespace simul
 			PixelFormat f=PixelFormat::UNKNOWN;
 			bool make_rt=false;
 			bool setDepthStencil=false;
+			VideoTextureType vidTexType = VideoTextureType::NONE;
 			bool need_srv=true;
 			bool computable = true;
 			int numOfSamples=1;
@@ -199,6 +209,7 @@ namespace simul
 		public:
 			ShaderResourceType type;
 		};
+
 		/// A Texture base class.
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
@@ -279,15 +290,12 @@ namespace simul
 			virtual bool InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
 			virtual bool InitFromExternalTexture3D(crossplatform::RenderPlatform*, void*, void*, bool = false) { return false; }
 			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*);
-			[[deprecated]]
-			//! Deprecated, use the alternate version that specified mips.
-			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l,
-				crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
-				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0);
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int m
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
 				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0)=0;
+			// Create texture for use as a reference frame in video encoding or decoding.
+			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return true; };
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.

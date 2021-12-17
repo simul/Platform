@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 #include "Platform/Core/Export.h"
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		//! An interface to derive from so you can provide your own file load/save functions.
 		//! Use SetFileLoader to define the object that Simul will use for file handling.
@@ -20,7 +20,7 @@ namespace simul
 			//! Set the file handling object: call this before any file operations, if at all.
 			static void SetFileLoader(FileLoader *f);
 			//! Put the file's entire contents into memory, by allocating sufficiently many bytes, and setting the pointer.
-			//! The memory should later be freed by a call to \ref ReleaseFileContents.
+			//! The memory should later be freed by a call to ReleaseFileContents.
 			//! The filename should be unicode UTF8-encoded.
 			virtual void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text)=0;
 			//! Get the file date as a julian day number. Return zero if the file doesn't exist.
@@ -40,6 +40,8 @@ namespace simul
 			// If more than one exists, the newest file is used.
 
 			int FindIndexInPathStack(const char *filename_utf8,const std::vector<std::string> &path_stack_utf8) const;
+
+
 
 		protected:
 			//! Find the named file relative to one of a given list of paths. Searches from the top of the stack.

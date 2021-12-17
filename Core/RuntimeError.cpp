@@ -2,14 +2,14 @@
 #include "Platform/Core/RuntimeError.h"
 
 #if SIMUL_INTERNAL_CHECKS
-bool simul::base::SimulInternalChecks = true;
+bool platform::core::SimulInternalChecks = true;
 #else
-bool simul::base::SimulInternalChecks = false;
+bool platform::core::SimulInternalChecks = false;
 #endif
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		static bool debugBreaksEnabled = true;
 		bool DebugBreaksEnabled()

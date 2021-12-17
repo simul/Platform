@@ -29,10 +29,11 @@ namespace simul
 			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
 
 			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+				, const crossplatform::Layout *layout=nullptr
 				, const crossplatform::RenderState *blendState=nullptr
 				, const crossplatform::RenderState *depthStencilState=nullptr
 				, const crossplatform::RenderState *rasterizerState=nullptr);
-			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology);
+			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
         private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();

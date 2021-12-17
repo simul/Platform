@@ -13,6 +13,10 @@
 #include <vulkan/vk_sdk_platform.h>
 #define NOMINMAX
 
+#ifndef _countof
+#define _countof(a) (sizeof(a)/sizeof(*(a)))
+#endif
+
 using namespace simul;
 using namespace vulkan;
 
@@ -100,7 +104,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mHwnd = handle;
 	
 	
-#ifdef _MSC_VER
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 	hDC = GetDC(mHwnd);
 	if (!(hDC))
 	{
@@ -115,6 +119,16 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	if (inst)
 	{
 		auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+#endif
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
+		.setWindow((ANativeWindow*)mHwnd);
+	vk::Instance* inst = GetVulkanInstance();
+	if (inst)
+	{
+		auto result = inst->createAndroidSurfaceKHR(&createInfo, nullptr, &mSurface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 
@@ -184,7 +198,11 @@ void DisplaySurface::GetQueues()
 	std::vector<vk::Bool32> supportsPresent(queue_family_count);
 	for (uint32_t i = 0; i < queue_family_count; i++)
 	{
-		vkGpu->getSurfaceSupportKHR(i, mSurface, &supportsPresent[i]);
+		vk::Result result=vkGpu->getSurfaceSupportKHR(i, mSurface, &supportsPresent[i]);
+		if(result != vk::Result::eSuccess)
+		{
+			SIMUL_CERR<<"Vulkan operation failed\n";
+		}
 	}
 
 	uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
@@ -441,7 +459,7 @@ void DisplaySurface::InitSwapChain()
 
 		for(int i=0;i<swapchainImages.size();i++)
 		{
-			SetVulkanName( renderPlatform, &(swapchainImages[i]), base::QuickFormat("Swapchain %d",i));
+			SetVulkanName( renderPlatform, &(swapchainImages[i]), platform::core::QuickFormat("Swapchain %d",i));
 		}
 	}
 	swapchain_image_resources.resize(swapchainImages.size());
@@ -824,9 +842,16 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 // Ensure no more than FRAME_LAG renderings are outstanding
-	vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
-	vulkanDevice->resetFences(1, &fences[frame_index]);
-	vk::Result result;
+	vk::Result result=vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
+	result = vulkanDevice->resetFences(1, &fences[frame_index]);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
 	do
 	{
 		result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);

@@ -57,7 +57,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mHeaps[i].Release();
-		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("PlatformConstantBuffer %016x CBHeap %d",this,i), false);
+		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("PlatformConstantBuffer %016x CBHeap %d",this,i), false);
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
@@ -140,7 +140,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mHeaps[i].Release();
-		std::string str= base::QuickFormat("%s mUploadHeap %d",name.c_str(),i);
+		std::string str= platform::core::QuickFormat("%s mUploadHeap %d",name.c_str(),i);
 		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i],str.c_str());
 		mUploadHeap[i]=nullptr;
 		delete [] cpuDescriptorHandles[i];

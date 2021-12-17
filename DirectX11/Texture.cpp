@@ -518,7 +518,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 	if(t)
 	{
 		int refct=t->AddRef();
-		if (simul::base::SimulInternalChecks)
+		if (platform::core::SimulInternalChecks)
 		{
 			//SIMUL_COUT << refct << std::endl;
 		}
@@ -624,6 +624,10 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 			return false;
 		}
 		SAFE_RELEASE(ppd);
+	}
+	else
+	{
+		return false;
 	}
 	dim=2;
 	return true;

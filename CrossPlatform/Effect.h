@@ -554,7 +554,7 @@ namespace simul
 			{
 				return filename.c_str();
 			}
-			void InvalidateDeviceObjects();
+			virtual void InvalidateDeviceObjects();
 			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
 			virtual bool Compile(const char *);
 			// Which texture is at this slot. Warning: slow.
@@ -685,7 +685,7 @@ namespace simul
 				return T::bindingIndex;
 			}
 			//! Create the buffer object.
-#if !defined( _MSC_VER) && !defined( _GAMING_XBOX )
+#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
 			void RestoreDeviceObjects(RenderPlatform* p)
 			{
 				InvalidateDeviceObjects();

@@ -131,7 +131,10 @@ void Texture::InvalidateDeviceObjects()
 bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::TextureCreate* tc)
 {
 	bool res=false;
-	if (tc->d == 2&&tc->arraysize==1)
+
+	if (tc->vidTexType != VideoTextureType::NONE)
+		res = ensureVideoTexture(r, tc->w, tc->l, tc->f, tc->vidTexType);
+	else if (tc->d == 2&&tc->arraysize==1)
 		res= ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil );
 	else if(tc->d==2)
 		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap ) ;
@@ -139,15 +142,6 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
 	return res;
 
-}
-
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l,
-	crossplatform::PixelFormat f, bool computable , bool rendertarget , bool depthstencil , int num_samples , int aa_quality , bool wrap ,
-	vec4 clear , float clearDepth , uint clearStencil )
-{
-	return ensureTexture2DSizeAndFormat(renderPlatform,  w,  l, 1,
-		 f,  computable,  rendertarget,  depthstencil,  num_samples,  aa_quality,  wrap,
-		 clear,  clearDepth,  clearStencil);
 }
 
 bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)
