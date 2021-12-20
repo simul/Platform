@@ -22,7 +22,7 @@ using namespace base;
 using namespace platform;
 using namespace core;
 
-if __ANDROID__
+#if __ANDROID__
 AAssetManager* DefaultFileLoader::s_AssetManager = nullptr;
 #endif
 
