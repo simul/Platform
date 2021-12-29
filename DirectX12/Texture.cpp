@@ -1611,17 +1611,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		clearValues.Color[3] = 0.0f;
 	}
 
-	// Find the initial texture state
-	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-    if (rendertarget)
-    {
-		AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (computable)
-    {
-		AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    }
-
 	// Clear resources
 	SAFE_RELEASE_LATER(mTextureDefault);
 
@@ -1646,8 +1635,19 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	FreeUAVTables();
 	
 	InitStateTable(totalNum, m);
+	// Find the initial texture state
+	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
+    if (rendertarget)
+    {
+		AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
+    if (computable)
+    {
+		AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    }
 	InitSRVTables(totalNum, m);
 	CreateSRVTables(num, m, cubemap);
+	
 
 	if (computable)
 	{
