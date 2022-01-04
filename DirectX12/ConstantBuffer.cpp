@@ -199,6 +199,7 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 			res = pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput);
 			if (SUCCEEDED(res))
 			{
+				std::cerr << "DRED - Breadcrumbs:" << std::endl;
 				const D3D12_AUTO_BREADCRUMB_NODE* breadcrumb = DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
 				while (breadcrumb)
 				{
@@ -305,18 +306,18 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 					if (breadcrumb->pCommandListDebugNameA)
 						std::cerr << breadcrumb->pCommandListDebugNameA;
 					else if(breadcrumb->pCommandListDebugNameW)
-						std::cerr << breadcrumb->pCommandListDebugNameW;
+						std::cerr << platform::core::WStringToUtf8(breadcrumb->pCommandListDebugNameW);
 					else
 						std::cerr << "Unknown CommandListDebugName";
-					std::cerr << " : " << (uint64_t)(void*)(breadcrumb->pCommandList) << std::endl;
+					std::cerr << " : " << std::hex << "0x" << (uint64_t)(void*)(breadcrumb->pCommandList) << std::dec << std::endl;
 					
 					if (breadcrumb->pCommandQueueDebugNameA)
 						std::cerr << breadcrumb->pCommandQueueDebugNameA;
 					else if (breadcrumb->pCommandQueueDebugNameW)
-						std::cerr << breadcrumb->pCommandQueueDebugNameW;
+						std::cerr << platform::core::WStringToUtf8(breadcrumb->pCommandQueueDebugNameW);
 					else
 						std::cerr << "Unknown CommandQueueDebugName";
-					std::cerr << " : " << (uint64_t)(void*)(breadcrumb->pCommandQueue) << std::endl;
+					std::cerr << " : " << std::hex << "0x" << (uint64_t)(void*)(breadcrumb->pCommandQueue) << std::dec << std::endl;
 
 					if (breadcrumb->pCommandHistory)
 					{
@@ -335,6 +336,7 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 						}
 					}
 					breadcrumb = breadcrumb->pNext;
+					std::cerr << std::endl;
 				}
 			}
 			else
@@ -346,7 +348,7 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 			res = pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput);
 			if (SUCCEEDED(res))
 			{
-				std::cerr << "Page Fault on GPU Virtual Address: " << DredPageFaultOutput.PageFaultVA << std::endl;
+				std::cerr << "DRED - Page Fault on GPU Virtual Address: " << DredPageFaultOutput.PageFaultVA << std::endl;
 
 				auto D3D12_DRED_ALLOCATION_TYPE_ToString = [](D3D12_DRED_ALLOCATION_TYPE type) -> std::string
 				{
@@ -414,31 +416,33 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 						return "";
 					}
 				};
-				std::cerr << "Existing Allocations:" << std::endl;
+				std::cerr << "DRED - Existing Allocations:" << std::endl;
 				const D3D12_DRED_ALLOCATION_NODE* existingNode = DredPageFaultOutput.pHeadExistingAllocationNode;
 				while (existingNode)
 				{
 					if (existingNode->ObjectNameA)
 						std::cerr << existingNode->ObjectNameA;
 					else if (existingNode->ObjectNameW)
-						std::cerr << existingNode->ObjectNameW;
+						std::cerr << platform::core::WStringToUtf8(existingNode->ObjectNameW);
 					else
 						std::cerr << "Unknown Object";
 					std::cerr << " : " << D3D12_DRED_ALLOCATION_TYPE_ToString(existingNode->AllocationType) << std::endl;
 					existingNode = existingNode->pNext;
+					std::cerr << std::endl;
 				}
-				std::cerr << "Freed Allocations:" << std::endl;
+				std::cerr << "DRED - Freed Allocations:" << std::endl;
 				const D3D12_DRED_ALLOCATION_NODE* freedNode = DredPageFaultOutput.pHeadRecentFreedAllocationNode;
 				while (freedNode)
 				{
 					if (freedNode->ObjectNameA)
 						std::cerr << freedNode->ObjectNameA;
 					else if (freedNode->ObjectNameW)
-						std::cerr << freedNode->ObjectNameW;
+						std::cerr << platform::core::WStringToUtf8(freedNode->ObjectNameW);
 					else
 						std::cerr << "Unknown Object";
 					std::cerr << " : " << D3D12_DRED_ALLOCATION_TYPE_ToString(freedNode->AllocationType) << std::endl;
 					freedNode = freedNode->pNext;
+					std::cerr << std::endl;
 				}
 			}
 			else
