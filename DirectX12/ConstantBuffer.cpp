@@ -191,21 +191,24 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	else
 	{
 #if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_SCARLETT) && !defined(_GAMING_XBOX_XBOXONE)
-		ID3D12DeviceRemovedExtendedData* pDred;
-		rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
+		ID3D12DeviceRemovedExtendedData* pDred = nullptr;
+		HRESULT res = rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
 
-		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
-		D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
-		V_CHECK(pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput))
-			V_CHECK(pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput));
-		auto n = DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
-		while (n)
+		if (SUCCEEDED(res) && pDred)
 		{
-			if (n->pCommandQueueDebugNameW)
-				std::cerr << platform::core::WStringToUtf8(n->pCommandQueueDebugNameW).c_str() << std::endl;
-			if (n->pCommandListDebugNameW)
-				std::cerr << platform::core::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
-			n = n->pNext;
+			D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
+			D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
+			V_CHECK(pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput))
+			V_CHECK(pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput));
+			const D3D12_AUTO_BREADCRUMB_NODE* n = DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
+			while (n)
+			{
+				if (n->pCommandQueueDebugNameW)
+					std::cerr << platform::core::WStringToUtf8(n->pCommandQueueDebugNameW).c_str() << std::endl;
+				if (n->pCommandListDebugNameW)
+					std::cerr << platform::core::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
+				n = n->pNext;
+			}
 		}
 #endif
 		SIMUL_BREAK_ONCE("hResult != S_OK");
