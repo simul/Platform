@@ -130,7 +130,7 @@ vec4 quat_from_vector_endpoints(vec3 start, vec3 end)
 	vec4 q_end	= vec4(normalize(end), 0.0);
 
 	//Encodes the dot and cross products of the vectors
-	//https://stackoverflow.com/a/67343721https://stackoverflow.com/a/67343721
+	//https://stackoverflow.com/a/67343721
 	vec4 q = quat_mult(q_start, q_end);
 	if (q.w == 1.0) 
 	{

@@ -26,7 +26,7 @@
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
-#ifdef UNIX
+#if defined(UNIX) || defined(__linux__)
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
 #ifndef __COMMODORE__
 #include <signal.h>

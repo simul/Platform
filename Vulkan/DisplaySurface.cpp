@@ -13,6 +13,10 @@
 #include <vulkan/vk_sdk_platform.h>
 #define NOMINMAX
 
+#ifndef _countof
+#define _countof(a) (sizeof(a)/sizeof(*(a)))
+#endif
+
 using namespace simul;
 using namespace vulkan;
 
@@ -100,7 +104,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mHwnd = handle;
 	
 	
-#ifdef _MSC_VER
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 	hDC = GetDC(mHwnd);
 	if (!(hDC))
 	{
@@ -115,6 +119,16 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	if (inst)
 	{
 		auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+#endif
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
+		.setWindow((ANativeWindow*)mHwnd);
+	vk::Instance* inst = GetVulkanInstance();
+	if (inst)
+	{
+		auto result = inst->createAndroidSurfaceKHR(&createInfo, nullptr, &mSurface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 

@@ -180,14 +180,14 @@ namespace simul
 			float HorizontalFieldOfViewInRadians;
 			float VerticalFieldOfViewInRadians;
 			simul::geometry::SimulOrientation	Orientation;
-	
+			/// Set the view struct for the camera
 			void SetCameraViewStruct(const CameraViewStruct &c);
 			const CameraViewStruct &GetCameraViewStruct() const;
 			// virtual from OrientationInterface
 			virtual const float *GetOrientationAsPermanentMatrix() const;		//! Permanent: this means that for as long as the interface exists, the address is valid.
 			virtual const float *GetRotationAsQuaternion() const;
 			virtual const float *GetPosition() const;
-
+			/// Create and return the view matrix used by the camera.
 			virtual const float *MakeViewMatrix() const;
 			virtual const float *MakeDepthReversedProjectionMatrix(float aspect) const;
 			virtual const float *MakeProjectionMatrix(float aspect) const;
@@ -200,6 +200,7 @@ namespace simul
 			virtual void SetOrientationAsMatrix(const float *);
 			virtual void SetOrientationAsQuaternion(const float *);
 			virtual void SetPosition(const float *);
+			/// Set the direction that the camera is pointing in.
 			virtual void LookInDirection(const float *view_dir,const float *view_up);
 			virtual void LookInDirection(const float *view_dir);
 			virtual void SetPositionAsXYZ(float,float,float);
@@ -212,8 +213,10 @@ namespace simul
 			virtual bool TimeStep(float delta_t);
 			//
 			float GetHorizontalFieldOfViewDegrees() const;
+			/// Set the Horizontal FoV
 			void SetHorizontalFieldOfViewDegrees(float f);
 			float GetVerticalFieldOfViewDegrees() const;
+			/// Set the Vertical FoV
 			void SetVerticalFieldOfViewDegrees(float f);
 			static void CreateViewMatrix(float *mat, const float *view_dir, const float *view_up,const float *pos=0);
 			static const float *MakeDepthReversedProjectionMatrix(float h, float v, float zNear, float zFar);
