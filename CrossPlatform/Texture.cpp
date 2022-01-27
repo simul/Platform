@@ -40,6 +40,7 @@ Texture::Texture(const char *n)
 
 Texture::~Texture()
 {
+	InvalidateDeviceObjects();
 }
 
 bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate)
