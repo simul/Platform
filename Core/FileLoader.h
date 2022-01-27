@@ -41,6 +41,8 @@ namespace platform
 
 			int FindIndexInPathStack(const char *filename_utf8,const std::vector<std::string> &path_stack_utf8) const;
 
+
+
 		protected:
 			//! Find the named file relative to one of a given list of paths. Searches from the top of the stack.
 			std::string FindFileInPathStack(const char *filename_utf8,const char * const* path_stack_utf8) const;

@@ -7,7 +7,7 @@ namespace simul
 {
 	namespace math
 	{
-		//! A 3D Perlin noise class.
+		//! A 2D Perlin noise class.
 		SIMUL_MATH_EXPORT_CLASS Noise2D : public NoiseInterface
 		{
 			unsigned frequency;

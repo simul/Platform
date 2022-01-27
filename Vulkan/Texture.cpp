@@ -1,11 +1,8 @@
-
-
 #include "Platform/Core/FileLoader.h"
 #include "Texture.h"
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
 #include "Effect.h"
-#include "stb_image.h"
 #include <algorithm>
 
 using namespace simul;

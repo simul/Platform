@@ -1,5 +1,4 @@
-﻿
-#include "Platform/Vulkan/RenderPlatform.h"
+﻿#include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/Texture.h"
 #include "Platform/Vulkan/Effect.h"
 #include "Platform/Vulkan/Buffer.h"
@@ -13,6 +12,10 @@
 #include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
+
+#ifndef _countof
+#define _countof(a) (sizeof(a)/sizeof(*(a)))
+#endif
 
 using namespace simul;
 using namespace vulkan;
@@ -1842,8 +1845,13 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	SIMUL_ASSERT(num_colour<=16);
 	for(int i=0;i<num_colour;i++)
 	{
+#if VK_VERSION_1_2
 		vk::ImageLayout layout=crossplatform::RenderPlatform::IsDepthFormat(pixelFormats[i])?
 			vk::ImageLayout::eDepthAttachmentOptimalKHR:vk::ImageLayout::eColorAttachmentOptimal;
+#else
+		vk::ImageLayout layout = crossplatform::RenderPlatform::IsDepthFormat(pixelFormats[i]) ?
+			vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal;
+#endif
 		//if(initial_layouts)
 		//	layout=initial_layouts[i];
 		vk::ImageLayout end_layout=vk::ImageLayout::eColorAttachmentOptimal ;

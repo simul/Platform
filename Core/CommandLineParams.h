@@ -4,7 +4,7 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/Export.h"
 
-#if defined(UNIX)
+#if defined(UNIX) || defined(__linux__)
 	#include <string.h>
 	#define _strcpy(d,n,s) (strncpy(d,s,n))
 	#define strcpy_s(d, n, s) (strncpy(d,s,n));

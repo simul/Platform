@@ -104,7 +104,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	}
 
 	// Choose a format:
-	if (tdata.n == 4)
+	/*if (tdata.n == 4)
 	{
 		pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
 	}
@@ -112,10 +112,18 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	{
 		pixelFormat = crossplatform::PixelFormat::RGB_8_UNORM;
 	}
+	else if (tdata.n == 2)
+	{
+		pixelFormat = crossplatform::PixelFormat::RG_8_UNORM;
+	}
+	else if (tdata.n == 1)
+	{
+		pixelFormat = crossplatform::PixelFormat::R_8_UNORM;
+	}
 	else
 	{
 		SIMUL_BREAK("");
-	}
+	}*/
 	// TO-DO: we force textures to be 4 components (loading X8R8G8B8 returns 3 components
 	// per pixel, so thats why we just override all to RGBA_8_UNORM)
 	pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
