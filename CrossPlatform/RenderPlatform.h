@@ -240,8 +240,17 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void BeginFrame			(GraphicsDeviceContext&);
-			virtual void EndFrame			(GraphicsDeviceContext&);
+			//! Mark the beginning of a frame, global for all DeviceContexts that will use this RenderPlatform instance.
+			//! The frame number will be incremented.
+			virtual void BeginFrame();
+			//! Mark the beginning of a frame, global for all DeviceContexts that will use this RenderPlatform instance.
+			//! The frame number will be the value specified in f.
+			void BeginFrame					(long long f);
+			//! Mark the end of a frame, global for all DeviceContexts that use this RenderPlatform instance.
+			//! There should be no further rendering or compute until BeginFrame() has been called again.
+			virtual void EndFrame			();
+			bool						FrameStarted() const;
+			long long					GetFrameNumber() const;
             //! Makes sure the resource is in the required state specified by transition. 
             virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
@@ -467,7 +476,10 @@ namespace simul
 			static bool IsStencilFormat(PixelFormat f);
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
+			
 		protected:
+			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
+			virtual void ContextFrameBegin(GraphicsDeviceContext&);
 			Allocator allocator;
 			void FinishLoadingTextures(DeviceContext& deviceContext);
 			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
@@ -507,7 +519,9 @@ namespace simul
 			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
 			unsigned char				mCurIdx;
 			//! Last frame number
-			long long					mLastFrame;
+			long long					mLastFrame=-1;
+			bool						frame_started=false;
+			long long					frameNumber = 0;
 			std::set<crossplatform::Texture*> fencedTextures;
 		public:
 			std::set< Effect*> destroyEffects;

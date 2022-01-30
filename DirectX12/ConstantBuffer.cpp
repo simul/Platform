@@ -161,9 +161,9 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	// If new frame, update current frame index and reset the apply count
-	if (last_frame_number != deviceContext.frame_number)
+	if (last_frame_number != deviceContext.GetFrameNumber())
 	{
-		last_frame_number = deviceContext.frame_number;
+		last_frame_number = deviceContext.GetFrameNumber();
 		buffer_index++;
 		if (buffer_index >= kNumBuffers)
 			buffer_index = 0;

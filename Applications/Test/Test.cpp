@@ -349,7 +349,7 @@ public:
 		deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
 		deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
 		deviceContext.defaultTargetsAndViewport.viewport = { 0, 0, w, h };
-		deviceContext.frame_number = framenumber;
+		deviceContext.GetFrameNumber() = framenumber;
 		deviceContext.platform_context = context;
 		deviceContext.renderPlatform = renderPlatform;
 		deviceContext.viewStruct.view_id = view_id;
@@ -369,7 +369,7 @@ public:
 		}
 
 		//Begin frame
-		renderPlatform->BeginFrame(deviceContext);
+		renderPlatform->BeginFrame();
 		hdrFramebuffer->SetWidthAndHeight(w, h);
 		hdrFramebuffer->Activate(deviceContext);
 
@@ -493,7 +493,7 @@ public:
 		rwSB.CopyToReadBuffer(deviceContext);
 
 		//First buffer won't be ready as it a ring of buffers
-		if (deviceContext.frame_number < 3)
+		if (deviceContext.GetFrameNumber() < 3)
 			return;
 
 		bool pass = true;

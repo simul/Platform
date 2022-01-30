@@ -265,9 +265,14 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
+		protected:
+			long long frame_number = 0;
+		public:
+			long long GetFrameNumber() const;
+			//! Only RenderPlatform should call this.
+			void SetFrameNumber(long long n);
 			DeviceContextType deviceContextType;
 			long long completed_frame=0;
-			long long frame_number=0;
 			void *platform_context=nullptr;
 			void *platform_context_allocator=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
@@ -339,22 +344,11 @@ namespace simul
 
 		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
 		{
-			ComputeDeviceContext()
-			{
-				deviceContextType = DeviceContextType::COMPUTE;
-			}
-			ComputeDeviceContext* AsComputeDeviceContext() override
-			{
-				return this;
-			}
+			ComputeDeviceContext();
+			ComputeDeviceContext* AsComputeDeviceContext() override;
 			//Some function expect completed_frame and frame_number to increment.
 			//This copies the frame numbers from the normal DeviceContext to simulate this.
-			void UpdateFrameNumbers(DeviceContext& deviceContext)
-			{
-				this->completed_frame = deviceContext.completed_frame;
-				this->frame_number = deviceContext.frame_number;
-			}
-
+			void UpdateFrameNumbers(DeviceContext& deviceContext);
 		};
 	}
 }

@@ -203,12 +203,12 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		{
 			buffer_index = 0;
 		}
-		if(framenumber!=deviceContext.frame_number)
+		if(framenumber!=deviceContext.GetFrameNumber())
 		{
 			num_this_frame=0;
 		}
 		num_this_frame++;
-		framenumber=deviceContext.frame_number;
+		framenumber=deviceContext.GetFrameNumber();
 		#ifndef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
 			#error use cache line aligned buffers, otherwise an explicit flush for fast semantics is required here
 		#endif

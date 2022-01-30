@@ -180,7 +180,7 @@ void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 	mImmediateAllocator					= ctx->IAllocator;
 	immediateContext.platform_context	= mImmediateCommandList;
 	immediateContext.renderPlatform		= this;
-	immediateContext.contextState.contextActive =ctx->bActive;
+	immediateContext.contextState.contextActive =ctx->IRecording;
 	immediateContext.contextState.externalContext=ctx->bActive;
 }
 
@@ -1040,23 +1040,22 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 	#endif
 #endif
 }
-
-void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext &deviceContext)
+void RenderPlatform::BeginFrame()
 {
-	crossplatform::RenderPlatform::BeginFrame(deviceContext);
-	BeginD3D12Frame(deviceContext);
+	crossplatform::RenderPlatform::BeginFrame();
+	ResetImmediateCommandList();
 }
 
-void RenderPlatform::BeginD3D12Frame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
+	if (deviceContext.GetFrameNumber() == frameNumber)
+		return;
 	// Store a reference to the device context
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
-	
-	ResetImmediateCommandList();
 
 	// Create dummy textures
 	static bool createDummy = true;
@@ -1129,14 +1128,15 @@ void RenderPlatform::BeginD3D12Frame(crossplatform::GraphicsDeviceContext& devic
 	}
 }
 
-void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::EndFrame()
 {
-	crossplatform::RenderPlatform::EndFrame(deviceContext);
-	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	if(commandList&& deviceContext.contextState.contextActive &&!deviceContext.contextState.externalContext)
+	crossplatform::RenderPlatform::EndFrame();
+	auto &immediateContext=GetImmediateContext();
+	ID3D12GraphicsCommandList*	commandList		= immediateContext.asD3D12Context();
+	if(commandList&& immediateContext.contextState.contextActive &&!immediateContext.contextState.externalContext)
 		commandList->Close();
-	deviceContext.contextState.contextActive = false;
-	}
+	immediateContext.contextState.contextActive = false;
+}
 
 void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* t, crossplatform::ResourceTransition transition)
 {
@@ -1389,8 +1389,10 @@ void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueu
 
 void RenderPlatform::ResetImmediateCommandList()
 {
-	if (!immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
+	if (immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
 	{
+		ExecuteCommands(immediateContext);
+		//mImmediateCommandList->Close();
 		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
 		immediateContext.contextState.contextActive = true;
 	}
@@ -2526,9 +2528,7 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext &deviceCo
 void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext,const crossplatform::Buffer *buffer)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-
 	auto pBuffer = (dx12::Buffer*)buffer;
-
 	commandList->IASetIndexBuffer(pBuffer->GetIndexBufferView());
 }
 
@@ -2581,7 +2581,7 @@ void RenderPlatform::SetLayout(crossplatform::GraphicsDeviceContext &deviceConte
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
-	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
+	//ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	dx12::RenderState* state            = (dx12::RenderState*)s;
 	// We cache the description, during EffectPass::Apply() we will check if the PSO
 	// needs to be recreated
@@ -2669,14 +2669,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	}
 	
 	// We will only set the tables once per frame
-	if (mLastFrame != deviceContext.frame_number)
+	if (frameNumber != deviceContext.GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
 
-		BeginD3D12Frame(*deviceContext.AsGraphicsDeviceContext());
+		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 
-		mLastFrame = deviceContext.frame_number;
+		deviceContext.SetFrameNumber(frameNumber);
 		mCurIdx++;
 		mCurIdx = mCurIdx % kNumIdx;
 

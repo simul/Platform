@@ -2,6 +2,16 @@
 using namespace simul;
 using namespace crossplatform;
 
+long long DeviceContext::GetFrameNumber() const
+{
+
+	return frame_number;
+}
+//! Only RenderPlatform should call this.
+void DeviceContext::SetFrameNumber(long long n)
+{
+	frame_number = n;
+}
 
 ContextState::ContextState()
 {
@@ -72,4 +82,20 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	defaultTargetsAndViewport.viewport.y = viewportTop;
 	defaultTargetsAndViewport.viewport.w = viewportRight - viewportLeft;
 	defaultTargetsAndViewport.viewport.h = viewportBottom - viewportTop;
+}
+
+ComputeDeviceContext::ComputeDeviceContext()
+{
+	deviceContextType = DeviceContextType::COMPUTE;
+}
+ComputeDeviceContext* ComputeDeviceContext::AsComputeDeviceContext() 
+{
+	return this;
+}
+//Some function expect completed_frame and frame_number to increment.
+//This copies the frame numbers from the normal DeviceContext to simulate this.
+void ComputeDeviceContext::UpdateFrameNumbers(DeviceContext& deviceContext)
+{
+	this->completed_frame = deviceContext.completed_frame;
+	this->frame_number = deviceContext.GetFrameNumber();
 }

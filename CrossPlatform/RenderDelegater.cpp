@@ -65,7 +65,6 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	deviceContext.platform_context_allocator = context_allocator;
 	deviceContext.renderPlatform		= renderPlatform;
 	deviceContext.viewStruct.view_id	= view_id;
-	deviceContext.frame_number			= f;
 	crossplatform::Viewport vps[1];
 	vps[0].x = vps[0].y = 0;
 	vps[0].w = w;

@@ -472,7 +472,7 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	if (res == S_OK)
 	{
 		SIMUL_GPU_TRACK_MEMORY(mComputePso, 100)	// TODO: not the real size!
-			std::wstring name = L"ComputePSO_";
+		std::wstring name = L"ComputePSO_";
 		name += std::wstring(mTechName.begin(), mTechName.end());
 		mComputePso->SetName(name.c_str());
 	}

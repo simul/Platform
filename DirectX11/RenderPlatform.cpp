@@ -277,16 +277,11 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 #endif
 }
 
-void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	crossplatform::RenderPlatform::BeginFrame(deviceContext);
+	BeginFrame();
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
-}
-
-void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
-{
-	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
 
 namespace

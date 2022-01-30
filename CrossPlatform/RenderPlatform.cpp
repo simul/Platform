@@ -394,8 +394,10 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
+void RenderPlatform::ContextFrameBegin(GraphicsDeviceContext &deviceContext)
 {
+	if (!frame_started)
+		BeginFrame();
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
 		gpuProfiler->StartFrame(deviceContext);
@@ -406,11 +408,46 @@ void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 	FinishGeneratingTextureMips(deviceContext);
 	FinishLoadingTextures(deviceContext);
 	allocator.CheckForReleases();
-	last_begin_frame_number=deviceContext.frame_number;
+	last_begin_frame_number=deviceContext.GetFrameNumber();
+} 
+
+void RenderPlatform::EndFrame()
+{
+	if (!frame_started)
+	{
+		SIMUL_BREAK("EndFrame(): frame had not started.");
+	}
+	frame_started = false;
 }
 
-void RenderPlatform::EndFrame(GraphicsDeviceContext&dev)
+void RenderPlatform::BeginFrame()
 {
+	if (frame_started)
+	{
+		SIMUL_BREAK("BeginFrame(): frame had already started.");
+	}
+	frameNumber++;
+	frame_started = true;
+}
+
+bool RenderPlatform::FrameStarted() const
+{
+	return frame_started;
+}
+
+long long RenderPlatform::GetFrameNumber() const
+{
+	return frameNumber;
+}
+
+void RenderPlatform::BeginFrame(long long f)
+{
+	if (f==frameNumber)
+	{
+		SIMUL_BREAK("BeginFrame(long long): frame already at this number.");
+	}
+	BeginFrame();
+	frameNumber = f;
 }
 
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
@@ -891,7 +928,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	static int count=frames;
 	static unsigned long long framenumber=0;
 	float displayLod=0.0f;
-	if(debug&&framenumber!=deviceContext.frame_number)
+	if(debug&&framenumber!=deviceContext.GetFrameNumber())
 	{
 		count--;
 		if(!count)
@@ -899,7 +936,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			lod++;
 			count=frames;
 		}
-		framenumber=deviceContext.frame_number;
+		framenumber=deviceContext.GetFrameNumber();
 	}
 	if(debug&&tex)
 	{
@@ -1122,8 +1159,8 @@ void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool )
 {
-	if(deviceContext.frame_number!=last_begin_frame_number&&deviceContext.AsGraphicsDeviceContext())
-		BeginFrame(*(deviceContext.AsGraphicsDeviceContext()));
+	if(deviceContext.GetFrameNumber()!=last_begin_frame_number&&deviceContext.AsGraphicsDeviceContext())
+		ContextFrameBegin(*(deviceContext.AsGraphicsDeviceContext()));
 	return true;
 }
 

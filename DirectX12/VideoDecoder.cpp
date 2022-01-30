@@ -193,9 +193,9 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		mRefHeaps.resize(mNumReferenceFrames);
 
 		size_t index = 0;
-		int i = mCurrentTextureIndex - 1;
 		size_t numTextures = mTextures.size();
-		while (index < mNumReferenceFrames)
+		int i = (mCurrentTextureIndex - 1) % numTextures;
+		while (index < mNumReferenceFrames&&i< numTextures)
 		{
 			((DecoderTexture*)mTextures[i])->ChangeState(decodeCommandList, false);
 			mRefTextures[index] = mTextures[i]->AsD3D12Resource();

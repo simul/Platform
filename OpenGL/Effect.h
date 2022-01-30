@@ -137,7 +137,7 @@ namespace simul
 				}
 				else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
 				{
-					idx = mLastIdx = (deviceContext.frame_number + idxOffset) % mNumBuffers;
+					idx = mLastIdx = (deviceContext.GetFrameNumber() + idxOffset) % mNumBuffers;
 				}
 				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
 				{

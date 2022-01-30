@@ -69,7 +69,7 @@ void TimestampQueryManager::StartFrame(crossplatform::DeviceContext &deviceConte
 	mTimestampQueryCurrFrame=(mTimestampQueryCurrFrame+1)%4;
 	mTimestampQueryHeapOffset=0;
 	
-	last_frame_number=deviceContext.frame_number;
+	last_frame_number=deviceContext.GetFrameNumber();
 }
 
 void TimestampQueryManager::EndFrame(crossplatform::DeviceContext &deviceContext)
@@ -78,7 +78,7 @@ void TimestampQueryManager::EndFrame(crossplatform::DeviceContext &deviceContext
 
 void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset)
 {
-/*	if(deviceContext.frame_number!=last_frame_number)
+/*	if(deviceContext.GetFrameNumber()!=last_frame_number)
 	{
 		StartFrame(deviceContext);
 	}*/

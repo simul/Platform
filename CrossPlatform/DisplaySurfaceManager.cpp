@@ -37,13 +37,12 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 			SIMUL_CERR << "Window for cp_hwnd " << std::hex << h << " has hwnd " << w->GetHandle() << std::endl;
 			return;
 		}
-		w->StartFrame();
-		if (renderPlatform && !frame_started)
+		if (renderPlatform && !renderPlatform->FrameStarted())
 		{
-			frameNumber++;
-			frame_started = true;
+			renderPlatform->BeginFrame();
 		}
-		w->Render(delegatorReadWriteMutex, frameNumber);
+		w->StartFrame();
+		w->Render(delegatorReadWriteMutex, renderPlatform->GetFrameNumber());
 	}
 	if(clear)
 		toRender.clear();
@@ -51,7 +50,6 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 
 DisplaySurfaceManager::DisplaySurfaceManager():
 				renderPlatform(nullptr)
-				,frame_started(false)
 {
 }
 
@@ -146,5 +144,5 @@ void DisplaySurfaceManager::EndFrame(bool clear)
 	{
 		s.second->EndFrame();
 	}
-	frame_started=false;
+	renderPlatform->EndFrame();
 }

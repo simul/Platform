@@ -1243,7 +1243,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	{
 		if (w*l <= 0)
 			return false;
-		auto &deviceContext=renderPlatform->GetImmediateContext();
+		//auto &deviceContext=renderPlatform->GetImmediateContext();
 		width = w;
 		length = l;
 
@@ -1412,8 +1412,6 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
             depthStencil = true;
 			InitStateTable( 1, m);
 		}
-		//auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
-		//rPlat->FlushBarriers(deviceContext);
 	}
 
 	mips		= m;

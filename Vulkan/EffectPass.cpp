@@ -874,13 +874,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
 	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrameIndex != deviceContext.frame_number)
+	if (mLastFrameIndex != deviceContext.GetFrameNumber())
 	{
 		mCurApplyCount = 0;
 		mInternalFrameIndex++;
 		mInternalFrameIndex=mInternalFrameIndex%3;
 		i_desc[mInternalFrameIndex]=mDescriptorSets[mInternalFrameIndex].begin();
-		mLastFrameIndex = deviceContext.frame_number;
+		mLastFrameIndex = deviceContext.GetFrameNumber();
 	}
 	if(!initialized)
 		Initialize();

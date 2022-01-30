@@ -209,9 +209,9 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
-	if(current_framenumber==deviceContext.frame_number)
+	if(current_framenumber==deviceContext.GetFrameNumber())
 		return;
-	current_framenumber=deviceContext.frame_number;
+	current_framenumber=deviceContext.GetFrameNumber();
 	if(level!=0)
 	{
 		SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")

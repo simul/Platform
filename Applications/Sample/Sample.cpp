@@ -108,6 +108,9 @@ void GlfwErrorCallback(int errcode, const char* info)
 
 #endif
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
+int framenumber = 0;
+//! The render platform implements the cross-platform Simul graphics API for a specific target API,
+simul::crossplatform::RenderPlatform* renderPlatform = nullptr;
 platform::core::CommandLineParams commandLineParams;
 
 //! An example of how to use simul::dx11::SimulWeatherRendererDX12 in context.
@@ -152,29 +155,12 @@ class PlatformRenderer:public crossplatform::PlatformRendererInterface
 	bool show_textures=false;
 
 	crossplatform::Texture *depthTexture;
-
+	crossplatform::RenderPlatform* renderPlatform = nullptr;
 public:
-	int framenumber=0;
-	//! The render platform implements the cross-platform Simul graphics API for a specific target API,
-	simul::crossplatform::RenderPlatform *renderPlatform= nullptr;
 
-	PlatformRenderer()
+	PlatformRenderer(crossplatform::RenderPlatform *r)
 	{
-#ifdef SAMPLE_USE_D3D12
-		renderPlatform =new dx12::RenderPlatform();
-#endif
-#ifdef SAMPLE_USE_D3D11
-		renderPlatform =new dx11::RenderPlatform();
-#endif
-#ifdef SAMPLE_USE_VULKAN
-		renderPlatform =new vulkan::RenderPlatform();
-#endif
-#ifdef SAMPLE_USE_OPENGL
-		renderPlatform =new opengl::RenderPlatform();
-#endif
-#ifdef SAMPLE_USE_GLES
-		renderPlatform = new gles::RenderPlatform();
-#endif
+		renderPlatform = r;
 		depthTexture=renderPlatform->CreateTexture();
 
 		hDRRenderer		=new crossplatform::HdrRenderer();
@@ -423,7 +409,6 @@ public:
         deviceContext.defaultTargetsAndViewport.m_dt            = nullptr;
         deviceContext.defaultTargetsAndViewport.depthFormat     = crossplatform::UNKNOWN;
         deviceContext.defaultTargetsAndViewport.viewport        = { 0,0,w,h };
-		deviceContext.frame_number					            = framenumber;
 		deviceContext.platform_context				            = context;
 		deviceContext.renderPlatform				            = renderPlatform;
 		deviceContext.viewStruct.view_id			            = view_id;
@@ -462,7 +447,7 @@ public:
 
 		//if(framenumber ==0)
 		//	simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
-		renderPlatform->BeginFrame(deviceContext);
+		renderPlatform->BeginFrame();
 		if(!diffuseCubemapTexture)
 		{
 			GenerateCubemaps(deviceContext);
@@ -738,6 +723,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			double fTime=0.0;
 			float time_step=0.01f;
 			renderer->OnFrameMove(fTime,time_step);
+
+			renderPlatform->SetFrameNumber(framenumber);
 			displaySurfaceManager.Render(hWnd);
 			displaySurfaceManager.EndFrame();
 		}
@@ -805,8 +792,23 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
 	graphicsDeviceInterface->Initialize(commandLineParams("debug"),false,false);
 
-	renderer=new PlatformRenderer();
-	displaySurfaceManager.Initialize(renderer->renderPlatform);
+#ifdef SAMPLE_USE_D3D12
+	renderPlatform = new dx12::RenderPlatform();
+#endif
+#ifdef SAMPLE_USE_D3D11
+	renderPlatform = new dx11::RenderPlatform();
+#endif
+#ifdef SAMPLE_USE_VULKAN
+	renderPlatform = new vulkan::RenderPlatform();
+#endif
+#ifdef SAMPLE_USE_OPENGL
+	renderPlatform = new opengl::RenderPlatform();
+#endif
+#ifdef SAMPLE_USE_GLES
+	renderPlatform = new gles::RenderPlatform();
+#endif
+	renderer = new PlatformRenderer(renderPlatform);
+	displaySurfaceManager.Initialize(renderPlatform);
 
 	// Create an instance of our simple renderer class defined above:
 	renderer->OnCreateDevice(graphicsDeviceInterface->GetDevice());

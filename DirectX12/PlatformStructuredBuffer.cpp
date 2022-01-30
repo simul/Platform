@@ -188,9 +188,9 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 	crossplatform::PlatformStructuredBuffer::Apply(deviceContext,  shaderResource);
 
     // Reset the current applies, we need to do this even if we didnt change the buffer:
-    if (mLastFrame != deviceContext.frame_number)
+    if (mLastFrame != deviceContext.GetFrameNumber())
     {
-        mLastFrame = deviceContext.frame_number;
+        mLastFrame = deviceContext.GetFrameNumber();
 		mFrameCycle++;
 		if(mFrameCycle>2)
 		{
@@ -211,9 +211,9 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
     crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext,  shaderResource);
 
     // Reset the current applies, we need to do this even if we didnt change the buffer:
-    if (mLastFrame != deviceContext.frame_number)
+    if (mLastFrame != deviceContext.GetFrameNumber())
     {
-        mLastFrame = deviceContext.frame_number;
+        mLastFrame = deviceContext.GetFrameNumber();
 		mFrameCycle++;
 		if(mFrameCycle>2)
 		{
@@ -246,7 +246,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	// We intend to read from CPU so we pass a valid range!
     // We read from the oldest buffer
 	const CD3DX12_RANGE readRange(0, 1);
-	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
+	unsigned int curIdx = (deviceContext.GetFrameNumber() + 1) % mBuffering;
     if(!mReadBuffers[curIdx])
         return nullptr;
     HRESULT hr=mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
@@ -264,7 +264,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 	// We are mapping from a readback buffer so it doesnt matter what we modified,
 	// the GPU won't have acces to it. We pass a 0,0 range here.
 	const CD3DX12_RANGE readRange(0, 0);
-	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
+	unsigned int curIdx = (deviceContext.GetFrameNumber() + 1) % mBuffering;
     if(mReadBuffers[curIdx])
     	mReadBuffers[curIdx]->Unmap(0, &readRange);
 }
@@ -278,7 +278,7 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 		return;
 	}
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-	unsigned int curIdx                     = deviceContext.frame_number % mBuffering;
+	unsigned int curIdx                     = deviceContext.GetFrameNumber() % mBuffering;
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
 	// Check state

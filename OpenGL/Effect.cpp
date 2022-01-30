@@ -223,7 +223,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	if (!cpu_read)
 		return nullptr;
 
-	if (deviceContext.frame_number >= mNumBuffers && mBinding != -1)
+	if (deviceContext.GetFrameNumber() >= mNumBuffers && mBinding != -1)
 	{
 		// We want to map from the oldest buffer:
 		int idx = GetIndex(deviceContext, 1);

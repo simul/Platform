@@ -26,7 +26,11 @@ namespace simul
             void InvalidateDeviceObjects()override;
 			//! Render to the display surface. Requires a reference to the mutex to make sure that this rendering doesn't take place at the same time as other render calls.
             void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber);
-            
+
+            void* GetPlatformDeviceContext() override
+            {
+                return mCommandList;
+            }
         private:
 			unsigned GetCurrentBackBufferIndex() const;
             //! Query backbuffers and create render targets

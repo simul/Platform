@@ -192,8 +192,9 @@ namespace simul
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
-			void									BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext);
-			void									EndFrame(crossplatform::GraphicsDeviceContext& deviceContext);
+
+			void									BeginFrame() override;
+			void									EndFrame() override;
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
@@ -299,10 +300,10 @@ namespace simul
 			crossplatform::PixelFormat			  DefaultOutputFormat;
 			
 		protected:
+			//D3D12-specific things
+			virtual void ContextFrameBegin(crossplatform::GraphicsDeviceContext&) override;
 			crossplatform::Texture* createTexture() override;
 			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
-			//D3D12-specific things
-			void BeginD3D12Frame(crossplatform::GraphicsDeviceContext& deviceContext);
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device

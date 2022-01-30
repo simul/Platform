@@ -28,6 +28,10 @@ namespace simul
             virtual void    Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) {};
 			virtual void	StartFrame() {}
 			virtual void	EndFrame() {}
+			virtual void* GetPlatformDeviceContext()
+			{
+				return nullptr;
+			}
             cp_hwnd         GetHandle() { return mHwnd; }
             int             GetViewId() { return mViewId; }
 

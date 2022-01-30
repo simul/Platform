@@ -83,9 +83,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	}
 }
 
-void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::BeginFrame()
 {
-	crossplatform::RenderPlatform::BeginFrame(deviceContext);
+	if (frame_started)
+		return;
+	crossplatform::RenderPlatform::BeginFrame();
 	for(auto t:texturesToDelete[mCurIdx])
 	{
 		glDeleteTextures(1,&t);
@@ -95,9 +97,9 @@ void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceCont
 	texturesToDelete[mCurIdx].clear();
 }
 
-void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::EndFrame()
 {
-	crossplatform::RenderPlatform::EndFrame(deviceContext);
+	crossplatform::RenderPlatform::EndFrame();
 }
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
@@ -159,13 +161,13 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
 {
-	if (mLastFrame != deviceContext.frame_number)
+	if (mLastFrame != deviceContext.GetFrameNumber())
 	{
-		mLastFrame = deviceContext.frame_number;
+		mLastFrame = deviceContext.GetFrameNumber();
 		mCurIdx++;
 		mCurIdx = mCurIdx % kNumIdx;
 		if(deviceContext.AsGraphicsDeviceContext())
-			BeginFrame(*deviceContext.AsGraphicsDeviceContext());
+			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 	}
 
     crossplatform::ContextState* cs = &deviceContext.contextState;

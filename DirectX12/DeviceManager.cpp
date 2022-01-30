@@ -280,7 +280,7 @@ void* DeviceManager::GetImmediateContext()
 	mIContext.IAllocator->Reset();
 	mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
 	mIContext.IRecording = true;
-
+	mIContext.bActive = false;
 	return &mIContext;
 }
 

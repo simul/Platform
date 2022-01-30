@@ -114,19 +114,19 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	);
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
-		mGpuHeap->SetName(L"IndexUpload");
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			SIMUL_PPV_ARGS(&mIntermediateHeap)
-		);
-		SIMUL_ASSERT(res == S_OK);
-		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-		mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
+	mGpuHeap->SetName(L"IndexUpload");
+	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+	(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		SIMUL_PPV_ARGS(&mIntermediateHeap)
+	);
+	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
+	mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
 
 	if (data)
 	{

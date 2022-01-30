@@ -347,17 +347,19 @@ void RenderPlatform::PushToReleaseManager(vk::DescriptorPool& i)
 	resourcesToBeReleased = true;
 }
 
-void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::BeginFrame()
 {
-	crossplatform::RenderPlatform::BeginFrame(deviceContext);
+	if (frame_started)
+		return;
+	crossplatform::RenderPlatform::BeginFrame();
 	auto *vulkanDevice=AsVulkanDevice();
 	//vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frame_index], VK_TRUE, UINT64_MAX);
 	//vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frame_index]);
 }
 
-void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::EndFrame()
 {
-	crossplatform::RenderPlatform::EndFrame(deviceContext);
+	crossplatform::RenderPlatform::EndFrame();
 }
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *dest, crossplatform::Texture *source)
@@ -552,13 +554,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	
 	// We will only set the tables once per frame
-	if (deviceContext.AsGraphicsDeviceContext()&&mLastFrame != deviceContext.frame_number)
+	if (deviceContext.AsGraphicsDeviceContext()&&mLastFrame != deviceContext.GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
-		BeginFrame(*deviceContext.AsGraphicsDeviceContext());
+		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 
-		mLastFrame = deviceContext.frame_number;
+		mLastFrame = deviceContext.GetFrameNumber();
 		mCurIdx++;
 		mCurIdx = mCurIdx % kNumIdx;
 

@@ -72,8 +72,8 @@ namespace simul
 			void		RestoreDeviceObjects(void*) override;
 			void		InvalidateDeviceObjects() override;
 			void		RecompileShaders() override;
-			void		BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext) override;
-			void		EndFrame(crossplatform::GraphicsDeviceContext& deviceContext) override;
+			void		BeginFrame() override;
+			void		EndFrame() override;
 			void		CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *) override;
 			float		GetDefaultOutputGamma() const override;
 			void		BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;

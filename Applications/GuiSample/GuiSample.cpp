@@ -22,6 +22,7 @@ dx12::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface = &deviceManager;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 platform::core::CommandLineParams commandLineParams;
+simul::crossplatform::RenderPlatform* renderPlatform = nullptr;
 
 // Forward declarations of helper functions
 bool CreateDevice(HWND hWnd);
@@ -32,6 +33,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 class PlatformRenderer:public crossplatform::PlatformRendererInterface
 {
 public:
+    PlatformRenderer(crossplatform::RenderPlatform* r) :renderPlatform(r)
+    {
+    }
     //! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called. It returns an identifier for that view.
     int					AddView()
     {
@@ -58,7 +62,7 @@ public:
         deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
         deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
         deviceContext.defaultTargetsAndViewport.viewport = { 0,0,w,h };
-        deviceContext.frame_number = framenumber;
+        renderPlatform->BeginFrame( framenumber);
         deviceContext.platform_context = context;
         deviceContext.renderPlatform = renderPlatform;
         deviceContext.viewStruct.view_id = view_id;
@@ -82,7 +86,7 @@ public:
     }
     simul::crossplatform::RenderPlatform* renderPlatform = nullptr;
 };
-PlatformRenderer platformRenderer;
+PlatformRenderer *platformRenderer=nullptr;
 
 // Main code
 #ifdef _MSC_VER
@@ -125,7 +129,7 @@ int main(int, char**)
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplPlatform_Init(platformRenderer.renderPlatform);
+    ImGui_ImplPlatform_Init(renderPlatform);
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -233,7 +237,8 @@ int main(int, char**)
 
 bool CreateDevice(HWND hWnd)
 {
-    platformRenderer.renderPlatform = new dx12::RenderPlatform();
+    renderPlatform = new dx12::RenderPlatform(); 
+    platformRenderer = new PlatformRenderer(renderPlatform);
     graphicsDeviceInterface->Initialize(true, false, false);//commandLineParams("debug")
 
 #define STRING_OF_MACRO1(x) #x
@@ -243,22 +248,23 @@ bool CreateDevice(HWND hWnd)
     std::string cmake_source_dir = STRING_OF_MACRO(CMAKE_SOURCE_DIR);
     if (cmake_binary_dir.length())
     {
-        platformRenderer.renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + platformRenderer.renderPlatform->GetPathName() + "/HLSL").c_str());
-        platformRenderer.renderPlatform->PushShaderBinaryPath(((cmake_binary_dir + "/") + platformRenderer.renderPlatform->GetPathName() + "/shaderbin").c_str());
-        std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + platformRenderer.renderPlatform->GetPathName());
-        platformRenderer.renderPlatform->PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
-        platformRenderer.renderPlatform->PushTexturePath((cmake_source_dir + "/Resources/Textures").c_str());
+        platformRenderer->renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + platformRenderer->renderPlatform->GetPathName() + "/HLSL").c_str());
+        platformRenderer->renderPlatform->PushShaderBinaryPath(((cmake_binary_dir + "/") + platformRenderer->renderPlatform->GetPathName() + "/shaderbin").c_str());
+        std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + platformRenderer->renderPlatform->GetPathName());
+        platformRenderer->renderPlatform->PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
+        platformRenderer->renderPlatform->PushTexturePath((cmake_source_dir + "/Resources/Textures").c_str());
     }
-    platformRenderer.renderPlatform->PushShaderBinaryPath((std::string("shaderbin/") + platformRenderer.renderPlatform->GetPathName()).c_str());
-    platformRenderer.renderPlatform->RestoreDeviceObjects(graphicsDeviceInterface->GetDevice());
-    displaySurfaceManager.Initialize(platformRenderer.renderPlatform);
-    displaySurfaceManager.SetRenderer(hWnd, &platformRenderer, -1);
+    platformRenderer->renderPlatform->PushShaderBinaryPath((std::string("shaderbin/") + platformRenderer->renderPlatform->GetPathName()).c_str());
+    platformRenderer->renderPlatform->RestoreDeviceObjects(graphicsDeviceInterface->GetDevice());
+    displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
+    displaySurfaceManager.SetRenderer(hWnd, platformRenderer, -1);
     return true;
 }
 
 void CleanupDevice()
 {
-    delete platformRenderer.renderPlatform;
+    delete platformRenderer;
+    delete renderPlatform;
     displaySurfaceManager.Shutdown();
     deviceManager.Shutdown();
 }
