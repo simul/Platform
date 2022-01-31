@@ -1,11 +1,7 @@
 
 
-find_program(SIMUL_FX_EXECUTABLE fx)
-
-
 function ( add_sfx_shader_project targetName configJsonFile )
 	if(SIMUL_BUILD_SHADERS)
-	#message(${configJsonFile})
 		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES" ${ARGN} )
 		if (NOT TARGET ${targetName})
 			if("${sfx_FOLDER}" STREQUAL "")
@@ -55,10 +51,10 @@ function ( add_sfx_shader_project targetName configJsonFile )
 				string(REPLACE ".sfx" ".sfxo" out_f ${name})
 				set(out_f "${out_folder}/${out_f}")
 				add_custom_command(OUTPUT ${out_f}
-					COMMAND "${SIMUL_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" -M"${intermediate_folder}" ${EXTRA_OPTS_S}
+					COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" -M"${intermediate_folder}" ${EXTRA_OPTS_S}
 					MAIN_DEPENDENCY ${in_f}
 					WORKING_DIRECTORY ${out_folder}
-					DEPENDS ${SIMUL_SFX_EXECUTABLE}
+					DEPENDS ${PLATFORM_SFX_EXECUTABLE}
 					)
 				list(APPEND outputs${targetName} ${out_f})
 			else()
@@ -83,5 +79,3 @@ function ( add_sfx_shader_project targetName configJsonFile )
 	endif()
 endfunction()
 
-
-find_program(SIMUL_SFX_EXECUTABLE sfx)

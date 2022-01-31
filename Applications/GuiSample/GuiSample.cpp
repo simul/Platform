@@ -62,7 +62,7 @@ public:
         deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
         deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
         deviceContext.defaultTargetsAndViewport.viewport = { 0,0,w,h };
-        renderPlatform->BeginFrame( framenumber);
+    
         deviceContext.platform_context = context;
         deviceContext.renderPlatform = renderPlatform;
         deviceContext.viewStruct.view_id = view_id;

@@ -292,12 +292,6 @@ public:
 		sceneConstants.LinkToEffect(effect, "SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 
-#ifdef SAMPLE_USE_D3D12
-		if (renderPlatformType == crossplatform::RenderPlatformType::D3D12)
-		{
-			dx12_deviceManager.FlushImmediateCommandList();
-		}
-#endif
 	}
 
 	void OnLostDevice()
@@ -349,7 +343,7 @@ public:
 		deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
 		deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
 		deviceContext.defaultTargetsAndViewport.viewport = { 0, 0, w, h };
-		deviceContext.GetFrameNumber() = framenumber;
+		
 		deviceContext.platform_context = context;
 		deviceContext.renderPlatform = renderPlatform;
 		deviceContext.viewStruct.view_id = view_id;
@@ -368,8 +362,6 @@ public:
 			deviceContext.viewStruct.Init();
 		}
 
-		//Begin frame
-		renderPlatform->BeginFrame();
 		hdrFramebuffer->SetWidthAndHeight(w, h);
 		hdrFramebuffer->Activate(deviceContext);
 
@@ -624,57 +616,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-		/*case WM_MOUSEWHEEL:
-			if (renderer)
-			{
-				int xPos = GET_X_LPARAM(lParam);
-				int yPos = GET_Y_LPARAM(lParam);
-				short zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-				renderer->OnMouse((wParam & MK_LBUTTON) != 0
-					, (wParam & MK_RBUTTON) != 0
-					, (wParam & MK_MBUTTON) != 0
-					, 0, xPos, yPos);
-			}
-			break;
-		case WM_MOUSEMOVE:
-			if (renderer)
-			{
-				int xPos = GET_X_LPARAM(lParam);
-				int yPos = GET_Y_LPARAM(lParam);
-				renderer->OnMouse((wParam & MK_LBUTTON) != 0
-					, (wParam & MK_RBUTTON) != 0
-					, (wParam & MK_MBUTTON) != 0
-					, 0, xPos, yPos);
-			}
-			break;
-		case WM_KEYDOWN:
-			if (renderer)
-				renderer->OnKeyboard((unsigned)wParam, true);
-			break;
-		case WM_KEYUP:
-			if (renderer)
-				renderer->OnKeyboard((unsigned)wParam, false);
-			break;
-		case WM_COMMAND:
-		{
-	int wmId, wmEvent;
-			wmId = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
-			// Parse the menu selections:
-			//switch (wmId)
-			return DefWindowProc(hWnd, message, wParam, lParam);
-			break;
-			}
-		case WM_SIZE:
-			if (renderer)
-			{
-				INT Width = LOWORD(lParam);
-				INT Height = HIWORD(lParam);
-				if (Width > 8192 || Height > 8192 || Width < 0 || Height < 0)
-					break;
-				displaySurfaceManager.ResizeSwapChain(hWnd);
-			}
-			break;*/
 	case WM_PAINT:
 		if (platformRenderer)
 		{

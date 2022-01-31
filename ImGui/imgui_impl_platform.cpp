@@ -307,7 +307,7 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 	if (!bd->effect)
 		bd->effect= bd->renderPlatform->CreateEffect("imgui");
 	if(!bd->effectPass)
-		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass(0);
+		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
@@ -348,7 +348,7 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	if(!bd->renderPlatform)
 		return;
 	bd->effect = bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass(0);
+	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 }
 
 bool	ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r)

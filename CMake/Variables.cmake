@@ -83,7 +83,6 @@ set(SIMUL_SUPPORT_VULKAN ${PLATFORM_SUPPORT_VULKAN})
 set(BUILD_SHARED_LIBS off)
 set(ASSIMP_BUILD_TESTS off)
 
-find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin" "C:/Program Files (x86)/Windows Kits/10/bin/10.0.18362.0" PATH_SUFFIXES x64 )
 
 if(PLATFORM_WINDOWS)
 	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
@@ -91,14 +90,7 @@ if(PLATFORM_WINDOWS)
 	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" CACHE STRING "" )
 endif()
 
-if(PLATFORM_LINUX)
-	set(SIMUL_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Sfx" CACHE STRING "" )
-
-elseif(PLATFORM_WINDOWS)
-	set(SIMUL_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Release/Sfx.exe" CACHE STRING "" )
-else()
-	set(SIMUL_SFX_EXECUTABLE "${CMAKE_SOURCE_DIR}/build/bin/Release/Sfx.exe" CACHE STRING "" )
-endif()
+find_program(PLATFORM_SFX_EXECUTABLE sfx PATHS "${CMAKE_BINARY_DIR}/bin/Release" "${CMAKE_BINARY_DIR}/bin/Debug" "${CMAKE_BINARY_DIR}/bin/Sfx") 
 
 mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS )
 
