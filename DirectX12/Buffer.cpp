@@ -49,6 +49,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		nullptr,
 		SIMUL_PPV_ARGS(&mGpuHeap)
 	);
+	auto& deviceContext = renderPlatform->GetImmediateContext();
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
 		mGpuHeap->SetName(L"VertexUpload");
@@ -73,7 +74,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		subresourceData.RowPitch = mBufferSize;
 		subresourceData.SlicePitch = subresourceData.RowPitch;
 
-		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+		UpdateSubresources(deviceContext.asD3D12Context(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -83,7 +84,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 
-		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier);
+		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
 	}
 
 	// Make a vertex buffer view
@@ -102,7 +103,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	count = num_indices;
 	SAFE_DELETE(mGpuHeap);
 	SAFE_DELETE(mIntermediateHeap);
-
+	auto& deviceContext = renderPlatform->GetImmediateContext();
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -135,7 +136,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		subresourceData.RowPitch = mBufferSize;
 		subresourceData.SlicePitch = subresourceData.RowPitch;
 
-		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+		UpdateSubresources(deviceContext.asD3D12Context(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -145,7 +146,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 
-		renderPlatform->AsD3D12CommandList()->ResourceBarrier(1, &barrier);
+		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
 	}
 
 	DXGI_FORMAT indexFormat;

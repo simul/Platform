@@ -34,16 +34,12 @@ namespace simul
 			void					Shutdown();
 			void*					GetDevice();
 			void*					GetDeviceContext();
-			
-			void*					GetImmediateContext();
-			void					FlushImmediateCommandList();
 
 			int						GetNumOutputs();
 			crossplatform::Output	GetOutput(int i);
 			void					ReportMessageFilterState();
 
 		protected:
-			ImmediateContext		mIContext;
 			//! Map of displays
 			OutputMap				mOutputs;
 			//! The D3D device

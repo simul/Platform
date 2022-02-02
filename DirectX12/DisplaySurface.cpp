@@ -127,18 +127,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mCommandList->SetName(L"WindowCommandList 2");
 	mRecordingCommands = true;
 
-	// Provide a cmd list so we can start recording commands 
-	if (!dx12RenderPlatform->GetImmediateContext().platform_context)
-	{
-		ImmediateContext context;
-		context.ICommandList = mCommandList;
-		context.bActive = true;
-		context.IRecording = true;
-		// Allocator should not be used outside this class.
-		context.IAllocator = mCommandAllocators[0];
-		dx12RenderPlatform->SetImmediateContext(&context);
-	}
-	//dx12RenderPlatform->SetCurrentCommandList(mCommandList);
 	dx12RenderPlatform->DefaultOutputFormat = outFmt;
 }
 

@@ -128,7 +128,6 @@ RenderPlatform::RenderPlatform():
 	,mGraphicsQueue(nullptr)
 	,mComputeQueue(nullptr)
 	,mCopyQueue(nullptr)
-	,mImmediateCommandList(nullptr)
 	,mFrameHeap(nullptr)
 	,mFrameOverrideSamplerHeap(nullptr)
 	,mSamplerHeap(nullptr) 
@@ -176,17 +175,17 @@ float RenderPlatform::GetDefaultOutputGamma() const
 
 void RenderPlatform::SetImmediateContext(ImmediateContext * ctx)
 {
-	mImmediateCommandList				= ctx->ICommandList;
-	mImmediateAllocator					= ctx->IAllocator;
-	immediateContext.platform_context	= mImmediateCommandList;
+	if (!mIContext.isExternal)
+	{
+		SAFE_RELEASE(mIContext.IAllocator);
+		SAFE_RELEASE(mIContext.ICommandList);
+	}
+	mIContext = *ctx;
+	mIContext.isExternal = true;
+	immediateContext.platform_context	= mIContext.ICommandList;
 	immediateContext.renderPlatform		= this;
-	immediateContext.contextState.contextActive =ctx->IRecording;
-	immediateContext.contextState.externalContext=ctx->bActive;
-}
-
-ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
-{
-	return mImmediateCommandList;
+	immediateContext.contextState.contextActive =ctx->isRecording;
+	immediateContext.contextState.externalContext=ctx->isExternal;
 }
 
 ID3D12Device* RenderPlatform::AsD3D12Device()
@@ -492,7 +491,17 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		}
 #endif
 	}
-
+	if (!mIContext.isExternal)
+	{
+		SAFE_RELEASE(mIContext.IAllocator);
+		SAFE_RELEASE(mIContext.ICommandList);
+		V_CHECK(m12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mIContext.IAllocator)));
+		mIContext.IAllocator->SetName(L"mIContext.IAllocator");
+		V_CHECK(m12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mIContext.IAllocator, nullptr, SIMUL_PPV_ARGS(&mIContext.ICommandList)));
+		mIContext.IAllocator->SetName(L"mIContext.ICommandList");
+		V_CHECK(mIContext.ICommandList->Close());
+		mIContext.isRecording = false;
+	}
 	DefaultBlendState   = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	DefaultRasterState  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	DefaultDepthState   = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -778,6 +787,21 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	RecompileShaders();
 }
 
+void RenderPlatform::FlushImmediateCommandList()
+{
+	if (!mIContext.isRecording)
+	{
+		return;
+	}
+	mIContext.isRecording = false;
+	HRESULT res = mIContext.ICommandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { mIContext.ICommandList };
+	ID3D12CommandQueue* mGraphicsQueue = RenderPlatform::CreateCommandQueue(m12Device, D3D12_COMMAND_LIST_TYPE_DIRECT, "ImmediateCommandQueue");
+	mGraphicsQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	RenderPlatform::FlushCommandQueue(m12Device, mGraphicsQueue);
+	mGraphicsQueue->Release();
+}
+
 ID3D12CommandQueue* RenderPlatform::CreateCommandQueue(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type, const char* name)
 {
 	ID3D12CommandQueue* queue = nullptr;
@@ -993,6 +1017,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	computeContext.renderPlatform = nullptr;
 	computeContext.platform_context = nullptr;
 	computeContext.platform_context_allocator = nullptr;
+	if (!mIContext.isExternal)
+	{
+		SAFE_RELEASE(mIContext.IAllocator);
+		SAFE_RELEASE(mIContext.ICommandList);
+	}
 }
 
 void RenderPlatform::RecompileShaders()
@@ -1378,14 +1407,6 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 	commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
 }
 
-void RenderPlatform::ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue)
-{
-	if(immediateContext.contextState.contextActive&& !immediateContext.contextState.externalContext)
-	{
-		ExecuteCommandList(commandQueue, mImmediateCommandList);
-		immediateContext.contextState.contextActive = false;
-	}
-}
 
 void RenderPlatform::ResetImmediateCommandList()
 {
@@ -1393,7 +1414,7 @@ void RenderPlatform::ResetImmediateCommandList()
 	{
 		ExecuteCommands(immediateContext);
 		//mImmediateCommandList->Close();
-		mImmediateCommandList->Reset(mImmediateAllocator, nullptr);
+		mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
 		immediateContext.contextState.contextActive = true;
 	}
 }
@@ -2790,7 +2811,6 @@ crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
 	return new dx12::DisplaySurface();
 }
-
 
 crossplatform::GpuProfiler* RenderPlatform::CreateGpuProfiler()
 {

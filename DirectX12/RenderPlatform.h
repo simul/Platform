@@ -76,8 +76,8 @@ namespace simul
 		{
 			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
 			ID3D12CommandAllocator*			IAllocator		=nullptr;
-			bool							IRecording		=false;
-			bool							bActive			=false;
+			bool							isRecording		=false;
+			bool							isExternal		=false;
 		};
 		struct D3D12ComputeContext 
 		{
@@ -129,8 +129,6 @@ namespace simul
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
 
-			//! Returns the command list reference
-			ID3D12GraphicsCommandList*		AsD3D12CommandList();
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the device for raytracing, or nullptr if unavailable. You must call Release() on this pointer, as it is created via QueryInterface().
@@ -271,8 +269,7 @@ namespace simul
 			bool									IsMSAAEnabled();
 
 			void ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList);
-			void ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue);
-			void ResetImmediateCommandList();
+		
 
 			DXGI_SAMPLE_DESC						GetMSAAInfo();
 			
@@ -314,8 +311,8 @@ namespace simul
 			ID3D12CommandQueue*			mComputeQueue;
 			//! Reference to the copy command queue
 			ID3D12CommandQueue*			mCopyQueue;
-			//! Reference to the immediate command list
-			ID3D12GraphicsCommandList*	mImmediateCommandList;
+			// Immediate context can be owned or external.
+			ImmediateContext			mIContext;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap*					mFrameHeap;
@@ -358,7 +355,6 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
 			crossplatform::TargetsAndViewport mTargets;
-			ID3D12CommandAllocator*	 mImmediateAllocator=nullptr;
 			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
@@ -366,6 +362,8 @@ namespace simul
 
 			D3D12ComputeContext m12ComputeContext;
 			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
+			void FlushImmediateCommandList();
+			void ResetImmediateCommandList();
 		};
 	}
 }

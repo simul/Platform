@@ -235,8 +235,6 @@ void DeviceManager::Shutdown()
 	mOutputs.clear();
 
 	ReportMessageFilterState();
-	SAFE_RELEASE(mIContext.IAllocator);
-	SAFE_RELEASE(mIContext.ICommandList);
 	
 	SAFE_RELEASE(mDevice);
 #ifndef _XBOX_ONE
@@ -259,44 +257,6 @@ void* DeviceManager::GetDevice()
 void* DeviceManager::GetDeviceContext()
 { 
 	return 0; 
-}
-
-void* DeviceManager::GetImmediateContext()
-{
-	if (!mIContext.ICommandList)
-	{
-		V_CHECK (mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mIContext.IAllocator)));
-		mIContext.IAllocator->SetName(L"mIContext.IAllocator");
-		V_CHECK (mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mIContext.IAllocator, nullptr, SIMUL_PPV_ARGS(&mIContext.ICommandList)));
-		mIContext.IAllocator->SetName(L"mIContext.ICommandList");
-		V_CHECK (mIContext.ICommandList->Close());
-		mIContext.IRecording = false;
-	}
-	if (mIContext.IRecording)
-	{
-		FlushImmediateCommandList();
-	}
-
-	mIContext.IAllocator->Reset();
-	mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
-	mIContext.IRecording = true;
-	mIContext.bActive = false;
-	return &mIContext;
-}
-
-void DeviceManager::FlushImmediateCommandList()
-{
-	if (!mIContext.IRecording)
-	{
-		return;
-	}
-	mIContext.IRecording    = false;
-	HRESULT res             = mIContext.ICommandList->Close();
-	ID3D12CommandList* ppCommandLists[] = { mIContext.ICommandList };
-	ID3D12CommandQueue* mGraphicsQueue = RenderPlatform::CreateCommandQueue(mDevice, D3D12_COMMAND_LIST_TYPE_DIRECT, "ImmediateCommandQueue");
-	mGraphicsQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	RenderPlatform::FlushCommandQueue(mDevice, mGraphicsQueue);
-	mGraphicsQueue->Release();
 }
 
 int DeviceManager::GetNumOutputs()
