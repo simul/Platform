@@ -362,7 +362,7 @@ bool	ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r)
 	// Setup backend capabilities flags
 	bd = IM_NEW(ImGui_ImplPlatform_Data)();
 	io.BackendRendererUserData = (void*)bd;
-	io.BackendRendererName = "imgui_impl_dx11";
+	io.BackendRendererName = "imgui_impl_platform";
 	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
 	bd->renderPlatform = r;
