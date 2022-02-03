@@ -365,6 +365,7 @@ namespace simul
 			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
 			void FlushImmediateCommandList();
 			void ResetImmediateCommandList() override;
+			unsigned char frameHeapIndex=0;
 		};
 
 	}

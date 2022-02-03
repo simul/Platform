@@ -503,6 +503,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	{
 		return;
 	}
+	frameHeapIndex=0;
 	if (m12Device != device)
 	{
 		m12Device = (ID3D12Device*)device;
@@ -1089,6 +1090,12 @@ void RenderPlatform::BeginFrame()
 {
 	crossplatform::RenderPlatform::BeginFrame();
 	ResetImmediateCommandList();
+	frameHeapIndex++;
+	frameHeapIndex=frameHeapIndex%3;
+	// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
+	mFrameHeap[frameHeapIndex].Reset();
+	// Reset the override samplers heap
+	mFrameOverrideSamplerHeap[frameHeapIndex].Reset();
 }
 
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -2716,13 +2723,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 
 		deviceContext.SetFrameNumber(frameNumber);
-		mCurIdx++;
-		mCurIdx = mCurIdx % kNumIdx;
-
-		// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
-		mFrameHeap[mCurIdx].Reset();
-		// Reset the override samplers heap
-		mFrameOverrideSamplerHeap[mCurIdx].Reset();
 	}
 
 	auto cmdList    = deviceContext.asD3D12Context();
@@ -2730,11 +2730,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 	// Set the frame descriptor heaps
 	Heap* currentSamplerHeap                = dx12Effect->GetEffectSamplerHeap();
-	ID3D12DescriptorHeap* currentHeaps[2]   = { mFrameHeap[mCurIdx].GetHeap(),currentSamplerHeap->GetHeap()};
+	ID3D12DescriptorHeap* currentHeaps[2]   = { mFrameHeap[frameHeapIndex].GetHeap(),currentSamplerHeap->GetHeap()};
 	// If we are overriding samplers, use the override heap instead:
 	if (cs->samplerStateOverrides.size() > 0)
 	{
-		currentSamplerHeap  = &mFrameOverrideSamplerHeap[mCurIdx];
+		currentSamplerHeap  = &mFrameOverrideSamplerHeap[frameHeapIndex];
 		currentHeaps[1]     = currentSamplerHeap->GetHeap();
 	}
 	cmdList->SetDescriptorHeaps(2, currentHeaps);
@@ -2744,12 +2744,12 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	//       the shader binary, refer to Simul/Platform/<target>/HLSL/GFX.hls
 	const UINT cbvSrvUavTableId = 0;
 	const UINT samplerTableId	= 1;
-	auto bufferGpuHandle=mFrameHeap[mCurIdx].GpuHandle();
+	auto bufferGpuHandle=mFrameHeap[frameHeapIndex].GpuHandle();
 	auto samplerGpuHandle=currentSamplerHeap->GpuHandle();
 	if (pass->IsCompute())
 	{
 		cmdList->SetComputeRootSignature(mGRootSignature);
-		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
+		cmdList->SetComputeRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[frameHeapIndex].GpuHandle());
 		cmdList->SetComputeRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}
 	else if(pass->IsRaytrace())
@@ -2762,24 +2762,24 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	{
 		// Apply the common root signature
 		cmdList->SetGraphicsRootSignature(mGRootSignature);
-		cmdList->SetGraphicsRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[mCurIdx].GpuHandle());
+		cmdList->SetGraphicsRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[frameHeapIndex].GpuHandle());
 		cmdList->SetGraphicsRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());
 	}
 
 	// Apply Override samplers:	
 	if (cs->samplerStateOverrides.size() > 0)
 	{
-		pass->SetSamplers(dx12Effect->GetSamplers(),&mFrameOverrideSamplerHeap[mCurIdx],m12Device,deviceContext);
+		pass->SetSamplers(dx12Effect->GetSamplers(),&mFrameOverrideSamplerHeap[frameHeapIndex],m12Device,deviceContext);
 	}
 	
 	// Apply CBVs:
-	pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[mCurIdx],m12Device,deviceContext);
+	pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[frameHeapIndex],m12Device,deviceContext);
 
 	// Apply SRVs (textures and SB):
-	pass->SetSRVs(cs->textureAssignmentMap, cs->applyStructuredBuffers, &mFrameHeap[mCurIdx], m12Device, deviceContext);
+	pass->SetSRVs(cs->textureAssignmentMap, cs->applyStructuredBuffers, &mFrameHeap[frameHeapIndex], m12Device, deviceContext);
 
 	// Apply UAVs (RwTextures and RwSB):
-	pass->SetUAVs(cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers, &mFrameHeap[mCurIdx], m12Device, deviceContext);
+	pass->SetUAVs(cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers, &mFrameHeap[frameHeapIndex], m12Device, deviceContext);
 
 	// We are ready to draw/dispatch, so now flush the barriers!
 	FlushBarriers(deviceContext);

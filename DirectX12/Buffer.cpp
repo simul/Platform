@@ -36,17 +36,14 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	count = num_vertices;
 	SAFE_DELETE(d3d12Buffer);
 	SAFE_DELETE(mIntermediateHeap);
-	// Just debug memory usage
-	//float megas = (float)mBufferSize / 1048576.0f;
-	//SIMUL_COUT << "Allocating: " << std::to_string(mBufferSize) << ".bytes in the GPU, (" << std::to_string(megas) << ".MB)\n";
-	// Upload heap to hold the vertex data in the GPU (we will be mapping it to copy new data)
 
+	// NOTE: Buffers must start in the COMMON resource state. Not all drivers enforce this.
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		data ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
 		SIMUL_PPV_ARGS(&d3d12Buffer)
 	);
@@ -54,7 +51,6 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(d3d12Buffer, mBufferSize)
 	SetD3DName(d3d12Buffer,(name+" VertexUpload").c_str());
-	
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -66,7 +62,14 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	);
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-		mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+	mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+
+	D3D12_RESOURCE_BARRIER barrier;
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = d3d12Buffer;
+	barrier.Transition.Subresource = 0;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
 	if (data)
 	{
 
@@ -75,21 +78,18 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		subresourceData.RowPitch = mBufferSize;
 		subresourceData.SlicePitch = subresourceData.RowPitch;
 
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+
 		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
-		D3D12_RESOURCE_BARRIER barrier;
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = d3d12Buffer;
-		barrier.Transition.Subresource = 0;
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-
-		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
-#if SIMUL_DEBUG_BARRIERS
-		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
-#endif
 	}
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+	deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+#if SIMUL_DEBUG_BARRIERS
+	LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
+#endif
 
 	// Make a vertex buffer view
 	mVertexBufferView.SizeInBytes = mBufferSize;
@@ -113,7 +113,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-		data ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_INDEX_BUFFER,
+		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
 		SIMUL_PPV_ARGS(&d3d12Buffer)
 	);
@@ -133,6 +133,12 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
 	mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
 
+	D3D12_RESOURCE_BARRIER barrier;
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = d3d12Buffer;
+	barrier.Transition.Subresource = 0;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
 	if (data)
 	{
 		D3D12_SUBRESOURCE_DATA subresourceData = {};
@@ -140,21 +146,21 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		subresourceData.RowPitch = mBufferSize;
 		subresourceData.SlicePitch = subresourceData.RowPitch;
 
-		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
-
-		D3D12_RESOURCE_BARRIER barrier;
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = d3d12Buffer;
-		barrier.Transition.Subresource = 0;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
 #if SIMUL_DEBUG_BARRIERS
 		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
 #endif
+		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
+
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	}
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+
+	deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+#if SIMUL_DEBUG_BARRIERS
+	LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
+#endif
 
 	DXGI_FORMAT indexFormat;
 	if (index_size_bytes == 4)

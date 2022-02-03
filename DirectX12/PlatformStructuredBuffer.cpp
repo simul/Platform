@@ -53,7 +53,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
     // Create the buffers:
     //  const D3D12_RESOURCE_STATES		mShaderResourceState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    D3D12_RESOURCE_STATES initState     = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    D3D12_RESOURCE_STATES initState     = D3D12_RESOURCE_STATE_COMMON;
+	D3D12_RESOURCE_STATES finalState	=computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	D3D12_RESOURCE_FLAGS bufferFlags    = computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS   : D3D12_RESOURCE_FLAG_NONE;
     mCurrentState                       = initState;
 
@@ -97,9 +98,10 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         dataToCopy.pData                    = pNewData;
         dataToCopy.RowPitch                 = dataToCopy.SlicePitch = mUnitSize;
         crossplatform::DeviceContext &deviceContext=mRenderPlatform->GetImmediateContext();
-        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST, true);
+        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, initState, D3D12_RESOURCE_STATE_COPY_DEST, true);
         UpdateSubresources(deviceContext.asD3D12Context(), mGPUBuffer, mUploadBuffer, 0, 0, 1, &dataToCopy);
-        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState, true);
+        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, finalState, true);
+		mCurrentState                       = finalState;
         
         free(pNewData);
     }
