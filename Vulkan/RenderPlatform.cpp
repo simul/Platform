@@ -554,12 +554,12 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	
 	// We will only set the tables once per frame
-	if (deviceContext.AsGraphicsDeviceContext()&&mLastFrame != deviceContext.GetFrameNumber())
+	if (frameNumber != deviceContext.GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins 
 		// release objects!
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
-
+		deviceContext.SetFrameNumber(frameNumber);
 		mLastFrame = deviceContext.GetFrameNumber();
 
 		//Make sure that any resources set for deletion are removed
