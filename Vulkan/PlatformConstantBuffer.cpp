@@ -133,27 +133,28 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 	}
 
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
-	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrameIndex != curFrameIndex)
+	if (mLastFrameIndex != renderPlatform->GetFrameNumber())
 	{
-		mLastFrameIndex = curFrameIndex;
+		mLastFrameIndex = renderPlatform->GetFrameNumber();
 		mCurApplyCount = 0;
+		currentFrameIndex++;
+		currentFrameIndex = currentFrameIndex % (kNumBuffers);
 	}
 
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
 	uint8_t* pDest = nullptr;
 	last_offset = (kBufferAlign * mSlots) * mCurApplyCount;	
-	lastBuffer=&mBuffers[curFrameIndex];
+	lastBuffer=&mBuffers[currentFrameIndex];
 
-	auto pData = vulkanDevice->mapMemory(mMemory[curFrameIndex],last_offset, (kBufferAlign * mSlots),  vk::MemoryMapFlags());
+	auto pData = vulkanDevice->mapMemory(mMemory[currentFrameIndex],last_offset, (kBufferAlign * mSlots),  vk::MemoryMapFlags());
 	
 	if(pData)
 	{
 		memcpy(pData,src, size);
 		//memset(pData,255,size);
-		vulkanDevice->unmapMemory(mMemory[curFrameIndex]);
+		vulkanDevice->unmapMemory(mMemory[currentFrameIndex]);
 	}
 	
 	mCurApplyCount++;

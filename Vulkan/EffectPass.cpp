@@ -872,7 +872,6 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) 
 {
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
-	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
 	if (mLastFrameIndex != deviceContext.GetFrameNumber())
 	{

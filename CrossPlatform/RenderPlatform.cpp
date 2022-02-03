@@ -80,7 +80,6 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 #else
 	,can_save_and_restore(true)
 #endif
-	,mCurIdx(0)
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
 {
@@ -146,6 +145,14 @@ vk::Instance* RenderPlatform::AsVulkanInstance()
 
 GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 {
+#if SIMUL_INTERNAL_CHECKS
+	if (!immediateContext.contextState.contextActive)
+	{
+		//SIMUL_CERR << "Immediate context is not active.\n";
+		// Reset so it is active, because we will now be executing commands on it probably.
+		ResetImmediateCommandList();
+	}
+#endif
 	return immediateContext;
 }
 
@@ -415,7 +422,7 @@ void RenderPlatform::EndFrame()
 {
 	if (!frame_started)
 	{
-		SIMUL_BREAK("EndFrame(): frame had not started.");
+		SIMUL_CERR<<"EndFrame(): frame had not started.\n";
 	}
 	frame_started = false;
 }

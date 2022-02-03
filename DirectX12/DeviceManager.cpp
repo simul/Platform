@@ -53,11 +53,19 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{
-				ID3D12Debug3* debugController1 = nullptr;
-				debugController->QueryInterface(SIMUL_PPV_ARGS(&debugController1));
-				debugController1->SetEnableGPUBasedValidation(true);
-				debugController1->SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS_DISABLE_STATE_TRACKING);
+				ID3D12Debug3* debug3 = nullptr; 
+				debugController->QueryInterface(SIMUL_PPV_ARGS(&debug3));
+				debug3->SetEnableGPUBasedValidation(true);
+				debug3->SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS_DISABLE_STATE_TRACKING);
 			}
+#ifdef __ID3D12Debug5_INTERFACE_DEFINED__
+			ID3D12Debug5* debug5 = nullptr; 
+			debugController->QueryInterface(SIMUL_PPV_ARGS(&debug5));
+			if (debug5)
+			{
+				debug5->SetEnableAutoName(TRUE);
+			}
+#endif
 		}
 		ID3D12DeviceRemovedExtendedDataSettings *pDredSettings=nullptr;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))

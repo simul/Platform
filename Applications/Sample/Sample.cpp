@@ -286,10 +286,6 @@ public:
 	Light lights[10];
 	void OnCreateDevice(void* pd3dDevice)
 	{
-#ifdef SAMPLE_USE_D3D12
-		// We will provide a command list so initialization of following resource can take place
-		((dx12::RenderPlatform*)renderPlatform)->SetImmediateContext((dx12::ImmediateContext*)deviceManager.GetImmediateContext());
-#endif
 		renderPlatform->RestoreDeviceObjects(pd3dDevice);
 		ReloadMeshes();
 		rtTargetTexture->ensureTexture2DSizeAndFormat(renderPlatform,kOverrideWidth,kOverrideHeight,1,crossplatform::PixelFormat::RGBA_8_UNORM,true);
@@ -724,7 +720,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			float time_step=0.01f;
 			renderer->OnFrameMove(fTime,time_step);
 
-			renderPlatform->SetFrameNumber(framenumber);
+			renderPlatform->BeginFrame(framenumber);
 			displaySurfaceManager.Render(hWnd);
 			displaySurfaceManager.EndFrame();
 		}
@@ -814,9 +810,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	renderer->OnCreateDevice(graphicsDeviceInterface->GetDevice());
 	//displaySurfaceManager.AddWindow(hWnd);
 	displaySurfaceManager.SetRenderer(hWnd,renderer,-1);
-#ifdef SAMPLE_USE_D3D12
-    deviceManager.FlushImmediateCommandList();
-#endif
 	// Main message loop:
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -824,7 +817,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 		InvalidateRect(hWnd, NULL, TRUE);
-		if(commandLineParams.quitafterframe>0&& renderer->framenumber>=commandLineParams.quitafterframe)
+		if(commandLineParams.quitafterframe>0&& renderPlatform->GetFrameNumber()>=commandLineParams.quitafterframe)
 			break;
 	}
 	displaySurfaceManager.RemoveWindow(hWnd);

@@ -50,13 +50,13 @@ def cmake(src,build_path,flags):
 	vs_versions=['Visual Studio 17 2022','Visual Studio 16 2019','Visual Studio 15 2017']
 	for vs_version in vs_versions:
 		cmakeCmd = ["cmake.exe", '-G',vs_version, os.path.relpath(src, build_path)]
-	retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
+		retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
 		if retCode!=0:
 			continue
-	sln=find('*.sln','.')[0]
-	print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
-	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
-	pid.poll()
+		sln=find('*.sln','.')[0]
+		print(MSBUILD+'/p:Configuration=Release'+'/p:Platform=x64'+sln)
+		pid=subprocess.Popen([MSBUILD,'/p:Configuration=Release','/p:Platform=x64',sln])
+		pid.poll()
 		break
 	print(MSBUILD+'/p:Configuration=Debug'+'/p:Platform=x64'+sln)
 	pid=subprocess.Popen([MSBUILD,'/p:Configuration=Debug','/p:Platform=x64',sln])

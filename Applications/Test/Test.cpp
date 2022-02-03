@@ -274,13 +274,6 @@ public:
 
 	void OnCreateDevice()
 	{
-#ifdef SAMPLE_USE_D3D12
-		if (renderPlatformType == crossplatform::RenderPlatformType::D3D12)
-		{
-			// We will provide a command list so initialization of following resource can take place
-			((dx12::RenderPlatform*)renderPlatform)->SetImmediateContext((dx12::ImmediateContext*)dx12_deviceManager.GetImmediateContext());
-		}
-#endif
 		void* device = graphicsDeviceInterface->GetDevice();
 		renderPlatform->RestoreDeviceObjects(device);
 

@@ -816,10 +816,9 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		}
 		SAFE_RELEASE(_t);
 	}
-
+	renderPlatform = r;
 	auto &deviceContext=renderPlatform->GetImmediateContext();
 	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
-	renderPlatform				= r;
 	// If it's the same as before, return.
 	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
 	{
@@ -1536,55 +1535,55 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 #endif
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool cubemap)
 {
-	bool ok			= true;
-	int totalNum	= cubemap ? 6 * num : num;
+	bool ok = true;
+	int totalNum = cubemap ? 6 * num : num;
 
 	if (mTextureDefault)
 	{
 		auto tDesc = mTextureDefault->GetDesc();
-        if (tDesc.DepthOrArraySize != totalNum || tDesc.MipLevels != m || tDesc.Width != w || tDesc.Height != l || tDesc.Format != dxgi_format)
-        {
+		if (tDesc.DepthOrArraySize != totalNum || tDesc.MipLevels != m || tDesc.Width != w || tDesc.Height != l || tDesc.Format != dxgi_format)
+		{
 			ok = false;
-        }
-        if (computable != ((tDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
-        {
+		}
+		if (computable != ((tDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
+		{
 			ok = false;
-        }
-        if (rendertarget != ((tDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
-        {
+		}
+		if (rendertarget != ((tDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
+		{
 			ok = false;
-        }
+		}
 	}
 	else
 	{
 		ok = false;
 	}
-    if (ok)
-    {
+	if (ok)
+	{
 		return false;
-    }
-	auto &deviceContext=renderPlatform->GetImmediateContext();
-	HRESULT res		= S_OK;
-	renderPlatform	= r;
-	pixelFormat		= f;
-	dxgi_format		= dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
-	width			= w;
-	length			= l;
-	depth			= 1;
-	dim				= 2;
-    mips            = m;
-    arraySize       = num;
-    this->cubemap   = cubemap;
+	}
+	HRESULT res = S_OK;
+	renderPlatform = r;
+	auto& deviceContext = renderPlatform->GetImmediateContext();
+	pixelFormat = f;
+	dxgi_format = dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	width = w;
+	length = l;
+	depth = 1;
+	dim = 2;
+	mips = m;
+	arraySize = num;
+	this->cubemap = cubemap;
 
 	D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
 	textureFlags = (D3D12_RESOURCE_FLAGS)
-	(
-		textureFlags |
-		(computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |
-		(rendertarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0)
-	);
+		(
+			textureFlags |
+			(computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |
+			(rendertarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0)
+			);
 
 	CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
 	(
@@ -1611,13 +1610,25 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 	// Clear resources
 	SAFE_RELEASE_LATER(mTextureDefault);
-
+	// Find the initial texture state
+	if (rendertarget)
+	{
+		AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
+	}
+	else if (computable)
+	{
+		AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	}
+	else
+	{
+		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
+	}
 	res = r->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&textureDesc,
-		GetCurrentState(deviceContext),
+		mResourceState,
 		rendertarget? &clearValues : nullptr,
         SIMUL_PPV_ARGS(&mTextureDefault)
 	);
@@ -1633,16 +1644,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	FreeUAVTables();
 	
 	InitStateTable(totalNum, m);
-	// Find the initial texture state
-	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-    if (rendertarget)
-    {
-		AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (computable)
-    {
-		AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    }
 	InitSRVTables(totalNum, m);
 	CreateSRVTables(num, m, cubemap);
 	

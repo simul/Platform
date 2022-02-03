@@ -180,8 +180,6 @@ namespace simul
 			}
 			//! Returns true if all the specified feature bits are supported.
 			bool HasRenderingFeatures(RenderingFeatures r) const;
-			//! Returns the current idx (used in ring buffers)
-			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
 			virtual std::string GetPathName() const;
@@ -208,7 +206,7 @@ namespace simul
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
 			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
 			//! Gets an object containing immediate-context API-specific values.
-			GraphicsDeviceContext &GetImmediateContext();
+			virtual GraphicsDeviceContext &GetImmediateContext();
 			//! Gets an object containing the current global compute context.
 			ComputeDeviceContext &GetComputeDeviceContext() { return computeContext; }
 			//! Push the given file path onto the texture path stack.
@@ -512,17 +510,12 @@ namespace simul
 			crossplatform::GpuProfiler		*gpuProfiler=nullptr;
 			bool							gpuProfileFrameStarted = false;
 			bool can_save_and_restore;
-			//! Value used to determine the number of "x" that we will have, this is useful in dx12
-			//! as many times we can not reuse the same resource as in the last frame so we need to have 
-			//! a ring buffer.
-			static const int			kNumIdx = 3;
-			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
-			unsigned char				mCurIdx;
 			//! Last frame number
 			long long					mLastFrame=-1;
 			bool						frame_started=false;
 			long long					frameNumber = 0;
 			std::set<crossplatform::Texture*> fencedTextures;
+			virtual void ResetImmediateCommandList() {}
 		public:
 			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;

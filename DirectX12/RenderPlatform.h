@@ -76,7 +76,6 @@ namespace simul
 		{
 			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
 			ID3D12CommandAllocator*			IAllocator		=nullptr;
-			bool							isRecording		=false;
 			bool							isExternal		=false;
 		};
 		struct D3D12ComputeContext 
@@ -177,9 +176,6 @@ namespace simul
 			//! Returns the current applied primitive topology
 			D3D_PRIMITIVE_TOPOLOGY			GetCurrentPrimitiveTopology() { return mStoredTopology; }
 
-			static ID3D12CommandQueue* CreateCommandQueue(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type, const char* name);
-			static void FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue* queue);
-
 			//! Platform-dependent function called when initializing the render platform.
 			void							RestoreDeviceObjects(void* device);
 			//! Platform-dependent function called when uninitializing the render platform.
@@ -187,6 +183,8 @@ namespace simul
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void							RecompileShaders();
 			void							SynchronizeCacheAndState(crossplatform::DeviceContext &) override;
+
+			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
 
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
@@ -297,6 +295,9 @@ namespace simul
 			crossplatform::PixelFormat			  DefaultOutputFormat;
 			
 		protected:
+			friend class CommandListController;
+			static ID3D12CommandQueue* CreateCommandQueue(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type, const char* name);
+			static void FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue* queue);
 			//D3D12-specific things
 			virtual void ContextFrameBegin(crossplatform::GraphicsDeviceContext&) override;
 			crossplatform::Texture* createTexture() override;
@@ -363,8 +364,9 @@ namespace simul
 			D3D12ComputeContext m12ComputeContext;
 			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
 			void FlushImmediateCommandList();
-			void ResetImmediateCommandList();
+			void ResetImmediateCommandList() override;
 		};
+
 	}
 }
 #ifdef _MSC_VER

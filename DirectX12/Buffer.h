@@ -23,16 +23,16 @@ namespace simul
 			void						Unmap(crossplatform::DeviceContext &deviceContext) override;
 			ID3D12Resource * const AsD3D12Buffer()  const override
 			{
-				return mGpuHeap;
+				return d3d12Buffer;
 			}
 			ID3D12Resource *  AsD3D12Buffer() override 
 			{
-				return mGpuHeap;
+				return d3d12Buffer;
 			}
 			D3D12_VERTEX_BUFFER_VIEW*	GetVertexBufferView() override;
 			D3D12_INDEX_BUFFER_VIEW*	GetIndexBufferView() override;
 		private:
-			ID3D12Resource*				mGpuHeap;
+			ID3D12Resource*				d3d12Buffer;
 			ID3D12Resource*				mIntermediateHeap;
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;

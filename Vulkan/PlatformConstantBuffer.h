@@ -50,6 +50,7 @@ namespace simul
 			size_t size;
 			size_t last_offset;
 			vk::Buffer *lastBuffer;
+			unsigned char currentFrameIndex = 0;
 		};
 	}
 }

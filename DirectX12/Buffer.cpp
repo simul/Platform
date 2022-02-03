@@ -1,12 +1,13 @@
 #include "SimulDirectXHeader.h"
 #include "Buffer.h"
 #include "RenderPlatform.h"
+#include <iomanip>
 
 using namespace simul;
 using namespace dx12;
 
 Buffer::Buffer():
-	mGpuHeap(nullptr)
+	d3d12Buffer(nullptr)
 	,mIntermediateHeap(nullptr)
 {
 
@@ -20,10 +21,10 @@ Buffer::~Buffer()
 void Buffer::InvalidateDeviceObjects()
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-	rPlat->PushToReleaseManager(mGpuHeap, "Buffer");
+	rPlat->PushToReleaseManager(d3d12Buffer, "Buffer");
 	rPlat->PushToReleaseManager(mIntermediateHeap, "Buffer");
 	mIntermediateHeap=nullptr;
-	mGpuHeap=nullptr;
+	d3d12Buffer=nullptr;
 }
 
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertices, const crossplatform::Layout* layout, const void* data, bool cpu_access, bool streamout_target)
@@ -33,7 +34,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	stride = layout->GetStructSize();
 	mBufferSize = num_vertices * layout->GetStructSize();
 	count = num_vertices;
-	SAFE_DELETE(mGpuHeap);
+	SAFE_DELETE(d3d12Buffer);
 	SAFE_DELETE(mIntermediateHeap);
 	// Just debug memory usage
 	//float megas = (float)mBufferSize / 1048576.0f;
@@ -47,25 +48,25 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 		data ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
 		nullptr,
-		SIMUL_PPV_ARGS(&mGpuHeap)
+		SIMUL_PPV_ARGS(&d3d12Buffer)
 	);
 	auto& deviceContext = renderPlatform->GetImmediateContext();
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
-		mGpuHeap->SetName(L"VertexUpload");
-
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			SIMUL_PPV_ARGS(&mIntermediateHeap)
-		);
-		SIMUL_ASSERT(res == S_OK);
-		SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-			mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+	SIMUL_GPU_TRACK_MEMORY(d3d12Buffer, mBufferSize)
+	SetD3DName(d3d12Buffer,(name+" VertexUpload").c_str());
+	
+	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+	(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		SIMUL_PPV_ARGS(&mIntermediateHeap)
+	);
+	SIMUL_ASSERT(res == S_OK);
+	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
+		mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
 	if (data)
 	{
 
@@ -74,23 +75,26 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		subresourceData.RowPitch = mBufferSize;
 		subresourceData.SlicePitch = subresourceData.RowPitch;
 
-		UpdateSubresources(deviceContext.asD3D12Context(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = mGpuHeap;
+		barrier.Transition.pResource = d3d12Buffer;
 		barrier.Transition.Subresource = 0;
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+#if SIMUL_DEBUG_BARRIERS
+		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
+#endif
 	}
 
 	// Make a vertex buffer view
 	mVertexBufferView.SizeInBytes = mBufferSize;
 	mVertexBufferView.StrideInBytes = stride;
-	mVertexBufferView.BufferLocation = mGpuHeap->GetGPUVirtualAddress();
+	mVertexBufferView.BufferLocation = d3d12Buffer->GetGPUVirtualAddress();
 	bufferType = crossplatform::BufferType::VERTEX;
 }
 
@@ -101,7 +105,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	stride = index_size_bytes;
 	mBufferSize = index_size_bytes * num_indices;
 	count = num_indices;
-	SAFE_DELETE(mGpuHeap);
+	SAFE_DELETE(d3d12Buffer);
 	SAFE_DELETE(mIntermediateHeap);
 	auto& deviceContext = renderPlatform->GetImmediateContext();
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
@@ -111,11 +115,11 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 		data ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_INDEX_BUFFER,
 		nullptr,
-		SIMUL_PPV_ARGS(&mGpuHeap)
+		SIMUL_PPV_ARGS(&d3d12Buffer)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
-	mGpuHeap->SetName(L"IndexUpload");
+	SIMUL_GPU_TRACK_MEMORY(d3d12Buffer, mBufferSize)
+	d3d12Buffer->SetName(L"IndexUpload");
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -136,17 +140,20 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		subresourceData.RowPitch = mBufferSize;
 		subresourceData.SlicePitch = subresourceData.RowPitch;
 
-		UpdateSubresources(deviceContext.asD3D12Context(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = mGpuHeap;
+		barrier.Transition.pResource = d3d12Buffer;
 		barrier.Transition.Subresource = 0;
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+#if SIMUL_DEBUG_BARRIERS
+		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
+#endif
 	}
 
 	DXGI_FORMAT indexFormat;
@@ -166,7 +173,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 
 	mIndexBufferView.Format = indexFormat;
 	mIndexBufferView.SizeInBytes = mBufferSize;
-	mIndexBufferView.BufferLocation = mGpuHeap->GetGPUVirtualAddress();
+	mIndexBufferView.BufferLocation = d3d12Buffer->GetGPUVirtualAddress();
 	bufferType = crossplatform::BufferType::INDEX;
 }
 
@@ -189,22 +196,28 @@ void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
 		D3D12_RESOURCE_BARRIER barrier1;
 		barrier1.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier1.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier1.Transition.pResource = mGpuHeap;
+		barrier1.Transition.pResource = d3d12Buffer;
 		barrier1.Transition.Subresource = 0;
 		barrier1.Transition.StateBefore = bufferType==crossplatform::BufferType::INDEX?D3D12_RESOURCE_STATE_INDEX_BUFFER:D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 		barrier1.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier1);
-		UpdateSubresources(deviceContext.asD3D12Context(), mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+#if SIMUL_DEBUG_BARRIERS
+		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier1.Transition.StateBefore, barrier1.Transition.StateAfter);
+#endif
+		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
 		D3D12_RESOURCE_BARRIER barrier2;
 		barrier2.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier2.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier2.Transition.pResource = mGpuHeap;
+		barrier2.Transition.pResource = d3d12Buffer;
 		barrier2.Transition.Subresource = 0;
 		barrier2.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		barrier2.Transition.StateAfter = barrier1.Transition.StateBefore;
 
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier2);
+#if SIMUL_DEBUG_BARRIERS
+		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier2.Transition.StateBefore, barrier2.Transition.StateAfter);
+#endif
 		}
 		delete[] mGpuMappedPtr;
 		mGpuMappedPtr = nullptr;

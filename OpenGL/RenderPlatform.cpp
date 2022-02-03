@@ -88,13 +88,14 @@ void RenderPlatform::BeginFrame()
 	if (frame_started)
 		return;
 	crossplatform::RenderPlatform::BeginFrame();
-	for(auto t:texturesToDelete[mCurIdx])
+	unsigned curIdx = frameNumber % 3;
+	for(auto t:texturesToDelete[curIdx])
 	{
 		glDeleteTextures(1,&t);
 	}
-	if(texturesToDelete[mCurIdx].size())
+	if(texturesToDelete[curIdx].size())
 		ClearResidentTextures();
-	texturesToDelete[mCurIdx].clear();
+	texturesToDelete[curIdx].clear();
 }
 
 void RenderPlatform::EndFrame()
@@ -164,8 +165,6 @@ void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceConte
 	if (mLastFrame != deviceContext.GetFrameNumber())
 	{
 		mLastFrame = deviceContext.GetFrameNumber();
-		mCurIdx++;
-		mCurIdx = mCurIdx % kNumIdx;
 		if(deviceContext.AsGraphicsDeviceContext())
 			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 	}
@@ -530,7 +529,7 @@ void RenderPlatform::DeleteGLTextures(const std::set<GLuint> &t)
 {
 	for(auto c:t)
 	{
-		texturesToDelete[mCurIdx].insert(c);
+		texturesToDelete[frameNumber%3].insert(c);
 	}
 }
 

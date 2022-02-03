@@ -282,6 +282,8 @@ void DisplaySurface::EndFrame()
 	res = mCommandList->Close();
 	SIMUL_ASSERT(res == S_OK);
 	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
+	// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
+	dx12RenderPlatform->ExecuteCommands(dx12RenderPlatform->GetImmediateContext());
 	ID3D12CommandList* ppCommandLists[] = { mCommandList };
 	dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:

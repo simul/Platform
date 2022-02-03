@@ -561,8 +561,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 
 		mLastFrame = deviceContext.GetFrameNumber();
-		mCurIdx++;
-		mCurIdx = mCurIdx % kNumIdx;
 
 		//Make sure that any resources set for deletion are removed
 		if(resourcesToBeReleased)

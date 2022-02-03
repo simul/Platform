@@ -2,6 +2,8 @@
  
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/Layout.h"
+#include <string>
+
 struct ID3D11Buffer;
 struct ID3D12Resource;
 struct D3D12_VERTEX_BUFFER_VIEW;
@@ -23,6 +25,7 @@ namespace simul
 		{
 		public:
 			Buffer();
+			void SetName(const char* n);
 			virtual ~Buffer();
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11Buffer *AsD3D11Buffer()
@@ -65,6 +68,7 @@ namespace simul
 			BufferType bufferType= BufferType::UNKNOWN;
             crossplatform::Layout*  mBufferLayout=nullptr;
 			crossplatform::RenderPlatform *renderPlatform=nullptr;
+			std::string name;
 		};
 	}
 }

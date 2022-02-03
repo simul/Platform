@@ -144,5 +144,4 @@ void DisplaySurfaceManager::EndFrame(bool clear)
 	{
 		s.second->EndFrame();
 	}
-	renderPlatform->EndFrame();
 }
