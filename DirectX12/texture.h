@@ -80,7 +80,7 @@ namespace simul
 			bool							ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
-																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0) override;
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false) override;
 			bool                            ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
 			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
@@ -125,7 +125,7 @@ namespace simul
 			bool											EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
-																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0,crossplatform::CompressionFormat																		cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false,crossplatform::CompressionFormat cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
 			void											InitUAVTables(int l, int m);
 			void											FreeUAVTables();
 

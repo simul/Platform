@@ -938,7 +938,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	, crossplatform::PixelFormat f
 	, bool computable, bool rendertarget, bool depthstencil
 	, int num_samples, int aa_quality, bool
-	, vec4 clear, float clearDepth, uint clearStencil)
+	, vec4 clear, float clearDepth, uint clearStencil, bool shared)
 {
 	return EnsureTexture2DSizeAndFormat(r, w, l, f, computable, rendertarget, depthstencil, num_samples, aa_quality, false, clear, clearDepth, clearStencil,crossplatform::CompressionFormat::UNCOMPRESSED);
 }
@@ -950,7 +950,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	, int num_samples, int aa_quality, bool
 	, vec4 clear, float clearDepth, uint clearStencil
 	, crossplatform::CompressionFormat compressionFormat
-	, const void * initData)
+	, const void* initData)
 {
 	int m=1;
 	renderPlatform=r;

@@ -122,6 +122,7 @@ namespace simul
 			vec4 clear;
 			float clearDepth=0.0f;
 			uint clearStencil = 0;
+			bool shared = false;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			const void* initialData = nullptr;
 		};
@@ -293,7 +294,7 @@ namespace simul
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int m
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
-				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0)=0;
+				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, bool shared = false)=0;
 			// Create texture for use as a reference frame in video encoding or decoding.
 			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return true; };
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.

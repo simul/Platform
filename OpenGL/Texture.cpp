@@ -328,7 +328,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,
 											crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil)
+											vec4 clear, float clearDepth, uint clearStencil, bool shared)
 {
 	if (!IsSame(w, l, 1, 1, m, num_samples))
 	{

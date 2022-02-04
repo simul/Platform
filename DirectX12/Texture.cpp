@@ -1163,7 +1163,7 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::Text
 {
 	return EnsureTexture2DSizeAndFormat(r, create->w, create->l, create->mips, create->f, create->computable, create->make_rt
 		, create->setDepthStencil, create->numOfSamples, create->aa_quality, false
-		, create->clear, create->clearDepth, create->clearStencil, create->compressionFormat,create->initialData);
+		, create->clear, create->clearDepth, create->clearStencil, create->shared, create->compressionFormat,create->initialData);
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
@@ -1171,9 +1171,9 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											crossplatform::PixelFormat f,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil)
+											vec4 clear, float clearDepth, uint clearStencil, bool shared)
 {
-	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil);
+	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil,shared);
 }
 
 bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
@@ -1181,7 +1181,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											crossplatform::PixelFormat f,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil
+											vec4 clear, float clearDepth, uint clearStencil, bool shared
 											,crossplatform::CompressionFormat cf,const void *data)
 {
 	// Define pixel formats of this texture
@@ -1314,11 +1314,17 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		mTextureDefault = nullptr;
 
 
+		D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE;
+		if (shared)
+		{
+			heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_SHARED;
+		}
+
 		// Create the texture resource
 		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
+			heapFlags,
 			&textureDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			(rendertarget || depthstencil) ? &clearValues : nullptr,

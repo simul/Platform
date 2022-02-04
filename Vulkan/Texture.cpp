@@ -128,7 +128,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 		name+=m+",";
 	}
 	if(num<=1)
-		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0);
+		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0,false);
 	else
 		ensureTextureArraySizeAndFormat(r,(int)w,(int)l,(int)num,(int)m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
 	textureLoadComplete=false;
@@ -537,7 +537,7 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m,
 	crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
-	vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
+	vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/, bool shared /*= false*/)
 {
 	if (IsSame(w, l, 1, 1, m,f, num_samples, computable, rendertarget, depthstencil, true))
 	{
