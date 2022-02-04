@@ -22,6 +22,10 @@ namespace simul
 			//! Render to the display surface. Requires a reference to the mutex to make sure that this rendering doesn't take place at the same time as other render calls.
             void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			void EndFrame() override;
+            virtual void* GetPlatformDeviceContext()
+            {
+                return mDeferredContext;
+            }
         private:
             //! Will resize the swap chain only if needed
             void Resize();

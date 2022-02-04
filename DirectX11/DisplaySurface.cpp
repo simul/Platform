@@ -30,6 +30,12 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	pixelFormat=outFmt;
     mDeviceRef                          = renderPlatform->AsD3D11Device();
     mHwnd                               = handle;
+    SAFE_RELEASE(mDeferredContext);
+    if (mDeviceRef)
+    {
+        UINT cf = mDeviceRef->GetCreationFlags();
+        V_CHECK(mDeviceRef->CreateDeferredContext(0, &mDeferredContext));
+    }
 }
 
 void DisplaySurface::InvalidateDeviceObjects()
@@ -128,13 +134,6 @@ void DisplaySurface::InitSwapChain()
 	SAFE_RELEASE(pDXGIAdapter);
 	SAFE_RELEASE(pDXGIDevice);
 #endif
-	if(mDeviceRef)
-	{
-		UINT cf=mDeviceRef->GetCreationFlags();
-		//std::cout<<"Creation flags "<<cf<<"."<<std::endl;
-		SAFE_RELEASE(mDeferredContext);
-		V_CHECK(mDeviceRef->CreateDeferredContext(0,&mDeferredContext));
-	}
     SAFE_RELEASE(mBackBuffer);
     result = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&mBackBuffer);
     SIMUL_ASSERT(result == S_OK);
