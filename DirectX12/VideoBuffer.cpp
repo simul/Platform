@@ -39,7 +39,8 @@ void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::
 	renderPlatform = r;
 	mBufferType = bufferType;
 
-	mState = D3D12_RESOURCE_STATE_COPY_DEST;
+	mState = D3D12_RESOURCE_STATE_COMMON;
+	// Was D3D12_RESOURCE_STATE_COPY_DEST. But this is an warning in D3D12 - the buffer will be in the common state regardless of what we specify.
 
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
@@ -65,7 +66,7 @@ void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::
 	);
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-		mIntermediateHeap->SetName(L"IntermediateVideoBuffer");
+	mIntermediateHeap->SetName(L"IntermediateVideoBuffer");
 }
 
 void VideoBuffer::ChangeState(void* videoContext, bool toUpdateState)
