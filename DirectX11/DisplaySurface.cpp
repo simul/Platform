@@ -157,7 +157,9 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 		return;
 	if(!mDeferredContext)
 		return;
-
+    
+     if (!mBackBufferRT)
+        return;
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
 
