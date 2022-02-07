@@ -206,41 +206,52 @@ ID3D12Device5* RenderPlatform::AsD3D12Device5()
 
 std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES states)
 {
+	static std::unordered_map<D3D12_RESOURCE_STATES, std::string> stateStrings;
+	auto i = stateStrings.find(states);
+	if (i != stateStrings.end())
+	{
+		return i->second;
+	}
 	std::string str;
 
-	if(states&D3D12_RESOURCE_STATE_COMMON)								str+=" COMMON";
-	if(states&D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str+=" VERTEX_AND_CONSTANT_BUFFER";
-	if(states&D3D12_RESOURCE_STATE_INDEX_BUFFER)						str+=" INDEX_BUFFER";
-	if(states&D3D12_RESOURCE_STATE_RENDER_TARGET)						str+=" RENDER_TARGET";
-	if(states&D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str+=" UNORDERED_ACCESS";
-	if(states&D3D12_RESOURCE_STATE_DEPTH_WRITE)							str+=" DEPTH_WRITE";
-	if(states&D3D12_RESOURCE_STATE_DEPTH_READ)							str+=" DEPTH_READ";
-	if(states&D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str+=" NON_PIXEL_SHADER_RESOURCE";
-	if(states&D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)				str+=" PIXEL_SHADER_RESOURCE";
-	if(states&D3D12_RESOURCE_STATE_STREAM_OUT)							str+=" STREAM_OUT";
-	if(states&D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str+=" INDIRECT_ARGUMENT";
-	if(states&D3D12_RESOURCE_STATE_COPY_DEST)							str+=" COPY_DEST";
-	if(states&D3D12_RESOURCE_STATE_COPY_SOURCE)							str+=" COPY_SOURCE";
-	if(states&D3D12_RESOURCE_STATE_RESOLVE_DEST)						str+=" RESOLVE_DEST";
-	if(states&D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str+=" RESOLVE_SOURCE";
-	if(states&D3D12_RESOURCE_STATE_PRESENT)								str+=" PRESENT";
-	if(states&D3D12_RESOURCE_STATE_PREDICATION)							str+=" PREDICATION";
+	if(states==D3D12_RESOURCE_STATE_COMMON)								str=" COMMON";
+	else if (D3D12_RESOURCE_STATE_GENERIC_READ == states)				str = " GENERIC_READ";
+	else if ((D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) == states)
+																str = " SHADER_RESOURCE";
+	else
+	{
+		if (states & D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str += " VERTEX_AND_CONSTANT_BUFFER";
+		if (states & D3D12_RESOURCE_STATE_INDEX_BUFFER)						str += " INDEX_BUFFER";
+		if (states & D3D12_RESOURCE_STATE_RENDER_TARGET)						str += " RENDER_TARGET";
+		if (states & D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str += " UNORDERED_ACCESS";
+		if (states & D3D12_RESOURCE_STATE_DEPTH_WRITE)							str += " DEPTH_WRITE";
+		if (states & D3D12_RESOURCE_STATE_DEPTH_READ)							str += " DEPTH_READ";
+		if (states & D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str += " NON_PIXEL_SHADER_RESOURCE";
+		if (states & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)				str += " PIXEL_SHADER_RESOURCE";
+		if (states & D3D12_RESOURCE_STATE_STREAM_OUT)							str += " STREAM_OUT";
+		if (states & D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str += " INDIRECT_ARGUMENT";
+		if (states & D3D12_RESOURCE_STATE_COPY_DEST)							str += " COPY_DEST";
+		if (states & D3D12_RESOURCE_STATE_COPY_SOURCE)							str += " COPY_SOURCE";
+		if (states & D3D12_RESOURCE_STATE_RESOLVE_DEST)						str += " RESOLVE_DEST";
+		if (states & D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str += " RESOLVE_SOURCE";
+		if (states & D3D12_RESOURCE_STATE_PRESENT)								str += " PRESENT";
+		if (states & D3D12_RESOURCE_STATE_PREDICATION)							str += " PREDICATION";
 #if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
-	if(states&D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str += " RAYTRACING_ACCELERATION_STRUCTURE";
-	if(states&D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)					str += " SHADING_RATE_SOURCE";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str+=" VIDEO_DECODE_READ";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE)					str+=" VIDEO_DECODE_WRITE";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ)					str+=" VIDEO_PROCESS_READ";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE)					str+=" VIDEO_PROCESS_WRITE";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ)					str+=" VIDEO_ENCODE_READ";
-	if(states&D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)					str+=" VIDEO_ENCODE_WRITE";
+		if (states & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str += " RAYTRACING_ACCELERATION_STRUCTURE";
+		if (states & D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)					str += " SHADING_RATE_SOURCE";
+		if (states & D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str += " VIDEO_DECODE_READ";
+		if (states & D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE)					str += " VIDEO_DECODE_WRITE";
+		if (states & D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ)					str += " VIDEO_PROCESS_READ";
+		if (states & D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE)					str += " VIDEO_PROCESS_WRITE";
+		if (states & D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ)					str += " VIDEO_ENCODE_READ";
+		if (states & D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)					str += " VIDEO_ENCODE_WRITE";
 #endif
-	if(D3D12_RESOURCE_STATE_GENERIC_READ==states)						str=" GENERIC_READ";
-	if((D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)==states)						str=" SHADER_RESOURCE";
+	}
 	if(str.length()==0)
 	{
 		SIMUL_BREAK("Bad resource state");
 	}
+	stateStrings[states] = str;
 	return str;
 }
 #include <iomanip>
@@ -248,9 +259,13 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	const size_t MAX_NAME_LENGTH = 30;
 	char name[MAX_NAME_LENGTH];
+	if (mPendingBarriers.size() > 30)
+	{
+		SIMUL_CERR << "That's a lot of barriers!\n";
+	}
 #endif
 #ifndef DISABLE_BARRIERS
 	// merge barriers??
@@ -263,7 +278,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			SIMUL_ASSERT(before==b.Transition.StateAfter);
 			if(before!=b.Transition.StateAfter)
 			{
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -276,7 +291,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 				if(mCurBarriers>1)
 				{
 					std::swap(b,mPendingBarriers[mCurBarriers-1]);
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -286,7 +301,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 				}
 				else
 				{
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -298,7 +313,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			}
 			else
 			{
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -313,7 +328,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 	if(!found)
 	{
 		auto& barrier = mPendingBarriers[mCurBarriers++];
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 		if(deviceContext.deviceContextType==barrierDeviceContextType)
 		{
 			GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -325,7 +340,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			res, before, after, subRes
 		);
 	}
-	//if (flush)
+	if (flush)
 	{
 		FlushBarriers(deviceContext);
 	}
@@ -346,7 +361,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 	
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
 #endif
 /*	if (true)
@@ -373,7 +388,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	auto& barrier = mPendingBarriers[mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 	
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
 #endif
 	if (true)
@@ -403,7 +418,7 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 	{
 		return; 
 	}
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	if(deviceContext.deviceContextType==barrierDeviceContextType)
 	{
 		SIMUL_COUT<<"\t\tFlush "<<mCurBarriers<<" barriers."<<std::endl;
@@ -412,7 +427,7 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
 	
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	for(size_t i = 0; i < mCurBarriers; i++)
 		commandList->ResourceBarrier(1, &mPendingBarriers[i]);
 #else
@@ -474,7 +489,7 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 	res->AddRef();
 	int count=res->Release();
-	SIMUL_COUT<<(n?n:"")<<" "<<(unsigned long long)res<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
+	SIMUL_COUT<<(n?n:"")<<" 0x" << std::setfill('0') << std::setw(16) << std::hex<<(unsigned long long)res<<std::dec<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
 #endif
 	mResourceBin.push_back(std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>
 	(
@@ -1089,7 +1104,7 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::BeginFrame()
 {
 	crossplatform::RenderPlatform::BeginFrame();
-	ResetImmediateCommandList();
+	//ResetImmediateCommandList();
 	frameHeapIndex++;
 	frameHeapIndex=frameHeapIndex%3;
 	// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
@@ -1105,8 +1120,8 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 	// Store a reference to the device context
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
 
-	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(GetImmediateContext().viewStruct.proj);
-	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
+	//simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	//SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
 
 	// Create dummy textures
@@ -1424,6 +1439,13 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 	if (FAILED(r))
 	{
 		SIMUL_BREAK("Failed to close command list");
+	}// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
+	if (immediateContext.contextState.contextActive)
+	{
+		ID3D12GraphicsCommandList* const immCommandList = immediateContext.asD3D12Context();
+		HRESULT r = immCommandList->Close();
+		mGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&immCommandList);
+		immediateContext.contextState.contextActive = false;
 	}
 	commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
 }
@@ -1435,9 +1457,12 @@ void RenderPlatform::ResetImmediateCommandList()
 	{
 		if (immediateContext.contextState.contextActive)
 		{
-			ExecuteCommands(immediateContext);
+			ID3D12GraphicsCommandList* const immCommandList = immediateContext.asD3D12Context();
+			HRESULT r = immCommandList->Close();
+			mGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&immCommandList);
+	
 		}
-		if(mIContext.ICommandList)
+		if (mIContext.ICommandList)
 			mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
 		immediateContext.contextState.contextActive = true;
 	}
@@ -2713,7 +2738,15 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 		pass->Apply(deviceContext, cs->last_action_was_compute);
 		cs->effectPassValid = true;
 	}
-	
+	// TODO: If inactive, we must reset the context first.
+	/*if (!deviceContext.contextState.contextActive)
+	{
+		if (commandList)
+			commandList->Reset(mIContext.IAllocator, nullptr);
+		deviceContext.contextState.contextActive = true;
+	}
+	doesn't work as we don't necessarily know the allocator.
+	*/
 	// We will only set the tables once per frame
 	if (frameNumber != deviceContext.GetFrameNumber())
 	{

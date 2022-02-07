@@ -145,14 +145,12 @@ vk::Instance* RenderPlatform::AsVulkanInstance()
 
 GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 {
-#if SIMUL_INTERNAL_CHECKS
 	if (!immediateContext.contextState.contextActive)
 	{
 		//SIMUL_CERR << "Immediate context is not active.\n";
 		// Reset so it is active, because we will now be executing commands on it probably.
 		ResetImmediateCommandList();
 	}
-#endif
 	return immediateContext;
 }
 

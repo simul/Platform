@@ -279,20 +279,19 @@ void DisplaySurface::EndFrame()
 	mRecordingCommands = false;
 
 	HRESULT res = S_FALSE;
-	res = mCommandList->Close();
-	SIMUL_ASSERT(res == S_OK);
 	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
-	// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
-	dx12RenderPlatform->ExecuteCommands(dx12RenderPlatform->GetImmediateContext());
-	ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetCommandQueue(), mCommandList);
+	
+	//ID3D12CommandList* ppCommandLists[] = { mCommandList };
+	//dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 
 #ifndef _GAMING_XBOX
 	// Present new frame
 	const DWORD dwFlags = 0;
-	const UINT SyncInterval = 1;
+	const UINT SyncInterval = 0;
 	res = mSwapChain->Present(SyncInterval, dwFlags);
 	if (res != S_OK)
 	{

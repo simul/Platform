@@ -204,6 +204,9 @@ namespace simul
 			void ClearLoadingData();
 			void ClearFileContents();
 			unsigned GetSubresourceIndex(int mip, int layer);
+			void CreateUploadResource();
+			// for upload texture:
+			D3D12_PLACED_SUBRESOURCE_FOOTPRINT pLayouts[16];
 		};
 	}
 }

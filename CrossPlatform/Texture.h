@@ -125,6 +125,7 @@ namespace simul
 			bool shared = false;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			const void* initialData = nullptr;
+			const char* name = nullptr;
 		};
 		//! A crossplatform viewport structure.
 		struct Viewport

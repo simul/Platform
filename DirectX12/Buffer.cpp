@@ -87,7 +87,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	}
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 	deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
 #endif
 
@@ -148,7 +148,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
 #endif
 		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
@@ -158,7 +158,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 
 	deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 	LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
 #endif
 
@@ -208,7 +208,7 @@ void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
 		barrier1.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier1);
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier1.Transition.StateBefore, barrier1.Transition.StateAfter);
 #endif
 		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
@@ -221,7 +221,7 @@ void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
 		barrier2.Transition.StateAfter = barrier1.Transition.StateBefore;
 
 		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier2);
-#if SIMUL_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS
 		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier2.Transition.StateBefore, barrier2.Transition.StateAfter);
 #endif
 		}
