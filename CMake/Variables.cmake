@@ -83,6 +83,7 @@ set(SIMUL_SUPPORT_VULKAN ${PLATFORM_SUPPORT_VULKAN})
 set(BUILD_SHARED_LIBS off)
 set(ASSIMP_BUILD_TESTS off)
 
+find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin" "C:/Program Files (x86)/Windows Kits/10/bin/10.0.18362.0" PATH_SUFFIXES x64 )
 
 if(PLATFORM_WINDOWS)
 	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
