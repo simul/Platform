@@ -240,7 +240,7 @@ int FileLoader::FindIndexInPathStack(const char *filename_utf8, const char* cons
 		if(FileExists(f.c_str()))
 		{
 			double filedate=GetFileDate(f.c_str());
-			if(filedate>newest_date)
+			if(filedate>=newest_date)
 			{
 				fn=f;
 				newest_date=filedate;
