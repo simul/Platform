@@ -69,21 +69,11 @@ DepthStencilState WriteReverseDepth
 };
 technique main
 {
-    pass depth
+    pass p0
     {
         SetRasterizerState(ImGuiRasterizer);
         SetTopology(TriangleList);
         SetDepthStencilState(WriteReverseDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-    pass no_depth
-    {
-        SetRasterizerState(ImGuiRasterizer);
-        SetTopology(TriangleList);
-        SetDepthStencilState(DisableDepth, 0);
         SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
         SetGeometryShader(NULL);
         SetVertexShader(CompileShader(vs_5_0, VS_Main()));
