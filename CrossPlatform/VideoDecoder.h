@@ -6,6 +6,8 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/VideoBuffer.h"
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 #define DEC_FAILED(r) \
 	(r != simul::crossplatform::VideoDecoderResult::Ok)
 
@@ -92,10 +94,7 @@ namespace simul
 			RenderPlatform* mRenderPlatform;
 			VideoDecoderParams mDecoderParams;
 			VideoBuffer* mInputBuffer;
-			uint32_t mMaxReferenceFrames;
 			std::vector<Texture*> mTextures;
-			uint32_t mNumReferenceFrames;
-			uint32_t mCurrentTextureIndex;
 			Fence* mDecodeFence;
 			bool mFeaturesSupported;
 		};

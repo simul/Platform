@@ -71,14 +71,9 @@ cp::VideoDecoderResult VideoDecoder::Init()
 		return r;
 	}
 
-	/*mRefFrameTextureBuffers.resize(mMaxInputArgBuffers);
-	mRefFrameHeapBuffers.resize(mMaxInputArgBuffers);
-
-	for (int i = 0; i < mMaxInputArgBuffers; ++i)
-	{
-		mRefFrameTextureBuffers[i].resize(mMaxReferenceFrames);
-		mRefFrameHeapBuffers[i].resize(mMaxReferenceFrames);
-	}*/
+	mRefTextures.resize(mTextures.size());
+	mRefSubresources.resize(mTextures.size());
+	mRefHeaps.resize(mTextures.size());
 
 	return cp::VideoDecoderResult::Ok;
 }
@@ -104,29 +99,10 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	mGraphicsCLC.ExecuteCommandList();
 	Signal(mGraphicsCLC.GetCommandQueue(), mDecodeFence);
 
-	D3D12_VIDEO_DECODE_OUTPUT_STREAM_ARGUMENTS outputArgs;
-	outputArgs.OutputSubresource = 0;
 
-	// This texture will either hold the native output regardless of whether conversion is enabled.
-	((DecoderTexture*)mTextures[mCurrentTextureIndex])->ChangeState(decodeCommandList, true);
+	uint32_t currPic = 0;
 
-	D3D12_RESOURCE_STATES outputTextureStateBefore = dx12OutputTexture->GetState();
-	D3D12_RESOURCE_STATES outputTextureStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
-	// Change surface texture state.
-	//decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter, 0));
-
-	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
-	
-	outputArgs.pOutputTexture2D = outputResource;
-	DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
-	DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.outputFormat);
-	// Conversion is always enabled because the output texture is expected to be in
-	// same colour space as the input texture.
-	convArgs.Enable = true;
-	convArgs.DecodeColorSpace = VideoFormats.find(dxgiDecodeFormat)->second;
-	convArgs.OutputColorSpace = VideoFormats.find(dxgiSurfaceFormat)->second;
-	convArgs.pReferenceTexture2D = mTextures[mCurrentTextureIndex]->AsD3D12Resource();
-	convArgs.ReferenceSubresource = 0;
+	// Input Arguments 
 
 	D3D12_VIDEO_DECODE_INPUT_STREAM_ARGUMENTS inputArgs;
 	inputArgs.CompressedBitstream.Size = bufferSize;
@@ -137,6 +113,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	// DXVA accepts a maximum of 10 arguments. 
 	inputArgs.NumFrameArguments = std::min<uint32_t>(decodeArgCount, mMaxInputArgs);
 	bool picParams = false;
+
 	for (uint32_t i = 0; i < inputArgs.NumFrameArguments; ++i)
 	{
 		auto& frameArgs = inputArgs.FrameArguments[i];
@@ -147,7 +124,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 			return cp::VideoDecoderResult::InvalidDecodeArgumentType;
 		}
 		frameArgs.pData = decodeArgs[i].data;
-		DXVA_PicParams_HEVC* test = static_cast<DXVA_PicParams_HEVC*>(frameArgs.pData);
+		
 		frameArgs.Size = decodeArgs[i].size;
 		switch (decodeArgs[i].type)
 		{
@@ -156,10 +133,23 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 			if (mDecoderParams.codec == cp::VideoCodec::H264)
 			{
 				frameArgs.Size = sizeof(DXVA_PicParams_H264);
+				DXVA_PicParams_H264* pp = static_cast<DXVA_PicParams_H264*>(frameArgs.pData);
+				// TODO:: Implement
 			}
 			else if (mDecoderParams.codec == cp::VideoCodec::HEVC)
 			{
 				frameArgs.Size = sizeof(DXVA_PicParams_HEVC);
+				DXVA_PicParams_HEVC* pp = static_cast<DXVA_PicParams_HEVC*>(frameArgs.pData);
+
+				currPic = pp->CurrPic.Index7Bits;
+				DecoderTexture* tex = (DecoderTexture*)mTextures[currPic];
+				tex->usedAsReference = false;
+				for (int i = 0; i < ARRAY_SIZE(pp->RefPicList); ++i)
+				{
+					uint32_t index = pp->RefPicList[i].AssociatedFlag;
+					tex = (DecoderTexture*)mTextures[index];
+					tex->usedAsReference = index != currPic && pp->RefPicList[i].bPicEntry != 0x7f && pp->RefPicList[i].bPicEntry != 0xff;
+				}
 			}
 			picParams = true;
 			break;
@@ -184,32 +174,56 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		return cp::VideoDecoderResult::InvalidDecodeArgumentType;
 	}
 
-	inputArgs.ReferenceFrames.NumTexture2Ds = mNumReferenceFrames;
+	inputArgs.ReferenceFrames.NumTexture2Ds = mTextures.size();
 
-	if (mNumReferenceFrames)
+	for(int i = 0; i < mTextures.size(); ++i)
 	{
-		mRefTextures.resize(mNumReferenceFrames);
-		mRefSubresources.resize(mNumReferenceFrames);
-		mRefHeaps.resize(mNumReferenceFrames);
-
-		size_t index = 0;
-		size_t numTextures = mTextures.size();
-		int i = (mCurrentTextureIndex - 1) % numTextures;
-		while (index < mNumReferenceFrames&&i< numTextures)
+		DecoderTexture* tex = (DecoderTexture*)mTextures[i];
+		if (tex->usedAsReference)
 		{
-			((DecoderTexture*)mTextures[i])->ChangeState(decodeCommandList, false);
-			mRefTextures[index] = mTextures[i]->AsD3D12Resource();
-			mRefSubresources[index] = 0;
-			mRefHeaps[index] = mHeap;
-			++index;
-			// Wrap back around like a circular buffer.
-			i = (i - 1) % numTextures;
+			tex->ChangeState(decodeCommandList, false);
+			mRefTextures[i] = tex->AsD3D12Resource();
 		}
-		inputArgs.ReferenceFrames.ppTexture2Ds = mRefTextures.data();
-		// Specifies 0 used for each texture.
-		inputArgs.ReferenceFrames.pSubresources = mRefSubresources.data();
-		inputArgs.ReferenceFrames.ppHeaps = mRefHeaps.data();
+		else
+		{
+			mRefTextures[i] = nullptr;
+		}
+		mRefSubresources[i] = 0;
+		mRefHeaps[i] = mHeap;
 	}
+	inputArgs.ReferenceFrames.ppTexture2Ds = mRefTextures.data();
+	// Specifies 0 used for each texture.
+	inputArgs.ReferenceFrames.pSubresources = mRefSubresources.data();
+	inputArgs.ReferenceFrames.ppHeaps = mRefHeaps.data();
+	
+
+
+	// Output Arguments
+
+	D3D12_VIDEO_DECODE_OUTPUT_STREAM_ARGUMENTS outputArgs;
+	outputArgs.OutputSubresource = 0;
+
+	// This texture will  hold the native output regardless of whether conversion is enabled.
+	((DecoderTexture*)mTextures[currPic])->ChangeState(decodeCommandList, true);
+
+	D3D12_RESOURCE_STATES outputTextureStateBefore = dx12OutputTexture->GetState();
+	D3D12_RESOURCE_STATES outputTextureStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+	// Change surface texture state.
+	//decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter, 0));
+
+	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
+
+	outputArgs.pOutputTexture2D = outputResource;
+	DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
+	DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.outputFormat);
+	// Conversion is always enabled because the output texture is expected to be in
+	// same colour space as the input texture.
+	convArgs.Enable = true;
+	convArgs.DecodeColorSpace = VideoFormats.find(dxgiDecodeFormat)->second;
+	convArgs.OutputColorSpace = VideoFormats.find(dxgiSurfaceFormat)->second;
+	convArgs.pReferenceTexture2D = mTextures[currPic]->AsD3D12Resource();
+	convArgs.ReferenceSubresource = 0;
+
 
 	// Set to required state for decoding.
 	mInputBuffer->ChangeState(decodeCommandList, false);

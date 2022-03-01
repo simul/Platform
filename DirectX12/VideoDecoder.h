@@ -8,6 +8,7 @@
 #include <d3d12video.h>
 #include <unordered_map>
 
+
 typedef ID3D12VideoDevice2 ID3D12VideoDeviceType;
 typedef ID3D12VideoDecodeCommandList2 ID3D12VideoDecodeCommandListType;
 
@@ -21,6 +22,7 @@ namespace simul
 		{
 		public:
 			void ChangeState(ID3D12VideoDecodeCommandList* commandList, bool write = false);
+			bool usedAsReference = false;
 		};
 
 		/*struct FrameArguments

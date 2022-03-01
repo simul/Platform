@@ -11,9 +11,6 @@ using namespace crossplatform;
 VideoDecoder::VideoDecoder()
 	: mRenderPlatform(nullptr)
 	, mInputBuffer(nullptr)
-	, mMaxReferenceFrames(0)
-	, mNumReferenceFrames(0)
-	, mCurrentTextureIndex(0)
 	, mDecodeFence(nullptr)
 	, mFeaturesSupported(false)
 {
@@ -39,11 +36,7 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	mInputBuffer = CreateVideoBuffer();
 	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, 250000);
 
-	// This could vary depending on the codec.
-	mMaxReferenceFrames = 6;
-	mCurrentTextureIndex = 0;
-
-	mTextures.resize(mMaxReferenceFrames);
+	mTextures.resize(decoderParams.maxDecodePictureBufferCount);
 
 	for (int i = 0; i < mTextures.size(); ++i)
 	{
@@ -58,17 +51,7 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 
 VideoDecoderResult VideoDecoder::Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
 {
-	// If the frame is an IDR, the reference frames must be flushed.
-	if (IsIDR(static_cast<const uint8_t*>(buffer), bufferSize))
-	{
-		mNumReferenceFrames = 0;
-	}
 	DecodeFrame(outputTexture, buffer, bufferSize, decodeArgs, decodeArgCount);
-	if (mNumReferenceFrames < mMaxReferenceFrames)
-	{
-		mNumReferenceFrames++;
-	}
-	mCurrentTextureIndex = (mCurrentTextureIndex + 1) % mTextures.size();
 	return VideoDecoderResult::Ok;
 }
 
@@ -80,8 +63,6 @@ VideoDecoderResult VideoDecoder::Shutdown()
 		SAFE_DELETE(texture);
 	}
 	mTextures.clear();
-	mNumReferenceFrames = 0;
-	mCurrentTextureIndex = 0;
 	SAFE_DELETE(mInputBuffer);
 	mDecoderParams = {};
 	mRenderPlatform = nullptr;
