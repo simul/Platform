@@ -24,7 +24,7 @@
 #else
 #include <cmath>		// for isinf()
 #endif
-#pragma clang optimize off
+//#pragma clang optimize off
 using namespace simul;
 using namespace crossplatform;
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
