@@ -148,7 +148,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 				{
 					uint32_t index = pp->RefPicList[i].AssociatedFlag;
 					tex = (DecoderTexture*)mTextures[index];
-					tex->usedAsReference = index != currPic && pp->RefPicList[i].bPicEntry != 0x7f && pp->RefPicList[i].bPicEntry != 0xff;
+					tex->usedAsReference = pp->RefPicList[i].bPicEntry != 0x7f && pp->RefPicList[i].bPicEntry != 0xff;
 				}
 			}
 			picParams = true;
