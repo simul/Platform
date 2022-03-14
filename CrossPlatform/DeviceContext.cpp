@@ -4,21 +4,6 @@ using namespace crossplatform;
 
 
 ContextState::ContextState()
-				:last_action_was_compute(false)
-				,effectPassValid(false)
-				,vertexBuffersValid(false)
-				,constantBuffersValid(false)
-				,structuredBuffersValid(false)
-				,rwStructuredBuffersValid(false)
-				,samplerStateOverridesValid(true)
-				,textureAssignmentMapValid(false)
-				,rwTextureAssignmentMapValid(false)
-				,streamoutTargetsValid(false)
-				,textureSlots(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,textureSlotsForSB(0)
-				,bufferSlots(0)
 {
 	memset(viewports,0,8*sizeof(Viewport));
 }

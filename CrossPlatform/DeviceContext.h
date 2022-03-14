@@ -173,7 +173,7 @@ namespace simul
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
-			bool last_action_was_compute;
+			bool last_action_was_compute = false;
 			Viewport viewports[8];
 			const Buffer *indexBuffer=nullptr;
 			std::unordered_map<int,const Buffer*> applyVertexBuffers;
@@ -186,13 +186,28 @@ namespace simul
 			TextureAssignmentMap rwTextureAssignmentMap;
 			FenceMap fenceMap;
 			EffectPass *currentEffectPass=nullptr;
-			//EffectTechnique *currentTechnique=nullptr;
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
-			Topology topology;
+			Topology topology = Topology::UNDEFINED;
 			int apply_count = 0;
 			bool contextActive=true;
 			bool externalContext=false;
+
+			bool effectPassValid=false;
+			bool vertexBuffersValid=false;
+			bool constantBuffersValid=false;
+			bool structuredBuffersValid=false;
+			bool rwStructuredBuffersValid=false;
+			bool samplerStateOverridesValid=false;
+			bool textureAssignmentMapValid=false;
+			bool rwTextureAssignmentMapValid=false;
+			bool streamoutTargetsValid=false;
+			unsigned int textureSlots=0;
+			unsigned int rwTextureSlots=0;
+			unsigned int rwTextureSlotsForSB=0;
+			unsigned int textureSlotsForSB=0;
+			unsigned int bufferSlots=0;
+
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -214,20 +229,29 @@ namespace simul
 				contextActive = true;
 				externalContext = false;
 			}
-			bool effectPassValid;
-			bool vertexBuffersValid;
-			bool constantBuffersValid;
-			bool structuredBuffersValid;
-			bool rwStructuredBuffersValid;
-			bool samplerStateOverridesValid;
-			bool textureAssignmentMapValid;
-			bool rwTextureAssignmentMapValid;
-			bool streamoutTargetsValid;
-			unsigned textureSlots;
-			unsigned rwTextureSlots;
-			unsigned rwTextureSlotsForSB;
-			unsigned textureSlotsForSB;
-			unsigned bufferSlots;
+
+			void Reset()
+			{
+				invalidate();
+
+				last_action_was_compute = false;
+				memset(viewports, 0, 8 * sizeof(Viewport));
+				indexBuffer = nullptr;
+				applyVertexBuffers.clear();
+				streamoutTargets.clear();
+				applyBuffers.clear();
+				applyStructuredBuffers.clear();
+				applyRwStructuredBuffers.clear();
+				samplerStateOverrides.clear();
+				textureAssignmentMap.clear();
+				rwTextureAssignmentMap.clear();
+				fenceMap.clear();
+
+				currentEffectPass = nullptr;
+				currentEffect = nullptr;
+				apply_count = 0;
+			}
+		
 		};
 		class EffectTechnique;
 		class RenderPlatform;

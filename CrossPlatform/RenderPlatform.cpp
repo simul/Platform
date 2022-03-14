@@ -24,6 +24,7 @@
 #else
 #include <cmath>		// for isinf()
 #endif
+//#pragma clang optimize off
 using namespace simul;
 using namespace crossplatform;
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
@@ -419,6 +420,7 @@ void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba
 	debugConstants.debugColour=colour_rgba;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,clearTechnique,0);
+	SetTopology(deviceContext,crossplatform::Topology::TRIANGLESTRIP);
 	DrawQuad(deviceContext);
 	debugEffect->Unapply(deviceContext);
 }
@@ -448,6 +450,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				debugConstants.texSize=uint4(w,l,d,1);
 				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 				texture->activateRenderTarget(*graphicsDeviceContext,i,j);
+				SetTopology(*graphicsDeviceContext,crossplatform::Topology::TRIANGLESTRIP);
 				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
 					DrawQuad(*graphicsDeviceContext);
 				debugEffect->Unapply(*graphicsDeviceContext);
@@ -804,8 +807,8 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	Viewport viewport;
 	viewport.w		=(int)(oldv.w*size);
 	viewport.h		=(int)(oldv.h*size);
-	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
-	viewport.y		=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
+	viewport.x		=oldv.x+(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
+	viewport.y		=oldv.y+(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;

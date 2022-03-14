@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cctype>
 #if PLATFORM_STD_CHARCONV
 #include <charconv>
 #endif

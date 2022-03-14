@@ -22,7 +22,7 @@ the last is C code to be copied verbatim to the output.
 
 	// Direct IO functions (read and such)
 	#include <io.h>
-
+	
 	// Disable the warning for yywrap
 	#pragma warning( disable: 4003 )
 		// Disable the warning about deprecated naming of _read and friends
@@ -44,6 +44,7 @@ the last is C code to be copied verbatim to the output.
 	#include <stdarg.h>
 	#include <charconv>
 	#include <algorithm>
+	#include <cctype>
 
 	#include "Sfx.h"
 	#include "SfxClasses.h"

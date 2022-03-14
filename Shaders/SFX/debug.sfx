@@ -389,8 +389,10 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	vec4 result		=cubeTexture.SampleLevel(cubeSamplerState,view,displayLod);
 	result.rgb		*=multiplier.rgb;
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
-	vec4 u			=vec4(saturate(result.rgb),1.0);
-	return u;
+	vec4 u			=vec4(saturate(result.rgb),0.0);
+
+	return
+u;
 }
 
 shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
@@ -1225,8 +1227,8 @@ technique draw_cubemap_sphere
 		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemapSphere()));
 		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-    }
+		SetBlendState(DontBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+	}
 }
 
 technique draw_lat_long_sphere

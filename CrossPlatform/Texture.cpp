@@ -40,6 +40,8 @@ Texture::Texture(const char *n)
 
 Texture::~Texture()
 {
+// TODO: Does this cause crashes on exit?
+	InvalidateDeviceObjects();
 }
 
 bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate)
