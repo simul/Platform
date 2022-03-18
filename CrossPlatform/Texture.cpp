@@ -32,7 +32,8 @@ Texture::Texture(const char *n)
 				,renderTarget(false)
 				,external_texture(false)
 				,depthStencil(false)
-				,unfenceable(false)		
+				,unfenceable(false)
+				,yuvLayerIndex(-1)
 {
 	if(n)
 		name=n;

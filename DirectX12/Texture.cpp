@@ -563,7 +563,20 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
         {
 			return &arrayShaderResourceView12;
         }
-		return &mainShaderResourceView12;
+
+		if (yuvLayerIndex < 0)
+		{
+			return &mainShaderResourceView12;
+		}
+
+		if (yuvLayerIndex == 0)
+		{
+			yuvLayerIndex = 1;
+			return &mainShaderResourceView12;
+		}
+
+		yuvLayerIndex = 0;
+		return &uvLayerShaderResourceView12;
 	}
 
 	// Return main SRV / return element of array
@@ -1166,6 +1179,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	dxgi_format		= (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat = dxgi_format;
 	DXGI_FORMAT srvFormat		= dxgi_format;
+	// needed for video decoder.
+	bool yuvFormat = false;
 	if (texture2dFormat == DXGI_FORMAT_D32_FLOAT)
 	{
 		texture2dFormat = DXGI_FORMAT_R32_TYPELESS;
@@ -1180,6 +1195,12 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	{
 		texture2dFormat = DXGI_FORMAT_R24G8_TYPELESS;
 		srvFormat		= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	if (texture2dFormat == DXGI_FORMAT_NV12)
+	{
+		// For Y layer.
+		srvFormat = DXGI_FORMAT_R8_UNORM;
+		yuvFormat = true;
 	}
 	dim			= 2;
 	HRESULT res = S_FALSE;
@@ -1363,10 +1384,23 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		{
 			SIMUL_BREAK_INTERNAL("Unnamed texture");
 		}
-		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
+
+		uint32_t srvCount = yuvFormat ? 2 : 1;
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, srvCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
+
+		// One srv for Y layer and one for UV layer.
+		if (yuvFormat)
+		{
+			srvDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+			srvDesc.Texture2D.PlaneSlice = 1;
+			renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
+			uvLayerShaderResourceView12 = mTextureSrvHeap.CpuHandle();
+			mTextureSrvHeap.Offset();
+			yuvLayerIndex = 0;
+		}
 
 		if (computable && (!layerMipUnorderedAccessViews12 || !ok))
 		{

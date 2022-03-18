@@ -159,7 +159,8 @@ namespace simul
 			bool							mLoadedFromFile;	
 			bool							mInitializedFromExternal = false;
 			
-			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips.	
+			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips or y layer for yuv.	
+			D3D12_CPU_DESCRIPTOR_HANDLE		uvLayerShaderResourceView12;    // SRV for uv layer in a yuv texture.
 
 			D3D12_CPU_DESCRIPTOR_HANDLE		arrayShaderResourceView12;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 

@@ -103,7 +103,6 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	uint32_t currPic = 0;
 
 	// Input Arguments 
-
 	D3D12_VIDEO_DECODE_INPUT_STREAM_ARGUMENTS inputArgs;
 	inputArgs.CompressedBitstream.Size = bufferSize;
 	inputArgs.CompressedBitstream.Offset = 0;
@@ -203,7 +202,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	D3D12_VIDEO_DECODE_OUTPUT_STREAM_ARGUMENTS outputArgs;
 	outputArgs.OutputSubresource = 0;
 
-	// This texture will  hold the native output regardless of whether conversion is enabled.
+	// This texture will hold the native output regardless of whether conversion is enabled.
 	((DecoderTexture*)mTextures[currPic])->ChangeState(decodeCommandList, true);
 
 	D3D12_RESOURCE_STATES outputTextureStateBefore = dx12OutputTexture->GetState();

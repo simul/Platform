@@ -346,6 +346,10 @@ namespace simul
 			{
 				return cubemap?arraySize*6:arraySize;
 			}
+			bool isYUV() const
+			{
+				return yuvLayerIndex > -1;
+			}
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
@@ -362,6 +366,8 @@ namespace simul
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
 			bool unfenceable;
+			// YUv textures need two SRVs to be bound to a shader. This index is incremened when AsD3D12ShaderResourceView is called.
+			int yuvLayerIndex;
 			// a wrapper around stbi_load_from_memory.
 			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
 			void FreeTranslatedTextureData(void *data);
