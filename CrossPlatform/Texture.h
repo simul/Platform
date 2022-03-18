@@ -366,7 +366,7 @@ namespace simul
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
 			bool unfenceable;
-			// YUv textures need two SRVs to be bound to a shader. This index is incremened when AsD3D12ShaderResourceView is called.
+			// YUV textures need two SRVs to be bound to a shader. This index is incremented/decremented when AsD3D12ShaderResourceView is called.
 			int yuvLayerIndex;
 			// a wrapper around stbi_load_from_memory.
 			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
