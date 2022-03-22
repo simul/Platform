@@ -383,38 +383,38 @@ namespace simul
 		template<typename T, typename U> void MatrixToQuaternion(Quaternion<T>& q, const tmatrix4<U>& M)
 		{
 			tmatrix4<U> Mt = M;
-			M.Transpose();
+			Mt.transpose();
 			//    Calculate the trace of the matrix Mt from the equation:
-			T Tr = (T)Mt(0, 0) + (T)Mt(1, 1) + (T)Mt(2, 2) + T(1.0);
+			T Tr = (T)Mt.M[0][0] + (T)Mt.M[1][1] + (T)Mt.M[2][2] + T(1.0);
 			//    If the trace of the matrix is greater than zero
 			if (Tr > 0)
 			{
 				T Size = T(2.0) * (T)sqrt(Tr);
 				q.s = (T)0.25 * Size;
-				q.x = ((T)(Mt.m21 - Mt.m12) / Size);
-				q.y = ((T)(Mt.m02 - Mt.m20) / Size);
-				q.z = ((T)(Mt.m10 - Mt.m01) / Size);
+				q.x = ((T)(Mt._m21 - Mt._m12) / Size);
+				q.y = ((T)(Mt._m02 - Mt._m20) / Size);
+				q.z = ((T)(Mt._m10 - Mt._m01) / Size);
 			}
 			else
 			{
-				T		r[4];
-				int    i, j, k;
+				T r[4];
+				int i, j, k;
 				int nxt[3] = { 1, 2, 0 };
 				// diagonal is negative
 				i = 0;
-				if (Mt(1, 1) > Mt(0, 0))
+				if ((T)Mt.M[1][1] > (T)Mt.M[0][0])
 					i = 1;
-				if (Mt(2, 2) > Mt(i, i))
+				if ((T)Mt.M[2][2] > (T)Mt.M[i][i])
 					i = 2;
 				j = nxt[i];
 				k = nxt[j];
-				float Size = sqrt((Mt(i, i) - (Mt(j, j) + Mt(k, k))) + T(1.0));
+				float Size = sqrt(((T)Mt.M[i][i] - ((T)Mt.M[j][j] + (T)Mt.M[k][k])) + T(1.0));
 				r[i] = Size * T(0.5);
 				if (Size != T(0.0))
 					Size = T(0.5) / Size;
-				r[j] = (Mt(i, j) + Mt(j, i)) * Size;
-				r[k] = (Mt(i, k) + Mt(k, i)) * Size;
-				r[3] = (Mt(j, k) - Mt(k, j)) * Size;
+				r[j] = ((T)Mt.M[i][j] + (T)Mt.M[j][i]) * Size;
+				r[k] = ((T)Mt.M[i][k] + (T)Mt.M[k][i]) * Size;
+				r[3] = ((T)Mt.M[j][k] - (T)Mt.M[k][j]) * Size;
 
 				q.x = -r[0];
 				q.y = -r[1];
