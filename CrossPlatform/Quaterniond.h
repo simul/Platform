@@ -408,7 +408,7 @@ namespace simul
 					i = 2;
 				j = nxt[i];
 				k = nxt[j];
-				float Size = sqrt(((T)Mt.M[i][i] - ((T)Mt.M[j][j] + (T)Mt.M[k][k])) + T(1.0));
+				T Size = sqrt(((T)Mt.M[i][i] - ((T)Mt.M[j][j] + (T)Mt.M[k][k])) + T(1.0));
 				r[i] = Size * T(0.5);
 				if (Size != T(0.0))
 					Size = T(0.5) / Size;
