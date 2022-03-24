@@ -1613,13 +1613,13 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 	// Clear resources
 	SAFE_RELEASE_LATER(mTextureDefault);
-
+	mResourceState=D3D12_RESOURCE_STATE_GENERIC_READ;
 	res = r->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&textureDesc,
-		GetCurrentState(deviceContext),
+		mResourceState,
 		rendertarget? &clearValues : nullptr,
         SIMUL_PPV_ARGS(&mTextureDefault)
 	);
@@ -1636,15 +1636,16 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	
 	InitStateTable(totalNum, m);
 	// Find the initial texture state
-	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-    if (rendertarget)
+	AssumeLayout(mResourceState);
+	// We have SET the state. So mResourceState is the real value.
+  /*  if (rendertarget)
     {
 		AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
     if (computable)
     {
 		AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    }
+    }*/
 	InitSRVTables(totalNum, m);
 	CreateSRVTables(num, m, cubemap);
 	

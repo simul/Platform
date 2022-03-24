@@ -295,7 +295,9 @@ void DisplaySurface::EndFrame()
 	SIMUL_ASSERT(res == S_OK);
 	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 	ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	auto cc = dx12RenderPlatform->GetCommandQueue();
+	if(cc&& mCommandList)
+		cc->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 
