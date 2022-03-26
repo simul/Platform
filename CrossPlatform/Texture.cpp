@@ -136,14 +136,13 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 
 	if (tc->vidTexType != VideoTextureType::NONE)
 		res = ensureVideoTexture(r, tc->w, tc->l, tc->f, tc->vidTexType);
-	else if (tc->d == 2&&tc->arraysize==1)
+	else if (tc->d == 1&&tc->arraysize==1)
 		res= ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil );
-	else if(tc->d==2)
+	else if(tc->d==1)
 		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap ) ;
-	else if(tc->d==3)
+	else
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
 	return res;
-
 }
 
 bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)

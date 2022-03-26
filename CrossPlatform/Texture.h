@@ -124,6 +124,7 @@ namespace simul
 			uint clearStencil = 0;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			const void* initialData = nullptr;
+			bool cpuWritable = false;
 		};
 		//! A crossplatform viewport structure.
 		struct Viewport
