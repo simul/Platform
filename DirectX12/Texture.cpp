@@ -2022,7 +2022,7 @@ void Texture::SplitLayouts()
 
 void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 {
-#ifdef SIMUL_DEBUG_BARRIERS
+#if SIMUL_DEBUG_BARRIERS
 	SIMUL_COUT<<name.c_str()<<" 0x"<<std::hex<<(unsigned long long)mTextureDefault<<" assumed as layout "<<dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str()<<std::endl;
 #endif
     int numLayers       = (int)mSubResourcesStates.size();
