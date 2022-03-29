@@ -173,7 +173,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		return cp::VideoDecoderResult::InvalidDecodeArgumentType;
 	}
 
-	inputArgs.ReferenceFrames.NumTexture2Ds = mTextures.size();
+	inputArgs.ReferenceFrames.NumTexture2Ds = (uint)mTextures.size();
 
 	for(int i = 0; i < mTextures.size(); ++i)
 	{

@@ -90,6 +90,9 @@ void GpuProfiler::InvalidateDeviceObjects()
 	BaseProfilingInterface::Clear();
 }
 
+#if PLATFORM_DEBUG_PROFILING_LEVELS
+std::vector<std::string> profilingStrings;
+#endif
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 	if (!enabled||!renderPlatform||!root||!frame_active)
@@ -98,6 +101,11 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
 	level++;
+#if PLATFORM_DEBUG_PROFILING_LEVELS
+	SIMUL_ASSERT_WARN_ONCE(level>0,"Profiler debugging: level was less than zero calling GpuProfiler::Begin")
+	SIMUL_COUT << "Profiler debugging: begin level "<<level<<", "<<name<< std::endl;
+	profilingStrings.push_back(name);
+#endif
 	if(level>max_level)
 		return;
 	level_in_use++;
@@ -178,6 +186,19 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 		return;
 	
 	renderPlatform->EndEvent(deviceContext);
+#if PLATFORM_DEBUG_PROFILING_LEVELS
+	if(profilingStrings.size())
+	{
+		SIMUL_COUT << "Profiler debugging: end   level "<<level<<", "<<profilingStrings.back().c_str()<< std::endl;
+	
+		profilingStrings.pop_back();
+	}
+	else
+	{
+		SIMUL_ASSERT_WARN_ONCE(level>0,"Profiler debugging: level zero calling GpuProfiler::End")
+		SIMUL_COUT << "Profiler debugging: end   level "<<level<<", stack empty."<< std::endl;
+	}
+#endif
 	level--;
 	if(level>=max_level)
 		return;

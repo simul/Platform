@@ -372,6 +372,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	}
 	if(num_loaded)
 	{
+		//pixelFormat		=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 		// Create an upload heap
 		// only single mip in the upload.
 		CreateUploadResource();

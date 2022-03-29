@@ -39,7 +39,7 @@ namespace simul
 			unsigned						mSlots;					//number of 256-byte chunks of memory...
 			unsigned						mMaxDescriptors;
 
-			unsigned						mLastFrameIndex;
+			int64_t							mLastFrameIndex;
 			unsigned						mCurApplyCount;
 
 			vk::Buffer 						mBuffers[kNumBuffers];

@@ -512,6 +512,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	if(use_debug)
 		InitDebugging();
+ 	ERRNO_BREAK
 	CreateDevice();
  	ERRNO_BREAK
 }
@@ -627,7 +628,7 @@ void DeviceManager::CreateDevice()
 	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 		gpu_feature_checks = false;
 	#endif
-
+ 	ERRNO_BREAK
 	if (gpu_feature_checks)
 	{
 		if(!deviceManagerInternal->gpu_features.vertexPipelineStoresAndAtomics)
@@ -641,6 +642,7 @@ void DeviceManager::CreateDevice()
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
+ 	ERRNO_BREAK
 	auto deviceInfo = vk::DeviceCreateInfo()
 							.setQueueCreateInfoCount(1)
 							.setPQueueCreateInfos(queues.data())
@@ -650,10 +652,15 @@ void DeviceManager::CreateDevice()
 							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
 							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
 							.setQueueCreateInfoCount((uint32_t)queues.size());
-
+							
+ 	ERRNO_BREAK
 	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
+ 	// For unknown reasons, even when successful, Vulkan createDevice sets errno==2: No such file or directory here.
+	// So we reset it to prevent spurious error detection.
+	errno=0;
 	device_initialized=result == vk::Result::eSuccess;
 	SIMUL_ASSERT(device_initialized);
+ 	ERRNO_BREAK
 }
 
 std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKHR *surface)

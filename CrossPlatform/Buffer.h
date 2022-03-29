@@ -9,6 +9,10 @@ struct ID3D12Resource;
 struct D3D12_VERTEX_BUFFER_VIEW;
 struct D3D12_INDEX_BUFFER_VIEW;
 typedef unsigned GLuint;
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 namespace simul
 {
 	namespace crossplatform
@@ -72,3 +76,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

@@ -1108,9 +1108,15 @@ void RenderPlatform::BeginFrame()
 	frameHeapIndex++;
 	frameHeapIndex=frameHeapIndex%3;
 	// Reset the frame heaps (SRV_CBV_UAV and SAMPLER)
-	mFrameHeap[frameHeapIndex].Reset();
+	if(mFrameHeap)
+	{
+		mFrameHeap[frameHeapIndex].Reset();
+	}
 	// Reset the override samplers heap
-	mFrameOverrideSamplerHeap[frameHeapIndex].Reset();
+	if(mFrameOverrideSamplerHeap)
+	{
+		mFrameOverrideSamplerHeap[frameHeapIndex].Reset();
+	}
 }
 
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -1764,6 +1770,8 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	using namespace crossplatform;
 	switch(f)
 	{
+	case DXGI_FORMAT_R8_UNORM:
+		return R_8_UNORM;
 	case DXGI_FORMAT_R16_FLOAT:
 		return R_16_FLOAT;
 	case DXGI_FORMAT_R16G16B16A16_TYPELESS:

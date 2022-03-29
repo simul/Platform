@@ -9,7 +9,7 @@ option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
 option( SIMUL_BUILD_SAMPLES "Deprecated, use PLATFORM_BUILD_SAMPLES instead." ON )
 mark_as_advanced(SIMUL_BUILD_SAMPLES)
 option(PLATFORM_BUILD_SAMPLES "Build executable samples?" ${SIMUL_BUILD_SAMPLES})
-option(PLATFORM_WARNINGS_AS_ERRORS "Should Platform treat C++ compile warnings as errors. " OFF)
+option(PLATFORM_WARNINGS_AS_ERRORS "Should Platform treat C++ compile warnings as errors. " ON)
 mark_as_advanced(PLATFORM_WARNINGS_AS_ERRORS)
 
 

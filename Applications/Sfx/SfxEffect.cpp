@@ -1321,7 +1321,10 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 	// TODO: binary is here, sfxb not needed??
 		outstr.write((const char *)binBuffer.data(), binBuffer.size());
 	}
-	std::cout<<sfxoFilename.c_str()<<": info: output effect file."<<std::endl;
+	if(sfxOptions.verbose)
+	{
+		std::cout<<sfxoFilename.c_str()<<": info: output effect file."<<std::endl;
+	}
 	return res!=0;
 }
 

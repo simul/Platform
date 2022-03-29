@@ -307,22 +307,22 @@ namespace simul
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device=nullptr;
 			//! Reference to the graphics command queue
-			ID3D12CommandQueue*			mGraphicsQueue;
+			ID3D12CommandQueue*			mGraphicsQueue=nullptr;
 			//! Reference to the compute command queue
-			ID3D12CommandQueue*			mComputeQueue;
+			ID3D12CommandQueue*			mComputeQueue=nullptr;
 			//! Reference to the copy command queue
-			ID3D12CommandQueue*			mCopyQueue;
+			ID3D12CommandQueue*			mCopyQueue=nullptr;
 			// Immediate context can be owned or external.
 			ImmediateContext			mIContext;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
-			dx12::Heap*					mFrameHeap;
+			dx12::Heap*					mFrameHeap=nullptr;
 			//! Heap used to hold override sampler states
-			dx12::Heap*					mFrameOverrideSamplerHeap;
-			dx12::Heap*					mSamplerHeap;
-			dx12::Heap*					mRenderTargetHeap;
-			dx12::Heap*					mDepthStencilHeap;
-			dx12::Heap*					mNullHeap;
+			dx12::Heap*					mFrameOverrideSamplerHeap=nullptr;
+			dx12::Heap*					mSamplerHeap=nullptr;
+			dx12::Heap*					mRenderTargetHeap=nullptr;
+			dx12::Heap*					mDepthStencilHeap=nullptr;
+			dx12::Heap*					mNullHeap=nullptr;
 			//! Shared root signature for graphics
 			ID3D12RootSignature*		mGRootSignature=nullptr;
 			//! For raytracing
