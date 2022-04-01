@@ -39,6 +39,10 @@ if(PLATFORM_SUPPORT_GLES)
 	add_subdirectory(GLES)
 endif()
 
+if(PLATFORM_BUILD_SAMPLES)
+	add_subdirectory(Examples)
+endif()
+
 if(SIMUL_BUILD_SAMPLES AND ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten" )
 	add_subdirectory(Applications/EmscriptenSample)
 endif()
@@ -63,6 +67,14 @@ if(PLATFORM_WINDOWS)
 	if( PLATFORM_SUPPORT_D3D11 )
 		add_subdirectory(DirectX11)
 	endif()
+endif()
+
+if( PLATFORM_SUPPORT_ANGLE )
+	add_subdirectory(GLES)
+endif()
+
+if( PLATFORM_EMSCRIPTEN )
+	add_subdirectory(Applications/EmscriptenSample)
 endif()
 
 if(XBOXONE AND PLATFORM_SUPPORT_D3D11)
