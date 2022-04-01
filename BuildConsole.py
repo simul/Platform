@@ -148,13 +148,16 @@ def main(argv):
 	#Pass cmd args
 	PlatformName=""
 	BuildDir=""
+	sfxPath="build_x64/bin/Release/Sfx.exe"
 	opts, args = getopt.getopt(argv, "hp:b:")
 	for opt, arg in opts:
 		if opt == "-h":
-			print("usage: BuildConsole.py -p <Platform> -b <BuildDir>")
+			print("usage: BuildConsole.py -p <Platform> -b <BuildDir> -s <pathToSfxExe>")
 			sys.exit(0)
 		elif opt in "-p":
 			PlatformName = arg
+		elif opt in "-s":
+			sfxPath = arg
 		elif opt in "-b":
 			BuildDir = arg
 		else:
@@ -221,7 +224,7 @@ def main(argv):
 	defines=[]
 	defines.append("-D CMAKE_BUILD_TYPE=Debug,Release")
 	defines.append("-D CMAKE_TOOLCHAIN_FILE=" + wrap_dq(cwd+"\\"+PlatformName+"\\"+CMAKE_TOOLCHAIN))
-	defines.append("-D SIMUL_SFX_EXECUTABLE=" + wrap_dq(cwd+"\\build_x64\\bin\\Release\\Sfx.exe"))
+	defines.append("-D PLATFORM_SFX_EXECUTABLE=" + wrap_dq(cwd+"\\"+sfxPath))
 	
 	if ePlatform == PlatformType.PS4:
 		defines.append("-D "+ wrap_dq("SCE_ORBIS_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
