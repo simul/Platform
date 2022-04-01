@@ -28,6 +28,8 @@ elseif(PLATFORM_LINUX)
 	set(PLATFORM_STD_CHARCONV OFF)
 elseif(PLATFORM_EMSCRIPTEN)
 	set(PLATFORM_STD_CHARCONV OFF)
+elseif(PLATFORM_SWITCH)
+	set(PLATFORM_STD_CHARCONV OFF)
 endif()
 # Setup and build the static library.
 add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
