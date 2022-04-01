@@ -1,4 +1,3 @@
-
 #include "Platform/CrossPlatform/TextInputOutput.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/StringFunctions.h"
@@ -9,20 +8,23 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+
 #if PLATFORM_STD_CHARCONV
 #include <charconv>
 #endif
+
 using namespace simul;
 using namespace platform;
 using namespace crossplatform;
 using std::string;
-#ifndef _MSC_VER
+
+#if defined(_MSC_VER) && defined(_WIN32)
+#include <Windows.h>
+#else
 #include <stdio.h>
 #include <strings.h>
 #include <string.h> // for memset
 #define _stricmp strcasecmp
-#else
-#include <windows.h>
 #endif
 
 TextFileInput::TextFileInput(simul::base::MemoryInterface *m)

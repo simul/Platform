@@ -13,20 +13,18 @@
 #define SIMUL_INTERNAL_CHECKS 0
 #endif
 
-#ifdef _MSC_VER
-    #pragma warning(push)
+#if defined(_MSC_VER) && defined(_WIN32)
+	#pragma warning(push)
 	#pragma warning(disable:4996)
 	#include <Windows.h>// for DebugBreak etc
-#endif
-#ifdef _WIN32
-#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+	#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #endif
 
 #if defined(__ORBIS__) || defined(__COMMODORE__)
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
-#if defined(UNIX) || defined(__linux__)
+#if defined(UNIX) || defined(__linux__) || defined(__SWITCH__)
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
 #ifndef __COMMODORE__
 #include <signal.h>

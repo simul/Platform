@@ -15,6 +15,7 @@ class PlatformType(Enum):
 	XBOX_ONE_GDK = 4
 	XBOX_SERIES = 5
 	WIN_GDK = 6
+	SWITCH = 7
 
 def GetPlatformType(PlatformName):
 	platform = PlatformType.UNKNOWN
@@ -34,6 +35,8 @@ def GetPlatformType(PlatformName):
 		platform = PlatformType.XBOX_SERIES
 	elif PlatformName == "WINGDK" or PlatformName == "GAMING.DESKTOP.X64":
 		platform = PlatformType.WIN_GDK
+	elif PlatformName == "SWITCH" or PlatformName == "NX64":
+		platform = PlatformType.SWITCH
 	else:
 		platform = PlatformType.UNKNOWN
 
