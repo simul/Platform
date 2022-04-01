@@ -32,7 +32,7 @@ namespace simul
 		};*/
 
 		//! A class to implement common video encodng/decoding functionality for DirectX 12.
-		class SIMUL_DIRECTX12_EXPORT VideoDecoder: public cp::VideoDecoder
+		class SIMUL_DIRECTX12_EXPORT VideoDecoder final: public cp::VideoDecoder
 		{
 		public:
 			VideoDecoder();

@@ -60,20 +60,18 @@ cp::VideoDecoderResult VideoDecoder::Init()
 	r = CreateVideoDecoder();
 	if (DEC_FAILED(r))
 	{
-		Shutdown();
 		return r;
 	}
 
 	r = CreateCommandObjects();
 	if (DEC_FAILED(r))
 	{
-		Shutdown();
 		return r;
 	}
 
-	mRefTextures.resize(mTextures.size());
-	mRefSubresources.resize(mTextures.size());
-	mRefHeaps.resize(mTextures.size());
+	mRefTextures.resize(mDecoderParams.maxDecodePictureBufferCount, nullptr);
+	mRefSubresources.resize(mDecoderParams.maxDecodePictureBufferCount, 0);
+	mRefHeaps.resize(mDecoderParams.maxDecodePictureBufferCount, nullptr);
 
 	return cp::VideoDecoderResult::Ok;
 }
@@ -173,7 +171,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		return cp::VideoDecoderResult::InvalidDecodeArgumentType;
 	}
 
-	inputArgs.ReferenceFrames.NumTexture2Ds = (uint)mTextures.size();
+	inputArgs.ReferenceFrames.NumTexture2Ds = mTextures.size();
 
 	for(int i = 0; i < mTextures.size(); ++i)
 	{
@@ -182,13 +180,15 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		{
 			tex->ChangeState(decodeCommandList, false);
 			mRefTextures[i] = tex->AsD3D12Resource();
+			mRefHeaps[i] = mHeap;
 		}
 		else
 		{
 			mRefTextures[i] = nullptr;
+			mRefHeaps[i] = nullptr;
 		}
 		mRefSubresources[i] = 0;
-		mRefHeaps[i] = mHeap;
+		
 	}
 	inputArgs.ReferenceFrames.ppTexture2Ds = mRefTextures.data();
 	// Specifies 0 used for each texture.
@@ -207,8 +207,6 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 
 	D3D12_RESOURCE_STATES outputTextureStateBefore = dx12OutputTexture->GetState();
 	D3D12_RESOURCE_STATES outputTextureStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
-	// Change surface texture state.
-	//decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter, 0));
 
 	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
 
@@ -227,12 +225,15 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	// Set to required state for decoding.
 	mInputBuffer->ChangeState(decodeCommandList, false);
 
+	// Change output texture state.
+	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter, 0));
+
 	decodeCommandList->DecodeFrame(mDecoder, &outputArgs, &inputArgs);
 
 	mInputBuffer->ChangeState(decodeCommandList, true);
 
-	// Change surface texture state back.
-	//decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateAfter, outputTextureStateBefore));
+	// Change output texture state back.
+	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateAfter, outputTextureStateBefore));
 
 	// Ensure gpu waits for the buffer to be uploaded before decoding.
 	WaitOnFence(mDecodeCLC.GetCommandQueue(), mDecodeFence);

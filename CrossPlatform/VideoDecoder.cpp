@@ -28,9 +28,11 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	mDecoderParams = decoderParams;
 	mFeaturesSupported = false;
 
-	if (DEC_FAILED(Init()))
+	VideoDecoderResult result = Init();
+	if (DEC_FAILED(result))
 	{
 		Shutdown();
+		return result;
 	}
 
 	mInputBuffer = CreateVideoBuffer();

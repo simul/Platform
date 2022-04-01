@@ -1386,13 +1386,22 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			SIMUL_BREAK_INTERNAL("Unnamed texture");
 		}
 
-		uint32_t srvCount = yuvFormat ? 2 : 1;
+		uint32_t srvCount;
+		if (yuvFormat)
+		{
+			srvCount = 2;
+			srvDesc.Texture2D.PlaneSlice = 0;
+		}
+		else
+		{
+			srvCount = 1;
+		}
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, srvCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("Texture2DSrvHeap %s",name.c_str()), false);
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
 
-		// One srv for Y layer and one for UV layer.
+		// Create the UV layer SRV
 		if (yuvFormat)
 		{
 			srvDesc.Format = DXGI_FORMAT_R8G8_UNORM;
