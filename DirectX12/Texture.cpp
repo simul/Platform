@@ -1199,8 +1199,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	}
 	if (texture2dFormat == DXGI_FORMAT_NV12)
 	{
-		// For Y layer.
-		srvFormat = DXGI_FORMAT_R8_UNORM;
+		// For Y layer. UINT is easier for conversion to RGB in shader that UNORM.
+		srvFormat = DXGI_FORMAT_R8_UINT;
 		yuvFormat = true;
 	}
 	dim			= 2;
@@ -1404,7 +1404,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		// Create the UV layer SRV
 		if (yuvFormat)
 		{
-			srvDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+			srvDesc.Format = DXGI_FORMAT_R8G8_UINT;
 			srvDesc.Texture2D.PlaneSlice = 1;
 			renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 			uvLayerShaderResourceView12 = mTextureSrvHeap.CpuHandle();
