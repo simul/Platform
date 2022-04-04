@@ -43,7 +43,7 @@ namespace platform
 {
 	namespace core
 	{
-		#ifndef _MSC_VER	
+		#if !(defined(_MSC_VER) && defined(_WIN32))
 		extern PLATFORM_CORE_EXPORT void DebugBreak();
 		#endif
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
@@ -198,7 +198,7 @@ namespace platform
 #define SIMUL_NULL_CHECK_RETURN(val,message)
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32)
 	#define BREAK_IF_DEBUGGING\
 		{\
 			if(platform::core::DebugBreaksEnabled()&&IsDebuggerPresent())\
@@ -207,6 +207,8 @@ namespace platform
 #else
 	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
 		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
+	#elif defined(__SWITCH__) && (SIMUL_INTERNAL_CHECKS)
+		#define BREAK_IF_DEBUGGING raise(SIGTRAP)
 	#else
 		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
 		// Therefore we use this workaround.
