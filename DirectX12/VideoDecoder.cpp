@@ -92,15 +92,20 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	mGraphicsCLC.ResetCommandList();
 	mDecodeCLC.ResetCommandList();
 
+	//////// Buffer Update ////////
+
+	// Set to the required state for updating the buffer.
+	mInputBuffer->ChangeState(graphicsCommandList, cp::VideoBufferState::UPLOAD);
+
+	// Update data in the buffer.
 	mInputBuffer->Update(graphicsCommandList, buffer, (uint32_t)bufferSize);
 		
 	mGraphicsCLC.ExecuteCommandList();
 	Signal(mGraphicsCLC.GetCommandQueue(), mDecodeFence);
 
 
-	uint32_t currPic = 0;
+	//////// Input Arguments ////////
 
-	// Input Arguments 
 	D3D12_VIDEO_DECODE_INPUT_STREAM_ARGUMENTS inputArgs;
 	inputArgs.CompressedBitstream.Size = bufferSize;
 	inputArgs.CompressedBitstream.Offset = 0;
@@ -110,6 +115,8 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	// DXVA accepts a maximum of 10 arguments. 
 	inputArgs.NumFrameArguments = std::min<uint32_t>(decodeArgCount, mMaxInputArgs);
 	bool picParams = false;
+
+	uint32_t currPic = 0;
 
 	for (uint32_t i = 0; i < inputArgs.NumFrameArguments; ++i)
 	{
@@ -171,8 +178,6 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		return cp::VideoDecoderResult::InvalidDecodeArgumentType;
 	}
 
-	inputArgs.ReferenceFrames.NumTexture2Ds = mTextures.size();
-
 	for(int i = 0; i < mTextures.size(); ++i)
 	{
 		DecoderTexture* tex = (DecoderTexture*)mTextures[i];
@@ -187,17 +192,16 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 			mRefTextures[i] = nullptr;
 			mRefHeaps[i] = nullptr;
 		}
-		mRefSubresources[i] = 0;
-		
+		mRefSubresources[i] = 0;	
 	}
+
+	inputArgs.ReferenceFrames.NumTexture2Ds = mTextures.size();
 	inputArgs.ReferenceFrames.ppTexture2Ds = mRefTextures.data();
-	// Specifies 0 used for each texture.
 	inputArgs.ReferenceFrames.pSubresources = mRefSubresources.data();
 	inputArgs.ReferenceFrames.ppHeaps = mRefHeaps.data();
-	
 
 
-	// Output Arguments
+	//////// Output Arguments ////////
 
 	D3D12_VIDEO_DECODE_OUTPUT_STREAM_ARGUMENTS outputArgs;
 	outputArgs.OutputSubresource = 0;
@@ -205,7 +209,8 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	// This texture will hold the native output regardless of whether conversion is enabled.
 	((DecoderTexture*)mTextures[currPic])->ChangeState(decodeCommandList, true);
 
-	D3D12_RESOURCE_STATES outputTextureStateBefore = dx12OutputTexture->GetState();
+	// The calling application should ensure the output texture is in the common state.
+	D3D12_RESOURCE_STATES outputTextureStateBefore = D3D12_RESOURCE_STATE_COMMON;
 	D3D12_RESOURCE_STATES outputTextureStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
 
 	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
@@ -222,15 +227,18 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	convArgs.ReferenceSubresource = 0;
 
 
-	// Set to required state for decoding.
-	mInputBuffer->ChangeState(decodeCommandList, false);
+	//////// Decoding ////////
+
+	// Set to the required state for decoding.
+	mInputBuffer->ChangeState(decodeCommandList, cp::VideoBufferState::OPERATION);
 
 	// Change output texture state.
-	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter, 0));
+	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter));
 
 	decodeCommandList->DecodeFrame(mDecoder, &outputArgs, &inputArgs);
 
-	mInputBuffer->ChangeState(decodeCommandList, true);
+	// Set to the common state for access by the graphics command list.
+	mInputBuffer->ChangeState(decodeCommandList, cp::VideoBufferState::COMMON);
 
 	// Change output texture state back.
 	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateAfter, outputTextureStateBefore));
@@ -250,7 +258,6 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 cp::VideoDecoderResult VideoDecoder::Shutdown()
 {
 	cp::VideoDecoder::Shutdown();
-	SAFE_DELETE(mInputBuffer);
 	mGraphicsCLC.Release();
 	mDecodeCLC.Release();
 	SAFE_RELEASE(mHeap);

@@ -18,6 +18,13 @@ namespace simul
 			PROCESS_READ
 		};
 
+		enum class VideoBufferState
+		{
+			COMMON,
+			UPLOAD,
+			OPERATION
+		};
+
 		struct DeviceContext;
 		class SIMUL_CROSSPLATFORM_EXPORT VideoBuffer
 		{
@@ -47,8 +54,8 @@ namespace simul
 			}
 			//! Set up as a buffer for video encoding/decoding read operations.
 			virtual void EnsureBuffer(crossplatform::RenderPlatform* r, VideoBufferType bufferType, uint32_t bufferSize) = 0;
-			//! Change buffer state for updating or for reading in video opertions.
-			virtual void ChangeState(void* videoContext, bool toUpdateState) = 0;
+			//! Change buffer state for updating or for video opertions.
+			virtual void ChangeState(void* videoContext, VideoBufferState bufferState) = 0;
 			//! Update the data in the buffer.
 			virtual void Update(void* graphicsContext, const void* data, uint32_t dataSize) = 0;
 

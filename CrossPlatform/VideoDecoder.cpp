@@ -36,7 +36,7 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	}
 
 	mInputBuffer = CreateVideoBuffer();
-	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, 250000);
+	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, 400000);
 
 	mTextures.resize(decoderParams.maxDecodePictureBufferCount);
 

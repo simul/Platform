@@ -17,7 +17,7 @@ namespace simul
 			~VideoBuffer();
 			void InvalidateDeviceObjects();
 			void EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::VideoBufferType bufferType, uint32_t dataSize) override;
-			void ChangeState(void* videoContext, bool toUpdateState) override;
+			void ChangeState(void* videoContext, crossplatform::VideoBufferState bufferState) override;
 			void Update(void* graphicsContext, const void* data, uint32_t dataSize) override;
 			ID3D12Resource * const AsD3D12Buffer()  const override
 			{

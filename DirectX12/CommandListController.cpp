@@ -75,9 +75,20 @@ void CommandListController::Initialize(RenderPlatform* renderPlatform, D3D12_COM
 
 void CommandListController::Release()
 {
+	// Check last allocator used is finished with.
+	if (mFences)
+	{
+		int index = ((int)mIndex - 1) % mNumAllocators;
+		if (mFences[index]->AsD3D12Fence()->GetCompletedValue() < mFences[index]->value)
+		{
+			mFences[index]->AsD3D12Fence()->SetEventOnCompletion(mFences[index]->value, mWindowEvent);
+			WaitForSingleObject(mWindowEvent, INFINITE);
+		}
+	}
+	
 	if (mCommandListRecording)
 	{
-		//CloseCommandList();
+		CloseCommandList();
 	}
 	SAFE_DELETE_ARRAY_MEMBERS(mFences, mNumAllocators);
 	SAFE_DELETE_ARRAY(mFences);
@@ -85,14 +96,16 @@ void CommandListController::Release()
 	SAFE_RELEASE_ARRAY(mAllocators, mNumAllocators);
 	SAFE_DELETE_ARRAY(mAllocators);
 	if (mCommandQueueOwner)
+	{
 		SAFE_RELEASE(mCommandQueue);
+	}
 }
 
 void CommandListController::ResetCommandList()
 {
 	if (mCommandListRecording)
 	{
-		return;
+		CloseCommandList();
 	}
 
 	// If the GPU is behind, wait:
@@ -109,14 +122,22 @@ void CommandListController::ResetCommandList()
 
 #if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
+	{
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
+	}
 	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
+	{
 		((ID3D12VideoEncodeCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
+	}
 	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
+	{
 		((ID3D12VideoProcessCommandList*)mCommandList)->Reset(mAllocators[mIndex]);
+	}
 	else
 #endif
+	{
 		((ID3D12GraphicsCommandList*)mCommandList)->Reset(mAllocators[mIndex], nullptr);
+	}
 	mCommandListRecording = true;
 	
 }
@@ -137,14 +158,21 @@ void CommandListController::CloseCommandList()
 {
 #if SIMUL_D3D12_VIDEO_SUPPORTED
 	if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)
+	{
 		((ID3D12VideoDecodeCommandList*)mCommandList)->Close();
+	}
 	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE)
+	{
 		((ID3D12VideoEncodeCommandList*)mCommandList)->Close();
+	}
 	else if (mCommandList->GetType() == D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS)
+	{
 		((ID3D12VideoProcessCommandList*)mCommandList)->Close();
+	}
 	else
 #endif
+	{
 		((ID3D12GraphicsCommandList*)mCommandList)->Close();
+	}
 	mCommandListRecording = false;
-	
 }
