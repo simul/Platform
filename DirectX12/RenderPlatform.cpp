@@ -407,15 +407,13 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 	{
 		if (res == mResourceBin[i].second.second)  
 		{
-			SIMUL_CERR<<(n?n:"")<<" "<<(unsigned long long)res<<" Pushed to release manager twice."<<std::endl;
+			SIMUL_CERR<<(n?n:"")<<" 0x"<<std::hex<<(unsigned long long)res<<" Pushed to release manager twice."<<std::endl;
 			return;
 		}
 	}
-#endif
-#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 	res->AddRef();
 	int count=res->Release();
-	SIMUL_COUT<<(n?n:"")<<" "<<(unsigned long long)res<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
+	SIMUL_COUT<<(n?n:"")<<" 0x"<<std::hex<<(unsigned long long)res<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
 #endif
 	mResourceBin.push_back(std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>
 	(

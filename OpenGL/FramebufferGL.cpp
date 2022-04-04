@@ -99,48 +99,46 @@ bool FramebufferGL::CreateBuffers()
         SIMUL_BREAK("renderPlatform should not be NULL here");
         return false;
     }
-    if ((buffer_texture && buffer_texture->IsValid()))
+	static int quality = 0;
+    if (!buffer_texture || !buffer_texture->IsValid())
     {
-        return true;
+		if (buffer_texture)
+		{
+			buffer_texture->InvalidateDeviceObjects();
+		}
+		if (!buffer_texture)
+		{
+			std::string sn = "BaseFramebuffer_" + name;
+			buffer_texture = renderPlatform->CreateTexture(sn.c_str());
+		}
+		if (!external_texture && target_format != crossplatform::UNKNOWN)
+		{
+			if (!is_cubemap)
+			{
+				buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, 1, target_format, false, true, false, numAntialiasingSamples, quality);
+			}
+			else
+			{
+				buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform, Width, Height, 1, mips, target_format, false, true, true);
+			}
+		}
     }
-    if (buffer_depth_texture && buffer_depth_texture->IsValid())
+    if (!buffer_depth_texture ||!buffer_depth_texture->IsValid())
     {
-        return true;
-    }
-    if (buffer_texture)
-    {
-        buffer_texture->InvalidateDeviceObjects();
-    }
-    if (buffer_depth_texture)
-    {
-        buffer_depth_texture->InvalidateDeviceObjects();
-    }
-    if (!buffer_texture)
-    {
-        std::string sn = "BaseFramebuffer_" + name;
-        buffer_texture = renderPlatform->CreateTexture(sn.c_str());
-    }
-    if (!buffer_depth_texture)
-    {
-        std::string sn = "BaseFramebufferDepth_" + name;
-        buffer_depth_texture = renderPlatform->CreateTexture(sn.c_str());
-    }
-    static int quality = 0;
-    if (!external_texture && target_format != crossplatform::UNKNOWN)
-    {
-        if (!is_cubemap)
-        {
-            buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, 1, target_format, false, true, false, numAntialiasingSamples, quality);
-        }
-        else
-        {
-            buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform, Width, Height, 1, mips, target_format, false, true, true);
-        }
-    }
-    if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)
-    {
-        buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, 1,depth_format, false, false, true, numAntialiasingSamples, quality);
-    }
+		if (buffer_depth_texture)
+		{
+			buffer_depth_texture->InvalidateDeviceObjects();
+		}
+		if (!buffer_depth_texture)
+		{
+			std::string sn = "BaseFramebufferDepth_" + name;
+			buffer_depth_texture = renderPlatform->CreateTexture(sn.c_str());
+		}
+		if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)
+		{
+			buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, 1,depth_format, false, false, true, numAntialiasingSamples, quality);
+		}
+	}
 
 	glDeleteFramebuffers((GLsizei)mFBOId.size(),mFBOId.data());
 	
@@ -184,6 +182,8 @@ void FramebufferGL::InvalidateDeviceObjects()
 void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
+		CreateBuffers();
+	if(mFBOId.size()==0||mFBOId[0]==0)
 		CreateBuffers();
 	int fb=0;
 	if(is_cubemap)
@@ -230,6 +230,7 @@ void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext
 void FramebufferGL::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
 {
     BaseFramebuffer::SetExternalTextures(colour, depth);
+	CreateBuffers();
 }
 
 void FramebufferGL::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)

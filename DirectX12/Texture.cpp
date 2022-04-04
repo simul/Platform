@@ -832,8 +832,12 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	}
 	if (mTextureDefault)
 	{
-		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+		if(!mInitializedFromExternal)
+		{
+			auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+			renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+		}
+		mTextureDefault=nullptr;
 	}
 	if (!t)
 	{
@@ -2025,12 +2029,12 @@ void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 #if SIMUL_DEBUG_BARRIERS
 	SIMUL_COUT<<name.c_str()<<" 0x"<<std::hex<<(unsigned long long)mTextureDefault<<" assumed as layout "<<dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str()<<std::endl;
 #endif
-	int numLayers	= (int)mSubResourcesStates.size();
 	mResourceState	= state;
 	// And set all the subresources to that state
 	// We understand that we transitioned ALL the resources
 	if (!mSubResourcesStates.empty())
 	{
+		int numLayers	= (int)mSubResourcesStates.size();
 		for (int l = 0; l < numLayers; l++)
 		{
 			for (int m = 0; m < mips; m++)
