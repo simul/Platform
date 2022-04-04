@@ -40,7 +40,7 @@ if(PLATFORM_SUPPORT_GLES)
 endif()
 
 if(PLATFORM_BUILD_SAMPLES)
-	add_subdirectory(Examples)
+	#add_subdirectory(Examples)
 endif()
 
 if(SIMUL_BUILD_SAMPLES AND ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten" )
