@@ -195,7 +195,7 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 		mRefSubresources[i] = 0;	
 	}
 
-	inputArgs.ReferenceFrames.NumTexture2Ds = mTextures.size();
+	inputArgs.ReferenceFrames.NumTexture2Ds = static_cast<UINT>(mTextures.size());
 	inputArgs.ReferenceFrames.ppTexture2Ds = mRefTextures.data();
 	inputArgs.ReferenceFrames.pSubresources = mRefSubresources.data();
 	inputArgs.ReferenceFrames.ppHeaps = mRefHeaps.data();
