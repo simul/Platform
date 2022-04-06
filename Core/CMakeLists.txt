@@ -14,6 +14,8 @@ elseif(PLATFORM_PS4)
 	set(PLATFORM_STD_FILESYSTEM 0)
 elseif(PLATFORM_LINUX)
 	set(PLATFORM_STD_FILESYSTEM 2)
+elseif(PLATFORM_SWITCH)
+	set(PLATFORM_STD_FILESYSTEM 0)
 endif()
  
 # Setup and build the static library.
