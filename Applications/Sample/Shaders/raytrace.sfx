@@ -59,7 +59,7 @@ void MyRaygenShader()
 void InitialClosestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
     float3 barycentrics = float3(2 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
-   // payload.color = float4(RayTCurrent(),attr.barycentrics.xy, 1);
+   // payload.color = vec4(RayTCurrent(),attr.barycentrics.xy, 1);
     payload.dist= RayTCurrent();
     payload.colour= vec3(1,1,1);
     RayDesc ray;

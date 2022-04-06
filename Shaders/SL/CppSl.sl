@@ -364,6 +364,12 @@
 			return u/l;
 		return u;
 	}
+	template<typename T>
+	tvector3<T> lerp(tvector3<T> a, tvector3<T> b, T x)
+	{
+		tvector3 c = b*x + a*(T(1.0) - x);
+		return c;
+	}
 	typedef tvector2<float> vec2;
 	typedef tvector3<float> vec3;
 	template<typename T> T cross(const tvector2<T>& a, const tvector2<T>& b)
@@ -555,6 +561,11 @@
 			tvector4 r(x*m,y*m,z*m,w*m);
 			return r;
 		}
+		tvector4 operator*(const tvector4& v)
+		{
+			tvector4 r(x*v.x,y*v.y,z*v.z,w*v.w);
+			return r;
+		}
 		tvector4 operator+(tvector4 v) const
 		{
 			tvector4 r;
@@ -601,12 +612,31 @@
 			z/=m;
 			w/=m;
 		}
-		void operator*=(const T *v)
+		const tvector4 &operator*=(tvector4 v)
 		{
-			x*=v[0];
-			y*=v[1];
-			z*=v[2];
-			w*=v[3];
+			x=x*v.x;
+			y=y*v.y;
+			x=z*v.z;
+			w=w*v.w;
+			return *this;
+		}
+		tvector4 operator/(tvector4 v) const
+		{
+			tvector4 r;
+			r.x=x/v.x;
+			r.y=y/v.y;
+			r.x=z/v.z;
+			r.w=w/v.w;
+			return r;
+		}
+		tvector4 operator-() const
+		{
+			tvector4 r;
+			r.x=-x;
+			r.y=-y;
+			r.x=-x;
+			r.w=-w;
+			return r;
 		}
 	};
 	typedef tvector4<float> vec4;
@@ -649,6 +679,12 @@
 		r.z=m._31*v.x+m._32*v.y+m._33*v.z+m._34*v.w;
 		r.w=m._41*v.x+m._42*v.y+m._43*v.z+m._44*v.w;
 		return r;
+	}
+	template<typename T>
+	tvector4<T> lerp(tvector4<T> a, tvector4<T> b, T x)
+	{
+		tvector4 c = b*x + a*(T(1.0) - x);
+		return c;
 	}
 	struct int2
 	{
