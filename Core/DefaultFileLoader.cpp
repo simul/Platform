@@ -24,8 +24,9 @@ using namespace core;
 
 #if defined(__ANDROID__)
 AAssetManager* DefaultFileLoader::s_AssetManager = nullptr;
-#else defined(__SWITCH__)
+#elif defined(__SWITCH__)
 #include <nn/fs.h>
+#include <TutorialUtil.h>
 std::string DefaultFileLoader::s_NVN_ROM_Name;
 #endif
 
@@ -381,7 +382,7 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 		}
 		else
 		{
-			pointer = malloc(fileSize + 1);
+			pointer = reinterpret_cast<char*>(AlignedAllocate(static_cast<size_t>(fileSize + 1), 8));
 			bytes = static_cast<unsigned int>(fileSize);
 
 			res = nn::fs::ReadFile(fileHandle, 0, pointer, fileSize);
@@ -477,6 +478,10 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 
 void DefaultFileLoader::ReleaseFileContents(void* pointer)
 {
+#if defined(__SWITCH__)
+	AlignedDeallocate(pointer);
+	return;
+#endif
 	free(pointer);
 }
 
