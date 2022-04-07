@@ -288,30 +288,14 @@ bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* file
 	}
 	bool result = true;
 	nn::fs::FileHandle fileHandle;
-	nn::Result res = nn::fs::OpenFile(&fileHandle, filepath.c_str(), nn::fs::OpenMode::OpenMode_Write);
+	nn::Result res = nn::fs::OpenFile(&fileHandle, filepath.c_str(), nn::fs::OpenMode::OpenMode_Write | nn::fs::OpenMode::OpenMode_AllowAppend);
 	if (res.IsSuccess())
 	{
-		int64_t fileSize = 0;
-		res = nn::fs::GetFileSize(&fileSize, fileHandle);
+		res = nn::fs::WriteFile(fileHandle, 0, pointer, bytes, nn::fs::WriteOption::MakeValue(nn::fs::WriteOptionFlag_Flush));
 		if (res.IsFailure())
 		{
-			SIMUL_CERR << "Failed to get file size: " << filename_utf8 << std::endl;
+			SIMUL_CERR << "Failed to write file: " << filename_utf8 << std::endl;
 			result = false;
-		}
-		else
-		{
-			if (fileSize < bytes)
-			{
-				SIMUL_CERR << "File write error: Data larger than file size." << std::endl;
-				result = false;
-			}
-
-			res = nn::fs::WriteFile(fileHandle, 0, pointer, bytes, nn::fs::WriteOption::MakeValue(nn::fs::WriteOptionFlag_Flush));
-			if (res.IsFailure())
-			{
-				SIMUL_CERR << "Failed to write file: " << filename_utf8 << std::endl;
-				result = false;
-			}
 		}
 	}
 	nn::fs::CloseFile(fileHandle);
