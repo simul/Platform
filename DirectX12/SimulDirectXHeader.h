@@ -423,3 +423,5 @@ inline bool ID3D12DeviceCriticalError(HRESULT res)
 	else
 		return false;
 }
+
+#define SIMUL_D3D12_DRED_CHECK(res, device) { if (ID3D12DeviceCriticalError(res)) { ID3D12DeviceRemovedExtendedDataParser(device); } }
