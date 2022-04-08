@@ -245,6 +245,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits = rPlat->GetResourceBindingLimits();
 	auto nullSrv = rPlat->GetNullSRV();
+	auto nullSBSrv = rPlat->GetNullSBSRV();
 	int usedSBSlots = 0;
 	int usedTextureSlots = 0;
 
@@ -310,7 +311,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		if (!sb)
 		{
 			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Structured buffer slot " << slot << " is invalid." << std::endl;
-			mSrvSrcHandles[slot] = nullSrv;
+			mSrvSrcHandles[slot] = nullSBSrv;
 			continue;
 		}
 		mSrvSrcHandles[slot] = *sb->AsD3D12ShaderResourceView(deviceContext);
@@ -1095,7 +1096,7 @@ bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 	auto rPlat = (dx12::RenderPlatform*)r;
 	mSamplersHeap = new Heap;
 	std::string name = filename_utf8;
-	name += "_SamplersHeap";
+	name += "_effect_SamplersHeap";
 	mSamplersHeap->Restore(rPlat, ResourceBindingLimits::NumSamplers, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, name.c_str());
 
 	// Copy the default samplers into the heap:

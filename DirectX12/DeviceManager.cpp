@@ -49,7 +49,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			debugController->EnableDebugLayer();
 			
 			// Enable GPU validation (it will report a list of errors if occurred after ExecuteCommandList())
-			static bool doGPUValidation = true;
+			static bool doGPUValidation = false;
 			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{

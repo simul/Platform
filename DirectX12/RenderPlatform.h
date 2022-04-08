@@ -278,6 +278,7 @@ namespace simul
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSBSRV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullUAV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
 
@@ -365,6 +366,7 @@ namespace simul
 			ResourceBindingLimits				mResourceBindingLimits;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullCBV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSRV;
+			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSBSRV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullUAV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 

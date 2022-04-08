@@ -22,7 +22,7 @@
 #include "Platform/DirectX12/Heap.h"
 #include "DisplaySurface.h"
 #include <algorithm>
-#ifdef SIMUL_ENABLE_PIX
+#if SIMUL_ENABLE_PIX
 	#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO) || defined(_GAMING_XBOX) || defined(_GAMING_XBOX_SCARLETT)
 		#define SIMUL_PIX_XBOX
 	#endif
@@ -140,7 +140,7 @@ RenderPlatform::RenderPlatform():
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
-#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
+#if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
 #endif
@@ -149,7 +149,7 @@ RenderPlatform::RenderPlatform():
 RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
-#if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
+#if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
 	if (hWinPixEventRuntime != 0)
 	{
 		if (!FreeLibrary(hWinPixEventRuntime))
@@ -637,6 +637,16 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// SRV
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format							= DXGI_FORMAT_R8G8B8A8_UNORM;
+		mNullSRV                                = mNullHeap->CpuHandle();
+		m12Device->CreateShaderResourceView(nullptr,&srvDesc, mNullSRV);
+		mNullHeap->Offset();
+	}
+	// SRV
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_BUFFER;
 		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format							= DXGI_FORMAT_UNKNOWN;
@@ -644,8 +654,8 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		srvDesc.Buffer.NumElements				= 1;
 		srvDesc.Buffer.StructureByteStride		= 1;
 		srvDesc.Buffer.Flags					= D3D12_BUFFER_SRV_FLAG_NONE;
-		mNullSRV                                = mNullHeap->CpuHandle();
-		m12Device->CreateShaderResourceView(nullptr,&srvDesc, mNullSRV);
+		mNullSBSRV                              = mNullHeap->CpuHandle();
+		m12Device->CreateShaderResourceView(nullptr,&srvDesc, mNullSBSRV);
 		mNullHeap->Offset();
 	}
 	// UAV
@@ -1078,7 +1088,7 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name)
 {
-#if defined(SIMUL_ENABLE_PIX)
+#if SIMUL_ENABLE_PIX
 	#if defined(SIMUL_PIX_XBOX)
 		PIXBeginEvent(deviceContext.asD3D12Context(), 0, name);
 	#else
@@ -1097,7 +1107,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext,cons
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
-#if defined(SIMUL_ENABLE_PIX)
+#if SIMUL_ENABLE_PIX
 	#if defined(SIMUL_PIX_XBOX)
 		PIXEndEvent(deviceContext.asD3D12Context());
 	#else
@@ -2197,6 +2207,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullCBV() const
 D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullSRV() const
 {
 	return mNullSRV;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullSBSRV() const
+{
+	return mNullSBSRV;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderPlatform::GetNullUAV() const
