@@ -56,6 +56,7 @@ namespace simul
 		private:
 			void Signal(void* context, cp::Fence* fence) override;
 			void WaitOnFence(void* context, cp::Fence* fence) override;
+			size_t mBSize = 0;
 			cp::VideoDecoderResult CreateVideoDevice();
 			cp::VideoDecoderResult CreateVideoDecoder();
 			cp::VideoDecoderResult CreateCommandObjects();

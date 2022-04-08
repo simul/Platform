@@ -97,12 +97,25 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	// Set to the required state for updating the buffer.
 	mInputBuffer->ChangeState(graphicsCommandList, cp::VideoBufferState::UPLOAD);
 
+	if (bufferSize > mBSize)
+	{
+		mBSize = bufferSize;
+	}
 	// Update data in the buffer.
 	mInputBuffer->Update(graphicsCommandList, buffer, (uint32_t)bufferSize);
+
+	// Set to the common state for access by the decode command list.
+	mInputBuffer->ChangeState(graphicsCommandList, cp::VideoBufferState::COMMON);
 		
 	mGraphicsCLC.ExecuteCommandList();
 	Signal(mGraphicsCLC.GetCommandQueue(), mDecodeFence);
 
+	// Initially set all textures as not used for reference.
+	for (int i = 0; i < mTextures.size(); ++i)
+	{
+		DecoderTexture* tex = (DecoderTexture*)mTextures[i];
+		tex->usedAsReference = false;
+	}
 
 	//////// Input Arguments ////////
 
@@ -142,17 +155,17 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 			}
 			else if (mDecoderParams.codec == cp::VideoCodec::HEVC)
 			{
-				frameArgs.Size = sizeof(DXVA_PicParams_HEVC);
 				DXVA_PicParams_HEVC* pp = static_cast<DXVA_PicParams_HEVC*>(frameArgs.pData);
 
 				currPic = pp->CurrPic.Index7Bits;
-				DecoderTexture* tex = (DecoderTexture*)mTextures[currPic];
-				tex->usedAsReference = false;
 				for (int i = 0; i < ARRAY_SIZE(pp->RefPicList); ++i)
 				{
-					uint32_t index = pp->RefPicList[i].AssociatedFlag;
-					tex = (DecoderTexture*)mTextures[index];
-					tex->usedAsReference = pp->RefPicList[i].bPicEntry != 0x7f && pp->RefPicList[i].bPicEntry != 0xff;
+					if (pp->RefPicList[i].bPicEntry != 0x7f && pp->RefPicList[i].bPicEntry != 0xff)
+					{
+						uint32_t index = pp->RefPicList[i].Index7Bits;
+						DecoderTexture* tex = (DecoderTexture*)mTextures[index];
+						tex->usedAsReference = true;
+					}	
 				}
 			}
 			picParams = true;
@@ -288,8 +301,16 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDevice()
 {
 	ID3D12Device* device = mRenderPlatform->AsD3D12Device();
 
+	static bool useDebug = true;
+
+	UINT dxgiFactoryFlags = 0;
+	if (useDebug)
+	{
+		dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+	}
+
 	IDXGIFactory4* factory = nullptr;
-	if (FAILED(CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory))))
+	if (FAILED(CreateDXGIFactory2(dxgiFactoryFlags, SIMUL_PPV_ARGS(&factory))))
 	{
 		SIMUL_CERR << "Error occurred trying to create D3D12 factory.";
 		return cp::VideoDecoderResult::VideoAPIError;
@@ -304,6 +325,7 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDevice()
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 	SAFE_RELEASE(factory);
+
 	if (FAILED(D3D12CreateDevice(hardwareAdapter, D3D_FEATURE_LEVEL_12_1, SIMUL_PPV_ARGS(&mVideoDevice))))
 	{
 		SIMUL_CERR << "Error occurred trying to create video device.";
@@ -311,6 +333,53 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDevice()
 		return cp::VideoDecoderResult::VideoAPIError;
 	}
 	SAFE_RELEASE(hardwareAdapter);
+
+	// We must create the video device with debug flags if we want break on severity or mute warnings.
+	if (useDebug)
+	{
+		ID3D12InfoQueue* infoQueue = nullptr;
+		mVideoDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue));
+		if (infoQueue)
+		{
+			// Set break on_x settings
+#if SIMUL_ENABLE_PIX
+			static bool breakOnWarning = false;
+#else
+			static bool breakOnWarning = true;
+#endif // SIMUL_ENABLE_PIX
+
+			SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
+			if (breakOnWarning)
+			{
+				SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
+
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+			}
+			else
+			{
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false);
+			}
+
+			//// Filter msgs
+			//bool filterMsgs = true;
+			//if (filterMsgs)
+			//{
+			//	D3D12_MESSAGE_ID msgs[] =
+			//	{
+			//		D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+			//		D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+			//	};
+			//	D3D12_INFO_QUEUE_FILTER filter = {};
+			//	filter.DenyList.pIDList = msgs;
+			//	filter.DenyList.NumIDs = _countof(msgs);
+			//	infoQueue->AddStorageFilterEntries(&filter);
+			//}
+			SAFE_RELEASE(infoQueue);
+		}
+	}
+
 	return cp::VideoDecoderResult::Ok;
 }
 

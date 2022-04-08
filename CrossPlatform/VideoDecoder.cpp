@@ -36,7 +36,10 @@ VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform
 	}
 
 	mInputBuffer = CreateVideoBuffer();
-	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, 400000);
+	
+	// Increase this value maybe for 8k or greater resolutions.
+	static constexpr uint32_t inputBufferSize = 300000;
+	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, inputBufferSize);
 
 	mTextures.resize(decoderParams.maxDecodePictureBufferCount);
 
