@@ -123,7 +123,7 @@ void VideoBuffer::ChangeState(void* videoContext, crossplatform::VideoBufferStat
 	barrier.Transition.StateBefore = stateBefore;
 	barrier.Transition.StateAfter = stateAfter;
 	
-	if (stateAfter == uploadState)
+	if (stateBefore == uploadState || stateAfter == uploadState)
 	{
 		((ID3D12GraphicsCommandList*)videoContext)->ResourceBarrier(1, &barrier);
 	}
@@ -159,7 +159,7 @@ void VideoBuffer::Update(void* graphicsContext, const void* data, uint32_t dataS
 	subresourceData.RowPitch = mBufferSize;
 	subresourceData.SlicePitch = subresourceData.RowPitch;
 
-	UINT64 result = UpdateSubresources(graphicsCommandList, mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
+	UINT64 result = 1;// UpdateSubresources(graphicsCommandList, mGpuHeap, mIntermediateHeap, 0, 0, 1, &subresourceData);
 
 	SIMUL_ASSERT(result != 0);
 }
