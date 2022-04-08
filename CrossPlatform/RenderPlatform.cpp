@@ -1278,7 +1278,7 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 	return rs;
 }
 
-crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
+crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t, const std::string& entryPoint)
 {
 	platform::core::FileLoader* fileLoader = platform::core::FileLoader::GetFileLoader();
 	
@@ -1300,19 +1300,20 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, cr
 			return nullptr;
 		}
 	}
-	Shader *s = EnsureShader(filenameUtf8,fileData, 0, fileSize, t);
+	Shader *s = EnsureShader(filenameUtf8,fileData, 0, fileSize, t, entryPoint);
 
 	// Free the loaded memory
 	fileLoader->ReleaseFileContents(fileData);
 	return s;
 }
 
-crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
+crossplatform::Shader* RenderPlatform::EnsureShader(const char* filenameUtf8, const void* sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t, const std::string& entryPoint)
 {
 	std::string name(filenameUtf8);
 	if(shaders.find(name) != shaders.end())
 		return shaders[name];
 	Shader *s = CreateShader();
+	s->entryPoint = entryPoint;
 	s->load(this,filenameUtf8, (unsigned char*)sfxb_ptr+inline_offset, inline_length, t);
 	shaders[name] = s;
 	return s;
