@@ -190,7 +190,7 @@ namespace simul
 			Layout *currentLayout=nullptr;
 			Topology topology = Topology::UNDEFINED;
 			int apply_count = 0;
-			bool contextActive=true;
+			bool contextActive=false;
 			bool externalContext=false;
 
 			bool effectPassValid=false;

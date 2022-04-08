@@ -36,7 +36,7 @@
 using namespace simul;
 using namespace dx12;
 #if SIMUL_INTERNAL_CHECKS
-#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 1
+#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
 crossplatform::DeviceContextType barrierDeviceContextType=crossplatform::DeviceContextType::GRAPHICS;
 #else
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
@@ -140,11 +140,6 @@ RenderPlatform::RenderPlatform():
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
-
-	mCurBarriers    = 0;
-	mTotalBarriers  = 16; 
-	mPendingBarriers.resize(mTotalBarriers);
-
 #if defined(SIMUL_ENABLE_PIX) && !defined(SIMUL_PIX_XBOX)
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
@@ -256,29 +251,37 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 }
 #include <iomanip>
 
+RenderPlatform::ContextBarriers &RenderPlatform::GetBarriers(crossplatform::DeviceContext &deviceContext)
+{
+	auto a=deviceContext.asD3D12Context();
+	RenderPlatform::ContextBarriers *barrierList=barriers[a];
+	if(barrierList==nullptr)
+	{
+		barriers[a]=barrierList=new RenderPlatform::ContextBarriers();
+	}
+	return *barrierList;
+}
+
 void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& deviceContext,	ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, 
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
-#if PLATFORM_DEBUG_BARRIERS
+	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
+#if PLATFORM_DEBUG_BARRIERS1
 	const size_t MAX_NAME_LENGTH = 30;
 	char name[MAX_NAME_LENGTH];
-	if (mPendingBarriers.size() > 30)
-	{
-		SIMUL_CERR << "That's a lot of barriers!\n";
-	}
 #endif
 #ifndef DISABLE_BARRIERS
 	// merge barriers??
 	bool found=false;
-	for(int i=0;i<mCurBarriers;i++)
+	for(int i=0;i<barrierList.mCurBarriers;i++)
 	{
-		auto& b = mPendingBarriers[i];
+		auto& b = barrierList.mPendingBarriers[i];
 		if(b.Transition.pResource==res&&b.Transition.Subresource==subRes)
 		{
 			SIMUL_ASSERT(before==b.Transition.StateAfter);
 			if(before!=b.Transition.StateAfter)
 			{
-#if PLATFORM_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS1
 				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -288,32 +291,32 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			}
 			if(after==b.Transition.StateBefore)
 			{
-				if(mCurBarriers>1)
+				if(barrierList.mCurBarriers>1)
 				{
-					std::swap(b,mPendingBarriers[mCurBarriers-1]);
-#if PLATFORM_DEBUG_BARRIERS
-				if(deviceContext.deviceContextType==barrierDeviceContextType)
-				{
-					GetD3DName(res, name, MAX_NAME_LENGTH);
-					SIMUL_COUT<<"Barrier swapped:" << name << "(0x" <<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
-				}
+					std::swap(b,barrierList.mPendingBarriers[barrierList.mCurBarriers-1]);
+#if PLATFORM_DEBUG_BARRIERS1
+					if(deviceContext.deviceContextType==barrierDeviceContextType)
+					{
+						GetD3DName(res, name, MAX_NAME_LENGTH);
+						SIMUL_COUT<<"Barrier swapped:" << name << "(0x" <<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+					}
 #endif
 				}
 				else
 				{
-#if PLATFORM_DEBUG_BARRIERS
-				if(deviceContext.deviceContextType==barrierDeviceContextType)
-				{
-					GetD3DName(res, name, MAX_NAME_LENGTH);
-					SIMUL_COUT<<"Barrier removed : "<< name<<"(0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
-				}
+#if PLATFORM_DEBUG_BARRIERS1
+					if(deviceContext.deviceContextType==barrierDeviceContextType)
+					{
+						GetD3DName(res, name, MAX_NAME_LENGTH);
+						SIMUL_COUT<<"Barrier removed : "<< name<<"(0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+					}
 #endif
 				}
-				mCurBarriers--;
+				barrierList.mCurBarriers--;
 			}
 			else
 			{
-#if PLATFORM_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS1
 				if(deviceContext.deviceContextType==barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -327,12 +330,12 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 	}
 	if(!found)
 	{
-		auto& barrier = mPendingBarriers[mCurBarriers++];
-#if PLATFORM_DEBUG_BARRIERS
+		auto& barrier = barrierList.mPendingBarriers[barrierList.mCurBarriers++];
+#if PLATFORM_DEBUG_BARRIERS1
 		if(deviceContext.deviceContextType==barrierDeviceContextType)
 		{
 			GetD3DName(res, name, MAX_NAME_LENGTH);
-			SIMUL_COUT<<"Barrier : "<< name<<"(0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<std::endl;
+			SIMUL_COUT<<"Barrier : "<< name<<"(0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<"("<<subRes<<") from "<<D3D12ResourceStateToString(before)<<" to "<<D3D12ResourceStateToString(after)<<" with context 0x"<<(unsigned long long)deviceContext.asD3D12Context()<<std::endl;
 		}
 #endif
 		barrier = CD3DX12_RESOURCE_BARRIER::Transition
@@ -340,7 +343,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			res, before, after, subRes
 		);
 	}
-	if (flush)
+	//if (flush)
 	{
 		FlushBarriers(deviceContext);
 	}
@@ -351,6 +354,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
 #ifndef DISABLE_BARRIERS
+	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
 	ID3D12Resource* res = sb->AsD3D12Resource(deviceContext);
 	if (!res )
 	{
@@ -358,10 +362,10 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 		return;
 	}
 
-	auto& barrier = mPendingBarriers[mCurBarriers++];
+	auto& barrier = barrierList.mPendingBarriers[barrierList.mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 	
-#if PLATFORM_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS1
 	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
 #endif
 /*	if (true)
@@ -376,6 +380,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 {
 #ifndef DISABLE_BARRIERS
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
+	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
 	dx12::Texture* t12 = (dx12::Texture*)tex;
 
 	ID3D12Resource* res = t12->AsD3D12Resource();
@@ -385,16 +390,12 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 		return;
 	}
 
-	auto& barrier = mPendingBarriers[mCurBarriers++];
+	auto& barrier = barrierList.mPendingBarriers[barrierList.mCurBarriers++];
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 	
 #if PLATFORM_DEBUG_BARRIERS
 	SIMUL_COUT<<"Barrier : 0x"<<std::setfill('0') << std::setw(16)<<std::hex<<(unsigned long long)res<<std::endl;
 #endif
-	if (true)
-	{
-//		FlushBarriers(deviceContext);
-	}
 	CheckBarriersForResize(deviceContext);
 #endif
 }
@@ -402,40 +403,46 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 void RenderPlatform::CheckBarriersForResize(crossplatform::DeviceContext &deviceContext)
 {
+	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
 	// Check if we need more space:
-	if (mCurBarriers >= mTotalBarriers)
+	if (barrierList.mCurBarriers >=barrierList. mTotalBarriers)
 	{
 		FlushBarriers(deviceContext);
-		mTotalBarriers += 16;
-		mPendingBarriers.resize(mTotalBarriers);
+		barrierList.mTotalBarriers += 16;
+		barrierList.mPendingBarriers.resize(barrierList.mTotalBarriers);
 		//SIMUL_COUT << "[PERF] Resizing barrier holder to: " << mTotalBarriers << std::endl;
 	}
 }
 
 void RenderPlatform::FlushBarriers(crossplatform::DeviceContext& deviceContext)
 {
-	if (mCurBarriers <= 0) 
+#ifndef DISABLE_BARRIERS
+	ID3D12GraphicsCommandList*	commandList= deviceContext.asD3D12Context();
+	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
+	if (barrierList.mCurBarriers <= 0) 
 	{
 		return; 
 	}
-#if PLATFORM_DEBUG_BARRIERS
+#if PLATFORM_DEBUG_BARRIERS1
 	if(deviceContext.deviceContextType==barrierDeviceContextType)
 	{
-		SIMUL_COUT<<"\t\tFlush "<<mCurBarriers<<" barriers."<<std::endl;
+		std::cout<<"================================================================================"<<std::endl;
+		SIMUL_COUT<<"\t\tFlushing "<<barrierList.mCurBarriers<<" barriers on 0x"<<std::hex<<(uint64_t)commandList<<std::endl;
+		if (barrierList.mCurBarriers > 30)
+		{
+			SIMUL_CERR << "That's a lot of barriers!\n";
+		}
 	}
 #endif
-#ifndef DISABLE_BARRIERS
-	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-	
-#if PLATFORM_DEBUG_BARRIERS
+#if 0
 	for(size_t i = 0; i < mCurBarriers; i++)
 		commandList->ResourceBarrier(1, &mPendingBarriers[i]);
 #else
-	commandList->ResourceBarrier(mCurBarriers, mPendingBarriers.data());
+	commandList->ResourceBarrier(barrierList.mCurBarriers, barrierList.mPendingBarriers.data());
 #endif
 
 #endif
-	mCurBarriers = 0;
+	barrierList.mCurBarriers = 0;
 }
 
 void RenderPlatform::SynchronizeCacheAndState(crossplatform::DeviceContext &deviceContext) 
@@ -979,6 +986,11 @@ ID3D12RootSignature *RenderPlatform::LoadRootSignature(const char *filename)
 }
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	for(auto b:barriers)
+	{
+		delete b.second;
+	}
+	barriers.clear();
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
 	if(mFrameHeap)
@@ -1116,6 +1128,10 @@ void RenderPlatform::BeginFrame()
 	if(mFrameOverrideSamplerHeap)
 	{
 		mFrameOverrideSamplerHeap[frameHeapIndex].Reset();
+	}
+	for(auto b:barriers)
+	{
+		b.second->mCurBarriers=0;
 	}
 }
 

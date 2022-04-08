@@ -342,9 +342,22 @@ namespace simul
 			std::vector<std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
-			int									mTotalBarriers;
-			int									mCurBarriers;
-			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			struct ContextBarriers
+			{
+				ContextBarriers()
+				{
+					mCurBarriers    = 0;
+					mTotalBarriers  = 16; 
+					mPendingBarriers.resize(mTotalBarriers);
+				}
+
+				int									mTotalBarriers;
+				int									mCurBarriers;
+				std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			};
+			std::map<ID3D12CommandList*,ContextBarriers*> barriers;
+			
+			ContextBarriers &GetBarriers(crossplatform::DeviceContext &);
 			bool								isInitialized = false;
 			bool								mIsMsaaEnabled;
 			DXGI_SAMPLE_DESC					mMsaaInfo;			

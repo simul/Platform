@@ -368,7 +368,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 			size_t texSize = textureDesc.Width * textureDesc.Height  * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 			SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
 		}
-		num_loaded++;
+		num_loaded++; 
 	}
 	if(num_loaded)
 	{
@@ -382,15 +382,17 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	
 		std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas;
 		textureSubDatas.resize(arraySize);
+		SetLayout(deviceContext,D3D12_RESOURCE_STATE_COPY_DEST);
+		// must flush before copying:
+		((dx12::RenderPlatform*)renderPlatform)->FlushBarriers(deviceContext);
 		for(int i=0;i<wicContents.size();i++)
-		{
-			SetLayout(deviceContext,D3D12_RESOURCE_STATE_COPY_DEST,0,i);
-			WicContents &wic=wicContents[i];
+			{
+			WicContents &wic						=wicContents[i];
 			// Perform the texture copy
-			D3D12_SUBRESOURCE_DATA &textureSubData	= textureSubDatas[i];
-			textureSubData.pData					= wic.image->pixels; 
-			textureSubData.RowPitch					= wic.image->rowPitch; 
-			textureSubData.SlicePitch				= wic.image->rowPitch * textureDesc.Height;
+			D3D12_SUBRESOURCE_DATA &textureSubData	=textureSubDatas[i];
+			textureSubData.pData					=wic.image->pixels; 
+			textureSubData.RowPitch					=wic.image->rowPitch; 
+			textureSubData.SlicePitch				=wic.image->rowPitch * textureDesc.Height;
 		
 			UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload,pLayouts[i].Offset, i*mips, 1, &textureSubDatas[i]);
 		}
@@ -1041,11 +1043,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		}
 
 		// Find the initial texture state
-		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-		if (rendertargets)
-			AssumeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
-		if (computable)
-			AssumeLayout(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		D3D12_RESOURCE_STATES initialState=D3D12_RESOURCE_STATE_GENERIC_READ;
 
 		// Clean resources
 		SAFE_RELEASE_LATER(mTextureDefault); 
@@ -1056,7 +1054,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
-			GetCurrentState(deviceContext),
+			initialState,
 			rendertargets? &clearValues : nullptr,
             SIMUL_PPV_ARGS(&mTextureDefault)
 		);
@@ -1066,6 +1064,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
+		AssumeLayout(initialState);
 
 		// Create the main SRV
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -2084,8 +2083,11 @@ void Texture::SplitLayouts()
 
 void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 {
-#if PLATFORM_DEBUG_BARRIERS
-	SIMUL_COUT<<name.c_str()<<" 0x"<<std::hex<<(unsigned long long)mTextureDefault<<" assumed as layout "<<dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str()<<std::endl;
+#if PLATFORM_DEBUG_BARRIERS1
+	const size_t MAX_NAME_LENGTH = 30;
+	char namebuf[MAX_NAME_LENGTH];
+	GetD3DName(mTextureDefault, namebuf, MAX_NAME_LENGTH);
+	SIMUL_COUT<<namebuf<<" 0x"<<std::hex<<(unsigned long long)mTextureDefault<<" assumed as layout "<<dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str()<<std::endl;
 #endif
     int numLayers       = (int)mSubResourcesStates.size();
 	mResourceState      = state;
@@ -2136,7 +2138,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 	}
 	static bool flush=false;
 	// Set the resource state
-	if (mip == -1 && index == -1)
+	if ((mip == -1||mips<=1) && (index == -1||curArray<=1))
 	{
 		int numLayers       = (int)curArray;
 		if (split_layouts)
@@ -2217,7 +2219,6 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		else if(mResourceState!=state)
 			split_layouts=true;
 	}
-	//rPlat->FlushBarriers(deviceContext);
 }
 
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
@@ -2290,7 +2291,6 @@ void Texture::CreateUploadResource()
 	textureDesc.DepthOrArraySize = (UINT16)wicContents.size();
 	textureDesc.Width = width;
 	textureDesc.Height = length;
-	textureDesc.DepthOrArraySize = 1;
 	textureDesc.MipLevels = 1;
 	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	textureDesc.Format = dxgiFormat;
