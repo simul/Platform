@@ -3,7 +3,7 @@
 #include "Platform/Math/Export.h"
 #include "Platform/Math/Noise3D.h"
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{
@@ -19,7 +19,7 @@ namespace simul
 			float persistence;
 			NoiseFilter *filter;
 			unsigned buffer_size;
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 			RandomNumberGenerator *noise_random;
 			int generation_number;
 			virtual int GetGenerationNumber() const
@@ -27,7 +27,7 @@ namespace simul
 				return generation_number;
 			}
 		public:
-			Noise2D(simul::base::MemoryInterface *mem=NULL);
+			Noise2D(platform::core::MemoryInterface *mem=NULL);
 			virtual ~Noise2D();
 		//! Define the grid of pseudo-random numbers to be used in the PerlinNoise2D function. The parameter freq is the
 		//! frequency, or grid-size.

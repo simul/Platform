@@ -15,7 +15,7 @@ namespace platform
 	}
 }
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -47,9 +47,9 @@ namespace simul
 		
 		struct SIMUL_CROSSPLATFORM_EXPORT ProfileData:public platform::core::ProfileData
 		{
-			simul::crossplatform::Query *DisjointQuery;
-			simul::crossplatform::Query *TimestampStartQuery;
-			simul::crossplatform::Query *TimestampEndQuery;
+			platform::crossplatform::Query *DisjointQuery;
+			platform::crossplatform::Query *TimestampStartQuery;
+			platform::crossplatform::Query *TimestampEndQuery;
 			ProfileData();
 			~ProfileData();
 		};
@@ -58,15 +58,15 @@ namespace simul
 
 		* On initialization, when you have a device pointer:
 		
-				simul::crossplatform::GpuProfiler::GetGlobalProfiler().Initialize(pd3dDevice);
+				platform::crossplatform::GpuProfiler::GetGlobalProfiler().Initialize(pd3dDevice);
 
 		* On shutdown, or whenever the device is changed or lost:
 
-				simul::crossplatform::GpuProfiler::GetGlobalProfiler().Uninitialize();
+				platform::crossplatform::GpuProfiler::GetGlobalProfiler().Uninitialize();
 
 		* Per-frame, at the start of the frame:
 
-				platform::core::SetGpuProfilingInterface(deviceContext.platform_context,&simul::crossplatform::GpuProfiler::GetGlobalProfiler());
+				platform::core::SetGpuProfilingInterface(deviceContext.platform_context,&platform::crossplatform::GpuProfiler::GetGlobalProfiler());
 				SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
 
 		*  Wrap these around anything you want to measure:
@@ -80,7 +80,7 @@ namespace simul
 
 		* To obtain the profiling results - pass true if you want HTML output:
 
-				const char *text=simul::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
+				const char *text=platform::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
 		*/
 		class SIMUL_CROSSPLATFORM_EXPORT GpuProfiler:public GpuProfilingInterface
 		{
@@ -141,20 +141,20 @@ namespace simul
 #ifdef SIMUL_INTERNAL_PROFILING
 		
 		#define SIMUL_GPU_PROFILE_STARTFRAME(ctx) \
-			{simul::crossplatform::GpuProfilingInterface *gpuProfilingInterface=simul::crossplatform::GetGpuProfilingInterface(ctx); \
+			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
 			if(gpuProfilingInterface) \
 				gpuProfilingInterface->StartFrame(ctx);}
 		#define SIMUL_GPU_PROFILE_ENDFRAME(ctx) \
-			{simul::crossplatform::GpuProfilingInterface *gpuProfilingInterface=simul::crossplatform::GetGpuProfilingInterface(ctx); \
+			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
 			if(gpuProfilingInterface) \
 				gpuProfilingInterface->EndFrame(ctx);}
 		
 		#define SIMUL_GPU_PROFILE_START(ctx,name) \
-			{simul::crossplatform::GpuProfilingInterface *gpuProfilingInterface=simul::crossplatform::GetGpuProfilingInterface(ctx); \
+			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
 			if(gpuProfilingInterface) \
 				gpuProfilingInterface->Begin(ctx,name);}
 		#define SIMUL_GPU_PROFILE_END(ctx) \
-			{simul::crossplatform::GpuProfilingInterface *gpuProfilingInterface=simul::crossplatform::GetGpuProfilingInterface(ctx); \
+			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
 			if(gpuProfilingInterface) \
 				gpuProfilingInterface->End(ctx);}
 		

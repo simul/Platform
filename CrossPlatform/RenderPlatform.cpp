@@ -24,7 +24,7 @@
 #else
 #include <cmath>		// for isinf()
 #endif
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
 
@@ -62,7 +62,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	return *this;
 }
 
-RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
+RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
@@ -621,12 +621,12 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 	return texturePathsUtf8;
 }
 
-simul::base::MemoryInterface *RenderPlatform::GetMemoryInterface()
+platform::core::MemoryInterface *RenderPlatform::GetMemoryInterface()
 {
 	return memoryInterface;
 }
 
-void RenderPlatform::SetMemoryInterface(simul::base::MemoryInterface *m)
+void RenderPlatform::SetMemoryInterface(platform::core::MemoryInterface *m)
 {
 	// TODO: shutdown old memory, test for leaks at RenderPlatform shutdown.
 	memoryInterface=m;
@@ -737,7 +737,7 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
-	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
+	platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
@@ -860,11 +860,11 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	float size_req=tan_x*.5f;
 	static float sizem=3.f;
 	float d=2.0f*sizem/size_req;
-	simul::math::Vector3 offs0(0,0,-d);
+	platform::math::Vector3 offs0(0,0,-d);
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	simul::math::Vector3 offs;
+	platform::math::Vector3 offs;
 	Multiply3(offs,view,offs0);
 	world._14 =offs.x;
 	world._24 =offs.y;
@@ -1098,7 +1098,7 @@ void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y
 	}
 	if(!proj)
 		proj=deviceContext.viewStruct.proj;
-	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(proj);
+	platform::crossplatform::Frustum frustum=platform::crossplatform::GetFrustumFromProjectionMatrix(proj);
 	debugConstants.debugTanHalfFov=(frustum.tanHalfFov);
 
 	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,isinf(frustum.farZ)?300000.0f:frustum.farZ);
@@ -1240,7 +1240,7 @@ crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()
 }
 
 
-SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc)
+SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,platform::crossplatform::SamplerStateDesc *desc)
 {
 	SamplerState *ss=nullptr;
 	std::string str(name_utf8);
@@ -1534,7 +1534,7 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	cs->rwTextureAssignmentMapValid = false;
 }
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

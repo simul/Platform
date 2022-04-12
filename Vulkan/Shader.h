@@ -8,12 +8,12 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
         //! A Vulkan shader
-		class SIMUL_VULKAN_EXPORT Shader:public simul::crossplatform::Shader
+		class SIMUL_VULKAN_EXPORT Shader:public platform::crossplatform::Shader
 		{
 		public:
                     Shader();

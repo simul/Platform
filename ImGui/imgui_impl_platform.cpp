@@ -7,7 +7,7 @@
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Macros.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 struct ImGuiCB
@@ -203,8 +203,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			};
 			bd->imgui_to_world = mul(bd->local_to_world,bd->imgui_to_local);
 			// store the inverse for mouse clicks:
-			simul::math::Matrix4x4 *m=(simul::math::Matrix4x4 *)&bd->imgui_to_world;
-			m->Inverse(*((simul::math::Matrix4x4 *)&bd->world_to_imgui));
+			platform::math::Matrix4x4 *m=(platform::math::Matrix4x4 *)&bd->imgui_to_world;
+			m->Inverse(*((platform::math::Matrix4x4 *)&bd->world_to_imgui));
 			bd->view_pos=deviceContext.viewStruct.cam_pos;
 			bd->invViewProj=deviceContext.viewStruct.invViewProj;
 			mat4 *viewProj= (mat4 * )(&deviceContext.viewStruct.viewProj);
@@ -352,7 +352,7 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 }
 
-bool	ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r)
+bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (bd)

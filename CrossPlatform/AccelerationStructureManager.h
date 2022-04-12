@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

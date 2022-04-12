@@ -1,7 +1,7 @@
 #include "PlatformConstantBuffer.h"
 #include "RenderPlatform.h"
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 
@@ -114,7 +114,7 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const ch
 	}
 }
 
-void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext& deviceContext,size_t sz,void* addr)
+void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext& deviceContext,size_t sz,void* addr)
 {
 	src=addr;
 	size=sz;
@@ -176,6 +176,6 @@ size_t PlatformConstantBuffer::GetSize()
 	return size;
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceContext)
+void PlatformConstantBuffer::Unbind(platform::crossplatform::DeviceContext& deviceContext)
 {
 }

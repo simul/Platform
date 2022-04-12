@@ -6,9 +6,9 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		enum  MouseButtons
 		{

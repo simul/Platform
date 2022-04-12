@@ -3,7 +3,7 @@
 #include "RenderPlatform.h"
 #include <d3d12video.h>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 VideoBuffer::VideoBuffer()

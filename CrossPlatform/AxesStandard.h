@@ -1,7 +1,7 @@
 #pragma once
 #include "Export.h"
 #include "Quaterniond.h"
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

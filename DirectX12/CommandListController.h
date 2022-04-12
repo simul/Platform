@@ -4,7 +4,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "SimulDirectXHeader.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

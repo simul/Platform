@@ -5,7 +5,7 @@
 #include "RenderPlatform.h"
 #include "Platform/Core/RuntimeError.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 Buffer::Buffer():

@@ -28,7 +28,7 @@ namespace nvn
 {
 	class CommandBuffer;
 }
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -268,11 +268,9 @@ namespace simul
 		protected:
 			long long frame_number = 0;
 		public:
-			long long GetFrameNumber() const;
-			//! Only RenderPlatform should call this.
-			void SetFrameNumber(long long n);
+			friend class RenderPlatform;
 			DeviceContextType deviceContextType;
-			long long completed_frame=0;
+			
 			void *platform_context=nullptr;
 			void *platform_context_allocator=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
@@ -280,6 +278,10 @@ namespace simul
 #ifdef _DEBUG
 			int ApiCallCounter=0;
 #endif
+			//! Only RenderPlatform should call this.
+			long long GetFrameNumber() const;
+			//! Only RenderPlatform should call this.
+			void SetFrameNumber(long long n);
 			virtual GraphicsDeviceContext* AsGraphicsDeviceContext()
 			{ 
 				return nullptr;

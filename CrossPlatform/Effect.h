@@ -25,7 +25,7 @@ struct D3D12_CPU_DESCRIPTOR_HANDLE;
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -435,7 +435,7 @@ namespace simul
 				name=n;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *,int){}
+			virtual void ActualApply(platform::crossplatform::DeviceContext &,EffectPass *,int){}
 		};
 		
 		class Texture;

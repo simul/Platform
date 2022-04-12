@@ -12,7 +12,7 @@
 using meter_t = units::unit_t<units::length::meter>;
 using watts_per_sqm_per_nm = units::compound_unit<units::power::watts, units::inverse<units::squared<units::length::meter>>, units::inverse<units::length::nanometer>>;
 typedef tvector3<watts_per_sqm_per_nm> vec3_watts_per_sqm_per_nm;
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

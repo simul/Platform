@@ -1,7 +1,7 @@
 #include "MouseHandler.h"
 
-using namespace simul;
-using namespace base;
+using namespace platform;
+using namespace core;
 using namespace crossplatform;
 
 MouseHandler::MouseHandler()
@@ -28,7 +28,7 @@ MouseHandler::MouseHandler()
 	,forward_back_spd(0.f)
 	,right_left_spd(0.f)
 {
-	camera=new simul::crossplatform::Camera();
+	camera=new platform::crossplatform::Camera();
 	vec4 cameraPos(0.f,0,1500.f,0);
 	camera->SetPosition(cameraPos);
 	vec4 lookAtPos(-7.07f,cameraPos.y+0.f,7.07f,0);
@@ -92,17 +92,17 @@ void MouseHandler::getMousePosition(int &x,int &y) const
 
 bool MouseHandler::getLeftButton() const
 {
-	return (mouseButtons==base::LeftButton);
+	return (mouseButtons==core::LeftButton);
 }
 
 bool MouseHandler::getRightButton() const
 {
-	return (mouseButtons==base::RightButton);
+	return (mouseButtons==core::RightButton);
 }
 
 bool MouseHandler::getMiddleButton() const
 {
-	return (mouseButtons==base::MiddleButton);
+	return (mouseButtons==core::MiddleButton);
 }
 
 void MouseHandler::mouseWheel(int delta,int modifiers)
@@ -118,7 +118,7 @@ void MouseHandler::mouseWheel(int delta,int modifiers)
 	updateViews();
 }
 
-simul::crossplatform::Camera *MouseHandler::GetCamera()
+platform::crossplatform::Camera *MouseHandler::GetCamera()
 {
 	return camera;
 }
@@ -140,17 +140,17 @@ void MouseHandler::Update(float time_step)
 {
 	camera->SetHorizontalFieldOfViewDegrees(fov);
 	camera->SetVerticalFieldOfViewDegrees(0);
-	simul::math::Vector3 offset_camspace;
+	platform::math::Vector3 offset_camspace;
 	if(cameraMode==CENTRED)
 	{
-		simul::math::Vector3 pos=camera->GetPosition();
-		simul::math::Vector3 dir=pos;
+		platform::math::Vector3 pos=camera->GetPosition();
+		platform::math::Vector3 dir=pos;
 		dir-=centre;
 		camera->Orientation.GlobalToLocalDirection(offset_camspace,dir);
 	}
 	{
 		float cam_spd=speed_factor*(shift_down?100.f:1.f);
-		simul::math::Vector3 pos=camera->GetPosition();
+		platform::math::Vector3 pos=camera->GetPosition();
 
 		float retain=1.f/(1.f+CameraDamping*time_step);
 		float introduce=1.f-retain;
@@ -170,7 +170,7 @@ void MouseHandler::Update(float time_step)
 			up_down_spd+=cam_spd*introduce;
 		if(move_down)
 			up_down_spd-=cam_spd*introduce;
-		if((mouseButtons&base::MiddleButton)||mouseButtons==(base::LeftButton|base::RightButton))
+		if((mouseButtons&core::MiddleButton)||mouseButtons==(core::LeftButton|core::RightButton))
 		{
 			static float slide_spd=100.f;
 			right_left_spd	+=slide_spd*fDeltaX*cam_spd*introduce;
@@ -205,7 +205,7 @@ void MouseHandler::Update(float time_step)
 			tilt=asin(camera->Orientation.Tx().y);
 		else
 			tilt=asin(camera->Orientation.Tx().z);
-		if(mouseButtons==base::RightButton)
+		if(mouseButtons==core::RightButton)
 		{
 			if(!alt_down)
 			{
@@ -235,13 +235,13 @@ void MouseHandler::Update(float time_step)
 		fDeltaX=0.f;
 		fDeltaY=0.f;
 
-		simul::math::Vector3 vertical(0,0,-1.f);
+		platform::math::Vector3 vertical(0,0,-1.f);
 		if(y_vertical)
 			vertical.Define(0,1.f,0);
 		static float sr=0.1f;
-		simul::math::Vector3 del=vertical*(x_rotate+sr*step_rotate_x);
+		platform::math::Vector3 del=vertical*(x_rotate+sr*step_rotate_x);
 		step_rotate_x=0;
-		simul::math::Vector3 dir=del;
+		platform::math::Vector3 dir=del;
 		dir.Normalize();
 		camera->Rotate(del.Magnitude(),dir);
 
@@ -251,7 +251,7 @@ void MouseHandler::Update(float time_step)
 		dir.Normalize();
 		camera->Rotate(del.Magnitude(),dir);
 
-		del=simul::math::Vector3(0.f,0.f,z_rotate);
+		del=platform::math::Vector3(0.f,0.f,z_rotate);
 		camera->LocalRotate(del);
 
 		static float correct_tilt=0.005f;
@@ -263,8 +263,8 @@ void MouseHandler::Update(float time_step)
 	}
 	if(cameraMode==CENTRED)
 	{
-		simul::math::Vector3 pos=camera->GetPosition();
-		simul::math::Vector3 dir;
+		platform::math::Vector3 pos=camera->GetPosition();
+		platform::math::Vector3 dir;
 		camera->Orientation.LocalToGlobalDirection(dir,offset_camspace);
 		pos=centre;
 		pos+=dir;

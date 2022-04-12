@@ -1,5 +1,6 @@
 #include "DeviceContext.h"
-using namespace simul;
+#include "RenderPlatform.h"
+using namespace platform;
 using namespace crossplatform;
 
 long long DeviceContext::GetFrameNumber() const
@@ -92,10 +93,9 @@ ComputeDeviceContext* ComputeDeviceContext::AsComputeDeviceContext()
 {
 	return this;
 }
-//Some function expect completed_frame and frame_number to increment.
-//This copies the frame numbers from the normal DeviceContext to simulate this.
+
+// TODO: this is terrible, let's get rid of it.
 void ComputeDeviceContext::UpdateFrameNumbers(DeviceContext& deviceContext)
 {
-	this->completed_frame = deviceContext.completed_frame;
-	this->frame_number = deviceContext.GetFrameNumber();
+	this->frame_number = renderPlatform->GetFrameNumber();
 }

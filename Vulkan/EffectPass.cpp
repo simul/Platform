@@ -7,7 +7,7 @@
 #include "Platform/Vulkan/PlatformStructuredBuffer.h"
 #include "Platform/Vulkan/Texture.h"
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
@@ -779,7 +779,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 		vk::DynamicState dynamicStates[2]							= { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 		auto dynamicStateInfo										= vk::PipelineDynamicStateCreateInfo().setPDynamicStates(dynamicStates).setDynamicStateCount(2);
 	
-		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo	= vk::PipelineInputAssemblyStateCreateInfo().setTopology(simul::vulkan::RenderPlatform::toVulkanTopology(topology));
+		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo	= vk::PipelineInputAssemblyStateCreateInfo().setTopology(platform::vulkan::RenderPlatform::toVulkanTopology(topology));
 		if(topology!=crossplatform::Topology::UNDEFINED)
 		{
 			inputAssemblyInfo.setTopology(vulkan::RenderPlatform::toVulkanTopology(topology));

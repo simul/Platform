@@ -6,7 +6,7 @@
 struct ID3D11Buffer;
 struct ID3D12Resource;
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

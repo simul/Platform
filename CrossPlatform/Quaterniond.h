@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <math.h>
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

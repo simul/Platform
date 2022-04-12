@@ -10,13 +10,13 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
 		typedef unsigned long long RenderPassHash;
         //! A Vulkan program object (combination of shaders)
-		class SIMUL_VULKAN_EXPORT EffectPass :public simul::crossplatform::EffectPass
+		class SIMUL_VULKAN_EXPORT EffectPass :public platform::crossplatform::EffectPass
 		{
 		public:
 			            EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *);

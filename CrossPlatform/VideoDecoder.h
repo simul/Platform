@@ -9,9 +9,9 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #define DEC_FAILED(r) \
-	(r != simul::crossplatform::VideoDecoderResult::Ok)
+	(r != platform::crossplatform::VideoDecoderResult::Ok)
 
-namespace simul
+namespace platform
 {
 	/// The namespace and library for cross-platform base classes, with abstract video decoding functionality.
 	namespace crossplatform
@@ -76,7 +76,7 @@ namespace simul
 		public:
 			VideoDecoder();
 			virtual ~VideoDecoder();
-			VideoDecoderResult Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams);
+			VideoDecoderResult Initialize(platform::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams);
 			VideoDecoderResult Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0);
 			virtual VideoDecoderResult Shutdown();
 

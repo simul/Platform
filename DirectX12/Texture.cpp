@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <DirectXTex.h>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 SamplerState::SamplerState(crossplatform::SamplerStateDesc *d):
@@ -834,6 +834,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	mTextureDefault				= t;
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
+
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
 

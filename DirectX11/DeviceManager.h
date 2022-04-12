@@ -7,7 +7,7 @@
 struct ID3D11Debug;
 #pragma warning(push)
 #pragma warning(disable:4251)
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{

@@ -10,7 +10,7 @@
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 ShaderIncludeHandler::ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8,const std::vector<std::string> &shaderPathsUtf8)

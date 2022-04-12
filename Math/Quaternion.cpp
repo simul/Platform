@@ -11,7 +11,7 @@
 
 #include <math.h>
 
-using namespace simul;
+using namespace platform;
 using namespace math;
 
 Quaternion::Quaternion()
@@ -315,7 +315,7 @@ Quaternion& Quaternion::operator/=(const Quaternion &q)
 #endif
 	return *this;
 }
-namespace simul
+namespace platform
 {
 	namespace math
 	{

@@ -52,7 +52,7 @@
 VisualStudioDebugOutput debug_buffer(true, NULL, 128);
 #endif
 
-using namespace simul;
+using namespace platform;
 
 //Other Windows Header Files
 #include <SDKDDKVer.h>
@@ -177,7 +177,7 @@ public:
 		graphicsDeviceInterface->Initialize(debug, false, false);
 		
 		//RenderPlatforn Set up
-		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
+		renderPlatform->SetShaderBuildMode(platform::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		renderPlatform->PushTexturePath("Textures");
 
 		switch (renderPlatformType)
@@ -327,7 +327,7 @@ public:
 			return;
 
 		// Device context structure
-		simul::crossplatform::GraphicsDeviceContext	deviceContext;
+		platform::crossplatform::GraphicsDeviceContext	deviceContext;
 
 		// Store back buffer, depth buffer and viewport information
 		deviceContext.defaultTargetsAndViewport.num = 1;
@@ -547,7 +547,7 @@ public:
 };
 PlatformRenderer* platformRenderer;
 
-simul::crossplatform::RenderPlatformType GetRenderPlatformTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
+platform::crossplatform::RenderPlatformType GetRenderPlatformTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
 {
 	for (int i = 0; i < argCount; i++)
 	{
@@ -637,7 +637,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	int argCount;
 	szArgList = CommandLineToArgvW(GetCommandLineW(), &argCount);
 
-	simul::crossplatform::RenderPlatformType x64_API = GetRenderPlatformTypeFromCmdLnArgs(szArgList, argCount);
+	platform::crossplatform::RenderPlatformType x64_API = GetRenderPlatformTypeFromCmdLnArgs(szArgList, argCount);
 
 	TestType test = GetTestTypeFromCmdLnArgs(szArgList, argCount);
 

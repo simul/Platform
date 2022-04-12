@@ -33,7 +33,7 @@
 		static HMODULE hWinPixEventRuntime;
 	#endif
 #endif
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 #if SIMUL_INTERNAL_CHECKS
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
@@ -343,7 +343,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 			res, before, after, subRes
 		);
 	}
-	//if (flush)
+	if (flush)
 	{
 		FlushBarriers(deviceContext);
 	}
@@ -1050,9 +1050,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" freed."<<std::endl;
 			}
 #else
-			ptr->Release();
+			int remainRefs = ptr->Release();
 #endif
-			if (GetMemoryInterface()) 
+			if (!remainRefs&&GetMemoryInterface()) 
 				GetMemoryInterface()->UntrackVideoMemory(ptr);
 		}
 	}
@@ -1152,7 +1152,7 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 	// Store a reference to the device context
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
 
-	//simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	//platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	//SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 
 
@@ -1239,14 +1239,14 @@ void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceCont
 
 	switch (transition)
 	{
-		case simul::crossplatform::ReadableGraphics:
-		case simul::crossplatform::ReadableCompute:
+		case platform::crossplatform::ReadableGraphics:
+		case platform::crossplatform::ReadableCompute:
 		{
-			bool pixelShader = (transition == simul::crossplatform::ReadableGraphics);
+			bool pixelShader = (transition == platform::crossplatform::ReadableGraphics);
 			t12->AsD3D12ShaderResourceView(deviceContext,true, crossplatform::ShaderResourceType::TEXTURE_2D, -1, -1, pixelShader);
 			break;
 		}
-		case simul::crossplatform::Writeable:
+		case platform::crossplatform::Writeable:
 		{
 			if (t12->HasRenderTargets())
 			{
@@ -1258,7 +1258,7 @@ void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceCont
 			}
 			break;
 		}
-		case simul::crossplatform::UnorderedAccess:
+		case platform::crossplatform::UnorderedAccess:
 		{
 			t12->AsD3D12UnorderedAccessView(deviceContext);
 			break;
@@ -1624,11 +1624,11 @@ static D3D12_TEXTURE_ADDRESS_MODE ToD3D12TextureAddressMode(crossplatform::Sampl
 {
 	switch (w)	
 	{
-	case simul::crossplatform::SamplerStateDesc::WRAP:
+	case platform::crossplatform::SamplerStateDesc::WRAP:
 		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	case simul::crossplatform::SamplerStateDesc::CLAMP:
+	case platform::crossplatform::SamplerStateDesc::CLAMP:
 		return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-	case simul::crossplatform::SamplerStateDesc::MIRROR:
+	case platform::crossplatform::SamplerStateDesc::MIRROR:
 		return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
 	default:
 		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -1638,11 +1638,11 @@ static D3D12_FILTER ToD3D12Filter(crossplatform::SamplerStateDesc::Filtering f)
 {
 	switch (f)
 	{
-	case simul::crossplatform::SamplerStateDesc::POINT:
+	case platform::crossplatform::SamplerStateDesc::POINT:
 		return D3D12_FILTER_MIN_MAG_MIP_POINT;
-	case simul::crossplatform::SamplerStateDesc::LINEAR:
+	case platform::crossplatform::SamplerStateDesc::LINEAR:
 		return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	case simul::crossplatform::SamplerStateDesc::ANISOTROPIC:
+	case platform::crossplatform::SamplerStateDesc::ANISOTROPIC:
 		return D3D12_FILTER_ANISOTROPIC;
 	default: 
 		return D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -1700,25 +1700,25 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
 {
 	switch (p)
 	{
-	case simul::crossplatform::FMT_UNKNOWN:
+	case platform::crossplatform::FMT_UNKNOWN:
 		return DXGI_FORMAT_UNKNOWN;
-	case simul::crossplatform::FMT_32_GR:
+	case platform::crossplatform::FMT_32_GR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_32_AR:
+	case platform::crossplatform::FMT_32_AR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_FP16_ABGR:
+	case platform::crossplatform::FMT_FP16_ABGR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_UNORM16_ABGR:
+	case platform::crossplatform::FMT_UNORM16_ABGR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_SNORM16_ABGR:
+	case platform::crossplatform::FMT_SNORM16_ABGR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_UINT16_ABGR:
+	case platform::crossplatform::FMT_UINT16_ABGR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_SINT16_ABGR:
+	case platform::crossplatform::FMT_SINT16_ABGR:
 		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case simul::crossplatform::FMT_32_ABGR:
+	case platform::crossplatform::FMT_32_ABGR:
 		return ToDxgiFormat(crossplatform::RGBA_32_FLOAT);
-	case simul::crossplatform::OUTPUT_FORMAT_COUNT:
+	case platform::crossplatform::OUTPUT_FORMAT_COUNT:
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 		break;
@@ -2150,13 +2150,13 @@ D3D12_QUERY_HEAP_TYPE RenderPlatform::ToD3D12QueryHeapType(crossplatform::QueryT
 {
 	switch (t)
 	{
-	case simul::crossplatform::QUERY_UNKNOWN:
+	case platform::crossplatform::QUERY_UNKNOWN:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
-	case simul::crossplatform::QUERY_OCCLUSION:
+	case platform::crossplatform::QUERY_OCCLUSION:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
-	case simul::crossplatform::QUERY_TIMESTAMP:
+	case platform::crossplatform::QUERY_TIMESTAMP:
 		return D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
-	case simul::crossplatform::QUERY_TIMESTAMP_DISJOINT:
+	case platform::crossplatform::QUERY_TIMESTAMP_DISJOINT:
 		return D3D12_QUERY_HEAP_TYPE_TIMESTAMP;	
 	default:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
@@ -2259,21 +2259,21 @@ static D3D12_COMPARISON_FUNC toD3d12Comparison(crossplatform::DepthComparison d)
 {
 	switch (d)
 	{
-	case simul::crossplatform::DEPTH_ALWAYS:
+	case platform::crossplatform::DEPTH_ALWAYS:
 		return D3D12_COMPARISON_FUNC_ALWAYS;
-	case simul::crossplatform::DEPTH_NEVER:
+	case platform::crossplatform::DEPTH_NEVER:
 		return D3D12_COMPARISON_FUNC_NEVER;
-	case simul::crossplatform::DEPTH_LESS:
+	case platform::crossplatform::DEPTH_LESS:
 		return D3D12_COMPARISON_FUNC_LESS;
-	case simul::crossplatform::DEPTH_EQUAL:
+	case platform::crossplatform::DEPTH_EQUAL:
 		return D3D12_COMPARISON_FUNC_EQUAL;
-	case simul::crossplatform::DEPTH_LESS_EQUAL:
+	case platform::crossplatform::DEPTH_LESS_EQUAL:
 		return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	case simul::crossplatform::DEPTH_GREATER:
+	case platform::crossplatform::DEPTH_GREATER:
 		return D3D12_COMPARISON_FUNC_GREATER;
-	case simul::crossplatform::DEPTH_NOT_EQUAL:
+	case platform::crossplatform::DEPTH_NOT_EQUAL:
 		return D3D12_COMPARISON_FUNC_NOT_EQUAL;
-	case simul::crossplatform::DEPTH_GREATER_EQUAL:
+	case platform::crossplatform::DEPTH_GREATER_EQUAL:
 		return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
 	default:
 		SIMUL_BREAK("Undefined comparison func");
@@ -2285,15 +2285,15 @@ static D3D12_BLEND_OP toD3d12BlendOp(crossplatform::BlendOperation o)
 {
 	switch (o)
 	{
-	case simul::crossplatform::BLEND_OP_NONE:
+	case platform::crossplatform::BLEND_OP_NONE:
 		return D3D12_BLEND_OP_ADD; // Just pass a default thing?
-	case simul::crossplatform::BLEND_OP_ADD:
+	case platform::crossplatform::BLEND_OP_ADD:
 		return D3D12_BLEND_OP_ADD;
-	case simul::crossplatform::BLEND_OP_SUBTRACT:
+	case platform::crossplatform::BLEND_OP_SUBTRACT:
 		return D3D12_BLEND_OP_REV_SUBTRACT;
-	case simul::crossplatform::BLEND_OP_MAX:
+	case platform::crossplatform::BLEND_OP_MAX:
 		return D3D12_BLEND_OP_MAX;
-	case simul::crossplatform::BLEND_OP_MIN:
+	case platform::crossplatform::BLEND_OP_MIN:
 		return D3D12_BLEND_OP_MIN;
 	default:
 		SIMUL_BREAK("Undefined blend operation");
@@ -2305,39 +2305,39 @@ static D3D12_BLEND toD3d12Blend(crossplatform::BlendOption o)
 {
 	switch (o)
 	{
-	case simul::crossplatform::BLEND_ZERO:
+	case platform::crossplatform::BLEND_ZERO:
 		return D3D12_BLEND_ZERO;
-	case simul::crossplatform::BLEND_ONE:
+	case platform::crossplatform::BLEND_ONE:
 		return D3D12_BLEND_ONE;
-	case simul::crossplatform::BLEND_SRC_COLOR:
+	case platform::crossplatform::BLEND_SRC_COLOR:
 		return D3D12_BLEND_SRC_COLOR;
-	case simul::crossplatform::BLEND_INV_SRC_COLOR:
+	case platform::crossplatform::BLEND_INV_SRC_COLOR:
 		return D3D12_BLEND_INV_SRC_COLOR;
-	case simul::crossplatform::BLEND_SRC_ALPHA:
+	case platform::crossplatform::BLEND_SRC_ALPHA:
 		return D3D12_BLEND_SRC_ALPHA;
-	case simul::crossplatform::BLEND_INV_SRC_ALPHA:
+	case platform::crossplatform::BLEND_INV_SRC_ALPHA:
 		return D3D12_BLEND_INV_SRC_ALPHA;
-	case simul::crossplatform::BLEND_DEST_ALPHA:
+	case platform::crossplatform::BLEND_DEST_ALPHA:
 		return D3D12_BLEND_DEST_ALPHA;
-	case simul::crossplatform::BLEND_INV_DEST_ALPHA:
+	case platform::crossplatform::BLEND_INV_DEST_ALPHA:
 		return D3D12_BLEND_INV_DEST_ALPHA;
-	case simul::crossplatform::BLEND_DEST_COLOR:
+	case platform::crossplatform::BLEND_DEST_COLOR:
 		return D3D12_BLEND_DEST_COLOR;
-	case simul::crossplatform::BLEND_INV_DEST_COLOR:
+	case platform::crossplatform::BLEND_INV_DEST_COLOR:
 		return D3D12_BLEND_INV_DEST_COLOR;
-	case simul::crossplatform::BLEND_SRC_ALPHA_SAT:
+	case platform::crossplatform::BLEND_SRC_ALPHA_SAT:
 		return D3D12_BLEND_SRC_ALPHA_SAT;
-	case simul::crossplatform::BLEND_BLEND_FACTOR:
+	case platform::crossplatform::BLEND_BLEND_FACTOR:
 		return D3D12_BLEND_BLEND_FACTOR;
-	case simul::crossplatform::BLEND_INV_BLEND_FACTOR:
+	case platform::crossplatform::BLEND_INV_BLEND_FACTOR:
 		return D3D12_BLEND_INV_BLEND_FACTOR;
-	case simul::crossplatform::BLEND_SRC1_COLOR:
+	case platform::crossplatform::BLEND_SRC1_COLOR:
 		return D3D12_BLEND_SRC1_COLOR;
-	case simul::crossplatform::BLEND_INV_SRC1_COLOR:
+	case platform::crossplatform::BLEND_INV_SRC1_COLOR:
 		return D3D12_BLEND_INV_SRC1_COLOR;
-	case simul::crossplatform::BLEND_SRC1_ALPHA:
+	case platform::crossplatform::BLEND_SRC1_ALPHA:
 		return D3D12_BLEND_SRC1_ALPHA;
-	case simul::crossplatform::BLEND_INV_SRC1_ALPHA:
+	case platform::crossplatform::BLEND_INV_SRC1_ALPHA:
 		return D3D12_BLEND_INV_SRC1_ALPHA;
 	default:
 		return D3D12_BLEND_ZERO;
@@ -2365,13 +2365,13 @@ D3D12_CULL_MODE toD3d12CullMode(crossplatform::CullFaceMode c)
 {
 	switch (c)
 	{
-	case simul::crossplatform::CULL_FACE_NONE:
+	case platform::crossplatform::CULL_FACE_NONE:
 		return D3D12_CULL_MODE_NONE;
-	case simul::crossplatform::CULL_FACE_FRONT:
+	case platform::crossplatform::CULL_FACE_FRONT:
 		return D3D12_CULL_MODE_FRONT;
-	case simul::crossplatform::CULL_FACE_BACK:
+	case platform::crossplatform::CULL_FACE_BACK:
 		return D3D12_CULL_MODE_BACK;
-	case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+	case platform::crossplatform::CULL_FACE_FRONTANDBACK:
 		SIMUL_BREAK("In Directx12 there is no FRONTANDBACK cull face mode");
 	default:
 		SIMUL_BREAK("Undefined cull face mode");
@@ -2870,7 +2870,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
-	SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
+	SetTopology(deviceContext,platform::crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	commandList->DrawInstanced(4, 1, 0, 0);
 }

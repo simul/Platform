@@ -12,7 +12,7 @@
 #include <ShlObj.h>
 #include <filesystem>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 static RENDERDOC_API_1_4_1* s_RenderDocAPI = nullptr;
@@ -130,7 +130,7 @@ bool RenderDocLoader::IsLoaded()
 #else //Dummy class implementation
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 void RenderDocLoader::Load() {}

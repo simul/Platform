@@ -12,7 +12,7 @@
 
 #pragma warning(disable:4251)
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

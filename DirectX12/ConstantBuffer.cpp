@@ -8,7 +8,7 @@
 #include "SimulDirectXHeader.h"
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 inline bool IsPowerOfTwo( UINT64 n )
@@ -151,7 +151,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	size = 0;
 }
 
-void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t sz, void *addr)
+void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext &deviceContext, size_t sz, void *addr)
 {
 	src=addr;
 	size=sz;
@@ -161,9 +161,9 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	// If new frame, update current frame index and reset the apply count
-	if (last_frame_number != deviceContext.GetFrameNumber())
+	if (last_frame_number != renderPlatform->GetFrameNumber())
 	{
-		last_frame_number = deviceContext.GetFrameNumber();
+		last_frame_number = renderPlatform->GetFrameNumber();
 		buffer_index++;
 		if (buffer_index >= kNumBuffers)
 			buffer_index = 0;
@@ -459,6 +459,6 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	mCurApplyCount++;
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& )
+void PlatformConstantBuffer::Unbind(platform::crossplatform::DeviceContext& )
 {
 }

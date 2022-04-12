@@ -10,11 +10,11 @@
 #include <map>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace platform;
 using namespace crossplatform;
 using namespace std;
-static std::unordered_map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
+static std::unordered_map<void*,platform::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int BOOL;
 
@@ -32,7 +32,7 @@ ProfileData::~ProfileData()
 					delete TimestampEndQuery;
 				}
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -230,9 +230,9 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
-	if(current_framenumber==deviceContext.GetFrameNumber())
+	if(current_framenumber==renderPlatform->GetFrameNumber())
 		return;
-	current_framenumber=deviceContext.GetFrameNumber();
+	current_framenumber=renderPlatform->GetFrameNumber();
 	if(level!=0)
 	{
 		SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")

@@ -12,7 +12,7 @@
 	#define ALIGN32
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

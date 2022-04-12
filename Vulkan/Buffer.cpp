@@ -6,7 +6,7 @@
 #include "Platform/Vulkan/DeviceManager.h"
 #include "Platform/Core/RuntimeError.h"
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 #define VK_CHECK(result)\

@@ -61,13 +61,13 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 static bool pipe_compiler_output=true;
 
 //static ID3D11Device		*pd3dDevice		=NULL;
-using namespace simul;
+using namespace platform;
 using namespace dx11;
-using namespace base;
+using namespace core;
 
 #pragma optimize("",off)
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -92,7 +92,7 @@ HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *fil
 }
 #endif
 
-ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
+ID3D11Texture2D* platform::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	ERRNO_BREAK
 	ID3D11Texture2D* tex=NULL;
@@ -154,7 +154,7 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 	return tex;
 }
 
-ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
+ID3D11Texture2D* platform::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 
@@ -250,7 +250,7 @@ void BreakIfDebugging()
 	BREAK_IF_DEBUGGING;
  }
 
-int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
+int platform::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {
     switch( format )
     {

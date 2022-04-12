@@ -5,7 +5,7 @@
 #include "Effect.h"
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace platform;
 using namespace vulkan;
 

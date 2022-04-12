@@ -10,13 +10,13 @@
 #include <d3dx11.h>
 #include <dxerr.h>
 #endif
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 #ifdef SIMUL_WIN8_SDK
 
 #include <DirectXTex.h>
 #include <wincodec.h>
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -46,7 +46,7 @@ namespace simul
 }
 #else
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -56,7 +56,7 @@ namespace simul
 			bool as_dds=false;
 			if(fn_utf8.find(".dds")<fn_utf8.length())
 				as_dds=true;
-			std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
+			std::wstring wfilename=platform::base::Utf8ToWString(fn_utf8);
 			ID3D11DeviceContext*			m_pImmediateContext;
 			pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 			D3DX11SaveTextureToFileW(m_pImmediateContext,texture,as_dds?D3DX11_IFF_DDS:D3DX11_IFF_PNG,wfilename.c_str());

@@ -10,7 +10,7 @@
 #endif             
 #undef PLAYSTATION2
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{    

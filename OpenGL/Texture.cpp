@@ -5,7 +5,7 @@
 #include "Platform/Core/StringFunctions.h"
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 void DeleteTextures(size_t num,GLuint *t)

@@ -5,7 +5,7 @@
 #include <strings.h>
 #define _stricmp strcasecmp
 #endif
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 static bool is_equal(const char * str,const char *tst)
@@ -14,7 +14,7 @@ return (_stricmp(str,tst) == 0);
 }
 
 
-PixelFormat simul::crossplatform::TypeToFormat(const char *txt)
+PixelFormat platform::crossplatform::TypeToFormat(const char *txt)
 {
 		//return R_16_FLOAT;
 	if(is_equal(txt,"vec4"))

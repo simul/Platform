@@ -11,7 +11,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -169,8 +169,8 @@ namespace simul
  																					float farVal);
 		//! A camera class. The orientation has the z-axis facing backwards, the x-axis right and the y-axis up.
 		class SIMUL_CROSSPLATFORM_EXPORT Camera :
-			public simul::geometry::OrientationInterface,
-			public simul::crossplatform::CameraInterface
+			public platform::math::OrientationInterface,
+			public platform::crossplatform::CameraInterface
 		{
 			CameraViewStruct cameraViewStruct;
 		public:
@@ -179,7 +179,7 @@ namespace simul
 			
 			float HorizontalFieldOfViewInRadians;
 			float VerticalFieldOfViewInRadians;
-			simul::geometry::SimulOrientation	Orientation;
+			platform::math::SimulOrientation	Orientation;
 			/// Set the view struct for the camera
 			void SetCameraViewStruct(const CameraViewStruct &c);
 			const CameraViewStruct &GetCameraViewStruct() const;

@@ -20,9 +20,9 @@
 #define CHECK_MATRIX_BOUNDS
 #endif
 
-using namespace simul::math;
+using namespace platform::math;
 
-void simul::math::Precross(Matrix4x4 &M,const Vector3 &v)
+void platform::math::Precross(Matrix4x4 &M,const Vector3 &v)
 {
 #ifndef PLAYSTATION2
 #ifndef SIMD
@@ -77,7 +77,7 @@ void simul::math::Precross(Matrix4x4 &M,const Vector3 &v)
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::TransposeMultiply(Vector3 &V2,const Matrix &M,const Vector3 &V1)
+void platform::math::TransposeMultiply(Vector3 &V2,const Matrix &M,const Vector3 &V1)
 {                   
 #ifdef CHECK_MATRIX_BOUNDS
 	if(M.Height!=3)
@@ -150,7 +150,7 @@ void simul::math::TransposeMultiply(Vector3 &V2,const Matrix &M,const Vector3 &V
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::Multiply3(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
+void platform::math::Multiply3(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 {
 	Vector3 res;
 	res.Values[0]=M(0,0)*V1.Values[0]+M(0,1)*V1.Values[1]+M(0,2)*V1.Values[2];
@@ -159,7 +159,7 @@ void simul::math::Multiply3(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 	V2=res;
 }
 
-void simul::math::Multiply3(Vector3 &V2,const Vector3 &V1,const Matrix4x4 &M)
+void platform::math::Multiply3(Vector3 &V2,const Vector3 &V1,const Matrix4x4 &M)
 {
 	Vector3 res;
 	res.x=M(0,0)*V1.x;
@@ -170,7 +170,7 @@ void simul::math::Multiply3(Vector3 &V2,const Vector3 &V1,const Matrix4x4 &M)
 	V2=res;
 }
 
-void simul::math::Multiply4(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
+void platform::math::Multiply4(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 {              
 #ifndef SIMD
 //	V1.Values[3]=1;
@@ -206,7 +206,7 @@ void simul::math::Multiply4(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::MultiplyAndAdd(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
+void platform::math::MultiplyAndAdd(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 { 
 #ifndef PLAYSTATION2
 #ifndef SIMD
@@ -398,7 +398,7 @@ void simul::math::MultiplyAndAdd(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::MultiplyAndSubtract(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
+void platform::math::MultiplyAndSubtract(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 {
 #ifndef SIMD
 #ifndef PLAYSTATION2
@@ -549,7 +549,7 @@ void simul::math::MultiplyAndSubtract(Vector3 &V2,const Matrix4x4 &M,const Vecto
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::InsertNegativeVectorAsRow(Matrix &M,const Vector3 &v,const unsigned row)
+void platform::math::InsertNegativeVectorAsRow(Matrix &M,const Vector3 &v,const unsigned row)
 {
 #ifdef CHECK_MATRIX_BOUNDS
 	if(row>=M.Height||row<0)
@@ -607,7 +607,7 @@ void simul::math::InsertNegativeVectorAsRow(Matrix &M,const Vector3 &v,const uns
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::AddDoublePrecross(Matrix4x4 &M,float f,const Vector3 &v)
+void platform::math::AddDoublePrecross(Matrix4x4 &M,float f,const Vector3 &v)
 {
 	M.Values[0]-=f*(v.Values[2]*v.Values[2]+v.Values[1]*v.Values[1]);
 	M.Values[1]+=f*(v.Values[0]*v.Values[1]);
@@ -622,7 +622,7 @@ void simul::math::AddDoublePrecross(Matrix4x4 &M,float f,const Vector3 &v)
 	M.Values[2*4+2]-=f*(v.Values[1]*v.Values[1]+v.Values[0]*v.Values[0]);
 }
 //------------------------------------------------------------------------------
-void simul::math::SubtractDoublePrecross(Matrix4x4 &M,float f,const Vector3 &v)
+void platform::math::SubtractDoublePrecross(Matrix4x4 &M,float f,const Vector3 &v)
 {
 	M.Values[0]+=f*(v.Values[2]*v.Values[2]+v.Values[1]*v.Values[1]);
 	M.Values[1]-=f*(v.Values[0]*v.Values[1]);
@@ -637,7 +637,7 @@ void simul::math::SubtractDoublePrecross(Matrix4x4 &M,float f,const Vector3 &v)
 	M.Values[2*4+2]+=f*(v.Values[1]*v.Values[1]+v.Values[0]*v.Values[0]);
 }
 //------------------------------------------------------------------------------
-void simul::math::AddVectorToRow(Matrix &M,unsigned Row,Vector3 &V)
+void platform::math::AddVectorToRow(Matrix &M,unsigned Row,Vector3 &V)
 {
 #ifndef SIMD
 #ifndef PLAYSTATION2
@@ -706,7 +706,7 @@ void simul::math::AddVectorToRow(Matrix &M,unsigned Row,Vector3 &V)
 #endif
 }
 //------------------------------------------------------------------------------
-void simul::math::AddRow(Vector3 &V1,Matrix &M2,unsigned Row2)
+void platform::math::AddRow(Vector3 &V1,Matrix &M2,unsigned Row2)
 {
 #ifndef SIMD
 #ifndef PLAYSTATION2
@@ -773,7 +773,7 @@ void simul::math::AddRow(Vector3 &V1,Matrix &M2,unsigned Row2)
 #endif
 }
 //------------------------------------------------------------------------------      
-void simul::math::RowToVector(const Matrix &M,Vector3 &V,unsigned Row)
+void platform::math::RowToVector(const Matrix &M,Vector3 &V,unsigned Row)
 {
 #ifndef SIMD
 #ifndef PLAYSTATION2
@@ -841,7 +841,7 @@ void simul::math::RowToVector(const Matrix &M,Vector3 &V,unsigned Row)
 #endif            
 }    
 //------------------------------------------------------------------------------ 
-float simul::math::MatrixRowTimesVector(const Matrix &M,const unsigned Row,const Vector3 &V)
+float platform::math::MatrixRowTimesVector(const Matrix &M,const unsigned Row,const Vector3 &V)
 {
 #ifndef SIMD 
 #ifdef CHECK_MATRIX_BOUNDS
@@ -966,18 +966,18 @@ float simul::math::MatrixRowTimesVector(const Matrix &M,const unsigned Row,const
 #endif
 }
 
-void simul::math::InsertVectorAsColumn(Matrix &M,const Vector3 &v,const unsigned col)
+void platform::math::InsertVectorAsColumn(Matrix &M,const Vector3 &v,const unsigned col)
 {
 	for(unsigned i=0;i<3;i++)
 		M.Values[i*M.W16+col]=v(i);
 }
 
-void simul::math::InsertNegativeVectorAsColumn(Matrix &M,const Vector3 &v,const unsigned col)
+void platform::math::InsertNegativeVectorAsColumn(Matrix &M,const Vector3 &v,const unsigned col)
 {
 	for(unsigned i=0;i<3;i++)
 		M.Values[i*M.W16+col]=-v(i);
 }
-void simul::math::TransposeMultiply4(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
+void platform::math::TransposeMultiply4(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 {
 #ifndef SIMD
 #ifndef PLAYSTATION2
@@ -1030,7 +1030,7 @@ void simul::math::TransposeMultiply4(Vector3 &V2,const Matrix4x4 &M,const Vector
 #endif
 }
 
-void simul::math::TransposeMultiply3(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
+void platform::math::TransposeMultiply3(Vector3 &V2,const Matrix4x4 &M,const Vector3 &V1)
 {
 #ifndef SIMD
 #ifndef PLAYSTATION2

@@ -9,7 +9,7 @@
 #endif
 typedef struct GLFWwindow GLFWwindow;
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -43,7 +43,7 @@ namespace simul
 			void ReloadTextures();
 			// called late to start debug output.
 			void InitDebugging();
-			simul::opengl::RenderPlatform *renderPlatformOpenGL;
+			platform::opengl::RenderPlatform *renderPlatformOpenGL;
 		protected:
 			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
 			GLFWwindow* offscreen_context;

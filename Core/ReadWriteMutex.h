@@ -6,9 +6,9 @@
 #endif
 #include <mutex>
 #include <condition_variable>
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		class ReadWriteMutex
 		{
@@ -75,9 +75,9 @@ namespace simul
 #define RWMUTEX_WIN_DTOR_UNEXPECTED()assert(false)
 #endif
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		namespace lockguard
 		{

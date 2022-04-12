@@ -14,7 +14,7 @@ namespace DirectX
 	class ScratchImage;
 	struct Image;
 }
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

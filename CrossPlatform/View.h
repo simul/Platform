@@ -12,7 +12,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -73,9 +73,9 @@ namespace simul
 			bool										vrDistortion;
 		protected:
 			/// A framebuffer with depth.
-			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
+			platform::crossplatform::BaseFramebuffer		*hdrFramebuffer;
 			/// The resolved texture.
-			simul::crossplatform::Texture				*resolvedTexture;
+			platform::crossplatform::Texture				*resolvedTexture;
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
 		public:

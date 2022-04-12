@@ -6,7 +6,7 @@
 #pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

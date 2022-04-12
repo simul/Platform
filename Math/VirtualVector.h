@@ -3,7 +3,7 @@
 
 #include "SimVector.h"
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

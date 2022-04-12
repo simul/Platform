@@ -17,7 +17,7 @@
 #define _countof(a) (sizeof(a)/sizeof(*(a)))
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::VkObjectTypeMap =
 {
@@ -66,7 +66,7 @@ const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::
 	{VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT"},
 };
 
-void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
+void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
 {
 #if 0
 	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
@@ -99,7 +99,7 @@ void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,
 	}
 #endif
 }
-void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
+void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
 {
 	SetVulkanName(renderPlatform,ds,name.c_str());
 }
@@ -842,27 +842,27 @@ crossplatform::Query* RenderPlatform::CreateQuery(crossplatform::QueryType type)
 	return q;
 }
 
-vk::Filter simul::vulkan::RenderPlatform::toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
+vk::Filter platform::vulkan::RenderPlatform::toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+	if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
 	{
 		return vk::Filter::eLinear;
 	}
 	return vk::Filter::eNearest;
 }
 
-vk::Filter simul::vulkan::RenderPlatform::toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
+vk::Filter platform::vulkan::RenderPlatform::toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+	if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
 	{
 		return vk::Filter::eLinear;
 	}
 	return vk::Filter::eNearest;
 }
 
-vk::SamplerMipmapMode simul::vulkan::RenderPlatform::toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f)
+vk::SamplerMipmapMode platform::vulkan::RenderPlatform::toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f)
 {
-	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+	if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
 	{
 		return vk::SamplerMipmapMode::eLinear;
 	}
@@ -973,13 +973,13 @@ vk::BlendOp RenderPlatform::toVulkanBlendOperation(crossplatform::BlendOperation
 {
 	switch (o)
 	{
-	case simul::crossplatform::BLEND_OP_ADD:
+	case platform::crossplatform::BLEND_OP_ADD:
 		return vk::BlendOp::eAdd;
-	case simul::crossplatform::BLEND_OP_SUBTRACT:
+	case platform::crossplatform::BLEND_OP_SUBTRACT:
 		return vk::BlendOp::eSubtract;
-	case simul::crossplatform::BLEND_OP_MAX:
+	case platform::crossplatform::BLEND_OP_MAX:
 		return vk::BlendOp::eMax;
-	case simul::crossplatform::BLEND_OP_MIN:
+	case platform::crossplatform::BLEND_OP_MIN:
 		return vk::BlendOp::eMin;
 	default:
 		break;
@@ -1325,11 +1325,11 @@ vk::CullModeFlags RenderPlatform::toVulkanCullFace(crossplatform::CullFaceMode c
 {
 	switch (c)
 	{
-	case simul::crossplatform::CULL_FACE_FRONT:
+	case platform::crossplatform::CULL_FACE_FRONT:
 		return vk::CullModeFlagBits::eFront;
-	case simul::crossplatform::CULL_FACE_BACK:
+	case platform::crossplatform::CULL_FACE_BACK:
 		return vk::CullModeFlagBits::eBack;
-	case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+	case platform::crossplatform::CULL_FACE_FRONTANDBACK:
 		return vk::CullModeFlagBits::eFrontAndBack;
 	default:
 		return vk::CullModeFlagBits::eNone;

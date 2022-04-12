@@ -6,7 +6,7 @@
 #include "Platform/DirectX12/TopLevelAccelerationStructure.h"
 #include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 

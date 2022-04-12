@@ -1,8 +1,6 @@
 #include "Platform/CrossPlatform/Allocator.h"
 #include "Platform/Core/RuntimeError.h"
 
-using namespace simul;
-using namespace base;
 using namespace platform;
 using namespace core;
 using namespace crossplatform;
@@ -66,7 +64,7 @@ void Allocator::CheckForReleases()
 	mutex.unlock();
 }
 
-void Allocator::SetExternalAllocator(simul::base::MemoryInterface* m)
+void Allocator::SetExternalAllocator(platform::core::MemoryInterface* m)
 {
 	if(m==memoryInterface)
 		return;

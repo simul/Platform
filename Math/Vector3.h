@@ -8,7 +8,7 @@
 	#pragma warning(disable:4201)	// Disable the warning for nameless struct {float x,y,z,w;} in union
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

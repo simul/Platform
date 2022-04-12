@@ -1,10 +1,10 @@
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
-void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
+void platform::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;
@@ -57,7 +57,7 @@ void DisplaySurfaceManager::Initialize(RenderPlatform *r)
 {
 	renderPlatform=r;
 	if (!delegatorReadWriteMutex)
-		delegatorReadWriteMutex = new simul::base::ReadWriteMutex;
+		delegatorReadWriteMutex = new platform::core::ReadWriteMutex;
 }
 
 DisplaySurfaceManager::~DisplaySurfaceManager()

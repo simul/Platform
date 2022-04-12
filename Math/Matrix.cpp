@@ -4,7 +4,7 @@
 #include "Matrix4x4.h"
 #include "SimVector.h"
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

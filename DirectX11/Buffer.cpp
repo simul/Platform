@@ -3,7 +3,7 @@
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/DirectX11/MacrosDX1x.h"
 #include "Platform/DirectX11/DirectXHeader.h"
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 Buffer::Buffer()

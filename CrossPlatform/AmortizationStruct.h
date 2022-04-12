@@ -2,7 +2,7 @@
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/Shaders/SL/CppSl.sl"
 #include <math.h>
-namespace simul
+namespace platform
 {
 namespace crossplatform
 {

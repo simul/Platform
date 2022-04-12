@@ -1,7 +1,7 @@
 #include "Platform/CrossPlatform/Material.h"
 #include "Platform/CrossPlatform/Effect.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 Material::Material(const char *n) : effect(nullptr),name(n)

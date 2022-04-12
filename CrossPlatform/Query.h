@@ -23,7 +23,7 @@ struct D3D12_CPU_DESCRIPTOR_HANDLE;
     #pragma warning(push)
     #pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

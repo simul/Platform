@@ -13,9 +13,7 @@ endif()
 
 set(SIMUL_PLATFORM_DIR ${CMAKE_CURRENT_LIST_DIR})  
 
-if(PLATFORM_USE_FMT)
-	add_subdirectory(External/fmt)
-endif()
+add_subdirectory(External/fmt)
 
 if(PLATFORM_USE_ASSIMP)
 	set( ASSIMP_LIBNAME assimp-vc142-mt$<$<CONFIG:Debug>:d> )

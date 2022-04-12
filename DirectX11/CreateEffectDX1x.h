@@ -22,7 +22,7 @@ struct ID3DX11EffectTechnique;
 struct ID3DX11EffectPass;
 
 typedef long HRESULT;
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

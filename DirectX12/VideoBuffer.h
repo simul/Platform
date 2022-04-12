@@ -5,12 +5,12 @@
 
 #pragma warning(disable:4251)
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
 		/// DirectX12 buffer class that can be used as index buffer and vertex buffer
-		class SIMUL_DIRECTX12_EXPORT VideoBuffer : public simul::crossplatform::VideoBuffer
+		class SIMUL_DIRECTX12_EXPORT VideoBuffer : public platform::crossplatform::VideoBuffer
 		{
 		public:
 			VideoBuffer();

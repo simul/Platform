@@ -17,8 +17,6 @@
 #include <stdlib.h> // for malloc, free
 #include <time.h>
 typedef struct stat Stat;
-using namespace simul;
-using namespace base;
 using namespace platform;
 using namespace core;
 

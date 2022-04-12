@@ -1,8 +1,8 @@
 #ifndef SIMUL_META_ORIENTATION_INTERFACE_H
 #define SIMUL_META_ORIENTATION_INTERFACE_H
-namespace simul
+namespace platform
 {
-	namespace geometry
+	namespace math
 	{
 		class OrientationOutputInterface
 		{

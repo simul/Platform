@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

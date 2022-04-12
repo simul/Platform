@@ -2,7 +2,7 @@
 #define SIMUL_GRAPH_CAMERA_CAMERAINTERFACE_H
 #include "Platform/CrossPlatform/Export.h"
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

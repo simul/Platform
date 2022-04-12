@@ -6,7 +6,7 @@
 #include "Platform/Math/RandomNumberGenerator.h"
 #include "Platform/Core/MemoryInterface.h"
 
-using namespace simul::math;
+using namespace platform::math;
 
 static float lerp(float t, float a, float b)
 {
@@ -15,7 +15,7 @@ static float lerp(float t, float a, float b)
 NoiseInterface::NoiseInterface(){}
 NoiseInterface::~NoiseInterface(){}
 
-simul::math::Noise3D::Noise3D(simul::base::MemoryInterface *mem)
+platform::math::Noise3D::Noise3D(platform::core::MemoryInterface *mem)
 	:generation_number(0)
 	,buffer_size(0)
 	,grid_x(0)
@@ -29,13 +29,13 @@ simul::math::Noise3D::Noise3D(simul::base::MemoryInterface *mem)
 	noise_random=new(memoryInterface) RandomNumberGenerator(memoryInterface);
 }
 
-simul::math::Noise3D::~Noise3D()
+platform::math::Noise3D::~Noise3D()
 {
 	operator delete[](noise_buffer,memoryInterface);
 	del(noise_random,memoryInterface);
 }
 
-void simul::math::Noise3D::Setup(unsigned freq,int RandomSeed,int octaves,float pers)
+void platform::math::Noise3D::Setup(unsigned freq,int RandomSeed,int octaves,float pers)
 {
 	persistence=pers;
 	numOctaves=octaves;
@@ -74,12 +74,12 @@ void simul::math::Noise3D::Setup(unsigned freq,int RandomSeed,int octaves,float 
 	}
 }
 
-unsigned simul::math::Noise3D::GetNoiseFrequency() const
+unsigned platform::math::Noise3D::GetNoiseFrequency() const
 {
 	return frequency;
 }
 
-float simul::math::Noise3D::value_at(unsigned i,unsigned j,unsigned k) const
+float platform::math::Noise3D::value_at(unsigned i,unsigned j,unsigned k) const
 {
 	i=i%frequency;
 	j=j%frequency;
@@ -87,7 +87,7 @@ float simul::math::Noise3D::value_at(unsigned i,unsigned j,unsigned k) const
 	return noise_buffer[(k*frequency+j)*frequency+i];
 }
 
-float simul::math::Noise3D::noise3(int pos[3]) const
+float platform::math::Noise3D::noise3(int pos[3]) const
 {
 	int x=pos[0];
 	int y=pos[1];
@@ -99,7 +99,7 @@ float simul::math::Noise3D::noise3(int pos[3]) const
 	return value_at(i1,j1,k1);
 }
 
-float simul::math::Noise3D::noise3(float pos[3]) const
+float platform::math::Noise3D::noise3(float pos[3]) const
 {
 	float x=pos[0];
 	float y=pos[1];
@@ -139,7 +139,7 @@ float simul::math::Noise3D::noise3(float pos[3]) const
 	return lerp(sz,c,d);
 }
 
-float simul::math::Noise3D::PerlinNoise3D(float x,float y,float z) const
+float platform::math::Noise3D::PerlinNoise3D(float x,float y,float z) const
 {
 	int i;
 	float dens=0.f;
@@ -165,23 +165,23 @@ float simul::math::Noise3D::PerlinNoise3D(float x,float y,float z) const
 	return dens;
 }
 
-float simul::math::Noise3D::PerlinNoise3D(int x,int y,int z) const
+float platform::math::Noise3D::PerlinNoise3D(int x,int y,int z) const
 {
 	return PerlinNoise3D(((float)x+0.5f)/(float)grid_x,((float)y+0.5f)/(float)grid_y,((float)z+0.5f)/(float)grid_z);
 }
 
-void simul::math::Noise3D::SetFilter(NoiseFilter *nf)
+void platform::math::Noise3D::SetFilter(NoiseFilter *nf)
 {
 	filter=nf;
 }
 
-unsigned simul::math::Noise3D::GetMemoryUsage() const
+unsigned platform::math::Noise3D::GetMemoryUsage() const
 {
 	unsigned mem=sizeof(this)+sizeof(RandomNumberGenerator)+buffer_size*sizeof(float);
 	return mem;
 }
 
-void simul::math::Noise3D::SetCacheGrid(int x,int y,int z)
+void platform::math::Noise3D::SetCacheGrid(int x,int y,int z)
 {
 	grid_x=x;
 	grid_y=y;

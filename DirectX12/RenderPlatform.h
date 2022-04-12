@@ -34,7 +34,7 @@ extern const char *PlatformD3D12GetErrorText(HRESULT hr);
 		}\
 	}
 #endif
-namespace simul
+namespace platform
 {
 	//! Used to hold information about the resource binding limits and
 	//! the current hardware binding tier
@@ -140,11 +140,11 @@ namespace simul
 				switch (type)
 				{
 				default:
-				case simul::crossplatform::DeviceContextType::GRAPHICS:
+				case platform::crossplatform::DeviceContextType::GRAPHICS:
 					return mGraphicsQueue;
-				case simul::crossplatform::DeviceContextType::COMPUTE:
+				case platform::crossplatform::DeviceContextType::COMPUTE:
 					return mComputeQueue;
-				case simul::crossplatform::DeviceContextType::COPY:
+				case platform::crossplatform::DeviceContextType::COPY:
 					return mCopyQueue;
 				}
 			}

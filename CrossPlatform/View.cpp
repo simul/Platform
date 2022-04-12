@@ -15,7 +15,7 @@
 #include <windows.h>
 #endif
 #include <algorithm>
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 int View::last_class_id=0;

@@ -39,7 +39,7 @@ namespace vk
 	class Device;
 	class Instance;
 }
-namespace simul
+namespace platform
 {
 	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
 	namespace crossplatform
@@ -159,7 +159,7 @@ namespace simul
 			/// Get the current state to be applied to the given context at the next draw or dispatch.
 			crossplatform::ContextState *GetContextState(crossplatform::DeviceContext &deviceContext);
 			virtual void T1(){}
-			RenderPlatform(simul::base::MemoryInterface*m=NULL);
+			RenderPlatform(platform::core::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
 			virtual float GetDefaultOutputGamma() const
 			{
@@ -330,7 +330,7 @@ namespace simul
 			/// Look for a sampler state of the stated name, and create one if it does not exist. The resulting state will be owned by the RenderPlatform, so do not destroy it.
 			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
 			/// as the Effects system assumes that SamplerState names are unique.
-			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
+			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,platform::crossplatform::SamplerStateDesc *desc=0);
 			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
 			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
@@ -340,10 +340,10 @@ namespace simul
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
-			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
+			/// platform::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
 			/// Create a platform-specific structured buffer instance. This is not usually used directly, instead, create a
-			/// simul::crossplatform::StructuredBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
+			/// platform::crossplatform::StructuredBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformStructuredBuffer	*CreatePlatformStructuredBuffer	()	=0;
 			/// Create a platform-specific buffer instance - e.g. vertex buffers, index buffers etc.
 			virtual Buffer					*CreateBuffer					()	=0;
@@ -445,7 +445,7 @@ namespace simul
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
-			base::MemoryInterface *GetAllocator()
+			platform::core::MemoryInterface *GetAllocator()
 			{
 				return &allocator;
 			}
@@ -464,8 +464,8 @@ namespace simul
 			std::map<std::string,crossplatform::Material*> materials;
 			std::map<std::string, crossplatform::Texture*> textures;
 			std::vector<std::string> GetTexturePathsUtf8(); 
-			simul::base::MemoryInterface *GetMemoryInterface();
-			void SetMemoryInterface(simul::base::MemoryInterface *m);
+			platform::core::MemoryInterface *GetMemoryInterface();
+			void SetMemoryInterface(platform::core::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 			// Does the format use stencil?
@@ -485,7 +485,7 @@ namespace simul
 			std::set<Texture*> unMippedTextures;
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			virtual Texture* createTexture() = 0;
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
 			std::vector<std::string> texturePathsUtf8;
 			std::vector<std::string> shaderBinaryPathsUtf8;

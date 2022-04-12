@@ -44,7 +44,7 @@ extern "C"
 
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -363,7 +363,7 @@ namespace simul
 			bool depthStencil;
 			bool shouldGenerateMips = false;
 			std::string name;
-			simul::crossplatform::TargetsAndViewport targetsAndViewport;
+			platform::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
 			bool unfenceable;
 			// YUV textures need two SRVs to be bound to a shader. This index is incremented/decremented when AsD3D12ShaderResourceView is called.

@@ -2,7 +2,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

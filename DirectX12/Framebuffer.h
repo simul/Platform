@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/Texture.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

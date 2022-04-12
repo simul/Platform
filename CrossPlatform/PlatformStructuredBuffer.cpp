@@ -3,7 +3,7 @@
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
 #include "Platform/CrossPlatform/Effect.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 using namespace std;
 

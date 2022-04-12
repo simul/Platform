@@ -1,7 +1,7 @@
 #include "MeshRenderer.h"
 #include "Material.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 MeshRenderer::MeshRenderer()
@@ -81,7 +81,7 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
 	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);
 	effect->SetTexture(deviceContext, "screenspaceShadowTexture", screenspaceShadowTexture);
-	mesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
+	mesh->BeginDraw(deviceContext, platform::crossplatform::ShadingMode::SHADING_MODE_SHADED);
 	mat4 w;
 	mat4 tw =*( (mat4*)&(mesh->orientation.GetMatrix()));
 	tw.transpose();

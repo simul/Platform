@@ -4,7 +4,7 @@
 #include "Utilities.h"
 #include "Platform/Core/RuntimeError.h"
 #include <xg.h>
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 namespace

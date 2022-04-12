@@ -9,7 +9,7 @@
 	#pragma warning(disable : 4251)  
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -19,7 +19,7 @@ namespace simul
 			FLYING,LOOKAROUND,CENTRED
 		};
 
-		class SIMUL_CROSSPLATFORM_EXPORT MouseHandler: public simul::base::BaseMouseHandler
+		class SIMUL_CROSSPLATFORM_EXPORT MouseHandler: public platform::core::BaseMouseHandler
 		{
 		public:
 			MouseHandler();
@@ -41,7 +41,7 @@ namespace simul
 				CameraDamping=d;
 			}
 			float GetSpeed() const;
-			simul::crossplatform::Camera *GetCamera();
+			platform::crossplatform::Camera *GetCamera();
 			void	getMousePosition(int &x,int &y) const;
 			bool	getLeftButton() const;
 			bool	getRightButton() const;
@@ -56,7 +56,7 @@ namespace simul
 			float speed_factor;
 			bool y_vertical;
 			float aspect;
-			simul::crossplatform::Camera *camera;
+			platform::crossplatform::Camera *camera;
 			bool move_forward,move_backward,move_left,move_right,move_up,move_down,shift_down,alt_down;
 			float up_down_spd;
 			float forward_back_spd;

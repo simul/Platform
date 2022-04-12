@@ -10,7 +10,7 @@
 	#pragma warning(disable:4275)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
@@ -41,7 +41,7 @@ namespace simul
 			vk::Sampler									mSampler;
 		};
 
-		class SIMUL_VULKAN_EXPORT Texture:public simul::crossplatform::Texture
+		class SIMUL_VULKAN_EXPORT Texture:public platform::crossplatform::Texture
 		{
 		public:
 							Texture();

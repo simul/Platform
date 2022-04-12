@@ -3,7 +3,7 @@
 #include "Macros.h"
 #include "Platform/Math/Pi.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 template <class T> inline void VectorDelete(std::vector<T>& vec)

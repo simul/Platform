@@ -1,7 +1,7 @@
 #include "VideoDecoder.h"
 #include "Platform/Core/RuntimeError.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 #ifndef SAFE_DELETE
@@ -22,7 +22,7 @@ VideoDecoder::~VideoDecoder()
 
 }
 
-VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams)
+VideoDecoderResult VideoDecoder::Initialize(platform::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams)
 {
 	mRenderPlatform = renderPlatform;
 	mDecoderParams = decoderParams;

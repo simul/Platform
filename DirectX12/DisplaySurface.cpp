@@ -3,14 +3,13 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/StringFunctions.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 DisplaySurface::DisplaySurface():
 	mDeviceRef(nullptr),
 	mSwapChain(nullptr),
-	mRTHeap(nullptr),
-	mCommandList(nullptr)
+	mRTHeap(nullptr)
 {
 	for (int i = 0; i < FrameCount; i++)
 	{
@@ -136,7 +135,6 @@ void DisplaySurface::InvalidateDeviceObjects()
 	{
 		WaitForAllWorkDone();
 	}
-	//SAFE_RELEASE(mCommandList);
 	SAFE_RELEASE(mSwapChain);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
@@ -156,7 +154,7 @@ unsigned DisplaySurface::GetCurrentBackBufferIndex() const
 #endif
 	return curIdx;
 }
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
+void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
@@ -260,6 +258,7 @@ void DisplaySurface::StartFrame()
 		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
 		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
+	WaitForAllWorkDone();
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 

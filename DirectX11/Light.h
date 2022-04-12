@@ -7,7 +7,7 @@
 #include "Material.h"
 #include "Platform/CrossPlatform/Light.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{

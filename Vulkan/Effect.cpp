@@ -17,7 +17,7 @@
 #include "Platform/Core/CommandLine.h"
 #include "Platform/Core/EnvironmentVariables.h"
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 bool RewriteOutput(std::string str)
@@ -49,7 +49,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 
 void Query::SetName(const char*name)
 {
-	simul::vulkan::SetVulkanName(renderPlatform,&mQueryPool,name);
+	platform::vulkan::SetVulkanName(renderPlatform,&mQueryPool,name);
 }
 
 void Query::InvalidateDeviceObjects() 
@@ -154,7 +154,7 @@ bool Effect::Compile(const char *filename_utf8)
 	//wchar_t wd[1000];
 	//_wgetcwd(wd,1000);
 	std::string shaderbin = renderPlatform->GetShaderBinaryPathsUtf8().back();
-	std::string SIMUL=base::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
+	std::string SIMUL=core::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
 #ifdef _MSC_VER
 	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";
 	if (SIMUL == "")

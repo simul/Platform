@@ -3,7 +3,7 @@
 #include "RenderPlatform.h"
 #include <iomanip>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 Buffer::Buffer():

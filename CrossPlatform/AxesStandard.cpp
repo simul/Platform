@@ -1,5 +1,5 @@
 #include "AxesStandard.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 /*
 void ConvertTransform(AxesStandard fromStandard, AxesStandard toStandard, Transform& transform)
@@ -9,7 +9,7 @@ void ConvertTransform(AxesStandard fromStandard, AxesStandard toStandard, Transf
 	ConvertScale(fromStandard, toStandard, transform.scale);
 }
 */
-Quaternionf simul::crossplatform::ConvertRotation(AxesStandard fromStandard, AxesStandard toStandard, const Quaternionf& rotation)
+Quaternionf platform::crossplatform::ConvertRotation(AxesStandard fromStandard, AxesStandard toStandard, const Quaternionf& rotation)
 {
 	if (fromStandard == toStandard)
 		return rotation;
@@ -75,7 +75,7 @@ Quaternionf simul::crossplatform::ConvertRotation(AxesStandard fromStandard, Axe
 	return q;
 }
 
-int8_t simul::crossplatform::ConvertAxis(AxesStandard fromStandard, AxesStandard toStandard, int8_t axis)
+int8_t platform::crossplatform::ConvertAxis(AxesStandard fromStandard, AxesStandard toStandard, int8_t axis)
 {
 	//int8_t a = (axis) % 3;
 	//int8_t sn=(axis>=3)?-1:1;
@@ -152,7 +152,7 @@ int8_t simul::crossplatform::ConvertAxis(AxesStandard fromStandard, AxesStandard
 	return -1;
 }
 
-vec3 simul::crossplatform::ConvertScale(AxesStandard fromStandard, AxesStandard toStandard, const vec3& scale)
+vec3 platform::crossplatform::ConvertScale(AxesStandard fromStandard, AxesStandard toStandard, const vec3& scale)
 {
 	if (fromStandard == toStandard)
 	{
@@ -213,12 +213,12 @@ vec3 simul::crossplatform::ConvertScale(AxesStandard fromStandard, AxesStandard 
 	}
 	return s;
 }
-mat4 simul::crossplatform::ConvertMatrix(AxesStandard fromStandard, AxesStandard toStandard, const mat4& m)
+mat4 platform::crossplatform::ConvertMatrix(AxesStandard fromStandard, AxesStandard toStandard, const mat4& m)
 {
 	int8_t ax[3];
-	ax[0]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 0);
-	ax[1]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 1);
-	ax[2]=simul::crossplatform::ConvertAxis( fromStandard, toStandard, 2);
+	ax[0]=platform::crossplatform::ConvertAxis( fromStandard, toStandard, 0);
+	ax[1]=platform::crossplatform::ConvertAxis( fromStandard, toStandard, 1);
+	ax[2]=platform::crossplatform::ConvertAxis( fromStandard, toStandard, 2);
 	float s[3]={float((ax[0]<3)-(ax[0]>2)),float((ax[1] < 3) - (ax[1] > 2)),float((ax[2] < 3) - (ax[2] > 2))};
 	ax[0]=ax[0]%3;
 	ax[1]=ax[1]%3;
@@ -243,7 +243,7 @@ mat4 simul::crossplatform::ConvertMatrix(AxesStandard fromStandard, AxesStandard
 	return n;
 }
 
-vec3 simul::crossplatform::ConvertPosition(AxesStandard fromStandard, AxesStandard toStandard, const vec3& position)
+vec3 platform::crossplatform::ConvertPosition(AxesStandard fromStandard, AxesStandard toStandard, const vec3& position)
 {
 	if (fromStandard == toStandard)
 	{

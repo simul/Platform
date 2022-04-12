@@ -1,4 +1,4 @@
-namespace simul
+namespace platform
 {
 	//! The namespace corresponding to the Math module.
 

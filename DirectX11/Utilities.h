@@ -15,7 +15,7 @@
 #include "Platform/Math/Matrix4x4.h"
 struct ID3DX11EffectConstantBuffer;
 #pragma warning(disable:4251)
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -207,7 +207,7 @@ namespace simul
 				m_pD3DX11EffectConstantBuffer=NULL;
 			}
 			//! Apply the stored data using the given context, in preparation for rendering.
-			void Apply(simul::crossplatform::DeviceContext &deviceContext)
+			void Apply(platform::crossplatform::DeviceContext &deviceContext)
 			{
 				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
 				Apply(pContext);
@@ -336,7 +336,7 @@ namespace simul
 
 namespace std
 {
-	template<class T> inline void swap(simul::dx11::VertexBuffer<T>& _Left, simul::dx11::VertexBuffer<T>& _Right)
+	template<class T> inline void swap(platform::dx11::VertexBuffer<T>& _Left, platform::dx11::VertexBuffer<T>& _Right)
 	{
 		std::swap(_Left.vertexBuffer		,_Right.vertexBuffer);
 //		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);

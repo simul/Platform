@@ -11,7 +11,7 @@
 	#pragma warning(disable:4275)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{

@@ -16,13 +16,13 @@
 VisualStudioDebugOutput debug_buffer(true, NULL, 128);
 #endif
 
-using namespace simul;
+using namespace platform;
 // Data
 dx12::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface = &deviceManager;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 platform::core::CommandLineParams commandLineParams;
-simul::crossplatform::RenderPlatform* renderPlatform = nullptr;
+platform::crossplatform::RenderPlatform* renderPlatform = nullptr;
 
 // Forward declarations of helper functions
 bool CreateDevice(HWND hWnd);
@@ -53,7 +53,7 @@ public:
     //! It will be assumed for simplicity that the viewport should be restored to the entire size of the renderTexture.
     void				Render(int view_id, void* context, void* renderTexture, int w, int h, long long framenumber, void* context_allocator)
     {
-        simul::crossplatform::GraphicsDeviceContext	deviceContext;
+        platform::crossplatform::GraphicsDeviceContext	deviceContext;
 
         // Store back buffer, depth buffer and viewport information
         deviceContext.defaultTargetsAndViewport.num = 1;
@@ -84,7 +84,7 @@ public:
     void				SetRenderDelegate(int /*view_id*/, crossplatform::RenderDelegate /*d*/)
     {
     }
-    simul::crossplatform::RenderPlatform* renderPlatform = nullptr;
+    platform::crossplatform::RenderPlatform* renderPlatform = nullptr;
 };
 PlatformRenderer *platformRenderer=nullptr;
 

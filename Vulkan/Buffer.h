@@ -9,12 +9,12 @@
     #pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
         //! Vulkan buffer (vertex/index) implementation
-		class SIMUL_VULKAN_EXPORT Buffer:public simul::crossplatform::Buffer
+		class SIMUL_VULKAN_EXPORT Buffer:public platform::crossplatform::Buffer
 		{
 		public:
 						Buffer();
