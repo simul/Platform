@@ -22,7 +22,7 @@ namespace simul
 		#if defined(__ANDROID__)
 			static void SetAndroid_AAssetManager(AAssetManager* assetManager) { s_AssetManager = assetManager; };
 			static AAssetManager* s_AssetManager;
-		#else defined(__SWITCH__)
+		#elif defined(__SWITCH__)
 			static void Set_NVN_ROM_Name(const std::string& name);
 			static std::string s_NVN_ROM_Name;
 		#endif

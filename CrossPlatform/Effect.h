@@ -191,10 +191,10 @@ namespace simul
 			RenderStateType type;
 			union
 			{
-				DepthStencilDesc		depth;
 				BlendDesc				blend;
-				RasterizerDesc		  rasterizer;
-				RenderTargetFormatDesc  rtFormat;
+				DepthStencilDesc		depth;
+				RasterizerDesc			rasterizer;
+				RenderTargetFormatDesc	rtFormat;
 			};
 			std::string name;
 		};
