@@ -1199,7 +1199,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	}
 	if (texture2dFormat == DXGI_FORMAT_NV12)
 	{
-		// For Y layer. UINT is easier for conversion to RGB in shader that UNORM.
+		// For Y layer. UINT is easier for conversion to RGB in shader than UNORM.
 		srvFormat = DXGI_FORMAT_R8_UINT;
 		yuvFormat = true;
 	}
@@ -1329,8 +1329,20 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
             SIMUL_PPV_ARGS(&mTextureDefault)
 		);
 		SIMUL_ASSERT(res == S_OK);
-		size_t bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format);
-		size_t texSize = w * l  * bytes_per_pixel;
+		size_t texSize;
+		size_t bytes_per_pixel = 0;
+		size_t sizeInPixels = w * l;
+		if (yuvFormat)
+		{
+			// Y * UV	
+			texSize = sizeInPixels + (sizeInPixels / 2);
+		}
+		else
+		{
+			bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format);
+			texSize = sizeInPixels * bytes_per_pixel;
+		}
+		
 		SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
 		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());

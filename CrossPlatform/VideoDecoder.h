@@ -20,10 +20,12 @@ namespace platform
 		{
 			Ok = 0,
 			VideoAPIError,
+			D3D12APIError,
 			InvalidCodec,
 			InvalidDecodeArgumentType,
 			UnsupportedFeatures,
-			UnsupportedDimensions
+			UnsupportedDimensions,
+			DecodingFailed
 		};
 
 		enum class VideoCodec
@@ -52,7 +54,7 @@ namespace platform
 			uint32_t height = 1080;
 			uint32_t minWidth = 1200;
 			uint32_t minHeight = 720;
-			uint32_t maxDecodePictureBufferCount = 20;
+			uint32_t maxDecodePictureBufferCount = 16;
 			DeinterlaceMode deinterlaceMode = DeinterlaceMode::None;
 		};
 
@@ -76,7 +78,7 @@ namespace platform
 		public:
 			VideoDecoder();
 			virtual ~VideoDecoder();
-			VideoDecoderResult Initialize(platform::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams);
+			VideoDecoderResult Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams, bool validateDecoding = false);
 			VideoDecoderResult Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0);
 			virtual VideoDecoderResult Shutdown();
 
@@ -97,6 +99,7 @@ namespace platform
 			std::vector<Texture*> mTextures;
 			Fence* mDecodeFence;
 			bool mFeaturesSupported;
+			bool mValidateDecoding;
 		};
 	}
 

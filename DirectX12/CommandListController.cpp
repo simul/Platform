@@ -21,7 +21,7 @@ CommandListController::CommandListController()
 	, mIndex(0)
 	, mCommandQueueOwner(false)
 	, mCommandListRecording(false)
-	, mWindowEvent(nullptr)
+	, mCompletionEvent(nullptr)
 {
 
 }
@@ -70,22 +70,14 @@ void CommandListController::Initialize(RenderPlatform* renderPlatform, D3D12_COM
 	std::string commandListName = commandName + "CommandList";
 	mCommandList->SetName(platform::core::StringToWString(commandListName).c_str());
 
-	mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	mCompletionEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 }
 
 void CommandListController::Release()
 {
-	// Check last allocator used is finished with.
-	if (mFences)
-	{
-		int index = ((int)mIndex - 1) % mNumAllocators;
-		if (mFences[index]->AsD3D12Fence()->GetCompletedValue() < mFences[index]->value)
-		{
-			mFences[index]->AsD3D12Fence()->SetEventOnCompletion(mFences[index]->value, mWindowEvent);
-			WaitForSingleObject(mWindowEvent, INFINITE);
-		}
-	}
-	
+	// Ensure the command queue has finished executing.
+	WaitOnGPU();
+
 	if (mCommandListRecording)
 	{
 		CloseCommandList();
@@ -108,12 +100,9 @@ void CommandListController::ResetCommandList()
 		CloseCommandList();
 	}
 
-	// If the GPU is behind, wait:
-	if (mFences[mIndex]->AsD3D12Fence()->GetCompletedValue() < mFences[mIndex]->value)
-	{
-		mFences[mIndex]->AsD3D12Fence()->SetEventOnCompletion(mFences[mIndex]->value, mWindowEvent);
-		WaitForSingleObject(mWindowEvent, INFINITE);
-	}
+	// If the GPU is behind, wait fpr it to be finished with the allocator before use.
+	WaitOnGPU(mIndex);
+
 	// ExecuteCommandList will Signal this value:
 	mFences[mIndex]->value++;
 
@@ -175,4 +164,23 @@ void CommandListController::CloseCommandList()
 		((ID3D12GraphicsCommandList*)mCommandList)->Close();
 	}
 	mCommandListRecording = false;
+}
+
+void CommandListController::WaitOnGPU(int allocIndex)
+{
+	if (!mFences)
+	{
+		return;
+	}
+
+	if (allocIndex < 0)
+	{
+		allocIndex = ((int)mIndex - 1) % mNumAllocators;
+	}
+
+	if (mFences[allocIndex]->AsD3D12Fence()->GetCompletedValue() < mFences[allocIndex]->value)
+	{
+		mFences[allocIndex]->AsD3D12Fence()->SetEventOnCompletion(mFences[allocIndex]->value, mCompletionEvent);
+		WaitForSingleObject(mCompletionEvent, INFINITE);
+	}
 }

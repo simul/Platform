@@ -13,6 +13,7 @@ VideoDecoder::VideoDecoder()
 	, mInputBuffer(nullptr)
 	, mDecodeFence(nullptr)
 	, mFeaturesSupported(false)
+	, mValidateDecoding(false)
 {
 
 }
@@ -22,11 +23,12 @@ VideoDecoder::~VideoDecoder()
 
 }
 
-VideoDecoderResult VideoDecoder::Initialize(platform::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams)
+VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams, bool validateDecoding)
 {
 	mRenderPlatform = renderPlatform;
 	mDecoderParams = decoderParams;
 	mFeaturesSupported = false;
+	mValidateDecoding = validateDecoding;
 
 	VideoDecoderResult result = Init();
 	if (DEC_FAILED(result))
@@ -56,8 +58,7 @@ VideoDecoderResult VideoDecoder::Initialize(platform::crossplatform::RenderPlatf
 
 VideoDecoderResult VideoDecoder::Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs, uint32_t decodeArgCount)
 {
-	DecodeFrame(outputTexture, buffer, bufferSize, decodeArgs, decodeArgCount);
-	return VideoDecoderResult::Ok;
+	return DecodeFrame(outputTexture, buffer, bufferSize, decodeArgs, decodeArgCount);
 }
 
 VideoDecoderResult VideoDecoder::Shutdown()

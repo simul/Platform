@@ -20,6 +20,9 @@ namespace platform
 			void Release();
 			void ResetCommandList();
 			void ExecuteCommandList();
+			// Waits until the GPU is finished with the command allocator at the index.
+			// The allocator will be the last one used if the index is less than 0.
+			void WaitOnGPU(int allocIndex = -1);
 
 			ID3D12CommandQueue* GetCommandQueue() const
 			{
@@ -41,7 +44,7 @@ namespace platform
 			uint32_t mIndex;
 			bool mCommandQueueOwner;
 			bool mCommandListRecording;
-			HANDLE	mWindowEvent;
+			HANDLE	mCompletionEvent;
 		};
 	}
 }
