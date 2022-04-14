@@ -78,7 +78,7 @@ namespace platform
 		public:
 			VideoDecoder();
 			virtual ~VideoDecoder();
-			VideoDecoderResult Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams, bool validateDecoding = false);
+			VideoDecoderResult Initialize(crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams, bool validateDecoding = false);
 			VideoDecoderResult Decode(Texture* outputTexture, const void* buffer, size_t bufferSize, const VideoDecodeArgument* decodeArgs = nullptr, uint32_t decodeArgCount = 0);
 			virtual VideoDecoderResult Shutdown();
 

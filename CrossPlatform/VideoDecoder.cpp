@@ -23,7 +23,7 @@ VideoDecoder::~VideoDecoder()
 
 }
 
-VideoDecoderResult VideoDecoder::Initialize(simul::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams, bool validateDecoding)
+VideoDecoderResult VideoDecoder::Initialize(platform::crossplatform::RenderPlatform* renderPlatform, const VideoDecoderParams& decoderParams, bool validateDecoding)
 {
 	mRenderPlatform = renderPlatform;
 	mDecoderParams = decoderParams;
