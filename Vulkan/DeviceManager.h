@@ -10,7 +10,7 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -44,7 +44,7 @@ namespace simul
 			void ReloadTextures();
 			// called late to start debug output.
 			void InitDebugging();
-		//	simul::vulkan::RenderPlatform *renderPlatformVulkan;
+		//	platform::vulkan::RenderPlatform *renderPlatformVulkan;
 
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);

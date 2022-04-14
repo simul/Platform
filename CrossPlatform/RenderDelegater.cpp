@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/Math/Pi.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 RenderDelegater::RenderDelegater(crossplatform::RenderPlatform *r)
@@ -79,7 +79,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 			0, 0, vs.x, vs.y
 		);
 
-	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatform->GetGpuProfiler());
+	platform::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatform->GetGpuProfiler());
 	if (renderDelegate[view_id])
 	{
 		renderDelegate[view_id](deviceContext);

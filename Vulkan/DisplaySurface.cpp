@@ -17,7 +17,7 @@
 #define _countof(a) (sizeof(a)/sizeof(*(a)))
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 #ifdef _MSC_VER
@@ -832,7 +832,7 @@ void DisplaySurface::CreateDefaultPipeline()
 }
 
 
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
+void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();

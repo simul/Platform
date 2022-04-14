@@ -15,7 +15,7 @@ typedef int GLint;
 typedef unsigned int GLenum;
 typedef uint64_t GLuint64;
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{

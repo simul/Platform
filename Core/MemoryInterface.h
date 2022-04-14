@@ -19,14 +19,14 @@
 	//new/delete operators are implicitly static and only need to be defined in the base class of your 
 	//inheritance hierarchy.
 	#define DEFINE_NEW_DELETE_OVERRIDES \
-		inline void* operator new(std::size_t size)                       { return simul::base::memory::New(size, 0); } \
-		inline void* operator new(std::size_t size, std::size_t align)    { return simul::base::memory::New(size, align); } \
-		inline void  operator delete(void* p)                             { simul::base::memory::Delete(p); } \
-		inline void  operator delete(void* p, std::size_t /*align*/)      { simul::base::memory::Delete(p); } \
-		inline void* operator new[] (std::size_t size)                    { return simul::base::memory::NewArray(size, 0); } \
-		inline void* operator new[] (std::size_t size, std::size_t align) { return simul::base::memory::NewArray(size, align); } \
-		inline void  operator delete[] (void* p)                          { simul::base::memory::DeleteArray(p); } \
-		inline void  operator delete[] (void* p, std::size_t /*align*/)   { simul::base::memory::DeleteArray(p); } \
+		inline void* operator new(std::size_t size)                       { return platform::core::memory::New(size, 0); } \
+		inline void* operator new(std::size_t size, std::size_t align)    { return platform::core::memory::New(size, align); } \
+		inline void  operator delete(void* p)                             { platform::core::memory::Delete(p); } \
+		inline void  operator delete(void* p, std::size_t /*align*/)      { platform::core::memory::Delete(p); } \
+		inline void* operator new[] (std::size_t size)                    { return platform::core::memory::NewArray(size, 0); } \
+		inline void* operator new[] (std::size_t size, std::size_t align) { return platform::core::memory::NewArray(size, align); } \
+		inline void  operator delete[] (void* p)                          { platform::core::memory::DeleteArray(p); } \
+		inline void  operator delete[] (void* p, std::size_t /*align*/)   { platform::core::memory::DeleteArray(p); } \
 		inline void* operator new(std::size_t, void* /*p*/)               { return 0; /*Unimplemented placement new*/ } \
 		inline void  operator delete(void*, void*)                        { } \
 		class MacroMustEndWithSemiColon
@@ -34,9 +34,9 @@
 	#define DEFINE_NEW_DELETE_OVERRIDES class MacroMustEndWithSemiColon
 #endif
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		//! A virtual interface class for classes that can allocate and de-allocate memory.
 
@@ -92,21 +92,21 @@ namespace simul
 #define AllocateVideoMemory(n,a) AllocateVideoMemoryTracked(n,a,__PRETTY_FUNCTION__)
 #endif
 
-inline void* operator new(size_t nbytes,simul::base::MemoryInterface *mi)
+inline void* operator new(size_t nbytes,platform::core::MemoryInterface *mi)
 {
 	if(!mi)
 		return malloc(nbytes);
 	return mi->Allocate(nbytes,0);
 }
 
-inline void* operator new[](size_t nbytes,simul::base::MemoryInterface *mi)
+inline void* operator new[](size_t nbytes,platform::core::MemoryInterface *mi)
 {
 	if(!mi)
 		return malloc(nbytes);
 	return mi->Allocate(nbytes,0);
 }
 
-inline void operator delete[](void *p,simul::base::MemoryInterface *mi)
+inline void operator delete[](void *p,platform::core::MemoryInterface *mi)
 {
 	if(!mi)
 		free(p);
@@ -114,7 +114,7 @@ inline void operator delete[](void *p,simul::base::MemoryInterface *mi)
 		mi->Deallocate(p);
 }
 
-inline void operator delete(void *p,simul::base::MemoryInterface *mi)
+inline void operator delete(void *p,platform::core::MemoryInterface *mi)
 {
 	if(!mi)
 		free(p);
@@ -122,7 +122,7 @@ inline void operator delete(void *p,simul::base::MemoryInterface *mi)
 		mi->Deallocate(p);
 }
 
-template<class T> void del(T* p, simul::base::MemoryInterface *mi)
+template<class T> void del(T* p, platform::core::MemoryInterface *mi)
 {
 	if (p)
 	{
@@ -137,9 +137,9 @@ template<class T> void del(T* p, simul::base::MemoryInterface *mi)
 }
 
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		//! An allocator to use MemoryInterface in STL classes.
 		template<typename T> class MemoryInterfaceAllocator: public std::allocator<T>

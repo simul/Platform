@@ -11,7 +11,7 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -41,7 +41,7 @@ namespace simul
 		protected:
 			struct Artifact
 			{
-				simul::math::Vector3 pos;
+				platform::math::Vector3 pos;
 				float coord;
 				float size;
 				int type;

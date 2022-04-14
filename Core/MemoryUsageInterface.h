@@ -1,8 +1,7 @@
-#ifndef SIMUL_BASE_MEMORYUSAGEINTERFACE_H
-#define SIMUL_BASE_MEMORYUSAGEINTERFACE_H
-namespace simul
+#pragma once
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		//! A virtual interface class for classes that can return how much memory they use.
 		class MemoryUsageInterface
@@ -13,4 +12,4 @@ namespace simul
 		};
 	}
 }
-#endif
+

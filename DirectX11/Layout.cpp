@@ -3,7 +3,7 @@
 #include "DirectXHeader.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/RuntimeError.h"
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 Layout::Layout()

@@ -8,7 +8,7 @@
 #pragma warning(push)
 #pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -34,7 +34,7 @@ namespace simul
 			math::Matrix4x4 viewProj;
 			// derived vectors.
 			vec3 cam_pos, view_dir, up;
-			simul::crossplatform::Frustum frustum;	///< The viewing frustum, calculated from the proj matrix and stored for convenience using simul::crossplatform::GetFrustumFromProjectionMatrix.
+			platform::crossplatform::Frustum frustum;	///< The viewing frustum, calculated from the proj matrix and stored for convenience using platform::crossplatform::GetFrustumFromProjectionMatrix.
 			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
 			//! MUST be called whenever view or proj change.
 			void Init();

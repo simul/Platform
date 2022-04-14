@@ -7,7 +7,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4740)
 #endif
-namespace simul
+namespace platform
 {
 	namespace math
 	{

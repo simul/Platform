@@ -1,6 +1,6 @@
 #include "BottomLevelAccelerationStructure.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 ////////////////////////////////////

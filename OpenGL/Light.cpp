@@ -1,6 +1,6 @@
 #include "Light.h"
 
-using namespace simul;
+using namespace platform;
 
 opengl::Light::Light()
 {

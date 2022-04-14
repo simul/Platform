@@ -6,7 +6,7 @@
 #define PLATFORM_SUPPORT_D3D12_RAYTRACING 0
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

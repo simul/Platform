@@ -1,7 +1,7 @@
 #include "Platform/Core/BaseMouseHandler.h"
 
-using namespace simul;
-using namespace base;
+using namespace platform;
+using namespace core;
 
 BaseMouseHandler::BaseMouseHandler()
 	:fDeltaX(0)
@@ -10,7 +10,7 @@ BaseMouseHandler::BaseMouseHandler()
 	,MouseY(0)
 	, view_width(750)
 	, view_height(750)
-	,mouseButtons(base::NoButton)
+	,mouseButtons(core::NoButton)
 {
 }
 

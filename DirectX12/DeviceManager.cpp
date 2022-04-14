@@ -12,7 +12,7 @@
 
 #pragma comment(lib,"dxguid")
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 /////////////////

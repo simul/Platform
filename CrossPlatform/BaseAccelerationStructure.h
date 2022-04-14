@@ -3,7 +3,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Shaders/SL/raytracing_constants.sl"
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

@@ -2,7 +2,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 #ifdef _MSC_VER
@@ -168,7 +168,7 @@ void DisplaySurface::InitSwapChain()
 	// Initialize the swap chain description.
 }
 
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
+void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 	deferredContext.platform_context=immediateContext.platform_context;

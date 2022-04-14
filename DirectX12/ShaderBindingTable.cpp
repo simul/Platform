@@ -4,7 +4,7 @@
 #include "DirectXRaytracingHelper.h"
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 ShaderBindingTable::ShaderBindingTable()
@@ -32,7 +32,7 @@ void ShaderBindingTable::InvalidateDeviceObjects()
 	}
 }
 
-std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> simul::dx12::ShaderBindingTable::GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass)
+std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> platform::dx12::ShaderBindingTable::GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass)
 {
 	std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> result;
 

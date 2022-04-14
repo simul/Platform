@@ -40,7 +40,7 @@
 #include "Platform/DirectX11/Utilities.h"
 #pragma optimize("",off)
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 using namespace platform::core;
 
@@ -280,7 +280,7 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	BeginFrame();
-	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 }
 
@@ -903,13 +903,13 @@ D3D11_CULL_MODE toD3d11CullMode(crossplatform::CullFaceMode c)
 {
 	switch (c)
 	{
-	case simul::crossplatform::CULL_FACE_NONE:
+	case platform::crossplatform::CULL_FACE_NONE:
 		return D3D11_CULL_NONE;
-	case simul::crossplatform::CULL_FACE_FRONT:
+	case platform::crossplatform::CULL_FACE_FRONT:
 		return D3D11_CULL_FRONT;
-	case simul::crossplatform::CULL_FACE_BACK:
+	case platform::crossplatform::CULL_FACE_BACK:
 		return D3D11_CULL_BACK;
-	case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+	case platform::crossplatform::CULL_FACE_FRONTANDBACK:
 		SIMUL_BREAK("In DirectX11 there is no FRONTANDBACK cull face mode");
 	default:
 		SIMUL_BREAK("Undefined cull face mode");
@@ -1482,7 +1482,7 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
-	crossplatform::RenderPlatform::SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
+	crossplatform::RenderPlatform::SetTopology(deviceContext,platform::crossplatform::Topology::TRIANGLESTRIP);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
 	ApplyContextState(deviceContext);

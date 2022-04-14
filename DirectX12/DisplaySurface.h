@@ -11,7 +11,7 @@
 
 static const UINT FrameCount = 4;
 
-namespace simul
+namespace platform
 {
     namespace dx12
     {
@@ -25,7 +25,7 @@ namespace simul
 			//! Platform-dependent function called when uninitializing the display surface.
             void InvalidateDeviceObjects()override;
 			//! Render to the display surface. Requires a reference to the mutex to make sure that this rendering doesn't take place at the same time as other render calls.
-            void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber);
+            void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber);
 
             void* GetPlatformDeviceContext() override
             {
@@ -71,7 +71,7 @@ namespace simul
             //! Storage for the values of the fence
             UINT64						                mFenceValues[FrameCount];
             //! Used to record commands
-            ID3D12GraphicsCommandList*	                mCommandList;
+            ID3D12GraphicsCommandList*	                mCommandList=nullptr;
             bool                                        mRecordingCommands;
         };
     }

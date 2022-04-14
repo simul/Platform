@@ -26,7 +26,7 @@
 	#endif
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

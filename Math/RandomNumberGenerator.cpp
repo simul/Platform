@@ -28,9 +28,9 @@ static distribution_type distribution(0,1.f);
 #pragma optimize("",off)
 #endif
 
-using namespace simul::math;
+using namespace platform::math;
 
-simul::math::RandomNumberGenerator::RandomNumberGenerator(simul::base::MemoryInterface *mem)
+platform::math::RandomNumberGenerator::RandomNumberGenerator(platform::core::MemoryInterface *mem)
 	:gnr(NULL)
 	,last_seed(-1)
 	,memoryInterface(mem)
@@ -44,7 +44,7 @@ simul::math::RandomNumberGenerator::RandomNumberGenerator(simul::base::MemoryInt
 #endif
 }
 
-simul::math::RandomNumberGenerator::~RandomNumberGenerator()
+platform::math::RandomNumberGenerator::~RandomNumberGenerator()
 {
 #ifdef SIMUL_USE_CPP11_RANDOMS
 	mt19937 *generator=(mt19937*)gnr;
@@ -55,7 +55,7 @@ simul::math::RandomNumberGenerator::~RandomNumberGenerator()
 #endif
 }
 
-float simul::math::RandomNumberGenerator::FRand(float minval,float maxval) const
+float platform::math::RandomNumberGenerator::FRand(float minval,float maxval) const
 {
 #ifdef SIMUL_USE_CPP11_RANDOMS
 	mt19937 *generator=(mt19937*)gnr;
@@ -69,7 +69,7 @@ float simul::math::RandomNumberGenerator::FRand(float minval,float maxval) const
 #endif
 }
 
-unsigned simul::math::RandomNumberGenerator::URand(unsigned maximum) const
+unsigned platform::math::RandomNumberGenerator::URand(unsigned maximum) const
 {
 #ifdef SIMUL_USE_CPP11_RANDOMS
 	mt19937 *generator=(mt19937*)gnr;
@@ -84,7 +84,7 @@ unsigned simul::math::RandomNumberGenerator::URand(unsigned maximum) const
 #endif
 }
 
-int simul::math::RandomNumberGenerator::IRand(int maximum) const
+int platform::math::RandomNumberGenerator::IRand(int maximum) const
 {
 #ifdef SIMUL_USE_CPP11_RANDOMS
 	mt19937 *generator=(mt19937*)gnr;
@@ -99,7 +99,7 @@ int simul::math::RandomNumberGenerator::IRand(int maximum) const
 #endif
 }
  
-void simul::math::RandomNumberGenerator::Seed(int RandomSeed)
+void platform::math::RandomNumberGenerator::Seed(int RandomSeed)
 {
 	last_seed=RandomSeed;
 #ifdef SIMUL_USE_CPP11_RANDOMS
@@ -114,12 +114,12 @@ void simul::math::RandomNumberGenerator::Seed(int RandomSeed)
 #endif
 }
 
-int simul::math::RandomNumberGenerator::GetSeed() const
+int platform::math::RandomNumberGenerator::GetSeed() const
 {
 	return last_seed;
 }
 
-void simul::math::RandomNumberGenerator::RandomDirection(float &x,float &y,float &z)
+void platform::math::RandomNumberGenerator::RandomDirection(float &x,float &y,float &z)
 {
 	float az=0,el=0;
 	RandomAngle(az,el);
@@ -128,7 +128,7 @@ void simul::math::RandomNumberGenerator::RandomDirection(float &x,float &y,float
 	z=float(sin(el));
 }
 
-void simul::math::RandomNumberGenerator::SphericalRandom(float &x,float &y,float &z)
+void platform::math::RandomNumberGenerator::SphericalRandom(float &x,float &y,float &z)
 {
 	float r=1.f-(float)pow(FRand(),4.f);
 	float az=FRand()*2.0f*3.1415926536f;
@@ -138,7 +138,7 @@ void simul::math::RandomNumberGenerator::SphericalRandom(float &x,float &y,float
 	z=r*(float)sin(el);
 }
 
-void simul::math::RandomNumberGenerator::RandomAngle(float &az,float &el)
+void platform::math::RandomNumberGenerator::RandomAngle(float &az,float &el)
 {
 	az=FRand()*2*3.1415926536f;
 	el=(float)asin(FRand()*2.f-1.f);

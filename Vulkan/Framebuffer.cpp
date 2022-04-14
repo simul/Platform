@@ -11,7 +11,7 @@
     #include <windows.h>
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 Framebuffer::Framebuffer(const char* name):

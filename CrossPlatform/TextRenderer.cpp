@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include <algorithm>
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 

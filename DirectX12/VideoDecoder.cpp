@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <dxva.h>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 const std::unordered_map<DXGI_FORMAT, DXGI_COLOR_SPACE_TYPE> VideoDecoder::VideoFormats

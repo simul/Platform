@@ -1,6 +1,6 @@
 #include "AccelerationStructureManager.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 AccelerationStructureManager::AccelerationStructureManager(RenderPlatform* r)

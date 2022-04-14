@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 Mesh::Mesh(crossplatform::RenderPlatform*r) :crossplatform::Mesh(r)

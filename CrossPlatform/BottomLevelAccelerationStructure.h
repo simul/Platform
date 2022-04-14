@@ -4,7 +4,7 @@
 #include "Platform/Shaders/SL/raytracing_constants.sl"
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
 #include "BaseAccelerationStructure.h"
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

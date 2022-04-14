@@ -9,7 +9,7 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{
@@ -76,8 +76,8 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void* addr);
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex);
-			void Apply(simul::crossplatform::DeviceContext& deviceContext,size_t size,void* addr);
-			void Unbind(simul::crossplatform::DeviceContext& deviceContext);
+			void Apply(platform::crossplatform::DeviceContext& deviceContext,size_t size,void* addr);
+			void Unbind(platform::crossplatform::DeviceContext& deviceContext);
 
 		private:
 			GLuint		mUBOId;
@@ -153,7 +153,7 @@ namespace simul
 		};
 
 		//! An OpenGl program object (combination of shaders)
-		class SIMUL_OPENGL_EXPORT EffectPass :public simul::crossplatform::EffectPass
+		class SIMUL_OPENGL_EXPORT EffectPass :public platform::crossplatform::EffectPass
 		{
 		public:
 						EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e);
@@ -198,7 +198,7 @@ namespace simul
 		};
 
 		//! An OpenGl shader
-		class SIMUL_OPENGL_EXPORT Shader:public simul::crossplatform::Shader
+		class SIMUL_OPENGL_EXPORT Shader:public platform::crossplatform::Shader
 		{
 		public:
 					Shader();

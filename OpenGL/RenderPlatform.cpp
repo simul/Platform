@@ -16,7 +16,7 @@
 #include "Platform/OpenGL/Texture.h"
 #include "Platform/OpenGL/DisplaySurface.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 RenderPlatform::RenderPlatform():
@@ -229,18 +229,18 @@ crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 	return b;
 }
 
-GLenum simul::opengl::RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum platform::opengl::RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+    if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
         return GL_LINEAR_MIPMAP_LINEAR;
     }
     return GL_NEAREST_MIPMAP_NEAREST;
 }
 
-GLenum simul::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum platform::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+    if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
         return GL_LINEAR;
     }
@@ -647,11 +647,11 @@ static GLenum toGlCullFace(crossplatform::CullFaceMode c)
 {
     switch (c)
     {
-    case simul::crossplatform::CULL_FACE_FRONT:
+    case platform::crossplatform::CULL_FACE_FRONT:
         return GL_FRONT;
-    case simul::crossplatform::CULL_FACE_BACK:
+    case platform::crossplatform::CULL_FACE_BACK:
         return GL_BACK;
-    case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+    case platform::crossplatform::CULL_FACE_FRONTANDBACK:
         return GL_FRONT_AND_BACK;
     default:
         break;
@@ -663,13 +663,13 @@ static GLenum toGlFun(crossplatform::BlendOperation o)
 {
     switch (o)
     {
-    case simul::crossplatform::BLEND_OP_ADD:
+    case platform::crossplatform::BLEND_OP_ADD:
         return GL_FUNC_ADD;
-    case simul::crossplatform::BLEND_OP_SUBTRACT:
+    case platform::crossplatform::BLEND_OP_SUBTRACT:
         return GL_FUNC_SUBTRACT;
-    case simul::crossplatform::BLEND_OP_MAX:
+    case platform::crossplatform::BLEND_OP_MAX:
         return GL_MAX;
-    case simul::crossplatform::BLEND_OP_MIN:
+    case platform::crossplatform::BLEND_OP_MIN:
         return GL_MIN;
     default:
         break;

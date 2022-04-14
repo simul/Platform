@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 SamplerState::SamplerState():default_slot(-1),renderPlatform(nullptr)
 {

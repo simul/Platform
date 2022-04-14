@@ -3,7 +3,7 @@
 #include "Platform/CrossPlatform/Layout.h"
 #include "glad/glad.h"
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{

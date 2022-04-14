@@ -1,6 +1,6 @@
 #include "Profiler.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 Profiler::~Profiler()

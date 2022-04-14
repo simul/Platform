@@ -10,7 +10,7 @@
     #pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{
@@ -36,7 +36,7 @@ namespace simul
             GLuint mSamplerID;
 		};
 
-		class SIMUL_OPENGL_EXPORT Texture : public simul::crossplatform::Texture
+		class SIMUL_OPENGL_EXPORT Texture : public platform::crossplatform::Texture
 		{
 		public:
 			                Texture();

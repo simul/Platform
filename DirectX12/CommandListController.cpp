@@ -9,7 +9,7 @@
 #endif
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 CommandListController::CommandListController()

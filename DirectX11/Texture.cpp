@@ -10,7 +10,7 @@
 #include <math.h>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 #pragma optimize("",off)
@@ -164,8 +164,13 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
-	ID3D11Texture2D *t	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
+	ID3D11Texture2D *t	=platform::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
+
 	InitFromExternalTexture2D(renderPlatform, t, nullptr, 0, 0, crossplatform::PixelFormat::UNKNOWN);
+	if(renderPlatform&&renderPlatform->GetMemoryInterface()&&t)
+	{
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(t,width*length*4,name.c_str());
+	}
 	SAFE_RELEASE(t);
 	external_texture = false;
 	SetDebugObjectName(texture,pFilePathUtf8);
@@ -193,7 +198,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	std::vector<ID3D11Texture2D *> textures;
 	for(unsigned i=0;i<texture_files.size();i++)
 	{
-		textures.push_back(simul::dx11::LoadStagingTexture(r->AsD3D11Device(),texture_files[i].c_str(),pathsUtf8));
+		textures.push_back(platform::dx11::LoadStagingTexture(r->AsD3D11Device(),texture_files[i].c_str(),pathsUtf8));
 	}
 	D3D11_TEXTURE2D_DESC desc;
 	ID3D11DeviceContext *pContext=NULL;
@@ -306,7 +311,7 @@ ID3D11UnorderedAccessView *Texture::AsD3D11UnorderedAccessView(int index,int mip
 
 void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
 {
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(dxgi_format);
+	int byteSize=platform::dx11::ByteSizeOfFormatElement(dxgi_format);
 	if(!stagingBuffer)
 	{
 		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
@@ -386,7 +391,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		SIMUL_CERR<<"Failed to set texels on texture "<<name.c_str()<<std::endl;
 		return;
 	}
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(dxgi_format);
+	int byteSize=platform::dx11::ByteSizeOfFormatElement(dxgi_format);
 	const unsigned char *source=(const unsigned char*)src;
 	unsigned char *target=(unsigned char*)mapped.pData;
 	int expected_pitch=byteSize*width;
@@ -1041,7 +1046,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			{
 				data.SysMemPitch = width * ByteSizeOfFormatElement(dxgi_format);
 				
-				textureDesc.Format= srvFormat = (DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(simul::crossplatform::PixelFormat::RGBA_8_UNORM, crossplatform::CompressionFormat::UNCOMPRESSED);
+				textureDesc.Format= srvFormat = (DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(platform::crossplatform::PixelFormat::RGBA_8_UNORM, crossplatform::CompressionFormat::UNCOMPRESSED);
 				V_CHECK(hr=pd3dDevice->CreateTexture2D(&textureDesc,  nullptr, (ID3D11Texture2D * *)(&texture)));
 				if (hr != S_OK)
 					return false;

@@ -26,7 +26,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/DirectX11/RenderPlatform.h"
 #pragma optimize("",off)
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 // First figure out sizes, for placement create

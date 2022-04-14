@@ -62,5 +62,5 @@
 
 #define RETURN_FALSE_IF_FAILED(v) {if((v)!=vk::Result::eSuccess) {SIMUL_BREAK("failed in Vulkan."); return false;}}
 
-#define vulkanRenderPlatform ((simul::vulkan::RenderPlatform*)renderPlatform)
+#define vulkanRenderPlatform ((platform::vulkan::RenderPlatform*)renderPlatform)
 #endif

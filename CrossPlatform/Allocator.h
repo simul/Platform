@@ -3,17 +3,17 @@
 #include <mutex>
 #include <map>
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
 	//! A passthrough memory allocator which does not release memory immediately, instead allowing allocations a number of frames to age out.
-		class Allocator:public simul::base::MemoryInterface
+		class Allocator:public platform::core::MemoryInterface
 		{
 			std::map<void*,size_t> to_free_video;
 			std::map<void*, size_t> to_free_cpu;
 			size_t max_age=8;
-			simul::base::MemoryInterface* memoryInterface =nullptr;
+			platform::core::MemoryInterface* memoryInterface =nullptr;
 			mutable std::mutex mutex;
 		public:
 			Allocator();
@@ -24,7 +24,7 @@ namespace simul
 			void Shutdown();
 			//! Age all memory blocks by 1. Free any blocks that are old enough.
 			void CheckForReleases();
-			void SetExternalAllocator(simul::base::MemoryInterface *m);
+			void SetExternalAllocator(platform::core::MemoryInterface *m);
 			void* AllocateTracked(size_t nbytes,size_t align,const char *fn) override;
 			void Deallocate(void* ptr)override;
 			void* AllocateVideoMemoryTracked(size_t nbytes,size_t align,const char *fn)override;

@@ -1,7 +1,7 @@
 #include "VideoDecoder.h"
 #include "Platform/Core/RuntimeError.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 #ifndef SAFE_DELETE

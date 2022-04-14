@@ -10,7 +10,7 @@
 #else
 #undef CHECK_MATRIX_BOUNDS
 #endif
-namespace simul
+namespace platform
 {
 	namespace math
 	{

@@ -11,7 +11,7 @@
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/Math/Pi.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 HdrRenderer::HdrRenderer()

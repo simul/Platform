@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 ///////////
@@ -100,7 +100,7 @@ void EffectPass::InvalidateDeviceObjects()
 	mComputePso = nullptr;
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
 	//Raytrace
-	pl->PushToReleaseManager(mRaytracePso, "Raytrace SO");
+	pl->PushToReleaseManager(mRaytracePso, "Raytrace PSO");
 	mRaytracePso = nullptr;
 #endif
 	SAFE_DELETE(shaderBindingTable);
@@ -245,6 +245,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits = rPlat->GetResourceBindingLimits();
 	auto nullSrv = rPlat->GetNullSRV();
+	auto nullSBSrv = rPlat->GetNullSBSRV();
 	int usedSBSlots = 0;
 	int usedTextureSlots = 0;
 
@@ -310,7 +311,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		if (!sb)
 		{
 			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Structured buffer slot " << slot << " is invalid." << std::endl;
-			mSrvSrcHandles[slot] = nullSrv;
+			mSrvSrcHandles[slot] = nullSBSrv;
 			continue;
 		}
 		mSrvSrcHandles[slot] = *sb->AsD3D12ShaderResourceView(deviceContext);
@@ -688,6 +689,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	auto* device = curRenderPlat->AsD3D12Device();
 	// Create it:
 	HRESULT res = device->CreateGraphicsPipelineState(&gpsoDesc, SIMUL_PPV_ARGS(&pso.pipelineState));
+	SIMUL_GPU_TRACK_MEMORY(pso.pipelineState,100)
 	SIMUL_ASSERT(res == S_OK);
 	if (pso.pipelineState)
 	{
@@ -996,12 +998,13 @@ void EffectPass::CreateRaytracePso()
 
 	// Create the state object.
 	HRESULT res = pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
-
+	
 	mTechName = this->name;
-	std::wstring w_name = L"RaytraceSO_";
+	std::wstring w_name = L"RaytracePSO_";
 	w_name += std::wstring(mTechName.begin(), mTechName.end());
 	mRaytracePso->SetName(w_name.c_str());
 	V_CHECK(res);
+	SIMUL_GPU_TRACK_MEMORY(mRaytracePso, 100)	
 
 	SAFE_RELEASE(pDevice5);
 #endif
@@ -1095,7 +1098,7 @@ bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 	auto rPlat = (dx12::RenderPlatform*)r;
 	mSamplersHeap = new Heap;
 	std::string name = filename_utf8;
-	name += "_SamplersHeap";
+	name += "_effect_SamplersHeap";
 	mSamplersHeap->Restore(rPlat, ResourceBindingLimits::NumSamplers, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, name.c_str());
 
 	// Copy the default samplers into the heap:

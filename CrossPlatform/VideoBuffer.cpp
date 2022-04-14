@@ -1,6 +1,6 @@
 #include "VideoBuffer.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 VideoBuffer::VideoBuffer() 

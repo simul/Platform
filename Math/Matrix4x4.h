@@ -14,7 +14,7 @@
 #pragma warning(disable:4201) // anonymous unions warning
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

@@ -1,7 +1,7 @@
 #include "AmortizationStruct.h"
 #include "Platform/Math/RandomNumberGenerator.h"
 #include <vector>
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 // Amortization: 0 = 1x1, 1=2x1, 2=1x2, 3=2x2, 4=3x2, 5=2x3, 6=3x3, etc.
 void AmortizationStruct::setAmortization(int a)
@@ -10,7 +10,7 @@ void AmortizationStruct::setAmortization(int a)
 		return;
 	delete[] pattern;
 	pattern=NULL;
-	simul::math::RandomNumberGenerator rand;
+	platform::math::RandomNumberGenerator rand;
 	amortization=a;
 	if(a<=1)
 		return;

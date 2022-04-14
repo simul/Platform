@@ -9,7 +9,7 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/Shaders/SL/sphere_constants.sl"
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

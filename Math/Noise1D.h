@@ -3,7 +3,7 @@
 #include "Platform/Math/Export.h"
 #include "Platform/Math/Noise3D.h"
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{
@@ -18,11 +18,11 @@ namespace simul
 			float persistence;
 			NoiseFilter *filter;
 			unsigned buffer_size;
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 			RandomNumberGenerator *noise_random;
 			int generation_number;
 		public:
-			Noise1D(simul::base::MemoryInterface *mem=NULL);
+			Noise1D(platform::core::MemoryInterface *mem=NULL);
 			virtual ~Noise1D();
 		//! Define the grid of pseudo-random numbers to be used in the PerlinNoise3D function. The parameter freq is the
 		//! frequency, or grid-size.

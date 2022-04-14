@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 Query::Query(crossplatform::QueryType t):

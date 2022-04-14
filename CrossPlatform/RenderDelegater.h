@@ -12,7 +12,7 @@
 #pragma warning(disable:4275)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -27,7 +27,7 @@ namespace simul
 			std::vector<crossplatform::StartupDeviceDelegate> startupDeviceDelegates;
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			int last_view_id;
-			simul::crossplatform::RenderPlatform *renderPlatform;
+			platform::crossplatform::RenderPlatform *renderPlatform;
 		public:
 			RenderDelegater(crossplatform::RenderPlatform *r=nullptr);
 			~RenderDelegater();

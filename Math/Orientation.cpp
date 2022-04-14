@@ -8,20 +8,20 @@
 #undef NDEBUG
 #include <assert.h>
 
-using namespace simul::math;
-using namespace simul::geometry;
-namespace simul
+using namespace platform::math;
+using namespace platform::math;
+namespace platform
 {
 	namespace math
 	{
-		extern SIMUL_MATH_EXPORT void QuaternionToMatrix(simul::math::Matrix4x4 &m,const simul::math::Quaternion &q); 
-		extern SIMUL_MATH_EXPORT void MatrixToQuaternion(simul::math::Quaternion &q,const simul::math::Matrix4x4 &M);
+		extern SIMUL_MATH_EXPORT void QuaternionToMatrix(platform::math::Matrix4x4 &m,const platform::math::Quaternion &q); 
+		extern SIMUL_MATH_EXPORT void MatrixToQuaternion(platform::math::Quaternion &q,const platform::math::Matrix4x4 &M);
 	}
 }
 
-namespace simul
+namespace platform
 {
-	namespace geometry
+	namespace math
 	{
 		//------------------------------------------------------------------------------
 		void RelativeOrientationFrom1To2(SimulOrientation &Orientation1To2,SimulOrientation *O1,SimulOrientation *O2)
@@ -116,7 +116,7 @@ SimulOrientation::SimulOrientation(const Quaternion &Q)
 	q.MakeUnit();
 }
 
-SimulOrientation::SimulOrientation(const simul::math::Matrix4x4 &M)
+SimulOrientation::SimulOrientation(const platform::math::Matrix4x4 &M)
 {
 	MatrixValid=InverseValid=false;
 	Inv.Zero();
@@ -173,13 +173,13 @@ void SimulOrientation::operator=(const SimulOrientation &o)
 void SimulOrientation::operator=(const float *m)
 {
 	T4=m;
-	simul::math::MatrixToQuaternion(q,T4);
+	platform::math::MatrixToQuaternion(q,T4);
 }
 
-void SimulOrientation::operator=(const simul::math::Matrix4x4 &M)
+void SimulOrientation::operator=(const platform::math::Matrix4x4 &M)
 {
 	T4=M;
-	simul::math::MatrixToQuaternion(q,M);
+	platform::math::MatrixToQuaternion(q,M);
 }
 //------------------------------------------------------------------------------
 void SimulOrientation::SetPosition(const Vector3 &v)
@@ -350,7 +350,7 @@ void SimulOrientation::DefineFromYZ(const math::Vector3 &y_dir,const math::Vecto
 	T4.InsertRow(0,x_dir);
 	T4.InsertRow(1,y_ortho);
 	T4.InsertRow(2,z_ortho);
-	simul::math::MatrixToQuaternion(q,T4);
+	platform::math::MatrixToQuaternion(q,T4);
 	MatrixValid=true;
 }
 //---------------------------------------------------------------------------
@@ -625,7 +625,7 @@ void SimulOrientation::Define(float s,float x,float y,float z)
 	MatrixValid=InverseValid=false;
 	ConvertQuaternionToMatrix();
 }
-void SimulOrientation::Define(const simul::math::Vector3 &X,const simul::math::Vector3 &Y,const simul::math::Vector3 &Z)
+void SimulOrientation::Define(const platform::math::Vector3 &X,const platform::math::Vector3 &Y,const platform::math::Vector3 &Z)
 {
 #ifndef NDEBUG
 	float test_x=1.f-X.SquareSize();
@@ -649,7 +649,7 @@ void SimulOrientation::Define(const simul::math::Vector3 &X,const simul::math::V
 	math::MatrixToQuaternion(q,T4);
 }
 
-void SimulOrientation::Define(const simul::math::Vector3 &X,const simul::math::Vector3 &Y,const simul::math::Vector3 &Z,const simul::math::Vector3 &pos)
+void SimulOrientation::Define(const platform::math::Vector3 &X,const platform::math::Vector3 &Y,const platform::math::Vector3 &Z,const platform::math::Vector3 &pos)
 {
 	Define(X,Y,Z);
 	SetPosition(pos);
@@ -663,7 +663,7 @@ void SimulOrientation::ConvertQuaternionToMatrix() const
 	scaled=false;
 	max_iso_scale=1.f;
 	max_inv_iso_scale=1.f;
-	simul::math::QuaternionToMatrix(T4,q);
+	platform::math::QuaternionToMatrix(T4,q);
 	T4(3,3)=1.f;
 	InverseMatrix();
 	MatrixValid=true;
@@ -672,7 +672,7 @@ void SimulOrientation::ConvertQuaternionToMatrix() const
 void SimulOrientation::ConvertMatrixToQuaternion()
 {
 	MatrixValid=true;
-	simul::math::MatrixToQuaternion(q,T4);
+	platform::math::MatrixToQuaternion(q,T4);
 }
 
 void SimulOrientation::QuaternionFromAircraft(float heading,float pitch,float roll,int vertical_axis)

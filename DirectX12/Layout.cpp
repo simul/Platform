@@ -4,7 +4,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 Layout::Layout():

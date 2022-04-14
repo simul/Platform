@@ -10,7 +10,7 @@
 #include <ShlObj.h>
 #include <filesystem>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 static HMODULE s_HModuleWinPixGpuCapturer;
@@ -86,7 +86,7 @@ bool WinPixGpuCapturerLoader::IsLoaded()
 #else //Dummy class implementation
 #include "Platform/CrossPlatform/WinPixGpuCapturerLoader.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 void WinPixGpuCapturerLoader::Load() {}

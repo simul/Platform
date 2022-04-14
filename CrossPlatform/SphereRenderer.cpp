@@ -1,7 +1,7 @@
 #include "SphereRenderer.h"
 
 #if SIMUL_EDITOR
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 SphereRenderer::SphereRenderer()

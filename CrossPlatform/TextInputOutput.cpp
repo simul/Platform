@@ -11,7 +11,7 @@
 #if PLATFORM_STD_CHARCONV
 #include <charconv>
 #endif
-using namespace simul;
+using namespace platform;
 using namespace platform;
 using namespace crossplatform;
 using std::string;
@@ -24,7 +24,7 @@ using std::string;
 #include <windows.h>
 #endif
 
-TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
+TextFileInput::TextFileInput(platform::core::MemoryInterface *m)
 	:good(true)
 	,fileLoader(nullptr)
 	,memoryInterface(m)
@@ -138,7 +138,7 @@ static int findMatchingBrace(const std::string &text,int open_brace_pos)
 	return findMatching(text,open_brace_pos,"{","}");
 }
 
-static void LoadArray(TextInput::Array &array,const string &text,simul::base::MemoryInterface *m)
+static void LoadArray(TextInput::Array &array,const string &text,platform::core::MemoryInterface *m)
 {
 	size_t pos=0;
 	while(pos<text.length())
@@ -539,7 +539,7 @@ bool TextFileInput::HasArray(const char *name) const
 	return (arrays.find(name)!=arrays.end());
 }
 
-TextFileOutput::TextFileOutput(simul::base::MemoryInterface *m)
+TextFileOutput::TextFileOutput(platform::core::MemoryInterface *m)
 	:memoryInterface(m)
 {
 }

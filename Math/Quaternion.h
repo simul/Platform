@@ -6,7 +6,7 @@
 #include "Platform/Math/Vector3.h"
 #include "Export.h"
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

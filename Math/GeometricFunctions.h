@@ -1,7 +1,7 @@
 #ifndef SIMUL_MATH_GEOMETRICFUNCTIONS_H
 #define SIMUL_MATH_GEOMETRICFUNCTIONS_H
 #include "Export.h"
-namespace simul
+namespace platform
 {
 	namespace math
 	{

@@ -7,7 +7,7 @@
 #include "Platform/DirectX12/RenderPlatform.h"
 #include <functional>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 #if defined(_XBOX_ONE)

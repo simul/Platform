@@ -18,7 +18,7 @@
 	struct ID3DUserDefinedAnnotation;
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

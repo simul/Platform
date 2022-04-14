@@ -45,6 +45,13 @@ inline void SetD3DName(ID3D12Object* obj, const char* name)
 }
 inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 {
+	if(!maxsize)
+		return;
+	if(!obj)
+	{
+		name[0]=0;
+		return;
+	}
 	UINT size=0;
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
 	// not implemented?????
@@ -120,14 +127,9 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
     #define  SIMUL_PPV_ARGS IID_PPV_ARGS
 #endif
 
-#if SIMUL_INTERNAL_CHECKS
-#define PLATFORM_DEBUG_BARRIERS 0
 #if PLATFORM_DEBUG_BARRIERS
 	#define LOG_BARRIER_INFO(name, res, before, after);\
 	SIMUL_CERR << "Barrier: " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << ") - from "\
 	<< RenderPlatform::D3D12ResourceStateToString(before) << " to " << RenderPlatform::D3D12ResourceStateToString(after) << std::endl;
-#endif
-#else
-#define PLATFORM_DEBUG_BARRIERS 0
 #endif
 

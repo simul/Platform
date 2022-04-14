@@ -2,7 +2,7 @@
 #include "Macros.h"
 #include "GpuProfiler.h"
 #include "RenderPlatform.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 
@@ -299,12 +299,12 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 	for(int i=cube_start;i<cube_end;i++)
 	{
 		target_texture->activateRenderTarget(deviceContext,i,0);
-		//math::Matrix4x4 cube_proj = simul::crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F / 2.f, SIMUL_PI_F / 2.f, 0.2f, 200000.f);
+		//math::Matrix4x4 cube_proj = platform::crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F / 2.f, SIMUL_PI_F / 2.f, 0.2f, 200000.f);
 		{
 			//static bool rev = true;
-			//simul::crossplatform::GetCubeMatrixAtPosition((float *)&view, i, cam_pos, false, rev);
+			//platform::crossplatform::GetCubeMatrixAtPosition((float *)&view, i, cam_pos, false, rev);
 			//crossplatform::MakeInvViewProjMatrix(invViewProj, view, cube_proj);
-			simul::crossplatform::GetCubeInvViewProjMatrix(invViewProj,i,false,true);
+			platform::crossplatform::GetCubeInvViewProjMatrix(invViewProj,i,false,true);
 			lightProbeConstants.invViewProj = invViewProj;
 			lightProbeConstants.numSHBands = bands;
 			

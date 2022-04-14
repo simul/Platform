@@ -31,7 +31,7 @@
 #endif
 
 #endif
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
@@ -43,7 +43,7 @@ namespace simul
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 using namespace std;
@@ -59,7 +59,7 @@ static void VulkanDebugCallback()
 
 // Allow a maximum of two outstanding presentation operations.
 
-class simul::vulkan::DeviceManagerInternal
+class platform::vulkan::DeviceManagerInternal
 {
 public:
 	vk::Instance instance;
@@ -87,7 +87,7 @@ DeviceManager::DeviceManager()
 //	if (!renderPlatformVulkan)
 //		renderPlatformVulkan = new vulkan::RenderPlatform;
 //	renderPlatformVulkan->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED | crossplatform::TRY_AGAIN_ON_FAIL | crossplatform::BREAK_ON_FAIL);
-//	simul::crossplatform::Profiler::GetGlobalProfiler().Initialize(NULL);
+//	platform::crossplatform::Profiler::GetGlobalProfiler().Initialize(NULL);
 	deviceManagerInternal = new DeviceManagerInternal;
 }
 
@@ -98,7 +98,7 @@ void DeviceManager::InvalidateDeviceObjects()
 	errno = 0;
 //	delete renderPlatformVulkan;
 //	renderPlatformVulkan=nullptr;
-//	simul::vulkan::Profiler::GetGlobalProfiler().Uninitialize();
+//	platform::vulkan::Profiler::GetGlobalProfiler().Uninitialize();
 }
 
 DeviceManager::~DeviceManager()
@@ -517,7 +517,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 }
 
-void simul::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vector<vk::QueueFamilyProperties>& queue_props)
+void platform::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vector<vk::QueueFamilyProperties>& queue_props)
 {
 	uint32_t queue_family_count;
 	/* Call with nullptr data to get count */

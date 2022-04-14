@@ -2,7 +2,7 @@
 #include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

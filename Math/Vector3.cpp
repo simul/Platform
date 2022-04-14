@@ -16,7 +16,7 @@
 #endif
 #ifndef SIMD
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

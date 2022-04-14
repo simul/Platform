@@ -12,12 +12,12 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
         //! Vulkan Framebuffer implementation
-		class SIMUL_VULKAN_EXPORT Framebuffer:public simul::crossplatform::BaseFramebuffer
+		class SIMUL_VULKAN_EXPORT Framebuffer:public platform::crossplatform::BaseFramebuffer
 		{
 		public:
             Framebuffer(const char *name = nullptr);

@@ -5,7 +5,7 @@
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
 #include "BaseAccelerationStructure.h"
 #include "BottomLevelAccelerationStructure.h"
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

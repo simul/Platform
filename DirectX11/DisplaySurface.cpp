@@ -1,7 +1,7 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 DisplaySurface::DisplaySurface():
@@ -151,7 +151,7 @@ void DisplaySurface::InitSwapChain()
     SIMUL_ASSERT(result == S_OK);
 }
 
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
+void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if(mCommandList)
 		return;

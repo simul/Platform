@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <regex>		// for file loading
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 using namespace std;
 using namespace platform;
@@ -1250,7 +1250,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
 				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
 				int reg=atoi(register_num.c_str());
-				simul::crossplatform::SamplerStateDesc desc;
+				platform::crossplatform::SamplerStateDesc desc;
 				string state=line.substr(comma+1,line.length()-comma-1);
 				vector<string> st=platform::core::split(state,',');
 				desc.filtering=stringToFilter(st[0]);

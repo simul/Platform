@@ -9,7 +9,7 @@
 	#pragma warning(disable : 4251)  
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -25,7 +25,7 @@ namespace simul
 			void            Release();
 			void            SetRenderer(PlatformRendererInterface *ci, int view_id);
 			void            ResizeSwapChain(DeviceContext &deviceContext);
-            virtual void    Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) {};
+            virtual void    Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) {};
 			virtual void	StartFrame() {}
 			virtual void	EndFrame() {}
 			virtual void* GetPlatformDeviceContext()

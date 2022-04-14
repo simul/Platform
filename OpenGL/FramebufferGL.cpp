@@ -10,7 +10,7 @@
     #include <windows.h>
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 FramebufferGL::FramebufferGL(const char* name):

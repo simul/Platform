@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 /////////////////////////////////

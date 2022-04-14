@@ -68,7 +68,7 @@ int kOverrideHeight	= 900;
 
 HWND hWnd			= nullptr;
 
-using namespace simul;
+using namespace platform;
 
 //! This class manages the Device object, and makes the connection between Windows HWND's and swapchains.
 //! In practice you will have your own method to do this.
@@ -110,10 +110,10 @@ void GlfwErrorCallback(int errcode, const char* info)
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 int framenumber = 0;
 //! The render platform implements the cross-platform Simul graphics API for a specific target API,
-simul::crossplatform::RenderPlatform* renderPlatform = nullptr;
+platform::crossplatform::RenderPlatform* renderPlatform = nullptr;
 platform::core::CommandLineParams commandLineParams;
 
-//! An example of how to use simul::dx11::SimulWeatherRendererDX12 in context.
+//! An example of how to use platform::dx11::SimulWeatherRendererDX12 in context.
 class PlatformRenderer:public crossplatform::PlatformRendererInterface
 {
 	//! It is better to use a reversed depth buffer format, i.e. the near plane is z=1 and the far plane is z=0. This
@@ -204,7 +204,7 @@ public:
 		tl_accelerationStructureExample = renderPlatform->CreateTopLevelAccelerationStructure();
 		accelerationStructureManager = renderPlatform->CreateAccelerationStructureManager();
 		rtTargetTexture = renderPlatform->CreateTexture("rtTargetTexture");
-		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
+		renderPlatform->SetShaderBuildMode(platform::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		// Whether run from the project directory or from the executable location, we want to be
 		// able to find the shaders and textures:
 		renderPlatform->PushTexturePath("");
@@ -396,7 +396,7 @@ public:
 	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
 	{
 		// Device context structure
-		simul::crossplatform::GraphicsDeviceContext	deviceContext;
+		platform::crossplatform::GraphicsDeviceContext	deviceContext;
 
 		// Store back buffer, depth buffer and viewport information
         deviceContext.defaultTargetsAndViewport.num             = 1;
@@ -442,7 +442,7 @@ public:
 		accelerationStructureManager->BuildCombinedAccelerationStructure(deviceContext);
 
 		//if(framenumber ==0)
-		//	simul::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
+		//	platform::crossplatform::RenderDocLoader::StartCapture(deviceContext.renderPlatform,(void*)hWnd);
 		renderPlatform->BeginFrame();
 		if(!diffuseCubemapTexture)
 		{
@@ -450,7 +450,7 @@ public:
 		}
 		// Profiling
 #if DO_PROFILING 
-		simul::crossplatform::SetGpuProfilingInterface(deviceContext, renderPlatform->GetGpuProfiler());
+		platform::crossplatform::SetGpuProfilingInterface(deviceContext, renderPlatform->GetGpuProfiler());
 		renderPlatform->GetGpuProfiler()->SetMaxLevel(9);
 		renderPlatform->GetGpuProfiler()->StartFrame(deviceContext);
 #endif
@@ -542,7 +542,7 @@ public:
 		renderPlatform->LinePrint(deviceContext,renderPlatform->GetGpuProfiler()->GetDebugText());
 #endif
 		//if (framenumber == 0)
-		//	simul::crossplatform::RenderDocLoader::FinishCapture();
+		//	platform::crossplatform::RenderDocLoader::FinishCapture();
 		framenumber++;
 	}
 
@@ -782,8 +782,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		ShowWindow(hWnd, nCmdShow);
 		UpdateWindow(hWnd);
 	}
-	//simul::crossplatform::RenderDocLoader::Load();
-	simul::crossplatform::WinPixGpuCapturerLoader::Load();
+	//platform::crossplatform::RenderDocLoader::Load();
+	platform::crossplatform::WinPixGpuCapturerLoader::Load();
 	
 	// Pass "true" to graphicsDeviceInterface to use d3d debugging etc:
 	graphicsDeviceInterface->Initialize(commandLineParams("debug"),false,false);

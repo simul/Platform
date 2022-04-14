@@ -3,7 +3,7 @@
 #include "Platform/CrossPlatform/Material.h"
 #include "Platform/CrossPlatform/AxesStandard.h"
 #include "Platform/Core/StringFunctions.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 #if PLATFORM_USE_ASSIMP

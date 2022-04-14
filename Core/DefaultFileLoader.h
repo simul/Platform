@@ -4,9 +4,9 @@
 #if defined(__ANDROID__)
 #include "android/asset_manager.h"
 #endif
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		//! The default derived file loader
 		class PLATFORM_CORE_EXPORT DefaultFileLoader:public platform::core::FileLoader

@@ -19,7 +19,7 @@
 #include <D3Dcompiler.h>
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 #pragma optimize("",off)
 
@@ -187,15 +187,15 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	type = t;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
 	{
-		pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader);
+		V_CHECK(pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader));
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
-		pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader);
+		V_CHECK(pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader));
 	}
 	else if (t == crossplatform::SHADERTYPE_COMPUTE)
 	{
-		pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader);
+		V_CHECK(pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader));
 	}
 	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
 	{

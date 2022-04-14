@@ -12,9 +12,9 @@
 typedef ID3D12VideoDevice2 ID3D12VideoDeviceType;
 typedef ID3D12VideoDecodeCommandList2 ID3D12VideoDecodeCommandListType;
 
-namespace cp = simul::crossplatform;
+namespace cp = platform::crossplatform;
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

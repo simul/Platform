@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

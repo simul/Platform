@@ -12,12 +12,12 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{
         //! GL Framebuffer implementation
-		class SIMUL_OPENGL_EXPORT FramebufferGL:public simul::crossplatform::BaseFramebuffer
+		class SIMUL_OPENGL_EXPORT FramebufferGL:public platform::crossplatform::BaseFramebuffer
 		{
 		public:
             FramebufferGL(const char *name = nullptr);

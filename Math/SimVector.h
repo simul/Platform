@@ -16,7 +16,7 @@
 #include "Platform/Math/MathFunctions.h"
 #include <iostream>
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

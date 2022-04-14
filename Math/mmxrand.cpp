@@ -67,7 +67,7 @@
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #endif
-using namespace simul;
+using namespace platform;
 using namespace math;
 
 void MMXTwister::Seed(unsigned int seed)

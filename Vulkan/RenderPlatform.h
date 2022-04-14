@@ -26,7 +26,7 @@ namespace vk
 {
 	class Instance;
 }
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{

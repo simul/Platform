@@ -59,7 +59,7 @@
 
 #ifndef _MMXRand_
 #define _MMXRand_
-namespace simul
+namespace platform
 {
 	namespace math
 	{

@@ -16,7 +16,7 @@
 #include "Platform/Core/RuntimeError.h"
 
 
-using namespace simul;
+using namespace platform;
 using namespace math;
 
 Matrix4x4::Matrix4x4()
@@ -248,7 +248,7 @@ void Matrix4x4::AddScalarTimesMatrix(float val,const Matrix4x4 &M2)
 	}
 }
 #include "Quaternion.h"
-namespace simul
+namespace platform
 {
 	namespace math
 	{
@@ -1013,7 +1013,7 @@ void Matrix4x4::ScaleColumns(const float s[4])
 	}
 }
 
-void simul::math::MultiplyAndSubtract(Matrix4x4 &M,const Matrix4x4 &M1,const Matrix4x4 &M2)
+void platform::math::MultiplyAndSubtract(Matrix4x4 &M,const Matrix4x4 &M1,const Matrix4x4 &M2)
 {
 	unsigned i,j,k;
 	for(i=0;i<4;++i)
@@ -1028,7 +1028,7 @@ void simul::math::MultiplyAndSubtract(Matrix4x4 &M,const Matrix4x4 &M1,const Mat
 	}
 }
 
-void simul::math::MultiplyByScalar(Matrix4x4 &result,const float f,const Matrix4x4 &M)
+void platform::math::MultiplyByScalar(Matrix4x4 &result,const float f,const Matrix4x4 &M)
 {
 	unsigned i,j;
 	for(i=0;i<4;i++)

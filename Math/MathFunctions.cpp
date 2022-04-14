@@ -3,7 +3,7 @@
 #include <math.h>     
 #include <algorithm>
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

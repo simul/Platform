@@ -2,9 +2,9 @@
 #define SIMUL_BASE_ENVIRONMENTVARIABLES_H
 #include <string>
 #include "Platform/Core/Export.h"
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		extern PLATFORM_CORE_EXPORT void SetUseExternalTextures(bool t);
 		/// See SetUseExternalTextures.

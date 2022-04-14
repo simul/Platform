@@ -6,7 +6,7 @@
 #include <math.h>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
  double length(vec3d v)
@@ -18,7 +18,7 @@ double dot(vec3d& a,vec3d& b)
 {
 	return a.x*b.x+a.y*b.y+a.z*b.z;
 }
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -150,7 +150,7 @@ namespace simul
 
 
 
-double simul::crossplatform::angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
+double platform::crossplatform::angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
 {
 	crossplatform::Quaterniond Q1 = q1;
 	crossplatform::Quaterniond Q2 = q2;
@@ -170,7 +170,7 @@ double simul::crossplatform::angleBetweenQuaternions(const crossplatform::Quater
 
 
 
-Quaterniond simul::crossplatform::rotateByOffsetCartesian(const Quaterniond& input, const vec2& offset, float sph_radius)
+Quaterniond platform::crossplatform::rotateByOffsetCartesian(const Quaterniond& input, const vec2& offset, float sph_radius)
 {
 	//Check there's an offset;
 	if (offset.x == 0 || offset.y == 0)
@@ -188,7 +188,7 @@ Quaterniond simul::crossplatform::rotateByOffsetCartesian(const Quaterniond& inp
 	return x_rot * y_rot * input;
 }
 
-Quaterniond simul::crossplatform::rotateByOffsetPolar(const Quaterniond& input, float polar_radius, float polar_angle, float sph_radius)
+Quaterniond platform::crossplatform::rotateByOffsetPolar(const Quaterniond& input, float polar_radius, float polar_angle, float sph_radius)
 {	
 	//Check there's an offset;
 	if (polar_radius == 0 || polar_angle == 0)
@@ -210,7 +210,7 @@ Quaterniond simul::crossplatform::rotateByOffsetPolar(const Quaterniond& input, 
 }
 
 
-crossplatform::Quaterniond simul::crossplatform::LocalToGlobalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& local)
+crossplatform::Quaterniond platform::crossplatform::LocalToGlobalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& local)
 {
 	// rel is a rotation in local space. Convert it first to global space:
 	crossplatform::Quaterniond new_relative = (origin * (local / origin));
@@ -218,7 +218,7 @@ crossplatform::Quaterniond simul::crossplatform::LocalToGlobalOrientation(const 
 	crossplatform::Quaterniond new_quat = new_relative * origin;
 	return new_quat;
 }
-crossplatform::Quaterniond simul::crossplatform::GlobalToLocalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& global)
+crossplatform::Quaterniond platform::crossplatform::GlobalToLocalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& global)
 {
 	// abso is an orientation in global space. First get the global rotation between the keyframe's origin and abso:
 	crossplatform::Quaterniond dq = global/ origin;
@@ -227,7 +227,7 @@ crossplatform::Quaterniond simul::crossplatform::GlobalToLocalOrientation(const 
 	return rel;
 }
 
-crossplatform::Quaterniond simul::crossplatform::TransformOrientationByOffsetXY(const crossplatform::Quaterniond &origin,vec2 local_offset_radians)
+crossplatform::Quaterniond platform::crossplatform::TransformOrientationByOffsetXY(const crossplatform::Quaterniond &origin,vec2 local_offset_radians)
 {
 		// Now the new quaternion is 
 		crossplatform::Quaterniond local_offset;
@@ -240,7 +240,7 @@ crossplatform::Quaterniond simul::crossplatform::TransformOrientationByOffsetXY(
 		return new_quat;
 }
 
-vec3 simul::crossplatform::TransformPosition(Quaterniond old_origin,Quaterniond new_origin,vec3 old_pos,double radius)
+vec3 platform::crossplatform::TransformPosition(Quaterniond old_origin,Quaterniond new_origin,vec3 old_pos,double radius)
 {
 	vec3d posd(old_pos.x,old_pos.y,radius+old_pos.z);
 	vec3d globalposd;

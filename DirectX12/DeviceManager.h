@@ -15,7 +15,7 @@
 
 #define cp_hwnd HWND
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

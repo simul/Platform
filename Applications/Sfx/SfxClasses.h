@@ -37,7 +37,7 @@ int sfxlex();
 namespace sfx
 {
 	typedef std::map<std::string, std::tuple<std::streampos, std::size_t>> BinaryMap;
-	/// This must track simul::crossplatform::ShaderResourceType
+	/// This must track platform::crossplatform::ShaderResourceType
 	enum class ShaderResourceType : unsigned long long
 	{
 		UNKNOWN = 0

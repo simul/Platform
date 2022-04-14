@@ -15,7 +15,7 @@
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/Timer.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 GLenum toGlQueryType(crossplatform::QueryType t)
@@ -115,7 +115,7 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const ch
 	mBindingSlot = bindingIndex;
 }
 
-void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext& deviceContext,size_t size,void* addr)
+void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext& deviceContext,size_t size,void* addr)
 {
 	if(mBindingSlot<0)
 		return;
@@ -128,7 +128,7 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext& deviceCo
 	glBindBufferBase(GL_UNIFORM_BUFFER, mBindingSlot, mUBOId);
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& deviceContext)
+void PlatformConstantBuffer::Unbind(platform::crossplatform::DeviceContext& deviceContext)
 {
 }
 
@@ -503,25 +503,25 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	GLenum type = GL_NONE;
 	switch (t)
 	{
-	case simul::crossplatform::SHADERTYPE_VERTEX:
+	case platform::crossplatform::SHADERTYPE_VERTEX:
 		type = GL_VERTEX_SHADER;
 		break;
-	case simul::crossplatform::SHADERTYPE_HULL:
+	case platform::crossplatform::SHADERTYPE_HULL:
 		type = GL_TESS_CONTROL_SHADER;
 		break;
-	case simul::crossplatform::SHADERTYPE_DOMAIN:
+	case platform::crossplatform::SHADERTYPE_DOMAIN:
 		type = GL_TESS_EVALUATION_SHADER;
 		break;
-	case simul::crossplatform::SHADERTYPE_GEOMETRY:
+	case platform::crossplatform::SHADERTYPE_GEOMETRY:
 		type = GL_GEOMETRY_SHADER;
 		break;
-	case simul::crossplatform::SHADERTYPE_PIXEL:
+	case platform::crossplatform::SHADERTYPE_PIXEL:
 		type = GL_FRAGMENT_SHADER;
 		break;
-	case simul::crossplatform::SHADERTYPE_COMPUTE:
+	case platform::crossplatform::SHADERTYPE_COMPUTE:
 		type = GL_COMPUTE_SHADER;
 		break;
-	case simul::crossplatform::SHADERTYPE_COUNT:
+	case platform::crossplatform::SHADERTYPE_COUNT:
 	default:
 		break;
 	}

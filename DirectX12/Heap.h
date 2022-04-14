@@ -14,7 +14,7 @@
 	#pragma warning(disable:4251) //! "needs to have dll-interface to be used by clients of class"
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

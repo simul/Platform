@@ -4,7 +4,7 @@
 #include "Platform/Core/StringToWString.h"
 #include "Utilities.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 

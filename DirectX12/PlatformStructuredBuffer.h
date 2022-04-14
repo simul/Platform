@@ -7,7 +7,7 @@
 
 #pragma warning(disable:4251)
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
@@ -39,12 +39,12 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
 			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
 			ID3D12Resource*					AsD3D12Resource(crossplatform::DeviceContext &deviceContext);
-			void							ActualApply(simul::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot);
+			void							ActualApply(platform::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot);
 
 		private:
             //! If we called GetBuffer, we need to update the GPU data, this methods, handles updating the data at 
             //! different offsets + CPU<->GPU memory transition
-            void                            UpdateBuffer(simul::crossplatform::DeviceContext& deviceContext);
+            void                            UpdateBuffer(platform::crossplatform::DeviceContext& deviceContext);
 
 			static const unsigned int		mBuffering = 3;
 			ID3D12Resource*					mGPUBuffer;

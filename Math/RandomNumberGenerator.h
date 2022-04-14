@@ -2,7 +2,7 @@
 #define SIMULMATH_RANDOMNUMBERGENERATOR_H
 #include "Platform/Math/Export.h"
 #include "Platform/Core/MemoryInterface.h"
-namespace simul
+namespace platform
 {
 	namespace math
 	{
@@ -11,7 +11,7 @@ namespace simul
 			void *gnr;
 			int last_seed;
 		public:
-			RandomNumberGenerator(simul::base::MemoryInterface *mem=NULL);
+			RandomNumberGenerator(platform::core::MemoryInterface *mem=NULL);
 			virtual ~RandomNumberGenerator();
 			void Seed(int RandomSeed);
 			int GetSeed() const;
@@ -21,7 +21,7 @@ namespace simul
 			void RandomDirection(float &x,float &y,float &z);
 			void SphericalRandom(float &x,float &y,float &z);
 			void RandomAngle(float &az,float &el);
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 		};
 	}
 }

@@ -8,7 +8,7 @@
 #include "Platform/Math/Pi.h"
 #include <memory.h>
 #include <algorithm>
-using namespace simul;
+using namespace platform;
 using namespace math;
 using namespace crossplatform;
 
@@ -45,7 +45,7 @@ void ViewStruct::Init()
 	frustum = GetFrustumFromProjectionMatrix(proj);
 	MakeViewProjMatrix((float*)&viewProj, (const float*)&view, (const float*)&proj);
 	MakeInvViewProjMatrix((float*)&invViewProj, (const float*)&view, (const float*)&proj);
-	view.Inverse(*((simul::math::Matrix4x4*) & invView));
+	view.Inverse(*((platform::math::Matrix4x4*) & invView));
 	GetCameraPosVector((const float*)&view, (float*)&cam_pos, (float*)&view_dir, (float*)&up);
 	initialized = true;
 }

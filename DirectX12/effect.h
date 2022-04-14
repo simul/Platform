@@ -17,7 +17,7 @@
 struct ID3D12RootSignature;
 struct ID3D12PipelineState;
 struct ID3D12ShaderReflection;
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -65,7 +65,7 @@ namespace simul
 		
 		//! DirectX12 Effect Pass implementation, this will hold several PSOs, its also in charge of 
 		// setting resources.
-		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
+		class SIMUL_DIRECTX12_EXPORT EffectPass:public platform::crossplatform::EffectPass
 		{
 		public:
 			EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e);
@@ -131,7 +131,7 @@ namespace simul
 			D3D12_BLEND_DESC*			mInUseOverrideBlendState;
 		};
 
-		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
+		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public platform::crossplatform::EffectTechnique
 		{
 		public:
 			EffectTechnique(crossplatform::RenderPlatform *r,crossplatform::Effect *e);
@@ -139,7 +139,7 @@ namespace simul
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};
 
-		class SIMUL_DIRECTX12_EXPORT Shader :public simul::crossplatform::Shader
+		class SIMUL_DIRECTX12_EXPORT Shader :public platform::crossplatform::Shader
 		{
 		public:
 			~Shader();
@@ -154,7 +154,7 @@ namespace simul
 		};
 
 		//! DirectX12 Effect implementation
-		class SIMUL_DIRECTX12_EXPORT Effect:public simul::crossplatform::Effect
+		class SIMUL_DIRECTX12_EXPORT Effect:public platform::crossplatform::Effect
 		{
 		protected:
 			EffectTechnique *CreateTechnique();

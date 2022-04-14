@@ -11,7 +11,7 @@
 #include <string>
 #include <assert.h>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 Framebuffer::Framebuffer(const char *n) :
@@ -40,7 +40,12 @@ void Framebuffer::SetAntialiasing(int a)
     if (numAntialiasingSamples != a)
     {
         numAntialiasingSamples = a;
-        InvalidateDeviceObjects();
+		if(!external_texture)
+			SAFE_DELETE(buffer_texture);
+		if(!external_depth_texture)
+			SAFE_DELETE(buffer_depth_texture);
+		buffer_texture=NULL;
+		buffer_depth_texture=NULL;
     }
 }
 

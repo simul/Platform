@@ -24,7 +24,7 @@ struct D3D12_CPU_DESCRIPTOR_HANDLE;
     #pragma warning(push)
     #pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -39,7 +39,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
 		public:
-			simul::crossplatform::RenderPlatform* renderPlatform;
+			platform::crossplatform::RenderPlatform* renderPlatform;
 		protected:
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
@@ -72,7 +72,7 @@ namespace simul
 				numCopies = 0;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext& /*deviceContext*/, EffectPass* /*currentEffectPass*/, int /*slot*/, bool /*as uav*/) {}
+			virtual void ActualApply(platform::crossplatform::DeviceContext& /*deviceContext*/, EffectPass* /*currentEffectPass*/, int /*slot*/, bool /*as uav*/) {}
 		};
 
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer

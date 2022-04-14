@@ -17,7 +17,7 @@ typedef void* cp_hwnd;
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/RenderDelegate.h"
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

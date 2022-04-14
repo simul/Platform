@@ -6,7 +6,7 @@
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/Math/RandomNumberGenerator.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 

@@ -34,7 +34,7 @@ extern const char *PlatformD3D12GetErrorText(HRESULT hr);
 		}\
 	}
 #endif
-namespace simul
+namespace platform
 {
 	//! Used to hold information about the resource binding limits and
 	//! the current hardware binding tier
@@ -140,11 +140,11 @@ namespace simul
 				switch (type)
 				{
 				default:
-				case simul::crossplatform::DeviceContextType::GRAPHICS:
+				case platform::crossplatform::DeviceContextType::GRAPHICS:
 					return mGraphicsQueue;
-				case simul::crossplatform::DeviceContextType::COMPUTE:
+				case platform::crossplatform::DeviceContextType::COMPUTE:
 					return mComputeQueue;
-				case simul::crossplatform::DeviceContextType::COPY:
+				case platform::crossplatform::DeviceContextType::COPY:
 					return mCopyQueue;
 				}
 			}
@@ -278,6 +278,7 @@ namespace simul
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSBSRV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullUAV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
 
@@ -342,9 +343,22 @@ namespace simul
 			std::vector<std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
-			int									mTotalBarriers;
-			int									mCurBarriers;
-			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			struct ContextBarriers
+			{
+				ContextBarriers()
+				{
+					mCurBarriers    = 0;
+					mTotalBarriers  = 16; 
+					mPendingBarriers.resize(mTotalBarriers);
+				}
+
+				int									mTotalBarriers;
+				int									mCurBarriers;
+				std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			};
+			std::map<ID3D12CommandList*,ContextBarriers*> barriers;
+			
+			ContextBarriers &GetBarriers(crossplatform::DeviceContext &);
 			bool								isInitialized = false;
 			bool								mIsMsaaEnabled;
 			DXGI_SAMPLE_DESC					mMsaaInfo;			
@@ -352,6 +366,7 @@ namespace simul
 			ResourceBindingLimits				mResourceBindingLimits;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullCBV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSRV;
+			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSBSRV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullUAV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
