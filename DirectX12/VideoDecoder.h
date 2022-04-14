@@ -25,12 +25,6 @@ namespace simul
 			bool usedAsReference = false;
 		};
 
-		/*struct FrameArguments
-		{
-			UINT numFrameArguments;
-			D3D12_VIDEO_DECODE_FRAME_ARGUMENT frameArguments[10];
-		};*/
-
 		//! A class to implement common video encodng/decoding functionality for DirectX 12.
 		class SIMUL_DIRECTX12_EXPORT VideoDecoder final: public cp::VideoDecoder
 		{
@@ -56,20 +50,26 @@ namespace simul
 		private:
 			void Signal(void* context, cp::Fence* fence) override;
 			void WaitOnFence(void* context, cp::Fence* fence) override;
-			size_t mBSize = 0;
+			void WaitOnGPU();
 			cp::VideoDecoderResult CreateVideoDevice();
 			cp::VideoDecoderResult CreateVideoDecoder();
+			cp::VideoDecoderResult CreateQueryObjects();
 			cp::VideoDecoderResult CreateCommandObjects();
 
 			//! D3D12 video device for hardware accelerated video encoding/decoding
 			ID3D12VideoDeviceType* mVideoDevice;
 			ID3D12VideoDecoder1* mDecoder;
 			ID3D12VideoDecoderHeap1* mHeap;
+			ID3D12QueryHeap* mQueryHeap;
+			ID3D12Resource* mQueryBuffer;
+			HANDLE mSyncEvent;
+
 			CommandListController mGraphicsCLC;
 			CommandListController mDecodeCLC;
 			std::vector<ID3D12Resource*> mRefTextures;
 			std::vector<UINT> mRefSubresources;
 			std::vector<ID3D12VideoDecoderHeap*> mRefHeaps;
+
 			static constexpr uint32_t mMaxInputArgs = 10;
 		};
 	}
