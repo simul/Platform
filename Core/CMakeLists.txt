@@ -21,4 +21,6 @@ add_static_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATF
 
 # Setup and build the dynamic library.
 add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_CORE_DLL=1 PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} LINK fmt)
-  
+
+target_include_directories( Core_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/fmt/include" )
+target_include_directories( Core_MD PUBLIC "${SIMUL_PLATFORM_DIR}/External/fmt/include" )
