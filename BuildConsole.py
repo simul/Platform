@@ -232,7 +232,7 @@ def main(argv):
 		defines.append("-D " + wrap_dq("COMMODORE_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
 	if ePlatform == PlatformType.XBOX_ONE:
 		defines.append("-D REQUIRED_XB1_TOOLCHAIN_VERSION="+SDK_VERSION)
-	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK or PlatformType.WIN_GDK:
+	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK or ePlatform == PlatformType.WIN_GDK:
 		defines.append("-D REQUIRED_GDK_TOOLCHAIN_VERSION="+SDK_VERSION)
 	
 	defines.append("-D SIMUL_SOURCE_BUILD=1")
