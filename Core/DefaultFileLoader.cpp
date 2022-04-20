@@ -24,10 +24,6 @@ using namespace core;
 
 #if defined(__ANDROID__)
 AAssetManager* DefaultFileLoader::s_AssetManager = nullptr;
-#elif defined(__SWITCH__)
-#include <nn/fs.h>
-#include <TutorialUtil.h>
-std::string DefaultFileLoader::s_NVN_ROM_Name;
 #endif
 
 
@@ -47,16 +43,6 @@ static int do_mkdir(const char *path_utf8)
 {
 	ALWAYS_ERRNO_CHECK
     int             status = 0;
-
-#if defined(__SWITCH__)
-	nn::Result res = nn::fs::CreateDirectory(path_utf8);
-	if (res.IsFailure())
-	{
-		SIMUL_CERR << "Failed to create directory: " << path_utf8 << std::endl;
-		status = -1;
-	}
-	return status;
-#endif
 
 #if defined(_MSC_VER) && defined(_WIN32)
     struct _stat64i32            st;
@@ -164,13 +150,6 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 	}
 	// If res is NO_FILE, errno will now be set, so we must clear it.
 	errno=0;
-#elif __SWITCH__
-	bool bExists = false;
-	nn::fs::DirectoryEntryType type;
-	std::string filepath = s_NVN_ROM_Name + std::string(filename_utf8);
-	nn::Result res = nn::fs::GetEntryType(&type, filepath.c_str());
-	if (res.IsSuccess())
-		bExists = type == nn::fs::DirectoryEntryType::DirectoryEntryType_File;
 #elif __COMMODORE__
 	bool bExists = fs::exists(filename_utf8);
 #elif __ANDROID__
@@ -272,37 +251,6 @@ int FileLoader::FindIndexInPathStack(const char *filename_utf8, const char* cons
 
 bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)
 {
-#if defined(__SWITCH__)
-	std::string filepath = s_NVN_ROM_Name + std::string(filename_utf8);
-	if (!FileExists(filename_utf8))
-	{
-		std::string path = filepath.substr(0, filepath.find_last_of("\\/") + 1);
-		if (do_mkdir(path.c_str()) == 0)
-		{
-			nn::Result res = nn::fs::CreateFile(filepath.c_str(), static_cast<int64_t>(bytes));
-			if (res.IsFailure())
-			{
-				SIMUL_CERR << "Failed to create file: " << filename_utf8 << std::endl;
-				return false;
-			}
-		}
-	}
-	bool result = true;
-	nn::fs::FileHandle fileHandle;
-	nn::Result res = nn::fs::OpenFile(&fileHandle, filepath.c_str(), nn::fs::OpenMode::OpenMode_Write | nn::fs::OpenMode::OpenMode_AllowAppend);
-	if (res.IsSuccess())
-	{
-		res = nn::fs::WriteFile(fileHandle, 0, pointer, bytes, nn::fs::WriteOption::MakeValue(nn::fs::WriteOptionFlag_Flush));
-		if (res.IsFailure())
-		{
-			SIMUL_CERR << "Failed to write file: " << filename_utf8 << std::endl;
-			result = false;
-		}
-	}
-	nn::fs::CloseFile(fileHandle);
-	return result;
-#endif
-
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 	// Ensure the directory exists:
@@ -333,15 +281,6 @@ bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* file
 	return true;
 }
 
-#if defined(__SWITCH__)
-void DefaultFileLoader::Set_NVN_ROM_Name(const std::string& name)
-{
-	s_NVN_ROM_Name = name;
-	if (s_NVN_ROM_Name.find(":/") == std::string::npos)
-		s_NVN_ROM_Name + ":/";
-}
-#endif
-
 void FileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8, const std::vector<std::string> &paths, bool open_as_text)
 {
 	for(auto p: paths)
@@ -366,34 +305,6 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 		return;
 	}
 
-#if __SWITCH__
-	pointer = nullptr;
-	bytes = 0;
-	std::string filepath = s_NVN_ROM_Name + std::string(filename_utf8);
-	nn::fs::FileHandle fileHandle;
-	nn::Result res = nn::fs::OpenFile(&fileHandle, filepath.c_str(), nn::fs::OpenMode::OpenMode_Read);
-	if (res.IsSuccess())
-	{
-		int64_t fileSize = 0;
-		res = nn::fs::GetFileSize(&fileSize, fileHandle);
-		if (res.IsFailure())
-		{
-			SIMUL_CERR << "Failed to get file size: " << filename_utf8 << std::endl;
-		}
-		else
-		{
-			pointer = reinterpret_cast<char*>(AlignedAllocate(static_cast<size_t>(fileSize + 1), 8));
-			bytes = static_cast<unsigned int>(fileSize);
-
-			res = nn::fs::ReadFile(fileHandle, 0, pointer, fileSize);
-			if (res.IsFailure())
-				SIMUL_CERR << "Failed to read file: " << filename_utf8 << std::endl;
-		}
-	}
-	nn::fs::CloseFile(fileHandle);
-	return;
-#endif
-	
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 #if defined(_MSC_VER) && defined(_WIN32)
@@ -435,17 +346,6 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	if(!FileExists(filename_utf8))
 		return 0.0;
 
-#if __SWITCH__
-	std::string filepath = s_NVN_ROM_Name + std::string(filename_utf8);
-	nn::fs::FileTimeStamp timeStamp = {};
-	nn::Result res = nn::fs::GetFileTimeStampForDebug(&timeStamp, filepath.c_str());
-	if (res.IsFailure())
-		return 0.0;
-	else
-		return static_cast<double>(timeStamp.modify.value); //POSIX time!
-	
-#endif
-
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 #if defined(_MSC_VER) && defined(_WIN32)
@@ -478,10 +378,6 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 
 void DefaultFileLoader::ReleaseFileContents(void* pointer)
 {
-#if defined(__SWITCH__)
-	AlignedDeallocate(pointer);
-	return;
-#endif
 	free(pointer);
 }
 
