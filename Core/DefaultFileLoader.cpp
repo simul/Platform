@@ -414,7 +414,7 @@ std::string FileLoader::FindParentFolder(const char *folder_utf8)
 	//std::string utf8path(wspath.begin(), wspath.end());
 	while (utf8path.compare(folder_utf8) != 0)
 	{
-		if (!path.has_parent_path())
+		if (!path.has_relative_path())
 			return "";
 		path = path.parent_path();
 		wspath=path.stem().c_str();
