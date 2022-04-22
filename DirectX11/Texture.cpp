@@ -926,11 +926,17 @@ void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT &texture2dFormat,DXGI_FORMAT
 	};
 }
 
-bool Texture::EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *create)
+bool Texture::EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *tc)
 {
-	return EnsureTexture2DSizeAndFormat(r, create->w, create->l, create->f, create->computable, create->make_rt
-		, create->setDepthStencil, create->numOfSamples, create->aa_quality, false
-		, create->clear, create->clearDepth, create->clearStencil, create->compressionFormat,create->initialData);
+	bool res = false;
+	if (tc->d == 1 && tc->arraysize == 1)
+		res = EnsureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->f, tc->computable, tc->make_rt, tc->setDepthStencil, tc->numOfSamples, tc->aa_quality, false, tc->clear, tc->clearDepth, tc->clearStencil, tc->compressionFormat, tc->initialData);
+	else if (tc->d == 1)
+		res = ensureTextureArraySizeAndFormat(r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable, tc->make_rt, tc->cubemap);
+	else
+		res = ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable, tc->mips, tc->make_rt);
+	return res;
+
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
