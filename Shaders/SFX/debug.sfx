@@ -718,6 +718,7 @@ shader void CS_LatLongToCubemap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 #ifdef GLSL
 	clip_pos.xy*=-1.0;
 #endif
+#ifndef SFX_SWITCH
 	mat4 cubeInvViewProj[6] = {
 		{ {0,0,-1,0}	,{0,-1,0,0}	,{1,0,0,0}	,{0,0,0,1}	}
 		, { {0,0,1,0}	,{0,-1,0,0}	,{-1,0,0,0}	,{0,0,0,1} }
@@ -727,6 +728,32 @@ shader void CS_LatLongToCubemap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 		,{ {1,0,0,0}	,{0,-1,0,0}	,{0,0,1,0}	,{0,0,0,1}	}
 	};
 	vec3 view = normalize(mul(cubeInvViewProj[idx.z], clip_pos).xyz);
+#else
+	mat4 cubeInvViewProj0 = { { 0, 0, -1, 0 }, { 0, -1, 0, 0 }, { 1, 0, 0, 0 }, { 0, 0, 0, 1 } };
+	mat4 cubeInvViewProj1 = { { 0, 0, 1, 0 }, { 0, -1, 0, 0 }, { -1, 0, 0, 0 }, { 0, 0, 0, 1 } };
+	mat4 cubeInvViewProj2 = { { -1, 0, 0, 0 }, { 0, 0, -1, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 1 } };
+	mat4 cubeInvViewProj3 = { { -1, 0, 0, 0 }, { 0, 0, 1, 0 }, { 0, -1, 0, 0 }, { 0, 0, 0, 1 } };
+	mat4 cubeInvViewProj4 = { { -1, 0, 0, 0 }, { 0, -1, 0, 0 }, { 0, 0, -1, 0 }, { 0, 0, 0, 1 } };
+	mat4 cubeInvViewProj5 = { { 1, 0, 0, 0 }, { 0, -1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
+	mat4 cubeInvViewProj;
+	switch (idx.z)
+	{
+		case 0:
+			cubeInvViewProj = cubeInvViewProj0; break;
+		case 1:
+			cubeInvViewProj = cubeInvViewProj1; break;
+		case 2:
+			cubeInvViewProj = cubeInvViewProj2; break;
+		case 3:
+			cubeInvViewProj = cubeInvViewProj3; break;
+		case 4:
+			cubeInvViewProj = cubeInvViewProj4; break;
+		case 5:
+			cubeInvViewProj = cubeInvViewProj5; break;
+	};
+	
+	vec3 view = normalize(mul(cubeInvViewProj, clip_pos).xyz);
+#endif
 //	vec3 view=CubeFaceIndexToView(idx,dims.xx);
 	// convert direction to lat long
 	float lat=asin(view.z);
