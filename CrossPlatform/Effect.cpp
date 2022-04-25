@@ -1531,11 +1531,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					Shader *s = nullptr;
 					if (bin_ptr)
 					{
-						s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t, entry_point);
+						s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
 					}
 					else if(filenamestr.length())
 					{
-						s=renderPlatform->EnsureShader(filenamestr.c_str(), t, entry_point);
+						s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
 					}
 					if(s)
 					{
