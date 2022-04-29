@@ -144,6 +144,39 @@ bool DeviceManager::IsActive() const
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {
  	ERRNO_BREAK
+	uint32_t apiVersion=VK_API_VERSION_1_0;
+	//query the api version in order to use the correct vulkan functionality
+	uint32_t* instanceVersion = (uint32_t*)malloc(sizeof(uint32_t));
+	vk::Result result = vk::enumerateInstanceVersion(instanceVersion);
+
+	//check what is returned
+	if (result == vk::Result::eSuccess)
+	{
+		SIMUL_INTERNAL_COUT << "RESULT(vkEnumerateInstanceVersion) : Intance version enumeration successful\n" << std::endl;
+
+		if (instanceVersion != nullptr)
+		{
+			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_1\n" << std::endl;
+			apiVersion = VK_API_VERSION_1_1;
+		}
+		else
+		{
+			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_0\n" << std::endl;
+		}
+		SIMUL_INTERNAL_COUT << "Version number returned : " 
+			<< VK_VERSION_MAJOR(*instanceVersion) << '.'
+			<< VK_VERSION_MINOR(*instanceVersion) << '.'
+			<< VK_VERSION_PATCH(*instanceVersion) << '\n';
+	}
+	else if (result == vk::Result::eErrorOutOfHostMemory)
+	{
+		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : eErrorOutOfHostMemory\n" << std::endl;
+	}
+	else
+	{
+		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : Something else returned while enumerating instance version\n" << std::endl;
+	}
+
 	uint32_t instance_extension_count = 0;
 	uint32_t instance_layer_count = 0;
 	uint32_t validation_layer_count = 0;
@@ -239,7 +272,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
 
-	auto result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
+	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	extension_names.resize(instance_extension_count);
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
@@ -405,7 +438,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setApplicationVersion(0)
 		.setPEngineName("Simul")
 		.setEngineVersion(0)
-		.setApiVersion(VK_API_VERSION_1_0);
+		.setApiVersion(apiVersion);
 	auto inst_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app)
 		.setEnabledLayerCount(enabled_layer_count)

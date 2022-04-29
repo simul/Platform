@@ -65,6 +65,7 @@ endif()
 set( JSON_FILE_D3D12 "${SIMUL_PLATFORM_DIR}/DirectX12/Sfx/DirectX12.json" )
 set( JSON_FILE_D3D11 "${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/DirectX11.json" )
 
+if(PLATFORM_BUILD_MD_LIBS)
 add_dynamic_executable(Sample_MD WIN32 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${shaders} DEFINITIONS ${SAMPLE_API} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 target_compile_definitions(Sample_MD PRIVATE SIMUL_DYNAMIC_LINK=1 DO_PROFILING=0)
 target_include_directories(Sample_MD PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
@@ -112,3 +113,4 @@ if(PLATFORM_SUPPORT_VULKAN)
 	endif()
 endif()
 
+endif()
