@@ -15,6 +15,7 @@ class PlatformType(Enum):
 	XBOX_ONE_GDK = 4
 	XBOX_SERIES = 5
 	WIN_GDK = 6
+	SWITCH = 7
 
 def GetPlatformType(PlatformName):
 	platform = PlatformType.UNKNOWN
@@ -34,6 +35,8 @@ def GetPlatformType(PlatformName):
 		platform = PlatformType.XBOX_SERIES
 	elif PlatformName == "WINGDK" or PlatformName == "GAMING.DESKTOP.X64":
 		platform = PlatformType.WIN_GDK
+	elif PlatformName == "SWITCH" or PlatformName == "NX64":
+		platform = PlatformType.SWITCH
 	else:
 		platform = PlatformType.UNKNOWN
 
@@ -148,18 +151,18 @@ def main(argv):
 	#Pass cmd args
 	PlatformName=""
 	BuildDir=""
-	sfxPath="build_x64/bin/Release/Sfx.exe"
-	opts, args = getopt.getopt(argv, "hp:b:")
+	SfxPath="build_x64/bin/Release/Sfx.exe"
+	opts, args = getopt.getopt(argv, "hp:b:s:")
 	for opt, arg in opts:
 		if opt == "-h":
-			print("usage: BuildConsole.py -p <Platform> -b <BuildDir> -s <pathToSfxExe>")
+			print("usage: BuildConsole.py -p <Platform> -b <BuildDir> -s <PathToSfxExe>")
 			sys.exit(0)
 		elif opt in "-p":
 			PlatformName = arg
-		elif opt in "-s":
-			sfxPath = arg
 		elif opt in "-b":
 			BuildDir = arg
+		elif opt in "-s":
+			SfxPath = arg
 		else:
 			continue
 
@@ -224,7 +227,7 @@ def main(argv):
 	defines=[]
 	defines.append("-D CMAKE_BUILD_TYPE=Debug,Release")
 	defines.append("-D CMAKE_TOOLCHAIN_FILE=" + wrap_dq(cwd+"\\"+PlatformName+"\\"+CMAKE_TOOLCHAIN))
-	defines.append("-D PLATFORM_SFX_EXECUTABLE=" + wrap_dq(cwd+"\\"+sfxPath))
+	defines.append("-D PLATFORM_SFX_EXECUTABLE=" + wrap_dq(cwd+"\\"+SfxPath))
 	
 	if ePlatform == PlatformType.PS4:
 		defines.append("-D "+ wrap_dq("SCE_ORBIS_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
@@ -232,7 +235,7 @@ def main(argv):
 		defines.append("-D " + wrap_dq("COMMODORE_SDK_DIR="+SDK_DIR+"\\"+SDK_VERSION))
 	if ePlatform == PlatformType.XBOX_ONE:
 		defines.append("-D REQUIRED_XB1_TOOLCHAIN_VERSION="+SDK_VERSION)
-	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK or PlatformType.WIN_GDK:
+	if ePlatform == PlatformType.XBOX_SERIES or ePlatform == PlatformType.XBOX_ONE_GDK or ePlatform == PlatformType.WIN_GDK:
 		defines.append("-D REQUIRED_GDK_TOOLCHAIN_VERSION="+SDK_VERSION)
 	
 	defines.append("-D SIMUL_SOURCE_BUILD=1")
