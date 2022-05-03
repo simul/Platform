@@ -187,15 +187,28 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	type = t;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
 	{
-		V_CHECK(pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader));
+		if(HRESULT hr=pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader)!=S_OK)
+		{
+			SIMUL_INTERNAL_COUT<<"Unsupported Pixel shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
+			pixelShader=nullptr;
+		}
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
-		V_CHECK(pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader));
+		if(HRESULT hr=pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader)!=S_OK)
+		{
+			SIMUL_INTERNAL_COUT<<"Unsupported Vertex shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
+			vertexShader=nullptr;
+		}
 	}
 	else if (t == crossplatform::SHADERTYPE_COMPUTE)
 	{
-		V_CHECK(pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader));
+		if(HRESULT hr=pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader)!=S_OK)
+		{
+		// TODO: Is this fine? This can happen if e.g. we try to load a shader model 5.1 shader in D3D11 and have not initialized at feature level 12.0
+			SIMUL_INTERNAL_COUT<<"Unsupported Compute shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
+			computeShader=nullptr;
+		}
 	}
 	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
 	{
