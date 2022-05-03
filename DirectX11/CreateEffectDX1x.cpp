@@ -248,7 +248,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 void BreakIfDebugging()
 {
 	BREAK_IF_DEBUGGING;
- }
+}
 
 int platform::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {
