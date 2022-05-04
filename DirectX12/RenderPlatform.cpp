@@ -1477,7 +1477,7 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 		mGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&immCommandList);
 		immediateContext.contextState.contextActive = false;
 	}
-	// Close and Execute the parameter commandlist, check that's it's not the immediate commandlist that was just dealt with.
+	// Close and Execute the parameter commandlist, check that it's not the immediate commandlist that was just dealt with.
 	if (commandQueue && commandList && commandList != immediateContext.asD3D12Context())
 	{
 		HRESULT r = commandList->Close();
