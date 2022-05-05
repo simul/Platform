@@ -250,6 +250,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
 
 		renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
+
 		sphericalHarmonicsConstants.Unbind(deviceContext);
 		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 		sphericalHarmonicsEffect->Unapply(deviceContext);
