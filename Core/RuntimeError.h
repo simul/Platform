@@ -149,6 +149,7 @@ namespace platform
 		if(!done) \
 		{\
 			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
+			done=true;\
 			BREAK_IF_DEBUGGING\
 		}\
 	}

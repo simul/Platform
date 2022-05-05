@@ -33,7 +33,7 @@ endif()
 add_dynamic_library(SimulVulkan SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} )
 
 if(SIMUL_SOURCE_BUILD)
-target_link_directories(SimulVulkan_MD PUBLIC ${VULKAN_SDK_DIR}/Lib)
+target_link_directories(SimulVulkan_MD PUBLIC ${VULKAN_SDK_DIR}/Lib )
 target_compile_definitions(SimulVulkan_MD PRIVATE SIMUL_DYNAMIC_LINK=1 SIMUL_VULKAN_DLL=1  VK_PROTOTYPES )
 
 if(PLATFORM_WINDOWS)

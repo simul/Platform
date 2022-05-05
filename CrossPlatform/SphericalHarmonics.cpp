@@ -248,16 +248,17 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
 		sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
 		int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
-	
+
 		renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
 		sphericalHarmonicsConstants.Unbind(deviceContext);
+		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 		sphericalHarmonicsEffect->Unapply(deviceContext);
 		sphericalHarmonics.CopyToReadBuffer(deviceContext);
-		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 	}
 	static bool test2=false;
 	if(test2)
 	{
+		sphericalHarmonics.CopyToReadBuffer(deviceContext);
 		const vec4* h=(const vec4* )sphericalHarmonics.OpenReadBuffer(deviceContext);
 		if(h)
 		{
