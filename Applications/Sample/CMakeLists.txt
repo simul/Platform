@@ -72,7 +72,7 @@ target_include_directories(Sample_MD PRIVATE "${CMAKE_SOURCE_DIR}/Platform/Direc
 target_include_directories(Sample_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 set_target_properties(Sample_MD PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 							VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
-target_link_libraries(Sample_MD SimulCrossPlatform_MD SimulMath_MD Core_MD md_fmt)
+target_link_libraries(Sample_MD SimulCrossPlatform_MD SimulMath_MD Core_MD)
 
 add_sfx_shader_project ( Sample_MD ${JSON_FILE_D3D12} SOURCES ${shaders} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" "${SIMUL_PLATFORM_DIR}/Shaders/SL" "${SIMUL_PLATFORM_DIR}/DirectX12/Sfx" OPTIONS -w OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/shaderbin/DirectX12)
 

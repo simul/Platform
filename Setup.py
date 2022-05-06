@@ -43,11 +43,11 @@ def read_config_file(filename):
 	config.read_file(add_section_header(file, 'asection'), source=filename)
 	return config['asection']
 
-def cmake(src,build_path,flags):
+def cmake(src,build_path,cmake_generator,flags):
 	wd=os.getcwd()
 	Path(build_path).mkdir(True,exist_ok=True)
 	os.chdir(build_path)
-	vs_versions=['Visual Studio 17 2022','Visual Studio 16 2019','Visual Studio 15 2017']
+	vs_versions=[cmake_generator,'Visual Studio 17 2022','Visual Studio 16 2019','Visual Studio 15 2017']
 	for vs_version in vs_versions:
 		cmakeCmd = ["cmake.exe", '-G',vs_version, os.path.relpath(src, build_path)]
 		retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
@@ -69,6 +69,24 @@ def cmake(src,build_path,flags):
 		distutils.dir_util.copy_tree("bin", main_build+"/bin", update=1)
 
 	os.chdir(wd)
+
+def get_cmake_generator(build_path,default_gen):
+	wd=os.getcwd()
+	print(wd)
+	print(os.path.relpath(wd, build_path))
+	result=default_gen
+	cmakeCmd = ["cmake.exe", '-LA','-N', build_path]
+	try:
+		process = subprocess.Popen(cmakeCmd, stdout=subprocess.PIPE)
+		out = process.stdout.readlines()
+		for ln in out:
+			x = re.search(r"PLATFORM_USED_CMAKE_GENERATOR\:STRING\=([a-zA-Z0-9 ]*)", str(ln))
+			if x:
+				result=x.group(1)
+		process.poll()
+	except:
+		pass
+	return result
 
 def GetMSBuild():
 	VSW=os.environ['ProgramFiles(x86)']+'/Microsoft Visual Studio/Installer/vswhere.exe'
@@ -92,6 +110,8 @@ def GetMSBuild():
 	return MSB
 
 def execute():
+	cmake_gen=get_cmake_generator('build','Visual Studio 17 2022')
+	print(cmake_gen)
 	repo = Repo(os.getcwd())
 	#We update only the submodules in "External" - others are private and must be handled manually.
 	sms = repo.submodules
@@ -100,14 +120,16 @@ def execute():
 			print("updating submodule "+sm.name)
 			sm.update()
 
+	fmt_md_flags=["-DCMAKE_CONFIGURATION_TYPES=Debug;Release","-DFMT_DOC=false","-DFMT_TEST=false","-DFMT_INSTALL=false","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib","-DCMAKE_STATIC_LIBRARY_PREFIX_CXX=md_"]
+	cmake('External/fmt','External/fmt/build_md',cmake_gen,fmt_md_flags)
 	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
-	cmake('External/glfw','External/glfw/build_md',glfwflags)
-	cmake('External/glfw','External/glfw/build_mt',glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
+	cmake('External/glfw','External/glfw/build_md',cmake_gen,glfwflags)
+	cmake('External/glfw','External/glfw/build_mt',cmake_gen,glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
 	assimpflags=["-DASSIMP_BUILD_DOCS=false","-DASSIMP_BUILD_EXAMPLES=false","-DASSIMP_BUILD_TESTS=false","-DASSIMP_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
-	cmake('External/assimp','External/assimp/build_md',glfwflags)
-	cmake('External/assimp','External/assimp/build_mt',glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
+	cmake('External/assimp','External/assimp/build_md',cmake_gen,glfwflags)
+	cmake('External/assimp','External/assimp/build_mt',cmake_gen,glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
 	platform_flags=[]
-	cmake('.','build',platform_flags)
+	cmake('.','build',cmake_gen,platform_flags)
 
 
 version=read_config_file('version.properties')
