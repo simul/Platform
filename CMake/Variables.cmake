@@ -1,4 +1,5 @@
 include_guard()
+set(PLATFORM_USED_CMAKE_GENERATOR "${CMAKE_GENERATOR}" CACHE STRING "Which CMAKE_GENERATOR was used before?" FORCE)
 if(NOT DEFINED SIMUL_SOURCE_BUILD)
 	option( SIMUL_SOURCE_BUILD "Build from source?" ON )
 endif()
