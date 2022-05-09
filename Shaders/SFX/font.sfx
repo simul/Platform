@@ -12,7 +12,7 @@ shader posTexVertexOutput BackgroundVertexShader(idOnly IN)
 	OUT.texCoords			=vec2(0,0);
 	return OUT;
 }
-
+ 
 shader posTexVertexOutput FontVertexShader(idOnly IN)
 {
 	uint char_index=IN.vertex_id/6;
