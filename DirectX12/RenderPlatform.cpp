@@ -1467,19 +1467,24 @@ void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext
 
 void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList)
 {
-	HRESULT r = commandList->Close();
-	if (FAILED(r))
-	{
-		SIMUL_BREAK("Failed to close command list");
-	}// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
+	// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
 	if (immediateContext.contextState.contextActive)
 	{
 		ID3D12GraphicsCommandList* const immCommandList = immediateContext.asD3D12Context();
-		HRESULT r = immCommandList->Close();
+		HRESULT r = immCommandList->Close(); 
+		if (FAILED(r))
+			SIMUL_BREAK("Failed to close command list");
 		mGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&immCommandList);
 		immediateContext.contextState.contextActive = false;
 	}
-	commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
+	// Close and Execute the parameter commandlist, check that it's not the immediate commandlist that was just dealt with.
+	if (commandQueue && commandList && commandList != immediateContext.asD3D12Context())
+	{
+		HRESULT r = commandList->Close();
+		if (FAILED(r))
+			SIMUL_BREAK("Failed to close command list");
+		commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
+	}
 }
 
 
@@ -1488,13 +1493,9 @@ void RenderPlatform::ResetImmediateCommandList()
 	if(!immediateContext.contextState.externalContext)
 	{
 		if (immediateContext.contextState.contextActive)
-		{
-			ID3D12GraphicsCommandList* const immCommandList = immediateContext.asD3D12Context();
-			HRESULT r = immCommandList->Close();
-			mGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&immCommandList);
+			ExecuteCommandList(nullptr, nullptr);
 	
-		}
-		if (mIContext.ICommandList)
+		if (mIContext.ICommandList && mIContext.IAllocator)
 			mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
 		immediateContext.contextState.contextActive = true;
 	}

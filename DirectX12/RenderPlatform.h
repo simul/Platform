@@ -266,6 +266,8 @@ namespace platform
 			void									SetCurrentSamples(int samples, int quality = 0);
 			bool									IsMSAAEnabled();
 
+			//! Executes the provided commandList on the provided commandQueue, alongwith executing the internal immediate commandlist on the graphics queue.
+			//! Passing nullptr for both parameters will only execute the immediate commandlist.
 			void ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList);
 		
 

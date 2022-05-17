@@ -1,4 +1,5 @@
 include_guard()
+set(PLATFORM_USED_CMAKE_GENERATOR "${CMAKE_GENERATOR}" CACHE STRING "Which CMAKE_GENERATOR was used before?" FORCE)
 if(NOT DEFINED SIMUL_SOURCE_BUILD)
 	option( SIMUL_SOURCE_BUILD "Build from source?" ON )
 endif()
@@ -89,10 +90,14 @@ find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows K
 if(PLATFORM_WINDOWS)
 	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
 	set( FLEX_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
-	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" CACHE STRING "" )
+	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" c STRING "" )
 endif()
 
+if(PLATFORM_WINDOWS)
+set(PLATFORM_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Release/Sfx.exe" CACHE STRING "")
+else()
 find_program(PLATFORM_SFX_EXECUTABLE sfx PATHS "${CMAKE_BINARY_DIR}/bin/Release" "${CMAKE_BINARY_DIR}/bin/Debug" "${CMAKE_BINARY_DIR}/bin/Sfx") 
+endif()
 
 mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS )
 

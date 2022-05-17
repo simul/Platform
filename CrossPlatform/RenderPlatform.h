@@ -23,8 +23,8 @@
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(mem);
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4251)
+	#pragma warning(push)
+	#pragma warning(disable:4251)
 #endif
 struct ID3D11Device;
 struct ID3D12Device;
@@ -68,22 +68,22 @@ namespace platform
 		struct Query;
 		struct TargetsAndViewport;
 		class SwapChain;
-        struct Window;
-        class DisplaySurface;
+		struct Window;
+		class DisplaySurface;
 		class BottomLevelAccelerationStructure;
 		class TopLevelAccelerationStructure;
 		class AccelerationStructureManager;
 		class ShaderBindingTable;
 
-        //! Type of resource transition, some platforms used this (dx12)
-        enum ResourceTransition
-        {
-            Readable         = 0,
-            ReadableGraphics = Readable,
-            ReadableCompute  = 1,
-            Writeable        = 2,
-            UnorderedAccess  = 3
-        };
+		//! Type of resource transition, some platforms used this (dx12)
+		enum ResourceTransition
+		{
+			Readable			= 0,
+			ReadableGraphics	= Readable,
+			ReadableCompute		= 1,
+			Writeable			= 2,
+			UnorderedAccess		= 3
+		};
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
 		{
@@ -249,8 +249,8 @@ namespace platform
 			virtual void EndFrame			();
 			bool						FrameStarted() const;
 			long long					GetFrameNumber() const;
-            //! Makes sure the resource is in the required state specified by transition. 
-            virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
+			//! Makes sure the resource is in the required state specified by transition. 
+			virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, crossplatform::Texture* texture) {};
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
@@ -359,7 +359,7 @@ namespace platform
 			virtual Shader					*EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
 			/// Create a shader.
 			virtual Shader					*CreateShader()=0;
-            virtual DisplaySurface*         CreateDisplaySurface();
+			virtual DisplaySurface*         CreateDisplaySurface();
 
 			virtual GpuProfiler*			CreateGpuProfiler();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
@@ -372,8 +372,8 @@ namespace platform
 			virtual void					ApplyDefaultRenderTargets		(crossplatform::GraphicsDeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(GraphicsDeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-            virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
-            virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
+			virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
+			virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
 			virtual void					SetViewports					(GraphicsDeviceContext &deviceContext,int num,const Viewport *vps);
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport						(GraphicsDeviceContext &deviceContext,int index);
@@ -585,7 +585,7 @@ namespace platform
 }
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif
 
 #endif
