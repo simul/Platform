@@ -1,51 +1,63 @@
 {
-	"compiler": "",
-	"api": "OpenGL",
-	"defaultOptions": "",
-	"outputExtension": "glsl",
+	"compiler": {
+		"command": "$VULKAN_SDK/Bin/glslangValidator -V -S {stage}",
+		"stages": {
+			"vertex": "vert",
+			"geometry": "geom",
+			"pixel": "frag",
+			"compute": "comp"
+		}
+	},
+	"api": "Vulkan",
+	"defaultOptions": "-Os",
+	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
-	"outputOption": "",
+	"outputOption": "-o ",
 	"includeOption": "",
-	"entryPointOption": "",
+	"entryPointOption": "--entry-point {name} --source-entrypoint main",
+	"debugOption": "-g -Od",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
 		"GLSL": "1",
-		"SFX_GLSL": "1",
-		"SFX_OPENGL": "1",
-		"uint64_t": "uvec2"
+		"SFX_VULKAN": "1"
 	},
 	"generateSlots": true,
-	"identicalIOBlocks": true,
+	"sharedSlots": false,
 	"lineDirectiveFilenames": true,
 	"passThroughSamplers": false,
 	"combineTexturesSamplers": true,
-	"maintainSamplerDeclaration": true,
-	"combineInShader": false,
-	"supportsPercentOperator": false,
+	"combineInShader": true,
+	"reverseTexCoordY": false,
+	"reverseVertexOutputY": true,
+	"failOnCerr": true,
 	"getSizeExpression": "ivec{dim:{textureName}} {tempName} = textureSize({textureName}{args});\n",
 	"getRWSizeExpression": "ivec{return_size} {tempName} = imageSize({textureName}{args});\n",
 	"textureDeclaration": "layout(binding = {slot}) uniform {type} {name};",
-	"imageDeclaration": "layout({fqualifier}, binding = {slot}) uniform {type} {name};",
-	"imageDeclarationWriteOnly": "writeonly layout(binding = {slot}) uniform {type} {name};",
+	"imageDeclaration": "layout({fqualifier},binding={slot}) uniform {type} {name};",
+	"imageDeclarationWriteOnly": "writeonly layout(binding={slot}) uniform {type} {name};",
 	"samplerDeclaration": "layout(binding = {slot}) uniform {type} {name};",
 	"samplingSyntax": "{command}({samplerType}({textureSampler}),{otherParams})",
 	"loadSyntax": "{command}({texture},{params})",
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
 	"structDeclaration": "struct {name}\n{\n[\t{type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]};",
-	"inputDeclaration": "layout(location = 0) in Block\n{\n[{type} {name};]} ioblock;",
+
+	"inputDeclarationX": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
+	"pixelInputDeclaration": "[layout(location={slot}) in {member_type} {type}{name}{member_name};]",
+
 	"vertexInputDeclaration": "[layout(location={slot}) in {type} {name};]",
-	"outputDeclaration": "layout(location = 0) out Block\n{\n[{type} {name};]} ioblock;",
+	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\n[layout(location ={slot}) out {member_type} {type}{name}{member_name};]",
+
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
-	"compilerMessageRegex": [ "(ERROR|WARNING): ([0-9]+):([\\?0-9]+)[ ]*:[ ]*(.*)", "$2($3): $1: $4" ],
-	"preamble": "#version 450\n#extension GL_ARB_gpu_shader5 : enable\n#extension GL_ARB_bindless_texture : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n",
-	"computePreamble": "#extension GL_ARB_shader_storage_buffer_object : enable\n#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
+	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
+	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n",
+	"computePreamble": "#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
 	"vertexSemantics": {
-		"SV_VertexId": "gl_VertexID",
-		"SV_VertexID": "gl_VertexID",
-		"SV_InstanceId": "gl_InstanceID",
+		"SV_VertexId": "gl_VertexIndex",
+		"SV_VertexID": "gl_VertexIndex",
+		"SV_InstanceId": "gl_InstanceIndex",
 		"SV_POSITION": "gl_Position"
 	},
 	"pixelSemantics": {
@@ -69,8 +81,7 @@
 		"ivec4": "rgba32i",
 		"uint": "r32ui",
 		"float": "r32f",
-		"float4": "rgba32f",
-		"half4": "rgba16f"
+		"float4": "rgba32f"
 	},
 	"toImageType": {
 		"vec4": "image",
@@ -79,8 +90,7 @@
 		"ivec4": "iimage",
 		"uint": "uimage",
 		"float": "image",
-		"float4": "image",
-		"half4": "image"
+		"float4": "image"
 	},
 	"toTextureType": {
 		"default": "sampler",
@@ -94,28 +104,10 @@
 		"half4": "sampler"
 	},
 	"templateTypes": {
-		"Texture2D<uint>": "uint64_t",
-		"Texture2D<uint4>": "uint64_t",
-		"Texture2D<float>": "uint64_t",
-		"Texture2D<float4>": "uint64_t",
-
-		"Texture2DMS<uint>": "uint64_t",
-		"Texture2DMS<uint4>": "uint64_t",
-		"Texture2DMS<float>": "uint64_t",
-		"Texture2DMS<float4>": "uint64_t",
-
-		"Texture3D<uint>": "uint64_t",
-		"Texture3D<uint4>": "uint64_t",
-		"Texture3D<float>": "uint64_t",
-		"Texture3D<float4>": "uint64_t",
-
-		"Texture3DMS<uint>": "uint64_t",
-		"Texture3DMS<uint4>": "uint64_t",
-		"Texture3DMS<float>": "uint64_t",
-		"Texture3DMS<float4>": "uint64_t"
+		"Texture2D<uint>": "utexture2D"
 	},
-	"computeLayout": "layout(local_size_x=$1, local_size_y=$2, local_size_z=$3) in;",
-	"structuredBufferDeclaration": "layout(std430, binding = {slot}) buffer {name}\n{\n\t{content} \n};",
+	"computeLayout": "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;",
+	"structuredBufferDeclaration": "layout(std430,binding={slot})buffer {name}\n{\n\t{content} \n};",
 	"replace": {
 		"SV_VertexId": "S_VERTEX_ID",
 		"SV_POSITION": "S_POSITION",
@@ -152,14 +144,17 @@
 		"uint2": "uvec2",
 		"uint3": "uvec3",
 		"uint4": "uvec4",
-		"(SamplerState)": "int",
-		"Texture1D": "sampler1D",
-		"Texture2D": "sampler2D",
-		"Texture3D": "sampler3D",
-		"TextureCube": "samplerCube",
-		"TextureCubeArray": "samplerCubeArray",
-		"Texture2DArray": "sampler2DArray",
-		"Texture2DMS": "sampler2DMS",
+		"float2": "vec2",
+		"float3": "vec3",
+		"float4": "vec4",
+		"SamplerState": "sampler",
+		"Texture1D": "texture1D",
+		"Texture2D": "texture2D",
+		"Texture3D": "texture3D",
+		"TextureCube": "textureCube",
+		"TextureCubeArray": "textureCubeArray",
+		"Texture2DArray": "texture2DArray",
+		"Texture2DMS": "texture2DMS",
 		"RWTexture3D": "image3D",
 		"RWTexture2D": "image2D",
 		"RWTexture1D": "image1D",
@@ -174,6 +169,7 @@
 		"imageStore(uav,pos, c)": "imageStore(uav,pos,c)",
 		"lerp": "mix",
 		"atan2": "atan",
-		"frac": "fract"
+		"frac": "fract",
+		"flat": ""
 	}
 }

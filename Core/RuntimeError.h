@@ -120,7 +120,7 @@ namespace platform
 #define SIMUL_FILE_LINE_CERR(filename,line)\
 	std::cerr<<filename<<"("<<line<<"): warning B0001: "
 
-#ifdef _DEBUG
+#if defined(_DEBUG)||SIMUL_INTERNAL_CHECKS
 #define SIMUL_ASSERT(value)\
 	if(value!=true)\
 	{\

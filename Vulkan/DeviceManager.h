@@ -29,6 +29,7 @@ namespace platform
 			virtual ~DeviceManager();
 			// GDI:
 			void	Initialize(bool use_debug, bool instrument, bool default_driver) override;
+			void	Initialize(bool use_debug, bool instrument, bool default_driver,std::vector<std::string> required_device_extensions,std::vector<std::string> required_instance_extensions) ;
 			bool	IsActive() const override;
 			void	Shutdown() override;
 			void*	GetDevice() override;

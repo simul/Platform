@@ -2086,10 +2086,29 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		}
 		ordered_decs[main_linenumber]=*u;
 	}
-
 	// Used for platforms that dont support separate sampler and textures:
 	ConstantBuffer textureCB;
 	ConstantBuffer samplerCB;
+	// declare the samplers if we didn't pass them through already:
+	if(!sfxConfig.passThroughSamplers)
+	{
+		for (const auto s : samplerStates)
+		{
+		//Declare(shaderInstance->shaderType, theShader, s, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+			if(sfxConfig.samplerDeclaration.size() > 0)
+			{
+				string thisDeclaration=sfxConfig.samplerDeclaration;
+				find_and_replace(thisDeclaration,"{name}",s->name);
+				find_and_replace(thisDeclaration,"{slot}",ToString(gEffect->GenerateSamplerSlot(s->register_number)));
+				find_and_replace(thisDeclaration,"{type}","sampler");
+				theShader<<thisDeclaration<<"\n";
+			}
+			else
+			{
+				theShader<<s->original<<"\n";
+			}
+		}
+	}
 	char kTexHandleUbo []  = "_TextureHandles_X";
 	char ext[]={'v','h','d','g','p','c'};
 	bool combo=sfxConfig.combineTexturesSamplers&&!sfxConfig.combineInShader;
@@ -2230,12 +2249,16 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	{
 		find_and_replace(dec,shaderName,"main");
 	}
-
+	
+	// in square brackets [] is the definition for ONE member.
+	string memberDeclaration;
+	//find_and_replace(memberDeclaration,"{blockname}",blockname);
+	// extract and replace the member declaration.
 	// If this shader language can't accept input parameters in main shader functions
 	// we will have an inputDeclaration specifying how to rewrite the input.
-	string content			= function->content;
-	string inputDeclaration = sfxConfig.inputDeclaration;
 	bool split_structs		= false;
+	int num=0;
+	string inputDeclaration = sfxConfig.pixelInputDeclaration;
 	if(shaderInstance->shaderType==sfx::ShaderType::VERTEX_SHADER)
 	{
 		if (sfxConfig.vertexInputDeclaration.length() > 0)
@@ -2244,17 +2267,23 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			split_structs = true;
 		}
 	}
+	if(shaderInstance->shaderType==sfx::ShaderType::FRAGMENT_SHADER)
+	{
+		if(sfxConfig.pixelInputDeclaration.find("{member_type}")<sfxConfig.pixelInputDeclaration.length())
+		{
+			split_structs=true;
+			num=1;
+			find_and_replace(inputDeclaration,"{type}","{struct_type}");
+			find_and_replace(inputDeclaration,"{name}","{struct_name}");
+		}
+	}
+	string content			= function->content;
+	string str=inputDeclaration;
+	process_member_decl(str,memberDeclaration);
 	string blockname = "ioblock";
 	if(inputDeclaration.length()>0)
 	{
-		string str=inputDeclaration;
 		string members;
-		// in square brackets [] is the definition for ONE member.
-		string memberDeclaration;
-		find_and_replace(memberDeclaration,"{blockname}",blockname);
-		// extract and replace the member declaration.
-		process_member_decl(str,memberDeclaration);
-		int num=0;
 		string setup_code;
 		for(auto i:function->parameters)
 		{
@@ -2262,29 +2291,38 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			Declaration *d=nullptr;
 			if (D != declarations.end())
 				d=D->second;
-			// It is a struct and we are in a vertex shader
+			// It is a struct 
 			if (d && split_structs && d->declarationType == DeclarationType::STRUCT)
 			{
 				Struct *s=(Struct *)d;
 				if(s)
 				{
 					setup_code+=(i.type+" ")+i.identifier+";\n";
+					string structPrefix;
+					if(shaderInstance->shaderType==sfx::ShaderType::FRAGMENT_SHADER)
+					{
+						structPrefix=i.type+"BlocKData";
+					}
 					for(auto j:s->m_structMembers)
 					{
 						string m=memberDeclaration;
+						find_and_replace(m,"{struct_type}",i.type);
+						find_and_replace(m,"{struct_name}","BlocKData");
+						find_and_replace(m,"{member_type}",j.type);
+						find_and_replace(m,"{member_name}",j.name);
 						find_and_replace(m,"{type}",j.type);
 						find_and_replace(m,"{name}",j.name);
 						find_and_replace(m,"{semantic}",j.semantic);
 						find_and_replace(m,"{slot}",ToString(num++));
 						auto s=sfxConfig.vertexSemantics.find(j.semantic);
-						if(s!=sfxConfig.vertexSemantics.end())
+						if(shaderInstance->shaderType==sfx::ShaderType::VERTEX_SHADER&&s!=sfxConfig.vertexSemantics.end())
 						{
 							setup_code+=((i.identifier+".")+j.name+"=")+s->second+";\n";
 						}
 						else
 						{
 							members+=m+"\n";
-							setup_code+=((i.identifier+".")+j.name+"=")+j.name+";\n";
+							setup_code+=((i.identifier+".")+j.name+"=")+structPrefix+j.name+";\n";
 						}
 					}
 				}
@@ -2312,8 +2350,8 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 				{
 					if (sfxConfig.identicalIOBlocks)
 					{
-						// In OpenGL io blocks should match, this means, that the name of					
-						// the members should be the same...					
+						// In GLSL io blocks should match, i.e. the names of
+						// the members should be the same.		
 						customId = "BlockData";
 						find_and_replace(content, i.identifier, customId);
 					}
@@ -2467,29 +2505,67 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 				}
 			}
 		}
-		else if(sfxConfig.outputDeclaration.length()>0)
+		else if(sfxConfig.vertexOutputDeclaration.length()>0)
 		{
+			Declaration* retDec = nullptr;
+			auto retEntry = declarations.find(function->returnType);
 			// replace each return statement with a block that writes
-			string str=sfxConfig.outputDeclaration;
-			find_and_replace(str,"{slot}","0"); // TODO: What if this is not 0! 
-			find_and_replace(str,"{blockname}",blockname);
+			string vertexOutputDeclaration=sfxConfig.vertexOutputDeclaration;
+			find_and_replace(vertexOutputDeclaration,"{blockname}",blockname);
 			string m;
 			// extract and replace the member declaration.
-			process_member_decl(str,m);
+			process_member_decl(vertexOutputDeclaration,m);
+			string members;
+			// if the member declaration contains member_name, we will declar the struct members individually, instead of passing a whole structure.
+			// This alternative approach is to get around Qualcomm's broken SPIR-V drivers for Adreno 600-series devices, e.g. Oculus Quest etc.
 			// NOTE(NACHO): we want to match io block member names...
-			string returnName = "BlockData"; /*"returnObject_" + function->returnType;*/
-			find_and_replace(m,"{type}",function->returnType);
-			find_and_replace(m,"{name}",returnName);
-			find_and_replace(str,"{members}",m+"\n");
+			bool as_blocks=true;
+			if(m.find("{member_name}")<m.length()&&retEntry != declarations.end())
+			{
+				as_blocks=false;
+				retDec = retEntry->second;
+				int slot=1;
+				if (retDec && retDec->declarationType == DeclarationType::STRUCT)
+				{
+					Struct* retStruct = (Struct *)retDec;
+					for (auto j : retStruct->m_structMembers)
+					{
+						string this_member_decl=m;
+						find_and_replace(this_member_decl,"{member_type}",j.type);
+						find_and_replace(this_member_decl,"{member_name}",j.name);
+						find_and_replace(this_member_decl,"{slot}",std::to_string(slot++)); // TODO: What if this is not 0! 
+						members+=this_member_decl+"\n";
+					}
+				}
+				m=members;
+			}
+			else
+			{
+				members=m;
+			}
+			string returnName = "BlockData";
+			find_and_replace(members,"{type}",function->returnType);
+			find_and_replace(members,"{name}",returnName);
+			find_and_replace(vertexOutputDeclaration,"{members}",members+"\n");
+			
+			find_and_replace(vertexOutputDeclaration,"{slot}","0"); // TODO: What if this is not 0! 
 
-			// Now replace every instance of return ...; with returnName=...;return;
-			regex re("return\\s+(.*);");
+			// Now construct the replacement for the return command.
 			string ret = "{\n";
-			ret += (blockname + ".") + returnName + "=$1;";
+			regex re("return\\s+(.*);");
+			// if we're returning by block
+			// 
+			// Now replace every instance of return ...; with returnName=...;return;
+			if(as_blocks)
+			{
+				ret += (blockname + ".") + returnName + "=$1;";
+			}
+			else
+			{
+			// If we're filling individual elements:
+			}
 
-			// If required, write to global outpus
-			auto retEntry = declarations.find(function->returnType);
-			Declaration* retDec = nullptr;
+			// If required, write to global outputs
 			if (retEntry != declarations.end())
 			{
 				retDec = retEntry->second;
@@ -2498,17 +2574,24 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					Struct* retStruct = (Struct *)retDec;
 					for (auto j : retStruct->m_structMembers)
 					{
+						if(!as_blocks)
+						{
+							string this_member_fill= function->returnType+returnName+j.name + "=" + "$1" + "." + j.name + ";\n";
+							ret += this_member_fill;
+						}
+
+						// And fill in the "magic GLSL outputs":
 						auto sem = sfxConfig.vertexOutputAssignment.find(j.semantic);
 						if (sem != sfxConfig.vertexOutputAssignment.end())
 						{
 							std::string code;
 							if(sfxConfig.reverseVertexOutputY&&is_equal(j.semantic,"SV_POSITION"))
 							{
-								code += "\n" + sem->second + "=" + "vec4($1." + j.name + ".x,-$1." + j.name + ".y,$1."+j.name+".z,$1."+j.name+".w);";
+								code += "\n" + sem->second + "=" + "vec4($1." + j.name + ".x,-$1." + j.name + ".y,$1."+j.name+".z,$1."+j.name+".w);\n";
 							}
 							else
 							{
-								code += "\n" + sem->second + "=" + "$1" + "." + j.name + ";";
+								code += "\n" + sem->second + "=" + "$1" + "." + j.name + ";\n";
 							}
 							ret += code;
 						}
@@ -2519,7 +2602,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			ret += "\n}";
 
 			content = std::regex_replace(content, re, ret);
-			theShader<<str.c_str()<<endl;
+			theShader<<vertexOutputDeclaration.c_str()<<endl;
 		}
 	}
 	// Add the CS layout:

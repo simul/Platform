@@ -64,6 +64,7 @@ namespace platform
 			static int GenerateTextureSlot(int s,bool offset=true);
 			static int GenerateTextureWriteSlot(int s,bool offset=true);
 			static int GenerateConstantBufferSlot(int s,bool offset=true);
+void CreateTestPipeline(vk::Device *device,RenderPassPipeline *renderPassPipeline,vulkan::Shader* v,vulkan::Shader* f,vk::RenderPass* rp);
 			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
 				, const crossplatform::RenderState *blendState=nullptr
 				, const crossplatform::RenderState *depthStencilState=nullptr

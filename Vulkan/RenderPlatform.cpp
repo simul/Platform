@@ -1912,3 +1912,61 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 }
+
+
+ std::string RenderPlatform::VulkanResultString(vk::Result res)
+ {
+	switch (res)
+	{
+		case vk::Result::eSuccess:
+			return "SUCCESS";
+		case vk::Result::eNotReady:
+			return "NOT_READY";
+		case vk::Result::eTimeout:
+			return "TIMEOUT";
+		case vk::Result::eEventSet:
+			return "EVENT_SET";
+		case vk::Result::eEventReset:
+			return "EVENT_RESET";
+		case vk::Result::eIncomplete:
+			return "INCOMPLETE";
+		case vk::Result::eErrorOutOfHostMemory:
+			return "ERROR_OUT_OF_HOST_MEMORY";
+		case vk::Result::eErrorOutOfDeviceMemory:
+			return "ERROR_OUT_OF_DEVICE_MEMORY";
+		case vk::Result::eErrorInitializationFailed:
+			return "ERROR_INITIALIZATION_FAILED";
+		case vk::Result::eErrorDeviceLost:
+			return "ERROR_DEVICE_LOST";
+		case vk::Result::eErrorMemoryMapFailed:
+			return "ERROR_MEMORY_MAP_FAILED";
+		case vk::Result::eErrorLayerNotPresent:
+			return "ERROR_LAYER_NOT_PRESENT";
+		case vk::Result::eErrorExtensionNotPresent:
+			return "ERROR_EXTENSION_NOT_PRESENT";
+		case vk::Result::eErrorFeatureNotPresent:
+			return "ERROR_FEATURE_NOT_PRESENT";
+		case vk::Result::eErrorIncompatibleDriver:
+			return "ERROR_INCOMPATIBLE_DRIVER";
+		case vk::Result::eErrorTooManyObjects:
+			return "ERROR_TOO_MANY_OBJECTS";
+		case vk::Result::eErrorFormatNotSupported:
+			return "ERROR_FORMAT_NOT_SUPPORTED";
+		case vk::Result::eErrorSurfaceLostKHR:
+			return "ERROR_SURFACE_LOST_KHR";
+		case vk::Result::eErrorNativeWindowInUseKHR:
+			return "ERROR_NATIVE_WINDOW_IN_USE_KHR";
+		case vk::Result::eSuboptimalKHR:
+			return "SUBOPTIMAL_KHR";
+		case vk::Result::eErrorOutOfDateKHR:
+			return "ERROR_OUT_OF_DATE_KHR";
+		case vk::Result::eErrorIncompatibleDisplayKHR:
+			return "ERROR_INCOMPATIBLE_DISPLAY_KHR";
+		case vk::Result::eErrorValidationFailedEXT:
+			return "ERROR_VALIDATION_FAILED_EXT";
+		case vk::Result::eErrorInvalidShaderNV:
+			return "ERROR_INVALID_SHADER_NV";
+		default:
+			return "Unknown error.";
+	}
+}

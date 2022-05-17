@@ -277,11 +277,21 @@ int main(int argc, char** argv)
 		if (j.count("constantBufferDeclaration")>0)
 			sfxConfig.constantBufferDeclaration				=j["constantBufferDeclaration"];
 		if (j.count("inputDeclaration")>0)
-			sfxConfig.inputDeclaration						=j["inputDeclaration"];
+		{
+			std::cerr<<platformFilename.c_str()<<": inputDeclaration is deprecated, please use pixelInputDeclaration\n";
+			sfxConfig.pixelInputDeclaration					=j["inputDeclaration"];
+		}
+		if (j.count("pixelInputDeclaration")>0)
+			sfxConfig.pixelInputDeclaration					=j["pixelInputDeclaration"];
 		if (j.count("vertexInputDeclaration")>0)
 			sfxConfig.vertexInputDeclaration				=j["vertexInputDeclaration"];
 		if (j.count("outputDeclaration")>0)
-			sfxConfig.outputDeclaration						=j["outputDeclaration"];
+		{
+			std::cerr<<platformFilename.c_str()<<": outputDeclaration is deprecated, please use vertexOutputDeclaration\n";
+			sfxConfig.vertexOutputDeclaration				=j["outputDeclaration"];
+		}
+		if (j.count("vertexOutputDeclaration")>0)
+			sfxConfig.vertexOutputDeclaration				=j["vertexOutputDeclaration"];
 		if (j.count("pixelOutputDeclaration")>0)
 			sfxConfig.pixelOutputDeclaration				=j["pixelOutputDeclaration"];
 		if (j.count("pixelOutputDeclarationDSB") > 0)

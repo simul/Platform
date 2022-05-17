@@ -58,7 +58,14 @@
 #define SIMUL_VULKAN_EXPORT_CLASS class SIMUL_VULKAN_EXPORT
 #define SIMUL_VULKAN_EXPORT_STRUCT struct SIMUL_VULKAN_EXPORT
 
-#define SIMUL_VK_CHECK(result) {vk::Result res=result;SIMUL_ASSERT((res) == vk::Result::eSuccess);}
+#define SIMUL_VK_CHECK(result)\
+	{\
+		vk::Result res=result;\
+		if(res!=vk::Result::eSuccess)\
+		{\
+			std::cerr<<platform::vulkan::RenderPlatform::VulkanResultString(res)<<std::endl;\
+		};\
+	}
 
 #define RETURN_FALSE_IF_FAILED(v) {if((v)!=vk::Result::eSuccess) {SIMUL_BREAK("failed in Vulkan."); return false;}}
 

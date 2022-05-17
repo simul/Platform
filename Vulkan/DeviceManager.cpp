@@ -140,8 +140,14 @@ bool DeviceManager::IsActive() const
 #define SIMUL_VK_ASSERT_RETURN(val) \
 	if(val!=vk::Result::eSuccess)\
 		return;
-
+		
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
+{
+	Initialize(use_debug,instrument,default_driver,std::vector<std::string>(),std::vector<std::string>());
+}
+
+void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver,std::vector<std::string> required_device_extensions
+	,std::vector<std::string> required_instance_extensions)
 {
  	ERRNO_BREAK
 	uint32_t apiVersion=VK_API_VERSION_1_0;
@@ -295,71 +301,81 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				debugExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
 			}
-			if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				surfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
 			}
-			if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugUtilsExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 			}
-			if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				nameExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
 			}
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-			if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
-			if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
-			if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-			if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
-			if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_IOS_MVK)
-			if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
-			if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-			if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 			}
 #endif
+			else
+			{
+				for(size_t j=0;j<required_instance_extensions.size();j++)
+				{
+					if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
+					{
+						extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
+					}
+				}
+			}
 			assert(enabled_extension_count < 64);
 		}
 		delete[] instance_extensions;
@@ -508,16 +524,29 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 	if (device_extension_count > 0)
 	{
-		std::unique_ptr<vk::ExtensionProperties[]> device_extensions(new vk::ExtensionProperties[device_extension_count]);
-		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.get());
+		std::vector<vk::ExtensionProperties> device_extensions;
+		device_extensions.resize(device_extension_count);
+		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
-
+		
+		std::cout<<"Available device extensions: "<<device_extension_count<<std::endl;
 		for (uint32_t i = 0; i < device_extension_count; i++)
 		{
+			std::cout<<device_extensions[i].extensionName<<std::endl;
 			if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName))
 			{
 				swapchainExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+			}
+			else
+			{
+				for(size_t j=0;j<required_device_extensions.size();j++)
+				{
+					if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))
+					{
+						extension_names[enabled_extension_count++] = required_device_extensions[j].c_str();
+					}
+				}
 			}
 			assert(enabled_extension_count < 64);
 		}
@@ -731,6 +760,7 @@ vk::Device *DeviceManager::GetVulkanDevice()
 {
 	return &deviceManagerInternal->device;
 }
+
 
 vk::Instance *DeviceManager::GetVulkanInstance()
 {

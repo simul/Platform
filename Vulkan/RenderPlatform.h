@@ -166,6 +166,7 @@ namespace platform
 			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
+			static std::string						VulkanResultString(vk::Result res);
 
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 

@@ -97,6 +97,11 @@ struct idOnly
 	uint vertex_id			: SV_VertexId;
 };
 
+struct posVertexOutput
+{
+	vec4 hPosition	: SV_POSITION;
+};
+
 struct posTexVertexOutput
 {
 	vec4 hPosition	: SV_POSITION;
@@ -116,6 +121,20 @@ struct positionColourVertexInput
 	vec4 colour		: TEXCOORD0;		
 };
 
+posVertexOutput UltraSimpleFullscreen(idOnly IN)
+{
+	posVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]=vec2( 1.0,-1.0);
+	poss[1]=vec2( 1.0, 1.0);
+	poss[2]=vec2(-1.0,-1.0);
+	poss[3]=vec2(-1.0, 1.0);
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	OUT.hPosition.z	=0.0;
+	return OUT;
+}
+
 posTexVertexOutput SimpleFullscreen(idOnly IN)
 {
 	posTexVertexOutput OUT;
@@ -132,6 +151,12 @@ posTexVertexOutput SimpleFullscreen(idOnly IN)
 	OUT.texCoords.y =1.0 - OUT.texCoords.y;
 #endif
 	return OUT;
+}
+
+shader posVertexOutput VS_UltraSimpleFullscreen(idOnly IN)
+{
+	posVertexOutput pt=UltraSimpleFullscreen(IN);
+	return pt;
 }
 
 shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
