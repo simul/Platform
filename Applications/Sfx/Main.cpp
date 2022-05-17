@@ -229,7 +229,7 @@ int main(int argc, char** argv)
 		if(j.count("debugOutputFileOption")>0)
 			sfxConfig.debugOutputFileOption					=j["debugOutputFileOption"]; 
 		if(j.count("multiplePixelOutputFormats")>0)
-		sfxConfig.multiplePixelOutputFormats				=j["multiplePixelOutputFormats"];
+			sfxConfig.multiplePixelOutputFormats			=j["multiplePixelOutputFormats"];
 		if (j.count("identicalIOBlocks") > 0)
 			sfxConfig.identicalIOBlocks						=j["identicalIOBlocks"];
 		if (j.count("supportInlineSamplerStates")>0)
@@ -242,6 +242,14 @@ int main(int argc, char** argv)
 			sfxConfig.generateSlots							=j["generateSlots"]; 
 		if (j.count("numTextureSlots")>0)
 			sfxConfig.numTextureSlots						=j["numTextureSlots"];
+		if (j.count("numSamplerSlots")>0)
+			sfxConfig.numSamplerSlots						=j["numSamplerSlots"];
+		if (j.count("numRWTextureSlots")>0)
+			sfxConfig.numRWTextureSlots						=j["numRWTextureSlots"];
+		if (j.count("numStructuredBufferSlots")>0)
+			sfxConfig.numStructuredBufferSlots				=j["numStructuredBufferSlots"];
+		if (j.count("numConstantBufferSlot")>0)
+			sfxConfig.numConstantBufferSlot					=j["numConstantBufferSlot"];
 		if (j.count("sharedSlots")>0)
 			sfxConfig.sharedSlots							=j["sharedSlots"];
 		if (j.count("reverseTexCoordY")>0)

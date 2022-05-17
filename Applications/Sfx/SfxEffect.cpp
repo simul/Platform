@@ -48,9 +48,6 @@ Effect::Effect()
 	: m_includes(0)
 	, m_active(true)
 	, last_filenumber(0)
-	, current_texture_number(0)
-	, current_rw_texture_number(0)
-	, m_max_sampler_register_number(0)
 {
 }
 
@@ -128,7 +125,7 @@ void Effect::AccumulateFunctionsUsed(const Function *f,std::set<const Function *
 	}
 }
 
-const std::set<std::string> &sfx::Function::GetTypesUsed() const
+const std::set<std::string>& Function::GetTypesUsed() const
 {
 	if(!initialized)
 	{
@@ -1411,18 +1408,23 @@ DeclaredConstantBuffer* Effect::DeclareTemplatizedConstantBuffer(const string &n
 	declarations[name] = (t);
 	if (!IsConstantBufferMemberAlignmentValid(declarations[structureType]))
 	{
+		std::cerr << this->Filename().c_str() << ": error: constant buffer member alignment is not valid." << std::endl;
 		delete t;
-		return nullptr;
+		t = nullptr;
+	}
+	if (slot >= sfxConfig.numConstantBufferSlot)
+	{
+		std::cerr << this->Filename().c_str() << ": error: ran out of constant buffer slots." << std::endl;
 	}
 	return t;
 }
 
 DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType shaderResourceType,int slot,int space,const string &structureType,const string &original)
 {
-	DeclaredTexture* t	  = new DeclaredTexture();
+	DeclaredTexture* t		= new DeclaredTexture();
 	t->structureType		= structureType;
-	t->original			 = original;
-	t->name				 = name;
+	t->original				= original;
+	t->name					= name;
 	t->shaderResourceType	= shaderResourceType;
 
 	bool write = IsRW(shaderResourceType);
@@ -1437,46 +1439,64 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 			//keep declared slot?...
 			num=slot;
 		}
-		// RW texture
 		else if (shaderResourceType==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
 		{
 			//find a good buffer slot later...
 		}
-		else if (rw)
+		else if (((shaderResourceType & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE) || ((shaderResourceType & ShaderResourceType::STRUCTURED_BUFFER) == ShaderResourceType::STRUCTURED_BUFFER))
 		{
-			if (rwTextureNumberMap.find(name) != rwTextureNumberMap.end())
+			const bool& texture = ((shaderResourceType & ShaderResourceType::TEXTURE) == ShaderResourceType::TEXTURE);
+			const bool& structureBuffer = ((shaderResourceType & ShaderResourceType::STRUCTURED_BUFFER) == ShaderResourceType::STRUCTURED_BUFFER);
+
+			// RW texture or structure buffer
+			if (rw)
 			{
-				num = rwTextureNumberMap[name];
-			}
-			else
-			{
-				rwTextureNumberMap[name] = current_rw_texture_number;
-				num = current_rw_texture_number++;
-			}
-		}
-		// R texture
-		else
-		{
-			// REALLY what we want here is to find the lowest slot number
-			//    that isn't used by another texture in the same shader.
-			// so we must know which shaders use the texture, and which other textures they use.
-			if (textureNumberMap.find(name) != textureNumberMap.end())
-			{
-				num = textureNumberMap[name];
-			}
-			else
-			{
-				if (current_texture_number < sfxConfig.numTextureSlots)
+				if (readWriteSlotNumberMap.find(name) != readWriteSlotNumberMap.end())
 				{
-					textureNumberMap[name] = current_texture_number;
-					num = current_texture_number++;
+					num = readWriteSlotNumberMap[name];
 				}
-				else // TRY using the slot that's specified, if one IS specified...
+				else
 				{
-					std::cerr << this->Filename().c_str()<< ": error: ran out of texture slots."<< std::endl;
-					exit(1);
-					num = GetTextureNumber(name.c_str(), slot);
-					textureNumberMap[name] = num;
+					const int& maxSlot = texture && !structureBuffer ? sfxConfig.numRWTextureSlots : sfxConfig.numStructuredBufferSlots;
+					if (current_read_write_slot_number < maxSlot)
+					{
+						readWriteSlotNumberMap[name] = current_read_write_slot_number;
+						num = current_read_write_slot_number++;
+					}
+					else // TRY using the slot that's specified, if one IS specified...
+					{
+						const char* resTypeStr = texture && !structureBuffer ? "texture" : "structured buffer";
+						std::cerr << this->Filename().c_str() << ": error: ran out of read-write " << resTypeStr << " slots." << std::endl;
+						num = GetRWSlotNumber(name.c_str(), slot);
+						readWriteSlotNumberMap[name] = num;
+					}
+				}
+			}
+			// R texture or structure buffer
+			else
+			{
+				// REALLY what we want here is to find the lowest slot number
+				//    that isn't used by another texture in the same shader.
+				// so we must know which shaders use the texture, and which other textures they use.
+				if (readOnlySlotNumberMap.find(name) != readOnlySlotNumberMap.end())
+				{
+					num = readOnlySlotNumberMap[name];
+				}
+				else
+				{
+					const int& maxSlot = texture && !structureBuffer ? sfxConfig.numTextureSlots : sfxConfig.numStructuredBufferSlots;
+					if (current_read_only_slot_number < maxSlot)
+					{
+						readOnlySlotNumberMap[name] = current_read_only_slot_number;
+						num = current_read_only_slot_number++;
+					}
+					else // TRY using the slot that's specified, if one IS specified...
+					{
+						const char* resTypeStr = texture && !structureBuffer ? "texture" : "structured buffer";
+						std::cerr << this->Filename().c_str() << ": error: ran out of read only " << resTypeStr << " slots." << std::endl;
+						num = GetRSlotNumber(name.c_str(), slot);
+						readOnlySlotNumberMap[name] = num;
+					}
 				}
 			}
 		}
@@ -1486,11 +1506,25 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 	{
 		if (write)
 		{
-			num = GetRWTextureNumber(name.c_str(), slot);
+			num = GetRWSlotNumber(name.c_str(), slot);
+			if (num >= 1000)
+				num -= 1000;
+			if (num >= sfxConfig.numRWTextureSlots)
+			{
+				std::cerr << "Error: slot " << num << " too big, maximum is " << sfxConfig.numRWTextureSlots << "." << std::endl;
+				return nullptr;
+			}
 		}
 		else
 		{
-			num = GetTextureNumber(name.c_str(), slot);
+			num = GetRSlotNumber(name.c_str(), slot);
+			if (num >= 1000)
+				num -= 1000;
+			if (num >= sfxConfig.numTextureSlots)
+			{
+				std::cerr << "Error: slot " << num << " too big, maximum is " << sfxConfig.numTextureSlots << "." << std::endl;
+				return nullptr;
+			}
 		}
 
 		if (slot < 0)
@@ -1518,16 +1552,6 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 		else
 			t->slot = -1;
 	}
-	if (num >= sfxConfig.numTextureSlots)
-	{
-		if (num >= 1000)
-			num -= 1000;
-		if (num >= sfxConfig.numTextureSlots)
-		{
-			std::cerr << "Error: slot " << num << " too big, maximum is " << sfxConfig.numTextureSlots << "." << std::endl;
-			return nullptr;
-		}
-	}
 	declarations[name] = (t);
 	return t;
 }
@@ -1537,11 +1561,15 @@ SamplerState *Effect::DeclareSamplerState(const string &name,int register_number
 	*s= templateSS;
 	if(register_number<0)
 	{
-		register_number=m_max_sampler_register_number+1;
+		register_number=max_sampler_register_number+1;
+	}
+	if(register_number>=sfxConfig.numSamplerSlots)
+	{
+		std::cerr << this->Filename().c_str() << ": error: ran out of sampler slots." << std::endl;
 	}
 	s->register_number=register_number;
 	declarations[name]=s;
-	m_max_sampler_register_number=std::max(register_number,m_max_sampler_register_number);
+	max_sampler_register_number=std::max(register_number,max_sampler_register_number);
 	return s;
 }
 
@@ -1572,44 +1600,43 @@ DepthStencilState *Effect::DeclareDepthStencilState(const string &name)
 	return s;
 }
 
-int Effect::GetRWTextureNumber(string n, int specified_slot)
+int Effect::GetRWSlotNumber(string n, int specified_slot)
 {
-	int texture_number = current_rw_texture_number;
-	if(rwTextureNumberMap.find(n) != rwTextureNumberMap.end())
-		texture_number = rwTextureNumberMap[n];
+	int slot_number = current_read_write_slot_number;
+	if(readWriteSlotNumberMap.find(n) != readWriteSlotNumberMap.end())
+		slot_number = readWriteSlotNumberMap[n];
 	else
 	{
 		if(specified_slot>=0)
-			texture_number = specified_slot;
+			slot_number = specified_slot;
 		else
 		{
 			if (specified_slot >= 0)
-				texture_number = specified_slot;
+				slot_number = specified_slot;
 			else return -1;
 	
-			rwTextureNumberMap[n] = texture_number;
+			readWriteSlotNumberMap[n] = slot_number;
 		}
 	}
-	return texture_number;
+	return slot_number;
 }
 
-int Effect::GetTextureNumber(string n,int specified_slot)
+int Effect::GetRSlotNumber(string n,int specified_slot)
 {
-	int texture_number = current_texture_number;
-	if (textureNumberMap.find(n) != textureNumberMap.end())
-		texture_number = textureNumberMap[n];
+	int slot_number = current_read_only_slot_number;
+	if (readOnlySlotNumberMap.find(n) != readOnlySlotNumberMap.end())
+		slot_number = readOnlySlotNumberMap[n];
 	else
 	{
 		if (specified_slot >= 0)
-			texture_number = specified_slot;
+			slot_number = specified_slot;
 		else return -1;
-		textureNumberMap[n] = texture_number;
+		readOnlySlotNumberMap[n] = slot_number;
 	}
-	return texture_number;
+	return slot_number;
 }
 
  void errSem(const string& str, int lex_linenumber);
-
 
  std::string Effect::CombinedTypeString(const std::string& type, const std::string& memberType)
  {
@@ -1657,22 +1684,19 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				dec = "";
 			}
 			// It is a (RW)StructuredBuffer
-			if (( td->type == "RWStructuredBuffer" || td->type == "StructuredBuffer")
-			
-				&&!sfxConfig.structuredBufferDeclaration.empty())
-				{
-					dec = sfxConfig.structuredBufferDeclaration;
-					static int ssbouid = 0;
-					find_and_replace(dec, "{name}", td->name + "_ssbo");
-					int temp_slot=td->slot;
-					if(IsRW(td->shaderResourceType))
-						temp_slot=GenerateTextureWriteSlot(td->slot);
-					else
-						temp_slot=GenerateTextureSlot(td->slot);
-					find_and_replace(dec, "{slot}", ToString(temp_slot));
-					find_and_replace(dec, "{content}", td->structureType + " " + td->name + "[];");
-					ssbouid++;
-				
+			if ((td->type == "RWStructuredBuffer" || td->type == "StructuredBuffer") && !sfxConfig.structuredBufferDeclaration.empty())
+			{
+				dec = sfxConfig.structuredBufferDeclaration;
+				static int ssbouid = 0;
+				find_and_replace(dec, "{name}", td->name + "_ssbo");
+				int temp_slot=td->slot;
+				if(IsRW(td->shaderResourceType))
+					temp_slot=GenerateTextureWriteSlot(td->slot);
+				else
+					temp_slot=GenerateTextureSlot(td->slot);
+				find_and_replace(dec, "{slot}", ToString(temp_slot));
+				find_and_replace(dec, "{content}", td->structureType + " " + td->name + "[];");
+				ssbouid++;
 			}
 			// Its an Image or Texture
 			else

@@ -43,7 +43,6 @@ struct SfxConfig
 		,maintainSamplerDeclaration(true)
 		,failOnCerr(false)
 		,generateSlots(false)
-		,numTextureSlots(32)
 		,sharedSlots(true)
 		,combineTexturesSamplers(false)
 		,combineInShader(false)
@@ -77,8 +76,16 @@ struct SfxConfig
 	bool failOnCerr;
 	//! Should SFX override the provided slots and generate unique ones?
 	bool generateSlots;
-	//! Maximum number of slots - if we try to generate more we have a problem!
-	int numTextureSlots;
+	//! Maximum number of read-only(SRV) texture slots - if we try to generate more we have a problem!
+	int numTextureSlots = 128;
+	//! Maximum number of sampler slots - if we try to generate more we have a problem!
+	int numSamplerSlots = 16;
+	//! Maximum number of read-write(UAV) texture slots - if we try to generate more we have a problem!
+	int numRWTextureSlots = 64;
+	//! Maximum number of structured buffer/storage buffer slots - if we try to generate more we have a problem!
+	int numStructuredBufferSlots = 64;
+	//! Maximum number of constant buffer(CBV) slots - if we try to generate more we have a problem!
+	int numConstantBufferSlot = 14;
 	//! Can we use the same slots for multiple objects. If not, we must generate unique slots.
 	bool sharedSlots;
 	//! Because GLSL and HLSL use opposite interpretations of the y coordinate in texture lookups...
