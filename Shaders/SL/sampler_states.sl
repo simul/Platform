@@ -2,7 +2,7 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-SamplerState wccSamplerState SIMUL_STATE_REGISTER(1)
+SamplerState wccSamplerState SIMUL_STATE_REGISTER(0)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -10,14 +10,14 @@ SamplerState wccSamplerState SIMUL_STATE_REGISTER(1)
 	AddressW = Clamp;
 };
 
-SamplerState wmcSamplerState SIMUL_STATE_REGISTER(2)
+SamplerState wmcSamplerState SIMUL_STATE_REGISTER(1)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
-SamplerState wrapMirrorSamplerState SIMUL_STATE_REGISTER(3)
+SamplerState wrapMirrorSamplerState SIMUL_STATE_REGISTER(2)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -25,7 +25,7 @@ SamplerState wrapMirrorSamplerState SIMUL_STATE_REGISTER(3)
 	AddressW = Wrap;
 };
 
-SamplerState cmcSamplerState SIMUL_STATE_REGISTER(5)
+SamplerState cmcSamplerState SIMUL_STATE_REGISTER(3)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -33,7 +33,7 @@ SamplerState cmcSamplerState SIMUL_STATE_REGISTER(5)
 	AddressW = Clamp;
 };
 
-SamplerState wrapSamplerState SIMUL_STATE_REGISTER(6)
+SamplerState wrapSamplerState SIMUL_STATE_REGISTER(4)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -41,7 +41,7 @@ SamplerState wrapSamplerState SIMUL_STATE_REGISTER(6)
 	AddressW = Wrap;
 };
 
-SamplerState wwcSamplerState SIMUL_STATE_REGISTER(7)
+SamplerState wwcSamplerState SIMUL_STATE_REGISTER(5)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -49,7 +49,7 @@ SamplerState wwcSamplerState SIMUL_STATE_REGISTER(7)
 	AddressW = Clamp;
 };
 
-SamplerState cwcSamplerState SIMUL_STATE_REGISTER(8)
+SamplerState cwcSamplerState SIMUL_STATE_REGISTER(6)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -57,7 +57,7 @@ SamplerState cwcSamplerState SIMUL_STATE_REGISTER(8)
 	AddressW = Clamp;
 };
 
-SamplerState clampSamplerState SIMUL_STATE_REGISTER(9)
+SamplerState clampSamplerState SIMUL_STATE_REGISTER(7)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -65,7 +65,7 @@ SamplerState clampSamplerState SIMUL_STATE_REGISTER(9)
 	AddressW = Clamp;
 };
 
-SamplerState wrapClampSamplerState SIMUL_STATE_REGISTER(10)
+SamplerState wrapClampSamplerState SIMUL_STATE_REGISTER(8)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -73,7 +73,7 @@ SamplerState wrapClampSamplerState SIMUL_STATE_REGISTER(10)
 	AddressW = Clamp;
 };
 
-SamplerState samplerStateNearest SIMUL_STATE_REGISTER(11)
+SamplerState samplerStateNearest SIMUL_STATE_REGISTER(9)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
@@ -81,7 +81,7 @@ SamplerState samplerStateNearest SIMUL_STATE_REGISTER(11)
 	AddressW = Clamp;
 };
 
-SamplerState wwcNearestSamplerState SIMUL_STATE_REGISTER(12)
+SamplerState wwcNearestSamplerState SIMUL_STATE_REGISTER(10)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Wrap;
@@ -89,7 +89,7 @@ SamplerState wwcNearestSamplerState SIMUL_STATE_REGISTER(12)
 	AddressW = Clamp;
 };
 
-SamplerState cmcNearestSamplerState SIMUL_STATE_REGISTER(13)
+SamplerState cmcNearestSamplerState SIMUL_STATE_REGISTER(11)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
@@ -97,7 +97,7 @@ SamplerState cmcNearestSamplerState SIMUL_STATE_REGISTER(13)
 	AddressW = Clamp;
 };
 
-SamplerState samplerStateNearestWrap SIMUL_STATE_REGISTER(14)
+SamplerState samplerStateNearestWrap SIMUL_STATE_REGISTER(12)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Wrap;
@@ -105,7 +105,7 @@ SamplerState samplerStateNearestWrap SIMUL_STATE_REGISTER(14)
 	AddressW = Wrap;
 };
 
-SamplerState samplerStateNearestClamp SIMUL_STATE_REGISTER(15)
+SamplerState samplerStateNearestClamp SIMUL_STATE_REGISTER(13)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
@@ -113,7 +113,7 @@ SamplerState samplerStateNearestClamp SIMUL_STATE_REGISTER(15)
 	AddressW = Clamp;
 };
 
-SamplerState cubeSamplerState SIMUL_STATE_REGISTER(4)
+SamplerState cubeSamplerState SIMUL_STATE_REGISTER(14)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Mirror;

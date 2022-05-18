@@ -19,19 +19,19 @@ namespace sfx
 	{
 		std::map<std::string,Declaration *>		declarations;
 		std::map<std::string, Pass*>			m_programs;
-		std::vector<std::string>						m_programNames;
-		std::map<std::string, TechniqueGroup>		m_techniqueGroups;
+		std::vector<std::string>				m_programNames;
+		std::map<std::string, TechniqueGroup>	m_techniqueGroups;
 		FunctionMap								m_declaredFunctions;
 		std::map<std::string,Struct*>			m_structs;
 		std::map<std::string, ConstantBuffer*>	m_constantBuffers;
 
 		//! Holds SRVs and UAVs (UAVs will have a slot >= 1000)
 		std::map<int, DeclaredTexture*>			m_declaredTexturesByNumber;
-		std::map<std::string,int>				textureNumberMap;
-		std::map<std::string,int>				rwTextureNumberMap;
+		std::map<std::string,int>				readOnlySlotNumberMap;
+		std::map<std::string,int>				readWriteSlotNumberMap;
 
-		std::map<std::string,std::string>			m_cslayout;
-		std::map<std::string,std::string>			m_gslayout;
+		std::map<std::string,std::string>		m_cslayout;
+		std::map<std::string,std::string>		m_gslayout;
 		ShaderInstanceMap						m_shaderInstances;
 		struct InterfaceDcl
 		{
@@ -153,8 +153,8 @@ namespace sfx
 		bool IsConstantBufferMemberAlignmentValid(const Declaration* d);
 		std::string GetTypeOfParameter(std::vector<sfxstype::variable>& parameters, std::string keyName);
 		std::string GetDeclaredType(const std::string &str) const;
-		int GetRWTextureNumber(std::string n, int specified_slot=-1);
-		int GetTextureNumber(std::string n, int specified_slot=-1);
+		int GetRWSlotNumber(std::string n, int specified_slot=-1);
+		int GetRSlotNumber(std::string n, int specified_slot=-1);
 		DeclaredConstantBuffer* DeclareTemplatizedConstantBuffer(const std::string &name,int slot,int space,const std::string &structureType,const std::string &original);
 		DeclaredTexture *DeclareTexture(const std::string &name, ShaderResourceType shaderResourceType, int slot,int space,const std::string &templatedType,const std::string &original);
 		SamplerState *DeclareSamplerState(const std::string &name,int reg,const SamplerState &templateSS);
@@ -171,9 +171,9 @@ namespace sfx
 		std::string GetFilename(int filenumber) ;
 		friend int ::sfxparse();
 		friend int ::sfxlex();
-		int							current_texture_number;
-		int							current_rw_texture_number;
-		int							m_max_sampler_register_number;
+		int							current_read_only_slot_number = 0;
+		int							current_read_write_slot_number = 0;
+		int							max_sampler_register_number = 0;
 	};
 	extern Effect *gEffect;
 }
