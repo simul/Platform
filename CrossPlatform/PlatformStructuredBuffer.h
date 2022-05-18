@@ -30,9 +30,15 @@ namespace simul
 	{
 		enum class BufferUsageHint
 		{
-			ONCE,
-			ONCE_PER_FRAME,
-			MANY_PER_FRAME
+			INVALID=0,
+			ONCE=1,
+			ONCE_PER_FRAME=2,
+			MANY_PER_FRAME=4,
+			GPU_READ=8,
+			GPU_WRITE=16,
+			CPU_READ=32,
+			CPU_WRITE=64,
+			ONCE_PER_FRAME_GPU_TO_CPU=ONCE_PER_FRAME|GPU_WRITE|CPU_READ
 		};
 		struct ShaderResource;
 		/// A base class for structured buffers, used by StructuredBuffer internally.

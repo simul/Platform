@@ -24,6 +24,7 @@ namespace simul
 			//! Platform-dependent function called when uninitializing the Spherical Harmonics.
 			void InvalidateDeviceObjects();
 			//! Make sure no invalid data is retained.
+			void ClearBuffers(GraphicsDeviceContext &deviceContext);
 			void ResetBuffers();
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void RecompileShaders();
@@ -42,7 +43,7 @@ namespace simul
 			//! Changing the number of bands will resize the internal storeage.
 			void CalcSphericalHarmonics(DeviceContext &deviceContext,Texture *texture);
 
-			StructuredBuffer<vec4> &GetSphericalHarmonics()
+			StructuredBuffer<vec4,BufferUsageHint::ONCE_PER_FRAME_GPU_TO_CPU> &GetSphericalHarmonics()
 			{
 				return sphericalHarmonics;
 			}
@@ -65,7 +66,7 @@ namespace simul
 			StructuredBuffer<vec4>	probeResultsRW;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			ConstantBuffer<SphericalHarmonicsConstants>	sphericalHarmonicsConstants;
-			StructuredBuffer<vec4>						sphericalHarmonics;
+			StructuredBuffer<vec4,BufferUsageHint::ONCE_PER_FRAME_GPU_TO_CPU>						sphericalHarmonics;
 			Effect										*sphericalHarmonicsEffect;
 			int											shSeed;
 			crossplatform::Effect						*lightProbesEffect;

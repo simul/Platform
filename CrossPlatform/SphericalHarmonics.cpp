@@ -78,6 +78,10 @@ void SphericalHarmonics::ResetBuffers()
 	probeResultsRW.InvalidateDeviceObjects();
 }
 
+void SphericalHarmonics::ClearBuffers(GraphicsDeviceContext &deviceContext)
+{
+}
+
 float RoughnessFromMip(float mip, float numMips)
 {
 	static float  roughness_mip_scale = 1.2f;
@@ -209,6 +213,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&	sphericalHarmonicsConstants);
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
 		int u = (sphericalHarmonicsConstants.numJitterSamples + BLOCK_SIZE - 1) / BLOCK_SIZE;
+		// 1,1,1
 		renderPlatform->DispatchCompute(deviceContext, u, 1, 1);
 		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 		sphericalHarmonicsEffect->SetUnorderedAccessView(deviceContext,_samplesBufferRW,NULL);
@@ -248,7 +253,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
 		sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
 		int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
-
+		//9,1,1
 		renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
 
 		sphericalHarmonicsConstants.Unbind(deviceContext);
