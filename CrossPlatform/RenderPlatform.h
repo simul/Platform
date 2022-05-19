@@ -509,7 +509,6 @@ namespace simul
 			unsigned char				mCurIdx;
 			//! Last frame number
 			long long					mLastFrame;
-			std::set<crossplatform::Texture*> fencedTextures;
 		public:
 			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;
