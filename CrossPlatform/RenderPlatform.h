@@ -536,6 +536,7 @@ namespace simul
 			if (p)
 			{
 				platformConstantBuffer = p->CreatePlatformConstantBuffer();
+				platformConstantBuffer->SetName(typeid(T).name());
 				platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
 			}
 		}
