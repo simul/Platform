@@ -219,6 +219,7 @@ namespace simul
 			Texture(const char *name=NULL);
 			virtual ~Texture();
 			virtual void SetName(const char *n);
+			const char* GetName() const;
 			/// Set the fence on this texture: it cannot be used until the fence has been triggered by the rendering API.
 			void SetFence(DeviceContext &,unsigned long long);
 			/// Get the current fence on this texture; it should not be used until the API has passed this fence.
@@ -348,20 +349,20 @@ namespace simul
 			}
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,arraySize,dim,mips;
-			PixelFormat pixelFormat;
-			RenderPlatform *renderPlatform;
-			bool textureLoadComplete;
+			PixelFormat pixelFormat= PixelFormat::UNKNOWN;
+			RenderPlatform *renderPlatform=nullptr;
+			bool textureLoadComplete = false;
 		protected:
-			bool cubemap;
-			bool computable;
-			bool renderTarget;
-			bool depthStencil;
-			bool external_texture;
+			bool cubemap = false;
+			bool computable=false;
+			bool renderTarget = false;
+			bool depthStencil = false;
+			bool external_texture = false;
 			bool shouldGenerateMips = false;
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
-			bool unfenceable;
+			bool unfenceable = false;
 			// a wrapper around stbi_load_from_memory.
 			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
 			void FreeTranslatedTextureData(void *data);

@@ -460,6 +460,7 @@ namespace simul
 			simul::base::MemoryInterface *GetMemoryInterface();
 			void SetMemoryInterface(simul::base::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
+			crossplatform::Effect *GetCopyEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 			// Does the format use stencil?
 			static PixelFormat ToColourFormat(PixelFormat f);
@@ -508,7 +509,6 @@ namespace simul
 			unsigned char				mCurIdx;
 			//! Last frame number
 			long long					mLastFrame;
-			std::set<crossplatform::Texture*> fencedTextures;
 		public:
 			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;

@@ -89,6 +89,12 @@ void Texture::SetName(const char *n)
 {
 	name=n;
 }
+
+const char* Texture::GetName() const
+{
+	return name.c_str();
+}
+
 unsigned long long Texture::GetFence(DeviceContext &deviceContext) const
 {
 	const auto &i=deviceContext.contextState.fenceMap.find((const Texture*)this);

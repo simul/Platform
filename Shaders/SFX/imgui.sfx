@@ -24,7 +24,7 @@ struct PS_INPUT
 };
             
 shader PS_INPUT VS_Main(VS_INPUT vertex)
-{
+{ 
   PS_INPUT v_out;
   v_out.pos = mul( ProjectionMatrix, vec4(vertex.pos.xy, 0.f, 1.f));
   v_out.col = vertex.col;

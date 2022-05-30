@@ -23,7 +23,24 @@ uniform Texture2D<vec4> SourceTex2 : register(t0);
 uniform RWTexture3D<vec4> DestTex3 : register(u0);
 uniform Texture3D<vec4> SourceTex3 : register(t0);
 
+//uniform ByteBuffer  targetCopyBufferRW;
+
+uniform RWStructuredBuffer<uint> targetCopyBufferRW: register(u0);
+uniform StructuredBuffer<uint> sourceCopyBuffer: register(t0);
+
 #ifdef __PSSL__
+CS_LAYOUT(64,1,1)
+shader void CS_CopyBuffer(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g * 64 + t;
+	uint dim;
+	uint stride;
+	targetCopyBufferRW.GetDimensions(dim,stride);
+	if(sub_pos.x>=dim)
+		return;
+	targetCopyBufferRW[sub_pos.x]	=sourceCopyBuffer[sub_pos.x];
+}
+
 CS_LAYOUT(64,1,1)
 shader void Copy1DInt4( uint3 position : SV_DispatchThreadID )
 {
@@ -61,6 +78,14 @@ shader void Copy3D( uint3 position : SV_DispatchThreadID )
 }
 
 #ifdef __PSSL__
+technique copy_buffer
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_CopyBuffer()));
+    }
+}
+
 technique copy_1d_int4
 {
     pass p0

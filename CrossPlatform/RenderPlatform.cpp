@@ -599,6 +599,11 @@ crossplatform::Effect *RenderPlatform::GetDebugEffect()
 	return debugEffect;
 }
 
+crossplatform::Effect *RenderPlatform::GetCopyEffect()
+{
+	return copyEffect;
+}
+
 ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
 {
 	return debugConstants;
