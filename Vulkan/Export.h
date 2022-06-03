@@ -60,10 +60,10 @@
 
 #define SIMUL_VK_CHECK(result)\
 	{\
-		vk::Result res=result;\
-		if(res!=vk::Result::eSuccess)\
+		vk::Result resxx1=result;\
+		if(resxx1!=vk::Result::eSuccess)\
 		{\
-			std::cerr<<platform::vulkan::RenderPlatform::VulkanResultString(res)<<std::endl;\
+			std::cerr<<platform::vulkan::RenderPlatform::VulkanResultString(resxx1)<<std::endl;\
 		};\
 	}
 

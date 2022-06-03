@@ -947,7 +947,9 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	clear_value.stencil=stencilClear;
 
 	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
-	SetLayout(deviceContext, prev_image_layout);
+	// can't go back to these layouts so just stay in eTransferDstOptimal for now:
+	if(prev_image_layout!=vk::ImageLayout::ePreinitialized&&prev_image_layout!=vk::ImageLayout::eUndefined)
+		SetLayout(deviceContext, prev_image_layout);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)

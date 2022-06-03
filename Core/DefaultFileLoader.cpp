@@ -28,7 +28,7 @@ using namespace core;
 #include <filesystem>
 namespace fs = std::filesystem;
 #else
-#define SIMUL_FILESYSTEM 1
+#define SIMUL_FILESYSTEM PLATFORM_STD_FILESYSTEM
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #endif
@@ -133,7 +133,7 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 }
 
 
-bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)
+bool DefaultFileLoader::Save(const void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)
 {
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;

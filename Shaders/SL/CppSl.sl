@@ -328,190 +328,7 @@
 			z-=v[2];
 		}
 	};
-	namespace std
-	{
-		template <typename T> tvector2<T> max(tvector2<T> a, tvector2<T> b)
-		{
-			return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
-		};
-		template <typename T> tvector2<T> min(tvector2<T> a, tvector2<T> b)
-		{
-			return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
-		};
-		template <typename T> tvector3<T> max(tvector3<T> a,tvector3<T> b)
-			{
-				return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
-			};
-		template <typename T> tvector3<T> min(tvector3<T> a,tvector3<T> b)
-			{
-				return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
-			};
-	}
-	template<typename T> T length(const tvector2<T>& u)
-	{
-		T size = u.x * u.x + u.y * u.y ;
-		return static_cast<T>(sqrt(static_cast<double>(size)));
-	}
-	template<typename T> T length(const tvector3<T>& u)
-	{
-		T size = u.x * u.x + u.y * u.y + u.z * u.z;
-		return static_cast<T>(sqrt(static_cast<double>(size)));
-	}
-	template<typename T> tvector3<T> normalize(const tvector3<T>& u)
-	{
-		T l=length(u);
-		if(l>0)
-			return u/l;
-		return u;
-	}
-	template<typename T>
-	tvector3<T> lerp(tvector3<T> a, tvector3<T> b, T x)
-	{
-		tvector3 c = b*x + a*(T(1.0) - x);
-		return c;
-	}
-	typedef tvector2<float> vec2;
-	typedef tvector3<float> vec3;
-	template<typename T> T cross(const tvector2<T>& a, const tvector2<T>& b)
-	{
-		return  a.x * b.y - b.x * a.y;
-	}
-	template<typename T> T dot(const tvector2<T>& a, const tvector2<T>& b)
-	{
-		return  a.x * b.x+a.y * b.y;
-	}
-	inline vec3 cross(const vec3 &a,const vec3 &b)
-	{
-		vec3 r;
-		r.x=a.y*b.z-b.y*a.z;
-		r.y=a.z*b.x-b.z*a.x;
-		r.z=a.x*b.y-b.x*a.y;
-		return r;
-	}
-	struct mat3
-	{
-		union
-		{
-			float m[16];
-			struct
-			{
-				float        _11, _12, _13;
-				float        _21, _22, _23;
-				float        _31, _32, _33;
-			};
-			struct
-			{
-				float        _m00, _m01, _m02;
-				float        _m10, _m11, _m12;
-				float        _m20, _m21, _m22;
-			};
-			float M[3][3];
-		};
-	};
-	template<typename T> struct tmatrix4
-	{
-		union
-		{
-			float m[16];
-			struct
-			{
-				T        _11, _12, _13, _14;
-				T        _21, _22, _23, _24;
-				T        _31, _32, _33, _34;
-				T        _41, _42, _43, _44;
-			};
-			struct
-			{
-				T        _m00, _m01, _m02, _m03;
-				T        _m10, _m11, _m12, _m13;
-				T        _m20, _m21, _m22, _m23;
-				T        _m30, _m31, _m32, _m33;
-			};
-			T M[4][4];
-		};
-		operator const T *()
-		{
-			return m;
-		}
-		void operator=(const T *v)
-		{
-			for(int i=0;i<16;i++)
-				m[i]=v[i];
-		}
-		inline static void mul(tmatrix4<T> &r,const tmatrix4<T> &a,const tmatrix4<T> &b)
-		{
-			for(int i=0;i<4;i++)
-			{
-				for(int j=0;j<4;j++)
-				{
-					const T *m1row=&a.m[i*4+0];
-					T t=0.f;
-					int k=0;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];
-					r.M[i][j]=t;
-				}
-			}
-		}
-		void operator*=(T c)
-		{
-			for(int i=0;i<16;i++)
-				m[i]*=c;
-		}
-		void transpose()
-		{
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					if(i<j)
-					{
-						T temp=m[i*4+j];
-						m[i*4+j]=m[j*4+i];
-						m[j*4+i]=temp;
-					}
-		}
-		static inline tmatrix4<T> identity()
-		{
-			tmatrix4<T> m;
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					m.M[i][j]=0.0f;
-			m._11=m._22=m._33=m._44=1.0f;
-			return m;
-		}
-		static inline tmatrix4<T> translation(vec3 tr)
-		{
-			tmatrix4<T> m=identity();
-			m._14 = tr.x;
-			m._24 = tr.y;
-			m._34 =tr.z;
-			return m;
-		}
-	};
-	typedef tmatrix4<float> mat4;
-	inline mat4 mul(const mat4& a, const mat4& b)
-	{
-		mat4 r;
-		mat4::mul(r, a, b);
-		return r;
-	}
-	inline vec3 operator*(const mat4 &m,const vec3 &v)
-	{
-		vec3 r;
-		r.x=m._11*v.x+m._12*v.y+m._13*v.z;
-		r.y=m._21*v.x+m._22*v.y+m._23*v.z;
-		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
-		return r;
-	}
-	template<typename T> tvector3<T> operator*(T m, tvector3<T> v)
-	{
-		tvector3<T> r;
-		r.x=m*v.x;
-		r.y=m*v.y;
-		r.z=m*v.z;
-		return r;
-	}
+	
 	template<typename T> struct tvector4
 	{
 		union
@@ -639,6 +456,229 @@
 			return r;
 		}
 	};
+	namespace std
+	{
+		template <typename T> tvector2<T> max(tvector2<T> a, tvector2<T> b)
+		{
+			return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
+		};
+		template <typename T> tvector2<T> min(tvector2<T> a, tvector2<T> b)
+		{
+			return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
+		};
+		template <typename T> tvector3<T> max(tvector3<T> a,tvector3<T> b)
+			{
+				return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
+			};
+		template <typename T> tvector3<T> min(tvector3<T> a,tvector3<T> b)
+			{
+				return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
+			};
+	}
+	template<typename T> T length(const tvector2<T>& u)
+	{
+		T size = u.x * u.x + u.y * u.y ;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
+	template<typename T> T length(const tvector3<T>& u)
+	{
+		T size = u.x * u.x + u.y * u.y + u.z * u.z;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
+	template<typename T> tvector3<T> normalize(const tvector3<T>& u)
+	{
+		T l=length(u);
+		if(l>0)
+			return u/l;
+		return u;
+	}
+	template<typename T>
+	tvector3<T> lerp(tvector3<T> a, tvector3<T> b, T x)
+	{
+		tvector3 c = b*x + a*(T(1.0) - x);
+		return c;
+	}
+	typedef tvector2<float> vec2;
+	typedef tvector3<float> vec3;
+	template<typename T> T cross(const tvector2<T>& a, const tvector2<T>& b)
+	{
+		return  a.x * b.y - b.x * a.y;
+	}
+	template<typename T> T dot(const tvector2<T>& a, const tvector2<T>& b)
+	{
+		return  a.x * b.x+a.y * b.y;
+	}
+	inline vec3 cross(const vec3 &a,const vec3 &b)
+	{
+		vec3 r;
+		r.x=a.y*b.z-b.y*a.z;
+		r.y=a.z*b.x-b.z*a.x;
+		r.z=a.x*b.y-b.x*a.y;
+		return r;
+	}
+	struct mat3
+	{
+		union
+		{
+			float m[16];
+			struct
+			{
+				float        _11, _12, _13;
+				float        _21, _22, _23;
+				float        _31, _32, _33;
+			};
+			struct
+			{
+				float        _m00, _m01, _m02;
+				float        _m10, _m11, _m12;
+				float        _m20, _m21, _m22;
+			};
+			float M[3][3];
+		};
+	};
+	template<typename T> struct tmatrix4
+	{
+		union
+		{
+			float m[16];
+			struct
+			{
+				T        _11, _12, _13, _14;
+				T        _21, _22, _23, _24;
+				T        _31, _32, _33, _34;
+				T        _41, _42, _43, _44;
+			};
+			struct
+			{
+				T        _m00, _m01, _m02, _m03;
+				T        _m10, _m11, _m12, _m13;
+				T        _m20, _m21, _m22, _m23;
+				T        _m30, _m31, _m32, _m33;
+			};
+			struct
+			{
+				T a, b, c, d;
+				T e, f, g, h;
+				T i, j, k, l;
+				T mm, n, o, p;
+			};
+			T M[4][4];
+		};
+		
+		operator const T *()
+		{
+			return m;
+		}
+		void operator=(const T *v)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=v[i];
+		}
+		bool operator==(const tmatrix4 &v) const
+		{
+			for(int i=0;i<16;i++)
+				if(m[i]!=v.m[i])
+				return false;
+			return true;
+		}
+		bool operator!=(const tmatrix4 &v) const
+		{
+			return !operator==(v);
+		}
+		inline static void mul(tmatrix4<T> &r,const tmatrix4<T> &a,const tmatrix4<T> &b)
+		{
+			for(int i=0;i<4;i++)
+			{
+				for(int j=0;j<4;j++)
+				{
+					const T *m1row=&a.m[i*4+0];
+					T t=0.f;
+					int k=0;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];
+					r.M[i][j]=t;
+				}
+			}
+		}
+		tmatrix4<T> operator* (const tmatrix4<T>& input) const
+		{
+			tvector4<T> input_i={input.a, input.e, input.i, input.mm};
+			tvector4<T> input_j={input.b, input.f, input.j, input.n};
+			tvector4<T> input_k={input.c, input.g, input.k, input.o};
+			tvector4<T> input_l={input.d, input.h, input.l, input.p};
+
+			tvector4<T> output_i = *this * input_i;
+			tvector4<T> output_j = *this * input_j;
+			tvector4<T> output_k = *this * input_k;
+			tvector4<T> output_l = *this * input_l;
+
+			tmatrix4<T> output={output_i.x, output_i.y, output_i.z, output_i.w
+						,output_j.x, output_j.y, output_j.z, output_j.w
+						,output_k.x, output_k.y, output_k.z, output_k.w
+						,output_l.x, output_l.y, output_l.z, output_l.w};
+			output.transpose();
+			return output;
+		}
+
+		void operator*=(T c)
+		{
+			for(int i=0;i<16;i++)
+				m[i]*=c;
+		}
+		void transpose()
+		{
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					if(i<j)
+					{
+						T temp=m[i*4+j];
+						m[i*4+j]=m[j*4+i];
+						m[j*4+i]=temp;
+					}
+		}
+		static inline tmatrix4<T> identity()
+		{
+			tmatrix4<T> m;
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					m.M[i][j]=0.0f;
+			m._11=m._22=m._33=m._44=1.0f;
+			return m;
+		}
+		static inline tmatrix4<T> translation(vec3 tr)
+		{
+			tmatrix4<T> m=identity();
+			m._14 = tr.x;
+			m._24 = tr.y;
+			m._34 =tr.z;
+			return m;
+		}
+	};
+	typedef tmatrix4<float> mat4;
+	inline mat4 mul(const mat4& a, const mat4& b)
+	{
+		mat4 r;
+		mat4::mul(r, a, b);
+		return r;
+	}
+	inline vec3 operator*(const mat4 &m,const vec3 &v)
+	{
+		vec3 r;
+		r.x=m._11*v.x+m._12*v.y+m._13*v.z;
+		r.y=m._21*v.x+m._22*v.y+m._23*v.z;
+		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
+		return r;
+	}
+	template<typename T> tvector3<T> operator*(T m, tvector3<T> v)
+	{
+		tvector3<T> r;
+		r.x=m*v.x;
+		r.y=m*v.y;
+		r.z=m*v.z;
+		return r;
+	}
 	typedef tvector4<float> vec4;
 	template<typename T>
 	tvector4<T> operator*(T m,const tvector4<T> &v)

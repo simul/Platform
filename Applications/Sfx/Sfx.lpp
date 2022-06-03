@@ -610,6 +610,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"uint2"								{
 													modReturn(IDENTIFIER,"uint2");
 												}
+<IN_SHADER>"uvec2"								{
+													modReturn(IDENTIFIER,"uint2");
+												}
 <IN_SHADER>"uint3"								{
 													modReturn(IDENTIFIER,"uint3");
 												}
@@ -617,6 +620,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													modReturn(IDENTIFIER,"uint3");
 												}
 <IN_SHADER>"uint4"								{
+													modReturn(IDENTIFIER,"uint4");
+												}
+<IN_SHADER>"uvec4"								{
 													modReturn(IDENTIFIER,"uint4");
 												}
 <IN_SHADER>"fract"								{

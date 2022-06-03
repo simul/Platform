@@ -16,7 +16,6 @@
 #ifdef _MSC_VER
     #pragma warning(push)
 	#pragma warning(disable:4996)
-	#include <Windows.h>// for DebugBreak etc
 #endif
 #ifdef _WIN32
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
@@ -45,9 +44,8 @@ namespace platform
 {
 	namespace core
 	{
-		#ifndef _MSC_VER	
 		extern PLATFORM_CORE_EXPORT void DebugBreak();
-		#endif
+		extern PLATFORM_CORE_EXPORT bool IsDebuggerPresent();
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
@@ -203,8 +201,8 @@ namespace platform
 #ifdef _MSC_VER
 	#define BREAK_IF_DEBUGGING\
 		{\
-			if(platform::core::DebugBreaksEnabled()&&IsDebuggerPresent())\
-				DebugBreak();\
+			if(platform::core::DebugBreaksEnabled()&&platform::core::IsDebuggerPresent())\
+				platform::core::DebugBreak();\
 		}
 #else
 	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)

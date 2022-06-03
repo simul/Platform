@@ -1,15 +1,24 @@
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/StringToWString.h"
+#include "Platform/Core/RuntimeError.h"
+#include <iostream>
+#if PLATFORM_STD_FILESYSTEM==1
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif PLATFORM_STD_FILESYSTEM==2
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#endif
 using namespace platform;
 using namespace core;
 
 std::vector<std::string> FileLoader::ListDirectory(const std::string& path) const
 {
 	std::vector<std::string> dir;
-#if SIMUL_FILESYSTEM
+#if PLATFORM_STD_FILESYSTEM
 	try
 	{
-		if (!fs::exists(path))
+		if (!std::filesystem::exists(path))
 		{
 			SIMUL_COUT << "path does not exist: " << path.c_str() << std::endl;
 			return dir;
@@ -70,7 +79,6 @@ std::string FileLoader::FindFileInPathStack(const char* filename_utf8, const cha
 
 int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* const* path_stack_utf8) const
 {
-
 	std::string fn;
 	if (FileExists(filename_utf8))
 		return -1;
@@ -91,11 +99,11 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 	for (; i >= 0; i--)
 	{
 		std::string f = std::string(path_stack_utf8[i]);
-		/*std::vector<std::string> dir=ListDirectory(f);
+		std::vector<std::string> dir=ListDirectory(f);
 		for(auto s:dir)
 		{
-			SIMUL_COUT<<s.c_str()<<std::endl;
-		}*/
+			std::cout<<s.c_str()<<std::endl;
+		}
 		if (f.length() > 0 && f.back() != '/' && f.back() != '\\')
 			f += std::string("/");
 		f += filename_utf8;

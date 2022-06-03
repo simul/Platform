@@ -298,9 +298,9 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 
 	crossplatform::LayoutDesc local_layout[] =
 	{
-		{ "POSITION", 0, crossplatform::RG_32_FLOAT,   0, (UINT)IM_OFFSETOF(ImDrawVert, pos), false, 0 },
-		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT,   0, (UINT)IM_OFFSETOF(ImDrawVert, uv),  false, 0 },
-		{ "COLOR"   , 0, crossplatform::RGBA_8_UNORM, 0, (UINT)IM_OFFSETOF(ImDrawVert, col), false, 0 },
+		{ "POSITION", 0, crossplatform::RG_32_FLOAT,	0, (uint32_t)IM_OFFSETOF(ImDrawVert, pos), false, 0 },
+		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT,	0, (uint32_t)IM_OFFSETOF(ImDrawVert, uv),  false, 0 },
+		{ "COLOR"   , 0, crossplatform::RGBA_8_UNORM,	0, (uint32_t)IM_OFFSETOF(ImDrawVert, col), false, 0 },
 	};
 	if (!bd->pInputLayout)
 		bd->pInputLayout=bd->renderPlatform->CreateLayout(3,local_layout,true);
@@ -308,7 +308,7 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 	if (!bd->effect)
 		bd->effect= bd->renderPlatform->CreateEffect("imgui");
 	if(!bd->effectPass)
-		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
+		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
@@ -349,7 +349,7 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	if(!bd->renderPlatform)
 		return;
 	bd->effect = bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
+	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
 }
 
 bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r)
@@ -456,13 +456,11 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (!bd->is3d)
 		return;
-	if (!bd->screen.x || !bd->screen.y)
-		return;
 	ImGuiIO& io = ImGui::GetIO();
 
 	const ImVec2 mouse_pos_prev = io.MousePos;
 	static ImVec2 last_pos = { 0,0 };
-	static float control_surface_thickness = 0.02f;
+	static float control_surface_thickness = 0.05f;
 	float lowest = 1e10f;
 	bool any = false;
 	static std::vector<bool> clicked;

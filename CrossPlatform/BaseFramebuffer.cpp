@@ -1,4 +1,7 @@
 #include "BaseFramebuffer.h"
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"

@@ -67,6 +67,12 @@ DepthStencilState WriteReverseDepth
     DepthWriteMask = ALL;
     DepthFunc = ALWAYS;
 };
+DepthStencilState TestReverseDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ZERO;
+	DepthFunc = GREATER_EQUAL;
+};
 
 technique main
 {
@@ -85,6 +91,16 @@ technique main
         SetRasterizerState(ImGuiRasterizer);
         SetTopology(TriangleList);
         SetDepthStencilState(DisableDepth, 0);
+        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+        SetGeometryShader(NULL);
+        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+    }
+    pass test_depth
+    {
+        SetRasterizerState(ImGuiRasterizer);
+        SetTopology(TriangleList);
+        SetDepthStencilState(TestReverseDepth, 0);
         SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
         SetGeometryShader(NULL);
         SetVertexShader(CompileShader(vs_5_0, VS_Main()));

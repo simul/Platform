@@ -197,8 +197,9 @@
 				auto stype	  = config->toTextureType.find(searchT);
 				if(stype==config->toTextureType.end())
 				{
-					string errstr="Unknown type: ";
-					errstr+=searchT;
+					string errstr="Unknown type for texture: ";
+					errstr+=searchT+" ";
+					errstr+=" - see toTextureType in config json.";
 					errSyn(errstr.c_str());
 				}
 				name			= stype->second;
