@@ -1245,7 +1245,8 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 			rebuildRenderPass = !(*rp);
 		else
 			rebuildRenderPass = true;
-
+		bool colour_write=true;
+		bool depth_write=(tv->depthTarget.texture!=nullptr&&depthStencilState->desc.depth.write);
 		if(rebuildRenderPass)
 		{
 			auto color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
@@ -1256,28 +1257,29 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 
 			subpass		.setInputAttachmentCount(0)
 						.setPInputAttachments(nullptr)
-						.setColorAttachmentCount(1)
-						.setPColorAttachments(&color_reference);
+						.setColorAttachmentCount(colour_write?1:0)
+						.setPColorAttachments(colour_write?&color_reference:nullptr);
 		
-			vk::AttachmentDescription attachments[2] ;
-			attachments[0].setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
+			vk::AttachmentDescription attachments[2];
+			int a=0;
+			if(colour_write)
+				attachments[a++].setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
 																  .setSamples(vk::SampleCountFlagBits::e1)
 																  .setLoadOp(vk::AttachmentLoadOp::eLoad)
 																  .setStoreOp(vk::AttachmentStoreOp::eStore)
 																  .setInitialLayout(vk::ImageLayout::eUndefined)
 																  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
-			if(tv->depthTarget.texture)
-				attachments[1].setFormat(vk::Format::eD32Sfloat)
-																  .setSamples(vk::SampleCountFlagBits::e1)
-																  .setLoadOp(vk::AttachmentLoadOp::eLoad)
-																  .setStoreOp(vk::AttachmentStoreOp::eStore)
-																  .setStencilLoadOp(vk::AttachmentLoadOp::eLoad)
-																  .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
-																  .setInitialLayout(vk::ImageLayout::eUndefined)
-																  .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			if(depth_write)
+				attachments[a++].setFormat(vk::Format::eD32Sfloat).setSamples(vk::SampleCountFlagBits::e1)
+																.setLoadOp(vk::AttachmentLoadOp::eLoad)
+																.setStoreOp(vk::AttachmentStoreOp::eStore)
+																.setStencilLoadOp(vk::AttachmentLoadOp::eLoad)
+																.setStencilStoreOp(vk::AttachmentStoreOp::eStore)
+																.setInitialLayout(vk::ImageLayout::eUndefined)
+																.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 			auto rp_info = vk::RenderPassCreateInfo()
-				.setAttachmentCount(tv->depthTarget.texture?2:1)
+				.setAttachmentCount(a)
 				.setPAttachments(attachments)
 				.setSubpassCount(1)
 				.setPSubpasses(&subpass)

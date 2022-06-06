@@ -460,16 +460,20 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 
 	const ImVec2 mouse_pos_prev = io.MousePos;
 	static ImVec2 last_pos = { 0,0 };
-	static float control_surface_thickness = 0.05f;
-	float lowest = 1e10f;
+	static float control_area_thickness = 0.05f;
+	static float min_z =-0.05f;
+	static float max_z = 0.0f;
+	static float control_surface_thickness = 0.0f;
+	static float hysteresis_thickness = 0.02f;
+	float lowest = max_z;
 	bool any = false;
-	static std::vector<bool> clicked;
+	/*static std::vector<bool> clicked;
 	if (clicked.size() != position_press.size())
 	{
 		clicked.resize(position_press.size());
 		for (size_t i = 0; i < position_press.size(); i++)
 			clicked[i] = false;
-	}
+	}*/
 	for (size_t i = 0; i < position_press.size(); i++)
 	{
 		// Set Dear ImGui mouse position from OS position
@@ -478,17 +482,24 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 		// resolve position onto the control surface:
 		vec3 client_pos = (bd->world_to_imgui * vec4(pos, 1.0f)).xyz;
 		// Too far beneath the surface.
-		if (!clicked[i])
+		//if (!clicked[i])
 		{
-			if (client_pos.z < -control_surface_thickness || client_pos.z > control_surface_thickness)
+			if (client_pos.z < min_z || client_pos.z > max_z)
 				continue;
 			if (client_pos.x<0 || client_pos.y<0 || client_pos.x>io.DisplaySize.x || client_pos.y>io.DisplaySize.y)
 				continue;
 		}
-		if (client_pos.z <= control_surface_thickness)
+		if (client_pos.z <= hysteresis_thickness)
 		{
-			io.MouseDown[0] = true;
 			any = true;
+		}
+		if(!io.MouseDown[0])
+		{
+			if (client_pos.z <= control_surface_thickness)
+			{
+				io.MouseDown[0] = true;
+				// record mouseDown position...?
+			}
 		}
 		if (client_pos.z < lowest)
 		{
@@ -496,10 +507,10 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 			// Finally, set this as the mouse pos.
 			io.MousePos = ImVec2(client_pos.x, client_pos.y);
 		}
-		if (clicked[i] && client_pos.z > control_surface_thickness)
+		/*if (clicked[i] && client_pos.z > control_area_thickness)
 		{
 			io.MousePos = ImVec2(client_pos.x, client_pos.y);
-		}
+		}*/
 	}
 	if (io.MouseDown[0] && !any)
 	{

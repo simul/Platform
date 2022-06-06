@@ -291,7 +291,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 		if(instance_layer_count)
 		{
-			SIMUL_COUT<<"Vulkan extensions supported on this device:\n";
+			SIMUL_COUT<<"Vulkan extensions supported on this instance:\n";
 		}
 		for (uint32_t i = 0; i < instance_extension_count; i++)
 		{

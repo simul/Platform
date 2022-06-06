@@ -1628,11 +1628,12 @@ vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::Graphic
 		tv = &(deviceContext.defaultTargetsAndViewport);
 		dTaV = true;
 	}
+	bool do_depth=(tv->depthTarget.texture!=nullptr);//&&deviceContext.contextState.currentEffectPass->depthStencilState->desc.depth.write;
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
 		if (!dTaV)
 		{
-			if (tv->num == 1 && !tv->depthTarget.texture) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
+			if (tv->num == 1 && !do_depth) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
 			{
 				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
 				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
@@ -1646,7 +1647,7 @@ vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::Graphic
 		}
 		else //No activateRenderTarget() called
 		{
-			if (!tv->depthTarget.texture)
+			if (!do_depth)
 			{
 				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
 				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
@@ -1774,11 +1775,13 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 		tv=&(deviceContext.defaultTargetsAndViewport);
 		dTaV = true;
 	}
+	// If shader doesn't write depth, do not try to use a framebuffer that includes depth......
+	bool do_depth=(tv->depthTarget.texture!=nullptr);//&&deviceContext.contextState.currentEffectPass->depthStencilState->desc.depth.write;
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
 		if (!dTaV)
 		{
-			if (tv->num == 1 && !tv->depthTarget.texture) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
+			if (tv->num == 1 && !do_depth) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
 			{
 				auto& tt = tv->textureTargets[0];
 				auto vt = (vulkan::Texture*)tt.texture;
@@ -1796,7 +1799,7 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 		}
 		else //No activateRenderTarget() called
 		{
-			if (!tv->depthTarget.texture)
+			if (!do_depth)
 			{
 				auto& tt = tv->textureTargets[0];
 				auto vt = (vulkan::Texture*)tt.texture;
@@ -1833,7 +1836,8 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 // the renderpass, no barriers are necessary.
 	bool depth=(depthFormat!=crossplatform::PixelFormat::UNKNOWN);
 	crossplatform::RenderState* depthStencilState = deviceContext.contextState.currentEffectPass ? deviceContext.contextState.currentEffectPass->depthStencilState:nullptr;
-	bool depthTestWrite = depthStencilState ? (depthStencilState->desc.depth.test || depthStencilState->desc.depth.write) : false;
+	bool depthTest = depthStencilState ? (depthStencilState->desc.depth.test ) : false;
+	bool depthWrite = depthStencilState ? ( depthStencilState->desc.depth.write) : false;
 	
 	bool msaa = numOfSamples > 1;
 	int num_attachments = num_colour + (depth ? 1 : 0);
@@ -1852,11 +1856,11 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		vk::ImageLayout layout = crossplatform::RenderPlatform::IsDepthFormat(pixelFormats[i]) ?
 			vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal;
 #endif
-		//if(initial_layouts)
-		//	layout=initial_layouts[i];
+	
+
 		vk::ImageLayout end_layout=vk::ImageLayout::eColorAttachmentOptimal ;
-		//if(target_layouts)
-		//	end_layout=target_layouts[i];
+		
+	
 		attachments[i]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(pixelFormats[i]))
 														.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
 														.setLoadOp(clear?vk::AttachmentLoadOp::eClear:vk::AttachmentLoadOp::eLoad)
@@ -1868,22 +1872,26 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		colour_reference[i].setAttachment(i).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	}
 		
-	if(depth)
+	if(depth&&(depthWrite||depthTest))
 	{
-		vk::ImageLayout layout=depthTestWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined;
-		//if(initial_layouts)
-		//	layout=initial_layouts[num_colour];
-		vk::ImageLayout end_layout=vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		//if(target_layouts)
-		//	end_layout=target_layouts[num_colour];
+		vk::ImageLayout layout= vk::ImageLayout::eUndefined;
+		if(depthWrite&&depthTest)
+			layout=vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		else if(depthTest&&!depthWrite)
+			layout=vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+		//TODO: add stencil options for layout.
+		 
+		// initial and final layouts can be the same...?
+		//vk::ImageLayout end_layout=vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
 		attachments[num_attachments-1]=  vk::AttachmentDescription()	.setFormat(ToVulkanFormat(depthFormat))
 																		.setSamples(msaa ? (vk::SampleCountFlagBits)numOfSamples : vk::SampleCountFlagBits::e1)
-																		.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTestWrite?vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
+																		.setLoadOp(clear?vk::AttachmentLoadOp::eClear:depthTest?vk::AttachmentLoadOp::eLoad:vk::AttachmentLoadOp::eDontCare)
 																		.setStoreOp(vk::AttachmentStoreOp::eStore)
 																		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 																		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 																		.setInitialLayout(layout)
-																		.setFinalLayout(end_layout);
+																		.setFinalLayout(layout);
 		depth_reference.setAttachment(num_attachments-1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
 	

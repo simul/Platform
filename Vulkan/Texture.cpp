@@ -1167,7 +1167,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			flags = vk::AccessFlagBits::eColorAttachmentWrite;
 			break;
 		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite|vk::AccessFlagBits::eDepthStencilAttachmentRead;
+			break;
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentRead;
 			break;
 		case vk::ImageLayout::eShaderReadOnlyOptimal:
 			// Make sure any Copy or CPU writes to image are flushed
@@ -1180,6 +1183,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			flags = vk::AccessFlagBits::eMemoryRead;
 			break;
 		default:
+			SIMUL_BREAK_ONCE("Unknown layout.");
 			break;
 		}
 

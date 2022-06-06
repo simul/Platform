@@ -1357,6 +1357,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		if (initData)
 		{
 			auto& deviceContext = renderPlatform->GetImmediateContext();
+			wicContents.resize(1);
 			CreateUploadResource();
 			SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0);
 

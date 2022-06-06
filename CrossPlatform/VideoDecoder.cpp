@@ -38,7 +38,8 @@ VideoDecoderResult VideoDecoder::Initialize(platform::crossplatform::RenderPlatf
 	}
 
 	mInputBuffer = CreateVideoBuffer();
-	
+	if(!mInputBuffer)
+		return VideoDecoderResult::UnsupportedFeatures;
 	// Increase this value maybe for 8k or greater resolutions.
 	static constexpr uint32_t inputBufferSize = 300000;
 	mInputBuffer->EnsureBuffer(mRenderPlatform, VideoBufferType::DECODE_READ, inputBufferSize);
