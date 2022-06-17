@@ -209,7 +209,10 @@ namespace platform
 	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
 		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
 	#elif defined(__SWITCH__) && (SIMUL_INTERNAL_CHECKS)
-		#define BREAK_IF_DEBUGGING raise(SIGTRAP)
+		#pragma clang optimize off
+		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
+		// Therefore we use this workaround.
+		#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
 	#else
 		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
 		// Therefore we use this workaround.

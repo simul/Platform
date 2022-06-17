@@ -190,6 +190,7 @@ namespace simul
 			Layout *currentLayout=nullptr;
 			Topology topology = Topology::UNDEFINED;
 			int apply_count = 0;
+			int test=0;
 			bool contextActive=true;
 			bool externalContext=false;
 
@@ -233,7 +234,7 @@ namespace simul
 			void Reset()
 			{
 				invalidate();
-
+				test=0;
 				last_action_was_compute = false;
 				memset(viewports, 0, 8 * sizeof(Viewport));
 				indexBuffer = nullptr;

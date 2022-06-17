@@ -1161,8 +1161,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					else
 					{
-						desc.blend.RenderTarget[i].SrcBlendAlpha			=crossplatform::BLEND_ONE;
-						desc.blend.RenderTarget[i].DestBlendAlpha			=crossplatform::BLEND_ZERO;
+						desc.blend.RenderTarget[i].SrcBlend					=crossplatform::BLEND_ONE;
+						desc.blend.RenderTarget[i].DestBlend				=crossplatform::BLEND_ZERO;
 					}
 					if(desc.blend.RenderTarget[i].blendOperationAlpha!=crossplatform::BLEND_OP_NONE)
 					{

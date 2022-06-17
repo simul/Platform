@@ -105,7 +105,6 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 	set(SIMUL_DYNAMIC_LIBS OFF )
 else()
 	set(MSVC 0)
-	message("Warning: Platform not found")
 endif()
 
 function (deploy_target_assets target targetDir )

@@ -72,7 +72,7 @@ void Allocator::SetExternalAllocator(simul::base::MemoryInterface* m)
 		return;
 	if(to_free_cpu.size()||to_free_video.size())
 	{
-		SIMUL_BREAK_INTERNAL("Changing allocator when memory is waiting to be freed.");
+		SIMUL_BREAK_INTERNAL("Changing allocator when memory is waiting to be freed.")
 		Shutdown();
 	}
 	memoryInterface=m;

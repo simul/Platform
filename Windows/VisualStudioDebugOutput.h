@@ -1,11 +1,13 @@
 #pragma once
-#include "Platform/Core/RuntimeError.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #include <direct.h>
 #else
 #define OutputDebugString
 #define _getcwd
+#endif
+#if PLATFORM_SWITCH
+#include <nn/nn_Log.h>
 #endif
 #ifndef _MAX_PATH
 #define _MAX_PATH 500
@@ -85,7 +87,6 @@ public:
 		,old_cerr_buffer(NULL)
 		,callback(c)
 	{
-	ERRNO_CHECK
 		//if(errno!=0)
 		//	simul::base::RuntimeError(strerror(errno));
 		to_output_window=send_to_output_window;
@@ -93,7 +94,6 @@ public:
 			setLogFile(logfilename);
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
-	ERRNO_CHECK
 	}
 	virtual ~VisualStudioDebugOutput()
 	{
@@ -126,7 +126,7 @@ public:
 			to_logfile=true;
 		else if(errno!=0)
 		{
-			SIMUL_CERR<<"Failed to create logfile "<<fn.c_str()<<std::endl;
+			std::cerr<<"Failed to create logfile "<<fn.c_str()<<std::endl;
 			errno=0;
 		}
 	}
@@ -144,7 +144,16 @@ public:
 		}
 		if(to_output_window)
 		{
-#ifdef UNICODE
+#if PLATFORM_SWITCH
+			static std::string switch_str;
+			switch_str+=str;
+			size_t ret_pos=std::min(switch_str.find("\n"),switch_str.find("\r"));
+			if(ret_pos<switch_str.length())
+			{
+				NN_LOG("%s\n",switch_str.substr(0,ret_pos).c_str());
+				switch_str=switch_str.substr(ret_pos+1,switch_str.length()-ret_pos-1);
+			}
+#elif defined(UNICODE)
 			std::wstring wstr(str.length(), L' '); // Make room for characters
 			// Copy string to wstring.
 			std::copy(str.begin(), str.end(), wstr.begin());

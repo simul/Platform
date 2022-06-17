@@ -466,12 +466,13 @@ shader vec4 PS_TraceVolume(posTexVertexOutput IN) : SV_Target
 	colour *= multiplier;
 	return colour;
 }
-
+#ifndef SFX_SWITCH
 #ifndef GLSL
 shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	return texture_int(imageTextureUint,IN.texCoords.xy);
 }
+#endif
 #endif
 
 shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
@@ -856,6 +857,7 @@ technique copy_2d
     }
 }
 
+#ifndef SFX_SWITCH
 technique lat_long_to_cubemap
 {
     pass p0
@@ -863,7 +865,7 @@ technique lat_long_to_cubemap
 		SetComputeShader(CompileShader(cs_5_0,CS_LatLongToCubemap()));
     }
 }
-
+#endif
 technique compute_clear
 {
     pass p0
@@ -904,6 +906,7 @@ technique compute_clear_3d_u8
 	}
 }
 
+#ifndef SFX_SWITCH
 technique texel_query
 {
     pass p0
@@ -911,7 +914,7 @@ technique texel_query
 		SetComputeShader(CompileShader(cs_5_0,CS_TexelQuery()));
     }
 }
-
+#endif
 technique clear
 {
     pass p0
@@ -1042,6 +1045,7 @@ technique show_texture
     }
 }
 
+#ifndef SFX_SWITCH
 technique show_texture_array
 	{
 		pass noblend
@@ -1063,7 +1067,7 @@ technique show_texture_array
 			SetPixelShader(CompileShader(ps_5_0, PS_ShowTextureArray()));
 		}
 	}
-
+	#endif
 technique show_cubemap
 {
     pass noblend
@@ -1293,6 +1297,7 @@ technique draw_quad_on_sphere
     }
 }
 
+#ifndef SFX_SWITCH
 technique draw_texture_on_sphere
 {
     pass p0 
@@ -1307,6 +1312,7 @@ technique draw_texture_on_sphere
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
+#endif
 
 technique draw_circle_on_sphere
 {
@@ -1408,6 +1414,7 @@ technique show_depth_ms
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Forward()));
     }
 }
+#ifndef SFX_SWITCH
 #ifndef GLSL
 technique compacted_texture
 {
@@ -1430,4 +1437,5 @@ technique compacted_texture
 		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
     }
 }
+#endif
 #endif
