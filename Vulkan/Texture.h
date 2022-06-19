@@ -61,13 +61,15 @@ namespace platform
 															vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0, bool shared = false) override;
 			bool			ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool ascubemap=false) override;
 			bool			ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false) override;
+			
+			bool			ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
 			void			ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void			GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void			setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
-			int			 GetLength() const override;
-			int			 GetWidth() const override;
-			int			 GetDimension() const override;
-			int			 GetSampleCount() const override;
+			int				GetLength() const override;
+			int				GetWidth() const override;
+			int				GetDimension() const override;
+			int				GetSampleCount() const override;
 			bool			IsComputable() const override;
 			bool			HasRenderTargets() const override;
 			void			copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;

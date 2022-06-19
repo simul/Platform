@@ -297,7 +297,7 @@ namespace platform
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
 				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, bool shared = false)=0;
 			// Create texture for use as a reference frame in video encoding or decoding.
-			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return true; };
+			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return false; };
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.

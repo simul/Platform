@@ -1180,7 +1180,8 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 {
 	if(num>0&&vps!=nullptr)
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
-	if(deviceContext.GetFrameBufferStack().size())
+	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
+	/*if(deviceContext.GetFrameBufferStack().size())
 	{
 		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
 		if(f)
@@ -1189,7 +1190,9 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 	else
 	{
 		deviceContext.defaultTargetsAndViewport.viewport=*vps;
-	}
+	}*/
+	if(tv)
+		tv->viewport=*vps;
 }
 
 crossplatform::Viewport	RenderPlatform::GetViewport(GraphicsDeviceContext &deviceContext,int index)

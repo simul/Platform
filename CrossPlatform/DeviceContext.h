@@ -208,6 +208,7 @@ namespace platform
 			unsigned int textureSlotsForSB=0;
 			unsigned int bufferSlots=0;
 
+			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -219,21 +220,22 @@ namespace platform
 				textureAssignmentMapValid=false;
 				rwTextureAssignmentMapValid=false;
 				streamoutTargetsValid=false;
-				currentLayout = nullptr;
 				textureSlots=0;
 				rwTextureSlots=0;
 				rwTextureSlotsForSB=0;
 				textureSlotsForSB=0;
 				bufferSlots=0;
-				topology = Topology::UNDEFINED;
 				contextActive = true;
 				externalContext = false;
 			}
-
+			
+			/// Reset the temporary and persistent properties.
 			void Reset()
 			{
 				invalidate();
-
+				
+				currentLayout = nullptr;
+				topology = Topology::UNDEFINED;
 				last_action_was_compute = false;
 				memset(viewports, 0, 8 * sizeof(Viewport));
 				indexBuffer = nullptr;
@@ -329,6 +331,8 @@ namespace platform
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
+			
+			crossplatform::TargetsAndViewport *GetCurrentTargetsAndViewport();
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
 			//! as 
 			void setDefaultRenderTargets(const ApiRenderTarget* rt

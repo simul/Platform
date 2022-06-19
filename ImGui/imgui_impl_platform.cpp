@@ -24,7 +24,8 @@ struct ImGui_ImplPlatform_Data
 	Buffer*					pVB = nullptr;
 	Buffer*					pIB = nullptr;
 	Effect*					effect = nullptr;
-	EffectPass*				effectPass=nullptr;
+	EffectPass*				effectPass_testDepth=nullptr;
+	EffectPass*				effectPass_noDepth=nullptr;
 	Layout*					pInputLayout = nullptr;
 	ConstantBuffer<ImGuiCB>	constantBuffer;
 	Texture*				pFontTextureView = nullptr;
@@ -223,7 +224,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	crossplatform::Viewport vp=bd->renderPlatform->GetViewport(deviceContext, 1);
 	// Setup desired DX state
 	ImGui_ImplPlatform_SetupRenderState(draw_data, deviceContext);
-
+	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
+	bool test_depth=tv&&tv->depthTarget.texture!=nullptr?true:false;
 	// Render command lists
 	// (Because we merged all buffers into a single one, we maintain our own offset into them)
 	int global_idx_offset = 0;
@@ -259,7 +261,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				// Bind texture, Draw
 				Texture* texture_srv = (Texture*)pcmd->GetTexID();
 				renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),texture_srv);
-				renderPlatform->ApplyPass(deviceContext, bd->effectPass);
+				renderPlatform->ApplyPass(deviceContext, test_depth?bd->effectPass_testDepth:bd->effectPass_noDepth);
 				bd->pInputLayout->Apply(deviceContext);
 				renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
 				bd->pInputLayout->Unapply(deviceContext);
@@ -307,8 +309,8 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 #if 1
 	if (!bd->effect)
 		bd->effect= bd->renderPlatform->CreateEffect("imgui");
-	if(!bd->effectPass)
-		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
+	bd->effectPass_testDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
+	bd->effectPass_noDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
@@ -349,7 +351,8 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	if(!bd->renderPlatform)
 		return;
 	bd->effect = bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
+	bd->effectPass_testDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
+	bd->effectPass_noDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 }
 
 bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r)

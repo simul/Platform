@@ -519,6 +519,7 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 	if(!deviceContext.contextState.currentEffectPass)
 		return;
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
@@ -527,6 +528,7 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 		commandBuffer->draw(4,1,0,0);
 		commandBuffer->endRenderPass();
 	}
+	SetTopology(deviceContext, crossplatform::Topology::UNDEFINED);
 	EndEvent(deviceContext);
 }
 
@@ -1508,19 +1510,19 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 {
 	deviceContext.GetFrameBufferStack().pop();
 	mTargets = {};
-
+	
+	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
 	// Default FBO:
-	if (deviceContext.GetFrameBufferStack().empty())
+	//if (deviceContext.GetFrameBufferStack().empty())
 	{
-		auto defT = deviceContext.defaultTargetsAndViewport;
-		SetViewports(deviceContext, 1, &defT.viewport);
+		//auto defT = deviceContext.defaultTargetsAndViewport;
 	}
 	// Plugin FBO:
-	else
+	//else
 	{
-		auto topRt = deviceContext.GetFrameBufferStack().top();
-		SetViewports(deviceContext, 1, &topRt->viewport);
+		//auto topRt = deviceContext.GetFrameBufferStack().top();
 	}
+	SetViewports(deviceContext, 1, &tv->viewport);
 }
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
