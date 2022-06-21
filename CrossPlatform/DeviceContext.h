@@ -209,6 +209,7 @@ namespace simul
 			unsigned int textureSlotsForSB=0;
 			unsigned int bufferSlots=0;
 
+			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -323,6 +324,8 @@ namespace simul
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
+			
+			crossplatform::TargetsAndViewport *GetCurrentTargetsAndViewport();
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
 			//! as 
 			void setDefaultRenderTargets(const ApiRenderTarget* rt

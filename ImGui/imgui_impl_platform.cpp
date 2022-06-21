@@ -24,7 +24,8 @@ struct ImGui_ImplPlatform_Data
 	Buffer*					pVB = nullptr;
 	Buffer*					pIB = nullptr;
 	Effect*					effect = nullptr;
-	EffectPass*				effectPass=nullptr;
+	EffectPass*				effectPass_testDepth=nullptr;
+	EffectPass*				effectPass_noDepth=nullptr;
 	Layout*					pInputLayout = nullptr;
 	ConstantBuffer<ImGuiCB>	constantBuffer;
 	Texture*				pFontTextureView = nullptr;
@@ -223,7 +224,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	crossplatform::Viewport vp=bd->renderPlatform->GetViewport(deviceContext, 1);
 	// Setup desired DX state
 	ImGui_ImplPlatform_SetupRenderState(draw_data, deviceContext);
-
+	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
+	bool test_depth=tv&&tv->depthTarget.texture!=nullptr?true:false;
 	// Render command lists
 	// (Because we merged all buffers into a single one, we maintain our own offset into them)
 	int global_idx_offset = 0;
@@ -259,7 +261,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				// Bind texture, Draw
 				Texture* texture_srv = (Texture*)pcmd->GetTexID();
 				renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),texture_srv);
-				renderPlatform->ApplyPass(deviceContext, bd->effectPass);
+				renderPlatform->ApplyPass(deviceContext, test_depth?bd->effectPass_testDepth:bd->effectPass_noDepth);
 				bd->pInputLayout->Apply(deviceContext);
 				renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
 				bd->pInputLayout->Unapply(deviceContext);
@@ -298,17 +300,17 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 
 	crossplatform::LayoutDesc local_layout[] =
 	{
-		{ "POSITION", 0, crossplatform::RG_32_FLOAT,   0, (UINT)IM_OFFSETOF(ImDrawVert, pos), false, 0 },
-		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT,   0, (UINT)IM_OFFSETOF(ImDrawVert, uv),  false, 0 },
-		{ "COLOR"   , 0, crossplatform::RGBA_8_UNORM, 0, (UINT)IM_OFFSETOF(ImDrawVert, col), false, 0 },
+		{ "POSITION", 0, crossplatform::RG_32_FLOAT,	0, (uint32_t)IM_OFFSETOF(ImDrawVert, pos), false, 0 },
+		{ "TEXCOORD", 0, crossplatform::RG_32_FLOAT,	0, (uint32_t)IM_OFFSETOF(ImDrawVert, uv),  false, 0 },
+		{ "COLOR"   , 0, crossplatform::RGBA_8_UNORM,	0, (uint32_t)IM_OFFSETOF(ImDrawVert, col), false, 0 },
 	};
 	if (!bd->pInputLayout)
 		bd->pInputLayout=bd->renderPlatform->CreateLayout(3,local_layout,true);
 #if 1
 	if (!bd->effect)
 		bd->effect= bd->renderPlatform->CreateEffect("imgui");
-	if(!bd->effectPass)
-		bd->effectPass=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
+	bd->effectPass_testDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
+	bd->effectPass_noDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
@@ -349,7 +351,8 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	if(!bd->renderPlatform)
 		return;
 	bd->effect = bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass = bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
+	bd->effectPass_testDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
+	bd->effectPass_noDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
 }
 
 bool	ImGui_ImplPlatform_Init(simul::crossplatform::RenderPlatform* r)
@@ -456,22 +459,24 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (!bd->is3d)
 		return;
-	if (!bd->screen.x || !bd->screen.y)
-		return;
 	ImGuiIO& io = ImGui::GetIO();
 
 	const ImVec2 mouse_pos_prev = io.MousePos;
 	static ImVec2 last_pos = { 0,0 };
-	static float control_surface_thickness = 0.02f;
-	float lowest = 1e10f;
+	static float control_area_thickness = 0.05f;
+	static float min_z =-0.05f;
+	static float max_z = 0.0f;
+	static float control_surface_thickness = 0.0f;
+	static float hysteresis_thickness = 0.02f;
+	float lowest = max_z;
 	bool any = false;
-	static std::vector<bool> clicked;
+	/*static std::vector<bool> clicked;
 	if (clicked.size() != position_press.size())
 	{
 		clicked.resize(position_press.size());
 		for (size_t i = 0; i < position_press.size(); i++)
 			clicked[i] = false;
-	}
+	}*/
 	for (size_t i = 0; i < position_press.size(); i++)
 	{
 		// Set Dear ImGui mouse position from OS position
@@ -480,17 +485,24 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 		// resolve position onto the control surface:
 		vec3 client_pos = (bd->world_to_imgui * vec4(pos, 1.0f)).xyz;
 		// Too far beneath the surface.
-		if (!clicked[i])
+		//if (!clicked[i])
 		{
-			if (client_pos.z < -control_surface_thickness || client_pos.z > control_surface_thickness)
+			if (client_pos.z < min_z || client_pos.z > max_z)
 				continue;
 			if (client_pos.x<0 || client_pos.y<0 || client_pos.x>io.DisplaySize.x || client_pos.y>io.DisplaySize.y)
 				continue;
 		}
-		if (client_pos.z <= control_surface_thickness)
+		if (client_pos.z <= hysteresis_thickness)
 		{
-			io.MouseDown[0] = true;
 			any = true;
+		}
+		if(!io.MouseDown[0])
+		{
+			if (client_pos.z <= control_surface_thickness)
+			{
+				io.MouseDown[0] = true;
+				// record mouseDown position...?
+			}
 		}
 		if (client_pos.z < lowest)
 		{
@@ -498,10 +510,10 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 			// Finally, set this as the mouse pos.
 			io.MousePos = ImVec2(client_pos.x, client_pos.y);
 		}
-		if (clicked[i] && client_pos.z > control_surface_thickness)
+		/*if (clicked[i] && client_pos.z > control_area_thickness)
 		{
 			io.MousePos = ImVec2(client_pos.x, client_pos.y);
-		}
+		}*/
 	}
 	if (io.MouseDown[0] && !any)
 	{

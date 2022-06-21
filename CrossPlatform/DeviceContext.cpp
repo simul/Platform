@@ -23,6 +23,17 @@ GraphicsDeviceContext::GraphicsDeviceContext():
 }
 
 
+crossplatform::TargetsAndViewport *GraphicsDeviceContext::GetCurrentTargetsAndViewport()
+{
+	if(GetFrameBufferStack().size())
+	{
+		crossplatform::TargetsAndViewport *f=GetFrameBufferStack().top();
+		if(f)
+			return f;
+	}
+	return &defaultTargetsAndViewport;
+}
+
 void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	,const ApiDepthRenderTarget* dt
 	,uint32_t viewportLeft
