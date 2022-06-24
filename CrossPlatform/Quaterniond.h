@@ -233,6 +233,14 @@ namespace simul
 				s=v.w;
 				return *this;
 			}
+			template<typename U> Quaternion& operator=(const Quaternion<U> &v)
+			{
+				x=T(v.x);
+				y=T(v.y);
+				z=T(v.z);
+				s=T(v.s);
+				return *this;
+			}
 			bool operator==(const Quaternion &q)
 			{
 				return(s==q.s&&x==q.x&&y==q.y&&z==q.z);
@@ -315,12 +323,12 @@ namespace simul
 				s /= magnitude;
 			}
 		};
-		template<typename T> void Multiply(Quaternion<T>& r, const Quaternion<T>& q1, const Quaternion<T>& q2)
+		template<typename T> void Multiply(Quaternion<T>& r, const Quaternion<T>& Y, const Quaternion<T>& Z)
 		{
-			r.s = q1.s * q2.s - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
-			r.x = q2.s * q1.x + q1.s * q2.x + q1.y * q2.z - q1.z * q2.y;
-			r.y = q2.s * q1.y + q1.s * q2.y + q1.z * q2.x - q1.x * q2.z;
-			r.z = q2.s * q1.z + q1.s * q2.z + q1.x * q2.y - q1.y * q2.x;
+			r.s = Y.s * Z.s - Y.x * Z.x - Y.y * Z.y - Y.z * Z.z;
+			r.x = Z.s * Y.x + Y.s * Z.x + Y.y * Z.z - Y.z * Z.y;
+			r.y = Z.s * Y.y + Y.s * Z.y + Y.z * Z.x - Y.x * Z.z;
+			r.z = Z.s * Y.z + Y.s * Z.z + Y.x * Z.y - Y.y * Z.x;
 		}
 		template<typename T> void Multiply(tvector3<T>& ret, const Quaternion<T>& q, const tvector3<T>& v)
 		{
@@ -339,14 +347,14 @@ namespace simul
 		typedef Quaternion<float> Quaternionf;
 		/// Multiply, or rotate, vec3d v by q, return the value in vec3d ret. v and ret must have size 3.
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(vec3d & ret,const Quaterniond & q,const vec3d & v);
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyByNegative(Quaterniond& ret,const Quaterniond& q1,const Quaterniond& q2);
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyNegativeByQuaterniond(Quaterniond& r,const Quaterniond& q1,const Quaterniond& q2);
+		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyByNegative(Quaterniond& ret,const Quaterniond& Y,const Quaterniond& Z);
+		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyNegativeByQuaterniond(Quaterniond& r,const Quaterniond& Y,const Quaterniond& Z);
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Divide(vec3d& ret,const Quaterniond& q,const vec3d& v);
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN AddQuaterniondTimesVector(vec3d& ret,const Quaterniond& q,const vec3d& v);
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(Quaterniond& r,const Quaterniond& q1,const Quaterniond& q2);
+		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(Quaterniond& r,const Quaterniond& Y,const Quaterniond& Z);
 	
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Slerp(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2,double l);  
-		extern double SIMUL_CROSSPLATFORM_EXPORT_FN angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2);
+		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Slerp(Quaterniond &ret,const Quaterniond &Y,const Quaterniond &Z,double l);  
+		extern double SIMUL_CROSSPLATFORM_EXPORT_FN angleBetweenQuaternions(const crossplatform::Quaterniond& Y, const crossplatform::Quaterniond& Z);
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN rotateByOffsetCartesian(const Quaterniond& input, const vec2& offset, float sph_radius);
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN rotateByOffsetPolar(const Quaterniond& input, float polar_radius, float polar_angle, float sph_radius);
 
@@ -363,22 +371,24 @@ namespace simul
 			T Y = (T)q.y;
 			T Z = (T)q.z;
 			T S = (T)q.s;
-			T sqw = S * S;
-			T sqx = X * X;
-			T sqy = Y * Y;
-			T sqz = Z * Z;
-			T invs = T(1.0) / (sqx + sqy + sqz + sqw);
-			M.m[0] = (T)((sqx - sqy - sqz + sqw) * invs);
-			M.m[1] = (T)(T(2.0) * (X * Y + Z * S));      
-			M.m[2] = (T)(T(2.0) * (X * Z - Y * S));      
-			 
-			M.m[4 + 0] = (T)(T(2.0) * (X * Y - Z * S));      
-			M.m[4 + 1] = (T)(-X * X + Y * Y - Z * Z + S * S);
-			M.m[4 + 2] = (T)(T(2.0) * (Y * Z + X * S));      
-			
-			M.m[2 * 4 + 0] = (T)(T(2.0) * (X * Z + Y * S));     
-			M.m[2 * 4 + 1] = (T)(T(2.0) * (Y * Z - X * S));     
-			M.m[2 * 4 + 2] = (T)(-X * X - Y * Y + Z * Z + S * S);
+			T S2 = S * S;
+			T X2 = X * X;
+			T Y2 = Y * Y;
+			T Z2 = Z * Z;
+			T T1=T(1.0);
+			T T2=T(2.0);
+
+			M.m[0]		=	T1-	T2*(Y2+Z2);
+			M.m[1]		=		T2*(X*Y-S*Z);
+			M.m[2]		=		T2*(Z*X+S*Y);
+      
+			M.m[4+0]	=		T2*(Y*Y+S*Z);
+			M.m[4+1]	=	T1-	T2*(X2+Z2);
+			M.m[4+2]	=		T2*(Y*Z-S*X);
+     			
+			M.m[2*4+0]	=		T2*(X*Z-S*Y);
+			M.m[2*4+1]	=		T2*(Y*Z+S*X);
+			M.m[2*4+2]	=	T1-	T2*(X2+Y2);
 		}
 		template<typename T, typename U> void MatrixToQuaternion(Quaternion<T>& q, const tmatrix4<U>& M)
 		{
