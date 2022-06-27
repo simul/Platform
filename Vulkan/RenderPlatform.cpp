@@ -707,7 +707,6 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 #endif
 }
 
-
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 {
 	auto pass = (vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;

@@ -253,17 +253,12 @@ namespace platform
 		/// A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
-			ShaderResource():	shaderResourceType(crossplatform::ShaderResourceType::UNKNOWN), 
-								platform_shader_resource(nullptr),
-								slot(-1),
-								dimensions(-1),
-								valid(false)
-			{}
-			ShaderResourceType  shaderResourceType;
-			void*				platform_shader_resource;
-			int					slot;
-			int					dimensions;
-			bool				valid;
+			ShaderResource()	{}
+			ShaderResourceType  shaderResourceType=ShaderResourceType::UNKNOWN;
+			void*				platform_shader_resource=nullptr;
+			int					slot=-1;
+			int					dimensions=-1;
+			bool				valid=false;
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RaytraceHitGroup
 		{

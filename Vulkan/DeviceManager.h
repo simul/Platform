@@ -67,7 +67,8 @@ namespace platform
 			uint32_t enabled_extension_count;
 			uint32_t enabled_layer_count;
 			bool device_initialized;
-			std::vector<const char *> extension_names;
+			std::vector<const char *> device_extension_names;
+			std::vector<const char *> instance_extension_names;
 			char const *enabled_layers[64];
 			DeviceManagerInternal *deviceManagerInternal;
 			bool separate_present_queue;

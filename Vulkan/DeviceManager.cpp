@@ -279,7 +279,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	vk::Bool32 nameExtFound=VK_FALSE;
 
 	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
-	extension_names.resize(instance_extension_count);
+	instance_extension_names.resize(instance_extension_count);
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
 		return;
@@ -299,22 +299,22 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
 			}
 			else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				surfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
 			}
 			else if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugUtilsExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 			}
 			else if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				nameExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
 			}
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 			else if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
@@ -363,7 +363,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			else if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 			}
 #endif
 			else
@@ -372,7 +372,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				{
 					if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
 					{
-						extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
+						instance_extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
 					}
 				}
 			}
@@ -460,7 +460,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setEnabledLayerCount(enabled_layer_count)
 		.setPpEnabledLayerNames(instance_validation_layers)
 		.setEnabledExtensionCount(enabled_extension_count)
-		.setPpEnabledExtensionNames(extension_names.data());
+		.setPpEnabledExtensionNames(instance_extension_names.data());
  	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
 	// Vulkan sets errno without warning or error.
@@ -476,9 +476,18 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	else if (result == vk::Result::eErrorExtensionNotPresent)
 	{
 		SIMUL_BREAK(
-			"Cannot find a specified extension library.\n"
+			"Cannot find a specified extension.\n"
 			"Make sure your layers path is set appropriately.\n"
 			"vkCreateInstance Failure");
+		for(int i=0;i<enabled_extension_count+1;i++)
+		{
+			inst_info.setEnabledExtensionCount(i);
+			result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
+			if (result == vk::Result::eErrorExtensionNotPresent)
+			{
+				SIMUL_CERR<<"Fails on extension: "<<instance_extension_names[i]<<std::endl;
+			}
+		}
 	}
 	else if (result != vk::Result::eSuccess)
 	{
@@ -517,9 +526,10 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	uint32_t device_extension_count = 0;
 	vk::Bool32 swapchainExtFound = VK_FALSE;
 	enabled_extension_count = 0;
-	memset(extension_names.data(), 0, sizeof(extension_names));
 
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
+	device_extension_names.resize(device_extension_count);
+	memset(device_extension_names.data(), 0, sizeof(device_extension_names));
 	SIMUL_VK_ASSERT_RETURN(result);
  	ERRNO_BREAK
 	if (device_extension_count > 0)
@@ -536,7 +546,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName))
 			{
 				swapchainExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+				device_extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 			}
 			else
 			{
@@ -544,7 +554,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				{
 					if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))
 					{
-						extension_names[enabled_extension_count++] = required_device_extensions[j].c_str();
+						device_extension_names[enabled_extension_count++] = required_device_extensions[j].c_str();
 					}
 				}
 			}
@@ -711,7 +721,7 @@ void DeviceManager::CreateDevice()
 							.setEnabledLayerCount(0)
 							.setPpEnabledLayerNames(nullptr)
 							.setEnabledExtensionCount(enabled_extension_count)
-							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
+							.setPpEnabledExtensionNames((const char *const *)device_extension_names.data())
 							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
 							.setQueueCreateInfoCount((uint32_t)queues.size());
 							
