@@ -1468,7 +1468,7 @@ void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext
 void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList)
 {
 	// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
-	if (immediateContext.contextState.contextActive)
+	if (immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
 	{
 		ID3D12GraphicsCommandList* const immCommandList = immediateContext.asD3D12Context();
 		HRESULT r = immCommandList->Close(); 
@@ -1487,14 +1487,11 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 	}
 }
 
-
 void RenderPlatform::ResetImmediateCommandList()
 {
-	if(!immediateContext.contextState.externalContext)
+	if(immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
 	{
-		if (immediateContext.contextState.contextActive)
-			ExecuteCommandList(nullptr, nullptr);
-	
+		ExecuteCommandList(nullptr, nullptr);
 		if (mIContext.ICommandList && mIContext.IAllocator)
 			mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
 		immediateContext.contextState.contextActive = true;
