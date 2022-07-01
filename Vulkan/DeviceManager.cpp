@@ -320,44 +320,44 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			else if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
 			else if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
 			else if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
 			else if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
 			else if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_IOS_MVK)
 			else if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
 			else if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 			else if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
