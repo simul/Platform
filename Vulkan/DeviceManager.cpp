@@ -479,7 +479,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"Cannot find a specified extension.\n"
 			"Make sure your layers path is set appropriately.\n"
 			"vkCreateInstance Failure");
-		for(int i=0;i<enabled_extension_count+1;i++)
+		for(uint32_t i=0;i<enabled_extension_count+1;i++)
 		{
 			inst_info.setEnabledExtensionCount(i);
 			result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
