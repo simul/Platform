@@ -80,8 +80,8 @@ namespace simul
 			virtual size_t GetCurrentVideoBytesAllocated() const {return 0;}
 			virtual size_t GetTotalVideoBytesAllocated() const {return 0;}
 			virtual size_t GetTotalVideoBytesFreed() const {return 0;}
-			virtual void TrackVideoMemory(void* , size_t,const char *){}
-			virtual void UntrackVideoMemory(void* ){}
+			virtual void TrackVideoMemory(const void* , size_t,const char *){}
+			virtual void UntrackVideoMemory(const void* ){}
 		};
 		extern PLATFORM_CORE_EXPORT MemoryInterface *GetDefaultMemoryInterface();
 	}

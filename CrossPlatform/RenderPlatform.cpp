@@ -624,7 +624,6 @@ bool crossplatform::RenderPlatform::IsDepthFormat(PixelFormat f)
 	};
 }
 
-
 PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
 {
 	switch(f)
@@ -639,6 +638,7 @@ PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
 		return f;
 	};
 }
+
 bool crossplatform::RenderPlatform::IsStencilFormat(PixelFormat f)
 {
 	switch(f)
