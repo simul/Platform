@@ -117,30 +117,32 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 
 #if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_SCARLETT) && !defined(_GAMING_XBOX_XBOXONE)
 #include <iostream>
+
+inline std::string HRESULTToString(HRESULT error)
+{
+	if (error != 0)
+	{
+		char* formatedMessage = nullptr;
+		DWORD formatedMessageSize = FormatMessageA(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			nullptr, error, 0, (char*)&formatedMessage, 0, nullptr);
+
+		if (formatedMessage != nullptr && formatedMessageSize > 0)
+		{
+			std::string result(formatedMessage, formatedMessageSize);
+			LocalFree(formatedMessage);
+			return result;
+		}
+	}
+	return std::string();
+}
+
 inline void ID3D12DeviceRemovedExtendedDataParser(ID3D12Device* device)
 {
 	if (!device)
 		return;
 
 	HRESULT res = device->GetDeviceRemovedReason();
-	auto HRESULTToString = [](HRESULT error) -> std::string
-	{
-		if (error != 0)
-		{
-			char* formatedMessage = nullptr;
-			DWORD formatedMessageSize = FormatMessageA(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				nullptr, error, 0, (char*)&formatedMessage, 0, nullptr);
-
-			if (formatedMessage != nullptr && formatedMessageSize > 0)
-			{
-				std::string result(formatedMessage, formatedMessageSize);
-				LocalFree(formatedMessage);
-				return result;
-			}
-		}
-		return std::string();
-	};
 	std::cerr << HRESULTToString(res);
 
 	ID3D12DeviceRemovedExtendedData* pDred = nullptr;
