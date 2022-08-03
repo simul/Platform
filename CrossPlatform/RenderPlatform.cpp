@@ -1223,7 +1223,7 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 		{
 		#if SIMUL_INTERNAL_CHECKS
 			SIMUL_COUT << "Simul fx: The sampler state " << name_utf8 << " was declared with default slot " << s->default_slot << " and slot " << desc->slot << 
-				"therefore it will have no default slot." << std::endl;
+				" therefore it will have no default slot." << std::endl;
 		#endif
 			s->default_slot=-1;
 			ss=s;
