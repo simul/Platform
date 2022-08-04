@@ -24,7 +24,11 @@
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
-#if defined(UNIX) || defined(__linux__) || defined(__SWITCH__)
+#if defined(__SWITCH__)
+#define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
+#include <nn/diag.h>
+#endif
+#if defined(UNIX) || defined(__linux__)
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
 #ifndef __COMMODORE__
 #include <signal.h>
@@ -118,6 +122,31 @@ namespace platform
 #define SIMUL_FILE_LINE_CERR(filename,line)\
 	std::cerr<<filename<<"("<<line<<"): warning B0001: "
 
+#if defined(_MSC_VER) && defined(_WIN32)
+	#define BREAK_IF_DEBUGGING\
+		{\
+			if(platform::core::DebugBreaksEnabled()&&IsDebuggerPresent())\
+				DebugBreak();\
+		}
+#else
+	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
+		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
+	#elif defined(__SWITCH__) //&& (SIMUL_INTERNAL_CHECKS)
+		#pragma clang optimize off
+		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&nn::diag::IsDebuggerAttached()) NN_DIAG_BREAK();
+	#else
+		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
+		// Therefore we use this workaround.
+		#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
+	#endif
+#endif
+
+#define BREAK_ONCE_IF_DEBUGGING\
+		{static bool done=false;\
+		if(!done)\
+			BREAK_IF_DEBUGGING\
+		done=true;}
+
 #ifdef _DEBUG
 #define SIMUL_ASSERT(value)\
 	if(value!=true)\
@@ -198,33 +227,6 @@ namespace platform
 #else
 #define SIMUL_NULL_CHECK_RETURN(val,message)
 #endif
-
-#if defined(_MSC_VER) && defined(_WIN32)
-	#define BREAK_IF_DEBUGGING\
-		{\
-			if(platform::core::DebugBreaksEnabled()&&IsDebuggerPresent())\
-				DebugBreak();\
-		}
-#else
-	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
-		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
-	#elif defined(__SWITCH__) && (SIMUL_INTERNAL_CHECKS)
-		#pragma clang optimize off
-		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
-		// Therefore we use this workaround.
-		#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
-	#else
-		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
-		// Therefore we use this workaround.
-		#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
-	#endif
-#endif
-
-#define BREAK_ONCE_IF_DEBUGGING\
-		{static bool done=false;\
-		if(!done)\
-			BREAK_IF_DEBUGGING\
-		done=true;}
 
 /// This errno check can be disabled for production. ALWAYS_ERRNO_CHECK must always be enabled as it is used for functionality.
 #ifdef NDEBUG
