@@ -40,6 +40,10 @@ namespace simul
 			CPU_WRITE=64,
 			ONCE_PER_FRAME_GPU_TO_CPU=ONCE_PER_FRAME|GPU_WRITE|CPU_READ
 		};
+		constexpr BufferUsageHint operator&(BufferUsageHint lhs, BufferUsageHint rhs)
+		{
+			return static_cast<BufferUsageHint>(static_cast<typename std::underlying_type<BufferUsageHint>::type>(lhs) & static_cast<typename std::underlying_type<BufferUsageHint>::type>(rhs));
+		}
 		struct ShaderResource;
 		/// A base class for structured buffers, used by StructuredBuffer internally.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer

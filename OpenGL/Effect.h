@@ -131,15 +131,15 @@ namespace simul
 			inline int GetIndex(crossplatform::DeviceContext& deviceContext, int idxOffset = 0)
 			{
 				int idx = 0;
-				if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+				if ((bufferUsageHint & crossplatform::BufferUsageHint::ONCE) == crossplatform::BufferUsageHint::ONCE)
 				{
 					idx = mLastIdx = 0;
 				}
-				else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
+				else if ((bufferUsageHint & crossplatform::BufferUsageHint::ONCE_PER_FRAME) == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
 				{
 					idx = mLastIdx = (deviceContext.frame_number + idxOffset) % mNumBuffers;
 				}
-				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
+				else if ((bufferUsageHint & crossplatform::BufferUsageHint::MANY_PER_FRAME) == crossplatform::BufferUsageHint::MANY_PER_FRAME)
 				{
 					idx = mLastIdx = (mLastIdx + idxOffset) % mNumBuffers;
 				}
