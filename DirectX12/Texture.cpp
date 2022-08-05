@@ -573,7 +573,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 	if (setState)
 	{
 		auto curState = GetCurrentState(deviceContext,mip,index);
-		auto newState=pixel_shader?D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		auto newState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		newState |= pixel_shader ? D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_COMMON;
 		if	((curState & (newState)) != (newState) )
 		{
 			SetLayout(deviceContext,newState,mip,index);
