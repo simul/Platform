@@ -537,22 +537,23 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 			finalRaster = curRenderPlat->RasterStateOverride;
 		}
 	}
-
-	// Get current MSAA:
-	DXGI_SAMPLE_DESC msaaDesc = { 1,0 };
-	if (curRenderPlat->IsMSAAEnabled())
-	{
-		msaaDesc = curRenderPlat->GetMSAAInfo();
-	}
-	uint64_t msaaHash = ((uint64_t)msaaDesc.Count + (uint64_t)msaaDesc.Quality) << (uint64_t)32;
-
 	// Get the current targets:
 	const crossplatform::TargetsAndViewport* targets = &deviceContext.defaultTargetsAndViewport;
 	if (!deviceContext.targetStack.empty())
 	{
 		targets = deviceContext.targetStack.top();
 	}
+	
 
+	// Get current MSAA:
+	DXGI_SAMPLE_DESC msaaDesc = { 1,0 };
+	uint64_t msaaHash = ((uint64_t)msaaDesc.Count + (uint64_t)msaaDesc.Quality) << (uint64_t)32;
+	if(targets->textureTargets[0].texture)
+	{
+		auto *res=targets->textureTargets[0].texture->AsD3D12Resource();
+		D3D12_RESOURCE_DESC textureDesc = res->GetDesc();
+		msaaDesc=textureDesc.SampleDesc;
+	}
 	// Current render target output state:
 	D3D12_RENDER_TARGET_FORMAT_DESC* finalRt = nullptr;
 	uint64_t rthash = 0;

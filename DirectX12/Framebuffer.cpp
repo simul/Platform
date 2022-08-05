@@ -93,11 +93,6 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 
     deviceContext.renderPlatform->ActivateRenderTargets(deviceContext, &targetsAndViewport);
     
-    // Inform current samples
-    mCachedMSAAState	= rPlat->GetMSAAInfo();
-    int colSamples		= col12Texture->GetSampleCount();
-    rPlat->SetCurrentSamples(colSamples == 0 ? 1 : colSamples);
-
     // Cache current state
 	colour_active	                    = true;
 	depth_active	                    = dsView != nullptr;
@@ -119,8 +114,6 @@ void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext
 	colour_active	= false;
 	depth_active	= false;
 
-    // Restore MSAA
-    ((dx12::RenderPlatform*)deviceContext.renderPlatform)->SetCurrentSamples(mCachedMSAAState.Count, mCachedMSAAState.Quality);
 }
 
 void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)

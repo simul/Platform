@@ -131,11 +131,7 @@ RenderPlatform::RenderPlatform():
 	,mDummy2D(nullptr)
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
-	,mIsMsaaEnabled(false)
 {
-	mMsaaInfo.Count = 1;
-	mMsaaInfo.Quality = 0;
-
 	mCurBarriers    = 0;
 	mTotalBarriers  = 16; 
 	mPendingBarriers.resize(mTotalBarriers);
@@ -2020,22 +2016,6 @@ D3D12_QUERY_HEAP_TYPE RenderPlatform::ToD3D12QueryHeapType(crossplatform::QueryT
 	default:
 		return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
 	}
-}
-
-void RenderPlatform::SetCurrentSamples(int samples, int quality/*=0*/)
-{
-	mMsaaInfo.Count     = samples;
-	mMsaaInfo.Quality   = quality;
-}
-
-bool RenderPlatform::IsMSAAEnabled()
-{
-	return mMsaaInfo.Count != 1;
-}
-
-DXGI_SAMPLE_DESC RenderPlatform::GetMSAAInfo()
-{
-	return mMsaaInfo;
 }
 
 ResourceBindingLimits RenderPlatform::GetResourceBindingLimits() const

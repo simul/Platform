@@ -1962,10 +1962,6 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 		targetsAndViewport.viewport.y		= 0;
 
 		rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
-		
-		// Inform the render platform of the current number of MSAA samples
-		mCachedMSAAState = rp->GetMSAAInfo();
-		rp->SetCurrentSamples(mNumSamples);
 	}
 }
 
@@ -1973,8 +1969,6 @@ void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext &devic
 {
 	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	rp->DeactivateRenderTargets(deviceContext);
-	// Restore MSAA state
-	rp->SetCurrentSamples(mCachedMSAAState.Count,mCachedMSAAState.Quality);
 }
 
 int Texture::GetSampleCount()const

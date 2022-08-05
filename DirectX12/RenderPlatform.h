@@ -265,9 +265,6 @@ namespace simul
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
 			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
 			static std::string						D3D12ResourceStateToString(D3D12_RESOURCE_STATES states);
-			//! We cache the current number of samples
-			void									SetCurrentSamples(int samples, int quality = 0);
-			bool									IsMSAAEnabled();
 
 			void ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList);
 			void ExecuteImmediateCommandList(ID3D12CommandQueue* commandQueue);
@@ -347,8 +344,6 @@ namespace simul
 			int									mCurBarriers;
 			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
 			bool								isInitialized = false;
-			bool								mIsMsaaEnabled;
-			DXGI_SAMPLE_DESC					mMsaaInfo;			
 
 			ResourceBindingLimits				mResourceBindingLimits;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullCBV;
