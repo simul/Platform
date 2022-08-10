@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 
 	SfxOptions sfxOptions;
 	std::string SIMUL=GetEnv("SIMUL");
-	std::string SIMUL_BUILD= GetEnv("SIMUL_BUILD");
+	std::string SIMUL_BUILD= "";
 	std::map<std::string, std::string> environment;
 	if (SIMUL_BUILD == "" || SIMUL_BUILD == "1")
 		SIMUL_BUILD = SIMUL;
@@ -277,11 +277,21 @@ int main(int argc, char** argv)
 		if (j.count("constantBufferDeclaration")>0)
 			sfxConfig.constantBufferDeclaration				=j["constantBufferDeclaration"];
 		if (j.count("inputDeclaration")>0)
-			sfxConfig.inputDeclaration						=j["inputDeclaration"];
+		{
+			std::cerr<<platformFilename.c_str()<<": inputDeclaration is deprecated, please use pixelInputDeclaration\n";
+			sfxConfig.pixelInputDeclaration					=j["inputDeclaration"];
+		}
+		if (j.count("pixelInputDeclaration")>0)
+			sfxConfig.pixelInputDeclaration					=j["pixelInputDeclaration"];
 		if (j.count("vertexInputDeclaration")>0)
 			sfxConfig.vertexInputDeclaration				=j["vertexInputDeclaration"];
 		if (j.count("outputDeclaration")>0)
-			sfxConfig.outputDeclaration						=j["outputDeclaration"];
+		{
+			std::cerr<<platformFilename.c_str()<<": outputDeclaration is deprecated, please use vertexOutputDeclaration\n";
+			sfxConfig.vertexOutputDeclaration				=j["outputDeclaration"];
+		}
+		if (j.count("vertexOutputDeclaration")>0)
+			sfxConfig.vertexOutputDeclaration				=j["vertexOutputDeclaration"];
 		if (j.count("pixelOutputDeclaration")>0)
 			sfxConfig.pixelOutputDeclaration				=j["pixelOutputDeclaration"];
 		if (j.count("pixelOutputDeclarationDSB") > 0)
@@ -311,6 +321,16 @@ int main(int argc, char** argv)
 				std::string a=it.key();
 				std::string b=it.value();
 				sfxConfig.vertexSemantics[a]			=b;
+			}
+		}
+		if(j.count("pixelSemantics")>0)
+		{
+			json pixelSemantics				=j["pixelSemantics"];
+			for (json::iterator it = pixelSemantics.begin();it != pixelSemantics.end(); ++it)
+			{
+				std::string a=it.key();
+				std::string b=it.value();
+				sfxConfig.pixelSemantics[a]			=b;
 			}
 		}
 		if (j.count("vertexOutputAssignment") > 0)
@@ -396,6 +416,10 @@ int main(int argc, char** argv)
 		if (j.count("forceSM51") > 0)
 		{
 			sfxConfig.forceSM51 = j["forceSM51"];
+		}
+		if (j.count("supportRaytracing") > 0)
+		{
+			sfxConfig.supportRaytracing = j["supportRaytracing"];
 		}
 	}
 	catch(std::exception &e)

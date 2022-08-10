@@ -3,7 +3,7 @@
 #include "Platform/CrossPlatform/Layout.h"
 //! Forward declaration for this, means we needn't include the dx11 headers yet.
 enum D3D_PRIMITIVE_TOPOLOGY;
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{

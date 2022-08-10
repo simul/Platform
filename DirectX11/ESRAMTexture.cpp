@@ -11,7 +11,7 @@
 
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 extern ESRAMManager *eSRAMManager;
 

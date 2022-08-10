@@ -9,7 +9,7 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{
@@ -76,8 +76,8 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void* addr);
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex);
-			void Apply(simul::crossplatform::DeviceContext& deviceContext,size_t size,void* addr);
-			void Unbind(simul::crossplatform::DeviceContext& deviceContext);
+			void Apply(platform::crossplatform::DeviceContext& deviceContext,size_t size,void* addr);
+			void Unbind(platform::crossplatform::DeviceContext& deviceContext);
 
 		private:
 			GLuint		mUBOId;
@@ -118,6 +118,7 @@ namespace simul
 			size_t				mTotalSize;
 			int					mBinding;
 			void*				mCurReadMap = nullptr;
+			void*				mMappedWritePtr = nullptr;
 			GLsync				mFences[mNumBuffers];
 
 			inline bool IsBufferMapped(size_t idx)
@@ -136,7 +137,7 @@ namespace simul
 				}
 				else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
 				{
-					idx = mLastIdx = (deviceContext.frame_number + idxOffset) % mNumBuffers;
+					idx = mLastIdx = (deviceContext.GetFrameNumber() + idxOffset) % mNumBuffers;
 				}
 				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
 				{
@@ -152,7 +153,7 @@ namespace simul
 		};
 
 		//! An OpenGl program object (combination of shaders)
-		class SIMUL_OPENGL_EXPORT EffectPass :public simul::crossplatform::EffectPass
+		class SIMUL_OPENGL_EXPORT EffectPass :public platform::crossplatform::EffectPass
 		{
 		public:
 						EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e);
@@ -197,7 +198,7 @@ namespace simul
 		};
 
 		//! An OpenGl shader
-		class SIMUL_OPENGL_EXPORT Shader:public simul::crossplatform::Shader
+		class SIMUL_OPENGL_EXPORT Shader:public platform::crossplatform::Shader
 		{
 		public:
 					Shader();
@@ -217,11 +218,11 @@ namespace simul
 		public:
 											Effect();
 											~Effect();
-			void							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8,const std::map<std::string,std::string>& defines);
+			bool							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8)override;
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
 			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
-			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;		
+			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
 			void							SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase* s)override;
 			
 			void							Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass);

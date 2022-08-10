@@ -4,7 +4,7 @@
 #include "Platform/Vulkan/EffectPass.h"
 #include "Platform/Vulkan/RenderPlatform.h"
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 
@@ -29,16 +29,16 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,co
     // Start creating the gl shader:
     switch (t)
     {
-    case simul::crossplatform::SHADERTYPE_VERTEX:
+    case platform::crossplatform::SHADERTYPE_VERTEX:
         break;
-    case simul::crossplatform::SHADERTYPE_HULL:
-    case simul::crossplatform::SHADERTYPE_DOMAIN:
-    case simul::crossplatform::SHADERTYPE_GEOMETRY:
-    case simul::crossplatform::SHADERTYPE_COUNT:
+    case platform::crossplatform::SHADERTYPE_HULL:
+    case platform::crossplatform::SHADERTYPE_DOMAIN:
+    case platform::crossplatform::SHADERTYPE_GEOMETRY:
+    case platform::crossplatform::SHADERTYPE_COUNT:
         break;
-    case simul::crossplatform::SHADERTYPE_PIXEL:
+    case platform::crossplatform::SHADERTYPE_PIXEL:
         break;
-    case simul::crossplatform::SHADERTYPE_COMPUTE:
+    case platform::crossplatform::SHADERTYPE_COMPUTE:
         break;
     default:
         break;
@@ -46,6 +46,7 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,co
 	vk::Device *device=renderPlatform->AsVulkanDevice();
 	if (device->createShaderModule( &createInfo, nullptr,&mShader) != vk::Result::eSuccess)
 	{
+		SIMUL_CERR<<"Vulkan error creating "<<filename_utf8<<std::endl;
 		SIMUL_BREAK_ONCE("failed to create shader module!");
 	}
 	SetVulkanName(renderPlatform,&mShader,filename_utf8);

@@ -1,0 +1,109 @@
+//  Copyright (c) 2015-2017 Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "common.sl"
+#include "render_states.sl"
+#include "sampler_states.sl"
+
+cbuffer vertexBuffer SIMUL_BUFFER_REGISTER(0)
+{
+  mat4 ProjectionMatrix; 
+};
+
+struct VS_INPUT
+{
+  vec2 pos : POSITION;
+  vec2 uv : TEXCOORD0;
+  vec4 col : COLOR;
+};
+
+struct PS_INPUT
+{
+  vec4 pos : SV_POSITION;
+  vec4 col : TEXCOORD0;
+  vec2 uv  : TEXCOORD1;
+};
+            
+shader PS_INPUT VS_Main(VS_INPUT vertex)
+{
+  PS_INPUT v_out;
+  v_out.pos = mul( ProjectionMatrix, vec4(vertex.pos.xy, 0.f, 1.f));
+  v_out.col = vertex.col;
+  v_out.uv  = vertex.uv;
+  return v_out;
+}
+
+Texture2D texture0;
+
+shader vec4 PS_Main(PS_INPUT p_in) : SV_Target
+{
+    vec4 out_col = p_in.col* texture0.Sample(clampSamplerState, p_in.uv).aaaa;
+
+    return out_col; 
+}
+
+BlendState ImGuiBlend
+{
+    BlendEnable[0] = TRUE;
+    BlendEnable[1] = TRUE;
+    SrcBlend = SRC_ALPHA;
+    DestBlend = INV_SRC_ALPHA;
+    SrcBlendAlpha = ONE;
+    DestBlendAlpha = INV_SRC_ALPHA;
+    BlendOp = ADD;
+    BlendOpAlpha = ADD;
+};
+
+RasterizerState ImGuiRasterizer
+{
+    FillMode = SOLID;
+    CullMode = none;
+    DepthClipEnable = true;
+    ScissorEnable = true;
+};
+
+DepthStencilState WriteReverseDepth
+{
+    DepthEnable = TRUE;
+    DepthWriteMask = ALL;
+    DepthFunc = ALWAYS;
+};
+DepthStencilState TestReverseDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ZERO;
+	DepthFunc = GREATER_EQUAL;
+};
+
+technique main
+{
+    pass depth
+    {
+        SetRasterizerState(ImGuiRasterizer);
+        SetTopology(TriangleList);
+        SetDepthStencilState(WriteReverseDepth, 0);
+        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+        SetGeometryShader(NULL);
+        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+    }
+    pass no_depth
+    {
+        SetRasterizerState(ImGuiRasterizer);
+        SetTopology(TriangleList);
+        SetDepthStencilState(DisableDepth, 0);
+        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+        SetGeometryShader(NULL);
+        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+    }
+    pass test_depth
+    {
+        SetRasterizerState(ImGuiRasterizer);
+        SetTopology(TriangleList);
+        SetDepthStencilState(TestReverseDepth, 0);
+        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+        SetGeometryShader(NULL);
+        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+    }
+}

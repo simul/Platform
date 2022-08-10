@@ -9,11 +9,15 @@
 #include <dxgidebug.h>
 #endif
 #endif
-using namespace simul;
-using namespace dx12;
-
 
 #pragma comment(lib,"dxguid")
+
+using namespace platform;
+using namespace dx12;
+
+/////////////////
+//DeviceManager//
+/////////////////
 
 DeviceManager::DeviceManager():
 	mDevice(nullptr)
@@ -25,12 +29,7 @@ DeviceManager::~DeviceManager()
 	Shutdown();
 }
 
-bool DeviceManager::IsActive() const
-{
-	return mGraphicsQueue != nullptr;
-}
-
-void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driver )
+void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {
 	SIMUL_COUT << "Initializing DX12 D3D12 DirectX12 manager with: \n";
 	SIMUL_COUT << "-Device Debug = " << (use_debug ? "enabled" : "disabled") << std::endl;
@@ -40,7 +39,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 #ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	// Debug layer
-    UINT dxgiFactoryFlags = 0;
+	UINT dxgiFactoryFlags = 0;
 	if (use_debug)
 	{
 		ID3D12Debug* debugController = nullptr;
@@ -54,11 +53,19 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{
-				ID3D12Debug3* debugController1 = nullptr;
-				debugController->QueryInterface(SIMUL_PPV_ARGS(&debugController1));
-				debugController1->SetEnableGPUBasedValidation(true);
-				debugController1->SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS_DISABLE_STATE_TRACKING);
+				ID3D12Debug3* debug3 = nullptr; 
+				debugController->QueryInterface(SIMUL_PPV_ARGS(&debug3));
+				debug3->SetEnableGPUBasedValidation(true);
+				debug3->SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS_DISABLE_STATE_TRACKING);
 			}
+#ifdef __ID3D12Debug5_INTERFACE_DEFINED__
+			ID3D12Debug5* debug5 = nullptr; 
+			debugController->QueryInterface(SIMUL_PPV_ARGS(&debug5));
+			if (debug5)
+			{
+				debug5->SetEnableAutoName(TRUE);
+			}
+#endif
 		}
 		ID3D12DeviceRemovedExtendedDataSettings *pDredSettings=nullptr;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))
@@ -102,6 +109,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 			if (hardwareAdapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
 			{
 				curAdapterIdx++;
+				SAFE_RELEASE(hardwareAdapter);
 				continue;
 			}
 
@@ -135,7 +143,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 			}
 			curAdapterIdx++;
 		}
-		res = D3D12CreateDevice(hardwareAdapter,featureLevel, SIMUL_PPV_ARGS(&mDevice));
+		res = D3D12CreateDevice(hardwareAdapter, featureLevel, SIMUL_PPV_ARGS(&mDevice));
 		mDevice->SetName (L"D3D12 Device");
 		SIMUL_ASSERT(res == S_OK);
 
@@ -148,16 +156,16 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 			if(infoQueue)
 			{
 				// Set break on_x settings
-#if SIMUL_D3D12_ENABLE_PIX
+#if SIMUL_ENABLE_PIX
 				static bool breakOnWarning = false;
 #else
 				static bool breakOnWarning = true;
-#endif // SIMUL_D3D12_ENABLE_PIX
+#endif // SIMUL_ENABLE_PIX
 
 				SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 				if (breakOnWarning)
 				{
-                    SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
+					SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
 
 					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 					infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
@@ -200,10 +208,10 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 		// Enumerate mOutputs(monitors)
 		IDXGIOutput* output = nullptr;
 		int outputIdx		= 0;
-		while (hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
+		while (res = hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
 		{
 			mOutputs[outputIdx] = output;
-			SIMUL_ASSERT(res == S_OK);
+			SIMUL_ASSERT(SUCCEEDED (res ));
 			outputIdx++;
 			if (outputIdx>100)
 			{
@@ -214,47 +222,49 @@ void DeviceManager::Initialize(bool use_debug,bool instrument, bool default_driv
 		SAFE_RELEASE(hardwareAdapter);
 	}
 	SAFE_RELEASE(factory);
-
-	// Create a command queue
-	D3D12_COMMAND_QUEUE_DESC queueDesc	= {};
-	queueDesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;
-	queueDesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
-	res									= mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mGraphicsQueue));
-	SIMUL_ASSERT(res == S_OK);
-    mGraphicsQueue->SetName(L"Main CommandQueue");
-
-	// Asynchronous compute:
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&m_computeCommandQueue));
-	SIMUL_ASSERT(res == S_OK);
-	m_computeCommandQueue->SetName(L"Aynchronous Compute CommandQueue");
-
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-	res = mDevice->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&m_copyCommandQueue));
-	SIMUL_ASSERT(res == S_OK);
-	m_copyCommandQueue->SetName(L"Copy CommandQueue");
-	
-	for (int i = 0; i < FrameCount; ++i)
-	{
-		mComputeContexts[i].RestoreDeviceObjects(mDevice);
-		wchar_t buffer[64] = {};
-		swprintf_s (buffer, L"ComputeContext CommandList %i", i);
-		V_CHECK(mComputeContexts[i].ICommandList->SetName(buffer));
-		swprintf_s (buffer, L"ComputeContext Allocator %i", i);
-		V_CHECK(mComputeContexts[i].IAllocator->SetName(buffer));
-	}
 #endif
 #endif
 }
 
-void D3D12ComputeContext::RestoreDeviceObjects(ID3D12DeviceType *mDevice)
+bool DeviceManager::IsActive() const
 {
-	V_CHECK (mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE,  SIMUL_PPV_ARGS(&IAllocator)));
-	V_CHECK (mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, IAllocator, nullptr, SIMUL_PPV_ARGS(&ICommandList)));
-	V_CHECK (mDevice->CreateFence(0, D3D12_FENCE_FLAG_SHARED, SIMUL_PPV_ARGS (&IFence)));//__uuidof(**(ppType)), IID_PPV_ARGS_Helper(ppType)
+	return mDevice != nullptr;
+}
+
+void DeviceManager::Shutdown()
+{
+	if(!mDevice)
+		return;
+	// TO-DO: wait for the GPU to complete last work
+	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
+	{
+		SAFE_RELEASE(i->second);
+	}
+	mOutputs.clear();
+
+	ReportMessageFilterState();
 	
-	
- 	V_CHECK(ICommandList->Close());
+	SAFE_RELEASE(mDevice);
+#ifndef _XBOX_ONE
+#ifndef _GAMING_XBOX
+	IDXGIDebug1 *dxgiDebug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
+	{
+		dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL| DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+	}
+	dxgiDebug->Release();
+#endif
+#endif
+}
+
+void* DeviceManager::GetDevice()
+{
+	return mDevice;
+}
+
+void* DeviceManager::GetDeviceContext()
+{ 
+	return 0; 
 }
 
 int DeviceManager::GetNumOutputs()
@@ -284,23 +294,23 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	
 #if defined(WINVER) &&!defined(_XBOX_ONE) &&!defined(_GAMING_XBOX)
 	MONITORINFOEX monitor;
-    monitor.cbSize = sizeof(monitor);
-    if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
-    {
+	monitor.cbSize = sizeof(monitor);
+	if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
+	{
 		DISPLAY_DEVICE dispDev;
-        memset(&dispDev, 0, sizeof(dispDev));
+		memset(&dispDev, 0, sizeof(dispDev));
 		dispDev.cb = sizeof(dispDev);
 
-       if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
-       {
+	   if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
+	   {
 #ifdef _UNICODE
-           o.monitorName=base::WStringToUtf8(dispDev.DeviceName);
+		   o.monitorName=platform::core::WStringToUtf8(dispDev.DeviceName);
 #else
-           o.monitorName=dispDev.DeviceName;
+		   o.monitorName=dispDev.DeviceName;
 #endif
-           o.desktopX	=monitor.rcMonitor.left;
-           o.desktopY	=monitor.rcMonitor.top;
-       }
+		   o.desktopX	=monitor.rcMonitor.left;
+		   o.desktopY	=monitor.rcMonitor.top;
+	   }
    }
 #endif
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
@@ -339,167 +349,6 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	return o;
 }
 
-void D3D12ComputeContext::InvalidateDeviceObjects()
-{
-	SAFE_RELEASE(IAllocator);
-	SAFE_RELEASE(ICommandList);
-	SAFE_RELEASE(IFence);
-}
-
-
-void DeviceManager::Shutdown()
-{
-	if(!mDevice)
-		return;
-	for (int i = 0; i < FrameCount; ++i)
-	{
-		mComputeContexts[i].InvalidateDeviceObjects();
-	}
-	// TO-DO: wait for the GPU to complete last work
-	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
-	{
-		SAFE_RELEASE(i->second);
-	}
-	mOutputs.clear();
-
-	ReportMessageFilterState();
-	SAFE_RELEASE(mIContext.IAllocator);
-	SAFE_RELEASE(mIContext.ICommandList);
-	SAFE_RELEASE(mGraphicsQueue);
-	m_computeCommandQueue.Reset();
-	m_copyCommandQueue.Reset();
-	for(int i=0;i<FrameCount;i++)
-	{
-		//asyncComputeFrames[i].InvalidateDeviceObjects();
-	}
-	m_computeCommandQueue.Reset();
-	
-	SAFE_RELEASE(mDevice);
-#ifndef _XBOX_ONE
-#ifndef _GAMING_XBOX
-	IDXGIDebug1 *dxgiDebug;
-	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
-    {
-        dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL| DXGI_DEBUG_RLO_IGNORE_INTERNAL));
-    }
-	dxgiDebug->Release();
-#endif
-#endif
-}
-
 void DeviceManager::ReportMessageFilterState()
 {
 }
-
-void* DeviceManager::GetDevice()
-{
-	return mDevice;
-}
-
-void* DeviceManager::GetDeviceContext()
-{ 
-	return 0; 
-}
-
-void D3D12ComputeContext::StartFrame()
-{
-	if(active)
-		return;
-	V_CHECK(IAllocator->Reset());
-	V_CHECK(ICommandList->Reset(IAllocator, nullptr));
-	active=true;
-}
-void D3D12ComputeContext::EndFrame()
-{
-	if(!active)
-		return;
-	V_CHECK(ICommandList->Close());
-	active=false;
-}
-
-void DeviceManager::GetComputeContext(crossplatform::DeviceContext &computeContext)
-{
-	//m_computeCommandQueue->Wait (asyncComputeFrames[lastFrameIndex].fence, asyncComputeFrames[lastFrameIndex].fenceValue);
-
-	//computeContext.ApiCallCounter=0;
-	
-	if(mComputeContexts[computeFrame].fenceValue>0)
-	{
-		m_computeCommandQueue->Wait(mComputeContexts[computeFrame].IFence, mComputeContexts[computeFrame].fenceValue);
-		while(mComputeContexts[computeFrame].IFence->GetCompletedValue()!=mComputeContexts[computeFrame].fenceValue)
-		{
-		}
-	}
-	computeContext.completed_frame=mComputeContexts[computeFrame].fenceValue;
-	mComputeContexts[computeFrame].StartFrame();
-	mComputeContexts[computeFrame].fenceValue=computeContext.frame_number;
-	m_computeCommandQueue->Signal(mComputeContexts[computeFrame].IFence, 0);
-	computeContext.platform_context=mComputeContexts[computeFrame].ICommandList;
-}
-
-void* DeviceManager::GetImmediateContext()
-{
-    if (!mIContext.ICommandList)
-    {
-        V_CHECK (mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mIContext.IAllocator)));
-        V_CHECK (mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mIContext.IAllocator, nullptr, SIMUL_PPV_ARGS(&mIContext.ICommandList)));
-        V_CHECK (mIContext.ICommandList->Close());
-        mIContext.IRecording = false;
-	}
-    if (mIContext.IRecording)
-    {
-        FlushImmediateCommandList();
-    }
-
-    mIContext.IAllocator->Reset();
-    mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
-    mIContext.IRecording = true;
-
-    return &mIContext;
-}
-
-void DeviceManager::EndAsynchronousFrame()
-{
-	if(computeFrame<FrameCount&&mComputeContexts[computeFrame].active)
-	{
-		mComputeContexts[computeFrame].EndFrame();
-		ID3D12GraphicsCommandList* pCommandList = mComputeContexts[computeFrame].ICommandList;
-		ID3D12CommandList *comm[]={pCommandList};
-		m_computeCommandQueue->ExecuteCommandLists(1,comm);
-		m_computeCommandQueue->Signal(mComputeContexts[computeFrame].IFence, mComputeContexts[computeFrame].fenceValue);
-		lastFrameIndex=computeFrame;
-		computeFrame++;
-		if(computeFrame>=FrameCount)
-			computeFrame=0;
-	}
-}
-
-void DeviceManager::FlushImmediateCommandList()
-{
-	EndAsynchronousFrame();
-    if (!mIContext.IRecording)
-    {
-        return;
-    }
-    mIContext.IRecording    = false;
-    HRESULT res             = mIContext.ICommandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { mIContext.ICommandList };
-    mGraphicsQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-    
-    // Wait until completed
-    ID3D12Fence* pFence;
-    res = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&pFence));
-    mGraphicsQueue->Signal(pFence, 64);
-    // ugly spinlock wait
-    while(pFence->GetCompletedValue() != 64) {}
-    pFence->Release();
-}
-
-void* DeviceManager::GetCommandQueue()
-{
-	return mGraphicsQueue;
-}
-
-
-
-

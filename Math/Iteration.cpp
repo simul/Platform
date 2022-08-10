@@ -7,7 +7,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4740)
 #endif
-namespace simul
+namespace platform
 {
 	namespace math
 	{
@@ -927,7 +927,7 @@ void YNMultiply6(float *y,Matrix &BetaY,unsigned &yn,
 				std::vector<unsigned> *YN1,std::vector<unsigned> *YN2,
 				float *ntemp,Vector &nr)
 {
-	ntemp;
+	//ntemp;
 	ALIGN16 float y0[4];
 	ALIGN16 float y1[4];
 	ALIGN16 float y2[4];
@@ -1284,7 +1284,7 @@ void ApplyForceLimits(Vector &NOutput,Vector &NNormals,Vector &ForceMin,
 	std::vector<unsigned>&TransverseNSize,std::vector<unsigned>&VCN)
 {
 #ifndef SIMD
-	StartNormalN;
+	//StartNormalN;
 	unsigned N=0;
 	unsigned i=0;
 	for(i=0;i<VCN.size();i++)

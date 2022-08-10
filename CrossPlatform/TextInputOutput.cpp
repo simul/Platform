@@ -8,7 +8,11 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-using namespace simul;
+#if PLATFORM_STD_CHARCONV
+#include <charconv>
+#endif
+using namespace platform;
+using namespace platform;
 using namespace crossplatform;
 using std::string;
 #ifndef _MSC_VER
@@ -20,12 +24,12 @@ using std::string;
 #include <windows.h>
 #endif
 
-TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
+TextFileInput::TextFileInput(platform::core::MemoryInterface *m)
 	:good(true)
 	,fileLoader(nullptr)
 	,memoryInterface(m)
 {
-	fileLoader=base::FileLoader::GetFileLoader();
+	fileLoader= platform::core::FileLoader::GetFileLoader();
 }
 
 TextFileInput::~TextFileInput()
@@ -134,7 +138,7 @@ static int findMatchingBrace(const std::string &text,int open_brace_pos)
 	return findMatching(text,open_brace_pos,"{","}");
 }
 
-static void LoadArray(TextInput::Array &array,const string &text,simul::base::MemoryInterface *m)
+static void LoadArray(TextInput::Array &array,const string &text,platform::core::MemoryInterface *m)
 {
 	size_t pos=0;
 	while(pos<text.length())
@@ -204,7 +208,7 @@ void TextFileInput::Load(const std::string &text)
 	}
 }
 
-void TextFileInput::SetFileLoader(simul::base::FileLoader *f)
+void TextFileInput::SetFileLoader(platform::core::FileLoader *f)
 {
 	fileLoader=f;
 }
@@ -235,7 +239,7 @@ void TextFileInput::Load(const char *filename_utf8)
 			return;
 		}
 #ifdef _MSC_VER
-		std::ifstream ifs(simul::base::Utf8ToWString(filename_utf8).c_str());
+		std::ifstream ifs(platform::core::Utf8ToWString(filename_utf8).c_str());
 #else
 		std::ifstream ifs(filename_utf8);
 #endif
@@ -314,14 +318,40 @@ double TextFileInput::Get(const char *name,double dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
-	return atof(properties[name].c_str());
+
+	string propNameStr = properties[name];
+#if PLATFORM_STD_CHARCONV
+	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), [](unsigned char x) {return std::isspace(x); }), propNameStr.end());
+	const char* propName = propNameStr.c_str();
+	double value;
+	std::from_chars_result res = std::from_chars(propName, propName + strlen(propName), value);
+	if (res.ec != std::errc())
+		return dflt;
+	else
+		return value;
+#else
+	return atof(propNameStr.c_str());
+#endif 
 }
 
 float TextFileInput::Get(const char *name,float dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
-	return (float)atof(properties[name].c_str());
+
+	string propNameStr = properties[name];
+#if PLATFORM_STD_CHARCONV
+	propNameStr.erase(std::remove_if(propNameStr.begin(), propNameStr.end(), [](unsigned char x) {return std::isspace(x); }), propNameStr.end());
+	const char* propName = propNameStr.c_str();
+	float value;
+	std::from_chars_result res = std::from_chars(propName, propName + strlen(propName), value);
+	if (res.ec != std::errc())
+		return dflt;
+	else
+		return value;
+#else
+	return (float)atof(propNameStr.c_str());
+#endif 
 }
 
 int3 TextFileInput::Get(const char *name,int3 dflt)
@@ -353,7 +383,18 @@ vec2 TextFileInput::Get(const char *name,vec2 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+#if PLATFORM_STD_CHARCONV
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
+		const char* s_cstr = s.c_str();
+		float value;
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0f;
+		else
+			val[i] = value;
+#else
 		val[i]=(float)atof(s.c_str());
+#endif
 		pos=comma_pos+1;
 	}
 	vec2 ret=(const float *)val;
@@ -371,7 +412,18 @@ vec3 TextFileInput::Get(const char *name,vec3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+#if PLATFORM_STD_CHARCONV
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
+		const char* s_cstr = s.c_str();
+		float value;
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0f;
+		else
+			val[i] = value;
+#else
 		val[i]=(float)atof(s.c_str());
+#endif
 		pos=comma_pos+1;
 	}
 	vec3 ret=val;
@@ -389,7 +441,18 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
+#if PLATFORM_STD_CHARCONV
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
+		const char* s_cstr = s.c_str();
+		float value;
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0f;
+		else
+			val[i] = value;
+#else
 		val[i]=(float)atof(s.c_str());
+#endif
 		pos=comma_pos+1;
 	}
 	vec4 ret=val;
@@ -407,7 +470,18 @@ Quaterniond TextFileInput::Get(const char *name,Quaterniond dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(double)atof(s.c_str());
+#if PLATFORM_STD_CHARCONV
+		s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char x) {return std::isspace(x); }), s.end());
+		const char* s_cstr = s.c_str();
+		double value;
+		std::from_chars_result res = std::from_chars(s_cstr, s_cstr + strlen(s_cstr), value);
+		if (res.ec != std::errc())
+			val[i] = 0.0;
+		else
+			val[i] = value;
+#else
+		val[i]=atof(s.c_str());
+#endif
 		pos=comma_pos+1;
 	}
 	Quaterniond ret=val;
@@ -465,7 +539,7 @@ bool TextFileInput::HasArray(const char *name) const
 	return (arrays.find(name)!=arrays.end());
 }
 
-TextFileOutput::TextFileOutput(simul::base::MemoryInterface *m)
+TextFileOutput::TextFileOutput(platform::core::MemoryInterface *m)
 	:memoryInterface(m)
 {
 }
@@ -495,7 +569,7 @@ void TextFileOutput::Save(const char *filename_utf8)
 	if(!filename_utf8)
 		return;
 #ifdef _MSC_VER
-	std::ofstream ofs(simul::base::Utf8ToWString(filename_utf8).c_str());
+	std::ofstream ofs(platform::core::Utf8ToWString(filename_utf8).c_str());
 #else
 	std::ofstream ofs(filename_utf8);
 #endif
@@ -520,30 +594,30 @@ void TextFileOutput::Save(std::ostream &ofs,int tab,bool bookEnd)
 	const char *t0=tabstr0.c_str();
 	const char *t1=tabstr1.c_str();
 	if(properties.size()>1||arrays.size()>0||bookEnd)
-		write(ofs,base::stringFormat("%s{\n",t0));
+		write(ofs,core::stringFormat("%s{\n",t0));
 	for(std::map<std::string,std::string>::iterator i=properties.begin();i!=properties.end();i++)
 	{
 		std::string &str=i->second;
-		write(ofs,base::stringFormat("%s\"%s\": \"%s\"\n",t1,i->first.c_str(),str.c_str()));
+		write(ofs,core::stringFormat("%s\"%s\": \"%s\"\n",t1,i->first.c_str(),str.c_str()));
 	}
 	for(std::map<std::string,TextFileOutput>::iterator i=subElements.begin();i!=subElements.end();i++)
 	{
-		write(ofs,base::stringFormat("%s\"%s\":\n",t1,i->first.c_str()));
+		write(ofs,core::stringFormat("%s\"%s\":\n",t1,i->first.c_str()));
 		TextFileOutput &s=i->second;
 		s.Save(ofs,tab+1);
 	}
 	for(std::map<std::string,Array>::iterator i=arrays.begin();i!=arrays.end();i++)
 	{
-		write(ofs,base::stringFormat("%s\"%s\":\n%s[\n",t1,i->first.c_str(),t1));
+		write(ofs,core::stringFormat("%s\"%s\":\n%s[\n",t1,i->first.c_str(),t1));
 		Array &array=i->second;
 		for(size_t j=0;j<array.size();j++)
 		{
 			((TextFileOutput*)array[j])->Save(ofs,tab+1);
 		}
-		write(ofs,base::stringFormat("%s]\n",t1));
+		write(ofs,core::stringFormat("%s]\n",t1));
 	}
 	if(properties.size()>1||arrays.size()>0||bookEnd)
-		write(ofs,base::stringFormat("%s}\n",t0));
+		write(ofs,core::stringFormat("%s}\n",t0));
 }
 
 bool TextFileOutput::Good()
@@ -553,62 +627,62 @@ bool TextFileOutput::Good()
 
 void TextFileOutput::Set(const char *name,const char *value)
 {
-	properties[name]=base::stringFormat("%s",value);
+	properties[name]=core::stringFormat("%s",value);
 }
 
 void TextFileOutput::Set(const char *name,bool value)
 {
-	properties[name]=base::stringFormat("%s",value?"true":"false");
+	properties[name]=core::stringFormat("%s",value?"true":"false");
 }
 
 void TextFileOutput::Set(const char *name,int value)
 {
-	properties[name]=base::stringFormat("%d",value);
+	properties[name]=core::stringFormat("%d",value);
 }
 
 void TextFileOutput::Set(const char* name, long long value)
 {
-	properties[name] = base::stringFormat("%lld", value);
+	properties[name] = core::stringFormat("%lld", value);
 }
 
 void TextFileOutput::Set(const char* name, unsigned long long value)
 {
-	properties[name] = base::stringFormat("%llu", value);
+	properties[name] = core::stringFormat("%llu", value);
 }
 
 void TextFileOutput::Set(const char *name,double value)
 {
-	properties[name]=base::stringFormat("%16.16g",value);
+	properties[name]=core::stringFormat("%16.16g",value);
 }
 
 void TextFileOutput::Set(const char *name,float value)
 {
-	properties[name]=base::stringFormat("%16.16g",value);
+	properties[name]=core::stringFormat("%16.16g",value);
 }
 
 void TextFileOutput::Set(const char *name,int3 value)
 {
-	properties[name]=base::stringFormat("%d,%d,%d",value.x,value.y,value.z);
+	properties[name]=core::stringFormat("%d,%d,%d",value.x,value.y,value.z);
 }
 
 void TextFileOutput::Set(const char *name,vec2 value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g",value.x,value.y);
+	properties[name]=core::stringFormat("%16.16g,%16.16g",value.x,value.y);
 }
 
 void TextFileOutput::Set(const char *name,vec3 value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g",value.x,value.y,value.z);
+	properties[name]=core::stringFormat("%16.16g,%16.16g,%16.16g",value.x,value.y,value.z);
 }
 
 void TextFileOutput::Set(const char *name,vec4 value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.w);
+	properties[name]=core::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.w);
 }
 
 void TextFileOutput::Set(const char *name,Quaterniond value)
 {
-	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.s);
+	properties[name]=core::stringFormat("%16.16g,%16.16g,%16.16g,%16.16g",value.x,value.y,value.z,value.s);
 }
 
 

@@ -7,7 +7,7 @@
 
 #pragma warning(disable:4251)
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
@@ -25,9 +25,9 @@ namespace simul
 			void InvalidateDeviceObjects						();
 			void LinkToEffect									(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			//! This method copies the provided data into the buffer.
-			void Apply											(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
+			void Apply											(platform::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void ActualApply									(crossplatform::DeviceContext &deviceContext, crossplatform::EffectPass *currentEffectPass, int slot) override;
-			void Unbind											(simul::crossplatform::DeviceContext &deviceContext);
+			void Unbind											(platform::crossplatform::DeviceContext &deviceContext);
 			//! This method creates the heaps and the resources, it allocates GPU memory.
 			void CreateBuffers									(crossplatform::RenderPlatform* r, void *addr);
 			void SetNumBuffers									(crossplatform::RenderPlatform* r,UINT nContexts,  UINT nMapsPerFrame, UINT nFramesBuffering );

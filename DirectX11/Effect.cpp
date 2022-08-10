@@ -19,7 +19,7 @@
 #include <D3Dcompiler.h>
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 #pragma optimize("",off)
 
@@ -187,15 +187,28 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	type = t;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
 	{
-		pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader);
+		if(HRESULT hr=pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader)!=S_OK)
+		{
+			SIMUL_INTERNAL_COUT<<"Unsupported Pixel shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
+			pixelShader=nullptr;
+		}
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
-		pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader);
+		if(HRESULT hr=pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader)!=S_OK)
+		{
+			SIMUL_INTERNAL_COUT<<"Unsupported Vertex shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
+			vertexShader=nullptr;
+		}
 	}
 	else if (t == crossplatform::SHADERTYPE_COMPUTE)
 	{
-		pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader);
+		if(HRESULT hr=pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader)!=S_OK)
+		{
+		// TODO: Is this fine? This can happen if e.g. we try to load a shader model 5.1 shader in D3D11 and have not initialized at feature level 12.0
+			SIMUL_INTERNAL_COUT<<"Unsupported Compute shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
+			computeShader=nullptr;
+		}
 	}
 	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
 	{
@@ -212,13 +225,17 @@ EffectTechnique *Effect::CreateTechnique()
 	return new dx11::EffectTechnique(renderPlatform,this);
 }
 
-void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+bool Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8)
 {
 	renderPlatform=r;
 	if(!renderPlatform)
-		return;
-	EnsureEffect(r, filename_utf8);
-	crossplatform::Effect::Load(r, filename_utf8, defines);
+		return false;
+
+	if (EnsureEffect(r, filename_utf8))
+		return crossplatform::Effect::Load(r, filename_utf8);
+	else
+		return false;
+
 }
 
 void Effect::PostLoad()

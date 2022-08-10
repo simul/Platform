@@ -12,16 +12,13 @@
 #include <algorithm>
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 Query::Query(crossplatform::QueryType t):
 	crossplatform::Query(t),
-	//mQueryHeap(nullptr),
-	//mReadBuffer(nullptr),
-	//mQueryData(nullptr),
-	mTime(0),
-	mIsDisjoint(false)
+	mIsDisjoint(false),
+	mTime(0)
 {
 	mD3DType = dx12::RenderPlatform::ToD3dQueryType(t);
 	if (t == crossplatform::QueryType::QUERY_TIMESTAMP_DISJOINT)

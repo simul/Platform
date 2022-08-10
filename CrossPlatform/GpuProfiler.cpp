@@ -10,10 +10,11 @@
 #include <map>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
+using namespace platform;
 using namespace crossplatform;
 using namespace std;
-static std::unordered_map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
+static std::unordered_map<void*,platform::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int BOOL;
 
@@ -31,7 +32,7 @@ ProfileData::~ProfileData()
 					delete TimestampEndQuery;
 				}
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -89,20 +90,22 @@ void GpuProfiler::InvalidateDeviceObjects()
 	BaseProfilingInterface::Clear();
 }
 
+#if PLATFORM_DEBUG_PROFILING_LEVELS
+std::vector<std::string> profilingStrings;
+#endif
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
-	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-	// Seriously? We're doing strcmp in perf-measurement?
-	//bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	//bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
-	//if (!is_opengl && !is_vulkan && !context)
-//		return;
 
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
 	level++;
+#if PLATFORM_DEBUG_PROFILING_LEVELS
+	SIMUL_ASSERT_WARN_ONCE(level>0,"Profiler debugging: level was less than zero calling GpuProfiler::Begin")
+	SIMUL_COUT << "Profiler debugging: begin level "<<level<<", "<<name<< std::endl;
+	profilingStrings.push_back(name);
+#endif
 	if(level>max_level)
 		return;
 	level_in_use++;
@@ -181,13 +184,21 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
 	if (!enabled||!renderPlatform||!root||!frame_active)
 		return;
-	ID3D11DeviceContext* context = deviceContext.asD3D11DeviceContext();
-/*	bool is_opengl = (strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0);
-	bool is_vulkan = (deviceContext.renderPlatform->AsVulkanDevice() != nullptr);
-	if (!is_opengl && !is_vulkan && !context)
-		return;*/
-
+	
 	renderPlatform->EndEvent(deviceContext);
+#if PLATFORM_DEBUG_PROFILING_LEVELS
+	if(profilingStrings.size())
+	{
+		SIMUL_COUT << "Profiler debugging: end   level "<<level<<", "<<profilingStrings.back().c_str()<< std::endl;
+	
+		profilingStrings.pop_back();
+	}
+	else
+	{
+		SIMUL_ASSERT_WARN_ONCE(level>0,"Profiler debugging: level zero calling GpuProfiler::End")
+		SIMUL_COUT << "Profiler debugging: end   level "<<level<<", stack empty."<< std::endl;
+	}
+#endif
 	level--;
 	if(level>=max_level)
 		return;
@@ -219,9 +230,9 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
-	if(current_framenumber==deviceContext.frame_number)
+	if(current_framenumber==renderPlatform->GetFrameNumber())
 		return;
-	current_framenumber=deviceContext.frame_number;
+	current_framenumber=renderPlatform->GetFrameNumber();
 	if(level!=0)
 	{
 		SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")
@@ -229,7 +240,7 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 		//profileStack.clear();
 		return;
 	}
-	base::BaseProfilingInterface::StartFrame();
+	core::BaseProfilingInterface::StartFrame();
 }
 
 void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *profile)
@@ -363,17 +374,17 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-const char *GpuProfiler::GetDebugText(base::TextStyle style) const
+const char *GpuProfiler::GetDebugText(core::TextStyle style) const
 {
 	static std::string str;
 	str=BaseProfilingInterface::GetDebugText();
 	
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
-	str += (style == base::HTML) ? "<br/>" : "\n";
+	str += (style == core::HTML) ? "<br/>" : "\n";
 	return str.c_str();
 }
 
-const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,int i) const
+const core::ProfileData *GpuProfiler::GetEvent(const core::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
 	{
@@ -387,7 +398,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	{
 		if(j==i)
 		{
-			base::ProfileData *d=it->second;
+			core::ProfileData *d=it->second;
 			d->name=it->second->unqualifiedName;
 			d->time=it->second->time;
 			return it->second;

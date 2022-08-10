@@ -11,7 +11,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -70,6 +70,7 @@ namespace simul
 				LEFT_BUTTON		            = 0x01
 				,MIDDLE_BUTTON	            = 0x02
 				,RIGHT_BUTTON	            = 0x04
+				,ALL_BUTTONS	            = LEFT_BUTTON|MIDDLE_BUTTON| RIGHT_BUTTON
 				,WHEEL			            = 0x08
 				,LEFT_BUTTON_RELEASED       = 0x10
 				,MIDDLE_BUTTON_RELEASED     = 0x20
@@ -147,7 +148,9 @@ namespace simul
 															,float cam_spd
 															,MouseCameraState &state
 															,MouseCameraInput &input
-															,float max_height);
+															,float max_height
+															,bool lock_height = false
+					,int rotateButton= MouseCameraInput::LEFT_BUTTON | MouseCameraInput::RIGHT_BUTTON);
 		
 		math::Matrix4x4 SIMUL_CROSSPLATFORM_EXPORT MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded);
 		// The x-y min and max (in z and w) of the bounds of the projection on the given face of a cubemap.
@@ -165,9 +168,9 @@ namespace simul
  																					float nearVal,
  																					float farVal);
 		//! A camera class. The orientation has the z-axis facing backwards, the x-axis right and the y-axis up.
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS Camera :
-			public simul::geometry::OrientationInterface,
-			public simul::crossplatform::CameraInterface
+		class SIMUL_CROSSPLATFORM_EXPORT Camera :
+			public platform::math::OrientationInterface,
+			public platform::crossplatform::CameraInterface
 		{
 			CameraViewStruct cameraViewStruct;
 		public:
@@ -176,15 +179,15 @@ namespace simul
 			
 			float HorizontalFieldOfViewInRadians;
 			float VerticalFieldOfViewInRadians;
-			simul::geometry::SimulOrientation	Orientation;
-	
+			platform::math::SimulOrientation	Orientation;
+			/// Set the view struct for the camera
 			void SetCameraViewStruct(const CameraViewStruct &c);
 			const CameraViewStruct &GetCameraViewStruct() const;
 			// virtual from OrientationInterface
 			virtual const float *GetOrientationAsPermanentMatrix() const;		//! Permanent: this means that for as long as the interface exists, the address is valid.
 			virtual const float *GetRotationAsQuaternion() const;
 			virtual const float *GetPosition() const;
-
+			/// Create and return the view matrix used by the camera.
 			virtual const float *MakeViewMatrix() const;
 			virtual const float *MakeDepthReversedProjectionMatrix(float aspect) const;
 			virtual const float *MakeProjectionMatrix(float aspect) const;
@@ -197,6 +200,7 @@ namespace simul
 			virtual void SetOrientationAsMatrix(const float *);
 			virtual void SetOrientationAsQuaternion(const float *);
 			virtual void SetPosition(const float *);
+			/// Set the direction that the camera is pointing in.
 			virtual void LookInDirection(const float *view_dir,const float *view_up);
 			virtual void LookInDirection(const float *view_dir);
 			virtual void SetPositionAsXYZ(float,float,float);
@@ -209,8 +213,10 @@ namespace simul
 			virtual bool TimeStep(float delta_t);
 			//
 			float GetHorizontalFieldOfViewDegrees() const;
+			/// Set the Horizontal FoV
 			void SetHorizontalFieldOfViewDegrees(float f);
 			float GetVerticalFieldOfViewDegrees() const;
+			/// Set the Vertical FoV
 			void SetVerticalFieldOfViewDegrees(float f);
 			static void CreateViewMatrix(float *mat, const float *view_dir, const float *view_up,const float *pos=0);
 			static const float *MakeDepthReversedProjectionMatrix(float h, float v, float zNear, float zFar);

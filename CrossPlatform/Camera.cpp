@@ -7,7 +7,7 @@
 #include "Platform/Math/Pi.h"
 #include <memory.h>
 #include <algorithm>
-using namespace simul;
+using namespace platform;
 using namespace math;
 using namespace crossplatform;
 
@@ -68,7 +68,7 @@ static float U(float x)
 	return atan(x/2.f);
 }
 */
-vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const ViewStruct &viewStruct, float max_dist_metres)
+vec4 platform::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const ViewStruct &viewStruct, float max_dist_metres)
 {
 	// 	Z = x/(depth*y + z)+w*depth;
 	// e.g. for depth-rev, infinite far plane:
@@ -87,7 +87,7 @@ vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthT
 }
 
 
-vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres)
+vec4 platform::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres)
 {
 	// 	Z = x/(depth*y + z)+w*depth;
 	// e.g. for depth-rev, infinite far plane:
@@ -100,20 +100,20 @@ vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthT
 		return vec4(proj.m[3][2], max_dist_metres, proj.m[2][2] * max_dist_metres, 0.0f);
 	if (depthTextureStyle == crossplatform::DISTANCE_FROM_NEAR_PLANE)
 	{
-		Frustum f = simul::crossplatform::GetFrustumFromProjectionMatrix(proj);
+		Frustum f = platform::crossplatform::GetFrustumFromProjectionMatrix(proj);
 		return vec4(f.nearZ / max_dist_metres, 0.0f, 1.f, (f.farZ - f.nearZ) / max_dist_metres);
 	}
 	return vec4(0, 0, 0, 0);
 }
 
-vec4 simul::crossplatform::GetDepthToDistanceParameters(const crossplatform::ViewStruct &viewStruct,float max_dist_metres)
+vec4 platform::crossplatform::GetDepthToDistanceParameters(const crossplatform::ViewStruct &viewStruct,float max_dist_metres)
 {
 	return GetDepthToDistanceParameters(viewStruct.depthTextureStyle, viewStruct, max_dist_metres);
 }
 
 static float x_sgn = -1.f;
 static float y_sgn = -1.f;
-Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
+Frustum platform::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 {
 	Frustum frustum;
 	Matrix4x4 M(mat);
@@ -142,7 +142,7 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	return frustum;
 }
 
-float simul::crossplatform::GetDepthAtDistance(float thresholdMetres, const float *proj)
+float platform::crossplatform::GetDepthAtDistance(float thresholdMetres, const float *proj)
 {
 	// let pos=(0,0,t)
 	// then the vector after multiplying is (0 , 0 ,  (M33 t + M43), (M34 t + M44))
@@ -166,24 +166,25 @@ float simul::crossplatform::GetDepthAtDistance(float thresholdMetres, const floa
 	return z;
 }
 
-void simul::crossplatform::ModifyProjectionMatrix(float *mat,float new_near_plane,float new_far_plane)
+void platform::crossplatform::ModifyProjectionMatrix(float *mat,float new_near_plane,float new_far_plane)
 {
 	Matrix4x4 *m=(Matrix4x4*)mat;
 	Matrix4x4 &M=(*m);
 	float z0=-M._43/M._33;
 	float z1=(M._43-M._44)/(M._34-M._33);
-	float nearZ=0.0f,farZ=1.0f;
+	//float nearZ=0.0f;
+	//float farZ=1.0f;
 	if(z0>z1)
 	{
-		nearZ=-z0;
-		farZ=-z1;
+		//nearZ=-z0;
+		//farZ=-z1;
 		M._33	=	new_far_plane/(new_near_plane-new_far_plane);			M._34	=-1.f;
 		M._43	=	new_near_plane*new_far_plane/(new_near_plane-new_far_plane);
 	}
 	else// reversedepth
 	{
-		nearZ=-z1;
-		farZ=-z0;
+		//nearZ=-z1;
+		//farZ=-z0;
 		if(new_far_plane>0)
 		{
 			M._33	=new_near_plane/(new_far_plane-new_near_plane);	M._34	=-1.f;
@@ -197,9 +198,9 @@ void simul::crossplatform::ModifyProjectionMatrix(float *mat,float new_near_plan
 	}
 }
 
-void simul::crossplatform::ConvertReversedToRegularProjectionMatrix(float *p)
+void platform::crossplatform::ConvertReversedToRegularProjectionMatrix(float *p)
 {
-	simul::math::Matrix4x4 &proj=*((simul::math::Matrix4x4*)p);
+	platform::math::Matrix4x4 &proj=*((platform::math::Matrix4x4*)p);
 	if(proj._43>0)
 	{
 		float zF	=proj._43/proj._33;
@@ -209,71 +210,72 @@ void simul::crossplatform::ConvertReversedToRegularProjectionMatrix(float *p)
 	}
 }
 
-void simul::crossplatform::MakeInvViewProjMatrix(float *ivp,const float *v,const float *p)
+void platform::crossplatform::MakeInvViewProjMatrix(float *ivp,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 view(v),proj(p);
-	simul::math::Matrix4x4 vpt;
-	simul::math::Matrix4x4 viewproj;
+	platform::math::Matrix4x4 view(v),proj(p);
+	platform::math::Matrix4x4 vpt;
+	platform::math::Matrix4x4 viewproj;
 	view(3,0)=view(3,1)=view(3,2)=0;
-	simul::math::Multiply4x4(viewproj,view,proj);
-	viewproj.Inverse(*((simul::math::Matrix4x4*)ivp));
+	platform::math::Multiply4x4(viewproj,view,proj);
+	viewproj.Inverse(*((platform::math::Matrix4x4*)ivp));
 }
 
-void simul::crossplatform::MakeInvWorldViewProjMatrix(float *ivp,const float *world,const float *v,const float *p)
+void platform::crossplatform::MakeInvWorldViewProjMatrix(float *ivp,const float *world,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 view(v),proj(p);
-	simul::math::Matrix4x4 vpt;
-	simul::math::Matrix4x4 wvp,tmp1;
+	platform::math::Matrix4x4 view(v),proj(p);
+	platform::math::Matrix4x4 vpt;
+	platform::math::Matrix4x4 wvp,tmp1;
 	view(3,0)=view(3,1)=view(3,2)=0;
-	simul::math::Multiply4x4(tmp1,world,view);
-	simul::math::Multiply4x4(wvp,tmp1,proj);
+	platform::math::Multiply4x4(tmp1,world,view);
+	platform::math::Multiply4x4(wvp,tmp1,proj);
 	wvp.Transpose(vpt);
-	wvp.Inverse(*((simul::math::Matrix4x4*)ivp));
+	wvp.Inverse(*((platform::math::Matrix4x4*)ivp));
 }
 
-void simul::crossplatform::MakeViewProjMatrix(float *vp,const float *v,const float *p)
+void platform::crossplatform::MakeViewProjMatrix(float *vp,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 viewProj, tmp,view(v),proj(p);
-	simul::math::Multiply4x4(tmp,view,proj);
-	tmp.Transpose(*((simul::math::Matrix4x4*)vp));
+	platform::math::Matrix4x4 viewProj, tmp,view(v),proj(p);
+	platform::math::Multiply4x4(tmp,view,proj);
+	tmp.Transpose(*((platform::math::Matrix4x4*)vp));
 }
 
-void simul::crossplatform::MakeCentredViewProjMatrix(float *vp,const float *v,const float *p)
+void platform::crossplatform::MakeCentredViewProjMatrix(float *vp,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 viewProj, tmp,view(v),proj(p);
+	platform::math::Matrix4x4 viewProj, tmp,view(v),proj(p);
 	view._41=view._42=view._43=0;
-	simul::math::Multiply4x4(tmp,view,proj);
-	tmp.Transpose(*((simul::math::Matrix4x4*)vp));
+	platform::math::Multiply4x4(tmp,view,proj);
+	tmp.Transpose(*((platform::math::Matrix4x4*)vp));
 }
 
-void simul::crossplatform::MakeWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
+void platform::crossplatform::MakeWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world;
+	platform::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world,wt;
 	if(w)
 	{
-		simul::math::Multiply4x4(tmp1,view,proj);
+		platform::math::Multiply4x4(tmp1,view,proj);
 		world=w;
-		simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),world,tmp1);
+		world.Transpose(wt);
+		platform::math::Multiply4x4(*((platform::math::Matrix4x4*)wvp), wt,tmp1);
 	}
 	else
 	{
-		simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),view,proj);
+		platform::math::Multiply4x4(*((platform::math::Matrix4x4*)wvp),view,proj);
 	}
 }
 
-void simul::crossplatform::MakeCentredWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
+void platform::crossplatform::MakeCentredWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world(w);
+	platform::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world(w);
 	view._41=view._42=view._43=0;
-	simul::math::Multiply4x4(tmp1,world,view);
-	simul::math::Multiply4x4(tmp2,tmp1,proj);
-	tmp2.Transpose(*((simul::math::Matrix4x4*)wvp));
+	platform::math::Multiply4x4(tmp1,world,view);
+	platform::math::Multiply4x4(tmp2,tmp1,proj);
+	tmp2.Transpose(*((platform::math::Matrix4x4*)wvp));
 }
 
-void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,float *up)
+void platform::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,float *up)
 {
-	simul::math::Matrix4x4 tmp1;
-	const simul::math::Matrix4x4 &view(*((const simul::math::Matrix4x4*)v));
+	platform::math::Matrix4x4 tmp1;
+	const platform::math::Matrix4x4 &view(*((const platform::math::Matrix4x4*)v));
 	
 	view.Inverse(tmp1);
 	
@@ -297,17 +299,17 @@ void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,flo
 	}
 }
 
-const float *simul::crossplatform::GetCameraPosVector(const float *v)
+const float *platform::crossplatform::GetCameraPosVector(const float *v)
 {
 	
-	simul::math::Matrix4x4 view(v);
+	platform::math::Matrix4x4 view(v);
 	static float cam_pos[4],view_dir[4];
 	GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir);
 	return cam_pos;
 }
 
-using namespace simul::math;
-Matrix4x4 simul::crossplatform::MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded)
+using namespace platform::math;
+Matrix4x4 platform::crossplatform::MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded)
 { 
 	Matrix4x4 M;
 	M.ResetToUnitMatrix();
@@ -337,7 +339,7 @@ Matrix4x4 simul::crossplatform::MatrixLookInDirection(const float *dir,const flo
 	return M;
 }
 
-vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invViewProj)
+vec4 platform::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invViewProj)
 {
 	vec4 range(1.0,1.0,-1.0,-1.0);
 	mat4 faceMatrix;
@@ -385,7 +387,7 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 	return range;
 }
 
-void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth,bool ReverseDirection)
+void platform::crossplatform::MakeCubeMatrices(platform::math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth,bool ReverseDirection)
 {
 	vec3 vEyePt (cam_pos[0],cam_pos[1],cam_pos[2]);
     vec3 vLookDir;
@@ -424,14 +426,14 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 			mat[i]*=-1.0f;
 		}
 		Vector3 loc_cam_pos;
-		simul::math::Multiply3(loc_cam_pos,mat[i],cam_pos);
+		platform::math::Multiply3(loc_cam_pos,mat[i],cam_pos);
 		loc_cam_pos*=-1.f;
 		mat[i].InsertRow(3,loc_cam_pos);
 		mat[i]._44=1.f;
 	}
 }
 
-void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection)
+void platform::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection)
 {
 	vec3 zero_pos(0,0,0);
 	
@@ -446,17 +448,17 @@ void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDept
 	memcpy(mat4x4,view_matrices[combo][face],sizeof(float)*16);
 }
 
-void simul::crossplatform::GetCubeMatrixAtPosition(float *mat4x4,int face,vec3 cam_pos,bool ReverseDepth,bool ReverseDirection)
+void platform::crossplatform::GetCubeMatrixAtPosition(float *mat4x4,int face,vec3 cam_pos,bool ReverseDepth,bool ReverseDirection)
 {
 	GetCubeMatrix(mat4x4,face,ReverseDepth,ReverseDirection);
 	Vector3 loc_cam_pos;
-	simul::math::Multiply3(loc_cam_pos,*((const math::Matrix4x4*)mat4x4),*((const math::Vector3*)&cam_pos));
+	platform::math::Multiply3(loc_cam_pos,*((const math::Matrix4x4*)mat4x4),*((const math::Vector3*)&cam_pos));
 	loc_cam_pos*=-1.f;
 	((math::Matrix4x4*)mat4x4)->InsertRow(3,loc_cam_pos);
 	((math::Matrix4x4*)mat4x4)->_44=1.f;
 }
 
-void MakeCubeInvViewProjMatrices(simul::math::Matrix4x4 mat[],bool ReverseDepth,bool ReverseDirection)
+void MakeCubeInvViewProjMatrices(platform::math::Matrix4x4 mat[],bool ReverseDepth,bool ReverseDirection)
 {
 	static math::Matrix4x4 view,proj;
 	proj			=crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F/2.f,SIMUL_PI_F/2.f,1.0f,0.0f);
@@ -467,7 +469,7 @@ void MakeCubeInvViewProjMatrices(simul::math::Matrix4x4 mat[],bool ReverseDepth,
 	}
 }
 
-void simul::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection)
+void platform::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection)
 {
 	static bool init[]={false,false,false,false};
 	int combo=(ReverseDepth?2:0)+(ReverseDirection?1:0);
@@ -479,7 +481,7 @@ void simul::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool 
 		}
 	memcpy(mat4x4,ivp_matrices[combo][face],sizeof(float)*16);
 }
-math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
+math::Matrix4x4 platform::crossplatform::MakeOrthoProjectionMatrix(float left,
  	float right,
  	float bottom,
  	float top,
@@ -505,7 +507,7 @@ Camera::Camera():Orientation()
 {
 	VerticalFieldOfViewInRadians=60.f*SIMUL_PI_F/180.f;
 	HorizontalFieldOfViewInRadians=0.f;
-	Orientation.Rotate(3.14f/2.f,simul::math::Vector3(1,0,0));
+	Orientation.Rotate(3.14f/2.f,platform::math::Vector3(1,0,0));
 }
 
 Camera::~Camera()
@@ -717,7 +719,7 @@ vec3 Camera::ScreenPositionToDirection(float x,float y,float aspect)
 	Matrix4x4 proj			=MakeDepthReversedProjectionMatrix(aspect);
 	Matrix4x4 view			=MakeViewMatrix();
 	Matrix4x4 ivp;
-	simul::crossplatform::MakeInvViewProjMatrix((float*)&ivp,view,proj);
+	platform::crossplatform::MakeInvViewProjMatrix((float*)&ivp,view,proj);
 	Vector3 clip(x*2.0f-1.0f,1.0f-y*2.0f,1.0f);
 	vec3 res;
 	ivp.Transpose();
@@ -744,8 +746,8 @@ const float *Camera::GetOrientationAsPermanentMatrix() const
 
 const float *Camera::GetRotationAsQuaternion() const
 {
-	static simul::math::Quaternion q;
-	simul::math::MatrixToQuaternion(q,Orientation.GetMatrix());
+	static platform::math::Quaternion q;
+	platform::math::MatrixToQuaternion(q,Orientation.GetMatrix());
 	return (const float *)(&q);
 }
 
@@ -761,17 +763,17 @@ void Camera::SetOrientationAsMatrix(const float *m)
 
 void Camera::SetOrientationAsQuaternion(const float *q)
 {
-	Orientation.Define(simul::math::Quaternion(q));
+	Orientation.Define(platform::math::Quaternion(q));
 }
 
 void Camera::SetPosition(const float *x)
 {
-	Orientation.SetPosition(simul::math::Vector3(x));
+	Orientation.SetPosition(platform::math::Vector3(x));
 }
 
 void Camera::SetPositionAsXYZ(float x,float y,float z)
 {
-	Orientation.SetPosition(simul::math::Vector3(x,y,z));
+	Orientation.SetPosition(platform::math::Vector3(x,y,z));
 }
 
 void Camera::Move(const float *x)
@@ -794,7 +796,7 @@ void Camera::LocalRotate(float x,const float *a)
 }
 void Camera::LocalRotate(const float *a)
 {
-	Orientation.LocalRotate(simul::math::Vector3(a));
+	Orientation.LocalRotate(platform::math::Vector3(a));
 }
 
 bool Camera::TimeStep(float )
@@ -831,7 +833,7 @@ void Camera::CreateViewMatrix(float *mat,const float *view_dir, const float *vie
 	Vector3 x = d^u;
 	x.Normalize();
 	u = x^d;
-	simul::geometry::SimulOrientation ori;
+	platform::math::SimulOrientation ori;
 	ori.DefineFromYZ(u,-d);
 	if(pos)
 		ori.SetPosition(pos);
@@ -859,14 +861,16 @@ void Camera::LookInDirection(const float *view_dir)
 	Orientation.DefineFromYZ(u,-d);
 }
 
-void simul::crossplatform::UpdateMouseCamera(	Camera *cam
+void platform::crossplatform::UpdateMouseCamera(	Camera *cam
 					,float time_step
 					,float cam_spd
 					,MouseCameraState &state
 					,MouseCameraInput &input
-					,float max_height)
+					,float max_height
+					,bool lock_height
+					,int rotateButton)
 {
-	simul::math::Vector3 pos=cam->GetPosition();
+	platform::math::Vector3 pos=cam->GetPosition();
 
 	static float CameraDamping=1e4f;
 	float retain			=1.f/(1.f+CameraDamping*time_step);
@@ -875,14 +879,24 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	state.forward_back_spd	*=retain;
 	state.right_left_spd	*=retain;
 	state.up_down_spd		*=retain;
+
 	state.forward_back_spd	+=input.forward_back_input*cam_spd*introduce;
 	state.right_left_spd	+=input.right_left_input*cam_spd*introduce;
 	state.up_down_spd		+=input.up_down_input*cam_spd*introduce;
 
-	pos						-=state.forward_back_spd*time_step*cam->Orientation.Tz();
+	math::Vector3 forward = cam->Orientation.Tz();
+	if (lock_height)
+	{
+		forward.z = 0;
+		forward.Normalize();
+	}
+	pos						-=state.forward_back_spd*time_step*forward;
 	pos						+=state.right_left_spd*time_step*cam->Orientation.Tx();
-	pos.z					+=state.up_down_spd*time_step;
-
+	if (!lock_height)
+	{
+		pos.z += state.up_down_spd * time_step;
+	}
+	
 	if(pos.z>max_height)
 		pos.z=max_height;
 
@@ -892,7 +906,7 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	int dy=input.MouseY-input.LastMouseY;
 	float mouseDeltaX=0.f,mouseDeltaY=0.f;
 	static float rr=750.0f;
-	if(input.MouseButtons&(MouseCameraInput::LEFT_BUTTON|MouseCameraInput::RIGHT_BUTTON))
+	if(input.MouseButtons&(rotateButton))
 	{
 		mouseDeltaX =dx/rr;
 		mouseDeltaY =dy/rr;
@@ -909,9 +923,9 @@ void simul::crossplatform::UpdateMouseCamera(	Camera *cam
 	y_rotate		+=mouseDeltaY*introduce;
 	mouseDeltaY		=0.f;
 
-	simul::math::Vector3 vertical(0,0,-1.f);
-	simul::math::Vector3 del	=vertical*x_rotate;
-	simul::math::Vector3 dir	=del;
+	platform::math::Vector3 vertical(0,0,-1.f);
+	platform::math::Vector3 del	=vertical*x_rotate;
+	platform::math::Vector3 dir	=del;
 	dir.Normalize();
 	cam->Rotate(del.Magnitude(),dir);
 

@@ -14,7 +14,7 @@
 #pragma warning(disable:4201) // anonymous unions warning
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{
@@ -26,7 +26,7 @@ namespace simul
 
 		/// A fixed-size 4 by 4 matrix class.
 		/// It is used mainly for transformations - see SimulOrientation.
-		SIMUL_MATH_EXPORT_CLASS Matrix4x4
+		class SIMUL_MATH_EXPORT Matrix4x4
 		{
 		public:
 			union
@@ -148,6 +148,8 @@ namespace simul
 			static Matrix4x4 RotationZ(float rads);
 			static Matrix4x4 Translation(float x,float y,float z);
 			static Matrix4x4 Translation(const float *x);
+			static Matrix4x4 Scale(float x, float y, float z);
+			static Matrix4x4 Scale(const float *x);
 		};
 		extern Matrix4x4 SIMUL_MATH_EXPORT_FN Rotate(const Matrix4x4 &A,float angle,const Vector3 &axis);
 		extern void SIMUL_MATH_EXPORT_FN Multiply4x4(Matrix4x4 &M,const Matrix4x4 &A,const Matrix4x4 &B);

@@ -1,6 +1,7 @@
 #if PLATFORM_LOAD_RENDERDOC
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/EnvironmentVariables.h"
+#include "Platform/Core/StringToWString.h"
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/External/RenderDoc/Include/renderdoc_app.h"
@@ -8,9 +9,10 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <ShlObj.h>
 #include <filesystem>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 static RENDERDOC_API_1_4_1* s_RenderDocAPI = nullptr;
@@ -27,8 +29,10 @@ void RenderDocLoader::Load()
 		return;
 
 	ERRNO_BREAK
-	std::string platform_dir = PLATFORM_SOURCE_DIR_STR;
-	s_RenderDocFullpath = platform_dir + "/External/RenderDoc/lib/x64/renderdoc.dll";
+	LPWSTR programFilesPath;
+	SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, 0, &programFilesPath);
+	s_RenderDocFullpath = platform::core::WStringToString(programFilesPath);
+	s_RenderDocFullpath /= "RenderDoc/renderdoc.dll";
 	s_HModuleRenderDoc = LoadLibraryA(s_RenderDocFullpath.generic_string().c_str());
 	errno=0;
 	if (!s_HModuleRenderDoc)
@@ -118,14 +122,20 @@ void RenderDocLoader::FinishCapture()
 		}
 	}
 }
+bool RenderDocLoader::IsLoaded()
+{
+	return (s_HModuleRenderDoc ? true : false);
+}
+
 #else //Dummy class implementation
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 void RenderDocLoader::Load() {}
 void RenderDocLoader::Unload() {}
 void RenderDocLoader::StartCapture(RenderPlatform *renderPlatform,void * windowHandlePtr){}
 void RenderDocLoader::FinishCapture(){}
+bool RenderDocLoader::IsLoaded(){return false;}
 #endif

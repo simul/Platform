@@ -19,7 +19,7 @@
 #endif
 #include <vector>
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -77,7 +77,7 @@ namespace simul
 			struct SubNode
 			{
 				std::vector<int> subMeshes;
-				simul::geometry::SimulOrientation orientation;
+				platform::math::SimulOrientation orientation;
 				std::vector<SubNode> children;
 			};
 			SubMesh *SetSubMesh(int submesh,int index_start,int num_indices,Material *m,int lowest=-1,int highest=-1);
@@ -96,7 +96,7 @@ namespace simul
 			std::vector<SubMesh*> mSubMeshes;
 			//! The children are meshes with different orientation.
 			std::vector<Mesh*> children;
-			simul::geometry::SimulOrientation orientation;
+			platform::math::SimulOrientation orientation;
 			unsigned stride;		// number of bytes per vertex.
 			unsigned indexSize;
 			unsigned numVertices;

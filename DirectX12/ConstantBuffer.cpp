@@ -8,7 +8,7 @@
 #include "SimulDirectXHeader.h"
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 inline bool IsPowerOfTwo( UINT64 n )
@@ -57,7 +57,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mHeaps[i].Release();
-		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, base::QuickFormat("PlatformConstantBuffer %016x CBHeap %d",this,i), false);
+		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("PlatformConstantBuffer %016x CBHeap %d",this,i), false);
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
@@ -140,7 +140,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mHeaps[i].Release();
-		std::string str= base::QuickFormat("%s mUploadHeap %d",name.c_str(),i);
+		std::string str= platform::core::QuickFormat("%s mUploadHeap %d",name.c_str(),i);
 		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i],str.c_str());
 		mUploadHeap[i]=nullptr;
 		delete [] cpuDescriptorHandles[i];
@@ -151,7 +151,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	size = 0;
 }
 
-void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t sz, void *addr)
+void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext &deviceContext, size_t sz, void *addr)
 {
 	src=addr;
 	size=sz;
@@ -161,9 +161,9 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	// If new frame, update current frame index and reset the apply count
-	if (last_frame_number != deviceContext.frame_number)
+	if (last_frame_number != renderPlatform->GetFrameNumber())
 	{
-		last_frame_number = deviceContext.frame_number;
+		last_frame_number = renderPlatform->GetFrameNumber();
 		buffer_index++;
 		if (buffer_index >= kNumBuffers)
 			buffer_index = 0;
@@ -190,22 +190,268 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	}
 	else
 	{
-#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_SCARLETT)
-		ID3D12DeviceRemovedExtendedData* pDred;
-		rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
-
-		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
-		D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
-		V_CHECK(pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput))
-			V_CHECK(pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput));
-		auto n = DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
-		while (n)
+#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_SCARLETT) && !defined(_GAMING_XBOX_XBOXONE)
+		ID3D12DeviceRemovedExtendedData* pDred = nullptr;
+		HRESULT res = rPlat->AsD3D12Device()->QueryInterface(IID_PPV_ARGS(&pDred));
+		if (SUCCEEDED(res) && pDred)
 		{
-			if (n->pCommandQueueDebugNameW)
-				std::cerr << simul::base::WStringToUtf8(n->pCommandQueueDebugNameW).c_str() << std::endl;
-			if (n->pCommandListDebugNameW)
-				std::cerr << simul::base::WStringToUtf8(n->pCommandListDebugNameW).c_str() << std::endl;
-			n = n->pNext;
+			D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBreadcrumbsOutput;
+			res = pDred->GetAutoBreadcrumbsOutput(&DredAutoBreadcrumbsOutput);
+			if (SUCCEEDED(res))
+			{
+				std::cerr << "DRED - Breadcrumbs:" << std::endl;
+				const D3D12_AUTO_BREADCRUMB_NODE* breadcrumb = DredAutoBreadcrumbsOutput.pHeadAutoBreadcrumbNode;
+				while (breadcrumb)
+				{
+					auto D3D12_AUTO_BREADCRUMB_OP_ToString = [](D3D12_AUTO_BREADCRUMB_OP op) -> std::string
+					{
+						switch (op)
+						{
+						case D3D12_AUTO_BREADCRUMB_OP_SETMARKER:
+							return "D3D12_AUTO_BREADCRUMB_OP_SETMARKER";
+						case D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT:
+							return "D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT";
+						case D3D12_AUTO_BREADCRUMB_OP_ENDEVENT:
+							return "D3D12_AUTO_BREADCRUMB_OP_ENDEVENT";
+						case D3D12_AUTO_BREADCRUMB_OP_DRAWINSTANCED:
+							return "D3D12_AUTO_BREADCRUMB_OP_DRAWINSTANCED";
+						case D3D12_AUTO_BREADCRUMB_OP_DRAWINDEXEDINSTANCED:
+							return "D3D12_AUTO_BREADCRUMB_OP_DRAWINDEXEDINSTANCED";
+						case D3D12_AUTO_BREADCRUMB_OP_EXECUTEINDIRECT:
+							return "D3D12_AUTO_BREADCRUMB_OP_EXECUTEINDIRECT";
+						case D3D12_AUTO_BREADCRUMB_OP_DISPATCH:
+							return "D3D12_AUTO_BREADCRUMB_OP_DISPATCH";
+						case D3D12_AUTO_BREADCRUMB_OP_COPYBUFFERREGION:
+							return "D3D12_AUTO_BREADCRUMB_OP_COPYBUFFERREGION";
+						case D3D12_AUTO_BREADCRUMB_OP_COPYTEXTUREREGION:
+							return "D3D12_AUTO_BREADCRUMB_OP_COPYTEXTUREREGION";
+						case D3D12_AUTO_BREADCRUMB_OP_COPYRESOURCE:
+							return "D3D12_AUTO_BREADCRUMB_OP_COPYRESOURCE";
+						case D3D12_AUTO_BREADCRUMB_OP_COPYTILES:
+							return "D3D12_AUTO_BREADCRUMB_OP_COPYTILES";
+						case D3D12_AUTO_BREADCRUMB_OP_RESOLVESUBRESOURCE:
+							return "D3D12_AUTO_BREADCRUMB_OP_RESOLVESUBRESOURCE";
+						case D3D12_AUTO_BREADCRUMB_OP_CLEARRENDERTARGETVIEW:
+							return "D3D12_AUTO_BREADCRUMB_OP_CLEARRENDERTARGETVIEW";
+						case D3D12_AUTO_BREADCRUMB_OP_CLEARUNORDEREDACCESSVIEW:
+							return "D3D12_AUTO_BREADCRUMB_OP_CLEARUNORDEREDACCESSVIEW";
+						case D3D12_AUTO_BREADCRUMB_OP_CLEARDEPTHSTENCILVIEW:
+							return "D3D12_AUTO_BREADCRUMB_OP_CLEARDEPTHSTENCILVIEW";
+						case D3D12_AUTO_BREADCRUMB_OP_RESOURCEBARRIER:
+							return "D3D12_AUTO_BREADCRUMB_OP_RESOURCEBARRIER";
+						case D3D12_AUTO_BREADCRUMB_OP_EXECUTEBUNDLE:
+							return "D3D12_AUTO_BREADCRUMB_OP_EXECUTEBUNDLE";
+						case D3D12_AUTO_BREADCRUMB_OP_PRESENT:
+							return "D3D12_AUTO_BREADCRUMB_OP_PRESENT";
+						case D3D12_AUTO_BREADCRUMB_OP_RESOLVEQUERYDATA:
+							return "D3D12_AUTO_BREADCRUMB_OP_RESOLVEQUERYDATA";
+						case D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION:
+							return "D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION";
+						case D3D12_AUTO_BREADCRUMB_OP_ENDSUBMISSION:
+							return "D3D12_AUTO_BREADCRUMB_OP_ENDSUBMISSION";
+						case D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME:
+							return "D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME";
+						case D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES:
+							return "D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES";
+						case D3D12_AUTO_BREADCRUMB_OP_ATOMICCOPYBUFFERUINT:
+							return "D3D12_AUTO_BREADCRUMB_OP_ATOMICCOPYBUFFERUINT";
+						case D3D12_AUTO_BREADCRUMB_OP_ATOMICCOPYBUFFERUINT64:
+							return "D3D12_AUTO_BREADCRUMB_OP_ATOMICCOPYBUFFERUINT64";
+						case D3D12_AUTO_BREADCRUMB_OP_RESOLVESUBRESOURCEREGION:
+							return "D3D12_AUTO_BREADCRUMB_OP_RESOLVESUBRESOURCEREGION";
+						case D3D12_AUTO_BREADCRUMB_OP_WRITEBUFFERIMMEDIATE:
+							return "D3D12_AUTO_BREADCRUMB_OP_WRITEBUFFERIMMEDIATE";
+						case D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME1:
+							return "D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME1";
+						case D3D12_AUTO_BREADCRUMB_OP_SETPROTECTEDRESOURCESESSION:
+							return "D3D12_AUTO_BREADCRUMB_OP_SETPROTECTEDRESOURCESESSION";
+						case D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME2:
+							return "D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME2";
+						case D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES1:
+							return "D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES1";
+						case D3D12_AUTO_BREADCRUMB_OP_BUILDRAYTRACINGACCELERATIONSTRUCTURE:
+							return "D3D12_AUTO_BREADCRUMB_OP_BUILDRAYTRACINGACCELERATIONSTRUCTURE";
+						case D3D12_AUTO_BREADCRUMB_OP_EMITRAYTRACINGACCELERATIONSTRUCTUREPOSTBUILDINFO:
+							return "D3D12_AUTO_BREADCRUMB_OP_EMITRAYTRACINGACCELERATIONSTRUCTUREPOSTBUILDINFO";
+						case D3D12_AUTO_BREADCRUMB_OP_COPYRAYTRACINGACCELERATIONSTRUCTURE:
+							return "D3D12_AUTO_BREADCRUMB_OP_COPYRAYTRACINGACCELERATIONSTRUCTURE";
+						case D3D12_AUTO_BREADCRUMB_OP_DISPATCHRAYS:
+							return "D3D12_AUTO_BREADCRUMB_OP_DISPATCHRAYS";
+						case D3D12_AUTO_BREADCRUMB_OP_INITIALIZEMETACOMMAND:
+							return "D3D12_AUTO_BREADCRUMB_OP_INITIALIZEMETACOMMAND";
+						case D3D12_AUTO_BREADCRUMB_OP_EXECUTEMETACOMMAND:
+							return "D3D12_AUTO_BREADCRUMB_OP_EXECUTEMETACOMMAND";
+						case D3D12_AUTO_BREADCRUMB_OP_ESTIMATEMOTION:
+							return "D3D12_AUTO_BREADCRUMB_OP_ESTIMATEMOTION";
+						case D3D12_AUTO_BREADCRUMB_OP_RESOLVEMOTIONVECTORHEAP:
+							return "D3D12_AUTO_BREADCRUMB_OP_RESOLVEMOTIONVECTORHEAP";
+						case D3D12_AUTO_BREADCRUMB_OP_SETPIPELINESTATE1:
+							return "D3D12_AUTO_BREADCRUMB_OP_SETPIPELINESTATE1";
+						case D3D12_AUTO_BREADCRUMB_OP_INITIALIZEEXTENSIONCOMMAND:
+							return "D3D12_AUTO_BREADCRUMB_OP_INITIALIZEEXTENSIONCOMMAND";
+						case D3D12_AUTO_BREADCRUMB_OP_EXECUTEEXTENSIONCOMMAND:
+							return "D3D12_AUTO_BREADCRUMB_OP_EXECUTEEXTENSIONCOMMAND";
+						case D3D12_AUTO_BREADCRUMB_OP_DISPATCHMESH:
+							return "D3D12_AUTO_BREADCRUMB_OP_DISPATCHMESH";
+					#if (WDK_NTDDI_VERSION > NTDDI_WIN10_VB)
+						case D3D12_AUTO_BREADCRUMB_OP_ENCODEFRAME:
+							return "D3D12_AUTO_BREADCRUMB_OP_ENCODEFRAME";
+						case D3D12_AUTO_BREADCRUMB_OP_RESOLVEENCODEROUTPUTMETADATA:
+							return "D3D12_AUTO_BREADCRUMB_OP_RESOLVEENCODEROUTPUTMETADATA";
+					#endif
+						default:
+							return "";
+						}
+					};
+
+					if (breadcrumb->pCommandListDebugNameA)
+						std::cerr << breadcrumb->pCommandListDebugNameA;
+					else if(breadcrumb->pCommandListDebugNameW)
+						std::cerr << platform::core::WStringToUtf8(breadcrumb->pCommandListDebugNameW);
+					else
+						std::cerr << "Unknown CommandListDebugName";
+					std::cerr << " : " << std::hex << "0x" << (uint64_t)(void*)(breadcrumb->pCommandList) << std::dec << std::endl;
+					
+					if (breadcrumb->pCommandQueueDebugNameA)
+						std::cerr << breadcrumb->pCommandQueueDebugNameA;
+					else if (breadcrumb->pCommandQueueDebugNameW)
+						std::cerr << platform::core::WStringToUtf8(breadcrumb->pCommandQueueDebugNameW);
+					else
+						std::cerr << "Unknown CommandQueueDebugName";
+					std::cerr << " : " << std::hex << "0x" << (uint64_t)(void*)(breadcrumb->pCommandQueue) << std::dec << std::endl;
+
+					if (breadcrumb->pCommandHistory)
+					{
+						std::cerr << "CommandHistory - GPU Operation Entries: " << breadcrumb->BreadcrumbCount << std::endl;
+						for (UINT32 i = 0; i < breadcrumb->BreadcrumbCount; i++)
+						{
+							D3D12_AUTO_BREADCRUMB_OP gpuOperation = breadcrumb->pCommandHistory[i];
+							std::cerr << i << ": " << D3D12_AUTO_BREADCRUMB_OP_ToString(gpuOperation) << std::endl;
+						}
+						std::cerr << "CommandHistory - Last Render Or Compute GPU Operation" << std::endl;
+						if (breadcrumb->pLastBreadcrumbValue)
+						{
+							const UINT32 lastRenderOrComputeGPUOperation = *(breadcrumb->pLastBreadcrumbValue);
+							D3D12_AUTO_BREADCRUMB_OP gpuOperation = breadcrumb->pCommandHistory[lastRenderOrComputeGPUOperation];
+							std::cerr << D3D12_AUTO_BREADCRUMB_OP_ToString(gpuOperation) << std::endl;
+						}
+					}
+					breadcrumb = breadcrumb->pNext;
+					std::cerr << std::endl;
+				}
+			}
+			else
+			{
+				SIMUL_CERR << "ID3D12DeviceRemovedExtendedDataSettings::SetAutoBreadcrumbsEnablement() is not set correctly." << std::endl;
+			}
+
+			D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
+			res = pDred->GetPageFaultAllocationOutput(&DredPageFaultOutput);
+			if (SUCCEEDED(res))
+			{
+				std::cerr << "DRED - Page Fault on GPU Virtual Address: " << DredPageFaultOutput.PageFaultVA << std::endl;
+
+				auto D3D12_DRED_ALLOCATION_TYPE_ToString = [](D3D12_DRED_ALLOCATION_TYPE type) -> std::string
+				{
+					switch (type)
+					{
+					case D3D12_DRED_ALLOCATION_TYPE_COMMAND_QUEUE:
+						return "D3D12_DRED_ALLOCATION_TYPE_COMMAND_QUEUE";
+					case D3D12_DRED_ALLOCATION_TYPE_COMMAND_ALLOCATOR:
+						return "D3D12_DRED_ALLOCATION_TYPE_COMMAND_ALLOCATOR";
+					case D3D12_DRED_ALLOCATION_TYPE_PIPELINE_STATE:
+						return "D3D12_DRED_ALLOCATION_TYPE_PIPELINE_STATE";
+					case D3D12_DRED_ALLOCATION_TYPE_COMMAND_LIST:
+						return "D3D12_DRED_ALLOCATION_TYPE_COMMAND_LIST";
+					case D3D12_DRED_ALLOCATION_TYPE_FENCE:
+						return "D3D12_DRED_ALLOCATION_TYPE_FENCE";
+					case D3D12_DRED_ALLOCATION_TYPE_DESCRIPTOR_HEAP:
+						return "D3D12_DRED_ALLOCATION_TYPE_DESCRIPTOR_HEAP";
+					case D3D12_DRED_ALLOCATION_TYPE_HEAP:
+						return "D3D12_DRED_ALLOCATION_TYPE_HEAP";
+					case D3D12_DRED_ALLOCATION_TYPE_QUERY_HEAP:
+						return "D3D12_DRED_ALLOCATION_TYPE_QUERY_HEAP";
+					case D3D12_DRED_ALLOCATION_TYPE_COMMAND_SIGNATURE:
+						return "D3D12_DRED_ALLOCATION_TYPE_COMMAND_SIGNATURE";
+					case D3D12_DRED_ALLOCATION_TYPE_PIPELINE_LIBRARY:
+						return "D3D12_DRED_ALLOCATION_TYPE_PIPELINE_LIBRARY";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_DECODER:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_DECODER";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_PROCESSOR:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_PROCESSOR";
+					case D3D12_DRED_ALLOCATION_TYPE_RESOURCE:
+						return "D3D12_DRED_ALLOCATION_TYPE_RESOURCE";
+					case D3D12_DRED_ALLOCATION_TYPE_PASS:
+						return "D3D12_DRED_ALLOCATION_TYPE_PASS";
+					case D3D12_DRED_ALLOCATION_TYPE_CRYPTOSESSION:
+						return "D3D12_DRED_ALLOCATION_TYPE_CRYPTOSESSION";
+					case D3D12_DRED_ALLOCATION_TYPE_CRYPTOSESSIONPOLICY:
+						return "D3D12_DRED_ALLOCATION_TYPE_CRYPTOSESSIONPOLICY";
+					case D3D12_DRED_ALLOCATION_TYPE_PROTECTEDRESOURCESESSION:
+						return "D3D12_DRED_ALLOCATION_TYPE_PROTECTEDRESOURCESESSION";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_DECODER_HEAP:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_DECODER_HEAP";
+					case D3D12_DRED_ALLOCATION_TYPE_COMMAND_POOL:
+						return "D3D12_DRED_ALLOCATION_TYPE_COMMAND_POOL";
+					case D3D12_DRED_ALLOCATION_TYPE_COMMAND_RECORDER:
+						return "D3D12_DRED_ALLOCATION_TYPE_COMMAND_RECORDER";
+					case D3D12_DRED_ALLOCATION_TYPE_STATE_OBJECT:
+						return "D3D12_DRED_ALLOCATION_TYPE_STATE_OBJECT";
+					case D3D12_DRED_ALLOCATION_TYPE_METACOMMAND:
+						return "D3D12_DRED_ALLOCATION_TYPE_METACOMMAND";
+					case D3D12_DRED_ALLOCATION_TYPE_SCHEDULINGGROUP:
+						return "D3D12_DRED_ALLOCATION_TYPE_SCHEDULINGGROUP";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_MOTION_ESTIMATOR:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_MOTION_ESTIMATOR";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_MOTION_VECTOR_HEAP:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_MOTION_VECTOR_HEAP";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_EXTENSION_COMMAND:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_EXTENSION_COMMAND";
+				#if (WDK_NTDDI_VERSION > NTDDI_WIN10_VB)
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_ENCODER:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_ENCODER";
+					case D3D12_DRED_ALLOCATION_TYPE_VIDEO_ENCODER_HEAP:
+						return "D3D12_DRED_ALLOCATION_TYPE_VIDEO_ENCODER_HEAP";
+				#endif
+					case D3D12_DRED_ALLOCATION_TYPE_INVALID:
+						return "D3D12_DRED_ALLOCATION_TYPE_INVALID";
+					default:
+						return "";
+					}
+				};
+				std::cerr << "DRED - Existing Allocations:" << std::endl;
+				const D3D12_DRED_ALLOCATION_NODE* existingNode = DredPageFaultOutput.pHeadExistingAllocationNode;
+				while (existingNode)
+				{
+					if (existingNode->ObjectNameA)
+						std::cerr << existingNode->ObjectNameA;
+					else if (existingNode->ObjectNameW)
+						std::cerr << platform::core::WStringToUtf8(existingNode->ObjectNameW);
+					else
+						std::cerr << "Unknown Object";
+					std::cerr << " : " << D3D12_DRED_ALLOCATION_TYPE_ToString(existingNode->AllocationType) << std::endl;
+					existingNode = existingNode->pNext;
+					std::cerr << std::endl;
+				}
+				std::cerr << "DRED - Freed Allocations:" << std::endl;
+				const D3D12_DRED_ALLOCATION_NODE* freedNode = DredPageFaultOutput.pHeadRecentFreedAllocationNode;
+				while (freedNode)
+				{
+					if (freedNode->ObjectNameA)
+						std::cerr << freedNode->ObjectNameA;
+					else if (freedNode->ObjectNameW)
+						std::cerr << platform::core::WStringToUtf8(freedNode->ObjectNameW);
+					else
+						std::cerr << "Unknown Object";
+					std::cerr << " : " << D3D12_DRED_ALLOCATION_TYPE_ToString(freedNode->AllocationType) << std::endl;
+					freedNode = freedNode->pNext;
+					std::cerr << std::endl;
+				}
+			}
+			else
+			{
+				SIMUL_CERR << "ID3D12DeviceRemovedExtendedDataSettings::SetPageFaultEnablement() is not set correctly." << std::endl;
+			}
 		}
 #endif
 		SIMUL_BREAK_ONCE("hResult != S_OK");
@@ -213,6 +459,6 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	mCurApplyCount++;
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext& )
+void PlatformConstantBuffer::Unbind(platform::crossplatform::DeviceContext& )
 {
 }

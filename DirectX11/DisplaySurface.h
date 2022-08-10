@@ -6,11 +6,11 @@
 #include "DirectXHeader.h"
 #include "MacrosDx1x.h"
 
-namespace simul
+namespace platform
 {
     namespace dx11
     {
-        SIMUL_DIRECTX11_EXPORT_CLASS DisplaySurface : public crossplatform::DisplaySurface
+        class SIMUL_DIRECTX11_EXPORT DisplaySurface: public crossplatform::DisplaySurface
         {
         public:
             DisplaySurface();
@@ -20,8 +20,12 @@ namespace simul
 			//! Platform-dependent function called when uninitializing the display surface.
 			void InvalidateDeviceObjects() override;
 			//! Render to the display surface. Requires a reference to the mutex to make sure that this rendering doesn't take place at the same time as other render calls.
-            void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
+            void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			void EndFrame() override;
+            virtual void* GetPlatformDeviceContext()
+            {
+                return mDeferredContext;
+            }
         private:
             //! Will resize the swap chain only if needed
             void Resize();

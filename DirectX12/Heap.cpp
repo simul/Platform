@@ -2,7 +2,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
@@ -93,6 +93,18 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE h	= mHeap->GetCPUDescriptorHandleForHeapStart();
 			h.ptr							+= off * mHandleIncrement;
 			return h;
+		}
+
+		void Heap::Reset()
+		{
+			if (mHeap)
+			{
+				mCpuHandle = mHeap->GetCPUDescriptorHandleForHeapStart();
+				mGpuHandle = mHeap->GetGPUDescriptorHandleForHeapStart();
+				mCnt = 0;
+			}
+			else
+				SIMUL_BREAK("Trying to reset Heap when not set");
 		}
 
 		void Heap::Release()

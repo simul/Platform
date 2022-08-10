@@ -20,8 +20,18 @@
 #include <linux/input.h>
 #endif
 #include <vulkan/vulkan.hpp>
+#ifdef NOMINMAX
+#undef NOMINMAX
+#endif
 #include <vulkan/vk_sdk_platform.h>
-namespace simul
+#ifndef NOMINMAX
+
+#ifndef _countof
+#define _countof(a) (sizeof(a)/sizeof(*(a)))
+#endif
+
+#endif
+namespace platform
 {
 	namespace vulkan
 	{
@@ -33,7 +43,7 @@ namespace simul
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 using namespace std;
@@ -49,7 +59,7 @@ static void VulkanDebugCallback()
 
 // Allow a maximum of two outstanding presentation operations.
 
-class simul::vulkan::DeviceManagerInternal
+class platform::vulkan::DeviceManagerInternal
 {
 public:
 	vk::Instance instance;
@@ -77,7 +87,7 @@ DeviceManager::DeviceManager()
 //	if (!renderPlatformVulkan)
 //		renderPlatformVulkan = new vulkan::RenderPlatform;
 //	renderPlatformVulkan->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED | crossplatform::TRY_AGAIN_ON_FAIL | crossplatform::BREAK_ON_FAIL);
-//	simul::crossplatform::Profiler::GetGlobalProfiler().Initialize(NULL);
+//	platform::crossplatform::Profiler::GetGlobalProfiler().Initialize(NULL);
 	deviceManagerInternal = new DeviceManagerInternal;
 }
 
@@ -88,7 +98,7 @@ void DeviceManager::InvalidateDeviceObjects()
 	errno = 0;
 //	delete renderPlatformVulkan;
 //	renderPlatformVulkan=nullptr;
-//	simul::vulkan::Profiler::GetGlobalProfiler().Uninitialize();
+//	platform::vulkan::Profiler::GetGlobalProfiler().Uninitialize();
 }
 
 DeviceManager::~DeviceManager()
@@ -130,10 +140,49 @@ bool DeviceManager::IsActive() const
 #define SIMUL_VK_ASSERT_RETURN(val) \
 	if(val!=vk::Result::eSuccess)\
 		return;
-
+		
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {
+	Initialize(use_debug,instrument,default_driver,std::vector<std::string>(),std::vector<std::string>());
+}
+
+void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver,std::vector<std::string> required_device_extensions
+	,std::vector<std::string> required_instance_extensions)
+{
  	ERRNO_BREAK
+	uint32_t apiVersion=VK_API_VERSION_1_0;
+	//query the api version in order to use the correct vulkan functionality
+	uint32_t* instanceVersion = (uint32_t*)malloc(sizeof(uint32_t));
+	vk::Result result = vk::enumerateInstanceVersion(instanceVersion);
+
+	//check what is returned
+	if (result == vk::Result::eSuccess)
+	{
+		SIMUL_INTERNAL_COUT << "RESULT(vkEnumerateInstanceVersion) : Intance version enumeration successful\n" << std::endl;
+
+		if (instanceVersion != nullptr)
+		{
+			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_1\n" << std::endl;
+			apiVersion = VK_API_VERSION_1_1;
+		}
+		else
+		{
+			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_0\n" << std::endl;
+		}
+		SIMUL_INTERNAL_COUT << "Version number returned : " 
+			<< VK_VERSION_MAJOR(*instanceVersion) << '.'
+			<< VK_VERSION_MINOR(*instanceVersion) << '.'
+			<< VK_VERSION_PATCH(*instanceVersion) << '\n';
+	}
+	else if (result == vk::Result::eErrorOutOfHostMemory)
+	{
+		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : eErrorOutOfHostMemory\n" << std::endl;
+	}
+	else
+	{
+		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : Something else returned while enumerating instance version\n" << std::endl;
+	}
+
 	uint32_t instance_extension_count = 0;
 	uint32_t instance_layer_count = 0;
 	uint32_t validation_layer_count = 0;
@@ -229,8 +278,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
 
-	auto result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
-	extension_names.resize(instance_extension_count);
+	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
+	instance_extension_names.resize(instance_extension_count);
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
 		return;
@@ -240,73 +289,93 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions);
 		SIMUL_VK_ASSERT_RETURN(result);
 
+		if(instance_layer_count)
+		{
+			SIMUL_COUT<<"Vulkan extensions supported on this instance:\n";
+		}
 		for (uint32_t i = 0; i < instance_extension_count; i++)
 		{
+			SIMUL_COUT << "\t"<<instance_extensions[i].extensionName<<std::endl;
 			if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
 			}
-			if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				surfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
 			}
-			if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugUtilsExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 			}
-			if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				nameExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
 			}
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-			if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
-			if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
-			if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-			if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
-			if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_IOS_MVK)
-			if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
 			}
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
-			if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
 			}
-
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+			else if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				platformSurfaceExtFound = 1;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
+			}
 #endif
+			else
+			{
+				for(size_t j=0;j<required_instance_extensions.size();j++)
+				{
+					if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
+					{
+						instance_extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
+					}
+				}
+			}
 			assert(enabled_extension_count < 64);
 		}
 		delete[] instance_extensions;
@@ -370,6 +439,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"look at the Getting Started guide for additional "
 			"information.\n"
 			"vkCreateInstance Failure");
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_ANDROID_SURFACE_EXTENSION_NAME
+			" extension.\n\nDo you have a compatible "
+			"Vulkan installable client driver (ICD) installed?\nPlease "
+			"look at the Getting Started guide for additional "
+			"information.\n"
+			"vkCreateInstance Failure");
 #endif
 	}
  	ERRNO_BREAK
@@ -378,13 +454,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setApplicationVersion(0)
 		.setPEngineName("Simul")
 		.setEngineVersion(0)
-		.setApiVersion(VK_API_VERSION_1_0);
+		.setApiVersion(apiVersion);
 	auto inst_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app)
 		.setEnabledLayerCount(enabled_layer_count)
 		.setPpEnabledLayerNames(instance_validation_layers)
 		.setEnabledExtensionCount(enabled_extension_count)
-		.setPpEnabledExtensionNames(extension_names.data());
+		.setPpEnabledExtensionNames(instance_extension_names.data());
  	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
 	// Vulkan sets errno without warning or error.
@@ -400,9 +476,18 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	else if (result == vk::Result::eErrorExtensionNotPresent)
 	{
 		SIMUL_BREAK(
-			"Cannot find a specified extension library.\n"
+			"Cannot find a specified extension.\n"
 			"Make sure your layers path is set appropriately.\n"
 			"vkCreateInstance Failure");
+		for(uint32_t i=0;i<enabled_extension_count+1;i++)
+		{
+			inst_info.setEnabledExtensionCount(i);
+			result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
+			if (result == vk::Result::eErrorExtensionNotPresent)
+			{
+				SIMUL_CERR<<"Fails on extension: "<<instance_extension_names[i]<<std::endl;
+			}
+		}
 	}
 	else if (result != vk::Result::eSuccess)
 	{
@@ -441,23 +526,37 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	uint32_t device_extension_count = 0;
 	vk::Bool32 swapchainExtFound = VK_FALSE;
 	enabled_extension_count = 0;
-	memset(extension_names.data(), 0, sizeof(extension_names));
 
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
+	device_extension_names.resize(device_extension_count);
+	memset(device_extension_names.data(), 0, sizeof(device_extension_names));
 	SIMUL_VK_ASSERT_RETURN(result);
  	ERRNO_BREAK
 	if (device_extension_count > 0)
 	{
-		std::unique_ptr<vk::ExtensionProperties[]> device_extensions(new vk::ExtensionProperties[device_extension_count]);
-		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.get());
+		std::vector<vk::ExtensionProperties> device_extensions;
+		device_extensions.resize(device_extension_count);
+		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
-
+		
+		std::cout<<"Available device extensions: "<<device_extension_count<<std::endl;
 		for (uint32_t i = 0; i < device_extension_count; i++)
 		{
+			std::cout<<device_extensions[i].extensionName<<std::endl;
 			if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName))
 			{
 				swapchainExtFound = 1;
-				extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+				device_extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+			}
+			else
+			{
+				for(size_t j=0;j<required_device_extensions.size();j++)
+				{
+					if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))
+					{
+						device_extension_names[enabled_extension_count++] = required_device_extensions[j].c_str();
+					}
+				}
 			}
 			assert(enabled_extension_count < 64);
 		}
@@ -485,11 +584,12 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	if(use_debug)
 		InitDebugging();
+ 	ERRNO_BREAK
 	CreateDevice();
  	ERRNO_BREAK
 }
 
-void simul::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vector<vk::QueueFamilyProperties>& queue_props)
+void platform::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::vector<vk::QueueFamilyProperties>& queue_props)
 {
 	uint32_t queue_family_count;
 	/* Call with nullptr data to get count */
@@ -561,7 +661,7 @@ void DeviceManager::SetupDebugCallback()
 {
 	#if 1//def _DEBUG
 /* Load VK_EXT_debug_report entry points in debug builds */
-		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	 (vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
+		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
 		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>			(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
 		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
 
@@ -596,6 +696,12 @@ void DeviceManager::CreateDevice()
 	}
 	
 	//Query Physical Device Features for compatibility
+	bool gpu_feature_checks = true;
+	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+		gpu_feature_checks = false;
+	#endif
+ 	ERRNO_BREAK
+	if (gpu_feature_checks)
 	{
 		if(!deviceManagerInternal->gpu_features.vertexPipelineStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"vertexPipelineStoresAndAtomics\". Unable to proceed.\n");
@@ -605,32 +711,28 @@ void DeviceManager::CreateDevice()
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"dualSrcBlend\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.samplerAnisotropy)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"samplerAnisotropy\". Unable to proceed.\n");
-			// No, we really don't need this:
-	//	if(!deviceManagerInternal->gpu_features.shaderFloat64)
-	//		SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"shaderFloat64\". Unable to proceed.\n");
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
+ 	ERRNO_BREAK
 	auto deviceInfo = vk::DeviceCreateInfo()
 							.setQueueCreateInfoCount(1)
 							.setPQueueCreateInfos(queues.data())
 							.setEnabledLayerCount(0)
 							.setPpEnabledLayerNames(nullptr)
 							.setEnabledExtensionCount(enabled_extension_count)
-							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
+							.setPpEnabledExtensionNames((const char *const *)device_extension_names.data())
 							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
 							.setQueueCreateInfoCount((uint32_t)queues.size());
-	/*
-	if (separate_present_queue) {
-		queues[1].setQueueFamilyIndex(present_queue_family_index);
-		queues[1].setQueueCount(1);
-		queues[1].setPQueuePriorities(priorities);
-		deviceInfo.setQueueCreateInfoCount(2);
-	}*/
-
+							
+ 	ERRNO_BREAK
 	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
+ 	// For unknown reasons, even when successful, Vulkan createDevice sets errno==2: No such file or directory here.
+	// So we reset it to prevent spurious error detection.
+	errno=0;
 	device_initialized=result == vk::Result::eSuccess;
 	SIMUL_ASSERT(device_initialized);
+ 	ERRNO_BREAK
 }
 
 std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKHR *surface)
@@ -668,6 +770,7 @@ vk::Device *DeviceManager::GetVulkanDevice()
 {
 	return &deviceManagerInternal->device;
 }
+
 
 vk::Instance *DeviceManager::GetVulkanInstance()
 {

@@ -8,7 +8,7 @@
     #pragma warning(disable:4251)
 #endif
 struct ID3D11InputLayout;
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

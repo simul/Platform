@@ -1,7 +1,7 @@
 #include "MeshRenderer.h"
 #include "Material.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 MeshRenderer::MeshRenderer()
@@ -81,7 +81,7 @@ void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4
 	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
 	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);
 	effect->SetTexture(deviceContext, "screenspaceShadowTexture", screenspaceShadowTexture);
-	mesh->BeginDraw(deviceContext, simul::crossplatform::ShadingMode::SHADING_MODE_SHADED);
+	mesh->BeginDraw(deviceContext, platform::crossplatform::ShadingMode::SHADING_MODE_SHADED);
 	mat4 w;
 	mat4 tw =*( (mat4*)&(mesh->orientation.GetMatrix()));
 	tw.transpose();
@@ -104,8 +104,6 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	//solidConstants.roughness = material->roughness.value;
 	//solidConstants.metal = material->metal.value;
 
-	int lightCount=0;
-	int reverseDepth=1;
 	vec2 vec2_unit(1.0f,1.0f);
 	vec4 vec4_unit(1.0f, 1.0f, 1.0f, 1.0f);
 	vec4 vec3_unit(1.0f,  1.0f, 1.0f);
@@ -132,7 +130,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	solidConstants.combinedTexCoordsScalar_B				=vec2_unit;
 	solidConstants.combinedTexCoordsScalar_A				=vec2_unit;
 
-	solidConstants.emissiveOutputScalar						= vec4_unit;
+	solidConstants.emissiveOutputScalar						= material->emissive.value;
 	solidConstants.emissiveTexCoordsScalar_R				=vec2_unit;
 	solidConstants.emissiveTexCoordsScalar_G				=vec2_unit;
 	solidConstants.emissiveTexCoordsScalar_B				=vec2_unit;

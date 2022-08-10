@@ -3,7 +3,7 @@
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/DirectX11/MacrosDX1x.h"
 #include "Platform/DirectX11/DirectXHeader.h"
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 Buffer::Buffer()
@@ -59,13 +59,13 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 	count = num_vertices;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void * data, bool cpu_access)
 {
 	D3D11_BUFFER_DESC ib_desc;
 	ib_desc.ByteWidth			= num_indices * index_size_bytes;
-	ib_desc.Usage				= D3D11_USAGE_IMMUTABLE;
+	ib_desc.Usage				= cpu_access? D3D11_USAGE_DYNAMIC:D3D11_USAGE_IMMUTABLE;
 	ib_desc.BindFlags			= D3D11_BIND_INDEX_BUFFER;
-	ib_desc.CPUAccessFlags		= 0;
+	ib_desc.CPUAccessFlags		= cpu_access? D3D11_CPU_ACCESS_WRITE:0;
 	ib_desc.MiscFlags			= 0;
 	ib_desc.StructureByteStride = index_size_bytes;
 
@@ -75,7 +75,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	init_data.SysMemSlicePitch	= 0;
 
 	SAFE_RELEASE(d3d11Buffer);
-	renderPlatform->AsD3D11Device()->CreateBuffer(&ib_desc, &init_data, &d3d11Buffer);
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&ib_desc, data?&init_data:nullptr, &d3d11Buffer));
 	stride=index_size_bytes;
 	count = num_indices;
 }

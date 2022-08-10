@@ -3,15 +3,13 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/StringFunctions.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 DisplaySurface::DisplaySurface():
 	mDeviceRef(nullptr),
-//	mQueue(nullptr),
 	mSwapChain(nullptr),
 	mRTHeap(nullptr)
-	,mCommandList(nullptr)
 {
 	for (int i = 0; i < FrameCount; i++)
 	{
@@ -34,73 +32,62 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	{
 		return;
 	}
-	dx12::RenderPlatform *dx12RenderPlatform=static_cast<dx12::RenderPlatform*>(renderPlatform);
+	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 	InvalidateDeviceObjects();
 
-	mHwnd				   = handle;
-	this->renderPlatform	= renderPlatform;
-	mIsVSYNC				= vsync;
+	mHwnd = handle;
+	this->renderPlatform = renderPlatform;
+	mIsVSYNC = vsync;
 
 	HRESULT res = S_FALSE;
-	RECT rect	= {};
-	mDeviceRef  = renderPlatform->AsD3D12Device();
+	RECT rect = {};
+	mDeviceRef = renderPlatform->AsD3D12Device();
 
 #if defined(WINVER) && !defined(_XBOX_ONE) &&!defined(_GAMING_XBOX)
 	GetWindowRect(mHwnd, &rect);
 #endif
 
-	int screenWidth			= abs(rect.right - rect.left);
-	int screenHeight		= abs(rect.bottom - rect.top);
+	int screenWidth = abs(rect.right - rect.left);
+	int screenHeight = abs(rect.bottom - rect.top);
 
 	// Viewport
-	mCurViewport.TopLeftX	= 0;
-	mCurViewport.TopLeftY	= 0;
-	mCurViewport.Width		= (float)screenWidth;
-	mCurViewport.Height		= (float)screenHeight;
-	mCurViewport.MinDepth	= 0.0f;
-	mCurViewport.MaxDepth	= 1.0f;
+	mCurViewport.TopLeftX = 0;
+	mCurViewport.TopLeftY = 0;
+	mCurViewport.Width = (float)screenWidth;
+	mCurViewport.Height = (float)screenHeight;
+	mCurViewport.MinDepth = 0.0f;
+	mCurViewport.MaxDepth = 1.0f;
 
 	// Scissor
-	mCurScissor.left		= 0;
-	mCurScissor.top			= 0;
-	mCurScissor.right		= screenWidth;
-	mCurScissor.bottom		= screenHeight;
+	mCurScissor.left = 0;
+	mCurScissor.top = 0;
+	mCurScissor.right = screenWidth;
+	mCurScissor.bottom = screenHeight;
 
-   viewport.w			  = screenWidth;
-   viewport.h			  = screenHeight;
-   viewport.x			  = viewport.y = 0;
+	viewport.w = screenWidth;
+	viewport.h = screenHeight;
+	viewport.x = viewport.y = 0;
 
 #ifndef _XBOX_ONE 
 #ifndef _GAMING_XBOX
 	// Dx12 swap chain	
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc12	= {};
-	swapChainDesc12.BufferCount				= FrameCount;
-	swapChainDesc12.Width					= 0; 
-	swapChainDesc12.Height					= 0; 
-	swapChainDesc12.Format					= dx12::RenderPlatform::ToDxgiFormat(outFmt);
-	swapChainDesc12.BufferUsage				= DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc12.SwapEffect				= DXGI_SWAP_EFFECT_FLIP_DISCARD; 
-	swapChainDesc12.SampleDesc.Count		= 1;
-	swapChainDesc12.SampleDesc.Quality		= 0;
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc12 = {};
+	swapChainDesc12.BufferCount = FrameCount;
+	swapChainDesc12.Width = 0;
+	swapChainDesc12.Height = 0;
+	swapChainDesc12.Format = dx12::RenderPlatform::ToDxgiFormat(outFmt);
+	swapChainDesc12.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc12.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc12.SampleDesc.Count = 1;
+	swapChainDesc12.SampleDesc.Quality = 0;
 
-	IDXGIFactory4* factory		= nullptr;
-	res							= CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
+	IDXGIFactory4* factory = nullptr;
+	res = CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
 	SIMUL_ASSERT(res == S_OK);
 
-	// Create a command queue
-#if 0
-	D3D12_COMMAND_QUEUE_DESC queueDesc  = {};
-	queueDesc.Type					  = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	queueDesc.Flags					 = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	res = mDeviceRef->CreateCommandQueue(&queueDesc, SIMUL_PPV_ARGS(&mQueue));
-	SIMUL_ASSERT(res == S_OK);
-
-	std::string str=base::QuickFormat("Display Surface mQueue H %u: %d x %d",handle,screenWidth,screenHeight);
-	mQueue->SetName(simul::base::StringToWString(str).c_str());
-#endif
 	// Create swapchain
-	IDXGISwapChain1* swapChain	= nullptr;
-	res							= factory->CreateSwapChainForHwnd
+	IDXGISwapChain1* swapChain = nullptr;
+	res = factory->CreateSwapChainForHwnd
 	(
 		dx12RenderPlatform->GetCommandQueue(),
 		mHwnd,
@@ -113,8 +100,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 	// Assign and query
 	factory->MakeWindowAssociation(mHwnd, DXGI_MWA_NO_ALT_ENTER);
-	if(swapChain)
-		swapChain->QueryInterface(__uuidof(IDXGISwapChain4), (void **)&mSwapChain);
+	if (swapChain)
+		swapChain->QueryInterface(__uuidof(IDXGISwapChain4), (void**)&mSwapChain);
 
 #endif
 #endif
@@ -132,17 +119,14 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 	// Create this window command list
 	SAFE_RELEASE(mCommandList);
-	res=mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
+	res = mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
 	SIMUL_ASSERT(res == S_OK);
-	if(!mCommandList)
+	if (!mCommandList)
 		return;
 	mCommandList->SetName(L"WindowCommandList 2");
 	mRecordingCommands = true;
 
-	// Provide a cmd list so we can start recording commands
-	auto dx12plat = (dx12::RenderPlatform*)renderPlatform;
-	//dx12plat->SetCommandList(mCommandList);
-	dx12plat->DefaultOutputFormat = outFmt;
+	dx12RenderPlatform->DefaultOutputFormat = outFmt;
 }
 
 void DisplaySurface::InvalidateDeviceObjects()
@@ -151,12 +135,10 @@ void DisplaySurface::InvalidateDeviceObjects()
 	{
 		WaitForAllWorkDone();
 	}
-	//SAFE_RELEASE(mCommandList);
 	SAFE_RELEASE(mSwapChain);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
-	//SAFE_RELEASE(mQueue);
 	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 	SAFE_RELEASE(mCommandList);
 }
@@ -172,7 +154,7 @@ unsigned DisplaySurface::GetCurrentBackBufferIndex() const
 #endif
 	return curIdx;
 }
-void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
+void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
@@ -200,7 +182,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	if (renderer)
 	{
-		renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom,frameNumber);
+		renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom, frameNumber, mCommandAllocators[curIdx]);
 	}
 
 	// Get ready to present
@@ -254,13 +236,17 @@ void DisplaySurface::CreateSyncObjects()
 	{
 		mFenceValues[i] = 0;
 		mDeviceRef->CreateFence(mFenceValues[i], D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&mGPUFences[i]));
+		mGPUFences[i]->SetName(L"DisplaySurfaceSwapchainSync");
 	}
 }
 
 void DisplaySurface::StartFrame()
 {
 	// If we already requested the command list just exit
-	if (mRecordingCommands) { return; }
+	if (mRecordingCommands)
+	{
+		return;
+	}
 
 	HRESULT res = S_FALSE;
 	static UINT idx_old=0;
@@ -272,11 +258,12 @@ void DisplaySurface::StartFrame()
 		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
 		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
+	WaitForAllWorkDone();
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 
 	res = mCommandAllocators[idx]->Reset();
-	SIMUL_ASSERT(res == S_OK);
+	SIMUL_ASSERT(res == S_OK); 
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
@@ -291,18 +278,19 @@ void DisplaySurface::EndFrame()
 	mRecordingCommands = false;
 
 	HRESULT res = S_FALSE;
-	res = mCommandList->Close();
-	SIMUL_ASSERT(res == S_OK);
 	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
-	ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetCommandQueue(), mCommandList);
+	
+	//ID3D12CommandList* ppCommandLists[] = { mCommandList };
+	//dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 
 #ifndef _GAMING_XBOX
 	// Present new frame
 	const DWORD dwFlags = 0;
-	const UINT SyncInterval = 1;
+	const UINT SyncInterval = 0;
 	res = mSwapChain->Present(SyncInterval, dwFlags);
 	if (res != S_OK)
 	{

@@ -1,6 +1,6 @@
 #pragma once
 #include <float.h>
-namespace simul
+namespace platform
 {
 	namespace math
 	{

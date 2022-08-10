@@ -19,10 +19,10 @@
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 using namespace std;
 
@@ -138,7 +138,7 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
     }
     else
     {
-        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY: " << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << "," << message << std::endl;
+        std::cout << "[GL " << typeText.c_str() << "] (SEVERITY: " << severityText.c_str() << ") CAUSED BY: " << sourceText.c_str() << ", " << message << std::endl;
     }
     if (type != GL_DEBUG_TYPE_PERFORMANCE)
     {
@@ -156,7 +156,7 @@ DeviceManager::DeviceManager()
 	//if(!renderPlatformOpenGL)
 		//renderPlatformOpenGL		=new opengl::RenderPlatform;
 	//renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL|crossplatform::BREAK_ON_FAIL);
-	//simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
+	//platform::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 
 }
 
@@ -174,7 +174,7 @@ glfw owns hRC
 	}*/
 	hRC=nullptr;                           // Set DC To NULL
 ERRNO_CHECK
-	//simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
+	//platform::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 	//glfwMakeContextCurrent(nullptr);
    // glfwDestroyWindow(offscreen_context);
 	offscreen_context=nullptr;

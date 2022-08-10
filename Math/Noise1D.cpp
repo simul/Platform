@@ -4,7 +4,7 @@
 #include "Platform/Math/RandomNumberGenerator.h"
 #include "Platform/Core/MemoryInterface.h"
 
-using namespace simul::math;
+using namespace platform::math;
 
 static float cos_interp(float x, float a, float b)
 {
@@ -13,7 +13,7 @@ static float cos_interp(float x, float a, float b)
 	return  a*(1.f-f) + b*f;
 }
 
-simul::math::Noise1D::Noise1D(simul::base::MemoryInterface *mem)
+platform::math::Noise1D::Noise1D(platform::core::MemoryInterface *mem)
 	:noise_buffer(NULL)
 	,buffer_size(0)
 	,memoryInterface(mem)
@@ -25,13 +25,13 @@ simul::math::Noise1D::Noise1D(simul::base::MemoryInterface *mem)
 	
 }
 
-simul::math::Noise1D::~Noise1D()
+platform::math::Noise1D::~Noise1D()
 {
 	operator delete[](noise_buffer,memoryInterface);
 	del(noise_random,memoryInterface);
 }
 
-void simul::math::Noise1D::Setup(unsigned freq,int RandomSeed,int octaves,float p)
+void platform::math::Noise1D::Setup(unsigned freq,int RandomSeed,int octaves,float p)
 {
 	persistence=p;
 	numOctaves=octaves;
@@ -51,18 +51,18 @@ void simul::math::Noise1D::Setup(unsigned freq,int RandomSeed,int octaves,float 
 	generation_number++;
 }
 
-int simul::math::Noise1D::GetNoiseFrequency() const
+int platform::math::Noise1D::GetNoiseFrequency() const
 {
 	return frequency;
 }
 
-float simul::math::Noise1D::value_at(unsigned i) const
+float platform::math::Noise1D::value_at(unsigned i) const
 {
 	i=i%frequency;
 	return noise_buffer[i];
 }
 
-float simul::math::Noise1D::noise1(float p) const
+float platform::math::Noise1D::noise1(float p) const
 {
 	float x=p;
 	int i1=((int)x);
@@ -77,7 +77,7 @@ float simul::math::Noise1D::noise1(float p) const
 	return a;
 }
 
-float simul::math::Noise1D::PerlinNoise1D(float x) const
+float platform::math::Noise1D::PerlinNoise1D(float x) const
 {
 	int i;
 	float pos;
@@ -97,12 +97,12 @@ float simul::math::Noise1D::PerlinNoise1D(float x) const
 	result/=sum;
 	return(result);
 }
-void simul::math::Noise1D::SetFilter(NoiseFilter *nf)
+void platform::math::Noise1D::SetFilter(NoiseFilter *nf)
 {
 	filter=nf;
 }
 
-unsigned simul::math::Noise1D::GetMemoryUsage() const
+unsigned platform::math::Noise1D::GetMemoryUsage() const
 {
 	return sizeof(this)+sizeof(RandomNumberGenerator)+buffer_size*sizeof(float);
 }

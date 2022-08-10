@@ -13,7 +13,7 @@
 #include <string>
 #include <map>
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{

@@ -1,8 +1,8 @@
 #include "Platform/Math/ReferenceFrame.h"
 #include "Platform/Math/Vector3.inl"
 
-using namespace simul::math;
-using namespace simul::geometry;
+using namespace platform::math;
+using namespace platform::math;
 
 SimulReferenceFrame::SimulReferenceFrame() : SimulOrientation()
 {

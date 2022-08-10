@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/Math/Pi.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 RenderDelegater::RenderDelegater(crossplatform::RenderPlatform *r)
@@ -54,7 +54,7 @@ void RenderDelegater::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDele
 	shutdownDeviceDelegates.push_back(d);
 }
 
-void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h, long long f)
+void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h, long long f, void* context_allocator)
 {
 	//if(!rendertarget)
 	//	return;
@@ -62,9 +62,9 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	crossplatform::GraphicsDeviceContext deviceContext;
 	viewSize[view_id]					= int2(w,h);
 	deviceContext.platform_context		= context;
+	deviceContext.platform_context_allocator = context_allocator;
 	deviceContext.renderPlatform		= renderPlatform;
 	deviceContext.viewStruct.view_id	= view_id;
-	deviceContext.frame_number			= f;
 	crossplatform::Viewport vps[1];
 	vps[0].x = vps[0].y = 0;
 	vps[0].w = w;
@@ -79,7 +79,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 			0, 0, vs.x, vs.y
 		);
 
-	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatform->GetGpuProfiler());
+	platform::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatform->GetGpuProfiler());
 	if (renderDelegate[view_id])
 	{
 		renderDelegate[view_id](deviceContext);

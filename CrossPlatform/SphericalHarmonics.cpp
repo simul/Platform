@@ -2,7 +2,7 @@
 #include "Macros.h"
 #include "GpuProfiler.h"
 #include "RenderPlatform.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 
@@ -182,7 +182,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
 	int num_coefficients=bands*bands;
 	static int BLOCK_SIZE=16;
-	static int sqrt_jitter_samples					=4;
+	static int sqrt_jitter_samples=4;
 	if(!sphericalHarmonics.count)
 	{
 		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true,true,nullptr,"spherical Harmonics");
@@ -239,20 +239,36 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
-	sphericalHarmonicsEffect->SetTexture(deviceContext,_cubemapTexture,buffer_texture);
-	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, _samplesBuffer);
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect,_targetBuffer);
+	{
+		sphericalHarmonicsEffect->SetTexture(deviceContext,_cubemapTexture,buffer_texture);
+		sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, _samplesBuffer);
+		sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect,_targetBuffer);
 
-	static bool sh_by_samples=false;
-	sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
-	sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
-	int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
+		static bool sh_by_samples=false;
+		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
+		sphericalHarmonicsEffect->Apply(deviceContext,encode,0);
+		int n = sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients;
 	
-	renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
-	sphericalHarmonicsConstants.Unbind(deviceContext);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
-	sphericalHarmonics.CopyToReadBuffer(deviceContext);
-	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
+		renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
+		sphericalHarmonicsConstants.Unbind(deviceContext);
+		sphericalHarmonicsEffect->Unapply(deviceContext);
+		sphericalHarmonics.CopyToReadBuffer(deviceContext);
+		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
+	}
+	static bool test2=false;
+	if(test2)
+	{
+		const vec4* h=(const vec4* )sphericalHarmonics.OpenReadBuffer(deviceContext);
+		if(h)
+		{
+			for(int i=0;i<num_coefficients;i++)
+			{
+				std::cout<<i<<", RGB: ("<<h[i].x<<","<<h[i].y<<","<<h[i].z<<std::endl;
+			}
+			std::cout<<std::endl;
+		}
+		sphericalSamples.CloseReadBuffer(deviceContext);
+	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
@@ -283,12 +299,12 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 	for(int i=cube_start;i<cube_end;i++)
 	{
 		target_texture->activateRenderTarget(deviceContext,i,0);
-		//math::Matrix4x4 cube_proj = simul::crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F / 2.f, SIMUL_PI_F / 2.f, 0.2f, 200000.f);
+		//math::Matrix4x4 cube_proj = platform::crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F / 2.f, SIMUL_PI_F / 2.f, 0.2f, 200000.f);
 		{
 			//static bool rev = true;
-			//simul::crossplatform::GetCubeMatrixAtPosition((float *)&view, i, cam_pos, false, rev);
+			//platform::crossplatform::GetCubeMatrixAtPosition((float *)&view, i, cam_pos, false, rev);
 			//crossplatform::MakeInvViewProjMatrix(invViewProj, view, cube_proj);
-			simul::crossplatform::GetCubeInvViewProjMatrix(invViewProj,i,false,true);
+			platform::crossplatform::GetCubeInvViewProjMatrix(invViewProj,i,false,true);
 			lightProbeConstants.invViewProj = invViewProj;
 			lightProbeConstants.numSHBands = bands;
 			

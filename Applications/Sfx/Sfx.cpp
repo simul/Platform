@@ -319,7 +319,7 @@ BlendState::BlendState()
 
 DepthStencilState::DepthStencilState()
 	: Declaration(DeclarationType::DEPTHSTATE)
-	,DepthEnable(true)
+	,DepthTestEnable(true)
 	,DepthWriteMask(1)
 	,DepthFunc(DEPTH_LESS_EQUAL)
 {}

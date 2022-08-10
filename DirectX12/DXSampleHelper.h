@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "SimulDirectXHeader.h"
+
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
 // it has no understanding of the lifetime of resources on the GPU. Apps must account
 // for the GPU lifetime of resources to avoid destroying objects that may still be
@@ -32,7 +34,9 @@ private:
     const HRESULT m_hr;
 };
 
+#ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p) if (p) (p)->Release()
+#endif
 
 inline void ThrowIfFailed(HRESULT hr)
 {
@@ -205,7 +209,7 @@ protected:
                         &bufferDesc,
                         D3D12_RESOURCE_STATE_GENERIC_READ,
                         nullptr,
-                        IID_PPV_ARGS(&m_resource)));
+                        SIMUL_PPV_ARGS(&m_resource)));
         m_resource->SetName(resourceName);
     }
 

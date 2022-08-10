@@ -10,7 +10,7 @@
 	#pragma warning(disable : 4251)  
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -38,7 +38,7 @@ namespace simul
 			int GetViewId(cp_hwnd hwnd);
             DisplaySurface *GetWindow(cp_hwnd hwnd);
 
-			simul::base::ReadWriteMutex *delegatorReadWriteMutex;
+			platform::core::ReadWriteMutex *delegatorReadWriteMutex;
 			///
 			void EndFrame(bool clear=true);
 		protected:
@@ -46,8 +46,6 @@ namespace simul
 			RenderPlatform*                             renderPlatform;
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;
             DisplaySurfaceMap                           surfaces;
-			bool frame_started;
-			long long frameNumber=0;
 			std::set<cp_hwnd> toRender;
 		};
 	}

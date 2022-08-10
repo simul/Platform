@@ -6,7 +6,7 @@
 #pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -19,6 +19,7 @@ namespace simul
 			static void TriggerMultiFrameCapture(unsigned num);
 			static void StartCapture(RenderPlatform* renderPlatform, void* windowHandlePtr);
 			static void FinishCapture();
+			static bool IsLoaded();
 		};
 	}
 }

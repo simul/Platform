@@ -1,10 +1,10 @@
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
-void simul::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
+void platform::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;
@@ -37,14 +37,12 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 			SIMUL_CERR << "Window for cp_hwnd " << std::hex << h << " has hwnd " << w->GetHandle() << std::endl;
 			return;
 		}
-		w->StartFrame();
-		if (renderPlatform && !frame_started)
+		if (renderPlatform && !renderPlatform->FrameStarted())
 		{
-			frameNumber++;
-			//renderPlatform->BeginFrame(renderPlatform->GetImmediateContext());
-			frame_started = true;
+			renderPlatform->BeginFrame();
 		}
-		w->Render(delegatorReadWriteMutex, frameNumber);
+		w->StartFrame();
+		w->Render(delegatorReadWriteMutex, renderPlatform->GetFrameNumber());
 	}
 	if(clear)
 		toRender.clear();
@@ -52,7 +50,6 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 
 DisplaySurfaceManager::DisplaySurfaceManager():
 				renderPlatform(nullptr)
-				,frame_started(false)
 {
 }
 
@@ -60,7 +57,7 @@ void DisplaySurfaceManager::Initialize(RenderPlatform *r)
 {
 	renderPlatform=r;
 	if (!delegatorReadWriteMutex)
-		delegatorReadWriteMutex = new simul::base::ReadWriteMutex;
+		delegatorReadWriteMutex = new platform::core::ReadWriteMutex;
 }
 
 DisplaySurfaceManager::~DisplaySurfaceManager()
@@ -147,5 +144,4 @@ void DisplaySurfaceManager::EndFrame(bool clear)
 	{
 		s.second->EndFrame();
 	}
-	frame_started=false;
 }

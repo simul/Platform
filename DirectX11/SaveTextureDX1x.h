@@ -20,7 +20,7 @@ typedef enum D3DX11_IMAGE_FILE_FORMAT
 #endif
 #include "Platform/DirectX11/Export.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{

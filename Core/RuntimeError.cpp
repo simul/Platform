@@ -1,15 +1,17 @@
-
+#ifdef _MSC_VER
+#include <Windows.h>// for DebugBreak etc Include this at the cpp-level, too much to add into a header.
+#endif
 #include "Platform/Core/RuntimeError.h"
 
 #if SIMUL_INTERNAL_CHECKS
-bool simul::base::SimulInternalChecks = true;
+bool platform::core::SimulInternalChecks = true;
 #else
-bool simul::base::SimulInternalChecks = false;
+bool platform::core::SimulInternalChecks = false;
 #endif
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		static bool debugBreaksEnabled = true;
 		bool DebugBreaksEnabled()
@@ -20,14 +22,24 @@ namespace simul
 		{
 			debugBreaksEnabled = b;
 		}
-#ifndef _MSC_VER
+		bool IsDebuggerPresent()
+		{
+#ifdef _MSC_VER
+			return ::IsDebuggerPresent();
+#else
+		return true;
+#endif
+		}
 		void DebugBreak()
 		{
+#ifdef _MSC_VER
+			::DebugBreak();
+#else
 			if (debugBreaksEnabled)
 			{
 				std::cout << "Break here.\n";
 			}
-		}
 #endif
+		}
 	}
 }

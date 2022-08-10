@@ -18,7 +18,7 @@
 	struct ID3DUserDefinedAnnotation;
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -59,8 +59,6 @@ namespace simul
 			ID3D11Device *AsD3D11Device();
 			virtual void BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void EndEvent			(crossplatform::DeviceContext &deviceContext);
-			void BeginFrame(crossplatform::GraphicsDeviceContext &deviceContext);
-			void EndFrame(crossplatform::GraphicsDeviceContext &deviceContext);
 			void CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 
 			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
@@ -114,6 +112,7 @@ namespace simul
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 		protected:
+			void ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			crossplatform::Texture* createTexture();
 			bool ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/ = true) override;
 			void WaitForFencedResources(crossplatform::DeviceContext &deviceContext);

@@ -12,7 +12,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -44,8 +44,8 @@ namespace simul
 		protected:
 			crossplatform::RenderPlatform		*renderPlatform;
 			crossplatform::Texture				*brightpassTextures[4];
-			simul::crossplatform::Texture		*glowTextures[4];
-			simul::crossplatform::Texture		*blurTexture;
+			platform::crossplatform::Texture		*glowTextures[4];
+			platform::crossplatform::Texture		*blurTexture;
 			int Width,Height;
 			void DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture);
 		

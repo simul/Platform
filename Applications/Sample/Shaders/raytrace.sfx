@@ -59,7 +59,7 @@ void MyRaygenShader()
 void InitialClosestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
     float3 barycentrics = float3(2 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
-   // payload.color = float4(RayTCurrent(),attr.barycentrics.xy, 1);
+   // payload.color = vec4(RayTCurrent(),attr.barycentrics.xy, 1);
     payload.dist= RayTCurrent();
     payload.colour= vec3(1,1,1);
     RayDesc ray;
@@ -92,19 +92,38 @@ void MyMissShader(inout RayPayload payload)
     payload.dist    =10000.0;
 }
 
+void MyIntersectionShader()
+{
+}
+
 technique raytrace
 {
     raytrace_pass raytrace1
     {
         RayGeneration=CompileShader(lib_6_3,MyRaygenShader);
-        Miss=CompileShader(lib_6_3,MyMissShader);
+        MissShaders
+        {
+            CompileShader(lib_6_3, MyMissShader);
+        };
         HitGroup MainHitGroup
         {
+            //Intersection=CompileShader(lib_6_3,MyIntersectionShader); //Optional
+            AnyHit = CompileShader(lib_6_3, MyAnyHitShader);          //Optional 
             ClosestHit=CompileShader(lib_6_3,InitialClosestHit);
         };
         HitGroup SecondHitGroup
         {
             ClosestHit=CompileShader(lib_6_3,ShadowHit);
+        };
+
+        RayTracingShaderConfig
+        {
+            MaxPayloadSize = 16;
+            //MaxAttributeSize = 8; //Optional if using BuiltInTriangleIntersectionAttributes
+        };
+        RayTracingPipelineConfig
+        {
+            MaxTraceRecursionDepth = 2;
         };
     }
 }

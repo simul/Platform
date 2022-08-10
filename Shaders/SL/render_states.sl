@@ -65,7 +65,7 @@ DepthStencilState TestForwardDepth
 
 DepthStencilState WriteDepth
 {
-	DepthEnable = TRUE;
+	DepthEnable = FALSE;
 	DepthWriteMask = ALL;
 	DepthFunc = ALWAYS;
 };

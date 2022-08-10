@@ -16,7 +16,6 @@
 #ifdef _MSC_VER
     #pragma warning(push)
 	#pragma warning(disable:4996)
-	#include <Windows.h>// for DebugBreak etc
 #endif
 #ifdef _WIN32
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
@@ -26,7 +25,7 @@
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
-#ifdef UNIX
+#if defined(UNIX) || defined(__linux__)
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
 #ifndef __COMMODORE__
 #include <signal.h>
@@ -41,13 +40,12 @@
 #define SIMUL_CERR\
 	std::cerr<<__FILE__<<"("<<std::dec<<__LINE__<<"): warning: "
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
-		#ifndef _MSC_VER	
 		extern PLATFORM_CORE_EXPORT void DebugBreak();
-		#endif
+		extern PLATFORM_CORE_EXPORT bool IsDebuggerPresent();
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
@@ -77,8 +75,12 @@ namespace simul
 	}
 }
 
+#define SIMUL_INTERNAL_COUT\
+	if(platform::core::SimulInternalChecks)\
+		std::cout << __FILE__ << "(" << __LINE__ << "): info: "
+
 #define SIMUL_INTERNAL_CERR\
-	if(simul::base::SimulInternalChecks)\
+	if(platform::core::SimulInternalChecks)\
 		std::cerr << __FILE__ << "(" << __LINE__ << "): warning: "
 
 #define SIMUL_CERR_ONCE\
@@ -88,7 +90,7 @@ namespace simul
 
 #define SIMUL_INTERNAL_CERR_ONCE\
 	static bool SIMUL_CERR_ONCE_done=false;\
-	if(simul::base::SimulInternalChecks&&!SIMUL_CERR_ONCE_done)\
+	if(platform::core::SimulInternalChecks&&!SIMUL_CERR_ONCE_done)\
 		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning: "<<(SIMUL_CERR_ONCE_done=true)<<": "
 
 #define SIMUL_CERR_ONCE_PER(inst)\
@@ -103,7 +105,7 @@ namespace simul
 		if(!done)\
 			SIMUL_CERR<<err<<std::endl;\
 		done=true;\
-		throw simul::base::RuntimeError(err);\
+		throw platform::core::RuntimeError(err);\
 	}		
 #else
 	#define SIMUL_THROW(err)\
@@ -116,7 +118,7 @@ namespace simul
 #define SIMUL_FILE_LINE_CERR(filename,line)\
 	std::cerr<<filename<<"("<<line<<"): warning B0001: "
 
-#ifdef _DEBUG
+#if defined(_DEBUG)||SIMUL_INTERNAL_CHECKS
 #define SIMUL_ASSERT(value)\
 	if(value!=true)\
 	{\
@@ -126,6 +128,7 @@ namespace simul
 #else
 #define SIMUL_ASSERT(value)
 #endif
+
 #define SIMUL_BREAK(msg)\
 	{\
 		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
@@ -138,6 +141,26 @@ namespace simul
 		if(!done) \
 		{ std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl; BREAK_IF_DEBUGGING ; done=true; } \
 	}
+
+#if SIMUL_INTERNAL_CHECKS
+#define SIMUL_BREAK_ONCE_INTERNAL(msg)\
+	{\
+		static bool done=false;\
+		if(!done) \
+		{\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
+			BREAK_IF_DEBUGGING\
+		}\
+	}
+#define SIMUL_BREAK_INTERNAL(msg)\
+	{\
+		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
+		BREAK_IF_DEBUGGING\
+	}
+#else
+#define SIMUL_BREAK_INTERNAL(msg) {}
+#define SIMUL_BREAK_ONCE_INTERNAL(msg) {}
+#endif
 
 #define SIMUL_ASSERT_WARN(val,message)\
 	if((val)!=true)\
@@ -178,16 +201,16 @@ namespace simul
 #ifdef _MSC_VER
 	#define BREAK_IF_DEBUGGING\
 		{\
-			if(simul::base::DebugBreaksEnabled()&&IsDebuggerPresent())\
-				DebugBreak();\
+			if(platform::core::DebugBreaksEnabled()&&platform::core::IsDebuggerPresent())\
+				platform::core::DebugBreak();\
 		}
 #else
 	#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
-		#define BREAK_IF_DEBUGGING if(simul::base::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
+		#define BREAK_IF_DEBUGGING if(platform::core::DebugBreaksEnabled()&&sceDbgIsDebuggerAttached()) SCE_BREAK();
 	#else
 		// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
 		// Therefore we use this workaround.
-		#define BREAK_IF_DEBUGGING simul::base::DebugBreak();
+		#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
 	#endif
 #endif
 
@@ -205,26 +228,30 @@ namespace simul
 	#define ERRNO_CLEAR \
 		errno=0;
 
-#ifndef UNIX
-	#define ERRNO_CHECK \
-		if(errno!=0)\
-		{\
-			char errno_e[101];\
-			strerror_r(errno,errno_e,100);\
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<errno_e<<std::endl;\
-			errno=0;\
-		}
-#else
-	#define ERRNO_CHECK \
-		if(errno!=0)\
-		{\
-			char buffer[256];\
-			int err=errno;\
-			char * errorMsg = (char*)strerror_r( errno, buffer, 256 ); \
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<(errorMsg?errorMsg:"")<<std::endl; \
-			errno=0;\
-		}
-#endif
+	#if SIMUL_INTERNAL_CHECKS
+		#ifndef UNIX
+			#define ERRNO_CHECK \
+			if(errno!=0)\
+			{\
+				char errno_e[101];\
+				strerror_r(errno,errno_e,100);\
+				std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<errno_e<<std::endl;\
+				errno=0;\
+			}
+		#else
+			#define ERRNO_CHECK \
+			if(errno!=0)\
+			{\
+				char buffer[256];\
+				int err=errno;\
+				char * errorMsg = (char*)strerror_r( errno, buffer, 256 ); \
+				std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<(errorMsg?errorMsg:"")<<std::endl; \
+				errno=0;\
+			}
+		#endif
+	#else
+		#define ERRNO_CHECK {errno = 0; }
+	#endif
 #endif
 /// This errno check is always enabled, wherease ERRNO_CHECK can be disabled for production.
 	#define ALWAYS_ERRNO_CHECK \
@@ -238,7 +265,8 @@ namespace simul
 			SIMUL_THROW(errno_e);\
 		}
 /// This errno check is only used to find specific bugs, then removed from the code.
-#define ERRNO_BREAK \
+#if SIMUL_INTERNAL_CHECKS
+	#define ERRNO_BREAK \
 		if(errno!=0)\
 		{\
 			char errno_e[401];\
@@ -248,7 +276,9 @@ namespace simul
 			BREAK_IF_DEBUGGING	\
 			errno=0;\
 		}
-
+#else
+	#define ERRNO_BREAK {errno = 0; }
+#endif
 #ifdef _MSC_VER
     #pragma warning(pop)
 #endif

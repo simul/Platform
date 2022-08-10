@@ -1,11 +1,7 @@
 
 
-find_program(SIMUL_FX_EXECUTABLE fx)
-
-
 function ( add_sfx_shader_project targetName configJsonFile )
 	if(SIMUL_BUILD_SHADERS)
-	#message(${configJsonFile})
 		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES" ${ARGN} )
 		if (NOT TARGET ${targetName})
 			if("${sfx_FOLDER}" STREQUAL "")
@@ -55,10 +51,10 @@ function ( add_sfx_shader_project targetName configJsonFile )
 				string(REPLACE ".sfx" ".sfxo" out_f ${name})
 				set(out_f "${out_folder}/${out_f}")
 				add_custom_command(OUTPUT ${out_f}
-					COMMAND "${SIMUL_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" -M"${intermediate_folder}" ${EXTRA_OPTS_S}
+					COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" -M"${intermediate_folder}" ${EXTRA_OPTS_S}
 					MAIN_DEPENDENCY ${in_f}
 					WORKING_DIRECTORY ${out_folder}
-					DEPENDS ${SIMUL_SFX_EXECUTABLE}
+					DEPENDS ${PLATFORM_SFX_EXECUTABLE}
 					)
 				list(APPEND outputs${targetName} ${out_f})
 			else()
@@ -76,60 +72,10 @@ function ( add_sfx_shader_project targetName configJsonFile )
 		set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_ALL FALSE )
 		set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG FALSE )
 		set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE FALSE )
-		if((${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND SIMUL_SOURCE_BUILD)
+		if((PLATFORM_WINDOWS OR PLATFORM_LINUX) AND SIMUL_SOURCE_BUILD)
 			add_dependencies( ${targetName} Sfx )
 		endif()
 		set(${out_var} "${outputs${targetName}}" PARENT_SCOPE)
 	endif()
 endfunction()
 
-
-function( add_fx_shader_project targetName )
-	if(SIMUL_BUILD_SHADERS)
-	cmake_parse_arguments(fx "" "OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS" ${ARGN} )
-	if("${fx_FOLDER}" STREQUAL "")
-		set(fx_FOLDER Shaders)
-	endif()
-	set(INCLUDE_OPTS)
-	foreach(incl_path ${fx_INCLUDES})
-		set(INCLUDE_OPTS ${INCLUDE_OPTS} /I"${incl_path}" )
-	endforeach()
-	set(srcs)
-	set(outputs${targetName})
-	set(FX_OPTIONS)
-	if(SIMUL_DEBUG_SHADERS)
-		set(FX_OPTIONS /Zi /Od)
-	endif()
-	#message("fx(${targetName} )")
-	foreach(in_f ${fx_SOURCES})
-		list(APPEND srcs ${in_f})
-		string(FIND ${in_f} ".sfx" pos REVERSE)
-		if(NOT ${pos} EQUAL -1)
-			#message( STATUS "${SIMUL_FX_EXECUTABLE} ${in_f} ${pos}" )
-			get_filename_component(name ${in_f} NAME )
-			string(REPLACE ".sfx" ".fxo" out_f ${name})
-			#file(RELATIVE_PATH out_f ${CMAKE_CURRENT_SOURCE_DIR} ${out_f})
-			set(out_f "${fx_OUTPUT}/${out_f}")
-			add_custom_command(OUTPUT ${out_f}
-				COMMAND ${SIMUL_FX_EXECUTABLE} ${FX_OPTIONS} /E"main" ${INCLUDE_OPTS} /Fo"${out_f}" /T"fx_5_0" /nologo ${in_f}
-				MAIN_DEPENDENCY ${in_f}
-				WORKING_DIRECTORY ${out_folder}
-				COMMENT "${SIMUL_FX_EXECUTABLE} ${FX_OPTIONS} /E\"main\" /I\"${fx_INCLUDES}\" /Fo\"${out_f}\" /T fx_5_0 /nologo ${in_f}"
-				)
-			list(APPEND outputs${targetName} ${out_f})
-		else()
-			if(MSVC)
-				set_source_files_properties( ${in_f} PROPERTIES HEADER_FILE_ONLY TRUE )
-			endif()
-		endif()
-	endforeach()
-	add_custom_target(${targetName} DEPENDS ${outputs${targetName}} SOURCES ${srcs})
-	set_target_properties( ${targetName} PROPERTIES FOLDER ${fx_FOLDER})
-	set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_ALL FALSE )
-	set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG FALSE )
-	set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE FALSE )
-	set(${out_var} "${outputs${targetName}}" PARENT_SCOPE)
-	endif()
-endfunction()
-
-find_program(SIMUL_SFX_EXECUTABLE sfx)

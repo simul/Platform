@@ -5,7 +5,7 @@
 
 #pragma warning(disable:4251)
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{
@@ -16,7 +16,7 @@ namespace simul
 			unsigned long* timestamp;
 		};
 
-		SIMUL_OPENGL_EXPORT_CLASS Profiler : public simul::crossplatform::GpuProfiler
+		class SIMUL_OPENGL_EXPORT Profiler: public platform::crossplatform::GpuProfiler
 		{
 		public:
 			static Profiler&	GetGlobalProfiler();

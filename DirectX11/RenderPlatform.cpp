@@ -40,8 +40,9 @@
 #include "Platform/DirectX11/Utilities.h"
 #pragma optimize("",off)
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
+using namespace platform::core;
 
 struct Vertex3_t
 {
@@ -164,9 +165,9 @@ void RenderPlatform::StoredState::Clear()
 
 RenderPlatform::RenderPlatform()
 	:device(NULL)
-	,storedStateCursor(0)
-	,pUserDefinedAnnotation(NULL)
 	,fence(0)
+	,pUserDefinedAnnotation(NULL)
+	,storedStateCursor(0)
 {
 	storedStates.resize(4);
 }
@@ -205,7 +206,6 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	delete eSRAMManager;
 	eSRAMManager=new ESRAMManager(device);
 #endif
-	RecompileShaders();
 	RecompileShaders();
 	
 	{
@@ -250,7 +250,7 @@ void RenderPlatform::BeginEvent	(crossplatform::DeviceContext &,const char *name
 	if(n==name_map.end())
 	{
 		static std::vector<std::wstring> wstrs;
-		std::wstring wn=base::Utf8ToWString(name);
+		std::wstring wn=platform::core::Utf8ToWString(name);
 		// make sure the string is permanently stored:
 		wstrs.push_back(wn);
 		// and this pointer will remain valid until shutdown.
@@ -277,16 +277,11 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &)
 #endif
 }
 
-void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	crossplatform::RenderPlatform::BeginFrame(deviceContext);
-	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	BeginFrame();
+	platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
-}
-
-void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
-{
-	crossplatform::RenderPlatform::EndFrame(deviceContext);
 }
 
 namespace
@@ -598,6 +593,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	{
 	case DXGI_FORMAT_R16_FLOAT:
 		return R_16_FLOAT;
+	case DXGI_FORMAT_R16G16B16A16_TYPELESS:
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
@@ -610,6 +606,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return R_32_FLOAT;
 	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
 		return RGBA_8_UNORM_SRGB;
+	case DXGI_FORMAT_R8G8B8A8_TYPELESS:
 	case DXGI_FORMAT_R8G8B8A8_UNORM:
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_B8G8R8A8_UNORM:
@@ -626,6 +623,9 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_32_UINT;
 	case DXGI_FORMAT_D32_FLOAT:
 		return D_32_FLOAT;
+	case DXGI_FORMAT_R32G8X24_TYPELESS:
+		return D_32_FLOAT_S_8_UINT;
+	case DXGI_FORMAT_R24G8_TYPELESS:
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		return D_24_UNORM_S_8_UINT;
 	case DXGI_FORMAT_D16_UNORM:
@@ -732,6 +732,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 		case DXGI_FORMAT_R16_FLOAT:
 			format = "half";
 			break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:
 			format="float4";
 			break;
@@ -748,7 +749,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 			format="uint";
 			break;
 		default:
-			SIMUL_CERR<<"Unhandled type "<<std::endl;
+			SIMUL_CERR<<"Unhandled type "<< dec.Format<<std::endl;
 		};
 		dummy_shader+="   ";
 		dummy_shader+=format+" ";
@@ -902,13 +903,13 @@ D3D11_CULL_MODE toD3d11CullMode(crossplatform::CullFaceMode c)
 {
 	switch (c)
 	{
-	case simul::crossplatform::CULL_FACE_NONE:
+	case platform::crossplatform::CULL_FACE_NONE:
 		return D3D11_CULL_NONE;
-	case simul::crossplatform::CULL_FACE_FRONT:
+	case platform::crossplatform::CULL_FACE_FRONT:
 		return D3D11_CULL_FRONT;
-	case simul::crossplatform::CULL_FACE_BACK:
+	case platform::crossplatform::CULL_FACE_BACK:
 		return D3D11_CULL_BACK;
-	case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+	case platform::crossplatform::CULL_FACE_FRONTANDBACK:
 		SIMUL_BREAK("In DirectX11 there is no FRONTANDBACK cull face mode");
 	default:
 		SIMUL_BREAK("Undefined cull face mode");
@@ -1428,6 +1429,18 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		pass->Apply(deviceContext);
 		cs->effectPassValid = true;
 	}
+	{
+		auto c = deviceContext.asD3D11DeviceContext();
+		static ID3D11ShaderResourceView* src[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+		c->VSSetShaderResources(0, 32, src);
+		c->HSSetShaderResources(0, 32, src);
+		c->DSSetShaderResources(0, 32, src);
+		c->GSSetShaderResources(0, 32, src);
+		c->PSSetShaderResources(0, 32, src);
+		c->CSSetShaderResources(0, 32, src);
+		static ID3D11UnorderedAccessView* uav[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+		c->CSSetUnorderedAccessViews(0, 8, uav, 0);
+	}
 	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
 	
 	pass->SetConstantBuffers(deviceContext,cs->applyBuffers);
@@ -1469,7 +1482,7 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
-	crossplatform::RenderPlatform::SetTopology(deviceContext,simul::crossplatform::Topology::TRIANGLESTRIP);
+	crossplatform::RenderPlatform::SetTopology(deviceContext,platform::crossplatform::Topology::TRIANGLESTRIP);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
 	ApplyContextState(deviceContext);

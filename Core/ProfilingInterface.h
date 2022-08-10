@@ -24,25 +24,25 @@
 	#include <pthread.h>
 	#define THREAD_TYPE pthread_t
 #endif
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		/// Get the id of the current thread.
 		extern PLATFORM_CORE_EXPORT THREAD_TYPE GetThreadId();
 	}
 }
-#define GET_THREAD_ID simul::base::GetThreadId 
+#define GET_THREAD_ID platform::core::GetThreadId 
 
-//! Define this to enable internal calls to the profiler, if it has been set with simul::base::SetProfilingInterface().
+//! Define this to enable internal calls to the profiler, if it has been set with platform::core::SetProfilingInterface().
 #define SIMUL_INTERNAL_PROFILING
 
 #ifdef DOXYGEN
 #undef SIMUL_INTERNAL_PROFILING
 #endif
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		struct ProfileData;
 		typedef std::map<const char *,ProfileData*> ChildMap;
@@ -138,7 +138,7 @@ namespace simul
 			//! Returns just the overall time taken, in ms
 			const char* GetDebugTextSimple(TextStyle st = PLAINTEXT) const;
 
-			void Clear(base::ProfileData *p=nullptr);
+			void Clear(core::ProfileData *p=nullptr);
 			//! Call this at the start of the frame to reset values.
 			virtual void StartFrame();
 		protected:
@@ -149,7 +149,7 @@ namespace simul
 			bool frame_active=false;
 			ProfileData *root=nullptr;
 		};
-		//! simul::base::DefaultProfiler inherits from ProfilingInterface to measure CPU performance.
+		//! platform::core::DefaultProfiler inherits from ProfilingInterface to measure CPU performance.
 		class PLATFORM_CORE_EXPORT ProfilingInterface:public BaseProfilingInterface
 		{
 		public:
@@ -172,9 +172,9 @@ namespace simul
 
 		* Declare and initialize:
 
-				simul::base::DefaultProfiler cpuProfiler;
+				platform::core::DefaultProfiler cpuProfiler;
 				...
-				simul::base::SetProfilingInterface(&cpuProfiler);
+				platform::core::SetProfilingInterface(&cpuProfiler);
 
 		* Per-frame, at the start of the frame:
 
@@ -196,7 +196,7 @@ namespace simul
 
 		and print this text to screen.
 		*/
-		class PLATFORM_CORE_EXPORT DefaultProfiler:public simul::base::ProfilingInterface
+		class PLATFORM_CORE_EXPORT DefaultProfiler:public platform::core::ProfilingInterface
 		{
 		public:
 			struct Timing:public ProfileData
@@ -208,7 +208,7 @@ namespace simul
 			}
 			void ResetMaximums();
 			float overhead;
-			simul::core::Timer timer;
+			platform::core::Timer timer;
 			DefaultProfiler();
 			~DefaultProfiler();
 			//! Call this at the start of the frame to set-up the profiler for data-gathering.
@@ -217,7 +217,7 @@ namespace simul
 			virtual void Begin(const char *txt);
 			//! Allocate \a nbytes bytes of memory, aligned to \a align and return a pointer to them.
 			virtual void End();
-			float WalkOverhead(simul::base::DefaultProfiler::Timing *p,int level);
+			float WalkOverhead(platform::core::DefaultProfiler::Timing *p,int level);
 			bool GetCounter(int i,std::string &str,float &t);
 
 			const ProfileData *GetEvent(const ProfileData *parent,int i) const;
@@ -229,7 +229,7 @@ namespace simul
 		#define SIMUL_PROFILE_STARTFRAME \
 			{\
 				THREAD_TYPE thread_id=GET_THREAD_ID();\
-				simul::base::ProfilingInterface *profilingInterface=simul::base::GetProfilingInterface(thread_id); \
+				platform::core::ProfilingInterface *profilingInterface=platform::core::GetProfilingInterface(thread_id); \
 				if(profilingInterface) \
 					profilingInterface->StartFrame();\
 			}
@@ -237,20 +237,20 @@ namespace simul
 		#define SIMUL_PROFILE_ENDFRAME \
 			{\
 				THREAD_TYPE thread_id=GET_THREAD_ID();\
-				simul::base::ProfilingInterface *profilingInterface=simul::base::GetProfilingInterface(thread_id); \
+				platform::core::ProfilingInterface *profilingInterface=platform::core::GetProfilingInterface(thread_id); \
 				if(profilingInterface) \
 					profilingInterface->EndFrame();}
 
 		#define SIMUL_PROFILE_START(name) \
 			{\
 				THREAD_TYPE thread_id=GET_THREAD_ID();\
-				simul::base::ProfilingInterface *profilingInterface=simul::base::GetProfilingInterface(thread_id); \
+				platform::core::ProfilingInterface *profilingInterface=platform::core::GetProfilingInterface(thread_id); \
 				if(profilingInterface) \
 					profilingInterface->Begin(name);}
 		#define SIMUL_PROFILE_END \
 			{\
 				THREAD_TYPE thread_id=GET_THREAD_ID();\
-				simul::base::ProfilingInterface *profilingInterface=simul::base::GetProfilingInterface(thread_id); \
+				platform::core::ProfilingInterface *profilingInterface=platform::core::GetProfilingInterface(thread_id); \
 				if(profilingInterface) \
 					profilingInterface->End();}
 #else

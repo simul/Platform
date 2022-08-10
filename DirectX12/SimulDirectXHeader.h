@@ -13,7 +13,7 @@
 #include <DirectXMath.h>
 
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
-	#ifdef _GAMING_XBOX_SCARLETT
+	#if defined(_GAMING_XBOX_SCARLETT) ||  defined(_GAMING_XBOX_XBOXONE)
 		#include "ThisPlatform/Direct3D12.h"
 	#else
 		#ifndef _GAMING_XBOX //Deprecated from the GDK
@@ -38,8 +38,20 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
+inline void SetD3DName(ID3D12Object* obj, const char* name)
+{
+	std::wstring n(name, name+strlen(name));
+	obj->SetName(n.c_str());
+}
 inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 {
+	if(!maxsize)
+		return;
+	if(!obj)
+	{
+		name[0]=0;
+		return;
+	}
 	UINT size=0;
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
 	// not implemented?????
@@ -97,10 +109,16 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 		 } }
 #endif
 #ifndef SAFE_RELEASE_ARRAY
-	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=nullptr; } }
+	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<int(n);i++) if(p[i]) { (p[i])->Release(); (p[i])=nullptr; } }
 #endif
 #ifndef SAFE_DELETE
     #define SAFE_DELETE(p)          { if(p) { delete p; p=nullptr;} }
+#endif
+#ifndef SAFE_DELETE_ARRAY
+	#define SAFE_DELETE_ARRAY(p)          { if(p) { delete[] p; p=nullptr;} }
+#endif
+#ifndef SAFE_DELETE_ARRAY_MEMBERS
+	#define SAFE_DELETE_ARRAY_MEMBERS(p,n)	{ if(p) for(int i=0;i<int(n);i++) if(p[i]) { delete (p[i]); (p[i])=nullptr; } }
 #endif
 
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
@@ -109,4 +127,9 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
     #define  SIMUL_PPV_ARGS IID_PPV_ARGS
 #endif
 
+#if PLATFORM_DEBUG_BARRIERS
+	#define LOG_BARRIER_INFO(name, res, before, after);\
+	SIMUL_CERR << "Barrier: " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << ") - from "\
+	<< RenderPlatform::D3D12ResourceStateToString(before) << " to " << RenderPlatform::D3D12ResourceStateToString(after) << std::endl;
+#endif
 

@@ -3,7 +3,7 @@
 #include "RenderPlatform.h"
 #include "DeviceContext.h"
 #include "Macros.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 DemoOverlay::DemoOverlay()

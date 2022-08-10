@@ -12,7 +12,7 @@
     #pragma warning(disable:4251)
     #pragma warning(disable:4275)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -20,7 +20,7 @@ namespace simul
 		{
 		public:
 
-			DEFINE_NEW_DELETE_OVERRIDES
+			DEFINE_NEW_DELETE_OVERRIDES;
 
 			virtual ~TextInput(){}
 			//! Returns true if the file is successfully loaded
@@ -66,7 +66,7 @@ namespace simul
 		{
 		public:
 
-			DEFINE_NEW_DELETE_OVERRIDES
+			DEFINE_NEW_DELETE_OVERRIDES;
 
 			virtual ~TextOutput(){}
 			virtual bool Good()=0;
@@ -98,9 +98,9 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT TextFileInput:public TextInput
 		{
 		public:
-			TextFileInput(simul::base::MemoryInterface *m=NULL);
+			TextFileInput(platform::core::MemoryInterface *m=NULL);
 			virtual ~TextFileInput();
-			void SetFileLoader(simul::base::FileLoader *f);
+			void SetFileLoader(platform::core::FileLoader *f);
 			void Load(const char *filename);
 			void Load(const std::string &text);
 			bool Good();
@@ -142,15 +142,15 @@ namespace simul
 			std::map<std::string,Array> arrays;
 		private:
 			bool good;
-			simul::base::FileLoader *fileLoader;
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::FileLoader *fileLoader;
+			platform::core::MemoryInterface *memoryInterface;
 		};
 		
 		//NOTE: Copy constructor is unimplemented, and the default is shallow.
 		class SIMUL_CROSSPLATFORM_EXPORT TextFileOutput:public TextOutput
 		{
 		public:
-			TextFileOutput(simul::base::MemoryInterface *m=NULL);
+			TextFileOutput(platform::core::MemoryInterface *m=NULL);
 			virtual ~TextFileOutput();
 
 			void Save(const char *filename_utf8);
@@ -182,7 +182,7 @@ namespace simul
 			std::map<std::string,TextFileOutput> subElements;
 			std::map<std::string,Array> arrays;
 		private:
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 		};
 	}
 }

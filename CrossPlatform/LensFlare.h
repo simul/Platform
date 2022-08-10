@@ -11,12 +11,12 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
 		//! A helpful class to calculate lens flares.
-		SIMUL_CROSSPLATFORM_EXPORT_CLASS LensFlare
+		class SIMUL_CROSSPLATFORM_EXPORT LensFlare
 		{
 		public:
 			LensFlare();
@@ -41,7 +41,7 @@ namespace simul
 		protected:
 			struct Artifact
 			{
-				simul::math::Vector3 pos;
+				platform::math::Vector3 pos;
 				float coord;
 				float size;
 				int type;

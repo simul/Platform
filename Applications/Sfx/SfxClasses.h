@@ -37,7 +37,7 @@ int sfxlex();
 namespace sfx
 {
 	typedef std::map<std::string, std::tuple<std::streampos, std::size_t>> BinaryMap;
-	/// This must track simul::crossplatform::ShaderResourceType
+	/// This must track platform::crossplatform::ShaderResourceType
 	enum class ShaderResourceType : unsigned long long
 	{
 		UNKNOWN = 0
@@ -156,8 +156,8 @@ namespace sfx
 	} ;
 	enum DepthComparison
 	{
-		DEPTH_ALWAYS,
 		DEPTH_NEVER,
+		DEPTH_ALWAYS,
 		DEPTH_LESS,
 		DEPTH_EQUAL,
 		DEPTH_LESS_EQUAL,
@@ -274,7 +274,7 @@ namespace sfx
 	struct DepthStencilState: public Declaration
 	{
 		DepthStencilState();
-		bool DepthEnable;
+		bool DepthTestEnable;
 		int DepthWriteMask;
 		DepthComparison DepthFunc;
 	};
@@ -419,6 +419,11 @@ namespace sfx
 		TopologyState topologyState;
 		std::map<ShaderType,std::string> shaders;
 		std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
+		std::vector<std::string> missShaders;
+		std::vector<std::string> callableShaders;
+		int maxPayloadSize = 0;
+		int maxAttributeSize = 0;
+		int maxTraceRecursionDepth = 0;
 	};
 }
 #include "SfxProgram.h"

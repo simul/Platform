@@ -8,9 +8,11 @@
 #include "Platform/DirectX11/ConstantBuffer.h"
 
 #pragma warning(disable:4251)
+#pragma warning(default:4263)
+#pragma warning(default:4266)
 
 struct ID3D11Buffer;
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -42,7 +44,7 @@ namespace simul
 			virtual ~RenderState();
 			void InvalidateDeviceObjects() override;
 		};
-		class SIMUL_DIRECTX11_EXPORT Shader :public simul::crossplatform::Shader
+		class SIMUL_DIRECTX11_EXPORT Shader :public platform::crossplatform::Shader
 		{
 		public:
 			virtual ~Shader();
@@ -57,7 +59,7 @@ namespace simul
 				ID3D11ComputeShader* computeShader;
 			};
 		};
-		class SIMUL_DIRECTX11_EXPORT EffectPass:public simul::crossplatform::EffectPass
+		class SIMUL_DIRECTX11_EXPORT EffectPass:public platform::crossplatform::EffectPass
 		{
 		public:
 					EffectPass(crossplatform::RenderPlatform *,crossplatform::Effect *);
@@ -72,21 +74,21 @@ namespace simul
 		private:
 			std::array<ID3D11Buffer*,size_t(32)>	appliedConstantBuffers;
 		};
-		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
+		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public platform::crossplatform::EffectTechnique
 		{
 		public:
-			EffectTechnique(simul::crossplatform::RenderPlatform *r,crossplatform::Effect *e);
+			EffectTechnique(platform::crossplatform::RenderPlatform *r,crossplatform::Effect *e);
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};
-		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
+		class SIMUL_DIRECTX11_EXPORT Effect:public platform::crossplatform::Effect
 		{
 		protected:
 			EffectTechnique *CreateTechnique();
 		public:
 			Effect();
 			virtual ~Effect();
-			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			bool Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8) override;
 
 			void PostLoad() override;
 

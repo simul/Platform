@@ -17,7 +17,7 @@
 #include "Platform/Core/CommandLine.h"
 #include "Platform/Core/EnvironmentVariables.h"
 
-using namespace simul;
+using namespace platform;
 using namespace vulkan;
 
 bool RewriteOutput(std::string str)
@@ -49,7 +49,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 
 void Query::SetName(const char*name)
 {
-	simul::vulkan::SetVulkanName(renderPlatform,&mQueryPool,name);
+	platform::vulkan::SetVulkanName(renderPlatform,&mQueryPool,name);
 }
 
 void Query::InvalidateDeviceObjects() 
@@ -99,7 +99,9 @@ void Query::Begin(crossplatform::DeviceContext& deviceContext)
 void Query::End(crossplatform::DeviceContext& deviceContext)
 {
 	if (!mQueryPool)
-		RestoreDeviceObjects(deviceContext.renderPlatform); (deviceContext.renderPlatform);
+	{
+		RestoreDeviceObjects(deviceContext.renderPlatform);
+	}
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
 	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
@@ -128,7 +130,7 @@ Effect::Effect()
 {
 }
 
-void Effect::Compile(const char *filename_utf8)
+bool Effect::Compile(const char *filename_utf8)
 {
 	/* SIMUL/Tools/bin/Sfx.exe  -I"SIMUL\Platform\Vulkan\GLSL;SIMUL\Platform\CrossPlatform\SL"
 											-O"SIMUL\Platform\Vulkan\shaderbin"
@@ -139,20 +141,20 @@ void Effect::Compile(const char *filename_utf8)
 	std::string filename_fx(filename_utf8);
 	if(filename_fx.find(".")>=filename_fx.length())
 		filename_fx+=".sfx";
-	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
+	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
 	filenameInUseUtf8=filename_fx;
 	if(index==-2||index>=(int)renderPlatform->GetShaderPathsUtf8().size())
 	{
 		filenameInUseUtf8=filename_fx;
 		SIMUL_CERR<<"Failed to find shader source file "<<filename_utf8<<std::endl;
-		return;
+		return false;
 	}
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
 	//wchar_t wd[1000];
 	//_wgetcwd(wd,1000);
 	std::string shaderbin = renderPlatform->GetShaderBinaryPathsUtf8().back();
-	std::string SIMUL=base::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
+	std::string SIMUL=core::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
 #ifdef _MSC_VER
 	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";
 	if (SIMUL == "")
@@ -167,10 +169,10 @@ void Effect::Compile(const char *filename_utf8)
 												" -P\"{SIMUL}/Platform/Vulkan/GLSL/GLSL.json\""
 												" -m\"" + shaderbin + "\" ";
 	command+=filenameInUseUtf8.c_str();
-	base::find_and_replace(command,"{SIMUL}",SIMUL);
+	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
 
-	base::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	base::RunCommandLine(command.c_str(),  cc);
+	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
+	return platform::core::RunCommandLine(command.c_str(),  cc);
 }
 
 Effect::~Effect()
@@ -178,10 +180,12 @@ Effect::~Effect()
 	platform_effect=0;
 }
 
-void Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8, const std::map<std::string, std::string>& defines)
+bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-	EnsureEffect(r, filename_utf8);
- 	crossplatform::Effect::Load(r, filename_utf8, defines);
+	if (EnsureEffect(r, filename_utf8))
+		return crossplatform::Effect::Load(r, filename_utf8);
+	else
+		return false;
 }
 
 EffectTechnique* Effect::CreateTechnique()

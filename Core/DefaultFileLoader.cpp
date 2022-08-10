@@ -17,9 +17,21 @@
 #include <stdlib.h> // for malloc, free
 #include <time.h>
 typedef struct stat Stat;
-using namespace simul;
-using namespace base;
+using namespace platform;
+using namespace core;
 
+
+#if PLATFORM_STD_FILESYSTEM==0
+#define SIMUL_FILESYSTEM 0
+#elif PLATFORM_STD_FILESYSTEM==1
+#define SIMUL_FILESYSTEM 1
+#include <filesystem>
+namespace fs = std::filesystem;
+#else
+#define SIMUL_FILESYSTEM PLATFORM_STD_FILESYSTEM
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#endif
 
 static int do_mkdir(const char *path_utf8)
 {
@@ -29,7 +41,7 @@ static int do_mkdir(const char *path_utf8)
 #ifndef NN_NINTENDO_SDK
 #ifdef _MSC_VER
     struct _stat64i32            st;
-	std::wstring wstr=simul::base::Utf8ToWString(path_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(path_utf8);
     if (_wstat(wstr.c_str(), &st) != 0)
 #else
     Stat            st;
@@ -77,18 +89,19 @@ static int mkpath(const std::string &filename_utf8)
 DefaultFileLoader::DefaultFileLoader()
 {
 }
+
+
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #endif
 bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 {
-	
 	enum access_mode
 	{
 		NO_FILE=-1,EXIST=0,WRITE=2,READ=4
 	};
 #ifdef _MSC_VER
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	access_mode res=(access_mode)_waccess(wstr.c_str(),READ);
 	bool bExists = (res!=NO_FILE);
 	if(errno==EACCES)
@@ -109,6 +122,8 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 #elif NN_NINTENDO_SDK
 	// TO-DO: this
 	bool bExists = false;
+#elif __COMMODORE__
+	bool bExists = fs::exists(filename_utf8);
 #else
     Stat st;
     bool bExists=(stat(filename_utf8, &st)==0);
@@ -117,85 +132,10 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 	return bExists;
 }
 
-std::string FileLoader::FindFileInPathStack(const char *filename_utf8,const std::vector<std::string> &path_stack_utf8) const
-{
-	const char **paths=new const char *[path_stack_utf8.size()+1];
-	for(size_t i=0;i<path_stack_utf8.size();i++)
-	{
-		paths[i]=path_stack_utf8[i].c_str();
-	}
-	paths[path_stack_utf8.size()]=nullptr;
-	
-	std::string f= FindFileInPathStack(filename_utf8,paths);
-	delete [] paths;
-	return f;
-}
 
-int FileLoader::FindIndexInPathStack(const char *filename_utf8,const std::vector<std::string> &path_stack_utf8) const
+bool DefaultFileLoader::Save(const void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)
 {
-	const char **paths=new const char *[path_stack_utf8.size()+1];
-	for(size_t i=0;i<path_stack_utf8.size();i++)
-	{
-		paths[i]=path_stack_utf8[i].c_str();
-	}
-	paths[path_stack_utf8.size()]=nullptr;
-	int i= FindIndexInPathStack(filename_utf8,paths);
-	delete [] paths;
-	return i;
-}
-
-std::string FileLoader::FindFileInPathStack(const char *filename_utf8, const char* const* path_stack_utf8) const
-{
-	int s=FindIndexInPathStack(filename_utf8,path_stack_utf8);
-	if(s==-1)
-		return filename_utf8;
-	if(s<-1)
-		return "";
-	return std::string(path_stack_utf8[s])+std::string("/")+filename_utf8;
-}
-
-int FileLoader::FindIndexInPathStack(const char *filename_utf8, const char* const* path_stack_utf8) const
-{
-	
-	std::string fn;
-	if(FileExists(filename_utf8))
-		return -1;
-	if(path_stack_utf8==nullptr||path_stack_utf8[0]==nullptr)
-		return -2;
-	int i=0;
-	for(i=0;i<100;i++)
-	{
-		if(path_stack_utf8[i]==nullptr)
-		{
-			i--;
-			break;
-		}
-	}
-	double newest_date=0.0;
-	
-	int index=0;
-	for(;i>=0;i--)
-	{
-		std::string f=std::string(path_stack_utf8[i])+std::string("/")+filename_utf8;
-		if(FileExists(f.c_str()))
-		{
-			double filedate=GetFileDate(f.c_str());
-			if(filedate>newest_date)
-			{
-				fn=f;
-				newest_date=filedate;
-				index=i;
-			}
-		}
-	}
-	if(!FileExists(fn.c_str()))
-		return -2;
-	return index;
-}
-
-bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)
-{
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 	// Ensure the directory exists:
 	{
@@ -225,21 +165,6 @@ bool DefaultFileLoader::Save(void* pointer, unsigned int bytes, const char* file
 	return true;
 }
 
-void FileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8, const std::vector<std::string> &paths, bool open_as_text)
-{
-	for(auto p: paths)
-	{
-		std::string str = p;
-		str+="/";
-		str += filename_utf8;
-		if (FileExists(str.c_str()))
-		{
-			AcquireFileContents(pointer,bytes,str.c_str(),open_as_text);
-			return;
-		}
-	}
-}
-
 void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text)
 {
 	if(!FileExists(filename_utf8))
@@ -249,7 +174,7 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 		return;
 	}
 	
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 #ifdef _MSC_VER
 	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r":L"rb")
@@ -290,7 +215,7 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	if(!FileExists(filename_utf8))
 		return 0.0;
 
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
 #ifdef _MSC_VER
 	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r, ccs=UTF-8":
@@ -313,8 +238,10 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	// Note: bizarrely, the tm structure has MONTHS starting at ZERO, but DAYS start at 1.
 	double daynum=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon+1,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
 	return daynum;
+#elif SIMUL_FILESYSTEM
+    return (double)(fs::last_write_time(filename_utf8).time_since_epoch().count())/(3600.0*24.0*1000000.0);
 #else
-    return 0;
+	return 0;
 #endif
 }
 
@@ -335,41 +262,3 @@ void FileLoader::SetFileLoader(FileLoader *f)
 {
 	fileLoader=f;
 }
-
-#if defined (_MSC_VER) && !defined(_GAMING_XBOX)
-#include <filesystem>
-std::string FileLoader::FindParentFolder(const char *folder_utf8)
-{
-#ifdef __cpp_lib_filesystem //Test for C++ 17 and filesystem. From https://en.cppreference.com/w/User:D41D8CD98F/feature_testing_macros
-	using namespace std;
-#else
-	using namespace std::experimental;
-#endif
-	std::error_code ec;
-#ifdef __cpp_lib_filesystem
-	std::filesystem::path path = std::filesystem::current_path(ec);
-#else
-	std::experimental::filesystem::path path = std::experimental::filesystem::current_path(ec);
-#endif
-	std::wstring wspath(path.stem().c_str());
-	std::string utf8path=WStringToUtf8(wspath);
-	//std::string utf8path(wspath.begin(), wspath.end());
-	while (utf8path.compare(folder_utf8) != 0)
-	{
-		if (!path.has_parent_path())
-			return "";
-		path = path.parent_path();
-		wspath=path.stem().c_str();
-		utf8path=WStringToUtf8(wspath);
-	}
-	std::wstring ws(path.c_str());
-	std::string utf8=WStringToUtf8(ws);
-	return utf8;
-}
-#else
-std::string FileLoader::FindParentFolder(const char *)
-{
-	std::string utf8;
-	return utf8;
-}
-#endif

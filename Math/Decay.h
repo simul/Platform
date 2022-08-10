@@ -1,7 +1,7 @@
 #ifndef SIMUL_MATH_DECAY_H
 #define SIMUL_MATH_DECAY_H
 
-namespace simul
+namespace platform
 {
 	namespace math
 	{

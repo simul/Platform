@@ -1,17 +1,17 @@
 #include "PlatformStructuredBuffer.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/Core/StringToWString.h"
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 PlatformStructuredBuffer::PlatformStructuredBuffer():
     mGPUBuffer(nullptr),
     mUploadBuffer(nullptr),
-	mNumElements(0),
-	mElementByteSize(0),
-	mChanged(false),
 	mReadSrc(nullptr),
 	mTempBuffer(nullptr),
+	mChanged(false),
+	mNumElements(0),
+	mElementByteSize(0),
     mCpuRead(false),
     mCurApplies(0),
     mLastFrame(UINT64_MAX)
@@ -53,7 +53,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
     // Create the buffers:
     //  const D3D12_RESOURCE_STATES		mShaderResourceState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    D3D12_RESOURCE_STATES initState     = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    D3D12_RESOURCE_STATES initState     = D3D12_RESOURCE_STATE_COMMON;
+	D3D12_RESOURCE_STATES finalState	=computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	D3D12_RESOURCE_FLAGS bufferFlags    = computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS   : D3D12_RESOURCE_FLAG_NONE;
     mCurrentState                       = initState;
 
@@ -69,7 +70,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     );
     SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGPUBuffer, mTotalSize)
-    std::wstring wstr=base::StringToWString(name);
+    std::wstring wstr=platform::core::StringToWString(name);
     mGPUBuffer->SetName((wstr+L" GPU_SB").c_str());
 
     // Upload heap:
@@ -97,9 +98,10 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
         dataToCopy.pData                    = pNewData;
         dataToCopy.RowPitch                 = dataToCopy.SlicePitch = mUnitSize;
         crossplatform::DeviceContext &deviceContext=mRenderPlatform->GetImmediateContext();
-        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST, true);
+        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, initState, D3D12_RESOURCE_STATE_COPY_DEST, true);
         UpdateSubresources(deviceContext.asD3D12Context(), mGPUBuffer, mUploadBuffer, 0, 0, 1, &dataToCopy);
-        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState, true);
+        mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, finalState, true);
+		mCurrentState                       = finalState;
         
         free(pNewData);
     }
@@ -108,6 +110,10 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
     // we initialize a set of READ_BACK buffers:
     if (mCpuRead)
     {
+		for (unsigned int i = 0; i < mBuffering; i++)
+		{
+			SAFE_RELEASE_LATER(mReadBuffers[i]);
+		}
         for (unsigned int i = 0; i < mBuffering; i++)
         {
             res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
@@ -184,9 +190,9 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 	crossplatform::PlatformStructuredBuffer::Apply(deviceContext,  shaderResource);
 
     // Reset the current applies, we need to do this even if we didnt change the buffer:
-    if (mLastFrame != deviceContext.frame_number)
+    if (mLastFrame != renderPlatform->GetFrameNumber())
     {
-        mLastFrame = deviceContext.frame_number;
+        mLastFrame = renderPlatform->GetFrameNumber();
 		mFrameCycle++;
 		if(mFrameCycle>2)
 		{
@@ -207,9 +213,9 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
     crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext,  shaderResource);
 
     // Reset the current applies, we need to do this even if we didnt change the buffer:
-    if (mLastFrame != deviceContext.frame_number)
+    if (mLastFrame != renderPlatform->GetFrameNumber())
     {
-        mLastFrame = deviceContext.frame_number;
+        mLastFrame = renderPlatform->GetFrameNumber();
 		mFrameCycle++;
 		if(mFrameCycle>2)
 		{
@@ -242,7 +248,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	// We intend to read from CPU so we pass a valid range!
     // We read from the oldest buffer
 	const CD3DX12_RANGE readRange(0, 1);
-	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
+	unsigned int curIdx = (renderPlatform->GetFrameNumber() + 1) % mBuffering;
     if(!mReadBuffers[curIdx])
         return nullptr;
     HRESULT hr=mReadBuffers[curIdx]->Map(0, &readRange, reinterpret_cast<void**>(&mReadSrc));
@@ -260,15 +266,21 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 	// We are mapping from a readback buffer so it doesnt matter what we modified,
 	// the GPU won't have acces to it. We pass a 0,0 range here.
 	const CD3DX12_RANGE readRange(0, 0);
-	unsigned int curIdx = (deviceContext.frame_number + 1) % mBuffering;
+	unsigned int curIdx = (renderPlatform->GetFrameNumber() + 1) % mBuffering;
     if(mReadBuffers[curIdx])
     	mReadBuffers[curIdx]->Unmap(0, &readRange);
 }
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+	SIMUL_ASSERT(mCpuRead);
+	if(!mCpuRead)
+	{
+		SIMUL_BREAK_ONCE("Cpu read not enabled, can't write to read buffer for this PlatformStructuredBuffer.");
+		return;
+	}
 	ID3D12GraphicsCommandList*	commandList = deviceContext.asD3D12Context();
-	unsigned int curIdx                     = deviceContext.frame_number % mBuffering;
+	unsigned int curIdx                     = renderPlatform->GetFrameNumber() % mBuffering;
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
 	// Check state
@@ -315,7 +327,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
 	if (mTempBuffer)
 	{
-		delete mTempBuffer;
+		delete[] mTempBuffer;
 		mTempBuffer = nullptr;
 	}
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
@@ -333,7 +345,7 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& )
 {
 }
 
-void PlatformStructuredBuffer::UpdateBuffer(simul::crossplatform::DeviceContext& deviceContext)
+void PlatformStructuredBuffer::UpdateBuffer(platform::crossplatform::DeviceContext& deviceContext)
 {
 	auto r  = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	if (mChanged)
@@ -439,6 +451,6 @@ ID3D12Resource *PlatformStructuredBuffer::AsD3D12Resource(crossplatform::DeviceC
     return mGPUBuffer;
 }
 
-void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& , EffectPass* , int )
+void PlatformStructuredBuffer::ActualApply(platform::crossplatform::DeviceContext& , EffectPass* , int )
 {
 }

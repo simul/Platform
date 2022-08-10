@@ -7,11 +7,11 @@
 #include "Platform/Math/MatrixVector3.inl"
 #include "Platform/Math/Export.h"
 
-namespace simul
+namespace platform
 {
-	namespace math { class Vector3; }
-	namespace geometry
+	namespace math
 	{
+		class Vector3;
 		/// A spatial orientation comprising position and rotation.
 
 		/// The orientation holds position and rotation.
@@ -19,15 +19,15 @@ namespace simul
 		/// Rotation is stored as a quaternion q.
 		/// To transform use #LocalToGlobalPosition, #GlobalToLocalPosition,
 		/// #LocalToGlobalDirection and #GlobalToLocalDirection.
-		SIMUL_MATH_EXPORT_CLASS SimulOrientation
+		class SIMUL_MATH_EXPORT SimulOrientation
 		{
 		private:
-			simul::math::Quaternion q;	
-			mutable simul::math::Matrix4x4 T4;	
+			platform::math::Quaternion q;	
+			mutable platform::math::Matrix4x4 T4;	
 			mutable bool MatrixValid;			
 			mutable bool InverseValid;			
 		protected:
-			mutable simul::math::Matrix4x4 Inv;	
+			mutable platform::math::Matrix4x4 Inv;	
 			mutable float max_iso_scale;		
 			mutable float max_inv_iso_scale;	
 			mutable bool scaled;				
@@ -36,17 +36,17 @@ namespace simul
 			void ConvertQuaternionToMatrix() const;
 			void ConvertMatrixToQuaternion();
 		public:
-			const simul::math::Matrix4x4 &GetMatrix() const
+			const platform::math::Matrix4x4 &GetMatrix() const
 			{
 				if(!MatrixValid)
 					ConvertQuaternionToMatrix();
 				return T4;
 			}
-			const simul::math::Quaternion &GetQuaternion() const
+			const platform::math::Quaternion &GetQuaternion() const
 			{
 				return q;
 			}
-			const simul::math::Matrix4x4 &GetInverseMatrix() const
+			const platform::math::Matrix4x4 &GetInverseMatrix() const
 			{
 				if(!MatrixValid)
 					ConvertQuaternionToMatrix();
@@ -56,15 +56,15 @@ namespace simul
 			}
 			SimulOrientation();
 			SimulOrientation(const SimulOrientation &o);
-			SimulOrientation(const simul::math::Quaternion &q);
-			SimulOrientation(const simul::math::Matrix4x4 &M);
+			SimulOrientation(const platform::math::Quaternion &q);
+			SimulOrientation(const platform::math::Matrix4x4 &M);
 			SimulOrientation(const float *m);
 			~SimulOrientation();
 			void Clear();
 		// operators
 			void operator=(const SimulOrientation &o);
 			void operator=(const float *m);
-			void operator=(const simul::math::Matrix4x4 &M);
+			void operator=(const platform::math::Matrix4x4 &M);
 			bool operator==(const SimulOrientation &o)
 			{
 				math::Vector3 xe=GetPosition();
@@ -117,10 +117,10 @@ namespace simul
 			void Move(const math::Vector3 &offset);								///< Move the orientation by \param offset in global co-ordinates.
 			void LocalMove(const math::Vector3 &offset);						///< Move the orientation by \param offset in local co-ordinates.
 			void RotateLinear(float angle,const math::Vector3 &axis);			///< Rotate the orientation approximately angle radians about the global axis, axis.
-			void Define(const simul::math::Quaternion &s);
-			void Define(const simul::math::Matrix4x4 &M);
-			void Define(const simul::math::Vector3 &X,const simul::math::Vector3 &Y,const simul::math::Vector3 &Z);
-			void Define(const simul::math::Vector3 &X,const simul::math::Vector3 &Y,const simul::math::Vector3 &Z,const simul::math::Vector3 &pos);
+			void Define(const platform::math::Quaternion &s);
+			void Define(const platform::math::Matrix4x4 &M);
+			void Define(const platform::math::Vector3 &X,const platform::math::Vector3 &Y,const platform::math::Vector3 &Z);
+			void Define(const platform::math::Vector3 &X,const platform::math::Vector3 &Y,const platform::math::Vector3 &Z,const platform::math::Vector3 &pos);
 			void Define(float s,float x,float y,float z);
 			void QuaternionFromAircraft(float a,float b,float c,int vertical_axis=2);				///< Set rotation from the Aircraft Euler angles, yaw pitch and roll.
 			void QuaternionFromClassical(float a,float b,float c);
@@ -128,7 +128,7 @@ namespace simul
 			void CalcMaxIsotropicScales();
 			float GetMaxIsotropicScale();
 			float GetMaxInverseIsotropicScale();
-			friend SIMUL_MATH_EXPORT void RelativeOrientationFrom1To2(SimulOrientation &Orientation1To2,simul::geometry::SimulOrientation *O1,simul::geometry::SimulOrientation *O2);
+			friend SIMUL_MATH_EXPORT void RelativeOrientationFrom1To2(SimulOrientation &Orientation1To2,platform::math::SimulOrientation *O1,platform::math::SimulOrientation *O2);
 			friend SIMUL_MATH_EXPORT std::ostream &operator<<(std::ostream &, SimulOrientation const &);
 			friend SIMUL_MATH_EXPORT std::istream &operator>>(std::istream &, SimulOrientation &);
 		};

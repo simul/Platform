@@ -17,7 +17,7 @@ typedef void* cp_hwnd;
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/RenderDelegate.h"
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -43,7 +43,7 @@ namespace simul
 			virtual void				ResizeView(int view_id,int w,int h)=0;
 			//! Render the specified view. It's up to the renderer to decide what that means. The renderTexture is required because many API's don't allow querying of the current state.
 			//! It will be assumed for simplicity that the viewport should be restored to the entire size of the renderTexture.
-			virtual void				Render(int view_id,void* pContext,void* renderTexture,int w,int h,long long frame)=0;
+			virtual void				Render(int view_id,void* pContext,void* renderTexture,int w,int h,long long frame,void* context_allocator=nullptr)=0;
 			virtual void				SetRenderDelegate(int /*view_id*/,crossplatform::RenderDelegate /*d*/){}
 		};
 		/// An interface class for managing GPU-accelerated graphics windows.

@@ -11,7 +11,7 @@
 #include <string>
 #include <assert.h>
 
-using namespace simul;
+using namespace platform;
 using namespace dx12;
 
 Framebuffer::Framebuffer(const char *n) :
@@ -40,7 +40,12 @@ void Framebuffer::SetAntialiasing(int a)
     if (numAntialiasingSamples != a)
     {
         numAntialiasingSamples = a;
-        InvalidateDeviceObjects();
+		if(!external_texture)
+			SAFE_DELETE(buffer_texture);
+		if(!external_depth_texture)
+			SAFE_DELETE(buffer_depth_texture);
+		buffer_texture=NULL;
+		buffer_depth_texture=NULL;
     }
 }
 
@@ -74,6 +79,12 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	// Push current target and viewport
     targetsAndViewport.num				= 1;
     targetsAndViewport.m_rt[0]			= rtView;
+	targetsAndViewport.textureTargets[0].texture=buffer_texture;
+	targetsAndViewport.textureTargets[0].layer=0;
+	targetsAndViewport.textureTargets[0].mip=0;
+	targetsAndViewport.depthTarget.texture=buffer_depth_texture;
+	targetsAndViewport.depthTarget.layer = 0;
+	targetsAndViewport.depthTarget.mip = 0;
     targetsAndViewport.rtFormats[0]     = col12Texture->pixelFormat;
     targetsAndViewport.m_dt				= dsView;
     if (buffer_depth_texture&&buffer_depth_texture->IsValid())
@@ -99,7 +110,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 
 void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext&)
 {
-	SIMUL_BREAK_ONCE("Nacho has to check this");
+	//SIMUL_BREAK_ONCE("Nacho has to check this");
 }
 
 void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext)

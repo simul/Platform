@@ -8,7 +8,7 @@
 
 #include <string>
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 #pragma optimize("",off)
 
@@ -172,7 +172,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	last_placement=nullptr;
 }
 
-void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr)
+void  PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext &deviceContext,size_t size,void *addr)
 {
 	if(!m_pD3D11Buffer)
 	{
@@ -203,12 +203,12 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		{
 			buffer_index = 0;
 		}
-		if(framenumber!=deviceContext.frame_number)
+		if(framenumber!=deviceContext.GetFrameNumber())
 		{
 			num_this_frame=0;
 		}
 		num_this_frame++;
-		framenumber=deviceContext.frame_number;
+		framenumber=deviceContext.GetFrameNumber();
 		#ifndef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
 			#error use cache line aligned buffers, otherwise an explicit flush for fast semantics is required here
 		#endif
@@ -242,6 +242,6 @@ void *PlatformConstantBuffer::GetBaseAddr()
 
 
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
+void PlatformConstantBuffer::Unbind(platform::crossplatform::DeviceContext &)
 {
 }

@@ -8,33 +8,29 @@
 
 //API Selection Marcos
 #ifdef SAMPLE_USE_ALL_X64_API
-#define SAMPLE_USE_D3D11
-#define SAMPLE_USE_D3D12
-#define SAMPLE_USE_VULKAN
-#define SAMPLE_USE_OPENGL
+#define SAMPLE_USE_D3D11 1
+#define SAMPLE_USE_D3D12 1
+#define SAMPLE_USE_VULKAN 1
+#define SAMPLE_USE_OPENGL 1
 #endif
 
 //Platform includes
 #include "Platform/Core/EnvironmentVariables.h"
-#ifdef SAMPLE_USE_D3D12
+#if SAMPLE_USE_D3D12
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/DirectX12/DeviceManager.h"
-#include "Platform/DirectX12/Texture.h"
 #endif
-#ifdef SAMPLE_USE_D3D11
+#if SAMPLE_USE_D3D11
 #include "Platform/DirectX11/RenderPlatform.h"
-#include "Platform/DirectX11/Direct3D11Manager.h"
-#include "Platform/DirectX11/Texture.h"
+#include "Platform/DirectX11/DeviceManager.h"
 #endif
-#ifdef SAMPLE_USE_VULKAN
+#if SAMPLE_USE_VULKAN
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/DeviceManager.h"
-#include "Platform/Vulkan/Texture.h"
 #endif
-#ifdef SAMPLE_USE_OPENGL
+#if SAMPLE_USE_OPENGL
 #include "Platform/OpenGL/RenderPlatform.h"
 #include "Platform/OpenGL/DeviceManager.h"
-#include "Platform/OpenGL/Texture.h"
 #endif 
 #include "Platform/CrossPlatform/RenderDocLoader.h"
 #include "Platform/CrossPlatform/HDRRenderer.h"
@@ -45,18 +41,18 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/CommandLineParams.h"
+#include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
+
 
 #ifdef _MSC_VER
 #include "Platform/Windows/VisualStudioDebugOutput.h"
 VisualStudioDebugOutput debug_buffer(true, NULL, 128);
 #endif
 
-using namespace simul;
+using namespace platform;
 
 //Other Windows Header Files
 #include <SDKDDKVer.h>
@@ -67,23 +63,23 @@ using namespace simul;
 #define STRING_OF_MACRO(x) STRING_OF_MACRO1(x)
 
 //Per API device managers 
-#ifdef SAMPLE_USE_D3D11
-dx11::Direct3D11Manager dx11_deviceManager;
+#if SAMPLE_USE_D3D11
+dx11::DeviceManager dx11_deviceManager;
 #endif
-#ifdef SAMPLE_USE_D3D12
+#if SAMPLE_USE_D3D12
 dx12::DeviceManager dx12_deviceManager;
 #endif
-#ifdef SAMPLE_USE_VULKAN
+#if SAMPLE_USE_VULKAN
 vulkan::DeviceManager vk_deviceManager;
 #endif
-#ifdef SAMPLE_USE_OPENGL
+#if SAMPLE_USE_OPENGL
 opengl::DeviceManager gl_deviceManager;
 #endif
 
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 
-crossplatform::CommandLineParams commandLineParams;
+platform::core::CommandLineParams commandLineParams;
 
 HWND hWnd = nullptr;
 HINSTANCE hInst;
@@ -100,7 +96,13 @@ int kOverrideHeight = 900;
 
 enum class TestType
 {
+	UNKNOWN,
 	CLEAR_COLOUR,
+	QUAD_COLOUR,
+	TEXT,
+	CHECKERBOARD,
+	FIBONACCI,
+	TVTESTCARD
 };
 
 class PlatformRenderer : public crossplatform::PlatformRendererInterface
@@ -113,57 +115,69 @@ public:
 	int framenumber = 0;
 
 	//Render Primitives
-	crossplatform::RenderPlatform*					renderPlatform	= nullptr;
-	crossplatform::Texture*							depthTexture	= nullptr;
-	crossplatform::HdrRenderer*						hdrRenderer		= nullptr;
-	crossplatform::BaseFramebuffer*					hdrFramebuffer	= nullptr;
-	crossplatform::Effect*							effect			= nullptr;
+	crossplatform::RenderPlatform* renderPlatform = nullptr;
+	crossplatform::Texture* depthTexture = nullptr;
+	crossplatform::HdrRenderer* hdrRenderer = nullptr;
+	crossplatform::BaseFramebuffer* hdrFramebuffer = nullptr;
+	crossplatform::Effect* effect = nullptr;
 	crossplatform::ConstantBuffer<SceneConstants>	sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants>	cameraConstants;
 
 	//Scene Objects
 	crossplatform::Camera							camera;
 
+	//Test Object
+	crossplatform::StructuredBuffer<uint>			rwSB;
+	crossplatform::StructuredBuffer<vec4>			roSB;
+
 public:
 	PlatformRenderer(const crossplatform::RenderPlatformType& rpType, const TestType& tType, bool use_debug)
 		:renderPlatformType(rpType), testType(tType), debug(use_debug)
 	{
 		//Inital RenderPlatform and RenderDoc
+		//if (debug)
+			crossplatform::RenderDocLoader::Load();
+		
 		switch (renderPlatformType)
 		{
 		case crossplatform::RenderPlatformType::D3D11:
 		{
+#if SAMPLE_USE_D3D11
 			graphicsDeviceInterface = &dx11_deviceManager;
 			renderPlatform = new dx11::RenderPlatform();
+#endif
 			break;
 		}
 		default:
 		case crossplatform::RenderPlatformType::D3D12:
 		{
+#if SAMPLE_USE_D3D12
 			graphicsDeviceInterface = &dx12_deviceManager;
 			renderPlatform = new dx12::RenderPlatform();
+#endif
 			break;
 		}
 		case crossplatform::RenderPlatformType::Vulkan:
 		{
+#if SAMPLE_USE_VULKAN
 			graphicsDeviceInterface = &vk_deviceManager;
 			renderPlatform = new vulkan::RenderPlatform();
+#endif
 			break;
 		}
 		case crossplatform::RenderPlatformType::OpenGL:
 		{
+#if SAMPLE_USE_OPENGL
 			graphicsDeviceInterface = &gl_deviceManager;
 			renderPlatform = new opengl::RenderPlatform();
+#endif
 			break;
 		}
 		}
-
 		graphicsDeviceInterface->Initialize(debug, false, false);
-		if (debug)
-			crossplatform::RenderDocLoader::Load();
-
+		
 		//RenderPlatforn Set up
-		renderPlatform->SetShaderBuildMode(simul::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
+		renderPlatform->SetShaderBuildMode(platform::crossplatform::ShaderBuildMode::BUILD_IF_CHANGED);
 		renderPlatform->PushTexturePath("Textures");
 
 		switch (renderPlatformType)
@@ -260,13 +274,6 @@ public:
 
 	void OnCreateDevice()
 	{
-#ifdef SAMPLE_USE_D3D12
-		if (renderPlatformType == crossplatform::RenderPlatformType::D3D12)
-		{
-			// We will provide a command list so initialization of following resource can take place
-			((dx12::RenderPlatform*)renderPlatform)->SetImmediateContext((dx12::ImmediateContext*)dx12_deviceManager.GetImmediateContext());
-		}
-#endif
 		void* device = graphicsDeviceInterface->GetDevice();
 		renderPlatform->RestoreDeviceObjects(device);
 
@@ -278,12 +285,6 @@ public:
 		sceneConstants.LinkToEffect(effect, "SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 
-#ifdef SAMPLE_USE_D3D12
-		if (renderPlatformType == crossplatform::RenderPlatformType::D3D12)
-		{
-			dx12_deviceManager.FlushImmediateCommandList();
-		}
-#endif
 	}
 
 	void OnLostDevice()
@@ -312,7 +313,7 @@ public:
 		return true;
 	}
 
-	int AddView() override 
+	int AddView() override
 	{
 		static int last_view_id = 0;
 		return last_view_id++;
@@ -320,10 +321,13 @@ public:
 	void RemoveView(int id) override {};
 	void ResizeView(int view_id, int W, int H) override {};
 
-	void Render(int view_id, void* context, void* colorBuffer, int w, int h, long long frame) override
+	void Render(int view_id, void* context, void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
 	{
+		if (w * h == 0) //FramebufferGL can't deal with a viewport of {0,0,0,0}!
+			return;
+
 		// Device context structure
-		simul::crossplatform::GraphicsDeviceContext	deviceContext;
+		platform::crossplatform::GraphicsDeviceContext	deviceContext;
 
 		// Store back buffer, depth buffer and viewport information
 		deviceContext.defaultTargetsAndViewport.num = 1;
@@ -332,7 +336,7 @@ public:
 		deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
 		deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
 		deviceContext.defaultTargetsAndViewport.viewport = { 0, 0, w, h };
-		deviceContext.frame_number = framenumber;
+		
 		deviceContext.platform_context = context;
 		deviceContext.renderPlatform = renderPlatform;
 		deviceContext.viewStruct.view_id = view_id;
@@ -351,36 +355,199 @@ public:
 			deviceContext.viewStruct.Init();
 		}
 
-		//Begin frame
-		renderPlatform->BeginFrame(deviceContext);
+		hdrFramebuffer->SetWidthAndHeight(w, h);
+		hdrFramebuffer->Activate(deviceContext);
 
 		switch (testType)
 		{
 		default:
 		case TestType::CLEAR_COLOUR:
 		{
-			Test_ClearColour(deviceContext, w, h);
+			Test_ClearColour(deviceContext);
+			break;
+		}
+		case TestType::QUAD_COLOUR:
+		{
+			Test_QuadColour(deviceContext, w, h);
+			break;
+		}
+		case TestType::TEXT:
+		{
+			Test_Text(deviceContext, w, h);
+			break;
+		}
+		case TestType::CHECKERBOARD:
+		{
+			Test_Checkerboard(deviceContext, w, h);
+			break;
+		}
+		case TestType::FIBONACCI:
+		{
+			Test_Fibonacci(deviceContext);
+			break;
+		}
+		case TestType::TVTESTCARD:
+		{
+			Test_TVTestCard(deviceContext, w, h);
 			break;
 		}
 		}
 
+		hdrFramebuffer->Deactivate(deviceContext);
 		hdrRenderer->Render(deviceContext, hdrFramebuffer->GetTexture(), 1.0f, 0.44f);
 
 		framenumber++;
 	}
 
-	void Test_ClearColour(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	void Test_ClearColour(crossplatform::GraphicsDeviceContext& deviceContext)
 	{
-		hdrFramebuffer->SetWidthAndHeight(w, h);
-		hdrFramebuffer->Activate(deviceContext);
-		hdrFramebuffer->Clear(deviceContext, 1.0f, 0.0f, 1.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
-		hdrFramebuffer->Deactivate(deviceContext);
+		hdrFramebuffer->Clear(deviceContext, 0.00f, 0.31f, 0.57f, 1.00f, reverseDepth ? 0.0f : 1.0f);
 	}
 
+	void Test_QuadColour(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		hdrFramebuffer->Clear(deviceContext, 0.00f, 0.31f, 0.57f, 1.00f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->GetDebugConstantBuffer().multiplier = vec4(0.0f, 0.33f, 1.0f, 1.0f);
+		renderPlatform->SetConstantBuffer(deviceContext, &(renderPlatform->GetDebugConstantBuffer()));
+		renderPlatform->DrawQuad(deviceContext, w / 4, h / 4, w / 2, h / 2, renderPlatform->GetDebugEffect(), renderPlatform->GetDebugEffect()->GetTechniqueByName("untextured"), "noblend");
+	}
+
+	void Test_Text(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		int x = w / 4;
+		int y = h / 4;
+
+		std::string api = std::string("API: ") + renderPlatform->GetName();
+		std::string message;
+		switch (renderPlatformType)
+		{
+		case crossplatform::RenderPlatformType::D3D11:
+			message = "All your binaries are belong to us.";
+			break;
+		default:
+		case crossplatform::RenderPlatformType::D3D12:
+			message = "It's a trap!";
+			break;
+		case crossplatform::RenderPlatformType::Vulkan:
+			message = "You've met with a terrible fate, haven't you?"; 
+			break;
+		case crossplatform::RenderPlatformType::OpenGL:
+			message = "It's an older code, sir, but it checks out.";
+			break;
+		}
+		renderPlatform->Print(deviceContext, x, y, api.c_str()); y += 16;
+		renderPlatform->Print(deviceContext, x, y, message.c_str()); y += 16;
+	}
+
+	void Test_Checkerboard(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
+		crossplatform::EffectTechnique* checkerboard = test->GetTechniqueByName("test_checkerboard");
+		crossplatform::ShaderResource res = test->GetShaderResource("rwImage");
+
+		crossplatform::Texture* texture = renderPlatform->CreateTexture();
+		texture->ensureTexture2DSizeAndFormat(renderPlatform, 512, 512,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+
+		renderPlatform->ApplyPass(deviceContext, checkerboard->GetPass(0));
+		renderPlatform->SetUnorderedAccessView(deviceContext, res, texture);
+		renderPlatform->DispatchCompute(deviceContext, texture->width / 32, texture->length / 32, 1);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res, nullptr);
+		renderPlatform->UnapplyPass(deviceContext);
+
+		hdrFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5f, 1.00f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->DrawTexture(deviceContext, (w - h) / 2, 0, h, h, texture);
+	}
+
+	void Test_Fibonacci(crossplatform::GraphicsDeviceContext deviceContext)
+	{
+		static bool first = true;
+		if (first)
+		{
+			rwSB.RestoreDeviceObjects(renderPlatform, 32, true, true);
+			first = false;
+		}
+
+		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
+		crossplatform::EffectTechnique* fibonacci = test->GetTechniqueByName("test_fibonacci");
+		crossplatform::ShaderResource res = test->GetShaderResource("rwSB");
+
+		rwSB.ApplyAsUnorderedAccessView(deviceContext, test, res);
+		renderPlatform->ApplyPass(deviceContext, fibonacci->GetPass(0));
+		renderPlatform->DispatchCompute(deviceContext, 1, 1, 1);
+		renderPlatform->UnapplyPass(deviceContext);
+		rwSB.CopyToReadBuffer(deviceContext);
+
+		//First buffer won't be ready as it a ring of buffers
+		if (deviceContext.GetFrameNumber() < 3)
+			return;
+
+		bool pass = true;
+		const uint* ptr = rwSB.OpenReadBuffer(deviceContext);
+		if (!ptr)
+		{
+			pass = false;
+		}
+		if (ptr[0] != 1 && ptr[1] != 1)
+		{
+			pass = false;
+		}
+		for (int i = 2; i < rwSB.count; i++)
+		{
+			uint a = ptr[i - 2];
+			uint b = ptr[i - 1];
+
+			if (ptr[i] != (a + b))
+			{
+				pass = false;
+				break;
+			}
+		}
+
+		rwSB.CloseReadBuffer(deviceContext);
+		vec4 colour = pass ? vec4(0, 1, 0, 1) : vec4(1, 0, 0, 1);
+		hdrFramebuffer->Clear(deviceContext, colour.x, colour.y, colour.z, colour.w, reverseDepth ? 0.0f : 1.0f);
+	}
+
+	void Test_TVTestCard(crossplatform::GraphicsDeviceContext deviceContext, int w, int h)
+	{
+		vec4 colours[8] = {
+			vec4(1,0,0,1),
+			vec4(0,1,0,1),
+			vec4(0,0,1,1),
+			vec4(0,1,1,1),
+			vec4(1,0,1,1),
+			vec4(1,1,0,1),
+			vec4(1,1,1,1),
+			vec4(0,0,0,0)
+		};
+		roSB.RestoreDeviceObjects(renderPlatform, _countof(colours), false, true, colours);
+		vec4* ptr = roSB.GetBuffer(deviceContext);
+		if (ptr)
+			memcpy(ptr, colours, sizeof(colours));
+		else
+			return;
+
+		crossplatform::Texture* texture = renderPlatform->CreateTexture();
+		texture->ensureTexture2DSizeAndFormat(renderPlatform, w, h, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+
+		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
+		crossplatform::EffectTechnique* tvtestcard = test->GetTechniqueByName("test_tvtestcard");
+		crossplatform::ShaderResource res_roSB = test->GetShaderResource("roSB");
+		crossplatform::ShaderResource res_rwImage = test->GetShaderResource("rwImage");
+	
+		renderPlatform->ApplyPass(deviceContext, tvtestcard->GetPass(0));
+		roSB.Apply(deviceContext, test, res_roSB);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res_rwImage, texture);
+		renderPlatform->DispatchCompute(deviceContext, texture->width/32, texture->length/32, 1);
+		renderPlatform->UnapplyPass(deviceContext);
+
+		hdrFramebuffer->Clear(deviceContext, 1.0f, 0.0f, 0.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->DrawTexture(deviceContext, 0, 0, w, h, texture);
+	}
 };
 PlatformRenderer* platformRenderer;
 
-simul::crossplatform::RenderPlatformType GetRenderPlatformTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
+platform::crossplatform::RenderPlatformType GetRenderPlatformTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
 {
 	for (int i = 0; i < argCount; i++)
 	{
@@ -407,11 +574,13 @@ simul::crossplatform::RenderPlatformType GetRenderPlatformTypeFromCmdLnArgs(wcha
 		}
 		else
 		{
-			SIMUL_COUT << "Unknown API Type. This should be a specified on the command line arguments\n";
-			SIMUL_COUT << "Defaulting to D3D12.\n";
-			return crossplatform::RenderPlatformType::D3D12;
+			continue;
 		}
 	}
+	
+	SIMUL_COUT << "Unknown API Type. This should be a specified on the command line arguments\n";
+	SIMUL_COUT << "Defaulting to D3D12.\n";
+	return crossplatform::RenderPlatformType::D3D12;
 }
 
 TestType GetTestTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
@@ -428,66 +597,18 @@ TestType GetTestTypeFromCmdLnArgs(wchar_t** szArgList, int argCount)
 		}
 	}
 	if(!testFound)
-		{
-			SIMUL_COUT << "Unknown TestType. This should be a specified on the command line arguments\n";
-			SIMUL_COUT << "Defaulting to TestType::CLEAR_COLOUR.\n";
-			return TestType::CLEAR_COLOUR;
-		}
+	{
+		SIMUL_COUT << "Unknown TestType. This should be a specified on the command line arguments\n";
+		SIMUL_COUT << "Defaulting to TestType::CLEAR_COLOUR.\n";
+		return TestType::CLEAR_COLOUR;
+	}
+	return TestType::UNKNOWN;
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent;
 	switch (message)
 	{
-		/*case WM_MOUSEWHEEL:
-			if (renderer)
-			{
-				int xPos = GET_X_LPARAM(lParam);
-				int yPos = GET_Y_LPARAM(lParam);
-				short zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-				renderer->OnMouse((wParam & MK_LBUTTON) != 0
-					, (wParam & MK_RBUTTON) != 0
-					, (wParam & MK_MBUTTON) != 0
-					, 0, xPos, yPos);
-			}
-			break;
-		case WM_MOUSEMOVE:
-			if (renderer)
-			{
-				int xPos = GET_X_LPARAM(lParam);
-				int yPos = GET_Y_LPARAM(lParam);
-				renderer->OnMouse((wParam & MK_LBUTTON) != 0
-					, (wParam & MK_RBUTTON) != 0
-					, (wParam & MK_MBUTTON) != 0
-					, 0, xPos, yPos);
-			}
-			break;
-		case WM_KEYDOWN:
-			if (renderer)
-				renderer->OnKeyboard((unsigned)wParam, true);
-			break;
-		case WM_KEYUP:
-			if (renderer)
-				renderer->OnKeyboard((unsigned)wParam, false);
-			break;
-		case WM_COMMAND:
-			wmId = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
-			// Parse the menu selections:
-			//switch (wmId)
-			return DefWindowProc(hWnd, message, wParam, lParam);
-			break;
-		case WM_SIZE:
-			if (renderer)
-			{
-				INT Width = LOWORD(lParam);
-				INT Height = HIWORD(lParam);
-				if (Width > 8192 || Height > 8192 || Width < 0 || Height < 0)
-					break;
-				displaySurfaceManager.ResizeSwapChain(hWnd);
-			}
-			break;*/
 	case WM_PAINT:
 		if (platformRenderer)
 		{
@@ -516,7 +637,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	int argCount;
 	szArgList = CommandLineToArgvW(GetCommandLineW(), &argCount);
 
-	simul::crossplatform::RenderPlatformType x64_API = GetRenderPlatformTypeFromCmdLnArgs(szArgList, argCount);
+	platform::crossplatform::RenderPlatformType x64_API = GetRenderPlatformTypeFromCmdLnArgs(szArgList, argCount);
 
 	TestType test = GetTestTypeFromCmdLnArgs(szArgList, argCount);
 

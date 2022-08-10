@@ -10,14 +10,15 @@
     #include <windows.h>
 #endif
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 FramebufferGL::FramebufferGL(const char* name):
     BaseFramebuffer(name),
     mFBOId(0)
 {
-    this->name = name;
+    if (name)
+        this->name = name;
 }
 
 FramebufferGL::~FramebufferGL()
@@ -211,7 +212,9 @@ void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext
 
     // Construct targets and viewport:
     targetsAndViewport.num              = 1;
-    targetsAndViewport.m_rt[0]          = (void*)(mFBOId[fb]);
+	GLuint fboid						= mFBOId[fb];
+	unsigned long long	fboid_ull		=(unsigned long long)fboid;
+    targetsAndViewport.m_rt[0]          = (void*)(fboid_ull);
     targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;

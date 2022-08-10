@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #if WINVER>=0x0800
 #include <Stringapiset.h>
 #else

@@ -1,24 +1,20 @@
 #include "DeviceContext.h"
-using namespace simul;
+#include "RenderPlatform.h"
+using namespace platform;
 using namespace crossplatform;
 
+long long DeviceContext::GetFrameNumber() const
+{
+
+	return frame_number;
+}
+//! Only RenderPlatform should call this.
+void DeviceContext::SetFrameNumber(long long n)
+{
+	frame_number = n;
+}
 
 ContextState::ContextState()
-				:last_action_was_compute(false)
-				,effectPassValid(false)
-				,vertexBuffersValid(false)
-				,constantBuffersValid(false)
-				,structuredBuffersValid(false)
-				,rwStructuredBuffersValid(false)
-				,samplerStateOverridesValid(true)
-				,textureAssignmentMapValid(false)
-				,rwTextureAssignmentMapValid(false)
-				,streamoutTargetsValid(false)
-				,textureSlots(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,textureSlotsForSB(0)
-				,bufferSlots(0)
 {
 	memset(viewports,0,8*sizeof(Viewport));
 }
@@ -37,6 +33,17 @@ GraphicsDeviceContext::GraphicsDeviceContext():
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
 }
 
+
+crossplatform::TargetsAndViewport *GraphicsDeviceContext::GetCurrentTargetsAndViewport()
+{
+	if(GetFrameBufferStack().size())
+	{
+		crossplatform::TargetsAndViewport *f=GetFrameBufferStack().top();
+		if(f)
+			return f;
+	}
+	return &defaultTargetsAndViewport;
+}
 
 void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	,const ApiDepthRenderTarget* dt
@@ -68,13 +75,38 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 		if (depth_target)
 			defaultTargetsAndViewport.depthFormat = depth_target->GetFormat();
 	}
+
+	//TargetsAndViewport::num is defaulted to 0, but an valid RTV here should count.
+	if (defaultTargetsAndViewport.num == 0 && rt)
+		defaultTargetsAndViewport.num = 1;
+
 	defaultTargetsAndViewport.m_rt[0] = rt;
 	defaultTargetsAndViewport.m_rt[1] = nullptr;
 	defaultTargetsAndViewport.m_rt[2] = nullptr;
 	defaultTargetsAndViewport.m_rt[3] = nullptr;
+	defaultTargetsAndViewport.m_rt[4] = nullptr;
+	defaultTargetsAndViewport.m_rt[5] = nullptr;
+	defaultTargetsAndViewport.m_rt[6] = nullptr;
+	defaultTargetsAndViewport.m_rt[7] = nullptr;
 	defaultTargetsAndViewport.m_dt = dt;
+
 	defaultTargetsAndViewport.viewport.x = viewportLeft;
 	defaultTargetsAndViewport.viewport.y = viewportTop;
 	defaultTargetsAndViewport.viewport.w = viewportRight - viewportLeft;
 	defaultTargetsAndViewport.viewport.h = viewportBottom - viewportTop;
+}
+
+ComputeDeviceContext::ComputeDeviceContext()
+{
+	deviceContextType = DeviceContextType::COMPUTE;
+}
+ComputeDeviceContext* ComputeDeviceContext::AsComputeDeviceContext() 
+{
+	return this;
+}
+
+// TODO: this is terrible, let's get rid of it.
+void ComputeDeviceContext::UpdateFrameNumbers(DeviceContext& deviceContext)
+{
+	this->frame_number = renderPlatform->GetFrameNumber();
 }

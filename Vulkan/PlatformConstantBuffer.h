@@ -10,7 +10,7 @@
 	#pragma warning(disable:4275)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{
@@ -39,7 +39,7 @@ namespace simul
 			unsigned						mSlots;					//number of 256-byte chunks of memory...
 			unsigned						mMaxDescriptors;
 
-			unsigned						mLastFrameIndex;
+			int64_t							mLastFrameIndex;
 			unsigned						mCurApplyCount;
 
 			vk::Buffer 						mBuffers[kNumBuffers];
@@ -50,6 +50,7 @@ namespace simul
 			size_t size;
 			size_t last_offset;
 			vk::Buffer *lastBuffer;
+			unsigned char currentFrameIndex = 0;
 		};
 	}
 }

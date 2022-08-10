@@ -6,13 +6,13 @@
 extern const char *DXGetErrorStringA(HRESULT hr)
 {
 	static std::string str;
-	char *lpBuf;
-	DWORD res=FormatMessage(
+	char *lpBuf=nullptr;
+	DWORD res= FormatMessageA(
 #ifndef _XBOX_ONE
 			FORMAT_MESSAGE_ALLOCATE_BUFFER |
 #endif
 			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, hr, 0, (LPTSTR)&lpBuf, 0, NULL);
+			NULL, hr, 0, (LPSTR)&lpBuf, 0, NULL);
 	if(lpBuf)
 		str=lpBuf;
 #ifndef _XBOX_ONE
@@ -23,13 +23,13 @@ extern const char *DXGetErrorStringA(HRESULT hr)
 extern const char *DXGetErrorDescriptionA(HRESULT hr)
 {
 	static std::string str;
-	char *lpBuf;
-	DWORD res=FormatMessage(
+	char *lpBuf = nullptr;
+	DWORD res= FormatMessageA(
 #ifndef _XBOX_ONE
 			FORMAT_MESSAGE_ALLOCATE_BUFFER |
 #endif
 			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, hr, 0, (LPTSTR)&lpBuf, 0, NULL);
+			NULL, hr, 0, (LPSTR)&lpBuf, 0, NULL);
 	if(lpBuf)
 		str=lpBuf;
 #ifndef _XBOX_ONE

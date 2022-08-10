@@ -244,6 +244,8 @@ void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration 
 
 void Effect::AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const
 {
+	if(!f)
+		return;
 	for (auto i : f->globals)
 	{
 		s.insert(i);
@@ -600,6 +602,8 @@ string stringOf(ShaderCommand t)
 		return "closesthit";
 	case SetCallableShader:
 		return "callable";
+	case SetIntersectionShader:
+		return "intersection";
 	case SetExportShader:
 		return "export";
 	default:
@@ -694,6 +698,8 @@ ShaderInstance *Effect::AddShaderInstance(const std::string &shaderInstanceName,
 	if(i!=m_shaderInstances.end())
 		return i->second;
 	Function *function=gEffect->GetFunction(functionName,0);
+	if(!function)
+		return nullptr;
 	std::set<Declaration *> declarations;
 	std::set<string> globals;
 	gEffect->AccumulateGlobalsAsStrings(function,globals);
@@ -1023,7 +1029,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			continue;
 		DepthStencilState *d=(DepthStencilState *)t->second;
 		outstr<<"DepthStencilState "<<t->first<<" "
-			<<ToString(d->DepthEnable)
+			<<ToString(d->DepthTestEnable)
 			<<","<<ToString(d->DepthWriteMask)
 			<<","<<ToString((int)d->DepthFunc);
 		outstr<<"\n";
@@ -1240,6 +1246,65 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					}
 					outstr<<"\t\t\t}\n";
 				}
+
+				//If it's raytrace, go through the miss shaders.
+				if (!pass->passState.missShaders.empty())
+				{
+					outstr << "\t\t\tMissShaders:" << "\n\t\t\t{\n";
+					for (auto m : pass->passState.missShaders)
+					{
+						if (m.length())
+						{
+							ShaderInstance* shaderInstance = GetShaderInstance(m, MISS_SHADER);
+							outstr << "\t\t\t\t";
+							writeSb(outstr, shaderInstance, shaderInstance->sbFilenames[0]);
+						}
+					}
+					outstr << "\t\t\t}\n";
+				}
+
+				//If it's raytrace, go through the callable shaders.
+				if (!pass->passState.callableShaders.empty())
+				{
+					outstr << "\t\t\tCallableShaders:" << "\n\t\t\t{\n";
+					for (auto c : pass->passState.callableShaders)
+					{
+						if (c.length())
+						{
+							ShaderInstance* shaderInstance = GetShaderInstance(c, CALLABLE_SHADER);
+							outstr << "\t\t\t\t";
+							writeSb(outstr, shaderInstance, shaderInstance->sbFilenames[0]);
+						}
+					}
+					outstr << "\t\t\t}\n";
+				}
+
+				//If it's raytrace, define the Shader and Pipeline configs
+				if (!pass->passState.raytraceHitGroups.empty())
+				{
+					//---RayTracingShaderConfig---
+					outstr << "\t\t\tRayTracingShaderConfig:" << "\n\t\t\t{\n";
+					
+					//Default is sizeof(float) * 8.
+					int maxPayloadSize = pass->passState.maxPayloadSize != 0 ? pass->passState.maxPayloadSize : 32; 
+					outstr << "\t\t\t\t" << "MaxPayloadSize: " << std::to_string(maxPayloadSize) << "\n";
+
+					//Default is sizeof(BuiltInTriangleIntersectionAttributes).
+					int maxAttributeSize = pass->passState.maxAttributeSize != 0 ? pass->passState.maxAttributeSize : 8; 
+					outstr << "\t\t\t\t" << "MaxAttributeSize: " << std::to_string(maxAttributeSize) << "\n";
+
+					outstr << "\t\t\t}\n";
+					
+					//---RayTracingPipelineConfig---
+					outstr << "\t\t\tRayTracingPipelineConfig:" << "\n\t\t\t{\n";
+
+					//Default is 2 for inital hit and shadow.
+					int maxTraceRecursionDepth = pass->passState.maxTraceRecursionDepth != 0 ? pass->passState.maxTraceRecursionDepth : 2; 
+					outstr << "\t\t\t\t" << "MaxTraceRecursionDepth: " << std::to_string(maxTraceRecursionDepth) << "\n";
+
+					outstr << "\t\t\t}\n";
+				}
+
 				outstr<<"\t\t}\n";
 			}
 			outstr<<"\t}\n";
@@ -1256,7 +1321,10 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 	// TODO: binary is here, sfxb not needed??
 		outstr.write((const char *)binBuffer.data(), binBuffer.size());
 	}
-	std::cout<<sfxoFilename.c_str()<<": info: output effect file."<<std::endl;
+	if(sfxOptions.verbose)
+	{
+		std::cout<<sfxoFilename.c_str()<<": info: output effect file."<<std::endl;
+	}
 	return res!=0;
 }
 
@@ -1265,6 +1333,41 @@ bool Effect::IsDeclared(const string &name)
 	if (declarations.find(name) != declarations.end())
 		return true;
 	return false;
+}
+
+bool Effect::IsConstantBufferMemberAlignmentValid(const Declaration* d)
+{
+	const Struct* structure = (const Struct*)d;
+	int offset = 0;
+	for (const StructMember& member : structure->m_structMembers)
+	{
+		std::regex digits("\\d");
+		std::smatch match;
+		int size = 4;
+		if (std::regex_search(member.type, match, digits))
+		{
+			size *= atoi(match[0].str().c_str());
+		}
+		if (member.type.find(match[0].str() + "x" + match[0].str()) != std::string::npos
+			|| member.type.find("mat") != std::string::npos)
+		{
+			size *= atoi(match[0].str().c_str());
+		}
+
+		//std::cout << offset << ": " << structure->name << "::" << member.name << "\n";
+
+		if (((offset % 16) && (size > 8))
+			|| ((offset % 8) && (size == 8)))
+		{
+			std::cerr << fileList[d->file_number] << "(" << d->line_number << ") : error : Constant Buffer has misaligned members. ";
+			std::cerr << d->name << "::" << member.name << " can not be at an offset of " << offset << " with a size of " << size << "." << std::endl;
+			return false;
+		}
+
+		offset += size;
+	}
+
+	return true;
 }
 
 string Effect::GetTypeOfParameter(std::vector<sfxstype::variable>& parameters, string keyName)
@@ -1309,6 +1412,11 @@ DeclaredConstantBuffer* Effect::DeclareTemplatizedConstantBuffer(const string &n
 	t->slot				=slot;
 	t->space			=space;
 	declarations[name] = (t);
+	if (!IsConstantBufferMemberAlignmentValid(declarations[structureType]))
+	{
+		delete t;
+		return nullptr;
+	}
 	return t;
 }
 
@@ -1736,6 +1844,27 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			Struct *s=(Struct*)d;
 			string str = sfxConfig.structDeclaration;
 
+			//Check if struct is used in templatized ConstantBuffer
+			//HLSL SM5.1 has the struct declared before ConstantBuffer<>
+			//GLSL 420 has the struct declared with layout(std140, binding = X) uniform
+			//PSSL Doesn't support templatized ConstantBuffer, we need to convert it back to a global constant buffer.
+			if (sfxConfig.constantBufferDeclaration.length() || sfxConfig.sourceExtension.compare("pssl") == 0)
+			{ 
+				bool structIsUsedInTemplatizedConstantBuffer = false;
+				for (auto& decl : declarations)
+				{
+					if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+					{
+						if (decl.second->structureType.compare(d->name) == 0)
+						{
+							structIsUsedInTemplatizedConstantBuffer = true;
+						}
+					}
+				}
+				if (structIsUsedInTemplatizedConstantBuffer)
+					break; //Struct should now be declared with the templatized ConstantBuffer.
+			}
+
 			if (sfxConfig.pixelOutputDeclaration.empty() || sfxConfig.pixelOutputDeclarationDSB.empty())
 			{
 				for (auto& member : s->m_structMembers)
@@ -1805,8 +1934,57 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			{
 				// templatized.
 				DeclaredConstantBuffer *c = (DeclaredConstantBuffer*)d;
-				string str=d->original;
+				string str = sfxConfig.constantBufferDeclaration;
+				if (str.empty())
+				{
+					if (sfxConfig.sourceExtension.compare("pssl") == 0)
+					{
+						str = "ConstantBuffer {name} : register(b{slot})\n{\n[\t{type} {name};]};";
+
+						Struct* s = (Struct*)declarations[d->structureType];
+						for (auto& member : s->m_structMembers)
+						{
+							//Don't append to start for each shader instance, only needs to be done once.
+							if (member.name.find(c->name + "_") == std::string::npos) 
+								member.name = c->name + "_" + member.name;
+						}
+					}
+					else
+					{
+						str = d->original;
+						find_and_replace(str, "{slot}", ToString(c->slot));
+						os << str.c_str() << endl;
+						return;
+					}
+				}
+				else
+				{
+					str.insert(str.find_last_of(';'), "{instance_name}");
+				}
+
+				Struct* s = (Struct*)declarations[d->structureType];
+				string members;
+				// in square brackets [] is the definition for ONE member.
+				std::regex re_member("\\[(.*)\\]");
+				std::smatch match;
+				string structMemberDeclaration;
+				if (std::regex_search(str, match, re_member))
+				{
+					structMemberDeclaration = match[1].str();
+					str.replace(match[0].first, match[0].first + match[0].length(), "{members}");
+				}
+				for (int i = 0; i < s->m_structMembers.size(); i++)
+				{
+					string m = structMemberDeclaration;
+					find_and_replace(m, "{type}", s->m_structMembers[i].type);
+					find_and_replace(m, "{name}", s->m_structMembers[i].name);
+					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
+					members += m + "\n";
+				}
+				find_and_replace(str, "{members}", members);
+				find_and_replace(str, "{name}", s->name);
 				find_and_replace(str, "{slot}", ToString(c->slot));
+				find_and_replace(str, "{instance_name}", d->name);
 				os << str.c_str() << endl;
 			}
 			else
@@ -1836,10 +2014,6 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				{
 					string m = structMemberDeclaration;
 					string type=s->m_structMembers[i].type;
-					if(type==string("mat4"))
-					{
-					//	type="layout(row_major) mat4";
-					}
 					find_and_replace(m, "{type}", type);
 					find_and_replace(m, "{name}", s->m_structMembers[i].name);
 					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
@@ -1859,6 +2033,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				os << str.c_str() << endl;
 			}
 		}
+		break;
 		default:
 		break;
 	};
@@ -1911,10 +2086,29 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		}
 		ordered_decs[main_linenumber]=*u;
 	}
-
 	// Used for platforms that dont support separate sampler and textures:
 	ConstantBuffer textureCB;
 	ConstantBuffer samplerCB;
+	// declare the samplers if we didn't pass them through already:
+	if(!sfxConfig.passThroughSamplers)
+	{
+		for (const auto s : samplerStates)
+		{
+		//Declare(shaderInstance->shaderType, theShader, s, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+			if(sfxConfig.samplerDeclaration.size() > 0)
+			{
+				string thisDeclaration=sfxConfig.samplerDeclaration;
+				find_and_replace(thisDeclaration,"{name}",s->name);
+				find_and_replace(thisDeclaration,"{slot}",ToString(gEffect->GenerateSamplerSlot(s->register_number)));
+				find_and_replace(thisDeclaration,"{type}","sampler");
+				theShader<<thisDeclaration<<"\n";
+			}
+			else
+			{
+				theShader<<s->original<<"\n";
+			}
+		}
+	}
 	char kTexHandleUbo []  = "_TextureHandles_X";
 	char ext[]={'v','h','d','g','p','c'};
 	bool combo=sfxConfig.combineTexturesSamplers&&!sfxConfig.combineInShader;
@@ -1982,6 +2176,18 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					find_and_replace(function->content, s->name, "1 + " + std::to_string(s->register_number));
 				}
 			}
+
+			//Convert constant buffer accesses from templatized to global style in main function:
+			if (sfxConfig.sourceExtension.compare("pssl") == 0)
+			{
+				for (auto& decl : declarations)
+				{
+					if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+					{
+						find_and_replace(function->content, decl.second->name + ".", decl.second->name + "_");
+					}
+				}
+			}
 		}
 	}
 	std::set<const Variable*> vars;
@@ -2016,6 +2222,17 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 				find_and_replace(newCont, s->name, "1 + " + std::to_string(s->register_number));
 			}
 		}
+		//Convert constant buffer accesses from templatized to global style in non-main functions:
+		if (sfxConfig.sourceExtension.compare("pssl") == 0)
+		{
+			for (auto& decl : declarations)
+			{
+				if (decl.second->declarationType == DeclarationType::CONSTANT_BUFFER && decl.second->structureType.length())
+				{
+					find_and_replace(newCont, decl.second->name + ".", decl.second->name + "_");
+				}
+			}
+		}
 
 		theShader << newDec;
 		theShader << "\n{\n" << newCont << "\n}\n";
@@ -2032,12 +2249,16 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	{
 		find_and_replace(dec,shaderName,"main");
 	}
-
+	
+	// in square brackets [] is the definition for ONE member.
+	string memberDeclaration;
+	//find_and_replace(memberDeclaration,"{blockname}",blockname);
+	// extract and replace the member declaration.
 	// If this shader language can't accept input parameters in main shader functions
 	// we will have an inputDeclaration specifying how to rewrite the input.
-	string content			= function->content;
-	string inputDeclaration = sfxConfig.inputDeclaration;
 	bool split_structs		= false;
+	int num=0;
+	string inputDeclaration = sfxConfig.pixelInputDeclaration;
 	if(shaderInstance->shaderType==sfx::ShaderType::VERTEX_SHADER)
 	{
 		if (sfxConfig.vertexInputDeclaration.length() > 0)
@@ -2046,17 +2267,23 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			split_structs = true;
 		}
 	}
+	if(shaderInstance->shaderType==sfx::ShaderType::FRAGMENT_SHADER)
+	{
+		if(sfxConfig.pixelInputDeclaration.find("{member_type}")<sfxConfig.pixelInputDeclaration.length())
+		{
+			split_structs=true;
+			num=1;
+			find_and_replace(inputDeclaration,"{type}","{struct_type}");
+			find_and_replace(inputDeclaration,"{name}","{struct_name}");
+		}
+	}
+	string content			= function->content;
+	string str=inputDeclaration;
+	process_member_decl(str,memberDeclaration);
 	string blockname = "ioblock";
 	if(inputDeclaration.length()>0)
 	{
-		string str=inputDeclaration;
 		string members;
-		// in square brackets [] is the definition for ONE member.
-		string memberDeclaration;
-		find_and_replace(memberDeclaration,"{blockname}",blockname);
-		// extract and replace the member declaration.
-		process_member_decl(str,memberDeclaration);
-		int num=0;
 		string setup_code;
 		for(auto i:function->parameters)
 		{
@@ -2064,29 +2291,38 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			Declaration *d=nullptr;
 			if (D != declarations.end())
 				d=D->second;
-			// It is a struct and we are in a vertex shader
+			// It is a struct 
 			if (d && split_structs && d->declarationType == DeclarationType::STRUCT)
 			{
 				Struct *s=(Struct *)d;
 				if(s)
 				{
 					setup_code+=(i.type+" ")+i.identifier+";\n";
+					string structPrefix;
+					if(shaderInstance->shaderType==sfx::ShaderType::FRAGMENT_SHADER)
+					{
+						structPrefix=i.type+"BlocKData";
+					}
 					for(auto j:s->m_structMembers)
 					{
 						string m=memberDeclaration;
+						find_and_replace(m,"{struct_type}",i.type);
+						find_and_replace(m,"{struct_name}","BlocKData");
+						find_and_replace(m,"{member_type}",j.type);
+						find_and_replace(m,"{member_name}",j.name);
 						find_and_replace(m,"{type}",j.type);
 						find_and_replace(m,"{name}",j.name);
 						find_and_replace(m,"{semantic}",j.semantic);
 						find_and_replace(m,"{slot}",ToString(num++));
 						auto s=sfxConfig.vertexSemantics.find(j.semantic);
-						if(s!=sfxConfig.vertexSemantics.end())
+						if(shaderInstance->shaderType==sfx::ShaderType::VERTEX_SHADER&&s!=sfxConfig.vertexSemantics.end())
 						{
 							setup_code+=((i.identifier+".")+j.name+"=")+s->second+";\n";
 						}
 						else
 						{
 							members+=m+"\n";
-							setup_code+=((i.identifier+".")+j.name+"=")+j.name+";\n";
+							setup_code+=((i.identifier+".")+j.name+"=")+structPrefix+j.name+";\n";
 						}
 					}
 				}
@@ -2105,26 +2341,39 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			else if(shaderInstance->shaderType == sfx::ShaderType::FRAGMENT_SHADER)
 			{
 				string customId = i.identifier;
-
-				if (sfxConfig.identicalIOBlocks)
+				auto s=sfxConfig.pixelSemantics.find(i.semantic);
+				if(i.semantic.length()>0&&s!=sfxConfig.pixelSemantics.end())
 				{
-					// In OpenGL io blocks should match, this means, that the name of					
-					// the members should be the same...					
-					customId = "BlockData";
-					find_and_replace(content, i.identifier, customId);
+					setup_code+=((i.type+" ")+i.identifier+"=")+s->second+";\n";
 				}
 				else
 				{
-					customId = string("BlockData") + QuickFormat("%d", num);
-					find_and_replace_identifier(content, i.identifier, customId);
+					if (sfxConfig.identicalIOBlocks)
+					{
+						// In GLSL io blocks should match, i.e. the names of
+						// the members should be the same.		
+						customId = "BlockData";
+						find_and_replace(content, i.identifier, customId);
+					}
+					else
+					{
+						customId = string("BlockData") + QuickFormat("%d", num);
+						find_and_replace_identifier(content, i.identifier, customId);
+					}
+					string m = memberDeclaration;
+					string acceptable_type=i.type;
+					// ioblocks can't have bool's.
+					if(i.type=="bool")
+					{
+						acceptable_type="char";
+					}
+					find_and_replace(m, "{type}", acceptable_type);
+					find_and_replace(m, "{name}", customId);
+					find_and_replace(m, "{semantic}", i.semantic);
+					find_and_replace(m, "{slot}", ToString(num++));
+					members += m + "\n";
+					setup_code += ((i.type + " ") + customId + "=") + (blockname + ".") + customId + ";\n";
 				}
-				string m = memberDeclaration;
-				find_and_replace(m, "{type}", i.type);
-				find_and_replace(m, "{name}", customId);
-				find_and_replace(m, "{semantic}", i.semantic);
-				find_and_replace(m, "{slot}", ToString(num++));
-				members += m + "\n";
-				setup_code += ((i.type + " ") + customId + "=") + (blockname + ".") + customId + ";\n";
 			}
 			// Compute shader (could be or not a struct)
 			else if (shaderInstance->shaderType == sfx::ShaderType::COMPUTE_SHADER)
@@ -2256,29 +2505,67 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 				}
 			}
 		}
-		else if(sfxConfig.outputDeclaration.length()>0)
+		else if(sfxConfig.vertexOutputDeclaration.length()>0)
 		{
+			Declaration* retDec = nullptr;
+			auto retEntry = declarations.find(function->returnType);
 			// replace each return statement with a block that writes
-			string str=sfxConfig.outputDeclaration;
-			find_and_replace(str,"{slot}","0"); // TODO: What if this is not 0! 
-			find_and_replace(str,"{blockname}",blockname);
+			string vertexOutputDeclaration=sfxConfig.vertexOutputDeclaration;
+			find_and_replace(vertexOutputDeclaration,"{blockname}",blockname);
 			string m;
 			// extract and replace the member declaration.
-			process_member_decl(str,m);
+			process_member_decl(vertexOutputDeclaration,m);
+			string members;
+			// if the member declaration contains member_name, we will declar the struct members individually, instead of passing a whole structure.
+			// This alternative approach is to get around Qualcomm's broken SPIR-V drivers for Adreno 600-series devices, e.g. Oculus Quest etc.
 			// NOTE(NACHO): we want to match io block member names...
-			string returnName = "BlockData"; /*"returnObject_" + function->returnType;*/
-			find_and_replace(m,"{type}",function->returnType);
-			find_and_replace(m,"{name}",returnName);
-			find_and_replace(str,"{members}",m+"\n");
+			bool as_blocks=true;
+			if(m.find("{member_name}")<m.length()&&retEntry != declarations.end())
+			{
+				as_blocks=false;
+				retDec = retEntry->second;
+				int slot=1;
+				if (retDec && retDec->declarationType == DeclarationType::STRUCT)
+				{
+					Struct* retStruct = (Struct *)retDec;
+					for (auto j : retStruct->m_structMembers)
+					{
+						string this_member_decl=m;
+						find_and_replace(this_member_decl,"{member_type}",j.type);
+						find_and_replace(this_member_decl,"{member_name}",j.name);
+						find_and_replace(this_member_decl,"{slot}",std::to_string(slot++)); // TODO: What if this is not 0! 
+						members+=this_member_decl+"\n";
+					}
+				}
+				m=members;
+			}
+			else
+			{
+				members=m;
+			}
+			string returnName = "BlockData";
+			find_and_replace(members,"{type}",function->returnType);
+			find_and_replace(members,"{name}",returnName);
+			find_and_replace(vertexOutputDeclaration,"{members}",members+"\n");
+			
+			find_and_replace(vertexOutputDeclaration,"{slot}","0"); // TODO: What if this is not 0! 
 
-			// Now replace every instance of return ...; with returnName=...;return;
-			regex re("return\\s+(.*);");
+			// Now construct the replacement for the return command.
 			string ret = "{\n";
-			ret += (blockname + ".") + returnName + "=$1;";
+			regex re("return\\s+(.*);");
+			// if we're returning by block
+			// 
+			// Now replace every instance of return ...; with returnName=...;return;
+			if(as_blocks)
+			{
+				ret += (blockname + ".") + returnName + "=$1;";
+			}
+			else
+			{
+			// If we're filling individual elements:
+			}
 
-			// If required, write to global outpus
-			auto retEntry = declarations.find(function->returnType);
-			Declaration* retDec = nullptr;
+			// If required, write to global outputs
 			if (retEntry != declarations.end())
 			{
 				retDec = retEntry->second;
@@ -2287,17 +2574,24 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					Struct* retStruct = (Struct *)retDec;
 					for (auto j : retStruct->m_structMembers)
 					{
+						if(!as_blocks)
+						{
+							string this_member_fill= function->returnType+returnName+j.name + "=" + "$1" + "." + j.name + ";\n";
+							ret += this_member_fill;
+						}
+
+						// And fill in the "magic GLSL outputs":
 						auto sem = sfxConfig.vertexOutputAssignment.find(j.semantic);
 						if (sem != sfxConfig.vertexOutputAssignment.end())
 						{
 							std::string code;
 							if(sfxConfig.reverseVertexOutputY&&is_equal(j.semantic,"SV_POSITION"))
 							{
-								code += "\n" + sem->second + "=" + "vec4($1." + j.name + ".x,-$1." + j.name + ".y,$1."+j.name+".z,$1."+j.name+".w);";
+								code += "\n" + sem->second + "=" + "vec4($1." + j.name + ".x,-$1." + j.name + ".y,$1."+j.name+".z,$1."+j.name+".w);\n";
 							}
 							else
 							{
-								code += "\n" + sem->second + "=" + "$1" + "." + j.name + ";";
+								code += "\n" + sem->second + "=" + "$1" + "." + j.name + ";\n";
 							}
 							ret += code;
 						}
@@ -2308,7 +2602,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			ret += "\n}";
 
 			content = std::regex_replace(content, re, ret);
-			theShader<<str.c_str()<<endl;
+			theShader<<vertexOutputDeclaration.c_str()<<endl;
 		}
 	}
 	// Add the CS layout:
@@ -2364,6 +2658,10 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	{
 		theShader<<"[shader(\"miss\")]\n";//sfxConfig
 	}
+	if (shaderInstance->shaderType == INTERSECTION_SHADER)
+	{
+		theShader << "[shader(\"intersection\")]\n";//sfxConfig
+	}
 	if (shaderInstance->shaderType == CALLABLE_SHADER)
 	{
 		theShader<<"[shader(\"callable\")]\n";//sfxConfig
@@ -2376,6 +2674,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	// Add the root signature:
 	if (!sfxConfig.graphicsRootSignatureSource.empty())
 	{
+		theShader << "#define GFXRS \"RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), DescriptorTable(CBV(b0, numDescriptors = 14),SRV(t0, numDescriptors = 24),UAV(u0, numDescriptors = 16)),DescriptorTable(Sampler(s0, numDescriptors = 16))\"\n";
 		theShader << "[RootSignature(GFXRS)]\n";
 	}
 	// Add entry declaration:

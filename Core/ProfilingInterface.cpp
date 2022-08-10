@@ -28,13 +28,13 @@
 #define _isnanf _isnan
 #endif
 
-using namespace simul;
-using namespace base;
+using namespace platform;
+using namespace core;
 using std::string;
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		THREAD_TYPE GetThreadId()
 		{
@@ -66,44 +66,44 @@ namespace simul
 }
 
 static const string format_template("<div style=\"color:#%06x;margin-left:%d;\">%s</div>");
-static string formatLine(const char *name,int tab,float number,float parent,base::TextStyle style)
+static string formatLine(const char *name,int tab,float number,float parent,core::TextStyle style)
 {
 	float proportion_of_parent=0.0f;
 	if(parent>0.0f)
 		proportion_of_parent=number/parent;
 	string str;
-	if (style!=base::HTML)
+	if (style!=core::HTML)
 	for(int j=0;j<tab;j++)
 	{
 		str+="  ";
 	}
 	string content=name;
 	content+=" ";
-	content+=base::stringFormat("%4.4f",number);
+	content+=core::stringFormat("%4.4f",number);
 	if(parent>0.0f)
-		content += base::stringFormat(" (%3.3f%%)", 100.f*proportion_of_parent);
-	if (style == base::HTML)
+		content += core::stringFormat(" (%3.3f%%)", 100.f*proportion_of_parent);
+	if (style == core::HTML)
 	{
 		unsigned colour=0xFF0000;
 		unsigned greenblue=255-(unsigned)(175.0f*proportion_of_parent);
 		colour|=(greenblue<<8)|(greenblue);
 		int padding=12*tab;
-		content=base::stringFormat(format_template.c_str(),colour,padding,content.c_str());
+		content=core::stringFormat(format_template.c_str(),colour,padding,content.c_str());
 	}
-	else if (style == base::RICHTEXT)
+	else if (style == core::RICHTEXT)
 	{
 		unsigned colour = 0xFF0000;
 		unsigned greenblue = 255 - (unsigned)(175.0f*proportion_of_parent);
 		colour |= (greenblue << 8) | (greenblue);
 	//	int padding = 12 * tab;
-		content = base::stringFormat("<color=#%06x>%s</color>", colour,  content.c_str());
+		content = core::stringFormat("<color=#%06x>%s</color>", colour,  content.c_str());
 	}
 	str+=content;
-	str += (style == base::HTML )? "" : "\n";
+	str += (style == core::HTML )? "" : "\n";
 	return str;
 }
 
-std::string BaseProfilingInterface::Walk(base::ProfileData *profileData,int tab,float parent_time,base::TextStyle style) const
+std::string BaseProfilingInterface::Walk(core::ProfileData *profileData,int tab,float parent_time,core::TextStyle style) const
 {
 	if(tab>=max_level)
 		return "";
@@ -123,7 +123,7 @@ std::string BaseProfilingInterface::Walk(base::ProfileData *profileData,int tab,
 	return str;
 }
 
-simul::base::DefaultProfiler::DefaultProfiler():overhead(0.0f)
+platform::core::DefaultProfiler::DefaultProfiler():overhead(0.0f)
 {
 	timer.StartTime();
 	int num_per_frame=100;
@@ -147,7 +147,7 @@ DefaultProfiler::~DefaultProfiler()
     Clear();
 }
 
-void simul::base::BaseProfilingInterface::WalkReset(ProfileData *p)
+void platform::core::BaseProfilingInterface::WalkReset(ProfileData *p)
 {
 	p->frameTime=0.0f;
 	p->overhead=0.0f;
@@ -161,7 +161,7 @@ void simul::base::BaseProfilingInterface::WalkReset(ProfileData *p)
 	}
 }
 
-void simul::base::BaseProfilingInterface::StartFrame()
+void platform::core::BaseProfilingInterface::StartFrame()
 {
 	if(!root)
 	{
@@ -176,7 +176,7 @@ void simul::base::BaseProfilingInterface::StartFrame()
 	profileStack.clear();
 }
 
-void simul::base::DefaultProfiler::Begin(const char *name)
+void platform::core::DefaultProfiler::Begin(const char *name)
 {
 	// Get time at the beginning, so that we can properly calculate the overhead!
 	float t=timer.AbsoluteTimeMS();
@@ -218,7 +218,7 @@ void simul::base::DefaultProfiler::Begin(const char *name)
 	profileData->parent=parentData;
 }
 
-void simul::base::DefaultProfiler::End()
+void platform::core::DefaultProfiler::End()
 {
 	level--;
 	if(level>=max_level)
@@ -243,7 +243,7 @@ void simul::base::DefaultProfiler::End()
 	}
 }
 
-float DefaultProfiler::WalkOverhead(simul::base::DefaultProfiler::Timing *p,int level)
+float DefaultProfiler::WalkOverhead(platform::core::DefaultProfiler::Timing *p,int level)
 {
 	if(level>=max_level)
 		return 0.0f;
@@ -273,7 +273,7 @@ float DefaultProfiler::WalkOverhead(simul::base::DefaultProfiler::Timing *p,int 
 	return overhead;
 }
 
-void simul::base::DefaultProfiler::EndFrame()
+void platform::core::DefaultProfiler::EndFrame()
 {
 	frame_active=false;
 	if(!root)
@@ -289,7 +289,7 @@ void simul::base::DefaultProfiler::EndFrame()
 	}
 }
 
-bool simul::base::DefaultProfiler::GetCounter(int ,string &,float &)
+bool platform::core::DefaultProfiler::GetCounter(int ,string &,float &)
 {
 	/*if(i>=(int)profileMap.size())
 		return false;
@@ -302,7 +302,7 @@ bool simul::base::DefaultProfiler::GetCounter(int ,string &,float &)
 	return true;
 }
 
-const base::ProfileData *simul::base::DefaultProfiler::GetEvent(const base::ProfileData *parent,int i) const
+const core::ProfileData *platform::core::DefaultProfiler::GetEvent(const core::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
 	{
@@ -314,7 +314,7 @@ const base::ProfileData *simul::base::DefaultProfiler::GetEvent(const base::Prof
 	{
 		if(j==i)
 		{
-			base::ProfileData *d=it->second;
+			core::ProfileData *d=it->second;
 			d->name=it->second->unqualifiedName;
 			d->time=it->second->time;
 			return it->second;
@@ -330,7 +330,7 @@ void DefaultProfiler::ResetMaximums()
 	}
 }
 
-const char *simul::base::BaseProfilingInterface::GetDebugText(base::TextStyle style) const
+const char *platform::core::BaseProfilingInterface::GetDebugText(core::TextStyle style) const
 {
 	static std::string str;
 	str="";
@@ -346,11 +346,11 @@ const char *simul::base::BaseProfilingInterface::GetDebugText(base::TextStyle st
 		str+=formatLine(i->second->unqualifiedName.c_str(),1,t,total,style);
 		str += Walk(i->second, 2, i->second->time, style);
 	}
-	str += (style ==base::HTML)? "<br/>" : "\n";
+	str += (style ==core::HTML)? "<br/>" : "\n";
 	return str.c_str();
 }
 
-const char* simul::base::BaseProfilingInterface::GetDebugTextSimple(base::TextStyle style) const
+const char* platform::core::BaseProfilingInterface::GetDebugTextSimple(core::TextStyle style) const
 {
 	static std::string str;
 	str = "";
@@ -361,7 +361,7 @@ const char* simul::base::BaseProfilingInterface::GetDebugTextSimple(base::TextSt
 	return str.c_str();
 }
 
-void simul::base::BaseProfilingInterface::Clear(base::ProfileData *p)
+void platform::core::BaseProfilingInterface::Clear(core::ProfileData *p)
 {
 	if(!p)
 		p=root;

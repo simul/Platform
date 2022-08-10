@@ -1,11 +1,11 @@
 
 #include "Texture.h"
 #include "RenderPlatform.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Platform/Core/FileLoader.h"
+#include "Platform/Core/StringFunctions.h"
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 void DeleteTextures(size_t num,GLuint *t)
@@ -87,13 +87,14 @@ void Texture::SetName(const char* n)
 void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
+	renderPlatform = r;
 
 	// Load from file:
 	LoadedTexture tdata = { 0, 0, 0, 0, nullptr };
 	for (auto& path : r->GetTexturePathsUtf8())
 	{
 		std::string mainPath = path + "/" + std::string(pFilePathUtf8);
-		tdata = LoadTextureData(mainPath.c_str());
+		LoadTextureData(tdata ,mainPath.c_str());
 		if (tdata.data)
 			break;
 	}
@@ -103,7 +104,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	}
 
 	// Choose a format:
-	if (tdata.n == 4)
+	/*if (tdata.n == 4)
 	{
 		pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
 	}
@@ -111,10 +112,18 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	{
 		pixelFormat = crossplatform::PixelFormat::RGB_8_UNORM;
 	}
+	else if (tdata.n == 2)
+	{
+		pixelFormat = crossplatform::PixelFormat::RG_8_UNORM;
+	}
+	else if (tdata.n == 1)
+	{
+		pixelFormat = crossplatform::PixelFormat::R_8_UNORM;
+	}
 	else
 	{
 		SIMUL_BREAK("");
-	}
+	}*/
 	// TO-DO: we force textures to be 4 components (loading X8R8G8B8 returns 3 components
 	// per pixel, so thats why we just override all to RGBA_8_UNORM)
 	pixelFormat = crossplatform::PixelFormat::RGBA_8_UNORM;
@@ -152,9 +161,10 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
 {
 	InvalidateDeviceObjects();
+	renderPlatform = r;
 
 	std::vector<LoadedTexture> loadedTextures(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
@@ -162,7 +172,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 		for (auto& path : r->GetTexturePathsUtf8())
 		{
 			std::string mainPath = path + "/" + texture_files[i];
-			loadedTextures[i] = LoadTextureData(mainPath.c_str());
+			LoadTextureData(loadedTextures[i] ,mainPath.c_str());
 			if (loadedTextures[i].data)
 				break;
 		}
@@ -171,7 +181,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	width				= loadedTextures[0].x;
 	length				= loadedTextures[0].y;
 	arraySize			= (int)loadedTextures.size();
-	mips				= std::min(m,1 + int(floor(log2(width >= length ? width : length))));
+	mips				= gen_mips?std::min(16,1 + int(floor(log2(width >= length ? width : length)))):1;
 	dim					= 2;
 	depth				= 1;
 	cubemap				= false;
@@ -204,6 +214,11 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, texture_files[0].c_str());
 
 	InitViews(mips, arraySize, true);
+	for (unsigned int i = 0; i < loadedTextures.size(); i++)
+	{
+		FreeTranslatedTextureData( loadedTextures[i].data);
+	}
+	loadedTextures.clear();
 	
 	// CreateFBOs(1);
 }
@@ -283,7 +298,7 @@ void Texture::MakeHandleResident(GLuint64 thandle)
 	residentHandles.insert(thandle);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -308,11 +323,12 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 		depth		= 1;
 		mNumSamples = numOfSamples;
 	}
+	return true;
 }
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,
 											crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil)
+											vec4 clear, float clearDepth, uint clearStencil, bool shared)
 {
 	if (!IsSame(w, l, 1, 1, m, num_samples))
 	{
@@ -741,18 +757,56 @@ GLuint Texture::GetGLMainView()
 	return mTextureID;
 }
 
-LoadedTexture Texture::LoadTextureData(const char* path)
+ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 {
-	LoadedTexture lt	= {0, 0, 0, 0, nullptr};
-	lt.data				= stbi_load(path, &lt.x, &lt.y, &lt.n, 4);
+	lt	= {0, 0, 0, 0, nullptr};
+	const auto& pathsUtf8 = renderPlatform->GetTexturePathsUtf8();
+	int index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(path, pathsUtf8);
+	std::string filenameInUseUtf8 = path;
+	if (index == -2 || index >= (int)pathsUtf8.size())
+	{
+		errno = 0;
+		std::string file;
+		std::vector<std::string> split_path = platform::core::SplitPath(path);
+		if (split_path.size() > 1)
+		{
+			file = split_path[1];
+			index = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
+		}
+		if (index < -1 || index >= (int)pathsUtf8.size())
+		{
+			SIMUL_CERR << "Failed to find texture file " << filenameInUseUtf8 << std::endl;
+			return;
+		}
+		filenameInUseUtf8 = file;
+	}
+	if (index < renderPlatform->GetTexturePathsUtf8().size())
+		filenameInUseUtf8 = (renderPlatform->GetTexturePathsUtf8()[index] + "/") + filenameInUseUtf8;
+
+	int x, y, n;
+	void* buffer = nullptr;
+	unsigned size = 0;
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(buffer, size, filenameInUseUtf8.c_str(), false);
+	//void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
+	if (!buffer)
+	{
+		SIMUL_CERR << "Failed to load the texture: " << filenameInUseUtf8.c_str() << std::endl;
+		return;
+	}
+	void* data = nullptr;
+	TranslateLoadedTextureData(data, buffer, size, x, y, n, 4);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
+	lt.data = (unsigned char *)data;
+	lt.x = x;
+	lt.y = y;
+	lt.n = n;
 	if (!lt.data)
 	{
-		#if _DEBUG
-			SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
-		#endif
+#if _DEBUG
+		SIMUL_CERR << "Failed to load the texture: " << path << std::endl;
+#endif
 		errno = 0; //ERRNO_CLEAR
 	}
-	return lt;
 }
 
 bool Texture::IsSame(int w, int h, int d, int arr, int m, int msaa)

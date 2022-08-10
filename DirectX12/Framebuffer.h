@@ -4,12 +4,12 @@
 #include "Platform/DirectX12/Texture.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
 		//! A DirectX 12 framebuffer class.
-		SIMUL_DIRECTX12_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
+		class SIMUL_DIRECTX12_EXPORT Framebuffer: public crossplatform::BaseFramebuffer
 		{
 		public:
 			                Framebuffer(const char *name);

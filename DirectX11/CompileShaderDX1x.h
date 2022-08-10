@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{

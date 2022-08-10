@@ -28,7 +28,7 @@ namespace nvn
 {
 	class CommandBuffer;
 }
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -39,7 +39,7 @@ namespace simul
 		class Texture;
 		class SamplerState;
 		class Layout;
-		class AccelerationStructure;
+		class TopLevelAccelerationStructure;
 		enum class ShaderResourceType;
 		struct TextureFence
 		{
@@ -49,7 +49,7 @@ namespace simul
 		struct TextureAssignment
 		{
 			crossplatform::Texture *texture;
-			crossplatform::AccelerationStructure *accelerationStructure;
+			crossplatform::TopLevelAccelerationStructure *accelerationStructure;
 			int dimensions;
 			bool uav;
 			int mip;// if -1, it's the whole texture.
@@ -173,7 +173,7 @@ namespace simul
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
-			bool last_action_was_compute;
+			bool last_action_was_compute = false;
 			Viewport viewports[8];
 			const Buffer *indexBuffer=nullptr;
 			std::unordered_map<int,const Buffer*> applyVertexBuffers;
@@ -186,11 +186,29 @@ namespace simul
 			TextureAssignmentMap rwTextureAssignmentMap;
 			FenceMap fenceMap;
 			EffectPass *currentEffectPass=nullptr;
-			//EffectTechnique *currentTechnique=nullptr;
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
-			Topology topology;
+			Topology topology = Topology::UNDEFINED;
 			int apply_count = 0;
+			bool contextActive=false;
+			bool externalContext=false;
+
+			bool effectPassValid=false;
+			bool vertexBuffersValid=false;
+			bool constantBuffersValid=false;
+			bool structuredBuffersValid=false;
+			bool rwStructuredBuffersValid=false;
+			bool samplerStateOverridesValid=false;
+			bool textureAssignmentMapValid=false;
+			bool rwTextureAssignmentMapValid=false;
+			bool streamoutTargetsValid=false;
+			unsigned int textureSlots=0;
+			unsigned int rwTextureSlots=0;
+			unsigned int rwTextureSlotsForSB=0;
+			unsigned int textureSlotsForSB=0;
+			unsigned int bufferSlots=0;
+
+			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
 			{
 				effectPassValid=false;
@@ -202,81 +220,100 @@ namespace simul
 				textureAssignmentMapValid=false;
 				rwTextureAssignmentMapValid=false;
 				streamoutTargetsValid=false;
-				currentLayout = nullptr;
 				textureSlots=0;
 				rwTextureSlots=0;
 				rwTextureSlotsForSB=0;
 				textureSlotsForSB=0;
 				bufferSlots=0;
-				topology = Topology::UNDEFINED;
+				contextActive = true;
+				externalContext = false;
 			}
-			bool effectPassValid;
-			bool vertexBuffersValid;
-			bool constantBuffersValid;
-			bool structuredBuffersValid;
-			bool rwStructuredBuffersValid;
-			bool samplerStateOverridesValid;
-			bool textureAssignmentMapValid;
-			bool rwTextureAssignmentMapValid;
-			bool streamoutTargetsValid;
-			unsigned textureSlots;
-			unsigned rwTextureSlots;
-			unsigned rwTextureSlotsForSB;
-			unsigned textureSlotsForSB;
-			unsigned bufferSlots;
+			
+			/// Reset the temporary and persistent properties.
+			void Reset()
+			{
+				invalidate();
+				
+				currentLayout = nullptr;
+				topology = Topology::UNDEFINED;
+				last_action_was_compute = false;
+				memset(viewports, 0, 8 * sizeof(Viewport));
+				indexBuffer = nullptr;
+				applyVertexBuffers.clear();
+				streamoutTargets.clear();
+				applyBuffers.clear();
+				applyStructuredBuffers.clear();
+				applyRwStructuredBuffers.clear();
+				samplerStateOverrides.clear();
+				textureAssignmentMap.clear();
+				rwTextureAssignmentMap.clear();
+				fenceMap.clear();
+
+				currentEffectPass = nullptr;
+				currentEffect = nullptr;
+				apply_count = 0;
+			}
+		
 		};
 		class EffectTechnique;
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
+		struct ComputeDeviceContext;
 		enum class DeviceContextType
 		{
-			COMPUTE,COPY,GRAPHICS
+			GRAPHICS, 
+			COMPUTE, 
+			COPY
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
+		protected:
+			long long frame_number = 0;
+		public:
+			friend class RenderPlatform;
 			DeviceContextType deviceContextType;
-			long long completed_frame=0;
-			long long frame_number=0;
+			
 			void *platform_context=nullptr;
+			void *platform_context_allocator=nullptr;
 			RenderPlatform *renderPlatform=nullptr;
 			crossplatform::ContextState contextState;
 #ifdef _DEBUG
 			int ApiCallCounter=0;
 #endif
-			virtual GraphicsDeviceContext *AsGraphicsDeviceContext()
+			//! Only RenderPlatform should call this.
+			long long GetFrameNumber() const;
+			//! Only RenderPlatform should call this.
+			void SetFrameNumber(long long n);
+			virtual GraphicsDeviceContext* AsGraphicsDeviceContext()
+			{ 
+				return nullptr;
+			}
+			virtual ComputeDeviceContext* AsComputeDeviceContext()
 			{
 				return nullptr;
 			}
-			inline ID3D11DeviceContext *asD3D11DeviceContext()
+			ID3D11DeviceContext *asD3D11DeviceContext()
 			{
 				return (ID3D11DeviceContext*)platform_context;
 			}
-			inline IDirect3DDevice9 *asD3D9Device()
+			IDirect3DDevice9 *asD3D9Device()
 			{
 				return (IDirect3DDevice9*)platform_context;
 			}
-			inline sce::Gnmx::LightweightGfxContext *asGfxContext()
+			sce::Gnmx::LightweightGfxContext *asGfxContext()
 			{
 				return (sce::Gnmx::LightweightGfxContext*)platform_context;
 			}
-			inline nvn::CommandBuffer* asNVNContext()
+			nvn::CommandBuffer* asNVNContext()
 			{
 				return (nvn::CommandBuffer*)platform_context;
 			}
-			inline ID3D12GraphicsCommandList* asD3D12Context()
+			ID3D12GraphicsCommandList* asD3D12Context()
 			{
 				return (ID3D12GraphicsCommandList*)platform_context;
 			}
 		};
-		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
-		{
-			ComputeDeviceContext()
-			{
-				deviceContextType=DeviceContextType::COMPUTE;
-			}
-
-		};
-
+		
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
 		//! The DeviceContext also carries a pointer to the platform-specific RenderPlatform.
 		//! DeviceContext is context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
@@ -294,19 +331,30 @@ namespace simul
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
+			
+			crossplatform::TargetsAndViewport *GetCurrentTargetsAndViewport();
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
 			//! as 
-			void setDefaultRenderTargets(const ApiRenderTarget*
-				,const ApiDepthRenderTarget*
+			void setDefaultRenderTargets(const ApiRenderTarget* rt
+				,const ApiDepthRenderTarget* dt
 				,uint32_t viewportLeft
 				,uint32_t viewportTop
 				,uint32_t viewportRight
 				,uint32_t viewportBottom
 				,Texture **texture_targets=nullptr
-				,int num_targets=1
+				,int num_targets=0
 				,Texture *depth_target=nullptr
 			);
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
+		};
+
+		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
+		{
+			ComputeDeviceContext();
+			ComputeDeviceContext* AsComputeDeviceContext() override;
+			//Some function expect completed_frame and frame_number to increment.
+			//This copies the frame numbers from the normal DeviceContext to simulate this.
+			void UpdateFrameNumbers(DeviceContext& deviceContext);
 		};
 	}
 }

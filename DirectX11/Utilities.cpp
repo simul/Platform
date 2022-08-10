@@ -13,7 +13,7 @@
 #endif
 #include <algorithm>			// for std::min / max
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 const char *GetErrorText(HRESULT hr)
@@ -22,7 +22,7 @@ const char *GetErrorText(HRESULT hr)
 	return err;
 }
 
-bool simul::dx11::IsTypeless( DXGI_FORMAT fmt, bool partialTypeless )
+bool platform::dx11::IsTypeless( DXGI_FORMAT fmt, bool partialTypeless )
 {
     switch( static_cast<int>(fmt) )
     {
@@ -66,7 +66,7 @@ bool simul::dx11::IsTypeless( DXGI_FORMAT fmt, bool partialTypeless )
     }
 }
 
-DXGI_FORMAT simul::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
+DXGI_FORMAT platform::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
 {
 	if (!IsTypeless(fmt, true))
 		return fmt;
@@ -96,7 +96,7 @@ DXGI_FORMAT simul::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
 	return (DXGI_FORMAT)u;
 }
 
-DXGI_FORMAT simul::dx11::ResourceToDsvFormat(DXGI_FORMAT fmt)
+DXGI_FORMAT platform::dx11::ResourceToDsvFormat(DXGI_FORMAT fmt)
 {
 	int u=fmt+ 1;
 	switch(fmt)
@@ -180,7 +180,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	std::vector<ID3D11Texture2D *> textures;
 	for(unsigned i=0;i<texture_files.size();i++)
 	{
-		textures.push_back(simul::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str(),pathsUtf8));
+		textures.push_back(platform::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str(),pathsUtf8));
 	}
 	D3D11_TEXTURE2D_DESC desc;
 //	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];

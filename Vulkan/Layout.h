@@ -2,7 +2,7 @@
 #include "Export.h"
 #include "Platform/CrossPlatform/Layout.h"
 
-namespace simul
+namespace platform
 {
 	namespace vulkan
 	{

@@ -7,7 +7,10 @@
 #include <stdint.h>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
+using namespace core;
+
+using namespace platform;
 using namespace dx12;
 
 using std::string;
@@ -66,7 +69,7 @@ void TimestampQueryManager::StartFrame(crossplatform::DeviceContext &deviceConte
 	mTimestampQueryCurrFrame=(mTimestampQueryCurrFrame+1)%4;
 	mTimestampQueryHeapOffset=0;
 	
-	last_frame_number=deviceContext.frame_number;
+	last_frame_number=renderPlatform->GetFrameNumber();
 }
 
 void TimestampQueryManager::EndFrame(crossplatform::DeviceContext &deviceContext)
@@ -75,7 +78,7 @@ void TimestampQueryManager::EndFrame(crossplatform::DeviceContext &deviceContext
 
 void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset)
 {
-/*	if(deviceContext.frame_number!=last_frame_number)
+/*	if(deviceContext.GetFrameNumber()!=last_frame_number)
 	{
 		StartFrame(deviceContext);
 	}*/
@@ -120,10 +123,11 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 		);
 		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mTimestampQueryReadBuffer[mTimestampQueryCurrFrame], sz)
+		SIMUL_GPU_TRACK_MEMORY(mTimestampQueryHeap[mTimestampQueryCurrFrame],100)
 		std::string name("mTimestampQueryReadBuffer[");
 		name += ('0' + mTimestampQueryCurrFrame);
 		name += "]";
-		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(base::StringToWString(name).c_str());
+		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->SetName(StringToWString(name).c_str());
 		mTimestampQueryHeapOffset=0;
 	}
 	*offset=mTimestampQueryHeapOffset;

@@ -25,7 +25,7 @@ struct D3D12_CPU_DESCRIPTOR_HANDLE;
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -60,12 +60,12 @@ namespace simul
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
-			NEVER_BUILD=0
-			,ALWAYS_BUILD=1
-			,BUILD_IF_CHANGED=2
-			, BREAK_ON_FAIL = 8			// 0x1000
-			, TRY_AGAIN_ON_FAIL = 12	// 0x11000 - includes break.
-			, DEBUG_SHADERS=16
+			NEVER_BUILD			= 0x00000000,
+			ALWAYS_BUILD		= 0x00000001,
+			BUILD_IF_CHANGED	= 0x00000002,
+			BREAK_ON_FAIL		= 0x00000008,	// 0b1000
+			TRY_AGAIN_ON_FAIL	= 0x0000000C,	// 0b1100 - includes break.
+			DEBUG_SHADERS		= 0x00000010,
 		};
 		inline ShaderBuildMode operator|(ShaderBuildMode a, ShaderBuildMode b)
 		{
@@ -207,9 +207,6 @@ namespace simul
 			virtual ~RenderState(){}
 			virtual void InvalidateDeviceObjects() {}
 		};
-		struct RayDispatch
-		{
-		};
 		class SIMUL_CROSSPLATFORM_EXPORT Shader
 		{
 		public:
@@ -256,17 +253,12 @@ namespace simul
 		/// A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
-			ShaderResource():	shaderResourceType(crossplatform::ShaderResourceType::UNKNOWN), 
-								platform_shader_resource(nullptr),
-								slot(-1),
-								dimensions(-1),
-								valid(false)
-			{}
-			ShaderResourceType  shaderResourceType;
-			void*				platform_shader_resource;
-			int					slot;
-			int					dimensions;
-			bool				valid;
+			ShaderResource()	{}
+			ShaderResourceType  shaderResourceType=ShaderResourceType::UNKNOWN;
+			void*				platform_shader_resource=nullptr;
+			int					slot=-1;
+			int					dimensions=-1;
+			bool				valid=false;
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RaytraceHitGroup
 		{
@@ -284,6 +276,11 @@ namespace simul
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
 			std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
+			std::map<std::string,Shader*> missShaders;
+			std::map<std::string, Shader*> callableShaders;
+			int maxPayloadSize = 0;
+			int maxAttributeSize = 0;
+			int maxTraceRecursionDepth = 0;
 			std::string rtFormatState;
 			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);
@@ -433,7 +430,7 @@ namespace simul
 				name=n;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *,int){}
+			virtual void ActualApply(platform::crossplatform::DeviceContext &,EffectPass *,int){}
 		};
 		
 		class Texture;
@@ -502,18 +499,8 @@ namespace simul
 			EffectTechnique *GetTechniqueByName(const char *name);
 			EffectTechnique *GetTechniqueByIndex(int index);
 		};
-		/// A crossplatform structure for a \#define and its possible values.
-		/// This allows all of the macro combinations to be built to binary.
-		struct SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions
-		{
-			std::string name;
-			std::vector<std::string> options;
-		};
 		class Buffer;
 
-		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1);
-		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
-		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		typedef std::unordered_map<const char *,EffectTechniqueGroup *> GroupCharMap;
 		/// The cross-platform base class for shader effects.
@@ -562,14 +549,9 @@ namespace simul
 			{
 				return filename.c_str();
 			}
-			void InvalidateDeviceObjects();
-			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
-			void Load(RenderPlatform *r,const char *filename_utf8)
-			{
-				std::map<std::string,std::string> defines;
-				Load(r,filename_utf8,defines);
-			}
-			virtual void Compile(const char *);
+			virtual void InvalidateDeviceObjects();
+			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
+			virtual bool Compile(const char *);
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{
@@ -627,8 +609,8 @@ namespace simul
 
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
-			/// Ensure it's built and up-to-date.
-			void EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
+			/// Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
+			bool EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{

@@ -44,7 +44,7 @@ extern "C"
 
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -91,6 +91,15 @@ namespace simul
 			DepthComparison depthComparison;
 			int slot;			// register slot
 		};
+
+		enum class VideoTextureType
+		{
+			NONE = 0,
+			ENCODE,
+			DECODE,
+			PROCESS
+		};
+
 		/// A structure for creating or initializing textures.
 		struct TextureCreate
 		{
@@ -105,6 +114,7 @@ namespace simul
 			PixelFormat f=PixelFormat::UNKNOWN;
 			bool make_rt=false;
 			bool setDepthStencil=false;
+			VideoTextureType vidTexType = VideoTextureType::NONE;
 			bool need_srv=true;
 			bool computable = true;
 			int numOfSamples=1;
@@ -112,8 +122,10 @@ namespace simul
 			vec4 clear;
 			float clearDepth=0.0f;
 			uint clearStencil = 0;
+			bool shared = false;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			const void* initialData = nullptr;
+			const char* name = nullptr;
 		};
 		//! A crossplatform viewport structure.
 		struct Viewport
@@ -199,20 +211,10 @@ namespace simul
 		public:
 			ShaderResourceType type;
 		};
+
 		/// A Texture base class.
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
-		protected:
-			bool cubemap;
-			bool computable;
-			bool renderTarget;
-			bool external_texture;
-			bool depthStencil;
-			bool shouldGenerateMips=false;
-			std::string name;
-			simul::crossplatform::TargetsAndViewport targetsAndViewport;
-			// For API's that don't track resources:
-			bool unfenceable;
 		public:
 			Texture(const char *name=NULL);
 			virtual ~Texture();
@@ -249,7 +251,7 @@ namespace simul
 				return shouldGenerateMips;
 			}
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
-			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1)=0;
+			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
             virtual nvn::Texture* AsNXTexture() { return 0; };
@@ -285,20 +287,17 @@ namespace simul
 			{
 				return pixelFormat;
 			}
-			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
-			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
-			virtual void InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
-			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
+			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent. Returns true if successful.
+			virtual bool InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
+			virtual bool InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
+			virtual bool InitFromExternalTexture3D(crossplatform::RenderPlatform*, void*, void*, bool = false) { return false; }
 			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*);
-			[[deprecated]]
-			/// Deprecated, use the alternate version that specified mips.
-			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l,
-				crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
-				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0);
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int m
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
-				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0)=0;
+				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, bool shared = false)=0;
+			// Create texture for use as a reference frame in video encoding or decoding.
+			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return false; };
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
@@ -347,11 +346,33 @@ namespace simul
 			{
 				return cubemap?arraySize*6:arraySize;
 			}
+			bool isYUV() const
+			{
+				return yuvLayerIndex > -1;
+			}
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
 			bool textureLoadComplete;
+		protected:
+			bool cubemap;
+			bool computable;
+			bool renderTarget;
+			bool external_texture;
+			bool depthStencil;
+			bool shouldGenerateMips = false;
+			std::string name;
+			platform::crossplatform::TargetsAndViewport targetsAndViewport;
+			// For API's that don't track resources:
+			bool unfenceable;
+			// YUV textures need two SRVs to be bound to a shader. This index is incremented/decremented when AsD3D12ShaderResourceView is called.
+			int yuvLayerIndex;
+			// a wrapper around stbi_load_from_memory.
+			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
+			void FreeTranslatedTextureData(void *data);
+		private:
+			bool stbi_loaded = false;
 		};
 	}
 }

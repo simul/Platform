@@ -9,7 +9,7 @@
 
 #pragma warning(disable:4251)
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -32,7 +32,7 @@ namespace simul
 			virtual ~Texture() override;
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips) override;
-			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
+			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
 			bool IsValid() const;
 			ID3D11Texture2D *AsD3D11Texture2D()
 			{
@@ -72,8 +72,8 @@ namespace simul
 			}
 			bool IsComputable() const override;
 			bool HasRenderTargets() const override;
-			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			void InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
+			bool InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
+			bool InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
 			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
@@ -85,8 +85,7 @@ namespace simul
 			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				, int m,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
 				,int num_samples=1,int aa_quality=0,bool wrap=false,
-				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0
-			);
+				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0, bool shared = false) override;
 			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;

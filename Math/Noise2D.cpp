@@ -4,7 +4,7 @@
 #include "Platform/Math/RandomNumberGenerator.h"
 #include "Platform/Core/MemoryInterface.h"
 
-using namespace simul::math;
+using namespace platform::math;
 
 static float cos_interp(float x, float a, float b)
 {
@@ -13,7 +13,7 @@ static float cos_interp(float x, float a, float b)
 	return  a*(1.f-f) + b*f;
 }
 
-simul::math::Noise2D::Noise2D(simul::base::MemoryInterface *mem):buffer_size(0)
+platform::math::Noise2D::Noise2D(platform::core::MemoryInterface *mem):buffer_size(0)
 	,generation_number(0)
 {
 	memoryInterface=mem;
@@ -24,13 +24,13 @@ simul::math::Noise2D::Noise2D(simul::base::MemoryInterface *mem):buffer_size(0)
 
 }
 
-simul::math::Noise2D::~Noise2D()
+platform::math::Noise2D::~Noise2D()
 {
 	operator delete[](noise_buffer,memoryInterface);
 	del(noise_random,memoryInterface);
 }
 
-void simul::math::Noise2D::Setup(unsigned freq,int RandomSeed,int octaves,float p)
+void platform::math::Noise2D::Setup(unsigned freq,int RandomSeed,int octaves,float p)
 {
 	persistence=p;
 	numOctaves=octaves;
@@ -50,20 +50,20 @@ void simul::math::Noise2D::Setup(unsigned freq,int RandomSeed,int octaves,float 
 	generation_number++;
 }
 
-int simul::math::Noise2D::GetNoiseFrequency() const
+int platform::math::Noise2D::GetNoiseFrequency() const
 {
 	return frequency;
 }
 
 
-float simul::math::Noise2D::value_at(unsigned i,unsigned j) const
+float platform::math::Noise2D::value_at(unsigned i,unsigned j) const
 {
 	i=i%frequency;
 	j=j%frequency;
 	return noise_buffer[j*frequency+i];
 }
 
-float simul::math::Noise2D::noise3(int p[2]) const
+float platform::math::Noise2D::noise3(int p[2]) const
 {
 	int x=p[0];
 	int y=p[1];
@@ -73,7 +73,7 @@ float simul::math::Noise2D::noise3(int p[2]) const
 	return value_at(i1,j1);
 }
 
-float simul::math::Noise2D::noise3(float p[2]) const
+float platform::math::Noise2D::noise3(float p[2]) const
 {
 	float x=p[0];
 	float y=p[1];
@@ -97,7 +97,7 @@ float simul::math::Noise2D::noise3(float p[2]) const
 	return cos_interp(sy, a, b);
 }
 
-float simul::math::Noise2D::PerlinNoise2D(float x,float y) const
+float platform::math::Noise2D::PerlinNoise2D(float x,float y) const
 {
 	float pos[2];
 	float val,result = 0,sum=0;
@@ -120,7 +120,7 @@ float simul::math::Noise2D::PerlinNoise2D(float x,float y) const
 }
 // Because we input ints, it is necessary to start with the high-frequency octaves
 // and go to the lower ones.
-float simul::math::Noise2D::PerlinNoise2D(int x,int y) const
+float platform::math::Noise2D::PerlinNoise2D(int x,int y) const
 {
 	int i;
 	float val,result = 0,sum=0;
@@ -146,12 +146,12 @@ float simul::math::Noise2D::PerlinNoise2D(int x,int y) const
 	return(result);
 }
 
-void simul::math::Noise2D::SetFilter(NoiseFilter *nf)
+void platform::math::Noise2D::SetFilter(NoiseFilter *nf)
 {
 	filter=nf;
 }
 
-unsigned simul::math::Noise2D::GetMemoryUsage() const
+unsigned platform::math::Noise2D::GetMemoryUsage() const
 {
 	return sizeof(this)+sizeof(RandomNumberGenerator)+buffer_size*sizeof(float);
 }

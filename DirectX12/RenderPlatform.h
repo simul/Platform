@@ -12,6 +12,8 @@
 #include "ThisPlatform/Direct3D12.h"
 #include <vector>
 #include <queue>
+#include <mutex>
+#include <thread>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -19,7 +21,7 @@
 #endif
 
 extern const char *PlatformD3D12GetErrorText(HRESULT hr);
-#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
+//#define VERIFY_EXPLICIT_CAST(from, to) static_assert(sizeof(from) == sizeof(to)) 
 #ifndef V_CHECK
 	#define V_CHECK(x)\
 	{\
@@ -32,19 +34,19 @@ extern const char *PlatformD3D12GetErrorText(HRESULT hr);
 		}\
 	}
 #endif
-namespace simul
+namespace platform
 {
 	//! Used to hold information about the resource binding limits and
 	//! the current hardware binding tier
 	struct ResourceBindingLimits
 	{
 		ResourceBindingLimits():
+			BindingTier(D3D12_RESOURCE_BINDING_TIER_1),
 			MaxShaderVisibleDescriptors(0),
 			MaxCBVPerStage(0),
 			MaxSRVPerStage(0),
 			MaxUAVPerStage(0),
-			MaxSaplerPerStage(0),
-			BindingTier(D3D12_RESOURCE_BINDING_TIER_1)
+			MaxSamplersPerStage(0)
 		{
 		}
 		D3D12_RESOURCE_BINDING_TIER BindingTier;
@@ -55,7 +57,7 @@ namespace simul
 		int							MaxCBVPerStage;
 		int							MaxSRVPerStage;
 		int							MaxUAVPerStage;
-		int							MaxSaplerPerStage;
+		int							MaxSamplersPerStage;
 
 		static const int NumCBV		 = 14;
 		static const int NumSRV		 = 24;
@@ -72,22 +74,17 @@ namespace simul
 	{
 		struct ImmediateContext
 		{
-			ID3D12GraphicsCommandListType*	ICommandList;
-			ID3D12CommandAllocator*			IAllocator;
-			bool							IRecording=false;
-			bool							bActive=false;
+			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
+			ID3D12CommandAllocator*			IAllocator		=nullptr;
+			bool							isExternal		=false;
 		};
-		struct D3D12ComputeContext
+		struct D3D12ComputeContext 
 		{
-			void RestoreDeviceObjects(ID3D12DeviceType*			mDevice);
+			void RestoreDeviceObjects(ID3D12Device* mDevice);
 			void InvalidateDeviceObjects();
-			void StartFrame();
-			void EndFrame();
-			ID3D12GraphicsCommandListType	*ICommandList;
-			ID3D12CommandAllocator			*IAllocator;
-			ID3D12Fence						*IFence;
-			UINT64 fenceValue=0;
-			bool active=false;
+
+			ID3D12GraphicsCommandListType*	ICommandList	=nullptr;
+			ID3D12CommandAllocator*			IAllocator		=nullptr;
 		};
 		class Heap;
 		class Material;
@@ -95,7 +92,9 @@ namespace simul
 		{
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
-			ID3D12Fence* AsD3d12Fence()
+			Fence(crossplatform::RenderPlatform* r);
+			~Fence();
+			ID3D12Fence* AsD3D12Fence()
 			{
 				return d3d12Fence;
 			}
@@ -128,18 +127,27 @@ namespace simul
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
 			void							SetImmediateContext(ImmediateContext* ctx);
-			void							SetD3D12ComputeContext(D3D12ComputeContext* ctx);
-			//! Returns the command list reference
-			ID3D12GraphicsCommandList*		AsD3D12CommandList();
+
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
-			//! Returns the device for raytracing, or nullptr if unavailable.
+			//! Returns the device for raytracing, or nullptr if unavailable. You must call Release() on this pointer, as it is created via QueryInterface().
+#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
 			ID3D12Device5*					AsD3D12Device5();
 #endif
-			//! Returns the queue provided during RestoreDeviceObjects (we only need a queue for fencing)
-			ID3D12CommandQueue*				GetCommandQueue()				{ return m12Queue; }
-			ID3D12CommandQueue*				GetComputeQueue()				{ return mComputeQueue; }
+			//! Returns the queue created during RestoreDeviceObjects
+			ID3D12CommandQueue* GetCommandQueue(crossplatform::DeviceContextType type = crossplatform::DeviceContextType::GRAPHICS) 
+			{ 
+				switch (type)
+				{
+				default:
+				case platform::crossplatform::DeviceContextType::GRAPHICS:
+					return mGraphicsQueue;
+				case platform::crossplatform::DeviceContextType::COMPUTE:
+					return mComputeQueue;
+				case platform::crossplatform::DeviceContextType::COPY:
+					return mCopyQueue;
+				}
+			}
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
@@ -176,17 +184,24 @@ namespace simul
 			void							RecompileShaders();
 			void							SynchronizeCacheAndState(crossplatform::DeviceContext &) override;
 
+			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
+
 			virtual void							BeginEvent(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void							EndEvent(crossplatform::DeviceContext &deviceContext);
-			void									BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext);
-			void									EndFrame(crossplatform::GraphicsDeviceContext& deviceContext);
+
+			void									BeginFrame() override;
+			void									EndFrame() override;
 			void									ResourceTransition(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex, crossplatform::ResourceTransition transition)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
-			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
+			void									CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *dst,crossplatform::Texture *src);
 			void									DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d) override;
-			void									DispatchRays	(crossplatform::DeviceContext &deviceContext,const uint3 &dispatch) override;
-			void									Signal(crossplatform::DeviceContext& deviceContext, Fence* fence, unsigned long long value);
+			void									DispatchRays	(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr) override;
+			void									Signal			(crossplatform::DeviceContextType& type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence) override;
+			void									Wait			(crossplatform::DeviceContextType& type, crossplatform::Fence::Waiter waiter, crossplatform::Fence* fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
+			bool									GetFenceStatus	(crossplatform::Fence* fence) override;
+			void									ExecuteCommands (crossplatform::DeviceContext& deviceContext) override;
+			void									RestartCommands (crossplatform::DeviceContext& deviceContext) override;
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			
@@ -203,9 +218,11 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;			
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
-			crossplatform::Fence					*CreateFence() override;
+			crossplatform::Fence					*CreateFence(const char* name) override;
 			crossplatform::Shader					*CreateShader() override;
-			crossplatform::AccelerationStructure	*CreateAccelerationStructure() override;
+			crossplatform::BottomLevelAccelerationStructure*CreateBottomLevelAccelerationStructure() override;
+			crossplatform::TopLevelAccelerationStructure*CreateTopLevelAccelerationStructure() override;
+			crossplatform::ShaderBindingTable*		CreateShaderBindingTable() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
 
@@ -248,16 +265,22 @@ namespace simul
 			//! We cache the current number of samples
 			void									SetCurrentSamples(int samples, int quality = 0);
 			bool									IsMSAAEnabled();
+
+			//! Executes the provided commandList on the provided commandQueue, alongwith executing the internal immediate commandlist on the graphics queue.
+			//! Passing nullptr for both parameters will only execute the immediate commandlist.
+			void ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12GraphicsCommandList* const commandList);
+		
+
 			DXGI_SAMPLE_DESC						GetMSAAInfo();
 			
 			ResourceBindingLimits					GetResourceBindingLimits()const;
 			ID3D12RootSignature*					GetGraphicsRootSignature()const;
-			ID3D12RootSignature*					GetComputeRootSignature()const;
 			ID3D12RootSignature*					GetRaytracingLocalRootSignature() const;
 			ID3D12RootSignature*					GetRaytracingGlobalRootSignature() const;
 			
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullCBV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSRV()const;
+			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSBSRV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullUAV()const;
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
 
@@ -275,37 +298,36 @@ namespace simul
 			crossplatform::PixelFormat			  DefaultOutputFormat;
 			
 		protected:
-			crossplatform::Texture* createTexture() override;
-			crossplatform::Fence* generalFence=nullptr;
-			unsigned long long generalFenceVal=1;
-			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
+			friend class CommandListController;
+			static ID3D12CommandQueue* CreateCommandQueue(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type, const char* name);
+			static void FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue* queue);
 			//D3D12-specific things
-			void BeginD3D12Frame();
+			virtual void ContextFrameBegin(crossplatform::GraphicsDeviceContext&) override;
+			crossplatform::Texture* createTexture() override;
+			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//! The GPU timestamp counter frequency (in ticks/second)
 			UINT64					  mTimeStampFreq;
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device=nullptr;
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
-			ID3D12Device5*				m12Device5=nullptr;
-#endif
-			//! Reference to the command queue
-			ID3D12CommandQueue*			m12Queue;
+			//! Reference to the graphics command queue
+			ID3D12CommandQueue*			mGraphicsQueue=nullptr;
+			//! Reference to the compute command queue
 			ID3D12CommandQueue*			mComputeQueue=nullptr;
-			//! Reference to a command list
-			ID3D12GraphicsCommandList*	mImmediateCommandList;
+			//! Reference to the copy command queue
+			ID3D12CommandQueue*			mCopyQueue=nullptr;
+			// Immediate context can be owned or external.
+			ImmediateContext			mIContext;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
-			dx12::Heap*					mFrameHeap;
+			dx12::Heap*					mFrameHeap=nullptr;
 			//! Heap used to hold override sampler states
-			dx12::Heap*					mFrameOverrideSamplerHeap;
-			dx12::Heap*					mSamplerHeap;
-			dx12::Heap*					mRenderTargetHeap;
-			dx12::Heap*					mDepthStencilHeap;
-			dx12::Heap*					mNullHeap;
+			dx12::Heap*					mFrameOverrideSamplerHeap=nullptr;
+			dx12::Heap*					mSamplerHeap=nullptr;
+			dx12::Heap*					mRenderTargetHeap=nullptr;
+			dx12::Heap*					mDepthStencilHeap=nullptr;
+			dx12::Heap*					mNullHeap=nullptr;
 			//! Shared root signature for graphics
 			ID3D12RootSignature*		mGRootSignature=nullptr;
-			//! Shared root signature for compute
-			ID3D12RootSignature*		mCRootSignature=nullptr;
 			//! For raytracing
 			ID3D12RootSignature*		mGRaytracingLocalSignature=nullptr;
 			ID3D12RootSignature*		mGRaytracingGlobalSignature=nullptr;
@@ -320,12 +342,25 @@ namespace simul
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;
 
 			//! Holds resources to be deleted and its age
-			std::vector<std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
+			std::vector<std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
-			int									mTotalBarriers;
-			int									mCurBarriers;
-			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			struct ContextBarriers
+			{
+				ContextBarriers()
+				{
+					mCurBarriers    = 0;
+					mTotalBarriers  = 16; 
+					mPendingBarriers.resize(mTotalBarriers);
+				}
+
+				int									mTotalBarriers;
+				int									mCurBarriers;
+				std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
+			};
+			std::map<ID3D12CommandList*,ContextBarriers*> barriers;
+			
+			ContextBarriers &GetBarriers(crossplatform::DeviceContext &);
 			bool								isInitialized = false;
 			bool								mIsMsaaEnabled;
 			DXGI_SAMPLE_DESC					mMsaaInfo;			
@@ -333,18 +368,23 @@ namespace simul
 			ResourceBindingLimits				mResourceBindingLimits;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullCBV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSRV;
+			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSBSRV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullUAV;
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
 			crossplatform::TargetsAndViewport mTargets;
-			ID3D12CommandAllocator*	 mImmediateAllocator=nullptr;
-			bool bImmediateContextActive=false;
-			bool bExternalImmediate=false;
 			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
 			ID3D12RootSignature *LoadRootSignature(const char *filename);
+
+			D3D12ComputeContext m12ComputeContext;
+			std::deque<std::pair<crossplatform::Fence*, ID3D12CommandAllocator*>> mUsedAllocators;
+			void FlushImmediateCommandList();
+			void ResetImmediateCommandList() override;
+			unsigned char frameHeapIndex=0;
 		};
+
 	}
 }
 #ifdef _MSC_VER

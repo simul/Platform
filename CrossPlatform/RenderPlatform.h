@@ -13,6 +13,7 @@
 #include "Platform/Shaders/SL/CppSl.sl"
 #include "Platform/Shaders/SL/debug_constants.sl"
 #include "Platform/CrossPlatform/Effect.h"
+#include "Platform/CrossPlatform/Allocator.h"
 
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
@@ -22,8 +23,8 @@
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(mem);
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4251)
+	#pragma warning(push)
+	#pragma warning(disable:4251)
 #endif
 struct ID3D11Device;
 struct ID3D12Device;
@@ -38,7 +39,7 @@ namespace vk
 	class Device;
 	class Instance;
 }
-namespace simul
+namespace platform
 {
 	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
 	namespace crossplatform
@@ -48,7 +49,6 @@ namespace simul
 		class Effect;
 		class EffectTechnique;
 		class TextRenderer;
-		struct EffectDefineOptions;
 		struct Viewport;
 		class Light;
 		class Texture;
@@ -68,34 +68,44 @@ namespace simul
 		struct Query;
 		struct TargetsAndViewport;
 		class SwapChain;
-        struct Window;
-        class DisplaySurface;
-		class AccelerationStructure;
-        //! Type of resource transition, some platforms used this (dx12)
-        enum ResourceTransition
-        {
-            Readable        = 0,
-            Writeable       = 1,
-            UnorderedAccess = 2
-        };
+		struct Window;
+		class DisplaySurface;
+		class BottomLevelAccelerationStructure;
+		class TopLevelAccelerationStructure;
+		class AccelerationStructureManager;
+		class ShaderBindingTable;
+
+		//! Type of resource transition, some platforms used this (dx12)
+		enum ResourceTransition
+		{
+			Readable			= 0,
+			ReadableGraphics	= Readable,
+			ReadableCompute		= 1,
+			Writeable			= 2,
+			UnorderedAccess		= 3
+		};
 		/// Should correspond to UnityGfxRenderer
 		enum class RenderPlatformType
 		{
-			Unknown                 = -1,
-			OpenGL				    = 0,    // Desktop OpenGL
-			D3D11				    = 2,    // Direct3D 11
-			Null				    = 4,    // null means don't render, as opposed to Unknown which means uninitialized.
-			PS4					    = 13,   // PlayStation 4
-			XboxOne				    = 14,   // Xbox One        
-			Metal				    = 16,   // iOS Metal
-			D3D12				    = 18,   // Direct3D 12
+			Unknown					= -1,
+			OpenGL					= 0,	// Desktop OpenGL
+			D3D11					= 2,	// Direct3D 11
+			Null					= 4,	// null means don't render, as opposed to Unknown which means uninitialized.
+			PS4						= 13,	// PlayStation 4
+			XboxOne					= 14,	// Xbox One        
+			Metal					= 16,	// iOS Metal
+			D3D12					= 18,	// Direct3D 12
 			Vulkan					= 21,	// Vulkan
 			Switch					= 22,	// Nintendo Switch NVN API
 			XboxOneD3D12			= 23,	// XboxOne Direct3D 12
 			GameCoreXboxOne			= 24,	// Game Core Xbox One graphics API using Direct3D 12.
-			GameCoreScarlett		= 25,	// Game Core Scarlett graphics API using Direct3D 12.
+			GameCoreXboxSeries		= 25,	// Game Core Xbox Series graphics API using Direct3D 12.
+			GameCoreScarlett [[deprecated("Use GameCoreXboxSeries instead.")]] = 25, // Game Core Scarlett graphics API using Direct3D 12. 
 			Commodore				= 45,	// Commodore 64
 			Spectrum				= 25,	// ZX Spectrum
+			PS5						= 26,	// PlayStation 5
+			PS5NGGC					= 27,	// PlayStation 5 NGGC
+			GLES					= 28,
 			D3D11_FastSemantics	    = 1002, // Direct3D 11
 		};
 		enum RenderingFeatures:uint32_t
@@ -111,6 +121,10 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT Fence
 		{
+			virtual ~Fence() = default;
+			enum class Signaller : uint32_t { CPU, GPU };
+			typedef Signaller Waiter;
+			uint64_t value;
 			virtual void RestoreDeviceObjects(RenderPlatform *r)
 			{
 			}
@@ -137,14 +151,15 @@ namespace simul
 		protected:
 			RenderingFeatures renderingFeatures=RenderingFeatures::None;
 			int ApiCallLimit=0;
+			long long last_begin_frame_number=0;
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
-			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
+			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true);
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
 		public:
 			/// Get the current state to be applied to the given context at the next draw or dispatch.
 			crossplatform::ContextState *GetContextState(crossplatform::DeviceContext &deviceContext);
 			virtual void T1(){}
-			RenderPlatform(simul::base::MemoryInterface*m=NULL);
+			RenderPlatform(platform::core::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
 			virtual float GetDefaultOutputGamma() const
 			{
@@ -165,8 +180,6 @@ namespace simul
 			}
 			//! Returns true if all the specified feature bits are supported.
 			bool HasRenderingFeatures(RenderingFeatures r) const;
-			//! Returns the current idx (used in ring buffers)
-			unsigned char GetIdx()const                   { return mCurIdx; }
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
 			virtual std::string GetPathName() const;
@@ -193,16 +206,9 @@ namespace simul
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
 			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
 			//! Gets an object containing immediate-context API-specific values.
-			GraphicsDeviceContext &GetImmediateContext();
+			virtual GraphicsDeviceContext &GetImmediateContext();
 			//! Gets an object containing the current global compute context.
-			ComputeDeviceContext &GetComputeDeviceContext()
-			{
-				return computeContext;
-			}
-			void SetComputeDeviceContext(const ComputeDeviceContext &c)
-			{
-				computeContext=c;
-			}
+			ComputeDeviceContext &GetComputeDeviceContext() { return computeContext; }
 			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath	(const char *pathUtf8);
 			//! Remove a path from the top of the texture path stack.
@@ -232,20 +238,39 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &);
-			virtual void BeginFrame			(GraphicsDeviceContext &);
-			virtual void EndFrame			(GraphicsDeviceContext &);
-            //! Makes sure the resource is in the required state specified by transition. 
-            virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
+			//! Mark the beginning of a frame, global for all DeviceContexts that will use this RenderPlatform instance.
+			//! The frame number will be incremented.
+			virtual void BeginFrame();
+			//! Mark the beginning of a frame, global for all DeviceContexts that will use this RenderPlatform instance.
+			//! The frame number will be the value specified in f.
+			void BeginFrame					(long long f);
+			//! Mark the end of a frame, global for all DeviceContexts that use this RenderPlatform instance.
+			//! There should be no further rendering or compute until BeginFrame() has been called again.
+			virtual void EndFrame			();
+			bool						FrameStarted() const;
+			long long					GetFrameNumber() const;
+			//! Makes sure the resource is in the required state specified by transition. 
+			virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, crossplatform::Texture* texture) {};
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {};
 			//! Copy a given texture to another.
-			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
+			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *dst,crossplatform::Texture *src){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
-			virtual void DispatchRays		(DeviceContext &deviceContext,const uint3 &dispatch){}
-			virtual void Signal				(DeviceContext &deviceContext,Fence *fence,unsigned long long value){}
+			//! Execute the currently applied raytracing shaders.
+			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
+			//! Add a signal command to the CPU thread or GPU queue.
+			virtual void Signal				(DeviceContextType &type, Fence::Signaller signaller, Fence *fence){}
+			//! Add a wait command to the CPU thread or GPU queue. 
+			virtual void Wait				(DeviceContextType &type, Fence::Waiter waiter, Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX){}
+			//! Check the status of the fence. Returns true is fence is completed.
+			virtual bool GetFenceStatus		(crossplatform::Fence* fence) { return false; }
+			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
+			virtual void ExecuteCommands	(DeviceContext &deviceContext){};
+			//! Restart the commands for rendering after calling ExcuteCommands(). 
+			virtual void RestartCommands	(DeviceContext &deviceContext){};
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.
@@ -282,7 +307,13 @@ namespace simul
 			/// Create a platform-specific material instance.
 			Material						*GetOrCreateMaterial(const char *name);
 			/// Create a platform specific raytracing acceleration structure.
-			virtual AccelerationStructure	*CreateAccelerationStructure();
+			virtual BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
+			/// Create a platform specific raytracing acceleration structure.
+			virtual TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure();
+			/// Create a platform agnostic raytracing acceleration structure maanger.
+			AccelerationStructureManager*	CreateAccelerationStructureManager();
+			/// Create a platform agnostic raytracing shader binding table.
+			virtual ShaderBindingTable*		CreateShaderBindingTable();
 			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						();
 			/// Create a texture of the given file or name. If filename exists, it will be loaded.
@@ -290,6 +321,8 @@ namespace simul
 			Texture							*GetOrCreateTexture(const char* filename, bool gen_mips=false);
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			Texture							*CreateTexture					(const char *lFileNameUtf8=nullptr ,bool gen_mips=false);
+			/// called automatically from invalidate to clear the texture from e.g. the unfinishedTextures list. Do not call this directly.
+			void							InvalidatingTexture(Texture *t);
 			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
 			virtual BaseFramebuffer			*CreateFramebuffer				(const char * =nullptr)	=0;
 			/// Create a platform-specific sampler state instance.
@@ -297,24 +330,20 @@ namespace simul
 			/// Look for a sampler state of the stated name, and create one if it does not exist. The resulting state will be owned by the RenderPlatform, so do not destroy it.
 			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
 			/// as the Effects system assumes that SamplerState names are unique.
-			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
-			/// Create a platform-specific effect instance.
-			Effect							*CreateEffect					(const char *filename_utf8);
-			///  Create a platform-specific effect pass.
-			//virtual EffectPass				*CreateEffectPass();
+			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,platform::crossplatform::SamplerStateDesc *desc=0);
 			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
 			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
-			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			virtual Effect					*CreateEffect					(const char *filename_utf8);
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
-			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
+			/// platform::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
 			/// Create a platform-specific structured buffer instance. This is not usually used directly, instead, create a
-			/// simul::crossplatform::StructuredBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
+			/// platform::crossplatform::StructuredBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformStructuredBuffer	*CreatePlatformStructuredBuffer	()	=0;
 			/// Create a platform-specific buffer instance - e.g. vertex buffers, index buffers etc.
 			virtual Buffer					*CreateBuffer					()	=0;
@@ -324,13 +353,13 @@ namespace simul
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc);
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.
 			virtual Query					*CreateQuery					(QueryType q)=0;
-			virtual Fence					*CreateFence(){return nullptr;}
+			virtual Fence					*CreateFence(const char* name){return nullptr;}
 			/// Get or create an API-specific shader object.
 			virtual Shader					*EnsureShader(const char *filenameUtf8, ShaderType t);
 			virtual Shader					*EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
 			/// Create a shader.
 			virtual Shader					*CreateShader()=0;
-            virtual DisplaySurface*         CreateDisplaySurface();
+			virtual DisplaySurface*         CreateDisplaySurface();
 
 			virtual GpuProfiler*			CreateGpuProfiler();
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
@@ -343,8 +372,8 @@ namespace simul
 			virtual void					ApplyDefaultRenderTargets		(crossplatform::GraphicsDeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(GraphicsDeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-            virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
-            virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
+			virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
+			virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
 			virtual void					SetViewports					(GraphicsDeviceContext &deviceContext,int num,const Viewport *vps);
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport						(GraphicsDeviceContext &deviceContext,int index);
@@ -367,9 +396,9 @@ namespace simul
 			/// <param name="s"></param>
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			///
-			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a);
-			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
-			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
+			/// This function is called to ensure that the named shader is compiled.
+			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8);
 
 			/// <summary>
 			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
@@ -414,6 +443,12 @@ namespace simul
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+
+			//! Get the memory allocator - used in particular where API's allocate memory directly.
+			platform::core::MemoryInterface *GetAllocator()
+			{
+				return &allocator;
+			}
 			std::map<std::string, crossplatform::Material*> &GetMaterials()
 			{
 				return materials;
@@ -429,8 +464,8 @@ namespace simul
 			std::map<std::string,crossplatform::Material*> materials;
 			std::map<std::string, crossplatform::Texture*> textures;
 			std::vector<std::string> GetTexturePathsUtf8(); 
-			simul::base::MemoryInterface *GetMemoryInterface();
-			void SetMemoryInterface(simul::base::MemoryInterface *m);
+			platform::core::MemoryInterface *GetMemoryInterface();
+			void SetMemoryInterface(platform::core::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 			// Does the format use stencil?
@@ -439,14 +474,18 @@ namespace simul
 			static bool IsStencilFormat(PixelFormat f);
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
+			
 		protected:
+			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
+			virtual void ContextFrameBegin(GraphicsDeviceContext&);
+			Allocator allocator;
 			void FinishLoadingTextures(DeviceContext& deviceContext);
 			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
 			std::set<Texture*> unfinishedTextures;
 			std::set<Texture*> unMippedTextures;
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			virtual Texture* createTexture() = 0;
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
 			std::vector<std::string> texturePathsUtf8;
 			std::vector<std::string> shaderBinaryPathsUtf8;
@@ -471,15 +510,12 @@ namespace simul
 			crossplatform::GpuProfiler		*gpuProfiler=nullptr;
 			bool							gpuProfileFrameStarted = false;
 			bool can_save_and_restore;
-			//! Value used to determine the number of "x" that we will have, this is useful in dx12
-			//! as many times we can not reuse the same resource as in the last frame so we need to have 
-			//! a ring buffer.
-			static const int			kNumIdx = 3;
-			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
-			unsigned char				mCurIdx;
 			//! Last frame number
-			long long					mLastFrame;
+			long long					mLastFrame=-1;
+			bool						frame_started=false;
+			long long					frameNumber = 0;
 			std::set<crossplatform::Texture*> fencedTextures;
+			virtual void ResetImmediateCommandList() {}
 		public:
 			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;
@@ -489,7 +525,6 @@ namespace simul
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
-			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
 
 		/// Draw a horizontal grid in 3D.
@@ -550,7 +585,7 @@ namespace simul
 }
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif
 
 #endif

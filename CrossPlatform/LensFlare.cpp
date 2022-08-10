@@ -2,7 +2,7 @@
 #include "Platform/Math/Vector3.h"
 #include "Platform/Math/Pi.h"
 #include <math.h>
-using namespace simul;
+using namespace platform;
 using namespace math;
 using namespace crossplatform;
 

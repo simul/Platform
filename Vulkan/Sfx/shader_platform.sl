@@ -61,6 +61,8 @@ vec4 reverse_y_coord(vec4 a)
 	return a;//vec4(a.x,1.0-a.y,a.z,a.w);
 }
 
+#define fmod(a,b) (a-b*trunc(a/b))
+
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET6883660##n
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET6883661##n
 

@@ -48,6 +48,7 @@ struct SfxConfig
 		,combineTexturesSamplers(false)
 		,combineInShader(false)
 		,forceSM51(false)
+		,supportRaytracing(false)
 	{
 		samplerDeclaration= "SamplerState {name}: register(s{slot});";
 	}
@@ -99,9 +100,9 @@ struct SfxConfig
 	std::string samplerDeclaration;
 	std::string structDeclaration;
 	std::string constantBufferDeclaration;
-	std::string inputDeclaration;
+	std::string pixelInputDeclaration;
 	std::string vertexInputDeclaration;
-	std::string outputDeclaration;
+	std::string vertexOutputDeclaration;
 	std::string pixelOutputDeclaration;
 	std::string pixelOutputDeclarationDSB;
 	std::string samplingSyntax;
@@ -113,6 +114,7 @@ struct SfxConfig
 	//! Preamble only for compute shaders
 	std::string computePreamble;
 	std::map<std::string,std::string> vertexSemantics;
+	std::map<std::string,std::string> pixelSemantics;
 	std::map<std::string, std::string> vertexOutputAssignment;
 	std::map<std::string, std::string> fragmentOutputAssignment;
 	//! Mapping of semantics used in compute shaders
@@ -136,6 +138,8 @@ struct SfxConfig
 	std::string graphicsRootSignatureSource;
 	//! TEMP: Forces all shaders to be 5_1
 	bool forceSM51;
+	//! Does this API support Raytracing
+	bool supportRaytracing;
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
 };

@@ -7,7 +7,7 @@
 #include "Platform/CrossPlatform/Light.h"
 #include "glad/glad.h"
 
-namespace simul
+namespace platform
 {
 	namespace opengl
 	{

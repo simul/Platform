@@ -20,11 +20,12 @@
 #define MAX_PATH 500
 #endif
 
-using namespace simul::base;
+using namespace platform;
+using namespace core;
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		static bool useExternalTextures=false;
 		void SetUseExternalTextures(bool t)

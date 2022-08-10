@@ -8,6 +8,7 @@
 #define _getcwd getcwd
 #endif
 
+//! Class for loading files
 class FileLoader
 {
 public:

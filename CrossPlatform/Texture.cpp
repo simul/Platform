@@ -1,12 +1,13 @@
-
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/RuntimeError.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <iostream>
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 SamplerState::SamplerState():default_slot(-1),renderPlatform(nullptr)
 {
@@ -17,13 +18,7 @@ SamplerState::~SamplerState()
 }
 
 Texture::Texture(const char *n)
-				:cubemap(false)
-				,computable(false)
-				,renderTarget(false)
-				,external_texture(false)
-				,depthStencil(false)
-				,unfenceable(false)
-				,width(0)
+				:width(0)
 				,length(0)
 				,depth(0)
 				,arraySize(0)
@@ -32,6 +27,13 @@ Texture::Texture(const char *n)
 				,pixelFormat(crossplatform::UNKNOWN)
 				,renderPlatform(NULL)
 				,textureLoadComplete(true)
+				,cubemap(false)
+				,computable(false)
+				,renderTarget(false)
+				,external_texture(false)
+				,depthStencil(false)
+				,unfenceable(false)
+				,yuvLayerIndex(-1)
 {
 	if(n)
 		name=n;
@@ -39,12 +41,12 @@ Texture::Texture(const char *n)
 
 Texture::~Texture()
 {
+	InvalidateDeviceObjects();
 }
 
-void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate)
+bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate)
 {
-	InitFromExternalTexture2D(renderPlatform, textureCreate->external_texture, textureCreate->srv, textureCreate->w, textureCreate->l, textureCreate->f, textureCreate->make_rt, textureCreate->setDepthStencil, textureCreate->need_srv
-		, textureCreate->numOfSamples);
+	return InitFromExternalTexture2D(renderPlatform, textureCreate->external_texture, textureCreate->srv, textureCreate->w, textureCreate->l, textureCreate->f, textureCreate->make_rt, textureCreate->setDepthStencil, textureCreate->need_srv, textureCreate->numOfSamples);
 }
 
 void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int array_index,int mip_index )
@@ -119,6 +121,8 @@ void Texture::ClearFence(DeviceContext &deviceContext)
 
 void Texture::InvalidateDeviceObjects()
 {
+	if(renderPlatform)
+		renderPlatform->InvalidatingTexture(this);
 	shouldGenerateMips=false;
 	width=length=depth=arraySize=dim=mips=0;
 	pixelFormat=PixelFormat::UNKNOWN;
@@ -129,21 +133,30 @@ void Texture::InvalidateDeviceObjects()
 bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::TextureCreate* tc)
 {
 	bool res=false;
-	if (tc->d == 2&&tc->arraysize==1)
+
+	if (tc->vidTexType != VideoTextureType::NONE)
+		res = ensureVideoTexture(r, tc->w, tc->l, tc->f, tc->vidTexType);
+	else if (tc->d < 2&&tc->arraysize==1&&!tc->cubemap)
 		res= ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil );
-	else if(tc->d==2)
+	else if(tc->d<2)
 		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap ) ;
-	else if(tc->d==3)
+	else
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
 	return res;
 
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l,
-	crossplatform::PixelFormat f, bool computable , bool rendertarget , bool depthstencil , int num_samples , int aa_quality , bool wrap ,
-	vec4 clear , float clearDepth , uint clearStencil )
+bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)
 {
-	return ensureTexture2DSizeAndFormat(renderPlatform,  w,  l, 1,
-		 f,  computable,  rendertarget,  depthstencil,  num_samples,  aa_quality,  wrap,
-		 clear,  clearDepth,  clearStencil);
+	target = stbi_load_from_memory((const unsigned char*)src, (int)size, &x, &y, &num_channels, 4);
+	stbi_loaded = true;
+	return(target!=nullptr);
+}
+
+void Texture::FreeTranslatedTextureData(void* data)
+{
+	if (stbi_loaded)
+	{
+		stbi_image_free(data);
+	}
 }

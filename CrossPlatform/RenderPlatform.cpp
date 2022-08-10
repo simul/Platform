@@ -12,7 +12,11 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
-#include "Platform/CrossPlatform/AccelerationStructure.h"
+#include "Platform/CrossPlatform/BaseAccelerationStructure.h"
+#include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/BottomLevelAccelerationStructure.h"
+#include "Platform/CrossPlatform/AccelerationStructureManager.h"
+#include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -20,7 +24,7 @@
 #else
 #include <cmath>		// for isinf()
 #endif
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
 
@@ -58,7 +62,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	return *this;
 }
 
-RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
+RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
@@ -76,7 +80,6 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 #else
 	,can_save_and_restore(true)
 #endif
-	,mCurIdx(0)
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
 {
@@ -86,6 +89,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 
 RenderPlatform::~RenderPlatform()
 {
+	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
 
@@ -141,6 +145,12 @@ vk::Instance* RenderPlatform::AsVulkanInstance()
 
 GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 {
+	if (!immediateContext.contextState.contextActive)
+	{
+		//SIMUL_CERR << "Immediate context is not active.\n";
+		// Reset so it is active, because we will now be executing commands on it probably.
+		ResetImmediateCommandList();
+	}
 	return immediateContext;
 }
 
@@ -264,6 +274,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(t.second);
 	}
 	textures.clear();
+	last_begin_frame_number=0;
 }
 
 void RenderPlatform::RecompileShaders()
@@ -277,18 +288,16 @@ void RenderPlatform::RecompileShaders()
 	
 	Destroy(debugEffect);
 	
-	std::map<std::string, std::string> defines;
-	debugEffect=CreateEffect("debug",defines);
+	debugEffect=CreateEffect("debug");
 
 	Destroy(solidEffect);
-	
-	solidEffect=CreateEffect("solid",defines);
+	solidEffect=CreateEffect("solid");
 	
 	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy",defines);
+	copyEffect=CreateEffect("copy");
 	
 	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip",defines);
+	mipEffect=CreateEffect("mip");
 	
 	
 	textRenderer->RecompileShaders();
@@ -390,8 +399,10 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
-void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
+void RenderPlatform::ContextFrameBegin(GraphicsDeviceContext &deviceContext)
 {
+	if (!frame_started)
+		BeginFrame();
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
 		gpuProfiler->StartFrame(deviceContext);
@@ -401,12 +412,48 @@ void RenderPlatform::BeginFrame(GraphicsDeviceContext &deviceContext)
 	// as loading a texture SOMETIMES in D3D12, cause the mip to not generate.
 	FinishGeneratingTextureMips(deviceContext);
 	FinishLoadingTextures(deviceContext);
-}
+	allocator.CheckForReleases();
+	last_begin_frame_number=deviceContext.GetFrameNumber();
+} 
 
-void RenderPlatform::EndFrame(GraphicsDeviceContext &dev)
+void RenderPlatform::EndFrame()
 {
+	if (!frame_started)
+	{
+		SIMUL_CERR<<"EndFrame(): frame had not started.\n";
+	}
+	frame_started = false;
 }
 
+void RenderPlatform::BeginFrame()
+{
+	if (frame_started)
+	{
+		SIMUL_BREAK("BeginFrame(): frame had already started.");
+	}
+	frameNumber++;
+	frame_started = true;
+}
+
+bool RenderPlatform::FrameStarted() const
+{
+	return frame_started;
+}
+
+long long RenderPlatform::GetFrameNumber() const
+{
+	return frameNumber;
+}
+
+void RenderPlatform::BeginFrame(long long f)
+{
+	if (f==frameNumber)
+	{
+		SIMUL_BREAK("BeginFrame(long long): frame already at this number.");
+	}
+	BeginFrame();
+	frameNumber = f;
+}
 
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
@@ -474,27 +521,12 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				int W=(w+4-1)/4;
 				int L=(l+4-1)/4;
 				int D=(d+4-1)/4;
-				if (texture->dim == 2 && texture->NumFaces()>1)
+		
+				if(texture->dim==2)
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
-					D = d;
-					techname = "compute_clear_2d_array";
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
-					{
-						techname="compute_clear_2d_array_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i);
-					}
-					else
-					{
-						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i);
-					}
-				}
-				else if(texture->dim==2)
-				{
-					W=(w+8-1)/8;
-					L=(l+8-1)/8;
-					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i,j);
+					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, i, j);
 					D=1;
 				}
 				else if(texture->dim==3)
@@ -551,11 +583,11 @@ void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *
 	vec4 semiblack(0, 0, 0, 0.5);
 	for(int i=0;i<t->mips-1;i++)
 	{
-		int m0=i,m1=i+1;
+		int m1=i+1;
 		t->activateRenderTarget(deviceContext,array_idx,m1);
 		SetTexture(deviceContext,_imageTexture,t,array_idx,0);
 		DrawQuad(deviceContext);
-		//Print(deviceContext,0,0,base::QuickFormat("%d",m1),white,semiblack);
+		//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
 		t->deactivateRenderTarget(deviceContext);
 	}
 	UnapplyPass(deviceContext);
@@ -589,15 +621,16 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 	return texturePathsUtf8;
 }
 
-simul::base::MemoryInterface *RenderPlatform::GetMemoryInterface()
+platform::core::MemoryInterface *RenderPlatform::GetMemoryInterface()
 {
 	return memoryInterface;
 }
 
-void RenderPlatform::SetMemoryInterface(simul::base::MemoryInterface *m)
+void RenderPlatform::SetMemoryInterface(platform::core::MemoryInterface *m)
 {
 	// TODO: shutdown old memory, test for leaks at RenderPlatform shutdown.
 	memoryInterface=m;
+	allocator.SetExternalAllocator(m);
 }
 
 crossplatform::Effect *RenderPlatform::GetDebugEffect()
@@ -704,7 +737,7 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
-	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
+	platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
@@ -755,9 +788,24 @@ Material *RenderPlatform::GetOrCreateMaterial(const char *name)
 	return mat;
 }
 
-AccelerationStructure *RenderPlatform::CreateAccelerationStructure()
+BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
 {
-	return new AccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this);
+}
+
+TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+{
+	return new TopLevelAccelerationStructure(this);
+}
+
+AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
+{
+	return new AccelerationStructureManager(this);
+}
+
+ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
+{
+	return new ShaderBindingTable();
 }
 
 Mesh *RenderPlatform::CreateMesh()
@@ -774,10 +822,18 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 		{
 			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
 			unfinishedTextures.insert(tex);
+			SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
 		}
 		tex->SetName(fileNameUtf8);
 	}
 	return tex;
+}
+
+void RenderPlatform::InvalidatingTexture(Texture *t)
+{
+	auto i=unfinishedTextures.find(t);
+	if(i!=unfinishedTextures.end())
+		unfinishedTextures.erase(i);
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
@@ -804,15 +860,15 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	float size_req=tan_x*.5f;
 	static float sizem=3.f;
 	float d=2.0f*sizem/size_req;
-	simul::math::Vector3 offs0(0,0,-d);
+	platform::math::Vector3 offs0(0,0,-d);
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	simul::math::Vector3 offs;
+	platform::math::Vector3 offs;
 	Multiply3(offs,view,offs0);
-	world._41=offs.x;
-	world._42=offs.y;
-	world._43=offs.z;
+	world._14 =offs.x;
+	world._24 =offs.y;
+	world._34 =offs.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.displayLod=displayLod;
@@ -877,7 +933,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	static int count=frames;
 	static unsigned long long framenumber=0;
 	float displayLod=0.0f;
-	if(debug&&framenumber!=deviceContext.frame_number)
+	if(debug&&framenumber!=deviceContext.GetFrameNumber())
 	{
 		count--;
 		if(!count)
@@ -885,7 +941,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			lod++;
 			count=frames;
 		}
-		framenumber=deviceContext.frame_number;
+		framenumber=deviceContext.GetFrameNumber();
 	}
 	if(debug&&tex)
 	{
@@ -1042,7 +1098,7 @@ void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y
 	}
 	if(!proj)
 		proj=deviceContext.viewStruct.proj;
-	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(proj);
+	platform::crossplatform::Frustum frustum=platform::crossplatform::GetFrustumFromProjectionMatrix(proj);
 	debugConstants.debugTanHalfFov=(frustum.tanHalfFov);
 
 	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,isinf(frustum.farZ)?300000.0f:frustum.farZ);
@@ -1105,7 +1161,14 @@ void RenderPlatform::LinePrint(GraphicsDeviceContext &deviceContext,const char *
 	int lines=Print(deviceContext, deviceContext.framePrintX,deviceContext.framePrintY,text,colr,bkg);
 	deviceContext.framePrintY+=lines*textRenderer->GetDefaultTextHeight();
 }
-		
+
+bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool )
+{
+	if(deviceContext.GetFrameNumber()!=last_begin_frame_number&&deviceContext.AsGraphicsDeviceContext())
+		ContextFrameBegin(*(deviceContext.AsGraphicsDeviceContext()));
+	return true;
+}
+
 crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &,int)
 {
 	crossplatform::Viewport v;
@@ -1117,7 +1180,8 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 {
 	if(num>0&&vps!=nullptr)
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
-	if(deviceContext.GetFrameBufferStack().size())
+	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
+	/*if(deviceContext.GetFrameBufferStack().size())
 	{
 		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
 		if(f)
@@ -1126,7 +1190,9 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 	else
 	{
 		deviceContext.defaultTargetsAndViewport.viewport=*vps;
-	}
+	}*/
+	if(tv)
+		tv->viewport=*vps;
 }
 
 crossplatform::Viewport	RenderPlatform::GetViewport(GraphicsDeviceContext &deviceContext,int index)
@@ -1176,28 +1242,8 @@ crossplatform::GpuProfiler *RenderPlatform::GetGpuProfiler()
 	return gpuProfiler;
 }
 
-void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)
-{
-	if(options.size())
-	{
-		std::vector<crossplatform::EffectDefineOptions> opts=options;
-		opts.pop_back();
-		crossplatform::EffectDefineOptions opt=options.back();
-		for(int i=0;i<(int)opt.options.size();i++)
-		{
-			std::map<std::string,std::string> defs=defines;
-			defs[opt.name]=opt.options[i];
-			EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defs);
-		}
-	}
-	else
-	{
-		crossplatform::Effect *e=CreateEffect(filename_utf8,defines);
-		delete e;
-	}
-}
 
-SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc)
+SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,platform::crossplatform::SamplerStateDesc *desc)
 {
 	SamplerState *ss=nullptr;
 	std::string str(name_utf8);
@@ -1226,26 +1272,6 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	return ss;
 }
 
-Effect *RenderPlatform::GetEffect(const char *filename_utf8)
-{
-	auto i = effects.find(filename_utf8);
-	if (i == effects.end())
-		return nullptr;
-	return i->second;
-}
-
-Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
-{
-	std::map<std::string,std::string> defines;
-	Effect *e=CreateEffect(filename_utf8,defines);
-	return e;
-}
-
-/*Effect* RenderPlatform::CreateEffectPass()
-{
-	EffectPass* e = new EffectPass(this,effect);
-	return e;
-}*/
 void RenderPlatform::Destroy(Effect *&e)
 {
 	if (e)
@@ -1255,14 +1281,28 @@ void RenderPlatform::Destroy(Effect *&e)
 	}
 }
 
-crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 {
 	std::string fn(filename_utf8);
 	crossplatform::Effect *e=CreateEffect();
 	effects[fn] = e;
 	e->SetName(filename_utf8);
-	e->Load(this,filename_utf8,defines);
+	bool success = e->Load(this,filename_utf8);
+	if (!success)
+	{
+		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
+		delete e;
+		return nullptr;
+	}
 	return e;
+}
+
+Effect* RenderPlatform::GetEffect(const char* filename_utf8)
+{
+	auto i = effects.find(filename_utf8);
+	if (i == effects.end())
+		return nullptr;
+	return i->second;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)
@@ -1282,7 +1322,7 @@ RenderState *RenderPlatform::CreateRenderState(const RenderStateDesc &desc)
 
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
 {
-	simul::base::FileLoader* fileLoader = simul::base::FileLoader::GetFileLoader();
+	platform::core::FileLoader* fileLoader = platform::core::FileLoader::GetFileLoader();
 	
 	std::string shaderSourcePath = fileLoader->FindFileInPathStack(filenameUtf8, GetShaderBinaryPathsUtf8());
 
@@ -1320,11 +1360,10 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,con
 	return s;
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts)
+void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8)
 {
-	const std::map<std::string,std::string> defines;
-	static bool enabled=true;
-	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+	crossplatform::Effect* e = CreateEffect(filename_utf8);
+	delete e;
 }
 
 void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
@@ -1428,7 +1467,7 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	unsigned long slot = res.slot;
 	unsigned long dim = res.dimensions;
 #ifdef _DEBUG
-	if (!tex)
+	if (!tex) 
 	{
 		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
 	}
@@ -1457,7 +1496,7 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	cs->textureAssignmentMapValid = false;
 }
 
-void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, AccelerationStructure* a)
+void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if (!res.valid)
@@ -1498,7 +1537,7 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	cs->rwTextureAssignmentMapValid = false;
 }
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

@@ -10,7 +10,7 @@
 	#pragma warning(disable:4251)
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -21,7 +21,7 @@ namespace simul
 		extern void InitQueueProperties(const vk::PhysicalDevice& gpu, std::vector<vk::QueueFamilyProperties>& queue_props);
 		class RenderPlatform;
 		class DeviceManagerInternal;
-		SIMUL_VULKAN_EXPORT_CLASS DeviceManager
+		class SIMUL_VULKAN_EXPORT DeviceManager
 			: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
@@ -29,6 +29,7 @@ namespace simul
 			virtual ~DeviceManager();
 			// GDI:
 			void	Initialize(bool use_debug, bool instrument, bool default_driver) override;
+			void	Initialize(bool use_debug, bool instrument, bool default_driver,std::vector<std::string> required_device_extensions,std::vector<std::string> required_instance_extensions) ;
 			bool	IsActive() const override;
 			void	Shutdown() override;
 			void*	GetDevice() override;
@@ -44,7 +45,7 @@ namespace simul
 			void ReloadTextures();
 			// called late to start debug output.
 			void InitDebugging();
-		//	simul::vulkan::RenderPlatform *renderPlatformVulkan;
+		//	platform::vulkan::RenderPlatform *renderPlatformVulkan;
 
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
@@ -66,7 +67,8 @@ namespace simul
 			uint32_t enabled_extension_count;
 			uint32_t enabled_layer_count;
 			bool device_initialized;
-			std::vector<const char *> extension_names;
+			std::vector<const char *> device_extension_names;
+			std::vector<const char *> instance_extension_names;
 			char const *enabled_layers[64];
 			DeviceManagerInternal *deviceManagerInternal;
 			bool separate_present_queue;

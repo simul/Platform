@@ -24,7 +24,7 @@ struct D3D12_CPU_DESCRIPTOR_HANDLE;
     #pragma warning(push)
     #pragma warning(disable:4251)
 #endif
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -39,7 +39,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
 		public:
-			simul::crossplatform::RenderPlatform* renderPlatform;
+			platform::crossplatform::RenderPlatform* renderPlatform;
 		protected:
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
@@ -47,7 +47,7 @@ namespace simul
 			BufferUsageHint bufferUsageHint;
 		public:
 			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(BufferUsageHint::MANY_PER_FRAME) {}
-			virtual ~PlatformStructuredBuffer() {}
+			virtual ~PlatformStructuredBuffer() = default;
 			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, BufferUsageHint usageHint) = 0;
 			virtual void InvalidateDeviceObjects() = 0;
 			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
@@ -72,12 +72,13 @@ namespace simul
 				numCopies = 0;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext& /*deviceContext*/, EffectPass* /*currentEffectPass*/, int /*slot*/, bool /*as uav*/) {}
+			virtual void ActualApply(platform::crossplatform::DeviceContext& /*deviceContext*/, EffectPass* /*currentEffectPass*/, int /*slot*/, bool /*as uav*/) {}
 		};
 
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
 		{
 		public:
+			virtual ~BaseStructuredBuffer() = default;
 			PlatformStructuredBuffer* platformStructuredBuffer=nullptr;
 		};
 		class PlatformStructuredBuffer;
@@ -87,7 +88,7 @@ namespace simul
 		/// \code
 		/// 	StructuredBuffer<Example> example;
 		/// \endcode
-		template<class T, BufferUsageHint bufferUsageHint= BufferUsageHint::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
+		template<class T, BufferUsageHint bufferUsageHint = BufferUsageHint::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
 		{
 		public:
 			StructuredBuffer()

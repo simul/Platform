@@ -26,6 +26,18 @@ vec4 quat_conj(vec4 q)
 { 
   return vec4(-q.x, -q.y, -q.z, q.w); 
 }
+
+vec4 quat_inverse(vec4 q)
+{ 
+	float len = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+	if (len == 0.0f)
+	{
+		// Invalid argument
+		return vec4(0, 0, 0, 0);
+	}
+	float invLen = 1.0f / len;
+	return vec4(-q.x * invLen, -q.y * invLen, -q.z * invLen, q.w * invLen);
+}
   
 vec4 quat_mult(vec4 q1, vec4 q2)
 { 
@@ -49,13 +61,18 @@ vec4 quat_vec(vec4 q, vec3 v)
 
 vec3 rotate_by_quaternion(vec4 quat, vec3 position)
 { 
-//	quat.xyz*=-1.0;
   vec4 qr_conj		= quat_conj(quat);
-  
   vec4 q_tmp		= quat_vec(quat,position);
   vec4 qr			= quat_mult(q_tmp,qr_conj);
-  
   return qr.xyz;
+}
+
+vec3 rotate_by_inverse_quaternion(vec4 quat, vec3 position)
+{
+	vec4 qr_conj = quat_conj(quat);
+	vec4 q_tmp = quat_vec(qr_conj, position);
+	vec4 qr = quat_mult(q_tmp, quat);
+	return qr.xyz;
 }
 
 vec4 slerp(vec4 q1,vec4 q2,float interp)
@@ -105,4 +122,26 @@ vec4 slerp(vec4 q1,vec4 q2,float interp)
 	ret.w = (Q1.w * s1 + Q2.w * s2) / ss;
 	ret = normalize(ret);
 	return ret;
+}
+
+vec4 quat_from_vector_endpoints(vec3 start, vec3 end)
+{
+	vec4 q_start = vec4(normalize(start), 0.0);
+	vec4 q_end	= vec4(normalize(end), 0.0);
+
+	//Encodes the dot and cross products of the vectors
+	//https://stackoverflow.com/a/67343721
+	vec4 q = quat_mult(q_start, q_end);
+	if (q.w == 1.0) 
+	{
+		//Dot product was -1.0, there are therefore infinte 'shortest arcs' from start to end.
+		//Generate a perpendicular vector for vector component of the quaternion.
+		//Based on the cross product.
+		//https://qr.ae/pGVZDX
+		q.x = start.y - start.z;
+		q.y = start.z - start.x;
+		q.z = -start.x - start.y;
+	}
+	q.w = 1.0 - q.w;
+	return normalize(q);
 }

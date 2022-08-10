@@ -67,7 +67,7 @@
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #endif
-using namespace simul;
+using namespace platform;
 using namespace math;
 
 void MMXTwister::Seed(unsigned int seed)
@@ -110,13 +110,13 @@ void MMXTwister::DoTheTwistC()
 	for (i = N - M; i--; )
 	{
 		*p = twist(p[M], p[0], p[1]);
-		*p++;
+		*(p)++;
 	}
 	unsigned int *q = m_state;
 	for (i = M; --i; )
 	{
 		*p = twist(*q++, p[0], p[1]);
-		*p++;
+		*(p)++;
 	}
 	*p = twist( *q, p[0], m_state[0] );
 }

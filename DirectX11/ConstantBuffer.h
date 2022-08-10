@@ -10,7 +10,7 @@
 struct ID3D11Buffer;
 struct ID3DX11EffectConstantBuffer;
 struct ID3DX11EffectPass;
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -45,9 +45,9 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			//! Apply the current values within the constant buffer
-			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
+			void Apply(platform::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			//! Unbind the constant buffer
-			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
+			void Unbind(platform::crossplatform::DeviceContext &deviceContext);
 			
 			void CreateBuffers( crossplatform::RenderPlatform* r, void *addr);
 

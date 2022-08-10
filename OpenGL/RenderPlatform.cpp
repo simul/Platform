@@ -16,7 +16,7 @@
 #include "Platform/OpenGL/Texture.h"
 #include "Platform/OpenGL/DisplaySurface.h"
 
-using namespace simul;
+using namespace platform;
 using namespace opengl;
 
 RenderPlatform::RenderPlatform():
@@ -83,21 +83,24 @@ void RenderPlatform::InvalidateDeviceObjects()
 	}
 }
 
-void RenderPlatform::BeginFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::BeginFrame()
 {
-	crossplatform::RenderPlatform::BeginFrame(deviceContext);
-	for(auto t:texturesToDelete[mCurIdx])
+	if (frame_started)
+		return;
+	crossplatform::RenderPlatform::BeginFrame();
+	unsigned curIdx = frameNumber % 3;
+	for(auto t:texturesToDelete[curIdx])
 	{
 		glDeleteTextures(1,&t);
 	}
-	if(texturesToDelete[mCurIdx].size())
+	if(texturesToDelete[curIdx].size())
 		ClearResidentTextures();
-	texturesToDelete[mCurIdx].clear();
+	texturesToDelete[curIdx].clear();
 }
 
-void RenderPlatform::EndFrame(crossplatform::GraphicsDeviceContext& deviceContext)
+void RenderPlatform::EndFrame()
 {
-	crossplatform::RenderPlatform::EndFrame(deviceContext);
+	crossplatform::RenderPlatform::EndFrame();
 }
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
@@ -159,13 +162,11 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
 {
-	if (mLastFrame != deviceContext.frame_number)
+	if (mLastFrame != deviceContext.GetFrameNumber())
 	{
-		mLastFrame = deviceContext.frame_number;
-		mCurIdx++;
-		mCurIdx = mCurIdx % kNumIdx;
+		mLastFrame = deviceContext.GetFrameNumber();
 		if(deviceContext.AsGraphicsDeviceContext())
-			BeginFrame(*deviceContext.AsGraphicsDeviceContext());
+			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 	}
 
     crossplatform::ContextState* cs = &deviceContext.contextState;
@@ -228,18 +229,18 @@ crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 	return b;
 }
 
-GLenum simul::opengl::RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum platform::opengl::RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+    if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
         return GL_LINEAR_MIPMAP_LINEAR;
     }
     return GL_NEAREST_MIPMAP_NEAREST;
 }
 
-GLenum simul::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum platform::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
+    if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
         return GL_LINEAR;
     }
@@ -276,9 +277,9 @@ crossplatform::Effect* RenderPlatform::CreateEffect()
 	return e;
 }
 
-crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8)
 {
-	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8,defines);
+	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8);
 	return e;
 }
 
@@ -528,7 +529,7 @@ void RenderPlatform::DeleteGLTextures(const std::set<GLuint> &t)
 {
 	for(auto c:t)
 	{
-		texturesToDelete[mCurIdx].insert(c);
+		texturesToDelete[frameNumber%3].insert(c);
 	}
 }
 
@@ -646,11 +647,11 @@ static GLenum toGlCullFace(crossplatform::CullFaceMode c)
 {
     switch (c)
     {
-    case simul::crossplatform::CULL_FACE_FRONT:
+    case platform::crossplatform::CULL_FACE_FRONT:
         return GL_FRONT;
-    case simul::crossplatform::CULL_FACE_BACK:
+    case platform::crossplatform::CULL_FACE_BACK:
         return GL_BACK;
-    case simul::crossplatform::CULL_FACE_FRONTANDBACK:
+    case platform::crossplatform::CULL_FACE_FRONTANDBACK:
         return GL_FRONT_AND_BACK;
     default:
         break;
@@ -662,13 +663,13 @@ static GLenum toGlFun(crossplatform::BlendOperation o)
 {
     switch (o)
     {
-    case simul::crossplatform::BLEND_OP_ADD:
+    case platform::crossplatform::BLEND_OP_ADD:
         return GL_FUNC_ADD;
-    case simul::crossplatform::BLEND_OP_SUBTRACT:
+    case platform::crossplatform::BLEND_OP_SUBTRACT:
         return GL_FUNC_SUBTRACT;
-    case simul::crossplatform::BLEND_OP_MAX:
+    case platform::crossplatform::BLEND_OP_MAX:
         return GL_MAX;
-    case simul::crossplatform::BLEND_OP_MIN:
+    case platform::crossplatform::BLEND_OP_MIN:
         return GL_MIN;
     default:
         break;
@@ -945,7 +946,7 @@ void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &,crosspla
     mCurTopology = toGLTopology(t);
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
+void RenderPlatform::EnsureEffectIsBuilt(const char *)
 {
 }
 

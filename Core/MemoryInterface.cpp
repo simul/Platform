@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #endif
 #include <map>
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		/// Default implementation of MemoryInterface, using standard allocators.
 		class DefaultMemoryInterface:public MemoryInterface
@@ -110,12 +110,12 @@ namespace simul
 		{
 			static MemoryInterface* s_pMemInterface = &_defaultMemoryInterface;
 
-			void SetMemInterface(simul::base::MemoryInterface& mem)
+			void SetMemInterface(platform::core::MemoryInterface& mem)
 			{
 				s_pMemInterface = &mem;
 			}
 
-			simul::base::MemoryInterface* GetMemInterface()
+			platform::core::MemoryInterface* GetMemInterface()
 			{
 				return s_pMemInterface;
 			}

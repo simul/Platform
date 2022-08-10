@@ -1,10 +1,11 @@
 #ifndef SIMUL_MATH_NOISE3D_H
 #define SIMUL_MATH_NOISE3D_H
+
 #include "Platform/Math/Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/Core/MemoryUsageInterface.h"
 
-namespace simul
+namespace platform
 {
 	namespace graph
 	{
@@ -21,8 +22,8 @@ namespace simul
 		public:
 			virtual float Filter(float) const = 0;
 		};
-		SIMUL_MATH_EXPORT_CLASS NoiseInterface
-			:public simul::base::MemoryUsageInterface
+		class SIMUL_MATH_EXPORT NoiseInterface
+			:public platform::core::MemoryUsageInterface
 		{
 		public:
 			NoiseInterface();
@@ -40,7 +41,7 @@ namespace simul
 		SIMUL_MATH_EXPORT_CLASS Noise3D : public NoiseInterface
 		{
 		public:
-			Noise3D(simul::base::MemoryInterface *mem=0);
+			Noise3D(platform::core::MemoryInterface *mem=0);
 			virtual ~Noise3D();
 		//! Define the grid of pseudo-random numbers to be used in the PerlinNoise3D function. The parameter freq is the
 		//! frequency, or grid-size.
@@ -76,7 +77,7 @@ namespace simul
 			float persistence;
 			NoiseFilter *filter;
 			unsigned buffer_size;
-			simul::base::MemoryInterface *memoryInterface;
+			platform::core::MemoryInterface *memoryInterface;
 			RandomNumberGenerator *noise_random;
 			float sum;
 			unsigned grid_x,grid_y,grid_z;

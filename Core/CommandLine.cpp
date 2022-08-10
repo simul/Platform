@@ -3,13 +3,13 @@
 #include "StringToWString.h"
 #include "RuntimeError.h"
 
-using namespace simul;
-using namespace base;
+using namespace platform;
+using namespace core;
 
 #ifdef WIN64
 #include <Windows.h>
 
-bool simul::base::RunCommandLine(const char *command_utf8,  OutputDelegate outputDelegate)
+bool platform::core::RunCommandLine(const char *command_utf8,  OutputDelegate outputDelegate)
 {
 	bool pipe_compiler_output=true;
 	STARTUPINFOW si;
@@ -125,7 +125,7 @@ bool simul::base::RunCommandLine(const char *command_utf8,  OutputDelegate outpu
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-bool simul::base::RunCommandLine(const char *cmd,  OutputDelegate )
+bool platform::core::RunCommandLine(const char *cmd,  OutputDelegate )
 {
 	int res= system(cmd);
 
@@ -133,7 +133,7 @@ bool simul::base::RunCommandLine(const char *cmd,  OutputDelegate )
 }
 
 #else
-bool simul::base::RunCommandLine(const char *cmd,  OutputDelegate )
+bool platform::core::RunCommandLine(const char *cmd,  OutputDelegate )
 {
 	SIMUL_CERR<<"RunCommandLine not implemented on this platform.\n";
 	return false;

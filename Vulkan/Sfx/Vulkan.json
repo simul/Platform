@@ -9,13 +9,13 @@
 		}
 	},
 	"api": "Vulkan",
-	"defaultOptions": "",
+	"defaultOptions": "-Os",
 	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
-	"debugOption": "-g",
+	"debugOption": "-g -Od",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
@@ -42,19 +42,23 @@
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
 	"structDeclaration": "struct {name}\n{\n[\t{type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]};",
-	"inputDeclaration": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
+	"pixelInputDeclaration": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
 	"vertexInputDeclaration": "[layout(location={slot}) in {type} {name};]",
-	"outputDeclaration": "layout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
+	"outputDeclarationX": "layout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
+	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\nlayout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
 	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
-	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n",
+	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n",
 	"computePreamble": "#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
 	"vertexSemantics": {
 		"SV_VertexId": "gl_VertexIndex",
 		"SV_VertexID": "gl_VertexIndex",
 		"SV_InstanceId": "gl_InstanceIndex",
 		"SV_POSITION": "gl_Position"
+	},
+	"pixelSemantics": {
+		"SV_IsFrontFace": "gl_FrontFacing"
 	},
 	"vertexOutputAssignment": {
 		"SV_POSITION": "gl_Position"
@@ -80,8 +84,13 @@
 		"vec4": "image",
 		"char4": "image",
 		"uchar4": "image",
+		"ivec2": "iimage",
+		"ivec3": "iimage",
 		"ivec4": "iimage",
 		"uint": "uimage",
+		"uvec2": "uimage",
+		"uvec3": "uimage",
+		"uvec4": "uimage",
 		"float": "image",
 		"float4": "image"
 	},
@@ -90,14 +99,26 @@
 		"vec4": "sampler",
 		"char4": "sampler",
 		"uchar4": "sampler",
+		"ivec2": "isampler",
+		"ivec3": "isampler",
 		"ivec4": "isampler",
 		"uint": "usampler",
+		"uvec2": "usampler",
+		"uvec3": "usampler",
+		"uvec4": "usampler",
 		"float": "sampler",
 		"float4": "sampler",
 		"half4": "sampler"
 	},
 	"templateTypes": {
-		"Texture2D<uint>": "utexture2D"
+		"Texture2D<uint>": "utexture2D",
+		"Texture2D<uvec2>": "utexture2D",
+		"Texture2D<uvec3>": "utexture2D",
+		"Texture2D<uvec4>": "utexture2D",
+		"Texture2D<int>": "itexture2D",
+		"Texture2D<ivec2>": "itexture2D",
+		"Texture2D<ivec3>": "itexture2D",
+		"Texture2D<ivec4>": "itexture2D"
 	},
 	"computeLayout": "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;",
 	"structuredBufferDeclaration": "layout(std430,binding={slot})buffer {name}\n{\n\t{content} \n};",
@@ -137,6 +158,8 @@
 		"uint2": "uvec2",
 		"uint3": "uvec3",
 		"uint4": "uvec4",
+		"float2": "vec2",
+		"float3": "vec3",
 		"float4": "vec4",
 		"SamplerState": "sampler",
 		"Texture1D": "texture1D",
@@ -161,7 +184,6 @@
 		"lerp": "mix",
 		"atan2": "atan",
 		"frac": "fract",
-		"flat": "",
-		"fmod": "modf"
+		"flat": ""
 	}
 }

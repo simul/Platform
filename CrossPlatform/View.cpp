@@ -15,7 +15,7 @@
 #include <windows.h>
 #endif
 #include <algorithm>
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 int View::last_class_id=0;
@@ -50,10 +50,10 @@ void View::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		resolvedTexture		=renderPlatform->CreateTexture("Resolved");	
 		if(!useExternalFramebuffer)
 		{
-			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 			hdrFramebuffer->SetUseFastRAM(true,true);
 			hdrFramebuffer->SetFormat(RGBA_16_FLOAT);
 			hdrFramebuffer->SetDepthFormat(D_32_FLOAT);
+			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 		}
 	}
 }
@@ -134,12 +134,16 @@ View *ViewManager::AddView(int id)
 	return view;
 }
 
-void	ViewManager::AddView(int id,View *v)
+int	ViewManager::AddView(int id,View *v)
 {
+	if(id<0)
+		id= last_created_view_id+1;
 	int view_id		=id;
 	View *view		=views[view_id]=v;
 	view->useExternalFramebuffer=false;
 	view->RestoreDeviceObjects(renderPlatform);
+	last_created_view_id=view_id;
+	return view_id;
 }
 
 void ViewManager::RemoveView(int view_id)
@@ -171,10 +175,16 @@ const ViewManager::ViewMap &ViewManager::GetViews() const
 {
 	return views;
 }
+
 void ViewManager::CleanUp(int current_frame,int max_age)
 {
 	for (auto i:views)
 	{
+		if(i.second->last_framenumber==-1)
+		{
+			i.second->last_framenumber=current_frame;
+			continue;
+		}
 		int age=current_frame-i.second->last_framenumber;
 		if(age>max_age)
 		{
@@ -183,6 +193,7 @@ void ViewManager::CleanUp(int current_frame,int max_age)
 		}
 	}
 }
+
 void ViewManager::Clear()
 {
 	for(ViewMap::iterator i=views.begin();i!=views.end();i++)

@@ -61,13 +61,13 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 static bool pipe_compiler_output=true;
 
 //static ID3D11Device		*pd3dDevice		=NULL;
-using namespace simul;
+using namespace platform;
 using namespace dx11;
-using namespace base;
+using namespace core;
 
 #pragma optimize("",off)
 
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
@@ -92,12 +92,12 @@ HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *fil
 }
 #endif
 
-ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
+ID3D11Texture2D* platform::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	ERRNO_BREAK
 	ID3D11Texture2D* tex=NULL;
 	std::string str;
-	int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
+	int idx= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
 	if(idx<-1||idx>=(int)texturePathsUtf8.size())
 	{
 		SIMUL_CERR<<"Texture file not found: "<<filename<<std::endl;
@@ -108,7 +108,7 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 		str=(texturePathsUtf8[idx]+"/")+str;
 	void *ptr=NULL;
 	unsigned bytes=0;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,bytes,str.c_str(),false);
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(ptr,bytes,str.c_str(),false);
 #if WINVER<0x602
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory(&loadInfo,sizeof(D3DX11_IMAGE_LOAD_INFO));
@@ -150,11 +150,11 @@ ID3D11Texture2D* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *f
 	//	std::cout << numrefs << std::endl;
 	}
 #endif
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
+	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 	return tex;
 }
 
-ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
+ID3D11Texture2D* platform::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 
@@ -186,7 +186,7 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 		if(str.length())
 			str+="/";
 		str+=filename;
-		std::wstring wstr	=simul::base::Utf8ToWString(str);
+		std::wstring wstr	=platform::core::Utf8ToWString(str);
 		res					= D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(), &loadInfo, NULL, ( ID3D11Resource** )&tex, &res );
 
 		if(res == S_OK)
@@ -248,9 +248,9 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 void BreakIfDebugging()
 {
 	BREAK_IF_DEBUGGING;
- }
+}
 
-int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
+int platform::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {
     switch( format )
     {

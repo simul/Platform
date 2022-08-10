@@ -14,7 +14,7 @@ namespace DirectX
 	class ScratchImage;
 	struct Image;
 }
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
@@ -53,7 +53,7 @@ namespace simul
 			//! Loads this texture from a file
 			void							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips);
 			//! Loads this texture from multiple files
-			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,int specify_mips=-1);
+			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
 			bool							IsValid() const;
 			
 			void StoreExternalState(crossplatform::ResourceState);
@@ -69,9 +69,9 @@ namespace simul
 			bool							HasRenderTargets() const override;
 
 			//! Initializes this texture from an external (already created texture)
-			void							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false, bool setDepthStencil = false,bool need_srv=true);
-			void							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			void							InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
+			bool							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false, bool setDepthStencil = false,bool need_srv=true);
+			bool							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
+			bool							InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void							setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
@@ -80,7 +80,8 @@ namespace simul
 			bool							ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
-																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0) override;
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false) override;
+			bool							ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
 			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void							ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
@@ -103,6 +104,11 @@ namespace simul
 			{
 				return dim;
 			}
+			D3D12_RESOURCE_STATES GetState()
+			{
+				return mResourceState;
+			}
+
 			int GetSampleCount()const;
 
 			//! Returns the current state of the resource or subresource if provided.
@@ -119,7 +125,7 @@ namespace simul
 			bool											EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
-																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0,crossplatform::CompressionFormat																		cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false,crossplatform::CompressionFormat cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
 			void											InitUAVTables(int l, int m);
 			void											FreeUAVTables();
 
@@ -153,7 +159,8 @@ namespace simul
 			bool							mLoadedFromFile;	
 			bool							mInitializedFromExternal = false;
 			
-			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips.	
+			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips or y layer for yuv.	
+			D3D12_CPU_DESCRIPTOR_HANDLE		uvLayerShaderResourceView12;    // SRV for uv layer in a yuv texture.
 
 			D3D12_CPU_DESCRIPTOR_HANDLE		arrayShaderResourceView12;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 
@@ -166,6 +173,10 @@ namespace simul
 
 			D3D12_CPU_DESCRIPTOR_HANDLE		depthStencilView12;
 			D3D12_CPU_DESCRIPTOR_HANDLE**	renderTargetViews12;			// 2D table: layers and mips.
+
+			size_t							layerMipShaderResourceViews12Size = 0;
+			size_t							layerMipUnorderedAccessViews12Size = 0;
+			size_t							renderTargetViews12Size = 0;
 
             //! We need to store the old MSAA state
             DXGI_SAMPLE_DESC                mCachedMSAAState;
@@ -194,6 +205,9 @@ namespace simul
 			void ClearLoadingData();
 			void ClearFileContents();
 			unsigned GetSubresourceIndex(int mip, int layer);
+			void CreateUploadResource();
+			// for upload texture:
+			D3D12_PLACED_SUBRESOURCE_FOOTPRINT pLayouts[16];
 		};
 	}
 }

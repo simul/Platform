@@ -48,9 +48,9 @@ inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 
 #endif
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 
 		extern PLATFORM_CORE_EXPORT std::vector<std::string> SplitPath(const std::string& fullPath);
@@ -74,8 +74,6 @@ namespace simul
 		extern PLATFORM_CORE_EXPORT bool NextBool(const std::string &Line);
 		extern PLATFORM_CORE_EXPORT const float *NextVector3(const std::string &Line);
 		extern PLATFORM_CORE_EXPORT const float *NextVector2(const std::string &Line);
-		extern PLATFORM_CORE_EXPORT float NextFloat(const std::string &Line,size_t &idx);
-		extern PLATFORM_CORE_EXPORT float NextFloat(const std::string &Line);
 		extern PLATFORM_CORE_EXPORT float AsPhysicalValue(const std::string &Line);
 		extern PLATFORM_CORE_EXPORT size_t GoToLine(const std::string &Str,size_t line);
 		extern PLATFORM_CORE_EXPORT std::string StringOf(int i);

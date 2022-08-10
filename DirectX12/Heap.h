@@ -14,7 +14,7 @@
 	#pragma warning(disable:4251) //! "needs to have dll-interface to be used by clients of class"
 #endif
 
-namespace simul
+namespace platform
 {
 	namespace dx12
 	{
@@ -41,12 +41,7 @@ namespace simul
 			UINT							GetHandleIncrement()const { return mHandleIncrement; }
 			//! This method won't release or destroy anything, it will reset the internal count of handles
 			//!	and make the held handles point at the start of the heap
-			void Reset()
-			{
-				mCpuHandle = mHeap->GetCPUDescriptorHandleForHeapStart();
-				mGpuHandle = mHeap->GetGPUDescriptorHandleForHeapStart();
-				mCnt = 0;
-			}
+			void Reset();
 			void Release();
 
 		private:

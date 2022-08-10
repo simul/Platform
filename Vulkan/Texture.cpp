@@ -1,38 +1,13 @@
-
-
 #include "Platform/Core/FileLoader.h"
 #include "Texture.h"
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
 #include "Effect.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include <algorithm>
 
-using namespace simul;
+using namespace platform;
+using namespace platform;
 using namespace vulkan;
-
-void DeleteTextures(size_t num,GLuint *t)
-{
-	if(!t||!num)
-		return;
-	for(int i=0;i<num;i++)
-	{
-//		if(t[i]!=0&&!glIsTexture(t[i]))
-		{
-	//		SIMUL_BREAK_ONCE("Not a texture");
-		}
-	}
-	//glDeleteTextures(num,t);
-}
-
-// TODO: This is ridiculous. But GL, at least in the current NVidia implementation, seems unable to write to a re-used texture id that it has generated after that id 
-// was previously freed. Bad bug.
-// Therefore we force the issue by making the tex id's go up sequentially, not standard GL behaviour:
-void glGenTextures_DONT_REUSE(int count,GLuint *tex)
-{
-	//glGenTextures(count,tex);
-}
 
 SamplerState::SamplerState()
 {
@@ -66,7 +41,7 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 			.setCompareOp(vk::CompareOp::eNever)
 			.setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
 			.setUnnormalizedCoordinates(VK_FALSE);
-	vulkanDevice->createSampler(&samplerCreateInfo,nullptr,&mSampler);
+	SIMUL_VK_CHECK(vulkanDevice->createSampler(&samplerCreateInfo,nullptr,&mSampler));
 	SetVulkanName(renderPlatform,(uint64_t*)&mSampler,"Sampler ");
 }
 
@@ -117,27 +92,33 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	LoadTextureArray(r,texture_files,gen_mips?0:1);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, const std::vector<std::string>& texture_files,int m)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files, bool gen_mips)
 {
 	InvalidateDeviceObjects();
-	this->renderPlatform= renderPlatform;
+	renderPlatform= r;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
+	vulkan::RenderPlatform* vr = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	for(auto i:loadedTextures)
 	{
-		r->PushToReleaseManager(i.buffer);
-		r->PushToReleaseManager(i.mem);
+		vr->PushToReleaseManager(i.buffer);
+		vr->PushToReleaseManager(i.mem);
 	}
 	loadedTextures.resize(texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
 	{
-		//std::string mainPath	= r->GetTexturePathsUtf8()[0] + "/" + texture_files[i];
 		LoadTextureData(loadedTextures[i],texture_files[i].c_str());
 	}
 	int w= loadedTextures[0].x;
 	int l= loadedTextures[0].y;
+	if(w*l==0)
+	{
+	// don't try to complete the load with empty data.
+		textureLoadComplete=true;
+		return;
+	}
 	size_t num= loadedTextures.size();
-	if(!m)
+	int m=1;
+	if(gen_mips)
 		m=100;
 	m = std::min(m, int(floor(log2(std::max(w, l)))) +1);
 	m=std::min(16,std::max(1,m));
@@ -147,7 +128,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* renderPlatform, co
 		name+=m+",";
 	}
 	if(num<=1)
-		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0);
+		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0,false);
 	else
 		ensureTextureArraySizeAndFormat(r,(int)w,(int)l,(int)num,(int)m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
 	textureLoadComplete=false;
@@ -202,6 +183,14 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		{
 			r->PushToReleaseManager(i);
 		}
+		for(auto i:mCubemapLayerMipViews)
+		{
+			for(auto j:i)
+			{
+				r->PushToReleaseManager(j);
+			}
+		}
+		mCubemapLayerMipViews.clear();
 		for(auto i:mLayerMipViews)
 		{
 			for(auto j:i)
@@ -224,7 +213,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		}
 		r->PushToReleaseManager(mBuffer);
 	}
-	renderPlatform=nullptr;
 }
 
 void Texture::SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
@@ -363,6 +351,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 				vk::PipelineStageFlagBits::eFragmentShader);
 		}
 	}
+	for (unsigned int i = 0; i < loadedTextures.size(); i++)
+	{
+		FreeTranslatedTextureData(loadedTextures[i].data);
+	}
 	
 	textureLoadComplete=true;
 }
@@ -429,6 +421,10 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	{
 		return &mMainMipViews[mip];
 	}
+	if((type&crossplatform::ShaderResourceType::TEXTURE_CUBE)==crossplatform::ShaderResourceType::TEXTURE_CUBE)
+	{
+		return &mCubemapLayerMipViews[layer][mip];
+	}
 	// Layer mip view:
 	return &mLayerMipViews[layer][mip];
 }
@@ -462,7 +458,7 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 }
 
 #include "Platform/Core/StringFunctions.h"
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
 {
 	mExternalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	if (rendertarget)
@@ -483,28 +479,28 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	textureCreate.setDepthStencil = depthstencil;
 	textureCreate.need_srv = need_srv;
 	textureCreate.numOfSamples = numOfSamples;
-	InitFromExternalTexture(r,&textureCreate);
+	return InitFromExternalTexture(r,&textureCreate);
 }
 
-void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const crossplatform::TextureCreate *textureCreate)
+bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const crossplatform::TextureCreate *textureCreate)
 {
-		//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
+	//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
 	if (IsSame(textureCreate->w, textureCreate->l, textureCreate->d, textureCreate->arraysize, textureCreate->mips, textureCreate->f
 		, textureCreate->numOfSamples, textureCreate->computable, textureCreate->make_rt, textureCreate->setDepthStencil
 		, textureCreate->need_srv
 		, textureCreate->cubemap))
 	{
 		if (textureCreate->external_texture == (void*)mImage)
-			return;
+			return true;
 	}
 	renderPlatform = r;
 	depth =1;
 	if (textureCreate->w == 0)
-		return;
+		return false;
 	if (textureCreate->external_texture == 0)
-		return;
+		return false;
 	if (textureCreate->f == crossplatform::UNKNOWN)
-		return;
+		return false;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform = r;
 	void **image = (void **)&mImage;
@@ -536,11 +532,12 @@ void Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	}
 	external_texture = true;
 	SetVulkanName(renderPlatform, &mImage, name.c_str());
+	return true;
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m,
 	crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
-	vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
+	vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/, bool shared /*= false*/)
 {
 	if (IsSame(w, l, 1, 1, m,f, num_samples, computable, rendertarget, depthstencil, true))
 	{
@@ -684,23 +681,32 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	if(dim==2&&totalNum>1)
 	{
 		int c=1;
-		if(cubemap)//&&layers>1)
-		{
-			viewType=vk::ImageViewType::eCube;
-			c=6;
-		}
-		else
-			viewType=vk::ImageViewType::e2D;
+		viewType=vk::ImageViewType::e2D;
 		viewCreateInfo.setViewType(viewType);
 		mLayerViews.resize(totalNum);
-		for(int i=0;i< layers;i++)
+		for(int i=0;i< totalNum;i++)
 		{
-			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i*c,c));
+			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerViews[i]));
 			SetVulkanName(renderPlatform,(uint64_t*)&mLayerViews[i],(name+" mFaceArrayView").c_str());
 		}
 	}
-	viewCreateInfo.setViewType(vk::ImageViewType::e2D);
+	if(cubemap)
+	{
+		viewCreateInfo.setViewType(vk::ImageViewType::eCube);
+		mCubemapLayerMipViews.resize(layers);
+		for (int i = 0; i < layers; i++)
+		{
+			mCubemapLayerMipViews[i].resize(mipCount);
+			for (int j = 0; j < mipCount; j++)
+			{
+				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,j,1,6*i,6));
+				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mCubemapLayerMipViews[i][j]));
+				SetVulkanName(renderPlatform,(uint64_t*)&mCubemapLayerMipViews[i][j],(name+" mCubemapLayerMipView").c_str());
+			}
+		}
+	}
+	viewCreateInfo.setViewType(dim==2?vk::ImageViewType::e2D:vk::ImageViewType::e3D);
 	mLayerMipViews.resize(totalNum);
 	for (int i = 0; i < totalNum; i++)
 	{
@@ -726,7 +732,14 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 	if (!mRenderPass)
 	{
 		auto *r = (vulkan::RenderPlatform*)renderPlatform;
-		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, pixelFormat, crossplatform::PixelFormat::UNKNOWN,false, GetSampleCount());
+		if(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)
+		{
+			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal);
+	}
+		vk::ImageLayout layouts[]={currentImageLayout};
+		vk::ImageLayout end_layouts[]={(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:currentImageLayout};
+		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,GetSampleCount(),layouts,end_layouts);
+		AssumeLayout(end_layouts[0]);
 	}
 	return mRenderPass;
 }
@@ -736,7 +749,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 	if(mFramebuffers.size())
 		return;
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);// effectPass->GetVulkanRenderPass(deviceContext, pixelFormat);
+	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);
 	
 	vk::ImageView attachments[1]={nullptr};
 
@@ -760,7 +773,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],base::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
+			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
 	
 			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
 			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
@@ -840,9 +853,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	this->computable=computable;
 	this->renderTarget=rendertarget;
 	if(ascubemap)
-		SetName(base::QuickFormat("%s Cubemap %d of %d x %d",name.c_str(),num,w,l));
+		SetName(platform::core::QuickFormat("%s Cubemap %d of %d x %d",name.c_str(),num,w,l));
 	else
-		SetName(base::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));
+		SetName(platform::core::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));
 	return true;
 }
 
@@ -911,13 +924,37 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	return true;
 }
 
+bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
+{
+	return false;
+}
+
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
-	activateRenderTarget(deviceContext,0,0);
+	/*activateRenderTarget(deviceContext,0,0);
 	renderPlatform->GetDebugEffect()->Apply(deviceContext,"clear_depth",0);
 	renderPlatform->DrawQuad(deviceContext);
 	renderPlatform->GetDebugEffect()->Unapply(deviceContext);
 	deactivateRenderTarget(deviceContext);
+	*/
+	vk::ImageLayout prev_image_layout=currentImageLayout;
+	SetLayout(deviceContext,vk::ImageLayout::eTransferDstOptimal);
+
+	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+	vk::ImageLayout image_layout=currentImageLayout;
+	std::vector<vk::ImageSubresourceRange> image_subresource_ranges;
+	// if stencil, may need |vk::ImageAspectFlagBits::eStencil
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
+	image_subresource_ranges.push_back(imageSubresourceRange);
+
+	vk::ClearDepthStencilValue clear_value;
+	clear_value.depth=depthClear;
+	clear_value.stencil=stencilClear;
+
+	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
+	// can't go back to these layouts so just stay in eTransferDstOptimal for now:
+	if(prev_image_layout!=vk::ImageLayout::ePreinitialized&&prev_image_layout!=vk::ImageLayout::eUndefined)
+		SetLayout(deviceContext, prev_image_layout);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -981,17 +1018,17 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 {
 	const auto & pathsUtf8= renderPlatform->GetTexturePathsUtf8();
-	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(path,pathsUtf8);
+	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(path,pathsUtf8);
 	std::string filenameInUseUtf8=path;
 	if(index==-2||index>=(int)pathsUtf8.size())
 	{
 		errno=0;
 		std::string file;
-		std::vector<std::string> split_path = base::SplitPath(path);
+		std::vector<std::string> split_path = core::SplitPath(path);
 		if (split_path.size() > 1)
 		{
 			file = split_path[1];
-			index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
+			index = core::FileLoader::GetFileLoader()->FindIndexInPathStack(file.c_str(), pathsUtf8);
 		}
 		if (index < -1 || index >= (int)pathsUtf8.size())
 		{
@@ -1004,18 +1041,24 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 		filenameInUseUtf8=(renderPlatform->GetTexturePathsUtf8()[index]+"/")+filenameInUseUtf8;
 
 	int x,y,n;
-	void *data			 = stbi_load(filenameInUseUtf8.c_str(), &x, &y, &n, 4);
-	if (!data)
+	void* buffer=nullptr;
+	unsigned size=0;
+	core::FileLoader::GetFileLoader()->AcquireFileContents(buffer,size,filenameInUseUtf8.c_str(),false);
+
+	if (!buffer)
 	{
 		SIMUL_CERR << "Failed to load the texture: " << filenameInUseUtf8.c_str() << std::endl;
 		return;
 	}
+	void* data = nullptr;
+	TranslateLoadedTextureData(data,buffer,size,x,y,n,4);
+	core::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
 }
 
 void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f)
 {
-	lt.data=(const unsigned char*)data;
+	lt.data=( unsigned char*)data;
 	lt.x=x;
 	lt.y=y;
 	lt.z=z;
@@ -1070,22 +1113,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	textureLoadComplete=false;
 }
 
-
-
-
-void Texture::InitViews(int mipCount, int layers, bool isRenderTarget)
-{
-	mLayerViews.resize(layers);
-
-	mMainMipViews.resize(mipCount);
-
-	mLayerMipViews.resize(layers);
-	for (int i = 0; i < layers; i++)
-	{
-		mLayerMipViews[i].resize(mipCount);
-	}
-}
-
 void Texture::CreateFBOs(int sampleCount)
 {
 	for (int i = 0; i < arraySize; i++)
@@ -1124,6 +1151,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 {
 	if(newLayout==vk::ImageLayout::eUndefined)
 		return;
+	if (mip == mips)
+	{
+		mip = 0;
+	}
 	//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	//	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages)
 	auto *commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
@@ -1141,7 +1172,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			flags = vk::AccessFlagBits::eColorAttachmentWrite;
 			break;
 		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite|vk::AccessFlagBits::eDepthStencilAttachmentRead;
+			break;
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentRead;
 			break;
 		case vk::ImageLayout::eShaderReadOnlyOptimal:
 			// Make sure any Copy or CPU writes to image are flushed
@@ -1154,6 +1188,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			flags = vk::AccessFlagBits::eMemoryRead;
 			break;
 		default:
+			SIMUL_BREAK_ONCE("Unknown layout.");
 			break;
 		}
 

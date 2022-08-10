@@ -1,6 +1,6 @@
 #include "Light.h"
 
-using namespace simul;
+using namespace platform;
 using namespace dx11;
 
 namespace

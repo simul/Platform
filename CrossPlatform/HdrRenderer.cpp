@@ -11,7 +11,7 @@
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/Math/Pi.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 HdrRenderer::HdrRenderer()
@@ -88,6 +88,7 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	RecompileShaders();
 }
 
+#if !defined(__ORBIS__) && !defined(__PROSPERO__)
 static std::string string_format(const std::string fmt, ...)
 {
     int size = 100;
@@ -111,6 +112,7 @@ static std::string string_format(const std::string fmt, ...)
     }
     return str;
 }
+#endif
 
 template<typename t> t max3(t a,t b,t c)
 {
@@ -123,11 +125,7 @@ void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
 {
 	if (!r)
 		return;
-	std::vector<crossplatform::EffectDefineOptions> opts;
-	r->EnsureEffectIsBuilt("hdr", opts);
-	opts.push_back(crossplatform::CreateDefineOptions("SCAN_SMEM_SIZE", "1920"));
-	opts.push_back(crossplatform::CreateDefineOptions("THREADS_PER_GROUP", "128"));
-	r->EnsureEffectIsBuilt("gaussian", opts); 
+	r->EnsureEffectIsBuilt("hdr");
 }
 
 void HdrRenderer::RecompileShaders()
@@ -136,19 +134,13 @@ void HdrRenderer::RecompileShaders()
 		return;
 	renderPlatform->Destroy(hdr_effect);
 	renderPlatform->Destroy(m_pGaussianEffect);
-	std::map<std::string,std::string> defs;
-	hdr_effect					=renderPlatform->CreateEffect("hdr",defs);
+	hdr_effect					=renderPlatform->CreateEffect("hdr");
 
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
 	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
 
 	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
-	
-	// Just set scan_mem_size to the largest value we can ever expect:
-	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);//1920;//
-	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
-	defs["THREADS_PER_GROUP"]	=string_format("%d",threadsPerGroup);
 	
 	m_pGaussianEffect			=NULL;//renderPlatform->CreateEffect("gaussian",defs);
 	//hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");

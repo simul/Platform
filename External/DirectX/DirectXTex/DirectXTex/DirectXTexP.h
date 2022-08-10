@@ -111,6 +111,10 @@
 #include <memory>
 
 #include <vector>
+#include <string>
+#ifndef _DURANGO
+#include <charconv>
+#endif
 
 #include <stdlib.h>
 #include <search.h>

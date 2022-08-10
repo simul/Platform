@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <math.h>
 
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{
@@ -53,12 +53,12 @@ namespace simul
 				z = q[2];
 				s = q[3];
 			}
-			Quaternion(const Quaternion &q)
+			template<typename U> Quaternion(const Quaternion<U> &q)
 			{
-				s = q.s;
-				x = q.x;
-				y = q.y;
-				z = q.z;
+				s = T(q.s);
+				x = T(q.x);
+				y = T(q.y);
+				z = T(q.z);
 			}
 
 			Quaternion(T angle_radians, const tvector3<T>& vv)
@@ -169,9 +169,9 @@ namespace simul
 				return halfangle * (T)2.0;
 			}
 			// Operations
-			operator const double*() const
+			operator const T*() const
 			{
-				return (const double *)(&x);
+				return (const T *)(&x);
 			}
 			tvector3<T> operator*(const tvector3<T>&vec) const
 			{
@@ -202,7 +202,7 @@ namespace simul
 					-s1 * z + s * z1 - x * y1 + y * x1);
 			}
 
-			Quaternion operator*(double d)
+			Quaternion operator*(T d)
 			{
 				return Quaternion(x,y,z,s*d,false);
 			}
@@ -217,7 +217,7 @@ namespace simul
 				r.z=-z;
 				return r;
 			}
-			Quaternion& operator=(const double *q)
+			Quaternion& operator=(const T *q)
 			{
 				x=q[0];
 				y=q[1];
@@ -256,7 +256,7 @@ namespace simul
 			//			s -= this*q
 			Quaternion& operator/=(const Quaternion &q)
 			{
-				double X, Y, Z;
+				T X, Y, Z;
 				X = s * q.x + q.s * x + q.y * z - q.z * y;
 				Y = s * q.y + q.s * y + q.z * x - q.x * z;
 				Z = s * q.z + q.s * z + q.x * y - q.y * x;
@@ -288,10 +288,10 @@ namespace simul
 					tvector3<T> a = d;
 					a /= sz;
 					Quaternion dq(sz, a);
-					double s1 = dq.s * s - dq.x * x - dq.y * y - dq.z * z;
-					double x1 = s * dq.x + dq.s * x + dq.y * z - dq.z * y;
-					double y1 = s * dq.y + dq.s * y + dq.z * x - dq.x * z;
-					double z1 = s * dq.z + dq.s * z + dq.x * y - dq.y * x;
+					T s1 = dq.s * s - dq.x * x - dq.y * y - dq.z * z;
+					T x1 = s * dq.x + dq.s * x + dq.y * z - dq.z * y;
+					T y1 = s * dq.y + dq.s * y + dq.z * x - dq.x * z;
+					T z1 = s * dq.z + dq.s * z + dq.x * y - dq.y * x;
 					s = s1;
 					x = x1;
 					y = y1;
@@ -357,6 +357,72 @@ namespace simul
 		extern vec3 SIMUL_CROSSPLATFORM_EXPORT_FN TransformPosition(Quaterniond old_origin,Quaterniond new_origin,vec3 old_pos, double radius= 6378000.0);
 		//! Rotate an orientation by a specified offset in its local x and y axes.
 		extern Quaterniond SIMUL_CROSSPLATFORM_EXPORT_FN TransformOrientationByOffsetXY(const Quaterniond &origin,vec2 local_offset_radians);
+		template<typename T,typename U> void QuaternionToMatrix(tmatrix4<T>& M, const Quaternion<U>& q)
+		{
+			T X = (T)q.x;
+			T Y = (T)q.y;
+			T Z = (T)q.z;
+			T S = (T)q.s;
+			T sqw = S * S;
+			T sqx = X * X;
+			T sqy = Y * Y;
+			T sqz = Z * Z;
+			T invs = T(1.0) / (sqx + sqy + sqz + sqw);
+			M.m[0] = (T)((sqx - sqy - sqz + sqw) * invs);
+			M.m[1] = (T)(T(2.0) * (X * Y + Z * S));      
+			M.m[2] = (T)(T(2.0) * (X * Z - Y * S));      
+			 
+			M.m[4 + 0] = (T)(T(2.0) * (X * Y - Z * S));      
+			M.m[4 + 1] = (T)(-X * X + Y * Y - Z * Z + S * S);
+			M.m[4 + 2] = (T)(T(2.0) * (Y * Z + X * S));      
+			
+			M.m[2 * 4 + 0] = (T)(T(2.0) * (X * Z + Y * S));     
+			M.m[2 * 4 + 1] = (T)(T(2.0) * (Y * Z - X * S));     
+			M.m[2 * 4 + 2] = (T)(-X * X - Y * Y + Z * Z + S * S);
+		}
+		template<typename T, typename U> void MatrixToQuaternion(Quaternion<T>& q, const tmatrix4<U>& M)
+		{
+			tmatrix4<U> Mt = M;
+			Mt.transpose();
+			//    Calculate the trace of the matrix Mt from the equation:
+			T Tr = (T)Mt.M[0][0] + (T)Mt.M[1][1] + (T)Mt.M[2][2] + T(1.0);
+			//    If the trace of the matrix is greater than zero
+			if (Tr > 0)
+			{
+				T Size = T(2.0) * (T)sqrt(Tr);
+				q.s = (T)0.25 * Size;
+				q.x = ((T)(Mt._m21 - Mt._m12) / Size);
+				q.y = ((T)(Mt._m02 - Mt._m20) / Size);
+				q.z = ((T)(Mt._m10 - Mt._m01) / Size);
+			}
+			else
+			{
+				T r[4];
+				int i, j, k;
+				int nxt[3] = { 1, 2, 0 };
+				// diagonal is negative
+				i = 0;
+				if ((T)Mt.M[1][1] > (T)Mt.M[0][0])
+					i = 1;
+				if ((T)Mt.M[2][2] > (T)Mt.M[i][i])
+					i = 2;
+				j = nxt[i];
+				k = nxt[j];
+				T Size = sqrt(((T)Mt.M[i][i] - ((T)Mt.M[j][j] + (T)Mt.M[k][k])) + T(1.0));
+				r[i] = Size * T(0.5);
+				if (Size != T(0.0))
+					Size = T(0.5) / Size;
+				r[j] = ((T)Mt.M[i][j] + (T)Mt.M[j][i]) * Size;
+				r[k] = ((T)Mt.M[i][k] + (T)Mt.M[k][i]) * Size;
+				r[3] = ((T)Mt.M[j][k] - (T)Mt.M[k][j]) * Size;
+
+				q.x = -r[0];
+				q.y = -r[1];
+				q.z = -r[2];
+				q.s = r[3];
+			}
+			q.MakeUnit();
+		}
 		
 	}
 }

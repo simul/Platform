@@ -1,6 +1,6 @@
 #include "Light.h"
 
-using namespace simul;
+using namespace platform;
 using namespace crossplatform;
 
 crossplatform::Light::Light() : type(LightType::Sphere)

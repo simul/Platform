@@ -58,6 +58,9 @@
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
 
+	#define SIMUL_TEMPLATIZED_CONSTANT_BUFFER(struct_name, buff_num) struct struct_name {
+	#define SIMUL_TEMPLATIZED_CONSTANT_BUFFER_END(struct_name, name, buff_num) }; ConstantBuffer<struct_name> name SIMUL_BUFFER_REGISTER(buff_num);
+
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET
 	#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n
 	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
@@ -94,10 +97,22 @@ struct idOnly
 	uint vertex_id			: SV_VertexId;
 };
 
+struct posVertexOutput
+{
+	vec4 hPosition	: SV_POSITION;
+};
+
 struct posTexVertexOutput
 {
 	vec4 hPosition	: SV_POSITION;
 	vec2 texCoords	: TEXCOORD0;		
+};
+
+struct posTexColVertexOutput
+{
+	vec4 hPosition	: SV_POSITION;
+	vec2 texCoords	: TEXCOORD0;		
+	vec4 colour		: TEXCOORD1;		
 };
 
 struct positionColourVertexInput
@@ -105,6 +120,20 @@ struct positionColourVertexInput
 	vec3 position	: POSITION;
 	vec4 colour		: TEXCOORD0;		
 };
+
+posVertexOutput UltraSimpleFullscreen(idOnly IN)
+{
+	posVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]=vec2( 1.0,-1.0);
+	poss[1]=vec2( 1.0, 1.0);
+	poss[2]=vec2(-1.0,-1.0);
+	poss[3]=vec2(-1.0, 1.0);
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	OUT.hPosition.z	=0.0;
+	return OUT;
+}
 
 posTexVertexOutput SimpleFullscreen(idOnly IN)
 {
@@ -122,6 +151,12 @@ posTexVertexOutput SimpleFullscreen(idOnly IN)
 	OUT.texCoords.y =1.0 - OUT.texCoords.y;
 #endif
 	return OUT;
+}
+
+shader posVertexOutput VS_UltraSimpleFullscreen(idOnly IN)
+{
+	posVertexOutput pt=UltraSimpleFullscreen(IN);
+	return pt;
 }
 
 shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
@@ -148,6 +183,20 @@ posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 	OUT.texCoords.y =1.0 - OUT.texCoords.y;
 #endif
 	return OUT;
+}
+
+uint FlattenArrayIndex(uint3 idx, uint2 size)
+{
+	return idx.x + (idx.y * size.x) + (idx.z * size.x * size.y);
+}
+
+uint3 UnflattenArrayIndex(uint idx, uint2 size)
+{
+	uint z = idx / (size.x * size.y);
+	idx -= (z * size.x * size.y);
+	uint y = idx / size.x;
+    uint x = idx % size.x;
+	return uint3(x, y, z);
 }
 
 #endif

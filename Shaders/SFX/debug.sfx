@@ -211,7 +211,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	// we have (latitudes+1)*(longitudes+1)*2 id's
 	uint vertex_id		=IN.vertex_id;
 	vec3 pos;
-	if(vertex_id<((uint)latitudes+1)*((uint)longitudes+1))
+	if(vertex_id<(latitudes+1)*(longitudes+1))
 	{
 		uint latitude_strip	=vertex_id/(longitudes+1);
 		vertex_id			-=latitude_strip*(longitudes+1);
@@ -220,7 +220,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float elevation		=.999*(float(latitude_strip)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el		=cos(elevation);
 		pos					=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
-		float b				=latitude_strip==(uint)latitudes/2?1.0:0.2;
+		float b				=latitude_strip==latitudes/2?1.0:0.2;
 		OUT.colour			=multiplier*vec4(1.0,1.0,1.0,longitude>0&&longitude<(uint)longitudes?b:0.0); //Latitude Colour
 		//OUT.colour		*=saturate(elevation/1.7);
 	}
@@ -228,7 +228,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	{
 		vertex_id				-=(latitudes+1)*(longitudes+1);
 		uint longitude_strip	=vertex_id/(latitudes+1);
-		int latitude			=int(vertex_id-longitude_strip*(latitudes+1));
+		uint latitude			=uint(vertex_id-longitude_strip*(latitudes+1));
 		float azimuth			=2.0*3.1415926536*float(longitude_strip)/float(longitudes);
 		float elevation			=.999*(float(latitude)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el			=cos(elevation);
@@ -587,11 +587,11 @@ shader posTexVertexOutput VS_DepthWrite(idOnly IN)
 	return OUT;
 }
 
-
 VertexShader vs_quad_5_0=CompileShader(vs_5_0,VS_Quad());
 VertexShader debugvs_5_0=CompileShader(vs_5_0,DebugVS());
 PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
 VertexShader vs_simplefullscreen_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
+VertexShader vs_ultrasimplefullscreen_5_0=CompileShader(vs_5_0,VS_UltraSimpleFullscreen());
 
 group lines_3d_depth
 {
@@ -696,12 +696,19 @@ shader vec4 PS_Copy2DOffset(posTexVertexOutput IN) : SV_TARGET
 	vec4 res	=texture_clamp_lod(imageTexture,texc.xy,0);
 	return res;
 }
-
+ 
 shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 {
-	return debugColour;
+	vec4 ret= debugColour;
+	return ret;
 }
-
+ 
+shader vec4 PS_UltraSimpleClear(posVertexOutput IN) : SV_TARGET
+{
+	vec4 res=debugColour;
+	return res;
+}
+ 
 [numthreads(4,4,1)]
 shader void CS_LatLongToCubemap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
@@ -891,8 +898,8 @@ technique clear
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(vs_simplefullscreen_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+		SetVertexShader(vs_ultrasimplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_UltraSimpleClear()));
     }
 }
 
@@ -901,7 +908,7 @@ BlendState DontWriteColour
 	BlendEnable[0]	=FALSE;
 	RenderTargetWriteMask[0]=0;
 };
-
+ 
 technique clear_depth
 {
     pass p0

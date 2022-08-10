@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/CrossPlatform/Export.h"
-namespace simul
+namespace platform
 {
 	namespace crossplatform
 	{

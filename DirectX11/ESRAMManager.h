@@ -1,7 +1,7 @@
 #ifdef _XBOX_ONE
 #include "ESRAMTexture.h"
 #include <vector>
-namespace simul
+namespace platform
 {
 	namespace dx11
 	{
