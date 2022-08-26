@@ -8,6 +8,7 @@
 #include "sampler_states.sl"
 #include "quaternion.sl"
 #include "cubemap_matrices.sl"
+#include "trigonometric_LUT.sl"
 
 uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2DArray imageTextureArray SIMUL_TEXTURE_REGISTER(0);
@@ -1439,3 +1440,11 @@ technique compacted_texture
 }
 #endif
 #endif
+
+technique lut
+{
+	pass trigonometric
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_Generate_Trigonometric_LUT()));
+	}
+}
