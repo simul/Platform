@@ -25,8 +25,8 @@ RWTexture2D<float> trig_LUT0 : register(u0);
 RWTexture2D<float> trig_LUT1 : register(u1);
 
 static const uint LUT_Size = 128;
-static const uint LUT_Size_F = float(LUT_Size);
-static const float LUT_Size_Divisor = LUT_Size_F - 1.0;
+static const uint LUT_Size_F = 128.0;
+static const float LUT_Size_Divisor = 127.0;
 
 float GetRatioFromIdx(float idx)
 {
