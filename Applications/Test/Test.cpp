@@ -102,7 +102,8 @@ enum class TestType
 	TEXT,
 	CHECKERBOARD,
 	FIBONACCI,
-	TVTESTCARD
+	TVTESTCARD,
+	TRIGONOMETRY
 };
 
 class PlatformRenderer : public crossplatform::PlatformRendererInterface
@@ -120,6 +121,8 @@ public:
 	crossplatform::HdrRenderer* hdrRenderer = nullptr;
 	crossplatform::BaseFramebuffer* hdrFramebuffer = nullptr;
 	crossplatform::Effect* effect = nullptr;
+	crossplatform::Effect* test = nullptr;
+	crossplatform::Texture* texture = nullptr;
 	crossplatform::ConstantBuffer<SceneConstants>	sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants>	cameraConstants;
 
@@ -265,6 +268,9 @@ public:
 
 	~PlatformRenderer()
 	{
+		delete texture;
+		delete test;
+		delete effect;
 		delete hdrFramebuffer;
 		delete hdrRenderer;
 		delete depthTexture;
@@ -291,6 +297,8 @@ public:
 		sceneConstants.RestoreDeviceObjects(renderPlatform);
 		sceneConstants.LinkToEffect(effect, "SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
+		test = renderPlatform->CreateEffect("Test");
+		texture = renderPlatform->CreateTexture();
 
 #ifdef SAMPLE_USE_D3D12
 		if (renderPlatformType == crossplatform::RenderPlatformType::D3D12)
@@ -406,6 +414,11 @@ public:
 			Test_TVTestCard(deviceContext, w, h);
 			break;
 		}
+		case TestType::TRIGONOMETRY:
+		{
+			Test_Trigonometry(deviceContext, w, h);
+			break;
+		}
 		}
 
 		hdrFramebuffer->Deactivate(deviceContext);
@@ -456,11 +469,9 @@ public:
 
 	void Test_Checkerboard(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
 	{
-		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* checkerboard = test->GetTechniqueByName("test_checkerboard");
 		crossplatform::ShaderResource res = test->GetShaderResource("rwImage");
 
-		crossplatform::Texture* texture = renderPlatform->CreateTexture();
 		texture->ensureTexture2DSizeAndFormat(renderPlatform, 512, 512,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 		renderPlatform->ApplyPass(deviceContext, checkerboard->GetPass(0));
@@ -482,7 +493,6 @@ public:
 			first = false;
 		}
 
-		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* fibonacci = test->GetTechniqueByName("test_fibonacci");
 		crossplatform::ShaderResource res = test->GetShaderResource("rwSB");
 
@@ -542,10 +552,8 @@ public:
 		else
 			return;
 
-		crossplatform::Texture* texture = renderPlatform->CreateTexture();
 		texture->ensureTexture2DSizeAndFormat(renderPlatform, w, h, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
-		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* tvtestcard = test->GetTechniqueByName("test_tvtestcard");
 		crossplatform::ShaderResource res_roSB = test->GetShaderResource("roSB");
 		crossplatform::ShaderResource res_rwImage = test->GetShaderResource("rwImage");
@@ -558,6 +566,27 @@ public:
 
 		hdrFramebuffer->Clear(deviceContext, 1.0f, 0.0f, 0.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
 		renderPlatform->DrawTexture(deviceContext, 0, 0, w, h, texture);
+	}
+
+	void Test_Trigonometry(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
+	{
+		crossplatform::Effect* debug = renderPlatform->GetDebugEffect();
+		crossplatform::EffectTechnique* lut = debug->GetTechniqueByName("lut");
+		crossplatform::ShaderResource res0 = debug->GetShaderResource("trig_LUT0");
+		crossplatform::ShaderResource res1 = debug->GetShaderResource("trig_LUT1");
+
+		texture->ensureTextureArraySizeAndFormat(renderPlatform, 128, 128, 2, 1, crossplatform::PixelFormat::R_32_FLOAT, true);
+
+		renderPlatform->ApplyPass(deviceContext, lut->GetPass("trigonometric"));
+		renderPlatform->SetUnorderedAccessView(deviceContext, res0, texture, 0);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res1, texture, 1);
+		renderPlatform->DispatchCompute(deviceContext, 1, 133, 1);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res0, nullptr);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res1, nullptr);
+		renderPlatform->UnapplyPass(deviceContext);
+
+		hdrFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5f, 1.00f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->DrawTexture(deviceContext, (w - h) / 2, 0, h, h, texture);
 	}
 };
 PlatformRenderer* platformRenderer;
