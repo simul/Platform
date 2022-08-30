@@ -26,10 +26,14 @@ struct ImGui_ImplPlatform_Data
 	Effect*					effect = nullptr;
 	EffectPass*				effectPass_testDepth=nullptr;
 	EffectPass*				effectPass_noDepth=nullptr;
+	EffectPass*				effectPass_placeIn3D_testDepth=nullptr;
+	EffectPass*				effectPass_placeIn3D_noDepth=nullptr;
+	
 	Layout*					pInputLayout = nullptr;
 	ConstantBuffer<ImGuiCB>	constantBuffer;
 	Texture*				pFontTextureView = nullptr;
-	RenderState*			pRasterizerState = nullptr;
+	Texture*				framebufferTexture = nullptr;
+
 	RenderState*			pBlendState = nullptr;
 	int						VertexBufferSize=0;
 	int						IndexBufferSize=0;
@@ -39,18 +43,25 @@ struct ImGui_ImplPlatform_Data
 	vec3 normal;
 	float azimuth = 0.0f;
 	float tilt = 3.1415926536f / 4.0f;
-
+	unsigned matrices_ticker=0;
+	unsigned used_ticker=0;
 	mat4 imgui_to_world;
+	mat4 canvas_to_world;
 	mat4 local_to_world;
+	mat4 world_to_local;
 	mat4 imgui_to_local;
+	mat4 relative_to_local;
 	mat4 world_to_imgui;
 	mat4 invViewProj;
 	vec3 view_pos;
+	// temp:
+	float height_m=1.f;
+	float X=1.f,Y=1.f;
 	bool textureUploaded=false;
 
 	int2 mouse,screen;
 	bool is3d=false;
-
+	std::vector<vec3> client_press;
 	ImGui_ImplPlatform_Data()	   {  VertexBufferSize = 5000; IndexBufferSize = 10000; }
 
 	void Release()
@@ -99,6 +110,12 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 	bd->renderPlatform->SetVertexBuffers(deviceContext, 0, 1, &bd->pVB, bd->pInputLayout);
 	bd->renderPlatform->SetIndexBuffer(deviceContext, bd->pIB);
 	bd->renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLELIST);
+	TextureCreate tc;
+	tc.make_rt=true;
+	tc.w=draw_data->DisplaySize.x;
+	tc.l=draw_data->DisplaySize.y;
+	tc.f=crossplatform::PixelFormat::RGBA_8_UNORM;
+	bd->framebufferTexture->EnsureTexture(deviceContext.renderPlatform,&tc);
 }
 
 // Render function
@@ -107,10 +124,13 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	// Avoid rendering when minimized
 	if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
 		return;
-
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	RenderPlatform* renderPlatform = bd->renderPlatform;
-
+	{
+		if(!bd->framebufferTexture)
+			bd->framebufferTexture=renderPlatform->CreateTexture("imgui_framebuffer");
+	}
+	int4 old_scissor=renderPlatform->GetScissor(deviceContext);
 	// Create and grow vertex/index buffers if needed
 	if (!bd->pVB || bd->VertexBufferSize < draw_data->TotalVtxCount)
 	{
@@ -121,7 +141,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 		}
 		bd->VertexBufferSize = draw_data->TotalVtxCount + 5000;
 		bd->pVB=renderPlatform->CreateBuffer();
-		bd->pVB->EnsureVertexBuffer(renderPlatform, bd->VertexBufferSize, bd->pInputLayout, nullptr, true);
+		bd->pVB->EnsureVertexBuffer(renderPlatform, bd->VertexBufferSize, bd->pInputLayout, nullptr,true);
 	}
 	if (!bd->pIB || bd->IndexBufferSize < draw_data->TotalIdxCount)
 	{
@@ -137,11 +157,16 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	// Upload vertex/index data into a single contiguous GPU buffer
 	ImDrawVert* vtx_dst= (ImDrawVert*)bd->pVB->Map(deviceContext);
 	if (!vtx_dst)
+	{
+	// Force recreate to find error.
+		SAFE_DELETE(bd->pVB);
 		return;
+	}
 	ImDrawIdx* idx_dst= (ImDrawIdx*)bd->pIB->Map(deviceContext);
 	if (!idx_dst)
 	{
 		bd->pVB->Unmap(deviceContext);
+		SAFE_DELETE(bd->pIB);
 		return;
 	}
 	for (int n = 0; n < draw_data->CmdListsCount; n++)
@@ -156,25 +181,29 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	bd->pIB->Unmap(deviceContext);
 	// Setup orthographic projection matrix into our constant buffer
 	// Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+	
+	float L = draw_data->DisplayPos.x;
+	float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+	float T = draw_data->DisplayPos.y;
+	float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+	mat4 imgui_projection =
 	{
-		float L = draw_data->DisplayPos.x;
-		float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
-		float T = draw_data->DisplayPos.y;
-		float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
-		float mvp[4][4] =
+		 2.0f/(R-L),   0.0f,		   0.0f,	   0.0f ,
+		 0.0f,			2.0f/(T-B),		0.0f,	   0.0f ,
+		 0.0f,			 0.0f,			0.5f,	   0.0f ,
+		 (R+L)/(L-R),	(T+B)/(B-T),	0.5f,	   1.0f ,
+	};
+	mat4 modelViewProj;
+	if(bd->is3d)
+	{
+		if(bd->matrices_ticker!=bd->used_ticker)
 		{
-			{ 2.0f/(R-L),   0.0f,		   0.0f,	   0.0f },
-			{ 0.0f,			2.0f/(T-B),		0.0f,	   0.0f },
-			{ 0.0f,			 0.0f,			0.5f,	   0.0f },
-			{ (R+L)/(L-R),	(T+B)/(B-T),	0.5f,	   1.0f },
-		};
-		if(bd->is3d)
-		{
+			bd->used_ticker=bd->matrices_ticker;
 			// The intention here is first to transform the pixel-space xy positions into metres in object space,
 			// then we can multiply by viewProj.
-			float height_m = float(B - T) / float(R - L) * bd->width_m;
-			float X = bd->width_m / (R - L);
-			float Y = height_m / (B - T);
+			bd->height_m = float(B - T) / float(R - L) * bd->width_m;
+			bd->X = bd->width_m / (R - L);
+			bd->Y =bd-> height_m / (B - T);
 			float cos_t = cos(bd->tilt);
 			float sin_t = sin(bd->tilt);
 			float cos_a = cos(bd->azimuth);
@@ -182,43 +211,64 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			static float x=0,y=1.f,h = 2.f;
 			bd->local_to_world =
 			{
-				 cos_a,	-sin_a,			0.0f,	bd->centre.x,
-				 sin_a,	cos_a*cos_t,	-sin_t,	bd->centre.y,
-				 0.0f,	sin_t,			cos_t,	bd->centre.z,
-				 0.0f,	0.0f,			0.0f,	1.0f
+				 cos_a		,	-sin_a*cos_t	,sin_a*sin_t	,bd->centre.x,
+				 sin_a		,	cos_a*cos_t		,-cos_a*sin_t	,bd->centre.y,
+				 0			,	sin_t			,cos_t			,bd->centre.z,
+				 0.0f		,	0.0f			,0.0f			,1.0f
 			};
 			bd->normal = bd->local_to_world*vec3(0,0,1.0f);
 			bd->imgui_to_local=
 			{
-				 X,		0,		0,		-bd->width_m / 2.0f,
-				 0,		-Y,		0,		height_m / 2.0f,
+				 bd->X,		0,		0,		-bd->width_m / 2.0f,
+				 0,		-bd->Y,		0,		bd->height_m / 2.0f,
 				 0,		0,		1.0f,	0,
 				 0,		0,		0,		1.0f
 			};
-			bd->imgui_to_world =
+			mat4 canvas_to_local=
 			{
-				 X,		0,			0.0f,	bd->centre.x - bd->width_m / 2.0f,
-				 0,		Y* cos_t,	0.0f,	bd->centre.y - height_m / 2.0f,
-				 0.0f,	Y* sin_t,	1.0f,	bd->centre.z,
-				 0.0f,	0.0f,		0.0f,	1.0f
+				 bd->width_m/2.f,0					,0		,0,
+				 0				,-bd->height_m/2.f	,0		,0,
+				 0				,0					,1.0f	,0,
+				 0				,0					,0		,1.0f
+			};
+			bd->relative_to_local =
+			{
+				 cos_a,		sin_a,			0.0f,	0,
+				 -sin_a,	cos_a*cos_t,	sin_t,	0,
+				 0.0f,		-sin_t,			cos_t,	0,
+				 0.0f,		0.0f,			0.0f,	1.0f
 			};
 			bd->imgui_to_world = mul(bd->local_to_world,bd->imgui_to_local);
+			bd->canvas_to_world=mul(bd->local_to_world,canvas_to_local);
+			bd->world_to_local=mat4::unscaled_inverse_transform(bd->local_to_world);
+		#if 0
+			mat4 check_inverse;
+			((platform::math::Matrix4x4 *)&bd->local_to_world)->SimpleInverseOfTransposeTransform(*((platform::math::Matrix4x4 *)&check_inverse));
+
+			vec3 check_centre=(bd->local_to_world*vec4(0,0,0,1.0f)).xyz;
+			vec3 check_zero=(bd->world_to_local*vec4(bd->centre,1.0f)).xyz;
+
+			mat4 i_test = mul(bd->local_to_world,check_inverse);
+			((platform::math::Matrix4x4 *)&bd->local_to_world)->Inverse(*((platform::math::Matrix4x4 *)&check_inverse));
+		
+			i_test = mul(bd->local_to_world,check_inverse);
+			platform::math::Matrix4x4 *g=(platform::math::Matrix4x4 *)&bd->local_to_world;
+			//g->SimpleInverse(*((platform::math::Matrix4x4 *)&bd->world_to_local));
+			 i_test = mul(bd->local_to_world,bd->world_to_local);
+			#endif
+
 			// store the inverse for mouse clicks:
 			platform::math::Matrix4x4 *m=(platform::math::Matrix4x4 *)&bd->imgui_to_world;
-			m->Inverse(*((platform::math::Matrix4x4 *)&bd->world_to_imgui));
-			bd->view_pos=deviceContext.viewStruct.cam_pos;
-			bd->invViewProj=deviceContext.viewStruct.invViewProj;
-			mat4 *viewProj= (mat4 * )(&deviceContext.viewStruct.viewProj);
-			mat4 modelViewProj=mul(*viewProj, bd->imgui_to_world);
-			modelViewProj.transpose();
-			memcpy(&bd->constantBuffer.ProjectionMatrix, modelViewProj, sizeof(mat4));
+			bd->world_to_imgui=mat4::inverse(bd->imgui_to_world);//(*((platform::math::Matrix4x4 *)&bd->world_to_imgui));
+			//mat4 i_test = mul(bd->world_to_imgui,bd->imgui_to_world);
 		}
-		else
-		{
-			mat4* ProjectionMatrix = &bd->constantBuffer.ProjectionMatrix;
-			memcpy(ProjectionMatrix, mvp, sizeof(mat4));
-		}
+		bd->view_pos=deviceContext.viewStruct.cam_pos;
+		bd->invViewProj=deviceContext.viewStruct.invViewProj;
+		mat4 *viewProj= (mat4 * )(&deviceContext.viewStruct.viewProj);
+		modelViewProj=mul(*viewProj, bd->canvas_to_world);
+		modelViewProj.transpose();
 	}
+	bd->constantBuffer.ProjectionMatrix= imgui_projection;
 	bd->renderPlatform->SetConstantBuffer(deviceContext, &bd->constantBuffer);
 
 	crossplatform::Viewport vp=bd->renderPlatform->GetViewport(deviceContext, 1);
@@ -226,6 +276,9 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	ImGui_ImplPlatform_SetupRenderState(draw_data, deviceContext);
 	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
 	bool test_depth=tv&&tv->depthTarget.texture!=nullptr?true:false;
+	
+	if(bd->is3d)
+		bd->framebufferTexture->activateRenderTarget(deviceContext);
 	// Render command lists
 	// (Because we merged all buffers into a single one, we maintain our own offset into them)
 	int global_idx_offset = 0;
@@ -256,7 +309,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 
 				// TODO: Apply scissor/clipping rectangle
 			   // const D3D11_RECT r = { (LONG)clip_min.x, (LONG)clip_min.y, (LONG)clip_max.x, (LONG)clip_max.y };
-				//renderPlatform->RSSetScissorRects(1, &r);
+				int4 clip={(int)clip_min.x, (int)clip_min.y,(int)(clip_max.x-clip_min.x), (int)(clip_max.y-clip_min.y)};
+				renderPlatform->SetScissor(deviceContext, clip);
 
 				// Bind texture, Draw
 				Texture* texture_srv = (Texture*)pcmd->GetTexID();
@@ -270,6 +324,20 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 		}
 		global_idx_offset += cmd_list->IdxBuffer.Size;
 		global_vtx_offset += cmd_list->VtxBuffer.Size;
+	}
+	renderPlatform->SetScissor(deviceContext, old_scissor);
+	if(bd->is3d)
+	{
+		bd->framebufferTexture->deactivateRenderTarget(deviceContext);
+		bd->constantBuffer.ProjectionMatrix= modelViewProj;
+		bd->renderPlatform->SetConstantBuffer(deviceContext, &bd->constantBuffer);
+		// now draw it to screen.
+		renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),bd->framebufferTexture);
+		renderPlatform->ApplyPass(deviceContext, test_depth?bd->effectPass_placeIn3D_testDepth:bd->effectPass_placeIn3D_noDepth);
+		bd->pInputLayout->Apply(deviceContext);
+		renderPlatform->DrawQuad(deviceContext);
+		bd->pInputLayout->Unapply(deviceContext);
+		renderPlatform->UnapplyPass(deviceContext );
 	}
 	if(!bd->is3d)
 		bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
@@ -309,8 +377,12 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 #if 1
 	if (!bd->effect)
 		bd->effect= bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass_testDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
-	bd->effectPass_noDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
+	bd->effectPass_testDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
+	bd->effectPass_noDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
+	
+	bd->effectPass_placeIn3D_testDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
+	bd->effectPass_placeIn3D_noDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
+	
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
@@ -336,10 +408,11 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 	SAFE_DELETE(bd->pIB);
 	SAFE_DELETE(bd->pVB);
 	SAFE_DELETE(bd->pBlendState);
-	SAFE_DELETE(bd->pRasterizerState);
+
 	bd->constantBuffer.InvalidateDeviceObjects();
 	SAFE_DELETE(bd->pInputLayout);
 	SAFE_DELETE(bd->effect);
+	SAFE_DELETE(bd->framebufferTexture);
 }
 void	ImGui_ImplPlatform_RecompileShaders()
 {
@@ -351,8 +424,11 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	if(!bd->renderPlatform)
 		return;
 	bd->effect = bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass_testDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("test_depth");
-	bd->effectPass_noDepth=bd->effect->GetTechniqueByIndex(0)->GetPass("no_depth");
+	bd->effectPass_testDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
+	bd->effectPass_noDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
+	
+	bd->effectPass_placeIn3D_testDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
+	bd->effectPass_placeIn3D_noDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
 }
 
 bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r)
@@ -387,6 +463,19 @@ void ImGui_ImplPlatform_Shutdown()
 	IM_DELETE(bd);
 	bd=nullptr;
 }
+void ImGui_ImplPlatform_SetFrame(float w_m,float az,float tilt,vec3 c)
+{
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplPlatform_Init()?");
+	if(bd->width_m!=w_m||bd->azimuth!=az||bd->tilt!=tilt||bd->centre!=c)
+	{
+		bd->width_m=w_m;
+		bd->azimuth = az;
+		bd->tilt = tilt;
+		bd->centre=c;
+		bd->matrices_ticker++;
+	}
+}
 
 void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos, float az, float tilt,float width_m)
 {
@@ -394,9 +483,11 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplPlatform_Init()?");
 	
 	bd->is3d=in3d;
-	bd->width_m=width_m;
-	bd->azimuth = az;
-	bd->tilt = tilt;
+	static vec3 zero={0,0,0};
+	vec3 ctr=zero;
+	if(pos)
+		ctr=pos;
+	ImGui_ImplPlatform_SetFrame(width_m,az,tilt,ctr);
 	if (!bd->pFontTextureView)
 		ImGui_ImplPlatform_CreateDeviceObjects();
 
@@ -406,10 +497,8 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 		ImGuiIO& io = ImGui::GetIO();
 		// Setup display size (every frame to accommodate for window resizing)
 		io.DisplaySize = ImVec2((float)ui_pixel_width, (float)ui_pixel_height);
-		if(pos)
-			bd->centre=pos;
     // Override what win32 did with this
-		ImGui_ImplPlatform_Update3DMousePos();
+		//ImGui_ImplPlatform_Update3DMousePos();
 	}
 }
 
@@ -440,18 +529,25 @@ void ImGui_ImplPlatform_Update3DMousePos()
 
 	vec3 diff			= bd->centre - bd->view_pos;
 	// from the Windows mouse pos obtain a direction.
-	vec4 view_dir	= { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
+	vec4 view_dir		= { (2.0f*bd->mouse.x - bd->screen.x) / float(bd->screen.x),(bd->screen.y - 2.0f * bd->mouse.y) / float(bd->screen.y),1.0f,1.0f};
 	// Transform this into a worldspace direction.
-	vec3 view_w		=(view_dir*bd->invViewProj).xyz;
-	view_w = normalize(view_w);
+	vec3 view_w			= (view_dir*bd->invViewProj).xyz;
+	view_w				= normalize(view_w);
 	// Take the vector in this direction from view_pos, Intersect it with the UI surface.
 	float dist			= dot(diff, bd->normal)/dot(view_w,bd->normal);
 	vec3 intersection_w	= bd->view_pos+view_w*dist;
 
 	// Transform the intersection point into object-space then into UI-space.
-	vec3 client_pos =(bd->world_to_imgui*vec4(intersection_w,1.0f)).xyz;
+	mat4 m				= bd->world_to_imgui;
+	vec3 client_pos		= (m*vec4(intersection_w,1.0f)).xyz;
 	// Finally, set this as the mouse pos.
 	io.MousePos			= ImVec2(client_pos.x,client_pos.y);
+}
+
+void ImGui_ImplPlatform_Get3DTouchClientPos( std::vector<vec3>& client_press)
+{
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	client_press=bd->client_press;
 }
 
 void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press)
@@ -468,8 +564,10 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 	static float max_z = 0.0f;
 	static float control_surface_thickness = 0.0f;
 	static float hysteresis_thickness = 0.02f;
+	static float release_thickness = 0.04f;
 	float lowest = max_z;
 	bool any = false;
+	bool all_released=true;
 	/*static std::vector<bool> clicked;
 	if (clicked.size() != position_press.size())
 	{
@@ -477,14 +575,27 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 		for (size_t i = 0; i < position_press.size(); i++)
 			clicked[i] = false;
 	}*/
+			bd->imgui_to_local=
+			{
+				 bd->X,		0,		0,		-bd->width_m / 2.0f,
+				 0,		-bd->Y,		0,		bd->height_m / 2.0f,
+				 0,		0,		1.0f,	0,
+				 0,		0,		0,		1.0f
+			};
+	bd->client_press.resize(position_press.size());
+	//bd->client_press[position_press.size()]=(bd->world_to_local*vec4(bd->centre,1.0f)).xyz;
 	for (size_t i = 0; i < position_press.size(); i++)
 	{
 		// Set Dear ImGui mouse position from OS position
 		vec3 pos = position_press[i].xyz;
 		float press = position_press[i].w;
+		vec3 rel=pos-bd->centre;
+		vec3 local=(bd->relative_to_local*vec4(rel,1.0f)).xyz;
 		// resolve position onto the control surface:
-		vec3 client_pos = (bd->world_to_imgui * vec4(pos, 1.0f)).xyz;
-		// Too far beneath the surface.
+		//client_pr=(bd->world_to_local*vec4(pos,1.0f)).xyz;
+		vec3 client_pos =(bd->world_to_imgui*vec4(pos,1.0f)).xyz;
+		// Record the vertical position:
+		bd->client_press[i].z=client_pos.z;
 		//if (!clicked[i])
 		{
 			if (client_pos.z < min_z || client_pos.z > max_z)
@@ -496,29 +607,36 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 		{
 			any = true;
 		}
+		if (client_pos.z <= release_thickness)
+		{
+			all_released = false;
+		}
+		// Go from unpressed to pressed.
 		if(!io.MouseDown[0])
 		{
-			if (client_pos.z <= control_surface_thickness)
+			// record mouseDown position, ONLY on transition.
+			bd->client_press[i].x=client_pos.x;
+			bd->client_press[i].y=client_pos.y;
+			if(client_pos.z <= control_surface_thickness)
 			{
 				io.MouseDown[0] = true;
-				// record mouseDown position...?
 			}
 		}
 		if (client_pos.z < lowest)
 		{
 			lowest = client_pos.z;
 			// Finally, set this as the mouse pos.
-			io.MousePos = ImVec2(client_pos.x, client_pos.y);
+			io.MousePos = ImVec2(bd->client_press[i].x, bd->client_press[i].y);
 		}
 		/*if (clicked[i] && client_pos.z > control_area_thickness)
 		{
 			io.MousePos = ImVec2(client_pos.x, client_pos.y);
 		}*/
 	}
-	if (io.MouseDown[0] && !any)
+	if (io.MouseDown[0] && all_released)
 	{
 		io.MouseDown[0] = false;
-		io.MousePos= last_pos;
+		//io.MousePos= last_pos;
 	}
 	last_pos = io.MousePos;
 }

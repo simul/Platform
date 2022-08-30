@@ -57,7 +57,7 @@ namespace platform
 			SHADERTYPE_EXPORT,		// not generally used.
 			SHADERTYPE_COUNT
 		};
-		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
+		//! Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
 			NEVER_BUILD			= 0x00000000,
@@ -136,31 +136,32 @@ namespace platform
 		};
 		enum ViewportScissor
 		{
-			VIEWPORT_SCISSOR_DISABLE	  = 0, ///< Disable the scissor rectangle for a viewport.
-			VIEWPORT_SCISSOR_ENABLE		= 1, ///< Enable the scissor rectangle for a viewport.
+			VIEWPORT_SCISSOR_DISABLE	  = 0,	//!< Disable the scissor rectangle for a viewport.
+			VIEWPORT_SCISSOR_ENABLE		= 1,	//!< Enable the scissor rectangle for a viewport.
 		};
 		enum CullFaceMode
 		{
-			CULL_FACE_NONE			  = 0, ///< Disable face culling.
-			CULL_FACE_FRONT			 = 1, ///< Cull front-facing primitives only.
-			CULL_FACE_BACK			  = 2, ///< Cull back-facing primitives only.
-			CULL_FACE_FRONTANDBACK	  = 3, ///< Cull front and back faces.
+			CULL_FACE_NONE			  = 0,	//!< Disable face culling.
+			CULL_FACE_FRONT			 = 1,	//!< Cull front-facing primitives only.
+			CULL_FACE_BACK			  = 2,	//!< Cull back-facing primitives only.
+			CULL_FACE_FRONTANDBACK	  = 3,	//!< Cull front and back faces.
 		};
+	
 		enum FrontFace
 		{
-			FRONTFACE_CLOCKWISE					 = 1, ///< Clockwise is front-facing.
-			FRONTFACE_COUNTERCLOCKWISE			  = 0, ///< Counter-clockwise is front-facing.
+			FRONTFACE_CLOCKWISE					 = 1,	//! Clockwise is front-facing.
+			FRONTFACE_COUNTERCLOCKWISE			  = 0, //!< Counter-clockwise is front-facing.
 		};
 		enum PolygonMode
 		{
-			POLYGON_MODE_POINT			  = 0, ///< Render polygons as points.
-			POLYGON_MODE_LINE				= 1, ///< Render polygons in wireframe.
-			POLYGON_MODE_FILL				= 2, ///< Render polygons as solid/filled.
+			POLYGON_MODE_POINT			  = 0, //!< Render polygons as points.
+			POLYGON_MODE_LINE				= 1, //!< Render polygons in wireframe.
+			POLYGON_MODE_FILL				= 2, //!< Render polygons as solid/filled.
 		};
 		enum PolygonOffsetMode
 		{
-			POLYGON_OFFSET_ENABLE			= 1, ///< Enable polygon offset.
-			POLYGON_OFFSET_DISABLE		  = 0, ///< Disable polygon offset.
+			POLYGON_OFFSET_ENABLE			= 1, //!< Enable polygon offset.
+			POLYGON_OFFSET_DISABLE		  = 0, //!< Disable polygon offset.
 		};
 		struct RasterizerDesc
 		{
@@ -250,7 +251,7 @@ namespace platform
 			unsigned samplerSlots;			//s
 			crossplatform::RenderPlatform *renderPlatform;
 		};
-		/// A class representing a shader resource.
+		//! A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
 			ShaderResource()	{}
@@ -429,7 +430,7 @@ namespace platform
 			{
 				name=n;
 			}
-			/// For RenderPlatform's use only: do not call.
+			//! For RenderPlatform's use only: do not call.
 			virtual void ActualApply(platform::crossplatform::DeviceContext &,EffectPass *,int){}
 		};
 		
@@ -488,7 +489,7 @@ namespace platform
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
 		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;
 		typedef std::map<int,EffectTechnique *> IndexMap;
-		/// Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
+		//! Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
 		{
 			TechniqueCharMap charMap;
@@ -503,7 +504,7 @@ namespace platform
 
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		typedef std::unordered_map<const char *,EffectTechniqueGroup *> GroupCharMap;
-		/// The cross-platform base class for shader effects.
+		//! The cross-platform base class for shader effects.
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:
@@ -582,21 +583,21 @@ namespace platform
 			virtual void SetSamplerState(DeviceContext &deviceContext,const ShaderResource &name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
 			virtual void SetConstantBuffer(DeviceContext &deviceContext,ConstantBufferBase *s);
-			/// Activate the shader. Unapply must be called after rendering is done.
+			//! Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
-			/// Activate the shader. Unapply must be called after rendering is done.
+			//! Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,int pass=0);
-			/// Activate the shader. Unapply must be called after rendering is done.
+			//! Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass=0);
-			/// Activate the shader. Unapply must be called after rendering is done.
+			//! Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass);
-			/// Apply the specified shader effect pass. Unapply must be called after rendering is done.
+			//! Apply the specified shader effect pass. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext& deviceContext, EffectPass* p);
-			/// Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.
+			//! Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.
 			virtual void Reapply(DeviceContext &deviceContext);
-			/// Deactivate the shader.
+			//! Deactivate the shader.
 			virtual void Unapply(DeviceContext &deviceContext);
-			/// Zero-out the textures that are set for this shader. Call before apply.
+			//! Zero-out the textures that are set for this shader. Call before apply.
 			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext);
 
 			void StoreConstantBufferLink(crossplatform::ConstantBufferBase *);
@@ -609,7 +610,7 @@ namespace platform
 
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
-			/// Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
+			//! Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
 			bool EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
@@ -664,17 +665,17 @@ namespace platform
 			{
 				*(T*)pData = *this;
 			}
-			/// For Effect's use only, do not call.
+			//! For Effect's use only, do not call.
 			size_t GetSize() const override
 			{
 				return sizeof(T);
 			}
-			/// For Effect's use only, do not call.
+			//! For Effect's use only, do not call.
 			void* GetAddr() const override
 			{
 				return (void*)((T*)this);
 			}
-			/// Get the binding index in shaders.
+			//! Get the binding index in shaders.
 			int GetIndex() const override
 			{
 				return T::bindingIndex;

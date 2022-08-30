@@ -19,6 +19,13 @@ ContextState::ContextState()
 	memset(viewports,0,8*sizeof(Viewport));
 }
 
+bool ContextState::IsDepthActive() const
+{
+	crossplatform::RenderState* depthStencilState = currentEffectPass ? currentEffectPass->depthStencilState:nullptr;
+	bool depthTest = depthStencilState ? (depthStencilState->desc.depth.test ) : false;
+	bool depthWrite = depthStencilState ? ( depthStencilState->desc.depth.write) : false;
+	return (depthTest||depthWrite);
+}
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
 std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()
 {

@@ -301,6 +301,7 @@ namespace platform
 			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
 			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
+			void							DrawAxes(GraphicsDeviceContext &deviceContext,mat4 &m,float size);
 			virtual void PrintAt3dPos		(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(GraphicsDeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			(){}
@@ -375,6 +376,10 @@ namespace platform
 			virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
 			virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
 			virtual void					SetViewports					(GraphicsDeviceContext &deviceContext,int num,const Viewport *vps);
+			//! Set the scissor rectange: x,y, width and height. NOTE: NOT left,right,top,bottom!
+			virtual void					SetScissor						(GraphicsDeviceContext &deviceContext,int4 sc);
+			//! Get the scissor rectange: x,y, width and height. NOTE: NOT left,right,top,bottom!
+			virtual int4					GetScissor						(GraphicsDeviceContext &deviceContext) const;
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport						(GraphicsDeviceContext &deviceContext,int index);
 			/// Activate the specified index buffer in preparation for rendering.

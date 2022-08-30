@@ -84,6 +84,8 @@ namespace platform
 			,R_24_FLOAT_X_8
 
 			,NV12
+
+			,UNDEFINED	// for video decoding.
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

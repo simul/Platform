@@ -126,6 +126,7 @@ namespace platform
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			const void* initialData = nullptr;
 			const char* name = nullptr;
+			bool forceInit=false;			//!< Initialize fully, even if it looks the same.
 		};
 		//! A crossplatform viewport structure.
 		struct Viewport
@@ -203,6 +204,7 @@ namespace platform
 			}
 			int default_slot;
 			crossplatform::RenderPlatform *renderPlatform;
+			SamplerStateDesc samplerStateDesc;
 		};
 		enum class ShaderResourceType;
 		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
@@ -308,6 +310,8 @@ namespace platform
 			virtual void GenerateMips(GraphicsDeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
+			//! Set the texture data from CPU memory, but defer the transfer until we next have a valid DeviceContext.
+			virtual void setTexels(const void *src,int texel_index,int num_texels){}
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
 			virtual void activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index=-1,int mip_index=0);
 			//! Deactivate as a rendertarget.

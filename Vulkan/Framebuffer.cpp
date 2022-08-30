@@ -138,9 +138,9 @@ void Framebuffer::InvalidateFramebuffers()
 	for(int i=0;i<8;i++)
 	{
 		for(auto f:mFramebuffers[i])
-			vulkanDevice->destroyFramebuffer(f);
+			vulkanDevice->destroyFramebuffer(f,nullptr);
         mFramebuffers[i].clear();
-		vulkanDevice->destroyRenderPass(mDummyRenderPasses[i]);
+		vulkanDevice->destroyRenderPass(mDummyRenderPasses[i],nullptr);
 	}
 	initialized=false;
 }
@@ -174,9 +174,10 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
     
     // We need to attach the requested face: 
 	// For cubemap faces, we also include the native Vulkan framebuffer pointer in m_rt[1], which the renderplatform will handle.
+	// UPDATE: I don't think we are using this.
     if (is_cubemap)
     {
-		targetsAndViewport.m_rt[1] = (void*)GetVulkanFramebuffer(deviceContext, current_face);
+		targetsAndViewport.m_rt[1] = (void*)nullptr;//GetVulkanFramebuffer(deviceContext, current_face);
     }
 
     // Construct targets and viewport:
@@ -188,7 +189,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 	targetsAndViewport.depthTarget.layer			= 0;
 	targetsAndViewport.depthTarget.mip				= 0;
 	// note the different interpretation of m_rt in the case that it's a Simul framebuffer not native:
-    targetsAndViewport.m_rt[0]          = (void*)this;
+    targetsAndViewport.m_rt[0]          = (void*)0;
 	targetsAndViewport.m_dt             = 0;
     targetsAndViewport.viewport.x       = 0;
     targetsAndViewport.viewport.y       = 0;
@@ -207,13 +208,13 @@ void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &de
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(buffer_texture)
 	{
-		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH],1,&target_format,depth_format,false,numAntialiasingSamples);
-		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH|RPType::CLEAR],1,&target_format,depth_format,true,numAntialiasingSamples);
-		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR],1,&target_format,crossplatform::PixelFormat::UNKNOWN,false,numAntialiasingSamples);
-		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR|RPType::CLEAR],1,&target_format,crossplatform::PixelFormat::UNKNOWN,true,numAntialiasingSamples);
+		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH],1,&target_format,depth_format,true,true,false,numAntialiasingSamples);
+		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR|RPType::DEPTH|RPType::CLEAR],1,&target_format,depth_format,true,true,true,numAntialiasingSamples);
+		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR],1,&target_format,crossplatform::PixelFormat::UNKNOWN,false,false,false,numAntialiasingSamples);
+		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::COLOUR|RPType::CLEAR],1,&target_format,crossplatform::PixelFormat::UNKNOWN,false,false,true,numAntialiasingSamples);
 	}
 	if(buffer_depth_texture)
-		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::DEPTH],0,nullptr,depth_format,numAntialiasingSamples);
+		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext,mDummyRenderPasses[RPType::DEPTH],0,nullptr,depth_format,true,true,numAntialiasingSamples);
 
 	vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
 	framebufferCreateInfo.width = Width;

@@ -44,8 +44,8 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
     InitData.pSysMem		=data;
     InitData.SysMemPitch	=layout->GetPitch();
 	D3D11_USAGE usage		=D3D11_USAGE_DYNAMIC;
-	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
-		usage=D3D11_USAGE_DEFAULT;
+	//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+	//	usage=D3D11_USAGE_DEFAULT;
 	D3D11_BUFFER_DESC desc=
 	{
 		(unsigned)(num_vertices*layout->GetStructSize())

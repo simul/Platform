@@ -73,6 +73,9 @@ void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int arra
 
 	// Cache it:
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
+	deviceContext.contextState.scissor.x=deviceContext.contextState.scissor.y=0;
+	deviceContext.contextState.scissor.z=width;
+	deviceContext.contextState.scissor.w=length;
 }
 
 void Texture::deactivateRenderTarget(GraphicsDeviceContext &deviceContext)
@@ -142,8 +145,11 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap ) ;
 	else
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
+	if(tc->initialData)
+	{
+		setTexels(tc->initialData,0,tc->w*tc->l*tc->d);
+	}
 	return res;
-
 }
 
 bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)

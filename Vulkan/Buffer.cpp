@@ -78,7 +78,7 @@ void Buffer::InvalidateDeviceObjects()
 
 		vk::MemoryAllocateInfo allocInfo ;
 		allocInfo.setAllocationSize ( memRequirements.size);
-		bool  pass = ((vulkan::RenderPlatform*)renderPlatform)->memory_type_from_properties(
+		bool  pass = ((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(
 			memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 			&allocInfo.memoryTypeIndex);
 		SIMUL_ASSERT(pass);

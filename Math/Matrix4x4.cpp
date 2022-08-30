@@ -831,8 +831,11 @@ Matrix4x4 Matrix4x4::Scale(const float *x)
 	return Scale(x[0],x[1],x[2]);
 }
 
-void Matrix4x4::SimpleInverse(Matrix4x4 &Inv) const
+void Matrix4x4::SimpleInverseOfTransposeTransform(Matrix4x4 &Inv) const
 {
+#if SIMUL_INTERNAL_CHECKS
+	SIMUL_ASSERT(m[0][3]==0&&m[1][3]==0&&m[2][3]==0&&m[3][3]==1.0f);
+#endif
 	const Vector3 *XX=reinterpret_cast<const Vector3*>(RowPointer(0));
 	const Vector3 *YY=reinterpret_cast<const Vector3*>(RowPointer(1));
 	const Vector3 *ZZ=reinterpret_cast<const Vector3*>(RowPointer(2));

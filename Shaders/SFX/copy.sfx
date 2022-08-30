@@ -45,13 +45,21 @@ shader void Copy3DInt4( uint3 position : SV_DispatchThreadID )
 CS_LAYOUT(64,1,1)
 shader void Copy1D( uint3 position : SV_DispatchThreadID )
 {
-	DestTex1[position.x] = SourceTex1.Load(int(position.x));
+	DestTex1[position.x] = SourceTex1.Load(int2(position.xy));
 }
 
 CS_LAYOUT(8,8,1)
 shader void Copy2D( uint3 position : SV_DispatchThreadID )
 {
 	DestTex2[position.xy] = SourceTex2.Load(int3(position.x, position.y, 0));
+}
+
+CS_LAYOUT(8,8,1)
+shader void Copy2DFromVideo( uint3 position : SV_DispatchThreadID )
+{
+	vec4 clr=vec4(1.0,0,0,0.5);//SourceTex2.Load(int3(position.x, position.y, 0));;
+	//clr.r=1.0;
+	DestTex2[position.xy] = clr;
 }
 
 CS_LAYOUT(4,4,4)
@@ -98,6 +106,15 @@ technique copy_2d
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,Copy2D()));
+    }
+}
+
+// This is only different from the above in Vulkan. The shader source is the same, but we need a separate copy of the pass because it will be modified at runtime.
+technique copy_2d_from_video
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,Copy2DFromVideo()));
     }
 }
 

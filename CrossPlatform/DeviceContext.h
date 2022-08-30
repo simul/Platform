@@ -173,6 +173,7 @@ namespace platform
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
+			bool IsDepthActive() const;
 			bool last_action_was_compute = false;
 			Viewport viewports[8];
 			const Buffer *indexBuffer=nullptr;
@@ -189,6 +190,7 @@ namespace platform
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
 			Topology topology = Topology::UNDEFINED;
+			int4 scissor={0,0,INT_MAX,INT_MAX};
 			int apply_count = 0;
 			bool contextActive=false;
 			bool externalContext=false;

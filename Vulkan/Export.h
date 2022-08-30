@@ -63,11 +63,13 @@
 		vk::Result resxx1=result;\
 		if(resxx1!=vk::Result::eSuccess)\
 		{\
-			std::cerr<<platform::vulkan::RenderPlatform::VulkanResultString(resxx1)<<std::endl;\
+			std::cerr<<__FILE__<<"("<<__LINE__<<") error: "<<platform::vulkan::RenderPlatform::VulkanResultString(resxx1)<<std::endl;\
 		};\
 	}
 
 #define RETURN_FALSE_IF_FAILED(v) {if((v)!=vk::Result::eSuccess) {SIMUL_BREAK("failed in Vulkan."); return false;}}
 
 #define vulkanRenderPlatform ((platform::vulkan::RenderPlatform*)renderPlatform)
+
+
 #endif

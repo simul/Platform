@@ -204,6 +204,19 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	RenderState *depth_no=CreateRenderState(desc);
 	standardRenderStates[STANDARD_DEPTH_DISABLE]=depth_no;
 
+	desc.type=crossplatform::RASTERIZER;
+	desc.rasterizer.viewportScissor=ViewportScissor::VIEWPORT_SCISSOR_DISABLE;
+	desc.rasterizer.cullFaceMode=CullFaceMode::CULL_FACE_BACK;
+	desc.rasterizer.frontFace=FRONTFACE_COUNTERCLOCKWISE;
+	desc.rasterizer.polygonMode=POLYGON_MODE_FILL;
+	desc.rasterizer.polygonOffsetMode=POLYGON_OFFSET_DISABLE;
+	standardRenderStates[STANDARD_FRONTFACE_COUNTERCLOCKWISE]=CreateRenderState(desc);
+	desc.rasterizer.frontFace=FRONTFACE_CLOCKWISE;
+	standardRenderStates[STANDARD_FRONTFACE_CLOCKWISE]=CreateRenderState(desc);
+	
+	desc.rasterizer.cullFaceMode=CullFaceMode::CULL_FACE_NONE;
+	standardRenderStates[STANDARD_DOUBLE_SIDED]=CreateRenderState(desc);
+	
 	SAFE_DELETE(textRenderer);
 	
 	textRenderer=new TextRenderer;
@@ -459,6 +472,10 @@ void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
 	debugConstants.debugColour=colour_rgba;
+	if(debugConstants.debugColour.x+debugConstants.debugColour.y+debugConstants.debugColour.z==0)
+	{
+		SIMUL_BREAK("");
+	}
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,clearTechnique,0);
 	DrawQuad(deviceContext);
@@ -891,6 +908,20 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	SetViewports(deviceContext,1,&oldv);
 }
 
+void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,mat4 &m,float size)
+{
+	mat4 wvp;
+	crossplatform::MakeWorldViewProjMatrix((float*)&wvp,m,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj=wvp;
+	static float rr=1.f;
+	debugConstants.radius			=size;
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	debugEffect->Apply(deviceContext,"axes",0);
+	SetTopology(deviceContext,Topology::LINELIST);
+	Draw(deviceContext, 7, 0);
+	debugEffect->Unapply(deviceContext);
+}
+
 void RenderPlatform::PrintAt3dPos(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg,int offsetx,int offsety,bool centred)
 {
 	//unsigned int num_v=1;
@@ -900,9 +931,7 @@ void RenderPlatform::PrintAt3dPos(GraphicsDeviceContext &deviceContext,const flo
 		crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	else
 		crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-	static bool tr=false;
-	if(tr)
-		wvp.transpose();
+
 	vec4 clip_pos;
 	clip_pos=wvp*vec4(p[0],p[1],p[2],1.0f);
 	if(clip_pos.w<0)
@@ -1181,18 +1210,18 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 	if(num>0&&vps!=nullptr)
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
 	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
-	/*if(deviceContext.GetFrameBufferStack().size())
-	{
-		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
-		if(f)
-			f->viewport=*vps;
-	}
-	else
-	{
-		deviceContext.defaultTargetsAndViewport.viewport=*vps;
-	}*/
-	if(tv)
+	if(tv&&vps)
 		tv->viewport=*vps;
+}
+
+void RenderPlatform::SetScissor(GraphicsDeviceContext &deviceContext,int4 sc)
+{
+	deviceContext.contextState.scissor=sc;
+}
+
+int4 RenderPlatform::GetScissor(GraphicsDeviceContext &deviceContext) const
+{
+	return deviceContext.contextState.scissor;
 }
 
 crossplatform::Viewport	RenderPlatform::GetViewport(GraphicsDeviceContext &deviceContext,int index)

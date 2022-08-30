@@ -102,17 +102,17 @@ namespace platform
 		protected:
 			crossplatform::TargetsAndViewport targetsAndViewport;
 			//! The depth buffer.
-			crossplatform::Texture				*buffer_texture;
-			crossplatform::Texture				*buffer_depth_texture;
+			crossplatform::Texture				*buffer_texture=nullptr;
+			crossplatform::Texture				*buffer_depth_texture=nullptr;
 			bool GenerateMips;
 			bool is_cubemap;
 			int	current_face;
 			crossplatform::PixelFormat target_format;
 			crossplatform::PixelFormat depth_format;
-			int activate_count;
+			int activate_count=0;
 
-			bool external_texture;
-			bool external_depth_texture;
+			bool external_texture=false;
+			bool external_depth_texture=false;
 			std::string name;
 		};
 	}

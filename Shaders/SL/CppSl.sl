@@ -222,6 +222,14 @@
 		{
 			return &x;
 		}
+		bool operator==(const tvector3 &v) const
+		{
+			return (x==v.x&&y==v.y&&z==v.z);
+		}
+		bool operator!=(const tvector3 &v) const
+		{
+			return (x!=v.x||y!=v.y||z!=v.z);
+		}
 		void operator=(const int *v)
 		{
 			x=T(v[0]);
@@ -627,6 +635,14 @@
 			for(int i=0;i<16;i++)
 				m[i]*=c;
 		}
+		inline tmatrix4<T> t() const
+		{
+			tmatrix4<T> tr;
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					tr.m[i*4+j]=m[j*4+i];
+			return tr;
+		}
 		void transpose()
 		{
 			for(int i=0;i<4;i++)
@@ -654,6 +670,160 @@
 			m._24 = tr.y;
 			m._34 =tr.z;
 			return m;
+		}
+		//! Invert an unscaled transformation matrix. This must be a premultiplication transform,
+		//! with the translation in the 4th column.
+		static inline tmatrix4<T> unscaled_inverse_transform(const tmatrix4<T> &M) 
+		{
+#ifdef _DEBUG
+			assert(M._m30==0&&M._m31==0&&M._m32==0&&M._m33==1.0f);
+#endif
+			const tvector3<T> XX={M._m00,M._m10,M._m20};
+			const tvector3<T> YY={M._m01,M._m11,M._m21};
+			const tvector3<T> ZZ={M._m02,M._m12,M._m22};
+			tmatrix4 Inv=M.t();
+			const tvector3<T> xe={M._m03,M._m13,M._m23};
+
+			Inv._m30=0;
+			Inv._m31=0;
+			Inv._m32=0;
+			Inv._m03=-dot(xe,XX);
+			Inv._m13=-dot(xe,YY);
+			Inv._m23=-dot(xe,ZZ);
+			Inv._m33=T(1);
+			return Inv;
+		}
+		static inline tmatrix4<T> inverse(const tmatrix4<T> &M) 
+		{
+			tmatrix4<T> inv;
+		
+			T det;
+			int i;
+
+			inv.m[0] = M.m[5]  * M.m[10] * M.m[15] - 
+					 M.m[5]  * M.m[11] * M.m[14] - 
+					 M.m[9]  * M.m[6]  * M.m[15] + 
+					 M.m[9]  * M.m[7]  * M.m[14] +
+					 M.m[13] * M.m[6]  * M.m[11] - 
+					 M.m[13] * M.m[7]  * M.m[10];
+
+			inv.m[4] = -M.m[4]  * M.m[10] * M.m[15] + 
+					  M.m[4]  * M.m[11] * M.m[14] + 
+					  M.m[8]  * M.m[6]  * M.m[15] - 
+					  M.m[8]  * M.m[7]  * M.m[14] - 
+					  M.m[12] * M.m[6]  * M.m[11] + 
+					  M.m[12] * M.m[7]  * M.m[10];
+
+			inv.m[8] = M.m[4]  * M.m[9] * M.m[15] - 
+					 M.m[4]  * M.m[11] * M.m[13] - 
+					 M.m[8]  * M.m[5] * M.m[15] + 
+					 M.m[8]  * M.m[7] * M.m[13] + 
+					 M.m[12] * M.m[5] * M.m[11] - 
+					 M.m[12] * M.m[7] * M.m[9];
+
+			inv.m[12] = -M.m[4]  * M.m[9] * M.m[14] + 
+					   M.m[4]  * M.m[10] * M.m[13] +
+					   M.m[8]  * M.m[5] * M.m[14] - 
+					   M.m[8]  * M.m[6] * M.m[13] - 
+					   M.m[12] * M.m[5] * M.m[10] + 
+					   M.m[12] * M.m[6] * M.m[9];
+
+			inv.m[1] = -M.m[1]  * M.m[10] * M.m[15] + 
+					  M.m[1]  * M.m[11] * M.m[14] + 
+					  M.m[9]  * M.m[2] * M.m[15] - 
+					  M.m[9]  * M.m[3] * M.m[14] - 
+					  M.m[13] * M.m[2] * M.m[11] + 
+					  M.m[13] * M.m[3] * M.m[10];
+
+			inv.m[5] = M.m[0]  * M.m[10] * M.m[15] - 
+					 M.m[0]  * M.m[11] * M.m[14] - 
+					 M.m[8]  * M.m[2] * M.m[15] + 
+					 M.m[8]  * M.m[3] * M.m[14] + 
+					 M.m[12] * M.m[2] * M.m[11] - 
+					 M.m[12] * M.m[3] * M.m[10];
+
+			inv.m[9] = -M.m[0]  * M.m[9] * M.m[15] + 
+					  M.m[0]  * M.m[11] * M.m[13] + 
+					  M.m[8]  * M.m[1] * M.m[15] - 
+					  M.m[8]  * M.m[3] * M.m[13] - 
+					  M.m[12] * M.m[1] * M.m[11] + 
+					  M.m[12] * M.m[3] * M.m[9];
+
+			inv.m[13] = M.m[0]  * M.m[9] * M.m[14] - 
+					  M.m[0]  * M.m[10] * M.m[13] - 
+					  M.m[8]  * M.m[1] * M.m[14] + 
+					  M.m[8]  * M.m[2] * M.m[13] + 
+					  M.m[12] * M.m[1] * M.m[10] - 
+					  M.m[12] * M.m[2] * M.m[9];
+
+			inv.m[2] = M.m[1]  * M.m[6] * M.m[15] - 
+					 M.m[1]  * M.m[7] * M.m[14] - 
+					 M.m[5]  * M.m[2] * M.m[15] + 
+					 M.m[5]  * M.m[3] * M.m[14] + 
+					 M.m[13] * M.m[2] * M.m[7] - 
+					 M.m[13] * M.m[3] * M.m[6];
+
+			inv.m[6] = -M.m[0]  * M.m[6] * M.m[15] + 
+					  M.m[0]  * M.m[7] * M.m[14] + 
+					  M.m[4]  * M.m[2] * M.m[15] - 
+					  M.m[4]  * M.m[3] * M.m[14] - 
+					  M.m[12] * M.m[2] * M.m[7] + 
+					  M.m[12] * M.m[3] * M.m[6];
+
+			inv.m[10] = M.m[0]  * M.m[5] * M.m[15] - 
+					  M.m[0]  * M.m[7] * M.m[13] - 
+					  M.m[4]  * M.m[1] * M.m[15] + 
+					  M.m[4]  * M.m[3] * M.m[13] + 
+					  M.m[12] * M.m[1] * M.m[7] - 
+					  M.m[12] * M.m[3] * M.m[5];
+
+			inv.m[14] = -M.m[0]  * M.m[5] * M.m[14] + 
+					   M.m[0]  * M.m[6] * M.m[13] + 
+					   M.m[4]  * M.m[1] * M.m[14] - 
+					   M.m[4]  * M.m[2] * M.m[13] - 
+					   M.m[12] * M.m[1] * M.m[6] + 
+					   M.m[12] * M.m[2] * M.m[5];
+
+			inv.m[3] = -M.m[1] * M.m[6] * M.m[11] + 
+					  M.m[1] * M.m[7] * M.m[10] + 
+					  M.m[5] * M.m[2] * M.m[11] - 
+					  M.m[5] * M.m[3] * M.m[10] - 
+					  M.m[9] * M.m[2] * M.m[7] + 
+					  M.m[9] * M.m[3] * M.m[6];
+
+			inv.m[7] = M.m[0] * M.m[6] * M.m[11] - 
+					 M.m[0] * M.m[7] * M.m[10] - 
+					 M.m[4] * M.m[2] * M.m[11] + 
+					 M.m[4] * M.m[3] * M.m[10] + 
+					 M.m[8] * M.m[2] * M.m[7] - 
+					 M.m[8] * M.m[3] * M.m[6];
+
+			inv.m[11] = -M.m[0] * M.m[5] * M.m[11] + 
+					   M.m[0] * M.m[7] * M.m[9] + 
+					   M.m[4] * M.m[1] * M.m[11] - 
+					   M.m[4] * M.m[3] * M.m[9] - 
+					   M.m[8] * M.m[1] * M.m[7] + 
+					   M.m[8] * M.m[3] * M.m[5];
+
+			inv.m[15] = M.m[0] * M.m[5] * M.m[10] - 
+					  M.m[0] * M.m[6] * M.m[9] - 
+					  M.m[4] * M.m[1] * M.m[10] + 
+					  M.m[4] * M.m[2] * M.m[9] + 
+					  M.m[8] * M.m[1] * M.m[6] - 
+					  M.m[8] * M.m[2] * M.m[5];
+
+			det = M.m[0] * inv.m[0] + M.m[1] * inv.m[4] + M.m[2] * inv.m[8] + M.m[3] * inv.m[12];
+
+			if (det == 0)
+			{
+				return inv;
+			}
+
+			det = 1.f / det;
+
+			for (i = 0; i < 16; i++)
+				inv.m[i] = inv.m[i] * det;
+			return inv;
 		}
 	};
 	typedef tmatrix4<float> mat4;
@@ -1120,84 +1290,6 @@
 		c=a.x*b.x+a.y*b.y+a.z*b.z;
 		return c;
 	}
-	//! Very simple 4x4 matrix of doubles.
-	struct mat4d
-	{
-		union
-		{
-			double m[16];
-			struct
-			{
-				double	_11, _12, _13, _14;
-				double	_21, _22, _23, _24;
-				double	_31, _32, _33, _34;
-				double	_41, _42, _43, _44;
-			};
-			struct
-			{
-				double	_m00, _m01, _m02, _m03;
-				double	_m10, _m11, _m12, _m13;
-				double	_m20, _m21, _m22, _m23;
-				double	_m30, _m31, _m32, _m33;
-			};
-			double M[4][4];
-		};
-		operator double *()
-		{
-			return m;
-		}
-		operator const double *()
-		{
-			return m;
-		}
-		void operator=(const double *v)
-		{
-			for(int i=0;i<16;i++)
-				m[i]=v[i];
-		}
-		void operator=(const float *v)
-		{
-			for(int i=0;i<16;i++)
-				m[i]=(double)v[i];
-		}
-		void transpose()
-		{
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					if(i<j)
-					{
-						double temp=m[i*4+j];
-						m[i*4+j]=m[j*4+i];
-						m[j*4+i]=temp;
-					}
-		}
-		mat4d operator*(const mat4d &b)
-		{
-			mat4d r;
-			for(int i=0;i<4;i++)
-			{
-				for(int j=0;j<4;j++)
-				{
-					double t=0.0f;
-					for(int k=0;k<4;k++)
-					{
-						t+=M[i][k]*b.M[j][k];
-					}
-					r.M[i][j]=t;
-				}
-			}
-			return r;
-		}
-		static inline mat4d Identity()
-		{
-			mat4d m;
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					m.M[i][j]=0.0f;
-			m._11=m._22=m._33=m._44=1.0f;
-			return m;
-		}
-	};
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif

@@ -620,6 +620,40 @@ group lines_3d_depth
 		}
     }
 }
+
+shader v2f AxesVS(idOnly IN)
+{
+	v2f OUT;
+	vec3 poss[12];
+	poss[0]			=vec3(0,0,0);
+	poss[2]			=vec3(0,0,0);
+	poss[4]			=vec3(0,0,0);
+	poss[1]			=vec3(1.0,0,0);
+	poss[3]			=vec3(0,1.0,0);
+	poss[5]			=vec3(0,0,1.0);
+	vec3 pos		=radius*poss[IN.vertex_id];
+    OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	vec4 colours[3];
+	colours[0]=vec4(1.0,0.2,0.2,1.0);
+	colours[1]=vec4(0,1.0,0,1.0);
+	colours[2]=vec4(0,0.4,1.0,1.0);
+	OUT.colour		=colours[IN.vertex_id/2];
+    return OUT;
+}
+VertexShader axesvs_5_0=CompileShader(vs_5_0,AxesVS());
+PixelShader axesps_5_0=CompileShader(ps_5_0,DebugPS());
+technique axes
+{
+	pass p0
+	{
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(axesvs_5_0);
+		SetPixelShader(axesps_5_0);
+	}
+}
 fxgroup lines_3d
 {
 	technique lines_3d

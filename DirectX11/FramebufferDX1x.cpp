@@ -106,10 +106,19 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	}
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 	targetsAndViewport.m_rt[0]=renderTargetView;
+	targetsAndViewport.textureTargets[0].texture=buffer_texture;
+	targetsAndViewport.textureTargets[0].layer=0;
+	targetsAndViewport.textureTargets[0].mip=0;
+	targetsAndViewport.depthTarget.texture=buffer_depth_texture;
+	targetsAndViewport.depthTarget.layer=0;
+	targetsAndViewport.depthTarget.mip=0;
 	targetsAndViewport.m_dt=dt;
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
 	targetsAndViewport.viewport.w=Width;
 	targetsAndViewport.viewport.h=Height;
+	deviceContext.contextState.scissor.x=deviceContext.contextState.scissor.y=0;
+	deviceContext.contextState.scissor.z=Width;
+	deviceContext.contextState.scissor.w=Height;
 	targetsAndViewport.num=1;
 	
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);

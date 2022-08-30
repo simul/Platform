@@ -74,6 +74,7 @@ namespace platform
 			bool separate_present_queue;
 			uint32_t queue_family_count;
 			std::vector<vk::QueueFamilyProperties> queue_props;
+			vk::PhysicalDeviceSamplerYcbcrConversionFeatures physicalDeviceSamplerYcbcrConversionFeatures;
 		};
 		extern DeviceManager *deviceManager;
 	}

@@ -34,14 +34,23 @@ namespace platform
 				, const crossplatform::RenderState *depthStencilState=nullptr
 				, const crossplatform::RenderState *rasterizerState=nullptr);
 			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
+
+			//! For Vulkan alone, this forces the shader to initialize with the source texture as a video decode source.
+			//! This MUST be set to true before the first use of the shader, or it won't be applied to the shader's initialization.
+			void SetVideoSource(bool s)
+			{
+				videoSource=s;
+			}
         private:
+			bool videoSource=false;
+			std::vector<vk::Sampler> samplers;
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();
 			void Initialize(vk::DescriptorSet &descriptorSet);
             void MapTexturesToUBO(crossplatform::Effect* curEffect);
 			
-			vk::DescriptorSetLayout		mDescLayout;
-			vk::PipelineLayout			mPipelineLayout;
+			vk::DescriptorSetLayout			mDescLayout;
+			vk::PipelineLayout				mPipelineLayout;
 
 			struct RenderPassPipeline
 			{
@@ -64,7 +73,6 @@ namespace platform
 			static int GenerateTextureSlot(int s,bool offset=true);
 			static int GenerateTextureWriteSlot(int s,bool offset=true);
 			static int GenerateConstantBufferSlot(int s,bool offset=true);
-void CreateTestPipeline(vk::Device *device,RenderPassPipeline *renderPassPipeline,vulkan::Shader* v,vulkan::Shader* f,vk::RenderPass* rp);
 			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
 				, const crossplatform::RenderState *blendState=nullptr
 				, const crossplatform::RenderState *depthStencilState=nullptr

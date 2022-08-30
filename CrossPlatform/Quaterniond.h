@@ -267,12 +267,22 @@ namespace platform
 				z = Z;
 				return *this;
 			}
-			//Quaternion& operator*=(double d)
-			//{
-			//	Quaternion q(s*d,x,y,z);
-			//	*this=q;
-			//    return *this;
-			//}
+			
+			tvector3<T> RotateVector(const tvector3<T> &v)
+			{
+				const T &x0=v.x;
+				const T &y0=v.y;
+				const T &z0=v.z;
+				T s1=x*x0+y*y0+z*z0;
+				T x1=s*x0+y*z0-z*y0;
+				T y1=s*y0+z*x0-x*z0;
+				T z1=s*z0+x*y0-y*x0;
+				tvector3<T> ret;
+				ret.x=s1*x+s*x1+y*z1-z*y1;
+				ret.y=s1*y+s*y1+z*x1-x*z1;
+				ret.z=s1*z+s*z1+x*y1-y*x1;
+				return ret;
+			}             
 			Quaternion& Rotate(T angle,const tvector3<T>&axis)
 			{
 				Quaternion dq(angle, axis);

@@ -12,7 +12,7 @@
     #pragma warning(disable:4251)
 	#pragma warning(disable:4275)
 #endif
-
+#define MAX_STACKED_TARGETS 10
 
 #ifdef UNIX
 template <typename T, std::size_t N>
@@ -25,6 +25,21 @@ return N;
 namespace vk
 {
 	class Instance;
+}
+template<typename T1,typename T2> void ChainVulkanStructs(T1 t1,T2 t2)
+{
+	t1->pNext = t2;
+}
+template<typename T1,typename T2,typename T3> void ChainVulkanStructs(T1 t1,T2 t2,T3 t3)
+{
+	t1->pNext = t2;
+	t2->pNext = t3;
+}
+template<typename T1,typename T2,typename T3,typename T4> void ChainVulkanStructs(T1 t1,T2 t2,T3 t3,T4 t4)
+{
+	t1->pNext = t2;
+	t2->pNext = t3;
+	t3->pNext = t4;
 }
 namespace platform
 {
@@ -140,7 +155,9 @@ namespace platform
 			//static Vulkanenum						DataType(crossplatform::PixelFormat p);
 			static int								FormatTexelBytes(crossplatform::PixelFormat p);
 			static int								FormatCount(crossplatform::PixelFormat p);
-			bool									memory_type_from_properties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex);
+			bool									MemoryTypeFromProperties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex);
+			
+			static bool								memory_type_from_properties(vk::PhysicalDevice *gpu,uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex);
 			
 			//! Makes the handle resident only if its not resident already
 			vulkan::Texture*						GetDummyTextureCube();
@@ -158,8 +175,10 @@ namespace platform
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
 			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
-			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,const crossplatform::PixelFormat *pixelFormats
+			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass
+																			,int num_colour,const crossplatform::PixelFormat *pixelFormats
 																			,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN
+																			,bool depthTest=false,bool depthWrite=false
 																			,bool clear=false
 																			,int numOfSamples=1
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr);
@@ -170,11 +189,19 @@ namespace platform
 
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 
+			// Vulkan-specific support for video decoding:
+			vk::Sampler GetVideoSampler()
+			{
+				return vulkanVideoSampler;
+			}
+			vk::SamplerYcbcrConversionInfo *GetVideoSamplerYcbcrConversionInfo();
 		protected:
+			vk::SamplerYcbcrConversionInfo videoSamplerYcbcrConversionInfo;
 			crossplatform::Texture* createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;
+			vk::Sampler										vulkanVideoSampler;
 			bool											resourcesToBeReleased=false;
 			std::set<vk::Buffer>							releaseBuffers;
 			std::set<vk::BufferView>						releaseBufferViews;
@@ -202,7 +229,7 @@ namespace platform
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
 			std::map<unsigned long long,vk::RenderPass>		mFramebufferRenderPasses;
-			crossplatform::TargetsAndViewport				mTargets;
+			std::map<unsigned long long,crossplatform::TargetsAndViewport>				mTargets;
 		};
 	}
 }

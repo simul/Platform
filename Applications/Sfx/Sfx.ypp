@@ -346,7 +346,7 @@
 		}
 		else if(return_size == 2)
 		{
-			mip="int("+params+".y)";
+			mip="int("+params+".z)";
 			// gvec4 imageLoad(	gimage2D image,ivec2 P);
 			if(rw)
 				newParams = "ivec2(" + newParams + ").xy";

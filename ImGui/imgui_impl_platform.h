@@ -41,5 +41,6 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H);
 IMGUI_IMPL_API void		ImGui_ImplPlatform_Update3DMousePos();
 //! translate 3D controller positions into pseudo-mouse positions and clicks.
 IMGUI_IMPL_API void		ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4>& position_press);
+IMGUI_IMPL_API void		ImGui_ImplPlatform_Get3DTouchClientPos( std::vector<vec3>& client_press);
 
 IMGUI_IMPL_API void		ImGui_ImplPlatform_DebugInfo();

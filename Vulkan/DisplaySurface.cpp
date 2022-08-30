@@ -147,11 +147,11 @@ void DisplaySurface::InvalidateDeviceObjects()
 		vulkanDevice->waitIdle();
 		for(auto i:swapchain_image_resources)
 		{	
-			vulkanDevice->destroyFramebuffer(i.framebuffer);
+			vulkanDevice->destroyFramebuffer(i.framebuffer,nullptr);
 			vulkanDevice->freeCommandBuffers(cmd_pool, 1,&i.cmd);
 			if(present_cmd_pool)
 				vulkanDevice->freeCommandBuffers(present_cmd_pool, 1, &i.graphics_to_present_cmd);
-			vulkanDevice->destroyImageView(i.view);
+			vulkanDevice->destroyImageView(i.view,nullptr);
 			//vulkanDevice->destroyImage(i.image); part of swapchain?
 		}
 		swapchain_image_resources.clear();

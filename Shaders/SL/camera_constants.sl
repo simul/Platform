@@ -16,14 +16,14 @@ SIMUL_CONSTANT_BUFFER_END
 #ifndef __cplusplus
 vec3 ClipPosToView(vec4 clip_pos)
 {
-	vec3 view = -normalize(mul(invWorldViewProj, clip_pos).xyz);
+	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
 	return view;
 }
 
 vec3 ClipPosToView(vec2 clip_pos2)
 {
 	vec4 clip_pos = vec4(clip_pos2, 1.0, 1.0);
-	vec3 view = -normalize(mul(invWorldViewProj, clip_pos).xyz);
+	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
 	return view;
 }
 

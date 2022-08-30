@@ -21,7 +21,7 @@ SamplerState::~SamplerState()
 void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerStateDesc* desc)
 {
 	InvalidateDeviceObjects();
-	
+	samplerStateDesc=*desc;
 	renderPlatform=r;
 	vk::Device *vulkanDevice=r->AsVulkanDevice();
 	vk::SamplerCreateInfo samplerCreateInfo=vk::SamplerCreateInfo();
@@ -35,14 +35,14 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 			.setAddressModeW(RenderPlatform::toVulkanWrapping(desc->z))
 			.setMipLodBias(0.0f)
 			.setMaxLod(32.0f)
-			.setAnisotropyEnable(VK_TRUE)
+			.setAnisotropyEnable((desc->filtering==crossplatform::SamplerStateDesc::POINT)?VK_FALSE:VK_TRUE)
 			.setMaxAnisotropy(16)
 			.setCompareEnable(VK_FALSE)
 			.setCompareOp(vk::CompareOp::eNever)
 			.setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
 			.setUnnormalizedCoordinates(VK_FALSE);
 	SIMUL_VK_CHECK(vulkanDevice->createSampler(&samplerCreateInfo,nullptr,&mSampler));
-	SetVulkanName(renderPlatform,(uint64_t*)&mSampler,"Sampler ");
+	SetVulkanName(renderPlatform,(uint64_t*)&mSampler,"Sampler");
 }
 
   vk::Sampler *SamplerState::AsVulkanSampler() 
@@ -183,6 +183,10 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		{
 			r->PushToReleaseManager(i);
 		}
+		for(auto i:faceArrayMipViews)
+		{
+			r->PushToReleaseManager(i);
+		}
 		for(auto i:mCubemapLayerMipViews)
 		{
 			for(auto j:i)
@@ -205,6 +209,7 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		mRenderPass = nullptr;
 		mLayerViews.clear();
 		mMainMipViews.clear();
+		faceArrayMipViews.clear();
 		mLayerMipViews.clear();
 		if(!external_texture)
 		{
@@ -395,11 +400,13 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	int realArray	= GetArraySize();
 	bool no_array	= !cubemap && (arraySize <= 1);
 	bool isUAV		= (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
+	
+	bool cubemap_as_array=cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY);
 
 	// Base view:
 	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
 	{
-		if (cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY))
+		if (cubemap_as_array)
 		{
 			return &mFaceArrayView;
 		}
@@ -412,6 +419,8 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	{
 		if (layer < 0 || no_array)
 		{
+			if(cubemap_as_array)
+				return &mFaceArrayView;
 			return &mMainView;
 		}
 		return &mLayerViews[layer];
@@ -419,6 +428,10 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	// Mip view:
 	if (layer < 0)
 	{
+		if (cubemap_as_array)
+		{
+			return &faceArrayMipViews[mip];
+		}
 		return &mMainMipViews[mip];
 	}
 	if((type&crossplatform::ShaderResourceType::TEXTURE_CUBE)==crossplatform::ShaderResourceType::TEXTURE_CUBE)
@@ -485,7 +498,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const crossplatform::TextureCreate *textureCreate)
 {
 	//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
-	if (IsSame(textureCreate->w, textureCreate->l, textureCreate->d, textureCreate->arraysize, textureCreate->mips, textureCreate->f
+	if (!textureCreate->forceInit&&IsSame(textureCreate->w, textureCreate->l, textureCreate->d, textureCreate->arraysize, textureCreate->mips, textureCreate->f
 		, textureCreate->numOfSamples, textureCreate->computable, textureCreate->make_rt, textureCreate->setDepthStencil
 		, textureCreate->need_srv
 		, textureCreate->cubemap))
@@ -589,7 +602,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	mem_alloc.setAllocationSize(mem_reqs.size);
 	mem_alloc.setMemoryTypeIndex(0);
 
-	if(!((vulkan::RenderPlatform*)renderPlatform)->memory_type_from_properties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
+	if(!((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
 		&mem_alloc.memoryTypeIndex))
 		return false;
 
@@ -643,12 +656,20 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	//if(crossplatform::RenderPlatform::IsStencilFormat(f))
 	//	imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
+	//vk::Format view_format=tex_format;
+	
 	vk::ImageViewCreateInfo viewCreateInfo = vk::ImageViewCreateInfo()
 		.setImage(mImage)
 		.setViewType(viewType)
 		.setFormat(tex_format)
 		.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags, 0, mipCount, 0, totalNum));
-	SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView));
+	if(tex_format==vk::Format::eUndefined)
+	{
+		viewCreateInfo=viewCreateInfo.setPNext(vulkanRenderPlatform->GetVideoSamplerYcbcrConversionInfo());
+	}
+	vk::Result res=vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView);
+SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.operator VkImageView()<<std::endl;
+	SIMUL_VK_CHECK(res);
 	SetVulkanName(renderPlatform,(uint64_t*)&mMainView,(name+" imageView").c_str());
 	
 	// the mips of the main view.
@@ -676,6 +697,19 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 						.setViewType(vk::ImageViewType::eCubeArray);
 		SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mCubeArrayView));
 		SetVulkanName(renderPlatform,(uint64_t*)&mCubeArrayView,(name+" mCubeArrayView").c_str());
+		
+		// View each mip as a a 2D array of faces.
+		if(mipCount>1)
+		{
+			faceArrayMipViews.resize(mipCount);
+			for(int i=0;i<mipCount;i++)
+			{
+				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,i,1,0,totalNum))
+					.setViewType(vk::ImageViewType::e2DArray);
+				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &faceArrayMipViews[i]));
+				SetVulkanName(renderPlatform,(uint64_t*)&faceArrayMipViews[i],(name+" faceArray imageView").c_str());
+			}
+		}
 	}
 	// layer views: individual layers of an array.
 	if(dim==2&&totalNum>1)
@@ -738,7 +772,7 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 	}
 		vk::ImageLayout layouts[]={currentImageLayout};
 		vk::ImageLayout end_layouts[]={(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:currentImageLayout};
-		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,GetSampleCount(),layouts,end_layouts);
+		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,false,false,GetSampleCount(),layouts,end_layouts);
 		AssumeLayout(end_layouts[0]);
 	}
 	return mRenderPass;
@@ -829,7 +863,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	mem_alloc.setAllocationSize(mem_reqs.size);
 	mem_alloc.setMemoryTypeIndex(0);
 
-	if(!((vulkan::RenderPlatform*)renderPlatform)->memory_type_from_properties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
+	if(!((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
 		&mem_alloc.memoryTypeIndex))
 		return false;
 
@@ -900,7 +934,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	mem_alloc.setAllocationSize(mem_reqs.size);
 	mem_alloc.setMemoryTypeIndex(0);
 
-	if(!((vulkan::RenderPlatform*)renderPlatform)->memory_type_from_properties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
+	if(!((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
 		&mem_alloc.memoryTypeIndex))
 		return false;
 
@@ -966,6 +1000,11 @@ void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 
 void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void* src, int texel_index, int num_texels)
 {
+	setTexels(src,texel_index,num_texels);
+}
+
+void Texture::setTexels(const void *src,int texel_index,int num_texels)
+{
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vulkan::RenderPlatform *r=static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	for(auto i:loadedTextures)
@@ -979,6 +1018,7 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 	int w= loadedTextures[0].x;
 	int l= loadedTextures[0].y;
 }
+
 
 int Texture::GetLength() const
 {
@@ -1084,7 +1124,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	lt.mem_alloc.setMemoryTypeIndex(0);
 
 	vk::MemoryPropertyFlags requirements = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-	auto pass = vkRenderPlatform->memory_type_from_properties(mem_reqs.memoryTypeBits, requirements, &lt.mem_alloc.memoryTypeIndex);
+	auto pass = vkRenderPlatform->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, requirements, &lt.mem_alloc.memoryTypeIndex);
 	SIMUL_ASSERT(pass == true);
 
 	result = vulkanDevice->allocateMemory(&lt.mem_alloc, nullptr, &(lt.mem));
@@ -1186,6 +1226,8 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			break;
 		case vk::ImageLayout::ePresentSrcKHR:
 			flags = vk::AccessFlagBits::eMemoryRead;
+			break;
+		case vk::ImageLayout::eGeneral:
 			break;
 		default:
 			SIMUL_BREAK_ONCE("Unknown layout.");

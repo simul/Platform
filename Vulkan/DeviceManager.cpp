@@ -68,6 +68,7 @@ public:
 	vk::PhysicalDeviceProperties gpu_props;
 	vk::PhysicalDeviceMemoryProperties memory_properties;
 	vk::PhysicalDeviceFeatures gpu_features;
+	vk::PhysicalDeviceFeatures2 gpu_features2;
 	
 	DeviceManagerInternal()
 		: instance(vk::Instance()),
@@ -84,10 +85,7 @@ DeviceManager::DeviceManager()
 	,device_initialized(false)
 {
 	deviceManager=this;
-//	if (!renderPlatformVulkan)
-//		renderPlatformVulkan = new vulkan::RenderPlatform;
-//	renderPlatformVulkan->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED | crossplatform::TRY_AGAIN_ON_FAIL | crossplatform::BREAK_ON_FAIL);
-//	platform::crossplatform::Profiler::GetGlobalProfiler().Initialize(NULL);
+
 	deviceManagerInternal = new DeviceManagerInternal;
 }
 
@@ -96,15 +94,11 @@ void DeviceManager::InvalidateDeviceObjects()
 	int err = errno;
 	std::cout << "Errno " << err << std::endl;
 	errno = 0;
-//	delete renderPlatformVulkan;
-//	renderPlatformVulkan=nullptr;
-//	platform::vulkan::Profiler::GetGlobalProfiler().Uninitialize();
 }
 
 DeviceManager::~DeviceManager()
 {
 	InvalidateDeviceObjects();
-	//delete renderPlatformVulkan;
 	delete deviceManagerInternal;
 }
 
@@ -539,10 +533,10 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
 		
-		std::cout<<"Available device extensions: "<<device_extension_count<<std::endl;
+		std::cerr<<"Available device extensions: "<<device_extension_count<<std::endl;
 		for (uint32_t i = 0; i < device_extension_count; i++)
 		{
-			std::cout<<device_extensions[i].extensionName<<std::endl;
+			std::cerr<<device_extensions[i].extensionName<<std::endl;
 			if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName))
 			{
 				swapchainExtFound = 1;
@@ -580,6 +574,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	//  If app has specific feature requirements it should check supported
 	//  features based on this query
 	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
+
+	deviceManagerInternal->gpu_features2.setPNext(&physicalDeviceSamplerYcbcrConversionFeatures);
+	deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
  	ERRNO_BREAK
 
 	if(use_debug)
@@ -722,8 +719,9 @@ void DeviceManager::CreateDevice()
 							.setPpEnabledLayerNames(nullptr)
 							.setEnabledExtensionCount(enabled_extension_count)
 							.setPpEnabledExtensionNames((const char *const *)device_extension_names.data())
-							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
-							.setQueueCreateInfoCount((uint32_t)queues.size());
+							//.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
+							.setQueueCreateInfoCount((uint32_t)queues.size())
+							.setPNext(&deviceManagerInternal->gpu_features2);
 							
  	ERRNO_BREAK
 	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);

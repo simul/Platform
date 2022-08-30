@@ -955,6 +955,7 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 		rasterizerDesc.DepthClipEnable = false;
 		rasterizerDesc.MultisampleEnable = false;	// TO-DO : what if not!!!
 		rasterizerDesc.AntialiasedLineEnable = false;
+		rasterizerDesc.ScissorEnable=desc.rasterizer.viewportScissor;
 		AsD3D11Device()->CreateRasterizerState(&rasterizerDesc, &s->m_rasterizerState);
 	}
 	else if(desc.type==crossplatform::DEPTH)
@@ -1130,6 +1131,11 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext &deviceCo
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
+}
+
+void RenderPlatform::SetScissor(crossplatform::GraphicsDeviceContext &deviceContext,int4 sc) 
+{
+	crossplatform::RenderPlatform::SetScissor(deviceContext, sc) ;
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext, const crossplatform::Buffer *buffer)
@@ -1450,8 +1456,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 	// Apply SRVs (textures and SB):
 	pass->SetSRVs(deviceContext,cs->textureAssignmentMap, cs->applyStructuredBuffers);
-
-
+	
+	int4 sc=cs->scissor;
+	const D3D11_RECT r = { (LONG)sc.x, (LONG)sc.y, (LONG)(sc.x+sc.z), (LONG)(sc.y+sc.w) };
+	deviceContext.asD3D11DeviceContext()->RSSetScissorRects(1, &r);
 	return true;
 }
 

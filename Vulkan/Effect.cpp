@@ -56,7 +56,7 @@ void Query::InvalidateDeviceObjects()
 {
 	if (mDevice && mQueryPool)
 	{
-		mDevice->destroyQueryPool(mQueryPool);
+		mDevice->destroyQueryPool(mQueryPool,nullptr);
 		*(VkQueryPool*)&mQueryPool = VK_NULL_HANDLE;
 	}
 

@@ -133,7 +133,9 @@ namespace platform
 			void InsertRow(int row,Vector3 v);
 			void ScaleRows(const float s[4]);
 			void ScaleColumns(const float s[4]);
-			void SimpleInverse(Matrix4x4 &Inv) const;
+			//! A transpose transform is a transform that has the translation in the 4th row, rather than the column.
+			//! It should be post-multiplied with a vector to transform the vector, pre-multiplication is meaningless in this context.
+			void SimpleInverseOfTransposeTransform(Matrix4x4 &Inv) const;
 			void Inverse(Matrix4x4 &Inv) const;
 			// Transform matrix from world space to an oblique space aligned with \em direction on the axis specified
 			// and aligned with worldspace on the other two axes

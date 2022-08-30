@@ -38,7 +38,7 @@ namespace platform
 			void	InvalidateDeviceObjects() override;
 			vk::Sampler *AsVulkanSampler() override;
 		private:
-			vk::Sampler									mSampler;
+			vk::Sampler		mSampler;
 		};
 
 		class SIMUL_VULKAN_EXPORT Texture:public platform::crossplatform::Texture
@@ -66,6 +66,7 @@ namespace platform
 			void			ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void			GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void			setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
+			void			setTexels(const void *src,int texel_index,int num_texels) override;
 			int				GetLength() const override;
 			int				GetWidth() const override;
 			int				GetDimension() const override;
@@ -77,6 +78,7 @@ namespace platform
 			{
 				return mImage;
 			}
+			
 			vk::ImageView	*AsVulkanImageView(crossplatform::ShaderResourceType type=crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
 			vk::Framebuffer *GetVulkanFramebuffer(int layer = -1, int mip = -1);
 		//	static vk::ImageView *GetDummyVulkanImageView(crossplatform::ShaderResourceType type);
@@ -124,6 +126,7 @@ namespace platform
 
 			std::vector<vk::ImageView>					mLayerViews;
 			std::vector<vk::ImageView>					mMainMipViews;
+			std::vector<vk::ImageView>					faceArrayMipViews;
 
 			// For cubemaps/cubemap arrays there are two kinds of layer mip view.
 			// we can have a cubemap view that's one layer and mip, but a cubemap.
