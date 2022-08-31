@@ -69,13 +69,11 @@ void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int arra
 	targetsAndViewport.viewport.y					=0;
 	targetsAndViewport.viewport.w					=std::max(1, (width >> mip_index));
 	targetsAndViewport.viewport.h					=std::max(1, (length >> mip_index));
-	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
+	/*deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
 
 	// Cache it:
-	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
-	deviceContext.contextState.scissor.x=deviceContext.contextState.scissor.y=0;
-	deviceContext.contextState.scissor.z=width;
-	deviceContext.contextState.scissor.w=length;
+	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);*/
+	deviceContext.renderPlatform->ActivateRenderTargets(deviceContext,&targetsAndViewport);
 }
 
 void Texture::deactivateRenderTarget(GraphicsDeviceContext &deviceContext)

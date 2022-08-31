@@ -965,12 +965,6 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, 
 
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
-	/*activateRenderTarget(deviceContext,0,0);
-	renderPlatform->GetDebugEffect()->Apply(deviceContext,"clear_depth",0);
-	renderPlatform->DrawQuad(deviceContext);
-	renderPlatform->GetDebugEffect()->Unapply(deviceContext);
-	deactivateRenderTarget(deviceContext);
-	*/
 	vk::ImageLayout prev_image_layout=currentImageLayout;
 	SetLayout(deviceContext,vk::ImageLayout::eTransferDstOptimal);
 

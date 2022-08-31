@@ -112,8 +112,8 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 	bd->renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLELIST);
 	TextureCreate tc;
 	tc.make_rt=true;
-	tc.w=draw_data->DisplaySize.x;
-	tc.l=draw_data->DisplaySize.y;
+	tc.w=int(draw_data->DisplaySize.x);
+	tc.l=int(draw_data->DisplaySize.y);
 	tc.f=crossplatform::PixelFormat::RGBA_8_UNORM;
 	bd->framebufferTexture->EnsureTexture(deviceContext.renderPlatform,&tc);
 }
