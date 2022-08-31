@@ -176,6 +176,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	{
 		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : Something else returned while enumerating instance version\n" << std::endl;
 	}
+	free(instanceVersion);
 
 	uint32_t instance_extension_count = 0;
 	uint32_t instance_layer_count = 0;
@@ -201,8 +202,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 		if (instance_layer_count > 0)
 		{
-			std::unique_ptr<vk::LayerProperties[]> instance_layers(new vk::LayerProperties[instance_layer_count]);
-			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.get());
+			std::vector<vk::LayerProperties> instance_layers;
+			instance_layers.resize(instance_layer_count);
+			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.data());
 			SIMUL_VK_ASSERT_RETURN(result);
 			if(instance_layer_count)
 			{
@@ -216,7 +218,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			vk::Bool32 validation_set = VK_FALSE;
 			vk::Bool32 validation_found = VK_FALSE;
 			//Main
-			validation_found = CheckLayers(_countof(instance_validation_layers_main), instance_validation_layers_main, instance_layer_count, instance_layers.get());
+			validation_found = CheckLayers(_countof(instance_validation_layers_main), instance_validation_layers_main, instance_layer_count, instance_layers.data());
 			if (validation_found && !validation_set)
 			{
 				instance_validation_layers = instance_validation_layers_main;
@@ -227,7 +229,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			}
 
 			//Alt1
-			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers_alt1, instance_layer_count, instance_layers.get());
+			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers_alt1, instance_layer_count, instance_layers.data());
 			if (validation_found && !validation_set)
 			{
 				instance_validation_layers = instance_validation_layers_alt1;
@@ -238,7 +240,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			}
 
 			//Alt2
-			validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers_alt2, instance_layer_count, instance_layers.get());
+			validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers_alt2, instance_layer_count, instance_layers.data());
 			if (validation_found && !validation_set)
 			{
 				instance_validation_layers = instance_validation_layers_alt2;
@@ -272,6 +274,26 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
 
+	// Platform Surface Extension
+	const char* platformSurfaceExt = nullptr;
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+	platformSurfaceExt = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+	platformSurfaceExt = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+	platformSurfaceExt = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_MIR_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR)
+	platformSurfaceExt = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
+	platformSurfaceExt = VK_KHR_DISPLAY_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+	platformSurfaceExt = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+	platformSurfaceExt = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+	platformSurfaceExt = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
+#endif
+
 	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	instance_extension_names.resize(instance_extension_count);
 	SIMUL_VK_ASSERT_RETURN(result);
@@ -282,8 +304,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		found_required_instance_extension[i]=false;
 	if (instance_extension_count > 0)
 	{
-		vk::ExtensionProperties * instance_extensions=new vk::ExtensionProperties[instance_extension_count];
-		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions);
+		std::vector<vk::ExtensionProperties> instance_extensions;
+		instance_extensions.resize(instance_extension_count);
+		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
 
 		if(instance_layer_count)
@@ -298,11 +321,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				debugExtFound = 1;
 				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
 			}
-			else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				surfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
-			}
 			else if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
 			{
 				debugUtilsExtFound = 1;
@@ -313,56 +331,16 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				nameExtFound = 1;
 				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
 			}
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-			else if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				surfaceExtFound = 1;
+				instance_extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
+			}
+			else if (!strcmp(platformSurfaceExt, instance_extensions[i].extensionName))
 			{
 				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+				instance_extension_names[enabled_extension_count++] = platformSurfaceExt;
 			}
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-			else if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
-			}
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-			else if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
-			}
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-			else if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
-			}
-#elif defined(VK_USE_PLATFORM_MIR_KHR)
-#elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
-			else if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_DISPLAY_EXTENSION_NAME;
-			}
-#elif defined(VK_USE_PLATFORM_IOS_MVK)
-			else if (!strcmp(VK_MVK_IOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
-			}
-#elif defined(VK_USE_PLATFORM_MACOS_MVK)
-			else if (!strcmp(VK_MVK_MACOS_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
-			}
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-			else if (!strcmp(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
-			}
-#endif
 			for(size_t j=0;j<required_instance_extensions.size();j++)
 			{
 				if(!found_required_instance_extension[j]&&!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
@@ -374,7 +352,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			}
 			assert(enabled_extension_count < 64);
 		}
-		delete[] instance_extensions;
 	}
 	for(size_t i=0;i<found_required_instance_extension.size();i++)
 		if(!found_required_instance_extension[i])
@@ -395,61 +372,19 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	if (!platformSurfaceExtFound)
 	{
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_XCB_SURFACE_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_MIR_KHR)
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_XLIB_SURFACE_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_DISPLAY_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_IOS_MVK)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_MVK_IOS_SURFACE_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_MACOS_MVK)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_MVK_MACOS_SURFACE_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n"
-			"vkCreateInstance Failure");
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_ANDROID_SURFACE_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n"
-			"vkCreateInstance Failure");
-#endif
+		std::string errorMessage;
+		errorMessage += "vkEnumerateInstanceExtensionProperties failed to find the ";
+		errorMessage += platformSurfaceExt;
+		errorMessage += " extension.\n\nDo you have a compatible ";
+		errorMessage += "Vulkan installable client driver (ICD) installed?\nPlease ";
+		errorMessage += "look at the Getting Started guide for additional ";
+		errorMessage += "information.\n";
+		errorMessage += "vkCreateInstance Failure";
+
+		SIMUL_BREAK(errorMessage.c_str());
 	}
  	ERRNO_BREAK
+
 	auto const app = vk::ApplicationInfo()
 		.setPApplicationName("Simul")
 		.setApplicationVersion(0)
