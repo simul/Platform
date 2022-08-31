@@ -57,6 +57,16 @@ static void VulkanDebugCallback()
 	SIMUL_BREAK("");
 }
 
+static bool IsInVector(const std::vector<std::string>& container, const std::string& value)
+{
+	return std::find(container.begin(), container.end(), value) != container.end();
+}
+static void ExclusivePushBack(std::vector<std::string>& container, const std::string& value)
+{
+	if (!IsInVector(container, value))
+		container.push_back(value);
+}
+
 // Allow a maximum of two outstanding presentation operations.
 
 class platform::vulkan::DeviceManagerInternal
@@ -80,9 +90,7 @@ public:
 };
 
 DeviceManager::DeviceManager()
-	:enabled_extension_count(0)
-	,enabled_layer_count(0)
-	,device_initialized(false)
+	:device_initialized(false)
 {
 	deviceManager=this;
 
@@ -125,7 +133,6 @@ static bool CheckLayers(uint32_t check_count, char const *const *const check_nam
 	return true;
 }
 
-
 bool DeviceManager::IsActive() const
 {
 	return device_initialized;
@@ -146,15 +153,15 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 	uint32_t apiVersion=VK_API_VERSION_1_0;
 	//query the api version in order to use the correct vulkan functionality
-	uint32_t* instanceVersion = (uint32_t*)malloc(sizeof(uint32_t));
-	vk::Result result = vk::enumerateInstanceVersion(instanceVersion);
+	uint32_t instanceVersion = 0;
+	vk::Result result = vk::enumerateInstanceVersion(&instanceVersion);
 
 	//check what is returned
 	if (result == vk::Result::eSuccess)
 	{
 		SIMUL_INTERNAL_COUT << "RESULT(vkEnumerateInstanceVersion) : Intance version enumeration successful\n" << std::endl;
 
-		if (instanceVersion != nullptr)
+		if (instanceVersion == 0)
 		{
 			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_1\n" << std::endl;
 			apiVersion = VK_API_VERSION_1_1;
@@ -164,9 +171,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_0\n" << std::endl;
 		}
 		SIMUL_INTERNAL_COUT << "Version number returned : " 
-			<< VK_VERSION_MAJOR(*instanceVersion) << '.'
-			<< VK_VERSION_MINOR(*instanceVersion) << '.'
-			<< VK_VERSION_PATCH(*instanceVersion) << '\n';
+			<< VK_VERSION_MAJOR(instanceVersion) << '.'
+			<< VK_VERSION_MINOR(instanceVersion) << '.'
+			<< VK_VERSION_PATCH(instanceVersion) << '\n';
 	}
 	else if (result == vk::Result::eErrorOutOfHostMemory)
 	{
@@ -176,35 +183,24 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	{
 		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : Something else returned while enumerating instance version\n" << std::endl;
 	}
-	free(instanceVersion);
+ 	ERRNO_BREAK
 
-	uint32_t instance_extension_count = 0;
-	uint32_t instance_layer_count = 0;
-	uint32_t validation_layer_count = 0;
-	char const *const *instance_validation_layers = nullptr;
-	enabled_extension_count = 0;
-	enabled_layer_count = 0;
-
+	// Look for validation layers
 	char const *const instance_validation_layers_main[] = { "VK_LAYER_KHRONOS_validation" };
-
 	char const *const instance_validation_layers_alt1[] = { "VK_LAYER_LUNARG_standard_validation" };
-
 	char const *const instance_validation_layers_alt2[] = { "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation",
 														   "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",
 														   "VK_LAYER_GOOGLE_unique_objects" };
-	
- 	ERRNO_BREAK
-	// Look for validation layers
 	if (use_debug)
 	{
-		vk::Result result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, (vk::LayerProperties*)nullptr);
+		uint32_t instance_layer_count = 0;
+		vk::Result result = vk::enumerateInstanceLayerProperties(&instance_layer_count, (vk::LayerProperties*)nullptr);
 		SIMUL_VK_ASSERT_RETURN(result);
 
 		if (instance_layer_count > 0)
 		{
-			std::vector<vk::LayerProperties> instance_layers;
 			instance_layers.resize(instance_layer_count);
-			result = vk::enumerateInstanceLayerProperties((uint32_t*)&instance_layer_count, instance_layers.data());
+			result = vk::enumerateInstanceLayerProperties(&instance_layer_count, instance_layers.data());
 			SIMUL_VK_ASSERT_RETURN(result);
 			if(instance_layer_count)
 			{
@@ -221,10 +217,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			validation_found = CheckLayers(_countof(instance_validation_layers_main), instance_validation_layers_main, instance_layer_count, instance_layers.data());
 			if (validation_found && !validation_set)
 			{
-				instance_validation_layers = instance_validation_layers_main;
-				enabled_layer_count = _countof(instance_validation_layers_main);
-				enabled_layers[0] = instance_validation_layers_main[0];
-				validation_layer_count = 1;
+				for (const char* instance_layer : instance_validation_layers_main)
+					instance_layer_names.push_back(instance_layer);
 				validation_set = VK_TRUE;
 			}
 
@@ -232,10 +226,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			validation_found = CheckLayers(_countof(instance_validation_layers_alt1), instance_validation_layers_alt1, instance_layer_count, instance_layers.data());
 			if (validation_found && !validation_set)
 			{
-				instance_validation_layers = instance_validation_layers_alt1;
-				enabled_layer_count = _countof(instance_validation_layers_alt1);
-				enabled_layers[0] = instance_validation_layers_alt1[0];
-				validation_layer_count = 1;
+				for (const char* instance_layer : instance_validation_layers_alt1)
+					instance_layer_names.push_back(instance_layer);
 				validation_set = VK_TRUE;
 			}
 
@@ -243,13 +235,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			validation_found = CheckLayers(_countof(instance_validation_layers_alt2), instance_validation_layers_alt2, instance_layer_count, instance_layers.data());
 			if (validation_found && !validation_set)
 			{
-				instance_validation_layers = instance_validation_layers_alt2;
-				enabled_layer_count = _countof(instance_validation_layers_alt2);
-				validation_layer_count = _countof(instance_validation_layers_alt2);
-				for (uint32_t i = 0; i < validation_layer_count; i++)
-				{
-					enabled_layers[i] = instance_validation_layers_alt2[i];
-				}
+				for (const char* instance_layer : instance_validation_layers_alt2)
+					instance_layer_names.push_back(instance_layer);
 				validation_set = VK_TRUE;
 			}
 
@@ -266,13 +253,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 
 	/* Look for instance extensions */
-	vk::Bool32 surfaceExtFound = VK_FALSE;
-	vk::Bool32 platformSurfaceExtFound = VK_FALSE;
-	vk::Bool32 debugExtFound = VK_FALSE;
-	vk::Bool32 debugUtilsExtFound = VK_FALSE;
-	
-	// naming objects.
-	vk::Bool32 nameExtFound=VK_FALSE;
 
 	// Platform Surface Extension
 	const char* platformSurfaceExt = nullptr;
@@ -293,99 +273,53 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 	platformSurfaceExt = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 #endif
+	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	ExclusivePushBack(required_instance_extensions, VK_KHR_SURFACE_EXTENSION_NAME);
+	ExclusivePushBack(required_instance_extensions, platformSurfaceExt);
 
-	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
-	instance_extension_names.resize(instance_extension_count);
+	uint32_t instance_extension_count = 0;
+	result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
 		return;
-	std::vector<bool> found_required_instance_extension(required_instance_extensions.size());
-	for(size_t i=0;i<found_required_instance_extension.size();i++)
-		found_required_instance_extension[i]=false;
+
 	if (instance_extension_count > 0)
 	{
-		std::vector<vk::ExtensionProperties> instance_extensions;
+		std::vector<bool> found_required_instance_extension(required_instance_extensions.size(), false);
+
 		instance_extensions.resize(instance_extension_count);
-		result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, instance_extensions.data());
+		result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count, instance_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
 
-		if(instance_layer_count)
+		if(instance_extension_count)
 		{
 			SIMUL_COUT<<"Vulkan extensions supported on this instance:\n";
 		}
 		for (uint32_t i = 0; i < instance_extension_count; i++)
 		{
 			SIMUL_COUT << "\t"<<instance_extensions[i].extensionName<<std::endl;
-			if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instance_extensions[i].extensionName))
+			for (size_t j = 0; j < required_instance_extensions.size(); j++)
 			{
-				debugExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-			}
-			else if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				debugUtilsExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
-			}
-			else if (!strcmp(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				nameExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
-			}
-			else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
-			{
-				surfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
-			}
-			else if (!strcmp(platformSurfaceExt, instance_extensions[i].extensionName))
-			{
-				platformSurfaceExtFound = 1;
-				instance_extension_names[enabled_extension_count++] = platformSurfaceExt;
-			}
-			else
-			{
-				for(size_t j=0;j<required_instance_extensions.size();j++)
+				if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
 				{
-					if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
-					{
-						instance_extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
-						found_required_instance_extension[j]=true;
-						break;
-					}
+					instance_extension_names.push_back(instance_extensions[i].extensionName);
+					found_required_instance_extension[j] = true;
+					break;
 				}
 			}
-			assert(enabled_extension_count < 64);
+			
+			assert(instance_extension_names.size() < 64);
 		}
-	}
-	for(size_t i=0;i<found_required_instance_extension.size();i++)
-		if(!found_required_instance_extension[i])
+			
+		for (size_t j = 0; j < required_instance_extensions.size(); j++)
 		{
-			SIMUL_CERR<<"Missing the required instance extension "<<required_instance_extensions[i].c_str()<<std::endl;
+			if (!found_required_instance_extension[j])
+			{
+				SIMUL_CERR << "Missing the required instance extension " << required_instance_extensions[j].c_str() << std::endl;
+			}
 		}
+	}
 	errno = 0;
- 	ERRNO_BREAK
-
-	if (!surfaceExtFound)
-	{
-		SIMUL_BREAK("vkEnumerateInstanceExtensionProperties failed to find the " VK_KHR_SURFACE_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
-	}
-
-	if (!platformSurfaceExtFound)
-	{
-		std::string errorMessage;
-		errorMessage += "vkEnumerateInstanceExtensionProperties failed to find the ";
-		errorMessage += platformSurfaceExt;
-		errorMessage += " extension.\n\nDo you have a compatible ";
-		errorMessage += "Vulkan installable client driver (ICD) installed?\nPlease ";
-		errorMessage += "look at the Getting Started guide for additional ";
-		errorMessage += "information.\n";
-		errorMessage += "vkCreateInstance Failure";
-
-		SIMUL_BREAK(errorMessage.c_str());
-	}
  	ERRNO_BREAK
 
 	auto const app = vk::ApplicationInfo()
@@ -396,15 +330,16 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setApiVersion(apiVersion);
 	auto inst_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app)
-		.setEnabledLayerCount(enabled_layer_count)
-		.setPpEnabledLayerNames(instance_validation_layers)
-		.setEnabledExtensionCount(enabled_extension_count)
+		.setEnabledLayerCount((uint32_t)instance_layer_names.size())
+		.setPpEnabledLayerNames(instance_layer_names.data())
+		.setEnabledExtensionCount((uint32_t)instance_extension_names.size())
 		.setPpEnabledExtensionNames(instance_extension_names.data());
  	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
 	// Vulkan sets errno without warning or error.
 	errno=0;
- 	ERRNO_BREAK
+ 	
+	ERRNO_BREAK
 	if (result == vk::Result::eErrorIncompatibleDriver)
 	{
 		SIMUL_BREAK(
@@ -418,7 +353,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"Cannot find a specified extension.\n"
 			"Make sure your layers path is set appropriately.\n"
 			"vkCreateInstance Failure");
-		for(uint32_t i=0;i<enabled_extension_count+1;i++)
+		for(uint32_t i=0;i<(uint32_t)instance_extension_names.size()+1;i++)
 		{
 			inst_info.setEnabledExtensionCount(i);
 			result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
@@ -440,7 +375,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	/* Make initial call to query gpu_count, then second call for gpu info*/
 	uint32_t gpu_count;
-	result = deviceManagerInternal->instance.enumeratePhysicalDevices((uint32_t*)&gpu_count, (vk::PhysicalDevice*)nullptr);
+	result = deviceManagerInternal->instance.enumeratePhysicalDevices(&gpu_count, (vk::PhysicalDevice*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
  	ERRNO_BREAK
 
@@ -462,64 +397,53 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
  	ERRNO_BREAK
 	/* Look for device extensions */
-	uint32_t device_extension_count = 0;
-	vk::Bool32 swapchainExtFound = VK_FALSE;
-	enabled_extension_count = 0;
+	ExclusivePushBack(required_device_extensions, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
-	device_extension_names.resize(device_extension_count);
-	memset(device_extension_names.data(), 0, sizeof(device_extension_names));
+	uint32_t device_extension_count = 0;
+	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, (vk::ExtensionProperties*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
  	ERRNO_BREAK
 	if (device_extension_count > 0)
 	{
-		std::vector<vk::ExtensionProperties> device_extensions;
+		std::vector<bool> found_required_device_extension(required_device_extensions.size(), false);
+
 		device_extensions.resize(device_extension_count);
-		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, device_extensions.data());
+		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, device_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
 		
 		std::cerr<<"Available device extensions: "<<device_extension_count<<std::endl;
 		for (uint32_t i = 0; i < device_extension_count; i++)
 		{
 			std::cerr<<device_extensions[i].extensionName<<std::endl;
-			if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName))
+			for(size_t j=0;j<required_device_extensions.size();j++)
 			{
-				swapchainExtFound = 1;
-				device_extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-			}
-			else
-			{
-				for(size_t j=0;j<required_device_extensions.size();j++)
+				if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))
 				{
-					if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))
-					{
-						device_extension_names[enabled_extension_count++] = required_device_extensions[j].c_str();
-					}
+					device_extension_names.push_back(required_device_extensions[j].c_str());
+					found_required_device_extension[j] = true;
 				}
 			}
-			assert(enabled_extension_count < 64);
+			
+			assert(device_extension_names.size() < 64);
 		}
-	}
 
-	if (!swapchainExtFound)
-	{
-		SIMUL_BREAK("vkEnumerateDeviceExtensionProperties failed to find the " VK_KHR_SWAPCHAIN_EXTENSION_NAME
-			" extension.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-			"Please look at the Getting Started guide for additional information.\n"
-			"vkCreateInstance Failure");
+		for (size_t j = 0; j < required_device_extensions.size(); j++)
+		{
+			if (!found_required_device_extension[j])
+			{
+				SIMUL_CERR << "Missing the required device extension " << required_device_extensions[j].c_str() << std::endl;
+			}
+		}
 	}
  	ERRNO_BREAK
 
 	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
-	
 	InitQueueProperties(deviceManagerInternal->gpu,queue_props);
 
 	// Query fine-grained feature support for this device.
 	//  If app has specific feature requirements it should check supported
 	//  features based on this query
 	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
-
 	deviceManagerInternal->gpu_features2.setPNext(&physicalDeviceSamplerYcbcrConversionFeatures);
 	deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
  	ERRNO_BREAK
@@ -662,7 +586,7 @@ void DeviceManager::CreateDevice()
 							.setPQueueCreateInfos(queues.data())
 							.setEnabledLayerCount(0)
 							.setPpEnabledLayerNames(nullptr)
-							.setEnabledExtensionCount(enabled_extension_count)
+							.setEnabledExtensionCount((uint32_t)device_extension_names.size())
 							.setPpEnabledExtensionNames((const char *const *)device_extension_names.data())
 							//.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
 							.setQueueCreateInfoCount((uint32_t)queues.size())

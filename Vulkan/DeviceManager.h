@@ -64,12 +64,18 @@ namespace platform
 			void CreateDevice();
 			void SetupDebugCallback();
 			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
-			uint32_t enabled_extension_count;
-			uint32_t enabled_layer_count;
-			bool device_initialized;
-			std::vector<const char *> device_extension_names;
+			
+			std::vector<vk::LayerProperties> instance_layers;
+			std::vector<vk::ExtensionProperties> instance_extensions;
+			std::vector<vk::LayerProperties> device_layers;
+			std::vector<vk::ExtensionProperties> device_extensions;
+			
+			std::vector<const char *> instance_layer_names;
 			std::vector<const char *> instance_extension_names;
-			char const *enabled_layers[64];
+			std::vector<const char *> device_layer_names;
+			std::vector<const char *> device_extension_names;
+
+			bool device_initialized;
 			DeviceManagerInternal *deviceManagerInternal;
 			bool separate_present_queue;
 			uint32_t queue_family_count;
