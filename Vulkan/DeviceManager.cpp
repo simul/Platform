@@ -363,16 +363,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				instance_extension_names[enabled_extension_count++] = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 			}
 #endif
-			else
+			for(size_t j=0;j<required_instance_extensions.size();j++)
 			{
-				for(size_t j=0;j<required_instance_extensions.size();j++)
+				if(!found_required_instance_extension[j]&&!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
 				{
-					if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
-					{
-						instance_extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
-						found_required_instance_extension[j]=true;
-						break;
-					}
+					instance_extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
+					found_required_instance_extension[j]=true;
+					break;
 				}
 			}
 			assert(enabled_extension_count < 64);
@@ -534,6 +531,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, (uint32_t*)&device_extension_count, (vk::ExtensionProperties*)nullptr);
 	device_extension_names.resize(device_extension_count);
 	memset(device_extension_names.data(), 0, sizeof(device_extension_names));
+	std::vector<bool> found_required_device_extension(required_device_extensions.size());
+	for(size_t i=0;i<found_required_device_extension.size();i++)
+		found_required_device_extension[i]=false;
 	SIMUL_VK_ASSERT_RETURN(result);
  	ERRNO_BREAK
 	if (device_extension_count > 0)
@@ -552,20 +552,25 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				swapchainExtFound = 1;
 				device_extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 			}
-			else
+			for(size_t j=0;j<required_device_extensions.size();j++)
 			{
-				for(size_t j=0;j<required_device_extensions.size();j++)
-				{
+				if(!found_required_device_extension[j])
 					if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))
 					{
 						device_extension_names[enabled_extension_count++] = required_device_extensions[j].c_str();
+						found_required_device_extension[j]=true;
+						break;
 					}
-				}
 			}
 			assert(enabled_extension_count < 64);
 		}
 	}
-
+	
+	for(size_t i=0;i<found_required_device_extension.size();i++)
+		if(!found_required_device_extension[i])
+		{
+			SIMUL_CERR<<"Missing the required device extension "<<required_device_extensions[i].c_str()<<std::endl;
+		}
 	if (!swapchainExtFound)
 	{
 		SIMUL_BREAK("vkEnumerateDeviceExtensionProperties failed to find the " VK_KHR_SWAPCHAIN_EXTENSION_NAME
