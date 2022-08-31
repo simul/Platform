@@ -277,6 +277,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
 		return;
+	std::vector<bool> found_required_instance_extension(required_instance_extensions.size());
+	for(size_t i=0;i<found_required_instance_extension.size();i++)
+		found_required_instance_extension[i]=false;
 	if (instance_extension_count > 0)
 	{
 		vk::ExtensionProperties * instance_extensions=new vk::ExtensionProperties[instance_extension_count];
@@ -367,6 +370,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 					if (!strcmp(required_instance_extensions[j].c_str(), instance_extensions[i].extensionName))
 					{
 						instance_extension_names[enabled_extension_count++] = required_instance_extensions[j].c_str();
+						found_required_instance_extension[j]=true;
+						break;
 					}
 				}
 			}
@@ -374,6 +379,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		}
 		delete[] instance_extensions;
 	}
+	for(size_t i=0;i<found_required_instance_extension.size();i++)
+		if(!found_required_instance_extension[i])
+		{
+			SIMUL_CERR<<"Missing the required instance extension "<<required_instance_extensions[i].c_str()<<std::endl;
+		}
 	errno = 0;
  	ERRNO_BREAK
 
