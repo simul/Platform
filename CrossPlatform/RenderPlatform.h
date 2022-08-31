@@ -373,8 +373,8 @@ namespace platform
 			virtual void					ApplyDefaultRenderTargets		(crossplatform::GraphicsDeviceContext &){};
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(GraphicsDeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
-			virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* ) {}
-			virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) =0;
+			virtual void                    ActivateRenderTargets			(GraphicsDeviceContext &, TargetsAndViewport* );
+			virtual void					DeactivateRenderTargets			(GraphicsDeviceContext &deviceContext) ;
 			virtual void					SetViewports					(GraphicsDeviceContext &deviceContext,int num,const Viewport *vps);
 			//! Set the scissor rectange: x,y, width and height. NOTE: NOT left,right,top,bottom!
 			virtual void					SetScissor						(GraphicsDeviceContext &deviceContext,int4 sc);

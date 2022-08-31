@@ -123,7 +123,7 @@ namespace platform
 			
 			void									SetStreamOutTarget(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0) override;
 			void									ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth) override;
-			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &) override;
+
 			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
 
 			void									EnsureEffectIsBuilt(const char *filename_utf8) override;

@@ -337,6 +337,23 @@ void RenderPlatform::PopTexturePath()
 	texturePathsUtf8.pop_back();
 }
 
+void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::TargetsAndViewport* tv)
+{
+	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &tv->viewport);
+	int4 scissor={0,0,tv->viewport.w,tv->viewport.h};
+	SetScissor(deviceContext,scissor);
+	deviceContext.GetFrameBufferStack().push(tv);
+}
+
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
+{
+	deviceContext.GetFrameBufferStack().pop();
+	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
+	SetViewports(deviceContext, 1, &tv->viewport);
+	int4 scissor={0,0,tv->viewport.w,tv->viewport.h};
+	SetScissor(deviceContext,scissor);
+}
+
 void RenderPlatform::PushRenderTargets(GraphicsDeviceContext &deviceContext, TargetsAndViewport *tv)
 {
 	deviceContext.GetFrameBufferStack().push(tv);
@@ -472,10 +489,10 @@ void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
 	debugConstants.debugColour=colour_rgba;
-	if(debugConstants.debugColour.x+debugConstants.debugColour.y+debugConstants.debugColour.z==0)
-	{
-		SIMUL_BREAK("");
-	}
+	//if(debugConstants.debugColour.x+debugConstants.debugColour.y+debugConstants.debugColour.z==0)
+	//{
+	//	SIMUL_BREAK("");
+	//}
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,clearTechnique,0);
 	DrawQuad(deviceContext);

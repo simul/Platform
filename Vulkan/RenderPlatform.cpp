@@ -1557,12 +1557,6 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	SetViewports(deviceContext, 1, &target.viewport);
 }
 #include <cstdint>
-void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
-{
-	deviceContext.GetFrameBufferStack().pop();
-	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
-	SetViewports(deviceContext, 1, &tv->viewport);
-}
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {

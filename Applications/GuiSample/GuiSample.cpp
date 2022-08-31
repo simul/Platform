@@ -6,8 +6,8 @@
 #include "backends/imgui_impl_win32.h"
 #include "Platform/ImGui/imgui_impl_platform.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Platform/DirectX12/DeviceManager.h"
-#include "Platform/DirectX12/RenderPlatform.h"
+#include "Platform/DirectX11/DeviceManager.h"
+#include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/Core/Timer.h"
 #include <tchar.h>
@@ -18,7 +18,7 @@ VisualStudioDebugOutput debug_buffer(true, NULL, 128);
 
 using namespace platform;
 // Data
-dx12::DeviceManager deviceManager;
+dx11::DeviceManager deviceManager;
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface = &deviceManager;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 platform::core::CommandLineParams commandLineParams;
@@ -237,7 +237,7 @@ int main(int, char**)
 
 bool CreateDevice(HWND hWnd)
 {
-    renderPlatform = new dx12::RenderPlatform(); 
+    renderPlatform = new dx11::RenderPlatform(); 
     platformRenderer = new PlatformRenderer(renderPlatform);
     graphicsDeviceInterface->Initialize(true, false, false);//commandLineParams("debug")
 
