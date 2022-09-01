@@ -19,87 +19,34 @@
 
 using namespace platform;
 using namespace vulkan;
-const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::VkObjectTypeMap =
-{
-	{VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_BEGIN_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_END_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT"},
-};
 
-void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
+template<typename T>
+void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
 {
-#if 0
-	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
-	vk::Device *device=renderPlatform->AsVulkanDevice();
-	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
-		.setObjectType(vk::DebugReportObjectTypeEXT::eImage)
-		.setObject((uint64_t)ds)
+	uint64_t objectHandle = *((uint64_t*)&ds);
+
+	vk::DebugUtilsObjectNameInfoEXT nameInfo;
+	nameInfo
+		.setPNext(nullptr)
+		.setObjectType(ds.objectType)
+		.setObjectHandle(objectHandle)
 		.setPObjectName(name);
-	auto inf=nameInfo.operator const VkDebugMarkerObjectNameInfoEXT &();
-	//* It would be nice if this worked reliably on most drivers:
-	PFN_vkDebugMarkerSetObjectNameEXT vkDebugMarkerSetObjectNameEXT	=reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT> (instance->getProcAddr("vkDebugMarkerSetObjectNameEXT"));
-	if(vkDebugMarkerSetObjectNameEXT)
-	{
-		if(ds!=0)
-		{
-			vkDebugMarkerSetObjectNameEXT(device->operator VkDevice(),&inf);
-		}
-	}
-#endif
 
-	// But it doesn't. So instead we just list the objects and names.
+	vk::Device* device = renderPlatform->AsVulkanDevice();
+	device->setDebugUtilsObjectNameEXT(nameInfo);
+
 #if 1//def _DEBUG
-	if(platform::core::SimulInternalChecks)
+	if (platform::core::SimulInternalChecks)
 	{
-		uint64_t *u=(uint64_t*)ds;
-		RenderPlatform::ResourceMap[*u]=name;
+		RenderPlatform::ResourceMap[objectHandle] = name;
 #ifdef _DEBUG
-		std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
-		#endif
+		std::cout << "0x" << std::hex << *u << "\t" << name << "\n";
+#endif
 	}
 #endif
 }
-void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
+template<typename T>
+void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string & name)
 {
 	SetVulkanName(renderPlatform,ds,name.c_str());
 }
@@ -164,7 +111,7 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 			.setUnnormalizedCoordinates(false)
 			.setPNext(GetVideoSamplerYcbcrConversionInfo());
 	SIMUL_VK_CHECK(vulkanDevice->createSampler(&videoSamplerCreateInfo,nullptr,&vulkanVideoSampler));
-	SetVulkanName(this,(uint64_t*)&vulkanVideoSampler,"Vulkan Video Sampler");
+	SetVulkanName(this,vulkanVideoSampler,"Vulkan Video Sampler");
 }
 
 vk::SamplerYcbcrConversionInfo *RenderPlatform::GetVideoSamplerYcbcrConversionInfo()
@@ -1807,7 +1754,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 			attachments[tv->num]=*(tv->depthTarget.texture->AsVulkanImageView());
 		framebufferCreateInfo.pAttachments = attachments;
 		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
-		SetVulkanName(this,(uint64_t*)&mFramebuffers[hashval],"mFramebuffers");
+		SetVulkanName(this,mFramebuffers[hashval],"mFramebuffers");
 	}
 	return hashval;
 }
@@ -1966,7 +1913,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPDependencies(nullptr);
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
-	SetVulkanName(this,&renderPass,platform::core::QuickFormat("RenderPass"));
+	SetVulkanName(this,renderPass,platform::core::QuickFormat("RenderPass"));
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);

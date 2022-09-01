@@ -595,7 +595,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,&(mImage),name+" texture mImage");
+	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
 	vk::MemoryRequirements mem_reqs;
 	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
 	
@@ -607,7 +607,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,&(mMem),name+" texture mMem");
+	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 
@@ -856,7 +856,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,&(mImage),name+" texture mImage");
+	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
 	vk::MemoryRequirements mem_reqs;
 	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
 	
@@ -868,7 +868,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-		SetVulkanName(renderPlatform,&(mMem),name+" texture mMem");
+		SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
@@ -927,7 +927,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	
 	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,&(mImage),name+" texture mImage");
+	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
 	vk::MemoryRequirements mem_reqs;
 	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
 	
@@ -939,7 +939,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,&(mMem),name+" texture mMem");
+	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
@@ -1123,7 +1123,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 
 	result = vulkanDevice->allocateMemory(&lt.mem_alloc, nullptr, &(lt.mem));
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&(lt.mem),name+" texture lt.mem");
+	SetVulkanName(renderPlatform,lt.mem,name+" texture lt.mem");
 
 	vulkanDevice->bindBufferMemory(lt.buffer, lt.mem, 0);
 

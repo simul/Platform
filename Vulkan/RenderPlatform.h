@@ -45,8 +45,10 @@ namespace platform
 {
 	namespace vulkan
 	{
-		extern void SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name);
-		extern void SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name);
+		template<typename T>
+		extern void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name);
+		template<typename T>
+		extern void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string& name);
 		class Material;
 		class Texture;
 
@@ -186,8 +188,6 @@ namespace platform
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 			static std::string						VulkanResultString(vk::Result res);
-
-			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 
 			// Vulkan-specific support for video decoding:
 			vk::Sampler GetVideoSampler()

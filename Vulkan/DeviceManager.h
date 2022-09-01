@@ -40,12 +40,12 @@ namespace platform
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 
-			void Activate() ;
+			void Activate();
 
 			void ReloadTextures();
+			
 			// called late to start debug output.
 			void InitDebugging();
-		//	platform::vulkan::RenderPlatform *renderPlatformVulkan;
 
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
@@ -70,16 +70,18 @@ namespace platform
 			std::vector<vk::LayerProperties> device_layers;
 			std::vector<vk::ExtensionProperties> device_extensions;
 			
-			std::vector<const char *> instance_layer_names;
-			std::vector<const char *> instance_extension_names;
-			std::vector<const char *> device_layer_names;
-			std::vector<const char *> device_extension_names;
+			std::vector<const char*> instance_layer_names;
+			std::vector<const char*> instance_extension_names;
+			std::vector<const char*> device_layer_names;
+			std::vector<const char*> device_extension_names;
 
 			bool device_initialized;
 			DeviceManagerInternal *deviceManagerInternal;
 			bool separate_present_queue;
 			uint32_t queue_family_count;
 			std::vector<vk::QueueFamilyProperties> queue_props;
+			vk::DebugUtilsMessengerEXT debugUtilsMessenger;
+			vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI;
 			vk::PhysicalDeviceSamplerYcbcrConversionFeatures physicalDeviceSamplerYcbcrConversionFeatures;
 		};
 		extern DeviceManager *deviceManager;
