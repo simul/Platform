@@ -163,15 +163,9 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	{
 		SIMUL_INTERNAL_COUT << "RESULT(vkEnumerateInstanceVersion) : Intance version enumeration successful\n" << std::endl;
 
-		if (instanceVersion == 0)
-		{
-			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_1\n" << std::endl;
-			apiVersion = VK_API_VERSION_1_1;
-		}
-		else
-		{
-			SIMUL_INTERNAL_COUT << "API_VERSION : VK_API_VERSION_1_0\n" << std::endl;
-		}
+		if (instanceVersion != 0)
+			apiVersion = instanceVersion;
+		
 		SIMUL_INTERNAL_COUT << "Version number returned : " 
 			<< VK_VERSION_MAJOR(instanceVersion) << '.'
 			<< VK_VERSION_MINOR(instanceVersion) << '.'
