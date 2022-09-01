@@ -620,19 +620,29 @@ void DeviceManager::CreateDevice()
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
  	ERRNO_BREAK
+	
+	uint32_t apiVersion = VK_API_VERSION_1_0;
+	uint32_t instanceVersion = 0;
+	vk::Result result = vk::enumerateInstanceVersion(&instanceVersion);
+	if (result == vk::Result::eSuccess && instanceVersion != 0)
+		apiVersion = instanceVersion;
+
+	void* deviceCI_pNext = nullptr;
+	if (IsInVector(instance_extension_names, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) || apiVersion >= VK_API_VERSION_1_1) //Promoted to Vulkan 1.1
+		deviceCI_pNext = &deviceManagerInternal->gpu_features2;
+
 	auto deviceInfo = vk::DeviceCreateInfo()
-							.setQueueCreateInfoCount(1)
+							.setQueueCreateInfoCount((uint32_t)queues.size())
 							.setPQueueCreateInfos(queues.data())
 							.setEnabledLayerCount(0)
 							.setPpEnabledLayerNames(nullptr)
 							.setEnabledExtensionCount((uint32_t)device_extension_names.size())
 							.setPpEnabledExtensionNames((const char *const *)device_extension_names.data())
-							//.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
-							.setQueueCreateInfoCount((uint32_t)queues.size())
-							.setPNext(&deviceManagerInternal->gpu_features2);
+							.setPNext(deviceCI_pNext)
+							.setPEnabledFeatures(deviceCI_pNext ? nullptr : &deviceManagerInternal->gpu_features);
 							
  	ERRNO_BREAK
-	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
+	result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
  	// For unknown reasons, even when successful, Vulkan createDevice sets errno==2: No such file or directory here.
 	// So we reset it to prevent spurious error detection.
 	errno=0;

@@ -77,8 +77,10 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 			.setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
 			.setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
 			.setAnisotropyEnable(false)
-			.setUnnormalizedCoordinates(false)
-			.setPNext(GetVideoSamplerYcbcrConversionInfo());
+			.setUnnormalizedCoordinates(false);
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) //TODO: Need to check DeviceManager's PhysicalDeviceFeature2::pNext change for functionality
+	videoSamplerCreateInfo.setPNext(GetVideoSamplerYcbcrConversionInfo());
+#endif
 	SIMUL_VK_CHECK(vulkanDevice->createSampler(&videoSamplerCreateInfo,nullptr,&vulkanVideoSampler));
 	SetVulkanName(this,vulkanVideoSampler,"Vulkan Video Sampler");
 }
@@ -99,9 +101,11 @@ vk::SamplerYcbcrConversionInfo *RenderPlatform::GetVideoSamplerYcbcrConversionIn
 		samplerYcbcrConversionCreateInfo.setComponents(comp);
 		samplerYcbcrConversionCreateInfo.setForceExplicitReconstruction(false);
 		samplerYcbcrConversionCreateInfo.setChromaFilter(vk::Filter::eNearest);
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 		vk::ExternalFormatANDROID externalFormat;
 		externalFormat.externalFormat = 506;
 		samplerYcbcrConversionCreateInfo.pNext = &externalFormat;
+#endif
 		vk::SamplerYcbcrConversion  samplerYcbcrConversion=vulkanDevice->createSamplerYcbcrConversion(samplerYcbcrConversionCreateInfo);
 		
 		videoSamplerYcbcrConversionInfo.conversion=samplerYcbcrConversion;
