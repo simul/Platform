@@ -102,7 +102,11 @@ void DeviceManager::InvalidateDeviceObjects()
 DeviceManager::~DeviceManager()
 {
 	if (debugUtilsMessenger)
-		deviceManagerInternal->instance.destroyDebugUtilsMessengerEXT(debugUtilsMessenger, nullptr);
+	{
+		vk::DispatchLoaderDynamic d;
+		d.vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT");
+		deviceManagerInternal->instance.destroyDebugUtilsMessengerEXT(debugUtilsMessenger, nullptr, d);
+	}
 
 	InvalidateDeviceObjects();
 	delete deviceManagerInternal;
@@ -271,7 +275,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 	platformSurfaceExt = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 #endif
-	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, VK_KHR_SURFACE_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, platformSurfaceExt);
 
@@ -558,7 +562,10 @@ void DeviceManager::SetupDebugCallback()
 		.setPfnUserCallback(DebugReportCallback)
 		.setPUserData(this);
 
-	debugUtilsMessenger = deviceManagerInternal->instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCI);
+	vk::DispatchLoaderDynamic d;
+	d.vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
+
+	debugUtilsMessenger = deviceManagerInternal->instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCI, nullptr, d);
 }
 
 void DeviceManager::CreateDevice()

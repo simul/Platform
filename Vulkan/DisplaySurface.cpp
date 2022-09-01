@@ -434,7 +434,7 @@ void DisplaySurface::InitSwapChain()
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
 	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&swapchain,"Swapchain");
+	SetVulkanName(renderPlatform,swapchain,"Swapchain");
 
 	// If we just re-created an existing swapchain, we should destroy the
 	// old
@@ -459,7 +459,7 @@ void DisplaySurface::InitSwapChain()
 
 		for(int i=0;i<swapchainImages.size();i++)
 		{
-			SetVulkanName( renderPlatform, &(swapchainImages[i]), platform::core::QuickFormat("Swapchain %d",i));
+			SetVulkanName( renderPlatform, swapchainImages[i], platform::core::QuickFormat("Swapchain %d",i));
 		}
 	}
 	swapchain_image_resources.resize(swapchainImages.size());

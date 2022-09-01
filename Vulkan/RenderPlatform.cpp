@@ -20,37 +20,6 @@
 using namespace platform;
 using namespace vulkan;
 
-template<typename T>
-void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
-{
-	uint64_t objectHandle = *((uint64_t*)&ds);
-
-	vk::DebugUtilsObjectNameInfoEXT nameInfo;
-	nameInfo
-		.setPNext(nullptr)
-		.setObjectType(ds.objectType)
-		.setObjectHandle(objectHandle)
-		.setPObjectName(name);
-
-	vk::Device* device = renderPlatform->AsVulkanDevice();
-	device->setDebugUtilsObjectNameEXT(nameInfo);
-
-#if 1//def _DEBUG
-	if (platform::core::SimulInternalChecks)
-	{
-		RenderPlatform::ResourceMap[objectHandle] = name;
-#ifdef _DEBUG
-		std::cout << "0x" << std::hex << *u << "\t" << name << "\n";
-#endif
-	}
-#endif
-}
-template<typename T>
-void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string & name)
-{
-	SetVulkanName(renderPlatform,ds,name.c_str());
-}
-
 RenderPlatform::RenderPlatform():
 	mDummy2D(nullptr)
 	,mDummy3D(nullptr)
@@ -692,8 +661,8 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 #ifdef _DEBUG
 	if(name)
 	{
-		SetVulkanName(this,&(buffer),name);
-		SetVulkanName(this,&(bufferMemory),platform::core::QuickFormat("%s memory",name));
+		SetVulkanName(this,(buffer),name);
+		SetVulkanName(this,(bufferMemory),platform::core::QuickFormat("%s memory",name));
 	}
 #endif
 }

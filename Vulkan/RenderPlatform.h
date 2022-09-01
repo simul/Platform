@@ -46,9 +46,44 @@ namespace platform
 	namespace vulkan
 	{
 		template<typename T>
-		extern void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name);
+		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
+		{
+			vk::Instance* instance = renderPlatform->AsVulkanInstance();
+			vk::Device* device = renderPlatform->AsVulkanDevice();
+
+			vk::DispatchLoaderDynamic d;
+			d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
+
+			uint64_t objectHandle = *((uint64_t*)&ds);
+
+			if (d.vkSetDebugUtilsObjectNameEXT)
+			{
+				vk::DebugUtilsObjectNameInfoEXT nameInfo;
+				nameInfo
+					.setPNext(nullptr)
+					.setObjectType(ds.objectType)
+					.setObjectHandle(objectHandle)
+					.setPObjectName(name);
+
+				device->setDebugUtilsObjectNameEXT(nameInfo, d);
+			}
+
+		#if 1//def _DEBUG
+			if (platform::core::SimulInternalChecks)
+			{
+				crossplatform::RenderPlatform::ResourceMap[objectHandle] = name;
+		#ifdef _DEBUG
+				std::cout << "0x" << std::hex << objectHandle << "\t" << name << "\n";
+		#endif
+			}
+		#endif
+		}
 		template<typename T>
-		extern void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string& name);
+		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string& name)
+		{
+			SetVulkanName(renderPlatform, ds, name.c_str());
+		}
+
 		class Material;
 		class Texture;
 

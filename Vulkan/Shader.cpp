@@ -49,7 +49,7 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,co
 		SIMUL_CERR<<"Vulkan error creating "<<filename_utf8<<std::endl;
 		SIMUL_BREAK_ONCE("failed to create shader module!");
 	}
-	SetVulkanName(renderPlatform,&mShader,filename_utf8);
+	SetVulkanName(renderPlatform,mShader,filename_utf8);
 	name=filename_utf8;
 }
 
