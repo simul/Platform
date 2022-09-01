@@ -52,6 +52,16 @@ using namespace std;
 #pragma comment(lib, "vulkan-1")
 #endif
 
+static bool IsInVector(const std::vector<const char*>& container, const std::string& value)
+{
+	for (const char* element : container)
+	{
+		bool found = value.compare(element) == 0;
+		if (found)
+			return true;
+	}
+	return false;
+}
 static bool IsInVector(const std::vector<std::string>& container, const std::string& value)
 {
 	return std::find(container.begin(), container.end(), value) != container.end();
@@ -439,12 +449,26 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// Query fine-grained feature support for this device.
 	//  If app has specific feature requirements it should check supported
 	//  features based on this query
+
+	if (IsInVector(device_extension_names, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
+	{
+		deviceManagerInternal->gpu_features2.setPNext(&physicalDeviceSamplerYcbcrConversionFeatures);
+	}
+	if (apiVersion >= VK_API_VERSION_1_1)
+	{
+		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
+	}
+	else if (IsInVector(instance_extension_names, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+	{
+		vk::DispatchLoaderDynamic d;
+		d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceFeatures2");
+		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
+	}
+	
 	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
-	deviceManagerInternal->gpu_features2.setPNext(&physicalDeviceSamplerYcbcrConversionFeatures);
-	deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
  	ERRNO_BREAK
 
-	if(use_debug)
+	if(use_debug && IsInVector(instance_extension_names, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
 		InitDebugging();
  	ERRNO_BREAK
 	CreateDevice();
