@@ -218,7 +218,8 @@ namespace platform
 																			,bool depthTest=false,bool depthWrite=false
 																			,bool clear=false
 																			,int numOfSamples=1
-																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr);
+																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr
+																			,uint32_t viewMask=0); //viewMask is a bitfield of view indices describing which views rendering is broadcast to. Views 0->5 is 0b00111111
 			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;

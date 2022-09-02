@@ -80,10 +80,11 @@ public:
 	vk::Instance instance;
 	vk::PhysicalDevice gpu;
 	vk::Device device;
+	vk::PhysicalDeviceFeatures gpu_features;
 	vk::PhysicalDeviceProperties gpu_props;
 	vk::PhysicalDeviceMemoryProperties memory_properties;
-	vk::PhysicalDeviceFeatures gpu_features;
 	vk::PhysicalDeviceFeatures2 gpu_features2;
+	vk::PhysicalDeviceProperties2 gpu_props2;
 	
 	DeviceManagerInternal()
 		: instance(vk::Instance()),
@@ -443,29 +444,48 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
  	ERRNO_BREAK
 
-	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
 	InitQueueProperties(deviceManagerInternal->gpu,queue_props);
 
 	// Query fine-grained feature support for this device.
-	//  If app has specific feature requirements it should check supported
-	//  features based on this query
+	//  If app has specific feature requirements it should check supported features based on this query.
+	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
+	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
 
+	//Taken from UE4 for setting up chains of structures
+	void** nextFeatsAddr = nullptr;
+	nextFeatsAddr = &deviceManagerInternal->gpu_features2.pNext;
+	void** nextPropsAddr = nullptr;
+	nextPropsAddr = &deviceManagerInternal->gpu_props2.pNext;
+
+	// Query fine-grained feature and properties support for this device with VK_KHR_get_physical_device_properties2.
 	if (IsInVector(device_extension_names, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
 	{
-		deviceManagerInternal->gpu_features2.setPNext(&physicalDeviceSamplerYcbcrConversionFeatures);
+		*nextFeatsAddr = &physicalDeviceSamplerYcbcrConversionFeatures;
+		nextFeatsAddr = &physicalDeviceSamplerYcbcrConversionFeatures.pNext;
 	}
+	if (IsInVector(device_extension_names, VK_KHR_MULTIVIEW_EXTENSION_NAME))
+	{
+		*nextFeatsAddr = &physicalDeviceMultiviewFeatures;
+		nextFeatsAddr = &physicalDeviceMultiviewFeatures.pNext;
+		*nextPropsAddr = &physicalDeviceMultiviewProperties;
+		nextPropsAddr = &physicalDeviceMultiviewProperties.pNext;
+	}
+
+	//Execute calls into VK_KHR_get_physical_device_properties2
 	if (apiVersion >= VK_API_VERSION_1_1)
 	{
 		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
+		deviceManagerInternal->gpu.getProperties2(&deviceManagerInternal->gpu_props2);
 	}
 	else if (IsInVector(instance_extension_names, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
 	{
 		vk::DispatchLoaderDynamic d;
 		d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceFeatures2");
-		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
+		d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceProperties2");
+		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2, d);
+		deviceManagerInternal->gpu.getProperties2(&deviceManagerInternal->gpu_props2, d);
 	}
 	
-	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
  	ERRNO_BREAK
 
 	if(use_debug && IsInVector(instance_extension_names, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -686,7 +706,6 @@ vk::Device *DeviceManager::GetVulkanDevice()
 {
 	return &deviceManagerInternal->device;
 }
-
 
 vk::Instance *DeviceManager::GetVulkanInstance()
 {

@@ -680,7 +680,8 @@ void EffectPass::Initialize(vk::DescriptorSet &descriptorSet)
 void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat
 	,crossplatform::Topology topology, const crossplatform::RenderState *blendState
 	,const crossplatform::RenderState *depthStencilState
-	,const crossplatform::RenderState *rasterizerState)
+	,const crossplatform::RenderState *rasterizerState
+	,uint32_t viewMask)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
@@ -760,6 +761,16 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 				.setPSubpasses(&subpass)
 				.setDependencyCount(0)
 				.setPDependencies(nullptr);
+
+			auto multiview = vk::RenderPassMultiviewCreateInfo()
+				.setSubpassCount(1)
+				.setPViewMasks(&viewMask)
+				.setDependencyCount(0)
+				.setPViewOffsets(nullptr)
+				.setCorrelationMaskCount(1)
+				.setPCorrelationMasks(&viewMask);
+			if (viewMask != 0)
+				rp_info.setPNext(&multiview);
 
 			result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
 			SIMUL_VK_CHECK(result);

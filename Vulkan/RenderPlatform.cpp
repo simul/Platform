@@ -1795,7 +1795,7 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass
 	,int num_colour,const crossplatform::PixelFormat *pixelFormats
 	,crossplatform::PixelFormat depthFormat,bool depthTest,bool depthWrite,bool clear,int numOfSamples
-	,const vk::ImageLayout *initial_layouts,const vk::ImageLayout *target_layouts)
+	,const vk::ImageLayout *initial_layouts,const vk::ImageLayout *target_layouts,uint32_t viewMask)
 {
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
 // because at the start of the renderpass, we don't care about their contents.
@@ -1877,13 +1877,23 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPreserveAttachmentCount(0)
 		.setPPreserveAttachments(nullptr);
 
-	auto const rp_info = vk::RenderPassCreateInfo()
+	auto rp_info = vk::RenderPassCreateInfo()
 		.setAttachmentCount(num_attachments)
 		.setPAttachments(attachments)
 		.setSubpassCount(1)
 		.setPSubpasses(&subpass)
 		.setDependencyCount(0)
 		.setPDependencies(nullptr);
+
+	auto const multiview = vk::RenderPassMultiviewCreateInfo()
+		.setSubpassCount(1)
+		.setPViewMasks(&viewMask)
+		.setDependencyCount(0)
+		.setPViewOffsets(nullptr)
+		.setCorrelationMaskCount(1)
+		.setPCorrelationMasks(&viewMask);
+	if (viewMask != 0)
+		rp_info.setPNext(&multiview);
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
 	SetVulkanName(this,renderPass,platform::core::QuickFormat("RenderPass"));

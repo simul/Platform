@@ -76,7 +76,8 @@ namespace platform
 			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
 				, const crossplatform::RenderState *blendState=nullptr
 				, const crossplatform::RenderState *depthStencilState=nullptr
-				, const crossplatform::RenderState *rasterizerState=nullptr);
+				, const crossplatform::RenderState *rasterizerState=nullptr
+				, uint32_t viewMask=0); //viewMask is a bitfield of view indices describing which views rendering is broadcast to. Views 0->5 is 0b00111111
 			bool initialized=false;
 			vk::DescriptorSetLayoutBinding *layout_bindings=nullptr;
 		};

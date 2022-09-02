@@ -82,7 +82,11 @@ namespace platform
 			std::vector<vk::QueueFamilyProperties> queue_props;
 			vk::DebugUtilsMessengerEXT debugUtilsMessenger;
 			vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI;
+
 			vk::PhysicalDeviceSamplerYcbcrConversionFeatures physicalDeviceSamplerYcbcrConversionFeatures;
+
+			vk::PhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures;
+			vk::PhysicalDeviceMultiviewProperties physicalDeviceMultiviewProperties;
 		};
 		extern DeviceManager *deviceManager;
 	}
