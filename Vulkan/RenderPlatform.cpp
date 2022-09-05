@@ -57,11 +57,6 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
 		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
 
-	vk::PhysicalDeviceMultiviewFeatures mvFeat;
-	FillPhysicalDeviceFeatures2ExtensionStructure(mvFeat);
-	vk::PhysicalDeviceMultiviewProperties mvProp;
-	FillPhysicalDeviceProperties2ExtensionStructure(mvProp);
-
 	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
 	vk::DescriptorPoolSize const poolSizes[] = {
 		vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount)
@@ -77,7 +72,6 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 		vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount).setPoolSizeCount(_countof(poolSizes)).setPPoolSizes(poolSizes);
 	auto result = vulkanDevice->createDescriptorPool(&descriptorPoolCreateInfo, nullptr, &mDescriptorPool);
 
-	//TODO: Need to check DeviceManager's PhysicalDeviceFeature2::pNext change for functionality
 	// Vulkan Video decoding support:
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	if (CheckDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
@@ -208,7 +202,7 @@ bool RenderPlatform::CheckInstanceExtension(const std::string& instanceExtension
 
 	for (const auto& instance_extension_name : deviceManager->instance_extension_names)
 	{
-		if (std::string(instance_extension_name).compare(instanceExtensionName) == 0)
+		if (instance_extension_name.compare(instanceExtensionName) == 0)
 			return true;
 	}
 	return false;
@@ -221,7 +215,7 @@ bool RenderPlatform::CheckDeviceExtension(const std::string& deviceExtensionName
 
 	for (const auto& device_extension_name : deviceManager->device_extension_names)
 	{
-		if (std::string(device_extension_name).compare(deviceExtensionName) == 0)
+		if (device_extension_name.compare(deviceExtensionName) == 0)
 			return true;
 	}
 	return false;
@@ -1989,6 +1983,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setDependencyCount(0)
 		.setPDependencies(nullptr);
 
+#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	auto const multiview = vk::RenderPassMultiviewCreateInfo()
 		.setSubpassCount(1)
 		.setPViewMasks(&viewMask)
@@ -1998,6 +1993,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPCorrelationMasks(&viewMask);
 	if (viewMask != 0)
 		rp_info.setPNext(&multiview);
+#endif
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
 	SetVulkanName(this,renderPass,platform::core::QuickFormat("RenderPass"));

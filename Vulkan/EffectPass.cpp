@@ -762,6 +762,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 				.setDependencyCount(0)
 				.setPDependencies(nullptr);
 
+		#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 			auto multiview = vk::RenderPassMultiviewCreateInfo()
 				.setSubpassCount(1)
 				.setPViewMasks(&viewMask)
@@ -771,6 +772,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 				.setPCorrelationMasks(&viewMask);
 			if (viewMask != 0)
 				rp_info.setPNext(&multiview);
+		#endif
 
 			result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
 			SIMUL_VK_CHECK(result);

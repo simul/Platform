@@ -418,6 +418,12 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	/* Look for device extensions */
 	ExclusivePushBack(required_device_extensions, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
+#if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
+	ExclusivePushBack(required_device_extensions, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+#elif PLATFORM_SUPPORT_VULKAN_MULTIVIEW
+	ExclusivePushBack(required_device_extensions, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+#endif
+
 	uint32_t device_extension_count = 0;
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, (vk::ExtensionProperties*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
@@ -470,11 +476,13 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	nextPropsAddr = &deviceManagerInternal->gpu_props2.pNext;
 
 	// Query fine-grained feature and properties support for this device with VK_KHR_get_physical_device_properties2.
+#if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	if (IsInVector(device_extension_names, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
 	{
 		*nextFeatsAddr = &physicalDeviceSamplerYcbcrConversionFeatures;
 		nextFeatsAddr = &physicalDeviceSamplerYcbcrConversionFeatures.pNext;
 	}
+#elif PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	if (IsInVector(device_extension_names, VK_KHR_MULTIVIEW_EXTENSION_NAME))
 	{
 		*nextFeatsAddr = &physicalDeviceMultiviewFeatures;
@@ -482,6 +490,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		*nextPropsAddr = &physicalDeviceMultiviewProperties;
 		nextPropsAddr = &physicalDeviceMultiviewProperties.pNext;
 	}
+#endif
 
 	//Execute calls into VK_KHR_get_physical_device_properties2
 	if (apiVersion >= VK_API_VERSION_1_1)
