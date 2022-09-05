@@ -530,17 +530,22 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	{
 		m12Device = (ID3D12Device*)device;
 		renderingFeatures = crossplatform::RenderingFeatures::None;
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
+	
 		// Check feature support.
-		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
-		
-		if(S_OK==m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData)))
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
+		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureDataOpt5 = {};
+		if(S_OK==m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureDataOpt5, sizeof(featureDataOpt5)))
 		{
-			bool rt=(featureSupportData.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
-			if(rt)
-				renderingFeatures=(crossplatform::RenderingFeatures)((uint32_t)renderingFeatures|(uint32_t)crossplatform::RenderingFeatures::Raytracing);
+			if(featureDataOpt5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
+				renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Raytracing);
 		}
 #endif
+		D3D12_FEATURE_DATA_D3D12_OPTIONS3 featureDataOpt3 = {};
+		if (S_OK == m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS3, &featureDataOpt3, sizeof(featureDataOpt3)))
+		{
+			if (featureDataOpt3.ViewInstancingTier != D3D12_VIEW_INSTANCING_TIER_NOT_SUPPORTED)
+				renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::ViewInstancing);
+		}
 	}
 	DefaultBlendState   = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	DefaultRasterState  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);

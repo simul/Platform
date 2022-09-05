@@ -110,8 +110,12 @@ namespace platform
 		};
 		enum RenderingFeatures:uint32_t
 		{
-			None=0,
-			Raytracing=1
+			None			= 0x0000,
+			Raytracing		= 0x0001,
+			ViewInstancing	= 0x0002,
+
+			//Aliases
+			Multiview		= ViewInstancing //D3D12: ViewInstancing and Vulkan: Multiview 
 		};
 		/// A vertex format for debugging.
 		struct PosColourVertex

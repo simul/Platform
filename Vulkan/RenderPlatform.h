@@ -97,6 +97,12 @@ namespace platform
 			vk::Device *AsVulkanDevice() override;
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
+			uint32_t GetInstanceAPIVersion();
+			uint32_t GetPhysicalDeviceAPIVersion();
+			bool CheckInstanceExtension(const std::string& instanceExtensionName);
+			bool CheckDeviceExtension(const std::string& deviceExtensionName);
+			template<typename T> void FillPhysicalDeviceFeatures2ExtensionStructure(T& _structure);
+			template<typename T> void FillPhysicalDeviceProperties2ExtensionStructure(T& _structure);
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
 			void PushToReleaseManager(vk::PipelineCache& r);
@@ -226,13 +232,12 @@ namespace platform
 			static std::string						VulkanResultString(vk::Result res);
 
 			// Vulkan-specific support for video decoding:
-			vk::Sampler GetVideoSampler()
-			{
-				return vulkanVideoSampler;
-			}
-			vk::SamplerYcbcrConversionInfo *GetVideoSamplerYcbcrConversionInfo();
+			vk::Sampler GetVideoSampler() { return vulkanVideoSampler; }
+			vk::SamplerYcbcrConversionInfo* GetVideoSamplerYcbcrConversionInfo();
 		protected:
 			vk::SamplerYcbcrConversionInfo videoSamplerYcbcrConversionInfo;
+
+		protected:
 			crossplatform::Texture* createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;

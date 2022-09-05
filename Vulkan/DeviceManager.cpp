@@ -90,9 +90,11 @@ public:
 		: instance(vk::Instance()),
 		gpu(vk::PhysicalDevice()),
 		device(vk::Device()),
+		gpu_features(vk::PhysicalDeviceFeatures()),
 		gpu_props(vk::PhysicalDeviceProperties()),
 		memory_properties(vk::PhysicalDeviceMemoryProperties()),
-		gpu_features(vk::PhysicalDeviceFeatures()) {};
+		gpu_features2(vk::PhysicalDeviceFeatures2()),
+		gpu_props2(vk::PhysicalDeviceProperties2()){};
 };
 
 DeviceManager::DeviceManager()
@@ -329,6 +331,16 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	errno = 0;
  	ERRNO_BREAK
 
+	std::vector<const char*> instance_layer_names_cstr;
+	instance_layer_names_cstr.reserve(instance_layer_names.size());
+	for (const auto& instance_layer_name : instance_layer_names)
+		instance_layer_names_cstr.push_back(instance_layer_name.c_str());
+
+	std::vector<const char*> instance_extension_names_cstr;
+	instance_extension_names_cstr.reserve(instance_extension_names.size());
+	for (const auto& instance_extension_name : instance_extension_names)
+		instance_extension_names_cstr.push_back(instance_extension_name.c_str());
+
 	auto const app = vk::ApplicationInfo()
 		.setPApplicationName("Simul")
 		.setApplicationVersion(0)
@@ -337,10 +349,10 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setApiVersion(apiVersion);
 	auto inst_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app)
-		.setEnabledLayerCount((uint32_t)instance_layer_names.size())
-		.setPpEnabledLayerNames(instance_layer_names.data())
-		.setEnabledExtensionCount((uint32_t)instance_extension_names.size())
-		.setPpEnabledExtensionNames(instance_extension_names.data());
+		.setEnabledLayerCount((uint32_t)instance_layer_names_cstr.size())
+		.setPpEnabledLayerNames(instance_layer_names_cstr.data())
+		.setEnabledExtensionCount((uint32_t)instance_extension_names_cstr.size())
+		.setPpEnabledExtensionNames(instance_extension_names_cstr.data());
  	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
 	// Vulkan sets errno without warning or error.
@@ -651,13 +663,18 @@ void DeviceManager::CreateDevice()
 	if (IsInVector(instance_extension_names, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) || apiVersion >= VK_API_VERSION_1_1) //Promoted to Vulkan 1.1
 		deviceCI_pNext = &deviceManagerInternal->gpu_features2;
 
+	std::vector<const char*> device_extension_names_cstr;
+	device_extension_names_cstr.reserve(device_extension_names.size());
+	for (const auto& device_extension_name : device_extension_names)
+		device_extension_names_cstr.push_back(device_extension_name.c_str());
+
 	auto deviceInfo = vk::DeviceCreateInfo()
 							.setQueueCreateInfoCount((uint32_t)queues.size())
 							.setPQueueCreateInfos(queues.data())
 							.setEnabledLayerCount(0)
 							.setPpEnabledLayerNames(nullptr)
-							.setEnabledExtensionCount((uint32_t)device_extension_names.size())
-							.setPpEnabledExtensionNames((const char *const *)device_extension_names.data())
+							.setEnabledExtensionCount((uint32_t)device_extension_names_cstr.size())
+							.setPpEnabledExtensionNames(device_extension_names_cstr.data())
 							.setPNext(deviceCI_pNext)
 							.setPEnabledFeatures(deviceCI_pNext ? nullptr : &deviceManagerInternal->gpu_features);
 							

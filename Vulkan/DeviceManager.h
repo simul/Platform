@@ -70,10 +70,10 @@ namespace platform
 			std::vector<vk::LayerProperties> device_layers;
 			std::vector<vk::ExtensionProperties> device_extensions;
 			
-			std::vector<const char*> instance_layer_names;
-			std::vector<const char*> instance_extension_names;
-			std::vector<const char*> device_layer_names;
-			std::vector<const char*> device_extension_names;
+			std::vector<std::string> instance_layer_names;
+			std::vector<std::string> instance_extension_names;
+			std::vector<std::string> device_layer_names;
+			std::vector<std::string> device_extension_names;
 
 			bool device_initialized;
 			DeviceManagerInternal *deviceManagerInternal;
@@ -87,6 +87,8 @@ namespace platform
 
 			vk::PhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures;
 			vk::PhysicalDeviceMultiviewProperties physicalDeviceMultiviewProperties;
+
+			friend platform::vulkan::RenderPlatform;
 		};
 		extern DeviceManager *deviceManager;
 	}
