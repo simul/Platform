@@ -1181,6 +1181,20 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					if(shaderType==EXPORT_SHADER)
 						vertex_or_export=1;
 					Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+					static bool multiview = false;
+					for (const auto& parameter : function->parameters)
+					{
+						if (!multiview)
+						{
+							multiview |= parameter.semantic.compare("SV_ViewID") == 0;
+							multiview |= parameter.semantic.compare("SV_ViewId") == 0;
+						}
+					}
+					if (multiview)
+					{
+						outstr << "\t\t\tmultiview: 1\n";
+						multiview = false;
+					}
 					if(shaderType==VERTEX_SHADER&&function->parameters.size())
 					{
 						outstr<<"\t\t\tlayout:\n";
