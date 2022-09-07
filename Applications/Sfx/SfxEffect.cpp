@@ -1080,6 +1080,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 				{
 					outstr<<"\t\t\ttopology: "<<stringOf(pass->passState.topologyState.topology)<<"\n";
 				}
+				
 				auto writeSb=[&] (ofstream &outstr,ShaderInstance *shaderInstance,const std::string &sbFilename,std::string pfm="")
 					{
 						if(!sbFilename.size())
@@ -1166,6 +1167,8 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 						}
 						outstr<<")\n";
 					};
+				
+				bool multiviewDeclared = false;
 				for(int s=0;s<NUM_OF_SHADER_TYPES;s++)
 				{
 					ShaderType shaderType=(ShaderType)s;
@@ -1184,7 +1187,6 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 
 					Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
 
-					static bool multiviewDeclared = false;
 					bool multiview = false;
 					if ((shaderType > UNKNOWN_SHADER_TYPE && shaderType < COMPUTE_SHADER) && !multiviewDeclared)
 					{
