@@ -1080,6 +1080,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 				{
 					outstr<<"\t\t\ttopology: "<<stringOf(pass->passState.topologyState.topology)<<"\n";
 				}
+				
 				auto writeSb=[&] (ofstream &outstr,ShaderInstance *shaderInstance,const std::string &sbFilename,std::string pfm="")
 					{
 						if(!sbFilename.size())
@@ -1166,21 +1167,58 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 						}
 						outstr<<")\n";
 					};
+				
+				bool multiviewDeclared = false;
 				for(int s=0;s<NUM_OF_SHADER_TYPES;s++)
 				{
-					if(!pass->HasShader((ShaderType)s))
-						continue;
-					if(s==ShaderType::EXPORT_SHADER)	// either/or.
-						continue;
 					ShaderType shaderType=(ShaderType)s;
+					if(!pass->HasShader(shaderType))
+						continue;
+					if(shaderType==ShaderType::EXPORT_SHADER)	// either/or.
+						continue;
+
 					if(shaderType==ShaderType::VERTEX_SHADER&&pass->HasShader(GEOMETRY_SHADER))
 						shaderType=EXPORT_SHADER;
-					const string &shaderInstanceName=pass->GetShader((ShaderType)shaderType);
+					const string &shaderInstanceName=pass->GetShader(shaderType);
 					ShaderInstance *shaderInstance=GetShaderInstance(shaderInstanceName,shaderType);
 					int vertex_or_export=0;
 					if(shaderType==EXPORT_SHADER)
 						vertex_or_export=1;
+
 					Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+
+					bool multiview = false;
+					if ((shaderType > UNKNOWN_SHADER_TYPE && shaderType < COMPUTE_SHADER) && !multiviewDeclared)
+					{
+						for (const auto& parameter : function->parameters)
+						{
+							if (!parameter.semantic.empty())
+							{
+								multiview |= parameter.semantic.compare("SV_ViewID") == 0;
+								multiview |= parameter.semantic.compare("SV_ViewId") == 0;
+							}
+							else if(declarations.find(parameter.type) != declarations.end())
+							{
+								Declaration* declaration = declarations[parameter.type];
+								if (declaration->declarationType == DeclarationType::STRUCT)
+								{
+									Struct* structure = reinterpret_cast<Struct*>(declaration);
+									for (const auto& member : structure->m_structMembers)
+									{
+										multiview |= member.semantic.compare("SV_ViewID") == 0;
+										multiview |= member.semantic.compare("SV_ViewId") == 0;
+									}
+								}
+							}
+							
+						}
+					}
+					if (multiview && !multiviewDeclared)
+					{
+						outstr << "\t\t\tmultiview: 1\n";
+						multiviewDeclared = true;
+					}
+
 					if(shaderType==VERTEX_SHADER&&function->parameters.size())
 					{
 						outstr<<"\t\t\tlayout:\n";

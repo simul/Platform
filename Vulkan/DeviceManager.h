@@ -40,12 +40,12 @@ namespace platform
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 
-			void Activate() ;
+			void Activate();
 
 			void ReloadTextures();
+			
 			// called late to start debug output.
 			void InitDebugging();
-		//	platform::vulkan::RenderPlatform *renderPlatformVulkan;
 
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
@@ -64,17 +64,31 @@ namespace platform
 			void CreateDevice();
 			void SetupDebugCallback();
 			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
-			uint32_t enabled_extension_count;
-			uint32_t enabled_layer_count;
+			
+			std::vector<vk::LayerProperties> instance_layers;
+			std::vector<vk::ExtensionProperties> instance_extensions;
+			std::vector<vk::LayerProperties> device_layers;
+			std::vector<vk::ExtensionProperties> device_extensions;
+			
+			std::vector<std::string> instance_layer_names;
+			std::vector<std::string> instance_extension_names;
+			std::vector<std::string> device_layer_names;
+			std::vector<std::string> device_extension_names;
+
 			bool device_initialized;
-			std::vector<const char *> device_extension_names;
-			std::vector<const char *> instance_extension_names;
-			char const *enabled_layers[64];
 			DeviceManagerInternal *deviceManagerInternal;
 			bool separate_present_queue;
 			uint32_t queue_family_count;
 			std::vector<vk::QueueFamilyProperties> queue_props;
+			vk::DebugUtilsMessengerEXT debugUtilsMessenger;
+			vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI;
+
 			vk::PhysicalDeviceSamplerYcbcrConversionFeatures physicalDeviceSamplerYcbcrConversionFeatures;
+
+			vk::PhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures;
+			vk::PhysicalDeviceMultiviewProperties physicalDeviceMultiviewProperties;
+
+			friend platform::vulkan::RenderPlatform;
 		};
 		extern DeviceManager *deviceManager;
 	}

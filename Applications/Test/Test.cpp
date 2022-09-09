@@ -102,7 +102,8 @@ enum class TestType
 	TEXT,
 	CHECKERBOARD,
 	FIBONACCI,
-	TVTESTCARD
+	TVTESTCARD,
+	MULTIVIEW
 };
 
 class PlatformRenderer : public crossplatform::PlatformRendererInterface
@@ -120,6 +121,8 @@ public:
 	crossplatform::HdrRenderer* hdrRenderer = nullptr;
 	crossplatform::BaseFramebuffer* hdrFramebuffer = nullptr;
 	crossplatform::Effect* effect = nullptr;
+	crossplatform::Effect* test = nullptr;
+	crossplatform::Texture* texture = nullptr;
 	crossplatform::ConstantBuffer<SceneConstants>	sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants>	cameraConstants;
 
@@ -184,24 +187,24 @@ public:
 		{
 		case crossplatform::RenderPlatformType::D3D11:
 		{
-			renderPlatform->PushShaderPath("Platform/DirectX11/HLSL/");
-			renderPlatform->PushShaderPath("../../../../Platform/DirectX11/HLSL");
-			renderPlatform->PushShaderPath("../../Platform/DirectX11/HLSL");
+			renderPlatform->PushShaderPath("Platform/DirectX11/Sfx/");
+			renderPlatform->PushShaderPath("../../../../Platform/DirectX11/Sfx");
+			renderPlatform->PushShaderPath("../../Platform/DirectX11/Sfx");
 			break;
 		}
 		default:
 		case crossplatform::RenderPlatformType::D3D12:
 		{
-			renderPlatform->PushShaderPath("Platform/DirectX12/HLSL/");
-			renderPlatform->PushShaderPath("../../../../Platform/DirectX12/HLSL");
-			renderPlatform->PushShaderPath("../../Platform/DirectX12/HLSL");
+			renderPlatform->PushShaderPath("Platform/DirectX12/Sfx/");
+			renderPlatform->PushShaderPath("../../../../Platform/DirectX12/Sfx");
+			renderPlatform->PushShaderPath("../../Platform/DirectX12/Sfx");
 			break;
 		}
 		case crossplatform::RenderPlatformType::Vulkan:
 		{
-			renderPlatform->PushShaderPath("Platform/Vulkan/GLSL/");
-			renderPlatform->PushShaderPath("../../../../Platform/Vulkan/GLSL");
-			renderPlatform->PushShaderPath("../../Platform/Vulan/GLSL");
+			renderPlatform->PushShaderPath("Platform/Vulkan/Sfx/");
+			renderPlatform->PushShaderPath("../../../../Platform/Vulkan/Sfx");
+			renderPlatform->PushShaderPath("../../Platform/Vulkan/Sfx");
 			break;
 		}
 		case crossplatform::RenderPlatformType::OpenGL:
@@ -226,7 +229,7 @@ public:
 		std::string cmake_source_dir = STRING_OF_MACRO(CMAKE_SOURCE_DIR);
 		if (cmake_binary_dir.length())
 		{
-			renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + renderPlatform->GetPathName() + "/HLSL").c_str());
+			renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + renderPlatform->GetPathName() + "/Sfx").c_str());
 			renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + renderPlatform->GetPathName() + "/GLSL").c_str());
 			renderPlatform->PushShaderBinaryPath(((cmake_binary_dir + "/") + renderPlatform->GetPathName() + "/shaderbin").c_str());
 			std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + renderPlatform->GetPathName());
@@ -265,6 +268,9 @@ public:
 
 	~PlatformRenderer()
 	{
+		delete texture;
+		delete test;
+		delete effect;
 		delete hdrFramebuffer;
 		delete hdrRenderer;
 		delete depthTexture;
@@ -284,7 +290,8 @@ public:
 		sceneConstants.RestoreDeviceObjects(renderPlatform);
 		sceneConstants.LinkToEffect(effect, "SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
-
+		test = renderPlatform->CreateEffect("Test");
+		texture = renderPlatform->CreateTexture();
 	}
 
 	void OnLostDevice()
@@ -391,6 +398,11 @@ public:
 			Test_TVTestCard(deviceContext, w, h);
 			break;
 		}
+		case TestType::MULTIVIEW:
+		{
+			Test_Multiview(deviceContext, w, h);
+			break;
+		}
 		}
 
 		hdrFramebuffer->Deactivate(deviceContext);
@@ -441,11 +453,9 @@ public:
 
 	void Test_Checkerboard(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)
 	{
-		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* checkerboard = test->GetTechniqueByName("test_checkerboard");
 		crossplatform::ShaderResource res = test->GetShaderResource("rwImage");
 
-		crossplatform::Texture* texture = renderPlatform->CreateTexture();
 		texture->ensureTexture2DSizeAndFormat(renderPlatform, 512, 512,1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 		renderPlatform->ApplyPass(deviceContext, checkerboard->GetPass(0));
@@ -467,7 +477,6 @@ public:
 			first = false;
 		}
 
-		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* fibonacci = test->GetTechniqueByName("test_fibonacci");
 		crossplatform::ShaderResource res = test->GetShaderResource("rwSB");
 
@@ -527,10 +536,8 @@ public:
 		else
 			return;
 
-		crossplatform::Texture* texture = renderPlatform->CreateTexture();
 		texture->ensureTexture2DSizeAndFormat(renderPlatform, w, h, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
-		crossplatform::Effect* test = renderPlatform->CreateEffect("Test");
 		crossplatform::EffectTechnique* tvtestcard = test->GetTechniqueByName("test_tvtestcard");
 		crossplatform::ShaderResource res_roSB = test->GetShaderResource("roSB");
 		crossplatform::ShaderResource res_rwImage = test->GetShaderResource("rwImage");
@@ -544,6 +551,28 @@ public:
 		hdrFramebuffer->Clear(deviceContext, 1.0f, 0.0f, 0.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
 		renderPlatform->DrawTexture(deviceContext, 0, 0, w, h, texture);
 	}
+
+	void Test_Multiview(crossplatform::GraphicsDeviceContext deviceContext, int w, int h)
+	{
+		crossplatform::EffectTechnique* multiview = test->GetTechniqueByName("test_multiview");
+		texture->ensureTextureArraySizeAndFormat(renderPlatform, w, h, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, true, false);
+
+		renderPlatform->SetTopology(deviceContext, platform::crossplatform::Topology::TRIANGLESTRIP);
+		renderPlatform->ApplyPass(deviceContext, multiview->GetPass(0));
+		crossplatform::TargetsAndViewport targets;
+		targets.num = 1;
+		targets.m_rt[0] = texture->AsD3D12RenderTargetView(deviceContext, 0, 0);
+		targets.textureTargets[0] = {texture, 0, 0};
+		targets.viewport = { 0,0,texture->GetWidth(),texture->GetLength() };
+		renderPlatform->ActivateRenderTargets(deviceContext, &targets);
+		renderPlatform->Draw(deviceContext, 4, 0);
+		renderPlatform->DeactivateRenderTargets(deviceContext);
+		renderPlatform->UnapplyPass(deviceContext);
+
+		hdrFramebuffer->Clear(deviceContext, 0.0f, 0.0f, 0.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
+		renderPlatform->DrawTexture(deviceContext, 0, 0, w, h, texture);
+	}
+
 };
 PlatformRenderer* platformRenderer;
 
@@ -617,6 +646,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			renderer->OnFrameMove(fTime, time_step);*/
 			displaySurfaceManager.Render(hWnd);
 			displaySurfaceManager.EndFrame();
+			platformRenderer->renderPlatform->EndFrame();
 		}
 		break;
 	case WM_DESTROY:

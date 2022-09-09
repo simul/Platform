@@ -45,8 +45,45 @@ namespace platform
 {
 	namespace vulkan
 	{
-		extern void SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name);
-		extern void SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name);
+		template<typename T>
+		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
+		{
+			vk::Instance* instance = renderPlatform->AsVulkanInstance();
+			vk::Device* device = renderPlatform->AsVulkanDevice();
+
+			vk::DispatchLoaderDynamic d;
+			d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
+
+			uint64_t objectHandle = *((uint64_t*)&ds);
+
+			if (d.vkSetDebugUtilsObjectNameEXT)
+			{
+				vk::DebugUtilsObjectNameInfoEXT nameInfo;
+				nameInfo
+					.setPNext(nullptr)
+					.setObjectType(ds.objectType)
+					.setObjectHandle(objectHandle)
+					.setPObjectName(name);
+
+				device->setDebugUtilsObjectNameEXT(nameInfo, d);
+			}
+
+		#if 1//def _DEBUG
+			if (platform::core::SimulInternalChecks)
+			{
+				crossplatform::RenderPlatform::ResourceMap[objectHandle] = name;
+		#ifdef _DEBUG
+				std::cout << "0x" << std::hex << objectHandle << "\t" << name << "\n";
+		#endif
+			}
+		#endif
+		}
+		template<typename T>
+		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string& name)
+		{
+			SetVulkanName(renderPlatform, ds, name.c_str());
+		}
+
 		class Material;
 		class Texture;
 
@@ -60,6 +97,49 @@ namespace platform
 			vk::Device *AsVulkanDevice() override;
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
+			uint32_t GetInstanceAPIVersion();
+			uint32_t GetPhysicalDeviceAPIVersion();
+			bool CheckInstanceExtension(const std::string& instanceExtensionName);
+			bool CheckDeviceExtension(const std::string& deviceExtensionName);
+
+			template<typename T>
+			void FillPhysicalDeviceFeatures2ExtensionStructure(T& _structure)
+			{
+				vk::PhysicalDeviceFeatures2 features2;
+				features2.pNext = &_structure;
+
+				//Execute calls into VK_KHR_get_physical_device_properties2
+				if (GetInstanceAPIVersion() >= VK_API_VERSION_1_1)
+				{
+					vulkanGpu->getFeatures2(&features2);
+				}
+				else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+				{
+					vk::DispatchLoaderDynamic d;
+					d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceFeatures2");
+					vulkanGpu->getFeatures2(&features2, d);
+				}
+			}
+
+			template<typename T>
+			void FillPhysicalDeviceProperties2ExtensionStructure(T& _structure)
+			{
+				vk::PhysicalDeviceProperties2 properties2;
+				properties2.pNext = &_structure;
+
+				//Execute calls into VK_KHR_get_physical_device_properties2
+				if (GetInstanceAPIVersion() >= VK_API_VERSION_1_1)
+				{
+					vulkanGpu->getProperties2(&properties2);
+				}
+				else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+				{
+					vk::DispatchLoaderDynamic d;
+					d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceProperties2");
+					vulkanGpu->getProperties2(&properties2, d);
+				}
+			}
+
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
 			void PushToReleaseManager(vk::PipelineCache& r);
@@ -187,16 +267,13 @@ namespace platform
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 			static std::string						VulkanResultString(vk::Result res);
 
-			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
-
 			// Vulkan-specific support for video decoding:
-			vk::Sampler GetVideoSampler()
-			{
-				return vulkanVideoSampler;
-			}
-			vk::SamplerYcbcrConversionInfo *GetVideoSamplerYcbcrConversionInfo();
+			vk::Sampler GetVideoSampler() { return vulkanVideoSampler; }
+			vk::SamplerYcbcrConversionInfo* GetVideoSamplerYcbcrConversionInfo();
 		protected:
 			vk::SamplerYcbcrConversionInfo videoSamplerYcbcrConversionInfo;
+
+		protected:
 			crossplatform::Texture* createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;

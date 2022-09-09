@@ -49,7 +49,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 
 void Query::SetName(const char*name)
 {
-	platform::vulkan::SetVulkanName(renderPlatform,&mQueryPool,name);
+	platform::vulkan::SetVulkanName(renderPlatform,mQueryPool,name);
 }
 
 void Query::InvalidateDeviceObjects() 

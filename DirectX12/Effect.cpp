@@ -669,26 +669,84 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 		primitiveType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
 	}
 
+	//D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED is invalid default to D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE.
+	if (primitiveType == D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED)
+		primitiveType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
+
 	// Build the PSO description 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC& gpsoDesc = pso.desc;
 	gpsoDesc.pRootSignature = curRenderPlat->GetGraphicsRootSignature();
 	gpsoDesc.VS = { v->shader12.data(), v->shader12.size() };
 	gpsoDesc.PS = { p->shader12.data(), p->shader12.size() };
+	gpsoDesc.DS = {};
+	gpsoDesc.HS = {};
+	gpsoDesc.GS = {};
+	gpsoDesc.StreamOutput = {};
+	gpsoDesc.BlendState = *finalBlend;
+	gpsoDesc.SampleMask = UINT_MAX;
+	gpsoDesc.RasterizerState = *finalRaster;
+	gpsoDesc.DepthStencilState = targets->m_dt ? *finalDepth : D3D12_DEPTH_STENCIL_DESC();
 	gpsoDesc.InputLayout.NumElements = pCurInputLayout ? pCurInputLayout->NumElements : 0;
 	gpsoDesc.InputLayout.pInputElementDescs = pCurInputLayout ? pCurInputLayout->pInputElementDescs : nullptr;
-	gpsoDesc.RasterizerState = *finalRaster;
-	gpsoDesc.BlendState = *finalBlend;
-	gpsoDesc.DepthStencilState = *finalDepth;
-	gpsoDesc.SampleMask = UINT_MAX;
+	gpsoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 	gpsoDesc.PrimitiveTopologyType = primitiveType;
 	gpsoDesc.NumRenderTargets = finalRt->Count;
 	memcpy(gpsoDesc.RTVFormats, finalRt->RTFormats, sizeof(DXGI_FORMAT) * finalRt->Count);
 	gpsoDesc.DSVFormat = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat) : DXGI_FORMAT_UNKNOWN;
 	gpsoDesc.SampleDesc = msaaDesc;
+	gpsoDesc.NodeMask = 0;
+	gpsoDesc.CachedPSO = {};
+	gpsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-	auto* device = curRenderPlat->AsD3D12Device();
+	//Extensions
+	CD3DX12_PIPELINE_STATE_STREAM2 gpss2(gpsoDesc);
+
+	//ViewInstancing
+#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
+	std::vector<D3D12_VIEW_INSTANCE_LOCATION> ViewInstanceLocations;
+	if (renderPlatform->HasRenderingFeatures(platform::crossplatform::ViewInstancing) && multiview)
+	{
+		uint32_t viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(deviceContext, D3D12_MAX_VIEW_INSTANCE_COUNT);
+
+		if (viewMask > 0)
+		{
+			//Set the ViewMask in the ContextState for it to be referenced later in dx12::RenderPlatform::ApplyContextState().
+			deviceContext.contextState.viewMask = viewMask;
+
+			CD3DX12_VIEW_INSTANCING_DESC& ViewInstancingDesc = gpss2.ViewInstancingDesc;
+			ViewInstancingDesc.ViewInstanceCount = crossplatform::RenderPlatform::GetLayerCountFromRenderTargets(deviceContext, D3D12_MAX_VIEW_INSTANCE_COUNT);
+			ViewInstanceLocations.resize(ViewInstancingDesc.ViewInstanceCount);
+			for (size_t i = 0; i < ViewInstanceLocations.size(); i++)
+			{
+				//TODO: Address RenderTargetArrayIndex for ViewInstancing in D3D12.
+				ViewInstanceLocations[i].RenderTargetArrayIndex = 0;
+				ViewInstanceLocations[i].ViewportArrayIndex = 0;
+			}
+			ViewInstancingDesc.pViewInstanceLocations = ViewInstanceLocations.data();
+			ViewInstancingDesc.Flags = D3D12_VIEW_INSTANCING_FLAG_ENABLE_VIEW_INSTANCE_MASKING;
+		}
+	}
+#endif
+
 	// Create it:
-	HRESULT res = device->CreateGraphicsPipelineState(&gpsoDesc, SIMUL_PPV_ARGS(&pso.pipelineState));
+	auto* device = curRenderPlat->AsD3D12Device();
+	ID3D12Device2* device2 = nullptr;
+	HRESULT res = device->QueryInterface(&device2);
+	if (res == S_OK && device2)
+	{
+		D3D12_PIPELINE_STATE_STREAM_DESC gpssd;
+		gpssd.SizeInBytes = sizeof(gpss2);
+		gpssd.pPipelineStateSubobjectStream = &gpss2;
+		res = device2->CreatePipelineState(&gpssd, SIMUL_PPV_ARGS(&pso.pipelineState));
+		SAFE_RELEASE(device2);
+	}
+	else
+	{
+		res = device->CreateGraphicsPipelineState(&gpsoDesc, SIMUL_PPV_ARGS(&pso.pipelineState));
+	}
+
+
 	SIMUL_GPU_TRACK_MEMORY(pso.pipelineState,100)
 	SIMUL_ASSERT(res == S_OK);
 	if (pso.pipelineState)

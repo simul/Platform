@@ -52,13 +52,15 @@
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
 	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
-	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n",
+	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n",
 	"computePreamble": "#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
 	"vertexSemantics": {
 		"SV_VertexId": "gl_VertexIndex",
 		"SV_VertexID": "gl_VertexIndex",
 		"SV_InstanceId": "gl_InstanceIndex",
-		"SV_POSITION": "gl_Position"
+		"SV_POSITION": "gl_Position",
+		"SV_ViewID": "gl_ViewIndex",
+		"SV_ViewId": "gl_ViewIndex"
 	},
 	"pixelSemantics": {
 		"SV_IsFrontFace": "gl_FrontFacing"
@@ -153,6 +155,10 @@
 		"SV_GroupThreadID": "S_GROUP_THREAD_ID",
 		"SV_GroupID": "S_GROUP_ID",
 		"SV_Target": "S_TARGET_OUTPUT",
+		"SV_ViewID": "gl_ViewIndex",
+		"SV_ViewId": "gl_ViewIndex",
+		"SV_RenderTargetArrayIndex": "gl_Layer",
+		"SV_ViewportArrayIndex": "gl_ViewportIndex",
 		"ivec1": "int",
 		"int2": "ivec2",
 		"int3": "ivec3",

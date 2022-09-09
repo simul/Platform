@@ -73,10 +73,10 @@ namespace platform
 			static int GenerateTextureSlot(int s,bool offset=true);
 			static int GenerateTextureWriteSlot(int s,bool offset=true);
 			static int GenerateConstantBufferSlot(int s,bool offset=true);
-			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
-				, const crossplatform::RenderState *blendState=nullptr
-				, const crossplatform::RenderState *depthStencilState=nullptr
-				, const crossplatform::RenderState *rasterizerState=nullptr);
+			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+				, const crossplatform::RenderState* blendState = nullptr
+				, const crossplatform::RenderState* depthStencilState = nullptr
+				, const crossplatform::RenderState* rasterizerState = nullptr);
 			bool initialized=false;
 			vk::DescriptorSetLayoutBinding *layout_bindings=nullptr;
 		};

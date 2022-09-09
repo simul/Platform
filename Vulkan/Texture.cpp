@@ -42,7 +42,7 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 			.setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
 			.setUnnormalizedCoordinates(VK_FALSE);
 	SIMUL_VK_CHECK(vulkanDevice->createSampler(&samplerCreateInfo,nullptr,&mSampler));
-	SetVulkanName(renderPlatform,(uint64_t*)&mSampler,"Sampler");
+	SetVulkanName(renderPlatform,mSampler,"Sampler");
 }
 
   vk::Sampler *SamplerState::AsVulkanSampler() 
@@ -544,7 +544,7 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	//	InitFramebuffers(deviceContext);
 	}
 	external_texture = true;
-	SetVulkanName(renderPlatform, &mImage, name.c_str());
+	SetVulkanName(renderPlatform, mImage, name.c_str());
 	return true;
 }
 
@@ -595,7 +595,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,&(mImage),name+" texture mImage");
+	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
 	vk::MemoryRequirements mem_reqs;
 	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
 	
@@ -607,7 +607,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,&(mMem),name+" texture mMem");
+	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 
@@ -626,7 +626,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	depthStencil=depthstencil;
 	this->computable=computable;
 	this->renderTarget=rendertarget;
-	SetVulkanName(renderPlatform,&mImage,name.c_str());
+	SetVulkanName(renderPlatform,mImage,name.c_str());
 	return true;
 }
 
@@ -670,7 +670,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	vk::Result res=vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView);
 SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.operator VkImageView()<<std::endl;
 	SIMUL_VK_CHECK(res);
-	SetVulkanName(renderPlatform,(uint64_t*)&mMainView,(name+" imageView").c_str());
+	SetVulkanName(renderPlatform,mMainView,(name+" imageView").c_str());
 	
 	// the mips of the main view.
 	if(mipCount>1)
@@ -680,7 +680,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,i,1,0,totalNum));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainMipViews[i]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mMainMipViews[i],(name+" imageView").c_str());
+			SetVulkanName(renderPlatform,mMainMipViews[i],(name+" imageView").c_str());
 		}
 	}
 	// cube array as 2d texture array.
@@ -690,13 +690,13 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 		viewCreateInfo	.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags, 0, mipCount, 0, totalNum))
 						.setViewType(viewType);
 		SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mFaceArrayView));
-		SetVulkanName(renderPlatform,(uint64_t*)&mFaceArrayView,(name+" mFaceArrayView").c_str());
+		SetVulkanName(renderPlatform,mFaceArrayView,(name+" mFaceArrayView").c_str());
 
 		// View cubemap as a Cubemap array.
 		viewCreateInfo	.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags, 0, mipCount, 0, totalNum))
 						.setViewType(vk::ImageViewType::eCubeArray);
 		SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mCubeArrayView));
-		SetVulkanName(renderPlatform,(uint64_t*)&mCubeArrayView,(name+" mCubeArrayView").c_str());
+		SetVulkanName(renderPlatform,mCubeArrayView,(name+" mCubeArrayView").c_str());
 		
 		// View each mip as a a 2D array of faces.
 		if(mipCount>1)
@@ -707,7 +707,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,i,1,0,totalNum))
 					.setViewType(vk::ImageViewType::e2DArray);
 				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &faceArrayMipViews[i]));
-				SetVulkanName(renderPlatform,(uint64_t*)&faceArrayMipViews[i],(name+" faceArray imageView").c_str());
+				SetVulkanName(renderPlatform,faceArrayMipViews[i],(name+" faceArray imageView").c_str());
 			}
 		}
 	}
@@ -722,7 +722,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerViews[i]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mLayerViews[i],(name+" mFaceArrayView").c_str());
+			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mFaceArrayView").c_str());
 		}
 	}
 	if(cubemap)
@@ -736,7 +736,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 			{
 				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,j,1,6*i,6));
 				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mCubemapLayerMipViews[i][j]));
-				SetVulkanName(renderPlatform,(uint64_t*)&mCubemapLayerMipViews[i][j],(name+" mCubemapLayerMipView").c_str());
+				SetVulkanName(renderPlatform,mCubemapLayerMipViews[i][j],(name+" mCubemapLayerMipView").c_str());
 			}
 		}
 	}
@@ -749,7 +749,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,j,1,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerMipViews[i][j]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mLayerMipViews[i][j],(name+" mFaceArrayView").c_str());
+			SetVulkanName(renderPlatform,mLayerMipViews[i][j],(name+" mFaceArrayView").c_str());
 		}
 	}
 	if (isRenderTarget)
@@ -769,7 +769,7 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 		if(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)
 		{
 			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal);
-	}
+		}
 		vk::ImageLayout layouts[]={currentImageLayout};
 		vk::ImageLayout end_layouts[]={(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:currentImageLayout};
 		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,false,false,GetSampleCount(),layouts,end_layouts);
@@ -783,7 +783,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 	if(mFramebuffers.size())
 		return;
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);
+	vk::RenderPass& vkRenderPass = effectPass->multiview ? effectPass->GetVulkanRenderPass(*deviceContext.AsGraphicsDeviceContext()) : GetRenderPass(deviceContext);
 	
 	vk::ImageView attachments[1]={nullptr};
 
@@ -807,7 +807,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			attachments[0]=mLayerMipViews[i][j];
 			framebufferCreateInfo.pAttachments = attachments;
 			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
+			SetVulkanName(renderPlatform,mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
 	
 			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
 			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
@@ -856,7 +856,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,&(mImage),name+" texture mImage");
+	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
 	vk::MemoryRequirements mem_reqs;
 	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
 	
@@ -868,7 +868,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-		SetVulkanName(renderPlatform,&(mMem),name+" texture mMem");
+		SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
@@ -927,7 +927,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 	
 	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,&(mImage),name+" texture mImage");
+	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
 	vk::MemoryRequirements mem_reqs;
 	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
 	
@@ -939,7 +939,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,&(mMem),name+" texture mMem");
+	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
@@ -1123,7 +1123,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 
 	result = vulkanDevice->allocateMemory(&lt.mem_alloc, nullptr, &(lt.mem));
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,&(lt.mem),name+" texture lt.mem");
+	SetVulkanName(renderPlatform,lt.mem,name+" texture lt.mem");
 
 	vulkanDevice->bindBufferMemory(lt.buffer, lt.mem, 0);
 

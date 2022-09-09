@@ -19,90 +19,6 @@
 
 using namespace platform;
 using namespace vulkan;
-const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::VkObjectTypeMap =
-{
-	{VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_BEGIN_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_END_RANGE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT"},
-	//{VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_RANGE_SIZE_EXT"},
-	{VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT"},
-};
-
-void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
-{
-#if 0
-	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
-	vk::Device *device=renderPlatform->AsVulkanDevice();
-	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
-		.setObjectType(vk::DebugReportObjectTypeEXT::eImage)
-		.setObject((uint64_t)ds)
-		.setPObjectName(name);
-	auto inf=nameInfo.operator const VkDebugMarkerObjectNameInfoEXT &();
-	//* It would be nice if this worked reliably on most drivers:
-	PFN_vkDebugMarkerSetObjectNameEXT vkDebugMarkerSetObjectNameEXT	=reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT> (instance->getProcAddr("vkDebugMarkerSetObjectNameEXT"));
-	if(vkDebugMarkerSetObjectNameEXT)
-	{
-		if(ds!=0)
-		{
-			vkDebugMarkerSetObjectNameEXT(device->operator VkDevice(),&inf);
-		}
-	}
-#endif
-
-	// But it doesn't. So instead we just list the objects and names.
-#if 1//def _DEBUG
-	if(platform::core::SimulInternalChecks)
-	{
-		uint64_t *u=(uint64_t*)ds;
-		RenderPlatform::ResourceMap[*u]=name;
-#ifdef _DEBUG
-		std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
-		#endif
-	}
-#endif
-}
-void platform::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
-{
-	SetVulkanName(renderPlatform,ds,name.c_str());
-}
 
 RenderPlatform::RenderPlatform():
 	mDummy2D(nullptr)
@@ -127,15 +43,21 @@ const char* RenderPlatform::GetName()const
 void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 {
 	ERRNO_BREAK
-	void **ptr=(void**)vkDevice_vkInstance_gpu;
-	vulkanDevice=(vk::Device*)ptr[0];
-	vulkanInstance=(vk::Instance*)ptr[1];
-	vulkanGpu=(vk::PhysicalDevice*)ptr[2];
-	immediateContext.platform_context=nullptr;
+	
+	void** ptr = (void**)vkDevice_vkInstance_gpu;
+	vulkanDevice = (vk::Device*)ptr[0];
+	vulkanInstance = (vk::Instance*)ptr[1];
+	vulkanGpu = (vk::PhysicalDevice*)ptr[2];
+	immediateContext.platform_context = nullptr;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	RecompileShaders();
 
-	int swapchainImageCount=SIMUL_VULKAN_FRAME_LAG+1;
+	// Check feature support.
+	renderingFeatures = crossplatform::RenderingFeatures::None;
+	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
+		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
+
+	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
 	vk::DescriptorPoolSize const poolSizes[] = {
 		vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount)
 		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eCombinedImageSampler).setDescriptorCount(swapchainImageCount * 32)
@@ -144,37 +66,41 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageBuffer).setDescriptorCount(swapchainImageCount * 32)
 		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageBufferDynamic).setDescriptorCount(swapchainImageCount * 32)
 		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageImage).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount * 32)};
+		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount * 32) };
 
 	auto const descriptorPoolCreateInfo =
 		vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount).setPoolSizeCount(_countof(poolSizes)).setPPoolSizes(poolSizes);
-
 	auto result = vulkanDevice->createDescriptorPool(&descriptorPoolCreateInfo, nullptr, &mDescriptorPool);
 
 	// Vulkan Video decoding support:
-	vk::SamplerCreateInfo videoSamplerCreateInfo=vk::SamplerCreateInfo();
-	
-	videoSamplerCreateInfo
+#if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
+	if (CheckDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
+	{
+		vk::SamplerCreateInfo videoSamplerCreateInfo = vk::SamplerCreateInfo();
+		videoSamplerCreateInfo
 			.setMagFilter(vk::Filter::eNearest)
 			.setMinFilter(vk::Filter::eNearest)
 			.setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
 			.setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
 			.setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
 			.setAnisotropyEnable(false)
-			.setUnnormalizedCoordinates(false)
-			.setPNext(GetVideoSamplerYcbcrConversionInfo());
-	SIMUL_VK_CHECK(vulkanDevice->createSampler(&videoSamplerCreateInfo,nullptr,&vulkanVideoSampler));
-	SetVulkanName(this,(uint64_t*)&vulkanVideoSampler,"Vulkan Video Sampler");
+			.setUnnormalizedCoordinates(false);
+		videoSamplerCreateInfo.setPNext(GetVideoSamplerYcbcrConversionInfo());
+		SIMUL_VK_CHECK(vulkanDevice->createSampler(&videoSamplerCreateInfo, nullptr, &vulkanVideoSampler));
+		SetVulkanName(this, vulkanVideoSampler, "Vulkan Video Sampler");
+	}
+#endif
 }
 
-vk::SamplerYcbcrConversionInfo *RenderPlatform::GetVideoSamplerYcbcrConversionInfo()
+vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionInfo()
 {
+#if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	static bool init=false;
 	if(!init)
 	{
 		init=true;
 		vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
-		samplerYcbcrConversionCreateInfo.format=vk::Format::eUndefined;//(vk::Format)506;
+		samplerYcbcrConversionCreateInfo.setFormat(vk::Format::eUndefined);
 		samplerYcbcrConversionCreateInfo.setYcbcrModel(vk::SamplerYcbcrModelConversion::eYcbcr601);
 		samplerYcbcrConversionCreateInfo.setYcbcrRange(vk::SamplerYcbcrRange::eItuNarrow);
 		samplerYcbcrConversionCreateInfo.setXChromaOffset(vk::ChromaLocation::eMidpoint);
@@ -183,14 +109,53 @@ vk::SamplerYcbcrConversionInfo *RenderPlatform::GetVideoSamplerYcbcrConversionIn
 		samplerYcbcrConversionCreateInfo.setComponents(comp);
 		samplerYcbcrConversionCreateInfo.setForceExplicitReconstruction(false);
 		samplerYcbcrConversionCreateInfo.setChromaFilter(vk::Filter::eNearest);
-		vk::ExternalFormatANDROID externalFormat;
-		externalFormat.externalFormat = 506;
-		samplerYcbcrConversionCreateInfo.pNext = &externalFormat;
-		vk::SamplerYcbcrConversion  samplerYcbcrConversion=vulkanDevice->createSamplerYcbcrConversion(samplerYcbcrConversionCreateInfo);
-		
-		videoSamplerYcbcrConversionInfo.conversion=samplerYcbcrConversion;
+
+	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+		if (CheckDeviceExtension(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME))
+		{
+			vk::ExternalFormatANDROID externalFormat;
+			externalFormat.externalFormat = 506;
+			samplerYcbcrConversionCreateInfo.setPNext(&externalFormat);
+		}
+	#endif
+
+		vk::SamplerYcbcrConversion samplerYcbcrConversion = vulkanDevice->createSamplerYcbcrConversion(samplerYcbcrConversionCreateInfo);
+		videoSamplerYcbcrConversionInfo.conversion = samplerYcbcrConversion;
 	}
+#endif
 	return &videoSamplerYcbcrConversionInfo;
+}
+
+void RenderPlatform::InvalidateDeviceObjects()
+{
+	if (!vulkanDevice)
+		return;
+	for (auto& i : mFramebuffers)
+	{
+		vulkanDevice->destroyFramebuffer(i.second, nullptr);
+	}
+	mFramebuffers.clear();
+	for (auto& i : mFramebufferRenderPasses)
+	{
+		vulkanDevice->destroyRenderPass(i.second, nullptr);
+	}
+	mFramebufferRenderPasses.clear();
+	crossplatform::RenderPlatform::InvalidateDeviceObjects();
+	SAFE_DELETE(mDummy3D);
+	SAFE_DELETE(mDummy2D);
+	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
+
+	ClearReleaseManager();
+
+	vulkanDevice = nullptr;
+}
+
+void RenderPlatform::RecompileShaders()
+{
+	if (!vulkanDevice)
+		return;
+	//shaders.clear();
+	crossplatform::RenderPlatform::RecompileShaders();
 }
 
 vk::Device *RenderPlatform::AsVulkanDevice()
@@ -208,115 +173,54 @@ vk::PhysicalDevice *RenderPlatform::GetVulkanGPU()
 	return vulkanGpu;
 }
 
-void RenderPlatform::ClearReleaseManager()
+uint32_t RenderPlatform::GetInstanceAPIVersion()
 {
-	for (auto i : releaseBuffers)
-	{
-		vulkanDevice->destroyBuffer(i,nullptr);
-	}
-	releaseBuffers.clear();
-	for (auto i : releaseBufferViews)
-	{
-		vulkanDevice->destroyBufferView(i,nullptr);
-	}
-	releaseBufferViews.clear();
-	for (auto i : releaseMemories)
-	{
-		vulkanDevice->freeMemory(i,nullptr);
-	}
-	releaseMemories.clear();
+	uint32_t apiVersion = VK_API_VERSION_1_0;
+	uint32_t instanceVersion = 0;
+	vk::Result result = vk::enumerateInstanceVersion(&instanceVersion);
+	if (result == vk::Result::eSuccess && instanceVersion != 0)
+		apiVersion = instanceVersion;
 
-	for (auto i : releaseImageViews)
-	{
-		auto f=RenderPlatform::ResourceMap.find((unsigned long long)&i);
-		vulkanDevice->destroyImageView(i,nullptr);
-	}
-	releaseImageViews.clear();
-	for (auto i : releaseFramebuffers)
-	{
-		vulkanDevice->destroyFramebuffer(i,nullptr);
-	}
-	releaseFramebuffers.clear();
-	for (auto i : releaseRenderPasses)
-	{
-		vulkanDevice->destroyRenderPass(i,nullptr);
-	}
-	releaseRenderPasses.clear();
-	for (auto i : releaseImages)
-	{
-		vulkanDevice->destroyImage(i,nullptr);
-	}
-	releaseImages.clear();
-	for (auto i : releaseSamplers)
-	{
-		vulkanDevice->destroySampler(i,nullptr);
-	}
-	releaseSamplers.clear();
-	for (auto i : releasePipelines)
-	{
-		vulkanDevice->destroyPipeline(i, nullptr);
-	}
-	releasePipelines.clear();
-	for (auto i : releasePipelineCaches)
-	{
-		vulkanDevice->destroyPipelineCache(i, nullptr);
-	}
-	releasePipelineCaches.clear();
-	for (auto i : releasePipelineLayouts)
-	{
-		vulkanDevice->destroyPipelineLayout(i, nullptr);
-	}
-	releasePipelineLayouts.clear();
-	for (auto i : releaseDescriptorSetLayouts)
-	{
-		vulkanDevice->destroyDescriptorSetLayout(i,nullptr);
-	}
-	releaseDescriptorSetLayouts.clear();
-	for (auto i : releaseDescriptorSets)
-	{
-		//vulkanDevice->destroyDescriptorSet(i,nullptr);
-	}
-	releaseDescriptorSets.clear();
-	for (auto i : releaseDescriptorPools)
-	{
-		vulkanDevice->destroyDescriptorPool(i, nullptr);
-	}
-	releaseDescriptorPools.clear();
-
-	resourcesToBeReleased = false;
+	return apiVersion;
 }
 
-void RenderPlatform::InvalidateDeviceObjects()
+uint32_t RenderPlatform::GetPhysicalDeviceAPIVersion()
 {
-	if(!vulkanDevice)
-		return;
-	for(auto &i:mFramebuffers)
+	uint32_t apiVersion = VK_API_VERSION_1_0;
+	if (vulkanGpu)
 	{
-		vulkanDevice->destroyFramebuffer(i.second,nullptr);
+		vk::PhysicalDeviceProperties properties = vulkanGpu->getProperties();
+		apiVersion = properties.apiVersion;
 	}
-	mFramebuffers.clear();
-	for(auto &i:mFramebufferRenderPasses)
-	{
-		vulkanDevice->destroyRenderPass(i.second,nullptr);
-	}
-	mFramebufferRenderPasses.clear();
-	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	SAFE_DELETE(mDummy3D);
-	SAFE_DELETE(mDummy2D);
-	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
-	
-	ClearReleaseManager();
-
-	vulkanDevice=nullptr; 
+	return apiVersion;
 }
 
-void RenderPlatform::RecompileShaders()
+bool RenderPlatform::CheckInstanceExtension(const std::string& instanceExtensionName)
 {
-	if (!vulkanDevice)
-		return;
-	//shaders.clear();
-	crossplatform::RenderPlatform::RecompileShaders();
+	if (instanceExtensionName.empty() || deviceManager == nullptr)
+		return false;
+
+	for (const auto& instance_extension_name : deviceManager->instance_extension_names)
+	{
+		if (instance_extension_name.compare(instanceExtensionName) == 0)
+			return true;
+	}
+	return false;
 }
+
+bool RenderPlatform::CheckDeviceExtension(const std::string& deviceExtensionName)
+{
+	if (deviceExtensionName.empty() || deviceManager == nullptr)
+		return false;
+
+	for (const auto& device_extension_name : deviceManager->device_extension_names)
+	{
+		if (device_extension_name.compare(deviceExtensionName) == 0)
+			return true;
+	}
+	return false;
+}
+
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
 {
 	releaseBuffers.insert(b);
@@ -367,7 +271,6 @@ void RenderPlatform::PushToReleaseManager(vk::Sampler& i)
 	releaseSamplers.insert(i);
 	resourcesToBeReleased = true;
 }
-
 void RenderPlatform::PushToReleaseManager(vk::PipelineLayout& i)
 {
 	releasePipelineLayouts.insert(i);
@@ -387,6 +290,87 @@ void RenderPlatform::PushToReleaseManager(vk::DescriptorPool& i)
 {
 	releaseDescriptorPools.insert(i);
 	resourcesToBeReleased = true;
+}
+void RenderPlatform::ClearReleaseManager()
+{
+	for (auto i : releaseBuffers)
+	{
+		vulkanDevice->destroyBuffer(i, nullptr);
+	}
+	releaseBuffers.clear();
+	for (auto i : releaseBufferViews)
+	{
+		vulkanDevice->destroyBufferView(i, nullptr);
+	}
+	releaseBufferViews.clear();
+	for (auto i : releaseMemories)
+	{
+		vulkanDevice->freeMemory(i, nullptr);
+	}
+	releaseMemories.clear();
+
+	for (auto i : releaseImageViews)
+	{
+		auto f = RenderPlatform::ResourceMap.find((unsigned long long) & i);
+		if (f != RenderPlatform::ResourceMap.end())
+		{
+			SIMUL_COUT << " Releasing Vulkan ImageView " << std::hex << i << " (" << f->second.c_str() << ")" << std::endl;
+		}
+		vulkanDevice->destroyImageView(i, nullptr);
+	}
+	releaseImageViews.clear();
+	for (auto i : releaseFramebuffers)
+	{
+		vulkanDevice->destroyFramebuffer(i, nullptr);
+	}
+	releaseFramebuffers.clear();
+	for (auto i : releaseRenderPasses)
+	{
+		vulkanDevice->destroyRenderPass(i, nullptr);
+	}
+	releaseRenderPasses.clear();
+	for (auto i : releaseImages)
+	{
+		vulkanDevice->destroyImage(i, nullptr);
+	}
+	releaseImages.clear();
+	for (auto i : releaseSamplers)
+	{
+		vulkanDevice->destroySampler(i, nullptr);
+	}
+	releaseSamplers.clear();
+	for (auto i : releasePipelines)
+	{
+		vulkanDevice->destroyPipeline(i, nullptr);
+	}
+	releasePipelines.clear();
+	for (auto i : releasePipelineCaches)
+	{
+		vulkanDevice->destroyPipelineCache(i, nullptr);
+	}
+	releasePipelineCaches.clear();
+	for (auto i : releasePipelineLayouts)
+	{
+		vulkanDevice->destroyPipelineLayout(i, nullptr);
+	}
+	releasePipelineLayouts.clear();
+	for (auto i : releaseDescriptorSetLayouts)
+	{
+		vulkanDevice->destroyDescriptorSetLayout(i, nullptr);
+	}
+	releaseDescriptorSetLayouts.clear();
+	for (auto i : releaseDescriptorSets)
+	{
+		//vulkanDevice->destroyDescriptorSet(i,nullptr);
+	}
+	releaseDescriptorSets.clear();
+	for (auto i : releaseDescriptorPools)
+	{
+		vulkanDevice->destroyDescriptorPool(i, nullptr);
+	}
+	releaseDescriptorPools.clear();
+
+	resourcesToBeReleased = false;
 }
 
 void RenderPlatform::BeginFrame()
@@ -741,8 +725,8 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 #ifdef _DEBUG
 	if(name)
 	{
-		SetVulkanName(this,&(buffer),name);
-		SetVulkanName(this,&(bufferMemory),platform::core::QuickFormat("%s memory",name));
+		SetVulkanName(this,(buffer),name);
+		SetVulkanName(this,(bufferMemory),platform::core::QuickFormat("%s memory",name));
 	}
 #endif
 }
@@ -1803,7 +1787,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 			attachments[tv->num]=*(tv->depthTarget.texture->AsVulkanImageView());
 		framebufferCreateInfo.pAttachments = attachments;
 		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
-		SetVulkanName(this,(uint64_t*)&mFramebuffers[hashval],"mFramebuffers");
+		SetVulkanName(this,mFramebuffers[hashval],"mFramebuffers");
 	}
 	return hashval;
 }
@@ -1862,9 +1846,10 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 	}
 	else
 	{
-		SIMUL_BREAK("No valid texture for framebuffer.");
-	//	vk::Framebuffer *vfb=(vk::Framebuffer*)deviceContext.defaultTargetsAndViewport.m_rt[0];
-		return nullptr;
+		//SIMUL_BREAK("No valid texture for framebuffer.");
+		//return nullptr;
+		vk::Framebuffer *vfb=(vk::Framebuffer*)deviceContext.defaultTargetsAndViewport.m_rt[0];
+		return vfb;
 	}
 }
 
@@ -1953,7 +1938,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPreserveAttachmentCount(0)
 		.setPPreserveAttachments(nullptr);
 
-	auto const rp_info = vk::RenderPassCreateInfo()
+	auto rp_info = vk::RenderPassCreateInfo()
 		.setAttachmentCount(num_attachments)
 		.setPAttachments(attachments)
 		.setSubpassCount(1)
@@ -1962,7 +1947,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPDependencies(nullptr);
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
-	SetVulkanName(this,&renderPass,platform::core::QuickFormat("RenderPass"));
+	SetVulkanName(this,renderPass,platform::core::QuickFormat("RenderPass"));
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
