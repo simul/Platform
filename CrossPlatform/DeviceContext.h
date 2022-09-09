@@ -169,6 +169,7 @@ namespace platform
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
 		{
 			ContextState();
+			ContextState(const ContextState& cs);
 			~ContextState()
 			{
 			}

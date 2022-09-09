@@ -30,7 +30,11 @@ namespace platform
 			//! Save the chunk of memory to storage.
 			virtual bool Save(const void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)=0;
 			virtual std::vector<std::string> ListDirectory(const std::string &path) const;
-
+			
+			//! Load the file as an std::string.
+			std::string LoadAsString(const char* filename_utf8);
+			//! Load the file as an std::string.
+			std::string LoadAsString(const char *filename_utf8,const std::vector<std::string>& paths);
 			void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8, const std::vector<std::string>& paths, bool open_as_text);
 
 			static std::string FindParentFolder(const char *folder_utf8);

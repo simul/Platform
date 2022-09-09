@@ -123,12 +123,31 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 	return index;
 }
 
+std::string FileLoader::LoadAsString(const char* filename_utf8)
+{
+	static std::vector<std::string> paths={""};
+	return LoadAsString(filename_utf8,paths);
+}
+
+std::string FileLoader::LoadAsString(const char* filename_utf8, const std::vector<std::string>& paths)
+{
+	std::string str;
+	void *ptr=nullptr;
+	unsigned bytelen=0;
+	AcquireFileContents(ptr,bytelen,filename_utf8,paths,true);
+	if(ptr)
+		str=(char*)ptr;
+	ReleaseFileContents(ptr);
+	return str;
+}
+
 void FileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8, const std::vector<std::string>& paths, bool open_as_text)
 {
 	for (auto p : paths)
 	{
 		std::string str = p;
-		str += "/";
+		if(p.length())
+			str += "/";
 		str += filename_utf8;
 		if (FileExists(str.c_str()))
 		{

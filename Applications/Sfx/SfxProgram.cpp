@@ -37,17 +37,23 @@ typedef int errno_t;
 #include "SfxErrorCheck.h"
 using namespace std;
 
-Technique::Technique(const map<std::string, Pass>& passes)
-	:m_passes(passes)
+Technique::Technique(const vector<Pass>& passes)
+	:passes(passes)
 {
+	for(auto p:passes)
+	{
+		m_passes[p.name]=&p;
+	}
 }
 
-Pass::Pass()
+Pass::Pass(const char *n)
 {
+	name=n;
 }
 
-Pass::Pass(const PassState &passState)
+Pass::Pass(const char *n,const PassState &passState)
 {
+	name=n;
 	this->passState=passState;
 	map<ShaderType,string>::const_iterator it;
 	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
