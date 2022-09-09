@@ -191,6 +191,7 @@ namespace platform
 			Layout *currentLayout=nullptr;
 			Topology topology = Topology::UNDEFINED;
 			int4 scissor={0,0,INT_MAX,INT_MAX};
+			uint32_t viewMask = 0; //For ViewInstancing/Multiview
 			int apply_count = 0;
 			bool contextActive=false;
 			bool externalContext=false;
@@ -227,6 +228,7 @@ namespace platform
 				rwTextureSlotsForSB=0;
 				textureSlotsForSB=0;
 				bufferSlots=0;
+				viewMask=0;
 				contextActive = true;
 				externalContext = false;
 			}

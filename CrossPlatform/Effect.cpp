@@ -1429,6 +1429,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					Topology t=toTopology(name);
 					p->SetTopology(t);
 				}
+				else if (_stricmp(type.c_str(), "multiview") == 0)
+				{
+					p->multiview = name.compare("1") == 0;
+				}
 				else
 				{
 					if(_stricmp(type.c_str(),"vertex")==0)

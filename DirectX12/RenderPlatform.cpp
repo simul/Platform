@@ -540,12 +540,14 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 				renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Raytracing);
 		}
 #endif
+#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
 		D3D12_FEATURE_DATA_D3D12_OPTIONS3 featureDataOpt3 = {};
 		if (S_OK == m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS3, &featureDataOpt3, sizeof(featureDataOpt3)))
 		{
 			if (featureDataOpt3.ViewInstancingTier != D3D12_VIEW_INSTANCING_TIER_NOT_SUPPORTED)
 				renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::ViewInstancing);
 		}
+#endif
 	}
 	DefaultBlendState   = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	DefaultRasterState  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -2498,19 +2500,21 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplat
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
-	mTargets        = {};
-	mTargets.num    = num;
+	mTargets		= {};
+	mTargets.num	= num;
 	for (int i = 0; i < num; i++)
 	{
-		mTargets.m_rt[i]        = targs[i]->AsD3D12RenderTargetView(deviceContext,0, 0);
-		mTargets.rtFormats[i]   = targs[i]->pixelFormat;
+		mTargets.m_rt[i]			= targs[i]->AsD3D12RenderTargetView(deviceContext,0, 0);
+		mTargets.rtFormats[i]		= targs[i]->pixelFormat;
+		mTargets.textureTargets[i]	= { targs[i], 0, 0 };
 	}
 	if (depth)
 	{
-		mTargets.m_dt           = depth->AsD3D12DepthStencilView(deviceContext);
-		mTargets.depthFormat    = depth->pixelFormat;
+		mTargets.m_dt				= depth->AsD3D12DepthStencilView(deviceContext);
+		mTargets.depthFormat		= depth->pixelFormat;
+		mTargets.depthTarget		= { depth, 0, 0 };
 	}
-	mTargets.viewport           = { 0,0,targs[0]->GetWidth(),targs[0]->GetLength() };
+	mTargets.viewport				= { 0,0,targs[0]->GetWidth(),targs[0]->GetLength() };
 
 	ActivateRenderTargets(deviceContext, &mTargets);
 }
@@ -2802,6 +2806,18 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 	auto cmdList    = deviceContext.asD3D12Context();
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;
+
+	#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
+	// Set ViewInstanceMask
+	if (HasRenderingFeatures(platform::crossplatform::ViewInstancing) && cs->viewMask != 0)
+	{
+		ID3D12GraphicsCommandList2* cmdList2 = nullptr;
+		HRESULT res = cmdList->QueryInterface(&cmdList2);
+		if (res == S_OK && cmdList2)
+			cmdList2->SetViewInstanceMask(static_cast<UINT>(cs->viewMask));
+		SAFE_RELEASE(cmdList2);
+	}
+	#endif
 
 	// Set the frame descriptor heaps
 	Heap* currentSamplerHeap                = dx12Effect->GetEffectSamplerHeap();

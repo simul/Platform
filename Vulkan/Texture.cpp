@@ -769,7 +769,7 @@ vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceConte
 		if(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)
 		{
 			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal);
-	}
+		}
 		vk::ImageLayout layouts[]={currentImageLayout};
 		vk::ImageLayout end_layouts[]={(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:currentImageLayout};
 		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,false,false,GetSampleCount(),layouts,end_layouts);
@@ -783,7 +783,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 	if(mFramebuffers.size())
 		return;
 	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);
+	vk::RenderPass& vkRenderPass = effectPass->multiview ? effectPass->GetVulkanRenderPass(*deviceContext.AsGraphicsDeviceContext()) : GetRenderPass(deviceContext);
 	
 	vk::ImageView attachments[1]={nullptr};
 

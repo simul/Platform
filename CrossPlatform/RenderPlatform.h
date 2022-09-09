@@ -481,6 +481,8 @@ namespace platform
 			static PixelFormat ToColourFormat(PixelFormat f);
 			static bool IsDepthFormat(PixelFormat f);
 			static bool IsStencilFormat(PixelFormat f);
+			static uint32_t GetLayerCountFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
+			static uint32_t GetViewMaskFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
