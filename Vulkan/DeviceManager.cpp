@@ -52,6 +52,12 @@ using namespace std;
 #pragma comment(lib, "vulkan-1")
 #endif
 
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	void* pUserData);
+
 static bool IsInVector(const std::vector<const char*>& container, const std::string& value)
 {
 	for (const char* element : container)
@@ -341,6 +347,17 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	for (const auto& instance_extension_name : instance_extension_names)
 		instance_extension_names_cstr.push_back(instance_extension_name.c_str());
 
+	//Add in vk::DebugUtilsMessengerCreateInfo to vk::InstanceCreateInfo::pNext for error callbacks on vk::createInstance!
+	debugUtilsMessengerCI
+		.setPNext(nullptr)
+		.setFlags(vk::DebugUtilsMessengerCreateFlagBitsEXT(0))
+		.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+		.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
+			| vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+			| vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
+		.setPfnUserCallback(DebugReportCallback)
+		.setPUserData(this);
+
 	auto const app = vk::ApplicationInfo()
 		.setPApplicationName("Simul")
 		.setApplicationVersion(0)
@@ -348,6 +365,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setEngineVersion(0)
 		.setApiVersion(apiVersion);
 	auto inst_info = vk::InstanceCreateInfo()
+		.setPNext(&debugUtilsMessengerCI)
 		.setPApplicationInfo(&app)
 		.setEnabledLayerCount((uint32_t)instance_layer_names_cstr.size())
 		.setPpEnabledLayerNames(instance_layer_names_cstr.data())
@@ -355,6 +373,18 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setPpEnabledExtensionNames(instance_extension_names_cstr.data());
  	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+	if (result == vk::Result::eErrorExtensionNotPresent)
+	{
+		//Android Only: This is pure crazy. vk::createInstance can return vk::Result::eErrorExtensionNotPresent,
+		//despite querying and loading all the layers and extensions. Second call with the same data return
+		//successfully with an vk::Instance.
+		//https://developer.android.com/ndk/guides/graphics/validation-layer
+		result = vk::createInstance(&inst_info, (vk::AllocationCallbacks*)nullptr, &deviceManagerInternal->instance);
+	}
+#endif
+
 	// Vulkan sets errno without warning or error.
 	errno=0;
  	
