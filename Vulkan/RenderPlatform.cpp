@@ -96,7 +96,7 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 {
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	static bool init=false;
-	if(!init)
+	if(!init && CheckDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
 	{
 		init=true;
 		vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
@@ -111,12 +111,10 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 		samplerYcbcrConversionCreateInfo.setChromaFilter(vk::Filter::eNearest);
 
 	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+		vk::ExternalFormatANDROID externalFormat;
+		externalFormat.externalFormat = 506;
 		if (CheckDeviceExtension(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME))
-		{
-			vk::ExternalFormatANDROID externalFormat;
-			externalFormat.externalFormat = 506;
 			samplerYcbcrConversionCreateInfo.setPNext(&externalFormat);
-		}
 	#endif
 
 		vk::SamplerYcbcrConversion samplerYcbcrConversion = vulkanDevice->createSamplerYcbcrConversion(samplerYcbcrConversionCreateInfo);
