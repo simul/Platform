@@ -450,7 +450,7 @@
 			tvector4 r;
 			r.x=x/v.x;
 			r.y=y/v.y;
-			r.x=z/v.z;
+			r.z=z/v.z;
 			r.w=w/v.w;
 			return r;
 		}
@@ -459,7 +459,7 @@
 			tvector4 r;
 			r.x=-x;
 			r.y=-y;
-			r.x=-x;
+			r.z=-z;
 			r.w=-w;
 			return r;
 		}
@@ -1288,6 +1288,12 @@
 	{
 		T c;
 		c=a.x*b.x+a.y*b.y+a.z*b.z;
+		return c;
+	}
+	template<typename T> T dot(const tvector4<T> &a,const tvector4<T> &b)
+	{
+		T c;
+		c=a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w;
 		return c;
 	}
 #ifdef _MSC_VER

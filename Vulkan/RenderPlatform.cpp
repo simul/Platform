@@ -229,10 +229,6 @@ void RenderPlatform::ClearReleaseManager()
 	for (auto i : releaseImageViews)
 	{
 		auto f=RenderPlatform::ResourceMap.find((unsigned long long)&i);
-		if(f!=RenderPlatform::ResourceMap.end())
-		{
-			SIMUL_COUT<<" Releasing Vulkan ImageView "<<std::hex<<i<<" ("<<f->second.c_str()<<")"<<std::endl;
-		}
 		vulkanDevice->destroyImageView(i,nullptr);
 	}
 	releaseImageViews.clear();

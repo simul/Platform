@@ -462,11 +462,11 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 				{
 					for (map<string, Technique*>::const_iterator it = g->second.m_techniques.begin(); it != g->second.m_techniques.end(); ++it)
 					{
-						const std::map<string, Pass> &passes = it->second->GetPasses();
-						map<string, Pass>::const_iterator j = passes.begin();
+						const vector<Pass> &passes = it->second->GetPasses();
+						vector< Pass>::const_iterator j = passes.begin();
 						for (; j != passes.end(); j++)
 						{
-							const Pass *pass = &(j->second);
+							const Pass *pass = &(*j);
 							if (pass->passState.renderTargetFormatState.objectName.empty())
 							{
 								continue;
@@ -1048,12 +1048,12 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			std::string techName=it->first;
 			const Technique *tech=it->second;
 			outstr<<"\ttechnique "<<techName<<"\n\t{\n";
-			const std::map<string, Pass> &passes=tech->GetPasses();
-			map<string,Pass>::const_iterator j=passes.begin();
+			const std::vector< Pass> &passes=tech->GetPasses();
+			vector<Pass>::const_iterator j=passes.begin();
 			for(;j!=passes.end();j++)
 			{
-				const Pass *pass=&(j->second);
-				string passName=j->first;
+				const Pass *pass=&(*j);
+				string passName=j->name;
 				outstr<<"\t\tpass "<<passName<<"\n\t\t{\n";
 				if(pass->passState.rasterizerState.objectName.length()>0)
 				{

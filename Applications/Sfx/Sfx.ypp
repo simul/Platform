@@ -2590,22 +2590,23 @@ pass_list : pass_list pass_def
 		$$.passes = $1.passes;
 		string name = $2.strs[0];
 		Pass *p = $2.prog;
+		p->name=name;
 		if (p)
 		{
-			(*$$.passes)[name] = *(p);
+			(*$$.passes).push_back(*(p));
 		}
 		delete $2.prog;
 	}
 	| pass_def
 	{
-		map < string, Pass > *m=new map < string, Pass >;
+		vector < Pass > *m=new vector< Pass >;
 		$$.passes = m;
 		string name = $1.strs[0];
 		Pass *p = $1.prog;
+		p->name=name;
 		if (p)
 		{
-			Pass &newp = (*m)[name];
-			newp= *p;
+			 (*m).push_back(*p);
 		}
 		delete p;
 	};
@@ -2633,13 +2634,13 @@ raytrace_pass_def : RAYTRACE_PASS IDENTIFIER '{' raytrace_def '}'
 
 prog_def : shaders_list
 	{
-		$$.prog = new Pass(buildPassState);
+		$$.prog = new Pass("newpass",buildPassState);
 		buildPassState=PassState();
 	};
 
 raytrace_def : raytrace_shaders_list
 	{
-		$$.prog = new Pass(buildPassState);
+		$$.prog = new Pass("newpass",buildPassState);
 		buildPassState=PassState();
 	};
 raytrace_shaders_list : raytrace_shaders_list raytrace_shader_def

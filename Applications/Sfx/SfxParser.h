@@ -104,7 +104,7 @@ struct sfxstype
 		Technique *	tech;
 		Pass*		prog;
 
-		std::map<std::string, Pass>*			passes;
+		std::vector<Pass>*			passes;
 		std::vector<variable>*			vars;
 		std::vector<samplerVar>*			texNames;
 	};

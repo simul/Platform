@@ -30,8 +30,7 @@ std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
 
 ContextState& ContextState::operator=(const ContextState& cs)
 {
-	SIMUL_CERR<<"Warning: copying contextState is slow."<<std::endl;
-
+	SIMUL_BREAK_ONCE_INTERNAL("Warning: copying contextState is slow");
 	last_action_was_compute		=cs.last_action_was_compute;
 
 	applyVertexBuffers			=cs.applyVertexBuffers;

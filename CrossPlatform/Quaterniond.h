@@ -146,7 +146,7 @@ namespace platform
 			void MakeUnit()
 			{
 				T magnitude;
-				magnitude = (T)sqrt((x * x + y * y + z * z + s * s));
+				magnitude = (T)sqrt(x * x + y * y + z * z + s * s);
 				if (magnitude == 0)
 				{
 					s = (T)1.0;
@@ -316,7 +316,7 @@ namespace platform
 				z = ss * T(vv.z);
 				s = T(1.0);
 				T magnitude;
-				magnitude = sqrt((x * x + y * y + z * z + s * s));
+				magnitude = sqrt(x * x + y * y + z * z + s * s);
 				if (magnitude == 0)
 					return;
 				x /= magnitude;
