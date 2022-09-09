@@ -420,7 +420,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	ExclusivePushBack(required_device_extensions, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-#elif PLATFORM_SUPPORT_VULKAN_MULTIVIEW
+#endif
+#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	ExclusivePushBack(required_device_extensions, VK_KHR_MULTIVIEW_EXTENSION_NAME);
 #endif
 
@@ -482,7 +483,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		*nextFeatsAddr = &physicalDeviceSamplerYcbcrConversionFeatures;
 		nextFeatsAddr = &physicalDeviceSamplerYcbcrConversionFeatures.pNext;
 	}
-#elif PLATFORM_SUPPORT_VULKAN_MULTIVIEW
+#endif
+#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	if (IsInVector(device_extension_names, VK_KHR_MULTIVIEW_EXTENSION_NAME))
 	{
 		*nextFeatsAddr = &physicalDeviceMultiviewFeatures;
