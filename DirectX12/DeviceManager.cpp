@@ -99,7 +99,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		DXGI_ADAPTER_DESC1 hardwareAdapterDesc	= {};
 		int curAdapterIdx						= 0;
 		bool adapterFound						= false;
+#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO)
 		D3D_FEATURE_LEVEL featureLevel=D3D_FEATURE_LEVEL_12_2;
+#else
+		D3D_FEATURE_LEVEL featureLevel=D3D_FEATURE_LEVEL_12_1;
+#endif
 		while (factory->EnumAdapters1(curAdapterIdx, &hardwareAdapter) != DXGI_ERROR_NOT_FOUND)
 		{
 			// Query description
@@ -114,6 +118,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			}
 
 			// Check if has the right feature level
+#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO)
 			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
 			if (SUCCEEDED(res))
 			{
@@ -121,6 +126,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				break;
 			}
 			featureLevel = D3D_FEATURE_LEVEL_12_1;
+#endif
 			res = D3D12CreateDevice(hardwareAdapter, featureLevel, _uuidof(ID3D12Device), nullptr);
 			if (SUCCEEDED(res))
 			{
