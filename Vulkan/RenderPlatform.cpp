@@ -96,7 +96,7 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 {
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	static bool init=false;
-	if(!init)
+	if(!init && CheckDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
 	{
 		init=true;
 		vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
@@ -111,12 +111,10 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 		samplerYcbcrConversionCreateInfo.setChromaFilter(vk::Filter::eNearest);
 
 	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+		vk::ExternalFormatANDROID externalFormat;
+		externalFormat.externalFormat = 506;
 		if (CheckDeviceExtension(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME))
-		{
-			vk::ExternalFormatANDROID externalFormat;
-			externalFormat.externalFormat = 506;
 			samplerYcbcrConversionCreateInfo.setPNext(&externalFormat);
-		}
 	#endif
 
 		vk::SamplerYcbcrConversion samplerYcbcrConversion = vulkanDevice->createSamplerYcbcrConversion(samplerYcbcrConversionCreateInfo);
@@ -219,44 +217,6 @@ bool RenderPlatform::CheckDeviceExtension(const std::string& deviceExtensionName
 			return true;
 	}
 	return false;
-}
-
-template<typename T>
-void RenderPlatform::FillPhysicalDeviceFeatures2ExtensionStructure(T& _structure)
-{
-	vk::PhysicalDeviceFeatures2 features2;
-	features2.pNext = &_structure;
-
-	//Execute calls into VK_KHR_get_physical_device_properties2
-	if (GetInstanceAPIVersion() >= VK_API_VERSION_1_1)
-	{
-		vulkanGpu->getFeatures2(&features2);
-	}
-	else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
-	{
-		vk::DispatchLoaderDynamic d;
-		d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceFeatures2");
-		vulkanGpu->getFeatures2(&features2, d);
-	}
-}
-
-template<typename T>
-void RenderPlatform::FillPhysicalDeviceProperties2ExtensionStructure(T& _structure)
-{
-	vk::PhysicalDeviceProperties2 properties2;
-	properties2.pNext = &_structure;
-
-	//Execute calls into VK_KHR_get_physical_device_properties2
-	if (GetInstanceAPIVersion() >= VK_API_VERSION_1_1)
-	{
-		vulkanGpu->getProperties2(&properties2);
-	}
-	else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
-	{
-		vk::DispatchLoaderDynamic d;
-		d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceProperties2");
-		vulkanGpu->getProperties2(&properties2, d);
-	}
 }
 
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
@@ -1884,16 +1844,17 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 	}
 	else
 	{
-		SIMUL_BREAK("No valid texture for framebuffer.");
-	//	vk::Framebuffer *vfb=(vk::Framebuffer*)deviceContext.defaultTargetsAndViewport.m_rt[0];
-		return nullptr;
+		//SIMUL_BREAK("No valid texture for framebuffer.");
+		//return nullptr;
+		vk::Framebuffer *vfb=(vk::Framebuffer*)deviceContext.defaultTargetsAndViewport.m_rt[0];
+		return vfb;
 	}
 }
 
 void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass
 	,int num_colour,const crossplatform::PixelFormat *pixelFormats
 	,crossplatform::PixelFormat depthFormat,bool depthTest,bool depthWrite,bool clear,int numOfSamples
-	,const vk::ImageLayout *initial_layouts,const vk::ImageLayout *target_layouts,uint32_t viewMask)
+	,const vk::ImageLayout *initial_layouts,const vk::ImageLayout *target_layouts)
 {
 // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
 // because at the start of the renderpass, we don't care about their contents.
@@ -1982,18 +1943,6 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPSubpasses(&subpass)
 		.setDependencyCount(0)
 		.setPDependencies(nullptr);
-
-#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
-	auto const multiview = vk::RenderPassMultiviewCreateInfo()
-		.setSubpassCount(1)
-		.setPViewMasks(&viewMask)
-		.setDependencyCount(0)
-		.setPViewOffsets(nullptr)
-		.setCorrelationMaskCount(1)
-		.setPCorrelationMasks(&viewMask);
-	if (viewMask != 0)
-		rp_info.setPNext(&multiview);
-#endif
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
 	SetVulkanName(this,renderPass,platform::core::QuickFormat("RenderPass"));

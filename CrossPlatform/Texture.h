@@ -149,14 +149,14 @@ namespace platform
 		{
 			struct TextureTarget
 			{
-				TextureTarget():texture(nullptr),layer(0),mip(0)
-				{
-				}
-				Texture *texture;
-				int layer;
-				int mip;
+				TextureTarget() = default;
+
+				Texture *texture = nullptr;
+				int layer = 0;
+				int mip = 0;
 			};
-			TargetsAndViewport():temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)
+			TargetsAndViewport()
+				:temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)
 			{
                 for (int i = 0; i < 8; i++)
 				{

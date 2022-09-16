@@ -30,8 +30,7 @@ std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
 
 ContextState& ContextState::operator=(const ContextState& cs)
 {
-	SIMUL_CERR<<"Warning: copying contextState is slow."<<std::endl;
-
+	SIMUL_BREAK_ONCE_INTERNAL("Warning: copying contextState is slow");
 	last_action_was_compute		=cs.last_action_was_compute;
 
 	applyVertexBuffers			=cs.applyVertexBuffers;
@@ -717,6 +716,36 @@ bool crossplatform::RenderPlatform::IsStencilFormat(PixelFormat f)
 	default:
 		return false;
 	};
+}
+
+uint32_t RenderPlatform::GetLayerCountFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount)
+{
+	// Get the current targets:
+	const crossplatform::TargetsAndViewport* targets = &deviceContext.defaultTargetsAndViewport;
+	if (!deviceContext.targetStack.empty())
+	{
+		targets = deviceContext.targetStack.top();
+	}
+
+	if (targets->num > 1)
+		SIMUL_CERR << "Using ViewInstancing with " << targets->num << " render targets. Only using the first one.\n";
+
+	int rtLayerCount = 1;
+	crossplatform::Texture* target = targets->textureTargets[0].texture;
+	if (target)
+		rtLayerCount = target->IsCubemap() ? target->arraySize * 6 : target->arraySize;
+
+	SIMUL_ASSERT(rtLayerCount <= maxArrayLayerCount);
+	
+	return static_cast<uint32_t>(rtLayerCount);
+}
+
+uint32_t RenderPlatform::GetViewMaskFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount)
+{
+	uint32_t rtLayerCount = GetLayerCountFromRenderTargets(deviceContext, maxArrayLayerCount);
+
+	uint32_t viewMask = (uint32_t)pow<uint32_t, uint32_t>(2, rtLayerCount) - 1;
+	return viewMask;
 }
 
 void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)

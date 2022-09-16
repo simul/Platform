@@ -101,8 +101,45 @@ namespace platform
 			uint32_t GetPhysicalDeviceAPIVersion();
 			bool CheckInstanceExtension(const std::string& instanceExtensionName);
 			bool CheckDeviceExtension(const std::string& deviceExtensionName);
-			template<typename T> void FillPhysicalDeviceFeatures2ExtensionStructure(T& _structure);
-			template<typename T> void FillPhysicalDeviceProperties2ExtensionStructure(T& _structure);
+
+			template<typename T>
+			void FillPhysicalDeviceFeatures2ExtensionStructure(T& _structure)
+			{
+				vk::PhysicalDeviceFeatures2 features2;
+				features2.pNext = &_structure;
+
+				//Execute calls into VK_KHR_get_physical_device_properties2
+				if (GetInstanceAPIVersion() >= VK_API_VERSION_1_1)
+				{
+					vulkanGpu->getFeatures2(&features2);
+				}
+				else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+				{
+					vk::DispatchLoaderDynamic d;
+					d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceFeatures2");
+					vulkanGpu->getFeatures2(&features2, d);
+				}
+			}
+
+			template<typename T>
+			void FillPhysicalDeviceProperties2ExtensionStructure(T& _structure)
+			{
+				vk::PhysicalDeviceProperties2 properties2;
+				properties2.pNext = &_structure;
+
+				//Execute calls into VK_KHR_get_physical_device_properties2
+				if (GetInstanceAPIVersion() >= VK_API_VERSION_1_1)
+				{
+					vulkanGpu->getProperties2(&properties2);
+				}
+				else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+				{
+					vk::DispatchLoaderDynamic d;
+					d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceProperties2");
+					vulkanGpu->getProperties2(&properties2, d);
+				}
+			}
+
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
 			void PushToReleaseManager(vk::PipelineCache& r);
@@ -224,8 +261,7 @@ namespace platform
 																			,bool depthTest=false,bool depthWrite=false
 																			,bool clear=false
 																			,int numOfSamples=1
-																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr
-																			,uint32_t viewMask=0); //viewMask is a bitfield of view indices describing which views rendering is broadcast to. Views 0->5 is 0b00111111
+																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr);
 			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;

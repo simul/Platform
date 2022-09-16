@@ -19,6 +19,11 @@ ContextState::ContextState()
 	memset(viewports,0,8*sizeof(Viewport));
 }
 
+ContextState::ContextState(const ContextState& cs)
+{
+	operator=(cs);
+}
+
 bool ContextState::IsDepthActive() const
 {
 	crossplatform::RenderState* depthStencilState = currentEffectPass ? currentEffectPass->depthStencilState:nullptr;

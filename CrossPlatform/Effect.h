@@ -282,6 +282,7 @@ namespace platform
 			int maxPayloadSize = 0;
 			int maxAttributeSize = 0;
 			int maxTraceRecursionDepth = 0;
+			bool multiview = false;
 			std::string rtFormatState;
 			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);

@@ -73,11 +73,10 @@ namespace platform
 			static int GenerateTextureSlot(int s,bool offset=true);
 			static int GenerateTextureWriteSlot(int s,bool offset=true);
 			static int GenerateConstantBufferSlot(int s,bool offset=true);
-			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
-				, const crossplatform::RenderState *blendState=nullptr
-				, const crossplatform::RenderState *depthStencilState=nullptr
-				, const crossplatform::RenderState *rasterizerState=nullptr
-				, uint32_t viewMask=0); //viewMask is a bitfield of view indices describing which views rendering is broadcast to. Views 0->5 is 0b00111111
+			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+				, const crossplatform::RenderState* blendState = nullptr
+				, const crossplatform::RenderState* depthStencilState = nullptr
+				, const crossplatform::RenderState* rasterizerState = nullptr);
 			bool initialized=false;
 			vk::DescriptorSetLayoutBinding *layout_bindings=nullptr;
 		};
