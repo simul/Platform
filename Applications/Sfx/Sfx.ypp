@@ -197,8 +197,9 @@
 				auto stype	  = config->toTextureType.find(searchT);
 				if(stype==config->toTextureType.end())
 				{
-					string errstr="Unknown type: ";
-					errstr+=searchT;
+					string errstr="Unknown type for texture: ";
+					errstr+=searchT+" ";
+					errstr+=" - see toTextureType in config json.";
 					errSyn(errstr.c_str());
 				}
 				name			= stype->second;
@@ -307,21 +308,21 @@
 	string GetLoadExpr(string textureName,string command,string params,ShaderResourceType resourceType,bool with_mip=true)
 	{
 		auto config		= gEffect->GetConfig();
-		int return_size = 2;
+		int coord_size = 2;
 		string newParams= params;
 		string newExpr	= config->loadSyntax;
 
 		if((resourceType & ShaderResourceType::TEXTURE_1D)== ShaderResourceType::TEXTURE_1D)
 		{
-			return_size = 1;
+			coord_size = 1;
 		}
 		if ((resourceType & ShaderResourceType::TEXTURE_3D) == ShaderResourceType::TEXTURE_3D)
 		{
-			return_size = 4;
+			coord_size = 3;
 		}
 		if ((resourceType & ShaderResourceType::ARRAY) == ShaderResourceType::ARRAY)
 		{
-			return_size = 3;
+			coord_size = 3;
 		}
 
 		// Select the command
@@ -338,14 +339,14 @@
 		}
 		std::string mip;
 		// Check the params
-		if(return_size == 1)
+		if(coord_size == 1)
 		{
 			// gvec4 texelFetch(gsampler1D sampler,int P,int lod);
-			newParams = "int(" + params + ").x,(" + params + ").x"; 
+			newParams = "int(" + params + ").x,(" + params + ").y"; 
 		}
-		else if(return_size == 2)
+		else if(coord_size == 2)
 		{
-			mip="int("+params+".y)";
+			mip="int("+params+".z)";
 			// gvec4 imageLoad(	gimage2D image,ivec2 P);
 			if(rw)
 				newParams = "ivec2(" + newParams + ").xy";
@@ -358,9 +359,9 @@
 					newParams=(newParams+",0");
 			}
 		}
-		else if(return_size == 3)
+		else if(coord_size == 3)
 		{
-			mip="int("+params+".z)";
+			mip="int("+params+".w)";
 			if(rw)
 			{
 				// gvec4 imageLoad(	gimage2DArray image,ivec3 P);
@@ -369,24 +370,6 @@
 			else
 			{
 				// gvec4 texelFetch( gsampler2DArray sampler,ivec3 P,int lod);
-				newParams = ("ivec3(" + newParams + ").xyz");
-				if(with_mip)
-					newParams=(newParams+",")+mip;
-				else
-					newParams=(newParams+",0");
-			}
-		}
-		else if(return_size == 4)
-		{
-			mip="int("+params+".w)";
-			// gvec4 imageLoad(	gimage3D image,ivec3 P);
-			if(rw)
-			{
-				newParams = "ivec3(" + newParams + ").xyz";
-			}
-			// gvec4 texelFetch(gsampler3D sampler,ivec3 P,int lod);
-			else
-			{
 				newParams = ("ivec3(" + newParams + ").xyz");
 				if(with_mip)
 					newParams=(newParams+",")+mip;
