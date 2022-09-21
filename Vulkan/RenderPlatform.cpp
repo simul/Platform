@@ -101,7 +101,7 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 		init=true;
 		vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
 		samplerYcbcrConversionCreateInfo.setFormat(vk::Format::eUndefined);
-		samplerYcbcrConversionCreateInfo.setYcbcrModel(vk::SamplerYcbcrModelConversion::eYcbcr601);
+		samplerYcbcrConversionCreateInfo.setYcbcrModel(vk::SamplerYcbcrModelConversion::eYcbcr709);
 		samplerYcbcrConversionCreateInfo.setYcbcrRange(vk::SamplerYcbcrRange::eItuNarrow);
 		samplerYcbcrConversionCreateInfo.setXChromaOffset(vk::ChromaLocation::eMidpoint);
 		samplerYcbcrConversionCreateInfo.setYChromaOffset(vk::ChromaLocation::eMidpoint);

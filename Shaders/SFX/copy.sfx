@@ -57,8 +57,7 @@ shader void Copy2D( uint3 position : SV_DispatchThreadID )
 CS_LAYOUT(8,8,1)
 shader void Copy2DFromVideo( uint3 position : SV_DispatchThreadID )
 {
-	vec4 clr=SourceTex2.Load(int3(position.x, position.y, 0));;
-	clr.r=1.0;
+	vec4 clr=SourceTex2.Load(int3(position.x, position.y, 0));
 	DestTex2[position.xy] = clr;
 }
 
