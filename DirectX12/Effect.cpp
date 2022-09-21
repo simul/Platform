@@ -700,7 +700,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	gpsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
 	//Extensions
-	CD3DX12_PIPELINE_STATE_STREAM2 gpss2(gpsoDesc);
+	CD3DX12_PIPELINE_STATE_STREAM1 gpss2(gpsoDesc);
 
 	//ViewInstancing
 #if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
