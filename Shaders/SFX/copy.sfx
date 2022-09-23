@@ -56,27 +56,6 @@ shader void Copy2D( uint3 position : SV_DispatchThreadID )
 	DestTex2[position.xy] = SourceTex2.Load(int3(position.x, position.y, 0));
 }
 
-float4 Yuv420ToRgbForPixel(uint y, uint u, uint v)
-{
-	float fy = float(int(y) - 16);
-	float fu = float(int(u) - 128);
-	float fv = float(int(v) - 128);
-
-	float maxf = 255.0f;
-
-	float4 rgb;
-	rgb.x = clamp((1.16438f * fy) + (0.0f * fu) + (1.83367f * fv), 0.0f, maxf);
-	rgb.y = clamp((1.16438f * fy) + (-0.218117f * fu) + (-0.545076f * fv), 0.0f, maxf);
-	rgb.z = clamp((1.16438f * fy) + (2.16063f * fu) + (0.0f * fv), 0.0f, maxf);
-	rgb.w = 1.0f;
-
-	// Convert to unit scale float4needed f or the rgbTexture.
-	float toUnitScale = 1.0f / 255.0f;
-	rgb.xyz *= toUnitScale;
-
-	return rgb;
-}
-
 CS_LAYOUT(8,8,1)
 shader void Copy2DFromVideo( uint3 position : SV_DispatchThreadID )
 {
