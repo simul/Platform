@@ -23,6 +23,8 @@ uniform Texture2D<vec4> SourceTex2 : register(t0);
 uniform RWTexture3D<vec4> DestTex3 : register(u0);
 uniform Texture3D<vec4> SourceTex3 : register(t0);
 
+SamplerState YCbCrSampler : register(s0);
+
 #ifdef __PSSL__
 CS_LAYOUT(64,1,1)
 shader void Copy1DInt4( uint3 position : SV_DispatchThreadID )
@@ -54,10 +56,48 @@ shader void Copy2D( uint3 position : SV_DispatchThreadID )
 	DestTex2[position.xy] = SourceTex2.Load(int3(position.x, position.y, 0));
 }
 
+float4 Yuv420ToRgbForPixel(uint y, uint u, uint v)
+{
+	float fy = float(int(y) - 16);
+	float fu = float(int(u) - 128);
+	float fv = float(int(v) - 128);
+
+	float maxf = 255.0f;
+
+	float4 rgb;
+	rgb.x = clamp((1.16438f * fy) + (0.0f * fu) + (1.83367f * fv), 0.0f, maxf);
+	rgb.y = clamp((1.16438f * fy) + (-0.218117f * fu) + (-0.545076f * fv), 0.0f, maxf);
+	rgb.z = clamp((1.16438f * fy) + (2.16063f * fu) + (0.0f * fv), 0.0f, maxf);
+	rgb.w = 1.0f;
+
+	// Convert to unit scale float4needed f or the rgbTexture.
+	float toUnitScale = 1.0f / 255.0f;
+	rgb.xyz *= toUnitScale;
+
+	return rgb;
+}
+
 CS_LAYOUT(8,8,1)
 shader void Copy2DFromVideo( uint3 position : SV_DispatchThreadID )
 {
-	vec4 clr=SourceTex2.Load(int3(position.x, position.y, 0));
+#if 0
+	float2 size;
+	SourceTex2.GetDimensions(size.x, size.y);
+	float2 texCoords = float2(float(position.x), float(position.y)) / size;
+	vec4 clr = SourceTex2.SampleLevel(YCbCrSampler, texCoords, 0.0);
+#else
+	float3 value = SourceTex2.Load(int3(position.x, position.y, 0)).rgb;
+	float Cr = value.r - 0.5;
+	float Cb = value.b - 0.5;
+	float Y1 = value.g;
+	
+	vec4 clr;
+	//ITU-R BT.709 conversion https://en.wikipedia.org/wiki/YCbCr
+	clr.r = (1.0000 * Y1) + (0.0000 * Cb) + (1.5748 * Cr);
+	clr.g = (1.0000 * Y1) - (0.1873 * Cb) - (0.4681 * Cr);
+	clr.b = (1.0000 * Y1) + (1.8556 * Cb) + (0.0000 * Cr);
+	clr.a = 1.0;
+#endif
 	DestTex2[position.xy] = clr;
 }
 
@@ -70,57 +110,57 @@ shader void Copy3D( uint3 position : SV_DispatchThreadID )
 #ifdef __PSSL__
 technique copy_1d_int4
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy1DInt4()));
-    }
+	}
 }
 #endif
 technique copy_2d_int4
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy2DInt4()));
-    }
+	}
 }
 
 technique copy_3d_int4
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy3DInt4()));
-    }
+	}
 }
 
 technique copy_1d
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy1D()));
-    }
+	}
 }
 
 technique copy_2d
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy2D()));
-    }
+	}
 }
 
 // This is only different from the above in Vulkan. The shader source is the same, but we need a separate copy of the pass because it will be modified at runtime.
 technique copy_2d_from_video
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy2DFromVideo()));
-    }
+	}
 }
 
 technique copy_3d
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetComputeShader(CompileShader(cs_5_0,Copy3D()));
-    }
+	}
 }
