@@ -289,6 +289,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	platformSurfaceExt = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 #endif
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, VK_KHR_SURFACE_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, platformSurfaceExt);
 
@@ -541,8 +542,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	
  	ERRNO_BREAK
 
-	if(use_debug && IsInVector(instance_extension_names, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
-		InitDebugging();
+	if(use_debug)
+		SetupDebugCallback(IsInVector(instance_extension_names, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
  	ERRNO_BREAK
 	CreateDevice();
  	ERRNO_BREAK
@@ -562,6 +563,33 @@ void platform::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::v
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #endif
+void RewriteVulkanMessage( std::string &str)
+{
+	// If we have a number followed by a bracket at the start
+	std::smatch m;
+	std::regex re("0x([0-9a-f]+)");// e.g. 0x1c4e6c00000002c7
+	std::string out;
+	while(std::regex_search(str,m,re))
+	{
+		string hex_addr=m[1].str();
+		std::stringstream sstr;
+		unsigned long long num;
+		sstr << std::hex << hex_addr.c_str();
+		sstr >> num;
+
+		out += m.prefix();
+		out +=m.str();
+		auto f=RenderPlatform::ResourceMap.find(num);
+		if(f!=RenderPlatform::ResourceMap.end())
+		{
+			out+="(";
+			out+=f->second+")";
+		}
+		str=m.suffix();
+	}
+	out+=str;
+	str=out;
+}
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -641,8 +669,57 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	return VK_FALSE;
 }
 
-void DeviceManager::SetupDebugCallback()
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
+	VkDebugReportFlagsEXT	   flags,
+	VkDebugReportObjectTypeEXT  objectType,
+	uint64_t					object,
+	size_t					  location,
+	int32_t					 messageCode,
+	const char*				 pLayerPrefix,
+	const char*				 pMessage,
+	void*					   pUserData)
 {
+	if(pLayerPrefix)
+		std::cerr<<pLayerPrefix<<" layer: ";
+	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+		std::cerr<<" Error: ";
+	if ((flags& VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0)
+		std::cerr<<" Warning: ";
+	if(pMessage)
+	{
+		std::string str=pMessage;
+		RewriteVulkanMessage(str);
+		std::cerr << str.c_str() << std::endl;
+	}
+	if((flags&VK_DEBUG_REPORT_ERROR_BIT_EXT)!=0)
+		SIMUL_BREAK("Vulkan Error");
+	return VK_FALSE;
+}
+void DeviceManager::SetupDebugCallback(bool use_debug_utils)
+{
+	if(!use_debug_utils)
+	{
+/* Load VK_EXT_debug_report entry points in debug builds */
+		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
+		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>			(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
+		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
+
+		/* Setup callback creation information */
+		VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
+		callbackCreateInfo.sType	   = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+		callbackCreateInfo.pNext	   = nullptr;
+		callbackCreateInfo.flags	   = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+										 VK_DEBUG_REPORT_WARNING_BIT_EXT |
+										 VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+		callbackCreateInfo.pfnCallback = &DebugReportCallback;
+		callbackCreateInfo.pUserData   = nullptr;
+
+		/* Register the callback */
+		VkDebugReportCallbackEXT callback;
+		VkResult result = vkCreateDebugReportCallbackEXT(deviceManagerInternal->instance, &callbackCreateInfo, nullptr, &callback);
+	}
+	else
+	{
 	debugUtilsMessengerCI
 		.setPNext(nullptr)
 		.setFlags(vk::DebugUtilsMessengerCreateFlagBitsEXT(0))
@@ -657,6 +734,7 @@ void DeviceManager::SetupDebugCallback()
 	d.vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
 
 	debugUtilsMessenger = deviceManagerInternal->instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCI, nullptr, d);
+	}
 }
 
 void DeviceManager::CreateDevice()
@@ -768,11 +846,6 @@ vk::Device *DeviceManager::GetVulkanDevice()
 vk::Instance *DeviceManager::GetVulkanInstance()
 {
 	return &deviceManagerInternal->instance;
-}
-
-void DeviceManager::InitDebugging()
-{
-	SetupDebugCallback();
 }
 
 void	DeviceManager::Shutdown()

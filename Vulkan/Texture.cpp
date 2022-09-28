@@ -385,6 +385,31 @@ void Texture::AssumeLayout(vk::ImageLayout layout)
 //	SIMUL_COUT<<"Assume layout for "<<name.c_str()<<": "<<to_string( layout )<<std::endl;
 #endif
  }
+ 
+vk::ImageView *Texture::AsVulkanDepthView( int layer, int mip)
+{
+	if(!textureLoadComplete)
+	{
+		return nullptr;
+	}
+	if (mip == mips)
+	{
+		mip = 0;
+	}
+	int realArray	= GetArraySize();
+	bool no_array	= !cubemap && (arraySize <= 1);
+
+	// Base view:
+	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
+	{
+		return &layerDepthViews[0];
+	}
+	if(mip>0)
+	{
+		SIMUL_BREAK("Not implemented.");
+	}
+	return &layerDepthViews[layer];
+}
 
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
@@ -649,21 +674,28 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	else if(layers>1 || isArray)
 		viewType=vk::ImageViewType::e2DArray;
 	int totalNum = cubemap ? 6 * layers : layers;
-	//f=crossplatform::RenderPlatform::ToColourFormat(f);
 	vk::ImageAspectFlags imageAspectFlags=vk::ImageAspectFlagBits::eColor;
+	crossplatform::PixelFormat colourFormat=f;
+	crossplatform::PixelFormat depthFormat=f;
+	vk::Format depth_format;
 	if(crossplatform::RenderPlatform::IsDepthFormat(f))
+	{
 		imageAspectFlags=vk::ImageAspectFlagBits::eDepth;
+		//colourFormat=crossplatform::RenderPlatform::ToColourFormat(f);
+		SIMUL_ASSERT(isDepthTarget);
+		depth_format = vulkan::RenderPlatform::ToVulkanFormat(depthFormat);
+	}
 	//if(crossplatform::RenderPlatform::IsStencilFormat(f))
 	//	imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
-	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
+	vk::Format pixel_read_format = vulkan::RenderPlatform::ToVulkanFormat(colourFormat);
 	//vk::Format view_format=tex_format;
 	
 	vk::ImageViewCreateInfo viewCreateInfo = vk::ImageViewCreateInfo()
 		.setImage(mImage)
 		.setViewType(viewType)
-		.setFormat(tex_format)
+		.setFormat(pixel_read_format)
 		.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags, 0, mipCount, 0, totalNum));
-	if(tex_format==vk::Format::eUndefined)
+	if(pixel_read_format==vk::Format::eUndefined)
 	{
 		viewCreateInfo=viewCreateInfo.setPNext(vulkanRenderPlatform->GetVideoSamplerYcbcrConversionInfo());
 	}
@@ -724,6 +756,18 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerViews[i]));
 			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mFaceArrayView").c_str());
 		}
+	}
+	if(depthStencil)
+	{
+		layerDepthViews.resize(totalNum);
+		viewCreateInfo.setFormat(depth_format);
+		for(int i=0;i< totalNum;i++)
+		{
+			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,1,i,1));
+			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &layerDepthViews[i]));
+			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mFaceArrayView").c_str());
+		}
+		viewCreateInfo.setFormat(pixel_read_format);
 	}
 	if(cubemap)
 	{

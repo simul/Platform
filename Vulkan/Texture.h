@@ -80,6 +80,8 @@ namespace platform
 			}
 			
 			vk::ImageView	*AsVulkanImageView(crossplatform::ShaderResourceType type=crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
+			//! returns the imageview in the depth format - only applicable for depth textures.
+			vk::ImageView	*AsVulkanDepthView( int layer = -1, int mip = -1);
 			vk::Framebuffer *GetVulkanFramebuffer(int layer = -1, int mip = -1);
 		//	static vk::ImageView *GetDummyVulkanImageView(crossplatform::ShaderResourceType type);
 			vk::RenderPass &GetRenderPass(crossplatform::DeviceContext &deviceContext);
@@ -127,6 +129,8 @@ namespace platform
 			std::vector<vk::ImageView>					mLayerViews;
 			std::vector<vk::ImageView>					mMainMipViews;
 			std::vector<vk::ImageView>					faceArrayMipViews;
+
+			std::vector<vk::ImageView>					layerDepthViews;
 
 			// For cubemaps/cubemap arrays there are two kinds of layer mip view.
 			// we can have a cubemap view that's one layer and mip, but a cubemap.

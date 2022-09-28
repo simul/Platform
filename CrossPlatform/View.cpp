@@ -52,7 +52,7 @@ void View::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		{
 			hdrFramebuffer->SetUseFastRAM(true,true);
 			hdrFramebuffer->SetFormat(RGBA_16_FLOAT);
-			hdrFramebuffer->SetDepthFormat(D_32_FLOAT);
+			hdrFramebuffer->SetDepthFormat(D_MAX_FLOAT);
 			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 		}
 	}

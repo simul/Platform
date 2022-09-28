@@ -45,29 +45,30 @@ namespace platform
 {
 	namespace vulkan
 	{
+		extern bool debugUtilsSupported;
 		template<typename T>
 		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
 		{
 			vk::Instance* instance = renderPlatform->AsVulkanInstance();
 			vk::Device* device = renderPlatform->AsVulkanDevice();
 
-			vk::DispatchLoaderDynamic d;
-			d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
-
 			uint64_t objectHandle = *((uint64_t*)&ds);
-
-			if (d.vkSetDebugUtilsObjectNameEXT)
+			if(debugUtilsSupported)
 			{
-				vk::DebugUtilsObjectNameInfoEXT nameInfo;
-				nameInfo
-					.setPNext(nullptr)
-					.setObjectType(ds.objectType)
-					.setObjectHandle(objectHandle)
-					.setPObjectName(name);
+				vk::DispatchLoaderDynamic d;
+				d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
+				if (d.vkSetDebugUtilsObjectNameEXT)
+				{
+					vk::DebugUtilsObjectNameInfoEXT nameInfo;
+					nameInfo
+						.setPNext(nullptr)
+						//.setObjectType(ds.objectType)
+						.setObjectHandle(objectHandle)
+						.setPObjectName(name);
 
-				device->setDebugUtilsObjectNameEXT(nameInfo, d);
+					device->setDebugUtilsObjectNameEXT(nameInfo, d);
+				}
 			}
-
 		#if 1//def _DEBUG
 			if (platform::core::SimulInternalChecks)
 			{

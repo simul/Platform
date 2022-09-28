@@ -78,6 +78,10 @@ void SphericalHarmonics::ResetBuffers()
 	probeResultsRW.InvalidateDeviceObjects();
 }
 
+void SphericalHarmonics::ClearBuffers(GraphicsDeviceContext &deviceContext)
+{
+}
+
 float RoughnessFromMip(float mip, float numMips)
 {
 	static float  roughness_mip_scale = 1.2f;

@@ -24,6 +24,7 @@ namespace platform
 			//! Platform-dependent function called when uninitializing the Spherical Harmonics.
 			void InvalidateDeviceObjects();
 			//! Make sure no invalid data is retained.
+			void ClearBuffers(GraphicsDeviceContext &deviceContext);
 			void ResetBuffers();
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void RecompileShaders();

@@ -43,9 +43,6 @@ namespace platform
 			void Activate();
 
 			void ReloadTextures();
-			
-			// called late to start debug output.
-			void InitDebugging();
 
 			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
 			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
@@ -62,7 +59,7 @@ namespace platform
 			}
 		protected:
 			void CreateDevice();
-			void SetupDebugCallback();
+			void SetupDebugCallback(bool);
 			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
 			
 			std::vector<vk::LayerProperties> instance_layers;
