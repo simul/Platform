@@ -15,16 +15,16 @@ namespace platform
 	namespace vulkan
 	{
 		typedef unsigned long long RenderPassHash;
-        //! A Vulkan program object (combination of shaders)
-		class SIMUL_VULKAN_EXPORT EffectPass :public platform::crossplatform::EffectPass
+		//! A Vulkan program object (combination of shaders)
+		class SIMUL_VULKAN_EXPORT EffectPass : public platform::crossplatform::EffectPass
 		{
 		public:
-			            EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *);
-                        ~EffectPass();
-			void        InvalidateDeviceObjects();
+			EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *);
+			~EffectPass();
+			void InvalidateDeviceObjects();
 
-			void        Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
-            void        SetTextureHandles(crossplatform::DeviceContext& deviceContext);
+			void Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
+			void SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 
 			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
 
@@ -37,17 +37,15 @@ namespace platform
 
 			//! For Vulkan alone, this forces the shader to initialize with the source texture as a video decode source.
 			//! This MUST be set to true before the first use of the shader, or it won't be applied to the shader's initialization.
-			void SetVideoSource(bool s)
-			{
-				videoSource=s;
-			}
-        private:
+			void SetVideoSource(bool s) { videoSource = s; }
+
+		private:
 			bool videoSource=false;
 			std::vector<vk::Sampler> samplers;
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();
 			void Initialize(vk::DescriptorSet &descriptorSet);
-            void MapTexturesToUBO(crossplatform::Effect* curEffect);
+			void MapTexturesToUBO(crossplatform::Effect* curEffect);
 			
 			vk::DescriptorSetLayout			mDescLayout;
 			vk::PipelineLayout				mPipelineLayout;
