@@ -730,7 +730,7 @@ uint32_t RenderPlatform::GetLayerCountFromRenderTargets(const GraphicsDeviceCont
 	if (targets->num > 1)
 		SIMUL_CERR << "Using ViewInstancing with " << targets->num << " render targets. Only using the first one.\n";
 
-	int rtLayerCount = 1;
+	uint32_t rtLayerCount = 1;
 	crossplatform::Texture* target = targets->textureTargets[0].texture;
 	if (target)
 		rtLayerCount = target->IsCubemap() ? target->arraySize * 6 : target->arraySize;

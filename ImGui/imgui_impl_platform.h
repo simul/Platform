@@ -22,6 +22,8 @@ namespace platform
 	{
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
+		class DisplaySurfaceManagerInterface;
+		class PlatformRendererInterface;
 	}
 }
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r);
@@ -44,3 +46,11 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4>
 IMGUI_IMPL_API void		ImGui_ImplPlatform_Get3DTouchClientPos( std::vector<vec3>& client_press);
 
 IMGUI_IMPL_API void		ImGui_ImplPlatform_DebugInfo();
+// Forward Declarations
+IMGUI_IMPL_API void		ImGui_ImplPlatform_InitPlatformInterface();
+IMGUI_IMPL_API void		ImGui_ImplPlatform_ShutdownPlatformInterface();
+
+
+IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceMaangerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
+																		platform::crossplatform::PlatformRendererInterface *p);
+IMGUI_IMPL_API ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id);
