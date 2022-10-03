@@ -703,10 +703,10 @@ namespace platform
 					return;
 				if (IsLinkedToEffect(effect))
 					return;
-				defaultName = name;
-				platformConstantBuffer->SetName(defaultName.c_str());
 				SIMUL_ASSERT(platformConstantBuffer != nullptr);
 				SIMUL_ASSERT(effect != nullptr);
+				defaultName = name;
+				platformConstantBuffer->SetName(defaultName.c_str());
 				if (effect && platformConstantBuffer)
 				{
 					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);

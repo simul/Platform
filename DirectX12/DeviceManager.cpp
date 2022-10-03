@@ -221,7 +221,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		// Enumerate mOutputs(monitors)
 		IDXGIOutput* output = nullptr;
 		int outputIdx		= 0;
-		while (res = hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
+		while ((res = hardwareAdapter->EnumOutputs(outputIdx, &output)) != DXGI_ERROR_NOT_FOUND)
 		{
 			mOutputs[outputIdx] = output;
 			SIMUL_ASSERT(SUCCEEDED (res ));
