@@ -721,13 +721,13 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 
 	SIMUL_VK_CHECK (vulkanDevice->allocateMemory(&allocInfo, nullptr, &bufferMemory)); 
 	vulkanDevice->bindBufferMemory( buffer, bufferMemory, 0);
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	if(name)
 	{
 		SetVulkanName(this,(buffer),name);
 		SetVulkanName(this,(bufferMemory),platform::core::QuickFormat("%s memory",name));
 	}
-#endif
+//#endif
 }
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
