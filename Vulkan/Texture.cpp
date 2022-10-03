@@ -700,7 +700,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		viewCreateInfo=viewCreateInfo.setPNext(vulkanRenderPlatform->GetVideoSamplerYcbcrConversionInfo());
 	}
 	vk::Result res=vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView);
-SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.operator VkImageView()<<std::endl;
+//SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.operator VkImageView()<<std::endl;
 	SIMUL_VK_CHECK(res);
 	SetVulkanName(renderPlatform,mMainView,(name+" imageView").c_str());
 	
