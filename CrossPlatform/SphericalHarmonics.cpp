@@ -111,7 +111,8 @@ void SphericalHarmonics::CopyMip(GraphicsDeviceContext &deviceContext,Texture *t
 	lightProbeConstants.cubeFace = face;
 	lightProbeConstants.mipIndex = src_mip + 1;
 	lightProbesEffect->UnbindTextures(deviceContext);
-	lightProbeConstants.roughness = RoughnessFromMip((float)lightProbeConstants.mipIndex,(float)tex->mips);
+	const float maxMips = 8;
+	lightProbeConstants.roughness = RoughnessFromMip((float)lightProbeConstants.mipIndex, maxMips);
 	renderPlatform->SetConstantBuffer(deviceContext, &lightProbeConstants);
 
 	crossplatform::EffectTechnique *tech		= nullptr;
