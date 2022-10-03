@@ -198,7 +198,7 @@ ID3D11Texture2D* platform::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,con
 #ifdef DXTRACE_ERR
 		DXTRACE_ERR(L"LoadStagingTexture", res);
 #else
-		std::cerr<<"Failed to load texture: "<<filename<<std::endl;
+		SIMUL_CERR<<"Failed to load texture: "<<filename<<std::endl;
 #endif
 	}
 	return tex;

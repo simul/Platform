@@ -162,7 +162,7 @@ namespace platform
 		public:
 			/// Get the current state to be applied to the given context at the next draw or dispatch.
 			crossplatform::ContextState *GetContextState(crossplatform::DeviceContext &deviceContext);
-			virtual void T1(){}
+	
 			RenderPlatform(platform::core::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
 			virtual float GetDefaultOutputGamma() const

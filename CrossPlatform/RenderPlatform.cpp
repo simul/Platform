@@ -107,10 +107,10 @@ bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
 
 std::string RenderPlatform::GetPathName() const
 {
-	static std::string pathname;
+	std::string pathname;
 	pathname=GetName();
 	pathname.erase(remove_if(pathname.begin(), pathname.end(), isspace), pathname.end());
-	return pathname.c_str();
+	return pathname;
 }
 
 crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::DeviceContext &deviceContext)
