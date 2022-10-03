@@ -185,8 +185,8 @@ void ViewManager::CleanUp(int current_frame,int max_age)
 			i.second->last_framenumber=current_frame;
 			continue;
 		}
-		int age=current_frame-i.second->last_framenumber;
-		if((uint32_t)age>max_age)
+		int age = current_frame - (int)i.second->last_framenumber;
+		if(age > max_age)
 		{
 			RemoveView(i.first);
 			break;
