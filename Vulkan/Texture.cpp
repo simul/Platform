@@ -757,7 +757,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mFaceArrayView").c_str());
 		}
 	}
-	if(depthStencil)
+	if(isDepthTarget)
 	{
 		layerDepthViews.resize(totalNum);
 		viewCreateInfo.setFormat(depth_format);
@@ -765,7 +765,7 @@ SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.opera
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,1,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &layerDepthViews[i]));
-			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mFaceArrayView").c_str());
+			SetVulkanName(renderPlatform,layerDepthViews[i],(name+" mFaceArrayView").c_str());
 		}
 		viewCreateInfo.setFormat(pixel_read_format);
 	}
