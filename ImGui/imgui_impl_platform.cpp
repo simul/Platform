@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/Buffer.h"
+#include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
@@ -498,7 +499,7 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 		ImGuiIO& io = ImGui::GetIO();
 		// Setup display size (every frame to accommodate for window resizing)
 		io.DisplaySize = ImVec2((float)ui_pixel_width, (float)ui_pixel_height);
-    // Override what win32 did with this
+	// Override what win32 did with this
 		//ImGui_ImplPlatform_Update3DMousePos();
 	}
 }
@@ -660,7 +661,7 @@ platform::crossplatform::PlatformRendererInterface *platformRendererInterface=nu
 // Helper structure we store in the void* RenderUserData field of each ImGuiViewport to easily retrieve our backend data.
 struct ImGui_ImplPlatform_ViewportData
 {
-    int viewId=-1;
+	int viewId=-1;
 
 };
 
@@ -673,13 +674,14 @@ void ImGui_ImplPlatform_SetDisplaySurfaceMaangerAndPlatformRenderer(platform::cr
 
 static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 {
-    ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
-    ImGui_ImplPlatform_ViewportData* vd = IM_NEW(ImGui_ImplPlatform_ViewportData)();
-    viewport->RendererUserData = vd;
-    // PlatformHandleRaw should always be a HWND, whereas PlatformHandle might be a higher-level handle (e.g. GLFWWindow*, SDL_Window*).
-    // Some backend will leave PlatformHandleRaw NULL, in which case we assume PlatformHandle will contain the HWND.
-    HWND hwnd = viewport->PlatformHandleRaw ? (HWND)viewport->PlatformHandleRaw : (HWND)viewport->PlatformHandle;
-    IM_ASSERT(hwnd != 0);
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	ImGui_ImplPlatform_ViewportData* vd = IM_NEW(ImGui_ImplPlatform_ViewportData)();
+	viewport->RendererUserData = vd;
+	// PlatformHandleRaw should always be a HWND, whereas PlatformHandle might be a higher-level handle (e.g. GLFWWindow*, SDL_Window*).
+	// Some backend will leave PlatformHandleRaw NULL, in which case we assume PlatformHandle will contain the HWND for Win32 and void* for other platfoms.
+	// So we will use Platform's cp_hwnd type.
+	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
+	IM_ASSERT(hwnd != 0);
 
 	// All should be handled from within the displaySurface manager.
 	displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::RGBA_8_UNORM);
@@ -691,45 +693,45 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 
 static void ImGui_ImplPlatform_DestroyWindow(ImGuiViewport* viewport)
 {
-    HWND hwnd = viewport->PlatformHandleRaw ? (HWND)viewport->PlatformHandleRaw : (HWND)viewport->PlatformHandle;
-    IM_ASSERT(hwnd != 0);
+	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
+	IM_ASSERT(hwnd != 0);
 	displaySurfaceManagerInterface->RemoveWindow(hwnd);
-    // The main viewport (owned by the application) will always have RendererUserData == NULL since we didn't create the data for it.
-    if (ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData)
-    {
-        IM_DELETE(vd);
-    }
-    viewport->RendererUserData = NULL;
+	// The main viewport (owned by the application) will always have RendererUserData == NULL since we didn't create the data for it.
+	if (ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData)
+	{
+		IM_DELETE(vd);
+	}
+	viewport->RendererUserData = NULL;
 }
 
 static void ImGui_ImplPlatform_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 {
-    HWND hwnd = viewport->PlatformHandleRaw ? (HWND)viewport->PlatformHandleRaw : (HWND)viewport->PlatformHandle;
-    IM_ASSERT(hwnd != 0);
+	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
+	IM_ASSERT(hwnd != 0);
 	displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
 	/*
-    ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
-    ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
-    if (vd->RTView)
-    {
-        vd->RTView->Release();
-        vd->RTView = NULL;
-    }
-    if (vd->SwapChain)
-    {
-        ID3D11Texture2D* pBackBuffer = NULL;
-        vd->SwapChain->ResizeBuffers(0, (UINT)size.x, (UINT)size.y, DXGI_FORMAT_UNKNOWN, 0);
-        vd->SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-        if (pBackBuffer == NULL) { fprintf(stderr, "ImGui_ImplPlatform_SetWindowSize() failed creating buffers.\n"); return; }
-        bd->pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &vd->RTView);
-        pBackBuffer->Release();
-    }*/
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
+	if (vd->RTView)
+	{
+		vd->RTView->Release();
+		vd->RTView = NULL;
+	}
+	if (vd->SwapChain)
+	{
+		ID3D11Texture2D* pBackBuffer = NULL;
+		vd->SwapChain->ResizeBuffers(0, (UINT)size.x, (UINT)size.y, DXGI_FORMAT_UNKNOWN, 0);
+		vd->SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+		if (pBackBuffer == NULL) { fprintf(stderr, "ImGui_ImplPlatform_SetWindowSize() failed creating buffers.\n"); return; }
+		bd->pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &vd->RTView);
+		pBackBuffer->Release();
+	}*/
 }
 
 std::map<int,ImDrawData*> drawData;
 ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id)
 {
-	auto &i=drawData.find(view_id);
+	const auto &i=drawData.find(view_id);
 	if(i==drawData.end())
 		return nullptr;
 	return i->second;
@@ -737,37 +739,37 @@ ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id)
 
 static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void*)
 {
-    HWND hwnd = viewport->PlatformHandleRaw ? (HWND)viewport->PlatformHandleRaw : (HWND)viewport->PlatformHandle;
-    IM_ASSERT(hwnd != 0);
+	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
+	IM_ASSERT(hwnd != 0);
 	displaySurfaceManagerInterface->Render(hwnd);
-    ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
+	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
 	drawData[vd->viewId]=viewport->DrawData;
  /*   ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
-    ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
-    ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    bd->pd3dDeviceContext->OMSetRenderTargets(1, &vd->RTView, NULL);
-    if (!(viewport->Flags & ImGuiViewportFlags_NoRendererClear))
-        bd->pd3dDeviceContext->ClearRenderTargetView(vd->RTView, (float*)&clear_color);
-    ImGui_ImplPlatform_RenderDrawData(viewport->DrawData);*/
+	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
+	ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+	bd->pd3dDeviceContext->OMSetRenderTargets(1, &vd->RTView, NULL);
+	if (!(viewport->Flags & ImGuiViewportFlags_NoRendererClear))
+		bd->pd3dDeviceContext->ClearRenderTargetView(vd->RTView, (float*)&clear_color);
+	ImGui_ImplPlatform_RenderDrawData(viewport->DrawData);*/
 }
 
 static void ImGui_ImplPlatform_SwapBuffers(ImGuiViewport* viewport, void*)
 {
-    ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
+	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
    // vd->SwapChain->Present(0, 0); // Present without vsync
 }
 
 void ImGui_ImplPlatform_InitPlatformInterface()
 {
-    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
-    platform_io.Renderer_CreateWindow = ImGui_ImplPlatform_CreateWindow;
-    platform_io.Renderer_DestroyWindow = ImGui_ImplPlatform_DestroyWindow;
-    platform_io.Renderer_SetWindowSize = ImGui_ImplPlatform_SetWindowSize;
-    platform_io.Renderer_RenderWindow = ImGui_ImplPlatform_RenderWindow;
-    platform_io.Renderer_SwapBuffers = ImGui_ImplPlatform_SwapBuffers;
+	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+	platform_io.Renderer_CreateWindow = ImGui_ImplPlatform_CreateWindow;
+	platform_io.Renderer_DestroyWindow = ImGui_ImplPlatform_DestroyWindow;
+	platform_io.Renderer_SetWindowSize = ImGui_ImplPlatform_SetWindowSize;
+	platform_io.Renderer_RenderWindow = ImGui_ImplPlatform_RenderWindow;
+	platform_io.Renderer_SwapBuffers = ImGui_ImplPlatform_SwapBuffers;
 }
 
 void ImGui_ImplPlatform_ShutdownPlatformInterface()
 {
-    ImGui::DestroyPlatformWindows();
+	ImGui::DestroyPlatformWindows();
 }

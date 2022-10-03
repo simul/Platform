@@ -1167,6 +1167,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	if(ok)
 		return false;
 
+
 	pixelFormat=f;
 	InvalidateDeviceObjects();
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -1193,6 +1194,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	desc.MipLevels			=m;
 	desc.SampleDesc.Count	=1;
 	desc.SampleDesc.Quality	=0;
+	if(w*l*num<=0)
+		return false;
 	ID3D11Texture2D *pArrayTexture;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&pArrayTexture));
 	if(renderPlatform->GetMemoryInterface())

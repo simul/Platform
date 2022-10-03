@@ -2273,8 +2273,7 @@ void Texture::InitSRVTables(int l,int m)
 
 void Texture::FreeSRVTables()
 {
-	if (layerShaderResourceViews12)
-		delete[] layerShaderResourceViews12;
+	delete[] layerShaderResourceViews12;
 	layerShaderResourceViews12 = nullptr;
 
 	for (size_t i = 0; i< layerMipShaderResourceViews12Size; i++)
@@ -2284,8 +2283,6 @@ void Texture::FreeSRVTables()
 			delete[] layerMipShaderResourceViews12[i];
 		}
 	}
-	delete[] layerShaderResourceViews12;
-	layerShaderResourceViews12 = nullptr;
 	delete[] layerMipShaderResourceViews12;
 	layerMipShaderResourceViews12 = nullptr;
 

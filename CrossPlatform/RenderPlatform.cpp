@@ -954,7 +954,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	SetViewports(deviceContext,1,&oldv);
 }
 
-void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,mat4 &m,float size)
+void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m,float size)
 {
 	mat4 wvp;
 	crossplatform::MakeWorldViewProjMatrix((float*)&wvp,m,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
