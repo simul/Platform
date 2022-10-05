@@ -62,7 +62,7 @@ namespace platform
 					vk::DebugUtilsObjectNameInfoEXT nameInfo;
 					nameInfo
 						.setPNext(nullptr)
-						//.setObjectType(ds.objectType)
+						.setObjectType(ds.objectType)
 						.setObjectHandle(objectHandle)
 						.setPObjectName(name);
 
