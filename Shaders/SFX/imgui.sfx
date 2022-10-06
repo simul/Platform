@@ -92,7 +92,7 @@ DepthStencilState WriteReverseDepth
 DepthStencilState TestReverseDepth
 {
 	DepthEnable = TRUE;
-	DepthWriteMask = ZERO;
+	DepthWriteMask = ALL;
 	DepthFunc = GREATER_EQUAL;
 };
 

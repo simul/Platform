@@ -882,9 +882,9 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
 		const auto &layoutDesc=layout->GetDesc();
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+		vk::VertexInputBindingDescription bindingDescription;
 		if(layoutDesc.size())
 		{
-			vk::VertexInputBindingDescription bindingDescription ;
 			bindingDescription.setBinding (0);
 			bindingDescription.setStride(layout->GetStructSize());
 			bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
