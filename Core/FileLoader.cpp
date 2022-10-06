@@ -100,10 +100,10 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 	{
 		std::string f = std::string(path_stack_utf8[i]);
 		std::vector<std::string> dir=ListDirectory(f);
-		for(auto s:dir)
+	/*	for(auto s:dir)
 		{
 			std::cout<<s.c_str()<<std::endl;
-		}
+		}*/
 		if (f.length() > 0 && f.back() != '/' && f.back() != '\\')
 			f += std::string("/");
 		f += filename_utf8;
