@@ -21,10 +21,10 @@ namespace platform
 			size_t maxVideoAllocated;
 			size_t totalVideoAllocated;
 			size_t totalVideoFreed;
-			std::map<void*,size_t> memBlocks;
-			std::map<void*, size_t> gpuMemBlocks;
+			std::map<const void*,size_t> memBlocks;
+			std::map<const void*, size_t> gpuMemBlocks;
 			std::map<std::string, size_t> memoryTracks;
-			std::map<void *,std::string> allocationNames;
+			std::map<const void *,std::string> allocationNames;
 			bool show_output;
 			bool active;
 			mutable bool debugTextValid=true;
@@ -37,9 +37,9 @@ namespace platform
 			//! De-allocate the memory at \param address (requires that this memory was allocated with Allocate()).
 			virtual void Deallocate(void* ptr) override;
 			//! Track (but don't allocate) nbytes bytes of memory.
-			virtual void TrackVideoMemory(void* ptr,size_t nbytes,const char *fn) override;
+			virtual void TrackVideoMemory(const void* ptr,size_t nbytes,const char *fn) override;
 			//! Free the pointer from video memory tracking.
-			virtual void UntrackVideoMemory(void* ptr) override;
+			virtual void UntrackVideoMemory(const void* ptr) override;
 			 
 			const char *GetNameAtIndex(int index) const override;
 			size_t GetBytesAllocated(const char *name) const override;

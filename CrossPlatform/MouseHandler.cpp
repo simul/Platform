@@ -81,7 +81,8 @@ void MouseHandler::mouseMove(int x,int y)
 	fDeltaY=dy/uu;
 	MouseX=x;
 	MouseY=y;
-	updateViews();
+	if (updateViews)
+		updateViews();
 }
 
 void MouseHandler::getMousePosition(int &x,int &y) const
@@ -115,7 +116,8 @@ void MouseHandler::mouseWheel(int delta,int modifiers)
 		fov/=1.1f;
 	camera->SetHorizontalFieldOfViewDegrees(fov);
 	camera->SetVerticalFieldOfViewDegrees(0);
-	updateViews();
+	if (updateViews)
+		updateViews();
 }
 
 platform::crossplatform::Camera *MouseHandler::GetCamera()

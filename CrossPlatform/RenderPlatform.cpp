@@ -107,10 +107,10 @@ bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
 
 std::string RenderPlatform::GetPathName() const
 {
-	static std::string pathname;
+	std::string pathname;
 	pathname=GetName();
 	pathname.erase(remove_if(pathname.begin(), pathname.end(), isspace), pathname.end());
-	return pathname.c_str();
+	return pathname;
 }
 
 crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::DeviceContext &deviceContext)
@@ -730,7 +730,7 @@ uint32_t RenderPlatform::GetLayerCountFromRenderTargets(const GraphicsDeviceCont
 	if (targets->num > 1)
 		SIMUL_CERR << "Using ViewInstancing with " << targets->num << " render targets. Only using the first one.\n";
 
-	int rtLayerCount = 1;
+	uint32_t rtLayerCount = 1;
 	crossplatform::Texture* target = targets->textureTargets[0].texture;
 	if (target)
 		rtLayerCount = target->IsCubemap() ? target->arraySize * 6 : target->arraySize;
@@ -954,7 +954,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	SetViewports(deviceContext,1,&oldv);
 }
 
-void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,mat4 &m,float size)
+void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m,float size)
 {
 	mat4 wvp;
 	crossplatform::MakeWorldViewProjMatrix((float*)&wvp,m,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);

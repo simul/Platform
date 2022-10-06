@@ -83,7 +83,7 @@ namespace platform
 			int											ScreenWidth;
 			/// Height of the screen.
 			int											ScreenHeight;
-			int											last_framenumber;
+			long long									last_framenumber;
 			/// True to use external framebuffer.
 			bool										useExternalFramebuffer;
 		};

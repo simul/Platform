@@ -86,6 +86,16 @@ namespace platform
 			,NV12
 
 			,UNDEFINED	// for video decoding.
+			
+#if SIMUL_USE_32_BIT_FLOAT_TEXTURES
+			,RGBA_MAX_FLOAT=RGBA_32_FLOAT
+			,R_MAX_FLOAT=R_32_FLOAT
+			,D_MAX_FLOAT=D_32_FLOAT
+#else
+			,RGBA_MAX_FLOAT=RGBA_16_FLOAT
+			,R_MAX_FLOAT=R_16_FLOAT
+			,D_MAX_FLOAT=D_32_FLOAT
+#endif 
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
 		enum PixelOutputFormat

@@ -93,7 +93,7 @@ void TrackingAllocator::Deallocate(void* ptr)
 	debugTextValid=false;
 }
 
-void TrackingAllocator::TrackVideoMemory(void* ptr,size_t nbytes,const char *fn)
+void TrackingAllocator::TrackVideoMemory(const void* ptr,size_t nbytes,const char *fn)
 {
 	if(ptr)
 	{
@@ -154,7 +154,7 @@ void TrackingAllocator::TrackVideoMemory(void* ptr,size_t nbytes,const char *fn)
 	debugTextValid=false;
 }
 
-void TrackingAllocator::UntrackVideoMemory(void* ptr)
+void TrackingAllocator::UntrackVideoMemory(const void* ptr)
 {
 	// We ignore null, this is like doing delete on a null ptr.
 	if(ptr)

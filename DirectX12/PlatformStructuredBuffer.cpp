@@ -327,7 +327,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
 	if (mTempBuffer)
 	{
-		delete[] mTempBuffer;
+		delete[] (uint8_t*)mTempBuffer;
 		mTempBuffer = nullptr;
 	}
 	dx12::RenderPlatform *mRenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);

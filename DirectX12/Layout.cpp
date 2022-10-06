@@ -15,7 +15,6 @@ Layout::Layout():
 
 Layout::~Layout()
 {
-	InvalidateDeviceObjects();
 }
 
 void Layout::InvalidateDeviceObjects()

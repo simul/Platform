@@ -43,7 +43,7 @@
 	struct mat2
 	{
 		float m[8];
-		operator const float *()
+		operator const float *() const
 		{
 			return m;
 		}
@@ -370,7 +370,7 @@
 			this->z=v[2];
 			this->w=v[3];
 		}
-		operator const T *()
+		operator const T *() const
 		{
 			return &x;
 		}
@@ -441,7 +441,7 @@
 		{
 			x=x*v.x;
 			y=y*v.y;
-			x=z*v.z;
+			z=z*v.z;
 			w=w*v.w;
 			return *this;
 		}
@@ -573,7 +573,7 @@
 			T M[4][4];
 		};
 		
-		operator const T *()
+		operator const T *() const
 		{
 			return m;
 		}
@@ -1019,7 +1019,7 @@
 		{
 			operator=(v);
 		}
-		operator const unsigned *()
+		operator const unsigned *() const
 		{
 			return &x;
 		}
@@ -1055,7 +1055,7 @@
 		{
 			operator=(v);
 		}
-		operator const unsigned *()
+		operator const unsigned *() const
 		{
 			return &x;
 		}
@@ -1099,7 +1099,7 @@
 		{
 			operator=(v);
 		}
-		operator const int *()
+		operator const int *() const
 		{
 			return &x;
 		}
@@ -1167,7 +1167,7 @@
 		{
 			operator=(v);
 		}
-		operator const int *()
+		operator const int *() const
 		{
 			return &x;
 		}
@@ -1226,7 +1226,7 @@
 			z=v.z;
 			w=v.w;
 		}
-		operator const uint *()
+		operator const uint *() const
 		{
 			return &x;
 		}

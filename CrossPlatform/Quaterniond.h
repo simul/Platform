@@ -434,6 +434,12 @@ namespace platform
 			q.MakeUnit();
 		}
 		
+		template<typename T> struct tpose
+		{
+			Quaternion<T> orientation;
+			tvector3<T> position;
+		};
+		typedef tpose<float> pose;
 	}
 }
 #endif

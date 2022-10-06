@@ -384,9 +384,8 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
 {
 	renderPlatform->SetUnorderedAccessView(deviceContext,  res,  tex,  index,  mip);
-
 }
- 
+
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
 {
 	const ShaderResource &i=GetShaderResource(name);

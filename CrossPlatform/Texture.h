@@ -82,6 +82,7 @@ namespace platform
 			{
 				WRAP,CLAMP,MIRROR
 			};
+			//TODO: Add Mipmap mode for min filtering - AJR
 			enum Filtering
 			{
 				POINT,LINEAR,ANISOTROPIC
@@ -125,6 +126,7 @@ namespace platform
 			bool shared = false;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			const void* initialData = nullptr;
+			bool cpuWritable = false;
 			const char* name = nullptr;
 			bool forceInit=false;			//!< Initialize fully, even if it looks the same.
 		};
@@ -221,6 +223,7 @@ namespace platform
 			Texture(const char *name=NULL);
 			virtual ~Texture();
 			virtual void SetName(const char *n);
+			const char* GetName() const;
 			/// Set the fence on this texture: it cannot be used until the fence has been triggered by the rendering API.
 			void SetFence(DeviceContext &,unsigned long long);
 			/// Get the current fence on this texture; it should not be used until the API has passed this fence.

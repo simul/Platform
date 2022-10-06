@@ -204,47 +204,54 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	ID3D11DeviceContext *pContext=NULL;
 	r->AsD3D11Device()->GetImmediateContext(&pContext);
 	int w=1,l=1;
+	bool ok=true;
 	for(int i=0;i<(int)textures.size();i++)
 	{
 		if(!textures[i])
-			return;
+		{
+			ok=false;
+			continue;
+		}
 		textures[i]->GetDesc(&desc);
 		w=desc.Width;
 		l=desc.Height;
 	}
-	int m = 1;
-	if (gen_mips)
-		m = 100;
-	m = std::min(m, int(floor(log2(std::max(w, l)))) + 1);
-	m = std::min(16, std::max(1, m));
-	if (m < 0 || m>16)
-		m = 1;
-	auto format = RenderPlatform::FromDxgiFormat(desc.Format);
-
-	ensureTextureArraySizeAndFormat(r,desc.Width,desc.Height,(int)textures.size(),m,format,false,true);
-	
-	external_texture=false;
-	//if(renderPlatform->GetMemoryInterface())
-	//	renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
-	if(texture)
-	for(unsigned i=0;i<textures.size();i++)
+	if(ok)
 	{
-		// Copy the resource directly, no CPU mapping
-		pContext->CopySubresourceRegion(
-						texture
-						,i*m
-						,0
-						,0
-						,0
-						,textures[i]
-						,0
-						,NULL
-						);
+		int m = 1;
+		if (gen_mips)
+			m = 100;
+		m = std::min(m, int(floor(log2(std::max(w, l)))) + 1);
+		m = std::min(16, std::max(1, m));
+		if (m < 0 || m>16)
+			m = 1;
+		auto format = RenderPlatform::FromDxgiFormat(desc.Format);
+
+		ensureTextureArraySizeAndFormat(r,desc.Width,desc.Height,(int)textures.size(),m,format,false,true);
+	
+		external_texture=false;
+		//if(renderPlatform->GetMemoryInterface())
+		//	renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
+		if(texture)
+		for(unsigned i=0;i<textures.size();i++)
+		{
+			// Copy the resource directly, no CPU mapping
+			pContext->CopySubresourceRegion(
+							texture
+							,i*m
+							,0
+							,0
+							,0
+							,textures[i]
+							,0
+							,NULL
+							);
+		}
+		//void FreeSRVTables();
+		//void FreeRTVTables();
+		//InitRTVTables(texture_files.size(),m);
+		//V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView));
 	}
-	//void FreeSRVTables();
-	//void FreeRTVTables();
-	//InitRTVTables(texture_files.size(),m);
-	//V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView));
 	for(unsigned i=0;i<textures.size();i++)
 	{
 		SAFE_RELEASE(textures[i])
@@ -1160,6 +1167,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	if(ok)
 		return false;
 
+
 	pixelFormat=f;
 	InvalidateDeviceObjects();
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -1186,6 +1194,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	desc.MipLevels			=m;
 	desc.SampleDesc.Count	=1;
 	desc.SampleDesc.Quality	=0;
+	if(w*l*num<=0)
+		return false;
 	ID3D11Texture2D *pArrayTexture;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&pArrayTexture));
 	if(renderPlatform->GetMemoryInterface())

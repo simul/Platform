@@ -19,6 +19,7 @@
 
 using namespace platform;
 using namespace vulkan;
+bool platform::vulkan::debugUtilsSupported=false;
 
 RenderPlatform::RenderPlatform():
 	mDummy2D(nullptr)
@@ -101,7 +102,7 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 		init=true;
 		vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
 		samplerYcbcrConversionCreateInfo.setFormat(vk::Format::eUndefined);
-		samplerYcbcrConversionCreateInfo.setYcbcrModel(vk::SamplerYcbcrModelConversion::eYcbcr601);
+		samplerYcbcrConversionCreateInfo.setYcbcrModel(vk::SamplerYcbcrModelConversion::eYcbcr709);
 		samplerYcbcrConversionCreateInfo.setYcbcrRange(vk::SamplerYcbcrRange::eItuNarrow);
 		samplerYcbcrConversionCreateInfo.setXChromaOffset(vk::ChromaLocation::eMidpoint);
 		samplerYcbcrConversionCreateInfo.setYChromaOffset(vk::ChromaLocation::eMidpoint);
@@ -720,13 +721,13 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 
 	SIMUL_VK_CHECK (vulkanDevice->allocateMemory(&allocInfo, nullptr, &bufferMemory)); 
 	vulkanDevice->bindBufferMemory( buffer, bufferMemory, 0);
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	if(name)
 	{
 		SetVulkanName(this,(buffer),name);
 		SetVulkanName(this,(bufferMemory),platform::core::QuickFormat("%s memory",name));
 	}
-#endif
+//#endif
 }
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
@@ -1691,18 +1692,12 @@ void RenderPlatform::SetDefaultColourFormat(crossplatform::PixelFormat p)
 
 void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
 {
-	vk::Device* vulkanDevice = AsVulkanDevice();
-	if (!vulkanDevice)
-		return;
-
 	for (auto& fb : mFramebuffers)
-		vulkanDevice->destroyFramebuffer(fb.second,nullptr);
+		PushToReleaseManager(fb.second);
 	for (auto& rp : mFramebufferRenderPasses)
-		vulkanDevice->destroyRenderPass(rp.second,nullptr);
-
+		PushToReleaseManager(rp.second);
 	mFramebuffers.clear();
 	mFramebufferRenderPasses.clear();
-	SIMUL_ASSERT(mFramebuffers.empty() && mFramebufferRenderPasses.empty());
 }
 
 RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
@@ -1714,8 +1709,9 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		hashval += (unsigned long long)tv->textureTargets[0].texture->width;	//Deal with resizing the framebuffer!
 		hashval += (unsigned long long)tv->textureTargets[0].texture->length;
 	}
-	if(tv->depthTarget.texture)
-		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
+	vulkan::Texture *d=(vulkan::Texture *)tv->depthTarget.texture;
+	if(d)
+		hashval+=(unsigned long long)d->AsVulkanDepthView();
 	hashval+=tv->num;
 	return hashval;
 }
@@ -1782,7 +1778,10 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 			attachments[j]=*(tv->textureTargets[j].texture->AsVulkanImageView());
 		}
 		if(deviceContext.contextState.IsDepthActive())
-			attachments[tv->num]=*(tv->depthTarget.texture->AsVulkanImageView());
+		{
+			vulkan::Texture *d=(vulkan::Texture *)tv->depthTarget.texture;
+			attachments[tv->num]=*(d->AsVulkanDepthView());
+		}
 		framebufferCreateInfo.pAttachments = attachments;
 		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
 		SetVulkanName(this,mFramebuffers[hashval],"mFramebuffers");

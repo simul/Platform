@@ -13,7 +13,7 @@ using namespace platform;
 using namespace vulkan;
 
 EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e):
-    crossplatform::EffectPass(r,e)
+	crossplatform::EffectPass(r,e)
 	,mLastFrameIndex(0)
 	,mInternalFrameIndex(0)
 	,mCurApplyCount(0)
@@ -24,7 +24,7 @@ EffectPass::EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *e
 
 EffectPass::~EffectPass()
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 }
 
 void EffectPass::InvalidateDeviceObjects()
@@ -72,21 +72,21 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		return;
 	vk::Device *vulkanDevice	=renderPlatform->AsVulkanDevice();
 	
-    vulkan::Shader* c	= (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	vulkan::Shader* c	= (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	
-    // If valid, activate render states:
-    if (blendState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
-    }
-    if (depthStencilState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
-    }
-    if (rasterizerState)
-    {
-        deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
-    }
+	// If valid, activate render states:
+	if (blendState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
+	}
+	if (depthStencilState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
+	}
+	if (rasterizerState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
+	}
 	
 	int num_descr=numResourceSlots+numRwResourceSlots
 					+numSbResourceSlots
@@ -245,15 +245,15 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateSamplerSlot(slot));
 		crossplatform::SamplerState *ss=nullptr;
-        if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
-        {
-            ss = deviceContext.contextState.samplerStateOverrides[slot];
-            // We dont override this slot, just take a default sampler state:
-        }
+		if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
+		{
+			ss = deviceContext.contextState.samplerStateOverrides[slot];
+			// We dont override this slot, just take a default sampler state:
+		}
 		if(!ss)
-        {
-            ss = effect->GetSamplers()[slot];
-        }
+		{
+			ss = effect->GetSamplers()[slot];
+		}
 		auto *s=ss->AsVulkanSampler();
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eSampler);
@@ -621,11 +621,11 @@ void EffectPass::Initialize()
 	{
 		std::vector samplers{vulkanRenderPlatform->GetVideoSampler()};
 		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding=vk::DescriptorSetLayoutBinding()
-                    .setBinding(0)
-                    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                    .setDescriptorCount(1)
-                    .setStageFlags(vk::ShaderStageFlagBits::eFragment)
-                    .setImmutableSamplers(samplers);
+					.setBinding(0)
+					.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+					.setDescriptorCount(1)
+					.setStageFlags(vk::ShaderStageFlagBits::eFragment)
+					.setImmutableSamplers(samplers);
 		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo=vk::DescriptorSetLayoutCreateInfo()
 					//.setFlags(vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR)
 					.setBindingCount(1)
@@ -685,9 +685,9 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 	
 	SetVulkanName(renderPlatform,renderPassPipeline->mPipelineCache,platform::core::QuickFormat("%s EffectPass mPipelineCache",name.c_str()));
 
-    vulkan::Shader* v   =(vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
-    vulkan::Shader* f   =(vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
-    vulkan::Shader* c   =(vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	vulkan::Shader* v   =(vulkan::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
+	vulkan::Shader* f   =(vulkan::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
+	vulkan::Shader* c   =(vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	if(c)
 	{
 		vk::PipelineShaderStageCreateInfo shaderStageInfo =
@@ -849,8 +849,8 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 			//	rasterizerState->type;
 		}
 		vk::PipelineColorBlendStateCreateInfo colorBlendInfo		= vk::PipelineColorBlendStateCreateInfo();
-        colorBlendInfo.setLogicOpEnable(false);// NOTE: normal blending disables the "Logic Op", it's not needed and interferes with blending.
-        colorBlendInfo.setLogicOp (vk::LogicOp::eCopy);
+		colorBlendInfo.setLogicOpEnable(false);// NOTE: normal blending disables the "Logic Op", it's not needed and interferes with blending.
+		colorBlendInfo.setLogicOp (vk::LogicOp::eCopy);
 		colorBlendInfo.setBlendConstants({ 1.0f,1.0f,1.0f,1.0f});
 		std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(num_RT);
 		if(blendState)
@@ -882,9 +882,9 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		vk::VertexInputAttributeDescription *vertexInputs=nullptr;
 		const auto &layoutDesc=layout->GetDesc();
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+		vk::VertexInputBindingDescription bindingDescription;
 		if(layoutDesc.size())
 		{
-			vk::VertexInputBindingDescription bindingDescription ;
 			bindingDescription.setBinding (0);
 			bindingDescription.setStride(layout->GetStructSize());
 			bindingDescription.setInputRate(vk::VertexInputRate::eVertex);
@@ -1059,11 +1059,11 @@ vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceCon
 
 void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
 {
-    char kTexHandleUbo []  = "_TextureHandles_X";
+	char kTexHandleUbo []  = "_TextureHandles_X";
 	char ext[]={'v','h','d','g','p','c'};
 	// Different buffer object for each shader type.
 	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
 	{
 		kTexHandleUbo[16]=ext[i];
-    }
+	}
 }

@@ -30,9 +30,16 @@ namespace platform
             #ifndef UNIX
 				return memalign(align,nbytes);
 			#else
-				void* pBuffer = nullptr;
-				posix_memalign(&pBuffer,align,nbytes);
-				return pBuffer;
+				if(align==1)
+				{
+					return malloc(nbytes);
+				}
+				else
+				{
+					void* pBuffer = nullptr;
+					posix_memalign(&pBuffer,align,nbytes);
+					return pBuffer;
+				}
 			#endif	// __APPLE__.
 		#endif
 			}

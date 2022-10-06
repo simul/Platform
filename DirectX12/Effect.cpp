@@ -1309,8 +1309,8 @@ void Effect::CheckShaderSlots(dx12::Shader* shader, const std::vector<uint8_t>& 
 				pReflection->Load(pBlob);
 				(pReflection->FindFirstPartKind(DXIL_FOURCC('D', 'X', 'I', 'L'), &shaderIdx));
 				(pReflection->GetPartReflection(shaderIdx, __uuidof(ID3D12ShaderReflection), (void**)&d3d12reflection));*/
-			return;
 		}
+		return;
 
 	}
 
