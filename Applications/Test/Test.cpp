@@ -559,12 +559,7 @@ public:
 
 		renderPlatform->SetTopology(deviceContext, platform::crossplatform::Topology::TRIANGLESTRIP);
 		renderPlatform->ApplyPass(deviceContext, multiview->GetPass(0));
-		crossplatform::TargetsAndViewport targets;
-		targets.num = 1;
-		targets.m_rt[0] = texture->AsD3D12RenderTargetView(deviceContext, 0, 0);
-		targets.textureTargets[0] = {texture, 0, 0};
-		targets.viewport = { 0,0,texture->GetWidth(),texture->GetLength() };
-		renderPlatform->ActivateRenderTargets(deviceContext, &targets);
+		renderPlatform->ActivateRenderTargets(deviceContext, 1, &texture, nullptr);
 		renderPlatform->Draw(deviceContext, 4, 0);
 		renderPlatform->DeactivateRenderTargets(deviceContext);
 		renderPlatform->UnapplyPass(deviceContext);
