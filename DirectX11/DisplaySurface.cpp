@@ -28,7 +28,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mIsVSYNC = vsync;
 	renderPlatform=r;
 	pixelFormat=outFmt;
-    mDeviceRef                          = renderPlatform->AsD3D11Device();
+	dx11::RenderPlatform *r11=(dx11::RenderPlatform *)r;
+    mDeviceRef                          = r11->AsD3D11Device();
     mHwnd                               = handle;
     SAFE_RELEASE(mDeferredContext);
     if (mDeviceRef)

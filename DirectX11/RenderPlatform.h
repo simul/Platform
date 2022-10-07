@@ -56,7 +56,7 @@ namespace platform
 			{
 				return !can_save_and_restore;
 			}
-			ID3D11Device *AsD3D11Device();
+			ID3D11Device *AsD3D11Device() override;
 			virtual void BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name);
 			virtual void EndEvent			(crossplatform::DeviceContext &deviceContext);
 			void CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);

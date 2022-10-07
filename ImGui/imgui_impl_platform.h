@@ -29,6 +29,7 @@ namespace platform
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r);
 IMGUI_IMPL_API void     ImGui_ImplPlatform_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame(bool in3d=false, int ui_pixel_width=400, int ui_pixel_height=300,const float *menupos=nullptr, float az=0.0f, float tilt=0.0f,float width_m=2.0f);
+IMGUI_IMPL_API void		ImGui_ImplPlatform_Win32_NewFrame();
 IMGUI_IMPL_API void     ImGui_ImplPlatform_RenderDrawData(platform::crossplatform::GraphicsDeviceContext& deviceContext, ImDrawData* draw_data);
 
 // Use if you want to reset your rendering device without losing Dear ImGui state.
