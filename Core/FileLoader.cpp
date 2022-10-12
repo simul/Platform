@@ -99,7 +99,7 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 	for (; i >= 0; i--)
 	{
 		std::string f = std::string(path_stack_utf8[i]);
-		std::vector<std::string> dir=ListDirectory(f);
+		//std::vector<std::string> dir=ListDirectory(f);
 	/*	for(auto s:dir)
 		{
 			std::cout<<s.c_str()<<std::endl;

@@ -1161,9 +1161,9 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											crossplatform::PixelFormat f,
 											bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil, bool shared)
+											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
-	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil,shared);
+	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil,shared,compressionFormat,initData);
 }
 
 bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
@@ -1612,7 +1612,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 #endif
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool cubemap)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool cubemap, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	bool ok = true;
 	int totalNum = cubemap ? 6 * num : num;

@@ -328,7 +328,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,
 											crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil, bool shared)
+											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	if (!IsSame(w, l, 1, 1, m, num_samples))
 	{
@@ -412,7 +412,8 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	return false;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool ascubemap)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool ascubemap
+											, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	int totalCount = ascubemap ? 6 * num : num;
 	if (!IsSame(w, l, 1, num, nmips, 1))

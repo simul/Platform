@@ -902,7 +902,12 @@ void RenderPlatform::InvalidatingTexture(Texture *t)
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
 	//unsigned int num_v=0;
-
+	#if SIMUL_INTERNAL_CHECKS
+	if(cubemap&&cubemap->IsCubemap()==false)
+	{
+		SIMUL_INTERNAL_CERR_ONCE<<"Texture "<<cubemap->name.c_str()<<" is not a cubemap.\n";
+	}
+	#endif
 	Viewport oldv=GetViewport(deviceContext,0);
 	
 	// Setup the viewport for rendering.
