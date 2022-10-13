@@ -905,7 +905,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	#if SIMUL_INTERNAL_CHECKS
 	if(cubemap&&cubemap->IsCubemap()==false)
 	{
-		SIMUL_INTERNAL_CERR_ONCE<<"Texture "<<cubemap->name.c_str()<<" is not a cubemap.\n";
+		SIMUL_INTERNAL_CERR_ONCE<<"Texture "<<cubemap->GetName().c_str() << " is not a cubemap.\n";
 	}
 	#endif
 	Viewport oldv=GetViewport(deviceContext,0);

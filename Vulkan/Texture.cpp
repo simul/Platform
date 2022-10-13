@@ -573,9 +573,10 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	return true;
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m,
-	crossplatform::PixelFormat f, bool computable /*= false*/, bool rendertarget /*= false*/, bool depthstencil /*= false*/, int num_samples /*= 1*/, int aa_quality /*= 0*/, bool wrap /*= false*/,
-	vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/, bool shared /*= false*/)
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m, crossplatform::PixelFormat f,
+	bool computable, bool rendertarget, bool depthstencil,
+	int num_samples, int aa_quality, bool wrap, vec4 clear, float clearDepth, uint clearStencil,
+	bool shared, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
 {
 	if (IsSame(w, l, 1, 1, m,f, num_samples, computable, rendertarget, depthstencil, true))
 	{
@@ -859,15 +860,16 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 	}
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable , bool rendertarget , bool ascubemap )
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f,
+	bool computable, bool rendertarget, bool cubemap, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
 {
-	if (IsSame(w, l, 1, num, m,f,1,computable,rendertarget,depthStencil, true, ascubemap))
+	if (IsSame(w, l, 1, num, mips, f, 1, computable, rendertarget, depthStencil, true, cubemap))
 	{
 		return false;
 	}
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
-	int totalNum	= ascubemap ? 6 * num : num;
+	int totalNum	= cubemap ? 6 * num : num;
 
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
 	vk::FormatProperties props;
@@ -880,16 +882,16 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		usageFlags|=vk::ImageUsageFlagBits::eColorAttachment;
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
-	if(m>1)
+	if(mips>1)
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	vk::ImageCreateFlags imageCreateFlags;
-	if(ascubemap)
+	if(cubemap)
 		imageCreateFlags|=vk::ImageCreateFlagBits::eCubeCompatible;
 	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (uint32_t)1 })
-		.setMipLevels(m)
+		.setMipLevels(mips)
 		.setArrayLayers(totalNum)
 		.setSamples(vk::SampleCountFlagBits::e1)
 		.setTiling(vk::ImageTiling::eOptimal)
@@ -916,7 +918,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
-	InitViewTables(2,f,w,l,m,num, rendertarget,ascubemap,false, true);
+	InitViewTables(2,f,w,l,mips,num, rendertarget,cubemap,false, true);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
 
 	pixelFormat=f;
@@ -925,12 +927,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	depth=1;
 	dim=2;
 	arraySize=num;
-	mips=m;
-    cubemap   = ascubemap;
+	this->mips=mips;
+	this->cubemap=cubemap;
 	depthStencil=false;
 	this->computable=computable;
 	this->renderTarget=rendertarget;
-	if(ascubemap)
+	if(cubemap)
 		SetName(platform::core::QuickFormat("%s Cubemap %d of %d x %d",name.c_str(),num,w,l));
 	else
 		SetName(platform::core::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));

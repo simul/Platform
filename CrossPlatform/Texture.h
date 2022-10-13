@@ -346,6 +346,10 @@ namespace platform
 			{
 				return arraySize;
 			}
+			const std::string GetName()
+			{
+				return name;
+			}
 			virtual void FinishLoading(DeviceContext & ) {}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
