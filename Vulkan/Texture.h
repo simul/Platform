@@ -61,7 +61,7 @@ namespace platform
 													int num_samples = 1, int aa_quality = 0, bool wrap = false, vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, 
 													bool shared = false, crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED, const uint8_t** initData = nullptr) override;
 			bool	ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int mips, crossplatform::PixelFormat f,
-													bool computable = false, bool rendertarget = false, bool cubemap = false, 
+													bool computable = false, bool rendertarget = false, bool depthstencil = false, bool cubemap = false,
 													crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED, const uint8_t** initData = nullptr) override;
 			bool	ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable = false, int nmips = 1, bool rendertargets = false) override;
 
@@ -130,6 +130,7 @@ namespace platform
 			std::vector<vk::ImageView>					mMainMipViews;
 			std::vector<vk::ImageView>					faceArrayMipViews;
 
+			vk::ImageView								mainDepthView;
 			std::vector<vk::ImageView>					layerDepthViews;
 
 			// For cubemaps/cubemap arrays there are two kinds of layer mip view.

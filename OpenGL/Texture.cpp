@@ -412,7 +412,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 	return false;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool ascubemap
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool ascubemap, bool depthstencil
 											, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	int totalCount = ascubemap ? 6 * num : num;

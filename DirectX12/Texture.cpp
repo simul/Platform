@@ -1612,7 +1612,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 #endif
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool cubemap, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	bool ok = true;
 	int totalNum = cubemap ? 6 * num : num;

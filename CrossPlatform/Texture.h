@@ -306,7 +306,7 @@ namespace platform
 			// Create texture for use as a reference frame in video encoding or decoding.
 			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return false; };
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
-			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false
+			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,bool cubemap=false
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr)=0;
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;

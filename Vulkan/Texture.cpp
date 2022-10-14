@@ -592,19 +592,26 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	if(rendertarget)
 		usageFlags|=vk::ImageUsageFlagBits::eColorAttachment;
-	if(depthstencil)
-		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
+	if(depthstencil)
+#if defined(__ANDROID__)
+		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment; //Overwrite!
+#else
+		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
+#endif
 	
 	vk::ImageCreateFlags imageCreateFlags;
 	if(depthstencil)
 		imageCreateFlags|=vk::ImageCreateFlagBits::eMutableFormat;
+
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
-	vk::FormatProperties props;
-	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
-	gpu->getFormatProperties(tex_format, &props);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+
+	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
+
+	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
+	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
 	
 	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
@@ -682,14 +689,10 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	if(crossplatform::RenderPlatform::IsDepthFormat(f))
 	{
 		imageAspectFlags=vk::ImageAspectFlagBits::eDepth;
-		//colourFormat=crossplatform::RenderPlatform::ToColourFormat(f);
 		SIMUL_ASSERT(isDepthTarget);
 		depth_format = vulkan::RenderPlatform::ToVulkanFormat(depthFormat);
 	}
-	//if(crossplatform::RenderPlatform::IsStencilFormat(f))
-	//	imageAspectFlags|=vk::ImageAspectFlagBits::eStencil;
 	vk::Format pixel_read_format = vulkan::RenderPlatform::ToVulkanFormat(colourFormat);
-	//vk::Format view_format=tex_format;
 	
 	vk::ImageViewCreateInfo viewCreateInfo = vk::ImageViewCreateInfo()
 		.setImage(mImage)
@@ -697,11 +700,8 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		.setFormat(pixel_read_format)
 		.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags, 0, mipCount, 0, totalNum));
 	if(pixel_read_format==vk::Format::eUndefined)
-	{
 		viewCreateInfo=viewCreateInfo.setPNext(vulkanRenderPlatform->GetVideoSamplerYcbcrConversionInfo());
-	}
 	vk::Result res=vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView);
-//SIMUL_CERR<<"Texture "<<name.c_str()<<std::hex<<" imageView 0x"<<mMainView.operator VkImageView()<<std::endl;
 	SIMUL_VK_CHECK(res);
 	SetVulkanName(renderPlatform,mMainView,(name+" imageView").c_str());
 	
@@ -760,13 +760,21 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	}
 	if(isDepthTarget)
 	{
-		layerDepthViews.resize(totalNum);
+		viewType=vk::ImageViewType::e2DArray;
+		viewCreateInfo.setViewType(viewType);
 		viewCreateInfo.setFormat(depth_format);
+		viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,1,0,totalNum));
+		SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mainDepthView));
+		SetVulkanName(renderPlatform, mainDepthView,(name+" mainDepthView").c_str());
+
+		layerDepthViews.resize(totalNum);
+		viewType=vk::ImageViewType::e2D;
+		viewCreateInfo.setViewType(viewType);
 		for(int i=0;i< totalNum;i++)
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,1,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &layerDepthViews[i]));
-			SetVulkanName(renderPlatform,layerDepthViews[i],(name+" mFaceArrayView").c_str());
+			SetVulkanName(renderPlatform,layerDepthViews[i],(name+" layerDepthView").c_str());
 		}
 		viewCreateInfo.setFormat(pixel_read_format);
 	}
@@ -861,9 +869,9 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f,
-	bool computable, bool rendertarget, bool cubemap, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
+	bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
 {
-	if (IsSame(w, l, 1, num, mips, f, 1, computable, rendertarget, depthStencil, true, cubemap))
+	if (IsSame(w, l, 1, num, mips, f, 1, computable, rendertarget, depthstencil, true, cubemap))
 	{
 		return false;
 	}
@@ -871,11 +879,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	renderPlatform=r;
 	int totalNum	= cubemap ? 6 * num : num;
 
-	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
-	vk::FormatProperties props;
-	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
-	gpu->getFormatProperties(tex_format, &props);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	// Include vk::ImageUsageFlagBits::eTransferDst IN CASE we're loading from a file...
 	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst;
 	if(rendertarget)
@@ -884,9 +887,27 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 	if(mips>1)
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
+	if(depthstencil)
+#if defined(__ANDROID__)
+		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment; //Overwrite!
+#else
+		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
+#endif
+
 	vk::ImageCreateFlags imageCreateFlags;
 	if(cubemap)
 		imageCreateFlags|=vk::ImageCreateFlagBits::eCubeCompatible;
+	if (depthstencil)
+		imageCreateFlags |= vk::ImageCreateFlagBits::eMutableFormat;
+	
+	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
+
+	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
+	
+	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
+	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
+	
 	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
@@ -918,7 +939,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
 	
-	InitViewTables(2,f,w,l,mips,num, rendertarget,cubemap,false, true);
+	InitViewTables(2, f, w, l, mips, num, rendertarget, cubemap, depthstencil, true);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
 
 	pixelFormat=f;
@@ -929,7 +950,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	arraySize=num;
 	this->mips=mips;
 	this->cubemap=cubemap;
-	depthStencil=false;
+	this->depthStencil=depthstencil;
 	this->computable=computable;
 	this->renderTarget=rendertarget;
 	if(cubemap)
