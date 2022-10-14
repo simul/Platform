@@ -130,7 +130,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	if(num<=1)
 		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0,false);
 	else
-		ensureTextureArraySizeAndFormat(r,(int)w,(int)l,(int)num,(int)m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false);
+		ensureTextureArraySizeAndFormat(r,(int)w,(int)l,(int)num,(int)m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,false);
 	textureLoadComplete=false;
 }
 
