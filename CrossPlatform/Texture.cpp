@@ -140,7 +140,8 @@ void Texture::InvalidateDeviceObjects()
 bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::TextureCreate* tc)
 {
 	bool res=false;
-
+	if(tc->name)
+		name=tc->name;
 	if (tc->vidTexType != VideoTextureType::NONE)
 		res = ensureVideoTexture(r, tc->w, tc->l, tc->f, tc->vidTexType);
 	else if (tc->d < 2&&tc->arraysize==1&&!tc->cubemap)
@@ -150,9 +151,9 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap,tc->compressionFormat,tc->initialData) ;
 	else
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
-	/*if(tc->initialData)
+/*	if(tc->initialData)
 	{
-		setTexels(tc->initialData,0,tc->w*tc->l*tc->d);
+		setTexels(tc->initialData,0,tc->mips*);
 	}*/
 	return res;
 }

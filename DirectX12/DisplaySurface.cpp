@@ -265,6 +265,7 @@ void DisplaySurface::StartFrame()
 	res = mCommandAllocators[idx]->Reset();
 	SIMUL_ASSERT(res == S_OK); 
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
+	//SIMUL_COUT<<"Reset command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
 	idx_old=idx;
@@ -281,7 +282,7 @@ void DisplaySurface::EndFrame()
 	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
 	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetCommandQueue(), mCommandList);
-	
+	//SIMUL_COUT<<"Executing command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
 	//ID3D12CommandList* ppCommandLists[] = { mCommandList };
 	//dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:

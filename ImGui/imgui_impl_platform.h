@@ -20,12 +20,22 @@ namespace platform
 {
 	namespace crossplatform
 	{
+		class Texture;
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
 		class DisplaySurfaceManagerInterface;
 		class PlatformRendererInterface;
 	}
 }
+
+//! A wrapper class for drawing textures including mip/slice info.
+struct ImGui_ImplPlatform_TextureView
+{
+	const platform::crossplatform::Texture *texture=nullptr;
+	int mip=0;
+	int slice=0;
+};
+
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r);
 IMGUI_IMPL_API void     ImGui_ImplPlatform_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame(bool in3d=false, int ui_pixel_width=400, int ui_pixel_height=300,const float *menupos=nullptr, float az=0.0f, float tilt=0.0f,float width_m=2.0f);

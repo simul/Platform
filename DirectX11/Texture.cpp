@@ -750,6 +750,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 {
 	pixelFormat = pf;
 	DXGI_FORMAT dxgiFormat=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	genericDxgiFormat=dxgi_format;
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
@@ -877,63 +878,63 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	return changed;
 }
 
-void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT &texture2dFormat,DXGI_FORMAT &srvFormat)
+void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT &genericDxgiFormat,DXGI_FORMAT &srvFormat)
 {
-	switch (texture2dFormat)
+	switch (genericDxgiFormat)
 	{
 	case DXGI_FORMAT_D32_FLOAT:
-		texture2dFormat = DXGI_FORMAT_R32_TYPELESS;
+		genericDxgiFormat = DXGI_FORMAT_R32_TYPELESS;
 		srvFormat = DXGI_FORMAT_R32_FLOAT;
 		break;
 	case DXGI_FORMAT_D16_UNORM:
-		texture2dFormat = DXGI_FORMAT_R16_TYPELESS;
+		genericDxgiFormat = DXGI_FORMAT_R16_TYPELESS;
 		srvFormat = DXGI_FORMAT_R16_UNORM;
 		break;
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:
-		texture2dFormat = DXGI_FORMAT_R24G8_TYPELESS;
+		genericDxgiFormat = DXGI_FORMAT_R24G8_TYPELESS;
 		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		break;
 	case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
-		texture2dFormat = DXGI_FORMAT_R32G8X24_TYPELESS;
+		genericDxgiFormat = DXGI_FORMAT_R32G8X24_TYPELESS;
 		srvFormat = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC1_UNORM:
 	case DXGI_FORMAT_BC1_UNORM_SRGB:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC1_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC1_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC2_UNORM:
 	case DXGI_FORMAT_BC2_UNORM_SRGB:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC2_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC2_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC3_UNORM:
 	case DXGI_FORMAT_BC3_UNORM_SRGB:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC3_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC3_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC4_UNORM:
 	case DXGI_FORMAT_BC4_SNORM:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC4_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC4_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC5_UNORM:
 	case DXGI_FORMAT_BC5_SNORM:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC5_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC5_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC6H_UF16:
 	case DXGI_FORMAT_BC6H_SF16:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC6H_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC6H_TYPELESS;
 		break;
 	case DXGI_FORMAT_BC7_UNORM:
 	case DXGI_FORMAT_BC7_UNORM_SRGB:
-		srvFormat = texture2dFormat;
-		texture2dFormat = DXGI_FORMAT_BC7_TYPELESS;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_BC7_TYPELESS;
 		break;
 	default:
-		srvFormat = texture2dFormat;
+		srvFormat = genericDxgiFormat;
 		break;
 	};
 }
@@ -946,11 +947,11 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	, int num_samples, int aa_quality, bool
 	, vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
-	return EnsureTexture2DSizeAndFormat(r, w, l, f, computable, rendertarget, depthstencil, num_samples, aa_quality, false, clear, clearDepth, clearStencil,compressionFormat,initData);
+	return EnsureTexture2DSizeAndFormat(r, w, l,m, f, computable, rendertarget, depthstencil, num_samples, aa_quality, false, clear, clearDepth, clearStencil,compressionFormat,initData);
 }
 
 bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
-	, int w, int l
+	, int w, int l,int m
 	, crossplatform::PixelFormat f
 	, bool computable, bool rendertarget, bool depthstencil
 	, int num_samples, int aa_quality, bool
@@ -958,13 +959,12 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	, crossplatform::CompressionFormat compressionFormat
 	, const uint8_t** initData)
 {
-	int m=1;
 	renderPlatform=r;
 	pixelFormat=f;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
-	DXGI_FORMAT texture2dFormat=dxgi_format;
-	DXGI_FORMAT srvFormat=dxgi_format;
-	DepthFormatToResourceAndSrvFormats(texture2dFormat,srvFormat);
+	genericDxgiFormat=dxgi_format;
+	srvFormat=dxgi_format;
+	DepthFormatToResourceAndSrvFormats(genericDxgiFormat,srvFormat);
 	dim=2;
 	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -977,7 +977,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=(UINT)w||textureDesc.Height!= (UINT)l||textureDesc.Format!=texture2dFormat)
+			if(textureDesc.Width!=(UINT)w||textureDesc.Height!= (UINT)l||textureDesc.Format!=genericDxgiFormat)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -998,7 +998,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		while(numQualityLevels==0&&num_samples>1)
 		{
 			V_CHECK(renderPlatform->AsD3D11Device()->CheckMultisampleQualityLevels(
-				texture2dFormat,
+				genericDxgiFormat,
 				num_samples,
 				&numQualityLevels	));
 			//if(aa_quality>=numQualityLevels)
@@ -1013,11 +1013,11 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			textureDesc.Width					=width=w;
 			textureDesc.Height					=length=l;
 			depth								=1;
-			textureDesc.Format					=texture2dFormat;
+			textureDesc.Format					=genericDxgiFormat;
 			textureDesc.MipLevels				=mips=m;
 			textureDesc.ArraySize				=arraySize=1;
 			D3D11_USAGE usage					=D3D11_USAGE_DYNAMIC;
-			if(compressed)
+			if(compressed||m>1)
 				usage							=D3D11_USAGE_DEFAULT;
 			textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:usage;
 			textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
@@ -1028,32 +1028,56 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			
 			std::vector<D3D11_SUBRESOURCE_DATA> initialSubresourceData(m*arraySize);
 			int mip_width=width;
+			int mip_length=length;
 			if(initData)
-			for(size_t i=0;i<m;i++)
 			{
-				for(size_t j=0;j<arraySize;j++)
+				for(size_t i=0;i<m;i++)
 				{
-					size_t n=i*m+j;
-					D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
-					data.pSysMem						=initData[n];
-					data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
-					static int uu = 4;
-					data.SysMemSlicePitch = 0;
-					switch (compressionFormat)
+					for(size_t j=0;j<arraySize;j++)
 					{
-					case crossplatform::CompressionFormat::BC1:
-					case crossplatform::CompressionFormat::BC3:
-					case crossplatform::CompressionFormat::BC5:
-						data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*(mip_width / uu);
-						data.SysMemSlicePitch			= data.SysMemPitch*length/4;
-						break;
-					default:
-						break;
-					};
+						size_t n=i*arraySize+j;
+						D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
+						data.pSysMem						=initData[n];
+						data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
+						static int uu = 4;
+						data.SysMemSlicePitch = data.SysMemPitch*mip_length;
+						switch (compressionFormat)
+						{
+						case crossplatform::CompressionFormat::BC1:
+						case crossplatform::CompressionFormat::BC3:
+						case crossplatform::CompressionFormat::BC5:
+							data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*(mip_width / uu);
+							data.SysMemSlicePitch			= data.SysMemPitch*mip_length/4;
+							break;
+						default:
+							break;
+						};
+					}
+					mip_width=(mip_width+1)/2;
+					mip_length=(mip_length+1)/2;
 				}
-				mip_width=(mip_width+1)/2;
+				SAFE_DELETE(stagingBuffer);
+				//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
+				D3D11_TEXTURE2D_DESC desc;
+				memset(&desc,0,sizeof(desc));
+				desc.Width			=width;
+				desc.Height			=length;
+				desc.MipLevels		=m;
+				desc.ArraySize		=1;
+				desc.Format			=dxgi_format;
+				desc.Usage			=D3D11_USAGE_STAGING;
+				desc.CPUAccessFlags	=D3D11_CPU_ACCESS_WRITE;
+				desc.SampleDesc.Count=1;
+				desc.SampleDesc.Quality=0;
+				ID3D11Texture2D *tex;
+				renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex);
+				stagingBuffer=tex;
+				if(renderPlatform->GetMemoryInterface())
+					renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
+				textureUploadComplete=false;
+
 			}
-			HRESULT hr=pd3dDevice->CreateTexture2D(&textureDesc, initData? initialSubresourceData.data():nullptr,(ID3D11Texture2D**)(&texture));
+			HRESULT hr=pd3dDevice->CreateTexture2D(&textureDesc, nullptr,(ID3D11Texture2D**)(&texture));
 			if (hr != S_OK)
 			{
 				textureDesc.Format= srvFormat = (DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(platform::crossplatform::PixelFormat::RGBA_8_UNORM, crossplatform::CompressionFormat::UNCOMPRESSED);
@@ -1076,12 +1100,17 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			SAFE_RELEASE(arrayShaderResourceView);
 			V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
 			SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
+			
+			{
+				InitSRVTables(1,textureDesc.MipLevels);
+				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,false,false,textureDesc.SampleDesc.Count>1);
+			}
 		}
 		if(computable&&(!layerMipUnorderedAccessViews||!ok))
 		{
 			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 			ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-			uav_desc.Format						=texture2dFormat;
+			uav_desc.Format						=genericDxgiFormat;
 			uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_TEXTURE2D;
 			uav_desc.Texture2D.MipSlice			=0;
 		
@@ -1108,7 +1137,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			InitRTVTables(1,m);
 			// Setup the description of the render target view.
 			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-			renderTargetViewDesc.Format				=texture2dFormat;
+			renderTargetViewDesc.Format				=genericDxgiFormat;
 			renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 			// Create the render target in DX11:
 			if(renderTargetViews)
@@ -1146,6 +1175,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		m=1;
 	int total_num			=cubemap?6*num:num;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(f,compressionFormat);
+	genericDxgiFormat=dxgi_format;
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
 	if(texture)
@@ -1206,37 +1236,58 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	int mip_width=width;
 	std::vector<std::vector<uint32_t>> tempData(m*total_num);
 	if(initData)
-	for(size_t i=0;i<m;i++)
 	{
-		for(size_t j=0;j<total_num;j++)
+		for(size_t i=0;i<m;i++)
 		{
-			size_t n=i*m+j;
-			/*tempData[n].resize(mip_width*mip_width);
-			for(int k=0;k<mip_width*mip_width;k++)
+			for(size_t j=0;j<total_num;j++)
 			{
-				tempData[n][k]=0xFF00FF00;
-			}*/
-			D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
-			data.pSysMem						=initData[n];//tempData[n].data();//
-			data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
-			static int uu = 4;
-			data.SysMemSlicePitch = data.SysMemPitch*length;
-			switch (compressionFormat)
-			{
-			case crossplatform::CompressionFormat::BC1:
-			case crossplatform::CompressionFormat::BC3:
-			case crossplatform::CompressionFormat::BC5:
-				data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*(mip_width / uu);
-				data.SysMemSlicePitch			= data.SysMemPitch*length/4;
-				break;
-			default:
-				break;
-			};
+				size_t n=i*m+j;
+				/*tempData[n].resize(mip_width*mip_width);
+				for(int k=0;k<mip_width*mip_width;k++)
+				{
+					tempData[n][k]=0xFF00FF00;
+				}*/
+				D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
+				data.pSysMem						=initData[n];//tempData[n].data();//
+				data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
+				static int uu = 4;
+				data.SysMemSlicePitch = data.SysMemPitch*length;
+				switch (compressionFormat)
+				{
+				case crossplatform::CompressionFormat::BC1:
+				case crossplatform::CompressionFormat::BC3:
+				case crossplatform::CompressionFormat::BC5:
+					data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*(mip_width / uu);
+					data.SysMemSlicePitch			= data.SysMemPitch*length/4;
+					break;
+				default:
+					break;
+				};
+			}
+			mip_width=(mip_width+1)/2;
 		}
-		mip_width=(mip_width+1)/2;
+		SAFE_RELEASE(stagingBuffer);
+		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
+		D3D11_TEXTURE2D_DESC desc;
+		memset(&desc,0,sizeof(desc));
+		desc.Width			=width;
+		desc.Height			=length;
+		desc.MipLevels		=m;
+		desc.ArraySize		=total_num;
+		desc.Format			=dxgi_format;
+		desc.Usage			=D3D11_USAGE_STAGING;
+		desc.CPUAccessFlags	=D3D11_CPU_ACCESS_WRITE;
+		desc.SampleDesc.Count=1;
+		desc.SampleDesc.Quality=0;
+		ID3D11Texture2D *tex;
+		renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex);
+		stagingBuffer=tex;
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
+		textureUploadComplete=false;
 	}
 
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData?initialSubresourceData.data():nullptr,&pArrayTexture));
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,nullptr,&pArrayTexture));
 	if(renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->TrackVideoMemory(pArrayTexture,GetMemorySize(),name.c_str());
 	if(!external_texture&&renderPlatform->GetMemoryInterface())
@@ -1314,7 +1365,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap,bool volume,bool msaa)
 
 	if(!volume)
 	{
-		SRVDesc.Format						=TypelessToSrvFormat(dxgi_format);
+		SRVDesc.Format						=TypelessToSrvFormat(genericDxgiFormat);
 		SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
 		int total_num						=cubemap?6*num:num;
 		if(cubemap)
@@ -1690,6 +1741,14 @@ void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext &devic
 		renderPlatform->DeactivateRenderTargets(deviceContext);
 	else
 		deviceContext.GetFrameBufferStack().pop();
+}
+
+void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
+{
+	if(textureUploadComplete)
+		return;
+	deviceContext.asD3D11DeviceContext()->CopyResource(texture,stagingBuffer);
+	textureUploadComplete=true;
 }
 
 int Texture::GetSampleCount() const

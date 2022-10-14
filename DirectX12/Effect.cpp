@@ -275,10 +275,19 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		}
 		else
 		{
+			D3D12_CPU_DESCRIPTOR_HANDLE * srv=nullptr;
+			if (ta.texture &&ta.texture->IsValid())
+			{
+				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
+				if(!srv)
+				{
+					srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
+				}
+			}
 			// If the texture is null or invalid, set a dummy:
 			// NOTE: this basically disables any slot checks as we will always
 			// set something
-			if (!ta.texture || !ta.texture->IsValid())
+			if (!srv)
 			{
 				if (ta.dimensions == 3)
 				{
@@ -288,8 +297,9 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				{
 					ta.texture = rPlat->GetDummy2D();
 				}
+				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
 			}
-			mSrvSrcHandles[slot] = *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
+			mSrvSrcHandles[slot] = *srv;
 		}
 		if (slot < 25)
 		{
@@ -610,12 +620,12 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	uint64_t hash = ((uint64_t)finalBlend) ^ ((uint64_t)finalDepth) ^ ((uint64_t)finalRaster) ^ rthash ^ msaaHash;
 
 	// Runtime check for depth write:
-	if (finalDepth->DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO && !targets->m_dt)
+	if (finalDepth->DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO &&!targets->m_dt&& !targets->depthTarget.texture)
 	{
 		SIMUL_CERR_ONCE << "This pass(" << name.c_str() << ") expects a depth target to be bound (write), but there isn't one. \n";
 	}
 	// Runtime check for depth read:
-	if (finalDepth->DepthEnable && !targets->m_dt)
+	if (finalDepth->DepthEnable && !targets->m_dt&& !targets->depthTarget.texture)
 	{
 		SIMUL_CERR_ONCE << "This pass(" << name.c_str() << ") expects a depth target to be bound (read), but there isn't one. \n";
 	}

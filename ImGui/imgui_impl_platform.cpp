@@ -33,9 +33,10 @@ struct ImGui_ImplPlatform_Data
 	
 	Layout*					pInputLayout = nullptr;
 	ConstantBuffer<ImGuiCB>	constantBuffer;
-	Texture*				pFontTextureView = nullptr;
+	Texture*				fontTexture = nullptr;
 	Texture*				framebufferTexture = nullptr;
-
+	ImGui_ImplPlatform_TextureView fontTextureView;
+	ImGui_ImplPlatform_TextureView framebufferTextureView;
 	RenderState*			pBlendState = nullptr;
 	int						VertexBufferSize=0;
 	int						IndexBufferSize=0;
@@ -93,7 +94,8 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 		int width, height;
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-		bd->pFontTextureView->setTexels(deviceContext, pixels, 0, width * height);
+		bd->fontTexture->setTexels(deviceContext, pixels, 0, width * height);
+		bd->fontTextureView.texture=bd->fontTexture;
 		bd->textureUploaded = true;
 	}
 
@@ -117,7 +119,9 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 	tc.w=int(draw_data->DisplaySize.x);
 	tc.l=int(draw_data->DisplaySize.y);
 	tc.f=crossplatform::PixelFormat::RGBA_8_UNORM;
+	tc.mips=1;
 	bd->framebufferTexture->EnsureTexture(deviceContext.renderPlatform,&tc);
+	bd->framebufferTextureView.texture=bd->framebufferTexture;
 }
 
 // Render function
@@ -315,9 +319,9 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				renderPlatform->SetScissor(deviceContext, clip);
 
 				// Bind texture, Draw
-				Texture* texture_srv = (Texture*)pcmd->GetTexID();
-				renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),texture_srv);
-				renderPlatform->ApplyPass(deviceContext, test_depth?bd->effectPass_testDepth:bd->effectPass_noDepth);
+				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
+				renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),(Texture*)texture_srv->texture,texture_srv->slice,texture_srv->mip);
+				renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
 				bd->pInputLayout->Apply(deviceContext);
 				renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
 				bd->pInputLayout->Unapply(deviceContext);
@@ -353,11 +357,12 @@ static void ImGui_ImplPlatform_CreateFontsTexture()
 	unsigned char* pixels;
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-	bd->pFontTextureView=bd->renderPlatform->CreateTexture("imgui_font");
-	bd->pFontTextureView->ensureTexture2DSizeAndFormat(bd->renderPlatform,width,height,1,PixelFormat::RGBA_8_UNORM);
+	bd->fontTexture=bd->renderPlatform->CreateTexture("imgui_font");
+	bd->fontTexture->ensureTexture2DSizeAndFormat(bd->renderPlatform,width,height,1,PixelFormat::RGBA_8_UNORM);
+	bd->fontTextureView.texture=bd->fontTexture;
 	bd->textureUploaded=false;
 	// Store our identifier
-	io.Fonts->SetTexID((ImTextureID)bd->pFontTextureView);
+	io.Fonts->SetTexID((ImTextureID)&bd->fontTextureView);
 }
 
 bool	ImGui_ImplPlatform_CreateDeviceObjects()
@@ -365,7 +370,7 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (!bd->renderPlatform)
 		return false;
-	if (bd->pFontTextureView)
+	if (bd->fontTexture)
 		ImGui_ImplPlatform_InvalidateDeviceObjects();
 
 	crossplatform::LayoutDesc local_layout[] =
@@ -385,7 +390,7 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 	bd->effectPass_placeIn3D_testDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
 	bd->effectPass_placeIn3D_noDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
 	
-	if (!bd->pFontTextureView)
+	if (!bd->fontTexture)
 		ImGui_ImplPlatform_CreateFontsTexture();
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
 #endif
@@ -401,9 +406,9 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 		return;
 
 	// (bd->pFontSampler)		   { bd->pFontSampler->Release(); bd->pFontSampler = NULL; }
-	if (bd->pFontTextureView)	
+	if (bd->fontTexture)	
 	{
-		bd->pFontTextureView->InvalidateDeviceObjects();
+		bd->fontTexture->InvalidateDeviceObjects();
 		ImGui::GetIO().Fonts->SetTexID(NULL);
 		// We copied data->pFontTextureView to io.Fonts->TexID so let's clear that as well.
 	}
@@ -490,7 +495,7 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 	if(pos)
 		ctr=pos;
 	ImGui_ImplPlatform_SetFrame(width_m,az,tilt,ctr);
-	if (!bd->pFontTextureView)
+	if (!bd->fontTexture)
 		ImGui_ImplPlatform_CreateDeviceObjects();
 
 	// In 3d this takes the place of the CPU platform's NewFrame

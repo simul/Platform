@@ -376,6 +376,7 @@ namespace platform
 			bool external_texture;
 			bool depthStencil;
 			bool shouldGenerateMips = false;
+			bool textureUploadComplete=true;
 			std::string name;
 			platform::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
