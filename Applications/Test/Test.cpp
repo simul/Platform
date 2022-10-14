@@ -555,7 +555,7 @@ public:
 	void Test_Multiview(crossplatform::GraphicsDeviceContext deviceContext, int w, int h)
 	{
 		crossplatform::EffectTechnique* multiview = test->GetTechniqueByName("test_multiview");
-		texture->ensureTextureArraySizeAndFormat(renderPlatform, w, h, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, true, false);
+		texture->ensureTextureArraySizeAndFormat(renderPlatform, w, h, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, true, false, false);
 
 		renderPlatform->SetTopology(deviceContext, platform::crossplatform::Topology::TRIANGLESTRIP);
 		renderPlatform->ApplyPass(deviceContext, multiview->GetPass(0));

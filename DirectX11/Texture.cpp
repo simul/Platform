@@ -1168,7 +1168,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	return !ok;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap,crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool depthstencil,bool cubemap,crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	renderPlatform=r;
 	if(m<0||m>16)

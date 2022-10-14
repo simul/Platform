@@ -137,7 +137,7 @@ bool FramebufferGL::CreateBuffers()
         }
         else
         {
-            buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform, Width, Height, 1, mips, target_format, false, true, true);
+            buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform, Width, Height, 1, mips, target_format, false, true, false, true);
         }
     }
     if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)

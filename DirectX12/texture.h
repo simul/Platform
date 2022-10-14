@@ -82,7 +82,7 @@ namespace platform
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false
 																			, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
 			bool							ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
-			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false
+			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
 												, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void							ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
