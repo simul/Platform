@@ -368,7 +368,6 @@ namespace platform
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
-			bool textureLoadComplete;
 		protected:
 			bool cubemap;
 			bool computable;

@@ -113,7 +113,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	if(w*l==0)
 	{
 	// don't try to complete the load with empty data.
-		textureLoadComplete=true;
+		textureUploadComplete=true;
 		return;
 	}
 	size_t num= loadedTextures.size();
@@ -131,7 +131,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 		ensureTexture2DSizeAndFormat(r,w,l, m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,1,0,false,vec4(0.f,0.f,0.f,0.f),1.F,0,false);
 	else
 		ensureTextureArraySizeAndFormat(r,(int)w,(int)l,(int)num,(int)m,crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,false);
-	textureLoadComplete=false;
+	textureUploadComplete=false;
 }
 
 bool Texture::IsValid() const
@@ -274,7 +274,7 @@ void Texture::SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, v
 
 void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 {
-	if(textureLoadComplete)
+	if(textureUploadComplete)
 		return;
 	SIMUL_ASSERT(loadedTextures.size()!=0)
 	
@@ -361,7 +361,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		FreeTranslatedTextureData(loadedTextures[i].data);
 	}
 	
-	textureLoadComplete=true;
+	textureUploadComplete=true;
 }
 
 void Texture::SplitLayouts()
@@ -388,7 +388,7 @@ void Texture::AssumeLayout(vk::ImageLayout layout)
  
 vk::ImageView *Texture::AsVulkanDepthView( int layer, int mip)
 {
-	if(!textureLoadComplete)
+	if(!textureUploadComplete)
 	{
 		return nullptr;
 	}
@@ -413,7 +413,7 @@ vk::ImageView *Texture::AsVulkanDepthView( int layer, int mip)
 
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
 {
-	if(!textureLoadComplete)
+	if(!textureUploadComplete)
 	{
 		return nullptr;
 	}
@@ -605,7 +605,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	if(depthstencil)
 		imageCreateFlags|=vk::ImageCreateFlagBits::eMutableFormat;
 
-	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
+	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, compressionFormat);
 
 	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
 	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
@@ -660,6 +660,28 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	this->computable=computable;
 	this->renderTarget=rendertarget;
 	SetVulkanName(renderPlatform,mImage,name.c_str());
+	
+	if(initData)
+	{
+		size_t n=0;
+		int mip_width=width;
+		int mip_length=length;
+		loadedTextures.resize(mips);
+		for(size_t i=0;i<mips;i++)
+		{
+			/*tempData[n].resize(mip_width*mip_width);
+			for(int k=0;k<mip_width*mip_width;k++)
+			{
+				tempData[n][k]=0xFF00FF00;
+			}*/
+			auto &loadedTexture=loadedTextures[n];
+			SetTextureData(loadedTexture,initData[n],mip_width,mip_length,1,0,pixelFormat,compressionFormat);
+			mip_width=(mip_width+1)/2;
+			mip_length=(mip_length+1)/2;
+			n++;
+		}
+		textureUploadComplete=false;
+	}
 	return true;
 }
 
@@ -900,7 +922,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	if (depthstencil)
 		imageCreateFlags |= vk::ImageCreateFlagBits::eMutableFormat;
 	
-	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
+	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, compressionFormat);
 
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
@@ -1157,7 +1179,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
 }
 
-void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f)
+void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f,crossplatform::CompressionFormat compressionFormat)
 {
 	lt.data=( unsigned char*)data;
 	lt.x=x;
@@ -1165,11 +1187,25 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	lt.z=z;
 	lt.n=n;
 	lt.pixelFormat=f;
+	static int uu = 4;
+	size_t SysMemPitch		=x*crossplatform::GetByteSize(f);
+	size_t SysMemSlicePitch = SysMemPitch*y;
+	switch (compressionFormat)
+	{
+	case crossplatform::CompressionFormat::BC1:
+	case crossplatform::CompressionFormat::BC3:
+	case crossplatform::CompressionFormat::BC5:
+		SysMemPitch				= crossplatform::GetByteSize(f)*std::max(1,x / uu);
+		SysMemSlicePitch		= SysMemPitch*std::max(1,y/4);
+		break;
+	default:
+		break;
+	};
 	int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
 	auto const buffer_create_info = vk::BufferCreateInfo()
-		.setSize(lt.x * lt.y *lt.z * 4 *texelBytes)
+		.setSize(SysMemSlicePitch)//lt.x * lt.y *lt.z * 4 *texelBytes)
 		.setUsage(vk::BufferUsageFlagBits::eTransferSrc)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
@@ -1209,9 +1245,8 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 		cPtr += texelBytes*lt.x;
 		rgba_data += layout.rowPitch;
 	}
-
 	vulkanDevice->unmapMemory(lt.mem);
-	textureLoadComplete=false;
+	textureUploadComplete=false;
 }
 
 void Texture::CreateFBOs(int sampleCount)

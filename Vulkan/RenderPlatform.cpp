@@ -1079,7 +1079,7 @@ vk::BlendFactor RenderPlatform::toVulkanBlendFactor(crossplatform::BlendOption o
 	return vk::BlendFactor::eOne;
 }
 
-vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
+vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -1105,11 +1105,35 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return vk::Format::eR32Sfloat;
 	case RGBA_8_UNORM:
-		return vk::Format::eR8G8B8A8Unorm;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return vk::Format::eBc1RgbaUnormBlock;
+		case crossplatform::CompressionFormat::BC3:
+			return vk::Format::eBc3UnormBlock;
+		default:
+			return vk::Format::eR8G8B8A8Unorm;
+		};
 	case BGRA_8_UNORM:
-		return vk::Format::eB8G8R8A8Unorm;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return vk::Format::eBc1RgbaUnormBlock;
+		case crossplatform::CompressionFormat::BC3:
+			return vk::Format::eBc3UnormBlock;
+		default:
+			return vk::Format::eB8G8R8A8Unorm;
+		};
 	case RGBA_8_UNORM_SRGB:
-		return vk::Format::eR8G8B8A8Srgb;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return vk::Format::eBc1RgbaSrgbBlock;
+		case crossplatform::CompressionFormat::BC3:
+			return vk::Format::eBc3SrgbBlock;
+		default:
+			return vk::Format::eR8G8B8A8Srgb;
+		};
 	case RGBA_8_SNORM:
 		return vk::Format::eR8G8B8A8Snorm;
 	case RGB_8_UNORM:

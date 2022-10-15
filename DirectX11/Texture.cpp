@@ -151,6 +151,7 @@ void Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(stagingBuffer);
 	SAFE_RELEASE(external_copy_source);
+	textureUploadComplete=true;
 	external_texture=false;
 	arraySize=0;
 	mips=0;
@@ -1021,7 +1022,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 				usage							=D3D11_USAGE_DEFAULT;
 			textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:usage;
 			textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
-			textureDesc.CPUAccessFlags			=(computable||rendertarget||depthstencil||compressed)?0:D3D11_CPU_ACCESS_WRITE;
+			textureDesc.CPUAccessFlags			=(computable||rendertarget||depthstencil||compressed||usage!=D3D11_USAGE_DYNAMIC)?0:D3D11_CPU_ACCESS_WRITE;
 			textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 			textureDesc.SampleDesc.Count		=num_samples;
 			textureDesc.SampleDesc.Quality		=aa_quality;
@@ -1046,8 +1047,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 						case crossplatform::CompressionFormat::BC1:
 						case crossplatform::CompressionFormat::BC3:
 						case crossplatform::CompressionFormat::BC5:
-							data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*(mip_width / uu);
-							data.SysMemSlicePitch			= data.SysMemPitch*mip_length/4;
+							data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
+							data.SysMemSlicePitch			= data.SysMemPitch*std::max(1,mip_length/4);
 							break;
 						default:
 							break;
@@ -1056,7 +1057,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 					mip_width=(mip_width+1)/2;
 					mip_length=(mip_length+1)/2;
 				}
-				SAFE_DELETE(stagingBuffer);
+				SAFE_RELEASE(stagingBuffer);
 				//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
 				D3D11_TEXTURE2D_DESC desc;
 				memset(&desc,0,sizeof(desc));
@@ -1070,11 +1071,18 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 				desc.SampleDesc.Count=1;
 				desc.SampleDesc.Quality=0;
 				ID3D11Texture2D *tex;
-				renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex);
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex));
 				stagingBuffer=tex;
 				if(renderPlatform->GetMemoryInterface())
 					renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
-				textureUploadComplete=false;
+				if(!stagingBuffer)
+				{
+					SIMUL_BREAK_ONCE("Failed to create staging texture");
+				}
+				else
+				{
+					textureUploadComplete=false;
+				}
 
 			}
 			HRESULT hr=pd3dDevice->CreateTexture2D(&textureDesc, nullptr,(ID3D11Texture2D**)(&texture));
@@ -1233,15 +1241,16 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 	
 	std::vector<D3D11_SUBRESOURCE_DATA> initialSubresourceData(m*total_num);
-	int mip_width=width;
-	std::vector<std::vector<uint32_t>> tempData(m*total_num);
+	//std::vector<std::vector<uint32_t>> tempData(m*total_num);
 	if(initData)
 	{
-		for(size_t i=0;i<m;i++)
+		size_t n=0;
+		for(size_t j=0;j<total_num;j++)
 		{
-			for(size_t j=0;j<total_num;j++)
+			int mip_width=width;
+			int mip_length=length;
+			for(size_t i=0;i<m;i++)
 			{
-				size_t n=i*m+j;
 				/*tempData[n].resize(mip_width*mip_width);
 				for(int k=0;k<mip_width*mip_width;k++)
 				{
@@ -1249,22 +1258,24 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 				}*/
 				D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
 				data.pSysMem						=initData[n];//tempData[n].data();//
-				data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
 				static int uu = 4;
-				data.SysMemSlicePitch = data.SysMemPitch*length;
 				switch (compressionFormat)
 				{
 				case crossplatform::CompressionFormat::BC1:
 				case crossplatform::CompressionFormat::BC3:
 				case crossplatform::CompressionFormat::BC5:
-					data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*(mip_width / uu);
-					data.SysMemSlicePitch			= data.SysMemPitch*length/4;
+					data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
+					data.SysMemSlicePitch			= data.SysMemPitch*std::max(1,mip_length/4);
 					break;
 				default:
+					data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
+					data.SysMemSlicePitch = data.SysMemPitch*mip_length;
 					break;
 				};
+				mip_width=(mip_width+1)/2;
+				mip_length=(mip_length+1)/2;
+				n++;
 			}
-			mip_width=(mip_width+1)/2;
 		}
 		SAFE_RELEASE(stagingBuffer);
 		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
@@ -1280,7 +1291,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		desc.SampleDesc.Count=1;
 		desc.SampleDesc.Quality=0;
 		ID3D11Texture2D *tex;
-		renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex);
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex));
 		stagingBuffer=tex;
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
@@ -1747,7 +1758,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 {
 	if(textureUploadComplete)
 		return;
-	deviceContext.asD3D11DeviceContext()->CopyResource(texture,stagingBuffer);
+	if(stagingBuffer)
+		deviceContext.asD3D11DeviceContext()->CopyResource(texture,stagingBuffer);
 	textureUploadComplete=true;
 }
 

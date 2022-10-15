@@ -26,7 +26,6 @@ Texture::Texture(const char *n)
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN)
 				,renderPlatform(nullptr)
-				,textureLoadComplete(true)
 				,cubemap(false)
 				,computable(false)
 				,renderTarget(false)
@@ -134,7 +133,7 @@ void Texture::InvalidateDeviceObjects()
 	width=length=depth=arraySize=dim=mips=0;
 	pixelFormat=PixelFormat::UNKNOWN;
 	renderPlatform=nullptr;
-	textureLoadComplete=true;
+	textureUploadComplete=true;
 }
 
 bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::TextureCreate* tc)

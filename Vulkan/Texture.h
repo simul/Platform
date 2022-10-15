@@ -110,7 +110,7 @@ namespace platform
 			bool	IsSame(int w, int h, int d, int arr, int, crossplatform::PixelFormat f, int msaa_samples, bool computable, bool rt, bool ds, bool need_srv, bool cb = false);
 
 			void	LoadTextureData(LoadedTexture& lt, const char* path);
-			void	SetTextureData(LoadedTexture& lt, const void* data, int x, int y, int z, int n, crossplatform::PixelFormat f);
+			void	SetTextureData(LoadedTexture& lt, const void* data, int x, int y, int z, int n, crossplatform::PixelFormat f,crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
 			//! Creates the Framebuffers for this texture
 			void	CreateFBOs(int sampleCount);
 			//! Applies default sampling parameters to the texId texture

@@ -304,12 +304,12 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	
 	// ok to free loaded data??
 	ClearFileContents();
-	textureLoadComplete=false;
+	textureUploadComplete=false;
 }
 
 void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 {
-	if(textureLoadComplete)
+	if(textureUploadComplete)
 		return;
 	if(mips<0|| mips>16)
 		mips=1;
@@ -419,7 +419,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		InitRTVTables(totalNum, mips);
 		CreateRTVTables(totalNum, mips);
 	}
-	textureLoadComplete=true;
+	textureUploadComplete=true;
 	shouldGenerateMips=false;
 	if (mips > 1)
 	{
@@ -506,14 +506,14 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// The texture will be considered "valid" from here.
 	// Set the properties of this texture
 	mLoadedFromFile = true;
-	textureLoadComplete=false;
+	textureUploadComplete=false;
 }
 
 bool Texture::IsValid() const
 {
 	if (mTextureDefault != NULL)
 		return true;
-	if(mLoadedFromFile&&!textureLoadComplete)
+	if(mLoadedFromFile&&!textureUploadComplete)
 		return true;
 	return false;
 }
@@ -529,10 +529,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
     {
         mip = 0;
     }
-	if(!textureLoadComplete)
+	if(!textureUploadComplete)
 	{
 		FinishLoading(deviceContext);
-		textureLoadComplete=true;
+		textureUploadComplete=true;
 	}
 #if 0
 	if(!subResourcesUpdated)
