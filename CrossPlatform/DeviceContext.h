@@ -263,10 +263,12 @@ namespace platform
 		class EffectTechnique;
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
+		struct MultiviewGraphicsDeviceContext;
 		struct ComputeDeviceContext;
 		enum class DeviceContextType
 		{
 			GRAPHICS, 
+			MULTIVIEW_GRAPHICS, 
 			COMPUTE, 
 			COPY
 		};
@@ -291,6 +293,10 @@ namespace platform
 			void SetFrameNumber(long long n);
 			virtual GraphicsDeviceContext* AsGraphicsDeviceContext()
 			{ 
+				return nullptr;
+			}
+			virtual MultiviewGraphicsDeviceContext* AsMultiviewGraphicsDeviceContext()
+			{
 				return nullptr;
 			}
 			virtual ComputeDeviceContext* AsComputeDeviceContext()
@@ -353,10 +359,28 @@ namespace platform
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
 		};
 
+		//! MultiviewGraphicsDeviceContext extends GraphicsDeviceContext. It contains multiple ViewStruct that can be
+		//! associated with a layer in the Texture; therefore GraphicsDeviceContext::viewStruct should be ignored or
+		//! used a back up if MultiviewGraphicsDeviceContext::viewStructs is empty.
+		struct SIMUL_CROSSPLATFORM_EXPORT MultiviewGraphicsDeviceContext : public GraphicsDeviceContext
+		{
+			MultiviewGraphicsDeviceContext* AsMultiviewGraphicsDeviceContext() override
+			{
+				return this;
+			}
+			MultiviewGraphicsDeviceContext();
+
+			std::vector<ViewStruct> viewStructs;
+		};
+
 		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
 		{
+			ComputeDeviceContext* AsComputeDeviceContext() override
+			{
+				return this;
+			}
+
 			ComputeDeviceContext();
-			ComputeDeviceContext* AsComputeDeviceContext() override;
 			//Some function expect completed_frame and frame_number to increment.
 			//This copies the frame numbers from the normal DeviceContext to simulate this.
 			void UpdateFrameNumbers(DeviceContext& deviceContext);

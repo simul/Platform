@@ -13,6 +13,26 @@ SIMUL_CONSTANT_BUFFER(CameraConstants,1)
 	uniform vec3 viewPosition;
 SIMUL_CONSTANT_BUFFER_END
 
+SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)
+	uniform mat4 leftWorldViewProj;
+	uniform mat4 leftWorld;
+	uniform mat4 leftInvWorldViewProj;
+	uniform mat4 leftModelView;
+	uniform mat4 leftView;
+	uniform mat4 leftProj;
+	uniform mat4 leftViewProj;
+
+	uniform mat4 rightWorldViewProj;
+	uniform mat4 rightWorld;
+	uniform mat4 rightInvWorldViewProj;
+	uniform mat4 rightModelView;
+	uniform mat4 rightView;
+	uniform mat4 rightProj;
+	uniform mat4 rightViewProj;
+
+	uniform vec3 stereoViewPosition;
+SIMUL_CONSTANT_BUFFER_END
+
 #ifndef __cplusplus
 vec3 ClipPosToView(vec4 clip_pos)
 {

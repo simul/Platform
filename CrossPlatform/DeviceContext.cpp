@@ -1,18 +1,8 @@
 #include "DeviceContext.h"
 #include "RenderPlatform.h"
+
 using namespace platform;
 using namespace crossplatform;
-
-long long DeviceContext::GetFrameNumber() const
-{
-
-	return frame_number;
-}
-//! Only RenderPlatform should call this.
-void DeviceContext::SetFrameNumber(long long n)
-{
-	frame_number = n;
-}
 
 ContextState::ContextState()
 {
@@ -31,20 +21,32 @@ bool ContextState::IsDepthActive() const
 	bool depthWrite = depthStencilState ? ( depthStencilState->desc.depth.write) : false;
 	return (depthTest||depthWrite);
 }
+
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
-std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()
+long long DeviceContext::GetFrameNumber() const
 {
-	return targetStack;
+
+	return frame_number;
 }
 
-GraphicsDeviceContext::GraphicsDeviceContext():
-	cur_backbuffer(0)
+//! Only RenderPlatform should call this.
+void DeviceContext::SetFrameNumber(long long n)
+{
+	frame_number = n;
+}
+
+GraphicsDeviceContext::GraphicsDeviceContext()
+	:cur_backbuffer(0)
 {
 	deviceContextType=DeviceContextType::GRAPHICS;
 	viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
 }
 
+std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()
+{
+	return targetStack;
+}
 
 crossplatform::TargetsAndViewport *GraphicsDeviceContext::GetCurrentTargetsAndViewport()
 {
@@ -108,13 +110,14 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	defaultTargetsAndViewport.viewport.h = viewportBottom - viewportTop;
 }
 
+MultiviewGraphicsDeviceContext::MultiviewGraphicsDeviceContext()
+{
+	deviceContextType = DeviceContextType::MULTIVIEW_GRAPHICS;
+}
+
 ComputeDeviceContext::ComputeDeviceContext()
 {
 	deviceContextType = DeviceContextType::COMPUTE;
-}
-ComputeDeviceContext* ComputeDeviceContext::AsComputeDeviceContext() 
-{
-	return this;
 }
 
 // TODO: this is terrible, let's get rid of it.
