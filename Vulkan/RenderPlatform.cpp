@@ -1520,6 +1520,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.rtFormats[i] = targs[i]->GetFormat();
 		target.textureTargets[i].texture = targs[i];
 		target.textureTargets[i].layer = 0;
+		target.textureTargets[i].layerCount = targs[i]->IsCubemap() ? targs[i]->arraySize * 6 : targs[i]->arraySize;
 		target.textureTargets[i].mip= 0;
 	}
 	if (depth)
@@ -1528,6 +1529,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.depthFormat = depth->pixelFormat;
 		target.depthTarget.texture = depth;
 		target.depthTarget.layer = 0;
+		target.depthTarget.layerCount = depth->IsCubemap() ? depth->arraySize * 6 : depth->arraySize;
 		target.depthTarget.mip = 0;
 	}
 	target.viewport = int4(0, 0, targs[0]->width, targs[0]->length);
