@@ -63,6 +63,7 @@ void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int arra
 	targetsAndViewport.textureTargets[0].texture	=this;
 	targetsAndViewport.textureTargets[0].mip		=mip_index;
 	targetsAndViewport.textureTargets[0].layer		=array_index;
+	targetsAndViewport.textureTargets[0].layerCount =cubemap ? arraySize * 6 : arraySize;
 	targetsAndViewport.m_dt							=nullptr;
 	targetsAndViewport.viewport.x					=0;
 	targetsAndViewport.viewport.y					=0;

@@ -596,7 +596,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 	if(depthstencil)
 #if defined(__ANDROID__)
-		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment; //Overwrite!
+		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst; //Overwrite!
 #else
 		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
 #endif
@@ -911,7 +911,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	if(depthstencil)
 #if defined(__ANDROID__)
-		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment; //Overwrite!
+		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst; //Overwrite!
 #else
 		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
 #endif
@@ -1352,21 +1352,21 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
 	if ((layer >= 0 || mip >= 0) && (arraySize >1||mips>1))
 	{
-		int num_mips=1;
-		int num_layers=1;
+		int num_mips = 1;
+		int num_layers = 1;
 		if(layer<0)
 		{
 			layer=0;
-			num_layers= totalNum;
+			num_layers = totalNum;
 		}
 		if (mip < 0)
 		{
 			mip = 0;
 			num_mips = mips;
 		}
-		for(int l= layer;l< layer+num_layers;l++)
+		for (int l = layer; l < layer + num_layers; l++)
 		{
-			for(int m= mip;m< mip+num_mips;m++)
+			for (int m = mip; m < mip + num_mips; m++)
 			{
 				vk::ImageLayout& imageLayout = mLayerMipLayouts[l][m];
 				barrier.setOldLayout(imageLayout);

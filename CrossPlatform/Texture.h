@@ -155,8 +155,9 @@ namespace platform
 				TextureTarget() = default;
 
 				Texture *texture = nullptr;
-				int layer = 0;
 				int mip = 0;
+				int layer = 0;
+				int layerCount = 1;
 			};
 			TargetsAndViewport()
 				:temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)

@@ -408,22 +408,30 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			tv=graphicsDeviceContext->targetStack.top();
 		else
 			tv=&(graphicsDeviceContext->defaultTargetsAndViewport);
-	#if 1
+		
 		for(int i=0;i<tv->num;i++)
 		{
-			auto &tt= tv->textureTargets[i];
-			if(tv->textureTargets[i].texture)
-				((vulkan::Texture*)tt.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
+			crossplatform::TargetsAndViewport::TextureTarget& tt= tv->textureTargets[i];
+			if (tt.texture)
+			{
+				Texture* texture = (Texture*)tt.texture;
+				bool allLayers = texture->NumFaces() == tt.layerCount;
+				texture->SetLayout(*graphicsDeviceContext, vk::ImageLayout::eColorAttachmentOptimal, allLayers ? -1 : tt.layer, tt.mip);
+			}
 		}
 		if(tv->depthTarget.texture&&depthStencilState)
 		{
-			auto& dt = tv->depthTarget;
-			if(depthStencilState->desc.depth.write)
-				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal,dt.layer,dt.mip);
-			else if(depthStencilState->desc.depth.test)
-				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eDepthStencilReadOnlyOptimal,dt.layer,dt.mip);
+			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
+			const bool& depthWrite = depthStencilState->desc.depth.write;
+			const bool& depthTest = depthStencilState->desc.depth.test;
+			if (dt.texture && (depthWrite || depthTest))
+			{
+				Texture* texture = (Texture*)dt.texture;
+				bool allLayers = texture->NumFaces() == dt.layerCount;
+				vk::ImageLayout layout = depthWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : depthTest ? vk::ImageLayout::eDepthStencilReadOnlyOptimal : vk::ImageLayout::eUndefined;
+				texture->SetLayout(*graphicsDeviceContext, layout, allLayers ? -1 : dt.layer, dt.mip);
+			}
 		}
-	#endif
 	}
 }
 
