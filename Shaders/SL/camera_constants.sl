@@ -34,6 +34,9 @@ SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)
 SIMUL_CONSTANT_BUFFER_END
 
 #ifndef __cplusplus
+
+//For Mono Camera
+
 vec3 ClipPosToView(vec4 clip_pos)
 {
 	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
@@ -53,6 +56,31 @@ vec3 TexCoordsToView(vec2 texCoords)
 	clip_pos.x += 2.0*texCoords.x;
 	clip_pos.y -= 2.0*texCoords.y;
 	return ClipPosToView(clip_pos);
+}
+
+//For Stereo Camera
+
+vec3 ClipPosToView(vec4 clip_pos, uint viewID)
+{
+	mat4 _invWorldViewProj = viewID == 0 ? leftInvWorldViewProj : rightInvWorldViewProj;
+	vec3 view = normalize(mul(_invWorldViewProj, clip_pos).xyz);
+	return view;
+}
+
+vec3 ClipPosToView(vec2 clip_pos2, uint viewID)
+{
+	mat4 _invWorldViewProj = viewID == 0 ? leftInvWorldViewProj : rightInvWorldViewProj;
+	vec4 clip_pos = vec4(clip_pos2, 1.0, 1.0);
+	vec3 view = normalize(mul(_invWorldViewProj, clip_pos).xyz);
+	return view;
+}
+
+vec3 TexCoordsToView(vec2 texCoords, uint viewID)
+{
+	vec4 clip_pos = vec4(-1.0, 1.0, 1.0, 1.0);
+	clip_pos.x += 2.0 * texCoords.x;
+	clip_pos.y -= 2.0 * texCoords.y;
+	return ClipPosToView(clip_pos, viewID);
 }
 #endif
 #endif
