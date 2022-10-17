@@ -292,27 +292,46 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, currentImageLayout,
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
 			vk::PipelineStageFlagBits::eTransfer);
-		for (int i = 0; i < loadedTextures.size(); i++)
+		size_t n=0;
+		int totalNum=arraySize*(cubemap?6:1);
+		int totalImages=totalNum*mips;
+		for(size_t i=0;i<mips;i++)
 		{
-			LoadedTexture& lt = loadedTextures[i];
-			auto const subresource = vk::ImageSubresourceLayers()
-				.setAspectMask(vk::ImageAspectFlagBits::eColor)
-				.setMipLevel(0)
-				.setBaseArrayLayer(i)
-				.setLayerCount(1);
+			for(size_t j=0;j<totalNum;j++)
+			{
+				size_t n=i*arraySize+j;
+				if(n>=loadedTextures.size())
+					break;
+				LoadedTexture& lt = loadedTextures[n];
+				auto const subresource = vk::ImageSubresourceLayers()
+					.setAspectMask(vk::ImageAspectFlagBits::eColor)
+					.setMipLevel(i)
+					.setBaseArrayLayer(j)
+					.setLayerCount(1);
+				int row_texels=lt.x;
+				int rows=lt.y;
+				if(compressionFormat!=crossplatform::CompressionFormat::UNCOMPRESSED)
+				{
+				// must be at least a block size;
+					if(row_texels<4)
+						row_texels=4;
+					if(rows<4)
+						rows=4;
+				}
+				auto const copy_region =
+					vk::BufferImageCopy()
+					.setBufferOffset(0)
+					.setBufferRowLength(row_texels)
+					.setBufferImageHeight(rows)
+					.setImageSubresource(subresource)
+					.setImageOffset({ 0, 0, 0 })
+					.setImageExtent({ (uint32_t)lt.x, (uint32_t)lt.y, 1 });
 
-			auto const copy_region =
-				vk::BufferImageCopy()
-				.setBufferOffset(0)
-				.setBufferRowLength(lt.x)
-				.setBufferImageHeight(lt.y)
-				.setImageSubresource(subresource)
-				.setImageOffset({ 0, 0, 0 })
-				.setImageExtent({ (uint32_t)lt.x, (uint32_t)lt.y, 1 });
-
-			commandBuffer->copyBufferToImage(lt.buffer, mImage, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+				commandBuffer->copyBufferToImage(lt.buffer, mImage, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+			}
 		}
-		if (mips > 1)
+		
+		if (mips > 1&&totalImages>loadedTextures.size())
 		{
 			int srcWidth = width, srcLength = length;
 			vk::ImageBlit blit = vk::ImageBlit();
@@ -576,7 +595,7 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m, crossplatform::PixelFormat f,
 	bool computable, bool rendertarget, bool depthstencil,
 	int num_samples, int aa_quality, bool wrap, vec4 clear, float clearDepth, uint clearStencil,
-	bool shared, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
+	bool shared, crossplatform::CompressionFormat cf, const uint8_t** initData)
 {
 	if (IsSame(w, l, 1, 1, m,f, num_samples, computable, rendertarget, depthstencil, true))
 	{
@@ -584,6 +603,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	}
 	if(w*l==0)
 		return false;
+	compressionFormat=cf;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 	// include eTransferDst IN CASE this is for a texture file loaded.
@@ -714,7 +734,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		SIMUL_ASSERT(isDepthTarget);
 		depth_format = vulkan::RenderPlatform::ToVulkanFormat(depthFormat);
 	}
-	vk::Format pixel_read_format = vulkan::RenderPlatform::ToVulkanFormat(colourFormat);
+	vk::Format pixel_read_format = vulkan::RenderPlatform::ToVulkanFormat(colourFormat,compressionFormat);
 	
 	vk::ImageViewCreateInfo viewCreateInfo = vk::ImageViewCreateInfo()
 		.setImage(mImage)
@@ -1188,15 +1208,19 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	lt.n=n;
 	lt.pixelFormat=f;
 	static int uu = 4;
-	size_t SysMemPitch		=x*crossplatform::GetByteSize(f);
-	size_t SysMemSlicePitch = SysMemPitch*y;
+	size_t bytesPerTexel	=crossplatform::GetByteSize(f);
+	size_t SysMemPitch		=x*bytesPerTexel;
+	size_t bufferSize		 = SysMemPitch*y;
 	switch (compressionFormat)
 	{
 	case crossplatform::CompressionFormat::BC1:
 	case crossplatform::CompressionFormat::BC3:
 	case crossplatform::CompressionFormat::BC5:
-		SysMemPitch				= crossplatform::GetByteSize(f)*std::max(1,x / uu);
-		SysMemSlicePitch		= SysMemPitch*std::max(1,y/4);
+	case crossplatform::CompressionFormat::ETC1:
+	case crossplatform::CompressionFormat::ETC2:
+		SysMemPitch				= bytesPerTexel*std::max(1,x / uu);
+		// buffer must be at least one block in size.
+		bufferSize				= std::max(16*bytesPerTexel,SysMemPitch*std::max(1,y));
 		break;
 	default:
 		break;
@@ -1205,7 +1229,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
 	auto const buffer_create_info = vk::BufferCreateInfo()
-		.setSize(SysMemSlicePitch)//lt.x * lt.y *lt.z * 4 *texelBytes)
+		.setSize(bufferSize)//lt.x * lt.y *lt.z * 4 *texelBytes)
 		.setUsage(vk::BufferUsageFlagBits::eTransferSrc)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
@@ -1232,7 +1256,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 
 	vk::SubresourceLayout layout;
 	memset(&layout, 0, sizeof(layout));
-	layout.rowPitch = lt.x * texelBytes;
+	layout.rowPitch = SysMemPitch;//lt.x * texelBytes;
 	auto mapped_data = vulkanDevice->mapMemory(lt.mem, 0, lt.mem_alloc.allocationSize);
 	SIMUL_ASSERT(mapped_data !=nullptr);
 	
@@ -1241,8 +1265,8 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	uint8_t *cPtr		=(uint8_t*)lt.data;
 	for (int i = 0; i < lt.y;i++)
 	{
-		memcpy(rgba_data, cPtr, texelBytes*lt.x);
-		cPtr += texelBytes*lt.x;
+		memcpy(rgba_data, cPtr,SysMemPitch);// texelBytes*lt.x);
+		cPtr += SysMemPitch;//texelBytes*lt.x;
 		rgba_data += layout.rowPitch;
 	}
 	vulkanDevice->unmapMemory(lt.mem);

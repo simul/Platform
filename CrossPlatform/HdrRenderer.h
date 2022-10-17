@@ -61,7 +61,8 @@ namespace platform
 			crossplatform::Effect*				m_pGaussianEffect;
 			crossplatform::EffectTechnique*		gaussianRowTechnique;
 			crossplatform::EffectTechnique*		gaussianColTechnique;
-
+			crossplatform::ShaderResource hdr_effect_imageTexture;
+			crossplatform::ShaderResource hdr_effect_imageTextureMS;
 			crossplatform::ConstantBuffer<HdrConstants>			hdrConstants;
 			crossplatform::ConstantBuffer<ImageConstants>		imageConstants;
 		};

@@ -368,6 +368,7 @@ namespace platform
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
+			crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED;
 			RenderPlatform *renderPlatform;
 		protected:
 			bool cubemap;

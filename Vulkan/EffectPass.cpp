@@ -120,7 +120,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			ta.resourceType=requiredType;
 			texture=nullptr;
 		}
-		if(!texture||!texture->IsValid())
+		if(!texture)
 		{
 			// We really don't want to have to do this, but Vulkan GLSL can't eliminate unused textures in compilation:
 			if(ta.resourceType==crossplatform::ShaderResourceType::UNKNOWN)
@@ -128,6 +128,28 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 				ta.resourceType=requiredType;
 			}
 			texture=((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
+		}
+		if(texture)
+		{
+			if(!texture->IsValid())
+			{
+				// We really don't want to have to do this, but Vulkan GLSL can't eliminate unused textures in compilation:
+				if(ta.resourceType==crossplatform::ShaderResourceType::UNKNOWN)
+				{
+					ta.resourceType=requiredType;
+				}
+				texture=((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
+			}
+		}
+		if(!texture)
+		{
+			SIMUL_CERR_ONCE<<"Texture is null.\n";
+			return;
+		}
+		if(!texture->IsValid())
+		{
+			SIMUL_CERR_ONCE<<"Texture is invalid.\n";
+			return;
 		}
 		texture->FinishLoading(deviceContext);
 		texture->SetLayout(deviceContext,vk::ImageLayout::eShaderReadOnlyOptimal,ta.index,ta.mip);

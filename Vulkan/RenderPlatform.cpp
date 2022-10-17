@@ -1107,6 +1107,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 	case RGBA_8_UNORM:
 		switch (c)
 		{
+		case crossplatform::CompressionFormat::ETC2:
+			return vk::Format::eEtc2R8G8B8A8UnormBlock;
 		case crossplatform::CompressionFormat::BC1:
 			return vk::Format::eBc1RgbaUnormBlock;
 		case crossplatform::CompressionFormat::BC3:
@@ -1117,6 +1119,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 	case BGRA_8_UNORM:
 		switch (c)
 		{
+		case crossplatform::CompressionFormat::ETC2:
+			return vk::Format::eEtc2R8G8B8A8UnormBlock;
 		case crossplatform::CompressionFormat::BC1:
 			return vk::Format::eBc1RgbaUnormBlock;
 		case crossplatform::CompressionFormat::BC3:
@@ -1127,6 +1131,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 	case RGBA_8_UNORM_SRGB:
 		switch (c)
 		{
+		case crossplatform::CompressionFormat::ETC2:
+			return vk::Format::eEtc2R8G8B8A8SrgbBlock;
 		case crossplatform::CompressionFormat::BC1:
 			return vk::Format::eBc1RgbaSrgbBlock;
 		case crossplatform::CompressionFormat::BC3:
