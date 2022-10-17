@@ -293,9 +293,6 @@ void SphereRenderer::DrawArc(GraphicsDeviceContext &deviceContext, vec3 origin, 
 	world._43=origin.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	sphereConstants.debugWorldViewProj=wvp;
-	vec3 view_dir;
-	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_arc_on_sphere");
 
 	sphereConstants.quaternion		=q1;
