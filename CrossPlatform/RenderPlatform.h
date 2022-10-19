@@ -508,11 +508,13 @@ namespace platform
 			// All for debug Effect
 			crossplatform::Effect			*debugEffect=nullptr;
 			crossplatform::Effect			*mipEffect=nullptr;
-			crossplatform::EffectTechnique	*textured;
-			crossplatform::EffectTechnique	*untextured;
-			crossplatform::EffectTechnique	*showVolume;
+			crossplatform::EffectTechnique	*textured=nullptr;
+			crossplatform::EffectTechnique	*untextured=nullptr;
+			crossplatform::EffectTechnique	*showVolume=nullptr;
+			crossplatform::EffectTechnique *draw_cubemap_sphere=nullptr;
 			crossplatform::ShaderResource	volumeTexture;
 			crossplatform::ShaderResource	imageTexture;
+			crossplatform::ShaderResource debugEffect_cubeTexture;
 			//
 
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;

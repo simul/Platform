@@ -374,12 +374,12 @@ public:
 		{
 			specularCubemapTexture = renderPlatform->CreateTexture("specularCubemapTexture");
 		}
-		specularCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 11, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
+		specularCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 1024, 1024, 1, 11, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, false, true);
 		// plonk the hdr into the cubemap.
 		renderPlatform->LatLongTextureToCubemap(deviceContext, specularCubemapTexture, hdrTexture);
 		if(!diffuseCubemapTexture)
 			diffuseCubemapTexture = renderPlatform->CreateTexture("diffuseCubemapTexture");
-		diffuseCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 32, 32, 1, 1, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, true);
+		diffuseCubemapTexture->ensureTextureArraySizeAndFormat(renderPlatform, 32, 32, 1, 1, crossplatform::PixelFormat::RGBA_16_FLOAT, true, true, false, true);
 	
 		crossplatform::SphericalHarmonics  sphericalHarmonics;
 

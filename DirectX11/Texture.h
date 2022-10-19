@@ -86,7 +86,7 @@ namespace platform
 				,int num_samples=1,int aa_quality=0,bool wrap=false,
 				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0, bool shared = false
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
-			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false
+			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
@@ -109,15 +109,16 @@ namespace platform
 			{
 				return dim;
 			}
+			void FinishLoading(crossplatform::DeviceContext & );
 			int GetSampleCount() const;
 		protected:
-			bool EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l
+			bool EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,int m
 				, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil
 				, int num_samples, int aa_quality, bool wrap,
 				vec4 clear, float clearDepth, uint clearStencil
 				, crossplatform::CompressionFormat compressionFormat,const uint8_t** initData=nullptr);
 			int GetMemorySize() const;
-			ID3D11DeviceContext *last_context;
+			ID3D11DeviceContext			*last_context;
 			ID3D11Resource*				texture;
 			ID3D11Resource				*external_copy_source;			// If this is a copy of an external texture, but that texture was stupidly not created to have SRV's,
 																		// we must copy it for every update.
@@ -138,6 +139,8 @@ namespace platform
 			void FreeRTVTables();
 			void InitRTVTables(int l,int m);
 			void CreateSRVTables(int num,int m,bool cubemap,bool volume=false,bool msaa=false);
+			DXGI_FORMAT genericDxgiFormat=DXGI_FORMAT_UNKNOWN;
+			DXGI_FORMAT srvFormat=DXGI_FORMAT_UNKNOWN;
 		};
 	}
 }

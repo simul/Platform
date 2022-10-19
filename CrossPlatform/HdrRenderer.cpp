@@ -145,6 +145,8 @@ void HdrRenderer::RecompileShaders()
 	m_pGaussianEffect			=NULL;//renderPlatform->CreateEffect("gaussian",defs);
 	//hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 	//imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
+	hdr_effect_imageTexture=hdr_effect->GetShaderResource("imageTexture");
+	hdr_effect_imageTextureMS=hdr_effect->GetShaderResource("imageTextureMS");
 }
 
 crossplatform::Texture *HdrRenderer::GetBlurTexture()
@@ -194,9 +196,9 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	}
 	bool msaa=texture?(texture->GetSampleCount()>1):false;
 	if(msaa)
-		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
+		hdr_effect->SetTexture(deviceContext,hdr_effect_imageTextureMS	,texture);
 	else
-		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
+		hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture	,texture);
 	if(blurTexture->IsValid() && doBlur)
 	{	
 		crossplatform::Texture *src=texture;
@@ -228,8 +230,8 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
 	renderPlatform->DrawQuad(deviceContext);
 
-	hdr_effect->SetTexture(deviceContext,"imageTexture",NULL);
-	hdr_effect->SetTexture(deviceContext,"imageTextureMS",NULL);
+	hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture,NULL);
+	hdr_effect->SetTexture(deviceContext,hdr_effect_imageTextureMS,NULL);
 	hdrConstants.Unbind(deviceContext);
 	imageConstants.Unbind(deviceContext);
 	

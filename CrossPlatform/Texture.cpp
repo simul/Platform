@@ -26,7 +26,6 @@ Texture::Texture(const char *n)
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN)
 				,renderPlatform(nullptr)
-				,textureLoadComplete(true)
 				,cubemap(false)
 				,computable(false)
 				,renderTarget(false)
@@ -64,6 +63,7 @@ void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int arra
 	targetsAndViewport.textureTargets[0].texture	=this;
 	targetsAndViewport.textureTargets[0].mip		=mip_index;
 	targetsAndViewport.textureTargets[0].layer		=array_index;
+	targetsAndViewport.textureTargets[0].layerCount =cubemap ? arraySize * 6 : arraySize;
 	targetsAndViewport.m_dt							=nullptr;
 	targetsAndViewport.viewport.x					=0;
 	targetsAndViewport.viewport.y					=0;
@@ -134,25 +134,26 @@ void Texture::InvalidateDeviceObjects()
 	width=length=depth=arraySize=dim=mips=0;
 	pixelFormat=PixelFormat::UNKNOWN;
 	renderPlatform=nullptr;
-	textureLoadComplete=true;
+	textureUploadComplete=true;
 }
 
 bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::TextureCreate* tc)
 {
 	bool res=false;
-
+	if(tc->name)
+		name=tc->name;
 	if (tc->vidTexType != VideoTextureType::NONE)
 		res = ensureVideoTexture(r, tc->w, tc->l, tc->f, tc->vidTexType);
 	else if (tc->d < 2&&tc->arraysize==1&&!tc->cubemap)
 		res=ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil,false
 		,tc->compressionFormat,tc->initialData);
 	else if(tc->d<2)
-		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->cubemap,tc->compressionFormat,tc->initialData) ;
+		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->setDepthStencil, tc->cubemap, tc->compressionFormat, tc->initialData) ;
 	else
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
-	/*if(tc->initialData)
+/*	if(tc->initialData)
 	{
-		setTexels(tc->initialData,0,tc->w*tc->l*tc->d);
+		setTexels(tc->initialData,0,tc->mips*);
 	}*/
 	return res;
 }

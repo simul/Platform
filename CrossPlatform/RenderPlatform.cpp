@@ -316,11 +316,13 @@ void RenderPlatform::RecompileShaders()
 	
 	if(debugEffect)
 	{
-		textured=debugEffect->GetTechniqueByName("textured");
-		untextured=debugEffect->GetTechniqueByName("untextured");
-		showVolume=debugEffect->GetTechniqueByName("show_volume");
-		volumeTexture=debugEffect->GetShaderResource("volumeTexture");
-		imageTexture=debugEffect->GetShaderResource("imageTexture");
+		textured				=debugEffect->GetTechniqueByName("textured");
+		untextured				=debugEffect->GetTechniqueByName("untextured");
+		showVolume				=debugEffect->GetTechniqueByName("show_volume");
+		draw_cubemap_sphere		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
+		volumeTexture			=debugEffect->GetShaderResource("volumeTexture");
+		imageTexture			=debugEffect->GetShaderResource("imageTexture");
+		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
 	}		
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
 	
@@ -940,8 +942,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.displayLod=displayLod;
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
-	debugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
+	debugEffect->SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
 	static float rr=6.f;
 	debugConstants.latitudes		=16;
 	debugConstants.longitudes		=32;
@@ -949,12 +950,12 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	debugConstants.multiplier		=vec4(exposure,exposure,exposure,0.0f);
 	debugConstants.debugGamma		=gamma;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->Apply(deviceContext,tech,0);
+	debugEffect->Apply(deviceContext,draw_cubemap_sphere,0);
 
 	SetTopology(deviceContext,Topology::TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 
-	debugEffect->SetTexture(deviceContext, "cubeTexture", nullptr);
+	debugEffect->SetTexture(deviceContext, debugEffect_cubeTexture, nullptr);
 	debugEffect->Unapply(deviceContext);
 	SetViewports(deviceContext,1,&oldv);
 }

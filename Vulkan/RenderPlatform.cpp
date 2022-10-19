@@ -792,7 +792,7 @@ vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceTy
 		if (!mDummyTextureCubeArray)
 		{
 			mDummyTextureCubeArray = (vulkan::Texture*)CreateTexture("mDummyTextureCubeArray");
-			mDummyTextureCubeArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,true);
+			mDummyTextureCubeArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,true);
 		}
 		return mDummyTextureCubeArray;
 	}
@@ -806,7 +806,7 @@ vulkan::Texture* RenderPlatform::GetDummyTextureCube()
 	if (!mDummyTextureCube)
 	{
 		mDummyTextureCube = (vulkan::Texture*)CreateTexture("mDummyTextureCube");
-		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,true);
+		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,true);
 		
 		const float whiteTexels[24] = { 1.0f,1.0f,1.0f,1.0f
 										,1.0f,1.0f,1.0f,1.0f
@@ -1079,7 +1079,7 @@ vk::BlendFactor RenderPlatform::toVulkanBlendFactor(crossplatform::BlendOption o
 	return vk::BlendFactor::eOne;
 }
 
-vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
+vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -1105,11 +1105,41 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return vk::Format::eR32Sfloat;
 	case RGBA_8_UNORM:
-		return vk::Format::eR8G8B8A8Unorm;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::ETC2:
+			return vk::Format::eEtc2R8G8B8A8UnormBlock;
+		case crossplatform::CompressionFormat::BC1:
+			return vk::Format::eBc1RgbaUnormBlock;
+		case crossplatform::CompressionFormat::BC3:
+			return vk::Format::eBc3UnormBlock;
+		default:
+			return vk::Format::eR8G8B8A8Unorm;
+		};
 	case BGRA_8_UNORM:
-		return vk::Format::eB8G8R8A8Unorm;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::ETC2:
+			return vk::Format::eEtc2R8G8B8A8UnormBlock;
+		case crossplatform::CompressionFormat::BC1:
+			return vk::Format::eBc1RgbaUnormBlock;
+		case crossplatform::CompressionFormat::BC3:
+			return vk::Format::eBc3UnormBlock;
+		default:
+			return vk::Format::eB8G8R8A8Unorm;
+		};
 	case RGBA_8_UNORM_SRGB:
-		return vk::Format::eR8G8B8A8Srgb;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::ETC2:
+			return vk::Format::eEtc2R8G8B8A8SrgbBlock;
+		case crossplatform::CompressionFormat::BC1:
+			return vk::Format::eBc1RgbaSrgbBlock;
+		case crossplatform::CompressionFormat::BC3:
+			return vk::Format::eBc3SrgbBlock;
+		default:
+			return vk::Format::eR8G8B8A8Srgb;
+		};
 	case RGBA_8_SNORM:
 		return vk::Format::eR8G8B8A8Snorm;
 	case RGB_8_UNORM:
@@ -1520,6 +1550,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.rtFormats[i] = targs[i]->GetFormat();
 		target.textureTargets[i].texture = targs[i];
 		target.textureTargets[i].layer = 0;
+		target.textureTargets[i].layerCount = targs[i]->IsCubemap() ? targs[i]->arraySize * 6 : targs[i]->arraySize;
 		target.textureTargets[i].mip= 0;
 	}
 	if (depth)
@@ -1528,6 +1559,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.depthFormat = depth->pixelFormat;
 		target.depthTarget.texture = depth;
 		target.depthTarget.layer = 0;
+		target.depthTarget.layerCount = depth->IsCubemap() ? depth->arraySize * 6 : depth->arraySize;
 		target.depthTarget.mip = 0;
 	}
 	target.viewport = int4(0, 0, targs[0]->width, targs[0]->length);

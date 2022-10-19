@@ -468,6 +468,7 @@ crossplatform::GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 		immediateContext.platform_context = mIContext.ICommandList;
 		immediateContext.contextState.contextActive = true;
 	}
+	//ResetImmediateCommandList();
 	return crossplatform::RenderPlatform::GetImmediateContext();
 }
 
@@ -1496,7 +1497,7 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue* commandQueue, ID3D12
 
 void RenderPlatform::ResetImmediateCommandList()
 {
-	if(immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
+	if(!immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
 	{
 		ExecuteCommandList(nullptr, nullptr);
 		if (mIContext.ICommandList && mIContext.IAllocator)

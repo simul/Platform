@@ -120,7 +120,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			ta.resourceType=requiredType;
 			texture=nullptr;
 		}
-		if(!texture||!texture->IsValid())
+		if(!texture)
 		{
 			// We really don't want to have to do this, but Vulkan GLSL can't eliminate unused textures in compilation:
 			if(ta.resourceType==crossplatform::ShaderResourceType::UNKNOWN)
@@ -128,6 +128,28 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 				ta.resourceType=requiredType;
 			}
 			texture=((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
+		}
+		if(texture)
+		{
+			if(!texture->IsValid())
+			{
+				// We really don't want to have to do this, but Vulkan GLSL can't eliminate unused textures in compilation:
+				if(ta.resourceType==crossplatform::ShaderResourceType::UNKNOWN)
+				{
+					ta.resourceType=requiredType;
+				}
+				texture=((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
+			}
+		}
+		if(!texture)
+		{
+			SIMUL_CERR_ONCE<<"Texture is null.\n";
+			return;
+		}
+		if(!texture->IsValid())
+		{
+			SIMUL_CERR_ONCE<<"Texture is invalid.\n";
+			return;
 		}
 		texture->FinishLoading(deviceContext);
 		texture->SetLayout(deviceContext,vk::ImageLayout::eShaderReadOnlyOptimal,ta.index,ta.mip);
@@ -408,22 +430,30 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			tv=graphicsDeviceContext->targetStack.top();
 		else
 			tv=&(graphicsDeviceContext->defaultTargetsAndViewport);
-	#if 1
+		
 		for(int i=0;i<tv->num;i++)
 		{
-			auto &tt= tv->textureTargets[i];
-			if(tv->textureTargets[i].texture)
-				((vulkan::Texture*)tt.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eColorAttachmentOptimal,tt.layer,tt.mip);
+			crossplatform::TargetsAndViewport::TextureTarget& tt= tv->textureTargets[i];
+			if (tt.texture)
+			{
+				Texture* texture = (Texture*)tt.texture;
+				bool allLayers = texture->NumFaces() == tt.layerCount;
+				texture->SetLayout(*graphicsDeviceContext, vk::ImageLayout::eColorAttachmentOptimal, allLayers ? -1 : tt.layer, tt.mip);
+			}
 		}
 		if(tv->depthTarget.texture&&depthStencilState)
 		{
-			auto& dt = tv->depthTarget;
-			if(depthStencilState->desc.depth.write)
-				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eDepthStencilAttachmentOptimal,dt.layer,dt.mip);
-			else if(depthStencilState->desc.depth.test)
-				((vulkan::Texture*)tv->depthTarget.texture)->SetLayout(*graphicsDeviceContext,vk::ImageLayout::eDepthStencilReadOnlyOptimal,dt.layer,dt.mip);
+			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
+			const bool& depthWrite = depthStencilState->desc.depth.write;
+			const bool& depthTest = depthStencilState->desc.depth.test;
+			if (dt.texture && (depthWrite || depthTest))
+			{
+				Texture* texture = (Texture*)dt.texture;
+				bool allLayers = texture->NumFaces() == dt.layerCount;
+				vk::ImageLayout layout = depthWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : depthTest ? vk::ImageLayout::eDepthStencilReadOnlyOptimal : vk::ImageLayout::eUndefined;
+				texture->SetLayout(*graphicsDeviceContext, layout, allLayers ? -1 : dt.layer, dt.mip);
+			}
 		}
-	#endif
 	}
 }
 
@@ -760,6 +790,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 				.setDependencyCount(0)
 				.setPDependencies(nullptr);
 
+			auto multiviewCI = vk::RenderPassMultiviewCreateInfo();
 		#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 			if (renderPlatform->HasRenderingFeatures(platform::crossplatform::Multiview) && multiview)
 			{
@@ -772,8 +803,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 				{
 					//Set the ViewMask in the ContextState for it to be referenced later, if needed.
 					deviceContext.contextState.viewMask = viewMask;
-
-					auto multiviewCI = vk::RenderPassMultiviewCreateInfo()
+					multiviewCI
 						.setSubpassCount(1)
 						.setPViewMasks(&viewMask)
 						.setDependencyCount(0)

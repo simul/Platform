@@ -75,7 +75,6 @@ namespace platform
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void							setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
-			bool							EnsureTexture(crossplatform::RenderPlatform *r,crossplatform::TextureCreate *create) override;	
 			bool							ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1,bool rendertargets=false);
 			bool							ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
@@ -83,7 +82,7 @@ namespace platform
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false
 																			, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
 			bool							ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
-			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false
+			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
 												, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void							ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
@@ -124,10 +123,13 @@ namespace platform
 			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
 		protected:
+			void InitFormats(crossplatform::PixelFormat f);
 			bool											EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
 																			crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, 
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
-																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0, bool shared = false,crossplatform::CompressionFormat cf=crossplatform::CompressionFormat::UNCOMPRESSED,const void *data=nullptr);
+																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0
+																			, bool shared = false,crossplatform::CompressionFormat cf=crossplatform::CompressionFormat::UNCOMPRESSED
+																			,const uint8_t **data=nullptr);
 			void											InitUAVTables(int l, int m);
 			void											FreeUAVTables();
 
@@ -207,9 +209,13 @@ namespace platform
 			void ClearLoadingData();
 			void ClearFileContents();
 			unsigned GetSubresourceIndex(int mip, int layer);
-			void CreateUploadResource();
+			void CreateUploadResource(int slices);
 			// for upload texture:
 			D3D12_PLACED_SUBRESOURCE_FOOTPRINT pLayouts[16];
+			DXGI_FORMAT genericDxgiFormat = DXGI_FORMAT_UNKNOWN;
+			DXGI_FORMAT srvFormat		= DXGI_FORMAT_UNKNOWN;
+			DXGI_FORMAT uavFormat	=DXGI_FORMAT_UNKNOWN;
+			bool yuvFormat = false;
 		};
 	}
 }

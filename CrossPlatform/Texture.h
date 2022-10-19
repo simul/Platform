@@ -155,8 +155,9 @@ namespace platform
 				TextureTarget() = default;
 
 				Texture *texture = nullptr;
-				int layer = 0;
 				int mip = 0;
+				int layer = 0;
+				int layerCount = 1;
 			};
 			TargetsAndViewport()
 				:temp(false),num(0),m_dt(nullptr),depthFormat(UNKNOWN)
@@ -306,7 +307,7 @@ namespace platform
 			// Create texture for use as a reference frame in video encoding or decoding.
 			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return false; };
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
-			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false
+			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,bool cubemap=false
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr)=0;
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
@@ -367,8 +368,8 @@ namespace platform
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
+			crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED;
 			RenderPlatform *renderPlatform;
-			bool textureLoadComplete;
 		protected:
 			bool cubemap;
 			bool computable;
@@ -376,6 +377,7 @@ namespace platform
 			bool external_texture;
 			bool depthStencil;
 			bool shouldGenerateMips = false;
+			bool textureUploadComplete=true;
 			std::string name;
 			platform::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:

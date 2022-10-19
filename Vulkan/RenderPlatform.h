@@ -229,7 +229,7 @@ namespace platform
             static vk::Filter						toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
 			static vk::SamplerMipmapMode			toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f);
 			static vk::SamplerAddressMode			toVulkanWrapping(crossplatform::SamplerStateDesc::Wrapping w);
-			static vk::Format						ToVulkanFormat(crossplatform::PixelFormat p);
+			static vk::Format						ToVulkanFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
 			static crossplatform::PixelFormat		FromVulkanFormat(vk::Format p);
 			static vk::Format						ToVulkanExternalFormat(crossplatform::PixelFormat p);
 			static vk::ImageLayout					ToVulkanImageLayout(crossplatform::ResourceState r);
