@@ -790,6 +790,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 				.setDependencyCount(0)
 				.setPDependencies(nullptr);
 
+			auto multiviewCI = vk::RenderPassMultiviewCreateInfo();
 		#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 			if (renderPlatform->HasRenderingFeatures(platform::crossplatform::Multiview) && multiview)
 			{
@@ -802,8 +803,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 				{
 					//Set the ViewMask in the ContextState for it to be referenced later, if needed.
 					deviceContext.contextState.viewMask = viewMask;
-
-					auto multiviewCI = vk::RenderPassMultiviewCreateInfo()
+					multiviewCI
 						.setSubpassCount(1)
 						.setPViewMasks(&viewMask)
 						.setDependencyCount(0)
