@@ -385,55 +385,57 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			}
 		}
 	}
-	crossplatform::GraphicsDeviceContext *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
-	RenderPassHash  hashval=0 ;
-	RenderPassPipeline *renderPassPipeline=nullptr;
+
+	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
+	RenderPassHash hashval = 0;
+	RenderPassPipeline* renderPassPipeline = nullptr;
 	if(c)
 	{
-		const auto &p=mRenderPasses.find(hashval);
-		if(p==mRenderPasses.end())
+		const auto& p = mRenderPasses.find(hashval);
+		if (p == mRenderPasses.end())
 		{
-			renderPassPipeline=&mRenderPasses[hashval];
-			InitializePipeline(*graphicsDeviceContext,renderPassPipeline,crossplatform::PixelFormat::UNKNOWN, crossplatform::Topology::UNDEFINED);
+			renderPassPipeline = &mRenderPasses[hashval];
+			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, crossplatform::PixelFormat::UNKNOWN, crossplatform::Topology::UNDEFINED);
 		}
 		else
-			renderPassPipeline=&(mRenderPasses[hashval]);
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute,renderPassPipeline->mPipeline);
-		if(descriptorSet)
-			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+			renderPassPipeline = &(mRenderPasses[hashval]);
+		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline->mPipeline);
+		if (descriptorSet)
+			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else
 	{
-		crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
-		pixelFormat=vulkanRenderPlatform->GetActivePixelFormat(*graphicsDeviceContext);
+		crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNKNOWN;
+		pixelFormat = vulkanRenderPlatform->GetActivePixelFormat(*graphicsDeviceContext);
 		crossplatform::Topology appliedTopology = topology;
 		if (cs->topology != crossplatform::Topology::UNDEFINED)
 			appliedTopology = cs->topology;
 		if (appliedTopology == crossplatform::Topology::UNDEFINED)
 			appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
+
 		hashval = MakeRenderPassHash(pixelFormat, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState);
-		const auto &p=mRenderPasses.find(hashval);
-		if(p==mRenderPasses.end())
+		const auto& p = mRenderPasses.find(hashval);
+		if (p == mRenderPasses.end())
 		{
-			renderPassPipeline=&mRenderPasses[hashval];
-			InitializePipeline(*graphicsDeviceContext,renderPassPipeline,pixelFormat, appliedTopology, blendState, depthStencilState, rasterizerState);
+			renderPassPipeline = &mRenderPasses[hashval];
+			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, pixelFormat, appliedTopology, blendState, depthStencilState, rasterizerState);
 		}
 		else
-			renderPassPipeline=&(mRenderPasses[hashval]);
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics,renderPassPipeline->mPipeline);
-		if(descriptorSet)
-			commandBuffer->bindDescriptorSets( vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+			renderPassPipeline = &(mRenderPasses[hashval]);
+		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, renderPassPipeline->mPipeline);
+		if (descriptorSet)
+			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 		// Now figure out the layout business for the rendertargets:
-		crossplatform::TargetsAndViewport *tv;
-		if(graphicsDeviceContext->targetStack.size())
-			tv=graphicsDeviceContext->targetStack.top();
+		crossplatform::TargetsAndViewport* tv;
+		if (graphicsDeviceContext->targetStack.size())
+			tv = graphicsDeviceContext->targetStack.top();
 		else
-			tv=&(graphicsDeviceContext->defaultTargetsAndViewport);
-		
-		for(int i=0;i<tv->num;i++)
+			tv = &(graphicsDeviceContext->defaultTargetsAndViewport);
+
+		for (int i = 0; i < tv->num; i++)
 		{
-			crossplatform::TargetsAndViewport::TextureTarget& tt= tv->textureTargets[i];
+			crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[i];
 			if (tt.texture)
 			{
 				Texture* texture = (Texture*)tt.texture;
@@ -441,7 +443,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 				texture->SetLayout(*graphicsDeviceContext, vk::ImageLayout::eColorAttachmentOptimal, allLayers ? -1 : tt.layer, tt.mip);
 			}
 		}
-		if(tv->depthTarget.texture&&depthStencilState)
+		if (tv->depthTarget.texture && depthStencilState)
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 			const bool& depthWrite = depthStencilState->desc.depth.write;
@@ -739,86 +741,80 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 			tv = &(graphicsDeviceContext->defaultTargetsAndViewport);
 		int num_RT = tv->num;
 
-		vk::RenderPass* rp=vulkanRenderPlatform->GetActiveVulkanRenderPass(*graphicsDeviceContext);
-		//Check for valid pointer and underlying VkHandle.
-		bool rebuildRenderPass = rp ? !(*rp) : true;
+		bool colour_write = true;
+		bool depth_write = (tv->depthTarget.texture != nullptr && depthStencilState->desc.depth.write);
+		bool depth_read = (tv->depthTarget.texture != nullptr && depthStencilState->desc.depth.test);
+		crossplatform::PixelFormat depthFormat = (depth_write || depth_read) ? crossplatform::PixelFormat::D_32_FLOAT : crossplatform::PixelFormat::UNKNOWN;
+		vk::ImageLayout initialLayout = vk::ImageLayout::eUndefined;
+		vk::ImageLayout finalLayout = vk::ImageLayout::ePresentSrcKHR;
+		/*auto color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		auto depth_reference = vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-		#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
+		auto subpass = vk::SubpassDescription()
+						.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+
+		subpass		.setInputAttachmentCount(0)
+					.setPInputAttachments(nullptr)
+					.setColorAttachmentCount(colour_write?1:0)
+					.setPColorAttachments(colour_write?&color_reference:nullptr);
+	
+		vk::AttachmentDescription attachments[2];
+		int a=0;
+		if(colour_write)
+			attachments[a++].setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
+															  .setSamples(vk::SampleCountFlagBits::e1)
+															  .setLoadOp(vk::AttachmentLoadOp::eLoad)
+															  .setStoreOp(vk::AttachmentStoreOp::eStore)
+															  .setInitialLayout(vk::ImageLayout::eUndefined)
+															  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+		if(depth_write||depth_read)
+			attachments[a++].setFormat(vk::Format::eD32Sfloat).setSamples(vk::SampleCountFlagBits::e1)
+															.setLoadOp(vk::AttachmentLoadOp::eLoad)
+															.setStoreOp(vk::AttachmentStoreOp::eStore)
+															.setStencilLoadOp(vk::AttachmentLoadOp::eLoad)
+															.setStencilStoreOp(vk::AttachmentStoreOp::eStore)
+															.setInitialLayout(vk::ImageLayout::eUndefined)
+															.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+		auto rp_info = vk::RenderPassCreateInfo()
+			.setAttachmentCount(a)
+			.setPAttachments(attachments)
+			.setSubpassCount(1)
+			.setPSubpasses(&subpass)
+			.setDependencyCount(0)
+			.setPDependencies(nullptr);
+
+		auto multiviewCI = vk::RenderPassMultiviewCreateInfo();
+	#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 		if (renderPlatform->HasRenderingFeatures(platform::crossplatform::Multiview) && multiview)
-			rebuildRenderPass = true; //Always build new a RenderPass as the default ones from Texture don't know if the pass will be multiview!
-		#endif
-
-		bool colour_write=true;
-		bool depth_write=(tv->depthTarget.texture!=nullptr&&depthStencilState->desc.depth.write);
-		bool depth_read=(tv->depthTarget.texture!=nullptr&&depthStencilState->desc.depth.test);
-		if(rebuildRenderPass)
 		{
-			auto color_reference = vk::AttachmentReference().setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-			auto depth_reference = vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			vulkan::RenderPlatform* vkrp = (vulkan::RenderPlatform*)renderPlatform;
+			vk::PhysicalDeviceMultiviewProperties multiviewProperties;
+			vkrp->FillPhysicalDeviceProperties2ExtensionStructure(multiviewProperties);
+			uint32_t viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(deviceContext, multiviewProperties.maxMultiviewViewCount);
 
-			auto subpass = vk::SubpassDescription()
-							.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-
-			subpass		.setInputAttachmentCount(0)
-						.setPInputAttachments(nullptr)
-						.setColorAttachmentCount(colour_write?1:0)
-						.setPColorAttachments(colour_write?&color_reference:nullptr);
-		
-			vk::AttachmentDescription attachments[2];
-			int a=0;
-			if(colour_write)
-				attachments[a++].setFormat(vulkan::RenderPlatform::ToVulkanFormat(pixelFormat))
-																  .setSamples(vk::SampleCountFlagBits::e1)
-																  .setLoadOp(vk::AttachmentLoadOp::eLoad)
-																  .setStoreOp(vk::AttachmentStoreOp::eStore)
-																  .setInitialLayout(vk::ImageLayout::eUndefined)
-																  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
-			if(depth_write||depth_read)
-				attachments[a++].setFormat(vk::Format::eD32Sfloat).setSamples(vk::SampleCountFlagBits::e1)
-																.setLoadOp(vk::AttachmentLoadOp::eLoad)
-																.setStoreOp(vk::AttachmentStoreOp::eStore)
-																.setStencilLoadOp(vk::AttachmentLoadOp::eLoad)
-																.setStencilStoreOp(vk::AttachmentStoreOp::eStore)
-																.setInitialLayout(vk::ImageLayout::eUndefined)
-																.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-			auto rp_info = vk::RenderPassCreateInfo()
-				.setAttachmentCount(a)
-				.setPAttachments(attachments)
-				.setSubpassCount(1)
-				.setPSubpasses(&subpass)
-				.setDependencyCount(0)
-				.setPDependencies(nullptr);
-
-			auto multiviewCI = vk::RenderPassMultiviewCreateInfo();
-		#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
-			if (renderPlatform->HasRenderingFeatures(platform::crossplatform::Multiview) && multiview)
+			if (viewMask != 0)
 			{
-				vulkan::RenderPlatform* vkrp = (vulkan::RenderPlatform*)renderPlatform;
-				vk::PhysicalDeviceMultiviewProperties multiviewProperties;
-				vkrp->FillPhysicalDeviceProperties2ExtensionStructure(multiviewProperties);
-				uint32_t viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(deviceContext, multiviewProperties.maxMultiviewViewCount);
-
-				if (viewMask != 0)
-				{
-					//Set the ViewMask in the ContextState for it to be referenced later, if needed.
-					deviceContext.contextState.viewMask = viewMask;
-					multiviewCI
-						.setSubpassCount(1)
-						.setPViewMasks(&viewMask)
-						.setDependencyCount(0)
-						.setPViewOffsets(nullptr)
-						.setCorrelationMaskCount(1)
-						.setPCorrelationMasks(&viewMask);
-					rp_info.setPNext(&multiviewCI);
-				}
+				//Set the ViewMask in the ContextState for it to be referenced later, if needed.
+				deviceContext.contextState.viewMask = viewMask;
+				multiviewCI
+					.setSubpassCount(1)
+					.setPViewMasks(&viewMask)
+					.setDependencyCount(0)
+					.setPViewOffsets(nullptr)
+					.setCorrelationMaskCount(1)
+					.setPCorrelationMasks(&viewMask);
+				rp_info.setPNext(&multiviewCI);
 			}
-		#endif
-
-			result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
-			SIMUL_VK_CHECK(result);
-			SetVulkanName(renderPlatform,renderPassPipeline->mRenderPass,platform::core::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
 		}
+	#endif
+
+		result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPassPipeline->mRenderPass);
+		SIMUL_VK_CHECK(result);*/
+
+		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, renderPassPipeline->mRenderPass, num_RT, &pixelFormat,
+			depthFormat, depth_read, depth_write, false, 1, false/*, &initialLayout, &finalLayout*/);
+		SetVulkanName(renderPlatform,renderPassPipeline->mRenderPass,platform::core::QuickFormat("%s EffectPass mRenderPass",name.c_str()));
 		
 		vk::PipelineShaderStageCreateInfo shaderStageInfo[2] = {
 			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(v->mShader).setPName(v->entryPoint.c_str()),
@@ -954,12 +950,9 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 																		.setPColorBlendState(&colorBlendInfo)
 																		.setPDynamicState(&dynamicStateInfo)
 																		.setLayout(mPipelineLayout)
-																		.setRenderPass((rp&&(*rp))?*rp:renderPassPipeline->mRenderPass);
+																		.setRenderPass(renderPassPipeline->mRenderPass);
 		
-		#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
-		if (renderPlatform->HasRenderingFeatures(platform::crossplatform::Multiview) && multiview)
-			graphicsPipelineCreateInfo.setRenderPass(renderPassPipeline->mRenderPass); //Always set the new RenderPass as the default ones from Texture don't know if the pass will be multiview!
-		#endif
+		
 		
 		vk::Result res=vulkanDevice->createGraphicsPipelines(renderPassPipeline->mPipelineCache,1,&graphicsPipelineCreateInfo, nullptr, &renderPassPipeline->mPipeline);
 		if(res!=vk::Result::eSuccess)
@@ -1004,18 +997,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		i_desc[mInternalFrameIndex]++;
 }
 
-void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
-{
-}
-
 RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout)
 {
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat,topology,layout,blendState,depthStencilState,rasterizerState);
+	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, topology, layout, blendState, depthStencilState, rasterizerState);
 	return hashval;
 }
 
-RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology,
-	const crossplatform::Layout *layout,
+RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout *layout,
 	const crossplatform::RenderState *blendState, const crossplatform::RenderState *depthStencilState, const crossplatform::RenderState *rasterizerState)
 {
 	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)topology;
@@ -1059,9 +1047,9 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 	return hashval;
 }
 
-vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext)
+vk::RenderPass& EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	bool getActiveVulkanRenderPassFirst = true;
+	/*bool getActiveVulkanRenderPassFirst = true;
 #if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	getActiveVulkanRenderPassFirst = !multiview;
 #endif
@@ -1071,13 +1059,13 @@ vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceCon
 		auto* rp = vulkanRenderPlatform->GetActiveVulkanRenderPass(deviceContext);
 		if (rp)
 			return *rp;
-	}
+	}*/
 	
 	crossplatform::ContextState* cs = &deviceContext.contextState;
 	crossplatform::PixelFormat pixelFormat = vulkan::RenderPlatform::GetActivePixelFormat(deviceContext);
 	crossplatform::Topology topology = cs->topology;
 
-	RenderPassHash  hashval = MakeRenderPassHash(pixelFormat, topology, cs->currentLayout, blendState, depthStencilState, rasterizerState);
+	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, topology, cs->currentLayout, blendState, depthStencilState, rasterizerState);
 	const auto& p = mRenderPasses.find(hashval);
 	if (p == mRenderPasses.end())
 	{
@@ -1085,15 +1073,4 @@ vk::RenderPass &EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceCon
 	}
 
 	return mRenderPasses[hashval].mRenderPass;
-}
-
-void EffectPass::MapTexturesToUBO(crossplatform::Effect* curEffect)
-{
-	char kTexHandleUbo []  = "_TextureHandles_X";
-	char ext[]={'v','h','d','g','p','c'};
-	// Different buffer object for each shader type.
-	for(int i=0;i<crossplatform::ShaderType::SHADERTYPE_COUNT;i++)
-	{
-		kTexHandleUbo[16]=ext[i];
-	}
 }

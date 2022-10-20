@@ -585,15 +585,16 @@ void DisplaySurface::InitSwapChain()
 
 void DisplaySurface::CreateRenderPass() 
 {
-	vulkanRenderPlatform->CreateVulkanRenderpass(deferredContext,render_pass,1,&pixelFormat);
-// The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
-// because at the start of the renderpass, we don't care about their contents.
-// At the start of the subpass, the color attachment's layout will be transitioned
-// to LAYOUT_COLOR_ATTACHMENT_OPTIMAL and the depth stencil attachment's layout
-// will be transitioned to LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL.  At the end of
-// the renderpass, the color attachment's layout will be transitioned to
-// LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
-// the renderpass, no barriers are necessary.
+	// The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
+	// because at the start of the renderpass, we don't care about their contents.
+	// At the start of the subpass, the color attachment's layout will be transitioned
+	// to LAYOUT_COLOR_ATTACHMENT_OPTIMAL and the depth stencil attachment's layout
+	// will be transitioned to LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL.  At the end of
+	// the renderpass, the color attachment's layout will be transitioned to
+	// LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
+	// the renderpass, no barriers are necessary.
+
+	vulkanRenderPlatform->CreateVulkanRenderpass(deferredContext, render_pass, 1, &pixelFormat);
 }
 
 void DisplaySurface::CreateFramebuffers()
@@ -890,14 +891,13 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	result = commandBuffer.begin(&commandInfo);
 	SIMUL_VK_CHECK(result);
 
-	crossplatform::DeviceContext &immediateContext = renderPlatform->GetImmediateContext();
 	deferredContext.platform_context = &commandBuffer;
 	deferredContext.renderPlatform = renderPlatform;
 
 	renderPlatform->StoreRenderState(deferredContext);
-
 	EnsureImageLayout();
-	commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
+
+	/*commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
 
 	auto const vkViewport =
 		vk::Viewport().setWidth((float)viewport.w).setHeight((float)viewport.h).setMinDepth((float)0.0f).setMaxDepth((float)1.0f);
@@ -908,7 +908,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	//commandBuffer.draw(12 * 3, 1, 0, 0);
 	// Note that ending the renderpass changes the image's layout from
 	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
-	commandBuffer.endRenderPass();
+	commandBuffer.endRenderPass();*/
 	
 	ERRNO_BREAK
 	if (renderer)
@@ -920,7 +920,10 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	}
 
 	renderPlatform->RestoreRenderState(deferredContext);
+	EnsureImagePresentLayout();
+
 	commandBuffer.end();
+
 	Present();
 	current_buffer++;
 	current_buffer=current_buffer%(swapchain_image_resources.size());
@@ -944,6 +947,29 @@ void DisplaySurface::EnsureImageLayout()
 		.setDstAccessMask(dstAccessMask)
 		.setOldLayout(vk::ImageLayout::eUndefined)
 		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(image);
+	swapchain_image_resources[current_buffer].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+
+}
+
+void DisplaySurface::EnsureImagePresentLayout()
+{
+	vk::Image& image = swapchain_image_resources[current_buffer].image;
+
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	vk::AccessFlags dstAccessMask = vk::AccessFlagBits();
+	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+	auto  barrier = vk::ImageMemoryBarrier()
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
 		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
 		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)

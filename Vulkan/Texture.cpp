@@ -171,14 +171,14 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		{
 			r->PushToReleaseManager(i);
 		}
-		for(auto i:mFramebuffers)
+		/*for(auto i:mFramebuffers)
 		{
 			for(auto j:i)
 			{
 				r->PushToReleaseManager(j);
 			}
 		}
-		mFramebuffers.clear();
+		mFramebuffers.clear();*/
 		for(auto i:mMainMipViews)
 		{
 			r->PushToReleaseManager(i);
@@ -205,8 +205,8 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		r->PushToReleaseManager(mFaceArrayView);
 		r->PushToReleaseManager(mCubeArrayView);
 		r->PushToReleaseManager(mMainView);
-		r->PushToReleaseManager(mRenderPass);
-		mRenderPass = nullptr;
+		//r->PushToReleaseManager(mRenderPass);
+		//mRenderPass = nullptr;
 		mLayerViews.clear();
 		mMainMipViews.clear();
 		faceArrayMipViews.clear();
@@ -305,8 +305,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 				LoadedTexture& lt = loadedTextures[n];
 				auto const subresource = vk::ImageSubresourceLayers()
 					.setAspectMask(vk::ImageAspectFlagBits::eColor)
-					.setMipLevel(i)
-					.setBaseArrayLayer(j)
+					.setMipLevel(uint32_t(i))
+					.setBaseArrayLayer(uint32_t(j))
 					.setLayerCount(1);
 				int row_texels=lt.x;
 				int rows=lt.y;
@@ -486,7 +486,7 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	return &mLayerMipViews[layer][mip];
 }
 
-vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
+/*vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
 {
 	if(layer<0&&mip<0)
 	{
@@ -499,7 +499,7 @@ vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
 	if(mip<0)
 		mip=0;
 	return &(mFramebuffers[layer][mip]);
-}
+}*/
 
 bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds,bool need_srv
 	, bool cubemap)
@@ -849,14 +849,14 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 	}
 	if (isRenderTarget)
 	{
-		mFramebuffers.clear();
+		//mFramebuffers.clear();
 	}
 	mLayerMipLayouts.resize(totalNum);
 	for(int i=0;i<totalNum;i++)
 		mLayerMipLayouts[i].resize(mipCount);
 }
 
-vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceContext)
+/*vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceContext)
 {
 	if (!mRenderPass)
 	{
@@ -908,7 +908,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
 		}
 	}
-}
+}*/
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f,
 	bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)

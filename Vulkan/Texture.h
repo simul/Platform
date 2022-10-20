@@ -83,14 +83,14 @@ namespace platform
 			vk::ImageView* AsVulkanImageView(crossplatform::ShaderResourceType type = crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
 			//! returns the imageview in the depth format - only applicable for depth textures.
 			vk::ImageView* AsVulkanDepthView(int layer = -1, int mip = -1);
-			vk::Framebuffer* GetVulkanFramebuffer(int layer = -1, int mip = -1);
-			vk::RenderPass& GetRenderPass(crossplatform::DeviceContext& deviceContext);
+			//vk::Framebuffer* GetVulkanFramebuffer(int layer = -1, int mip = -1);
+			//vk::RenderPass& GetRenderPass(crossplatform::DeviceContext& deviceContext);
 
 			/// We need an active command list to finish loading a texture!
 			void	FinishLoading(crossplatform::DeviceContext& deviceContext) override;
 
 			/// We need a renderpass before we can create any framebuffers!
-			void	InitFramebuffers(crossplatform::DeviceContext& deviceContext);
+			//void	InitFramebuffers(crossplatform::DeviceContext& deviceContext);
 			void	StoreExternalState(crossplatform::ResourceState) override;
 			void	RestoreExternalTextureState(crossplatform::DeviceContext& deviceContext) override;
 			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
@@ -124,7 +124,7 @@ namespace platform
 			vk::ImageView								mMainView;
 			vk::ImageView								mCubeArrayView;
 			vk::ImageView								mFaceArrayView;
-			vk::RenderPass								mRenderPass;
+			//vk::RenderPass								mRenderPass;
 
 			std::vector<vk::ImageView>					mLayerViews;
 			std::vector<vk::ImageView>					mMainMipViews;
@@ -140,7 +140,7 @@ namespace platform
 			std::vector<std::vector<vk::ImageView>>		mCubemapLayerMipViews;
 			std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
 			
-			std::vector<std::vector<vk::Framebuffer>>	mFramebuffers;
+			//std::vector<std::vector<vk::Framebuffer>>	mFramebuffers;
 		
 			vk::MemoryAllocateInfo mem_alloc;
 			vk::DeviceMemory mMem;
