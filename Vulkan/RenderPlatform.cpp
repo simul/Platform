@@ -135,11 +135,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 		vulkanDevice->destroyFramebuffer(i.second, nullptr);
 	}
 	mFramebuffers.clear();
-	/*for (auto& i : mFramebufferRenderPasses)
-	{
-		vulkanDevice->destroyRenderPass(i.second, nullptr);
-	}
-	mFramebufferRenderPasses.clear();*/
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	SAFE_DELETE(mDummy3D);
 	SAFE_DELETE(mDummy2D);
@@ -1666,57 +1661,8 @@ bool RenderPlatform::MemoryTypeFromProperties(uint32_t typeBits, vk::MemoryPrope
 	return memory_type_from_properties(GetVulkanGPU(),typeBits,  requirements_mask, typeIndex);
 }
 
+crossplatform::PixelFormat RenderPlatform::defaultColourFormat=crossplatform::PixelFormat::UNKNOWN;
 
-/*vk::RenderPass *RenderPlatform::GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext)
-{
-	bool dTaV = false;
-	crossplatform::TargetsAndViewport *tv;
-	if(deviceContext.targetStack.size())
-		tv=deviceContext.targetStack.top();
-	else
-	{
-		tv = &(deviceContext.defaultTargetsAndViewport);
-		dTaV = true;
-	}
-	bool do_depth=(tv->depthTarget.texture!=nullptr);
-	auto *depthStencilState=deviceContext.contextState.currentEffectPass->depthStencilState;
-	bool depth_write=(tv->depthTarget.texture!=nullptr&&depthStencilState&&depthStencilState->desc.depth.write);
-	bool depth_read=(tv->depthTarget.texture!=nullptr&&depthStencilState&&depthStencilState->desc.depth.test);
-	if(tv->textureTargets[0].texture!=nullptr)
-	{
-		if (!dTaV)
-		{
-			if (tv->num == 1 && !do_depth) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
-			{
-				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
-				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
-				return &vkRenderPass;
-			}
-			else //ActivateRenderTargets(..., num, ...);
-			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebufferRenderPasses[combo]);
-			}
-		}
-		else //No activateRenderTarget() called
-		{
-			if (!do_depth)
-			{
-				vulkan::Texture* t = (vulkan::Texture*)tv->textureTargets[0].texture;
-				vk::RenderPass& vkRenderPass = t->GetRenderPass(deviceContext);
-				return &vkRenderPass;
-			}
-			else
-			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebufferRenderPasses[combo]);
-			}
-		}
-	}
-	return nullptr;
-}*/
-
- crossplatform::PixelFormat RenderPlatform::defaultColourFormat=crossplatform::PixelFormat::UNKNOWN;
 void RenderPlatform::SetDefaultColourFormat(crossplatform::PixelFormat p)
 {
 	defaultColourFormat=p;
@@ -1726,10 +1672,7 @@ void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
 {
 	for (auto& fb : mFramebuffers)
 		PushToReleaseManager(fb.second);
-	/*for (auto& rp : mFramebufferRenderPasses)
-		PushToReleaseManager(rp.second);*/
 	mFramebuffers.clear();
-	//mFramebufferRenderPasses.clear();
 }
 
 RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
@@ -1785,13 +1728,8 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 			if (deviceContext.contextState.IsDepthActive())
 				depthPF = tv->depthTarget.texture->pixelFormat;
 		}
-		vk::RenderPass& vkRenderPass = effectPass->GetVulkanRenderPass(*deviceContext.AsGraphicsDeviceContext());
-		//bool do_depth = (tv->depthTarget.texture != nullptr);
-		//auto* depthStencilState = deviceContext.contextState.currentEffectPass->depthStencilState;
-		//bool depth_write = (tv->depthTarget.texture != nullptr && depthStencilState && depthStencilState->desc.depth.write);
-		//bool depth_read = (tv->depthTarget.texture != nullptr && depthStencilState && depthStencilState->desc.depth.test);
-		//CreateVulkanRenderpass(deviceContext, vkRenderPass, tv->num, colourPF, depthPF, depth_read, depth_write, false, tv->textureTargets[0].texture->GetSampleCount());
 
+		vk::RenderPass& vkRenderPass = effectPass->GetVulkanRenderPass(*deviceContext.AsGraphicsDeviceContext());
 		vk::ImageView attachments[9];
 
 		vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
@@ -1832,51 +1770,14 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 		dTaV = true;
 	}
 	// If shader doesn't write depth, do not try to use a framebuffer that includes depth......
-	bool do_depth=(tv->depthTarget.texture!=nullptr);//&&deviceContext.contextState.currentEffectPass->depthStencilState->desc.depth.write;
+	bool do_depth = (tv->depthTarget.texture != nullptr);
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
-		/*if (!dTaV)
-		{
-			if (tv->num == 1 && !do_depth) //Texture::activateRenderTarget() or ActivateRenderTargets(..., 1, ...);
-			{
-				auto& tt = tv->textureTargets[0];
-				auto vt = (vulkan::Texture*)tt.texture;
-				vt->InitFramebuffers(deviceContext);
-				vk::Framebuffer* vfb = vt->GetVulkanFramebuffer(tt.layer, tt.mip);
-				SIMUL_ASSERT(vfb != nullptr);
-				return vfb;
-			}
-			else //ActivateRenderTargets(..., num, ...);
-			{
-			// For Vulkan, insanely, a Framebuffer contains details of the renderpass. So each framebuffer is uniquely tied to the renderstate.
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebuffers[combo]);
-			}
-		}
-		else //No activateRenderTarget() called
-		{
-			if (!do_depth)
-			{
-				auto& tt = tv->textureTargets[0];
-				auto vt = (vulkan::Texture*)tt.texture;
-				vt->InitFramebuffers(deviceContext);
-				vk::Framebuffer* vfb = vt->GetVulkanFramebuffer(tt.layer, tt.mip);
-				SIMUL_ASSERT(vfb != nullptr);
-				return vfb;
-			}
-			else
-			{
-				unsigned long long combo = InitFramebuffer(deviceContext, tv);
-				return &(mFramebuffers[combo]);
-			}
-		}*/
 		unsigned long long hash = InitFramebuffer(deviceContext, tv);
 		return &(mFramebuffers[hash]);
 	}
 	else
 	{
-		//SIMUL_BREAK("No valid texture for framebuffer.");
-		//return nullptr;
 		vk::Framebuffer *vfb=(vk::Framebuffer*)deviceContext.defaultTargetsAndViewport.m_rt[0];
 		return vfb;
 	}

@@ -249,7 +249,6 @@ namespace platform
 																			,int numOfSamples=1
 																			,bool multiview=false
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *final_layouts=nullptr);
-			//vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
 			static std::string						VulkanResultString(vk::Result res);
@@ -292,7 +291,6 @@ namespace platform
 			static crossplatform::PixelFormat				defaultColourFormat;
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
-			//std::map<unsigned long long,vk::RenderPass>	mFramebufferRenderPasses;
 			std::map<unsigned long long,crossplatform::TargetsAndViewport>				mTargets;
 		};
 	}

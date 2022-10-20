@@ -171,14 +171,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		{
 			r->PushToReleaseManager(i);
 		}
-		/*for(auto i:mFramebuffers)
-		{
-			for(auto j:i)
-			{
-				r->PushToReleaseManager(j);
-			}
-		}
-		mFramebuffers.clear();*/
 		for(auto i:mMainMipViews)
 		{
 			r->PushToReleaseManager(i);
@@ -205,8 +197,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		r->PushToReleaseManager(mFaceArrayView);
 		r->PushToReleaseManager(mCubeArrayView);
 		r->PushToReleaseManager(mMainView);
-		//r->PushToReleaseManager(mRenderPass);
-		//mRenderPass = nullptr;
 		mLayerViews.clear();
 		mMainMipViews.clear();
 		faceArrayMipViews.clear();
@@ -485,21 +475,6 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 	// Layer mip view:
 	return &mLayerMipViews[layer][mip];
 }
-
-/*vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
-{
-	if(layer<0&&mip<0)
-	{
-		AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
-	}
-	else
-		split_layouts=true;
-	if(layer<0)
-		layer=0;
-	if(mip<0)
-		mip=0;
-	return &(mFramebuffers[layer][mip]);
-}*/
 
 bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds,bool need_srv
 	, bool cubemap)
@@ -847,68 +822,10 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 			SetVulkanName(renderPlatform,mLayerMipViews[i][j],(name+" mFaceArrayView").c_str());
 		}
 	}
-	if (isRenderTarget)
-	{
-		//mFramebuffers.clear();
-	}
 	mLayerMipLayouts.resize(totalNum);
 	for(int i=0;i<totalNum;i++)
 		mLayerMipLayouts[i].resize(mipCount);
 }
-
-/*vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceContext)
-{
-	if (!mRenderPass)
-	{
-		auto *r = (vulkan::RenderPlatform*)renderPlatform;
-		if(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)
-		{
-			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal);
-		}
-		vk::ImageLayout layouts[]={currentImageLayout};
-		vk::ImageLayout end_layouts[]={(currentImageLayout==vk::ImageLayout::eUndefined||currentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:currentImageLayout};
-		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,false,false,GetSampleCount(),layouts,end_layouts);
-		AssumeLayout(end_layouts[0]);
-	}
-	return mRenderPass;
-}
-
-void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
-{
-	if(mFramebuffers.size())
-		return;
-	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass& vkRenderPass = effectPass->multiview ? effectPass->GetVulkanRenderPass(*deviceContext.AsGraphicsDeviceContext()) : GetRenderPass(deviceContext);
-	
-	vk::ImageView attachments[1]={nullptr};
-
-	vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
-	framebufferCreateInfo.renderPass = vkRenderPass;
-	framebufferCreateInfo.attachmentCount = 1;
-	framebufferCreateInfo.width = width;
-	framebufferCreateInfo.height = length;
-	framebufferCreateInfo.layers = 1;
-	
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	int totalNum	= cubemap ? 6 * arraySize : arraySize;
-	mFramebuffers.resize(totalNum);
-	for (int i = 0; i < totalNum; i++)
-	{
-		mFramebuffers[i].resize(mips);
-		framebufferCreateInfo.width = width;
-		framebufferCreateInfo.height = length;
-		for (int j= 0; j < mips; j++)
-		{
-			attachments[0]=mLayerMipViews[i][j];
-			framebufferCreateInfo.pAttachments = attachments;
-			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
-	
-			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
-			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
-		}
-	}
-}*/
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f,
 	bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)

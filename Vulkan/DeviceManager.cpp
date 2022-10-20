@@ -683,8 +683,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(
 
 	std::cerr << errorMessageStr.c_str() << std::endl;
 
-	//if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
-	//	SIMUL_BREAK("Vulkan Error");
+	if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
+		SIMUL_BREAK("Vulkan Error");
 	return VK_FALSE;
 }
 

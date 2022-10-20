@@ -873,21 +873,14 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
 		}
 	} while (result != vk::Result::eSuccess);
-	SwapchainImageResources &res=swapchain_image_resources[current_buffer];
-	
-	static vec4 clear = { 0.0f,0.0f,1.0f,1.0f };
-	
-	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-	vk::ClearValue const clearValues[1] = { vk::ClearColorValue(std::array<float, 4>({{clear.x,clear.y,clear.z,clear.w}})) };
-	auto &commandBuffer=res.cmd;
-	auto &fb=swapchain_image_resources[current_buffer].framebuffer;
-	auto const passInfo = vk::RenderPassBeginInfo()
-		.setRenderPass(render_pass)
-		.setFramebuffer(fb)
-		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)viewport.w, (uint32_t)viewport.h)))
-		.setClearValueCount(1)
-		.setPClearValues(clearValues);
+
 	vulkanDevice->waitIdle();
+	
+	SwapchainImageResources &res=swapchain_image_resources[current_buffer];
+	auto& commandBuffer = res.cmd;
+	auto& fb = swapchain_image_resources[current_buffer].framebuffer;
+
+	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 	result = commandBuffer.begin(&commandInfo);
 	SIMUL_VK_CHECK(result);
 
@@ -897,26 +890,12 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	renderPlatform->StoreRenderState(deferredContext);
 	EnsureImageLayout();
 
-	/*commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
-
-	auto const vkViewport =
-		vk::Viewport().setWidth((float)viewport.w).setHeight((float)viewport.h).setMinDepth((float)0.0f).setMaxDepth((float)1.0f);
-	commandBuffer.setViewport(0, 1, &vkViewport);
-
-	vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(viewport.w, viewport.h));
-	commandBuffer.setScissor(0, 1, &scissor);
-	//commandBuffer.draw(12 * 3, 1, 0, 0);
-	// Note that ending the renderpass changes the image's layout from
-	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
-	commandBuffer.endRenderPass();*/
-	
 	ERRNO_BREAK
 	if (renderer)
 	{
 		auto *rp = (vulkan::RenderPlatform*)renderPlatform;
 		rp->SetDefaultColourFormat(pixelFormat);
-		renderer->Render(mViewId, deferredContext.platform_context, &swapchain_image_resources[current_buffer].framebuffer
-			, viewport.w, viewport.h,  frameNumber);
+		renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
 	}
 
 	renderPlatform->RestoreRenderState(deferredContext);
