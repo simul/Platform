@@ -138,7 +138,7 @@ public:
 		:renderPlatformType(rpType), testType(tType), debug(use_debug)
 	{
 		//Inital RenderPlatform and RenderDoc
-		//if (debug)
+		if (debug)
 			crossplatform::RenderDocLoader::Load();
 		
 		switch (renderPlatformType)
@@ -711,7 +711,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		UpdateWindow(hWnd);
 	}
 
-	platformRenderer = new PlatformRenderer(x64_API, test, commandLineParams("debug"));
+	platformRenderer = new PlatformRenderer(x64_API, test, commandLineParams("-debug"));
 	platformRenderer->OnCreateDevice();
 	displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
 	displaySurfaceManager.SetRenderer(hWnd, platformRenderer, -1);
