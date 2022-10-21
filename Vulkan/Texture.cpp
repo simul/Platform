@@ -558,10 +558,7 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	depthStencil = depthstencil;
 	this->computable = computable;
 	this->renderTarget = textureCreate->make_rt;
-	if (textureCreate->make_rt)
-	{
-	//	InitFramebuffers(deviceContext);
-	}
+	
 	external_texture = true;
 	SetVulkanName(renderPlatform, mImage, name.c_str());
 	return true;
@@ -730,7 +727,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,i,1,0,totalNum));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainMipViews[i]));
-			SetVulkanName(renderPlatform,mMainMipViews[i],(name+" imageView").c_str());
+			SetVulkanName(renderPlatform,mMainMipViews[i],(name+" mMainMipViews "+std::to_string(i)).c_str());
 		}
 	}
 	// cube array as 2d texture array.
@@ -757,7 +754,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,i,1,0,totalNum))
 					.setViewType(vk::ImageViewType::e2DArray);
 				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &faceArrayMipViews[i]));
-				SetVulkanName(renderPlatform,faceArrayMipViews[i],(name+" faceArray imageView").c_str());
+				SetVulkanName(renderPlatform,faceArrayMipViews[i],(name+" faceArrayMipViews "+std::to_string(i)).c_str());
 			}
 		}
 	}
@@ -772,7 +769,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,mipCount,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerViews[i]));
-			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mFaceArrayView").c_str());
+			SetVulkanName(renderPlatform,mLayerViews[i],(name+" mLayerViews "+std::to_string(i)).c_str());
 		}
 	}
 	if(isDepthTarget)
@@ -791,7 +788,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,0,1,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &layerDepthViews[i]));
-			SetVulkanName(renderPlatform,layerDepthViews[i],(name+" layerDepthView").c_str());
+			SetVulkanName(renderPlatform,layerDepthViews[i],(name+" layerDepthView "+std::to_string(i)).c_str());
 		}
 		viewCreateInfo.setFormat(pixel_read_format);
 	}
@@ -806,7 +803,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 			{
 				viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,j,1,6*i,6));
 				SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mCubemapLayerMipViews[i][j]));
-				SetVulkanName(renderPlatform,mCubemapLayerMipViews[i][j],(name+" mCubemapLayerMipView").c_str());
+				SetVulkanName(renderPlatform,mCubemapLayerMipViews[i][j],(name+" mCubemapLayerMipView "+std::to_string(i)+" "+std::to_string(j)).c_str());
 			}
 		}
 	}
@@ -819,7 +816,7 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		{
 			viewCreateInfo.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags,j,1,i,1));
 			SIMUL_VK_CHECK(vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mLayerMipViews[i][j]));
-			SetVulkanName(renderPlatform,mLayerMipViews[i][j],(name+" mFaceArrayView").c_str());
+			SetVulkanName(renderPlatform,mLayerMipViews[i][j],(name+" mLayerMipViews "+std::to_string(i)+" "+std::to_string(j)).c_str());
 		}
 	}
 	mLayerMipLayouts.resize(totalNum);
