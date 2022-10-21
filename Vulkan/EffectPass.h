@@ -26,7 +26,7 @@ namespace platform
 			void Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
 			void SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 
-			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
+			vk::RenderPass& GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
 
 			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
 				, const crossplatform::Layout *layout=nullptr
@@ -45,7 +45,6 @@ namespace platform
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();
 			void Initialize(vk::DescriptorSet &descriptorSet);
-			void MapTexturesToUBO(crossplatform::Effect* curEffect);
 			
 			vk::DescriptorSetLayout			mDescLayout;
 			vk::PipelineLayout				mPipelineLayout;

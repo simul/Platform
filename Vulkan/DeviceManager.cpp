@@ -753,6 +753,7 @@ void DeviceManager::SetupDebugCallback(bool use_debug_utils)
 		d.vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
 
 		debugUtilsMessenger = deviceManagerInternal->instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCI, nullptr, d);
+		debugUtilsSupported = true;
 	}
 }
 
