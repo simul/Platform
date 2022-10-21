@@ -576,16 +576,20 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		cs->effectPassValid=true;
 	}
 	
-	// We will only set the tables once per frame
+	// Update frame_number in the DeviceContext from the RenderPlatform.
 	if (frameNumber != deviceContext.GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins release objects!
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 		deviceContext.SetFrameNumber(frameNumber);
-		mLastFrame = deviceContext.GetFrameNumber();
+	}
+	if (frameNumber != mLastFrame)
+	{
 		//Make sure that any resources set for deletion are removed
 		if(resourcesToBeReleased)
 			ClearReleaseManager();
+
+		mLastFrame = frameNumber;
 	}
 	
 	// If not a compute shader, apply viewports:
@@ -1712,11 +1716,19 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		{
 			width = tv->textureTargets[0].texture->width;
 			length = tv->textureTargets[0].texture->length;
+
+			const int& mip = tv->textureTargets[0].mip;
+			width >>= mip;
+			length >>= mip;
 		}
 		else if (tv->depthTarget.texture)
 		{
 			width = tv->depthTarget.texture->width;
 			length = tv->depthTarget.texture->length;
+
+			const int& mip = tv->depthTarget.mip;
+			width >>= mip;
+			length >>= mip;
 		}
 		else
 		{
