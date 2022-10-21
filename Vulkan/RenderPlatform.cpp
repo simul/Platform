@@ -1740,12 +1740,17 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 
 		for (int j = 0; j < tv->num; j++)
 		{
-			attachments[j] = *(tv->textureTargets[j].texture->AsVulkanImageView());
+			crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[j];
+			vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
+			bool allLayers = texture->NumFaces() == tt.layerCount;
+			attachments[j] = *(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.layer, tt.mip));
 		}
 		if (deviceContext.contextState.IsDepthActive())
 		{
-			vulkan::Texture* d = (vulkan::Texture*)tv->depthTarget.texture;
-			attachments[tv->num] = *(d->AsVulkanDepthView());
+			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
+			vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
+			bool allLayers = texture->NumFaces() == dt.layerCount;
+			attachments[tv->num] = *(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip));
 		}
 		framebufferCreateInfo.attachmentCount = count;
 		framebufferCreateInfo.pAttachments = attachments;
