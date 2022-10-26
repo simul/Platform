@@ -413,6 +413,10 @@ vk::ImageView *Texture::AsVulkanDepthView( int layer, int mip)
 	{
 		return &layerDepthViews[0];
 	}
+	if (arraySize > 1 && layer < 0 && mip == 0)
+	{
+		return &mainDepthView;
+	}
 	if(mip>0)
 	{
 		SIMUL_BREAK("Not implemented.");

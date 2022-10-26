@@ -603,6 +603,17 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	// If not a compute shader, apply viewports:
 	if (commandBuffer != nullptr && pass->shaders[crossplatform::SHADERTYPE_COMPUTE] == nullptr)
 	{
+		for (auto i : cs->applyVertexBuffers)
+		{
+			vulkan::Buffer* buffer = (vulkan::Buffer*)i.second;
+			buffer->FinishLoading(deviceContext);
+		}
+		if (cs->indexBuffer)
+		{
+			vulkan::Buffer* buffer = (vulkan::Buffer*)cs->indexBuffer;
+			buffer->FinishLoading(deviceContext);
+		}
+
 		//Set up clear colours
 		crossplatform::TargetsAndViewport* tv = graphicsDeviceContext->GetCurrentTargetsAndViewport();
 		size_t clearColoursCount = (size_t)tv->num + (tv->depthTarget.texture != nullptr ? 1 : 0);
@@ -660,7 +671,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		for (auto i : cs->applyVertexBuffers)
 		{
 			vulkan::Buffer* buffer = (vulkan::Buffer*)i.second;
-			buffer->FinishLoading(deviceContext);
 			vk::Buffer vertexBuffers[] = { buffer->asVulkanBuffer() };
 			vk::DeviceSize offsets[] = { 0 };
 			commandBuffer->bindVertexBuffers(i.first, 1, vertexBuffers, offsets);
@@ -668,7 +678,6 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		if (cs->indexBuffer)
 		{
 			vulkan::Buffer* buffer = (vulkan::Buffer*)cs->indexBuffer;
-			buffer->FinishLoading(deviceContext);
 			vk::IndexType indexType = cs->indexBuffer->stride == 4 ? vk::IndexType::eUint32 : vk::IndexType::eUint16;
 			vk::Buffer indexBuffer = { buffer->asVulkanBuffer() };
 			commandBuffer->bindIndexBuffer(indexBuffer, 0, indexType);
