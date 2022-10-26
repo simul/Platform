@@ -556,26 +556,26 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext,bool error_checking)
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
-	vulkan::EffectPass* pass	= (vulkan::EffectPass*)cs->currentEffectPass;
+	vulkan::EffectPass* pass = (vulkan::EffectPass*)cs->currentEffectPass;
 
-	if(!cs||!cs->currentEffectPass)
+	if (!cs || !cs->currentEffectPass)
 	{
 		SIMUL_BREAK("No valid shader pass in ApplyContextState");
 		return false;
 	}
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-	if(!commandBuffer)
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
 		return false;
 
-	if(!cs->effectPassValid)
+	if (!cs->effectPassValid)
 	{
-		if(cs->last_action_was_compute&&pass->shaders[crossplatform::SHADERTYPE_VERTEX]!=nullptr)
-			cs->last_action_was_compute=false;
-		else if((!cs->last_action_was_compute)&&pass->shaders[crossplatform::SHADERTYPE_COMPUTE]!=nullptr)
-			cs->last_action_was_compute=true;
-		cs->effectPassValid=true;
+		if (cs->last_action_was_compute && pass->shaders[crossplatform::SHADERTYPE_VERTEX] != nullptr)
+			cs->last_action_was_compute = false;
+		else if ((!cs->last_action_was_compute) && pass->shaders[crossplatform::SHADERTYPE_COMPUTE] != nullptr)
+			cs->last_action_was_compute = true;
+		cs->effectPassValid = true;
 	}
-	
+
 	// Update frame_number in the DeviceContext from the RenderPlatform.
 	if (frameNumber != deviceContext.GetFrameNumber())
 	{
@@ -586,42 +586,42 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	if (frameNumber != mLastFrame)
 	{
 		//Make sure that any resources set for deletion are removed
-		if(resourcesToBeReleased)
+		if (resourcesToBeReleased)
 			ClearReleaseManager();
 
 		mLastFrame = frameNumber;
 	}
-	
+
 	// If not a compute shader, apply viewports:
 	if (commandBuffer != nullptr && pass->shaders[crossplatform::SHADERTYPE_COMPUTE] == nullptr)
 	{
-		crossplatform::GraphicsDeviceContext *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
+		crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
 		vk::DeviceSize offsets[] = { 0 };
-		for(auto i:cs->applyVertexBuffers)
+		for (auto i : cs->applyVertexBuffers)
 		{
-			auto vulkanBuffer=(vulkan::Buffer*)i.second;
+			auto vulkanBuffer = (vulkan::Buffer*)i.second;
 			vulkanBuffer->FinishLoading(deviceContext);
-			vk::Buffer vertexBuffers[] ={vulkanBuffer->asVulkanBuffer()};
-			commandBuffer->bindVertexBuffers( i.first, 1, vertexBuffers, offsets);
+			vk::Buffer vertexBuffers[] = { vulkanBuffer->asVulkanBuffer() };
+			commandBuffer->bindVertexBuffers(i.first, 1, vertexBuffers, offsets);
 		}
-		if(cs->indexBuffer)
+		if (cs->indexBuffer)
 		{
-			auto vulkanBuffer=(vulkan::Buffer*)cs->indexBuffer;
+			auto vulkanBuffer = (vulkan::Buffer*)cs->indexBuffer;
 			vulkanBuffer->FinishLoading(deviceContext);
-			vk::IndexType indexType=vk::IndexType::eUint32;
-			if(cs->indexBuffer->stride==2)
-				indexType=::vk::IndexType::eUint16;
-			commandBuffer->bindIndexBuffer( ((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
+			vk::IndexType indexType = vk::IndexType::eUint32;
+			if (cs->indexBuffer->stride == 2)
+				indexType = ::vk::IndexType::eUint16;
+			commandBuffer->bindIndexBuffer(((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
 		}
-		pass->Apply(deviceContext,false);
+		pass->Apply(deviceContext, false);
 
-		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
-		auto *tv=deviceContext.AsGraphicsDeviceContext()->GetCurrentTargetsAndViewport();
-		size_t clearColoursCount = (size_t)tv->num + (tv->depthTarget.texture!=nullptr? 1 : 0);
+		vk::Framebuffer* framebuffer = GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
+		auto* tv = deviceContext.AsGraphicsDeviceContext()->GetCurrentTargetsAndViewport();
+		size_t clearColoursCount = (size_t)tv->num + (tv->depthTarget.texture != nullptr ? 1 : 0);
 		std::vector<vk::ClearValue>clearValues(clearColoursCount);
 		for (size_t i = 0; i < clearColoursCount; i++)
 		{
-			if(i == clearColoursCount - 1 && tv->depthTarget.texture!=nullptr)
+			if (i == clearColoursCount - 1 && tv->depthTarget.texture != nullptr)
 				clearValues[i] = vk::ClearDepthStencilValue(0.0f, 0u);
 			else
 				clearValues[i] = vk::ClearColorValue(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
@@ -630,36 +630,36 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		{
 			clearColoursCount = 2;
 			clearValues.resize(clearColoursCount);
-			clearValues[0] = vk::ClearColorValue(std::array<float, 4>({{0.0f, 0.0f, 0.0f, 0.0f}}));
+			clearValues[0] = vk::ClearColorValue(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
 			clearValues[1] = vk::ClearDepthStencilValue(0.0f, 0u);
 		}
-		crossplatform::Viewport vp=GetViewport(*graphicsDeviceContext,0);
+		crossplatform::Viewport vp = GetViewport(*graphicsDeviceContext, 0);
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 
-		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
-													.setRenderPass(pass->GetVulkanRenderPass(*graphicsDeviceContext))
-													.setFramebuffer(*framebuffer)
-													.setClearValueCount((uint32_t)clearColoursCount)
-													.setPClearValues(clearValues.data())
-													.setRenderArea(renderArea);
+		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo()
+			.setRenderPass(pass->GetVulkanRenderPass(*graphicsDeviceContext))
+			.setFramebuffer(*framebuffer)
+			.setClearValueCount((uint32_t)clearColoursCount)
+			.setPClearValues(clearValues.data())
+			.setRenderArea(renderArea);
 		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
 
 		vk::Viewport vkViewports[1];
 		vk::Rect2D vkScissors[1];
-		for(int i=0;i<1;i++)
+		for (int i = 0; i < 1; i++)
 		{
-			crossplatform::Viewport &vp=cs->viewports[i];
-			int4 scissor=cs->scissor;
+			crossplatform::Viewport& vp = cs->viewports[i];
+			int4 scissor = cs->scissor;
 			vkViewports[0].setHeight((float)vp.h).setWidth((float)vp.w).setX((float)vp.x).setY((float)vp.y)
 				.setMaxDepth(1.0f).setMinDepth(0.0f);
-			vkScissors[0].setExtent(vk::Extent2D(scissor.z,scissor.w)).setOffset(vk::Offset2D(scissor.x,scissor.y));
+			vkScissors[0].setExtent(vk::Extent2D(scissor.z, scissor.w)).setOffset(vk::Offset2D(scissor.x, scissor.y));
 		}
-		commandBuffer->setViewport(0,1,vkViewports);
-		commandBuffer->setScissor(0,1,vkScissors);
+		commandBuffer->setViewport(0, 1, vkViewports);
+		commandBuffer->setScissor(0, 1, vkScissors);
 	}
 	else
 	{
-		pass->Apply(deviceContext,true);
+		pass->Apply(deviceContext, true);
 	}
 	return true;
 }
@@ -1684,9 +1684,10 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 	RenderPassHash hashval=0;
 	if (tv->textureTargets[0].texture)
 	{
-		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
+		hashval += (unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
 		hashval += (unsigned long long)tv->textureTargets[0].texture->width;	//Deal with resizing the framebuffer!
 		hashval += (unsigned long long)tv->textureTargets[0].texture->length;
+		hashval += (unsigned long long)tv->textureTargets[0].texture->GetArraySize();
 	}
 	vulkan::Texture *d=(vulkan::Texture *)tv->depthTarget.texture;
 	if(d)
@@ -1887,13 +1888,14 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setDependencyCount(0)
 		.setPDependencies(nullptr);
 
-	auto multiviewCI = vk::RenderPassMultiviewCreateInfo();
 #if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
+	auto multiviewCI = vk::RenderPassMultiviewCreateInfo();
+	uint32_t viewMask = 0;
 	if (HasRenderingFeatures(platform::crossplatform::Multiview) && multiview)
 	{
 		vk::PhysicalDeviceMultiviewProperties multiviewProperties;
 		FillPhysicalDeviceProperties2ExtensionStructure(multiviewProperties);
-		uint32_t viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(*deviceContext.AsGraphicsDeviceContext(), multiviewProperties.maxMultiviewViewCount);
+		viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(*deviceContext.AsGraphicsDeviceContext(), multiviewProperties.maxMultiviewViewCount);
 
 		if (viewMask != 0)
 		{
