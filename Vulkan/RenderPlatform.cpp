@@ -596,8 +596,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	pass->Apply(deviceContext, false);
 	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
 	const EffectPass::RenderPassPipeline& renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
-	const vk::PipelineLayout& pipelineLayout = pass->GetPipelineLayout();
-	const vk::DescriptorSet& descriptorSet = pass->GetDescriptorSet();
+	const vk::PipelineLayout& pipelineLayout = pass->GetLastestPipelineLayout();
+	const vk::DescriptorSet& descriptorSet = pass->GetLastestDescriptorSet();
 	bool setDescriptors = descriptorSet ? true : false;
 
 	// If not a compute shader, apply viewports:
