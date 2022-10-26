@@ -54,7 +54,6 @@ void EffectPass::InvalidateDeviceObjects()
 }
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
 {
-	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
 	// If new frame, update current frame index and reset the apply count
 	if (m_LastFrameIndex != deviceContext.GetFrameNumber())
 	{
@@ -65,7 +64,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_LastFrameIndex = deviceContext.GetFrameNumber();
 	}
 	if (!m_Initialized)
-		CreateDescriptorPoolAndSetLayoutAndPipelineLayout(); //Create Desciptor Pools, Descriptor Set Layout and Pipeline Layout.
+		CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
 
 	if (m_DescriptorSets_It[m_InternalFrameIndex] == m_DescriptorSets[m_InternalFrameIndex].end())
 	{
@@ -73,7 +72,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_DescriptorSets[m_InternalFrameIndex].push_back(vk::DescriptorSet());
 		m_DescriptorSets_It[m_InternalFrameIndex] = m_DescriptorSets[m_InternalFrameIndex].end();
 		m_DescriptorSets_It[m_InternalFrameIndex]--;
-		AllocateDescriptorSets(*m_DescriptorSets_It[m_InternalFrameIndex]); // Allocate Descriptor Sets.
+		AllocateDescriptorSets(*m_DescriptorSets_It[m_InternalFrameIndex]);
 	}
 
 	ApplyContextState(deviceContext, *m_DescriptorSets_It[m_InternalFrameIndex]);
@@ -86,13 +85,8 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet)
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
-
-	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
-	if (!commandBuffer)
-		return;
-	
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
 	vulkan::Shader* c = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
 
 	// If valid, activate render states:
 	if (blendState)
@@ -405,6 +399,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			}
 		}
 	}
+		
+	m_DescriptorSet = descriptorSet;
 
 	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
 	RenderPassHash hashval = 0;
@@ -419,9 +415,6 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		}
 		else
 			renderPassPipeline = &(m_RenderPasses[hashval]);
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline->pipeline);
-		if (descriptorSet)
-			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_PipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else
 	{
@@ -442,9 +435,6 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		}
 		else
 			renderPassPipeline = &(m_RenderPasses[hashval]);
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, renderPassPipeline->pipeline);
-		if (descriptorSet)
-			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 		// Now figure out the layout business for the rendertargets:
 		crossplatform::TargetsAndViewport* tv;
@@ -900,7 +890,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 	}
 }
 
-vk::RenderPass& EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceContext& deviceContext)
+EffectPass::RenderPassPipeline& EffectPass::GetRenderPassPipeline(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
 	crossplatform::PixelFormat pixelFormat = vulkan::RenderPlatform::GetActivePixelFormat(deviceContext);
@@ -913,7 +903,7 @@ vk::RenderPass& EffectPass::GetVulkanRenderPass(crossplatform::GraphicsDeviceCon
 		InitializePipeline(deviceContext, &m_RenderPasses[hashval], pixelFormat, topology, blendState, depthStencilState, rasterizerState, multiview);
 	}
 
-	return m_RenderPasses[hashval].renderPass;
+	return m_RenderPasses[hashval];
 }
 
 RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout)

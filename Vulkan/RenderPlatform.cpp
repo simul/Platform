@@ -591,75 +591,97 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 		mLastFrame = frameNumber;
 	}
+	
+	//Apply the pass setting up the descriptors, pipeline and render pass.
+	pass->Apply(deviceContext, false);
+	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
+	const EffectPass::RenderPassPipeline& renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
+	const vk::PipelineLayout& pipelineLayout = pass->GetPipelineLayout();
+	const vk::DescriptorSet& descriptorSet = pass->GetDescriptorSet();
+	bool setDescriptors = descriptorSet ? true : false;
 
 	// If not a compute shader, apply viewports:
 	if (commandBuffer != nullptr && pass->shaders[crossplatform::SHADERTYPE_COMPUTE] == nullptr)
 	{
-		crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
-		vk::DeviceSize offsets[] = { 0 };
-		for (auto i : cs->applyVertexBuffers)
-		{
-			auto vulkanBuffer = (vulkan::Buffer*)i.second;
-			vulkanBuffer->FinishLoading(deviceContext);
-			vk::Buffer vertexBuffers[] = { vulkanBuffer->asVulkanBuffer() };
-			commandBuffer->bindVertexBuffers(i.first, 1, vertexBuffers, offsets);
-		}
-		if (cs->indexBuffer)
-		{
-			auto vulkanBuffer = (vulkan::Buffer*)cs->indexBuffer;
-			vulkanBuffer->FinishLoading(deviceContext);
-			vk::IndexType indexType = vk::IndexType::eUint32;
-			if (cs->indexBuffer->stride == 2)
-				indexType = ::vk::IndexType::eUint16;
-			commandBuffer->bindIndexBuffer(((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
-		}
-		pass->Apply(deviceContext, false);
-
-		vk::Framebuffer* framebuffer = GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
-		auto* tv = deviceContext.AsGraphicsDeviceContext()->GetCurrentTargetsAndViewport();
+		//Set up clear colours
+		crossplatform::TargetsAndViewport* tv = graphicsDeviceContext->GetCurrentTargetsAndViewport();
 		size_t clearColoursCount = (size_t)tv->num + (tv->depthTarget.texture != nullptr ? 1 : 0);
+		vk::ClearColorValue colourClear(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
+		vk::ClearDepthStencilValue depthClear(0.0f, 0u);
 		std::vector<vk::ClearValue>clearValues(clearColoursCount);
 		for (size_t i = 0; i < clearColoursCount; i++)
 		{
 			if (i == clearColoursCount - 1 && tv->depthTarget.texture != nullptr)
-				clearValues[i] = vk::ClearDepthStencilValue(0.0f, 0u);
+				clearValues[i] = depthClear;
 			else
-				clearValues[i] = vk::ClearColorValue(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
+				clearValues[i] = colourClear;
 		}
 		if (clearColoursCount == 0)
 		{
 			clearColoursCount = 2;
 			clearValues.resize(clearColoursCount);
-			clearValues[0] = vk::ClearColorValue(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
-			clearValues[1] = vk::ClearDepthStencilValue(0.0f, 0u);
+			clearValues[0] = colourClear;
+			clearValues[1] = depthClear;
 		}
+
+		//Begin the RenderPass
 		crossplatform::Viewport vp = GetViewport(*graphicsDeviceContext, 0);
 		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
-
+		vk::Framebuffer* framebuffer = GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
 		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo()
-			.setRenderPass(pass->GetVulkanRenderPass(*graphicsDeviceContext))
+			.setRenderPass(renderPassPipeline.renderPass)
 			.setFramebuffer(*framebuffer)
 			.setClearValueCount((uint32_t)clearColoursCount)
 			.setPClearValues(clearValues.data())
 			.setRenderArea(renderArea);
 		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
 
+		//Set Graphics Pipeline
+		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, renderPassPipeline.pipeline);
+
+		//Set the Viewports and Scissors
 		vk::Viewport vkViewports[1];
 		vk::Rect2D vkScissors[1];
 		for (int i = 0; i < 1; i++)
 		{
 			crossplatform::Viewport& vp = cs->viewports[i];
 			int4 scissor = cs->scissor;
-			vkViewports[0].setHeight((float)vp.h).setWidth((float)vp.w).setX((float)vp.x).setY((float)vp.y)
-				.setMaxDepth(1.0f).setMinDepth(0.0f);
+			vkViewports[0].setHeight((float)vp.h).setWidth((float)vp.w).setX((float)vp.x).setY((float)vp.y).setMaxDepth(1.0f).setMinDepth(0.0f);
 			vkScissors[0].setExtent(vk::Extent2D(scissor.z, scissor.w)).setOffset(vk::Offset2D(scissor.x, scissor.y));
 		}
 		commandBuffer->setViewport(0, 1, vkViewports);
 		commandBuffer->setScissor(0, 1, vkScissors);
+
+		//Set the Desciptor Sets
+		if (setDescriptors)
+			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
+		//Set Vertex and Index buffers
+		for (auto i : cs->applyVertexBuffers)
+		{
+			vulkan::Buffer* buffer = (vulkan::Buffer*)i.second;
+			buffer->FinishLoading(deviceContext);
+			vk::Buffer vertexBuffers[] = { buffer->asVulkanBuffer() };
+			vk::DeviceSize offsets[] = { 0 };
+			commandBuffer->bindVertexBuffers(i.first, 1, vertexBuffers, offsets);
+		}
+		if (cs->indexBuffer)
+		{
+			vulkan::Buffer* buffer = (vulkan::Buffer*)cs->indexBuffer;
+			buffer->FinishLoading(deviceContext);
+			vk::IndexType indexType = cs->indexBuffer->stride == 4 ? vk::IndexType::eUint32 : vk::IndexType::eUint16;
+			vk::Buffer indexBuffer = { buffer->asVulkanBuffer() };
+			commandBuffer->bindIndexBuffer(indexBuffer, 0, indexType);
+		}
 	}
 	else
 	{
-		pass->Apply(deviceContext, true);
+		//Set Compute Pipeline
+		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline.pipeline);
+
+		//Set the Desciptor Sets
+		if (setDescriptors)
+			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	return true;
 }
@@ -1742,7 +1764,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 				depthPF = tv->depthTarget.texture->pixelFormat;
 		}
 
-		vk::RenderPass& vkRenderPass = effectPass->GetVulkanRenderPass(*deviceContext.AsGraphicsDeviceContext());
+		vk::RenderPass& vkRenderPass = effectPass->GetRenderPassPipeline(*deviceContext.AsGraphicsDeviceContext()).renderPass;
 		vk::ImageView attachments[9];
 
 		vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();

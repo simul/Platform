@@ -18,7 +18,7 @@ namespace platform
 
 		class SIMUL_VULKAN_EXPORT EffectPass : public platform::crossplatform::EffectPass
 		{
-		private:
+		public:
 			struct RenderPassPipeline
 			{
 				vk::Pipeline		pipeline;
@@ -36,6 +36,11 @@ namespace platform
 			//! For Vulkan alone, this forces the shader to initialize with the source texture as a video decode source.
 			//! This MUST be set to true before the first use of the shader, or it won't be applied to the shader's initialization.
 			void SetVideoSource(bool s) { m_VideoSource = s; }
+
+			//Lastets created PipelineLayout.
+			inline const vk::PipelineLayout& GetLastestPipelineLayout() { return m_PipelineLayout; }
+			//Lastets created DescriptorSet.
+			inline const vk::DescriptorSet& GetLastestDescriptorSet() { return m_DescriptorSet; }
 		
 		private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet);
@@ -55,7 +60,7 @@ namespace platform
 				, bool multiview = false);
 
 		public:
-			vk::RenderPass& GetVulkanRenderPass(crossplatform::GraphicsDeviceContext& deviceContext);
+			RenderPassPipeline& GetRenderPassPipeline(crossplatform::GraphicsDeviceContext& deviceContext);
 			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
 
 		private:
@@ -71,10 +76,11 @@ namespace platform
 			std::vector<vk::Sampler>						m_ImmutableSamplers;
 
 			bool m_Initialized = false;
+			vk::DescriptorPool								m_DescriptorPool;
 			vk::DescriptorSetLayout							m_DescriptorSetLayout;
+			vk::DescriptorSet								m_DescriptorSet;		//Set by ApplyContextState().
 			vk::PipelineLayout								m_PipelineLayout;
 			std::map<RenderPassHash, RenderPassPipeline>	m_RenderPasses;
-			vk::DescriptorPool								m_DescriptorPool;
 
 			int64_t											m_LastFrameIndex;
 			size_t											m_InternalFrameIndex;	// incremented internally.
