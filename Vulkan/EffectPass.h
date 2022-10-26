@@ -6,8 +6,8 @@
 #include <list>
 
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable:4251)
+#pragma warning(push)
+#pragma warning(disable:4251)
 #endif
 
 namespace platform
@@ -15,71 +15,81 @@ namespace platform
 	namespace vulkan
 	{
 		typedef unsigned long long RenderPassHash;
-		//! A Vulkan program object (combination of shaders)
+
 		class SIMUL_VULKAN_EXPORT EffectPass : public platform::crossplatform::EffectPass
 		{
+		private:
+			struct RenderPassPipeline
+			{
+				vk::Pipeline		pipeline;
+				vk::PipelineCache	pipelineCache;
+				vk::RenderPass		renderPass;
+			};
+
 		public:
-			EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *);
+			EffectPass(crossplatform::RenderPlatform* r, crossplatform::Effect* e);
 			~EffectPass();
 			void InvalidateDeviceObjects();
 
 			void Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
-			void SetTextureHandles(crossplatform::DeviceContext& deviceContext);
-
-			vk::RenderPass& GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
-
-			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
-				, const crossplatform::Layout *layout=nullptr
-				, const crossplatform::RenderState *blendState=nullptr
-				, const crossplatform::RenderState *depthStencilState=nullptr
-				, const crossplatform::RenderState *rasterizerState=nullptr);
-			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
 
 			//! For Vulkan alone, this forces the shader to initialize with the source texture as a video decode source.
 			//! This MUST be set to true before the first use of the shader, or it won't be applied to the shader's initialization.
-			void SetVideoSource(bool s) { videoSource = s; }
-
+			void SetVideoSource(bool s) { m_VideoSource = s; }
+		
 		private:
-			bool videoSource=false;
-			std::vector<vk::Sampler> samplers;
-			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
-			void Initialize();
-			void Initialize(vk::DescriptorSet &descriptorSet);
-			
-			vk::DescriptorSetLayout			mDescLayout;
-			vk::PipelineLayout				mPipelineLayout;
+			void ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet);
+			void CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
+			void AllocateDescriptorSets(vk::DescriptorSet& descriptorSet);
 
-			struct RenderPassPipeline
-			{
-				vk::Pipeline				mPipeline;
-				vk::PipelineCache			mPipelineCache;
-				vk::RenderPass				mRenderPass;
-			};
-			std::map<RenderPassHash,RenderPassPipeline> mRenderPasses;
-			vk::DescriptorPool			mDescriptorPool;
+			static int GenerateSamplerSlot(int s, bool offset = true);
+			static int GenerateTextureSlot(int s, bool offset = true);
+			static int GenerateTextureWriteSlot(int s, bool offset = true);
+			static int GenerateConstantBufferSlot(int s, bool offset = true);
+			vk::ShaderStageFlags GetShaderFlagsForSlot(int slot, bool(platform::crossplatform::Shader::* pfn)(int) const);
 			
-			long long					mLastFrameIndex;
-			int							mInternalFrameIndex;	// incremented internally.
-			unsigned					mCurApplyCount;
-			//! Number of ring buffers
-			static const unsigned		kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);
-			// each frame in the 3-frame loop carries a variable-size list of descriptors: one for each submit.
-			std::list<vk::DescriptorSet> mDescriptorSets[kNumBuffers];
-			std::list<vk::DescriptorSet>::iterator i_desc[kNumBuffers];
-			static int GenerateSamplerSlot(int s,bool offset=true);
-			static int GenerateTextureSlot(int s,bool offset=true);
-			static int GenerateTextureWriteSlot(int s,bool offset=true);
-			static int GenerateConstantBufferSlot(int s,bool offset=true);
 			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
 				, const crossplatform::RenderState* blendState = nullptr
 				, const crossplatform::RenderState* depthStencilState = nullptr
-				, const crossplatform::RenderState* rasterizerState = nullptr);
-			bool initialized=false;
-			vk::DescriptorSetLayoutBinding *layout_bindings=nullptr;
+				, const crossplatform::RenderState* rasterizerState = nullptr
+				, bool multiview = false);
+
+		public:
+			vk::RenderPass& GetVulkanRenderPass(crossplatform::GraphicsDeviceContext& deviceContext);
+			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
+
+		private:
+			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+				, const crossplatform::Layout* layout = nullptr
+				, const crossplatform::RenderState* blendState = nullptr
+				, const crossplatform::RenderState* depthStencilState = nullptr
+				, const crossplatform::RenderState* rasterizerState = nullptr
+				, bool multiview = false);
+
+		private:
+			bool											m_VideoSource = false;
+			std::vector<vk::Sampler>						m_ImmutableSamplers;
+
+			bool m_Initialized = false;
+			vk::DescriptorSetLayout							m_DescriptorSetLayout;
+			vk::PipelineLayout								m_PipelineLayout;
+			std::map<RenderPassHash, RenderPassPipeline>	m_RenderPasses;
+			vk::DescriptorPool								m_DescriptorPool;
+
+			int64_t											m_LastFrameIndex;
+			size_t											m_InternalFrameIndex;	// incremented internally.
+			uint32_t										m_CurrentApplyCount;
+
+			//! Number of ring buffers
+			static const uint32_t							s_DescriptorSetCount = (SIMUL_VULKAN_FRAME_LAG + 1);
+			// each frame in the 3-frame loop carries a variable-size list of descriptors: one for each submit.
+			std::list<vk::DescriptorSet>					m_DescriptorSets[s_DescriptorSetCount];
+			std::list<vk::DescriptorSet>::iterator			m_DescriptorSets_It[s_DescriptorSetCount];
+			
 		};
 	}
 }
 
 #ifdef _MSC_VER
-	#pragma warning(pop)
+#pragma warning(pop)
 #endif
