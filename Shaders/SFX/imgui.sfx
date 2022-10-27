@@ -6,7 +6,8 @@
 
 cbuffer vertexBuffer SIMUL_BUFFER_REGISTER(0)
 {
-  mat4 ProjectionMatrix; 
+  mat4 ProjectionMatrix0; 
+  mat4 ProjectionMatrix1;
 };
 
 struct VS_INPUT
@@ -22,11 +23,11 @@ struct PS_INPUT
   vec4 col : TEXCOORD0;
   vec2 uv  : TEXCOORD1;
 };
-            
+			
 shader PS_INPUT VS_Main(VS_INPUT vertex)
 {
   PS_INPUT v_out;
-  v_out.pos = mul( ProjectionMatrix, vec4(vertex.pos.xy, 0.f, 1.0));
+  v_out.pos = mul( ProjectionMatrix0, vec4(vertex.pos.xy, 0.f, 1.0));
   v_out.col = vertex.col;
   v_out.uv  = vertex.uv;
   return v_out;
@@ -41,53 +42,70 @@ shader PS_INPUT VS_Quad(idOnly IN)
 	poss[3]		=vec2(-1.0, 1.0);
 	vec2 pos	=poss[IN.vertex_id];
 	PS_INPUT v_out;
-	v_out.pos	=mul( ProjectionMatrix, vec4(pos.xy,0,1.0));
+	v_out.pos	=mul( ProjectionMatrix0, vec4(pos.xy,0,1.0));
 	v_out.col	=vec4(1.0,1.0,1.0,1.0);
 	v_out.uv	=pos*0.5+vec2(0.5,0.5);
 	return v_out;
 }
+
+shader PS_INPUT VS_Quad_MV(idOnly IN, uint viewID : SV_ViewID)
+{
+	mat4 projectMatrix = viewID == 0 ? ProjectionMatrix0 : ProjectionMatrix1;
+	vec2 poss[4];
+	poss[0]		=vec2( 1.0,-1.0);
+	poss[1]		=vec2( 1.0, 1.0);
+	poss[2]		=vec2(-1.0,-1.0);
+	poss[3]		=vec2(-1.0, 1.0);
+	vec2 pos	=poss[IN.vertex_id];
+	PS_INPUT v_out;
+	v_out.pos = mul(projectMatrix, vec4(pos.xy, 0, 1.0));
+	v_out.col	=vec4(1.0,1.0,1.0,1.0);
+	v_out.uv	=pos*0.5+vec2(0.5,0.5);
+	return v_out;
+}
+
 Texture2D texture0;
 
 shader vec4 PS_Main(PS_INPUT p_in) : SV_Target
 {
-    vec4 out_col = p_in.col* texture0.Sample(clampSamplerState, p_in.uv).rgba;
+	vec4 out_col = p_in.col* texture0.Sample(clampSamplerState, p_in.uv).rgba;
 	//out_col.rg+=p_in.uv;
-    return out_col; 
+	return out_col; 
 }
 
 BlendState ImGuiBlend
 {
-    BlendEnable[0] = TRUE;
-    BlendEnable[1] = TRUE;
-    SrcBlend = SRC_ALPHA;
-    DestBlend = INV_SRC_ALPHA;
-    SrcBlendAlpha = ONE;
-    DestBlendAlpha = INV_SRC_ALPHA;
-    BlendOp = ADD;
-    BlendOpAlpha = ADD;
+	BlendEnable[0] = TRUE;
+	BlendEnable[1] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
+	SrcBlendAlpha = ONE;
+	DestBlendAlpha = INV_SRC_ALPHA;
+	BlendOp = ADD;
+	BlendOpAlpha = ADD;
 };
 
 RasterizerState ImGuiRasterizerScissor
 {
-    FillMode = SOLID;
-    CullMode = none;
-    DepthClipEnable = true;
-    ScissorEnable = true;
+	FillMode = SOLID;
+	CullMode = none;
+	DepthClipEnable = true;
+	ScissorEnable = true;
 };
 
 RasterizerState ImGuiRasterizerNoScissor
 {
-    FillMode = SOLID;
-    CullMode = none;
-    DepthClipEnable = true;
-    ScissorEnable = false;
+	FillMode = SOLID;
+	CullMode = none;
+	DepthClipEnable = true;
+	ScissorEnable = false;
 };
 
 DepthStencilState WriteReverseDepth
 {
-    DepthEnable = TRUE;
-    DepthWriteMask = ALL;
-    DepthFunc = ALWAYS;
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+	DepthFunc = ALWAYS;
 };
 DepthStencilState TestReverseDepth
 {
@@ -98,68 +116,102 @@ DepthStencilState TestReverseDepth
 
 technique layout_in_2d
 {
-    pass depth
-    {
-        SetRasterizerState(ImGuiRasterizerScissor);
-        SetTopology(TriangleList);
-        SetDepthStencilState(WriteReverseDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-    pass no_depth
-    {
-        SetRasterizerState(ImGuiRasterizerScissor);
-        SetTopology(TriangleList);
-        SetDepthStencilState(DisableDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-    pass test_depth
-    {
-        SetRasterizerState(ImGuiRasterizerScissor);
-        SetTopology(TriangleList);
-        SetDepthStencilState(TestReverseDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Main()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
+	pass depth
+	{
+		SetRasterizerState(ImGuiRasterizerScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(WriteReverseDepth, 0);
+		SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+	}
+	pass no_depth
+	{
+		SetRasterizerState(ImGuiRasterizerScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+	}
+	pass test_depth
+	{
+		SetRasterizerState(ImGuiRasterizerScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(TestReverseDepth, 0);
+		SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+	}
 }
 
 technique place_in_3d
 {
-    pass depth
-    {
-        SetRasterizerState(ImGuiRasterizerNoScissor);
-        SetTopology(TriangleList);
-        SetDepthStencilState(WriteReverseDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Quad()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-    pass no_depth
-    {
-        SetRasterizerState(ImGuiRasterizerNoScissor);
-        SetTopology(TriangleList);
-        SetDepthStencilState(DisableDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Quad()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-    pass test_depth
-    {
-        SetRasterizerState(ImGuiRasterizerNoScissor);
-        SetTopology(TriangleList);
-        SetDepthStencilState(TestReverseDepth, 0);
-        SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-        SetGeometryShader(NULL);
-        SetVertexShader(CompileShader(vs_5_0, VS_Quad()));
-        SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
+	pass depth
+	{
+		SetRasterizerState(ImGuiRasterizerNoScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(WriteReverseDepth, 0);
+		SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+	}
+	pass no_depth
+	{
+		SetRasterizerState(ImGuiRasterizerNoScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+	}
+	pass test_depth
+	{
+		SetRasterizerState(ImGuiRasterizerNoScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(TestReverseDepth, 0);
+		SetBlendState(ImGuiBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+	}
+}
+
+technique place_in_3d_multiview
+{
+	pass depth
+	{
+		SetRasterizerState(ImGuiRasterizerNoScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(WriteReverseDepth, 0);
+		SetBlendState(ImGuiBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Quad_MV()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Main()));
+	}
+	pass no_depth
+	{
+		SetRasterizerState(ImGuiRasterizerNoScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(ImGuiBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Quad_MV()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Main()));
+	}
+	pass test_depth
+	{
+		SetRasterizerState(ImGuiRasterizerNoScissor);
+		SetTopology(TriangleList);
+		SetDepthStencilState(TestReverseDepth, 0);
+		SetBlendState(ImGuiBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Quad_MV()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Main()));
+	}
 }
