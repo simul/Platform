@@ -998,8 +998,9 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 	vk::ImageLayout image_layout=currentImageLayout;
 	std::vector<vk::ImageSubresourceRange> image_subresource_ranges;
+	const int& layerCount = NumFaces();
 	// if stencil, may need |vk::ImageAspectFlagBits::eStencil
-	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, layerCount);
 	image_subresource_ranges.push_back(imageSubresourceRange);
 
 	vk::ClearDepthStencilValue clear_value;
