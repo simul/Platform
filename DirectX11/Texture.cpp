@@ -1269,7 +1269,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 						size_t block_width		=std::max(1,(mip_width+3)/4);
 						size_t block_height		=std::max(1,(mip_length+3)/4);
 						size_t block_size_bytes	=(bytesPerTexel==4)?16:8;
-						data.SysMemPitch				= (UINT)block_size_bytes*block_width;;//ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
+						data.SysMemPitch				= (UINT)(block_size_bytes*block_width);//ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
 						data.SysMemSlicePitch			= (UINT)std::max(block_size_bytes,data.SysMemPitch*block_height);//data.SysMemPitch*std::max(1,mip_length/4);
 					}
 					break;

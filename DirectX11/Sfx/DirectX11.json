@@ -1,5 +1,5 @@
 {
-	"compiler": "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/fxc.exe",
+	"compiler": "C:/Program Files (x86)/Windows Kits/10/bin/x64/fxc.exe",
 	"api": "DirectX 11",
 	"defaultOptions": "/T {shader_model} /nologo /Zi",
 	"sourceExtension": "hlsl",
@@ -15,5 +15,6 @@
 		"SFX_D3D11": "1",
 		"SFX": "1",
 		"PLATFORM_D3D11_SFX": "1"
-	}
+	},
+	"maxShaderModel": 5.0
 }

@@ -191,7 +191,7 @@ technique place_in_3d_multiview
 		SetDepthStencilState(WriteReverseDepth, 0);
 		SetBlendState(ImGuiBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0, VS_Quad_MV()));
+		SetVertexShader(CompileShader(vs_6_0, VS_Quad_MV()));
 		SetPixelShader(CompileShader(ps_5_0, PS_Main()));
 	}
 	pass no_depth
@@ -201,7 +201,7 @@ technique place_in_3d_multiview
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(ImGuiBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0, VS_Quad_MV()));
+		SetVertexShader(CompileShader(vs_6_0, VS_Quad_MV()));
 		SetPixelShader(CompileShader(ps_5_0, PS_Main()));
 	}
 	pass test_depth
@@ -211,7 +211,7 @@ technique place_in_3d_multiview
 		SetDepthStencilState(TestReverseDepth, 0);
 		SetBlendState(ImGuiBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0, VS_Quad_MV()));
+		SetVertexShader(CompileShader(vs_6_0, VS_Quad_MV()));
 		SetPixelShader(CompileShader(ps_5_0, PS_Main()));
 	}
 }
