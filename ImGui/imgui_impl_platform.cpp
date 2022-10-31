@@ -15,7 +15,8 @@ using namespace crossplatform;
 struct ImGuiCB
 {
 	static const int bindingIndex=0;
-	mat4	ProjectionMatrix;
+	mat4	ProjectionMatrix0;
+	mat4	ProjectionMatrix1;
 };
 
 
@@ -30,6 +31,8 @@ struct ImGui_ImplPlatform_Data
 	EffectPass*				effectPass_noDepth=nullptr;
 	EffectPass*				effectPass_placeIn3D_testDepth=nullptr;
 	EffectPass*				effectPass_placeIn3D_noDepth=nullptr;
+	EffectPass*				effectPass_placeIn3DMV_testDepth=nullptr;
+	EffectPass*				effectPass_placeIn3DMV_noDepth=nullptr;
 	
 	Layout*					pInputLayout = nullptr;
 	ConstantBuffer<ImGuiCB>	constantBuffer;
@@ -199,7 +202,10 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 		 0.0f,			 0.0f,			0.5f,	   0.0f ,
 		 (R+L)/(L-R),	(T+B)/(B-T),	0.5f,	   1.0f ,
 	};
-	mat4 modelViewProj;
+
+	mat4 modelViewProj0;
+	mat4 modelViewProj1;
+	bool multiview = false;
 	if(bd->is3d)
 	{
 		if(bd->matrices_ticker!=bd->used_ticker)
@@ -268,13 +274,26 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			bd->world_to_imgui=mat4::inverse(bd->imgui_to_world);//(*((platform::math::Matrix4x4 *)&bd->world_to_imgui));
 			//mat4 i_test = mul(bd->world_to_imgui,bd->imgui_to_world);
 		}
-		bd->view_pos=deviceContext.viewStruct.cam_pos;
-		bd->invViewProj=deviceContext.viewStruct.invViewProj;
-		mat4 *viewProj= (mat4 * )(&deviceContext.viewStruct.viewProj);
-		modelViewProj=mul(*viewProj, bd->canvas_to_world);
-		modelViewProj.transpose();
+		bd->view_pos = deviceContext.viewStruct.cam_pos;
+		bd->invViewProj = deviceContext.viewStruct.invViewProj;
+		mat4* viewProj = (mat4*)(&deviceContext.viewStruct.viewProj);
+		modelViewProj0 = mul(*viewProj, bd->canvas_to_world);
+		modelViewProj0.transpose();
+
+		if (deviceContext.deviceContextType == DeviceContextType::MULTIVIEW_GRAPHICS)
+		{
+			MultiviewGraphicsDeviceContext& mvgdc = *deviceContext.AsMultiviewGraphicsDeviceContext();
+
+			mat4* viewProj0 = (mat4*)(&mvgdc.viewStructs[0].viewProj);
+			modelViewProj0 = mul(*viewProj0, bd->canvas_to_world);
+			modelViewProj0.transpose();
+			mat4* viewProj1 = (mat4*)(&mvgdc.viewStructs[1].viewProj);
+			modelViewProj1 = mul(*viewProj1, bd->canvas_to_world);
+			modelViewProj1.transpose();
+			multiview = true;
+		}
 	}
-	bd->constantBuffer.ProjectionMatrix= imgui_projection;
+	bd->constantBuffer.ProjectionMatrix0 = imgui_projection;
 	bd->renderPlatform->SetConstantBuffer(deviceContext, &bd->constantBuffer);
 
 	crossplatform::Viewport vp=bd->renderPlatform->GetViewport(deviceContext, 1);
@@ -335,11 +354,20 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	if(bd->is3d)
 	{
 		bd->framebufferTexture->deactivateRenderTarget(deviceContext);
-		bd->constantBuffer.ProjectionMatrix= modelViewProj;
+		bd->constantBuffer.ProjectionMatrix0 = modelViewProj0;
+		bd->constantBuffer.ProjectionMatrix1 = modelViewProj1;
 		bd->renderPlatform->SetConstantBuffer(deviceContext, &bd->constantBuffer);
+
+		// select the pass
+		EffectPass* pass = nullptr;
+		if (multiview)
+			pass = test_depth ? bd->effectPass_placeIn3DMV_testDepth : bd->effectPass_placeIn3DMV_noDepth;
+		else
+			pass = test_depth ? bd->effectPass_placeIn3D_testDepth : bd->effectPass_placeIn3D_noDepth;
+
 		// now draw it to screen.
 		renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),bd->framebufferTexture);
-		renderPlatform->ApplyPass(deviceContext, test_depth?bd->effectPass_placeIn3D_testDepth:bd->effectPass_placeIn3D_noDepth);
+		renderPlatform->ApplyPass(deviceContext, pass);
 		bd->pInputLayout->Apply(deviceContext);
 		renderPlatform->DrawQuad(deviceContext);
 		bd->pInputLayout->Unapply(deviceContext);
@@ -381,19 +409,21 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 	};
 	if (!bd->pInputLayout)
 		bd->pInputLayout=bd->renderPlatform->CreateLayout(3,local_layout,true);
-#if 1
-	if (!bd->effect)
-		bd->effect= bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass_testDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
-	bd->effectPass_noDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
 	
-	bd->effectPass_placeIn3D_testDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
-	bd->effectPass_placeIn3D_noDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
+	if (!bd->effect)
+		bd->effect = bd->renderPlatform->CreateEffect("imgui");
+
+	bd->effectPass_testDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
+	bd->effectPass_noDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
+	bd->effectPass_placeIn3D_testDepth = bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
+	bd->effectPass_placeIn3D_noDepth = bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
+	bd->effectPass_placeIn3DMV_testDepth = bd->effect->GetTechniqueByName("place_in_3d_multiview")->GetPass("test_depth");
+	bd->effectPass_placeIn3DMV_noDepth = bd->effect->GetTechniqueByName("place_in_3d_multiview")->GetPass("no_depth");
 	
 	if (!bd->fontTexture)
 		ImGui_ImplPlatform_CreateFontsTexture();
+
 	bd->constantBuffer.RestoreDeviceObjects(bd->renderPlatform);
-#endif
 	return true;
 }
 
@@ -430,12 +460,14 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	bd->effect =nullptr;
 	if(!bd->renderPlatform)
 		return;
+
 	bd->effect = bd->renderPlatform->CreateEffect("imgui");
-	bd->effectPass_testDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
-	bd->effectPass_noDepth=bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
-	
-	bd->effectPass_placeIn3D_testDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
-	bd->effectPass_placeIn3D_noDepth=bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
+	bd->effectPass_testDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
+	bd->effectPass_noDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
+	bd->effectPass_placeIn3D_testDepth = bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");
+	bd->effectPass_placeIn3D_noDepth = bd->effect->GetTechniqueByName("place_in_3d")->GetPass("no_depth");
+	bd->effectPass_placeIn3DMV_testDepth = bd->effect->GetTechniqueByName("place_in_3d_multiview")->GetPass("test_depth");
+	bd->effectPass_placeIn3DMV_noDepth = bd->effect->GetTechniqueByName("place_in_3d_multiview")->GetPass("no_depth");
 }
 
 bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r)
