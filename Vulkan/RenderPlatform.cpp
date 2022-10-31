@@ -608,11 +608,22 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		if(cs->indexBuffer)
 		{
 			auto vulkanBuffer=(vulkan::Buffer*)cs->indexBuffer;
-			vulkanBuffer->FinishLoading(deviceContext);
 			vk::IndexType indexType=vk::IndexType::eUint32;
 			if(cs->indexBuffer->stride==2)
 				indexType=::vk::IndexType::eUint16;
-			commandBuffer->bindIndexBuffer( ((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
+			else if (cs->indexBuffer->stride==4)
+				indexType=vk::IndexType::eUint32;
+			else
+			{
+				cs->indexBuffer=nullptr;
+				// Sanity check. This should NEVER happen.
+				SIMUL_BREAK_ONCE("Bad index buffer.");
+			}
+			if(cs->indexBuffer)
+			{
+				vulkanBuffer->FinishLoading(deviceContext);
+				commandBuffer->bindIndexBuffer( ((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
+			}
 		}
 		pass->Apply(deviceContext,false);
 																												

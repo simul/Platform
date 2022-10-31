@@ -55,6 +55,7 @@ namespace platform
 		void SIMUL_DIRECTX11_EXPORT setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
 		void SIMUL_DIRECTX11_EXPORT setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
 							
+		//! Actually the "Block size" - either one texel, or one compressed block.
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
 		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8, const std::vector<std::string> &shaderBinPathsUtf8);

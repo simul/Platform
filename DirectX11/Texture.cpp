@@ -1244,6 +1244,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	//std::vector<std::vector<uint32_t>> tempData(m*total_num);
 	if(initData)
 	{
+		size_t bytesPerTexel	=crossplatform::GetByteSize(f);
 		size_t n=0;
 		for(size_t j=0;j<total_num;j++)
 		{
@@ -1257,15 +1258,20 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 					tempData[n][k]=0xFF00FF00;
 				}*/
 				D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
-				data.pSysMem						=initData[n];//tempData[n].data();//
+				data.pSysMem						=initData[n];
 				static int uu = 4;
 				switch (compressionFormat)
 				{
 				case crossplatform::CompressionFormat::BC1:
 				case crossplatform::CompressionFormat::BC3:
 				case crossplatform::CompressionFormat::BC5:
-					data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
-					data.SysMemSlicePitch			= data.SysMemPitch*std::max(1,mip_length/4);
+					{
+						size_t block_width		=std::max(1,(mip_width+3)/4);
+						size_t block_height		=std::max(1,(mip_length+3)/4);
+						size_t block_size_bytes	=(bytesPerTexel==4)?16:8;
+						data.SysMemPitch				= (UINT)block_size_bytes*block_width;;//ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
+						data.SysMemSlicePitch			= (UINT)std::max(block_size_bytes,data.SysMemPitch*block_height);//data.SysMemPitch*std::max(1,mip_length/4);
+					}
 					break;
 				default:
 					data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
