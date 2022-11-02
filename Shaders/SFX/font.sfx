@@ -8,12 +8,31 @@
 uniform StructuredBuffer<FontChar> fontChars;
 uniform Texture2D fontTexture;
 
-shader posTexVertexOutput FontVertexShader(idOnly IN, uint viewID : SV_ViewID)
+shader posTexVertexOutput VS_Font_SV(idOnly IN)
 {
 	uint char_index=IN.vertex_id/6;
 	uint vert_index=IN.vertex_id-(6*char_index);
 	uint ids[]={0,1,2,2,3,1};
-	FontChar f=fontChars[char_index+(numChars*viewID)];
+	FontChar f=fontChars[char_index];
+	idOnly cIN;
+	cIN.vertex_id=ids[vert_index];
+	
+	#ifdef  SFX_OPENGL
+	f.text_rect.y *= -1;
+	f.text_rect.y -= f.text_rect.w;
+	#endif
+	
+	posTexVertexOutput OUT	= VS_ScreenQuad(cIN, f.text_rect);
+	OUT.texCoords			= vec4(f.texc.xy+f.texc.zw*OUT.texCoords.xy,0.0,1.0).xy;
+	return OUT;
+}
+
+shader posTexVertexOutput VS_Font_MV(VertexAndViewID IN)
+{
+	uint char_index=IN.vertex_id/6;
+	uint vert_index=IN.vertex_id-(6*char_index);
+	uint ids[]={0,1,2,2,3,1};
+	FontChar f=fontChars[char_index+(numChars*IN.view_id)];
 	idOnly cIN;
 	cIN.vertex_id=ids[vert_index];
 	
@@ -27,7 +46,7 @@ shader posTexVertexOutput FontVertexShader(idOnly IN, uint viewID : SV_ViewID)
 	return OUT;
 }
  
-shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_Font(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 tc	=IN.texCoords;
 	tc.y		=1.0-tc.y;
@@ -37,14 +56,23 @@ shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 	return lookup;
 }
 
-shader posTexVertexOutput BackgroundVertexShader(idOnly IN, uint viewID : SV_ViewID)
+shader posTexVertexOutput VS_Background_SV(idOnly IN)
 {
-	posTexVertexOutput OUT	= VS_ScreenQuad(IN, background_rect[viewID]);
+	posTexVertexOutput OUT	= VS_ScreenQuad(IN, background_rect[0]);
 	OUT.texCoords			= vec2(0,0);
 	return OUT;
 }
 
-shader vec4 FontBackgroundShader(posTexVertexOutput IN) : SV_TARGET
+shader posTexVertexOutput VS_Background_MV(VertexAndViewID IN)
+{
+	idOnly _IN;
+	_IN.vertex_id = IN.vertex_id;
+	posTexVertexOutput OUT	= VS_ScreenQuad(_IN, background_rect[IN.view_id]);
+	OUT.texCoords			= vec2(0,0);
+	return OUT;
+}
+
+shader vec4 PS_Background(posTexVertexOutput IN) : SV_TARGET
 {
 	return background;
 }
@@ -72,28 +100,48 @@ BlendState AddBlendRGB
 
 technique backg
 {
-	pass p0
+	pass standard
 	{
 		SetRasterizerState( RenderNoCull );
 		SetTopology( TriangleStrip );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlendInvAlpha,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_1, BackgroundVertexShader()));
-		SetPixelShader(CompileShader(ps_4_0, FontBackgroundShader()));
+		SetVertexShader(CompileShader(vs_6_1, VS_Background_MV()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Background()));
+	}
+	pass vs_4_0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetTopology(TriangleStrip);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlendInvAlpha, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, VS_Background_SV()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Background()));
 	}
 }
 
 technique text
 {
-	pass p0
+	pass standard
 	{
 		SetRasterizerState( RenderNoCull );
 		SetTopology( TriangleList );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_1, FontVertexShader()));
-		SetPixelShader(CompileShader(ps_4_0, FontPixelShader()));
+		SetVertexShader(CompileShader(vs_6_1, VS_Font_MV()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Font()));
+	}
+	pass vs_4_0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetTopology(TriangleList);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlendRGB, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, VS_Font_SV()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Font()));
 	}
 }

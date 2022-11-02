@@ -200,6 +200,9 @@ int TextRenderer::GetDefaultTextHeight() const
 
 int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
+	bool supportShaderViewID = renderPlatform->GetType() == crossplatform::RenderPlatformType::D3D11 ? false : true;
+	int passIndex = supportShaderViewID ? 0 : 1;
+
 	if (recompile)
 		Recompile();
 	float transp[]={0.f,0.f,0.f,0.f};
@@ -245,7 +248,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 	if(constantBuffer.background.w>0.0f)
 	{
-		effect->Apply(deviceContext,backgTech,0);
+		effect->Apply(deviceContext,backgTech, passIndex);
 		renderPlatform->DrawQuad(deviceContext);
 		effect->Unapply(deviceContext);
 	}
@@ -290,7 +293,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	if(n>0)
 	{
 		effect->SetTexture(deviceContext,textureResource,font_texture);
-		effect->Apply(deviceContext,textTech,0);
+		effect->Apply(deviceContext,textTech,passIndex);
 		effect->SetConstantBuffer(deviceContext,&constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 		f.Apply(deviceContext,effect,_fontChars);
@@ -304,6 +307,10 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 
 int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* xs, float* ys, float screen_width, float screen_height, const char* txt, const float* clr, const float* bck, bool mirrorY)
 {
+	bool supportShaderViewID = renderPlatform->GetType() == crossplatform::RenderPlatformType::D3D11 ? false : true;
+	int passIndex = supportShaderViewID ? 0 : 1;
+	SIMUL_ASSERT_WARN(supportShaderViewID, "Graphics API doesn't support SV_ViewID/gl_Layer in the shader. Falling back to single view rendering.");
+
 	if (recompile)
 		Recompile();
 	float transp[] = { 0.f,0.f,0.f,0.f };
@@ -364,7 +371,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 		if (constantBuffer.background.w > 0.0f && i == (viewCount - 1)) 
 		{
 			effect->SetConstantBuffer(deviceContext, &constantBuffer);
-			effect->Apply(deviceContext, backgTech, 0);
+			effect->Apply(deviceContext, backgTech, passIndex);
 			renderPlatform->DrawQuad(deviceContext);
 			effect->Unapply(deviceContext);
 		}
@@ -412,7 +419,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	if (n > 0)
 	{
 		effect->SetTexture(deviceContext, textureResource, font_texture);
-		effect->Apply(deviceContext, textTech, 0);
+		effect->Apply(deviceContext, textTech, passIndex);
 		effect->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
 		f.Apply(deviceContext, effect, _fontChars);
