@@ -902,6 +902,68 @@ void RenderPlatform::InvalidatingTexture(Texture *t)
 		unfinishedTextures.erase(i);
 }
 
+void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayLod)
+{
+	//unsigned int num_v=0;
+	#if SIMUL_INTERNAL_CHECKS
+	if(cubemap&&cubemap->IsCubemap()==false)
+	{
+		SIMUL_INTERNAL_CERR_ONCE<<"Texture "<<cubemap->GetName().c_str() << " is not a cubemap.\n";
+	}
+	#endif
+	Viewport oldv=GetViewport(deviceContext,0);
+	
+	float aspect=float(oldv.w)/float(oldv.h);
+	int pixelWidth=int(float(pixelSize)*(aspect>1.0f?aspect:1.0f));
+	int pixelHeight=int(float(pixelSize)/(aspect<1.0f?aspect:1.0f));
+	// Setup the viewport for rendering.
+	Viewport viewport;
+	viewport.w		=pixelWidth;
+	viewport.h		=pixelHeight;
+	viewport.x		=x-pixelWidth/2;
+	viewport.y		=y-pixelHeight/2;
+	SetViewports(deviceContext,1,&viewport);
+	
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100.f);
+	// Create the viewport.
+	math::Matrix4x4 wvp,world;
+	world.ResetToUnitMatrix();
+	float tan_x=1.0f/proj(0, 0);
+	//float tan_y=1.0f/proj(1, 1);
+	float size_req=tan_x*.5f;
+	static float sizem=3.f;
+	float d=2.0f*sizem/size_req;
+	platform::math::Vector3 offs0(0,0,-d);
+	view._41=0;
+	view._42=0;
+	view._43=0;
+	platform::math::Vector3 offs;
+	Multiply3(offs,view,offs0);
+	world._14 =offs.x;
+	world._24 =offs.y;
+	world._34 =offs.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	debugConstants.debugWorldViewProj=wvp;
+	debugConstants.displayLod=displayLod;
+	debugEffect->SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
+	static float rr=6.f;
+	debugConstants.latitudes		=16;
+	debugConstants.longitudes		=32;
+	debugConstants.radius			=rr;
+	debugConstants.multiplier		=vec4(exposure,exposure,exposure,0.0f);
+	debugConstants.debugGamma		=gamma;
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	debugEffect->Apply(deviceContext,draw_cubemap_sphere,0);
+
+	SetTopology(deviceContext,Topology::TRIANGLESTRIP);
+	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
+
+	debugEffect->SetTexture(deviceContext, debugEffect_cubeTexture, nullptr);
+	debugEffect->Unapply(deviceContext);
+	SetViewports(deviceContext,1,&oldv);
+}
+
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
 	//unsigned int num_v=0;

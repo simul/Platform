@@ -4,6 +4,7 @@
 #include "DeviceManager.h"
 #include "Effect.h"
 #include <algorithm>
+#include "Platform/External/magic_enum/include/magic_enum.hpp"
 
 using namespace platform;
 using namespace platform;
@@ -279,6 +280,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	}
 	else
 	{
+		if(compressionFormat!=crossplatform::CompressionFormat::UNCOMPRESSED)
+		{
+			SIMUL_CERR<<"Texture "<<name.c_str()<<" uploading with compression format "<<magic_enum::enum_name<crossplatform::CompressionFormat>(compressionFormat)<<"\n";
+		}
 		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, currentImageLayout,
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
 			vk::PipelineStageFlagBits::eTransfer);
@@ -289,7 +294,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		{
 			for(size_t j=0;j<totalNum;j++)
 			{
-				size_t n=i*arraySize+j;
+				size_t n=j*mips+i;
 				if(n>=loadedTextures.size())
 					break;
 				LoadedTexture& lt = loadedTextures[n];
@@ -318,6 +323,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 					.setImageExtent({ (uint32_t)lt.x, (uint32_t)lt.y, 1 });
 
 				commandBuffer->copyBufferToImage(lt.buffer, mImage, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+				if(compressionFormat!=platform::crossplatform::CompressionFormat::UNCOMPRESSED)
+				{
+					SIMUL_CERR<<"Texture "<<name.c_str()<<", mip "<<i<<" Surface "<<j<<": Uploaded "<<lt.mem_alloc.allocationSize<<" bytes.\n";
+				}
 			}
 		}
 		
@@ -602,6 +611,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		imageCreateFlags|=vk::ImageCreateFlagBits::eMutableFormat;
 
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, compressionFormat);
+	
+	SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
 
 	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
 	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
@@ -829,15 +840,15 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f,
-	bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
+	bool computable, bool rendertarget, bool depthstencil, bool cb, crossplatform::CompressionFormat cf, const uint8_t** initData)
 {
-	if (IsSame(w, l, 1, num, mips, f, 1, computable, rendertarget, depthstencil, true, cubemap))
+	if (IsSame(w, l, 1, num, mips, f, 1, computable, rendertarget, depthstencil, true, cb))
 	{
 		return false;
 	}
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
-	int totalNum	= cubemap ? 6 * num : num;
+	int totalNum	= cb ? 6 * num : num;
 
 	// Include vk::ImageUsageFlagBits::eTransferDst IN CASE we're loading from a file...
 	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst;
@@ -855,12 +866,14 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 #endif
 
 	vk::ImageCreateFlags imageCreateFlags;
-	if(cubemap)
+	if(cb)
 		imageCreateFlags|=vk::ImageCreateFlagBits::eCubeCompatible;
 	if (depthstencil)
 		imageCreateFlags |= vk::ImageCreateFlagBits::eMutableFormat;
 	
-	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, compressionFormat);
+	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, cf);
+	if(cf!=crossplatform::CompressionFormat::UNCOMPRESSED)
+		SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
 
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
@@ -895,12 +908,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		return false;
 
 	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMem));
-		SetVulkanName(renderPlatform,mMem,name+" texture mMem");
+	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
 
 	vulkanDevice->bindImageMemory(mImage, mMem, 0);
-	
-	InitViewTables(2, f, w, l, mips, num, rendertarget, cubemap, depthstencil, true);
-	AssumeLayout(vk::ImageLayout::ePreinitialized);
 
 	pixelFormat=f;
 	width=w;
@@ -909,14 +919,37 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	dim=2;
 	arraySize=num;
 	this->mips=mips;
-	this->cubemap=cubemap;
+	this->cubemap=cb;
 	this->depthStencil=depthstencil;
 	this->computable=computable;
 	this->renderTarget=rendertarget;
+	compressionFormat=cf;
 	if(cubemap)
 		SetName(platform::core::QuickFormat("%s Cubemap %d of %d x %d",name.c_str(),num,w,l));
 	else
 		SetName(platform::core::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));
+	
+	InitViewTables(2, f, w, l, mips, num, rendertarget, cb, depthstencil, true);
+	AssumeLayout(vk::ImageLayout::ePreinitialized);
+	if(initData)
+	{
+		size_t n=0;
+		loadedTextures.resize(mips*totalNum);
+		for(size_t i=0;i<totalNum;i++)
+		{
+			int mip_width=width;
+			int mip_length=length;
+			for(size_t j=0;j<mips;j++)
+			{
+				auto &loadedTexture=loadedTextures[n];
+				SetTextureData(loadedTexture,initData[n],mip_width,mip_length,1,0,pixelFormat,compressionFormat);
+				n++;
+				mip_width=(mip_width+1)/2;
+				mip_length=(mip_length+1)/2;
+			}
+		}
+		textureUploadComplete=false;
+	}
 	return true;
 }
 
@@ -1118,7 +1151,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
 }
 
-void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f,crossplatform::CompressionFormat compressionFormat)
+void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f,crossplatform::CompressionFormat cf)
 {
 	lt.data=( unsigned char*)data;
 	lt.x=x;
@@ -1130,21 +1163,30 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	size_t bytesPerTexel	=crossplatform::GetByteSize(f);
 	size_t SysMemPitch		=x*bytesPerTexel;
 	size_t bufferSize		 = SysMemPitch*y;
-	switch (compressionFormat)
+	size_t numRowsToCopy	 = y;
+	switch (cf)
 	{
 	case crossplatform::CompressionFormat::BC1:
 	case crossplatform::CompressionFormat::BC3:
 	case crossplatform::CompressionFormat::BC5:
 	case crossplatform::CompressionFormat::ETC1:
 	case crossplatform::CompressionFormat::ETC2:
-		SysMemPitch				= bytesPerTexel*std::max(1,x / uu);
-		// buffer must be at least one block in size.
-		bufferSize				= std::max(16*bytesPerTexel,SysMemPitch*std::max(1,y));
+		{
+		// The memory pitch of a line for uncompressed formats, becomes the memory pitch
+		// of a row of blocks in the case of the compressed.
+			size_t block_width		=std::max(1,(x+3)/4);
+			size_t block_height		=std::max(1,(y+3)/4);
+			size_t block_size_bytes=(bytesPerTexel==4)?16:8;
+			SysMemPitch				= block_size_bytes*block_width;
+			// buffer must be at least one block in size.
+			bufferSize				= std::max(block_size_bytes,SysMemPitch*block_height);
+			numRowsToCopy			=block_height;
+		}
 		break;
 	default:
 		break;
 	};
-	int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
+	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
 	auto const buffer_create_info = vk::BufferCreateInfo()
@@ -1180,13 +1222,20 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	SIMUL_ASSERT(mapped_data !=nullptr);
 	
 	//memcpy(data, lt.data, lt.x * lt.y*4);
-	uint8_t *rgba_data	=(uint8_t*)mapped_data;
-	uint8_t *cPtr		=(uint8_t*)lt.data;
-	for (int i = 0; i < lt.y;i++)
+	uint8_t *target_data	=(uint8_t*)mapped_data;
+	uint8_t *cPtr			=(uint8_t*)lt.data;
+	size_t totalBytes=0;
+	for (int i = 0; i < numRowsToCopy;i++)
 	{
-		memcpy(rgba_data, cPtr,SysMemPitch);// texelBytes*lt.x);
-		cPtr += SysMemPitch;//texelBytes*lt.x;
-		rgba_data += layout.rowPitch;
+		memcpy(target_data, cPtr,SysMemPitch);
+		cPtr		+= SysMemPitch;
+		target_data	+= layout.rowPitch;
+		totalBytes+=SysMemPitch;
+	}
+	
+	if(cf!=platform::crossplatform::CompressionFormat::UNCOMPRESSED)
+	{
+		SIMUL_CERR<<"Texture "<<name.c_str()<<", surface "<<" mip "<<": Uploaded "<<totalBytes<<" bytes.\n";
 	}
 	vulkanDevice->unmapMemory(lt.mem);
 	textureUploadComplete=false;

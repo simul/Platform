@@ -132,7 +132,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 {
     InvalidateDeviceObjects();
 	renderPlatform = r;
-
+	bufferType=crossplatform::BufferType::INDEX;
 	stride = index_size_bytes;
 	bufferLoad.size = num_indices * index_size_bytes;
 

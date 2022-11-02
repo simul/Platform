@@ -542,15 +542,21 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 }
 
 
-void ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H)
+void ImGui_ImplPlatform_SetMousePos(int x, int y)//, int W, int H)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if(!bd)
 		return;
 	bd->mouse={x,y};
-	bd->screen={W,H};
+	//bd->screen={W,H};
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos			= ImVec2(bd->mouse.x,bd->mouse.y);
 }
-
+void ImGui_ImplPlatform_SetMouseDown(int button, bool value)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[button]=value;
+}
 
 
 void ImGui_ImplPlatform_Update3DMousePos()

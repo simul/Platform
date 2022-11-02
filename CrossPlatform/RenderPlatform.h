@@ -306,6 +306,7 @@ namespace platform
 			/// Draw a circle in 3D space at pos
 			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
+			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayLod=0.0f);
 			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
 			void							DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m,float size);
 			virtual void PrintAt3dPos		(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);

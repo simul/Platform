@@ -142,6 +142,8 @@ struct SfxConfig
 	bool supportRaytracing;
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
+	//! Maximum shader model number
+	double maxShaderModel=7.0;
 };
 
 struct SfxOptions

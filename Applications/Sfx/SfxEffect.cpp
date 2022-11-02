@@ -450,6 +450,18 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 	}
 	for(ShaderInstanceMap::iterator i=m_shaderInstances.begin();i!=m_shaderInstances.end();i++)
 	{
+	// Hold on, is this even supported?
+		std::string profile_text=i->second->m_profile;
+		find_and_replace(profile_text, "ps_", "");
+		find_and_replace(profile_text, "vs_", "");
+		find_and_replace(profile_text, "cs_", "");
+		find_and_replace(profile_text, "_", ".");
+		double profile_number=atof(profile_text.c_str());
+		if(profile_number>sfxConfig.maxShaderModel)
+		{
+			std::cout<<"Skipping "<<i->first.c_str()<<" as profile "<<i->second->m_profile.c_str()<<" is not supported.\n";
+			continue;
+		}
 		ConstructSource(i->second);
 		if(i->second->shaderType==FRAGMENT_SHADER)
 		{

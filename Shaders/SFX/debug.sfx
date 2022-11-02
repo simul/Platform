@@ -390,6 +390,7 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	result.rgb		*=multiplier.rgb;
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
 	vec4 u			=vec4(saturate(result.rgb),1.0);
+//	u.rgb+=0.2*saturate(view);
 	return u;
 }
 
