@@ -294,6 +294,8 @@ namespace platform
 
 			//! Print at the specified position, returns the number of lines.
 			virtual int Print				(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
+			//! Print at the specified position, returns the number of lines.
+			virtual int Print				(MultiviewGraphicsDeviceContext &deviceContext,float* xs,float* ys,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			//! Print diagnostics, starting from the top, and going down the screen one line each time as the frame progresses, then restarting next frame.
 			void LinePrint					(GraphicsDeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			virtual void DrawLines			(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
@@ -307,6 +309,7 @@ namespace platform
 			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
 			void							DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m,float size);
 			virtual void PrintAt3dPos		(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
+			virtual void PrintAt3dPos		(MultiviewGraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr);
 			virtual void SetModelMatrix		(GraphicsDeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			(){}
 			/// Create a platform-specific material instance.

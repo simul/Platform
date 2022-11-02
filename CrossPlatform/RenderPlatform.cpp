@@ -19,6 +19,7 @@
 #include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Effect.h"
 #include <algorithm>
+#include <array>
 #ifdef _MSC_VER
 #define isinf !_finite
 #else
@@ -1006,6 +1007,82 @@ void RenderPlatform::PrintAt3dPos(GraphicsDeviceContext &deviceContext,const flo
 	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,bkg);
 }
 
+void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext, const float* p, const char* text, const float* colr, const float* bkg)
+{
+	crossplatform::Viewport viewport = GetViewport(deviceContext, 0);
+
+	auto CreateViewProjectionMatrix = [&](size_t index) -> mat4
+	{
+		/*math::Matrix4x4 matrix = deviceContext.viewStructs[index].view;
+		matrix.Transpose();
+
+		//Translation
+		math::Vector3 translation(matrix.m03, matrix.m13, matrix.m23);
+
+		//Scale
+		float scale_x = math::Vector3(matrix.m00, matrix.m10, matrix.m20).Magnitude();
+		float scale_y = math::Vector3(matrix.m01, matrix.m11, matrix.m21).Magnitude();
+		float scale_z = math::Vector3(matrix.m02, matrix.m12, matrix.m22).Magnitude();
+		math::Vector3 scale(scale_x, scale_y, scale_z);
+
+		//Orientation
+		math::Matrix4x4 rotation(
+			matrix.m00 / scale_x, matrix.m01 / scale_y, matrix.m02 / scale_z, 0.0f,
+			matrix.m10 / scale_x, matrix.m11 / scale_y, matrix.m12 / scale_z, 0.0f,
+			matrix.m20 / scale_x, matrix.m21 / scale_y, matrix.m22 / scale_z, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f);
+		math::Quaternion orientation;
+		math::MatrixToQuaternion(orientation, rotation);*/
+
+		mat4 vp;
+		crossplatform::MakeViewProjMatrix((float*)&vp, deviceContext.viewStructs[index].view, deviceContext.viewStructs[index].proj);
+		return vp;
+	};
+
+	std::vector<mat4> vpMatrices;
+	for (size_t i = 0; i < deviceContext.viewStructs.size(); i++)
+		vpMatrices.push_back(CreateViewProjectionMatrix(i));
+
+	auto CreateTextPosition = [&](const mat4& vp, vec2& outPos) -> bool
+	{
+		vec4 clip_pos;
+		clip_pos = vp * vec4(p[0], p[1], p[2], 1.0f);
+		if (clip_pos.w < 0)
+			return false;
+		clip_pos.x /= clip_pos.w;
+		clip_pos.y /= clip_pos.w;
+		static bool ml = true;
+		vec2 pos;
+		pos.x = (1.0f + clip_pos.x) / 2.0f;
+		if (mirrorY)
+			pos.y = (1.0f + clip_pos.y) / 2.0f;
+		else
+			pos.y = (1.0f - clip_pos.y) / 2.0f;
+		if (ml)
+		{
+			pos.x *= viewport.w;
+			pos.y *= viewport.h;
+		}
+		outPos = pos;
+		return true;
+	};
+
+	std::array<std::vector<float>, 2> positions;
+	for (const auto& vp : vpMatrices)
+	{
+		vec2 outPos;
+		if (CreateTextPosition(vp, outPos))
+		{
+			positions[0].push_back(outPos.x);
+			positions[1].push_back(outPos.y);
+		}
+		else
+			return;
+	}
+
+	Print(deviceContext, positions[0].data(), positions[1].data(), text, colr, bkg);
+}
+
 void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug)
 {
 	static int level=0;
@@ -1218,7 +1295,7 @@ void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,v
 	Draw2dLines(deviceContext,pts,2,false);
 }
 
-int RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
+int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, const char* text, const float* colr, const float* bkg)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
 	static float clr[]={1.f,1.f,0.f,1.f};
@@ -1232,6 +1309,25 @@ int RenderPlatform::Print(GraphicsDeviceContext &deviceContext,int x,int y,const
 	if(*text!=0)
 	{
 		lines+=textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)viewport.h,text,colr,bkg,mirrorYText);
+	}
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	return lines;
+}
+
+int RenderPlatform::Print(MultiviewGraphicsDeviceContext& deviceContext, float* xs, float* ys, const char* text, const float* colr, const float* bkg)
+{
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
+	static float clr[] = { 1.f,1.f,0.f,1.f };
+	static float black[] = { 0.f,0.f,0.f,0.0f };
+	if (!colr)
+		colr = clr;
+	if (!bkg)
+		bkg = black;
+	crossplatform::Viewport viewport = GetViewport(deviceContext, 0);
+	int lines = 0;
+	if (*text != 0)
+	{
+		lines += textRenderer->Render(deviceContext, xs, ys, (float)viewport.w, (float)viewport.h, text, colr, bkg, mirrorYText);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	return lines;

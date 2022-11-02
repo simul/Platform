@@ -5,7 +5,9 @@
 SIMUL_CONSTANT_BUFFER(TextConstants,8)
 	vec4	colour;
 	vec4	background;
-	vec4	background_rect;
+	vec3	textConstantsPad0;
+	uint	numChars;
+	vec4	background_rect[4]; //Supports 4 hardware views for Multiview.
 SIMUL_CONSTANT_BUFFER_END
 
 struct FontChar

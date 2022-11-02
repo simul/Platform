@@ -30,6 +30,7 @@ namespace platform
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			int Render(GraphicsDeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
+			int Render(MultiviewGraphicsDeviceContext &deviceContext,float* xs,float* ys,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
 			int GetDefaultTextHeight() const;
 			struct FontIndex
 			{

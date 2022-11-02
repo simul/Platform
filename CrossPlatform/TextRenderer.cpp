@@ -234,13 +234,13 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	}
 	float ht=fontScale*float(GetDefaultTextHeight());
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
-	constantBuffer.background_rect		=vec4(2.0f*x0/screen_width-1.f,1.f-2.0f*(y+ht*lines)/screen_height,2.0f*(float)maxw/screen_width,2.0f*ht*lines/screen_height);
+	constantBuffer.background_rect[0]		=vec4(2.0f*x0/screen_width-1.f,1.f-2.0f*(y+ht*lines)/screen_height,2.0f*(float)maxw/screen_width,2.0f*ht*lines/screen_height);
 	float y_offset=-2.0f*ht/screen_height;
 	if(mirrorY)
 	{
 		y_offset*=-1.0f;
-		constantBuffer.background_rect.y=-constantBuffer.background_rect.y;
-		constantBuffer.background_rect.w*=-1.0f;
+		constantBuffer.background_rect[0].y=-constantBuffer.background_rect[0].y;
+		constantBuffer.background_rect[0].w*=-1.0f;
 	}
 	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 	if(constantBuffer.background.w>0.0f)
@@ -251,8 +251,8 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	}
 	float ypixel=1.0f/ screen_height;
 	float ytexel=1.0f/ GetDefaultTextHeight();
-	constantBuffer.background_rect = vec4(0, 1.f - 2.0f*(y + ht)* ypixel, 0, 2.0f*(ht+1.0f)* ypixel);
-	int n=0;
+	constantBuffer.background_rect[0] = vec4(0, 1.f - 2.0f*(y + ht)* ypixel, 0, 2.0f*(ht+1.0f)* ypixel);
+	uint& n = constantBuffer.numChars;
 	float u = 1024.f / font_texture->width;
 	crossplatform::StructuredBuffer<FontChar> &f=fontChars[deviceContext.platform_context];
 	if(max_chars>f.count)
@@ -266,7 +266,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		if (txt[i] == '\n')
 		{
 			x = x0;
-			constantBuffer.background_rect.y += y_offset;
+			constantBuffer.background_rect[0].y += y_offset;
 			continue;
 		}
 		int idx=(int)txt[i]-32;
@@ -278,7 +278,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 			if (charList != nullptr)
 			{
 				FontChar& c = charList[n];
-				c.text_rect = constantBuffer.background_rect;
+				c.text_rect = constantBuffer.background_rect[0];
 				c.text_rect.x = 2.0f * x / screen_width - 1.f;
 				c.text_rect.z = 2.0f * (float)f.pixel_width * fontScale / screen_width;
 				c.texc = vec4(f.x * u, 0.0f, (f.w - f.x) * u, 1.0f+ytexel);
@@ -296,6 +296,128 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		f.Apply(deviceContext,effect,_fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		renderPlatform->Draw(deviceContext,6*n,0);
+		effect->UnbindTextures(deviceContext);
+		effect->Unapply(deviceContext);
+	}
+	return lines;
+}
+
+int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* xs, float* ys, float screen_width, float screen_height, const char* txt, const float* clr, const float* bck, bool mirrorY)
+{
+	if (recompile)
+		Recompile();
+	float transp[] = { 0.f,0.f,0.f,0.f };
+	float white[] = { 1.f,1.f,1.f,1.f };
+	if (!clr)
+		clr = white;
+	if (!bck)
+		bck = transp;
+	static float fontScale = 1.0f;
+	constantBuffer.colour = vec4(clr);
+	constantBuffer.background = vec4(bck);
+	// Calc width and draw background:
+	int w = 0;
+	int maxw = 0;
+	int lines = 1;
+	for (int i = 0; i < max_chars; i++)
+	{
+		if (txt[i] == 0)
+			break;
+		if (txt[i] == '\n')
+		{
+			w = 0;
+			lines++;
+			continue;
+		}
+		int idx = (int)txt[i] - 32;
+		if (idx < 0 || idx>100)
+			continue;
+		const FontIndex& f = fontIndices[idx];
+		w += f.pixel_width * int(fontScale) + 1;
+		maxw = std::max(w, maxw);
+	}
+	float ht = fontScale * float(GetDefaultTextHeight());
+	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
+
+	int n = 0;
+	crossplatform::StructuredBuffer<FontChar>& f = fontChars[deviceContext.platform_context];
+	FontChar* charList = f.GetBuffer(deviceContext);
+
+	size_t countOfTextBackgroundArray = sizeof(constantBuffer.background_rect) / sizeof(constantBuffer.background_rect[0]);
+	size_t viewCount = std::min(countOfTextBackgroundArray, deviceContext.viewStructs.size());
+	for (size_t i = 0; i < viewCount; i++)
+	{
+		vec4& background_rect = constantBuffer.background_rect[i];
+		const float& x = xs[i];
+		const float& y = ys[i];
+
+		background_rect = vec4(2.0f * x / screen_width - 1.f, 1.f - 2.0f * (y + ht * lines) / screen_height, 2.0f * (float)maxw / screen_width, 2.0f * ht * lines / screen_height);
+		float y_offset = -2.0f * ht / screen_height;
+		if (mirrorY)
+		{
+			y_offset *= -1.0f;
+			background_rect.y = -background_rect.y;
+			background_rect.w *= -1.0f;
+		}
+		//backgTech is multiview, so only call to render once per N views. 
+		//Call on the last iteration, when both background_rect[0] and background_rect1 are set.
+		if (constantBuffer.background.w > 0.0f && i == (viewCount - 1)) 
+		{
+			effect->SetConstantBuffer(deviceContext, &constantBuffer);
+			effect->Apply(deviceContext, backgTech, 0);
+			renderPlatform->DrawQuad(deviceContext);
+			effect->Unapply(deviceContext);
+		}
+		float ypixel = 1.0f / screen_height;
+		float ytexel = 1.0f / GetDefaultTextHeight();
+		vec4 text_rect = vec4(0, 1.f - 2.0f * (y + ht) * ypixel, 0, 2.0f * (ht + 1.0f) * ypixel);
+		
+		float u = 1024.f / font_texture->width;
+		
+		if (max_chars > f.count)
+			f.RestoreDeviceObjects(renderPlatform, max_chars, false, false, nullptr, "fontChars");
+		
+		float _x = x;
+		for (int i = 0; i < f.count; i++)
+		{
+			if (txt[i] == 0)
+				break;
+			if (txt[i] == '\n')
+			{
+				_x = x;
+				text_rect.y += y_offset;
+				continue;
+			}
+			int idx = (int)txt[i] - 32;
+			if (idx < 0 || idx>94)
+				continue;
+			const FontIndex& f = fontIndices[idx];
+			if (idx > 0)
+			{
+				if (charList != nullptr)
+				{
+					FontChar& c = charList[n];
+					c.text_rect = text_rect;
+					c.text_rect.x = 2.0f * _x / screen_width - 1.f;
+					c.text_rect.z = 2.0f * (float)f.pixel_width * fontScale / screen_width;
+					c.texc = vec4(f.x * u, 0.0f, (f.w - f.x) * u, 1.0f + ytexel);
+				}
+				n++;
+			}
+			_x += f.pixel_width * fontScale + 1;
+		}
+	}
+	n /= viewCount;
+	constantBuffer.numChars = n;
+	if (n > 0)
+	{
+		effect->SetTexture(deviceContext, textureResource, font_texture);
+		effect->Apply(deviceContext, textTech, 0);
+		effect->SetConstantBuffer(deviceContext, &constantBuffer);
+		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
+		f.Apply(deviceContext, effect, _fontChars);
+		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
+		renderPlatform->Draw(deviceContext, 6 * n, 0);
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);
 	}
