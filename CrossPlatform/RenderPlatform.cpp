@@ -490,6 +490,9 @@ void RenderPlatform::BeginFrame(long long f)
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
+	if (deviceContext.AsMultiviewGraphicsDeviceContext())
+		clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear_multiview");
+
 	debugConstants.debugColour=colour_rgba;
 	//if(debugConstants.debugColour.x+debugConstants.debugColour.y+debugConstants.debugColour.z==0)
 	//{
