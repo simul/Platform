@@ -516,6 +516,11 @@
 	{
 		return  a.x * b.x+a.y * b.y;
 	}
+	template<typename T> tvector3<T> abs(const tvector3<T> &v)
+	{
+		tvector3<T> result={abs(v.x), abs(v.y), abs(v.z)};
+		return result;
+	}
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{
 		vec3 r;
