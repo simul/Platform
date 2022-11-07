@@ -189,6 +189,7 @@ namespace platform
 			
 			void									SetStreamOutTarget(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0) override;
 			void									ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth) override;
+			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext) override;
 
 			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
 
@@ -251,6 +252,7 @@ namespace platform
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *final_layouts=nullptr);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
+			void									EndRenderPass(crossplatform::DeviceContext& deviceContext);
 			static std::string						VulkanResultString(vk::Result res);
 
 			// Vulkan-specific support for video decoding:
@@ -292,19 +294,6 @@ namespace platform
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
 			std::map<unsigned long long,crossplatform::TargetsAndViewport>				mTargets;
-
-		public:
-			void EndRenderPass(crossplatform::DeviceContext& deviceContext)
-			{
-				vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
-				if (!commandBuffer)
-					return;
-				if (deviceContext.contextState.vulkanInsideRenderPass)
-				{
-					commandBuffer->endRenderPass();
-					deviceContext.contextState.vulkanInsideRenderPass = false;
-				}
-			}
 		};
 	}
 }

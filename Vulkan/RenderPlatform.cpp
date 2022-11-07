@@ -1609,6 +1609,13 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	deviceContext.targetStack.push(&target);
 	SetViewports(deviceContext, 1, &target.viewport);
 }
+
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
+{
+	crossplatform::RenderPlatform::DeactivateRenderTargets(deviceContext);
+	EndRenderPass(deviceContext);
+}
+
 #include <cstdint>
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
@@ -1957,6 +1964,18 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
+}
+
+void RenderPlatform::EndRenderPass(crossplatform::DeviceContext& deviceContext)
+{
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+	if (deviceContext.contextState.vulkanInsideRenderPass)
+	{
+		commandBuffer->endRenderPass();
+		deviceContext.contextState.vulkanInsideRenderPass = false;
+	}
 }
 
 

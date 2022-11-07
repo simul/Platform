@@ -233,7 +233,6 @@ namespace platform
 				viewMask=0;
 				contextActive = true;
 				externalContext = false;
-				vulkanInsideRenderPass=false;
 			}
 			
 			/// Reset the temporary and persistent properties.
