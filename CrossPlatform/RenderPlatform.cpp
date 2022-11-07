@@ -43,7 +43,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	textureAssignmentMap		=cs.textureAssignmentMap;
 	rwTextureAssignmentMap		=cs.rwTextureAssignmentMap;
 	currentEffectPass			=cs.currentEffectPass;
-	//currentTechnique			=cs.currentTechnique;
+	
 	currentEffect				=cs.currentEffect;
 	effectPassValid				=cs.effectPassValid;
 	vertexBuffersValid			=cs.vertexBuffersValid;
