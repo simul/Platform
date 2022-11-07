@@ -292,6 +292,19 @@ namespace platform
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
 			std::map<unsigned long long,crossplatform::TargetsAndViewport>				mTargets;
+
+		public:
+			void EndRenderPass(crossplatform::DeviceContext& deviceContext)
+			{
+				vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+				if (!commandBuffer)
+					return;
+				if (deviceContext.contextState.vulkanInsideRenderPass)
+				{
+					commandBuffer->endRenderPass();
+					deviceContext.contextState.vulkanInsideRenderPass = false;
+				}
+			}
 		};
 	}
 }

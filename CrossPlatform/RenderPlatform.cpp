@@ -59,6 +59,8 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	rwTextureSlotsForSB			=cs.rwTextureSlotsForSB;
 	textureSlotsForSB			=cs.textureSlotsForSB;
 	bufferSlots					=cs.bufferSlots;
+	viewMask					=cs.viewMask;
+	vulkanInsideRenderPass		=cs.vulkanInsideRenderPass;
 	return *this;
 }
 

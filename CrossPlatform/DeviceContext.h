@@ -196,6 +196,7 @@ namespace platform
 			int apply_count = 0;
 			bool contextActive=false;
 			bool externalContext=false;
+			bool vulkanInsideRenderPass=false;
 
 			bool effectPassValid=false;
 			bool vertexBuffersValid=false;
@@ -232,6 +233,7 @@ namespace platform
 				viewMask=0;
 				contextActive = true;
 				externalContext = false;
+				vulkanInsideRenderPass=false;
 			}
 			
 			/// Reset the temporary and persistent properties.
