@@ -255,7 +255,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	float ypixel=1.0f/ screen_height;
 	float ytexel=1.0f/ GetDefaultTextHeight();
 	constantBuffer.background_rect[0] = vec4(0, 1.f - 2.0f*(y + ht)* ypixel, 0, 2.0f*(ht+1.0f)* ypixel);
-	uint& n = constantBuffer.numChars;
+	int n = 0;
 	float u = 1024.f / font_texture->width;
 	crossplatform::StructuredBuffer<FontChar> &f=fontChars[deviceContext.platform_context];
 	if(max_chars>f.count)
@@ -290,6 +290,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		}
 		x+=f.pixel_width*fontScale+1;
 	}
+	constantBuffer.numChars = n;
 	if(n>0)
 	{
 		effect->SetTexture(deviceContext,textureResource,font_texture);
