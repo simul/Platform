@@ -291,6 +291,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		}
 		x+=fi.pixel_width*fontScale+1;
 	}
+	constantBuffer.numChars = n;
 	if(n>0)
 	{
 		effect->SetTexture(deviceContext,textureResource,font_texture);

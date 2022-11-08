@@ -496,14 +496,16 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
-	auto *vkEffectPass=((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+
+	EndRenderPass(deviceContext);
+
+	vulkan::EffectPass* vkEffectPass = ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
 	BeginEvent(deviceContext, vkEffectPass->name.c_str());
 	ApplyContextState(deviceContext);
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-	if(commandBuffer)
-	{
-		commandBuffer->dispatch(w, l, d);
-	}
+	commandBuffer->dispatch(w, l, d);
 	InsertFences(deviceContext);
 	EndEvent(deviceContext);
 }
@@ -539,16 +541,15 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 {
 	if(!deviceContext.contextState.currentEffectPass)
 		return;
+
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-
-	if(commandBuffer)
-	{
-		commandBuffer->draw(4,1,0,0);
-		commandBuffer->endRenderPass();
-	}
+	commandBuffer->draw(4,1,0,0);
 	SetTopology(deviceContext, crossplatform::Topology::UNDEFINED);
 	EndEvent(deviceContext);
 }
@@ -610,23 +611,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		}
 		if (cs->indexBuffer)
 		{
-			auto vulkanBuffer=(vulkan::Buffer*)cs->indexBuffer;
-			vk::IndexType indexType=vk::IndexType::eUint32;
-			if(cs->indexBuffer->stride==2)
-				indexType=::vk::IndexType::eUint16;
-			else if (cs->indexBuffer->stride==4)
-				indexType=vk::IndexType::eUint32;
-			else
-			{
-				cs->indexBuffer=nullptr;
-				// Sanity check. This should NEVER happen.
-				SIMUL_BREAK_ONCE("Bad index buffer.");
-			}
-			if(cs->indexBuffer)
-			{
-				vulkanBuffer->FinishLoading(deviceContext);
-				commandBuffer->bindIndexBuffer( ((vulkan::Buffer*)cs->indexBuffer)->asVulkanBuffer(), 0, indexType);
-			}
+			vulkan::Buffer* buffer = (vulkan::Buffer*)cs->indexBuffer;
+			buffer->FinishLoading(deviceContext);
 		}
 
 		//Set up clear colours
@@ -651,16 +637,27 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		}
 
 		//Begin the RenderPass
-		crossplatform::Viewport vp = GetViewport(*graphicsDeviceContext, 0);
-		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
-		vk::Framebuffer* framebuffer = GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
-		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo()
-			.setRenderPass(renderPassPipeline.renderPass)
-			.setFramebuffer(*framebuffer)
-			.setClearValueCount((uint32_t)clearColoursCount)
-			.setPClearValues(clearValues.data())
-			.setRenderArea(renderArea);
-		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
+		static vk::Framebuffer currentFramebuffer{};
+		vk::Framebuffer framebuffer = *GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
+		if (framebuffer != currentFramebuffer && deviceContext.contextState.vulkanInsideRenderPass) //Check for a change of framebuffer.
+		{
+			EndRenderPass(deviceContext);
+		}
+		currentFramebuffer = framebuffer;
+
+		if (!deviceContext.contextState.vulkanInsideRenderPass)
+		{
+			crossplatform::Viewport vp = GetViewport(*graphicsDeviceContext, 0);
+			vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
+			vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo()
+				.setRenderPass(renderPassPipeline.renderPass)
+				.setFramebuffer(framebuffer)
+				.setClearValueCount((uint32_t)clearColoursCount)
+				.setPClearValues(clearValues.data())
+				.setRenderArea(renderArea);
+			commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
+			deviceContext.contextState.vulkanInsideRenderPass = true;
+		}
 
 		//Set Graphics Pipeline
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, renderPassPipeline.pipeline);
@@ -1612,6 +1609,13 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	deviceContext.targetStack.push(&target);
 	SetViewports(deviceContext, 1, &target.viewport);
 }
+
+void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
+{
+	crossplatform::RenderPlatform::DeactivateRenderTargets(deviceContext);
+	EndRenderPass(deviceContext);
+}
+
 #include <cstdint>
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
@@ -1647,29 +1651,25 @@ void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &)
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+	
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	ApplyContextState(deviceContext);
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-
-	if(commandBuffer)
-	{
-		commandBuffer->draw(num_verts,1,start_vert,0);
-		commandBuffer->endRenderPass();
-	}
+	commandBuffer->draw(num_verts,1,start_vert,0);
 	EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	ApplyContextState(deviceContext);
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-
-	if(commandBuffer)
-	{
-		commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
-		commandBuffer->endRenderPass();
-	}
+	commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
 	EndEvent(deviceContext);
 }
 
@@ -1964,6 +1964,18 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
+}
+
+void RenderPlatform::EndRenderPass(crossplatform::DeviceContext& deviceContext)
+{
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+	if (deviceContext.contextState.vulkanInsideRenderPass)
+	{
+		commandBuffer->endRenderPass();
+		deviceContext.contextState.vulkanInsideRenderPass = false;
+	}
 }
 
 
