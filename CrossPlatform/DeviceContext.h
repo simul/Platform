@@ -196,7 +196,6 @@ namespace platform
 			int apply_count = 0;
 			bool contextActive=false;
 			bool externalContext=false;
-			bool vulkanInsideRenderPass=false;
 
 			bool effectPassValid=false;
 			bool vertexBuffersValid=false;
