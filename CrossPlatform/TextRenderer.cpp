@@ -255,7 +255,8 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	float ypixel=1.0f/ screen_height;
 	float ytexel=1.0f/ GetDefaultTextHeight();
 	constantBuffer.background_rect[0] = vec4(0, 1.f - 2.0f*(y + ht)* ypixel, 0, 2.0f*(ht+1.0f)* ypixel);
-	int n = 0;
+	uint& n = constantBuffer.numChars;
+	n=0;
 	float u = 1024.f / font_texture->width;
 	crossplatform::StructuredBuffer<FontChar> &f=fontChars[deviceContext.platform_context];
 	if(max_chars>f.count)
@@ -275,7 +276,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		int idx=(int)txt[i]-32;
 		if(idx<0||idx>94)
 			continue;
-		const FontIndex &f=fontIndices[idx];
+		const FontIndex &fi=fontIndices[idx];
 		if(idx>0)
 		{
 			if (charList != nullptr)
@@ -283,12 +284,12 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 				FontChar& c = charList[n];
 				c.text_rect = constantBuffer.background_rect[0];
 				c.text_rect.x = 2.0f * x / screen_width - 1.f;
-				c.text_rect.z = 2.0f * (float)f.pixel_width * fontScale / screen_width;
-				c.texc = vec4(f.x * u, 0.0f, (f.w - f.x) * u, 1.0f+ytexel);
+				c.text_rect.z = 2.0f * (float)fi.pixel_width * fontScale / screen_width;
+				c.texc = vec4(fi.x * u, 0.0f, (fi.w - fi.x) * u, 1.0f+ytexel);
 			}
 			n++;
 		}
-		x+=f.pixel_width*fontScale+1;
+		x+=fi.pixel_width*fontScale+1;
 	}
 	constantBuffer.numChars = n;
 	if(n>0)
