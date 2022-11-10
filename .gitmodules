@@ -31,3 +31,6 @@
 [submodule "External/magic_enum"]
 	path = External/magic_enum
 	url = git@github.com:Neargye/magic_enum.git
+[submodule "External/freetype"]
+	path = External/freetype
+	url = git@github.com:freetype/freetype.git

@@ -19,6 +19,7 @@ else()
 	set(ADDITIONAL_LIBS "")
 endif()
 
+set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} freetype)
 set(INCLUDE_DIRS ${INCLUDE_DIRS} "${SIMUL_PLATFORM_DIR}/External/stb")
  
 set(PLATFORM_STD_CHARCONV ON)
@@ -32,7 +33,7 @@ endif()
 
 # whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs.
 option(PLATFORM_DEBUG_PROFILING_LEVELS "Whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs." OFF)
-
+ 
 # Setup and build the static library.
 add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
 	DEFINITIONS PLATFORM_LOAD_RENDERDOC=$<BOOL:${PLATFORM_LOAD_RENDERDOC}> PLATFORM_LOAD_WINPIXGPUCAPTURER=$<BOOL:${PLATFORM_LOAD_WINPIXGPUCAPTURER}> PLATFORM_USE_ASSIMP=$<BOOL:${PLATFORM_USE_ASSIMP}> PLATFORM_STD_CHARCONV=$<BOOL:${PLATFORM_STD_CHARCONV}> PLATFORM_DEBUG_PROFILING_LEVELS=$<BOOL:${PLATFORM_DEBUG_PROFILING_LEVELS}>

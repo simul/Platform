@@ -301,11 +301,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	platformSurfaceExt = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 	platformSurfaceExt = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
-#endif
+#endif 
 
-#define PLATFORM_VULKAN_FORCE_DEBUG 0
+#define PLATFORM_VULKAN_FORCE_DEBUG 1
 #define PLATFORM_VULKAN_USE_RENDERDOC_META 0
-#if PLATFORM_VULKAN_USE_RENDERDOC_META == 0 && defined(__ANDROID__) || PLATFORM_VULKAN_FORCE_DEBUG
+#if (PLATFORM_VULKAN_USE_RENDERDOC_META == 0 && defined(__ANDROID__)) || PLATFORM_VULKAN_FORCE_DEBUG
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 #endif
