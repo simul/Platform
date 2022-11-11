@@ -4,16 +4,20 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include <algorithm>
+#if PLATFORM_USE_FREETYPE
 #include <ft2build.h>
 #include <Platform/External/magic_enum/include/magic_enum.hpp>
 #include <Platform/Core/FileLoader.h>
 #include FT_FREETYPE_H
+#endif
 using namespace platform;
 using namespace crossplatform;
 
+#if PLATFORM_USE_FREETYPE
 FT_Library  library;
+#endif
 
-Text3DRenderer::FontIndex defaultFontIndices[]={
+Text3DRenderer::FontIndex defaultFontIndices1[]={
 {0.0f		,0.0f			,5},
 {0.0f		,0.000976563f	,1},
 {0.00195313f,0.00488281f	,3},
@@ -114,6 +118,7 @@ static int max_chars=1500;
 
 Text3DRenderer::Text3DRenderer()
 {
+#if PLATFORM_USE_FREETYPE
 	FT_Error error = FT_Init_FreeType( &library );
 	if ( error )
 	{
@@ -125,6 +130,7 @@ Text3DRenderer::Text3DRenderer()
 	{
 		SIMUL_CERR<<"Error"<<error<<" in FT_Init_FreeType.\n";
 	}
+	#endif
 }
 
 Text3DRenderer::~Text3DRenderer()
@@ -137,12 +143,15 @@ void Text3DRenderer::PushFontPath(const char *p)
 	fontPaths.push_back(p);
 }
 
+#if PLATFORM_USE_FREETYPE
 	FT_Face     face;      /* handle to face object */
+	#endif
 void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	ERRNO_BREAK
 	renderPlatform=r;
-
+	
+#if PLATFORM_USE_FREETYPE
 	{
 		platform::core::FileLoader *fileLoader=platform::core::FileLoader::GetFileLoader();
 		std::string filename = fileLoader->FindFileInPathStack("Exo-SemiBold.ttf", fontPaths);
@@ -169,7 +178,7 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 			
 		}
 	}
-
+	#endif
 
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
@@ -198,7 +207,7 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	}
 	else
 	{
-		fontIndices = defaultFontIndices;
+		fontIndices = defaultFontIndices1;
 		font_texture = renderPlatform->CreateTexture("Font16.png");
 		defaultTextHeight=font_texture->length;
 		fontWidth = 0;
