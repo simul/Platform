@@ -255,17 +255,17 @@ namespace platform
 			static std::string						VulkanResultString(vk::Result res);
 
 			// Vulkan-specific support for video decoding:
-			vk::Sampler								GetVideoSampler() { return vulkanVideoSampler; }
-			vk::SamplerYcbcrConversionInfo*			GetVideoSamplerYcbcrConversionInfo();
+			vk::Sampler								GetSamplerYcbcr() { return vulkanSamplerYcbcr; }
+			vk::SamplerYcbcrConversionInfo*			GetSamplerYcbcrConversionInfo();
 		protected:
-			vk::SamplerYcbcrConversionInfo videoSamplerYcbcrConversionInfo;
+			vk::SamplerYcbcrConversionInfo samplerYcbcrConversionInfo;
 
 		protected:
 			crossplatform::Texture*					createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;
-			vk::Sampler										vulkanVideoSampler;
+			vk::Sampler										vulkanSamplerYcbcr;
 			bool											resourcesToBeReleased=false;
 			std::set<vk::Buffer>							releaseBuffers;
 			std::set<vk::BufferView>						releaseBufferViews;

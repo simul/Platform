@@ -181,7 +181,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		{
 			// video texture:
 			write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-			descriptorImageInfo[i].setSampler(vulkanRenderPlatform->GetVideoSampler());
+			descriptorImageInfo[i].setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
 		}
 		write.setPImageInfo(&descriptorImageInfo[i]);
 		cs->textureSlots |= 1 << slot;
@@ -539,7 +539,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 				if (m_VideoSource)
 				{
 					m_ImmutableSamplers.clear();
-					m_ImmutableSamplers.push_back(vulkanRenderPlatform->GetVideoSampler());
+					m_ImmutableSamplers.push_back(vulkanRenderPlatform->GetSamplerYcbcr());
 					binding.setPImmutableSamplers(m_ImmutableSamplers.data());
 				}
 			}
@@ -610,7 +610,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	//Override Desciptor Set Layout CreateInfo for Video Source?
 	if (m_VideoSource)
 	{
-		std::vector<vk::Sampler> samplers = { vulkanRenderPlatform->GetVideoSampler() };
+		std::vector<vk::Sampler> samplers = { vulkanRenderPlatform->GetSamplerYcbcr() };
 		vk::DescriptorSetLayoutBinding binding = vk::DescriptorSetLayoutBinding()
 			.setBinding(0)
 			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)

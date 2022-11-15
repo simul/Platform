@@ -78,23 +78,23 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	if (CheckDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
 	{
-		vk::SamplerCreateInfo videoSamplerCreateInfo = vk::SamplerCreateInfo();
-		videoSamplerCreateInfo
+		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo();
+		samplerCreateInfo
 			.setMagFilter(vk::Filter::eNearest)
 			.setMinFilter(vk::Filter::eNearest)
 			.setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
 			.setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
 			.setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
 			.setAnisotropyEnable(false)
-			.setUnnormalizedCoordinates(false);
-		videoSamplerCreateInfo.setPNext(GetVideoSamplerYcbcrConversionInfo());
-		SIMUL_VK_CHECK(vulkanDevice->createSampler(&videoSamplerCreateInfo, nullptr, &vulkanVideoSampler));
-		SetVulkanName(this, vulkanVideoSampler, "Vulkan Video Sampler");
+			.setUnnormalizedCoordinates(false)
+			.setPNext(GetSamplerYcbcrConversionInfo());
+		SIMUL_VK_CHECK(vulkanDevice->createSampler(&samplerCreateInfo, nullptr, &vulkanSamplerYcbcr));
+		SetVulkanName(this, vulkanSamplerYcbcr, "Vulkan Sampler Ycbcr");
 	}
 #endif
 }
 
-vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionInfo()
+vk::SamplerYcbcrConversionInfo* RenderPlatform::GetSamplerYcbcrConversionInfo()
 {
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	static bool init=false;
@@ -120,10 +120,10 @@ vk::SamplerYcbcrConversionInfo* RenderPlatform::GetVideoSamplerYcbcrConversionIn
 	#endif
 
 		vk::SamplerYcbcrConversion samplerYcbcrConversion = vulkanDevice->createSamplerYcbcrConversion(samplerYcbcrConversionCreateInfo);
-		videoSamplerYcbcrConversionInfo.conversion = samplerYcbcrConversion;
+		samplerYcbcrConversionInfo.conversion = samplerYcbcrConversion;
 	}
 #endif
-	return &videoSamplerYcbcrConversionInfo;
+	return &samplerYcbcrConversionInfo;
 }
 
 void RenderPlatform::InvalidateDeviceObjects()

@@ -404,7 +404,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 	float ht = fontScale * float(GetDefaultTextHeight());
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
 
-	int n = 0;
+	uint n = 0;
 	crossplatform::StructuredBuffer<FontChar>& f = fontChars[deviceContext.platform_context];
 	FontChar* charList = f.GetBuffer(deviceContext);
 
@@ -472,7 +472,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 			_x += f.pixel_width * fontScale + 1;
 		}
 	}
-	n /= viewCount;
+	n /= static_cast<uint>(viewCount);
 	constantBuffer.numChars = n;
 	if (n > 0)
 	{

@@ -728,9 +728,9 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		.setViewType(viewType)
 		.setFormat(pixel_read_format)
 		.setSubresourceRange(vk::ImageSubresourceRange(imageAspectFlags, 0, mipCount, 0, totalNum));
-	if(pixel_read_format==vk::Format::eUndefined)
-		viewCreateInfo=viewCreateInfo.setPNext(vulkanRenderPlatform->GetVideoSamplerYcbcrConversionInfo());
-	vk::Result res=vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView);
+	if (pixel_read_format == vk::Format::eUndefined)
+		viewCreateInfo.setPNext(vulkanRenderPlatform->GetSamplerYcbcrConversionInfo());
+	vk::Result res = vulkanDevice->createImageView(&viewCreateInfo, nullptr, &mMainView);
 	SIMUL_VK_CHECK(res);
 	SetVulkanName(renderPlatform,mMainView,(name+" imageView").c_str());
 	
