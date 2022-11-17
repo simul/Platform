@@ -9,9 +9,47 @@ ContextState::ContextState()
 	memset(viewports,0,8*sizeof(Viewport));
 }
 
+ContextState::~ContextState()
+{
+}
+
 ContextState::ContextState(const ContextState& cs)
 {
 	operator=(cs);
+}
+
+ContextState& ContextState::operator=(const ContextState& cs)
+{
+	SIMUL_BREAK_ONCE_INTERNAL("Warning: copying contextState is slow");
+	last_action_was_compute		=cs.last_action_was_compute;
+
+	applyVertexBuffers			=cs.applyVertexBuffers;
+	streamoutTargets			=cs.streamoutTargets;
+	applyBuffers				=cs.applyBuffers;
+	applyStructuredBuffers		=cs.applyStructuredBuffers;
+	applyRwStructuredBuffers	=cs.applyRwStructuredBuffers;
+	samplerStateOverrides		=cs.samplerStateOverrides;
+	textureAssignmentMap		=cs.textureAssignmentMap;
+	rwTextureAssignmentMap		=cs.rwTextureAssignmentMap;
+	currentEffectPass			=cs.currentEffectPass;
+	
+	currentEffect				=cs.currentEffect;
+	effectPassValid				=cs.effectPassValid;
+	vertexBuffersValid			=cs.vertexBuffersValid;
+	constantBuffersValid		=cs.constantBuffersValid;
+	structuredBuffersValid		=cs.structuredBuffersValid;
+	rwStructuredBuffersValid	=cs.rwStructuredBuffersValid;
+	samplerStateOverridesValid	=cs.samplerStateOverridesValid;
+	textureAssignmentMapValid	=cs.textureAssignmentMapValid;
+	rwTextureAssignmentMapValid	=cs.rwTextureAssignmentMapValid;
+	streamoutTargetsValid		=cs.streamoutTargetsValid;
+	textureSlots				=cs.textureSlots;
+	rwTextureSlots				=cs.rwTextureSlots;
+	rwTextureSlotsForSB			=cs.rwTextureSlotsForSB;
+	textureSlotsForSB			=cs.textureSlotsForSB;
+	bufferSlots					=cs.bufferSlots;
+	viewMask					=cs.viewMask;
+	return *this;
 }
 
 bool ContextState::IsDepthActive() const

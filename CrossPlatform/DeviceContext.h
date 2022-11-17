@@ -169,10 +169,8 @@ namespace platform
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
 		{
 			ContextState();
+			~ContextState();
 			ContextState(const ContextState& cs);
-			~ContextState()
-			{
-			}
 			ContextState& operator=(const ContextState& cs);
 			bool IsDepthActive() const;
 			bool last_action_was_compute = false;

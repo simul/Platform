@@ -25,43 +25,11 @@
 #else
 #include <cmath>		// for isinf()
 #endif
+
 using namespace platform;
 using namespace crossplatform;
+
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
-
-ContextState& ContextState::operator=(const ContextState& cs)
-{
-	SIMUL_BREAK_ONCE_INTERNAL("Warning: copying contextState is slow");
-	last_action_was_compute		=cs.last_action_was_compute;
-
-	applyVertexBuffers			=cs.applyVertexBuffers;
-	streamoutTargets			=cs.streamoutTargets;
-	applyBuffers				=cs.applyBuffers;
-	applyStructuredBuffers		=cs.applyStructuredBuffers;
-	applyRwStructuredBuffers	=cs.applyRwStructuredBuffers;
-	samplerStateOverrides		=cs.samplerStateOverrides;
-	textureAssignmentMap		=cs.textureAssignmentMap;
-	rwTextureAssignmentMap		=cs.rwTextureAssignmentMap;
-	currentEffectPass			=cs.currentEffectPass;
-	
-	currentEffect				=cs.currentEffect;
-	effectPassValid				=cs.effectPassValid;
-	vertexBuffersValid			=cs.vertexBuffersValid;
-	constantBuffersValid		=cs.constantBuffersValid;
-	structuredBuffersValid		=cs.structuredBuffersValid;
-	rwStructuredBuffersValid	=cs.rwStructuredBuffersValid;
-	samplerStateOverridesValid	=cs.samplerStateOverridesValid;
-	textureAssignmentMapValid	=cs.textureAssignmentMapValid;
-	rwTextureAssignmentMapValid	=cs.rwTextureAssignmentMapValid;
-	streamoutTargetsValid		=cs.streamoutTargetsValid;
-	textureSlots				=cs.textureSlots;
-	rwTextureSlots				=cs.rwTextureSlots;
-	rwTextureSlotsForSB			=cs.rwTextureSlotsForSB;
-	textureSlotsForSB			=cs.textureSlotsForSB;
-	bufferSlots					=cs.bufferSlots;
-	viewMask					=cs.viewMask;
-	return *this;
-}
 
 RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	:mirrorY(false)
@@ -683,7 +651,7 @@ ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
 	return debugConstants;
 }
 
-bool crossplatform::RenderPlatform::IsDepthFormat(PixelFormat f)
+bool RenderPlatform::IsDepthFormat(PixelFormat f)
 {
 	switch(f)
 	{
@@ -699,7 +667,7 @@ bool crossplatform::RenderPlatform::IsDepthFormat(PixelFormat f)
 }
 
 
-PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
+PixelFormat RenderPlatform::ToColourFormat(PixelFormat f)
 {
 	switch(f)
 	{
@@ -713,7 +681,7 @@ PixelFormat crossplatform::RenderPlatform::ToColourFormat(PixelFormat f)
 		return f;
 	};
 }
-bool crossplatform::RenderPlatform::IsStencilFormat(PixelFormat f)
+bool RenderPlatform::IsStencilFormat(PixelFormat f)
 {
 	switch(f)
 	{
@@ -1780,85 +1748,81 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	cs->rwTextureAssignmentMapValid = false;
 }
 
-namespace platform
+vec4 ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)
 {
-	namespace crossplatform
+
+	vec4 texcXYWH;
+	if(v&&t)
 	{
-		vec4 ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)
-		{
-		
-			vec4 texcXYWH;
-			if(v&&t)
-			{
-				texcXYWH.x=(float)v->x/(float)t->width;
-				texcXYWH.y=(float)v->y/(float)t->length;
-				texcXYWH.z=(float)v->w/(float)t->width;
-				texcXYWH.w=(float)v->h/(float)t->length;
-			}
-			else
-			{
-				texcXYWH=vec4(0,0,1.f,1.f);
-			}
-			return texcXYWH;
-		}
-		vec4 ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
-		{
-		
-			vec4 texcXYWH;
-			if(v&&t)
-			{
-				texcXYWH.x=(float)v->x/(float)t->width;
-				texcXYWH.y=(float)v->y/(float)t->length;
-				texcXYWH.z=(float)v->z/(float)t->width;
-				texcXYWH.w=(float)v->w/(float)t->length;
-			}
-			else
-			{
-				texcXYWH=vec4(0,0,1.f,1.f);
-			}
-			return texcXYWH;
-		}
-		void DrawGrid(GraphicsDeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
-		{
-			// 101 lines across, 101 along.
-			numLines++;
-			crossplatform::PosColourVertex *lines=new crossplatform::PosColourVertex[2*numLines*2];
-			// one metre apart
-		//	vec3 cam_pos=crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
-		//	vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
-			crossplatform::PosColourVertex *vertex=lines;
-			int halfOffset=numLines/2;
-			float l10=brightness;
-			float l5=brightness*0.5f;
-			float l25=brightness*2.5f;
-			for(int i=0;i<numLines;i++)
-			{
-				int j=i-numLines/2;
-				vec3 pos1		=centrePos+vec3(square_size*j	,-square_size*halfOffset	,0);
-				vec3 pos2		=centrePos+vec3(square_size*j	, square_size*halfOffset	,0);
-				vertex->pos		=pos1;
-				vertex->colour	=vec4(l5,0.5f*l5,0.f,0.2f);
-				vertex++;
-				vertex->pos		=pos2;
-				vertex->colour	=vec4(l5,0.1f*l5,0.f,0.2f);
-				vertex++;
-			}
-			for(int i=0;i<numLines;i++)
-			{
-				int j=i-numLines/2;
-				vec3 pos1		=centrePos+vec3(-square_size*halfOffset	,square_size*j	,0);
-				vec3 pos2		=centrePos+vec3( square_size*halfOffset	,square_size*j	,0);
-				vertex->pos		=pos1;
-				vertex->colour	=vec4(0.f,l10,0.1f*l5,0.2f);
-				vertex++;
-				vertex->pos		=pos2;
-				vertex->colour	=vec4(0.f,l25,0.1f*l5,0.2f);
-				vertex++;
-			}
-			deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false,true);
-			delete[] lines;
-		}
+		texcXYWH.x=(float)v->x/(float)t->width;
+		texcXYWH.y=(float)v->y/(float)t->length;
+		texcXYWH.z=(float)v->w/(float)t->width;
+		texcXYWH.w=(float)v->h/(float)t->length;
 	}
+	else
+	{
+		texcXYWH=vec4(0,0,1.f,1.f);
+	}
+	return texcXYWH;
+}
+
+vec4 ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
+{
+
+	vec4 texcXYWH;
+	if(v&&t)
+	{
+		texcXYWH.x=(float)v->x/(float)t->width;
+		texcXYWH.y=(float)v->y/(float)t->length;
+		texcXYWH.z=(float)v->z/(float)t->width;
+		texcXYWH.w=(float)v->w/(float)t->length;
+	}
+	else
+	{
+		texcXYWH=vec4(0,0,1.f,1.f);
+	}
+	return texcXYWH;
+}
+
+void DrawGrid(GraphicsDeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
+{
+	// 101 lines across, 101 along.
+	numLines++;
+	crossplatform::PosColourVertex *lines=new crossplatform::PosColourVertex[2*numLines*2];
+	// one metre apart
+//	vec3 cam_pos=crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
+//	vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
+	crossplatform::PosColourVertex *vertex=lines;
+	int halfOffset=numLines/2;
+	float l10=brightness;
+	float l5=brightness*0.5f;
+	float l25=brightness*2.5f;
+	for(int i=0;i<numLines;i++)
+	{
+		int j=i-numLines/2;
+		vec3 pos1		=centrePos+vec3(square_size*j	,-square_size*halfOffset	,0);
+		vec3 pos2		=centrePos+vec3(square_size*j	, square_size*halfOffset	,0);
+		vertex->pos		=pos1;
+		vertex->colour	=vec4(l5,0.5f*l5,0.f,0.2f);
+		vertex++;
+		vertex->pos		=pos2;
+		vertex->colour	=vec4(l5,0.1f*l5,0.f,0.2f);
+		vertex++;
+	}
+	for(int i=0;i<numLines;i++)
+	{
+		int j=i-numLines/2;
+		vec3 pos1		=centrePos+vec3(-square_size*halfOffset	,square_size*j	,0);
+		vec3 pos2		=centrePos+vec3( square_size*halfOffset	,square_size*j	,0);
+		vertex->pos		=pos1;
+		vertex->colour	=vec4(0.f,l10,0.1f*l5,0.2f);
+		vertex++;
+		vertex->pos		=pos2;
+		vertex->colour	=vec4(0.f,l25,0.1f*l5,0.2f);
+		vertex++;
+	}
+	deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false,true);
+	delete[] lines;
 }
 
 void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,StandardRenderState s)
