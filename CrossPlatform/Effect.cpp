@@ -587,6 +587,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	cs->samplerStateOverrides.clear();
 	cs->applyBuffers.clear();  //Because we might otherwise have invalid data
 	cs->applyVertexBuffers.clear();
+	cs->indexBuffer = nullptr;
 	cs->invalidate();
 	// Clean up the TextureAssignments (used in some platforms a.k.a. Switch and Opengl)
 }
