@@ -463,7 +463,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 				Texture* texture = (Texture*)dt.texture;
 				bool allLayers = texture->NumFaces() == dt.layerCount;
 				vk::ImageLayout layout = depthWrite ? vk::ImageLayout::eDepthStencilAttachmentOptimal : depthTest ? vk::ImageLayout::eDepthStencilReadOnlyOptimal : vk::ImageLayout::eUndefined;
-				texture->SetLayout(*graphicsDeviceContext, layout, allLayers ? -1 : dt.layer, dt.mip);
+				texture->SetLayout(*graphicsDeviceContext, layout, allLayers ? -1 : dt.layer, allLayers ? -1 :dt.mip);
 			}
 		}
 	}
