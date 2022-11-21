@@ -325,7 +325,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 				commandBuffer->copyBufferToImage(lt.buffer, mImage, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
 				if(compressionFormat!=platform::crossplatform::CompressionFormat::UNCOMPRESSED)
 				{
-					SIMUL_CERR<<"Texture "<<name.c_str()<<", mip "<<i<<" Surface "<<j<<": Uploaded "<<lt.mem_alloc.allocationSize<<" bytes.\n";
+					//SIMUL_CERR<<"Texture "<<name.c_str()<<", mip "<<i<<" Surface "<<j<<": Uploaded "<<lt.mem_alloc.allocationSize<<" bytes.\n";
 				}
 			}
 		}
@@ -1235,7 +1235,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	
 	if(cf!=platform::crossplatform::CompressionFormat::UNCOMPRESSED)
 	{
-		SIMUL_CERR<<"Texture "<<name.c_str()<<", surface "<<" mip "<<": Uploaded "<<totalBytes<<" bytes.\n";
+		//SIMUL_CERR<<"Texture "<<name.c_str()<<", surface "<<" mip "<<": Uploaded "<<totalBytes<<" bytes.\n";
 	}
 	vulkanDevice->unmapMemory(lt.mem);
 	textureUploadComplete=false;

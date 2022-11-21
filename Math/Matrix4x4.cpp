@@ -275,6 +275,12 @@ namespace platform
 
 		void Multiply4x4(Matrix4x4 &M,const Matrix4x4 &A,const Matrix4x4 &B)
 		{
+		#ifdef _DEBUG
+			if(&A==&M||&B==&M)
+			{
+				SIMUL_BREAK("Multiply4x4 can't use the same matrix as input and output.");
+			}
+		#endif
 			for(int i=0;i<4;i++)
 			{
 				for(int j=0;j<4;j++)
@@ -293,6 +299,12 @@ namespace platform
 
 		void Multiply4x4ByTranspose(Matrix4x4 &M,const Matrix4x4 &M1,const Matrix4x4 &M2)
 		{
+		#ifdef _DEBUG
+			if(&M1==&M||&M2==&M)
+			{
+				SIMUL_BREAK("Multiply4x4ByTranspose can't use the same matrix as input and output.");
+			}
+		#endif
 			unsigned i,j;
 			for(i=0;i<4;i++)
 			{
