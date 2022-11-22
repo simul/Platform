@@ -702,8 +702,8 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																  .setSamples(vk::SampleCountFlagBits::e1)
 																  .setLoadOp(vk::AttachmentLoadOp::eLoad)
 																  .setStoreOp(vk::AttachmentStoreOp::eStore)
-																  .setInitialLayout(vk::ImageLayout::eUndefined)
-																  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+																  .setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
+																  .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
 			if(tv->depthTarget.texture)
 				attachments[1].setFormat(vk::Format::eD32Sfloat)
 																  .setSamples(vk::SampleCountFlagBits::e1)
@@ -711,7 +711,7 @@ void EffectPass::InitializePipeline(crossplatform::DeviceContext &deviceContext,
 																  .setStoreOp(vk::AttachmentStoreOp::eStore)
 																  .setStencilLoadOp(vk::AttachmentLoadOp::eLoad)
 																  .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
-																  .setInitialLayout(vk::ImageLayout::eUndefined)
+																  .setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 																  .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 			auto rp_info = vk::RenderPassCreateInfo()

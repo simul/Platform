@@ -76,6 +76,7 @@ namespace simul
 			vk::Device *GetVulkanDevice();
 			vk::PhysicalDevice* GetGPU();
 			void EnsureImageLayout();
+			void EnsureImagePresentLayout();
         };
     }
 }

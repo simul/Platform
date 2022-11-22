@@ -920,6 +920,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	}
 
 	renderPlatform->RestoreRenderState(deferredContext);
+	EnsureImagePresentLayout();
 	commandBuffer.end();
 	Present();
 	current_buffer++;
@@ -952,6 +953,28 @@ void DisplaySurface::EnsureImageLayout()
 
 }
 
+void DisplaySurface::EnsureImagePresentLayout()
+{
+	vk::Image& image = swapchain_image_resources[current_buffer].image;
+
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	vk::AccessFlags dstAccessMask = vk::AccessFlagBits();
+	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+	auto  barrier = vk::ImageMemoryBarrier()
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(image);
+	swapchain_image_resources[current_buffer].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+
+}
 void DisplaySurface::Present()
 {
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
