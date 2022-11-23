@@ -319,4 +319,22 @@ void CombinedTauswortheRandom(inout RandomResult result)
     result.value = 2.3283064365387e-10 * (result.state.x ^ result.state.y ^ result.state.z ^ result.state.w);
 
 }
+
+vec3 CombinedTauswortheSphericalRandom(inout RandomResult result)
+{
+	CombinedTauswortheRandom(result);
+	float r			=1.f-pow(result.value,4.0);
+	CombinedTauswortheRandom(result);
+	float az		=result.value*2*3.1415926536;
+	CombinedTauswortheRandom(result);
+	float sine_el	=result.value*2.0-1.0;
+	float el		=asin(sine_el);
+	float cos_el	=cos(el);
+	vec3 v;
+	v.x				=r*sin(az)*cos_el;
+	v.y				=r*cos(az)*cos_el;
+	v.z				=r*sine_el;
+	return v;
+}
+
 #endif
