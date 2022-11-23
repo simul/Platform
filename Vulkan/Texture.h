@@ -117,6 +117,7 @@ namespace platform
 			vk::Buffer									mBuffer;
 			vk::ImageLayout								currentImageLayout{ vk::ImageLayout::eUndefined };
 			std::vector<std::vector<vk::ImageLayout>>	mLayerMipLayouts;
+			
 			vk::ImageView								mMainView;
 			vk::ImageView								mCubeArrayView;
 			vk::ImageView								mFaceArrayView;

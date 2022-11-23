@@ -168,18 +168,32 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(vulkanDevice)
 	{
+		r->PushToReleaseManager(mMainView);
+		r->PushToReleaseManager(mCubeArrayView);
+		r->PushToReleaseManager(mFaceArrayView);
+
 		for(auto i:mLayerViews)
 		{
 			r->PushToReleaseManager(i);
 		}
+		mLayerViews.clear();
 		for(auto i:mMainMipViews)
 		{
 			r->PushToReleaseManager(i);
 		}
+		mMainMipViews.clear();
 		for(auto i:faceArrayMipViews)
 		{
 			r->PushToReleaseManager(i);
 		}
+		faceArrayMipViews.clear();
+		
+		r->PushToReleaseManager(mainDepthView);
+		for (auto i : layerDepthViews)
+		{
+			r->PushToReleaseManager(i);
+		}
+
 		for(auto i:mCubemapLayerMipViews)
 		{
 			for(auto j:i)
@@ -195,13 +209,8 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 				r->PushToReleaseManager(j);
 			}
 		}
-		r->PushToReleaseManager(mFaceArrayView);
-		r->PushToReleaseManager(mCubeArrayView);
-		r->PushToReleaseManager(mMainView);
-		mLayerViews.clear();
-		mMainMipViews.clear();
-		faceArrayMipViews.clear();
 		mLayerMipViews.clear();
+		
 		if(!external_texture)
 		{
 			r->PushToReleaseManager(mImage);
