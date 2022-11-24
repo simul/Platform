@@ -23,6 +23,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	SIMUL_BREAK_ONCE_INTERNAL("Warning: copying contextState is slow");
 	last_action_was_compute		=cs.last_action_was_compute;
 
+	indexBuffer					=cs.indexBuffer;
 	applyVertexBuffers			=cs.applyVertexBuffers;
 	streamoutTargets			=cs.streamoutTargets;
 	applyBuffers				=cs.applyBuffers;

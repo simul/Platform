@@ -375,6 +375,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	}
 	if(!bd->is3d)
 		bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
+	
+	bd->effect->UnbindTextures(deviceContext);
 }
 
 static void ImGui_ImplPlatform_CreateFontsTexture()
