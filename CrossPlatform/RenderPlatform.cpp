@@ -1748,7 +1748,7 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	cs->rwTextureAssignmentMapValid = false;
 }
 
-vec4 ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)
+vec4 platform::crossplatform::ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)
 {
 
 	vec4 texcXYWH;
@@ -1766,7 +1766,7 @@ vec4 ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)
 	return texcXYWH;
 }
 
-vec4 ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
+vec4 platform::crossplatform::ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
 {
 
 	vec4 texcXYWH;
@@ -1784,14 +1784,12 @@ vec4 ViewportToTexCoordsXYWH(const int4 *v,const Texture *t)
 	return texcXYWH;
 }
 
-void DrawGrid(GraphicsDeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
+void platform::crossplatform::DrawGrid(GraphicsDeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
 {
 	// 101 lines across, 101 along.
 	numLines++;
 	crossplatform::PosColourVertex *lines=new crossplatform::PosColourVertex[2*numLines*2];
 	// one metre apart
-//	vec3 cam_pos=crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
-//	vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
 	crossplatform::PosColourVertex *vertex=lines;
 	int halfOffset=numLines/2;
 	float l10=brightness;
