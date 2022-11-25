@@ -3,6 +3,10 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX12/SimulDirectXHeader.h"
 
+#define MAGIC_ENUM_RANGE_MIN 0
+#define MAGIC_ENUM_RANGE_MAX 1536
+#include "Platform/External/magic_enum/include/magic_enum.hpp"
+
 #include <iomanip>
 #ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
@@ -182,6 +186,32 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 					filter.DenyList.NumIDs			= _countof(msgs);
 					infoQueue->AddStorageFilterEntries(&filter);
 				}
+
+				ID3D12InfoQueue1* infoQueue1 = nullptr;
+				mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue1));
+				if (infoQueue1)
+				{
+					auto MessageCallbackFunction = [](D3D12_MESSAGE_CATEGORY Category, D3D12_MESSAGE_SEVERITY Severity, D3D12_MESSAGE_ID ID, LPCSTR pDescription, void* pContext)
+					{
+						std::string category	= std::string(magic_enum::enum_name<D3D12_MESSAGE_CATEGORY>(Category));
+						std::string severity	= std::string(magic_enum::enum_name<D3D12_MESSAGE_SEVERITY>(Severity));
+						std::string id			= std::string(magic_enum::enum_name<D3D12_MESSAGE_ID>(ID));
+						std::string description = pDescription;
+						
+						category = category.substr(category.find_last_of('_') + 1);
+						severity = severity.substr(severity.find_last_of('_') + 1);
+
+						std::string errorMessage;
+						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + severity + " " + category + " #" + std::to_string(ID) + ": " + id + " ]");
+						if (Severity < D3D12_MESSAGE_SEVERITY_WARNING)
+						{
+							SIMUL_BREAK(errorMessage);
+						}
+					};
+					infoQueue1->RegisterMessageCallback(MessageCallbackFunction, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &mCallbackCookie);
+					SAFE_RELEASE(infoQueue1);
+				}
+
 				SAFE_RELEASE(infoQueue);
 			}
 		}
@@ -227,6 +257,15 @@ void DeviceManager::Shutdown()
 {
 	if(!mDevice)
 		return;
+
+	ID3D12InfoQueue1* infoQueue1 = nullptr;
+	mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue1));
+	if (infoQueue1)
+	{
+		infoQueue1->UnregisterMessageCallback(mCallbackCookie);
+		SAFE_RELEASE(infoQueue1);
+	}
+
 	// TO-DO: wait for the GPU to complete last work
 	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
 	{

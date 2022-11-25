@@ -48,6 +48,7 @@ namespace simul
 			OutputMap				mOutputs;
 			//! The D3D device
 			ID3D12DeviceType*		mDevice;
+			DWORD					mCallbackCookie;
 		};
 	}
 }
