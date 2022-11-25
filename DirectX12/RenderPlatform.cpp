@@ -129,6 +129,7 @@ RenderPlatform::RenderPlatform():
 	,mNullHeap(nullptr)
 	,mGRootSignature(nullptr)
 	,mDummy2D(nullptr)
+	,mDummy2DMS(nullptr)
 	,mDummy3D(nullptr)
 	,mCurInputLayout(nullptr)
 {
@@ -535,8 +536,10 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 
 	// Create dummy textures
 	mDummy2D = CreateTexture("Dummy2D");
+	mDummy2DMS = CreateTexture("Dummy2DMS");
 	mDummy3D = CreateTexture("Dummy3D");
 	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
+	mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::D_16_UNORM, false, false, true, 2);
 	mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
 	// Create null descriptors
@@ -765,11 +768,18 @@ void RenderPlatform::FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue*
 		// Wait until completed
 		ID3D12Fence* pFence;
 		HRESULT res = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&pFence));
-		queue->SetName(L"FlushCommandQueueSync");
-		queue->Signal(pFence, 64);
-		// ugly spinlock wait
-		while (pFence->GetCompletedValue() != 64) {}
-		pFence->Release();
+		if (res == S_OK && pFence != nullptr)
+		{
+			queue->SetName(L"FlushCommandQueueSync");
+			queue->Signal(pFence, 64);
+			// ugly spinlock wait
+			while (pFence->GetCompletedValue() != 64) {}
+			pFence->Release();
+		}
+		else
+		{
+			SIMUL_CERR << "Failed to create Fence to flush the CommandQueue. CommandQueue not flushed.\n";
+		}
 	}
 }
 
@@ -908,6 +918,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mNullHeap);
 
 	SAFE_DELETE(mDummy2D);
+	SAFE_DELETE(mDummy2DMS);
 	SAFE_DELETE(mDummy3D);
 	SAFE_RELEASE(mGRootSignature);
 	SAFE_RELEASE(mGRaytracingLocalSignature);
@@ -1024,6 +1035,7 @@ void RenderPlatform::BeginD3D12Frame(crossplatform::GraphicsDeviceContext& devic
 	static bool createDummy = true;
 	if (createDummy)
 	{
+		//Can't easily copy data into mDummy2DMS - AJR
 		const uint_fast8_t dummyData[4] = { 1,1,1,1 };
 		mDummy2D->setTexels(deviceContext, &dummyData[0], 0, 1);
 		mDummy3D->setTexels(deviceContext, &dummyData[0], 0, 1);
