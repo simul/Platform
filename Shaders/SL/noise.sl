@@ -309,7 +309,7 @@ uint LCGStep(uint z, uint A, uint C)
     return (A * z + C);    
 }
 
-void CombinedTauswortheRandom(inout RandomResult result)
+float CombinedTauswortheRandom(inout RandomResult result)
 {
     result.state.x = TausStep(result.state.x, 13, 19, 12, 4294967294);
     result.state.y = TausStep(result.state.y, 2, 25, 4, 4294967288);
@@ -317,7 +317,7 @@ void CombinedTauswortheRandom(inout RandomResult result)
     result.state.w = LCGStep(result.state.w, 1664525, 1013904223);
 
     result.value = 2.3283064365387e-10 * (result.state.x ^ result.state.y ^ result.state.z ^ result.state.w);
-
+	return result.value;
 }
 
 vec3 CombinedTauswortheSphericalRandom(inout RandomResult result)
@@ -343,10 +343,10 @@ vec4 TauswortheVirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfil
 	vec3 pos		=frac(texCoords)*gridsize;
 	vec3 intpart,floatpart;
 	floatpart		=modf(pos,intpart);
-	int3 seedpos	=int3(2*seed,17*seed,7*seed);
+	int3 seedpos	=int3(1271*seed,167*seed*seed+931*seed+129,135567*seed+398*seed*seed+3198);
 	int3 firstCorner=int3(intpart);
 	RandomResult randomResult;
-	randomResult.state=uint4(seed+128+intpart.x,seed+23465+intpart.y,seed+2174+intpart.z,seed+1902847+intpart.x);
+	//randomResult.state=uint4(seed+128+intpart.x,seed+23465+intpart.y,seed+2174+intpart.z,seed+1902847+intpart.x);
 	if (pfilter)
 	{
 		for (int i = 0; i < 2; i++)
@@ -365,6 +365,8 @@ vec4 TauswortheVirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfil
 						corner_pos.z = 0;
 					vec3 lookup_pos		=seedpos + vec3(corner_pos);
                     
+	int3 v= seedpos+corner_pos;
+	randomResult.state=uint4(v,v.z+v.x+v.y);
 					CombinedTauswortheRandom(randomResult);
 					vec4 rnd_lookup		=vec4(randomResult.value,randomResult.value,randomResult.value,randomResult.value);
 					float proportion	=abs(i - floatpart.x)*abs(j - floatpart.y)*abs(k - floatpart.z);
