@@ -279,9 +279,13 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			// set something
 			if (!ta.texture || !ta.texture->IsValid())
 			{
-				if (ta.dimensions == 3)
+				if (ta.resourceType == crossplatform::ShaderResourceType::TEXTURE_3D)
 				{
 					ta.texture = rPlat->GetDummy3D();
+				}
+				else if (ta.resourceType == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+				{
+					ta.texture = rPlat->GetDummy2DMS();
 				}
 				else
 				{

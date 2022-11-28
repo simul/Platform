@@ -169,6 +169,8 @@ namespace simul
 
 			//! Returns the 2D dummy texture
 			crossplatform::Texture*			GetDummy2D()const			{ return mDummy2D;}
+			//! Returns the 2D dummy texture
+			crossplatform::Texture*			GetDummy2DMS()const			{ return mDummy2DMS;}
 			//! Returns the 3D dummy texture
 			crossplatform::Texture*			GetDummy3D()const			{ return mDummy3D; }
 
@@ -329,6 +331,8 @@ namespace simul
 
 			//! Dummy 2D texture
 			crossplatform::Texture*		mDummy2D;
+			//! Dummy 2D texture
+			crossplatform::Texture*		mDummy2DMS;
 			//! Dummy 3D texture
 			crossplatform::Texture*		mDummy3D;
 			//! Current applied input layout
