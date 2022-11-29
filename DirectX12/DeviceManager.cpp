@@ -3,8 +3,8 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX12/SimulDirectXHeader.h"
 
-#define MAGIC_ENUM_RANGE_MIN 0
-#define MAGIC_ENUM_RANGE_MAX 1536
+//#define MAGIC_ENUM_RANGE_MIN 0
+//#define MAGIC_ENUM_RANGE_MAX 1536
 #include "Platform/External/magic_enum/include/magic_enum.hpp"
 
 #include <iomanip>
@@ -195,7 +195,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 					{
 						std::string category	= std::string(magic_enum::enum_name<D3D12_MESSAGE_CATEGORY>(Category));
 						std::string severity	= std::string(magic_enum::enum_name<D3D12_MESSAGE_SEVERITY>(Severity));
-						std::string id			= std::string(magic_enum::enum_name<D3D12_MESSAGE_ID>(ID));
+						//magic_enum is really slow on this enum and overflows the MSVC's step count for template processing in Debug builds.
+						std::string id			= "";//std::string(magic_enum::enum_name<D3D12_MESSAGE_ID>(ID)); 
 						std::string description = pDescription;
 						
 						category = category.substr(category.find_last_of('_') + 1);
@@ -205,7 +206,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + severity + " " + category + " #" + std::to_string(ID) + ": " + id + " ]");
 						if (Severity < D3D12_MESSAGE_SEVERITY_WARNING)
 						{
-							//SIMUL_BREAK(errorMessage);
+							SIMUL_BREAK(errorMessage);
 						}
 					};
 					infoQueue1->RegisterMessageCallback(MessageCallbackFunction, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &mCallbackCookie);
