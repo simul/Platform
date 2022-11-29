@@ -187,6 +187,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 					infoQueue->AddStorageFilterEntries(&filter);
 				}
 
+#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO)
 				ID3D12InfoQueue1* infoQueue1 = nullptr;
 				mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue1));
 				if (infoQueue1)
@@ -212,6 +213,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 					infoQueue1->RegisterMessageCallback(MessageCallbackFunction, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &mCallbackCookie);
 					SAFE_RELEASE(infoQueue1);
 				}
+#endif
 
 				SAFE_RELEASE(infoQueue);
 			}
@@ -259,6 +261,7 @@ void DeviceManager::Shutdown()
 	if(!mDevice)
 		return;
 
+#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO)
 	ID3D12InfoQueue1* infoQueue1 = nullptr;
 	mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue1));
 	if (infoQueue1)
@@ -266,6 +269,7 @@ void DeviceManager::Shutdown()
 		infoQueue1->UnregisterMessageCallback(mCallbackCookie);
 		SAFE_RELEASE(infoQueue1);
 	}
+#endif
 
 	// TO-DO: wait for the GPU to complete last work
 	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
