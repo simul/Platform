@@ -709,7 +709,7 @@ struct ImGui_ImplPlatform_ViewportData
 
 };
 
-void ImGui_ImplPlatform_SetDisplaySurfaceMaangerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
+void ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
 																		platform::crossplatform::PlatformRendererInterface *p)
 {
 	displaySurfaceManagerInterface=d;

@@ -64,6 +64,6 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_InitPlatformInterface();
 IMGUI_IMPL_API void		ImGui_ImplPlatform_ShutdownPlatformInterface();
 
 
-IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceMaangerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
+IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
 																		platform::crossplatform::PlatformRendererInterface *p);
 IMGUI_IMPL_API ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id);
