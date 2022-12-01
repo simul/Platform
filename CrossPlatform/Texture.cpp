@@ -172,3 +172,17 @@ void Texture::FreeTranslatedTextureData(void* data)
 		stbi_image_free(data);
 	}
 }
+
+uint32_t Texture::CalculateSubresourceIndex(uint32_t MipSlice, uint32_t ArraySlice, uint32_t PlaneSlice, uint32_t MipLevels, uint32_t ArraySize)
+{
+	return MipSlice + (ArraySlice * MipLevels) + (PlaneSlice * MipLevels * ArraySize);
+}
+
+uint3 Texture::CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uint32_t ArraySlice)
+{
+	uint z = Index / (MipSlice * ArraySlice);
+	Index -= (z * MipSlice * ArraySlice);
+	uint y = Index / MipSlice;
+	uint x = Index % MipSlice;
+	return uint3(x, y, z);
+}
