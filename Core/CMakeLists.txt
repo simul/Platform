@@ -17,7 +17,7 @@ elseif(PLATFORM_LINUX)
 endif()
 
 # Setup and build the static library.
-add_static_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} DEPENDENCIES mt_fmt$<$<CONFIG:DEBUG>:d>)
+add_static_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} LINK mt_fmt$<$<CONFIG:DEBUG>:d>)
 target_link_directories( Core_MT PUBLIC ${CMAKE_SOURCE_DIR}/Platform/External/fmt/build_mt/lib/${CMAKE_BUILD_TYPE})
 target_include_directories( Core_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/fmt/include" )
 
