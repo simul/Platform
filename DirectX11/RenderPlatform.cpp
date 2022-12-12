@@ -235,13 +235,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	device=NULL;
 }
 
-void RenderPlatform::RecompileShaders()
-{
-	if(!device)
-		return;
-	crossplatform::RenderPlatform::RecompileShaders();
-}
-
 void RenderPlatform::BeginEvent	(crossplatform::DeviceContext &,const char *name)
 {
 	static std::unordered_map<const char*,const wchar_t*> name_map;
@@ -457,7 +450,8 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-    return new dx11::DisplaySurface();
+	static int view_id=1;
+    return new dx11::DisplaySurface(view_id++);
 }
 
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c)
@@ -509,6 +503,17 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p,crossplatf
 		case crossplatform::CompressionFormat::BC3:
 			return DXGI_FORMAT_BC3_UNORM;
 		default:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		};
+	case RGB_8_UNORM:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM;
+		default:
+		// TODO: Not idea. This adds alpha.
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
 		};
 	case BGRA_8_UNORM:
@@ -584,6 +589,31 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p,crossplatf
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 	};
+}
+
+crossplatform::CompressionFormat RenderPlatform::DxgiFormatToCompressionFormat(DXGI_FORMAT dxgi_format)
+{
+	using namespace crossplatform;
+	switch(dxgi_format)
+	{
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_TYPELESS:
+			return crossplatform::CompressionFormat::BC6H;
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_TYPELESS:
+			return crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY;
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_TYPELESS:
+			return crossplatform::CompressionFormat::BC1;
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_TYPELESS:
+			return crossplatform::CompressionFormat::BC3;
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_TYPELESS:
+			return crossplatform::CompressionFormat::BC4;
+		default:
+			return crossplatform::CompressionFormat::UNCOMPRESSED;
+	}
 }
 
 crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)

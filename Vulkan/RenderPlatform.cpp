@@ -1628,7 +1628,8 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *)
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	return new vulkan::DisplaySurface();
+	static int view_id=1;
+	return new vulkan::DisplaySurface(view_id++);
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)

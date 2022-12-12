@@ -40,6 +40,7 @@ namespace platform
 			virtual void getMousePosition(int &x, int &y) const;
 			virtual void mouseWheel(int delta, int modifiers);
 			virtual void KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown);
+			virtual MouseButtons	getMouseButtons() const;
 			void SetViewSize(int w, int h);
 			VoidFnDelegate updateViews;
 			VoidFnDelegate valuesChanged;

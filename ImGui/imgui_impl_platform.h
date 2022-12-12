@@ -15,6 +15,7 @@
 #include "imgui.h"      // IMGUI_IMPL_API
 #include <vector>
 #include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/RenderDelegate.h"
 
 namespace platform
 {
@@ -24,16 +25,20 @@ namespace platform
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
 		class DisplaySurfaceManagerInterface;
-		class PlatformRendererInterface;
+		class RenderDelegaterInterface;
 	}
 }
 
 //! A wrapper class for drawing textures including mip/slice info.
 struct ImGui_ImplPlatform_TextureView
 {
-	const platform::crossplatform::Texture *texture=nullptr;
+	platform::crossplatform::Texture *texture=nullptr;
 	int mip=0;
 	int slice=0;
+	//! If set, this delegate will be called to render into the texture.
+	platform::crossplatform::RenderDelegate renderDelegate;
+	//! If texture is null, get a scratch texture of the appropriate width/height.
+	int width=0,height=0;
 };
 
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r);
@@ -65,5 +70,8 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_ShutdownPlatformInterface();
 
 
 IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
-																		platform::crossplatform::PlatformRendererInterface *p);
+																		platform::crossplatform::RenderDelegaterInterface *p);
 IMGUI_IMPL_API ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id);
+
+//! Draw the specified texture, optionally with a delegate to draw into it first.
+IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture( platform::crossplatform::Texture* texture,int mip,int slice,platform::crossplatform::RenderDelegate d,int width,int height);

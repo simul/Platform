@@ -1,11 +1,13 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 
 using namespace platform;
 using namespace dx11;
 
-DisplaySurface::DisplaySurface():
-    mSwapChain(nullptr),
+DisplaySurface::DisplaySurface(int view_id)
+	:crossplatform::DisplaySurface(view_id)
+    ,mSwapChain(nullptr),
     mBackBufferRT(nullptr),
     mBackBuffer(nullptr),
     mDeviceRef(nullptr),

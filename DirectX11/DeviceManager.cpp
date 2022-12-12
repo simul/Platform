@@ -3,6 +3,7 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX11/MacrosDx1x.h"
 #include "Platform/DirectX11/Utilities.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 #include <iomanip>
 #ifndef _XBOX_ONE 
 #ifndef _GAMING_XBOX
@@ -323,7 +324,7 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	viewport.TopLeftY = 0.0f;
 }
 
-void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
+void Window::SetRenderer(crossplatform::RenderDelegaterInterface *ci,int vw_id)
 {
 	if(renderer==ci)
 		return;

@@ -1,12 +1,12 @@
 #include "DisplaySurface.h"
-
+#include "RenderDelegater.h"
 using namespace platform;
 using namespace crossplatform;
 
-DisplaySurface::DisplaySurface():
+DisplaySurface::DisplaySurface(int view_id):
     renderer(nullptr),
     renderPlatform(nullptr),
-    mViewId(-1),
+    mViewId(view_id),
     mHwnd(0),
     mIsVSYNC(false)
 {
@@ -31,20 +31,9 @@ void DisplaySurface::ResizeSwapChain(DeviceContext &)
 		renderer->ResizeView(mViewId,viewport.w,viewport.h);
 }
 
-void DisplaySurface::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
+void DisplaySurface::SetRenderer(crossplatform::RenderDelegaterInterface *ci)
 {
-	if(renderer==ci)
-		return;
-	if(renderer)
-		renderer->RemoveView(mViewId);
-    mViewId		=vw_id;
 	renderer	=ci;
-	if(renderer)
-	{
-		if(mViewId<0)
-			mViewId =renderer->AddView();
-		renderer->ResizeView(mViewId,viewport.w,viewport.h);
-	}
 }
 
 void DisplaySurface::Release()

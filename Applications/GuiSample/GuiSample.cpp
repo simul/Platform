@@ -30,7 +30,7 @@ void CleanupDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-class PlatformRenderer:public crossplatform::PlatformRendererInterface
+class PlatformRenderer:public crossplatform::RenderDelegaterInterface
 {
 public:
     PlatformRenderer(crossplatform::RenderPlatform* r) :renderPlatform(r)

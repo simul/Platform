@@ -325,8 +325,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	textureDesc.Alignment			= 0;							// Let runtime decide
 
 	// Clear resources
-	renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
-	renderPlatformDx12->PushToReleaseManager(mTextureUpload, "mTextureUpload");
+	renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
+	renderPlatformDx12->PushToReleaseManager(mTextureUpload, (name+" mTextureUpload").c_str());
 	mTextureDefault = nullptr;
 	mTextureUpload = nullptr;
 	size_t num_loaded=0;
@@ -823,13 +823,14 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault)
 	{
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+		// Pass "owned=false" so we don't try to untrack memory we never tracked.
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" changing mTextureDefault").c_str(),!mInitializedFromExternal);
+		
 	}
 	if (!t)
 	{
 		return false;
 	}
-
 	t->AddRef();
 	FreeSRVTables();
 	mTextureDefault				= t;
@@ -854,7 +855,10 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			cubemap							= false;
 		}
 		dxgi_format = RenderPlatform::DsvToTypelessFormat(textureDesc.Format);
+		
 		pixelFormat = RenderPlatform::FromDxgiFormat(dxgi_format);
+		compressionFormat=RenderPlatform::DxgiFormatToCompressionFormat(dxgi_format);
+		InitFormats(pixelFormat);
 		width		= (int)textureDesc.Width;
 		length		= (int)textureDesc.Height;
         mNumSamples = textureDesc.SampleDesc.Count;
@@ -1150,7 +1154,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 void Texture::InitFormats(crossplatform::PixelFormat f)
 {
 	pixelFormat		= f;
-	dxgi_format		= (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format		= (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
 	genericDxgiFormat = dxgi_format;
 	srvFormat		= dxgi_format;
 	// needed for video decoder.
@@ -1165,6 +1169,11 @@ void Texture::InitFormats(crossplatform::PixelFormat f)
 	{
 		genericDxgiFormat = DXGI_FORMAT_R32_TYPELESS;
 		srvFormat		= DXGI_FORMAT_R32_FLOAT;
+	}
+	if (genericDxgiFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
+	{
+		genericDxgiFormat = DXGI_FORMAT_R32G8X24_TYPELESS;
+		srvFormat		= DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 	}
 	if (genericDxgiFormat == DXGI_FORMAT_D16_UNORM)
 	{
@@ -1302,7 +1311,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 		// Clean resources
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault,  (name+" mTextureDefault").c_str());
 		mTextureDefault = nullptr;
 
 
@@ -1503,7 +1512,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 	renderPlatform = r;
 	pixelFormat = f;
 	InitFormats(f);
-	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
 	genericDxgiFormat = dxgi_format;
 	if (genericDxgiFormat == DXGI_FORMAT_D32_FLOAT)
 	{
@@ -1581,7 +1590,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 
 		// Clean resources
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, "mTextureDefault");
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
 		mTextureDefault = nullptr;
 			
 		// Create the texture resource
@@ -1647,7 +1656,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	auto& deviceContext = renderPlatform->GetImmediateContext();
 	pixelFormat = f;
 	InitFormats(f);
-	dxgi_format = dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format = dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
 	width = w;
 	length = l;
 	depth = 1;
@@ -2310,7 +2319,7 @@ void Texture::CreateUploadResource(int slices)
 	textureDesc.Width = width;
 	textureDesc.Height = length;
 	textureDesc.MipLevels = mips;
-	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
 	textureDesc.Format = dxgiFormat;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;

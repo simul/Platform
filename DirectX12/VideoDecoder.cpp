@@ -232,8 +232,8 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	outputArgs.pOutputTexture2D = outputResource;
 	outputArgs.OutputSubresource = 0;
 
-	DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
-	DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.outputFormat);
+	DXGI_FORMAT dxgiDecodeFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
+	DXGI_FORMAT dxgiSurfaceFormat = RenderPlatform::ToDxgiFormat(mDecoderParams.outputFormat,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 
 	D3D12_VIDEO_DECODE_CONVERSION_ARGUMENTS& convArgs = outputArgs.ConversionArguments;
 	// Conversion is always enabled because the output texture is expected to be in
@@ -418,7 +418,7 @@ cp::VideoDecoderResult VideoDecoder::CreateVideoDecoder()
 	heapDesc.DecodeWidth = mDecoderParams.width;
 	heapDesc.DecodeHeight = mDecoderParams.height;
 	heapDesc.BitRate = mDecoderParams.bitRate;
-	heapDesc.Format = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat);
+	heapDesc.Format = RenderPlatform::ToDxgiFormat(mDecoderParams.decodeFormat,crossplatform::CompressionFormat::UNCOMPRESSED);
 	heapDesc.MaxDecodePictureBufferCount = mDecoderParams.maxDecodePictureBufferCount;
 	heapDesc.FrameRate = DXGI_RATIONAL{ mDecoderParams.frameRate, 1 };
 	heapDesc.NodeMask = 0;
@@ -498,7 +498,7 @@ cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device,
 	D3D12_FEATURE_DATA_VIDEO_DECODE_SUPPORT ds;
 	ds.BitRate = decoderParams.bitRate;
 	ds.FrameRate = { 1, decoderParams.frameRate };
-	ds.DecodeFormat = RenderPlatform::ToDxgiFormat(decoderParams.decodeFormat);
+	ds.DecodeFormat = RenderPlatform::ToDxgiFormat(decoderParams.decodeFormat,crossplatform::CompressionFormat::UNCOMPRESSED);
 	ds.NodeIndex = 0;
 	ds.Width = decoderParams.width;
 	ds.Height = decoderParams.height;
@@ -546,7 +546,7 @@ cp::VideoDecoderResult VideoDecoder::CheckSupport(ID3D12VideoDeviceType* device,
 	cs.DecodeSample.Height = ds.Height;
 	cs.DecodeSample.Format.Format = ds.DecodeFormat;
 	cs.DecodeSample.Format.ColorSpace = VideoFormats.find(ds.DecodeFormat)->second;
-	cs.OutputFormat.Format = RenderPlatform::ToDxgiFormat(decoderParams.outputFormat);
+	cs.OutputFormat.Format = RenderPlatform::ToDxgiFormat(decoderParams.outputFormat,crossplatform::CompressionFormat::UNCOMPRESSED);
 	cs.OutputFormat.ColorSpace = VideoFormats.find(cs.OutputFormat.Format)->second; 
 
 	if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_VIDEO_DECODE_CONVERSION_SUPPORT, &cs, sizeof(cs))))

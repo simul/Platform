@@ -4,6 +4,7 @@
 
 SIMUL_CONSTANT_BUFFER(SphereConstants,7)
 	uniform mat4 debugWorldViewProj;
+	uniform mat4 invWorldViewProj;
 	uniform vec4 rect;
 	uniform vec4 multiplier;
 	uniform vec4 quaternion;
@@ -18,7 +19,9 @@ SIMUL_CONSTANT_BUFFER(SphereConstants,7)
 	
 	uniform vec3 debugViewDir;
 	uniform int slices;
-
-	uniform vec2 texcOffset;
+	
+	uniform vec3 sphereCamPos;
+	uniform uint loopSteps;
+	uniform vec3 texcOffset;
 SIMUL_CONSTANT_BUFFER_END
 #endif
