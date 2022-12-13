@@ -2,6 +2,8 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
 
+#include "Platform/CrossPlatform/RenderDelegater.h"
+
 using namespace platform;
 using namespace opengl;
 
@@ -27,8 +29,9 @@ static const char *GetErr()
 }
 #endif
 
-DisplaySurface::DisplaySurface()
-	:pixelFormat(crossplatform::UNKNOWN)
+DisplaySurface::DisplaySurface(int view_id)
+	:crossplatform::DisplaySurface(view_id)
+	,pixelFormat(crossplatform::UNKNOWN)
 	,hDC(nullptr)
 	,hRC(nullptr)
 {

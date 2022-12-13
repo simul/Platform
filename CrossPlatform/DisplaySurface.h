@@ -16,14 +16,14 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT DisplaySurface
 		{
         public:
-                            DisplaySurface();
+                            DisplaySurface(int view_id);
 			virtual         ~DisplaySurface();
 			//! Platform-dependent function called when initializing the display surface.
 			virtual void    RestoreDeviceObjects(cp_hwnd handle, RenderPlatform* renderPlatform,bool m_vsync_enabled,int numerator,int denominator, PixelFormat outFmt);
 			//! Platform-dependent function called when uninitializing the display surface.
             virtual void    InvalidateDeviceObjects() {}
 			void            Release();
-			void            SetRenderer(PlatformRendererInterface *ci, int view_id);
+			void            SetRenderer(RenderDelegaterInterface *ci);
 			void            ResizeSwapChain(DeviceContext &deviceContext);
             virtual void    Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) {};
 			virtual void	StartFrame() {}
@@ -36,7 +36,7 @@ namespace platform
             int             GetViewId() { return mViewId; }
 
 			Viewport		           viewport;
-			PlatformRendererInterface*  renderer;
+			RenderDelegaterInterface*  renderer;
 
 		protected:
 			RenderPlatform*             renderPlatform;

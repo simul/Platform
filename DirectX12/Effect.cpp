@@ -574,7 +574,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 		// The debug layer will catch this, but its nice for us to be aware of this issue
 		for (uint i = 0; i < finalRt->Count; i++)
 		{
-			if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i]))
+			if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i],platform::crossplatform::CompressionFormat::UNCOMPRESSED))
 			{
 				SIMUL_INTERNAL_CERR << "Current applied render target idx(" << i << ")" << " does not match the format specified by the effect (" << name.c_str() << "). \n";
 			}
@@ -588,13 +588,13 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 		tmpState.Count = targets->num;
 		for (int i = 0; i < targets->num; i++)
 		{
-			tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(targets->rtFormats[i]);
+			tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(targets->rtFormats[i],platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 			// We don't want to have an unknow state as this will end up randomly choosen by the DX
 			// driver, probably causing gliches or crashes
 			// To fix this, we could either send the ID3D12Resource or send the format from the client
 			if (tmpState.RTFormats[i] == DXGI_FORMAT_UNKNOWN)
 			{
-				tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(curRenderPlat->DefaultOutputFormat);
+				tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(curRenderPlat->DefaultOutputFormat,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 			}
 			if (tmpState.RTFormats[i] == DXGI_FORMAT_R11G11B10_FLOAT)
 			{
@@ -703,7 +703,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	gpsoDesc.PrimitiveTopologyType = primitiveType;
 	gpsoDesc.NumRenderTargets = finalRt->Count;
 	memcpy(gpsoDesc.RTVFormats, finalRt->RTFormats, sizeof(DXGI_FORMAT) * finalRt->Count);
-	gpsoDesc.DSVFormat = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat) : DXGI_FORMAT_UNKNOWN;
+	gpsoDesc.DSVFormat = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat,platform::crossplatform::CompressionFormat::UNCOMPRESSED) : DXGI_FORMAT_UNKNOWN;
 	gpsoDesc.SampleDesc = msaaDesc;
 	gpsoDesc.NodeMask = 0;
 	gpsoDesc.CachedPSO = {};

@@ -37,27 +37,6 @@ namespace platform
 			r.y=-q2.s*q1.y+q1.s*q2.y-q1.z*q2.x+q1.x*q2.z;
 			r.z=-q2.s*q1.z+q1.s*q2.z-q1.x*q2.y+q1.y*q2.x;
 		}
-		void MultiplyByNegative(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2)
-		{
-			r.s=q1.s*q2.s+q1.x*q2.x+q1.y*q2.y+q1.z*q2.z;
-			r.x=q2.s*q1.x-q1.s*q2.x-q1.y*q2.z+q1.z*q2.y;
-			r.y=q2.s*q1.y-q1.s*q2.y-q1.z*q2.x+q1.x*q2.z;
-			r.z=q2.s*q1.z-q1.s*q2.z-q1.x*q2.y+q1.y*q2.x;
-		}
-		// v must be a 3-vector, ret must be a 3-vector.
-		void Multiply(vec3d &ret,const Quaterniond &q,const vec3d &v)
-		{
-			const double &x0=v.x;
-			const double &y0=v.y;
-			const double &z0=v.z;
-			double s1=q.x*x0+q.y*y0+q.z*z0;
-			double x1=q.s*x0+q.y*z0-q.z*y0;
-			double y1=q.s*y0+q.z*x0-q.x*z0;
-			double z1=q.s*z0+q.x*y0-q.y*x0;
-			ret.x=s1*q.x+q.s*x1+q.y*z1-q.z*y1;
-			ret.y=s1*q.y+q.s*y1+q.z*x1-q.x*z1;
-			ret.z=s1*q.z+q.s*z1+q.x*y1-q.y*x1;
-		}             
 		// v must be a 3-vector, ret must be a 3-vector.
 		void AddQuaternionTimesVector(vec3d &ret,const Quaterniond &q,const vec3d &v)
 		{
@@ -244,7 +223,7 @@ vec3 platform::crossplatform::TransformPosition(Quaterniond old_origin,Quaternio
 {
 	vec3d posd(old_pos.x,old_pos.y,radius+old_pos.z);
 	vec3d globalposd;
-	Multiply(globalposd,old_origin,posd);
+	Rotate(globalposd,old_origin,posd);
 	vec3d new_posd;
 	Divide(new_posd,new_origin,globalposd);
 

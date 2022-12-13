@@ -90,3 +90,8 @@ void BaseMouseHandler::KeyboardProc(unsigned int /*nChar*/, bool bKeyDown, bool 
 	if(updateViews)
 		UpdateViews();
 }
+
+MouseButtons	BaseMouseHandler::getMouseButtons() const
+{
+	return  mouseButtons;
+}

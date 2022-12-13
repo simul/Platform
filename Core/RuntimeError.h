@@ -150,6 +150,7 @@ namespace platform
 		{\
 			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
 			BREAK_IF_DEBUGGING\
+			done=true;\
 		}\
 	}
 #define SIMUL_BREAK_INTERNAL(msg)\

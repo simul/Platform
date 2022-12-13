@@ -472,7 +472,7 @@ crossplatform::GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 	return crossplatform::RenderPlatform::GetImmediateContext();
 }
 
-void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
+void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n,bool owned)
 {
 	if (!res)
 	{
@@ -499,15 +499,7 @@ void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild* res, const char *n)
 	int count=res->Release();
 	SIMUL_COUT<<(n?n:"")<<" 0x" << std::setfill('0') << std::setw(16) << std::hex<<(unsigned long long)res<<std::dec<<" Pushed to release manager with "<<count<<" refs remaining."<<std::endl;
 #endif
-	mResourceBin.push_back(std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>
-	(
-		0,
-		std::pair<std::string, ID3D12DeviceChild*>
-		(
-			dName,
-			res
-		)
-	));
+	mResourceBin.push_back({0,owned,dName,res});
 }
 
 void RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceContext)
@@ -1040,7 +1032,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	for (size_t i =0; i < mResourceBin.size(); i++)
 	{
-		auto ptr = mResourceBin[i].second.second;
+		auto &res=mResourceBin[i];
+		auto ptr = res.resource;
 		if (ptr)
 		{
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
@@ -1051,16 +1044,16 @@ void RenderPlatform::InvalidateDeviceObjects()
 			int remainRefs = ptr->Release();
 			if(remainRefs)
 			{
-				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
+				SIMUL_COUT<<"Resource "<< res.freeName.c_str()<<" "<<(unsigned long long)ptr<<" has "<<remainRefs<<" refs remaining."<<std::endl;
 			}
 			else
 			{
-				SIMUL_COUT<<"Resource "<< mResourceBin[i].second.first.c_str()<<" "<<(unsigned long long)ptr<<" freed."<<std::endl;
+				SIMUL_COUT<<"Resource "<< res.freeName.c_str()<<" "<<(unsigned long long)ptr<<" freed."<<std::endl;
 			}
 #else
 			int remainRefs = ptr->Release();
 #endif
-			if (!remainRefs&&GetMemoryInterface()) 
+			if (!remainRefs&&GetMemoryInterface()&&res.owned) 
 				GetMemoryInterface()->UntrackVideoMemory(ptr);
 		}
 	}
@@ -1180,12 +1173,12 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 	{
 		for (int64_t i = int64_t(mResourceBin.size() - 1); i >= 0; i--)
 		{
-			std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>& resource = mResourceBin[static_cast<size_t>(i)];
-			resource.first++;
-			if (resource.first >= kMaxAge)
+			auto& resource = mResourceBin[static_cast<size_t>(i)];
+			resource.age++;
+			if (resource.age >= kMaxAge)
 			{
 				ULONG remainRefs = 0;
-				ID3D12DeviceChild* ptr = resource.second.second;
+				ID3D12DeviceChild* ptr = resource.resource;
 				if (ptr)
 				{
 #if 0
@@ -1206,7 +1199,7 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 						}
 					#endif
 						SIMUL_INTERNAL_CERR << "Fatal error in Release Manager." << std::endl;
-						SIMUL_INTERNAL_CERR << resource.second.first << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
+						SIMUL_INTERNAL_CERR << resource.freeName << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
 						SIMUL_INTERNAL_CERR << "QueryInterface<ID3D12DeviceChild> failed to validate the resource." << std::endl;
 						SIMUL_INTERNAL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
 						SIMUL_BREAK_INTERNAL("Fatal error in Release Manager.");
@@ -1226,7 +1219,7 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 					SIMUL_CERR << resource.second.first << " is still being referenced " << remainRefs << "." << std::endl;
 				}
 #endif
-				if (GetMemoryInterface())
+				if (!remainRefs&&resource.owned&&GetMemoryInterface())
 					GetMemoryInterface()->UntrackVideoMemory(ptr);
 
 				mResourceBin.erase(mResourceBin.begin() + i);
@@ -1702,36 +1695,7 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return b;
 }
 
-DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
-{
-	switch (p)
-	{
-	case platform::crossplatform::FMT_UNKNOWN:
-		return DXGI_FORMAT_UNKNOWN;
-	case platform::crossplatform::FMT_32_GR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_32_AR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_FP16_ABGR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_UNORM16_ABGR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_SNORM16_ABGR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_UINT16_ABGR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_SINT16_ABGR:
-		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT);
-	case platform::crossplatform::FMT_32_ABGR:
-		return ToDxgiFormat(crossplatform::RGBA_32_FLOAT);
-	case platform::crossplatform::OUTPUT_FORMAT_COUNT:
-	default:
-		return DXGI_FORMAT_UNKNOWN;
-		break;
-	}
-}
-
-DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
+DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -1740,14 +1704,28 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R16_FLOAT;
 	case RGBA_16_FLOAT:
 		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case RGB_16_FLOAT:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC6H:
+			return DXGI_FORMAT_BC6H_UF16;
+		case crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY:
+			return DXGI_FORMAT_BC7_UNORM;
+		default:
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		};
 	case RGB_11_11_10_FLOAT:
 		return DXGI_FORMAT_R11G11B10_FLOAT;
-	case RGB10_A2_UNORM:
-		return DXGI_FORMAT_R10G10B10A2_UNORM; 
 	case RGBA_32_FLOAT:
 		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case RGB_32_FLOAT:
-		return DXGI_FORMAT_R32G32B32_FLOAT;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY:
+			return DXGI_FORMAT_BC7_UNORM;
+		default:
+			return DXGI_FORMAT_R32G32B32_FLOAT;
+		};
 	case RG_16_FLOAT:
 		return DXGI_FORMAT_R16G16_FLOAT;
 	case RG_32_FLOAT:
@@ -1759,21 +1737,82 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
-		return DXGI_FORMAT_R8G8B8A8_UNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM;
+		default:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		};
+	case RGB_8_UNORM:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM;
+		default:
+		// TODO: Not idea. This adds alpha.
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		};
 	case BGRA_8_UNORM:
-		return DXGI_FORMAT_B8G8R8A8_UNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM;
+		default:
+			return DXGI_FORMAT_B8G8R8A8_UNORM;
+		};
 	case RGBA_8_UNORM_SRGB:
-		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC1:
+			return DXGI_FORMAT_BC1_UNORM_SRGB;
+		case crossplatform::CompressionFormat::BC3:
+			return DXGI_FORMAT_BC3_UNORM_SRGB;
+		default:
+			return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		};
 	case RGBA_8_UNORM_COMPRESSED:
 		return DXGI_FORMAT_BC7_UNORM;
 	case RGBA_8_SNORM:
 		return DXGI_FORMAT_R8G8B8A8_SNORM;
 	case R_8_UNORM:
-		return DXGI_FORMAT_R8_UNORM;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC4_UNORM;
+		default:
+			return DXGI_FORMAT_R8_UNORM;
+		};
 	case R_8_SNORM:
-		return DXGI_FORMAT_R8_SNORM;
-	case RGBA_8_UINT:
-		return DXGI_FORMAT_R8G8B8A8_UINT;
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC4_SNORM;
+		default:
+			return DXGI_FORMAT_R8_SNORM;
+		};
+	case RG_8_SNORM:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC5_SNORM;
+		default:
+			return DXGI_FORMAT_R8G8_SNORM;
+		};
+	case RG_8_UNORM:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC4:
+			return DXGI_FORMAT_BC5_UNORM;
+		default:
+			return DXGI_FORMAT_R8G8_UNORM;
+		};
 	case R_32_UINT:
 		return DXGI_FORMAT_R32_UINT;
 	case RG_32_UINT:
@@ -1784,17 +1823,86 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32G32B32A32_UINT;
 	case D_32_FLOAT:
 		return DXGI_FORMAT_D32_FLOAT;
-	case D_32_FLOAT_S_8_UINT:
-		return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 	case D_16_UNORM:
 		return DXGI_FORMAT_D16_UNORM;
 	case D_24_UNORM_S_8_UINT:
 		return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	case platform::crossplatform::FMT_FP16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,c);
+	case platform::crossplatform::FMT_SNORM16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,c);
+	case platform::crossplatform::FMT_UINT16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,c);
+	case platform::crossplatform::FMT_SINT16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,c);
+	case platform::crossplatform::FMT_32_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_32_FLOAT,c);
+	case RGB10_A2_UNORM:
+		return DXGI_FORMAT_R10G10B10A2_UNORM; 
+	case RGBA_8_UINT:
+		return DXGI_FORMAT_R8G8B8A8_UINT;
+	case D_32_FLOAT_S_8_UINT:
+		return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 	case NV12:
 		return DXGI_FORMAT_NV12;
+	case platform::crossplatform::FMT_UNKNOWN:
 	default:
 		return DXGI_FORMAT_UNKNOWN;
-	};
+		break;
+	}
+}
+DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelOutputFormat p)
+{
+	switch (p)
+	{
+	case platform::crossplatform::FMT_UNKNOWN:
+		return DXGI_FORMAT_UNKNOWN;
+	case platform::crossplatform::FMT_32_GR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_32_AR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_FP16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_UNORM16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_SNORM16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_UINT16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_SINT16_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_16_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::FMT_32_ABGR:
+		return ToDxgiFormat(crossplatform::RGBA_32_FLOAT,crossplatform::CompressionFormat::UNCOMPRESSED);
+	case platform::crossplatform::OUTPUT_FORMAT_COUNT:
+	default:
+		return DXGI_FORMAT_UNKNOWN;
+		break;
+	}
+}
+
+crossplatform::CompressionFormat RenderPlatform::DxgiFormatToCompressionFormat(DXGI_FORMAT dxgi_format)
+{
+	using namespace crossplatform;
+	switch(dxgi_format)
+	{
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_TYPELESS:
+			return crossplatform::CompressionFormat::BC6H;
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_TYPELESS:
+			return crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY;
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_TYPELESS:
+			return crossplatform::CompressionFormat::BC1;
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_TYPELESS:
+			return crossplatform::CompressionFormat::BC3;
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_TYPELESS:
+			return crossplatform::CompressionFormat::BC4;
+		default:
+			return crossplatform::CompressionFormat::UNCOMPRESSED;
+	}
 }
 
 crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
@@ -1849,7 +1957,10 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return D_24_UNORM_S_8_UINT;
 	case DXGI_FORMAT_D16_UNORM:
 		return D_16_UNORM;
+	case DXGI_FORMAT_BC3_TYPELESS:
+		return RGBA_8_UNORM;
 	default:
+		SIMUL_BREAK_INTERNAL("Unknown format");
 		return UNKNOWN;
 	};
 }
@@ -2245,7 +2356,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 		}
 		l->Dx12InputLayout[i].SemanticName			= desc[i].semanticName;
 		l->Dx12InputLayout[i].SemanticIndex			= desc[i].semanticIndex;
-		l->Dx12InputLayout[i].Format				= ToDxgiFormat(desc[i].format);
+		l->Dx12InputLayout[i].Format				= ToDxgiFormat(desc[i].format,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 		l->Dx12InputLayout[i].InputSlot				= desc[i].inputSlot;
 		l->Dx12InputLayout[i].AlignedByteOffset		= desc[i].alignedByteOffset;
 		l->Dx12InputLayout[i].InputSlotClass		= desc[i].perInstance ?	D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA :D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
@@ -2919,7 +3030,8 @@ crossplatform::ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	return new dx12::DisplaySurface();
+	static int view_id=1;
+	return new dx12::DisplaySurface(view_id++);
 }
 
 crossplatform::GpuProfiler* RenderPlatform::CreateGpuProfiler()

@@ -39,6 +39,7 @@
 #include "Platform/CrossPlatform/SphericalHarmonics.h"
 #include "Platform/CrossPlatform/View.h"
 #include "Platform/CrossPlatform/Mesh.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/CrossPlatform/MeshRenderer.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/Camera.h"
@@ -114,7 +115,7 @@ platform::crossplatform::RenderPlatform* renderPlatform = nullptr;
 platform::core::CommandLineParams commandLineParams;
 
 //! An example of how to use platform::dx11::SimulWeatherRendererDX12 in context.
-class PlatformRenderer:public crossplatform::PlatformRendererInterface
+class PlatformRenderer:public crossplatform::RenderDelegaterInterface
 {
 	//! It is better to use a reversed depth buffer format, i.e. the near plane is z=1 and the far plane is z=0. This
 	//! distributes numerical precision to where it is better used.
@@ -809,7 +810,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// Create an instance of our simple renderer class defined above:
 	renderer->OnCreateDevice(graphicsDeviceInterface->GetDevice());
 	//displaySurfaceManager.AddWindow(hWnd);
-	displaySurfaceManager.SetRenderer(hWnd,renderer,-1);
+	displaySurfaceManager.SetRenderer(renderer);
 	// Main message loop:
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))

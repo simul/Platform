@@ -2,12 +2,14 @@
 #include "RenderPlatform.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 
 using namespace platform;
 using namespace dx12;
 
-DisplaySurface::DisplaySurface():
-	mDeviceRef(nullptr),
+DisplaySurface::DisplaySurface(int view_id)
+	:crossplatform::DisplaySurface(view_id)
+	,mDeviceRef(nullptr),
 	mSwapChain(nullptr),
 	mRTHeap(nullptr)
 {
@@ -75,7 +77,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	swapChainDesc12.BufferCount = FrameCount;
 	swapChainDesc12.Width = 0;
 	swapChainDesc12.Height = 0;
-	swapChainDesc12.Format = dx12::RenderPlatform::ToDxgiFormat(outFmt);
+	swapChainDesc12.Format = dx12::RenderPlatform::ToDxgiFormat(outFmt,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 	swapChainDesc12.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc12.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc12.SampleDesc.Count = 1;
