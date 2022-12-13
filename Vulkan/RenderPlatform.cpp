@@ -678,14 +678,16 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			vulkan::Buffer* buffer = (vulkan::Buffer*)i.second;
 			vk::Buffer vertexBuffers[] = { buffer->asVulkanBuffer() };
 			vk::DeviceSize offsets[] = { 0 };
-			commandBuffer->bindVertexBuffers(i.first, 1, vertexBuffers, offsets);
+			if (vertexBuffers[0])
+				commandBuffer->bindVertexBuffers(i.first, 1, vertexBuffers, offsets);
 		}
 		if (cs->indexBuffer)
 		{
 			vulkan::Buffer* buffer = (vulkan::Buffer*)cs->indexBuffer;
-			vk::IndexType indexType = cs->indexBuffer->stride == 4 ? vk::IndexType::eUint32 : vk::IndexType::eUint16;
 			vk::Buffer indexBuffer = { buffer->asVulkanBuffer() };
-			commandBuffer->bindIndexBuffer(indexBuffer, 0, indexType);
+			vk::IndexType indexType = cs->indexBuffer->stride == 4 ? vk::IndexType::eUint32 : vk::IndexType::eUint16;
+			if (indexBuffer)
+				commandBuffer->bindIndexBuffer(indexBuffer, 0, indexType);
 		}
 	}
 	else
@@ -1626,7 +1628,8 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *)
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	return new vulkan::DisplaySurface();
+	static int view_id=1;
+	return new vulkan::DisplaySurface(view_id++);
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
@@ -1724,14 +1727,24 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 	RenderPassHash hashval=0;
 	if (tv->textureTargets[0].texture)
 	{
-		hashval += (unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
-		hashval += (unsigned long long)tv->textureTargets[0].texture->width;	//Deal with resizing the framebuffer!
-		hashval += (unsigned long long)tv->textureTargets[0].texture->length;
-		hashval += (unsigned long long)tv->textureTargets[0].texture->GetArraySize();
+		crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[0];
+		vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
+		bool allLayers = texture->NumFaces() == tt.layerCount;
+
+		hashval += (unsigned long long)(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.layer, tt.mip))->operator VkImageView();
+		hashval += (unsigned long long)texture->width;	//Deal with resizing the framebuffer!
+		hashval += (unsigned long long)texture->length;
+		hashval += (unsigned long long)texture->GetArraySize();
 	}
-	vulkan::Texture *d=(vulkan::Texture *)tv->depthTarget.texture;
-	if(d)
-		hashval+=(unsigned long long)d->AsVulkanDepthView();
+	if (tv->depthTarget.texture)
+	{
+		vulkan::Texture* d = (vulkan::Texture*)tv->depthTarget.texture;
+		crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
+		vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
+		bool allLayers = texture->NumFaces() == dt.layerCount;
+
+		hashval += (unsigned long long)(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip))->operator VkImageView();
+	}
 	hashval+=tv->num;
 	return hashval;
 }

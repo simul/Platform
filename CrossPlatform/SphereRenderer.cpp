@@ -37,7 +37,7 @@ void SphereRenderer::RecompileShaders()
 	effect=renderPlatform->CreateEffect("sphere");
 }
 
-void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
+void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
 {
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -69,7 +69,7 @@ void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,cross
 	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
 	effect->Unapply(deviceContext);
 }
-void SphereRenderer::DrawMultipleCrossSections(GraphicsDeviceContext& deviceContext, crossplatform::Effect* effect, crossplatform::Texture* t, vec2 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices)
+void SphereRenderer::DrawMultipleCrossSections(GraphicsDeviceContext& deviceContext, crossplatform::Effect* effect, crossplatform::Texture* t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices)
 {
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
 	const math::Matrix4x4& proj = deviceContext.viewStruct.proj;
@@ -119,17 +119,23 @@ void SphereRenderer::DrawLatLongSphere(GraphicsDeviceContext &deviceContext,int 
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_lat_long_sphere");
 	
+	sphereConstants.sphereCamPos	=cam_pos;
 	sphereConstants.latitudes		=lat;
 	sphereConstants.longitudes		=longt;
+	static int loop=100;
+	sphereConstants.loopSteps		=loop;
 	sphereConstants.radius			=radius;
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,0);
 
 	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
-	// first draw the latitudes:
-	renderPlatform->Draw(deviceContext, (sphereConstants.longitudes+1)*(sphereConstants.latitudes+1)*2, 0);
-	// first draw the longitudes:
-	renderPlatform->Draw(deviceContext, (sphereConstants.longitudes+1)*(sphereConstants.latitudes+1)*2, 0);
+	// first draw the latitudes. We will draw (latitudes-1) loops - because at +-90 degrees the loop is just a point.
+	// Each loop has loop+3 vertices, being (loop+1) total, plus one invisible vertex at the start, plus and one invisible one at the end.
+	int lat_vertices=(loop+3)*(sphereConstants.latitudes-1);
+	int long_vertices=(loop+3)*(sphereConstants.longitudes);
+	renderPlatform->Draw(deviceContext,lat_vertices+long_vertices,0);//(sphereConstants.longitudes+1)*(loop+1)+, 0);
+	//  draw the longitudes:
+	//renderPlatform->Draw(deviceContext, (sphereConstants.longitudes+1)*(sphereConstants.latitudes+1)*2, 0);
 
 	effect->Unapply(deviceContext);
 }
@@ -173,6 +179,40 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,v
 		renderPlatform->Draw(deviceContext, 16, 0);
 		effect->Unapply(deviceContext);
 	}
+}
+
+void SphereRenderer::DrawTexturedSphere(GraphicsDeviceContext &deviceContext,vec3 origin,float sph_rad,crossplatform::Texture *texture)
+{
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
+
+	math::Matrix4x4 wvp,world;
+	world.ResetToUnitMatrix();
+
+	world._41=origin.x;
+	world._42=origin.y;
+	world._43=origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	sphereConstants.debugWorldViewProj=wvp;
+	sphereConstants.invWorldViewProj = deviceContext.viewStruct.invViewProj;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
+	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_textured_sphere");
+	auto imageTexture=effect->GetShaderResource("imageTexture");
+	effect->SetTexture(deviceContext,imageTexture,texture);
+	//sphereConstants.quaternion		=orient_quat;
+	sphereConstants.radius			=sph_rad;
+	//sphereConstants.sideview		=qsize*0.5f;
+	sphereConstants.sphereCamPos	=cam_pos;
+	sphereConstants.debugViewDir	=view_dir;
+	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+
+	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
+	effect->Apply(deviceContext,tech,0);
+	renderPlatform->DrawQuad(deviceContext);
+	effect->Unapply(deviceContext);
 }
 
 void SphereRenderer::DrawTexture(GraphicsDeviceContext &deviceContext,crossplatform::Texture *t,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
@@ -304,10 +344,44 @@ void SphereRenderer::DrawArc(GraphicsDeviceContext &deviceContext, vec3 origin, 
 	sphereConstants.debugColour		=colour; 
 	sphereConstants.multiplier		=colour;
 	sphereConstants.latitudes		=12;
+	sphereConstants.loopSteps		=12;
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,"outline");
 	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
-	renderPlatform->Draw(deviceContext,13, 0);
+	renderPlatform->Draw(deviceContext,(sphereConstants.loopSteps+1), 0);
 	effect->Unapply(deviceContext);
 }
+void SphereRenderer::DrawAxes(GraphicsDeviceContext &deviceContext,vec4 orient_quat,float sph_rad, float size)
+{
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
+
+	math::Matrix4x4 wvp,world;
+	world.ResetToUnitMatrix();
+
+	world._41=0;
+	world._42=0;
+	world._43=0;
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	sphereConstants.debugWorldViewProj=wvp;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
+	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_axes_on_sphere");
+
+	sphereConstants.quaternion			=orient_quat;
+	sphereConstants.radius				=sph_rad;
+	sphereConstants.sideview			=size;
+	sphereConstants.debugColour			={1.f,1.f,1.f,1.f};
+	sphereConstants.multiplier			={1.f,1.f,1.f,1.f};
+	sphereConstants.debugViewDir		=view_dir;
+	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	{
+		effect->Apply(deviceContext, tech,"main");
+		renderPlatform->SetTopology(deviceContext, Topology::LINELIST);
+		renderPlatform->Draw(deviceContext, 16, 0);
+		effect->Unapply(deviceContext);
+	}
+}
+			
 #endif

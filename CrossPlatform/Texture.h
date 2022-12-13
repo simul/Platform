@@ -125,7 +125,7 @@ namespace platform
 			uint clearStencil = 0;
 			bool shared = false;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
-			// N arrays of bytes, where N=arraysize*mips
+			// N arrays of bytes, where N=arraysize*mips and ordered by mips then layers.
 			const uint8_t** initialData = nullptr;
 			bool cpuWritable = false;
 			const char* name = nullptr;
@@ -387,6 +387,8 @@ namespace platform
 			// a wrapper around stbi_load_from_memory.
 			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
 			void FreeTranslatedTextureData(void *data);
+			uint32_t CalculateSubresourceIndex(uint32_t MipSlice, uint32_t ArraySlice, uint32_t PlaneSlice, uint32_t MipLevels, uint32_t ArraySize);
+			uint3 CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uint32_t ArraySlice); //Returned as { MipSlice, ArraySlice, PlaneSlice }
 		private:
 			bool stbi_loaded = false;
 		};

@@ -290,4 +290,100 @@ float snoise(vec3 v)
                                 dot(p2,x2), dot(p3,x3) ) );
   }
   
+
+// from http://http.developer.nvidia.com/GPUGems3/gpugems3_ch37.html
+struct RandomResult
+{
+    uint4 state;
+    float value;
+};
+
+uint TausStep(uint z, int S1, int S2, int S3, uint M)
+{
+    uint b = (((z << S1) ^ z) >> S2);
+    return (((z & M) << S3) ^ b);    
+}
+
+uint LCGStep(uint z, uint A, uint C)
+{
+    return (A * z + C);    
+}
+
+float CombinedTauswortheRandom(inout RandomResult result)
+{
+    result.state.x = TausStep(result.state.x, 13, 19, 12, 4294967294);
+    result.state.y = TausStep(result.state.y, 2, 25, 4, 4294967288);
+    result.state.z = TausStep(result.state.z, 3, 11, 17, 4294967280);
+    result.state.w = LCGStep(result.state.w, 1664525, 1013904223);
+
+    result.value = 2.3283064365387e-10 * (result.state.x ^ result.state.y ^ result.state.z ^ result.state.w);
+	return result.value;
+}
+
+vec3 CombinedTauswortheSphericalRandom(inout RandomResult result)
+{
+	CombinedTauswortheRandom(result);
+	float r			=1.f-pow(result.value,4.0);
+	CombinedTauswortheRandom(result);
+	float az		=result.value*2*3.1415926536;
+	CombinedTauswortheRandom(result);
+	float sine_el	=result.value*2.0-1.0;
+	float el		=asin(sine_el);
+	float cos_el	=cos(el);
+	vec3 v;
+	v.x				=r*sin(az)*cos_el;
+	v.y				=r*cos(az)*cos_el;
+	v.z				=r*sine_el;
+	return v;
+}
+
+vec4 TauswortheVirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfilter)
+{
+	vec4 result		=vec4(0,0,0,0);
+	vec3 pos		=frac(texCoords)*gridsize;
+	vec3 intpart,floatpart;
+	floatpart		=modf(pos,intpart);
+	int3 seedpos	=int3(1271*seed,167*seed*seed+931*seed+129,135567*seed+398*seed*seed+3198);
+	int3 firstCorner=int3(intpart);
+	RandomResult randomResult;
+	//randomResult.state=uint4(seed+128+intpart.x,seed+23465+intpart.y,seed+2174+intpart.z,seed+1902847+intpart.x);
+	if (pfilter)
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			for (int j = 0; j < 2; j++)
+			{
+				for (int k = 0; k < 2; k++)
+				{
+					int3 corner_pos = firstCorner + int3(1 - i, 1 - j, 1 - k);
+					// NOTE: operator % does NOT seem to work properly here.
+					if (corner_pos.x == gridsize)
+						corner_pos.x = 0;
+					if (corner_pos.y == gridsize)
+						corner_pos.y = 0;
+					if (corner_pos.z == gridsize)
+						corner_pos.z = 0;
+					vec3 lookup_pos		=seedpos + vec3(corner_pos);
+                    
+	int3 v= seedpos+corner_pos;
+	randomResult.state=uint4(v,v.z+v.x+v.y);
+					CombinedTauswortheRandom(randomResult);
+					vec4 rnd_lookup		=vec4(randomResult.value,randomResult.value,randomResult.value,randomResult.value);
+					float proportion	=abs(i - floatpart.x)*abs(j - floatpart.y)*abs(k - floatpart.z);
+					result				+=rnd_lookup*proportion;
+				}
+			}
+		}
+	}
+	else
+	{
+		// nearest.
+		int3 corner_pos = int3(pos+vec3(0.5, 0.5, 0.5));
+		vec3 lookup_pos = seedpos + vec3(corner_pos);
+        float rndTap = rand3(lookup_pos);
+		result       = vec4(rndTap,rndTap,rndTap,rndTap);
+	}
+	return result;
+}
+
 #endif

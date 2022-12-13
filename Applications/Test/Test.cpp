@@ -44,6 +44,7 @@
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
 
 
@@ -106,7 +107,7 @@ enum class TestType
 	MULTIVIEW
 };
 
-class PlatformRenderer : public crossplatform::PlatformRendererInterface
+class PlatformRenderer : public crossplatform::RenderDelegaterInterface
 {
 public:
 	crossplatform::RenderPlatformType renderPlatformType = crossplatform::RenderPlatformType::Unknown;
@@ -714,7 +715,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	platformRenderer = new PlatformRenderer(x64_API, test, commandLineParams("-debug"));
 	platformRenderer->OnCreateDevice();
 	displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
-	displaySurfaceManager.SetRenderer(hWnd, platformRenderer, -1);
+	displaySurfaceManager.SetRenderer( platformRenderer);
 
 	// Main message loop:
 	MSG msg;

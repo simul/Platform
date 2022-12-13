@@ -156,7 +156,7 @@ namespace platform
 			void							FlushBarriers(crossplatform::DeviceContext& deviceContext);
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
-			void							PushToReleaseManager(ID3D12DeviceChild* res, const char *name);
+			void							PushToReleaseManager(ID3D12DeviceChild* res, const char *name,bool owned=true);
 			//! Clears the input assembler state (index and vertex buffers)
 			void							ClearIA(crossplatform::DeviceContext &deviceContext);
 
@@ -251,7 +251,8 @@ namespace platform
 			bool									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
 
 			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelOutputFormat p);
-			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
+			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c);
+			static									crossplatform::CompressionFormat DxgiFormatToCompressionFormat(DXGI_FORMAT dxgi_format);
 			static									crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType		FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 			static int								ByteSizeOfFormatElement(DXGI_FORMAT format);
@@ -342,7 +343,14 @@ namespace platform
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;
 
 			//! Holds resources to be deleted and its age
-			std::vector<std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
+			struct ResourceToFree
+			{
+				unsigned int age=0;
+				bool owned=true;
+				std::string freeName;
+				ID3D12DeviceChild *resource=nullptr;
+			};
+			std::vector<ResourceToFree> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
 			struct ContextBarriers

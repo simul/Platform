@@ -8,7 +8,7 @@ using namespace platform;
 using namespace dx11;
 
 
-static const int NUM_STAGING_BUFFERS = 4;
+static const int NUM_STAGING_BUFFERS = 6;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 	:buffer(0)
 	,shaderResourceView(0)

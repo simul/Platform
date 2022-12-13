@@ -19,6 +19,21 @@ struct ImGuiCB
 	mat4	ProjectionMatrix1;
 };
 
+struct ScratchArray
+{
+	std::vector<platform::crossplatform::Texture*> textures;
+	int scratchIndex=0;
+};
+typedef uint64_t TextureHash;
+
+TextureHash MakeTextureHash(TextureCreate *tc)
+{
+	TextureHash hash=0;
+	hash+=tc->w;
+	hash+=20000*tc->l;
+	hash+=800000000*tc->f;
+	return hash;
+}
 
 // Platform data
 struct ImGui_ImplPlatform_Data
@@ -36,13 +51,14 @@ struct ImGui_ImplPlatform_Data
 	
 	Layout*					pInputLayout = nullptr;
 	ConstantBuffer<ImGuiCB>	constantBuffer;
+	std::map<TextureHash,ScratchArray> scratchTextures;
 	Texture*				fontTexture = nullptr;
 	Texture*				framebufferTexture = nullptr;
 	ImGui_ImplPlatform_TextureView fontTextureView;
 	ImGui_ImplPlatform_TextureView framebufferTextureView;
 	RenderState*			pBlendState = nullptr;
-	int						VertexBufferSize=0;
-	int						IndexBufferSize=0;
+	int						VertexBufferSize=5000;
+	int						IndexBufferSize=10000;
 	float					width_m=2.0f;
 	// pos/orientation of 3D UI:
 	vec3 centre;
@@ -51,15 +67,15 @@ struct ImGui_ImplPlatform_Data
 	float tilt = 3.1415926536f / 4.0f;
 	unsigned matrices_ticker=0;
 	unsigned used_ticker=0;
-	mat4 imgui_to_world;
-	mat4 canvas_to_world;
-	mat4 local_to_world;
-	mat4 world_to_local;
-	mat4 imgui_to_local;
-	mat4 relative_to_local;
-	mat4 world_to_imgui;
-	mat4 invViewProj;
-	vec3 view_pos;
+	mat4 imgui_to_world={};
+	mat4 canvas_to_world={0};
+	mat4 local_to_world={};
+	mat4 world_to_local={};
+	mat4 imgui_to_local={};
+	mat4 relative_to_local={};
+	mat4 world_to_imgui={};
+	mat4 invViewProj={};
+	vec3 view_pos={};
 	// temp:
 	float height_m=1.f;
 	float X=1.f,Y=1.f;
@@ -68,10 +84,20 @@ struct ImGui_ImplPlatform_Data
 	int2 mouse,screen;
 	bool is3d=false;
 	std::vector<vec3> client_press;
-	ImGui_ImplPlatform_Data()	   {  VertexBufferSize = 5000; IndexBufferSize = 10000; }
+	std::map<uint64_t,ImGui_ImplPlatform_TextureView> drawTextures;
+	ImGui_ImplPlatform_Data()
+	{
+	}
 
 	void Release()
 	{
+		for(auto s:scratchTextures)
+		{
+			for(auto u:s.second.textures)
+				SAFE_DELETE(u);
+		}
+		scratchTextures.clear();
+		drawTextures.clear();
 	}
 };
 
@@ -134,6 +160,21 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
 		return;
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+
+	// Before setting renderstate etc., we will call all the callout delegates for this frame.
+	for(auto dt:bd->drawTextures)
+	{
+		if(dt.second.renderDelegate)
+		{
+			if(dt.second.texture)
+			{
+				dt.second.texture->activateRenderTarget(deviceContext);
+				dt.second.renderDelegate(deviceContext);
+				dt.second.texture->deactivateRenderTarget(deviceContext);
+			}
+			dt.second.renderDelegate=0;
+		}
+	}
 	RenderPlatform* renderPlatform = bd->renderPlatform;
 	{
 		if(!bd->framebufferTexture)
@@ -339,12 +380,15 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 
 				// Bind texture, Draw
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
-				renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),(Texture*)texture_srv->texture,texture_srv->slice,texture_srv->mip);
-				renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
-				bd->pInputLayout->Apply(deviceContext);
-				renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
-				bd->pInputLayout->Unapply(deviceContext);
-				renderPlatform->UnapplyPass(deviceContext );
+				if(texture_srv->texture)
+				{
+					renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),(Texture*)texture_srv->texture,texture_srv->slice,texture_srv->mip);
+					renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
+					bd->pInputLayout->Apply(deviceContext);
+					renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
+					bd->pInputLayout->Unapply(deviceContext);
+					renderPlatform->UnapplyPass(deviceContext );
+				}
 			}
 		}
 		global_idx_offset += cmd_list->IdxBuffer.Size;
@@ -375,6 +419,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	}
 	if(!bd->is3d)
 		bd->renderPlatform->SetViewports(deviceContext, 1,&vp);
+	
+	bd->effect->UnbindTextures(deviceContext);
 }
 
 static void ImGui_ImplPlatform_CreateFontsTexture()
@@ -499,6 +545,7 @@ void ImGui_ImplPlatform_Shutdown()
 	ImGuiIO& io = ImGui::GetIO();
 	io.BackendRendererName = NULL;
 	io.BackendRendererUserData = NULL;
+	bd->Release();
 	IM_DELETE(bd);
 	bd=nullptr;
 }
@@ -519,6 +566,23 @@ void ImGui_ImplPlatform_SetFrame(float w_m,float az,float tilt,vec3 c)
 void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos, float az, float tilt,float width_m)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	bd->drawTextures.clear();
+	for(auto &s:bd->scratchTextures)
+	{
+		// Free any textures that weren't used in the last frame:
+		if(s.second.scratchIndex<s.second.textures.size())
+		{
+			for(size_t i=s.second.scratchIndex;i<s.second.textures.size();i++)
+				SAFE_DELETE(s.second.textures[i]);
+			s.second.textures.resize(s.second.scratchIndex);
+			if(s.second.scratchIndex==0)
+			{
+				bd->scratchTextures.erase(s.first);
+				break;
+			}
+		}
+		s.second.scratchIndex=0;
+	}
 	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplPlatform_Init()?");
 	
 	bd->is3d=in3d;
@@ -699,7 +763,7 @@ void ImGui_ImplPlatform_DebugInfo()
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 platform::crossplatform::DisplaySurfaceManagerInterface *displaySurfaceManagerInterface=nullptr;
-platform::crossplatform::PlatformRendererInterface *platformRendererInterface=nullptr;
+platform::crossplatform::RenderDelegaterInterface *platformRendererInterface=nullptr;
 // Helper structure we store in the void* RenderUserData field of each ImGuiViewport to easily retrieve our backend data.
 struct ImGui_ImplPlatform_ViewportData
 {
@@ -707,8 +771,8 @@ struct ImGui_ImplPlatform_ViewportData
 
 };
 
-void ImGui_ImplPlatform_SetDisplaySurfaceMaangerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
-																		platform::crossplatform::PlatformRendererInterface *p)
+void ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
+																		platform::crossplatform::RenderDelegaterInterface *p)
 {
 	displaySurfaceManagerInterface=d;
 	platformRendererInterface=p;
@@ -727,8 +791,7 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 
 	// All should be handled from within the displaySurface manager.
 	displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::RGBA_8_UNORM);
-	static int viewId=2;
-	displaySurfaceManagerInterface->SetRenderer(hwnd,platformRendererInterface,viewId++);
+	displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
 	vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
 
 }
@@ -814,4 +877,50 @@ void ImGui_ImplPlatform_InitPlatformInterface()
 void ImGui_ImplPlatform_ShutdownPlatformInterface()
 {
 	ImGui::DestroyPlatformWindows();
+}
+
+void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice,platform::crossplatform::RenderDelegate d,int width,int height)
+{
+	if(width<=0||height<=0)
+		return;
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if(!texture)
+	{
+		// If no texture was set, get one of the appropriate size from the renderPlatform.
+		platform::crossplatform::TextureCreate textureCreate;
+		textureCreate.w=width;
+		textureCreate.l=height;
+		textureCreate.make_rt=true;
+		textureCreate.f=platform::crossplatform::PixelFormat::RGB_11_11_10_FLOAT;
+		auto h=MakeTextureHash(&textureCreate);
+		auto &scratch=bd->scratchTextures[h];
+		if(scratch.scratchIndex==scratch.textures.size())
+		{
+			scratch.textures.push_back(bd->renderPlatform->CreateTexture("scratch"));
+			scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform,&textureCreate);
+		}
+		texture=scratch.textures[scratch.scratchIndex];
+		scratch.scratchIndex++;
+	}
+	if (!texture)
+		return;
+	if (!texture->IsValid())
+		return;
+	const ImVec2 regionSize = ImGui::GetContentRegionAvail();
+	uint64_t u=(uint64_t)texture+mip*1000+slice;
+	auto &dt=bd->drawTextures[u];
+	dt.texture=texture;
+	dt.mip=mip;
+	dt.slice=slice;
+	dt.renderDelegate=d;
+	const float aspect = static_cast<float>(width) / static_cast<float>(height);
+	const ImVec2 textureSize = ImVec2(static_cast<float>(width), static_cast<float>(height));
+	const ImVec2 size = ImVec2((float)width,(float)height);//std::min(regionSize.x, textureSize.x), std::min(regionSize.x, textureSize.x) / aspect);
+	ImTextureID imTextureID = (ImTextureID)&dt;
+	
+	static ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+	static ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
+	static ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
+	static ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.0f); // 0% opaque white
+	ImGui::Image(imTextureID, size, uv_min, uv_max, tint_col, border_col);
 }

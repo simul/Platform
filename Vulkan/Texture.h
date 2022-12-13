@@ -113,10 +113,15 @@ namespace platform
 			void	SetDefaultSampling(GLuint texId);
 			void	InitViewTables(int dim, crossplatform::PixelFormat f, int w, int h, int mipCount, int layers, bool isRenderTarget, bool cubemap, bool isDepthTarget, bool isArray = false);
 			
+			void	ClearLoadedTextures();
+			void	ResizeLoadedTextures(size_t mips, size_t layers);
+			void	PushLoadedTexturesToReleaseManager();
+
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;
 			vk::ImageLayout								currentImageLayout{ vk::ImageLayout::eUndefined };
-			std::vector<std::vector<vk::ImageLayout>>	mLayerMipLayouts;
+			std::vector<std::vector<vk::ImageLayout>>	mMipLayerLayouts;
+			
 			vk::ImageView								mMainView;
 			vk::ImageView								mCubeArrayView;
 			vk::ImageView								mFaceArrayView;
@@ -132,12 +137,12 @@ namespace platform
 			// we can have a cubemap view that's one layer and mip, but a cubemap.
 			// or we can have a 2d view that's one layer, face and mip.
 			// so we really need two arrays.
-			std::vector<std::vector<vk::ImageView>>		mCubemapLayerMipViews;
-			std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
+			std::vector<std::vector<vk::ImageView>>		mCubemapMipLayerViews;
+			std::vector<std::vector<vk::ImageView>>		mMipLayerViews;
 			
 			vk::MemoryAllocateInfo mem_alloc;
 			vk::DeviceMemory mMem;
-			std::vector<LoadedTexture>					loadedTextures;
+			std::vector<std::vector<LoadedTexture>>		loadedTextures; //By mip, then by layer.
 			bool split_layouts;
 			int	 mNumSamples = 1;
 			vk::ImageLayout mExternalLayout;
