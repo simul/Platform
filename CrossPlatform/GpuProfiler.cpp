@@ -269,8 +269,11 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 	}
 	static float mix=0.9f;
 	static float final_mix=0.01f;
-	mix*=0.999f;
-	mix+=0.001f*(final_mix);
+	if (profile->parent == nullptr)
+	{
+		mix*=0.999f;
+		mix+=0.001f*(final_mix);
+	}
 
 	if(profile->QueryFinished == false)
 		return;
