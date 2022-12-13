@@ -612,7 +612,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, compressionFormat);
 	
-	SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
+	//SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
 
 	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
 	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
