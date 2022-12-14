@@ -879,7 +879,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				}
 				if (ExitCode != 0)
 				{
-					SIMUL_CERR << "ExitCode: %d" << ExitCode << std::endl;
+					SIMUL_CERR << "ExitCode: " << ExitCode << std::endl;
 					result = false;
 				}
 				else
