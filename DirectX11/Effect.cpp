@@ -102,18 +102,24 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
 {
-	gotResults[currFrame]=true;
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	gotResults[currFrame] = true;
 	currFrame = (currFrame + 1) % QueryLatency;
-	if(!doneQuery[currFrame])
+	if (!doneQuery[currFrame])
 		return false;
+
+	ID3D11DeviceContext* pContext = nullptr;
+	deviceContext.renderPlatform->AsD3D11Device()->GetImmediateContext(&pContext);
+	if (!pContext)
+		return false;
+
 	// Get the data from the "next" query - which is the oldest!
-	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
-	if(hr== S_OK)
+	HRESULT hr = pContext->GetData(d3d11Query[currFrame], data, (UINT)sz, 0);
+	V_CHECK(hr);
+	if (hr == S_OK)
 	{
-		gotResults[currFrame]=true;
+		gotResults[currFrame] = true;
 	}
-	return hr== S_OK;
+	return hr == S_OK;
 }
 
 RenderState::RenderState()
