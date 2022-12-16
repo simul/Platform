@@ -1,24 +1,9 @@
-[submodule "PS4"]
-	path = PS4
-	url = ../PS4.git
-[submodule "XboxOne"]
-	path = XboxOne
-	url = ../XboxOne.git
-[submodule "Switch"]
-	path = Switch
-	url = ../Switch.git
 [submodule "External/glfw"]
 	path = External/glfw
 	url = https://github.com/glfw/glfw.git
 [submodule "External/stb"]
 	path = External/stb
 	url = https://github.com/nothings/stb.git
-[submodule "Commodore"]
-	path = Commodore
-	url = ../Commodore.git
-[submodule "Spectrum"]
-	path = Spectrum
-	url = ../Spectrum.git
 [submodule "External/fmt"]
 	path = External/fmt
 	url = https://github.com/fmtlib/fmt.git
@@ -34,3 +19,18 @@
 [submodule "External/freetype"]
 	path = External/freetype
 	url = https://github.com/freetype/freetype.git
+[submodule "Spectrum"]
+	path = Spectrum
+	url = ../Spectrum.git
+[submodule "Commodore"]
+	path = Commodore
+	url = ../Commodore.git
+[submodule "PS4"]
+	path = PS4
+	url = ../PS4.git
+[submodule "XboxOne"]
+	path = XboxOne
+	url = ../XboxOne.git
+[submodule "Switch"]
+	path = Switch
+	url = ../Switch.git
