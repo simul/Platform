@@ -1,36 +1,36 @@
-[submodule "PS4"]
-	path = PS4
-	url = git@github.com:simul/PS4.git
-[submodule "XboxOne"]
-	path = XboxOne
-	url = git@github.com:simul/XboxOne.git
-[submodule "Switch"]
-	path = Switch
-	url = git@github.com:simul/Switch.git
 [submodule "External/glfw"]
 	path = External/glfw
-	url = git@github.com:glfw/glfw.git
+	url = https://github.com/glfw/glfw.git
 [submodule "External/stb"]
 	path = External/stb
 	url = https://github.com/nothings/stb.git
-[submodule "Commodore"]
-	path = Commodore
-	url = git@github.com:simul/Commodore.git
-[submodule "Spectrum"]
-	path = Spectrum
-	url = git@github.com:simul/Spectrum.git
 [submodule "External/fmt"]
 	path = External/fmt
-	url = git@github.com:fmtlib/fmt.git
+	url = https://github.com/fmtlib/fmt.git
 [submodule "External/assimp"]
 	path = External/assimp
-	url = git@github.com:assimp/assimp.git
+	url = https://github.com/assimp/assimp.git
 [submodule "External/imgui"]
 	path = External/imgui
-	url = git@github.com:ocornut/imgui.git
+	url = https://github.com/ocornut/imgui.git
 [submodule "External/magic_enum"]
 	path = External/magic_enum
-	url = git@github.com:Neargye/magic_enum.git
+	url = https://github.com/Neargye/magic_enum.git
 [submodule "External/freetype"]
 	path = External/freetype
-	url = git@github.com:freetype/freetype.git
+	url = https://github.com/freetype/freetype.git
+[submodule "Spectrum"]
+	path = Spectrum
+	url = ../Spectrum.git
+[submodule "Commodore"]
+	path = Commodore
+	url = ../Commodore.git
+[submodule "PS4"]
+	path = PS4
+	url = ../PS4.git
+[submodule "XboxOne"]
+	path = XboxOne
+	url = ../XboxOne.git
+[submodule "Switch"]
+	path = Switch
+	url = ../Switch.git

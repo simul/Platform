@@ -258,7 +258,7 @@ bool CreateDevice(HWND hWnd)
     platformRenderer->renderPlatform->PushShaderBinaryPath((std::string("shaderbin/") + platformRenderer->renderPlatform->GetPathName()).c_str());
     platformRenderer->renderPlatform->RestoreDeviceObjects(graphicsDeviceInterface->GetDevice());
     displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
-    displaySurfaceManager.SetRenderer( platformRenderer);
+    displaySurfaceManager.SetRenderer(platformRenderer);
     return true;
 }
 
