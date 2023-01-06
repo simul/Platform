@@ -879,7 +879,8 @@ void ImGui_ImplPlatform_ShutdownPlatformInterface()
 	ImGui::DestroyPlatformWindows();
 }
 
-void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice,platform::crossplatform::RenderDelegate d,int width,int height)
+void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice
+	,platform::crossplatform::RenderDelegate d,int width,int height)
 {
 	if(width<=0||height<=0)
 		return;
@@ -915,7 +916,7 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,in
 	dt.renderDelegate=d;
 	const float aspect = static_cast<float>(width) / static_cast<float>(height);
 	const ImVec2 textureSize = ImVec2(static_cast<float>(width), static_cast<float>(height));
-	const ImVec2 size = ImVec2((float)width,(float)height);//std::min(regionSize.x, textureSize.x), std::min(regionSize.x, textureSize.x) / aspect);
+	const ImVec2 size = ImVec2((float)width,(float)height);
 	ImTextureID imTextureID = (ImTextureID)&dt;
 	
 	static ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left

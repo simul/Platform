@@ -675,7 +675,7 @@
 			m._11=m._22=m._33=m._44=1.0f;
 			return m;
 		}
-		static inline tmatrix4<T> translation(vec3 tr)
+		static inline tmatrix4<T> translationColumnMajor(vec3 tr)
 		{
 			tmatrix4<T> m=identity();
 			m._14 = tr.x;
@@ -683,17 +683,17 @@
 			m._34 =tr.z;
 			return m;
 		}
-		tvector3<T> getTranslation() const
+		tvector3<T> getTranslationRowMajor() const
 		{
 			tvector3<T> t;
-			t={_m03,_m13,_m23};
+			t={_m30,_m31,_m32};
 			return t;
 		}
-		void setTranslation(const tvector3<T> &t)
+		void setTranslationRowMajor(const tvector3<T> &t)
 		{
-			_m03=t.x;
-			_m13=t.y;
-			_m23=t.z;
+			_m30=t.x;
+			_m31=t.y;
+			_m32=t.z;
 		}
 		//! Invert an unscaled transformation matrix. This must be a premultiplication transform,
 		//! with the translation in the 4th column.

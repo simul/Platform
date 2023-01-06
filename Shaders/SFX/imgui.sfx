@@ -68,7 +68,9 @@ Texture2D texture0;
 
 shader vec4 PS_Main(PS_INPUT p_in) : SV_Target
 {
-	vec4 out_col = p_in.col* texture0.Sample(clampSamplerState, p_in.uv).rgba;
+	vec4 tex_colour=texture0.Sample(clampSamplerState, p_in.uv);
+	//tex_colour.rgb=pow(tex_colour.rgb,0.45);
+	vec4 out_col = p_in.col*tex_colour;
 	//out_col.rg+=p_in.uv;
 	return out_col; 
 }

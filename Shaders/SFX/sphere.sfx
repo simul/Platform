@@ -185,7 +185,7 @@ shader v2f VS_DrawAxesOnSphere(idOnly IN)
 		uint vert		=IN.vertex_id;
 		int axis		=int(vert/3);
 		vec3 ax			=vec3(axis==0,axis==1,axis==2);
-		pos				=vec3(0,0,1.0);
+		pos				=vec3(0,0,0);
 		if(bool(vert%2))
 			pos			+=ax*sideview;
         vec4 finalCol  = vec4(0.0,0.0,0.0,1.0);
@@ -205,7 +205,7 @@ shader v2f VS_DrawAxesOnSphere(idOnly IN)
 		//OUT.colour=vec4((axis==0)*vec3(1,0.5,0.5)+(axis==1)*vec3(0,1.0,0)+(axis==2)*vec3(0.5,0.5,1.0),1.0);
 	}
 	OUT.texCoords		= vec2(0,0);
-	pos					= radius*rotate_by_quaternion(quaternion,pos);
+	pos					= position+radius*rotate_by_quaternion(quaternion,pos);
 	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
 	// The quaternion rotates from that position.
 	OUT.hPosition		= mul(debugWorldViewProj,vec4(pos.xyz,1.0));

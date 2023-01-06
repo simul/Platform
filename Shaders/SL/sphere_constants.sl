@@ -23,5 +23,8 @@ SIMUL_CONSTANT_BUFFER(SphereConstants,7)
 	uniform vec3 sphereCamPos;
 	uniform uint loopSteps;
 	uniform vec3 texcOffset;
+	uniform uint pad324;
+
+	uniform vec3 position;
 SIMUL_CONSTANT_BUFFER_END
 #endif

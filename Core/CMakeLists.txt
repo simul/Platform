@@ -7,6 +7,7 @@ file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
 file(GLOB DOCS "*.rst" )
 
+
 set(PLATFORM_STD_FILESYSTEM 1)
 if(XBOXONE)
 	set(PLATFORM_STD_FILESYSTEM 2)

@@ -51,23 +51,6 @@ namespace platform
 			ret.y+=s1*q.y+q.s*y1+q.z*x1-q.x*z1;
 			ret.z+=s1*q.z+q.s*z1+q.x*y1-q.y*x1;
 		}
-		void Divide(vec3d &ret,const Quaterniond &q,const vec3d &v)
-		{
-			const double &x0=v.x;
-			const double &y0=v.y;
-			const double &z0=v.z;
-			double s1;
-			s1=-q.x*x0-q.y*y0-q.z*z0;
-			double x1;
-			x1= q.s*x0-q.y*z0+q.z*y0;
-			double y1;
-			y1= q.s*y0-q.z*x0+q.x*z0;
-			double z1;
-			z1= q.s*z0-q.x*y0+q.y*x0;
-			ret.x=-s1*q.x+q.s*x1-q.y*z1+q.z*y1,
-			ret.y=-s1*q.y+q.s*y1-q.z*x1+q.x*z1,
-			ret.z=-s1*q.z+q.s*z1-q.x*y1+q.y*x1;
-		}
 
 		void Slerp(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2,double l)
 		{
@@ -225,7 +208,7 @@ vec3 platform::crossplatform::TransformPosition(Quaterniond old_origin,Quaternio
 	vec3d globalposd;
 	Rotate(globalposd,old_origin,posd);
 	vec3d new_posd;
-	Divide(new_posd,new_origin,globalposd);
+	InverseRotate(new_posd,new_origin,globalposd);
 
 	vec3 newpos((float)new_posd.x,(float)new_posd.y,(float)(new_posd.z-radius));
 	return newpos;

@@ -176,7 +176,8 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,v
 	{
 		effect->Apply(deviceContext, tech,"outline");
 		renderPlatform->SetTopology(deviceContext, Topology::LINELIST);
-		renderPlatform->Draw(deviceContext, 16, 0);
+		// 8 vertices= no axes. 16 would draw axes also.
+		renderPlatform->Draw(deviceContext, 8, 0);
 		effect->Unapply(deviceContext);
 	}
 }
@@ -351,7 +352,7 @@ void SphereRenderer::DrawArc(GraphicsDeviceContext &deviceContext, vec3 origin, 
 	renderPlatform->Draw(deviceContext,(sphereConstants.loopSteps+1), 0);
 	effect->Unapply(deviceContext);
 }
-void SphereRenderer::DrawAxes(GraphicsDeviceContext &deviceContext,vec4 orient_quat,float sph_rad, float size)
+void SphereRenderer::DrawAxes(GraphicsDeviceContext &deviceContext,vec4 orient_quat,vec3 pos, float size)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -370,7 +371,7 @@ void SphereRenderer::DrawAxes(GraphicsDeviceContext &deviceContext,vec4 orient_q
 	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_axes_on_sphere");
 
 	sphereConstants.quaternion			=orient_quat;
-	sphereConstants.radius				=sph_rad;
+	sphereConstants.position			=pos;
 	sphereConstants.sideview			=size;
 	sphereConstants.debugColour			={1.f,1.f,1.f,1.f};
 	sphereConstants.multiplier			={1.f,1.f,1.f,1.f};

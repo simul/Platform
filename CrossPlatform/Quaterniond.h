@@ -292,7 +292,7 @@ namespace platform
 			}
 			void Rotate(const tvector3<T>&d)
 			{
-				double sz = length(d);
+				T sz = length(d);
 				if (sz > 0)
 				{
 					tvector3<T> a = d;
@@ -350,11 +350,24 @@ namespace platform
 			ret.y = s1 * q.y + q.s * y1 + q.z * x1 - q.x * z1;
 			ret.z = s1 * q.z + q.s * z1 + q.x * y1 - q.y * x1;
 		}
+		template<typename T> void InverseRotate(tvector3<T> &ret,const Quaternion<T> &q,const tvector3<T>& v)
+		{
+			const T &x0=v.x;
+			const T &y0=v.y;
+			const T &z0=v.z;
+			T s1=-q.x*x0-q.y*y0-q.z*z0;
+			T x1= q.s*x0-q.y*z0+q.z*y0;
+			T y1= q.s*y0-q.z*x0+q.x*z0;
+			T z1= q.s*z0-q.x*y0+q.y*x0;
+			ret.x=-s1*q.x+q.s*x1-q.y*z1+q.z*y1,
+			ret.y=-s1*q.y+q.s*y1-q.z*x1+q.x*z1,
+			ret.z=-s1*q.z+q.s*z1-q.x*y1+q.y*x1;
+		}
 		//! Quaternion with doubles.
 		typedef Quaternion<double> Quaterniond;
 		//! Quaternion with floats.
 		typedef Quaternion<float> Quaternionf;
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Divide(vec3d& ret,const Quaterniond& q,const vec3d& v);
+		
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN AddQuaterniondTimesVector(vec3d& ret,const Quaterniond& q,const vec3d& v);
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(Quaterniond& r,const Quaterniond& q1,const Quaterniond& q2);
 	
@@ -455,7 +468,7 @@ namespace platform
 		template<typename T,typename U> void PoseToMatrix(tmatrix4<T>& m, const tpose<U>& pose)
 		{
 			QuaternionToMatrix(m,pose.orientation);
-			m.setTranslation(pose.position);
+			m.setTranslationRowMajor(pose.position);
 		}
 	}
 }

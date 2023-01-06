@@ -501,8 +501,8 @@ public:
 			renderPlatform->SetStructuredBuffer(deviceContext, &lightsStructuredBuffer, effect->GetShaderResource("lights"));
 			effect->Apply(deviceContext, "solid", 0);
 			// pass raytraced rtTargetTexture as shadow.
-			meshRenderer->Render(deviceContext, exampleMesh, mat4::translation(vec3(sin(real_time), 0.0f, 2.0f)), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
-			meshRenderer->Render(deviceContext, exampleMesh, mat4::translation(vec3(0.0f, 1.0f, 2.0f)), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
+			meshRenderer->Render(deviceContext, exampleMesh, mat4::translationColumnMajor(vec3(sin(real_time), 0.0f, 2.0f)), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
+			meshRenderer->Render(deviceContext, exampleMesh, mat4::translationColumnMajor(vec3(0.0f, 1.0f, 2.0f)), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
 			meshRenderer->Render(deviceContext, environmentMesh, mat4::identity(), diffuseCubemapTexture, specularCubemapTexture, rtTargetTexture);
 
 			effect->Unapply(deviceContext);

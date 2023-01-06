@@ -32,7 +32,7 @@ namespace platform
 			void DrawCrossSection			(GraphicsDeviceContext &deviceContext, Effect *effect,Texture *t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour);
 			void DrawMultipleCrossSections	(GraphicsDeviceContext &deviceContext, Effect* effect, Texture* t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int slices = 4);
 			void DrawArc					(GraphicsDeviceContext &deviceContext, vec3 origin, vec4 q1, vec4 q2, float sph_rad, vec4 colour);
-			void DrawAxes					(GraphicsDeviceContext &deviceContext, vec4 orient_quat,float sph_rad, float size);
+			void DrawAxes					(GraphicsDeviceContext &deviceContext, vec4 orient_quat,vec3 pos, float size);
 		protected:
 			crossplatform::ConstantBuffer<SphereConstants> sphereConstants;
 			crossplatform::Effect  *effect=nullptr;

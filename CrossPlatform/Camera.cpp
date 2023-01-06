@@ -708,12 +708,6 @@ const float *Camera::MakeStereoViewMatrix(WhichEye ) const
 	return MakeViewMatrix();
 }
 
-float length(const vec3 &u)
-{
-	float size=u.x*u.x+u.y*u.y+u.z*u.z;
-	return sqrt(size);
-}
-
 vec3 Camera::ScreenPositionToDirection(float x,float y,float aspect)
 {
 	Matrix4x4 proj			=MakeDepthReversedProjectionMatrix(aspect);
@@ -748,7 +742,7 @@ const float *Camera::GetRotationAsQuaternion() const
 {
 	static platform::math::Quaternion q;
 	platform::math::MatrixToQuaternion(q,Orientation.GetMatrix());
-	return (const float *)(&q);
+	return (const float *)(&Orientation.GetQuaternion());
 }
 
 const float *Camera::GetPosition() const
