@@ -284,7 +284,7 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 		return;
 
 	timer.UpdateTime();
-
+	
 	// Get the query data
 	UINT64 startTime = 0;
 	bool ok=profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime));
