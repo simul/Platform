@@ -14,7 +14,7 @@ using namespace core;
 
 #ifdef _WIN32
 #include <windows.h>
-#elif
+#else
 #include <unistd.h>
 #endif
 
@@ -25,12 +25,14 @@ std::string platform::core::GetExeDirectory()
     wchar_t szPath[MAX_PATH];
     GetModuleFileNameW( NULL, szPath, MAX_PATH );
 #else
-    // Linux specific
     char szPath[PATH_MAX];
+#if UNIX
+    // Linux specific
     ssize_t count = readlink( "/proc/self/exe", szPath, PATH_MAX );
     if( count < 0 || count >= PATH_MAX )
         return {}; // some error
     szPath[count] = '\0';
+#endif
 #endif
 	std::filesystem::path p=std::filesystem::path{ szPath }.parent_path() / ""; // to finish the folder path with (back)slash
 	return p.string();
