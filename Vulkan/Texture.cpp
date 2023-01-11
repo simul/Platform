@@ -270,6 +270,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		return;
 	SIMUL_ASSERT(loadedTextures.size()!=0)
 	SIMUL_ASSERT(loadedTextures[0].size() != 0)
+
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
 
@@ -322,8 +324,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 
 				vk::Offset3D offset = { 0, 0, 0 };
 				vk::Extent3D extent = vk::Extent3D()
-					.setWidth(lt.x > 1 ? lt.x >> mip : 1)
-					.setHeight(lt.y > 1 ? lt.y >> mip : 1)
+					.setWidth(lt.x)
+					.setHeight(lt.y)
 					.setDepth(1);
 
 				auto const copy_region =
@@ -1049,6 +1051,7 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	clear_value.depth=depthClear;
 	clear_value.stencil=stencilClear;
 
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
 	// can't go back to these layouts so just stay in eTransferDstOptimal for now:
 	if(prev_image_layout!=vk::ImageLayout::ePreinitialized&&prev_image_layout!=vk::ImageLayout::eUndefined)
@@ -1284,12 +1287,12 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 {
 	if(newLayout==vk::ImageLayout::eUndefined)
 		return;
+
 	if (mip == mips)
 	{
 		mip = 0;
 	}
-	//void SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-	//	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages)
+
 	auto *commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	auto DstAccessMask = [](vk::ImageLayout const &layout)
 	{
@@ -1366,8 +1369,13 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			for (int l = layer; l < layer + num_layers; l++)
 			{
 				vk::ImageLayout& imageLayout = mMipLayerLayouts[m][l];
+				if (imageLayout == newLayout)
+					continue;
 				barrier.setOldLayout(imageLayout);
 				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+
+				vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 				imageLayout = newLayout;
 			}
@@ -1386,6 +1394,9 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 					continue;
 				barrier.setOldLayout(imageLayout);
 				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+
+				vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 				imageLayout = newLayout;
 			}
@@ -1400,6 +1411,9 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		int totalNum = cubemap ? 6 * arraySize : arraySize;
 		barrier.setOldLayout(currentImageLayout);
 		barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, mips, 0, totalNum));
+
+		vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 		commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 		AssumeLayout(newLayout);
 		split_layouts = false;

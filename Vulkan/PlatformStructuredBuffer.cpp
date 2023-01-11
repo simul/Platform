@@ -118,6 +118,8 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
 	vk::BufferCopy region=vk::BufferCopy().setDstOffset(0).setSize(mTotalSize).setSrcOffset(last_offset);
 	commandBuffer->copyBuffer(lastBuffer->mBuffer,mReadBuffers[mFrameIndex],region);

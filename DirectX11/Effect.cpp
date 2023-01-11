@@ -75,6 +75,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		V_CHECK(m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]));
 	}
 }
+
 void Query::InvalidateDeviceObjects() 
 {
 	for(int i=0;i<QueryLatency;i++)
@@ -117,7 +118,13 @@ bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_
 	V_CHECK(hr);
 	if (hr == S_OK)
 	{
+		pContext->Release();
 		gotResults[currFrame] = true;
+	}
+	else
+	{
+		pContext->Release();
+		return false;
 	}
 	return hr == S_OK;
 }

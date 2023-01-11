@@ -32,13 +32,14 @@ namespace platform
 	namespace vulkan
 	{
 		extern bool debugUtilsSupported;
+		extern bool debugMarkerSupported;
 		template<typename T>
 		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
 		{
 			vk::Instance* instance = renderPlatform->AsVulkanInstance();
 			vk::Device* device = renderPlatform->AsVulkanDevice();
-
 			uint64_t objectHandle = *((uint64_t*)&ds);
+
 			if(debugUtilsSupported)
 			{
 				vk::DispatchLoaderDynamic d;
@@ -55,6 +56,23 @@ namespace platform
 					device->setDebugUtilsObjectNameEXT(nameInfo, d);
 				}
 			}
+			if(debugMarkerSupported)
+			{
+				vk::DispatchLoaderDynamic d;
+				d.vkDebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)instance->getProcAddr("vkDebugMarkerSetObjectNameEXT");
+				if (d.vkDebugMarkerSetObjectNameEXT)
+				{
+					vk::DebugMarkerObjectNameInfoEXT nameInfo;
+					nameInfo
+						.setPNext(nullptr)
+						.setObjectType(ds.debugReportObjectType)
+						.setObject(objectHandle)
+						.setPObjectName(name);
+
+					device->debugMarkerSetObjectNameEXT(nameInfo, d);
+				}
+			}
+
 			if (platform::core::SimulInternalChecks)
 			{
 				crossplatform::RenderPlatform::ResourceMap[objectHandle] = name;
@@ -252,6 +270,7 @@ namespace platform
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *final_layouts=nullptr);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
+			void									EndRenderPass(crossplatform::DeviceContext& deviceContext);
 			static std::string						VulkanResultString(vk::Result res);
 
 			// Vulkan-specific support for video decoding:
