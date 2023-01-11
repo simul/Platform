@@ -1872,13 +1872,13 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					sampCB.m_structMembers.push_back(sMember);
 				}
 			}
-			else if(!sfxConfig.passThroughSamplers && !sfxConfig.maintainSamplerDeclaration)
+		/*	else if(!sfxConfig.passThroughSamplers && !sfxConfig.maintainSamplerDeclaration)
 			{
 				string str = sfxConfig.samplerDeclaration;
 				find_and_replace(str, "{name}", ss->name);
 				find_and_replace(str, "{slot}", ToString(ss->register_number));
 				os<<str.c_str()<<endl;
-			}
+			}*/
 		}
 		break;
 		case DeclarationType:: BLENDSTATE:

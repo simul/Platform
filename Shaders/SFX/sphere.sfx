@@ -437,7 +437,7 @@ shader vec4 PS_DrawTexturedSphere(posTexVertexOutput IN) :SV_TARGET
 	float longitude=atan2(pos.y,pos.x);
 	float latitude=asin(pos.z);
 	vec2 texc=vec2(0.5+longitude/2.0/SIMUL_PI_F,0.5-latitude/SIMUL_PI_F);
-	vec4 lookup=texture_nearest_lod(imageTexture,texc.xy,0);
+	vec4 lookup=debugColour*texture_nearest_lod(imageTexture,texc.xy,0);
 
 	return vec4(lookup.rgb,1.0f);
 }

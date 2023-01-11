@@ -41,7 +41,9 @@ struct ImGui_ImplPlatform_TextureView
 	int width=0,height=0;
 };
 
-IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r);
+//! Initialize the Platform implementation. If hosted is set to true, this will also fill in ImGuiPlatformIO, e.g. if imgui is hosted
+//! in a game engine etc instead of needing Win32 behaviour etc.
+IMGUI_IMPL_API bool     ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hosted=false);
 IMGUI_IMPL_API void     ImGui_ImplPlatform_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplPlatform_NewFrame(bool in3d=false, int ui_pixel_width=400, int ui_pixel_height=300,const float *menupos=nullptr, float az=0.0f, float tilt=0.0f,float width_m=2.0f);
 IMGUI_IMPL_API void		ImGui_ImplPlatform_Win32_NewFrame();

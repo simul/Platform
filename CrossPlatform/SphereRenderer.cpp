@@ -182,7 +182,7 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,v
 	}
 }
 
-void SphereRenderer::DrawTexturedSphere(GraphicsDeviceContext &deviceContext,vec3 origin,float sph_rad,crossplatform::Texture *texture)
+void SphereRenderer::DrawTexturedSphere(GraphicsDeviceContext &deviceContext,vec3 origin,float sph_rad,crossplatform::Texture *texture,vec4 clr)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -204,7 +204,7 @@ void SphereRenderer::DrawTexturedSphere(GraphicsDeviceContext &deviceContext,vec
 	effect->SetTexture(deviceContext,imageTexture,texture);
 	//sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius			=sph_rad;
-	//sphereConstants.sideview		=qsize*0.5f;
+	sphereConstants.debugColour		=clr;
 	sphereConstants.sphereCamPos	=cam_pos;
 	sphereConstants.debugViewDir	=view_dir;
 	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);

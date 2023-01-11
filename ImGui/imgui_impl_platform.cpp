@@ -38,6 +38,7 @@ TextureHash MakeTextureHash(TextureCreate *tc)
 // Platform data
 struct ImGui_ImplPlatform_Data
 {
+	bool					hosted	=false;
 	RenderPlatform*			renderPlatform = nullptr;
 	Buffer*					pVB = nullptr;
 	Buffer*					pIB = nullptr;
@@ -516,25 +517,6 @@ void	ImGui_ImplPlatform_RecompileShaders()
 	bd->effectPass_placeIn3DMV_noDepth = bd->effect->GetTechniqueByName("place_in_3d_multiview")->GetPass("no_depth");
 }
 
-bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r)
-{
-	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
-	if (bd)
-		return true;
-	ImGuiIO& io = ImGui::GetIO();
-	IM_ASSERT(io.BackendRendererUserData == NULL && "Already initialized a renderer backend!");
-
-	// Setup backend capabilities flags
-	bd = IM_NEW(ImGui_ImplPlatform_Data)();
-	io.BackendRendererUserData = (void*)bd;
-	io.BackendRendererName = "imgui_impl_platform";
-	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
-
-	bd->renderPlatform = r;
-
-	return true;
-}
-
 void ImGui_ImplPlatform_Shutdown()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
@@ -566,6 +548,22 @@ void ImGui_ImplPlatform_SetFrame(float w_m,float az,float tilt,vec3 c)
 void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_height,const float *pos, float az, float tilt,float width_m)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+
+	if(bd->hosted)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.DisplaySize = ImVec2((float)(ui_pixel_width), (float)(ui_pixel_height));
+		INT64 current_time = 0;
+		::QueryPerformanceCounter((LARGE_INTEGER*)&current_time);
+		//io.DeltaTime = (float)(current_time - bd->Time) / bd->TicksPerSecond;
+		//bd->Time = current_time;
+
+		// Update OS mouse position
+		//ImGui_ImplWin32_UpdateMouseData();
+
+		// Process workarounds for known Windows key handling issues
+		//ImGui_ImplWin32_ProcessKeyEventsWorkarounds();
+	}
 	bd->drawTextures.clear();
 	for(auto &s:bd->scratchTextures)
 	{
@@ -793,14 +791,14 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 	displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::RGBA_8_UNORM);
 	displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
 	vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
-
 }
 
 static void ImGui_ImplPlatform_DestroyWindow(ImGuiViewport* viewport)
 {
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
-	displaySurfaceManagerInterface->RemoveWindow(hwnd);
+	if(displaySurfaceManagerInterface)
+		displaySurfaceManagerInterface->RemoveWindow(hwnd);
 	// The main viewport (owned by the application) will always have RendererUserData == NULL since we didn't create the data for it.
 	if (ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData)
 	{
@@ -879,6 +877,52 @@ void ImGui_ImplPlatform_ShutdownPlatformInterface()
 	ImGui::DestroyPlatformWindows();
 }
 
+
+bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hosted)
+{
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if (bd)
+		return true;
+	ImGuiIO& io = ImGui::GetIO();
+	IM_ASSERT(io.BackendRendererUserData == NULL && "Already initialized a renderer backend!");
+
+	// Setup backend capabilities flags
+	bd = IM_NEW(ImGui_ImplPlatform_Data)();
+	io.BackendRendererUserData = (void*)bd;
+	io.BackendRendererName = "imgui_impl_platform";
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
+
+	bd->renderPlatform = r;
+	bd->hosted=hosted;
+	if(hosted)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		IM_ASSERT(io.BackendPlatformUserData == NULL && "Already initialized a platform backend!");
+
+		INT64 perf_frequency, perf_counter;
+		if (!::QueryPerformanceFrequency((LARGE_INTEGER*)&perf_frequency))
+			return false;
+		if (!::QueryPerformanceCounter((LARGE_INTEGER*)&perf_counter))
+			return false;
+
+		// Setup backend capabilities flags
+		//ImGui_ImplPlatform_Data* bd = IM_NEW(ImGui_ImplPlatform_Data)();
+		io.BackendPlatformUserData = (void*)nullptr;
+		io.BackendPlatformName = "imgui_impl_platform";
+		//io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
+		//io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
+		//io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;    // We can create multi-viewports on the Platform side (optional)
+		//io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport; // We can call io.AddMouseViewportEvent() with correct data (optional)
+
+
+		// Our mouse update function expect PlatformHandle to be filled for the main viewport
+		ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+		main_viewport->PlatformHandle = main_viewport->PlatformHandleRaw = (void*)nullptr;
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+			ImGui_ImplPlatform_InitPlatformInterface();
+	}
+	return true;
+}
 void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice
 	,platform::crossplatform::RenderDelegate d,int width,int height)
 {
