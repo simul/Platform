@@ -181,6 +181,9 @@ void Buffer::FinishLoading(crossplatform::DeviceContext& deviceContext)
 {
 	if(loadingComplete)
 		return;
+
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 	vk::BufferCopy copyRegion = {};
 	copyRegion.setSize(bufferLoad.size);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
