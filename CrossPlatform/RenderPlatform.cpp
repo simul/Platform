@@ -1117,7 +1117,7 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 	Print(deviceContext, positions[0].data(), positions[1].data(), text, colr, bkg);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale)
 {
 	static int level=0;
 	static int lod=0;
@@ -1146,6 +1146,12 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
 	debugConstants.displayLevel=0;
+	if(texc_scale.x==0||texc_scale.y==0)
+	{
+		texc_scale.x=1.0f;
+		texc_scale.y=1.0f;
+	}
+	debugConstants.viewport={texc.x,texc.y,texc_scale.x,texc_scale.y};
 	crossplatform::EffectTechnique *tech=textured;
 	if(tex&&tex->GetDimension()==3)
 	{
@@ -1265,9 +1271,9 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 	effect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale);
 }
 
 void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v

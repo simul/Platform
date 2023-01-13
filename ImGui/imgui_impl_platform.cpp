@@ -840,20 +840,13 @@ ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id)
 	return i->second;
 }
 
-static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void*)
+static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void* usr)
 {
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
 	displaySurfaceManagerInterface->Render(hwnd);
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
 	drawData[vd->viewId]=viewport->DrawData;
- /*   ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
-	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
-	ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-	bd->pd3dDeviceContext->OMSetRenderTargets(1, &vd->RTView, NULL);
-	if (!(viewport->Flags & ImGuiViewportFlags_NoRendererClear))
-		bd->pd3dDeviceContext->ClearRenderTargetView(vd->RTView, (float*)&clear_color);
-	ImGui_ImplPlatform_RenderDrawData(viewport->DrawData);*/
 }
 
 static void ImGui_ImplPlatform_SwapBuffers(ImGuiViewport* viewport, void*)
@@ -862,14 +855,104 @@ static void ImGui_ImplPlatform_SwapBuffers(ImGuiViewport* viewport, void*)
    // vd->SwapChain->Present(0, 0); // Present without vsync
 }
 
+static void Hosted_Renderer_CreateWindow(ImGuiViewport* viewport)
+{
+	std::cerr<<"Create Window\n";
+}
+
+static void Hosted_Renderer_DestroyWindow(ImGuiViewport* viewport)
+{
+}
+
+static void Hosted_Renderer_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+{
+}
+
+static void Hosted_Renderer_RenderWindow(ImGuiViewport* viewport, void* usr)
+{
+	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
+	drawData[vd->viewId]=viewport->DrawData;
+}
+
+static void Hosted_Renderer_SwapBuffers(ImGuiViewport* viewport, void*)
+{
+}
+
+static void Hosted_Platform_CreateWindow(ImGuiViewport* viewport)
+{
+	std::cerr<<"Platform Create Window\n";
+}
+
+static void Hosted_Platform_DestroyWindow(ImGuiViewport* viewport)
+{
+}
+
+static ImVec2 Hosted_Platform_GetWindowPos(ImGuiViewport* viewport)
+{
+	return ImVec2(0,0); 
+}
+
+static void Hosted_Platform_SetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
+{
+}
+
+static ImVec2 Hosted_Platform_GetWindowSize(ImGuiViewport* viewport)
+{
+	return ImVec2(256,256);
+}
+
+static void Hosted_Platform_SetWindowSize(ImGuiViewport* viewport,ImVec2 sz)
+{
+}
+
+static void Hosted_Platform_SetWindowTitle(ImGuiViewport* viewport, const char* title)
+{
+}
+
+static void Hosted_Platform_SetWindowAlpha(ImGuiViewport* viewport, float alpha)
+{
+}
+static void Hosted_Platform_ShowWindow(ImGuiViewport* viewport)
+{
+}
+
+void ImGui_ImplPlatform_Hosted_InitPlatformInterface()
+{
+	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+
+	platform_io.Platform_CreateWindow	= Hosted_Platform_CreateWindow;
+	platform_io.Platform_DestroyWindow	= Hosted_Platform_DestroyWindow ;
+	platform_io.Platform_GetWindowPos	= Hosted_Platform_GetWindowPos  ;
+	platform_io.Platform_SetWindowPos	= Hosted_Platform_SetWindowPos  ;
+	platform_io.Platform_GetWindowSize	= Hosted_Platform_GetWindowSize ;
+	platform_io.Platform_SetWindowSize	= Hosted_Platform_SetWindowSize ;
+	platform_io.Platform_SetWindowTitle	=Hosted_Platform_SetWindowTitle;
+	platform_io.Platform_SetWindowAlpha	=Hosted_Platform_SetWindowAlpha;
+	platform_io.Platform_ShowWindow		=Hosted_Platform_ShowWindow;
+}
+
+
 void ImGui_ImplPlatform_InitPlatformInterface()
 {
 	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
-	platform_io.Renderer_CreateWindow = ImGui_ImplPlatform_CreateWindow;
-	platform_io.Renderer_DestroyWindow = ImGui_ImplPlatform_DestroyWindow;
-	platform_io.Renderer_SetWindowSize = ImGui_ImplPlatform_SetWindowSize;
-	platform_io.Renderer_RenderWindow = ImGui_ImplPlatform_RenderWindow;
-	platform_io.Renderer_SwapBuffers = ImGui_ImplPlatform_SwapBuffers;
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+
+/*	if(bd->hosted)
+	{
+		platform_io.Renderer_CreateWindow	= Hosted_Renderer_CreateWindow;
+		platform_io.Renderer_DestroyWindow	= Hosted_Renderer_DestroyWindow;
+		platform_io.Renderer_SetWindowSize	= Hosted_Renderer_SetWindowSize;
+		platform_io.Renderer_RenderWindow	= Hosted_Renderer_RenderWindow;
+		platform_io.Renderer_SwapBuffers	= Hosted_Renderer_SwapBuffers;
+	}
+	else*/
+	{
+		platform_io.Renderer_CreateWindow = ImGui_ImplPlatform_CreateWindow;
+		platform_io.Renderer_DestroyWindow = ImGui_ImplPlatform_DestroyWindow;
+		platform_io.Renderer_SetWindowSize = ImGui_ImplPlatform_SetWindowSize;
+		platform_io.Renderer_RenderWindow = ImGui_ImplPlatform_RenderWindow;
+		platform_io.Renderer_SwapBuffers = ImGui_ImplPlatform_SwapBuffers;
+	}
 }
 
 void ImGui_ImplPlatform_ShutdownPlatformInterface()
@@ -878,7 +961,7 @@ void ImGui_ImplPlatform_ShutdownPlatformInterface()
 }
 
 
-bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hosted)
+bool ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hosted)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (bd)
@@ -918,11 +1001,12 @@ bool	ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hos
 		// Our mouse update function expect PlatformHandle to be filled for the main viewport
 		ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 		main_viewport->PlatformHandle = main_viewport->PlatformHandleRaw = (void*)nullptr;
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			ImGui_ImplPlatform_InitPlatformInterface();
+		//if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		//	ImGui_ImplPlatform_Hosted_InitPlatformInterface();
 	}
 	return true;
 }
+
 void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice
 	,platform::crossplatform::RenderDelegate d,int width,int height)
 {
