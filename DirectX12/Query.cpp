@@ -93,6 +93,9 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 
 bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_t sz)
 {
+	if (!data)
+		return false;
+
 	gotResults[currFrame]	= true;
 	int prevFrame=currFrame;
 	currFrame				= (currFrame + 1) % QueryLatency;
@@ -100,10 +103,9 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 	if (mIsDisjoint)
 	{
 		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-		crossplatform::DisjointQueryStruct disjointData;
-		disjointData.Disjoint	= false;
-		disjointData.Frequency	= rPlat->GetTimeStampFreq();
-		memcpy(data, &disjointData, sz);
+		crossplatform::DisjointQueryStruct* disjointData = (crossplatform::DisjointQueryStruct*)data;
+		disjointData->Disjoint	= false;
+		disjointData->Frequency	= rPlat->GetTimeStampFreq();
 		return true;
 	}
 	// For now, only take into account time stamp queries
@@ -117,8 +119,7 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 	{
 		return false;
 	}
-	unsigned long long mTime=timestampQueryManager->GetTimestampQueryData(deviceContext,offset[currFrame]);
-	memcpy(data, &mTime, sz);
+	*(unsigned long long*)data = (unsigned long long)timestampQueryManager->GetTimestampQueryData(deviceContext,offset[currFrame]);
 	
 	//mReadBuffer->Unmap(0, &CD3DX12_RANGE(0, 0));
 
