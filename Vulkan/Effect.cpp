@@ -84,6 +84,8 @@ vk::QueryType Query::toVkQueryType(crossplatform::QueryType t)
 
 void Query::Begin(crossplatform::DeviceContext& deviceContext)
 {
+	deviceContext.renderPlatform->EndRenderPass(deviceContext);
+
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if(!mQueryPool)
 	{
@@ -98,6 +100,8 @@ void Query::Begin(crossplatform::DeviceContext& deviceContext)
 
 void Query::End(crossplatform::DeviceContext& deviceContext)
 {
+	deviceContext.renderPlatform->EndRenderPass(deviceContext);
+
 	if (!mQueryPool)
 	{
 		RestoreDeviceObjects(deviceContext.renderPlatform);

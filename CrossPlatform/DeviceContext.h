@@ -337,6 +337,7 @@ namespace platform
 			int framePrintX=0;
 			int framePrintY=0;
 			GraphicsDeviceContext();
+			~GraphicsDeviceContext();
 			ViewStruct viewStruct;
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();

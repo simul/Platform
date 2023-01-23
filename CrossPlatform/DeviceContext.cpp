@@ -83,6 +83,11 @@ GraphicsDeviceContext::GraphicsDeviceContext()
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
 }
 
+GraphicsDeviceContext::~GraphicsDeviceContext()
+{
+	renderPlatform->EndRenderPass(*(DeviceContext*)this);
+}
+
 std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()
 {
 	return targetStack;

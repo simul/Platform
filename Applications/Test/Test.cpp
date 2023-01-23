@@ -269,6 +269,8 @@ public:
 
 	~PlatformRenderer()
 	{
+		rwSB.~StructuredBuffer();
+		roSB.~StructuredBuffer();
 		delete texture;
 		delete test;
 		delete effect;
@@ -645,6 +647,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			/*double fTime = 0.0;
 			float time_step = 0.01f;
 			renderer->OnFrameMove(fTime, time_step);*/
+			platformRenderer->renderPlatform->BeginFrame();
 			displaySurfaceManager.Render(hWnd);
 			displaySurfaceManager.EndFrame();
 			platformRenderer->renderPlatform->EndFrame();
@@ -715,6 +718,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	platformRenderer = new PlatformRenderer(x64_API, test, commandLineParams("-debug"));
 	platformRenderer->OnCreateDevice();
 	displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
+	displaySurfaceManager.AddWindow(hWnd);
 	displaySurfaceManager.SetRenderer( platformRenderer);
 
 	// Main message loop:

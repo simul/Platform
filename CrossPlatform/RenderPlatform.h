@@ -456,6 +456,7 @@ namespace platform
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+			virtual void					EndRenderPass					(DeviceContext& deviceContext) {};
 
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			platform::core::MemoryInterface *GetAllocator()
