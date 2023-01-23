@@ -553,8 +553,10 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2((float)(ui_pixel_width), (float)(ui_pixel_height));
+#ifdef _WIN32
 		INT64 current_time = 0;
 		::QueryPerformanceCounter((LARGE_INTEGER*)&current_time);
+#endif
 		//io.DeltaTime = (float)(current_time - bd->Time) / bd->TicksPerSecond;
 		//bd->Time = current_time;
 
@@ -982,11 +984,13 @@ bool ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hos
 		ImGuiIO& io = ImGui::GetIO();
 		IM_ASSERT(io.BackendPlatformUserData == NULL && "Already initialized a platform backend!");
 
+#ifdef _WIN32
 		INT64 perf_frequency, perf_counter;
 		if (!::QueryPerformanceFrequency((LARGE_INTEGER*)&perf_frequency))
 			return false;
 		if (!::QueryPerformanceCounter((LARGE_INTEGER*)&perf_counter))
 			return false;
+#endif
 
 		// Setup backend capabilities flags
 		//ImGui_ImplPlatform_Data* bd = IM_NEW(ImGui_ImplPlatform_Data)();
