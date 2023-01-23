@@ -295,6 +295,17 @@ int TextFileInput::Get(const char *name,int dflt)
 	return atoi(properties[name].c_str());
 }
 
+uint TextFileInput::Get(const char* name, uint dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	if (_stricmp(properties[name].c_str(), "true") == 0)
+		return 1;
+	if (_stricmp(properties[name].c_str(), "false") == 0)
+		return 0;
+	return atoi(properties[name].c_str());
+}
+
 long long TextFileInput::Get(const char* name, long long dflt)
 {
 	if (properties.find(name) == properties.end())
@@ -355,6 +366,24 @@ float TextFileInput::Get(const char *name,float dflt)
 #else
 	return (float)atof(propNameStr.c_str());
 #endif 
+}
+
+uint3 TextFileInput::Get(const char* name, uint3 dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	uint val[3];
+	size_t pos = 0;
+	std::string str = properties[name];
+	for (int i = 0; i < 3; i++)
+	{
+		size_t comma_pos = str.find(",", pos + 1);
+		string s = str.substr(pos, comma_pos - pos);
+		val[i] = (uint)atoi(s.c_str());
+		pos = comma_pos + 1;
+	}
+	uint3 ret = val;
+	return ret;
 }
 
 int3 TextFileInput::Get(const char *name,int3 dflt)
@@ -638,6 +667,11 @@ void TextFileOutput::Set(const char *name,bool value)
 	properties[name]=core::stringFormat("%s",value?"true":"false");
 }
 
+void TextFileOutput::Set(const char* name, uint value)
+{
+	properties[name] = core::stringFormat("%u", value);
+}
+
 void TextFileOutput::Set(const char *name,int value)
 {
 	properties[name]=core::stringFormat("%d",value);
@@ -661,6 +695,11 @@ void TextFileOutput::Set(const char *name,double value)
 void TextFileOutput::Set(const char *name,float value)
 {
 	properties[name]=core::stringFormat("%16.16g",value);
+}
+
+void TextFileOutput::Set(const char* name, uint3 value)
+{
+	properties[name] = core::stringFormat("%u,%u,%u", value.x, value.y, value.z);
 }
 
 void TextFileOutput::Set(const char *name,int3 value)

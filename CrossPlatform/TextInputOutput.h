@@ -32,6 +32,8 @@ namespace simul
 			//! Boolean value of the specified element.
 			virtual bool Get(const char *name,bool default_)=0;
 			//! Integer value of the specified element.
+			virtual uint Get(const char* name, uint default_) = 0;
+			//! Integer value of the specified element.
 			virtual int Get(const char *name,int default_)=0;
 			//! 64-bit integer value of the specified element.
 			virtual long long Get(const char* name, long long default_) = 0;
@@ -41,6 +43,8 @@ namespace simul
 			virtual double Get(const char *name,double default_)=0;
 			//! Floating-point value of the specified element.
 			virtual float Get(const char *name,float default_)=0;
+			//! Integer value of the specified element.
+			virtual uint3 Get(const char* name, uint3 default_) = 0;
 			//! Integer value of the specified element.
 			virtual int3 Get(const char *name,int3 default_)=0;
 			//! Floating-point value of the specified element.
@@ -74,10 +78,13 @@ namespace simul
 			virtual void Set(const char *name,const char *value)=0;
 			virtual void Set(const char *name,bool value)=0;
 			virtual void Set(const char *name,int value)=0;
+			virtual void Set(const char* name,uint value) = 0;
 			virtual void Set(const char* name,long long value) = 0;
 			virtual void Set(const char* name,unsigned long long value) = 0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
+			// Unsigned Integer value of the specified element.
+			virtual void Set(const char* name,uint3 value) = 0;
 			// Integer value of the specified element.
 			virtual void Set(const char *name,int3 value)=0;
 			// Floating-point value of the specified element.
@@ -110,8 +117,10 @@ namespace simul
 			const char *Get(const char *name,const char *default_);
 			// Boolean value of the specified element.
 			bool Get(const char *name,bool default_);
+			// Unsigned Integer value of the specified element.
+			uint Get(const char *name,uint default_);
 			// Integer value of the specified element.
-			int Get(const char *name,int default_);
+			int Get(const char* name,int default_);
 			// Integer value of the specified element.
 			long long Get(const char* name, long long default_);
 			// Integer value of the specified element.
@@ -120,6 +129,7 @@ namespace simul
 			double Get(const char *name,double default_);
 			// Floating-point value of the specified element.
 			float Get(const char *name,float default_);
+			uint3 Get(const char* name,uint3 default_);
 			int3 Get(const char *name,int3 default_);
 			// Floating-point value of the specified element.
 			vec2 Get(const char *name,vec2 default_);
@@ -160,10 +170,12 @@ namespace simul
 			void Set(const char *name,const char *value);
 			void Set(const char *name,bool value);
 			void Set(const char *name,int value);
-			void Set(const char* name, long long value);
-			void Set(const char* name, unsigned long long value);
+			void Set(const char* name,uint value);
+			void Set(const char* name,long long value);
+			void Set(const char* name,unsigned long long value);
 			void Set(const char *name,double value);
 			void Set(const char *name,float value);
+			void Set(const char* name,uint3 value);
 			void Set(const char *name,int3 value);
 			// Floating-point value of the specified element.
 			void Set(const char *name,vec2 value);
