@@ -105,7 +105,7 @@ TextRenderer::FontIndex defaultFontIndices[]={
 {0.573242f	,0.576172f		,3},
 {0.577148f	,0.583984f		,7},
 };
-static int max_chars=1500;
+//static int max_chars=1500;
 
 TextRenderer::TextRenderer()
 	:effect(NULL)
@@ -200,6 +200,8 @@ int TextRenderer::GetDefaultTextHeight() const
 
 int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
+	int max_chars = (int)strnlen_s(txt, 8192);
+
 	if (recompile)
 		Recompile();
 	float transp[]={0.f,0.f,0.f,0.f};
