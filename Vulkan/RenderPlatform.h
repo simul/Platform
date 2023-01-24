@@ -270,7 +270,7 @@ namespace platform
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *final_layouts=nullptr);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
-			void									EndRenderPass(crossplatform::DeviceContext& deviceContext);
+			void									EndRenderPass(crossplatform::DeviceContext& deviceContext) override;
 			static std::string						VulkanResultString(vk::Result res);
 
 			// Vulkan-specific support for video decoding:
