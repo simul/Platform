@@ -1252,6 +1252,10 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 	{
 		deviceContext.asD3D11DeviceContext()->OMSetDepthStencilState(ds->m_depthStencilState,0);
 	}
+	if(ds->type==crossplatform::RASTERIZER)
+	{
+		deviceContext.asD3D11DeviceContext()->RSSetState(ds->m_rasterizerState);
+	}
 }
 
 void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)

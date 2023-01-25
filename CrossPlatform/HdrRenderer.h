@@ -52,6 +52,8 @@ namespace platform
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			crossplatform::Effect*				hdr_effect;
 			crossplatform::EffectTechnique*		exposureGammaTechnique;
+			crossplatform::EffectPass*			exposureGammaMainPass;
+			crossplatform::EffectPass*			exposureGammaMSAAPass;
 			crossplatform::EffectTechnique*		glowExposureGammaTechnique;
 			crossplatform::EffectTechnique*		warpExposureGamma;
 			crossplatform::EffectTechnique*		warpGlowExposureGamma;

@@ -10,6 +10,10 @@ inline void SetThreadName(std::thread &thread,const char *name)
 {
 	pthread_setname_np(thread.native_handle(), name);
 }
+inline void SetThisThreadName(const char *name)
+{
+	prctl(PR_SET_NAME, (long)name, 0, 0, 0);
+}
 
 inline int strcpy_s(char* dst, size_t size, const char* src)
 {

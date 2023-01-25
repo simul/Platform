@@ -5,6 +5,7 @@ typedef unsigned int THREAD_TYPE;
 #include <windows.h>
 #include <processthreadsapi.h>
 #include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringToWString.h"
 
 const DWORD MS_VC_SETTHREADNAME_EXCEPTION = 0x406D1388;  
 
@@ -34,6 +35,30 @@ inline void SetThreadName(std::thread &thread,const char *name)
 	{  
     }  
 #pragma warning(pop)  
+}
+inline void SetThisThreadName(const char *name)
+{
+#if 0
+ SetThreadDescription(
+        GetCurrentThread(),
+       StringToWString(name).c_str());
+    );
+#else
+	DWORD ThreadId = ::GetCurrentThreadId();
+    THREADNAME_INFO info;
+    info.szName = name;  
+    info.dwThreadID = ThreadId;
+#pragma warning(push)  
+#pragma warning(disable: 6320 6322)  
+    __try
+	{  
+        RaiseException(MS_VC_SETTHREADNAME_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);  
+    }  
+    __except (EXCEPTION_EXECUTE_HANDLER)
+	{  
+    }  
+#pragma warning(pop)  
+#endif
 }
 
 

@@ -553,18 +553,6 @@ void ImGui_ImplPlatform_NewFrame(bool in3d,int ui_pixel_width,int ui_pixel_heigh
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2((float)(ui_pixel_width), (float)(ui_pixel_height));
-#ifdef _WIN32
-		INT64 current_time = 0;
-		::QueryPerformanceCounter((LARGE_INTEGER*)&current_time);
-#endif
-		//io.DeltaTime = (float)(current_time - bd->Time) / bd->TicksPerSecond;
-		//bd->Time = current_time;
-
-		// Update OS mouse position
-		//ImGui_ImplWin32_UpdateMouseData();
-
-		// Process workarounds for known Windows key handling issues
-		//ImGui_ImplWin32_ProcessKeyEventsWorkarounds();
 	}
 	bd->drawTextures.clear();
 	for(auto &s:bd->scratchTextures)
