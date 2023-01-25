@@ -386,6 +386,24 @@ uint3 TextFileInput::Get(const char* name, uint3 dflt)
 	return ret;
 }
 
+int2 TextFileInput::Get(const char *name,int2 dflt)
+{
+	if(properties.find(name)==properties.end())
+		return dflt;
+	int val[2];
+	size_t pos=0;
+	std::string str=properties[name];
+	for(int i=0;i<2;i++)
+	{
+		size_t comma_pos=str.find(",",pos+1);
+		string s=str.substr(pos,comma_pos-pos);
+		val[i]=(int)atoi(s.c_str());
+		pos=comma_pos+1;
+	}
+	int2 ret=val;
+	return ret;
+}
+
 int3 TextFileInput::Get(const char *name,int3 dflt)
 {
 	if(properties.find(name)==properties.end())
@@ -400,7 +418,7 @@ int3 TextFileInput::Get(const char *name,int3 dflt)
 		val[i]=(int)atoi(s.c_str());
 		pos=comma_pos+1;
 	}
-	int3 ret=val;
+	int2 ret=val;
 	return ret;
 }
 
@@ -695,6 +713,11 @@ void TextFileOutput::Set(const char *name,double value)
 void TextFileOutput::Set(const char *name,float value)
 {
 	properties[name]=core::stringFormat("%16.16g",value);
+}
+
+void TextFileOutput::Set(const char* name, int2 value)
+{
+	properties[name] = core::stringFormat("%u,%u", value.x, value.y);
 }
 
 void TextFileOutput::Set(const char* name, uint3 value)
