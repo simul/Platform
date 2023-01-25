@@ -200,7 +200,7 @@ int TextRenderer::GetDefaultTextHeight() const
 
 int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
-	int max_chars = (int)strnlen_s(txt, 8192);
+	int max_chars = (int)strnlen(txt, 8192);
 
 	if (recompile)
 		Recompile();
@@ -312,7 +312,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	int passIndex = supportShaderViewID ? 0 : 1;
 	SIMUL_ASSERT_WARN(supportShaderViewID, "Graphics API doesn't support SV_ViewID/gl_ViewIndex in the shader. Falling back to single view rendering.");
 
-	int max_chars = (int)strnlen_s(txt, 8192);
+	int max_chars = (int)strnlen(txt, 8192);
 
 	if (recompile)
 		Recompile();
