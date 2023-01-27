@@ -45,6 +45,9 @@ void EffectPass::InvalidateDeviceObjects()
 	rp->PushToReleaseManager(m_DescriptorPool);
 	for (int i = 0; i < s_DescriptorSetCount; i++)
 	{
+		for(auto& descriptorSet : m_DescriptorSets[i])
+			rp->PushToReleaseManager(descriptorSet);
+
 		m_DescriptorSets[i].clear();
 		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
 	}
@@ -64,7 +67,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_LastFrameIndex = deviceContext.GetFrameNumber();
 	}
 	if (!m_Initialized)
-		CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
+		 CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
 
 	if (m_DescriptorSets_It[m_InternalFrameIndex] == m_DescriptorSets[m_InternalFrameIndex].end())
 	{
@@ -73,6 +76,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_DescriptorSets_It[m_InternalFrameIndex] = m_DescriptorSets[m_InternalFrameIndex].end();
 		m_DescriptorSets_It[m_InternalFrameIndex]--;
 		AllocateDescriptorSets(*m_DescriptorSets_It[m_InternalFrameIndex]);
+		//std::cout << "New Descriptor Set addded: 0x" << std::hex << (void*)((*m_DescriptorSets_It[m_InternalFrameIndex]).operator VkDescriptorSet()) << std::dec << std::endl;
 	}
 
 	ApplyContextState(deviceContext, *m_DescriptorSets_It[m_InternalFrameIndex]);
