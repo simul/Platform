@@ -418,7 +418,7 @@ int3 TextFileInput::Get(const char *name,int3 dflt)
 		val[i]=(int)atoi(s.c_str());
 		pos=comma_pos+1;
 	}
-	int2 ret=val;
+	int3 ret=val;
 	return ret;
 }
 

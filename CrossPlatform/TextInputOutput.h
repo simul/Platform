@@ -87,7 +87,7 @@ namespace simul
 			virtual void Set(const char *name,float value)=0;
 			// Unsigned Integer value of the specified element.
 			virtual void Set(const char* name,uint3 value) = 0;
-			virtual void Set(const char* name, int2 value) = 0;
+			virtual void Set(const char* name,int2 value) = 0;
 			virtual void Set(const char *name,int3 value)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec2 value)=0;
