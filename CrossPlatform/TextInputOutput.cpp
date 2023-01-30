@@ -368,6 +368,24 @@ float TextFileInput::Get(const char *name,float dflt)
 #endif 
 }
 
+uint2 TextFileInput::Get(const char* name, uint2 dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	uint val[2];
+	size_t pos = 0;
+	std::string str = properties[name];
+	for (int i = 0; i < 2; i++)
+	{
+		size_t comma_pos = str.find(",", pos + 1);
+		string s = str.substr(pos, comma_pos - pos);
+		val[i] = (uint)atoi(s.c_str());
+		pos = comma_pos + 1;
+	}
+	uint2 ret = val;
+	return ret;
+}
+
 uint3 TextFileInput::Get(const char* name, uint3 dflt)
 {
 	if (properties.find(name) == properties.end())
@@ -386,6 +404,42 @@ uint3 TextFileInput::Get(const char* name, uint3 dflt)
 	return ret;
 }
 
+uint4 TextFileInput::Get(const char* name, uint4 dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	uint val[4];
+	size_t pos = 0;
+	std::string str = properties[name];
+	for (int i = 0; i < 4; i++)
+	{
+		size_t comma_pos = str.find(",", pos + 1);
+		string s = str.substr(pos, comma_pos - pos);
+		val[i] = (uint)atoi(s.c_str());
+		pos = comma_pos + 1;
+	}
+	uint4 ret = val;
+	return ret;
+}
+
+int2 TextFileInput::Get(const char* name, int2 dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	int val[2];
+	size_t pos = 0;
+	std::string str = properties[name];
+	for (int i = 0; i < 2; i++)
+	{
+		size_t comma_pos = str.find(",", pos + 1);
+		string s = str.substr(pos, comma_pos - pos);
+		val[i] = (int)atoi(s.c_str());
+		pos = comma_pos + 1;
+	}
+	int2 ret = val;
+	return ret;
+}
+
 int3 TextFileInput::Get(const char *name,int3 dflt)
 {
 	if(properties.find(name)==properties.end())
@@ -401,6 +455,24 @@ int3 TextFileInput::Get(const char *name,int3 dflt)
 		pos=comma_pos+1;
 	}
 	int3 ret=val;
+	return ret;
+}
+
+int4 TextFileInput::Get(const char* name, int4 dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	int val[4];
+	size_t pos = 0;
+	std::string str = properties[name];
+	for (int i = 0; i < 4; i++)
+	{
+		size_t comma_pos = str.find(",", pos + 1);
+		string s = str.substr(pos, comma_pos - pos);
+		val[i] = (int)atoi(s.c_str());
+		pos = comma_pos + 1;
+	}
+	int4 ret = val;
 	return ret;
 }
 
@@ -697,14 +769,34 @@ void TextFileOutput::Set(const char *name,float value)
 	properties[name]=core::stringFormat("%16.16g",value);
 }
 
+void TextFileOutput::Set(const char* name, uint2 value)
+{
+	properties[name] = core::stringFormat("%u,%u", value.x, value.y);
+}
+
 void TextFileOutput::Set(const char* name, uint3 value)
 {
 	properties[name] = core::stringFormat("%u,%u,%u", value.x, value.y, value.z);
 }
 
+void TextFileOutput::Set(const char* name, uint4 value)
+{
+	properties[name] = core::stringFormat("%u,%u,%u,%u", value.x, value.y, value.z, value.w);
+}
+
+void TextFileOutput::Set(const char* name, int2 value)
+{
+	properties[name] = core::stringFormat("%d,%d", value.x, value.y);
+}
+
 void TextFileOutput::Set(const char *name,int3 value)
 {
 	properties[name]=core::stringFormat("%d,%d,%d",value.x,value.y,value.z);
+}
+
+void TextFileOutput::Set(const char* name, int4 value)
+{
+	properties[name] = core::stringFormat("%d,%d,%d,%d", value.x, value.y, value.z, value.w);
 }
 
 void TextFileOutput::Set(const char *name,vec2 value)
