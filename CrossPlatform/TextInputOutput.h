@@ -42,7 +42,17 @@ namespace platform
 			//! Floating-point value of the specified element.
 			virtual float Get(const char *name,float default_)=0;
 			//! Integer value of the specified element.
+			virtual uint2 Get(const char* name,uint2 default_)=0;
+			//! Integer value of the specified element.
+			virtual uint3 Get(const char* name,uint3 default_)=0;
+			//! Integer value of the specified element.
+			virtual uint4 Get(const char* name,uint4 default_)=0;
+			//! Integer value of the specified element.
+			virtual int2 Get(const char *name,int2 default_)=0;
+			//! Integer value of the specified element.
 			virtual int3 Get(const char *name,int3 default_)=0;
+			//! Integer value of the specified element.
+			virtual int4 Get(const char *name,int4 default_)=0;
 			//! Floating-point value of the specified element.
 			virtual vec2 Get(const char *name,vec2 default_)=0;
 			//! Floating-point value of the specified element.
@@ -78,8 +88,18 @@ namespace platform
 			virtual void Set(const char* name,unsigned long long value) = 0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
+			// Unsigned Integer value of the specified element.
+			virtual void Set(const char *name,uint2 value)=0;
+			// Unsigned Integer value of the specified element.
+			virtual void Set(const char *name,uint3 value)=0;
+			// Unsigned Integer value of the specified element.
+			virtual void Set(const char *name,uint4 value)=0;
+			// Integer value of the specified element.
+			virtual void Set(const char *name,int2 value)=0;
 			// Integer value of the specified element.
 			virtual void Set(const char *name,int3 value)=0;
+			// Integer value of the specified element.
+			virtual void Set(const char *name,int4 value)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec2 value)=0;
 			// Floating-point value of the specified element.
@@ -120,7 +140,18 @@ namespace platform
 			double Get(const char *name,double default_);
 			// Floating-point value of the specified element.
 			float Get(const char *name,float default_);
-			int3 Get(const char *name,int3 default_);
+			// Integer value of the specified element.
+			uint2 Get(const char* name, uint2 default_);
+			// Integer value of the specified element.
+			uint3 Get(const char* name, uint3 default_);
+			// Integer value of the specified element.
+			uint4 Get(const char* name, uint4 default_);
+			// Integer value of the specified element.
+			int2 Get(const char* name, int2 default_);
+			// Integer value of the specified element.
+			int3 Get(const char* name, int3 default_);
+			// Integer value of the specified element.
+			int4 Get(const char* name, int4 default_);
 			// Floating-point value of the specified element.
 			vec2 Get(const char *name,vec2 default_);
 			// Floating-point value of the specified element.
@@ -164,7 +195,12 @@ namespace platform
 			void Set(const char* name, unsigned long long value);
 			void Set(const char *name,double value);
 			void Set(const char *name,float value);
-			void Set(const char *name,int3 value);
+			void Set(const char* name, uint2 value);
+			void Set(const char* name, uint3 value);
+			void Set(const char* name, uint4 value);
+			void Set(const char* name, int2 value);
+			void Set(const char* name, int3 value);
+			void Set(const char* name, int4 value);
 			// Floating-point value of the specified element.
 			void Set(const char *name,vec2 value);
 			// Floating-point value of the specified element.
