@@ -45,9 +45,6 @@ void EffectPass::InvalidateDeviceObjects()
 	rp->PushToReleaseManager(m_DescriptorPool);
 	for (int i = 0; i < s_DescriptorSetCount; i++)
 	{
-		for(auto& descriptorSet : m_DescriptorSets[i])
-			rp->PushToReleaseManager(descriptorSet);
-
 		m_DescriptorSets[i].clear();
 		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
 	}
@@ -606,10 +603,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			descriptorSetLayoutCI.setBindingCount(bindingIndex).setPBindings(layoutBindings);
 		}
 	}
-	/*else
-	{
-		SIMUL_COUT << "No inputs to shader" << std::endl;
-	}*/
 
 	//Override Desciptor Set Layout CreateInfo for Video Source?
 	if (m_VideoSource)
