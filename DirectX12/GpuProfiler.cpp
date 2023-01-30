@@ -78,11 +78,7 @@ void TimestampQueryManager::EndFrame(crossplatform::DeviceContext &deviceContext
 
 void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset)
 {
-/*	if(deviceContext.frame_number!=last_frame_number)
-	{
-		StartFrame(deviceContext);
-	}*/
-		if(mTimestampQueryHeapOffset>=mTimestampQueryHeapSize[mTimestampQueryCurrFrame])
+	if(mTimestampQueryHeapOffset>=mTimestampQueryHeapSize[mTimestampQueryCurrFrame])
 	{
 		if(mTimestampQueryData)
 		{
@@ -144,7 +140,8 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &CD3DX12_RANGE(0, 0));
 			//SIMUL_COUT<<"UnMapped 0x"<<std::hex<<(unsigned long long)mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]<<std::endl;
 		}
-	// At frame end, do all the resolves.
+
+		// At frame end, do all the resolves.
 		commandList->ResolveQueryData
 		(
 			mTimestampQueryHeap[mTimestampQueryCurrFrame], D3D12_QUERY_TYPE_TIMESTAMP,
@@ -154,7 +151,7 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 		int lastFrame=(mTimestampQueryCurrFrame)%4;
 		if(mTimestampQueryReadBuffer[lastFrame])
 		{
-			HRESULT res				=mTimestampQueryReadBuffer[lastFrame]->Map(0, &CD3DX12_RANGE(0, mTimestampQueryHeapOffset), reinterpret_cast<void**>(&mTimestampQueryData));
+			HRESULT res = mTimestampQueryReadBuffer[lastFrame]->Map(0, &CD3DX12_RANGE(0, mTimestampQueryHeapOffset), reinterpret_cast<void**>(&mTimestampQueryData));
 			if(res != S_OK)
 				return 0;
 			bMapped[lastFrame]=true;
@@ -185,7 +182,7 @@ void GpuProfiler::InvalidateDeviceObjects()
 	crossplatform::GpuProfiler::InvalidateDeviceObjects();
 }
 
-void	GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
+void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
 	crossplatform::GpuProfiler::StartFrame(deviceContext);
 	timestampQueryManager.StartFrame(deviceContext);

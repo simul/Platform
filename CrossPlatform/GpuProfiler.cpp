@@ -76,7 +76,7 @@ GpuProfiler::~GpuProfiler()
 void GpuProfiler::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform = r;
-    enabled=true;
+	enabled=true;
 }
 
 void GpuProfiler::InvalidateDeviceObjects()
@@ -84,8 +84,8 @@ void GpuProfiler::InvalidateDeviceObjects()
 #ifdef SIMUL_WIN8_SDK
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
-    renderPlatform = NULL;
-    enabled=true;
+	renderPlatform = NULL;
+	enabled=true;
 	profileStack.clear();
 	BaseProfilingInterface::Clear();
 }
@@ -109,7 +109,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	{
 		if(!enabled||!renderPlatform)
 			return;
-	    crossplatform::ProfileData *parentData=NULL;
+		crossplatform::ProfileData *parentData=NULL;
 		if(profileStack.size())
 			parentData=(crossplatform::ProfileData*)profileStack.back();
 		else
@@ -157,10 +157,10 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		}
 		if(profileData->DisjointQuery)
 		{
-		// Start a disjoint query first
+			// Start a disjoint query first
 			profileData->DisjointQuery->Begin(deviceContext);
 
-		// Insert the start timestamp   
+			// Insert the start timestamp
 			profileData->TimestampStartQuery->End(deviceContext);
 
 			profileData->QueryStarted = true;
@@ -191,20 +191,21 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 	if(!profileStack.size())
 		return;
 	
-    crossplatform::ProfileData *profileData=(crossplatform::ProfileData *)profileStack.back();
+	crossplatform::ProfileData *profileData=(crossplatform::ProfileData *)profileStack.back();
 	
 	profileStack.pop_back();
-    if(profileData->QueryStarted != true)
+	if(profileData->QueryStarted != true)
 		return;
 	profileData->updatedThisFrame=true;
-    SIMUL_ASSERT(profileData->QueryFinished == false);
-    // Insert the end timestamp    
+	SIMUL_ASSERT(profileData->QueryFinished == false);
+	
+	// Insert the end timestamp
 	profileData->TimestampEndQuery->End(deviceContext);
-    //context->End(profileData->TimestampEndQuery[currFrame]);
+	// End the disjoint query
 	profileData->DisjointQuery->End(deviceContext);
-    // End the disjoint query
-    profileData->QueryStarted = false;
-    profileData->QueryFinished = true;
+	
+	profileData->QueryStarted = false;
+	profileData->QueryFinished = true;
 }
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
@@ -224,7 +225,7 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 
 void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *profile)
 {
-    for(auto i:profile->children)
+	for(auto i:profile->children)
 	{
 		WalkEndFrame(deviceContext,(crossplatform::ProfileData*)i.second);
 	}
@@ -267,28 +268,25 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 	// Get the query data
 	UINT64 startTime = 0;
 	bool ok=profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime));
-		
-//       while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
 
-    UINT64 endTime = 0;
+	UINT64 endTime = 0;
 	ok&=profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime));
-    // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
 	
-    crossplatform::DisjointQueryStruct disjointData;
-    ok&=profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData));
+	crossplatform::DisjointQueryStruct disjointData;
+	ok&=profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData));
 	if(!ok)
 	{
 		// Takes a few frames to spool up...
 		//SIMUL_CERR<<"Failed to retrieve timestamp data. Can only do this from the Immediate Context."<<std::endl;
 		return;
 	}
-    timer.UpdateTime();
-    queryTime += timer.Time;
+	timer.UpdateTime();
+	queryTime += timer.Time;
 
-    float time = 0.0f;
-    if(disjointData.Disjoint == false)
-    {
-        UINT64 delta = endTime - startTime;
+	float time = 0.0f;
+	if(disjointData.Disjoint == false)
+	{
+		UINT64 delta = endTime - startTime;
 		if(endTime>startTime)
 		{
 			float frequency = static_cast<float>(disjointData.Frequency);
@@ -299,8 +297,7 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			time=0.0f;
 		}
 	}
-	if ((strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
-		|| (deviceContext.renderPlatform->AsVulkanDevice() != nullptr))
+	else
 	{
 		UINT64 delta = endTime - startTime;
 		if (endTime > startTime)
@@ -324,15 +321,15 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 	{
 		level=0;
 		Clear();
-        return;
+		return;
 	}
-    if(!root||!enabled||!renderPlatform||!frame_active)
-        return;
+	if(!root||!enabled||!renderPlatform||!frame_active)
+		return;
 
-    currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
+	currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;
 
-    queryTime = 0.0f;
-    timer.StartTime();
+	queryTime = 0.0f;
+	timer.StartTime();
 	
 	WalkEndFrame(deviceContext,(crossplatform::ProfileData*)root);
 
@@ -340,20 +337,20 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 	for(auto i=root->children.begin();i!=root->children.end();i++)
 	{
 		// Only add to total time if we updated the time this frame
- 		if (i->second->updatedThisFrame)
- 		{
- 			root->time+=i->second->time;
- 		}
+		if (i->second->updatedThisFrame)
+		{
+			root->time+=i->second->time;
+		}
 	}
 	frame_active=false;
 }
 
 template<typename T> inline std::string ToString(const T& val)
 {
-    std::ostringstream stream;
-    if (!(stream << val))
-        SIMUL_BREAK("Error converting value to string");
-    return stream.str();
+	std::ostringstream stream;
+	if (!(stream << val))
+		SIMUL_BREAK("Error converting value to string");
+	return stream.str();
 }
 
 const char *GpuProfiler::GetDebugText(core::TextStyle style) const
@@ -361,7 +358,7 @@ const char *GpuProfiler::GetDebugText(core::TextStyle style) const
 	static std::string str;
 	str=BaseProfilingInterface::GetDebugText();
 	
-    str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
+	str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 	str += (style == core::HTML) ? "<br/>" : "\n";
 	return str.c_str();
 }
