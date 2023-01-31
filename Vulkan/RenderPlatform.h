@@ -154,9 +154,8 @@ namespace platform
 			void PushToReleaseManager(vk::Image& i);
 			void PushToReleaseManager(vk::Sampler& i);
 			void PushToReleaseManager(vk::PipelineLayout& i);
-			void PushToReleaseManager(vk::DescriptorSet& i);
 			void PushToReleaseManager(vk::DescriptorSetLayout& i);
-			void PushToReleaseManager(vk::DescriptorPool& i);
+			void PushToReleaseManager(vk::DescriptorPool& i); //All descriptor sets allocated from the pool are implicitly freed and become invalid.
 			void ClearReleaseManager();
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
@@ -285,6 +284,7 @@ namespace platform
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;
 			vk::Sampler										vulkanSamplerYcbcr;
+
 			bool											resourcesToBeReleased=false;
 			std::set<vk::Buffer>							releaseBuffers;
 			std::set<vk::BufferView>						releaseBufferViews;
@@ -296,9 +296,7 @@ namespace platform
 			std::set<vk::Sampler>							releaseSamplers;
 			std::set<vk::Pipeline>							releasePipelines;
 			std::set<vk::PipelineCache>						releasePipelineCaches;
-
 			std::set<vk::PipelineLayout>					releasePipelineLayouts;
-			std::set<vk::DescriptorSet>						releaseDescriptorSets;
 			std::set<vk::DescriptorSetLayout>				releaseDescriptorSetLayouts;
 			std::set<vk::DescriptorPool>					releaseDescriptorPools;
 
