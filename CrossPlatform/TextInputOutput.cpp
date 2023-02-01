@@ -292,6 +292,17 @@ int TextFileInput::Get(const char *name,int dflt)
 	return atoi(properties[name].c_str());
 }
 
+uint TextFileInput::Get(const char* name, uint dflt)
+{
+	if (properties.find(name) == properties.end())
+		return dflt;
+	if (_stricmp(properties[name].c_str(), "true") == 0)
+		return 1;
+	if (_stricmp(properties[name].c_str(), "false") == 0)
+		return 0;
+	return (uint)strtoul(properties[name].c_str(),nullptr,0);
+}
+
 long long TextFileInput::Get(const char* name, long long dflt)
 {
 	if (properties.find(name) == properties.end())
@@ -728,6 +739,11 @@ void TextFileOutput::Set(const char *name,bool value)
 void TextFileOutput::Set(const char *name,int value)
 {
 	properties[name]=core::stringFormat("%d",value);
+}
+
+void TextFileOutput::Set(const char *name,uint value)
+{
+	properties[name]=core::stringFormat("%u",value);
 }
 
 void TextFileOutput::Set(const char* name, long long value)

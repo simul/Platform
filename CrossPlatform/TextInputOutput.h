@@ -33,6 +33,8 @@ namespace platform
 			virtual bool Get(const char *name,bool default_)=0;
 			//! Integer value of the specified element.
 			virtual int Get(const char *name,int default_)=0;
+			//! Integer value of the specified element.
+			virtual uint Get(const char *name,uint default_)=0;
 			//! 64-bit integer value of the specified element.
 			virtual long long Get(const char* name, long long default_) = 0;
 			//! 64-bit integer value of the specified element.
@@ -84,6 +86,7 @@ namespace platform
 			virtual void Set(const char *name,const char *value)=0;
 			virtual void Set(const char *name,bool value)=0;
 			virtual void Set(const char *name,int value)=0;
+			virtual void Set(const char *name,uint value)=0;
 			virtual void Set(const char* name,long long value) = 0;
 			virtual void Set(const char* name,unsigned long long value) = 0;
 			virtual void Set(const char *name,double value)=0;
@@ -132,6 +135,8 @@ namespace platform
 			bool Get(const char *name,bool default_);
 			// Integer value of the specified element.
 			int Get(const char *name,int default_);
+			// Integer value of the specified element.
+			uint Get(const char *name,uint default_);
 			// Integer value of the specified element.
 			long long Get(const char* name, long long default_);
 			// Integer value of the specified element.
@@ -191,6 +196,7 @@ namespace platform
 			void Set(const char *name,const char *value);
 			void Set(const char *name,bool value);
 			void Set(const char *name,int value);
+			void Set(const char *name,uint value);
 			void Set(const char* name, long long value);
 			void Set(const char* name, unsigned long long value);
 			void Set(const char *name,double value);
