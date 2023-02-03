@@ -6,7 +6,7 @@
 	url = https://github.com/nothings/stb.git
 [submodule "External/fmt"]
 	path = External/fmt
-	url = https://github.com/fmtlib/fmt.git
+	url = ../fmt.git
 [submodule "External/assimp"]
 	path = External/assimp
 	url = https://github.com/assimp/assimp.git
