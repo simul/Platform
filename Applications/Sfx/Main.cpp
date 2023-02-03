@@ -423,6 +423,10 @@ int main(int argc, char** argv)
 		{
 			sfxConfig.supportRaytracing = j["supportRaytracing"];
 		}
+		if (j.count("supportMultiview") > 0)
+		{
+			sfxConfig.supportMultiview = j["supportMultiview"];
+		}
 	}
 	catch(std::exception &e)
 	{
