@@ -4,34 +4,28 @@
 //! by removing a run time "if". This should only be on release builds...
 #define D3DCOMPILE_NO_DEBUG 1 
 
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	#define SIMUL_DX12_SLOTS_CHECK
-#endif
 #endif
 
 #include <DirectXMath.h>
 
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
-	#if defined(_GAMING_XBOX_SCARLETT) ||  defined(_GAMING_XBOX_XBOXONE)
-		#include "ThisPlatform/Direct3D12.h"
+#if defined(_GAMING_XBOX)
+	#if defined(_GAMING_XBOX_SCARLETT)
 		#undef PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
-		#define PLATFORM_SUPPORT_D3D12_VIEWINSTANCING 0 //Xbox Series X/S and Xbox One X/S do not support View Instancing.
-	#else
-		#ifndef _GAMING_XBOX //Deprecated from the GDK
-			#include <D3Dcompiler_x.h>
-		#else
-			#include <D3Dcompiler.h>
-		#endif
-	#include <d3d12_x.h>		//! core 12.x header
-	#include <d3dx12_x.h>		//! utility 12.x header
+		#define PLATFORM_SUPPORT_D3D12_VIEWINSTANCING 0 //Xbox Series X|S do not support View Instancing.
 	#endif
-//	#include <dxgi1_6.h>
+	#if defined(_GAMING_XBOX_XBOXONE)
+		#undef PLATFORM_SUPPORT_D3D12_RAYTRACING
+		#define PLATFORM_SUPPORT_D3D12_RAYTRACING 0 //Xbox One X/S do not support Ray Tracing.
+		#undef PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
+		#define PLATFORM_SUPPORT_D3D12_VIEWINSTANCING 0 //Xbox One X/S do not support View Instancing.
+	#endif
 	#define MONOLITHIC 1
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 1 
 	#define SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK 1 
 	#define SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE 0x40 
-#else
+#else //PC
 	#include <D3Dcompiler.h>
 	#include <dxgi.h>
 	#include <dxgi1_5.h>
@@ -55,7 +49,7 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 		return;
 	}
 	UINT size=0;
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
 	// not implemented?????
 	name[0] = 0;
 #else
@@ -123,7 +117,7 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 	#define SAFE_DELETE_ARRAY_MEMBERS(p,n)	{ if(p) for(int i=0;i<int(n);i++) if(p[i]) { delete (p[i]); (p[i])=nullptr; } }
 #endif
 
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
     #define  SIMUL_PPV_ARGS IID_GRAPHICS_PPV_ARGS
 #else
     #define  SIMUL_PPV_ARGS IID_PPV_ARGS

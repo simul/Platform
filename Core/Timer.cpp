@@ -6,9 +6,6 @@ using namespace platform::core;
 	#if defined (WIN32) || defined (WIN64) || defined(WINAPI_FAMILY_DESKTOP_APP) //WinGDK
 		#include <windows.h>
 		#include <mmsystem.h>
-	#elif defined (_XBOX_ONE)
-		#include <xdk.h>
-		#include <wrl.h>
 	#elif defined (_GAMING_XBOX)
 		#include <gxdk.h>
 		#include <wrl.h>

@@ -69,7 +69,6 @@ public:
 		if(fn.find(":")>=fn.length())
 		{
 			char buffer[_MAX_PATH];
-#ifndef _XBOX_ONE
 #ifdef _MSC_VER
 			if(_getcwd(buffer,_MAX_PATH))
 #else
@@ -78,7 +77,6 @@ public:
 			{
 				fn=buffer;
 			}
-#endif
 			fn+="/";
 			fn+=logfilename;
 		}

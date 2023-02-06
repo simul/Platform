@@ -2,18 +2,13 @@
 #define GRAPHICSDEVICEINTERFACE
 #include <string>
 
-#ifdef _XBOX_ONE
-#ifdef DECLARE_HANDLE
-typedef HWND cp_hwnd;
-#else
-typedef void* cp_hwnd;
-#endif
-#elif !defined(DOXYGEN) && defined(_MSC_VER)
+#if !defined(DOXYGEN) && defined(_MSC_VER)
 #include <Windows.h>
 #define cp_hwnd HWND
 #else
 typedef void* cp_hwnd;
 #endif
+
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/RenderDelegate.h"
 

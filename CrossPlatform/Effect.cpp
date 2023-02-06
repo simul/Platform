@@ -699,7 +699,7 @@ bool Effect::Compile(const char *filename_utf8)
 
 bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
-#if defined(WIN32) &&!defined(_XBOX_ONE)&&!defined(_GAMING_XBOX)
+#if defined(WIN32) && !defined(_GAMING_XBOX)
 	// We will only recompile if we are in windows
 	// SFX will handle the "if changed"
 	auto buildMode = r->GetShaderBuildMode();
