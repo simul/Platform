@@ -381,8 +381,8 @@ const char *GpuProfiler::GetDebugText(core::TextStyle style) const
 {
 	static std::string str;
 	str=BaseProfilingInterface::GetDebugText();
-	
-    str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
+	char s[20];
+    str+= ("Time spent waiting for queries: "s + core::QuickFormat(s,"%3.3f",queryTime)) + "ms"s;
 	str += (style == core::HTML) ? "<br/>" : "\n";
 	return str.c_str();
 }

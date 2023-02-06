@@ -193,6 +193,7 @@ void TextRenderer::Recompile()
 	textureResource	=effect->GetShaderResource("fontTexture");
 	_fontChars		=effect->GetShaderResource("fontChars");
 }
+
 int TextRenderer::GetDefaultTextHeight() const
 {
 	return defaultTextHeight;

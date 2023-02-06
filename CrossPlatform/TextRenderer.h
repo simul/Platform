@@ -46,7 +46,7 @@ namespace platform
 			crossplatform::ShaderResource				textureResource;
 			crossplatform::ShaderResource				_fontChars;
 			crossplatform::ConstantBuffer<TextConstants>	constantBuffer;
-			// We k
+	
 			std::map<const void*,crossplatform::StructuredBuffer<FontChar>> fontChars;
 			crossplatform::Texture*			font_texture;
 			crossplatform::RenderPlatform *renderPlatform;
