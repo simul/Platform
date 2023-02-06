@@ -24,6 +24,7 @@
 	},
 	"generateSlots": true,
 	"sharedSlots": false,
+	"supportMultiview": true,
 	"lineDirectiveFilenames": true,
 	"passThroughSamplers": true,
 	"combineTexturesSamplers": true,

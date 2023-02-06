@@ -49,6 +49,7 @@ struct SfxConfig
 		,combineInShader(false)
 		,forceSM51(false)
 		,supportRaytracing(false)
+		,supportMultiview(false)
 	{
 		samplerDeclaration= "SamplerState {name}: register(s{slot});";
 	}
@@ -140,6 +141,8 @@ struct SfxConfig
 	bool forceSM51;
 	//! Does this API support Raytracing
 	bool supportRaytracing;
+	//! Does this API support multiview rendering or view instancing
+	bool supportMultiview;
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
 	//! Maximum shader model number

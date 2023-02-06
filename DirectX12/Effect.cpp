@@ -742,7 +742,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	// Create it:
 	auto* device = curRenderPlat->AsD3D12Device();
 	ID3D12Device2* device2 = nullptr;
-	HRESULT res = device->QueryInterface(&device2);
+	HRESULT res = device->QueryInterface(SIMUL_PPV_ARGS(&device2));
 	if (res == S_OK && device2)
 	{
 		D3D12_PIPELINE_STATE_STREAM_DESC gpssd;

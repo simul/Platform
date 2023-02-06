@@ -53,6 +53,8 @@ typedef struct stat Stat;
 using namespace std;
 typedef std::function<void(const std::string &)> OutputDelegate;
 
+extern bool ShaderInstanceHasSemanic(ShaderInstance* shaderInstance, const char* semantic);
+
 #if 0
 static std::string WStringToUtf8(const wchar_t *src_w)
 {
@@ -689,7 +691,6 @@ int Compile(ShaderInstance *shader
 			};
 
 			std::cout << "Warning: Raytracing shader not supported. Type: " << RTShaderTypeToStr(t) << " Name: " << shader->m_functionName << ".\n";
-			//std::cout << "Warning: " << filenameOnly << " will not generate a " << filenameOnly << "o or a " << filenameOnly << "b.\n";
 			return 1; //Return 1 here, not compiling raytracing shaders is okay.
 		}
 	}
@@ -698,6 +699,16 @@ int Compile(ShaderInstance *shader
 	};
 	if(shaderTypeSuffix.length())
 		targetFilename+=L"_"+shaderTypeSuffix;
+
+	//Check for multiview compatibility
+	bool multiview = false;
+	multiview |= ShaderInstanceHasSemanic(shader, "SV_ViewID");
+	multiview |= ShaderInstanceHasSemanic(shader, "SV_ViewId");
+	if (!sfxConfig.supportMultiview && multiview)
+	{
+		std::cout << "Warning: Multiview shader not supported. Name: " << shader->m_functionName << ".\n";
+		return 1; //Return 1 here, not compiling multiview shaders is okay.
+	}
 
 	// Add the root signature (we want to keep it at the top of the file):
 	if (!sfxConfig.graphicsRootSignatureSource.empty())

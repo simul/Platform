@@ -3181,10 +3181,12 @@ public:
 template<class SI_CHAR>
 struct SI_NoCase {
     bool operator()(const SI_CHAR * pLeft, const SI_CHAR * pRight) const {
+#ifdef _CRT_USE_WINAPI_FAMILY_DESKTOP_APP
         if (sizeof(SI_CHAR) == sizeof(char)) {
             return _mbsicmp((const unsigned char *)pLeft,
                 (const unsigned char *)pRight) < 0;
         }
+#endif
         if (sizeof(SI_CHAR) == sizeof(wchar_t)) {
             return _wcsicmp((const wchar_t *)pLeft,
                 (const wchar_t *)pRight) < 0;

@@ -272,11 +272,6 @@ void RenderPlatform::PushToReleaseManager(vk::PipelineLayout& i)
 	releasePipelineLayouts.insert(i);
 	resourcesToBeReleased = true;
 }
-void RenderPlatform::PushToReleaseManager(vk::DescriptorSet& i)
-{
-	releaseDescriptorSets.insert(i);
-	resourcesToBeReleased = true;
-}
 void RenderPlatform::PushToReleaseManager(vk::DescriptorSetLayout& i)
 {
 	releaseDescriptorSetLayouts.insert(i);
@@ -304,14 +299,8 @@ void RenderPlatform::ClearReleaseManager()
 		vulkanDevice->freeMemory(i, nullptr);
 	}
 	releaseMemories.clear();
-
 	for (auto i : releaseImageViews)
 	{
-		auto f = RenderPlatform::ResourceMap.find((unsigned long long) & i);
-		if (f != RenderPlatform::ResourceMap.end())
-		{
-			SIMUL_COUT << " Releasing Vulkan ImageView " << std::hex << i << " (" << f->second.c_str() << ")" << std::endl;
-		}
 		vulkanDevice->destroyImageView(i, nullptr);
 	}
 	releaseImageViews.clear();
@@ -355,11 +344,6 @@ void RenderPlatform::ClearReleaseManager()
 		vulkanDevice->destroyDescriptorSetLayout(i, nullptr);
 	}
 	releaseDescriptorSetLayouts.clear();
-	for (auto i : releaseDescriptorSets)
-	{
-		//vulkanDevice->destroyDescriptorSet(i,nullptr);
-	}
-	releaseDescriptorSets.clear();
 	for (auto i : releaseDescriptorPools)
 	{
 		vulkanDevice->destroyDescriptorPool(i, nullptr);

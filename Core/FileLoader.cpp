@@ -24,18 +24,23 @@ std::string platform::core::GetExeDirectory()
     // Windows specific
     wchar_t szPath[MAX_PATH];
     GetModuleFileNameW( NULL, szPath, MAX_PATH );
-#else
-    char szPath[PATH_MAX];
-#if UNIX
+#endif
+
+#ifdef UNIX
     // Linux specific
+    char szPath[PATH_MAX];
     ssize_t count = readlink( "/proc/self/exe", szPath, PATH_MAX );
     if( count < 0 || count >= PATH_MAX )
         return {}; // some error
     szPath[count] = '\0';
 #endif
-#endif
+
+#if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
 	std::filesystem::path p=std::filesystem::path{ szPath }.parent_path() / ""; // to finish the folder path with (back)slash
 	return p.string();
+#else
+	return std::string();
+#endif
 }
 
 std::vector<std::string> FileLoader::ListDirectory(const std::string& path) const

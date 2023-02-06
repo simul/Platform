@@ -282,7 +282,7 @@ void DeviceManager::Shutdown()
 	if(!mDevice)
 		return;
 
-#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO)
+#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO) && !defined(_GAMING_XBOX)
 	ID3D12InfoQueue1* infoQueue1 = nullptr;
 	mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue1));
 	if (infoQueue1)
