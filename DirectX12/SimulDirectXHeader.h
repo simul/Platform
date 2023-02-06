@@ -15,6 +15,8 @@
 #if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
 	#if defined(_GAMING_XBOX_SCARLETT) ||  defined(_GAMING_XBOX_XBOXONE)
 		#include "ThisPlatform/Direct3D12.h"
+		#undef PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
+		#define PLATFORM_SUPPORT_D3D12_VIEWINSTANCING 0 //Xbox Series X/S and Xbox One X/S do not support View Instancing.
 	#else
 		#ifndef _GAMING_XBOX //Deprecated from the GDK
 			#include <D3Dcompiler_x.h>

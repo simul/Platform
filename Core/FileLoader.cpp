@@ -35,7 +35,7 @@ std::string platform::core::GetExeDirectory()
     szPath[count] = '\0';
 #endif
 
-#if PLATFORM_STD_FILESYSTEM
+#if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
 	std::filesystem::path p=std::filesystem::path{ szPath }.parent_path() / ""; // to finish the folder path with (back)slash
 	return p.string();
 #else
