@@ -44,11 +44,7 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	,untextured(nullptr)
 	,showVolume(nullptr)
 	,gpuProfiler(nullptr)
-#ifdef _XBOX_ONE
-	,can_save_and_restore(false)
-#else
 	,can_save_and_restore(true)
-#endif
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
 {

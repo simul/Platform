@@ -111,7 +111,7 @@ namespace platform
 			const char* GetName() const override { return PLATFORM_NAME; }
 			crossplatform::RenderPlatformType GetType() const override
 			{
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
 				return crossplatform::RenderPlatformType::XboxOneD3D12;
 #else
 				return crossplatform::RenderPlatformType::D3D12;
@@ -131,7 +131,7 @@ namespace platform
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the device for raytracing, or nullptr if unavailable. You must call Release() on this pointer, as it is created via QueryInterface().
-#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
+#if !defined(_GAMING_XBOX_XBOXONE)
 			ID3D12Device5*					AsD3D12Device5();
 #endif
 			//! Returns the queue created during RestoreDeviceObjects
@@ -381,7 +381,7 @@ namespace platform
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
 			crossplatform::TargetsAndViewport mTargets;
-			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
+			#if !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
 			ID3D12RootSignature *LoadRootSignature(const char *filename);

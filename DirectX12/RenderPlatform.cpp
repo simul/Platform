@@ -22,8 +22,9 @@
 #include "Platform/DirectX12/Heap.h"
 #include "DisplaySurface.h"
 #include <algorithm>
+
 #if SIMUL_ENABLE_PIX
-	#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO) || defined(_GAMING_XBOX) || defined(_GAMING_XBOX_SCARLETT)
+	#if defined(_GAMING_XBOX)
 		#define SIMUL_PIX_XBOX
 	#endif
 	#if defined(SIMUL_PIX_XBOX) //Xbox
@@ -33,8 +34,10 @@
 		static HMODULE hWinPixEventRuntime;
 	#endif
 #endif
+
 using namespace platform;
 using namespace dx12;
+
 #if SIMUL_INTERNAL_CHECKS
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
 crossplatform::DeviceContextType barrierDeviceContextType=crossplatform::DeviceContextType::GRAPHICS;
@@ -99,7 +102,7 @@ crossplatform::Fence* RenderPlatform::CreateFence(const char* name)
 const char *PlatformD3D12GetErrorText(HRESULT hr)
 {
 	static std::string str;
-#ifdef _XBOX_ONE
+#ifdef _GAMING_XBOX
 	std::wstring wstr;
 	wstr.resize(101);
 	DWORD res=FormatMessageW(
@@ -186,7 +189,7 @@ ID3D12Device* RenderPlatform::AsD3D12Device()
 	return m12Device;
 }
 
-#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
+#if !defined(_GAMING_XBOX_XBOXONE)
 ID3D12Device5* RenderPlatform::AsD3D12Device5()
 {
 	ID3D12Device5* m12Device5 = nullptr;
@@ -209,16 +212,16 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 	}
 	std::string str;
 
-	if(states==D3D12_RESOURCE_STATE_COMMON)								str=" COMMON";
-	else if (D3D12_RESOURCE_STATE_GENERIC_READ == states)				str = " GENERIC_READ";
+	if(states==D3D12_RESOURCE_STATE_COMMON)										str = " COMMON";
+	else if (D3D12_RESOURCE_STATE_GENERIC_READ == states)						str = " GENERIC_READ";
 	else if ((D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) == states)
-																str = " SHADER_RESOURCE";
+																				str = " SHADER_RESOURCE";
 	else
 	{
 		if (states & D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)			str += " VERTEX_AND_CONSTANT_BUFFER";
-		if (states & D3D12_RESOURCE_STATE_INDEX_BUFFER)						str += " INDEX_BUFFER";
+		if (states & D3D12_RESOURCE_STATE_INDEX_BUFFER)							str += " INDEX_BUFFER";
 		if (states & D3D12_RESOURCE_STATE_RENDER_TARGET)						str += " RENDER_TARGET";
-		if (states & D3D12_RESOURCE_STATE_UNORDERED_ACCESS)					str += " UNORDERED_ACCESS";
+		if (states & D3D12_RESOURCE_STATE_UNORDERED_ACCESS)						str += " UNORDERED_ACCESS";
 		if (states & D3D12_RESOURCE_STATE_DEPTH_WRITE)							str += " DEPTH_WRITE";
 		if (states & D3D12_RESOURCE_STATE_DEPTH_READ)							str += " DEPTH_READ";
 		if (states & D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)			str += " NON_PIXEL_SHADER_RESOURCE";
@@ -227,11 +230,11 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 		if (states & D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)					str += " INDIRECT_ARGUMENT";
 		if (states & D3D12_RESOURCE_STATE_COPY_DEST)							str += " COPY_DEST";
 		if (states & D3D12_RESOURCE_STATE_COPY_SOURCE)							str += " COPY_SOURCE";
-		if (states & D3D12_RESOURCE_STATE_RESOLVE_DEST)						str += " RESOLVE_DEST";
+		if (states & D3D12_RESOURCE_STATE_RESOLVE_DEST)							str += " RESOLVE_DEST";
 		if (states & D3D12_RESOURCE_STATE_RESOLVE_SOURCE)						str += " RESOLVE_SOURCE";
 		if (states & D3D12_RESOURCE_STATE_PRESENT)								str += " PRESENT";
 		if (states & D3D12_RESOURCE_STATE_PREDICATION)							str += " PREDICATION";
-#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
+#if !defined(_GAMING_XBOX_XBOXONE)
 		if (states & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)	str += " RAYTRACING_ACCELERATION_STRUCTURE";
 		if (states & D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE)					str += " SHADING_RATE_SOURCE";
 		if (states & D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)					str += " VIDEO_DECODE_READ";
@@ -684,7 +687,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 
 	HRESULT res						= S_FALSE;
 
-#if defined( _XBOX_ONE) ||  defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
 	// Refer to UE4:(XboxOneD3D12Device.cpp) FXboxOneD3D12DynamicRHI::GetHardwareGPUFrameTime() 
 	mTimeStampFreq					= D3D11X_XBOX_GPU_TIMESTAMP_FREQUENCY;
 #else
@@ -828,7 +831,7 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 		mGRaytracingGlobalSignature->SetName(L"Raytracing Global Root Signature");
 		//mGRaytracingSignature	=LoadRootSignature("//RTX.cso");
 	}
-#ifndef _XBOX_ONE	
+#ifndef _GAMING_XBOX 	
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
 	D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings));
 #endif
@@ -1187,7 +1190,7 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 					if (!chkptr || res != S_OK) //The chkptr failed, so we can not release the main ptr. Just remove it from the container at the end of the current iteration of the loop.
 					{
 						std::string lastErrorStr = "";
-					#if !defined(_DURANGO)
+					#if !defined(_GAMING_XBOX)
 						DWORD err = GetLastError();
 						char* msg = nullptr;
 						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,

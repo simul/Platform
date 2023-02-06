@@ -14,8 +14,6 @@
 #include "Platform/DirectX12/ShaderBindingTable.h"
 #include "DirectXRaytracingHelper.h"
 #include "SimulDirectXHeader.h"
-#include "ThisPlatform/Direct3D12.h"
-#include "Platform/DirectX12/d3dx12.h"
 
 #include <algorithm>
 #include <string>
@@ -709,8 +707,10 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	gpsoDesc.CachedPSO = {};
 	gpsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
+
 	//Extensions
-	CD3DX12_PIPELINE_STATE_STREAM1 gpss2(gpsoDesc);
+#if defined(PLATFORM_CD3DX12_PIPELINE_STATE_STREAM) && (PLATFORM_CD3DX12_PIPELINE_STATE_STREAM >= 1)
+	CD3DX12_PIPELINE_STATE_STREAM1 gpss(gpsoDesc);
 
 	//ViewInstancing
 #if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
@@ -739,19 +739,24 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	}
 #endif
 
+#endif
+
 	// Create it:
-	auto* device = curRenderPlat->AsD3D12Device();
+	HRESULT res = S_OK;
+	ID3D12Device* device = curRenderPlat->AsD3D12Device();
+#if defined(PLATFORM_CD3DX12_PIPELINE_STATE_STREAM) && (PLATFORM_CD3DX12_PIPELINE_STATE_STREAM >= 1)
 	ID3D12Device2* device2 = nullptr;
-	HRESULT res = device->QueryInterface(SIMUL_PPV_ARGS(&device2));
+	res = device->QueryInterface(SIMUL_PPV_ARGS(&device2));
 	if (res == S_OK && device2)
 	{
 		D3D12_PIPELINE_STATE_STREAM_DESC gpssd;
-		gpssd.SizeInBytes = sizeof(gpss2);
-		gpssd.pPipelineStateSubobjectStream = &gpss2;
+		gpssd.SizeInBytes = sizeof(gpss);
+		gpssd.pPipelineStateSubobjectStream = &gpss;
 		res = device2->CreatePipelineState(&gpssd, SIMUL_PPV_ARGS(&pso.pipelineState));
 		SAFE_RELEASE(device2);
 	}
 	else
+#endif
 	{
 		res = device->CreateGraphicsPipelineState(&gpsoDesc, SIMUL_PPV_ARGS(&pso.pipelineState));
 	}
