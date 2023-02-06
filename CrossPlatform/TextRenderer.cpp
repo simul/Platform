@@ -353,7 +353,8 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	uint n = 0;
 	crossplatform::StructuredBuffer<FontChar>& f = fontChars[deviceContext.platform_context];
 	FontChar* charList = f.GetBuffer(deviceContext);
-
+	if(!charList)
+		return 0;
 	size_t countOfTextBackgroundArray = sizeof(constantBuffer.background_rect) / sizeof(constantBuffer.background_rect[0]);
 	size_t viewCount = std::min(countOfTextBackgroundArray, deviceContext.viewStructs.size());
 	for (size_t i = 0; i < viewCount; i++)

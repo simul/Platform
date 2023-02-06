@@ -1122,31 +1122,35 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 	Print(deviceContext, positions[0].data(), positions[1].data(), text, colr, bkg);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale,float mip,int slice)
 {
-	static int level=0;
-	static int lod=0;
+	int level=slice;
 	static int frames=25;
 	static int count=frames;
 	static unsigned long long framenumber=0;
-	float displayLod=0.0f;
-	if(debug&&framenumber!=deviceContext.GetFrameNumber())
+	float displayLod=mip;
+	static int lod=0;
+	
+	if(debug&&mip<0)
 	{
-		count--;
-		if(!count)
+		if(framenumber!=deviceContext.GetFrameNumber())
 		{
-			lod++;
-			count=frames;
+			count--;
+			if(!count)
+			{
+				lod++;
+				count=frames;
+			}
+			framenumber=deviceContext.GetFrameNumber();
 		}
-		framenumber=deviceContext.GetFrameNumber();
+		if(tex)
+		{
+			int m=tex->GetMipCount();
+			displayLod=float((lod%(m?m:1)));
+		}
 	}
-	if(debug&&tex)
-	{
-		int m=tex->GetMipCount();
-		displayLod=float((lod%(m?m:1)));
-		if(!tex->IsValid())
-			tex=nullptr;
-	}
+	if(!tex->IsValid())
+		tex=nullptr;
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
@@ -1276,9 +1280,9 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 	effect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale,float mip,int slice)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale, mip, slice);
 }
 
 void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
