@@ -1145,7 +1145,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			displayLod=float((lod%(m?m:1)));
 		}
 	}
-	if(!tex->IsValid())
+	if(tex && !tex->IsValid())
 		tex=nullptr;
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
