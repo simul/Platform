@@ -128,7 +128,7 @@ if(PLATFORM_COMMODORE)
 endif()
 
 if(PLATFORM_IMGUI)
-	add_subdirectory(Imgui)
+	add_subdirectory(ImGui)
 	if(PLATFORM_BUILD_SAMPLES)
 		add_subdirectory(Applications/GuiSample)
 	endif()
