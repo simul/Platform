@@ -1,4 +1,3 @@
-#pragma once
 #include "ShaderInstance.h"
 using namespace sfx;
 
