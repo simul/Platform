@@ -95,18 +95,23 @@ static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int m
 	return d;
 }
 
+template <typename TP>
+std::time_t to_time_t(TP tp)
+{
+    using namespace std::chrono;
+    auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+              + system_clock::now());
+    return system_clock::to_time_t(sctp);
+}
+
 double GetFileDate(const std::string &fullPathNameUtf8)
 {
 	wstring filenamew=StringToWString(fullPathNameUtf8);
-	#ifdef _MSC_VER
-	struct _stat64i32 buf;
-	_wstat(filenamew.c_str(), &buf);
-	#else
-	struct stat buf;
-	stat(fullPathNameUtf8.c_str(), &buf);
-	#endif
-	buf.st_mtime;
-	time_t t = buf.st_mtime;
+	if(!std::filesystem::exists(fullPathNameUtf8))
+		return 0.0;
+    std::filesystem::file_time_type ftime = std::filesystem::last_write_time(fullPathNameUtf8);
+	std::time_t t=to_time_t(ftime);
+	
 	struct tm lt;
 	#ifdef _MSC_VER
 	gmtime_s(&lt,&t);
@@ -548,18 +553,19 @@ std::string GetExecutableDirectory()
 	return WStringToUtf8(str);
 }
 std::vector<std::string> extra_arguments;
-bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args)
+bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::string> &paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args)
 {
+	#if SIMUL_INTERNAL_CHECKS
+	std::cout<<"Parsing effect from "<<file<<std::endl;
+	#endif
 	bool retVal=true;
 	const char *filenamesUtf8[]={file,NULL};
 	gEffects[effect]->SetFilenameList(filenamesUtf8);
-	const char **p=paths;
-	while(p&&*p&&shaderPathsUtf8.size()<100)
+	for(auto p:paths)
 	{
-		std::vector<std::string> s=split(std::string(*p),';');
+		std::vector<std::string> s=split(p,';');
 		for(auto i:s)
 			shaderPathsUtf8.push_back(i);
-		p++;
 	}
 	const char **a=args;
 	while(a&&*a&&extra_arguments.size()<100)
@@ -611,7 +617,7 @@ bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,cons
 	shaderPathsUtf8.push_back(GetDirectoryFromFilename(file));
 	string newsrc=loadShaderSource(file,shaderPathsUtf8);
 	// Add the parsed paths to the SfxConfig:
-	for (const auto p : shaderPathsUtf8)
+	for (const auto &p : shaderPathsUtf8)
 	{
 		config->shaderPaths.push_back(p.c_str());
 	}
@@ -635,6 +641,9 @@ bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,cons
 		double output_filedatetime=GetFileDate(sfxoFilename);
 		if(!sfxOptions->force&&latest_datetime<output_filedatetime)
 		{
+	#if SIMUL_INTERNAL_CHECKS
+			std::cout<<"Already up-to-date: "<<output_filedatetime<<std::endl;
+	#endif
 			return true;
 		}
 		if(sfxOptions->verbose)
@@ -649,6 +658,9 @@ bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,cons
 			}
 		}
 		newsrc=preproOutput.str();
+	#if SIMUL_INTERNAL_CHECKS
+		//	std::cout<<"Preprocessor output:\n\t"<<newsrc<<std::endl;
+	#endif
 	}
 	catch(...)
 	{
@@ -658,6 +670,9 @@ bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,cons
 
 bool sfxParseEffectFromMemory( int effect, const char* src,const char *filename,const char *output_filename,const SfxConfig *config,const SfxOptions *sfxOptions)
 {
+	#if SIMUL_INTERNAL_CHECKS
+	std::cout<<"Parsing effect"<<std::endl;
+	#endif
 	bool retVal=true;
 	try
 	{

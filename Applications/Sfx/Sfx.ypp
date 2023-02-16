@@ -463,31 +463,47 @@
 		}
 		// texture load functions
 		
-		std::regex re("\\{load_expr ([a-z0-9_]+) ([a-z0-9_]+) (.+) (.+)? (.+)?}", std::regex_constants::icase | std::regex::extended);
-		std::smatch base_match;
-		while (std::regex_search(f.content, base_match, re))
+		std::regex re1("\\{load_expr[^}]*}", std::regex_constants::icase | std::regex::extended);
+		std::smatch base_match1;
+		while (std::regex_search(f.content, base_match1, re1))
 		{
-			string result_expression;
-			string textureName=base_match.str(1);
-			string command=base_match.str(2);
-			string params=base_match.str(3);
-			string pos=base_match.str(4);
-			string msaa_index=base_match.str(5);
-			bool msaa=(msaa_index.length()>0);
-			ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
-			if(resourceType!=ShaderResourceType::UNKNOWN)
+			std::regex re2("\\{load_expr ([a-z0-9_]+) ([a-z0-9_]+) (.+) (.+)? (.+)?}", std::regex_constants::icase | std::regex::extended);
+			std::smatch base_match2;
+			std::string content=base_match1.str(0);
+			if (std::regex_search(content, base_match2, re2))
 			{
-				if(msaa)
+				string result_expression2;
+				string fullExpression=base_match2.str(0);
+				std::cout<<"Regex for load_expr matches:\n\t"<<fullExpression<<std::endl;
+				#if SIMUL_INTERNAL_CHECKS
+				#endif
+				string textureName	=base_match2.str(1);
+				string command		=base_match2.str(2);
+				string params		=base_match2.str(3);
+				string pos			=base_match2.str(4);
+				string msaa_index	=base_match2.str(5);
+				bool msaa=(msaa_index.length()>0);
+				ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
+				if(resourceType!=ShaderResourceType::UNKNOWN)
 				{
-					result_expression+=GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+					if(msaa)
+					{
+						result_expression2+=GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+					}
+					else
+					{
+						result_expression2+=GetLoadExpr(textureName,command,params,resourceType);
+					}
 				}
-				else
-				{
-					result_expression+=GetLoadExpr(textureName,command,params,resourceType);
-				}
+				content = std::regex_replace(content, re2,result_expression2);
+				base_match2 = std::smatch();
 			}
-			f.content = std::regex_replace(f.content, re, result_expression);
-			base_match = std::smatch();
+			else
+			{
+				sfxerror("Failed to match texture load expression: ");
+			}
+			f.content= std::regex_replace(f.content, re1,content);
+			base_match1 = std::smatch();
 		}
 		// Check and fix texture sampler constructors
 		auto config	= gEffect->GetConfig();

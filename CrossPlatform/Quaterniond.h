@@ -60,6 +60,13 @@ namespace platform
 				y = T(q.y);
 				z = T(q.z);
 			}
+			Quaternion(const Quaternion &q)
+			{
+				x=q.x;
+				y=q.y;
+				z=q.z;
+				s=q.s;
+			}
 
 			Quaternion(T angle_radians, const tvector3<T>& vv)
 			{

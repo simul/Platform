@@ -17,6 +17,9 @@ using namespace core;
 #else
 #include <unistd.h>
 #endif
+#ifdef UNIX
+#include <linux/limits.h>
+#endif
 
 std::string platform::core::GetExeDirectory()
 {

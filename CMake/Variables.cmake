@@ -13,7 +13,6 @@ option(PLATFORM_BUILD_SAMPLES "Build executable samples?" ${SIMUL_BUILD_SAMPLES}
 option(PLATFORM_WARNINGS_AS_ERRORS "Should Platform treat C++ compile warnings as errors. " ON)
 mark_as_advanced(PLATFORM_WARNINGS_AS_ERRORS)
 
-
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
 
@@ -24,6 +23,16 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 else()
 	set(PLATFORM_LINUX OFF)
 endif()
+
+set(PLATFORM_STD_FILESYSTEM 1 CACHE STRING "Use std::filesystem?" )
+if(XBOXONE)
+	set(PLATFORM_STD_FILESYSTEM 2 CACHE STRING "Use std::filesystem?" )
+elseif(PLATFORM_PS4)
+	set(PLATFORM_STD_FILESYSTEM 0 CACHE STRING "Use std::filesystem?" )
+elseif(PLATFORM_LINUX)
+	set(PLATFORM_STD_FILESYSTEM 1 CACHE STRING "Use std::filesystem?" )
+endif()
+set_property(CACHE PLATFORM_STD_FILESYSTEM PROPERTY STRINGS 0 1 2)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 	set(PLATFORM_COMPILE_DEVICE_MANAGER OFF)

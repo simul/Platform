@@ -809,6 +809,9 @@ ShaderInstance *Effect::GetShaderInstance(const std::string &instanceName,Shader
 
 bool Effect::Save(string sfxFilename,string sfxoFilename)
 {
+	#if SIMUL_INTERNAL_CHECKS
+	std::cout<<"Saving to : "<<sfxoFilename<<std::endl;
+	#endif
 	PopulateProgramList();
 	string log;
 	std::set<int> usedTextureSlots;
@@ -1685,7 +1688,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
  }
  bool Effect::CheckDeclaredGlobal(const Function* func, const std::string toCheck)
  {
-	 for (const auto g : func->globals)
+	 for (const auto &g : func->globals)
 	 {
 		 if (g == toCheck)
 		 {
