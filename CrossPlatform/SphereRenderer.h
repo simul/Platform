@@ -3,8 +3,10 @@
 #define SIMUL_EDITOR 0
 #endif
 #if SIMUL_EDITOR
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
 #include "Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/Shaders/SL/sphere_constants.sl"
@@ -39,5 +41,7 @@ namespace platform
 		};
 	}
 }
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 #endif

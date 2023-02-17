@@ -53,6 +53,13 @@ namespace platform
 				z = q[2];
 				s = q[3];
 			}
+			Quaternion(const Quaternion &q)
+			{
+				s = q.s;
+				x = q.x;
+				y = q.y;
+				z = q.z;
+			}
 			template<typename U> Quaternion(const Quaternion<U> &q)
 			{
 				s = T(q.s);

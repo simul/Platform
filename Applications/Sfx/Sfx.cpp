@@ -548,18 +548,16 @@ std::string GetExecutableDirectory()
 	return WStringToUtf8(str);
 }
 std::vector<std::string> extra_arguments;
-bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args)
+bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::string> &paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args)
 {
 	bool retVal=true;
 	const char *filenamesUtf8[]={file,NULL};
 	gEffects[effect]->SetFilenameList(filenamesUtf8);
-	const char **p=paths;
-	while(p&&*p&&shaderPathsUtf8.size()<100)
+	for(auto p:paths)
 	{
-		std::vector<std::string> s=split(std::string(*p),';');
+		std::vector<std::string> s=split(p,';');
 		for(auto i:s)
 			shaderPathsUtf8.push_back(i);
-		p++;
 	}
 	const char **a=args;
 	while(a&&*a&&extra_arguments.size()<100)
@@ -611,7 +609,7 @@ bool sfxParseEffectFromFile(int effect, const char* file,const char **paths,cons
 	shaderPathsUtf8.push_back(GetDirectoryFromFilename(file));
 	string newsrc=loadShaderSource(file,shaderPathsUtf8);
 	// Add the parsed paths to the SfxConfig:
-	for (const auto p : shaderPathsUtf8)
+	for (const auto &p : shaderPathsUtf8)
 	{
 		config->shaderPaths.push_back(p.c_str());
 	}

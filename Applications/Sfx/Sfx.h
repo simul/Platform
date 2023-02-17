@@ -56,6 +56,7 @@ struct SfxConfig
 	std::string platformFilename;
 	std::string api;
 	std::string compiler;
+	std::vector<std::string> compilerPaths;
 	std::map<int, std::string> stages;
 	std::string defaultOptions;
 	std::string sourceExtension;
@@ -192,7 +193,7 @@ bool sfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filena
 *	file	-- File name
 * Return value: Status
 **************************************************/
-bool sfxParseEffectFromFile( int effect, const char* file,const char **paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args);
+bool sfxParseEffectFromFile( int effect, const char* file,const std::vector<std::string> &paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args);
 
 /**************************************************
 * sfxCreateEffectFromMemory
