@@ -776,11 +776,13 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 	// So we will use Platform's cp_hwnd type.
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
-
-	// All should be handled from within the displaySurface manager.
-	displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::RGBA_8_UNORM);
-	displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
-	vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
+	if(displaySurfaceManagerInterface)
+	{
+		// All should be handled from within the displaySurface manager.
+		displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::UNKNOWN);
+		displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
+		vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
+	}
 }
 
 static void ImGui_ImplPlatform_DestroyWindow(ImGuiViewport* viewport)
@@ -801,7 +803,8 @@ static void ImGui_ImplPlatform_SetWindowSize(ImGuiViewport* viewport, ImVec2 siz
 {
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
-	displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
+	if(displaySurfaceManagerInterface)
+		displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
 	/*
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
@@ -834,7 +837,8 @@ static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void* usr)
 {
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
-	displaySurfaceManagerInterface->Render(hwnd);
+	if(displaySurfaceManagerInterface)
+		displaySurfaceManagerInterface->Render(hwnd);
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
 	drawData[vd->viewId]=viewport->DrawData;
 }

@@ -321,7 +321,8 @@ void DisplaySurface::InitSwapChain()
 	//if(!swapchain)
 //		swapchain.swap(new vk::SwapchainKHR);
 	vk::SwapchainKHR oldSwapchain = swapchain;
-
+	if(!mSurface)
+		return;
 	// Check the mSurface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
 	vk::PhysicalDevice *gpu=GetGPU();

@@ -4,6 +4,7 @@
 #include <time.h>  // very simple and common plain C header file (it's NOT the c++ <sys/time.h>). If not available it's probably better to implement it yourself rather than modifying this file.
 #include <ctype.h> // toupper()
 #include <chrono>
+#include <fmt/core.h>
 //    namespace chr = std::chrono;
 #ifdef _MSC_VER
 #include "ThisPlatform/DateTime.h"
@@ -236,7 +237,7 @@ namespace ImGui
 
         IM_ASSERT(d.tm_mday == 1);    // Otherwise the algo does not work
         // Display items
-        char cur_day_str[4] = "";
+        std::string cur_day_str;
         int days_in_month = DaysInMonth(d);
         struct tm cur_date = GetCurrentDate();
         PushID(cid++);
@@ -266,9 +267,9 @@ namespace ImGui
                     if (!sunday_first && (dw > 0 && d.tm_wday == 0 && row == 0)) // 1st == synday case
                         TextUnformatted(" ");
                     if (cday < 9)
-						sprintf(cur_day_str, " %.1d", (unsigned char)cday + 1);
+						cur_day_str=fmt::format( " {0}", (unsigned char)cday + 1);
                     else
-						sprintf(cur_day_str, "%.2d", (unsigned char)cday + 1);
+						cur_day_str=fmt::format("{0}", (unsigned char)cday + 1);
 
                     // Highligth input date and today
                     bool is_today = cday + 1 == cur_date.tm_mday && SameMonth(cur_date, d);
@@ -279,7 +280,7 @@ namespace ImGui
                         PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_TableHeaderBg]);
 
                     // Day number as a button
-                    if (SmallButton(cur_day_str))
+                    if (SmallButton(cur_day_str.c_str()))
                     {
                         date_clicked = true;
                         struct tm date_out = d;

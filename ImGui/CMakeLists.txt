@@ -6,8 +6,8 @@ if(UNIX)
 set(OS_CPP imgui_impl_glfw.cpp)
 set(OS_H imgui_impl_glfw.h)
 else()
-set(OS_CPP imgui_impl_win32.cpp)
-set(OS_H imgui_impl_win32.h)
+set(OS_CPP imgui_impl_win32.cpp imgui_impl_glfw.cpp)
+set(OS_H imgui_impl_win32.h imgui_impl_glfw.h)
 endif()
 
 file(GLOB SOURCES 
@@ -28,10 +28,8 @@ file(GLOB HEADERS
 # Setup and build the static library.
 add_static_library( ImGui SOURCES ${SOURCES} ${HEADERS} ${SHADERS} DEFINITIONS PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} PUBLICINCLUDES ${SIMUL_PLATFORM_DIR}/External/imgui LINK SimulCrossPlatform_MT)
 
-if(UNIX)
-	target_link_directories( ImGui_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/glfw/build_mt/lib/${CMAKE_BUILD_TYPE})
-	target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/glfw/include")
-endif()
+target_link_directories( ImGui_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/glfw/build_mt/lib/${CMAKE_BUILD_TYPE})
+target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/glfw/include")
 if(PLATFORM_BUILD_MD_LIBS)
 # Setup and build the dynamic library.
 add_dynamic_library( ImGui SOURCES ${SOURCES} ${HEADERS} ${SHADERS} DEFINITIONS PLATFORM_IMGUI_DLL=1 PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} "IMGUI_API=__declspec(dllexport)" FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} PUBLICINCLUDES ${SIMUL_PLATFORM_DIR}/External/imgui LINK SimulCrossPlatform_MD)
