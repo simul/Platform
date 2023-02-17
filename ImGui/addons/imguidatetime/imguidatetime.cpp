@@ -8,6 +8,7 @@
 #ifdef _MSC_VER
 #include "ThisPlatform/DateTime.h"
 #endif
+#include "ThisPlatform/StringFunctions.h"
 
 namespace ImGui
 {
@@ -27,7 +28,7 @@ namespace ImGui
     {
         date.tm_isdst = -1;   // This tries to detect day time savings too
         time_t tmp = mktime(&date);
-        localtime_s(&date, &tmp);
+        localtime_r(&tmp,&date);
     }
 
     struct tm GetDateZero()
@@ -264,8 +265,10 @@ namespace ImGui
                     PushID(cid + 7 * row + dwi);
                     if (!sunday_first && (dw > 0 && d.tm_wday == 0 && row == 0)) // 1st == synday case
                         TextUnformatted(" ");
-                    if (cday < 9) sprintf_s(cur_day_str, sizeof(cur_day_str), " %.1d", (unsigned char)cday + 1);
-                    else sprintf_s(cur_day_str, sizeof(cur_day_str), "%.2d", (unsigned char)cday + 1);
+                    if (cday < 9)
+						sprintf(cur_day_str, " %.1d", (unsigned char)cday + 1);
+                    else
+						sprintf(cur_day_str, "%.2d", (unsigned char)cday + 1);
 
                     // Highligth input date and today
                     bool is_today = cday + 1 == cur_date.tm_mday && SameMonth(cur_date, d);
