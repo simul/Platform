@@ -12,7 +12,7 @@ namespace ImGui
         time_t now;
         time(&now);
         tm tm_now;
-        localtime_s(&tm_now, &now);
+        localtime_r(&now,&tm_now);
         return tm_now;
     }
 
