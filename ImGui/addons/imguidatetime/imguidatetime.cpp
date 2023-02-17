@@ -1,17 +1,23 @@
 #include "imguidatetime.h"
 #include <imgui_internal.h>
-
+#define __STDC_WANT_LIB_EXT1__ 1
 #include <time.h>  // very simple and common plain C header file (it's NOT the c++ <sys/time.h>). If not available it's probably better to implement it yourself rather than modifying this file.
 #include <ctype.h> // toupper()
+#include <chrono>
+//    namespace chr = std::chrono;
+#ifdef _MSC_VER
+#include "ThisPlatform/DateTime.h"
+#endif
 
 namespace ImGui
 {
-
     inline struct tm GetCurrentDate()
     {
         time_t now;
         time(&now);
         tm tm_now;
+		// want to use chr::zoned_time local_time{chr::current_zone(), chr::system_clock::now()};
+		// but that is C++20.
         localtime_r(&now,&tm_now);
         return tm_now;
     }
