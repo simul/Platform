@@ -4,7 +4,7 @@
 
 //struct tm *localtime(const time_t *timer);
 // reimplement this standard function as microsoft does not support it:
-struct tm *localtime_r(const time_t * tt,struct tm * result)
+inline struct tm *localtime_r(const time_t * tt,struct tm * result)
 {
    // signature of localtime_s is:
    //	  errno_t __CRTDECL localtime_s(
