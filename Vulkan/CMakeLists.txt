@@ -29,7 +29,11 @@ if(SIMUL_SOURCE_BUILD)
 	if(PLATFORM_WINDOWS)
 		target_compile_definitions(SimulVulkan_MT PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
 	endif()
-
+	# Support for X11
+	if(PLATFORM_LINUX)
+		target_compile_definitions(SimulVulkan_MT PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
+	endif()
+	
 	target_include_directories(SimulVulkan_MT PUBLIC "${VULKAN_SDK_DIR}/Include")
 	target_include_directories(SimulVulkan_MT PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	target_include_directories(SimulVulkan_MT PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")

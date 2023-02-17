@@ -123,6 +123,17 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
+#endif 
+#ifdef VK_USE_PLATFORM_XCB_KHR
+	vk::XcbSurfaceCreateInfoKHR createInfo = vk::XcbSurfaceCreateInfoKHR()
+		.setWindow((ANativeWindow*)mHwnd);
+	vk::Instance* inst = GetVulkanInstance();
+	if (inst)
+	{
+		auto result = inst->createXcbSurfaceKHR(&createInfo, nullptr, &mSurface);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+
 #endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
