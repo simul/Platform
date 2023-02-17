@@ -2,16 +2,26 @@
 
 cmake_minimum_required( VERSION 3.2 )
 
+if(UNIX)
+set(OS_CPP imgui_impl_glfw.cpp)
+set(OS_H imgui_impl_glfw.h)
+else()
+set(OS_CPP imgui_impl_win32.cpp)
+set(OS_H imgui_impl_win32.h)
+endif()
+
 file(GLOB SOURCES 
 	"${SIMUL_PLATFORM_DIR}/External/imgui/*.cpp" 
 	"${SIMUL_PLATFORM_DIR}/External/imgui/misc/cpp/*.cpp" 
-	"*.cpp" 
+	"imgui_impl_platform.cpp" 
+	${OS_CPP} 
 	"addons/*/*.cpp"
 )
 file(GLOB HEADERS 
 	"${SIMUL_PLATFORM_DIR}/External/imgui/*.h" 
 	"${SIMUL_PLATFORM_DIR}/External/imgui/misc/cpp/*.h" 
-	"*.h"  
+	"imgui_impl_platform.h" 
+	${OS_H} 
 	"addons/*/*.h"
 )
 

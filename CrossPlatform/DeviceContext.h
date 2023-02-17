@@ -7,6 +7,7 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <limits.h> 
 #include <string.h>	// for memset
 
 #ifdef _MSC_VER

@@ -1685,7 +1685,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
  }
  bool Effect::CheckDeclaredGlobal(const Function* func, const std::string toCheck)
  {
-	 for (const auto g : func->globals)
+	 for (const auto &g : func->globals)
 	 {
 		 if (g == toCheck)
 		 {
