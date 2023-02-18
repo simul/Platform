@@ -11,7 +11,7 @@
 #include <vulkan/vulkan.hpp>
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #define NOMINMAX
 
 #ifndef _countof
@@ -125,15 +125,27 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	}
 #endif 
 #ifdef VK_USE_PLATFORM_XCB_KHR
+#if 0
+
+        memset(&sci, 0, sizeof(sci));
+        sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+        sci.connection = connection;
+        sci.window = window->x11.handle;
+
+        err = vkCreateXcbSurfaceKHR(instance, &sci, allocator, surface);
+
 	vk::XcbSurfaceCreateInfoKHR createInfo = vk::XcbSurfaceCreateInfoKHR()
-		.setWindow((ANativeWindow*)mHwnd);
+		.setWindow((xcb_window_t)mHwnd)
+		.setConnection();
 	vk::Instance* inst = GetVulkanInstance();
 	if (inst)
 	{
 		auto result = inst->createXcbSurfaceKHR(&createInfo, nullptr, &mSurface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
-
+#else
+	mSurface=*((VkSurfaceKHR*)handle);
+#endif
 #endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()

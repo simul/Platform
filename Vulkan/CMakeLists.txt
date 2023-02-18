@@ -48,7 +48,7 @@ if(SIMUL_SOURCE_BUILD)
 		target_compile_definitions(SimulVulkan_MD PRIVATE SIMUL_DYNAMIC_LINK=1 ${VK_DEFS} )
 
 		if(PLATFORM_WINDOWS)
-			target_compile_definitions(SimulVulkan_MD PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
+			target_compile_definitions(SimulVulkan_MD PRIVATE VK_USE_PLATFORM_WIN32_KHR  )
 		endif()
 
 		target_include_directories(SimulVulkan_MD PUBLIC "${VULKAN_SDK_DIR}/Include")

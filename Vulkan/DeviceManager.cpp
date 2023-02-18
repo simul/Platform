@@ -23,7 +23,7 @@
 #ifdef NOMINMAX
 #undef NOMINMAX
 #endif
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #ifndef NOMINMAX
 
 #ifndef _countof
@@ -458,7 +458,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	uint32_t gpu_count;
 	result = deviceManagerInternal->instance.enumeratePhysicalDevices(&gpu_count, (vk::PhysicalDevice*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
- 	ERRNO_BREAK
+ 	errno=0;
 
 	if (gpu_count > 0)
 	{
