@@ -199,7 +199,6 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 	fclose(fp);
 }
 
-#ifdef _MSC_VER
 static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int min,int sec)
 {
     int D = 367*year - (7*(year + ((month+9)/12)))/4 + (275*month)/9 + day - 730531;//was +2451545
@@ -209,7 +208,7 @@ static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int m
 	d+=(double)sec/24.0/3600.0;
 	return d;
 }
-#endif
+
 double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 {
 	if(!FileExists(filename_utf8))
@@ -239,7 +238,22 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	double daynum=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon+1,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
 	return daynum;
 #elif SIMUL_FILESYSTEM
-    return (double)(fs::last_write_time(filename_utf8).time_since_epoch().count())/(3600.0*24.0*1000000.0);
+#ifdef CPP20
+	auto write_time=fs::last_write_time(filename_utf8);
+	const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+	const auto time = std::chrono::system_clock::to_time_t(systemTime);
+    return ((double)ns)/(3600.0*24.0*1000000.0);
+#else
+	std::wstring filenamew=StringToWString(filename_utf8);
+	struct stat buf;
+	stat(filename_utf8, &buf);
+	buf.st_mtime;
+	time_t t = buf.st_mtime;
+	struct tm lt;
+	gmtime_r(&t,&lt);
+	double datetime=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
+	return datetime;
+#endif
 #else
 	return 0;
 #endif

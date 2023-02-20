@@ -41,7 +41,14 @@ namespace platform
 			platform::core::ReadWriteMutex *delegatorReadWriteMutex;
 			///
 			void EndFrame(bool clear=true);
+			typedef std::function<DisplaySurface*(cp_hwnd)> CreateSurfaceDelegate;
+			void SetCreateSurfaceDelegate(CreateSurfaceDelegate d)
+			{
+				createSurfaceDelegate=d;
+			}
 		protected:
+			CreateSurfaceDelegate createSurfaceDelegate;
+	
             static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;

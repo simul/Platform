@@ -620,6 +620,28 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	return r;
 }
 
+void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,Texture *heightMap,Texture *normalMap,float scale)
+{
+	if(!heightMap||!heightMap->IsValid())
+		return;
+	if(!normalMap||!normalMap->IsValid())
+		return;
+	auto _imageTexture=debugEffect->GetShaderResource("imageTexture");
+	auto pass=debugEffect->GetTechniqueByName("height_to_normal")->GetPass(0);
+	debugConstants.texSize=uint4(heightMap->width,heightMap->length,1,1);
+	debugConstants.multiplier=vec4(scale,scale,scale,scale);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	ApplyPass(deviceContext,pass);
+	normalMap->activateRenderTarget(deviceContext,0,0);
+	SetTexture(deviceContext,_imageTexture,heightMap,0,0);
+	DrawQuad(deviceContext);
+	//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
+	normalMap->deactivateRenderTarget(deviceContext);
+	
+	UnapplyPass(deviceContext);
+}
+
+        
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;

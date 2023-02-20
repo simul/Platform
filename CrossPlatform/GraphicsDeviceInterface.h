@@ -31,6 +31,7 @@ namespace platform
 		class GraphicsDeviceInterface
 		{
 		public:
+			virtual ~GraphicsDeviceInterface(){}
 			virtual void	Initialize(bool use_debug, bool instrument, bool default_driver) = 0;
 			virtual void	Shutdown()=0;
 			virtual void*	GetDevice()=0;

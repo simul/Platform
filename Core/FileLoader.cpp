@@ -27,6 +27,7 @@ std::string platform::core::GetExeDirectory()
 #endif
 
 #ifdef UNIX
+#include <linux/limits.h>
     // Linux specific
     char szPath[PATH_MAX];
     ssize_t count = readlink( "/proc/self/exe", szPath, PATH_MAX );

@@ -458,6 +458,7 @@ namespace platform
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 			virtual void					EndRenderPass					(DeviceContext& deviceContext) {};
 
+			void							HeightMapToNormalMap			(GraphicsDeviceContext&,Texture *heightMap,Texture *normalMap,float scale);
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			platform::core::MemoryInterface *GetAllocator()
 			{

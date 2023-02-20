@@ -374,11 +374,22 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
 					continue;
 
-				// TODO: Apply scissor/clipping rectangle
-			   // const D3D11_RECT r = { (LONG)clip_min.x, (LONG)clip_min.y, (LONG)clip_max.x, (LONG)clip_max.y };
+				// TODO: Apply scissor/clipping rectangle				
+				if(clip_min.y<0)
+				{
+					clip_min.y=0;
+				}	
+				if(clip_min.x<0)
+				{
+					clip_min.x=0;
+				}
+				if(clip_max.x<=clip_min.x||clip_max.y<=clip_min.y)
+					continue;
+				
 				int4 clip={(int)clip_min.x, (int)clip_min.y,(int)(clip_max.x-clip_min.x), (int)(clip_max.y-clip_min.y)};
-				renderPlatform->SetScissor(deviceContext, clip);
 
+				renderPlatform->SetScissor(deviceContext, clip);
+				
 				// Bind texture, Draw
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
 				if(texture_srv->texture)
@@ -390,6 +401,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 					bd->pInputLayout->Unapply(deviceContext);
 					renderPlatform->UnapplyPass(deviceContext );
 				}
+				
 			}
 		}
 		global_idx_offset += cmd_list->IdxBuffer.Size;
@@ -774,13 +786,22 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 	// PlatformHandleRaw should always be a HWND, whereas PlatformHandle might be a higher-level handle (e.g. GLFWWindow*, SDL_Window*).
 	// Some backend will leave PlatformHandleRaw NULL, in which case we assume PlatformHandle will contain the HWND for Win32 and void* for other platfoms.
 	// So we will use Platform's cp_hwnd type.
-	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
+	cp_hwnd hwnd = 0;
+	// Windows using hwnds
+	if(viewport->PlatformHandleRaw)
+		hwnd=(cp_hwnd)viewport->PlatformHandleRaw;
+	else
+	{
+		hwnd=(cp_hwnd)viewport->PlatformHandle;
+	}
 	IM_ASSERT(hwnd != 0);
-
-	// All should be handled from within the displaySurface manager.
-	displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::RGBA_8_UNORM);
-	displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
-	vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
+	if(displaySurfaceManagerInterface)
+	{
+		// All should be handled from within the displaySurface manager.
+		displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::UNKNOWN);
+		displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
+		vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
+	}
 }
 
 static void ImGui_ImplPlatform_DestroyWindow(ImGuiViewport* viewport)
@@ -801,7 +822,8 @@ static void ImGui_ImplPlatform_SetWindowSize(ImGuiViewport* viewport, ImVec2 siz
 {
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
-	displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
+	if(displaySurfaceManagerInterface)
+		displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
 	/*
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
@@ -834,7 +856,8 @@ static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void* usr)
 {
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
-	displaySurfaceManagerInterface->Render(hwnd);
+	if(displaySurfaceManagerInterface)
+		displaySurfaceManagerInterface->Render(hwnd);
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
 	drawData[vd->viewId]=viewport->DrawData;
 }
