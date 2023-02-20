@@ -431,6 +431,7 @@ namespace simul
 		
 			//! Query for the texture value at the specified position in the texture. On most API's, the query will have a few frames' latency.
 			vec4							TexelQuery						(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
+			bool							SaveRaw3DTextureData			(DeviceContext &deviceContext,Texture *texture, char* filename_utf8);
 			virtual void					WaitForGpu						(DeviceContext &){}
 			virtual void					WaitForFencedResources			(DeviceContext &){}
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}

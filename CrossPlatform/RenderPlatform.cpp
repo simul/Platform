@@ -577,6 +577,35 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	return r;
 }
 
+bool RenderPlatform::SaveRaw3DTextureData(DeviceContext& deviceContext, Texture* texture, char* filename_utf8)
+{
+	if (!texture)
+		return false;
+	int bufferSize = texture->width * texture->length * texture->depth	*	16;//pixelformat bit size
+	if (bufferSize != textureQueryResult.count)
+	{
+		textureQueryResult.InvalidateDeviceObjects();
+		textureQueryResult.RestoreDeviceObjects(this, bufferSize, true, true, nullptr, "texel query");
+	}
+	debugConstants.texSize = uint4(texture->width, texture->length, texture->depth,0);
+	debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
+	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext, debugEffect, debugEffect->GetShaderResource("textureQueryResults"));
+	debugEffect->SetTexture(deviceContext, "imageTexture3D", texture);
+	debugEffect->Apply(deviceContext, "texture_query", 0);
+	DispatchCompute(deviceContext, texture->width, texture->length, texture->depth);
+	debugEffect->Unapply(deviceContext);
+	textureQueryResult.CopyToReadBuffer(deviceContext);
+	const vec4* result = textureQueryResult.OpenReadBuffer(deviceContext);
+	if (result)
+	{
+		std::ofstream ostrm(filename_utf8, std::ios::binary);
+		ostrm.write(reinterpret_cast<const char*>(result), bufferSize);
+	}
+	textureQueryResult.CloseReadBuffer(deviceContext);
+	return true;
+
+}
+
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
