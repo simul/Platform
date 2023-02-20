@@ -31,6 +31,10 @@ elseif(PLATFORM_EMSCRIPTEN)
 	set(PLATFORM_STD_CHARCONV OFF)
 endif()
 
+if(PLATFORM_PS4)
+	set(PLATFORM_STD_FILESYSTEM 0)
+endif()
+
 # whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs.
 option(PLATFORM_DEBUG_PROFILING_LEVELS "Whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs." OFF)
  
