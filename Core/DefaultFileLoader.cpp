@@ -251,7 +251,7 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	time_t t = buf.st_mtime;
 	struct tm lt;
 #if __COMMODORE__
-	gmtime_s(&lt,&t);
+	gmtime_s(&t,&lt);
 #else
 	gmtime_r(&t,&lt);
 #endif
