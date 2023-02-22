@@ -392,7 +392,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				
 				// Bind texture, Draw
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
-				if(texture_srv->texture)
+				if(texture_srv && texture_srv->texture)
 				{
 					renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),(Texture*)texture_srv->texture,texture_srv->slice,texture_srv->mip);
 					renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
