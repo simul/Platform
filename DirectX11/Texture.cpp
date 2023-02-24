@@ -175,8 +175,23 @@ void Texture::Load3DTextureFromRawDataFile(crossplatform::RenderPlatform* r, con
 {
 	renderPlatform = r;
 	D3D11_TEXTURE3D_DESC tdesc;
+
 	pixelFormat = tc->f;
 	dxgi_format = dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT srvFormat = dxgi_format;
+	DXGI_FORMAT uavFormat = dxgi_format;
+	DXGI_FORMAT altUavFormat = dxgi_format;
+	if (dxgi_format == DXGI_FORMAT_R8G8B8A8_UNORM)
+	{
+		srvFormat = dxgi_format;
+		dxgi_format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if PLATFORM_TYPED_UAV_FORMATS
+		altUavFormat = uavFormat;
+#else
+		altUavFormat = DXGI_FORMAT_R32_UINT;
+#endif
+	}
 	int byteSize = simul::dx11::ByteSizeOfFormatElement(dxgi_format);
 	tdesc.Width = width=tc->w;
 	tdesc.Height =length=tc->l;
@@ -189,16 +204,15 @@ void Texture::Load3DTextureFromRawDataFile(crossplatform::RenderPlatform* r, con
 	tdesc.CPUAccessFlags = 0;
 	tdesc.MiscFlags = 0;
 
-	std::ifstream istrm(pFilePathUtf8, std::ios::binary);
-	istrm.seekg(0, std::ios::end);
-	long length = istrm.tellg();
-	istrm.seekg(0, std::ios::beg);
+	std::ifstream istrm(pFilePathUtf8, std::istream::binary);
+	//istrm.seekg(0, std::ios::end);
+	long bufferLength = width * length * depth * byteSize;
+	//istrm.seekg(0, std::ios::beg);
 
-	char* buffer = new char[length];
+	char* buffer = new char[bufferLength];
 	// read data as a block:
-	istrm.read(buffer, length);
-	//r = reinterpret_cast<vec4*>(buffer);
-
+	istrm.read(buffer, bufferLength);
+	
 	D3D11_SUBRESOURCE_DATA srd; 
 	srd.pSysMem = buffer;
 	srd.SysMemPitch = tc->w* byteSize;
@@ -213,7 +227,7 @@ void Texture::Load3DTextureFromRawDataFile(crossplatform::RenderPlatform* r, con
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 	ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-	srv_desc.Format = dxgi_format;
+	srv_desc.Format = srvFormat;
 	srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 	srv_desc.Texture3D.MipLevels = tc->mips;
 	srv_desc.Texture3D.MostDetailedMip = 0;
