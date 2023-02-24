@@ -1941,6 +1941,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_R8G8B8A8_SNORM:
 		return RGBA_8_SNORM;
+	case DXGI_FORMAT_B8G8R8A8_TYPELESS:
 	case DXGI_FORMAT_B8G8R8A8_UNORM:		// What possible reason is there for this to exist?
 		return BGRA_8_UNORM;
 	case DXGI_FORMAT_R32_UINT:
