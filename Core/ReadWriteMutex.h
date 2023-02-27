@@ -1,11 +1,10 @@
 #ifndef READWRITEMUTEX_H
 #define READWRITEMUTEX_H
 #if 1
-#ifdef _XBOX_ONE
-#include <xdk.h>
-#endif
+
 #include <mutex>
 #include <condition_variable>
+
 namespace platform
 {
 	namespace core

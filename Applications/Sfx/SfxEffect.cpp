@@ -44,6 +44,34 @@ void process_member_decl(string &str,string &memberDeclaration)
 	}
 }
 
+bool ShaderInstanceHasSemanic(ShaderInstance* shaderInstance, const char* semantic)
+{
+	bool found = false;
+	Function* function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+	const std::map<std::string, Declaration*>& declarations = gEffect->GetDeclarations();
+	for (const auto& parameter : function->parameters)
+	{
+		if (!parameter.semantic.empty())
+		{
+			found |= parameter.semantic.compare(semantic) == 0;
+		}
+		else if (declarations.find(parameter.type) != declarations.end())
+		{
+			Declaration* declaration = declarations.at(parameter.type);
+			if (declaration->declarationType == DeclarationType::STRUCT)
+			{
+				Struct* structure = reinterpret_cast<Struct*>(declaration);
+				for (const auto& member : structure->m_structMembers)
+				{
+					found |= member.semantic.compare(semantic) == 0;
+				}
+			}
+		}
+
+	}
+	return found;
+}
+
 Effect::Effect()
 	: m_includes(0)
 	, m_active(true)
@@ -1200,31 +1228,8 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
 
 					bool multiview = false;
-					if ((shaderType > UNKNOWN_SHADER_TYPE && shaderType < COMPUTE_SHADER) && !multiviewDeclared)
-					{
-						for (const auto& parameter : function->parameters)
-						{
-							if (!parameter.semantic.empty())
-							{
-								multiview |= parameter.semantic.compare("SV_ViewID") == 0;
-								multiview |= parameter.semantic.compare("SV_ViewId") == 0;
-							}
-							else if(declarations.find(parameter.type) != declarations.end())
-							{
-								Declaration* declaration = declarations[parameter.type];
-								if (declaration->declarationType == DeclarationType::STRUCT)
-								{
-									Struct* structure = reinterpret_cast<Struct*>(declaration);
-									for (const auto& member : structure->m_structMembers)
-									{
-										multiview |= member.semantic.compare("SV_ViewID") == 0;
-										multiview |= member.semantic.compare("SV_ViewId") == 0;
-									}
-								}
-							}
-							
-						}
-					}
+					multiview |= ShaderInstanceHasSemanic(shaderInstance, "SV_ViewID");
+					multiview |= ShaderInstanceHasSemanic(shaderInstance, "SV_ViewId");
 					if (multiview && !multiviewDeclared)
 					{
 						outstr << "\t\t\tmultiview: 1\n";
@@ -1680,7 +1685,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
  }
  bool Effect::CheckDeclaredGlobal(const Function* func, const std::string toCheck)
  {
-	 for (const auto g : func->globals)
+	 for (const auto &g : func->globals)
 	 {
 		 if (g == toCheck)
 		 {
@@ -1872,13 +1877,13 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					sampCB.m_structMembers.push_back(sMember);
 				}
 			}
-			else if(!sfxConfig.passThroughSamplers && !sfxConfig.maintainSamplerDeclaration)
+		/*	else if(!sfxConfig.passThroughSamplers && !sfxConfig.maintainSamplerDeclaration)
 			{
 				string str = sfxConfig.samplerDeclaration;
 				find_and_replace(str, "{name}", ss->name);
 				find_and_replace(str, "{slot}", ToString(ss->register_number));
 				os<<str.c_str()<<endl;
-			}
+			}*/
 		}
 		break;
 		case DeclarationType:: BLENDSTATE:

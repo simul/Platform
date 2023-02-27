@@ -285,8 +285,8 @@ namespace platform
 		
 			virtual void DrawLineLoop		(GraphicsDeviceContext &,const double *,int ,const double *,const float [4]){}
 
-			virtual void DrawTexture		(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false);
-			void DrawTexture				(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f,bool debug=false);
+			virtual void DrawTexture		(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false,vec2 texc={0,0},vec2 texc_scale={0,0},float mip=0.f,int slice=0);
+			void DrawTexture				(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f,bool debug=false,vec2 texc={0,0},vec2 texc_scale={0,0},float mip=0.0f,int slice=0);
 			void DrawDepth					(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
@@ -456,7 +456,9 @@ namespace platform
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+			virtual void					EndRenderPass					(DeviceContext& deviceContext) {};
 
+			void							HeightMapToNormalMap			(GraphicsDeviceContext&,Texture *heightMap,Texture *normalMap,float scale);
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			platform::core::MemoryInterface *GetAllocator()
 			{
@@ -480,6 +482,7 @@ namespace platform
 			platform::core::MemoryInterface *GetMemoryInterface();
 			void SetMemoryInterface(platform::core::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
+			crossplatform::Effect *GetCopyEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 			// Does the format use stencil?
 			static PixelFormat ToColourFormat(PixelFormat f);

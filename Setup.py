@@ -3,7 +3,7 @@ import shlex, subprocess
 import sys
 import configparser
 import pkg_resources
-import distutils.core
+import shutil
 
 required = {'gitpython'}
 installed = {pkg.key for pkg in pkg_resources.working_set}
@@ -66,7 +66,8 @@ def cmake(src,build_path,cmake_generator,flags):
 		main_build=wd+"/build"
 		if not os.path.exists(main_build):
 			os.makedirs(main_build)
-		distutils.dir_util.copy_tree("bin", main_build+"/bin", update=1)
+		#distutils.dir_util.copy_tree("bin", main_build+"/bin", update=1)
+		shutil.copytree("bin", main_build+"/bin", dirs_exist_ok=True)
 
 	os.chdir(wd)
 
@@ -117,9 +118,14 @@ def execute():
 	sms = repo.submodules
 	for sm in sms:
 		if('External' in sm.module().working_tree_dir):
-			print("updating submodule "+sm.name)
-			sm.update()
+			print("\tUpdating submodule "+sm.name)
+			sm.update(init=True,force=True,recursive=True)
 
+	fmt_mt_flags=["-DCMAKE_BUILD_TYPE=None","-DCMAKE_CONFIGURATION_TYPES=Debug;Release","-DFMT_DOC=false","-DFMT_TEST=false",
+	"-DFMT_INSTALL=false","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib","-DCMAKE_STATIC_LIBRARY_PREFIX_CXX=mt_",
+	"-DCMAKE_CXX_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_CXX_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG"
+	,"-DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\""]
+	cmake('External/fmt','External/fmt/build_mt',cmake_gen,fmt_mt_flags)
 	fmt_md_flags=["-DCMAKE_CONFIGURATION_TYPES=Debug;Release","-DFMT_DOC=false","-DFMT_TEST=false","-DFMT_INSTALL=false","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib","-DCMAKE_STATIC_LIBRARY_PREFIX_CXX=md_"]
 	cmake('External/fmt','External/fmt/build_md',cmake_gen,fmt_md_flags)
 	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]

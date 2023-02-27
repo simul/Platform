@@ -18,7 +18,7 @@ namespace platform
         class SIMUL_DIRECTX12_EXPORT DisplaySurface : public crossplatform::DisplaySurface
         {
         public:
-            DisplaySurface();
+            DisplaySurface(int view_id);
             ~DisplaySurface();
 			//! Platform-dependent function called when initializing the display surface.
             void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;
@@ -47,7 +47,7 @@ namespace platform
             ID3D12Device*                               mDeviceRef;
             //ID3D12CommandQueue*                         mQueue; No. share ONE queue across threads.
             //! The swap chain used to present the rendered scene
-#if defined(_XBOX_ONE) |  defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
             IDXGISwapChain1*							mSwapChain;
 #else
             IDXGISwapChain3*							mSwapChain;

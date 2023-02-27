@@ -226,8 +226,10 @@ void MouseHandler::Update(float time_step)
 					x_rotate+=fDeltaX*introduce*xx;
 				}
 			}
-			else
-				z_rotate-=fDeltaX*introduce;
+		}
+		if(mouseButtons==core::MiddleButton)
+		{
+			z_rotate-=fDeltaX*introduce;
 		}
 		static float cc=0.01f;
 		if(cameraMode==FLYING)

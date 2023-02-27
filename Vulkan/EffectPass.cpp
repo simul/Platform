@@ -64,7 +64,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_LastFrameIndex = deviceContext.GetFrameNumber();
 	}
 	if (!m_Initialized)
-		CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
+		 CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
 
 	if (m_DescriptorSets_It[m_InternalFrameIndex] == m_DescriptorSets[m_InternalFrameIndex].end())
 	{
@@ -73,6 +73,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_DescriptorSets_It[m_InternalFrameIndex] = m_DescriptorSets[m_InternalFrameIndex].end();
 		m_DescriptorSets_It[m_InternalFrameIndex]--;
 		AllocateDescriptorSets(*m_DescriptorSets_It[m_InternalFrameIndex]);
+		//std::cout << "New Descriptor Set addded: 0x" << std::hex << (void*)((*m_DescriptorSets_It[m_InternalFrameIndex]).operator VkDescriptorSet()) << std::dec << std::endl;
 	}
 
 	ApplyContextState(deviceContext, *m_DescriptorSets_It[m_InternalFrameIndex]);
@@ -602,10 +603,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			descriptorSetLayoutCI.setBindingCount(bindingIndex).setPBindings(layoutBindings);
 		}
 	}
-	/*else
-	{
-		SIMUL_COUT << "No inputs to shader" << std::endl;
-	}*/
 
 	//Override Desciptor Set Layout CreateInfo for Video Source?
 	if (m_VideoSource)

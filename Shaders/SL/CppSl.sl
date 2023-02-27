@@ -346,7 +346,7 @@
 			};
 			struct {
 				tvector3<T> xyz;
-				float w_;
+				T w_;
 			};
 		};
 		tvector4(T x=0,T y=0,T z=0,T w=0)
@@ -553,7 +553,7 @@
 	{
 		union
 		{
-			float m[16];
+			T m[16];
 			struct
 			{
 				T        _11, _12, _13, _14;
@@ -582,10 +582,17 @@
 		{
 			return m;
 		}
-		void operator=(const T *v)
+		const tmatrix4& operator=(const T *v)
 		{
 			for(int i=0;i<16;i++)
 				m[i]=v[i];
+			return *this;
+		}
+		template<typename U> const tmatrix4& operator=(const tmatrix4<U> &u)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=T(u.m[i]);
+			return *this;
 		}
 		bool operator==(const tmatrix4 &v) const
 		{
@@ -668,13 +675,25 @@
 			m._11=m._22=m._33=m._44=1.0f;
 			return m;
 		}
-		static inline tmatrix4<T> translation(vec3 tr)
+		static inline tmatrix4<T> translationColumnMajor(vec3 tr)
 		{
 			tmatrix4<T> m=identity();
 			m._14 = tr.x;
 			m._24 = tr.y;
 			m._34 =tr.z;
 			return m;
+		}
+		tvector3<T> getTranslationRowMajor() const
+		{
+			tvector3<T> t;
+			t={_m30,_m31,_m32};
+			return t;
+		}
+		void setTranslationRowMajor(const tvector3<T> &t)
+		{
+			_m30=t.x;
+			_m31=t.y;
+			_m32=t.z;
 		}
 		//! Invert an unscaled transformation matrix. This must be a premultiplication transform,
 		//! with the translation in the 4th column.
@@ -824,18 +843,29 @@
 				return inv;
 			}
 
-			det = 1.f / det;
+			det = T(1)/ det;
 
 			for (i = 0; i < 16; i++)
 				inv.m[i] = inv.m[i] * det;
 			return inv;
 		}
+		//! Confirm that the right-hand column xyz is zero.
+		bool is_row_major() const
+		{
+			return(_m03==0&&_m13==0&&_m23==0);
+		}
+		//! Confirm that the bottom row xyz is zero.
+		bool is_column_major() const
+		{
+			return(_m30==0&&_m31==0&&_m32==0);
+		}
 	};
 	typedef tmatrix4<float> mat4;
-	inline mat4 mul(const mat4& a, const mat4& b)
+	typedef tmatrix4<double> mat4d;
+	template<typename T> tmatrix4<T> mul(const tmatrix4<T>& a, const tmatrix4<T>& b)
 	{
-		mat4 r;
-		mat4::mul(r, a, b);
+		tmatrix4<T> r;
+		tmatrix4<T>::mul(r, a, b);
 		return r;
 	}
 	inline vec3 operator*(const mat4 &m,const vec3 &v)

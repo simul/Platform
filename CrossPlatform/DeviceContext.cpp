@@ -50,6 +50,7 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	textureSlotsForSB			=cs.textureSlotsForSB;
 	bufferSlots					=cs.bufferSlots;
 	viewMask					=cs.viewMask;
+	vulkanInsideRenderPass		=cs.vulkanInsideRenderPass;
 	return *this;
 }
 
@@ -80,6 +81,11 @@ GraphicsDeviceContext::GraphicsDeviceContext()
 	deviceContextType=DeviceContextType::GRAPHICS;
 	viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
+}
+
+GraphicsDeviceContext::~GraphicsDeviceContext()
+{
+	renderPlatform->EndRenderPass(*(DeviceContext*)this);
 }
 
 std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()

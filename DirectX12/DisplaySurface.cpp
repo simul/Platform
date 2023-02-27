@@ -2,12 +2,14 @@
 #include "RenderPlatform.h"
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 
 using namespace platform;
 using namespace dx12;
 
-DisplaySurface::DisplaySurface():
-	mDeviceRef(nullptr),
+DisplaySurface::DisplaySurface(int view_id)
+	:crossplatform::DisplaySurface(view_id)
+	,mDeviceRef(nullptr),
 	mSwapChain(nullptr),
 	mRTHeap(nullptr)
 {
@@ -43,7 +45,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	RECT rect = {};
 	mDeviceRef = renderPlatform->AsD3D12Device();
 
-#if defined(WINVER) && !defined(_XBOX_ONE) &&!defined(_GAMING_XBOX)
+#if defined(WINVER) && !defined(_GAMING_XBOX)
 	GetWindowRect(mHwnd, &rect);
 #endif
 
@@ -68,14 +70,13 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	viewport.h = screenHeight;
 	viewport.x = viewport.y = 0;
 
-#ifndef _XBOX_ONE 
 #ifndef _GAMING_XBOX
 	// Dx12 swap chain	
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc12 = {};
 	swapChainDesc12.BufferCount = FrameCount;
 	swapChainDesc12.Width = 0;
 	swapChainDesc12.Height = 0;
-	swapChainDesc12.Format = dx12::RenderPlatform::ToDxgiFormat(outFmt);
+	swapChainDesc12.Format = dx12::RenderPlatform::ToDxgiFormat(outFmt,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 	swapChainDesc12.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc12.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc12.SampleDesc.Count = 1;
@@ -104,15 +105,13 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		swapChain->QueryInterface(__uuidof(IDXGISwapChain4), (void**)&mSwapChain);
 
 #endif
-#endif
+
 	// Initialize render targets
 	CreateRenderTargets(mDeviceRef);
 
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	SAFE_RELEASE(factory);
 	SAFE_RELEASE(swapChain);
-#endif
 #endif
 
 	CreateSyncObjects();
@@ -146,11 +145,9 @@ void DisplaySurface::InvalidateDeviceObjects()
 unsigned DisplaySurface::GetCurrentBackBufferIndex() const
 {
 	UINT curIdx =0;
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	if(mSwapChain)
 		curIdx = mSwapChain->GetCurrentBackBufferIndex();
-#endif
 #endif
 	return curIdx;
 }
@@ -161,7 +158,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	Resize();
 	// First lets make sure is safe to start working on this frame:
    // StartFrame();
-#if defined( _XBOX_ONE) || defined(_GAMING_XBOX) 
+#if defined(_GAMING_XBOX) 
 	UINT curIdx =0;
 #else
 	UINT curIdx = GetCurrentBackBufferIndex();
@@ -320,7 +317,7 @@ void DisplaySurface::WaitForAllWorkDone()
 void DisplaySurface::Resize()
 {
 	RECT rect = {};
-#if defined(WINVER) && !defined(_XBOX_ONE) &&!defined(_GAMING_XBOX)
+#if defined(WINVER) && !defined(_GAMING_XBOX)
 	GetWindowRect(mHwnd, &rect);
 #endif
 	int screenWidth = abs(rect.right - rect.left);

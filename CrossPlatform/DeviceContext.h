@@ -7,6 +7,7 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <limits.h> 
 #include <string.h>	// for memset
 
 #ifdef _MSC_VER
@@ -194,6 +195,7 @@ namespace platform
 			int apply_count = 0;
 			bool contextActive=false;
 			bool externalContext=false;
+			bool vulkanInsideRenderPass=false;
 
 			bool effectPassValid=false;
 			bool vertexBuffersValid=false;
@@ -336,6 +338,7 @@ namespace platform
 			int framePrintX=0;
 			int framePrintY=0;
 			GraphicsDeviceContext();
+			~GraphicsDeviceContext();
 			ViewStruct viewStruct;
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();

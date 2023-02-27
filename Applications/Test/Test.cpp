@@ -44,6 +44,7 @@
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/Shaders/Sl/camera_constants.sl"
 
 
@@ -106,7 +107,7 @@ enum class TestType
 	MULTIVIEW
 };
 
-class PlatformRenderer : public crossplatform::PlatformRendererInterface
+class PlatformRenderer : public crossplatform::RenderDelegaterInterface
 {
 public:
 	crossplatform::RenderPlatformType renderPlatformType = crossplatform::RenderPlatformType::Unknown;
@@ -268,6 +269,8 @@ public:
 
 	~PlatformRenderer()
 	{
+		rwSB.~StructuredBuffer();
+		roSB.~StructuredBuffer();
 		delete texture;
 		delete test;
 		delete effect;
@@ -644,6 +647,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			/*double fTime = 0.0;
 			float time_step = 0.01f;
 			renderer->OnFrameMove(fTime, time_step);*/
+			platformRenderer->renderPlatform->BeginFrame();
 			displaySurfaceManager.Render(hWnd);
 			displaySurfaceManager.EndFrame();
 			platformRenderer->renderPlatform->EndFrame();
@@ -714,7 +718,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	platformRenderer = new PlatformRenderer(x64_API, test, commandLineParams("-debug"));
 	platformRenderer->OnCreateDevice();
 	displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
-	displaySurfaceManager.SetRenderer(hWnd, platformRenderer, -1);
+	displaySurfaceManager.AddWindow(hWnd);
+	displaySurfaceManager.SetRenderer( platformRenderer);
 
 	// Main message loop:
 	MSG msg;

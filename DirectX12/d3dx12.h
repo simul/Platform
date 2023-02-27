@@ -11,8 +11,6 @@
 
 #ifndef __D3DX12_H__
 #define __D3DX12_H__
-#ifndef _XBOX_ONE
-#ifndef _GAMING_XBOX
 
 #include "d3d12.h"
 
@@ -3491,7 +3489,3 @@ private:
 #endif // defined( __cplusplus )
 
 #endif //__D3DX12_H__
-#endif
-
-
-#endif

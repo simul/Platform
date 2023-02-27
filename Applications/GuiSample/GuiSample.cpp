@@ -6,6 +6,7 @@
 #include "backends/imgui_impl_win32.h"
 #include "Platform/ImGui/imgui_impl_platform.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/DirectX11/DeviceManager.h"
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/Core/CommandLineParams.h"
@@ -30,7 +31,7 @@ void CleanupDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-class PlatformRenderer:public crossplatform::PlatformRendererInterface
+class PlatformRenderer:public crossplatform::RenderDelegaterInterface
 {
 public:
     PlatformRenderer(crossplatform::RenderPlatform* r) :renderPlatform(r)
@@ -257,7 +258,7 @@ bool CreateDevice(HWND hWnd)
     platformRenderer->renderPlatform->PushShaderBinaryPath((std::string("shaderbin/") + platformRenderer->renderPlatform->GetPathName()).c_str());
     platformRenderer->renderPlatform->RestoreDeviceObjects(graphicsDeviceInterface->GetDevice());
     displaySurfaceManager.Initialize(platformRenderer->renderPlatform);
-    displaySurfaceManager.SetRenderer(hWnd, platformRenderer, -1);
+    displaySurfaceManager.SetRenderer(platformRenderer);
     return true;
 }
 

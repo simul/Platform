@@ -33,7 +33,7 @@ namespace platform
 			desc.NodeMask					= 0;
 			desc.Type						= type;
 			desc.Flags						= shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
 			res								= device->CreateDescriptorHeap(&desc, IID_GRAPHICS_PPV_ARGS(&mHeap));
 #else
 			res								= device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));

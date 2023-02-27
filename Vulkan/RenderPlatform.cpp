@@ -18,6 +18,7 @@
 #endif
 
 bool platform::vulkan::debugUtilsSupported=false;
+bool platform::vulkan::debugMarkerSupported=false;
 
 using namespace platform;
 using namespace vulkan;
@@ -271,11 +272,6 @@ void RenderPlatform::PushToReleaseManager(vk::PipelineLayout& i)
 	releasePipelineLayouts.insert(i);
 	resourcesToBeReleased = true;
 }
-void RenderPlatform::PushToReleaseManager(vk::DescriptorSet& i)
-{
-	releaseDescriptorSets.insert(i);
-	resourcesToBeReleased = true;
-}
 void RenderPlatform::PushToReleaseManager(vk::DescriptorSetLayout& i)
 {
 	releaseDescriptorSetLayouts.insert(i);
@@ -303,14 +299,8 @@ void RenderPlatform::ClearReleaseManager()
 		vulkanDevice->freeMemory(i, nullptr);
 	}
 	releaseMemories.clear();
-
 	for (auto i : releaseImageViews)
 	{
-		auto f = RenderPlatform::ResourceMap.find((unsigned long long) & i);
-		if (f != RenderPlatform::ResourceMap.end())
-		{
-			SIMUL_COUT << " Releasing Vulkan ImageView " << std::hex << i << " (" << f->second.c_str() << ")" << std::endl;
-		}
 		vulkanDevice->destroyImageView(i, nullptr);
 	}
 	releaseImageViews.clear();
@@ -354,11 +344,6 @@ void RenderPlatform::ClearReleaseManager()
 		vulkanDevice->destroyDescriptorSetLayout(i, nullptr);
 	}
 	releaseDescriptorSetLayouts.clear();
-	for (auto i : releaseDescriptorSets)
-	{
-		//vulkanDevice->destroyDescriptorSet(i,nullptr);
-	}
-	releaseDescriptorSets.clear();
 	for (auto i : releaseDescriptorPools)
 	{
 		vulkanDevice->destroyDescriptorPool(i, nullptr);
@@ -459,46 +444,57 @@ float RenderPlatform::GetDefaultOutputGamma() const
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
 {
-#if 0
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	vk::DebugUtilsLabelEXT labelInfo;
-	labelInfo.pNext = nullptr;
-	labelInfo.pLabelName = name;
-	labelInfo.color[0]= labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
-	
-	commandBuffer->beginDebugUtilsLabelEXT(&labelInfo);
-#endif
+	if (debugUtilsSupported)
+	{
+		vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+		vk::DebugUtilsLabelEXT labelInfo;
+		labelInfo.pNext = nullptr;
+		labelInfo.pLabelName = name;
+		labelInfo.color[0] = labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
 
-#if 0
-	VkDebugMarkerMarkerInfoEXT markerInfo = {};
-	markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
-	// Color to display this region with (if supported by debugger)
-	float color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
-	memcpy(markerInfo.color, &color[0], sizeof(float) * 4);
-	// Name of the region displayed by the debugging application
-	markerInfo.pMarkerName = name;
-	commandBuffer->debugMarkerBegin(markerInfo);
-#endif
+		vk::DispatchLoaderDynamic d;
+		d.vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdBeginDebugUtilsLabelEXT");
+		commandBuffer->beginDebugUtilsLabelEXT(&labelInfo, d);
+	}
+	if (debugMarkerSupported)
+	{
+		vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+		vk::DebugMarkerMarkerInfoEXT markerInfo = {};
+		markerInfo.pNext = nullptr;
+		markerInfo.pMarkerName = name;
+		markerInfo.color[0] = markerInfo.color[1] = markerInfo.color[2] = markerInfo.color[3] = 1.0f;
+
+		vk::DispatchLoaderDynamic d;
+		d.vkCmdDebugMarkerBeginEXT = (PFN_vkCmdDebugMarkerBeginEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerBeginEXT");
+		commandBuffer->debugMarkerBeginEXT(markerInfo, d);
+	}
 }
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 {
-#if 0
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	commandBuffer->endDebugUtilsLabelEXT();
-#endif
-#if 0
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	commandBuffer->debugMarkerEnd();
-#endif
+	if (debugUtilsSupported)
+	{
+		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+		vk::DispatchLoaderDynamic d;
+		d.vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdEndDebugUtilsLabelEXT");
+		commandBuffer->endDebugUtilsLabelEXT(d);
+	}
+	if (debugMarkerSupported)
+	{
+		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+		vk::DispatchLoaderDynamic d;
+		d.vkCmdDebugMarkerEndEXT = (PFN_vkCmdDebugMarkerEndEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerEndEXT");
+		commandBuffer->debugMarkerEndEXT(d);
+	}
 }
-
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if (!commandBuffer)
 		return;
+
+	EndRenderPass(deviceContext);
 
 	vulkan::EffectPass* vkEffectPass = ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
 	BeginEvent(deviceContext, vkEffectPass->name.c_str());
@@ -510,6 +506,8 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {
+	EndRenderPass(deviceContext);
+
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if (commandBuffer)
 	{
@@ -521,6 +519,8 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
+	EndRenderPass(deviceContext);
+
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if (commandBuffer)
 	{
@@ -548,7 +548,6 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 	SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	commandBuffer->draw(4,1,0,0);
-	commandBuffer->endRenderPass();
 	SetTopology(deviceContext, crossplatform::Topology::UNDEFINED);
 	EndEvent(deviceContext);
 }
@@ -636,16 +635,27 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		}
 
 		//Begin the RenderPass
-		vk::Framebuffer framebuffer = *GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
 		crossplatform::Viewport vp = GetViewport(*graphicsDeviceContext, 0);
-		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
-		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo()
-			.setRenderPass(renderPassPipeline.renderPass)
-			.setFramebuffer(framebuffer)
-			.setClearValueCount((uint32_t)clearColoursCount)
-			.setPClearValues(clearValues.data())
-			.setRenderArea(renderArea);
-		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
+		static vk::Framebuffer currentFramebuffer{};
+		vk::Framebuffer framebuffer = *GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
+		if (framebuffer != currentFramebuffer && deviceContext.contextState.vulkanInsideRenderPass) //Check for a change of framebuffer.
+		{
+			EndRenderPass(deviceContext);
+		}
+		currentFramebuffer = framebuffer;
+
+		if (!deviceContext.contextState.vulkanInsideRenderPass)
+		{
+			vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
+			vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo()
+				.setRenderPass(renderPassPipeline.renderPass)
+				.setFramebuffer(framebuffer)
+				.setClearValueCount((uint32_t)clearColoursCount)
+				.setPClearValues(clearValues.data())
+				.setRenderArea(renderArea);
+			commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
+			deviceContext.contextState.vulkanInsideRenderPass = true;
+		}
 
 		//Set Graphics Pipeline
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, renderPassPipeline.pipeline);
@@ -1608,6 +1618,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	crossplatform::RenderPlatform::DeactivateRenderTargets(deviceContext);
+	EndRenderPass(deviceContext);
 }
 
 #include <cstdint>
@@ -1628,7 +1639,8 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *)
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-	return new vulkan::DisplaySurface();
+	static int view_id=1;
+	return new vulkan::DisplaySurface(view_id++);
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
@@ -1652,7 +1664,6 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	ApplyContextState(deviceContext);
 	commandBuffer->draw(num_verts,1,start_vert,0);
-	commandBuffer->endRenderPass();
 	EndEvent(deviceContext);
 }
 
@@ -1665,7 +1676,6 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	ApplyContextState(deviceContext);
 	commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
-	commandBuffer->endRenderPass();
 	EndEvent(deviceContext);
 }
 
@@ -1970,6 +1980,18 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
+}
+
+void RenderPlatform::EndRenderPass(crossplatform::DeviceContext& deviceContext)
+{
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+	if (deviceContext.contextState.vulkanInsideRenderPass)
+	{
+		commandBuffer->endRenderPass();
+		deviceContext.contextState.vulkanInsideRenderPass = false;
+	}
 }
 
  std::string RenderPlatform::VulkanResultString(vk::Result res)

@@ -59,7 +59,7 @@ namespace platform
 			}
 		protected:
 			void CreateDevice();
-			void SetupDebugCallback(bool);
+			void SetupDebugCallback(bool debugUtils, bool debugReport, bool debugMarker);
 			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
 			
 			std::vector<vk::LayerProperties> instance_layers;
@@ -77,6 +77,9 @@ namespace platform
 			bool separate_present_queue;
 			uint32_t queue_family_count;
 			std::vector<vk::QueueFamilyProperties> queue_props;
+
+			vk::DebugReportCallbackEXT debugReportCallback;
+			vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCI;
 			vk::DebugUtilsMessengerEXT debugUtilsMessenger;
 			vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI;
 

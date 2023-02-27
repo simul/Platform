@@ -111,7 +111,7 @@ namespace platform
 			const char* GetName() const override { return PLATFORM_NAME; }
 			crossplatform::RenderPlatformType GetType() const override
 			{
-#if defined(_XBOX_ONE) || defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX)
 				return crossplatform::RenderPlatformType::XboxOneD3D12;
 #else
 				return crossplatform::RenderPlatformType::D3D12;
@@ -131,7 +131,7 @@ namespace platform
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device*					AsD3D12Device();
 			//! Returns the device for raytracing, or nullptr if unavailable. You must call Release() on this pointer, as it is created via QueryInterface().
-#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX_XBOXONE)
+#if !defined(_GAMING_XBOX_XBOXONE)
 			ID3D12Device5*					AsD3D12Device5();
 #endif
 			//! Returns the queue created during RestoreDeviceObjects
@@ -156,7 +156,7 @@ namespace platform
 			void							FlushBarriers(crossplatform::DeviceContext& deviceContext);
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
-			void							PushToReleaseManager(ID3D12DeviceChild* res, const char *name);
+			void							PushToReleaseManager(ID3D12DeviceChild* res, const char *name,bool owned=true);
 			//! Clears the input assembler state (index and vertex buffers)
 			void							ClearIA(crossplatform::DeviceContext &deviceContext);
 
@@ -251,7 +251,8 @@ namespace platform
 			bool									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
 
 			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelOutputFormat p);
-			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
+			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p,crossplatform::CompressionFormat c);
+			static									crossplatform::CompressionFormat DxgiFormatToCompressionFormat(DXGI_FORMAT dxgi_format);
 			static									crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType		FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 			static int								ByteSizeOfFormatElement(DXGI_FORMAT format);
@@ -342,7 +343,14 @@ namespace platform
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;
 
 			//! Holds resources to be deleted and its age
-			std::vector<std::pair<unsigned int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
+			struct ResourceToFree
+			{
+				unsigned int age=0;
+				bool owned=true;
+				std::string freeName;
+				ID3D12DeviceChild *resource=nullptr;
+			};
+			std::vector<ResourceToFree> mResourceBin;
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
 			struct ContextBarriers
@@ -373,7 +381,7 @@ namespace platform
 			D3D12_CPU_DESCRIPTOR_HANDLE			mNullSampler;
 
 			crossplatform::TargetsAndViewport mTargets;
-			#if !defined(_XBOX_ONE) && !defined(_GAMING_XBOX)
+			#if !defined(_GAMING_XBOX)
 			ID3D12DeviceRemovedExtendedDataSettings * pDredSettings=nullptr;
 			#endif
 			ID3D12RootSignature *LoadRootSignature(const char *filename);

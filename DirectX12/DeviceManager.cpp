@@ -8,10 +8,8 @@
 #include "Platform/External/magic_enum/include/magic_enum.hpp"
 
 #include <iomanip>
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 #include <dxgidebug.h>
-#endif
 #endif
 
 #pragma comment(lib,"dxguid")
@@ -40,7 +38,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 
 	HRESULT res	= S_FALSE;
 
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	// Debug layer
 	UINT dxgiFactoryFlags = 0;
@@ -269,7 +266,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
 	SAFE_RELEASE(factory);
 #endif
-#endif
 }
 
 bool DeviceManager::IsActive() const
@@ -282,7 +278,7 @@ void DeviceManager::Shutdown()
 	if(!mDevice)
 		return;
 
-#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO)
+#if defined(NTDDI_WIN10_CO) && (NTDDI_VERSION >= NTDDI_WIN10_CO) && !defined(_GAMING_XBOX)
 	ID3D12InfoQueue1* infoQueue1 = nullptr;
 	mDevice->QueryInterface(SIMUL_PPV_ARGS(&infoQueue1));
 	if (infoQueue1)
@@ -302,7 +298,6 @@ void DeviceManager::Shutdown()
 	ReportMessageFilterState();
 	
 	SAFE_RELEASE(mDevice);
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	IDXGIDebug1 *dxgiDebug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
@@ -310,7 +305,6 @@ void DeviceManager::Shutdown()
 		dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL| DXGI_DEBUG_RLO_IGNORE_INTERNAL));
 	}
 	dxgiDebug->Release();
-#endif
 #endif
 }
 
@@ -333,7 +327,6 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 {
 	crossplatform::Output o;
 	
-#ifndef _XBOX_ONE
 #ifndef _GAMING_XBOX
 	unsigned numModes;
 	IDXGIOutput *output = mOutputs[i];
@@ -349,7 +342,7 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 
 	// Now get extended information about what monitor this is:
 	
-#if defined(WINVER) &&!defined(_XBOX_ONE) &&!defined(_GAMING_XBOX)
+#if defined(WINVER) && !defined(_GAMING_XBOX)
 	MONITORINFOEX monitor;
 	monitor.cbSize = sizeof(monitor);
 	if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
@@ -401,7 +394,6 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	// Release the display mode list.
 	delete [] displayModeList;
 	displayModeList = 0;
-#endif
 #endif
 	return o;
 }

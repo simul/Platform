@@ -1,5 +1,8 @@
 {
-	"compiler": "$PLATFORM/External/DirectX/DXCompiler/dxc.exe",
+	"compiler": {
+		"command": "dxc.exe",
+		"commandPaths": [ "$PLATFORM/External/DirectX/DXCompiler" ]
+	},
 	"api": "DirectX 12",
 	"defaultOptions": "/T {shader_model} /nologo /Zi -Qembed_debug",
 	"sourceExtension": "hlsl",
@@ -11,7 +14,8 @@
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,
 	"generateSlots": true,
-	"supportRaytracing":  true,
+	"supportRaytracing": true,
+	"supportMultiview": true,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
 		"SFX_D3D12": "1"

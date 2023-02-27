@@ -13,7 +13,7 @@ namespace platform
         class SIMUL_DIRECTX11_EXPORT DisplaySurface: public crossplatform::DisplaySurface
         {
         public:
-            DisplaySurface();
+            DisplaySurface(int view_id);
             ~DisplaySurface();
 			//! Platform-dependent function called when initializing the display surface.
             void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;

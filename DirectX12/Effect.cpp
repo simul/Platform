@@ -14,8 +14,6 @@
 #include "Platform/DirectX12/ShaderBindingTable.h"
 #include "DirectXRaytracingHelper.h"
 #include "SimulDirectXHeader.h"
-#include "ThisPlatform/Direct3D12.h"
-#include "Platform/DirectX12/d3dx12.h"
 
 #include <algorithm>
 #include <string>
@@ -574,7 +572,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 		// The debug layer will catch this, but its nice for us to be aware of this issue
 		for (uint i = 0; i < finalRt->Count; i++)
 		{
-			if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i]))
+			if (finalRt->RTFormats[i] != RenderPlatform::ToDxgiFormat(targets->rtFormats[i],platform::crossplatform::CompressionFormat::UNCOMPRESSED))
 			{
 				SIMUL_INTERNAL_CERR << "Current applied render target idx(" << i << ")" << " does not match the format specified by the effect (" << name.c_str() << "). \n";
 			}
@@ -588,13 +586,13 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 		tmpState.Count = targets->num;
 		for (int i = 0; i < targets->num; i++)
 		{
-			tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(targets->rtFormats[i]);
+			tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(targets->rtFormats[i],platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 			// We don't want to have an unknow state as this will end up randomly choosen by the DX
 			// driver, probably causing gliches or crashes
 			// To fix this, we could either send the ID3D12Resource or send the format from the client
 			if (tmpState.RTFormats[i] == DXGI_FORMAT_UNKNOWN)
 			{
-				tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(curRenderPlat->DefaultOutputFormat);
+				tmpState.RTFormats[i] = RenderPlatform::ToDxgiFormat(curRenderPlat->DefaultOutputFormat,platform::crossplatform::CompressionFormat::UNCOMPRESSED);
 			}
 			if (tmpState.RTFormats[i] == DXGI_FORMAT_R11G11B10_FLOAT)
 			{
@@ -703,14 +701,16 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	gpsoDesc.PrimitiveTopologyType = primitiveType;
 	gpsoDesc.NumRenderTargets = finalRt->Count;
 	memcpy(gpsoDesc.RTVFormats, finalRt->RTFormats, sizeof(DXGI_FORMAT) * finalRt->Count);
-	gpsoDesc.DSVFormat = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat) : DXGI_FORMAT_UNKNOWN;
+	gpsoDesc.DSVFormat = targets->m_dt ? RenderPlatform::ToDxgiFormat(targets->depthFormat,platform::crossplatform::CompressionFormat::UNCOMPRESSED) : DXGI_FORMAT_UNKNOWN;
 	gpsoDesc.SampleDesc = msaaDesc;
 	gpsoDesc.NodeMask = 0;
 	gpsoDesc.CachedPSO = {};
 	gpsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
+
 	//Extensions
-	CD3DX12_PIPELINE_STATE_STREAM1 gpss2(gpsoDesc);
+#if defined(PLATFORM_CD3DX12_PIPELINE_STATE_STREAM) && (PLATFORM_CD3DX12_PIPELINE_STATE_STREAM >= 1)
+	CD3DX12_PIPELINE_STATE_STREAM1 gpss(gpsoDesc);
 
 	//ViewInstancing
 #if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
@@ -739,19 +739,24 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	}
 #endif
 
+#endif
+
 	// Create it:
-	auto* device = curRenderPlat->AsD3D12Device();
+	HRESULT res = S_OK;
+	ID3D12Device* device = curRenderPlat->AsD3D12Device();
+#if defined(PLATFORM_CD3DX12_PIPELINE_STATE_STREAM) && (PLATFORM_CD3DX12_PIPELINE_STATE_STREAM >= 1)
 	ID3D12Device2* device2 = nullptr;
-	HRESULT res = device->QueryInterface(&device2);
+	res = device->QueryInterface(SIMUL_PPV_ARGS(&device2));
 	if (res == S_OK && device2)
 	{
 		D3D12_PIPELINE_STATE_STREAM_DESC gpssd;
-		gpssd.SizeInBytes = sizeof(gpss2);
-		gpssd.pPipelineStateSubobjectStream = &gpss2;
+		gpssd.SizeInBytes = sizeof(gpss);
+		gpssd.pPipelineStateSubobjectStream = &gpss;
 		res = device2->CreatePipelineState(&gpssd, SIMUL_PPV_ARGS(&pso.pipelineState));
 		SAFE_RELEASE(device2);
 	}
 	else
+#endif
 	{
 		res = device->CreateGraphicsPipelineState(&gpsoDesc, SIMUL_PPV_ARGS(&pso.pipelineState));
 	}

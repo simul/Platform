@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.9)
-if(PLATFORM_WINDOWS)
+if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 	file(GLOB CMAKE 	"*.cmake" )
 	file(GLOB SOURCES 	Compiler.cpp
 						FileLoader.cpp
@@ -37,14 +37,19 @@ if(PLATFORM_WINDOWS)
 	target_include_directories(Sfx PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles" )
 	
 	set( SFX_TEST_PLATFORM "DirectX11" CACHE STRING "Which platform to use when debugging the Sfx executable" )
-	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4 GLES) 
+	SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4 GLES Commodore) 
 
 	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE FILEPATH "Which file to use when debugging Sfx")
 	set(SFX_TEST_DEFINES "-E\"EXAMPLE_DEFINE=example\"" CACHE STRING "")
 	file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../" PLATFORM_ROOT )
 	#message("PLATFORM_ROOT ${PLATFORM_ROOT}")
-	set_target_properties(Sfx PROPERTIES
-		VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}"
-		VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -b\"${CMAKE_BINARY_DIR}\" -I\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${PLATFORM_ROOT}/Shaders/SL\" -O\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/shaderbin\" -P\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx/${SFX_TEST_PLATFORM}.json\" -M\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v ${SFX_TEST_DEFINES}"
-	)
+	if(PLATFORM_WINDOWS)
+		set_target_properties(Sfx PROPERTIES
+			VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}"
+			VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -b\"${CMAKE_BINARY_DIR}\" -I\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${PLATFORM_ROOT}/Shaders/SL\" -O\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/shaderbin\" -P\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx/${SFX_TEST_PLATFORM}.json\" -M\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v ${SFX_TEST_DEFINES}"
+			)
+	endif()
+	if(PLATFORM_LINUX)
+		target_link_libraries(Sfx c++)
+	endif()
 endif()

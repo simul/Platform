@@ -16,6 +16,15 @@
 #include <regex>
 #include <functional>
 
+#if PLATFORM_STD_FILESYSTEM==1
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif PLATFORM_STD_FILESYSTEM==2
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#error
+#endif
 
 #ifndef _MSC_VER
 typedef int errno_t;
@@ -52,6 +61,8 @@ typedef struct stat Stat;
 
 using namespace std;
 typedef std::function<void(const std::string &)> OutputDelegate;
+
+extern bool ShaderInstanceHasSemanic(ShaderInstance* shaderInstance, const char* semantic);
 
 #if 0
 static std::string WStringToUtf8(const wchar_t *src_w)
@@ -409,6 +420,15 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 {
 	if (sfxConfig.compiler.empty())
 		return L"";
+	std::string usePath="";
+	for(const auto &p:sfxConfig.compilerPaths)
+	{
+		std::string t=p+"/"s+sfxConfig.compiler;
+		if(fs::exists(t))
+		{
+			usePath=p;
+		}
+	}
 	wstring command;
 	
 	string stageName = "NO_STAGES_IN_JSON";
@@ -423,6 +443,8 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 			return L"";
 	}
 	std::string currentCompiler = FillInVariable(sfxConfig.compiler,"stage",stageName);
+	if(usePath.length())
+		currentCompiler=usePath+"/"s+currentCompiler;
 	command +=  Utf8ToWString(currentCompiler) ;
 
 	// Add additional options (requested from the XX.json)
@@ -689,7 +711,6 @@ int Compile(ShaderInstance *shader
 			};
 
 			std::cout << "Warning: Raytracing shader not supported. Type: " << RTShaderTypeToStr(t) << " Name: " << shader->m_functionName << ".\n";
-			//std::cout << "Warning: " << filenameOnly << " will not generate a " << filenameOnly << "o or a " << filenameOnly << "b.\n";
 			return 1; //Return 1 here, not compiling raytracing shaders is okay.
 		}
 	}
@@ -698,6 +719,16 @@ int Compile(ShaderInstance *shader
 	};
 	if(shaderTypeSuffix.length())
 		targetFilename+=L"_"+shaderTypeSuffix;
+
+	//Check for multiview compatibility
+	bool multiview = false;
+	multiview |= ShaderInstanceHasSemanic(shader, "SV_ViewID");
+	multiview |= ShaderInstanceHasSemanic(shader, "SV_ViewId");
+	if (!sfxConfig.supportMultiview && multiview)
+	{
+		std::cout << "Warning: Multiview shader not supported. Name: " << shader->m_functionName << ".\n";
+		return 1; //Return 1 here, not compiling multiview shaders is okay.
+	}
 
 	// Add the root signature (we want to keep it at the top of the file):
 	if (!sfxConfig.graphicsRootSignatureSource.empty())
@@ -862,7 +893,7 @@ int Compile(ShaderInstance *shader
 	if (res)
 	{
 		bool write_log=false;
-		string &log_str=log.str();
+		const string &log_str=log.str();
 		if (sfxOptions.verbose)
 		{
 			std::cout << tempf.c_str() << "(0): info: Temporary shader source file." << std::endl;

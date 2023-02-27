@@ -23,13 +23,13 @@ namespace platform
         class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
         {
         public:
-            DisplaySurface();
-            ~DisplaySurface();
-            void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
-            void InvalidateDeviceObjects() override;
-            void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
-			void EndFrame() override;
-        private:
+            DisplaySurface(int view_id);
+            virtual ~DisplaySurface();
+            virtual void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
+            virtual void InvalidateDeviceObjects() override;
+            virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
+			virtual void EndFrame() override;
+        protected:
             //! Will resize the swap chain only if needed
             void Resize();
 			crossplatform::DeviceContext deferredContext;

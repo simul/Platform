@@ -100,7 +100,7 @@ BlendState AddBlendRGB
 
 technique backg
 {
-	pass standard
+	pass multiview
 	{
 		SetRasterizerState( RenderNoCull );
 		SetTopology( TriangleStrip );
@@ -110,7 +110,7 @@ technique backg
 		SetVertexShader(CompileShader(vs_6_1, VS_Background_MV()));
 		SetPixelShader(CompileShader(ps_4_0, PS_Background()));
 	}
-	pass vs_4_0
+	pass singleview
 	{
 		SetRasterizerState(RenderNoCull);
 		SetTopology(TriangleStrip);
@@ -124,7 +124,7 @@ technique backg
 
 technique text
 {
-	pass standard
+	pass multiview
 	{
 		SetRasterizerState( RenderNoCull );
 		SetTopology( TriangleList );
@@ -134,7 +134,7 @@ technique text
 		SetVertexShader(CompileShader(vs_6_1, VS_Font_MV()));
 		SetPixelShader(CompileShader(ps_4_0, PS_Font()));
 	}
-	pass vs_4_0
+	pass singleview
 	{
 		SetRasterizerState(RenderNoCull);
 		SetTopology(TriangleList);

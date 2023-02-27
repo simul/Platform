@@ -138,7 +138,9 @@ void HdrRenderer::RecompileShaders()
 
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
 	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
-
+	
+	exposureGammaMainPass		=exposureGammaTechnique->GetPass("main");
+	exposureGammaMSAAPass		=glowExposureGammaTechnique->GetPass("msaa");
 	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
@@ -217,7 +219,7 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 			randomSeed=randomSeed%100;
 			hdrConstants.alpha				=alpha;
 			hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
-			hdr_effect->SetTexture(deviceContext,"imageTexture",src);
+			hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture,src);
 			dst->activateRenderTarget(deviceContext);
 			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName(msaa?"blur_msaa":"blur"),0);
 			renderPlatform->DrawQuad(deviceContext);
@@ -227,7 +229,7 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 		}
 		SIMUL_COMBINED_PROFILE_END(deviceContext)
 	}
-	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
+	renderPlatform->ApplyPass(deviceContext,msaa?exposureGammaMSAAPass:exposureGammaMainPass);
 	renderPlatform->DrawQuad(deviceContext);
 
 	hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture,NULL);
@@ -236,7 +238,7 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	imageConstants.Unbind(deviceContext);
 	
 	hdr_effect->UnbindTextures(deviceContext);
-	hdr_effect->Unapply(deviceContext);
+	renderPlatform->UnapplyPass(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 

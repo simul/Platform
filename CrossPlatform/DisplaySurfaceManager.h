@@ -32,7 +32,7 @@ namespace platform
 			//! Removes the window and destroys its associated Swap Chain.
 			void RemoveWindow(cp_hwnd h);
 			void Render(cp_hwnd hwnd);
-			void SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
+			void SetRenderer(crossplatform::RenderDelegaterInterface *ci);
 			void SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output);
 			void ResizeSwapChain(cp_hwnd hwnd);
 			int GetViewId(cp_hwnd hwnd);
@@ -41,11 +41,19 @@ namespace platform
 			platform::core::ReadWriteMutex *delegatorReadWriteMutex;
 			///
 			void EndFrame(bool clear=true);
+			typedef std::function<DisplaySurface*(cp_hwnd)> CreateSurfaceDelegate;
+			void SetCreateSurfaceDelegate(CreateSurfaceDelegate d)
+			{
+				createSurfaceDelegate=d;
+			}
 		protected:
+			CreateSurfaceDelegate createSurfaceDelegate;
+	
             static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;
             DisplaySurfaceMap                           surfaces;
+			RenderDelegaterInterface					*renderDelegater=nullptr;
 			std::set<cp_hwnd> toRender;
 		};
 	}

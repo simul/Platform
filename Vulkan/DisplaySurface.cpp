@@ -2,6 +2,7 @@
 #include "RenderPlatform.h"
 #include "DeviceManager.h"
 #include "Platform/Core/StringFunctions.h"
+#include "Platform/CrossPlatform/RenderDelegater.h"
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
@@ -10,7 +11,7 @@
 #include <vulkan/vulkan.hpp>
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #define NOMINMAX
 
 #ifndef _countof
@@ -42,8 +43,9 @@ static const char *GetErr()
 }
 #endif
 
-DisplaySurface::DisplaySurface()
-	:pixelFormat(crossplatform::UNKNOWN)
+DisplaySurface::DisplaySurface(int view_id)
+	:crossplatform::DisplaySurface( view_id)
+	,pixelFormat(crossplatform::UNKNOWN)
 #ifdef _MSC_VER
 	,hDC(nullptr)
 	,hRC(nullptr)
@@ -121,6 +123,29 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
+#endif 
+#ifdef VK_USE_PLATFORM_XCB_KHR
+#if 0
+
+        memset(&sci, 0, sizeof(sci));
+        sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+        sci.connection = connection;
+        sci.window = window->x11.handle;
+
+        err = vkCreateXcbSurfaceKHR(instance, &sci, allocator, surface);
+
+	vk::XcbSurfaceCreateInfoKHR createInfo = vk::XcbSurfaceCreateInfoKHR()
+		.setWindow((xcb_window_t)mHwnd)
+		.setConnection();
+	vk::Instance* inst = GetVulkanInstance();
+	if (inst)
+	{
+		auto result = inst->createXcbSurfaceKHR(&createInfo, nullptr, &mSurface);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+#else
+	mSurface=*((VkSurfaceKHR*)handle);
+#endif
 #endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
@@ -319,7 +344,8 @@ void DisplaySurface::InitSwapChain()
 	//if(!swapchain)
 //		swapchain.swap(new vk::SwapchainKHR);
 	vk::SwapchainKHR oldSwapchain = swapchain;
-
+	if(!mSurface)
+		return;
 	// Check the mSurface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
 	vk::PhysicalDevice *gpu=GetGPU();

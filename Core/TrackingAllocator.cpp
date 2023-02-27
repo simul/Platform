@@ -2,7 +2,7 @@
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/RuntimeError.h"
 #include <string.h> // for strlen
-#include <fmt/format.h> // for strlen
+#include <fmt/format.h>
 
 using namespace platform;
 using namespace core;

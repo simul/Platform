@@ -23,7 +23,7 @@
 #ifdef NOMINMAX
 #undef NOMINMAX
 #endif
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #ifndef NOMINMAX
 
 #ifndef _countof
@@ -134,6 +134,12 @@ void DeviceManager::InvalidateDeviceObjects()
 
 DeviceManager::~DeviceManager()
 {
+	if (debugReportCallback)
+	{
+		vk::DispatchLoaderDynamic d;
+		d.vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)deviceManagerInternal->instance.getProcAddr("vkDestroyDebugReportCallbackEXT");
+		deviceManagerInternal->instance.destroyDebugReportCallbackEXT(debugReportCallback, nullptr, d);
+	}
 	if (debugUtilsMessenger)
 	{
 		vk::DispatchLoaderDynamic d;
@@ -308,6 +314,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #if (PLATFORM_VULKAN_USE_RENDERDOC_META == 0 && defined(__ANDROID__)) || PLATFORM_VULKAN_FORCE_DEBUG
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 #endif
 	ExclusivePushBack(required_instance_extensions, VK_KHR_SURFACE_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, platformSurfaceExt);
@@ -451,7 +458,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	uint32_t gpu_count;
 	result = deviceManagerInternal->instance.enumeratePhysicalDevices(&gpu_count, (vk::PhysicalDevice*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
- 	ERRNO_BREAK
+ 	errno=0;
 
 	if (gpu_count > 0)
 	{
@@ -567,7 +574,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 
 	if(use_debug)
-		SetupDebugCallback(IsInVector(instance_extension_names, VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+		SetupDebugCallback(
+			IsInVector(instance_extension_names, VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
+			IsInVector(instance_extension_names, VK_EXT_DEBUG_REPORT_EXTENSION_NAME),
+			IsInVector(instance_extension_names, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)
+		);
  	ERRNO_BREAK
 	CreateDevice();
  	ERRNO_BREAK
@@ -719,30 +730,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 		SIMUL_BREAK("Vulkan Error");
 	return VK_FALSE;
 }
-void DeviceManager::SetupDebugCallback(bool use_debug_utils)
+void DeviceManager::SetupDebugCallback(bool debugUtils, bool debugReport, bool debugMarker)
 {
-	if(!use_debug_utils)
-	{
-		/* Load VK_EXT_debug_report entry points in debug builds */
-		PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT	=reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkCreateDebugReportCallbackEXT"));
-		PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT					=reinterpret_cast<PFN_vkDebugReportMessageEXT>			(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDebugReportMessageEXT"));
-		PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT =reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>	(vkGetInstanceProcAddr(deviceManagerInternal->instance, "vkDestroyDebugReportCallbackEXT"));
-
-		/* Setup callback creation information */
-		VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
-		callbackCreateInfo.sType	   = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-		callbackCreateInfo.pNext	   = nullptr;
-		callbackCreateInfo.flags	   = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-										 VK_DEBUG_REPORT_WARNING_BIT_EXT |
-										 VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-		callbackCreateInfo.pfnCallback = &DebugReportCallback;
-		callbackCreateInfo.pUserData   = nullptr;
-
-		/* Register the callback */
-		VkDebugReportCallbackEXT callback;
-		VkResult result = vkCreateDebugReportCallbackEXT(deviceManagerInternal->instance, &callbackCreateInfo, nullptr, &callback);
-	}
-	else
+	if (debugUtils)
 	{
 		debugUtilsMessengerCI
 			.setPNext(nullptr)
@@ -756,9 +746,27 @@ void DeviceManager::SetupDebugCallback(bool use_debug_utils)
 
 		vk::DispatchLoaderDynamic d;
 		d.vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
-
 		debugUtilsMessenger = deviceManagerInternal->instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCI, nullptr, d);
 		debugUtilsSupported = true;
+	}
+	else if(debugReport)
+	{
+		debugReportCallbackCI
+			.setPNext(nullptr)
+			.setFlags(vk::DebugReportFlagBitsEXT::eError
+						| vk::DebugReportFlagBitsEXT::eWarning
+						| vk::DebugReportFlagBitsEXT::ePerformanceWarning)
+			.setPfnCallback(DebugReportCallback)
+			.setPUserData(this);
+
+		vk::DispatchLoaderDynamic d;
+		d.vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugReportCallbackEXT");
+		debugReportCallback = deviceManagerInternal->instance.createDebugReportCallbackEXT(debugReportCallbackCI, nullptr, d);
+		debugMarkerSupported = debugMarker;
+	}
+	else
+	{
+		return;
 	}
 }
 

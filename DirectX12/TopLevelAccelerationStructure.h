@@ -2,7 +2,7 @@
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 
-#if defined(_XBOX_ONE)
+#if defined(_GAMING_XBOX_XBOXONE)
 #define PLATFORM_SUPPORT_D3D12_RAYTRACING 0
 #endif
 

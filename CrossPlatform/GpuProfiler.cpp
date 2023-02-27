@@ -269,8 +269,11 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 	}
 	static float mix=0.9f;
 	static float final_mix=0.01f;
-	mix*=0.999f;
-	mix+=0.001f*(final_mix);
+	if (profile->parent == nullptr)
+	{
+		mix*=0.999f;
+		mix+=0.001f*(final_mix);
+	}
 
 	if(profile->QueryFinished == false)
 		return;
@@ -281,7 +284,7 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 		return;
 
 	timer.UpdateTime();
-
+	
 	// Get the query data
 	UINT64 startTime = 0;
 	bool ok=profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime));
@@ -378,8 +381,8 @@ const char *GpuProfiler::GetDebugText(core::TextStyle style) const
 {
 	static std::string str;
 	str=BaseProfilingInterface::GetDebugText();
-	
-    str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
+	char s[20];
+    str+= ("Time spent waiting for queries: "s + core::QuickFormat(s,"%3.3f",queryTime)) + "ms"s;
 	str += (style == core::HTML) ? "<br/>" : "\n";
 	return str.c_str();
 }

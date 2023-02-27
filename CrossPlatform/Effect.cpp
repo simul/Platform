@@ -13,6 +13,10 @@
 #include <algorithm>
 #include <regex>		// for file loading
 
+#if PLATFORM_STD_FILESYSTEM > 0
+#include <filesystem>
+#endif
+
 using namespace platform;
 using namespace crossplatform;
 using namespace std;
@@ -699,7 +703,7 @@ bool Effect::Compile(const char *filename_utf8)
 
 bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
-#if defined(WIN32) &&!defined(_XBOX_ONE)&&!defined(_GAMING_XBOX)
+#if defined(WIN32) && !defined(_GAMING_XBOX)
 	// We will only recompile if we are in windows
 	// SFX will handle the "if changed"
 	auto buildMode = r->GetShaderBuildMode();
@@ -879,7 +883,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				}
 				if (ExitCode != 0)
 				{
-					SIMUL_CERR << "ExitCode: %d" << ExitCode << std::endl;
+					SIMUL_CERR << "ExitCode: " << ExitCode << std::endl;
 					result = false;
 				}
 				else
@@ -946,6 +950,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			static bool already = false;
 			if (!already)
 			{
+			#if PLATFORM_STD_FILESYSTEM > 0
+				std::cerr << "Current path is: " << std::filesystem::current_path().string().c_str()<<std::endl;
+			#endif
 				std::cerr << "Binary paths searched: "<< std::endl;
 				for (auto p : binaryPaths)
 				{

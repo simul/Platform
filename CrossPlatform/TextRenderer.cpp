@@ -105,7 +105,7 @@ TextRenderer::FontIndex defaultFontIndices[]={
 {0.573242f	,0.576172f		,3},
 {0.577148f	,0.583984f		,7},
 };
-static int max_chars=1500;
+//tatic int max_chars=1500;
 
 TextRenderer::TextRenderer()
 	:effect(NULL)
@@ -193,6 +193,7 @@ void TextRenderer::Recompile()
 	textureResource	=effect->GetShaderResource("fontTexture");
 	_fontChars		=effect->GetShaderResource("fontChars");
 }
+
 int TextRenderer::GetDefaultTextHeight() const
 {
 	return defaultTextHeight;
@@ -200,8 +201,7 @@ int TextRenderer::GetDefaultTextHeight() const
 
 int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
-	bool supportShaderViewID = renderPlatform->GetType() == crossplatform::RenderPlatformType::D3D11 ? false : true;
-	int passIndex = supportShaderViewID ? 0 : 1;
+	int max_chars = (int)strnlen(txt, 8192);
 
 	if (recompile)
 		Recompile();
@@ -248,7 +248,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 	if(constantBuffer.background.w>0.0f)
 	{
-		effect->Apply(deviceContext,backgTech, passIndex);
+		effect->Apply(deviceContext,backgTech, 1);
 		renderPlatform->DrawQuad(deviceContext);
 		effect->Unapply(deviceContext);
 	}
@@ -295,7 +295,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	if(n>0)
 	{
 		effect->SetTexture(deviceContext,textureResource,font_texture);
-		effect->Apply(deviceContext,textTech,passIndex);
+		effect->Apply(deviceContext,textTech, 1);
 		effect->SetConstantBuffer(deviceContext,&constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 		f.Apply(deviceContext,effect,_fontChars);
@@ -312,6 +312,8 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	bool supportShaderViewID = renderPlatform->GetType() == crossplatform::RenderPlatformType::D3D11 ? false : true;
 	int passIndex = supportShaderViewID ? 0 : 1;
 	SIMUL_ASSERT_WARN(supportShaderViewID, "Graphics API doesn't support SV_ViewID/gl_ViewIndex in the shader. Falling back to single view rendering.");
+
+	int max_chars = (int)strnlen(txt, 8192);
 
 	if (recompile)
 		Recompile();
@@ -351,7 +353,8 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	uint n = 0;
 	crossplatform::StructuredBuffer<FontChar>& f = fontChars[deviceContext.platform_context];
 	FontChar* charList = f.GetBuffer(deviceContext);
-
+	if(!charList)
+		return 0;
 	size_t countOfTextBackgroundArray = sizeof(constantBuffer.background_rect) / sizeof(constantBuffer.background_rect[0]);
 	size_t viewCount = std::min(countOfTextBackgroundArray, deviceContext.viewStructs.size());
 	for (size_t i = 0; i < viewCount; i++)

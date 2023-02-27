@@ -19,7 +19,7 @@ else()
 	set(ADDITIONAL_LIBS "")
 endif()
 
-set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} freetype)
+#set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} freetype)
 set(INCLUDE_DIRS ${INCLUDE_DIRS} "${SIMUL_PLATFORM_DIR}/External/stb")
  
 set(PLATFORM_STD_CHARCONV ON)
@@ -29,6 +29,10 @@ elseif(PLATFORM_LINUX)
 	set(PLATFORM_STD_CHARCONV OFF)
 elseif(PLATFORM_EMSCRIPTEN)
 	set(PLATFORM_STD_CHARCONV OFF)
+endif()
+
+if(PLATFORM_PS4)
+	set(PLATFORM_STD_FILESYSTEM 0)
 endif()
 
 # whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs.

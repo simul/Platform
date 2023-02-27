@@ -12,6 +12,38 @@ namespace fs = std::experimental::filesystem;
 using namespace platform;
 using namespace core;
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
+std::string platform::core::GetExeDirectory()
+{
+#ifdef _WIN32
+    // Windows specific
+    wchar_t szPath[MAX_PATH];
+    GetModuleFileNameW( NULL, szPath, MAX_PATH );
+#endif
+
+#ifdef UNIX
+#include <linux/limits.h>
+    // Linux specific
+    char szPath[PATH_MAX];
+    ssize_t count = readlink( "/proc/self/exe", szPath, PATH_MAX );
+    if( count < 0 || count >= PATH_MAX )
+        return {}; // some error
+    szPath[count] = '\0';
+#endif
+
+#if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
+	std::filesystem::path p=std::filesystem::path{ szPath }.parent_path() / ""; // to finish the folder path with (back)slash
+	return p.string();
+#else
+	return std::string();
+#endif
+}
+
 std::vector<std::string> FileLoader::ListDirectory(const std::string& path) const
 {
 	std::vector<std::string> dir;

@@ -44,11 +44,7 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	,untextured(nullptr)
 	,showVolume(nullptr)
 	,gpuProfiler(nullptr)
-#ifdef _XBOX_ONE
-	,can_save_and_restore(false)
-#else
 	,can_save_and_restore(true)
-#endif
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
 {
@@ -624,6 +620,28 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	return r;
 }
 
+void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,Texture *heightMap,Texture *normalMap,float scale)
+{
+	if(!heightMap||!heightMap->IsValid())
+		return;
+	if(!normalMap||!normalMap->IsValid())
+		return;
+	auto _imageTexture=debugEffect->GetShaderResource("imageTexture");
+	auto pass=debugEffect->GetTechniqueByName("height_to_normal")->GetPass(0);
+	debugConstants.texSize=uint4(heightMap->width,heightMap->length,1,1);
+	debugConstants.multiplier=vec4(scale,scale,scale,scale);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	ApplyPass(deviceContext,pass);
+	normalMap->activateRenderTarget(deviceContext,0,0);
+	SetTexture(deviceContext,_imageTexture,heightMap,0,0);
+	DrawQuad(deviceContext);
+	//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
+	normalMap->deactivateRenderTarget(deviceContext);
+	
+	UnapplyPass(deviceContext);
+}
+
+        
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
@@ -644,6 +662,11 @@ void RenderPlatform::SetMemoryInterface(platform::core::MemoryInterface *m)
 crossplatform::Effect *RenderPlatform::GetDebugEffect()
 {
 	return debugEffect;
+}
+
+crossplatform::Effect* RenderPlatform::GetCopyEffect()
+{
+	return copyEffect;
 }
 
 ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
@@ -1117,35 +1140,45 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 	Print(deviceContext, positions[0].data(), positions[1].data(), text, colr, bkg);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale,float mip,int slice)
 {
-	static int level=0;
-	static int lod=0;
+	int level=slice;
 	static int frames=25;
 	static int count=frames;
 	static unsigned long long framenumber=0;
-	float displayLod=0.0f;
-	if(debug&&framenumber!=deviceContext.GetFrameNumber())
+	float displayLod=mip;
+	static int lod=0;
+	
+	if(debug&&mip<0)
 	{
-		count--;
-		if(!count)
+		if(framenumber!=deviceContext.GetFrameNumber())
 		{
-			lod++;
-			count=frames;
+			count--;
+			if(!count)
+			{
+				lod++;
+				count=frames;
+			}
+			framenumber=deviceContext.GetFrameNumber();
 		}
-		framenumber=deviceContext.GetFrameNumber();
+		if(tex)
+		{
+			int m=tex->GetMipCount();
+			displayLod=float((lod%(m?m:1)));
+		}
 	}
-	if(debug&&tex)
-	{
-		int m=tex->GetMipCount();
-		displayLod=float((lod%(m?m:1)));
-		if(!tex->IsValid())
-			tex=nullptr;
-	}
+	if(tex && !tex->IsValid())
+		tex=nullptr;
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
 	debugConstants.displayLevel=0;
+	if(texc_scale.x==0||texc_scale.y==0)
+	{
+		texc_scale.x=1.0f;
+		texc_scale.y=1.0f;
+	}
+	debugConstants.viewport={texc.x,texc.y,texc_scale.x,texc_scale.y};
 	crossplatform::EffectTechnique *tech=textured;
 	if(tex&&tex->GetDimension()==3)
 	{
@@ -1265,9 +1298,9 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 	effect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug)
+void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale,float mip,int slice)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale, mip, slice);
 }
 
 void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v

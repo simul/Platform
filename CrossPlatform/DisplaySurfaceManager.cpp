@@ -75,17 +75,13 @@ void DisplaySurfaceManager::Shutdown()
 	surfaces.clear();
 }
 
-void DisplaySurfaceManager::SetRenderer(cp_hwnd hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
+void DisplaySurfaceManager::SetRenderer(crossplatform::RenderDelegaterInterface *ci)
 {
-	if(!ci)
-		return;
-	AddWindow(hwnd);
-	if(surfaces.find(hwnd)==surfaces.end())
-		return;
-	DisplaySurface *w=surfaces[hwnd];
-	if(!w)
-		return;
-	w->SetRenderer(ci,  view_id);
+	renderDelegater=ci;
+	for(auto s:surfaces)
+	{
+		s.second->SetRenderer(ci);
+	}
 }
 
 int DisplaySurfaceManager::GetViewId(cp_hwnd hwnd)
@@ -130,7 +126,12 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 	if(fmt==crossplatform::UNKNOWN)
 		fmt=kDisplayFormat;
 	SIMUL_NULL_CHECK_RETURN(renderPlatform,"Can't add a window when renderPlatform has not been set.")
-    DisplaySurface *window=renderPlatform->CreateDisplaySurface();
+    DisplaySurface *window=nullptr;
+	if(createSurfaceDelegate)
+		window=createSurfaceDelegate(hwnd);
+	else
+		window=renderPlatform->CreateDisplaySurface();
+	window->SetRenderer(renderDelegater);
 	surfaces[hwnd]=window;
 	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,fmt);
 }

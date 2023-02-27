@@ -5,7 +5,7 @@ endif()
 set(_XB1_TOOLCHAIN_ 1)
 
 # GDK version requirement
-set(REQUIRED_GDK_TOOLCHAIN_VERSION "200601" CACHE STRING "Choose the GDK version" )
+set(REQUIRED_GDK_TOOLCHAIN_VERSION "221001" CACHE STRING "Choose the GDK version" )
 
 # Get GDK environment
 if( EXISTS "$ENV{GameDK}" AND IS_DIRECTORY "$ENV{GameDK}" )
@@ -42,6 +42,8 @@ if( CMAKE_GENERATOR STREQUAL "Visual Studio 15 2017" )
 	set(GDK_COMPILER_DIR "C:/Program Files (x86)/Microsoft Visual Studio/2017/Professional" )
 elseif( CMAKE_GENERATOR STREQUAL "Visual Studio 16 2019" )
 	set(GDK_COMPILER_DIR "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community" )
+elseif( CMAKE_GENERATOR STREQUAL "Visual Studio 17 2022" )
+	set(GDK_COMPILER_DIR "C:/Program Files/Microsoft Visual Studio/2022/Community" )
 else()
 	message(FATAL_ERROR "Unsupported Visual Studio version!")
 endif()
@@ -102,3 +104,6 @@ link_directories("${GDK_ROOT}/${GDK_TOOLCHAIN_VERSION}/GRDK/gameKit/Lib/amd64/"
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Od /Ob2 /DNDEBUG /Zi /EHsc")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Ob0 /Od /DDEBUG /D_DEBUG /RTC1 /EHsc")
 set(CMAKE_LINK_LIBRARY_FLAG "")
+
+set(PLATFORM_USE_FMT true)
+set(FMT_COMPILER_FEATURE_CHECKS OFF)

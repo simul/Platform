@@ -953,7 +953,8 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *)
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-    return new opengl::DisplaySurface();
+	static int view_id=1;
+    return new opengl::DisplaySurface(view_id++);
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)

@@ -32,13 +32,14 @@ namespace platform
 	namespace vulkan
 	{
 		extern bool debugUtilsSupported;
+		extern bool debugMarkerSupported;
 		template<typename T>
 		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
 		{
 			vk::Instance* instance = renderPlatform->AsVulkanInstance();
 			vk::Device* device = renderPlatform->AsVulkanDevice();
-
 			uint64_t objectHandle = *((uint64_t*)&ds);
+
 			if(debugUtilsSupported)
 			{
 				vk::DispatchLoaderDynamic d;
@@ -55,6 +56,23 @@ namespace platform
 					device->setDebugUtilsObjectNameEXT(nameInfo, d);
 				}
 			}
+			if(debugMarkerSupported)
+			{
+				vk::DispatchLoaderDynamic d;
+				d.vkDebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)instance->getProcAddr("vkDebugMarkerSetObjectNameEXT");
+				if (d.vkDebugMarkerSetObjectNameEXT)
+				{
+					vk::DebugMarkerObjectNameInfoEXT nameInfo;
+					nameInfo
+						.setPNext(nullptr)
+						.setObjectType(ds.debugReportObjectType)
+						.setObject(objectHandle)
+						.setPObjectName(name);
+
+					device->debugMarkerSetObjectNameEXT(nameInfo, d);
+				}
+			}
+
 			if (platform::core::SimulInternalChecks)
 			{
 				crossplatform::RenderPlatform::ResourceMap[objectHandle] = name;
@@ -136,9 +154,8 @@ namespace platform
 			void PushToReleaseManager(vk::Image& i);
 			void PushToReleaseManager(vk::Sampler& i);
 			void PushToReleaseManager(vk::PipelineLayout& i);
-			void PushToReleaseManager(vk::DescriptorSet& i);
 			void PushToReleaseManager(vk::DescriptorSetLayout& i);
-			void PushToReleaseManager(vk::DescriptorPool& i);
+			void PushToReleaseManager(vk::DescriptorPool& i); //All descriptor sets allocated from the pool are implicitly freed and become invalid.
 			void ClearReleaseManager();
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
@@ -252,6 +269,7 @@ namespace platform
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *final_layouts=nullptr);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
+			void									EndRenderPass(crossplatform::DeviceContext& deviceContext) override;
 			static std::string						VulkanResultString(vk::Result res);
 
 			// Vulkan-specific support for video decoding:
@@ -266,6 +284,7 @@ namespace platform
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;
 			vk::Sampler										vulkanSamplerYcbcr;
+
 			bool											resourcesToBeReleased=false;
 			std::set<vk::Buffer>							releaseBuffers;
 			std::set<vk::BufferView>						releaseBufferViews;
@@ -277,9 +296,7 @@ namespace platform
 			std::set<vk::Sampler>							releaseSamplers;
 			std::set<vk::Pipeline>							releasePipelines;
 			std::set<vk::PipelineCache>						releasePipelineCaches;
-
 			std::set<vk::PipelineLayout>					releasePipelineLayouts;
-			std::set<vk::DescriptorSet>						releaseDescriptorSets;
 			std::set<vk::DescriptorSetLayout>				releaseDescriptorSetLayouts;
 			std::set<vk::DescriptorPool>					releaseDescriptorPools;
 

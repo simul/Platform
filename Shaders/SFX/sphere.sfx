@@ -63,38 +63,54 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
     v2f OUT;
 	// we have (latitudes+1)*(longitudes+1)*2 id's
 	uint vertex_id		=IN.vertex_id;
-	vec3 pos;
-	if(vertex_id<(latitudes+1)*((uint)longitudes+1))
+	vec3 pos=vec3(0,0,0);
+	if(vertex_id<(latitudes-1)*(loopSteps+3))
 	{
-		uint latitude_strip	=vertex_id/(longitudes+1);
-		vertex_id			-=latitude_strip*(longitudes+1);
-		uint longitude		=vertex_id;
-		float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
-		float elevation		=.999*(float(latitude_strip)/float(latitudes)-0.5)*3.1415926536;
+		uint latitude_strip	=vertex_id/(loopSteps+uint(3));
+		int loop_index		=int(vertex_id-latitude_strip*(loopSteps+3));
+		int longitude		=min(max(0,loop_index-1),int(loopSteps));
+		float azimuth		=2.0*3.1415926536*float(longitude)/float(loopSteps);
+		float elevation		=.999*(float(latitude_strip+1)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el		=cos(elevation);
 		pos					=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
-		float b				=(uint)latitude_strip==latitudes/2?1.0:0.2;
-		OUT.colour			=multiplier*vec4(1.0,1.0,1.0,longitude>0&&longitude<(uint)longitudes?b:0.0); //Latitude Colour
+		// bright at the equator:
+		float b				=(uint)(latitude_strip+1)==latitudes/2?1.0:0.7;
+		b					*=(loop_index>0&&loop_index<(loopSteps+2))?1.0:0.0;
+		OUT.colour			=multiplier;
+		//OUT.colour.a		*=latitude_strip%2?1.0:0.5;
+		OUT.colour.a		*=b; //Latitude Colour
 	}
 	else
 	{
-		vertex_id				-=(latitudes+1)*(longitudes+1);
-		uint longitude_strip		=vertex_id/(latitudes+1);
-		uint latitude			=int(vertex_id-longitude_strip*(latitudes+1));
+		vertex_id				-=(latitudes-1)*(loopSteps+3);
+		
+		uint longitude_strip	=vertex_id/(loopSteps+uint(3));
+		int loop_index			=int(vertex_id-longitude_strip*(loopSteps+uint(3)));
+		int latitude			=min(max(0,loop_index-1),int(loopSteps));
 		float azimuth			=2.0*3.1415926536*float(longitude_strip)/float(longitudes);
-		float elevation			=.999*(float(latitude)/float(latitudes)-0.5)*3.1415926536;
+		float elevation			=.999*(float(latitude)/float(loopSteps)-0.5)*3.1415926536;
 		float cos_el			=cos(elevation);
 		pos						=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
-		float b					=longitude_strip==0?1.0:0.2;
-		OUT.colour				=multiplier*vec4(1.0,1.0,1.0,latitude>0&&latitude<latitudes?b:0.0); //Longitude Colour
-	//	OUT.colour			*=saturate(elevation/1.7);
+		// bright at the meridian:
+		float b					=(longitude_strip%(longitudes/2))==0?1.0:0.8;
+		b						*=loop_index>0&&loop_index<(loopSteps+2)?b:0.0;
+		OUT.colour				=multiplier;
+		//	OUT.colour.r=1.0-float(longitude_strip)/float(longitudes);
+			OUT.colour.a			*=b;//latitude>0&&latitude<latitudes?b:0.0; //Longitude Colour
+		//	OUT.colour			*=saturate(elevation/1.7);
+	
 	}
 	OUT.hPosition			=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
 	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
 	float tz				=temp.z/temp.w;
 	float z					=OUT.hPosition.z/OUT.hPosition.w;
 	OUT.texCoords = vec2(0, 0);
-	if(tz<z)
+	// Don't render "over the horizon".
+	float horizon_dotp=dot(sphereCamPos,pos);
+	float Rh=length(sphereCamPos);
+	float horizon_cosine=horizon_dotp/(radius*Rh);
+	float min_horizon_cosine=radius/Rh;
+	if(horizon_cosine<min_horizon_cosine)
 		OUT.colour.a*=0;
     return OUT;
 }
@@ -156,6 +172,52 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	return OUT;
 }
 
+shader v2f VS_DrawAxesOnSphere(idOnly IN) 
+{
+    v2f OUT;
+	vec3 poss[4];
+	poss[0]			=vec3( 1.0,-1.0,1.0);
+	poss[1]			=vec3( 1.0, 1.0,1.0);
+	poss[2]			=vec3(-1.0, 1.0,1.0);
+	poss[3]			=vec3(-1.0,-1.0,1.0);
+	vec3 pos;
+	{
+		uint vert		=IN.vertex_id;
+		int axis		=int(vert/3);
+		vec3 ax			=vec3(axis==0,axis==1,axis==2);
+		pos				=vec3(0,0,0);
+		if(bool(vert%2))
+			pos			+=ax*sideview;
+        vec4 finalCol  = vec4(0.0,0.0,0.0,1.0);
+        if(axis == 0)
+        {
+            finalCol.xyz += vec3(0.5,0.0,0.0);
+        }
+        if(axis == 1)
+        {
+            finalCol.xyz += 0.75*vec3(0.0,0.5,0.0);
+        }
+        if(axis == 2)
+        {
+            finalCol.xyz += vec3(0.0,0.0,0.5);
+        }
+        OUT.colour = finalCol;
+		//OUT.colour=vec4((axis==0)*vec3(1,0.5,0.5)+(axis==1)*vec3(0,1.0,0)+(axis==2)*vec3(0.5,0.5,1.0),1.0);
+	}
+	OUT.texCoords		= vec2(0,0);
+	pos					= position+radius*rotate_by_quaternion(quaternion,pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition		= mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+
+	vec4 temp				=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	float tz				=temp.z/temp.w;
+	float z					=OUT.hPosition.z/OUT.hPosition.w;
+	if(tz<z)
+		OUT.colour*=0;
+
+	return OUT;
+}
 
 shader v2f VS_DrawFilledQuadOnSphere(idOnly IN)
 {
@@ -351,8 +413,39 @@ shader vec4 PS_DrawTextureOnSphere(posTexColVertexOutput IN) : SV_TARGET
 	return res;
 }
 
+shader vec4 PS_DrawTexturedSphere(posTexVertexOutput IN) :SV_TARGET
+{
+	vec4 clip_pos = vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x += 2.0 * IN.texCoords.x;
+	clip_pos.y -= 2.0 * IN.texCoords.y;
+	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
+	// view.z gives the elevation angle.
+	float R = radius;
+	float Rh = length(sphereCamPos);
+	float theta = asin(R / Rh);
+	float dotp=dot(-normalize(sphereCamPos),view);
+	if (dotp < cos(theta))
+		discard;//return vec4(0,0,0,0);
+	// Find position where view hits rad.
+	// ground=cam+d*view;
+	// |ground|=R.
+	// Solve for (cam+d*view).(cam+d*view)=R^2.
+	float B=2.0*dot(sphereCamPos,view);
+	float C=dot(sphereCamPos,sphereCamPos)-radius*radius;
+	float d=0.5*(-B-sqrt(B*B-4.0*C));
+	vec3 pos=sphereCamPos+d*view;
+	float longitude=atan2(pos.y,pos.x);
+	float latitude=asin(pos.z);
+	vec2 texc=vec2(0.5+longitude/2.0/SIMUL_PI_F,0.5-latitude/SIMUL_PI_F);
+	vec4 lookup=debugColour*texture_nearest_lod(imageTexture,texc.xy,0);
+
+	return vec4(lookup.rgb,1.0f);
+}
+
 shader vec4 DebugPS(v2f IN) : SV_TARGET
 {
+	if(IN.colour.a==0)
+		discard;
     vec4 c		=IN.colour;
 	return c;
 }
@@ -456,6 +549,19 @@ technique draw_quad_on_sphere
 	}
 }
 
+technique draw_axes_on_sphere
+{
+	pass main
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_DrawAxesOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+	}
+}
+
 technique draw_texture_on_sphere
 {
     pass p0 
@@ -482,6 +588,18 @@ technique draw_curved_texture_on_sphere
 	}
 }
 
+technique draw_textured_sphere
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawTexturedSphere()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
+}
 technique draw_circle_on_sphere
 {
     pass fill 

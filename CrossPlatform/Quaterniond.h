@@ -53,6 +53,13 @@ namespace platform
 				z = q[2];
 				s = q[3];
 			}
+			Quaternion(const Quaternion &q)
+			{
+				s = q.s;
+				x = q.x;
+				y = q.y;
+				z = q.z;
+			}
 			template<typename U> Quaternion(const Quaternion<U> &q)
 			{
 				s = T(q.s);
@@ -292,7 +299,7 @@ namespace platform
 			}
 			void Rotate(const tvector3<T>&d)
 			{
-				double sz = length(d);
+				T sz = length(d);
 				if (sz > 0)
 				{
 					tvector3<T> a = d;
@@ -325,6 +332,8 @@ namespace platform
 				s /= magnitude;
 			}
 		};
+		//! Quaternion multiplication. This is neither a dot nor a cross product, but can be derived
+		//! by considering the quaternions as complex numbers with a real part s and complex parts x, y and z on directions i, j and k.
 		template<typename T> void Multiply(Quaternion<T>& r, const Quaternion<T>& q1, const Quaternion<T>& q2)
 		{
 			r.s = q1.s * q2.s - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
@@ -332,11 +341,14 @@ namespace platform
 			r.y = q2.s * q1.y + q1.s * q2.y + q1.z * q2.x - q1.x * q2.z;
 			r.z = q2.s * q1.z + q1.s * q2.z + q1.x * q2.y - q1.y * q2.x;
 		}
-		template<typename T> void Multiply(tvector3<T>& ret, const Quaternion<T>& q, const tvector3<T>& v)
+		//! Rotate a vector by a quaternion, equivalent to (qV)q' or to q(Vq') where q' is the conjugate of q
+		//! and V is a quaternion with x,y,z as v and s=0.
+		template<typename T> void Rotate(tvector3<T>& ret, const Quaternion<T>& q, const tvector3<T>& v)
 		{
 			const T& x0 = v.x;
 			const T& y0 = v.y;
 			const T& z0 = v.z;
+			// The vector, considered as a quaternion, has non-unit size, and its real part, s, is zero.
 			T s1 = q.x * x0 + q.y * y0 + q.z * z0;
 			T x1 = q.s * x0 + q.y * z0 - q.z * y0;
 			T y1 = q.s * y0 + q.z * x0 - q.x * z0;
@@ -345,13 +357,24 @@ namespace platform
 			ret.y = s1 * q.y + q.s * y1 + q.z * x1 - q.x * z1;
 			ret.z = s1 * q.z + q.s * z1 + q.x * y1 - q.y * x1;
 		}
+		template<typename T> void InverseRotate(tvector3<T> &ret,const Quaternion<T> &q,const tvector3<T>& v)
+		{
+			const T &x0=v.x;
+			const T &y0=v.y;
+			const T &z0=v.z;
+			T s1=-q.x*x0-q.y*y0-q.z*z0;
+			T x1= q.s*x0-q.y*z0+q.z*y0;
+			T y1= q.s*y0-q.z*x0+q.x*z0;
+			T z1= q.s*z0-q.x*y0+q.y*x0;
+			ret.x=-s1*q.x+q.s*x1-q.y*z1+q.z*y1,
+			ret.y=-s1*q.y+q.s*y1-q.z*x1+q.x*z1,
+			ret.z=-s1*q.z+q.s*z1-q.x*y1+q.y*x1;
+		}
+		//! Quaternion with doubles.
 		typedef Quaternion<double> Quaterniond;
+		//! Quaternion with floats.
 		typedef Quaternion<float> Quaternionf;
-		/// Multiply, or rotate, vec3d v by q, return the value in vec3d ret. v and ret must have size 3.
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(vec3d & ret,const Quaterniond & q,const vec3d & v);
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyByNegative(Quaterniond& ret,const Quaterniond& q1,const Quaterniond& q2);
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyNegativeByQuaterniond(Quaterniond& r,const Quaterniond& q1,const Quaterniond& q2);
-		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Divide(vec3d& ret,const Quaterniond& q,const vec3d& v);
+		
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN AddQuaterniondTimesVector(vec3d& ret,const Quaterniond& q,const vec3d& v);
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(Quaterniond& r,const Quaterniond& q1,const Quaterniond& q2);
 	
@@ -380,15 +403,23 @@ namespace platform
 			T invs = T(1.0) / (sqx + sqy + sqz + sqw);
 			M.m[0] = (T)((sqx - sqy - sqz + sqw) * invs);
 			M.m[1] = (T)(T(2.0) * (X * Y + Z * S));      
-			M.m[2] = (T)(T(2.0) * (X * Z - Y * S));      
+			M.m[2] = (T)(T(2.0) * (X * Z - Y * S));  
+			M.m[3] = 0;    
 			 
 			M.m[4 + 0] = (T)(T(2.0) * (X * Y - Z * S));      
 			M.m[4 + 1] = (T)(-X * X + Y * Y - Z * Z + S * S);
-			M.m[4 + 2] = (T)(T(2.0) * (Y * Z + X * S));      
+			M.m[4 + 2] = (T)(T(2.0) * (Y * Z + X * S));   
+			M.m[4 + 3] = 0;      
 			
 			M.m[2 * 4 + 0] = (T)(T(2.0) * (X * Z + Y * S));     
 			M.m[2 * 4 + 1] = (T)(T(2.0) * (Y * Z - X * S));     
 			M.m[2 * 4 + 2] = (T)(-X * X - Y * Y + Z * Z + S * S);
+			M.m[2 * 4 + 3] = 0;      
+			
+			M.m[3 * 4 + 0] = 0;
+			M.m[3 * 4 + 1] = 0;
+			M.m[3 * 4 + 2] = 0;
+			M.m[3 * 4 + 3] = T(1.0);
 		}
 		template<typename T, typename U> void MatrixToQuaternion(Quaternion<T>& q, const tmatrix4<U>& M)
 		{
@@ -433,13 +464,19 @@ namespace platform
 			}
 			q.MakeUnit();
 		}
-		
-		template<typename T> struct tpose
+		template<typename T>
+		struct tpose
 		{
-			Quaternion<T> orientation;
-			tvector3<T> position;
+			Quaternion<T> orientation = { T(0), T(0), T(0), T(1) };
+			tvector3<T> position = { T(0), T(0), T(0) };
 		};
-		typedef tpose<float> pose;
+		typedef tpose<double> posed;
+		typedef tpose<float> posef;
+		template<typename T,typename U> void PoseToMatrix(tmatrix4<T>& m, const tpose<U>& pose)
+		{
+			QuaternionToMatrix(m,pose.orientation);
+			m.setTranslationRowMajor(pose.position);
+		}
 	}
 }
 #endif

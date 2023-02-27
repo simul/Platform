@@ -205,38 +205,28 @@ static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int m
 	d+=(double)sec/24.0/3600.0;
 	return d;
 }
+
 double FileLoader::GetFileDate(const char* filename_utf8)
 {
-
-	if(!FileExists(filename_utf8))
-		return 0.0;
-
-	std::wstring wstr=Utf8ToWString(filename_utf8);
-	FILE *fp = NULL;
-#ifdef _MSC_VER
-	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r, ccs=UTF-8":
-#else
-	fp = fopen(filename_utf8,"rb");//open_as_text?L"r, ccs=UTF-8":
-#endif
-	if(!fp)
-	{
-		//std::cerr<<"Failed to find file "<<filename_utf8<<std::endl;
-		return 0.0;
-	}
-	fclose(fp);
-#ifdef _MSC_VER
-	struct _stat buf;
-	_wstat(wstr.c_str(),&buf);
+	std::wstring filenamew=StringToWString(filename_utf8);
+	#ifdef _MSC_VER
+	struct _stat64i32 buf;
+	_wstat(filenamew.c_str(), &buf);
+	#else
+	struct stat buf;
+	stat(filename_utf8, &buf);
+	#endif
 	buf.st_mtime;
 	time_t t = buf.st_mtime;
 	struct tm lt;
+	#ifdef _MSC_VER
 	gmtime_s(&lt,&t);
-	double daynum=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
-	return daynum;
-#else
-		return 0;
-#endif
-}
+	#else
+	gmtime_r(&t,&lt);
+	#endif
+	double datetime=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
+	return datetime;
+}		
 
 void FileLoader::ReleaseFileContents(void* pointer)
 {
