@@ -10,10 +10,10 @@ static FP16 float_to_half_fast3_rtne(FP32 f)
     FP32 f32infty = { 255 << 23 };
     FP32 f16max = { (127 + 16) << 23 };
     FP32 denorm_magic = { ((127 - 15) + (23 - 10) + 1) << 23 };
-    uint sign_mask = 0x80000000u;
+    unsigned int sign_mask = 0x80000000u;
     FP16 o = { 0 };
 
-    uint sign = f.u & sign_mask;
+    unsigned int sign = f.u & sign_mask;
     f.u ^= sign;
 
     // NOTE all the integer compares in this function can be safely
@@ -37,7 +37,7 @@ static FP16 float_to_half_fast3_rtne(FP32 f)
         }
         else
         {
-            uint mant_odd = (f.u >> 13) & 1; // resulting mantissa is odd
+            unsigned int mant_odd = (f.u >> 13) & 1; // resulting mantissa is odd
 
             // update exponent, rounding bias part 1
             f.u += ((15 - 127) << 23) + 0xfff;
@@ -55,11 +55,11 @@ static FP16 float_to_half_fast3_rtne(FP32 f)
 static FP32 half_to_float(FP16 h)
 {
     static const FP32 magic = { 113 << 23 };
-    static const uint shifted_exp = 0x7c00 << 13; // exponent mask after shift
+    static const unsigned int shifted_exp = 0x7c00 << 13; // exponent mask after shift
     FP32 o;
 
     o.u = (h.u & 0x7fff) << 13;     // exponent/mantissa bits
-    uint exp = shifted_exp & o.u;   // just the exponent
+    unsigned int exp = shifted_exp & o.u;   // just the exponent
     o.u += (127 - 15) << 23;        // exponent adjust
 
     // handle exponent special cases
@@ -77,10 +77,14 @@ static FP32 half_to_float(FP16 h)
 
 unsigned short platform::math::ToFloat16(float f)
 {
-    return float_to_half_fast3_rtne({ f }).u;
+    FP32 fp32;
+    fp32.f = f;
+    return float_to_half_fast3_rtne(fp32).u;
 }
 
-float platform::math::ToFloat32(unsigned short f)
+float platform::math::ToFloat32(unsigned short u)
 {
-    return half_to_float({ f }).f;
+    FP16 fp16;
+    fp16.u = u;
+    return half_to_float(fp16).f;
 }

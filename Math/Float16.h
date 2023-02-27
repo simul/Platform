@@ -28,6 +28,6 @@ namespace platform
 		};
 
 		unsigned short ToFloat16(float f);
-		float ToFloat32(unsigned short f);
+		float ToFloat32(unsigned short u);
 	}
 }
