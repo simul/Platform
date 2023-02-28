@@ -156,6 +156,45 @@ namespace platform
 		{
 			return static_cast<ShaderResourceType>(static_cast<unsigned int>(a) & static_cast<unsigned int>(b));
 		}
+		enum class PixelFormatType { DOUBLE, FLOAT, HALF, UINT, USHORT, UCHAR, INT, SHORT, CHAR };
+		inline PixelFormatType GetElementType(PixelFormat p)
+		{
+			switch (p)
+			{
+			case RGBA_32_FLOAT:
+			case RGB_32_FLOAT:
+			case RG_32_FLOAT:
+			case R_32_FLOAT:
+			case LUM_32_FLOAT:
+			case INT_32_FLOAT:
+			case D_32_FLOAT:
+				return PixelFormatType::FLOAT;
+			case R_32_UINT:
+			case RG_32_UINT:
+			case RGB_32_UINT:
+			case RGBA_32_UINT:
+				return PixelFormatType::UINT;
+			case RGBA_16_FLOAT:
+			case RGB_16_FLOAT:
+			case RG_16_FLOAT:
+			case R_16_FLOAT:
+				return PixelFormatType::HALF;
+			case D_16_UNORM:
+				return PixelFormatType::USHORT;
+			case D_24_UNORM_S_8_UINT:
+				return PixelFormatType::UINT;
+			case RGBA_8_UNORM:
+			case BGRA_8_UNORM:
+			case RGBA_8_UNORM_SRGB:
+			case R_8_UNORM:
+				return PixelFormatType::UCHAR;
+			case RGBA_8_SNORM:
+			case R_8_SNORM:
+				return PixelFormatType::CHAR;
+			default:
+				return PixelFormatType::FLOAT;
+			};
+		}
 		inline int GetElementSize(PixelFormat p)
 		{
 			switch(p)

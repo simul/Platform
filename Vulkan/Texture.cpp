@@ -608,8 +608,9 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	compressionFormat=cf;
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
-	// include eTransferDst IN CASE this is for a texture file loaded.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst;
+	//Include eTransferDst IN CASE this is for a texture file loaded.
+	//Include eTransferSrc IN CASE this is for a texture readback.
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst|vk::ImageUsageFlagBits::eTransferSrc;
 	if(m>1)
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	if(rendertarget)
