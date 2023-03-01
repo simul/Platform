@@ -143,6 +143,9 @@ namespace platform
 				}
 			}
 
+			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
+			void FlushImmediateContext();
+
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
 			void PushToReleaseManager(vk::PipelineCache& r);
