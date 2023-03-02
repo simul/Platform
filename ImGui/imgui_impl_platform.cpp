@@ -1050,21 +1050,21 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,in
 		return;
 	if (!texture->IsValid())
 		return;
-	const ImVec2 regionSize = ImGui::GetContentRegionAvail();
+
 	uint64_t u=(uint64_t)texture+mip*1000+slice;
 	auto &dt=bd->drawTextures[u];
 	dt.texture=texture;
 	dt.mip=mip;
 	dt.slice=slice;
 	dt.renderDelegate=d;
+
 	const float aspect = static_cast<float>(width) / static_cast<float>(height);
 	const ImVec2 textureSize = ImVec2(static_cast<float>(width), static_cast<float>(height));
-	const ImVec2 size = ImVec2((float)width,(float)height);
 	ImTextureID imTextureID = (ImTextureID)&dt;
 	
 	static ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 	static ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
 	static ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
 	static ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.0f); // 0% opaque white
-	ImGui::Image(imTextureID, size, uv_min, uv_max, tint_col, border_col);
+	ImGui::Image(imTextureID, textureSize, uv_min, uv_max, tint_col, border_col);
 }
