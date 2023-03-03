@@ -495,7 +495,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 		{
 			vk::DescriptorPoolSize* poolSizes = new vk::DescriptorPoolSize[numDescriptors];
 			int poolSizeIdx = 0;
-			static int countPerFrame = 256;
+			static int countPerFrame = 1024;
 			if (numResourceSlots)
 			{
 				vk::DescriptorType type = m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage; //Video needs Combined image sampler
