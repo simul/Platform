@@ -12,6 +12,7 @@
 #include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
+#include <fstream>
 
 #ifndef _countof
 #define _countof(a) (sizeof(a)/sizeof(*(a)))
@@ -266,6 +267,62 @@ void RenderPlatform::InvalidateDeviceObjects()
 	ClearReleaseManager();
 
 	vulkanDevice=nullptr; 
+}
+
+static vk::CommandPool cmdPool;
+static vk::CommandBuffer cmdBuffer;
+
+crossplatform::GraphicsDeviceContext& RenderPlatform::GetImmediateContext()
+{
+	if (immediateContext.platform_context == nullptr && vulkanDevice != nullptr)
+	{
+		vk::CommandPoolCreateInfo cmdPoolCI;
+		cmdPoolCI.setPNext(nullptr)
+			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+			.setQueueFamilyIndex(0);
+		cmdPool = vulkanDevice->createCommandPool(cmdPoolCI);
+
+		vk::CommandBufferAllocateInfo cmdBufferAI;
+		cmdBufferAI.setPNext(nullptr)
+			.setCommandPool(cmdPool)
+			.setLevel(vk::CommandBufferLevel::ePrimary)
+			.setCommandBufferCount(1);
+		cmdBuffer = vulkanDevice->allocateCommandBuffers(cmdBufferAI)[0];
+
+		vk::CommandBufferBeginInfo cmdBufferBI;
+		cmdBufferBI.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+		cmdBuffer.begin(cmdBufferBI);
+
+		immediateContext.platform_context = &cmdBuffer;
+		immediateContext.renderPlatform = this;
+		immediateContext.contextState.contextActive = true;
+	}
+	return crossplatform::RenderPlatform::GetImmediateContext();
+}
+
+void RenderPlatform::FlushImmediateContext()
+{
+	if (!immediateContext.contextState.contextActive)
+	{
+		return;
+	}
+	cmdBuffer.end();
+
+	vk::FenceCreateInfo fenceCI;
+	fenceCI.setPNext(nullptr).setFlags(vk::FenceCreateFlags(0));
+	vk::Fence fence = vulkanDevice->createFence(fenceCI);
+
+	vk::SubmitInfo si;
+	si.setWaitSemaphoreCount(0).setPWaitSemaphores(nullptr)
+		.setWaitDstStageMask(nullptr)
+		.setCommandBufferCount(1).setPCommandBuffers(&cmdBuffer)
+		.setSignalSemaphoreCount(0).setPSignalSemaphores(nullptr)
+		.setPNext(nullptr);
+	vk::Queue queue = vulkanDevice->getQueue(0, 0);
+	SIMUL_VK_CHECK(queue.submit(1, &si, fence));
+	SIMUL_VK_CHECK(vulkanDevice->waitForFences(1, &fence, true, UINT64_MAX));
+
+	cmdBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 }
 
 void RenderPlatform::RecompileShaders()
@@ -1447,6 +1504,56 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
+	vk::Result result = vk::Result::eSuccess;
+
+	crossplatform::DeviceContext deviceContext = GetImmediateContext();
+	vk::CommandBuffer* cmdBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!cmdBuffer)
+		return;
+
+	crossplatform::PixelFormat format = texture->GetFormat();
+	uint64_t elementCount = static_cast<uint64_t>(GetElementCount(format));
+	uint64_t elementSize = static_cast<uint64_t>(GetElementSize(format));
+	uint64_t texelCount = static_cast<uint64_t>(texture->width * texture->length * texture->depth);
+	uint64_t texelSize = elementCount * elementSize;
+	uint64_t size = texelCount * texelSize;
+
+	vk::BufferCreateInfo bufferCI = vk::BufferCreateInfo(vk::BufferCreateFlags(0), size, vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive, 0, nullptr);
+	vk::Buffer imageBuffer = vulkanDevice->createBuffer(bufferCI);
+
+	vk::MemoryRequirements memoryRequirements;
+	vulkanDevice->getBufferMemoryRequirements(imageBuffer, &memoryRequirements);
+
+	vk::MemoryAllocateInfo memoryAI = vk::MemoryAllocateInfo(memoryRequirements.size,
+		FindMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+	vk::DeviceMemory imageBufferMemory = vulkanDevice->allocateMemory(memoryAI);
+	vulkanDevice->bindBufferMemory(imageBuffer, imageBufferMemory, 0);
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vulkan::Texture* t = (vulkan::Texture*)texture;
+	t->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
+	vk::BufferImageCopy bic = vk::BufferImageCopy(0, 0, 0,
+		{ vk::ImageAspectFlagBits::eColor, 0, 0, (uint32_t)texture->GetArraySize() },
+		{ 0, 0, 0 },
+		{ (uint32_t)texture->width, (uint32_t)texture->length, (uint32_t)texture->depth });
+	cmdBuffer->copyImageToBuffer(t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
+	FlushImmediateContext();
+
+	void* ptr = vulkanDevice->mapMemory(imageBufferMemory, 0, memoryAI.allocationSize, vk::MemoryMapFlags(0));
+	//crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, ptr);
+
+	std::ofstream ostrm(lFileNameUtf8, std::ios::binary);
+	ostrm.imbue(std::locale::classic());
+	ostrm.write(reinterpret_cast<const char*>(ptr), size);
+
+	vulkanDevice->unmapMemory(imageBufferMemory);
+	ptr = nullptr;
+
+	vulkanDevice->freeMemory(imageBufferMemory);
+	vulkanDevice->destroyBuffer(imageBuffer);
+
 }
 void RenderPlatform::RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {

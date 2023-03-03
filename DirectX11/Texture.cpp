@@ -204,19 +204,25 @@ void Texture::Load3DTextureFromRawDataFile(crossplatform::RenderPlatform* r, con
 	tdesc.CPUAccessFlags = 0;
 	tdesc.MiscFlags = 0;
 
-	std::ifstream istrm(pFilePathUtf8, std::istream::binary);
-	//istrm.seekg(0, std::ios::end);
-	long bufferLength = width * length * depth * byteSize;
-	//istrm.seekg(0, std::ios::beg);
+	std::ifstream istrm(pFilePathUtf8, std::ios::binary);
+	istrm.seekg(0, std::ios::end);
+	long filelength= (long)istrm.tellg();
+	istrm.seekg(0, std::ios::beg);
 
-	char* buffer = new char[bufferLength];
+	long bufferLength = width * length * depth *byteSize;
+
+	SIMUL_ASSERT(filelength == bufferLength);
+
+	char* buffer = new char[filelength];
 	// read data as a block:
-	istrm.read(buffer, bufferLength);
-	
-	D3D11_SUBRESOURCE_DATA srd; 
-	srd.pSysMem = buffer;
+	istrm.read(buffer, filelength);
+
+	unsigned char* resultUChar = reinterpret_cast<unsigned char*>(buffer);
+
+	D3D11_SUBRESOURCE_DATA srd;
+	srd.pSysMem = resultUChar;
 	srd.SysMemPitch = tc->w* byteSize;
-	srd.SysMemSlicePitch = tc->w*tc->l* byteSize;
+	srd.SysMemSlicePitch = tc->w * tc->l *byteSize;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture3D(&tdesc,&srd, (ID3D11Texture3D**)(&texture)));
 	delete[] buffer;
 
@@ -395,13 +401,13 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 		stagingBufferDesc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
 		stagingBufferDesc.MiscFlags		=0;
 
-		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
+		V_CHECK(deviceContext.renderPlatform->AsD3D11Device()->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer)));
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
 	}
 	deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer,texture);
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	V_CHECK(deviceContext.asD3D11DeviceContext()->Map( stagingBuffer, 0, D3D11_MAP_READ, SIMUL_D3D11_MAP_FLAGS, &mappedResource));
+	D3D11_MAPPED_SUBRESOURCE mappedResource{};
+	V_CHECK(deviceContext.asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ, SIMUL_D3D11_MAP_FLAGS, &mappedResource));
 	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
 	int expected_pitch=byteSize*width;

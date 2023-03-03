@@ -39,6 +39,10 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)texture;
 			}
+			ID3D11Texture3D* AsD3D11Texture3D()
+			{
+				return (ID3D11Texture3D*)texture;
+			}
 			ID3D11Resource *AsD3D11Resource() override
 			{
 				return texture;

@@ -252,7 +252,7 @@ namespace simul
 				return shouldGenerateMips;
 			}
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
-			virtual void Load3DTextureFromRawDataFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, crossplatform::TextureCreate* tc) { return; };
+			virtual void Load3DTextureFromRawDataFile(crossplatform::DeviceContext& deviceContext, const char* pFilePathUtf8, crossplatform::TextureCreate* tc) { return; };
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();

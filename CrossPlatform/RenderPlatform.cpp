@@ -582,12 +582,13 @@ bool RenderPlatform::SaveRaw3DTextureData(DeviceContext& deviceContext, Texture*
 
 	if (!texture)
 		return false;
-	int count = GetElementSize(texture->pixelFormat) * GetElementCount(texture->pixelFormat);
-	int bufferSize = texture->width * texture->length * texture->depth	* count;
-	if (bufferSize != textureQueryResult.count)
+	int count = simul::crossplatform::GetElementSize(texture->pixelFormat) *GetElementCount(texture->pixelFormat);
+	int texelCount = texture->width * texture->length * texture->depth;
+	int bufferSize = texelCount * count;
+	if (texelCount != textureQueryResult.count)
 	{
 		textureQueryResult.InvalidateDeviceObjects();
-		textureQueryResult.RestoreDeviceObjects(this, bufferSize, true, true, nullptr, "texture query");
+		textureQueryResult.RestoreDeviceObjects(this, texelCount, true, true, nullptr, "texture query");
 	}
 	debugConstants.texSize = uint4(texture->width, texture->length, texture->depth,0);
 	debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
@@ -598,10 +599,12 @@ bool RenderPlatform::SaveRaw3DTextureData(DeviceContext& deviceContext, Texture*
 	debugEffect->Unapply(deviceContext);
 	textureQueryResult.CopyToReadBuffer(deviceContext);
 	const void* result = textureQueryResult.OpenReadBuffer(deviceContext);
-	
-	if (result)
+	static int delay = 0;
+	delay++;
+	if (result && delay > 30)
 	{
-		std::ofstream ostrm(filename_utf8, std::ofstream::binary);
+		std::ofstream ostrm(filename_utf8, std::ios::binary);
+		ostrm.imbue(std::locale::classic());
 		ostrm.write(reinterpret_cast<const char*>(result), bufferSize);
 	}
 	textureQueryResult.CloseReadBuffer(deviceContext);

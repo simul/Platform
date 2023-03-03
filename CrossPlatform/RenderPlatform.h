@@ -208,7 +208,7 @@ namespace simul
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
 			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
 			//! Gets an object containing immediate-context API-specific values.
-			GraphicsDeviceContext &GetImmediateContext();
+			virtual GraphicsDeviceContext &GetImmediateContext();
 			//! Gets an object containing the current global compute context.
 			ComputeDeviceContext &GetComputeDeviceContext() { return computeContext; }
 			//! Push the given file path onto the texture path stack.

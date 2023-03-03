@@ -45,6 +45,10 @@ namespace simul
 			vk::Device *AsVulkanDevice() override;
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
+
+			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
+			void FlushImmediateContext();
+
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
 			void PushToReleaseManager(vk::PipelineCache& r);
