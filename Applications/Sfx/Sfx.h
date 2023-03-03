@@ -54,6 +54,7 @@ struct SfxConfig
 	std::string platformFilename;
 	std::string api;
 	std::string compiler;
+	std::vector<std::string> compilerPaths;
 	std::map<int, std::string> stages;
 	std::string defaultOptions;
 	std::string sourceExtension;
@@ -147,8 +148,12 @@ struct SfxConfig
 	bool forceSM51;
 	//! Does this API support Raytracing
 	bool supportRaytracing;
+	//! Does this API support multiview rendering or view instancing
+	bool supportMultiview;
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
+	//! Maximum shader model number
+	double maxShaderModel=7.0;
 };
 
 struct SfxOptions
@@ -194,7 +199,7 @@ bool sfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filena
 *	file	-- File name
 * Return value: Status
 **************************************************/
-bool sfxParseEffectFromFile( int effect, const char* file,const char **paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args);
+bool sfxParseEffectFromFile( int effect, const char* file,const std::vector<std::string> &paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args);
 
 /**************************************************
 * sfxCreateEffectFromMemory
