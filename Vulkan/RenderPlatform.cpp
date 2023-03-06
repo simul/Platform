@@ -1647,8 +1647,8 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 	vulkanDevice->unmapMemory(imageBufferMemory);
 	ptr = nullptr;
 
-	vulkanDevice->freeMemory(imageBufferMemory);
-	vulkanDevice->destroyBuffer(imageBuffer);
+	vulkanDevice->freeMemory(imageBufferMemory, nullptr);
+	vulkanDevice->destroyBuffer(imageBuffer, nullptr);
 }
 
 void RenderPlatform::RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
