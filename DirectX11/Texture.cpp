@@ -9,7 +9,7 @@
 #include <string>
 #include <math.h>
 #include <algorithm>
-
+#include <fstream>
 using namespace simul;
 using namespace dx11;
 
@@ -171,6 +171,85 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	SetDebugObjectName(texture,pFilePathUtf8);
 }
 
+void Texture::Load3DTextureFromRawDataFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, crossplatform::TextureCreate *tc)
+{
+	renderPlatform = r;
+	D3D11_TEXTURE3D_DESC tdesc;
+
+	pixelFormat = tc->f;
+	dxgi_format = dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT srvFormat = dxgi_format;
+	DXGI_FORMAT uavFormat = dxgi_format;
+	DXGI_FORMAT altUavFormat = dxgi_format;
+	if (dxgi_format == DXGI_FORMAT_R8G8B8A8_UNORM)
+	{
+		srvFormat = dxgi_format;
+		dxgi_format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if PLATFORM_TYPED_UAV_FORMATS
+		altUavFormat = uavFormat;
+#else
+		altUavFormat = DXGI_FORMAT_R32_UINT;
+#endif
+	}
+	int byteSize = simul::dx11::ByteSizeOfFormatElement(dxgi_format);
+	tdesc.Width = width=tc->w;
+	tdesc.Height =length=tc->l;
+	tdesc.Format = dxgi_format;
+	tdesc.Depth = depth =tc->d;
+	tdesc.MipLevels =mips= tc->mips;
+	dim = 3;
+	tdesc.Usage = D3D11_USAGE_DEFAULT;
+	tdesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	tdesc.CPUAccessFlags = 0;
+	tdesc.MiscFlags = 0;
+
+	std::ifstream istrm(pFilePathUtf8, std::ios::binary);
+	istrm.seekg(0, std::ios::end);
+	long filelength= (long)istrm.tellg();
+	istrm.seekg(0, std::ios::beg);
+
+	long bufferLength = width * length * depth *byteSize;
+
+	SIMUL_ASSERT(filelength == bufferLength);
+
+	char* buffer = new char[filelength];
+	// read data as a block:
+	istrm.read(buffer, filelength);
+
+	unsigned char* resultUChar = reinterpret_cast<unsigned char*>(buffer);
+
+	D3D11_SUBRESOURCE_DATA srd;
+	srd.pSysMem = resultUChar;
+	srd.SysMemPitch = tc->w* byteSize;
+	srd.SysMemSlicePitch = tc->w * tc->l *byteSize;
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture3D(&tdesc,&srd, (ID3D11Texture3D**)(&texture)));
+	delete[] buffer;
+
+
+	external_texture = false;
+	if (renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture, GetMemorySize(), name.c_str());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+	ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+	srv_desc.Format = srvFormat;
+	srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	srv_desc.Texture3D.MipLevels = tc->mips;
+	srv_desc.Texture3D.MostDetailedMip = 0;
+	InitSRVTables(1, mips);
+	V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainShaderResourceView));
+	if (mainMipShaderResourceViews) {
+		for (int j = 0; j < mips; j++)
+		{
+			srv_desc.Texture3D.MipLevels = 1;
+			srv_desc.Texture3D.MostDetailedMip = j;
+			V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainMipShaderResourceViews[j]));
+		}
+	}
+
+}
+
 int Texture::GetMemorySize() const
 {
 	int w=width,l=length,d=depth;
@@ -322,13 +401,13 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 		stagingBufferDesc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
 		stagingBufferDesc.MiscFlags		=0;
 
-		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
+		V_CHECK(deviceContext.renderPlatform->AsD3D11Device()->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer)));
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
 	}
 	deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer,texture);
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	V_CHECK(deviceContext.asD3D11DeviceContext()->Map( stagingBuffer, 0, D3D11_MAP_READ, SIMUL_D3D11_MAP_FLAGS, &mappedResource));
+	D3D11_MAPPED_SUBRESOURCE mappedResource{};
+	V_CHECK(deviceContext.asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ, SIMUL_D3D11_MAP_FLAGS, &mappedResource));
 	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
 	int expected_pitch=byteSize*width;

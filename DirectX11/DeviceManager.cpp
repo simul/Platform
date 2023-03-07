@@ -678,7 +678,6 @@ void DeviceManager::Shutdown()
 	}
 }
 
-
 void DeviceManager::ReportMessageFilterState()
 {
 	if(!infoQueue)

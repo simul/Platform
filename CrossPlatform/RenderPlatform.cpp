@@ -577,6 +577,41 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	return r;
 }
 
+bool RenderPlatform::SaveRaw3DTextureData(DeviceContext& deviceContext, Texture* texture, char* filename_utf8)
+{
+
+	if (!texture)
+		return false;
+	int count = simul::crossplatform::GetElementSize(texture->pixelFormat) *GetElementCount(texture->pixelFormat);
+	int texelCount = texture->width * texture->length * texture->depth;
+	int bufferSize = texelCount * count;
+	if (texelCount != textureQueryResult.count)
+	{
+		textureQueryResult.InvalidateDeviceObjects();
+		textureQueryResult.RestoreDeviceObjects(this, texelCount, true, true, nullptr, "texture query");
+	}
+	debugConstants.texSize = uint4(texture->width, texture->length, texture->depth,0);
+	debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
+	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext, debugEffect, debugEffect->GetShaderResource("textureQueryResults"));
+	debugEffect->SetTexture(deviceContext, "imageTexture3D", texture);
+	debugEffect->Apply(deviceContext, "texture_query", 0);
+	DispatchCompute(deviceContext, texture->width, texture->length, texture->depth);
+	debugEffect->Unapply(deviceContext);
+	textureQueryResult.CopyToReadBuffer(deviceContext);
+	const void* result = textureQueryResult.OpenReadBuffer(deviceContext);
+	static int delay = 0;
+	delay++;
+	if (result && delay > 30)
+	{
+		std::ofstream ostrm(filename_utf8, std::ios::binary);
+		ostrm.imbue(std::locale::classic());
+		ostrm.write(reinterpret_cast<const char*>(result), bufferSize);
+	}
+	textureQueryResult.CloseReadBuffer(deviceContext);
+	return true;
+
+}
+
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;

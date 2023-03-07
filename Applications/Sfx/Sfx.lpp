@@ -45,6 +45,9 @@ the last is C code to be copied verbatim to the output.
 	#include <charconv>
 	#include <algorithm>
 	#include <cctype>
+	#include <iostream>
+	#include <string>
+	#include <string_view>
 
 	#include "Sfx.h"
 	#include "SfxClasses.h"
@@ -61,7 +64,26 @@ the last is C code to be copied verbatim to the output.
 	using namespace std;
 	using namespace sfx;
 	static int brace=0;
-
+	int insert_line_statement=0;
+	void InsertLineStatement()
+	{
+		insert_line_statement++;
+	}
+	float ToFloat(const char * txr)
+	{
+		std::string yytextStr=yytext;
+	#ifdef __GNUC__
+		// Clang/Gcc doesn't implement std::remove_if properly.
+		yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),[](unsigned char x){ return std::isspace(x); }),yytextStr.end());
+		// Clang/Gcc still doesn't implement the standard function std::from_chars properly.
+		float value=atof(yytextStr.c_str());
+	#else
+		yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+		float value=0.0f;
+		std::from_chars(yytextStr.data(),yytextStr.data()+yytextStr.size(),value,std::chars_format::general);
+	#endif
+		return value;
+	}
 	void sfxWrite(const char *txt)
 	{
 		gEffect->m_sharedCode<<txt;
@@ -531,9 +553,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 													// Write an empty statement: preserve line numbers
 													sfxlval.strs[0] = yytext;
+													InsertLineStatement();
 												}
 
 <IN_SHADER>"/*"									{
+													InsertLineStatement();
 													sfxPushState(IN_MULTILINE_COMMENT);
 													if (gLexPassthrough)
 														sfxWrite(yytext);
@@ -553,11 +577,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}
 <IN_SHADER>{FLOAT_BLCK}							{
 													sfxlval.lineno=yylineno;
-													float value;
-													std::string yytextStr=yytext;
-													yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
-													const char* yytextCStr=yytextStr.c_str();
-													std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
+													float value=ToFloat(yytext);
 													sfxlval.fnum=value;
 													stdReturn(P_FLOAT);
 												}
@@ -611,6 +631,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"uint2"								{
 													modReturn(IDENTIFIER,"uint2");
 												}
+<IN_SHADER>"uvec2"								{
+													modReturn(IDENTIFIER,"uint2");
+												}
 <IN_SHADER>"uint3"								{
 													modReturn(IDENTIFIER,"uint3");
 												}
@@ -618,6 +641,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													modReturn(IDENTIFIER,"uint3");
 												}
 <IN_SHADER>"uint4"								{
+													modReturn(IDENTIFIER,"uint4");
+												}
+<IN_SHADER>"uvec4"								{
 													modReturn(IDENTIFIER,"uint4");
 												}
 <IN_SHADER>"fract"								{
@@ -818,7 +844,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}// Without this line, the yylineno would get out of whack.
 <IN_SHADER>\n									{				
 													//sfxlval.strs[0] = yytext;
-													//stdReturn(SHADER_LINE);
+													InsertLineStatement();
 												}// Without this line, the yylineno would get out of whack.
 
 <IN_SHADER_COMPILE>"ConstructGSWithSO"			{
@@ -920,12 +946,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE>{FLOAT_BLCK}	{
 													sfxlval.lineno=yylineno;
-													float value;
-													std::string yytextStr=yytext;
-													yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
-													const char* yytextCStr=yytextStr.c_str();
-													std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
-													sfxlval.fnum=value;
+													sfxlval.fnum=ToFloat(yytext);
 													stdReturn(P_FLOAT);
 												}
 <IN_TEXTURE_DECL>":"							{
@@ -989,12 +1010,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													else 
 													{
 														sfxlval.strs[0]=yytext;
-														float value;
-														std::string yytextStr=yytext;
-														yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
-														const char* yytextCStr=yytextStr.c_str();
-														std::from_chars(yytextCStr,yytextCStr+strlen(yytextCStr),value);
-														sfxlval.fnum=value;
+														sfxlval.fnum=ToFloat(yytext);
 														stdReturn(P_FLOAT);
 													}
 												}

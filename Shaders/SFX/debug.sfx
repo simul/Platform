@@ -12,6 +12,7 @@
 
 uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2DArray imageTextureArray SIMUL_TEXTURE_REGISTER(0);
+uniform Texture3D imageTexture3D SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2DMS<vec4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TextureCubeArray cubeTextureArray;
@@ -858,6 +859,29 @@ shader void CS_TexelQuery(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	textureQueryResults[sub_pos.x]=imageTexture[queryPos];
 }
 
+
+[numthreads(1,1,1)] 
+shader void CS_TextureQuery(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g + t;
+	uint texelQueryIndex = FlattenArrayIndex(sub_pos, texSize.xy);
+	textureQueryResults[texelQueryIndex]= imageTexture3D[sub_pos];
+}
+
+uint FlattenArrayIndex(uint3 idx, uint2 size)
+{
+	return idx.x + (idx.y * size.x) + (idx.z * size.x * size.y);
+}
+
+uint3 UnflattenArrayIndex(uint idx, uint2 size)
+{
+	uint z = idx / (size.x * size.y);
+	idx -= (z * size.x * size.y);
+	uint y = idx / size.x;
+	uint x = idx % size.x;
+	return uint3(x, y, z);
+}
+
 technique copy_2d
 {
     pass wrap
@@ -954,6 +978,13 @@ technique texel_query
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_TexelQuery()));
     }
+}
+technique texture_query
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_TextureQuery()));
+	}
 }
 #endif
 technique clear

@@ -874,7 +874,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	gpu->getFormatProperties(tex_format, &props);
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	// eTransferDst in case we want to call setTexels.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst ;
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst| vk::ImageUsageFlagBits::eTransferSrc;
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 
