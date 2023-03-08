@@ -259,6 +259,7 @@ namespace platform
 			
 			vk::Framebuffer*						GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext);
 			static crossplatform::PixelFormat		GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext);
+			static int								GetActiveNumOfSamples(crossplatform::GraphicsDeviceContext &deviceContext);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
 			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			

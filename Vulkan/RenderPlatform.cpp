@@ -788,6 +788,22 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::G
 	return pixelFormat;
 }
 
+int RenderPlatform::GetActiveNumOfSamples(crossplatform::GraphicsDeviceContext& deviceContext)
+{
+	int numOfSamples = 1;
+	{
+		crossplatform::TargetsAndViewport* tv = &deviceContext.defaultTargetsAndViewport;
+		if (deviceContext.targetStack.size())
+		{
+			tv = deviceContext.targetStack.top();
+		}
+		if (tv && tv->textureTargets[0].texture)
+			numOfSamples = tv->textureTargets[0].texture->GetSampleCount();
+	}
+	numOfSamples = numOfSamples == 0 ? 1 : numOfSamples;
+	return numOfSamples;
+}
+
 uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties)
 {
 	vk::PhysicalDeviceMemoryProperties memProperties;
@@ -1844,6 +1860,7 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		hashval += (unsigned long long)texture->width;	//Deal with resizing the framebuffer!
 		hashval += (unsigned long long)texture->length;
 		hashval += (unsigned long long)texture->GetArraySize();
+		hashval += (unsigned long long)texture->GetSampleCount();
 	}
 	if (tv->depthTarget.texture)
 	{
@@ -1861,13 +1878,18 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
 {
 	crossplatform::PixelFormat colourPF[16] = { crossplatform::PixelFormat::UNKNOWN };
+	int numOfSamples = 1;
 	for (int i = 0; i < tv->num; i++)
 	{
 		colourPF[i] = tv->textureTargets[i].texture->pixelFormat;
+		if (i == 0)
+			numOfSamples = tv->textureTargets[i].texture->GetSampleCount();
 	}
+	numOfSamples = numOfSamples == 0 ? 1 : numOfSamples;
+
 	vulkan::EffectPass* effectPass = (vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
 	RenderPassHash hashval = MakeTargetHash(tv);
-	hashval += 5 * (effectPass ? effectPass->GetHash(colourPF[0], deviceContext.contextState.topology, deviceContext.contextState.currentLayout) : 0);
+	hashval += 5 * (effectPass ? effectPass->GetHash(colourPF[0], numOfSamples, deviceContext.contextState.topology, deviceContext.contextState.currentLayout) : 0);
 	std::map<unsigned long long, vk::Framebuffer>::iterator h = mFramebuffers.find(hashval);
 
 	if (h == mFramebuffers.end() || !h->second || mFramebuffers.empty())
