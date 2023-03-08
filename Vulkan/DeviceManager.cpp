@@ -737,7 +737,8 @@ void DeviceManager::SetupDebugCallback(bool debugUtils, bool debugReport, bool d
 		debugUtilsMessengerCI
 			.setPNext(nullptr)
 			.setFlags(vk::DebugUtilsMessengerCreateFlagBitsEXT(0))
-			.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+			.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
+								| vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
 			.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
 							| vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
 							| vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
