@@ -136,7 +136,7 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 	vp.h = (int)draw_data->DisplaySize.y;
 	vp.x = vp.y = 0;
 	if(!bd->is3d)
-		bd->renderPlatform->SetViewports(deviceContext,1, &vp);
+		//bd->renderPlatform->SetViewports(deviceContext,1, &vp);
 
 	// Setup shader and vertex buffers
 	unsigned int stride = sizeof(ImDrawVert);
