@@ -311,10 +311,10 @@ void RenderPlatform::PopTexturePath()
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::TargetsAndViewport* tv)
 {
+	deviceContext.GetFrameBufferStack().push(tv);
 	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &tv->viewport);
 	int4 scissor={0,0,tv->viewport.w,tv->viewport.h};
 	SetScissor(deviceContext,scissor);
-	deviceContext.GetFrameBufferStack().push(tv);
 }
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)

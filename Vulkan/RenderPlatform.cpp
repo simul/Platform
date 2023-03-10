@@ -1741,11 +1741,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
-	//vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-	if(num>0&&vps!=nullptr)
-	{
-		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(crossplatform::Viewport));
-	}
+	crossplatform::RenderPlatform::SetViewports(deviceContext, num, vps);
 }
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *)
