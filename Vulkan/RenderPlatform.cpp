@@ -692,7 +692,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		}
 
 		//Begin the RenderPass
-		crossplatform::Viewport vp = { 0, 0, extent.width, extent.height };
+		crossplatform::Viewport vp = { 0, 0, static_cast<int>(extent.width), static_cast<int>(extent.height) };
 		if (extent.width * extent.height == 0)
 			vp = GetViewport(*graphicsDeviceContext, 0);
 		static vk::Framebuffer currentFramebuffer{};
