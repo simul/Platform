@@ -817,10 +817,10 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		}
 		SAFE_RELEASE(_t);
 	}
-
+	renderPlatform = r;
 	auto &deviceContext=renderPlatform->GetImmediateContext();
 	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
-	renderPlatform				= r;
+	
 	// If it's the same as before, return.
 	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
 	{
@@ -1577,9 +1577,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	{
 		return false;
 	}
+	renderPlatform = r;
 	auto &deviceContext=renderPlatform->GetImmediateContext();
 	HRESULT res		= S_OK;
-	renderPlatform	= r;
 	pixelFormat		= f;
 	dxgi_format		= dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	width			= w;
