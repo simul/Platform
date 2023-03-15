@@ -1577,7 +1577,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	{
 		return false;
 	}
-	auto &deviceContext=renderPlatform->GetImmediateContext();
 	HRESULT res		= S_OK;
 	renderPlatform	= r;
 	pixelFormat		= f;
@@ -1710,7 +1709,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	}
 
 	auto rPlat		= (dx12::RenderPlatform*)renderPlatform;
-	//rPlat->FlushBarriers(deviceContext);
 
 	return true;
 }
