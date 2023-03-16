@@ -446,6 +446,12 @@ long long RenderPlatform::GetFrameNumber() const
 	return frameNumber;
 }
 
+void RenderPlatform::DispatchComputeAuto(DeviceContext &deviceContext,int3 d)
+{
+		//deviceContext.contextState.currentEffectPass->numthreads;
+	//DispatchCompute(
+}
+
 void RenderPlatform::BeginFrame(long long f)
 {
 	if (f==frameNumber)

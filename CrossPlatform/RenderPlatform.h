@@ -262,6 +262,8 @@ namespace platform
 			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *dst,crossplatform::Texture *src){};
 			//! Execute the currently applied compute shader.
+			virtual void DispatchComputeAuto	(DeviceContext &deviceContext,int3 d);
+			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Execute the currently applied raytracing shaders.
 			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
