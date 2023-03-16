@@ -5,6 +5,7 @@
 SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
 	vec4 depthToLinFadeDistParams;
 	vec4 fullResToLowResTransformXYWH;
+	vec4 tanHalfFov;
 
 	int lightCount;
 	int reverseDepth;
@@ -39,7 +40,7 @@ SIMUL_CONSTANT_BUFFER(SolidConstants,13)
 	vec2 emissiveTexCoordsScalar_A;
 
 	vec3 u_SpecularColour;
-	float _pad;
+	float transparencyAlpha;
 
 	float u_DiffuseTexCoordIndex;
 	float u_NormalTexCoordIndex;

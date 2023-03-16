@@ -4,9 +4,15 @@
 using namespace simul;
 using namespace crossplatform;
 
-Material::Material(const char *n) : effect(nullptr),name(n)
+Material::Material()
 {
+	transparencyAlpha.value = 1.0f;
+}
 
+Material::Material(const char *n)
+	:effect(nullptr), name(n)
+{
+	transparencyAlpha.value = 1.0f;
 }
 
 Material::~Material()

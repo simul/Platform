@@ -137,6 +137,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	solidConstants.emissiveTexCoordsScalar_A				=vec2_unit;
 
 	solidConstants.u_SpecularColour							=vec3_unit;
+	solidConstants.transparencyAlpha						=material->transparencyAlpha.value;
 
 	solidConstants.u_DiffuseTexCoordIndex=0;
 	solidConstants.u_NormalTexCoordIndex=1;

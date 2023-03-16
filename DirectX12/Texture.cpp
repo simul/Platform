@@ -818,7 +818,6 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		SAFE_RELEASE(_t);
 	}
 
-	auto &deviceContext=renderPlatform->GetImmediateContext();
 	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
 	renderPlatform				= r;
 	// If it's the same as before, return.

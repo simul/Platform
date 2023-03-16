@@ -41,7 +41,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Material
 		{
 		public:
-			Material() {}
+			Material();
 			Material(const char *name);
 			virtual ~Material();
 			void SetEffect(crossplatform::Effect *e);
@@ -63,6 +63,7 @@ namespace simul
 			Channel<float> roughness;
 			Channel<float> metal;
 			Channel<float> ambientOcclusion;
+			Channel<float> transparencyAlpha;
 		protected:
 			crossplatform::Effect *effect=nullptr;
 			std::string name;

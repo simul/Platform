@@ -286,6 +286,7 @@ vec4 Solid(vertexOutput IN)
 	surfaceProperties.normal		=normal;
 	surfaceProperties.albedo		=diffuseColour;
 	surfaceProperties.roughness2	=surfaceProperties.roughness*surfaceProperties.roughness;
+	surfaceProperties.alpha			=transparencyAlpha;
 
 	SurfaceState surfaceState	=PreprocessSurface(view,surfaceProperties);
 	vec3 c						=.3*PBRAmbient(surfaceState, view, surfaceProperties);
@@ -300,7 +301,7 @@ vec4 Solid(vertexOutput IN)
 	vec3 emissive		=emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
 	emissive			*= emissiveOutputScalar.rgb;
 //	c=1.0-roughMetalOcclusion.a;
-	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
+	vec4 u				=vec4(c.rgb + emissive.rgb, surfaceProperties.alpha);
 	//u.rg= frac(screenPos);
 	return u;
 }
@@ -374,7 +375,6 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 				,vec3 view
 				,TextureCube nearFarTextureCube
 				,Texture2D loss2dTexture
-				,Texture2D shadowTexture
 				,Texture3D inscatterVolumeTexture
 				,vec4 depthToLinFadeDistParams)
 {
@@ -395,14 +395,17 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(sine)/SIMUL_PI_F),dist_rt);
 	
 	// Inscatter from air:
-	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
+	vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
 	
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
 
-	// Visibility due to clouds:
-	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.001));//(nearFarCloud.x-nearFarCloud.y));
-
-	insc.rgb					*=visibility;
+	float cloudMeanDepth		= fadeDistanceToDepth(nearFarCloud.z, clip_pos.xy, depthInterpretationStruct, tanHalfFov);
+	// Visibility due to clouds: 0.0 is no visibility and 1.0 is full visibility
+	float visibility			=1.0-saturate((dist-nearFarCloud.z)/(0.001)); //(nearFarCloud.x-nearFarCloud.y));
+	//visibility				=1.0-saturate((clip_pos.z-cloudMeanDepth)/(1)); //(nearFarCloud.x-nearFarCloud.y));
+	//visibility = saturate(cloudMeanDepth - clip_pos.z);
+	
+	insc.rgb *= visibility;
 	// loss due to air (alpha is visilibity due to cloud occlusion).
 	loss						=vec4(texture_clamp_lod(loss2dTexture,loss_texc,0).rgb,visibility);
 	add							=insc.rgb;
@@ -413,7 +416,7 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
 // Here is whatever colour your shader would normally generate in the absence of atmospherics:
-    vec4 c = vec4(0.5,0.5,0.5,0.5);
+    vec4 c = Solid(IN);
 
 // Now we calculate the atmospheric effects:
 	vec4 loss;
@@ -424,7 +427,6 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 				,IN.view
 				,nearFarTextureCube
 				,loss2dTexture
-				,shadowTexture
 				,inscatterVolumeTexture
 				,depthToLinFadeDistParams
 				);
@@ -462,7 +464,7 @@ technique transparent
     pass base 
     {
 		SetRasterizerState(RenderBackfaceCull);
-		//SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
+		SetDepthStencilState(TestReverseDepth, 0);
 		SetBlendState(AlphaBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
         SetGeometryShader(NULL);
