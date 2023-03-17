@@ -20,6 +20,7 @@ float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitude
 	return sun_alt_texc;
 }
 
+//Normalised 
 float depthToLinearDistance(float depth,DepthInterpretationStruct dis)
 {
 	if(dis.reverseDepth)
@@ -36,6 +37,7 @@ float depthToLinearDistance(float depth,DepthInterpretationStruct dis)
 	return linearFadeDistanceZ;
 }
 
+//Normalised 
 vec4 depthToLinearDistance(vec4 depth,DepthInterpretationStruct dis)
 {
 	vec4 linearFadeDistanceZ = saturate(dis.depthToLinFadeDistParams.xxxx / (depth*dis.depthToLinFadeDistParams.yyyy + dis.depthToLinFadeDistParams.zzzz)+dis.depthToLinFadeDistParams.wwww*depth);
@@ -53,6 +55,7 @@ vec4 depthToLinearDistance(vec4 depth,DepthInterpretationStruct dis)
 	return linearFadeDistanceZ;
 }
 
+//Normalised 
 vec2 depthToLinearDistance(vec2 depth,DepthInterpretationStruct dis)
 {
 	vec2 linearFadeDistanceZ =saturate(dis.depthToLinFadeDistParams.xx / (depth*dis.depthToLinFadeDistParams.yy + dis.depthToLinFadeDistParams.zz)+dis.depthToLinFadeDistParams.ww*depth);
