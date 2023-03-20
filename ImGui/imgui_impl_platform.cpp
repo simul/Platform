@@ -999,7 +999,7 @@ bool ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hos
 	return true;
 }
 
-void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice
+void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,float mip,int slice
 	,platform::crossplatform::RenderDelegate d,int width,int height)
 {
 	if(width<=0||height<=0)
@@ -1028,9 +1028,9 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,in
 	if (!texture->IsValid())
 		return;
 	const ImVec2 regionSize = ImGui::GetContentRegionAvail();
-	uint64_t u=(uint64_t)texture+mip*1000+slice;
+	uint64_t u=(uint64_t)texture+(uint64_t)(mip*1000.0f)+slice;
 	auto &dt=bd->drawTextures[u];
-	dt.texture=texture;
+	dt.texture= texture;
 	dt.mip=mip;
 	dt.slice=slice;
 	dt.renderDelegate=d;

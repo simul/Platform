@@ -396,6 +396,18 @@ void RenderPlatform::BeginEvent			(DeviceContext &,const char *name){}
 
 void RenderPlatform::EndEvent			(DeviceContext &){}
 
+void RenderPlatform::EnsureContextFrameHasBegun(DeviceContext& deviceContext)
+{
+	if (frameNumber != deviceContext.GetFrameNumber())
+	{
+		// Call start render at least once per frame to make sure the bins 
+		// release objects!
+		if(deviceContext.AsGraphicsDeviceContext())
+			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
+
+		deviceContext.SetFrameNumber(frameNumber);
+	}
+}
 void RenderPlatform::ContextFrameBegin(GraphicsDeviceContext &deviceContext)
 {
 	if (!frame_started)
@@ -410,7 +422,8 @@ void RenderPlatform::ContextFrameBegin(GraphicsDeviceContext &deviceContext)
 	FinishGeneratingTextureMips(deviceContext);
 	FinishLoadingTextures(deviceContext);
 	allocator.CheckForReleases();
-	last_begin_frame_number=deviceContext.GetFrameNumber();
+	last_begin_frame_number=GetFrameNumber();
+	deviceContext.SetFrameNumber(last_begin_frame_number);
 } 
 
 void RenderPlatform::EndFrame()
@@ -1129,7 +1142,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	
 	if(debug&&mip<0)
 	{
-		if(framenumber!=deviceContext.GetFrameNumber())
+		if(framenumber!=GetFrameNumber())
 		{
 			count--;
 			if(!count)
@@ -1137,7 +1150,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 				lod++;
 				count=frames;
 			}
-			framenumber=deviceContext.GetFrameNumber();
+			framenumber=GetFrameNumber();
 		}
 		if(tex)
 		{

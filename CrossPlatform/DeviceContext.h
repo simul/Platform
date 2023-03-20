@@ -275,8 +275,12 @@ namespace platform
 		{
 		protected:
 			long long frame_number = 0;
-		public:
+			//! Only RenderPlatform should call this.
+			long long GetFrameNumber() const;
+			//! Only RenderPlatform should call this.
+			void SetFrameNumber(long long n);
 			friend class RenderPlatform;
+		public:
 			DeviceContextType deviceContextType;
 			
 			void *platform_context=nullptr;
@@ -286,10 +290,6 @@ namespace platform
 #ifdef _DEBUG
 			int ApiCallCounter=0;
 #endif
-			//! Only RenderPlatform should call this.
-			long long GetFrameNumber() const;
-			//! Only RenderPlatform should call this.
-			void SetFrameNumber(long long n);
 			virtual GraphicsDeviceContext* AsGraphicsDeviceContext()
 			{ 
 				return nullptr;

@@ -1179,7 +1179,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool depthstencil,bool cubemap,crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
 {
 	renderPlatform=r;
-	if(m<0||m>16)
+	if(m<=0||m>16)
 		m=1;
 	int total_num			=cubemap?6*num:num;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(f,compressionFormat);

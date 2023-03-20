@@ -11,6 +11,7 @@ SIMUL_CONSTANT_BUFFER(CameraConstants,1)
 	uniform mat4 proj;
 	uniform mat4 viewProj;
 	uniform vec3 viewPosition;
+	uniform int frameNumber;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)

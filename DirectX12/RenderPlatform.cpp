@@ -1151,7 +1151,7 @@ void RenderPlatform::BeginFrame()
 
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	if (deviceContext.GetFrameNumber() == frameNumber)
+	if (GetFrameNumber() == frameNumber)
 		return;
 	// Store a reference to the device context
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
@@ -2909,15 +2909,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	doesn't work as we don't necessarily know the allocator.
 	*/
 	// We will only set the tables once per frame
-	if (frameNumber != deviceContext.GetFrameNumber())
-	{
-		// Call start render at least once per frame to make sure the bins 
-		// release objects!
-
-		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
-
-		deviceContext.SetFrameNumber(frameNumber);
-	}
+	EnsureContextFrameHasBegun(deviceContext);
 
 	auto cmdList    = deviceContext.asD3D12Context();
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;

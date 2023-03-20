@@ -576,11 +576,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 
 	// Update frame_number in the DeviceContext from the RenderPlatform.
-	if (frameNumber != deviceContext.GetFrameNumber())
+	if (frameNumber != GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins release objects!
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
-		deviceContext.SetFrameNumber(frameNumber);
 	}
 	if (frameNumber != mLastFrame)
 	{
