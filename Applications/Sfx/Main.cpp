@@ -7,15 +7,32 @@
 #include <iomanip> // for setw
 #include "Sfx.h"
 #include "SfxClasses.h"
+#ifdef _MSC_VER
 #include "VisualStudioDebugOutput.h"
+VisualStudioDebugOutput d(true);
+#else
+#include <fstream>
+#include <iostream>
+#endif
 #include "json.hpp"
 #include "Environ.h"
 #include <cstdio>
 
 using json = nlohmann::json;
 
-VisualStudioDebugOutput d(true);
-
+std::string StripQuotes(const std::string &s)
+{
+	std::string a=s;
+	while(a[0]==' ')
+		a=a.substr(1,a.length()-1);
+	if(a[0]=='\"')
+		a=a.substr(1,a.length()-1);
+	while(a[a.length()-1]==' ')
+		a=a.substr(0,a.length()-1);
+	if(a[a.length()-1]=='\"')
+		a=a.substr(0,a.length()-1);
+	return a;
+}
 std::string outputfile;
 int main(int argc, char** argv) 
 {
@@ -42,7 +59,7 @@ int main(int argc, char** argv)
 	char log[50000];
 	std::vector<std::string> pathStrings;
 	const char **paths=NULL;
-	const char *sourcefile="";
+	std::string sourcefile;
 	const char **args=NULL;
 	bool force=false;
 	std::string platformFilename="";
@@ -66,16 +83,16 @@ int main(int argc, char** argv)
 				}
 				char argtype=argv[i][1];
 				if(argtype=='i'||argtype=='I')
-					paths[n++]=arg;
+					pathStrings.push_back(StripQuotes(arg));
 				else if (argtype == 'm' || argtype == 'M')
-					sfxOptions.intermediateDirectory = arg;
+					sfxOptions.intermediateDirectory = StripQuotes(arg);
 				else if (argtype == 's' || argtype == 'S')
 				{
-					SIMUL=arg;
+					SIMUL=StripQuotes(arg);
 				}
 				else if (argtype == 'b' || argtype == 'B')
 				{
-					SIMUL_BUILD=arg;
+					SIMUL_BUILD=StripQuotes(arg);
 				}
 				else if (argtype == 't' || argtype == 'T')
 				{
@@ -120,14 +137,14 @@ int main(int argc, char** argv)
 					std::cout << "Disabling #line directives" << std::endl;
 				}
 				else if (argtype == 'p' || argtype == 'P')
-					platformFilename = arg;
+					platformFilename = StripQuotes(arg);
 				else if (argtype == 'o' || argtype == 'O')
-					outputfile = arg;
+					outputfile = StripQuotes(arg);
 				else if (argtype == 'd' || argtype == 'D')
 					sfxOptions.debugInfo = true;
 				else if (argtype == 'e' || argtype == 'E')
 				{
-					std::string c( arg);
+					std::string c=StripQuotes(arg);
 					size_t eq_pos=c.find_first_of("=");
 					environment[c.substr(0, eq_pos)] = c.substr(eq_pos + 1, c.length() - eq_pos - 1);
 				}
@@ -143,7 +160,7 @@ int main(int argc, char** argv)
 				args[a++] = argv[i]+1;
 			}
 			else
-				sourcefile=argv[i];
+				sourcefile=StripQuotes(argv[i]);
 		}
 		paths[n]=0;
 		args[a]=0;
@@ -156,7 +173,7 @@ int main(int argc, char** argv)
 	{
 		sfxOptions.intermediateDirectory="sfx_intermediate";
 	}
-	if(strlen(sourcefile)==0)
+	if(sourcefile.length()==0)
 	{
 		std::cerr<<("No source file from args :\n");
 		sfxGetEffectLog(effect, log, sizeof(log));
@@ -191,6 +208,13 @@ int main(int argc, char** argv)
 		else
 		{
 			sfxConfig.compiler = ProcessEnvironmentVariables(compiler["command"]);
+			if(compiler.count("commandPaths")>0)
+			{
+				for (auto& el : compiler["commandPaths"].items())
+				{
+					sfxConfig.compilerPaths.push_back( el.value());
+				}
+			}
 			if (compiler.count("stages") > 0)
 			{
 				json stages = compiler["stages"];
@@ -435,7 +459,7 @@ int main(int argc, char** argv)
 	}
 	
 	//std::cout<<"Sfx compiling"<<sourcefile<<std::endl;
-	if (!sfxParseEffectFromFile(effect,sourcefile,paths,outputfile.c_str(),&sfxConfig,&sfxOptions,args))
+	if (!sfxParseEffectFromFile(effect,sourcefile.c_str(),pathStrings,outputfile.c_str(),&sfxConfig,&sfxOptions,args))
 	{
 		std::cerr<<("Error creating effect:\n");
 		sfxGetEffectLog(effect, log, sizeof(log));

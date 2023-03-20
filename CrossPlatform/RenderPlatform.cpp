@@ -20,6 +20,11 @@
 #include "Effect.h"
 #include <algorithm>
 #include <array>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "Platform/External/stb/stb_image_write.h"
+#include "Platform/Math/Float16.h"
+
 #ifdef _MSC_VER
 #define isinf !_finite
 #else
@@ -306,10 +311,10 @@ void RenderPlatform::PopTexturePath()
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::TargetsAndViewport* tv)
 {
+	deviceContext.GetFrameBufferStack().push(tv);
 	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &tv->viewport);
 	int4 scissor={0,0,tv->viewport.w,tv->viewport.h};
 	SetScissor(deviceContext,scissor);
-	deviceContext.GetFrameBufferStack().push(tv);
 }
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -633,6 +638,28 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	return r;
 }
 
+void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,Texture *heightMap,Texture *normalMap,float scale)
+{
+	if(!heightMap||!heightMap->IsValid())
+		return;
+	if(!normalMap||!normalMap->IsValid())
+		return;
+	auto _imageTexture=debugEffect->GetShaderResource("imageTexture");
+	auto pass=debugEffect->GetTechniqueByName("height_to_normal")->GetPass(0);
+	debugConstants.texSize=uint4(heightMap->width,heightMap->length,1,1);
+	debugConstants.multiplier=vec4(scale,scale,scale,scale);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	ApplyPass(deviceContext,pass);
+	normalMap->activateRenderTarget(deviceContext,0,0);
+	SetTexture(deviceContext,_imageTexture,heightMap,0,0);
+	DrawQuad(deviceContext);
+	//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
+	normalMap->deactivateRenderTarget(deviceContext);
+	
+	UnapplyPass(deviceContext);
+}
+
+        
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
@@ -735,6 +762,94 @@ uint32_t RenderPlatform::GetViewMaskFromRenderTargets(const GraphicsDeviceContex
 
 	uint32_t viewMask = (uint32_t)pow<uint32_t, uint32_t>(2, rtLayerCount) - 1;
 	return viewMask;
+}
+
+bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int height, PixelFormat format, const void* data)
+{
+	crossplatform::PixelFormatType type = GetElementType(format);
+	uint64_t elementCount = static_cast<uint64_t>(GetElementCount(format));
+	uint64_t elementSize = static_cast<uint64_t>(GetElementSize(format));
+	uint64_t texelCount = static_cast<uint64_t>(width * height); //Assume 2D texture only.
+	uint64_t texelSize = elementCount * elementSize;
+	uint64_t size = texelCount * texelSize;
+
+	std::vector<uint8_t> imageData;
+	imageData.reserve(texelCount * elementCount);
+
+	if (data)
+	{
+		for (uint64_t i = 0; i < size; i += elementSize)
+		{
+			uint8_t u8value = 0;
+			void* _ptr = (void*)((uint64_t)data + i);
+			switch (type)
+			{
+				using namespace crossplatform;
+			case PixelFormatType::DOUBLE:
+			{
+				double value = std::clamp<double>(*(double*)_ptr, 0.0, 1.0);
+				u8value = static_cast<uint8_t>(value * UINT8_MAX);
+				break;
+			}
+			case PixelFormatType::FLOAT:
+			{
+				float value = std::clamp<float>(*(float*)_ptr, 0.0f, 1.0f);
+				u8value = static_cast<uint8_t>(value * UINT8_MAX);
+				break;
+			}
+			case PixelFormatType::HALF:
+			{
+				float value = std::clamp<float>(math::ToFloat32(*(uint16_t*)_ptr), 0.0f, 1.0f);
+				u8value = static_cast<uint8_t>(value * UINT8_MAX);
+				break;
+			}
+			case PixelFormatType::UINT:
+			{
+				uint32_t value = std::clamp<uint32_t>(*(uint32_t*)_ptr, 0, UINT32_MAX);
+				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(UINT32_MAX));
+				break;
+			}
+			case PixelFormatType::USHORT:
+			{
+				uint16_t value = std::clamp<uint16_t>(*(uint16_t*)_ptr, 0, UINT16_MAX);
+				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(UINT16_MAX));
+				break;
+			}
+			case PixelFormatType::UCHAR:
+			{
+				u8value = std::clamp<uint8_t>(*(uint8_t*)_ptr, 0, UINT8_MAX);
+				break;
+			}
+			case PixelFormatType::INT:
+			{
+				int32_t value = std::clamp<int32_t>(*(int32_t*)_ptr, 0, INT32_MAX);
+				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(INT32_MAX));
+
+				break;
+			}
+			case PixelFormatType::SHORT:
+			{
+				int16_t value = std::clamp<int16_t>(*(int16_t*)_ptr, 0, INT16_MAX);
+				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(INT16_MAX));
+				break;
+			}
+			case PixelFormatType::CHAR:
+			{
+				u8value = std::clamp<int8_t>(*(int8_t*)_ptr, 0, INT8_MAX);
+				break;
+			}
+			}
+			imageData.push_back(u8value);
+		}
+	}
+
+	int res = stbi_write_png(filename, width, height, (int)elementCount, imageData.data(), (int)(elementCount * width));
+	if (res != 1)
+	{
+		SIMUL_BREAK_ONCE("Failed to save screenshot data to disk.");
+		return false;
+	}
+	return true;
 }
 
 void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)

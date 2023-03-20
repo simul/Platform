@@ -134,8 +134,8 @@ namespace platform
 		//! A crossplatform viewport structure.
 		struct Viewport
 		{
-			int x,y;
-			int w,h;
+			int x=0,y=0;
+			int w=0,h=0;
 			inline const Viewport &operator=(const int4 &i)
 			{
 				x=i.x;

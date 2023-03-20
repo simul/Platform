@@ -348,10 +348,6 @@ vec4 DebugNormal(vertexOutput IN, int swizzle_mode)
 	}*/
 }
 
-shader vec4 PS_DebugNormal_Unswizzled(vertexOutput IN) : SV_TARGET
-{
-	return DebugNormal(IN, 0);
-}
 
 shader vec4 PS_DebugNormal_Unreal(vertexOutput IN) : SV_TARGET
 {
@@ -439,7 +435,6 @@ PixelShader ps_solid = CompileShader(ps_4_0, PS_Solid());
 
 //Debug renders.
 PixelShader ps_solid_albedo_only = CompileShader(ps_4_0, PS_Solid_AlbedoOnly()); //Albedo only view
-PixelShader ps_debug_normal_unswizzled = CompileShader(ps_4_0, PS_DebugNormal_Unswizzled()); //Unswizzled Normal view
 PixelShader ps_debug_normal_unreal = CompileShader(ps_4_0, PS_DebugNormal_Unreal()); //Unreal-basis normal view
 PixelShader ps_debug_normal_unity = CompileShader(ps_4_0, PS_DebugNormal_Unity()); //Unity-basis normal view
 PixelShader ps_debug_normal_vertexnormals = CompileShader(ps_4_0, PS_DebugNormal_VertexNormals()); //Vertex normals

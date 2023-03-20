@@ -14,6 +14,16 @@ option(PLATFORM_WARNINGS_AS_ERRORS "Should Platform treat C++ compile warnings a
 mark_as_advanced(PLATFORM_WARNINGS_AS_ERRORS)
 
 
+set(PLATFORM_STD_FILESYSTEM 1 CACHE STRING "Use std::filesystem?" )
+if(XBOXONE)
+	set(PLATFORM_STD_FILESYSTEM 2 CACHE STRING "Use std::filesystem?" )
+elseif(PLATFORM_PS4)
+	set(PLATFORM_STD_FILESYSTEM 0 CACHE STRING "Use std::filesystem?" )
+elseif(PLATFORM_LINUX)
+	set(PLATFORM_STD_FILESYSTEM 1 CACHE STRING "Use std::filesystem?" )
+endif()
+set_property(CACHE PLATFORM_STD_FILESYSTEM PROPERTY STRINGS 0 1 2)
+
 set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
 set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
 
@@ -46,7 +56,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	option(PLATFORM_SUPPORT_D3D12 "" ON )
 	option(PLATFORM_USE_ASSIMP "" OFF )
 	option(PLATFORM_BUILD_MD_LIBS "Build dynamically-linked dlls?" ON)
+	set(PLATFORM_USE_FMT OFF)
 else()
+	set(PLATFORM_USE_FMT ON)
 	set(PLATFORM_WINDOWS OFF)
 	option(PLATFORM_USE_ASSIMP "" OFF )
 	option(PLATFORM_SUPPORT_D3D11 "" OFF )

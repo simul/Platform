@@ -458,6 +458,7 @@ namespace platform
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 			virtual void					EndRenderPass					(DeviceContext& deviceContext) {};
 
+			void							HeightMapToNormalMap			(GraphicsDeviceContext&,Texture *heightMap,Texture *normalMap,float scale);
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			platform::core::MemoryInterface *GetAllocator()
 			{
@@ -489,6 +490,7 @@ namespace platform
 			static bool IsStencilFormat(PixelFormat f);
 			static uint32_t GetLayerCountFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
 			static uint32_t GetViewMaskFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
+			static bool SaveTextureDataToDisk(const char* filename, int width, int height, PixelFormat format, const void* data);
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 			

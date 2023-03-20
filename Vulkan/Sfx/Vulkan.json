@@ -1,6 +1,7 @@
 {
 	"compiler": {
-		"command": "$VULKAN_SDK/Bin/glslangValidator -V -S {stage}",
+		"command": "glslangValidator -V -S {stage}",
+		"commandPaths":["$VULKAN_SDK/Bin/"],
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",
@@ -9,7 +10,7 @@
 		}
 	},
 	"api": "Vulkan",
-	"defaultOptions": "-Os",
+	"defaultOptions": "",
 	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",

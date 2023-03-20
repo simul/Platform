@@ -11,6 +11,7 @@ typedef void* cp_hwnd;
 
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/RenderDelegate.h"
+#include "Platform/CrossPlatform/Export.h"
 
 namespace platform
 {
@@ -28,9 +29,10 @@ namespace platform
 		class RenderDelegaterInterface;
 		/// An interface class for managing GPU-accelerated graphics windows.
 		/// The derived class 
-		class GraphicsDeviceInterface
+		class SIMUL_CROSSPLATFORM_EXPORT GraphicsDeviceInterface
 		{
 		public:
+			virtual ~GraphicsDeviceInterface(){}
 			virtual void	Initialize(bool use_debug, bool instrument, bool default_driver) = 0;
 			virtual void	Shutdown()=0;
 			virtual void*	GetDevice()=0;

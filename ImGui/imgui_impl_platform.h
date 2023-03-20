@@ -75,5 +75,7 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRende
 																		platform::crossplatform::RenderDelegaterInterface *p);
 IMGUI_IMPL_API ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id);
 
-//! Draw the specified texture, optionally with a delegate to draw into it first.
-IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture( platform::crossplatform::Texture* texture,float mip,int slice,platform::crossplatform::RenderDelegate d,int width,int height);
+//! Draw the specified texture
+IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture, float mip, int slice, int width, int height);
+//! Draw the specified texture with a delegate to draw into it first.
+IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, const char* textureName, float mip, int slice, int width, int height);

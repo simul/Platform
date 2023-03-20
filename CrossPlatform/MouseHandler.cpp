@@ -229,7 +229,7 @@ void MouseHandler::Update(float time_step)
 		}
 		if(mouseButtons==core::MiddleButton)
 		{
-			z_rotate-=fDeltaX*introduce;
+			//z_rotate-=fDeltaX*introduce;
 		}
 		static float cc=0.01f;
 		if(cameraMode==FLYING)
@@ -355,10 +355,6 @@ void MouseHandler::KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown
 		if(nChar==0x01000020||nChar==16)
 		{
 			shift_down=false;
-		}
-		if(nChar==18)
-		{
-			alt_down=false;
 		}
 		if(nChar==0x01000016||nChar==0x21)
 		{

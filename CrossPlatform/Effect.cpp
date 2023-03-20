@@ -12,7 +12,10 @@
 #include <iostream>
 #include <algorithm>
 #include <regex>		// for file loading
+
+#if PLATFORM_STD_FILESYSTEM > 0
 #include <filesystem>
+#endif
 
 using namespace platform;
 using namespace crossplatform;
@@ -947,7 +950,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			static bool already = false;
 			if (!already)
 			{
+			#if PLATFORM_STD_FILESYSTEM > 0
 				std::cerr << "Current path is: " << std::filesystem::current_path().string().c_str()<<std::endl;
+			#endif
 				std::cerr << "Binary paths searched: "<< std::endl;
 				for (auto p : binaryPaths)
 				{

@@ -32,6 +32,7 @@
 	#include "SfxScanner.h"
 	#include "SfxEffect.h"
 	#include "StringFunctions.h"
+	extern int insert_line_statement;
 	extern int yy_start;
 	static void errSyn(const char *e);
 	void errSem(const string& str, int line=-1);
@@ -100,6 +101,13 @@
 	void WriteLineNumber(std::ostringstream &str,int lineno)
 	{
 		WriteLineNumber(str,current_filename,lineno);//.c_str()<<"\""<<endl;
+	}
+	std::string CreateLineStatement(int lineno)
+	{
+		ostringstream ostr;
+		ostr<<"\n";
+		WriteLineNumber(ostr,current_filename,lineno+last_linenumber-global_linenumber);
+		return ostr.str();
 	}
 	void stringReplaceAll(std::string& str, const std::string& from, const std::string& to)
 	{
@@ -463,7 +471,7 @@
 		}
 		// texture load functions
 		
-		std::regex re("\\{load_expr ([a-z0-9_]+) ([a-z0-9_]+) (.+) (.+)? (.+)?}", std::regex_constants::icase | std::regex::extended);
+		std::regex re("\\{load_expr ([a-z0-9_]+) ([a-z0-9_]+) ([^}]+) ([^}]+)? ([^}]+)?}", std::regex_constants::icase | std::regex::extended);
 		std::smatch base_match;
 		while (std::regex_search(f.content, base_match, re))
 		{
@@ -573,7 +581,7 @@
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
 %token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
-%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING /*SHADER_LINE SHADER_TYPE*/ COMPILE_SHADER_INSTANCE CONSTRUCT_GS
+%token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D TEMPLATIZED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
 %token REGULARBUFFER RW_REGULARBUFFER STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
@@ -816,14 +824,14 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		string def			=$5.strs[0];
 		string semantic		=$3.strs[0];
 		int buffer_number	=$3.num;
-
+		int sfx_linenumber	=sfxget_lineno();
 		buildStruct.file_number		=current_filenumber;
-		buildStruct.line_number		=sfxget_lineno()+(last_linenumber-global_linenumber);
+		buildStruct.line_number		=$1.lineno+(last_linenumber-global_linenumber);
 		buildStruct.global_line_number	=$1.lineno;
 
 		ostringstream ostr;
 		{
-			WriteLineNumber(ostr,current_filename,$1.lineno+(last_linenumber-global_linenumber));
+			WriteLineNumber(ostr,current_filename,buildStruct.line_number);
 			ostr<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<semantic<<" "<<$5.strs[0]<<";\n";
 			WriteLineNumber(ostr,current_filename,sfxget_lineno()+(last_linenumber-global_linenumber));
 		}
@@ -1229,6 +1237,10 @@ statement_list : statement_list statement
 	{
 		string statement_list=$1.strs[0] + "\n";
 		string statement = $2.strs[0];
+		if(insert_line_statement>0)
+		{
+			statement=CreateLineStatement($2.lineno)+statement;
+		}
 		statement_list += statement;
 		$$.strs[0]	=statement_list;
 		$$.strs[1]	=$1.strs[1]+$2.strs[1];
@@ -1236,6 +1248,11 @@ statement_list : statement_list statement
 	| statement
 	{
 		string statement=$1.strs[0];
+		if(insert_line_statement>0)
+		{
+			statement=CreateLineStatement($1.lineno)+statement;
+		}
+		insert_line_statement=0;
 		$$.strs[0]	=statement;
 		$$.strs[1]	=$1.strs[1];
 	}
@@ -2149,6 +2166,10 @@ statement : COMMENT
 	{
 		$$.strs[0]=$1.strs[0];
 	}
+	 | SHADER_LINE
+	 {
+		$$.strs[0]=$1.strs[0];
+	 }
 	| expression ';'
 	{
 		$$.strs[0]=$1.strs[0]+$2.strs[0];
@@ -2162,7 +2183,8 @@ statement : COMMENT
 	}
 	| declaration ';'
 	{
-		$$.strs[0]=$1.strs[0]+$2.strs[0];
+		string declaration=$1.strs[0]+$2.strs[0];
+		$$.strs[0]=declaration;
 		$$.strs[1]="";
 	}
 	| compound_statement
@@ -2255,7 +2277,10 @@ line_statement : LINE lex_fx NUM number_or_filename lex_passthrough
 			current_filenumber=gEffect->GetFilenumber(current_filename);
 		else if(current_filename=="")
 			current_filename=gEffect->GetFilename(current_filenumber);
-		global_linenumber=$1.lineno;
+			// Global linenumber means the line in the preprocessed file
+			// that this #line directive refers to, i.e. the NEXT line
+			// after the #line directive.
+		global_linenumber=$1.lineno+1;
 	}
 
 ignore_line_statement: LINE NUM number_or_filename
