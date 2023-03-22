@@ -1151,7 +1151,7 @@ void RenderPlatform::BeginFrame()
 
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	if (deviceContext.GetFrameNumber() == frameNumber)
+	if (GetFrameNumber() == frameNumber)
 		return;
 	// Store a reference to the device context
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
@@ -1941,6 +1941,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_8_UNORM;
 	case DXGI_FORMAT_R8G8B8A8_SNORM:
 		return RGBA_8_SNORM;
+	case DXGI_FORMAT_B8G8R8A8_TYPELESS:
 	case DXGI_FORMAT_B8G8R8A8_UNORM:		// What possible reason is there for this to exist?
 		return BGRA_8_UNORM;
 	case DXGI_FORMAT_R32_UINT:
@@ -2870,7 +2871,70 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
+	crossplatform::DeviceContext deviceContext = GetImmediateContext();
+	ID3D12GraphicsCommandList* cmdList = (ID3D12GraphicsCommandList*)deviceContext.platform_context;
+	if (!cmdList)
+		return;
+
+	crossplatform::PixelFormat format = texture->GetFormat();
+	crossplatform::PixelFormatType type = GetElementType(format);
+	uint64_t elementCount = static_cast<uint64_t>(GetElementCount(format));
+	uint64_t elementSize = static_cast<uint64_t>(GetElementSize(format));
+	uint64_t texelCount = static_cast<uint64_t>(texture->width * texture->length);
+	uint64_t texelSize = elementCount * elementSize;
+	uint64_t size = texelCount * texelSize;
+
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT Layout;
+	UINT NumRows;
+	UINT64 RowSizesInBytes;
+	UINT64 RequiredSize;
+	const D3D12_RESOURCE_DESC& srcResDesc = texture->AsD3D12Resource()->GetDesc();
+	m12Device->GetCopyableFootprints(&srcResDesc, 0, 1, 0, &Layout, &NumRows, &RowSizesInBytes, &RequiredSize);
+
+	ID3D12Resource* imageBuffer;
+	D3D12_RESOURCE_DESC imageBufferDesc;
+	imageBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	imageBufferDesc.Alignment = 0;
+	imageBufferDesc.Width = RequiredSize;
+	imageBufferDesc.Height = 1;
+	imageBufferDesc.DepthOrArraySize = 1;
+	imageBufferDesc.MipLevels = 1;
+	imageBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	imageBufferDesc.SampleDesc = { 1, 0 };
+	imageBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	imageBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 	
+	D3D12_HEAP_PROPERTIES heapProperties;
+	heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
+	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProperties.CreationNodeMask = 0;
+	heapProperties.VisibleNodeMask = 0;
+
+	D3D12_CLEAR_VALUE* clear = nullptr;
+
+	V_CHECK(m12Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &imageBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+		clear, SIMUL_PPV_ARGS(&imageBuffer)));
+
+	D3D12_TEXTURE_COPY_LOCATION dstCopyLocation = CD3DX12_TEXTURE_COPY_LOCATION(imageBuffer, Layout);
+	D3D12_TEXTURE_COPY_LOCATION srcCopyLocation = CD3DX12_TEXTURE_COPY_LOCATION(texture->AsD3D12Resource(), 0);
+
+	dx12::Texture* t = (dx12::Texture*)texture;
+	t->SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	FlushBarriers(deviceContext);
+
+	cmdList->CopyTextureRegion(&dstCopyLocation, 0, 0, 0, &srcCopyLocation, nullptr);
+	FlushImmediateCommandList();
+	immediateContext.contextState.contextActive = false;
+	ResetImmediateCommandList();
+
+	void* ptr;
+	D3D12_RANGE readRange = { 0, imageBufferDesc.Width };
+	imageBuffer->Map(0, &readRange, &ptr);
+	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, ptr);
+	imageBuffer->Unmap(0, nullptr);
+
+	SAFE_RELEASE(imageBuffer);
 }
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceContext, bool error_checking)
@@ -2909,15 +2973,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	doesn't work as we don't necessarily know the allocator.
 	*/
 	// We will only set the tables once per frame
-	if (frameNumber != deviceContext.GetFrameNumber())
-	{
-		// Call start render at least once per frame to make sure the bins 
-		// release objects!
-
-		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
-
-		deviceContext.SetFrameNumber(frameNumber);
-	}
+	EnsureContextFrameHasBegun(deviceContext);
 
 	auto cmdList    = deviceContext.asD3D12Context();
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;

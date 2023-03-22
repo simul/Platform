@@ -490,10 +490,12 @@ namespace platform
 			static bool IsStencilFormat(PixelFormat f);
 			static uint32_t GetLayerCountFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
 			static uint32_t GetViewMaskFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
+			static bool SaveTextureDataToDisk(const char* filename, int width, int height, PixelFormat format, const void* data);
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
+			void EnsureContextFrameHasBegun(DeviceContext& deviceContext);
 			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
 			virtual void ContextFrameBegin(GraphicsDeviceContext&);
 			Allocator allocator;

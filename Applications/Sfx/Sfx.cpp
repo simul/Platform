@@ -647,6 +647,19 @@ bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::
 			}
 		}
 		newsrc=preproOutput.str();
+		// if verbose, save the preprocessed text to a temporary file.
+		if(sfxOptions->verbose)
+		{
+			char buffer[_MAX_PATH];
+			string wd="";
+			if(_getcwd(buffer,_MAX_PATH))
+				wd=string(buffer)+"/";
+			mkpath(sfxOptions->intermediateDirectory);
+			string ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
+			ofstream pps(ppfile);
+			pps<<newsrc;
+			std::cerr<<ppfile<<": warning: preprocessed source"<<std::endl;
+		}
 	}
 	catch(...)
 	{
@@ -703,22 +716,6 @@ bool sfxParseEffectFromMemory( int effect, const char* src,const char *filename,
 	if(retVal)
 	{
 		retVal&=gEffect->Save(filename,output_filename);
-	}
-	//else
-	{
-		// if verbose, save the preprocessed text to a temporary file.
-		if(sfxOptions->verbose)
-		{
-			char buffer[_MAX_PATH];
-			string wd="";
-			if(_getcwd(buffer,_MAX_PATH))
-				wd=string(buffer)+"/";
-			mkpath(sfxOptions->intermediateDirectory);
-			string ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(filename))+"_pp";
-			ofstream pps(ppfile);
-			pps<<src;
-			std::cerr<<ppfile<<": warning: preprocessed source"<<std::endl;
-		}
 	}
 	string slog=gEffect->Log().str();
 	// now rewrite log to use filenames.

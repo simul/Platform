@@ -250,7 +250,11 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	buf.st_mtime;
 	time_t t = buf.st_mtime;
 	struct tm lt;
+#if __COMMODORE__
+	gmtime_s(&t,&lt);
+#else
 	gmtime_r(&t,&lt);
+#endif
 	double datetime=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
 	return datetime;
 #endif

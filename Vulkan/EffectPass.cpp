@@ -55,13 +55,13 @@ void EffectPass::InvalidateDeviceObjects()
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
 {
 	// If new frame, update current frame index and reset the apply count
-	if (m_LastFrameIndex != deviceContext.GetFrameNumber())
+	if (m_LastFrameIndex != renderPlatform->GetFrameNumber())
 	{
 		m_CurrentApplyCount = 0;
 		m_InternalFrameIndex++;
 		m_InternalFrameIndex = m_InternalFrameIndex % s_DescriptorSetCount;
 		m_DescriptorSets_It[m_InternalFrameIndex] = m_DescriptorSets[m_InternalFrameIndex].begin();
-		m_LastFrameIndex = deviceContext.GetFrameNumber();
+		m_LastFrameIndex = renderPlatform->GetFrameNumber();
 	}
 	if (!m_Initialized)
 		 CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
@@ -412,7 +412,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		if (p == m_RenderPasses.end())
 		{
 			renderPassPipeline = &m_RenderPasses[hashval];
-			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, crossplatform::PixelFormat::UNKNOWN, crossplatform::Topology::UNDEFINED);
+			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, crossplatform::PixelFormat::UNKNOWN, 0, crossplatform::Topology::UNDEFINED);
 		}
 		else
 			renderPassPipeline = &(m_RenderPasses[hashval]);
@@ -420,19 +420,21 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	else
 	{
 		crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNKNOWN;
-		pixelFormat = vulkanRenderPlatform->GetActivePixelFormat(*graphicsDeviceContext);
+		int numOfSamples = 1;
+		pixelFormat =  vulkan::RenderPlatform::GetActivePixelFormat(*graphicsDeviceContext);
+		numOfSamples = vulkan::RenderPlatform::GetActiveNumOfSamples(*graphicsDeviceContext);
 		crossplatform::Topology appliedTopology = topology;
 		if (cs->topology != crossplatform::Topology::UNDEFINED)
 			appliedTopology = cs->topology;
 		if (appliedTopology == crossplatform::Topology::UNDEFINED)
 			appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
 
-		hashval = MakeRenderPassHash(pixelFormat, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
+		hashval = MakeRenderPassHash(pixelFormat, numOfSamples, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
 		const auto& p = m_RenderPasses.find(hashval);
 		if (p == m_RenderPasses.end())
 		{
 			renderPassPipeline = &m_RenderPasses[hashval];
-			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, pixelFormat, appliedTopology, blendState, depthStencilState, rasterizerState, multiview);
+			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, pixelFormat, numOfSamples, appliedTopology, blendState, depthStencilState, rasterizerState, multiview);
 		}
 		else
 			renderPassPipeline = &(m_RenderPasses[hashval]);
@@ -495,7 +497,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 		{
 			vk::DescriptorPoolSize* poolSizes = new vk::DescriptorPoolSize[numDescriptors];
 			int poolSizeIdx = 0;
-			static int countPerFrame = 256;
+			static int countPerFrame = 1024;
 			if (numResourceSlots)
 			{
 				vk::DescriptorType type = m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage; //Video needs Combined image sampler
@@ -703,7 +705,7 @@ vk::ShaderStageFlags EffectPass::GetShaderFlagsForSlot(int slot, bool(platform::
 	return stageFlags;
 }
 
-void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat,
+void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, int numOfSamples,
 	crossplatform::Topology topology, const crossplatform::RenderState* blendState, const crossplatform::RenderState* depthStencilState, const crossplatform::RenderState* rasterizerState, bool multiview)
 {
 	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
@@ -742,7 +744,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 		crossplatform::PixelFormat depthFormat = (depth_write || depth_read) ? crossplatform::PixelFormat::D_32_FLOAT : crossplatform::PixelFormat::UNKNOWN;
 
 		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, renderPassPipeline->renderPass, num_RT, &pixelFormat,
-			depthFormat, depth_read, depth_write, false, 1, multiview);
+			depthFormat, depth_read, depth_write, false, numOfSamples, multiview);
 		SetVulkanName(renderPlatform, renderPassPipeline->renderPass, platform::core::QuickFormat("%s EffectPass mRenderPass", name.c_str()));
 
 		vk::PipelineShaderStageCreateInfo shaderStageInfo[2] = {
@@ -772,7 +774,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 			.setFrontFace(frontFace)
 			.setDepthBiasEnable(VK_FALSE)
 			.setLineWidth(1.0f);
-		vk::PipelineMultisampleStateCreateInfo multisampleInfo = vk::PipelineMultisampleStateCreateInfo();
+		vk::PipelineMultisampleStateCreateInfo multisampleInfo = vk::PipelineMultisampleStateCreateInfo().setRasterizationSamples(vk::SampleCountFlagBits(numOfSamples));
 		vk::StencilOpState stencilOp = vk::StencilOpState().setFailOp(vk::StencilOp::eKeep).setPassOp(vk::StencilOp::eKeep).setCompareOp(vk::CompareOp::eAlways);
 		vk::PipelineDepthStencilStateCreateInfo depthStencilInfo = vk::PipelineDepthStencilStateCreateInfo()
 			.setDepthTestEnable(VK_FALSE)
@@ -891,28 +893,29 @@ EffectPass::RenderPassPipeline& EffectPass::GetRenderPassPipeline(crossplatform:
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
 	crossplatform::PixelFormat pixelFormat = vulkan::RenderPlatform::GetActivePixelFormat(deviceContext);
+	int numOfSamples = vulkan::RenderPlatform::GetActiveNumOfSamples(deviceContext);
 	crossplatform::Topology topology = cs->topology;
 
-	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, topology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
+	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, numOfSamples,topology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
 	const auto& p = m_RenderPasses.find(hashval);
 	if (p == m_RenderPasses.end())
 	{
-		InitializePipeline(deviceContext, &m_RenderPasses[hashval], pixelFormat, topology, blendState, depthStencilState, rasterizerState, multiview);
+		InitializePipeline(deviceContext, &m_RenderPasses[hashval], pixelFormat, numOfSamples, topology, blendState, depthStencilState, rasterizerState, multiview);
 	}
 
 	return m_RenderPasses[hashval];
 }
 
-RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout)
+RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::Layout* layout)
 {
-	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, topology, layout, blendState, depthStencilState, rasterizerState, multiview);
+	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, numOfSamples, topology, layout, blendState, depthStencilState, rasterizerState, multiview);
 	return hashval;
 }
 
-RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout,
+RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::Layout* layout,
 	const crossplatform::RenderState* blendState, const crossplatform::RenderState* depthStencilState, const crossplatform::RenderState* rasterizerState, bool multiview)
 {
-	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)topology;
+	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)numOfSamples * 10 + (unsigned long long)topology;
 	if (layout)
 	{
 		const auto& lDesc = layout->GetDesc();

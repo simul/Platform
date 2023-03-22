@@ -33,7 +33,7 @@ namespace platform
 struct ImGui_ImplPlatform_TextureView
 {
 	platform::crossplatform::Texture *texture=nullptr;
-	int mip=0;
+	float mip=0.0f;
 	int slice=0;
 	//! If set, this delegate will be called to render into the texture.
 	platform::crossplatform::RenderDelegate renderDelegate;
@@ -75,5 +75,7 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRende
 																		platform::crossplatform::RenderDelegaterInterface *p);
 IMGUI_IMPL_API ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id);
 
-//! Draw the specified texture, optionally with a delegate to draw into it first.
-IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture( platform::crossplatform::Texture* texture,int mip,int slice,platform::crossplatform::RenderDelegate d,int width,int height);
+//! Draw the specified texture
+IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture, float mip, int slice, int width, int height);
+//! Draw the specified texture with a delegate to draw into it first.
+IMGUI_IMPL_API void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, const char* textureName, float mip, int slice, int width, int height);

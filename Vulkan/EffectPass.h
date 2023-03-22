@@ -53,7 +53,8 @@ namespace platform
 			static int GenerateConstantBufferSlot(int s, bool offset = true);
 			vk::ShaderStageFlags GetShaderFlagsForSlot(int slot, bool(platform::crossplatform::Shader::* pfn)(int) const);
 			
-			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline
+				, crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology
 				, const crossplatform::RenderState* blendState = nullptr
 				, const crossplatform::RenderState* depthStencilState = nullptr
 				, const crossplatform::RenderState* rasterizerState = nullptr
@@ -61,10 +62,10 @@ namespace platform
 
 		public:
 			RenderPassPipeline& GetRenderPassPipeline(crossplatform::GraphicsDeviceContext& deviceContext);
-			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
+			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::Layout* layout);
 
 		private:
-			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology
 				, const crossplatform::Layout* layout = nullptr
 				, const crossplatform::RenderState* blendState = nullptr
 				, const crossplatform::RenderState* depthStencilState = nullptr

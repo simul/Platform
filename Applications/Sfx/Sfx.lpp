@@ -64,6 +64,11 @@ the last is C code to be copied verbatim to the output.
 	using namespace std;
 	using namespace sfx;
 	static int brace=0;
+	int insert_line_statement=0;
+	void InsertLineStatement()
+	{
+		insert_line_statement++;
+	}
 	float ToFloat(const char * txr)
 	{
 		std::string yytextStr=yytext;
@@ -121,6 +126,9 @@ the last is C code to be copied verbatim to the output.
 	}
 	int modReturn_(int u,const char *txt)
 	{
+		if(u==SHADER_LINE)
+		{
+		}
 		sfxlval.token=u;
 		sfxlval.lineno=yylineno;
 		sfxlval.strs[0] = txt;//accw
@@ -548,9 +556,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 													// Write an empty statement: preserve line numbers
 													sfxlval.strs[0] = yytext;
+													InsertLineStatement();
 												}
 
 <IN_SHADER>"/*"									{
+													InsertLineStatement();
 													sfxPushState(IN_MULTILINE_COMMENT);
 													if (gLexPassthrough)
 														sfxWrite(yytext);
@@ -837,7 +847,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}// Without this line, the yylineno would get out of whack.
 <IN_SHADER>\n									{				
 													//sfxlval.strs[0] = yytext;
-													//stdReturn(SHADER_LINE);
+													InsertLineStatement();
 												}// Without this line, the yylineno would get out of whack.
 
 <IN_SHADER_COMPILE>"ConstructGSWithSO"			{

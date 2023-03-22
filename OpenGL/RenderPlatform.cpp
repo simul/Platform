@@ -162,9 +162,9 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
 {
-	if (mLastFrame != deviceContext.GetFrameNumber())
+	if (mLastFrame != GetFrameNumber())
 	{
-		mLastFrame = deviceContext.GetFrameNumber();
+		mLastFrame = GetFrameNumber();
 		if(deviceContext.AsGraphicsDeviceContext())
 			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 	}
