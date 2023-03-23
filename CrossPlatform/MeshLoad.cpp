@@ -143,8 +143,8 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 	M->albedo.value= Colour3("$clr.diffuse")+ Colour3("$clr.ambient") + Colour3("$clr.specular");
 	M->emissive.value = Colour3("$clr.emissive");
 	//m->Get(AI_MATKEY_COLOR_DIFFUSE, aiColour);
-	m->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, M->metal.value);
-	m->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, M->roughness.value);
+	m->Get(AI_MATKEY_METALLIC_FACTOR, M->metal.value);
+	m->Get(AI_MATKEY_ROUGHNESS_FACTOR, M->roughness.value);
 
 	// Seems to be always 1.0
 	M->ambientOcclusion.value=1.0f;
@@ -231,7 +231,7 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 	std::string short_filename=scene->GetShortFilename(filenameUtf8);
 	std::vector< Material*> materials;
 	std::string file;
-	std::vector<std::string>pathsplit=base::SplitPath(filenameUtf8);
+	std::vector<std::string>pathsplit=platform::core::SplitPath(filenameUtf8);
 	if(pathsplit.size())
 		renderPlatform->PushTexturePath(pathsplit[0].c_str());
 	for(unsigned i=0;i<scene->mNumMaterials;i++)
@@ -370,9 +370,9 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 }
 
 #else
-void Mesh::Load(const char* filenameUtf8, float scale, AxesStandard fromStandard)
+/*void Mesh::Load(const char* filenameUtf8, float scale, AxesStandard fromStandard)
 {
 	SIMUL_CERR_ONCE << "Can't load " << filenameUtf8 <<" - no importer enabled."<< std::endl;
-}
+}*/
 #endif
 

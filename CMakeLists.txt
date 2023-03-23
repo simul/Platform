@@ -18,7 +18,7 @@ if(PLATFORM_USE_FMT)
 endif()
 
 if(PLATFORM_USE_ASSIMP)
-	set( ASSIMP_LIBNAME assimp-vc142-mt$<$<CONFIG:Debug>:d> )
+	set( ASSIMP_LIBNAME assimp-vc${MSVC_TOOLSET_VERSION}-mt$<$<CONFIG:Debug>:d> )
 	if(NOT PLATFORM_WINDOWS )
 		add_subdirectory(External/assimp)
 	endif()
