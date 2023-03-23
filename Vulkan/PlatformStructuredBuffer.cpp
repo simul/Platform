@@ -98,7 +98,7 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
 {
-    if (deviceContext.GetFrameNumber() >= kNumBuffers)
+    if (renderPlatform->GetFrameNumber() >= kNumBuffers)
     {
 		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 		mCurReadMap = vulkanDevice->mapMemory(mReadBufferMemory[mFrameIndex], 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
@@ -160,7 +160,7 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	auto rPlat = (vulkan::RenderPlatform*)deviceContext.renderPlatform;
 
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrame != deviceContext.GetFrameNumber() || lastBuffer == perFrameBuffers.end())
+	if (mLastFrame != renderPlatform->GetFrameNumber() || lastBuffer == perFrameBuffers.end())
 	{
 		if(lastBuffer!=perFrameBuffers.end())
 			lastBuffer++;
@@ -168,7 +168,7 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 			lastBuffer=firstBuffer;
 		if(lastBuffer==perFrameBuffers.end())
 			SIMUL_BREAK("bad buffer iterator");
-		mLastFrame = deviceContext.GetFrameNumber();
+		mLastFrame = renderPlatform->GetFrameNumber();
 		mCurApplyCount = 0;
 		mFrameIndex = (mFrameIndex + 1) % kNumBuffers;
 	}

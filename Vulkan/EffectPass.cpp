@@ -55,13 +55,13 @@ void EffectPass::InvalidateDeviceObjects()
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
 {
 	// If new frame, update current frame index and reset the apply count
-	if (m_LastFrameIndex != deviceContext.GetFrameNumber())
+	if (m_LastFrameIndex != renderPlatform->GetFrameNumber())
 	{
 		m_CurrentApplyCount = 0;
 		m_InternalFrameIndex++;
 		m_InternalFrameIndex = m_InternalFrameIndex % s_DescriptorSetCount;
 		m_DescriptorSets_It[m_InternalFrameIndex] = m_DescriptorSets[m_InternalFrameIndex].begin();
-		m_LastFrameIndex = deviceContext.GetFrameNumber();
+		m_LastFrameIndex = renderPlatform->GetFrameNumber();
 	}
 	if (!m_Initialized)
 		 CreateDescriptorPoolAndSetLayoutAndPipelineLayout();

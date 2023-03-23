@@ -380,7 +380,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
 					continue;
 
-				// TODO: Apply scissor/clipping rectangle				
+				// TODO: Apply scissor/clipping rectangle
 				if(clip_min.y<0)
 				{
 					clip_min.y=0;
@@ -395,7 +395,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				int4 clip={(int)clip_min.x, (int)clip_min.y,(int)(clip_max.x-clip_min.x), (int)(clip_max.y-clip_min.y)};
 
 				renderPlatform->SetScissor(deviceContext, clip);
-				
+
 				// Bind texture, Draw
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
 				if(texture_srv && texture_srv->texture)
@@ -806,11 +806,11 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 	IM_ASSERT(hwnd != 0);
 	if(displaySurfaceManagerInterface)
 	{
-		// All should be handled from within the displaySurface manager.
+	// All should be handled from within the displaySurface manager.
 		displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::UNKNOWN);
-		displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
-		vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
-	}
+	displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
+	vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
+}
 }
 
 static void ImGui_ImplPlatform_DestroyWindow(ImGuiViewport* viewport)
@@ -832,7 +832,7 @@ static void ImGui_ImplPlatform_SetWindowSize(ImGuiViewport* viewport, ImVec2 siz
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
 	if(displaySurfaceManagerInterface)
-		displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
+	displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
 	/*
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
@@ -866,7 +866,7 @@ static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void* usr)
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
 	if(displaySurfaceManagerInterface)
-		displaySurfaceManagerInterface->Render(hwnd);
+	displaySurfaceManagerInterface->Render(hwnd);
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
 	drawData[vd->viewId]=viewport->DrawData;
 }
@@ -1031,13 +1031,13 @@ bool ImGui_ImplPlatform_Init(platform::crossplatform::RenderPlatform* r,bool hos
 	return true;
 }
 
-void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,int mip,int slice, int width,int height)
+void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,float mip,int slice, int width,int height)
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 
-	if (width <= 0 || height <= 0)
+	if(width<=0||height<=0)
 		return;
-	if (!texture)
+	if(!texture)
 		return;
 	if (!texture->IsValid())
 		return;
@@ -1060,45 +1060,45 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,in
 	ImGui::Image(imTextureID, textureSize, uv_min, uv_max, tint_col, border_col);
 }
 
-void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, const char* textureName, int mip, int slice, int width, int height)
-{
+void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, const char* textureName, float mip, int slice, int width, int height)
+	{
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 
 	if (width <= 0 || height <= 0)
 		return;
 	
 	platform::crossplatform::Texture* texture = nullptr;
-	platform::crossplatform::TextureCreate textureCreate;
-	textureCreate.w = width;
-	textureCreate.l = height;
-	textureCreate.make_rt = true;
-	textureCreate.f = platform::crossplatform::PixelFormat::RGB_11_11_10_FLOAT;
-	auto h = MakeTextureHash(&textureCreate);
-	auto& scratch = bd->scratchTextures[h];
-	if (scratch.scratchIndex == scratch.textures.size())
-	{
+		platform::crossplatform::TextureCreate textureCreate;
+		textureCreate.w=width;
+		textureCreate.l=height;
+		textureCreate.make_rt=true;
+		textureCreate.f=platform::crossplatform::PixelFormat::RGB_11_11_10_FLOAT;
+		auto h=MakeTextureHash(&textureCreate);
+		auto &scratch=bd->scratchTextures[h];
+		if(scratch.scratchIndex==scratch.textures.size())
+		{
 		scratch.textures.push_back(bd->renderPlatform->CreateTexture(textureName));
-		scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform, &textureCreate);
-	}
-	texture = scratch.textures[scratch.scratchIndex];
-	scratch.scratchIndex++;
+			scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform,&textureCreate);
+		}
+		texture=scratch.textures[scratch.scratchIndex];
+		scratch.scratchIndex++;
 	
 	if (!texture)
 		return;
 	if (!texture->IsValid())
 		return;
 
-	uint64_t u = (uint64_t)texture + mip * 1000 + slice;
-	auto& dt = bd->drawTextures[u];
+	uint64_t u=(uint64_t)texture+(uint64_t)(mip*1000.0f)+slice;
+	auto &dt=bd->drawTextures[u];
 	dt.texture = texture;
-	dt.mip = mip;
-	dt.slice = slice;
-	dt.renderDelegate = d;
+	dt.mip=mip;
+	dt.slice=slice;
+	dt.renderDelegate=d;
 
 	const float aspect = static_cast<float>(width) / static_cast<float>(height);
 	const ImVec2 textureSize = ImVec2(static_cast<float>(width), static_cast<float>(height));
 	ImTextureID imTextureID = (ImTextureID)&dt;
-
+	
 	static ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 	static ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
 	static ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint

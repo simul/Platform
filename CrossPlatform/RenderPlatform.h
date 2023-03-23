@@ -495,6 +495,7 @@ namespace platform
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
+			void EnsureContextFrameHasBegun(DeviceContext& deviceContext);
 			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
 			virtual void ContextFrameBegin(GraphicsDeviceContext&);
 			Allocator allocator;

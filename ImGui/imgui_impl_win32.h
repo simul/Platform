@@ -45,3 +45,6 @@ IMGUI_IMPL_API float    ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor); //
 IMGUI_IMPL_API void     ImGui_ImplWin32_EnableAlphaCompositing(void* hwnd);   // HWND hwnd
 
 IMGUI_IMPL_API void		ImGui_ImplWin32_SetFunction_GetCursorPos(int(*f)(long[]));
+
+
+IMGUI_IMPL_API ImGuiKey ImGui_ImplWin32_VirtualKeyToImGuiKey(unsigned long long wParam);
