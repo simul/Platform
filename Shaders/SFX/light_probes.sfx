@@ -221,8 +221,6 @@ vec4 RoughnessMip(vec3 view,bool rough)
 				float SolidAngleSample = 1.0 / ( NumSamples * PDF );
 				float Mip = 0.5 * log2( SolidAngleSample / SolidAngleTexel );
 
-				float ConeAngle = acos(saturate( 1.0 - SolidAngleSample / (2.0*PI) ));
-
 				L = mul(  TangentToWorld, L );
 				// Apply a limit to avoid numerical issues:
 				#ifdef CPP_GLSL
