@@ -61,9 +61,9 @@ namespace platform
 
 			ID3D12Resource*					AsD3D12Resource() override;
 			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1,bool=true);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int index = -1, int mip = -1);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext,int index = -1, int mip = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext, int index = -1, int mip = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext, int index = -1, int mip = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext, int index = -1, int mip = -1);
 
 			bool							IsComputable() const override;
 			bool							HasRenderTargets() const override;
@@ -130,16 +130,20 @@ namespace platform
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0
 																			, bool shared = false,crossplatform::CompressionFormat cf=crossplatform::CompressionFormat::UNCOMPRESSED
 																			,const uint8_t **data=nullptr);
-			void											InitUAVTables(int l, int m);
 			void											FreeUAVTables();
+			void											InitUAVTables(int l, int m);
 
-			void											InitSRVTables(int l, int m);
 			void											FreeSRVTables();
+			void											InitSRVTables(int l, int m);
 			void											CreateSRVTables(int num, int m, bool cubemap, bool volume = false, bool msaa = false);
 
 			void											FreeRTVTables();
 			void											InitRTVTables(int l, int m);
-			void											CreateRTVTables(int l,int m);
+			void											CreateRTVTables(int l, int m, bool msaa = false);
+
+			void											FreeDSVTables();
+			void											InitDSVTables(int l, int m);
+			void											CreateDSVTables(int l, int m, bool msaa = false);
 
 			void											InitStateTable(int l, int m);
 			
@@ -168,19 +172,22 @@ namespace platform
 
 			D3D12_CPU_DESCRIPTOR_HANDLE		arrayShaderResourceView12;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 
-			D3D12_CPU_DESCRIPTOR_HANDLE*	layerShaderResourceViews12;		// SRV's for each layer, including all mips
-			D3D12_CPU_DESCRIPTOR_HANDLE*	mainMipShaderResourceViews12;	// SRV's for the whole texture at different mips.
-			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipShaderResourceViews12;	// SRV's for each layer at different mips.
+			D3D12_CPU_DESCRIPTOR_HANDLE*	layerShaderResourceViews12;		// SRVs for each layer, including all mips
+			D3D12_CPU_DESCRIPTOR_HANDLE*	mainMipShaderResourceViews12;	// SRVs for the whole texture at different mips.
+			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipShaderResourceViews12;	// SRVs for each layer at different mips.
 
 			D3D12_CPU_DESCRIPTOR_HANDLE*	mipUnorderedAccessViews12;		// UAV for the whole texture at various mips: only for 2D arrays.
-			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipUnorderedAccessViews12;	// UAV's for the layers and mips
+			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipUnorderedAccessViews12;	// UAVs for the layers and mips
 
-			D3D12_CPU_DESCRIPTOR_HANDLE		depthStencilView12;
-			D3D12_CPU_DESCRIPTOR_HANDLE**	renderTargetViews12;			// 2D table: layers and mips.
+			D3D12_CPU_DESCRIPTOR_HANDLE		mainDepthStencilView12;			// DSV for the whole texture.
+			D3D12_CPU_DESCRIPTOR_HANDLE*	layerDepthStencilViews12;		// DSVs for each layer, including all mips
+
+			D3D12_CPU_DESCRIPTOR_HANDLE		mainRenderTargetView12;			// RTV for the whole texture.
+			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipRenderTargetViews12;	// RTVs for each layer at different mips.
 
 			size_t							layerMipShaderResourceViews12Size = 0;
 			size_t							layerMipUnorderedAccessViews12Size = 0;
-			size_t							renderTargetViews12Size = 0;
+			size_t							layerMipRenderTargetViews12Size = 0;
 
             //! We need to store the old MSAA state
             DXGI_SAMPLE_DESC                mCachedMSAAState;
