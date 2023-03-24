@@ -96,11 +96,6 @@ struct idOnly
 {
 	uint vertex_id	: SV_VertexId;
 };
-struct VertexAndViewID
-{
-	uint vertex_id : SV_VertexId;
-	uint view_id : SV_ViewID;
-};
 
 struct posVertexOutput
 {
@@ -126,13 +121,6 @@ struct positionColourVertexInput
 	vec4 colour		: TEXCOORD0;		
 };
 
-struct posTexViewVertexOutput
-{
-	vec4 hPosition : SV_POSITION;
-	vec2 texCoords : TEXCOORD0;
-	float viewID : TEXCOORD1;
-};
-
 posVertexOutput UltraSimpleFullscreen(idOnly IN)
 {
 	posVertexOutput OUT;
@@ -144,21 +132,6 @@ posVertexOutput UltraSimpleFullscreen(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	OUT.hPosition.z	=0.0;
-	return OUT;
-}
-
-posTexViewVertexOutput UltraSimpleFullscreen(VertexAndViewID IN)
-{
-	posTexViewVertexOutput OUT;
-	vec2 poss[4];
-	poss[0] = vec2(1.0, -1.0);
-	poss[1] = vec2(1.0, 1.0);
-	poss[2] = vec2(-1.0, -1.0);
-	poss[3] = vec2(-1.0, 1.0);
-	vec2 pos = poss[IN.vertex_id];
-	OUT.hPosition = vec4(pos, 0.0, 1.0);
-	OUT.hPosition.z = 0.0;
-	OUT.viewID = float(IN.view_id);
 	return OUT;
 }
 
@@ -180,24 +153,6 @@ posTexVertexOutput SimpleFullscreen(idOnly IN)
 	return OUT;
 }
 
-posTexViewVertexOutput SimpleFullscreen(VertexAndViewID IN)
-{
-	posTexViewVertexOutput OUT;
-	vec2 poss[4];
-	poss[0] = vec2(1.0, -1.0);
-	poss[1] = vec2(1.0, 1.0);
-	poss[2] = vec2(-1.0, -1.0);
-	poss[3] = vec2(-1.0, 1.0);
-	vec2 pos = poss[IN.vertex_id];
-	OUT.hPosition = vec4(pos, 0.0, 1.0);
-	OUT.hPosition.z = 0.0;
-	OUT.texCoords = 0.5 * (vec2(1.0, 1.0) + vec2(pos.x, -pos.y));
-	OUT.viewID = float(IN.view_id);
-#ifdef SFX_OPENGL
-	OUT.texCoords.y =1.0 - OUT.texCoords.y;
-#endif
-	return OUT;
-}
 
 shader posVertexOutput VS_UltraSimpleFullscreen(idOnly IN)
 {
@@ -205,21 +160,9 @@ shader posVertexOutput VS_UltraSimpleFullscreen(idOnly IN)
 	return pt;
 }
 
-shader posTexViewVertexOutput VS_UltraSimpleFullscreen_MV(VertexAndViewID IN)
-{
-posTexViewVertexOutput pt = UltraSimpleFullscreen(IN);
-	return pt;
-}
-
 shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
 {
 	posTexVertexOutput pt=SimpleFullscreen(IN);
-	return pt;
-}
-
-shader posTexViewVertexOutput VS_SimpleFullscreen_MV(VertexAndViewID IN)
-{
-	posTexViewVertexOutput pt=SimpleFullscreen(IN);
 	return pt;
 }
 
