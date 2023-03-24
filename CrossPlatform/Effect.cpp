@@ -337,14 +337,14 @@ int EffectTechnique::NumPasses() const
 }
 
 
-EffectPass *EffectTechnique::GetPass(int i)
+EffectPass *EffectTechnique::GetPass(int i) const
 {
-	return passes_by_index[i];
+	return passes_by_index.at(i);
 }
 
-EffectPass *EffectTechnique::GetPass(const char *name)
+EffectPass *EffectTechnique::GetPass(const char *name) const
 {
-	return passes_by_name[name];
+	return passes_by_name.at(name);
 }
 
 
