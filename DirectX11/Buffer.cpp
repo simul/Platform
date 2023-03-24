@@ -37,11 +37,11 @@ void Buffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(d3d11Buffer);
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access,bool streamout_target)
 {
     D3D11_SUBRESOURCE_DATA InitData;
     memset( &InitData,0,sizeof(D3D11_SUBRESOURCE_DATA) );
-    InitData.pSysMem		=data;
+    InitData.pSysMem		=data->data();
     InitData.SysMemPitch	=layout->GetPitch();
 	D3D11_USAGE usage		=D3D11_USAGE_DYNAMIC;
 	//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
@@ -59,7 +59,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 	count = num_vertices;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void * data, bool cpu_access)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>> data, bool cpu_access)
 {
 	D3D11_BUFFER_DESC ib_desc;
 	ib_desc.ByteWidth			= num_indices * index_size_bytes;
@@ -70,7 +70,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	ib_desc.StructureByteStride = index_size_bytes;
 
 	D3D11_SUBRESOURCE_DATA init_data;
-	init_data.pSysMem			= data;
+	init_data.pSysMem			= data->data();
 	init_data.SysMemPitch		= 0;
 	init_data.SysMemSlicePitch	= 0;
 

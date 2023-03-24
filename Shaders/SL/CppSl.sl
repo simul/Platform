@@ -12,8 +12,10 @@
 	#pragma warning(push)
 	#pragma warning(disable:4324)
 	#define ALIGN_16 __declspec( align( 16 ) )
+	#define PLATFORM_PACKED 
 #else
 	#define ALIGN_16
+	#define PLATFORM_PACKED __attribute__ ((packed,aligned(1)))
 #endif
 	#define STATIC static
 	#define uniform
@@ -858,6 +860,27 @@
 		bool is_column_major() const
 		{
 			return(_m30==0&&_m31==0&&_m32==0);
+		}
+		template<typename U>
+		static tmatrix4 translation(const tvector3<U>& translation)
+		{
+			return 
+			{
+				1.0f, 0.0f, 0.0f, translation.x,
+				0.0f, 1.0f, 0.0f, translation.y,
+				0.0f, 0.0f, 1.0f, translation.z,
+				0.0f, 0.0f, 0.0f, 1.0f
+			};
+		}
+		template<typename U>
+		static tmatrix4 rotation(const tvector4<U>& orientation)
+		{
+			return {
+				(powf(orientation.w, 2) + powf(orientation.x, 2) - powf(orientation.y, 2) - powf(orientation.z, 2)), 2 * (orientation.x * orientation.y - orientation.z * orientation.w), 2 * (orientation.x * orientation.z + orientation.y * orientation.w), 0,
+				2 * (orientation.x * orientation.y + orientation.z * orientation.w), (powf(orientation.w, 2) - powf(orientation.x, 2) + powf(orientation.y, 2) - powf(orientation.z, 2)), 2 * (orientation.y * orientation.z - orientation.x * orientation.w), 0,
+				2 * (orientation.x * orientation.z - orientation.y * orientation.w), 2 * (orientation.y * orientation.z + orientation.x * orientation.w), (powf(orientation.w, 2) - powf(orientation.x, 2) - powf(orientation.y, 2) + powf(orientation.z, 2)), 0,
+				0, 0, 0, 1
+			};
 		}
 	};
 	typedef tmatrix4<float> mat4;

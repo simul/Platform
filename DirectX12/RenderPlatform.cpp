@@ -2586,21 +2586,24 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
-	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 
 	if (buffers == nullptr)
 		return;
 
-	if (num_buffers > 1)
+	D3D12_VERTEX_BUFFER_VIEW v[12];
+	for(int i=0;i<num_buffers;i++)
 	{
-		SIMUL_BREAK("Nacho has to work to do here!!");
+		dx12::Buffer *b=(dx12::Buffer*)buffers[i];
+		b->Upload(deviceContext);
+		v[i]=*(b->GetVertexBufferView());
 	}
 	auto pBuffer = (dx12::Buffer*)buffers[0];
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	commandList->IASetVertexBuffers
 	(
 		0,
 		num_buffers,
-		pBuffer->GetVertexBufferView()
+		v
 	);
 };
 
@@ -2762,6 +2765,7 @@ void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &device
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	auto pBuffer = (dx12::Buffer*)buffer;
+	pBuffer->Upload(deviceContext);
 	commandList->IASetIndexBuffer(pBuffer->GetIndexBufferView());
 }
 

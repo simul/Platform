@@ -567,6 +567,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *r,void *T
 			else
 				cubemap=false;
 			dxgi_format=textureDesc.Format;
+			genericDxgiFormat=dxgi_format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
