@@ -505,6 +505,19 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 		return nullptr;
 	}
 
+	//ViewInstancing
+#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
+	uint32_t viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(deviceContext, D3D12_MAX_VIEW_INSTANCE_COUNT);
+	if (renderPlatform->HasRenderingFeatures(platform::crossplatform::ViewInstancing) && multiview)
+	{
+		if (viewMask > 0)
+		{
+			//Set the ViewMask in the ContextState for it to be referenced later in dx12::RenderPlatform::ApplyContextState().
+			deviceContext.contextState.viewMask = viewMask;
+		}
+	}
+#endif
+
 	// Get the current blend state:
 	D3D12_BLEND_DESC* finalBlend = &curRenderPlat->DefaultBlendState;
 	if (blendState)
@@ -717,24 +730,18 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	std::vector<D3D12_VIEW_INSTANCE_LOCATION> ViewInstanceLocations;
 	if (renderPlatform->HasRenderingFeatures(platform::crossplatform::ViewInstancing) && multiview)
 	{
-		uint32_t viewMask = crossplatform::RenderPlatform::GetViewMaskFromRenderTargets(deviceContext, D3D12_MAX_VIEW_INSTANCE_COUNT);
-
 		if (viewMask > 0)
 		{
-			//Set the ViewMask in the ContextState for it to be referenced later in dx12::RenderPlatform::ApplyContextState().
-			deviceContext.contextState.viewMask = viewMask;
-
-			CD3DX12_VIEW_INSTANCING_DESC& ViewInstancingDesc = gpss2.ViewInstancingDesc;
+			CD3DX12_VIEW_INSTANCING_DESC& ViewInstancingDesc = gpss.ViewInstancingDesc;
 			ViewInstancingDesc.ViewInstanceCount = crossplatform::RenderPlatform::GetLayerCountFromRenderTargets(deviceContext, D3D12_MAX_VIEW_INSTANCE_COUNT);
 			ViewInstanceLocations.resize(ViewInstancingDesc.ViewInstanceCount);
 			for (size_t i = 0; i < ViewInstanceLocations.size(); i++)
 			{
-				//TODO: Address RenderTargetArrayIndex for ViewInstancing in D3D12.
-				ViewInstanceLocations[i].RenderTargetArrayIndex = 0;
+				ViewInstanceLocations[i].RenderTargetArrayIndex = (UINT)i;
 				ViewInstanceLocations[i].ViewportArrayIndex = 0;
 			}
 			ViewInstancingDesc.pViewInstanceLocations = ViewInstanceLocations.data();
-			ViewInstancingDesc.Flags = D3D12_VIEW_INSTANCING_FLAG_ENABLE_VIEW_INSTANCE_MASKING;
+			ViewInstancingDesc.Flags = D3D12_VIEW_INSTANCING_FLAG_NONE;
 		}
 	}
 #endif

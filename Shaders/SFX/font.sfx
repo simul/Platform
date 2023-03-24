@@ -27,12 +27,12 @@ shader posTexVertexOutput VS_Font_SV(idOnly IN)
 	return OUT;
 }
 
-shader posTexVertexOutput VS_Font_MV(VertexAndViewID IN)
+shader posTexVertexOutput VS_Font_MV(idOnly IN, uint viewID : SV_ViewID)
 {
 	uint char_index=IN.vertex_id/6;
 	uint vert_index=IN.vertex_id-(6*char_index);
 	uint ids[]={0,1,2,2,3,1};
-	FontChar f=fontChars[char_index+(numChars*IN.view_id)];
+	FontChar f=fontChars[char_index+(numChars*viewID)];
 	idOnly cIN;
 	cIN.vertex_id=ids[vert_index];
 	
@@ -63,11 +63,11 @@ shader posTexVertexOutput VS_Background_SV(idOnly IN)
 	return OUT;
 }
 
-shader posTexVertexOutput VS_Background_MV(VertexAndViewID IN)
+shader posTexVertexOutput VS_Background_MV(idOnly IN, uint viewID : SV_ViewID)
 {
 	idOnly _IN;
 	_IN.vertex_id = IN.vertex_id;
-	posTexVertexOutput OUT	= VS_ScreenQuad(_IN, background_rect[IN.view_id]);
+	posTexVertexOutput OUT	= VS_ScreenQuad(_IN, background_rect[viewID]);
 	OUT.texCoords			= vec2(0,0);
 	return OUT;
 }
