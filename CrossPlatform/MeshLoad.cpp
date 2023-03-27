@@ -370,9 +370,9 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 }
 
 #else
-/*void Mesh::Load(const char* filenameUtf8, float scale, AxesStandard fromStandard)
+void Mesh::Load(const char* filenameUtf8, float scale, AxesStandard fromStandard)
 {
 	SIMUL_CERR_ONCE << "Can't load " << filenameUtf8 <<" - no importer enabled."<< std::endl;
-}*/
+}
 #endif
 
