@@ -17,10 +17,12 @@ namespace platform
 										Buffer();
 										~Buffer();
 			void						InvalidateDeviceObjects();
-			void						EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false) override;
-			void						EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data, bool cpu_access = false) override;
+			void						EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access=false,bool streamout_target=false) override;
+			void						EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>> data, bool cpu_access = false) override;
 			void						*Map(crossplatform::DeviceContext &deviceContext) override;
 			void						Unmap(crossplatform::DeviceContext &deviceContext) override;
+			//! RenderPlatform should call this before using the buffer.
+			void Upload(crossplatform::DeviceContext &deviceContext);
 			ID3D12Resource * const AsD3D12Buffer()  const override
 			{
 				return d3d12Buffer;
@@ -32,6 +34,7 @@ namespace platform
 			D3D12_VERTEX_BUFFER_VIEW*	GetVertexBufferView() override;
 			D3D12_INDEX_BUFFER_VIEW*	GetIndexBufferView() override;
 		private:
+			std::shared_ptr<std::vector<uint8_t>> upload_data;
 			ID3D12Resource*				d3d12Buffer;
 			ID3D12Resource*				mIntermediateHeap;
 			UINT32						mBufferSize;

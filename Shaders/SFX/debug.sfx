@@ -594,7 +594,6 @@ VertexShader debugvs_5_0=CompileShader(vs_5_0,DebugVS());
 PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
 VertexShader vs_simplefullscreen_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
 VertexShader vs_ultrasimplefullscreen_5_0=CompileShader(vs_5_0,VS_UltraSimpleFullscreen());
-VertexShader vs_ultrasimplefullscreen_mv_6_1=CompileShader(vs_6_1,VS_UltraSimpleFullscreen_MV());
 
 group lines_3d_depth
 {
@@ -746,9 +745,10 @@ shader vec4 PS_UltraSimpleClear(posVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-shader vec4 PS_UltraSimpleClear_MV(posTexViewVertexOutput IN) : SV_TARGET
+shader vec4 PS_UltraSimpleClear_MV(posVertexOutput IN, uint viewID : SV_ViewID) : SV_TARGET
 {
 	vec4 ret = debugColour;
+	ret.g = viewID == 1 ? 1.0 - ret.g : ret.g;
 	return ret;
 }
 
@@ -981,7 +981,7 @@ technique clear_multiview
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(DontBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(vs_ultrasimplefullscreen_mv_6_1);
+		SetVertexShader(vs_ultrasimplefullscreen_5_0);
 		SetPixelShader(CompileShader(ps_6_1, PS_UltraSimpleClear_MV()));
 	}
 }

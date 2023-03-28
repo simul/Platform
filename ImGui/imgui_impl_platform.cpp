@@ -1077,7 +1077,7 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, c
 		auto &scratch=bd->scratchTextures[h];
 		if(scratch.scratchIndex==scratch.textures.size())
 		{
-		scratch.textures.push_back(bd->renderPlatform->CreateTexture(textureName));
+			scratch.textures.push_back(bd->renderPlatform->CreateTexture(textureName));
 			scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform,&textureCreate);
 		}
 		texture=scratch.textures[scratch.scratchIndex];

@@ -40,61 +40,10 @@ void Buffer::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 }
 
-	/*
-	uint32_t Buffer::FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties)
-	{
-		return 0; // for now.
-		vk::Device *vulkanDevice	=renderPlatform->AsVulkanDevice();
-		//vk::PhysicalDevice *gpu		=deviceManager->GetGPU();
-		vk::PhysicalDeviceMemoryProperties memProperties;
-		//gpu->getMemoryProperties(&memProperties);
-
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-		{
-			if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-			{
-				return i;
-			}
-		}
-
-		SIMUL_BREAK("failed to find suitable memory type!");
-		return 0;
-	}
-	void Buffer::CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory)
-	{
-		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-		vk::BufferCreateInfo bufferInfo ;
-		bufferInfo.setSize(size);
-		bufferInfo.setUsage ( usage);
-		bufferInfo.setSharingMode ( vk::SharingMode::eExclusive);
-
-		if (vulkanDevice->createBuffer( &bufferInfo, nullptr, &buffer) != vk::Result::eSuccess)
-		{
-			SIMUL_BREAK("failed to create buffer!");
-		}
-
-		vk::MemoryRequirements memRequirements;
-		vulkanDevice->getBufferMemoryRequirements( buffer, &memRequirements);
-
-		vk::MemoryAllocateInfo allocInfo ;
-		allocInfo.setAllocationSize ( memRequirements.size);
-		bool  pass = ((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(
-			memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-			&allocInfo.memoryTypeIndex);
-		SIMUL_ASSERT(pass);
-
-		if (vulkanDevice->allocateMemory(&allocInfo, nullptr, &bufferMemory) != vk::Result::eSuccess)
-		{
-			SIMUL_BREAK("failed to allocate buffer memory!");
-		}
-
-		vulkanDevice->bindBufferMemory( buffer, bufferMemory, 0);
-	}*/
-
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 								,int num_vertices
 								,const crossplatform::Layout* layout
-								,const void* src_data
+								,std::shared_ptr<std::vector<uint8_t>> src_data
 								,bool cpu_access
 								,bool streamout_target)
 {
@@ -116,7 +65,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 		vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
 		if(result==vk::Result::eSuccess&&target_data)
 		{
-			memcpy(target_data, src_data, (size_t)bufferLoad.size);
+			memcpy(target_data, src_data->data(), (size_t)bufferLoad.size);
 			vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
 		}
 	}
@@ -128,7 +77,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	loadingComplete=false;
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,const void* src_data, bool cpu_access )
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>> src_data, bool cpu_access )
 {
     InvalidateDeviceObjects();
 	renderPlatform = r;
@@ -148,7 +97,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 		SIMUL_VK_CHECK(vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size, vk::MemoryMapFlagBits(), &target_data));
 		if (target_data)
 		{
-			memcpy(target_data, src_data, (size_t)bufferLoad.size);
+			memcpy(target_data, src_data->data(), (size_t)bufferLoad.size);
 			vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
 		}
 	}
