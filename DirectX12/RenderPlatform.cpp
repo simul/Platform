@@ -1151,7 +1151,7 @@ void RenderPlatform::BeginFrame()
 
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	if (deviceContext.GetFrameNumber() == frameNumber)
+	if (GetFrameNumber() == frameNumber)
 		return;
 	// Store a reference to the device context
 	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
@@ -2586,21 +2586,24 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
-	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 
 	if (buffers == nullptr)
 		return;
 
-	if (num_buffers > 1)
+	D3D12_VERTEX_BUFFER_VIEW v[12];
+	for(int i=0;i<num_buffers;i++)
 	{
-		SIMUL_BREAK("Nacho has to work to do here!!");
+		dx12::Buffer *b=(dx12::Buffer*)buffers[i];
+		b->Upload(deviceContext);
+		v[i]=*(b->GetVertexBufferView());
 	}
 	auto pBuffer = (dx12::Buffer*)buffers[0];
+	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	commandList->IASetVertexBuffers
 	(
 		0,
 		num_buffers,
-		pBuffer->GetVertexBufferView()
+		v
 	);
 };
 
@@ -2620,17 +2623,35 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	mTargets.num	= num;
 	for (int i = 0; i < num; i++)
 	{
-		mTargets.m_rt[i]			= targs[i]->AsD3D12RenderTargetView(deviceContext,0, 0);
-		mTargets.rtFormats[i]		= targs[i]->pixelFormat;
-		mTargets.textureTargets[i]	= { targs[i], 0, 0 };
+		D3D12_CPU_DESCRIPTOR_HANDLE* rtv = nullptr;
+		if (deviceContext.deviceContextType == crossplatform::DeviceContextType::MULTIVIEW_GRAPHICS)
+			rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, -1, 0);
+		else
+			rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, 0, 0);
+
+		mTargets.m_rt[i]						= rtv;
+		mTargets.rtFormats[i]					= targs[i]->pixelFormat;
+		mTargets.textureTargets[i].texture		= targs[i];
+		mTargets.textureTargets[i].layer		= 0;
+		mTargets.textureTargets[i].layerCount	= targs[i]->NumFaces();
+		mTargets.textureTargets[i].mip			= 0;
 	}
 	if (depth)
 	{
-		mTargets.m_dt				= depth->AsD3D12DepthStencilView(deviceContext);
-		mTargets.depthFormat		= depth->pixelFormat;
-		mTargets.depthTarget		= { depth, 0, 0 };
+		D3D12_CPU_DESCRIPTOR_HANDLE* dsv = nullptr;
+		if (deviceContext.deviceContextType == crossplatform::DeviceContextType::MULTIVIEW_GRAPHICS)
+			dsv = depth->AsD3D12DepthStencilView(deviceContext, -1, 0);
+		else
+			dsv = depth->AsD3D12DepthStencilView(deviceContext, 0, 0);
+
+		mTargets.m_dt					= dsv;
+		mTargets.depthFormat			= depth->pixelFormat;
+		mTargets.depthTarget.texture	= depth;
+		mTargets.depthTarget.layer		= 0;
+		mTargets.depthTarget.layerCount	= depth->NumFaces();
+		mTargets.depthTarget.mip		= 0;
 	}
-	mTargets.viewport				= { 0,0,targs[0]->GetWidth(),targs[0]->GetLength() };
+	mTargets.viewport				= { 0, 0, targs[0]->GetWidth(), targs[0]->GetLength() };
 
 	ActivateRenderTargets(deviceContext, &mTargets);
 }
@@ -2762,6 +2783,7 @@ void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &device
 {
 	ID3D12GraphicsCommandList*	commandList		= deviceContext.asD3D12Context();
 	auto pBuffer = (dx12::Buffer*)buffer;
+	pBuffer->Upload(deviceContext);
 	commandList->IASetIndexBuffer(pBuffer->GetIndexBufferView());
 }
 
@@ -2973,29 +2995,22 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	doesn't work as we don't necessarily know the allocator.
 	*/
 	// We will only set the tables once per frame
-	if (frameNumber != deviceContext.GetFrameNumber())
-	{
-		// Call start render at least once per frame to make sure the bins 
-		// release objects!
-
-		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
-
-		deviceContext.SetFrameNumber(frameNumber);
-	}
+	EnsureContextFrameHasBegun(deviceContext);
 
 	auto cmdList    = deviceContext.asD3D12Context();
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;
 
 	#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
+	// TODO: Workout why the ViewInstanceMask in broken - AJR.
 	// Set ViewInstanceMask
-	if (HasRenderingFeatures(platform::crossplatform::ViewInstancing) && cs->viewMask != 0)
-	{
-		ID3D12GraphicsCommandList2* cmdList2 = nullptr;
-		HRESULT res = cmdList->QueryInterface(&cmdList2);
-		if (res == S_OK && cmdList2)
-			cmdList2->SetViewInstanceMask(static_cast<UINT>(cs->viewMask));
-		SAFE_RELEASE(cmdList2);
-	}
+	//if (HasRenderingFeatures(platform::crossplatform::ViewInstancing) && cs->viewMask != 0)
+	//{
+	//	ID3D12GraphicsCommandList2* cmdList2 = nullptr;
+	//	HRESULT res = cmdList->QueryInterface(&cmdList2);
+	//	if (res == S_OK && cmdList2)
+	//		cmdList2->SetViewInstanceMask(static_cast<UINT>(cs->viewMask)); 
+	//	SAFE_RELEASE(cmdList2);
+	//}
 	#endif
 
 	// Set the frame descriptor heaps

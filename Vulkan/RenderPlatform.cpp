@@ -632,11 +632,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 
 	// Update frame_number in the DeviceContext from the RenderPlatform.
-	if (frameNumber != deviceContext.GetFrameNumber())
+	if (frameNumber != GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins release objects!
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
-		deviceContext.SetFrameNumber(frameNumber);
 	}
 	if (frameNumber != mLastFrame && *commandBuffer != cmdBuffer) //Check this VkCommandBuffer is not the one used of the ImmediateContext - AJR
 	{
@@ -671,6 +670,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 		//Set up clear colours
 		crossplatform::TargetsAndViewport* tv = graphicsDeviceContext->GetCurrentTargetsAndViewport();
+		vk::Extent2D extent = GetTargetAndViewportExtext2D(tv);
 		size_t clearColoursCount = (size_t)tv->num + (tv->depthTarget.texture != nullptr ? 1 : 0);
 		vk::ClearColorValue colourClear(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
 		vk::ClearDepthStencilValue depthClear(0.0f, 0u);
@@ -691,7 +691,9 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		}
 
 		//Begin the RenderPass
-		crossplatform::Viewport vp = GetViewport(*graphicsDeviceContext, 0);
+		crossplatform::Viewport vp = { 0, 0, static_cast<int>(extent.width), static_cast<int>(extent.height) };
+		if (extent.width * extent.height == 0)
+			vp = GetViewport(*graphicsDeviceContext, 0);
 		static vk::Framebuffer currentFramebuffer{};
 		vk::Framebuffer framebuffer = *GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
 		if (framebuffer != currentFramebuffer && deviceContext.contextState.vulkanInsideRenderPass) //Check for a change of framebuffer.
@@ -804,6 +806,39 @@ int RenderPlatform::GetActiveNumOfSamples(crossplatform::GraphicsDeviceContext& 
 	return numOfSamples;
 }
 
+vk::Extent2D RenderPlatform::GetTextureTargetExtext2D(const crossplatform::TargetsAndViewport::TextureTarget& targetTexture)
+{
+	int width = 0, length = 0;
+	if (targetTexture.texture)
+	{
+		width = targetTexture.texture->width;
+		length = targetTexture.texture->length;
+
+		const int& mip = targetTexture.mip;
+		width >>= mip;
+		length >>= mip;
+	}
+	return vk::Extent2D(width, length);
+}
+
+vk::Extent2D RenderPlatform::GetTargetAndViewportExtext2D(const crossplatform::TargetsAndViewport* targetsAndViewport)
+{
+	vk::Extent2D extent;
+	if (targetsAndViewport->textureTargets[0].texture)
+	{
+		extent = GetTextureTargetExtext2D(targetsAndViewport->textureTargets[0]);
+	}
+	else if (targetsAndViewport->depthTarget.texture)
+	{
+		extent = GetTextureTargetExtext2D(targetsAndViewport->depthTarget);
+	}
+	//else
+	//{
+	//	extent = vk::Extent2D(targetsAndViewport->viewport.w, targetsAndViewport->viewport.h);
+	//}
+	return extent;
+}
+
 uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties)
 {
 	vk::PhysicalDeviceMemoryProperties memProperties;
@@ -820,7 +855,8 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
 
 	 SIMUL_BREAK("failed to find suitable memory type!");
 	 return 0;
- }
+}
+
 #include "Platform/Core/StringFunctions.h"
 void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
 {
@@ -1713,7 +1749,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.rtFormats[i] = targs[i]->GetFormat();
 		target.textureTargets[i].texture = targs[i];
 		target.textureTargets[i].layer = 0;
-		target.textureTargets[i].layerCount = targs[i]->IsCubemap() ? targs[i]->arraySize * 6 : targs[i]->arraySize;
+		target.textureTargets[i].layerCount = targs[i]->NumFaces();
 		target.textureTargets[i].mip= 0;
 	}
 	if (depth)
@@ -1722,7 +1758,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.depthFormat = depth->pixelFormat;
 		target.depthTarget.texture = depth;
 		target.depthTarget.layer = 0;
-		target.depthTarget.layerCount = depth->IsCubemap() ? depth->arraySize * 6 : depth->arraySize;
+		target.depthTarget.layerCount = depth->NumFaces();
 		target.depthTarget.mip = 0;
 	}
 	target.viewport = int4(0, 0, targs[0]->width, targs[0]->length);
@@ -1741,11 +1777,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
-	//vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-	if(num>0&&vps!=nullptr)
-	{
-		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(crossplatform::Viewport));
-	}
+	crossplatform::RenderPlatform::SetViewports(deviceContext, num, vps);
 }
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *)
@@ -1896,29 +1928,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	{
 		int count = tv->num + (tv->depthTarget.texture != nullptr && deviceContext.contextState.IsDepthActive());
 
-		int width = 0, length = 0;
-		if (tv->textureTargets[0].texture)
-		{
-			width = tv->textureTargets[0].texture->width;
-			length = tv->textureTargets[0].texture->length;
-
-			const int& mip = tv->textureTargets[0].mip;
-			width >>= mip;
-			length >>= mip;
-		}
-		else if (tv->depthTarget.texture)
-		{
-			width = tv->depthTarget.texture->width;
-			length = tv->depthTarget.texture->length;
-
-			const int& mip = tv->depthTarget.mip;
-			width >>= mip;
-			length >>= mip;
-		}
-		else
-		{
-			SIMUL_BREAK("");
-		}
+		vk::Extent2D extent = GetTargetAndViewportExtext2D(tv);
 		crossplatform::PixelFormat depthPF = crossplatform::PixelFormat::UNKNOWN;
 		if (tv->depthTarget.texture)
 		{
@@ -1931,8 +1941,8 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 
 		vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
 		framebufferCreateInfo.renderPass = vkRenderPass;
-		framebufferCreateInfo.width = width;
-		framebufferCreateInfo.height = length;
+		framebufferCreateInfo.width = extent.width;
+		framebufferCreateInfo.height = extent.height;
 		framebufferCreateInfo.layers = 1;
 
 		for (int j = 0; j < tv->num; j++)

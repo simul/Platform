@@ -223,7 +223,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	if (!cpu_read)
 		return nullptr;
 
-	if (deviceContext.GetFrameNumber() >= mNumBuffers && mBinding != -1)
+	if (renderPlatform->GetFrameNumber() >= mNumBuffers && mBinding != -1)
 	{
 		// We want to map from the oldest buffer:
 		int idx = GetIndex(deviceContext, 1);
@@ -361,6 +361,29 @@ void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceCont
 
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContext)
 {
+}
+
+int PlatformStructuredBuffer::GetIndex(crossplatform::DeviceContext& deviceContext, int idxOffset )
+{
+	int idx = 0;
+	if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+	{
+		idx = mLastIdx = 0;
+	}
+	else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
+	{
+		idx = mLastIdx = (renderPlatform->GetFrameNumber() + idxOffset) % mNumBuffers;
+	}
+	else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
+	{
+		idx = mLastIdx = (mLastIdx + idxOffset) % mNumBuffers;
+	}
+	else
+	{
+		SIMUL_BREAK_ONCE("");
+	}
+
+	return idx;
 }
 
 void PlatformStructuredBuffer::InvalidateDeviceObjects()

@@ -20,8 +20,8 @@ namespace platform
 						Buffer();
 						~Buffer() override;
 			void		InvalidateDeviceObjects() override;
-			void		EnsureVertexBuffer(crossplatform::RenderPlatform* r,int num_vertices,const crossplatform::Layout* layout,const void* data,bool cpu_access=false,bool streamout_target=false) override;
-			void		EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,const void *data, bool cpu_access = false) override;
+			void		EnsureVertexBuffer(crossplatform::RenderPlatform* r,int num_vertices,const crossplatform::Layout* layout,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access=false,bool streamout_target=false) override;
+			void		EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>> data, bool cpu_access = false) override;
 			void*		Map(crossplatform::DeviceContext& deviceContext) override;
 			void		Unmap(crossplatform::DeviceContext& deviceContext) override;
 

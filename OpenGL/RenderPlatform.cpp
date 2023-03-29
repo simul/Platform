@@ -162,9 +162,9 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
 {
-	if (mLastFrame != deviceContext.GetFrameNumber())
+	if (mLastFrame != GetFrameNumber())
 	{
-		mLastFrame = deviceContext.GetFrameNumber();
+		mLastFrame = GetFrameNumber();
 		if(deviceContext.AsGraphicsDeviceContext())
 			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 	}
@@ -229,7 +229,7 @@ crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 	return b;
 }
 
-GLenum platform::opengl::RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
     if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
@@ -238,7 +238,7 @@ GLenum platform::opengl::RenderPlatform::toGLMinFiltering(crossplatform::Sampler
     return GL_NEAREST_MIPMAP_NEAREST;
 }
 
-GLenum platform::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
     if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {

@@ -128,28 +128,7 @@ namespace platform
 				return mapped == GL_TRUE;
 			}
 
-			inline int GetIndex(crossplatform::DeviceContext& deviceContext, int idxOffset = 0)
-			{
-				int idx = 0;
-				if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
-				{
-					idx = mLastIdx = 0;
-				}
-				else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
-				{
-					idx = mLastIdx = (deviceContext.GetFrameNumber() + idxOffset) % mNumBuffers;
-				}
-				else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
-				{
-					idx = mLastIdx = (mLastIdx + idxOffset) % mNumBuffers;
-				}
-				else
-				{
-					SIMUL_BREAK_ONCE("");
-				}
-
-				return idx;
-			}
+			int GetIndex(crossplatform::DeviceContext& deviceContext, int idxOffset = 0);
 		};
 
 		//! An OpenGl program object (combination of shaders)
