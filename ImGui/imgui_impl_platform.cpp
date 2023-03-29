@@ -400,7 +400,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
 				if(texture_srv && texture_srv->texture)
 				{
-					renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),(Texture*)texture_srv->texture,texture_srv->slice,texture_srv->mip);
+					renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"),(Texture*)texture_srv->texture,texture_srv->slice,(const int)texture_srv->mip);
 					renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
 					bd->pInputLayout->Apply(deviceContext);
 					renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
@@ -1042,7 +1042,7 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,fl
 	if (!texture->IsValid())
 		return;
 
-	uint64_t u = (uint64_t)texture + mip * 1000 + slice;
+	uint64_t u = (uint64_t)texture + (uint64_t)mip * 1000 + (uint64_t)slice;
 	ImGui_ImplPlatform_TextureView& dt = bd->drawTextures[u];
 	dt.texture = texture;
 	dt.mip = mip;

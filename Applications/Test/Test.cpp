@@ -490,7 +490,7 @@ public:
 		rwSB.CopyToReadBuffer(deviceContext);
 
 		//First buffer won't be ready as it a ring of buffers
-		if (deviceContext.GetFrameNumber() < 3)
+		if (renderPlatform->GetFrameNumber() < 3)
 			return;
 
 		bool pass = true;
