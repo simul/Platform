@@ -28,7 +28,7 @@ def configureDoxyfile(input_dir, output_dir):
 
 # Check if we're running on Read the Docs' servers
 read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
-print("read_the_docs_build: "+read_the_docs_build)
+print("read_the_docs_build: "+str(read_the_docs_build))
 breathe_projects = {}
 
 if read_the_docs_build:
