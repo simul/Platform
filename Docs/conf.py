@@ -34,16 +34,16 @@ def generate_doxygen_xml(app):
 	print("read_the_docs_build: "+str(read_the_docs_build))
 	breathe_projects = {}
 	if read_the_docs_build:
-		print('Executing doxygen at '+os.getcwd())
+		#print('Executing doxygen at '+os.getcwd())
 		cwd = Path(os.getcwd())
 		root_dir=str(cwd.parent.absolute())
-		print("root_dir = "+root_dir)
-		print('Contents of '+root_dir)
-		for file in glob.glob(root_dir+"/*.*",recursive=True):
-			print(file)
-		print('Contents of '+root_dir+'/Math')
-		for file in glob.glob(root_dir+"/Math/*.*",recursive=True):
-			print(file)
+		#print("root_dir = "+root_dir)
+		#print('Contents of '+root_dir)
+		#for file in glob.glob(root_dir+"/*.*",recursive=True):
+		#	print(file)
+		#print('Contents of '+root_dir+'/Math')
+		#for file in glob.glob(root_dir+"/Math/*.*",recursive=True):
+		#	print(file)
 		input_dir = '\"'+root_dir+'/Math\" \"'+root_dir+'/Core\" \"'+root_dir+'/CrossPlatform\"'
 		output_dir = root_dir+'/build_docs/Docs/doxygen'
 		if not os.path.exists(output_dir):
@@ -53,8 +53,9 @@ def generate_doxygen_xml(app):
 		if retcode < 0:
 			sys.stderr.write("doxygen terminated by signal %s" % (-retcode))
 		breathe_projects['Platform'] = output_dir + '/xml'
-		for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
-			print(file)
+		print("breathe_projects['Platform'] = "+breathe_projects['Platform'])
+		#for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
+		#	print(file)
 
 # -- Project information -----------------------------------------------------
 
