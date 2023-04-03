@@ -27,16 +27,20 @@ def configureDoxyfile(input_dir, output_dir,root_dir):
 		file.write(filedata)
 		print(filedata)
 
+cwd = Path(os.getcwd())
+root_dir=str(cwd.parent.absolute())
+output_dir = root_dir+'/build_docs/Docs/doxygen'
+read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+if read_the_docs_build:
+	breathe_projects = {}
+	breathe_projects['Platform'] = output_dir + '/xml'
+	print("breathe_projects['Platform'] = "+breathe_projects['Platform'])
 
 def generate_doxygen_xml(app):
 	# Check if we're running on Read the Docs' servers
-	read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 	print("read_the_docs_build: "+str(read_the_docs_build))
-	breathe_projects = {}
 	if read_the_docs_build:
 		#print('Executing doxygen at '+os.getcwd())
-		cwd = Path(os.getcwd())
-		root_dir=str(cwd.parent.absolute())
 		#print("root_dir = "+root_dir)
 		#print('Contents of '+root_dir)
 		#for file in glob.glob(root_dir+"/*.*",recursive=True):
@@ -45,15 +49,12 @@ def generate_doxygen_xml(app):
 		#for file in glob.glob(root_dir+"/Math/*.*",recursive=True):
 		#	print(file)
 		input_dir = '\"'+root_dir+'/Math\" \"'+root_dir+'/Core\" \"'+root_dir+'/CrossPlatform\"'
-		output_dir = root_dir+'/build_docs/Docs/doxygen'
 		if not os.path.exists(output_dir):
 			os.makedirs(output_dir)
 		configureDoxyfile(input_dir, output_dir,root_dir)
 		retcode=subprocess.call('doxygen', shell=True)
 		if retcode < 0:
 			sys.stderr.write("doxygen terminated by signal %s" % (-retcode))
-		breathe_projects['Platform'] = output_dir + '/xml'
-		print("breathe_projects['Platform'] = "+breathe_projects['Platform'])
 		#for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
 		#	print(file)
 
