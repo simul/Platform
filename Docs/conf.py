@@ -41,7 +41,10 @@ def generate_doxygen_xml(app):
 		print('Contents of '+root_dir)
 		for file in glob.glob(root_dir+"/*.*",recursive=True):
 			print(file)
-		input_dir = '"'+root_dir+'/Math","'+root_dir+'/Core","'+root_dir+'/CrossPlatform"'
+		print('Contents of '+root_dir+'/Math')
+		for file in glob.glob(root_dir+"/Math/*.*",recursive=True):
+			print(file)
+		input_dir = '\"'+root_dir+'/Math\",\"'+root_dir+'/Core\",\"'+root_dir+'/CrossPlatform\"'
 		output_dir = root_dir+'/build_docs/Docs/doxygen'
 		if not os.path.exists(output_dir):
 			os.makedirs(output_dir)
