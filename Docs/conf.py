@@ -36,11 +36,11 @@ if read_the_docs_build:
 	output_dir = '../build_docs/Docs/doxygen'
 	configureDoxyfile(input_dir, output_dir)
 	print('Executing doxygen at '+os.getcwd())
+	subprocess.call('doxygen', shell=True)
 	breathe_projects['Platform'] = output_dir + '/xml'
 	txtfiles = []
 	for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
 		print(file)
-	subprocess.call('doxygen', shell=True)
 
 # -- Project information -----------------------------------------------------
 
