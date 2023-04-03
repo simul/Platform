@@ -13,7 +13,7 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-import subprocess, os
+import subprocess, os, glob
 
 def configureDoxyfile(input_dir, output_dir):
 	with open('Doxyfile.in', 'r') as file :
@@ -33,11 +33,14 @@ breathe_projects = {}
 
 if read_the_docs_build:
 	input_dir = './'
-	output_dir = '../build'
+	output_dir = '../build_docs/Docs/doxygen'
 	configureDoxyfile(input_dir, output_dir)
 	print('Executing doxygen at '+os.getcwd())
-	subprocess.call('doxygen', shell=True)
 	breathe_projects['Platform'] = output_dir + '/xml'
+	txtfiles = []
+	for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
+		print(file)
+	subprocess.call('doxygen', shell=True)
 
 # -- Project information -----------------------------------------------------
 
