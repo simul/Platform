@@ -34,7 +34,7 @@ def generate_doxygen_xml(app):
 	print("read_the_docs_build: "+str(read_the_docs_build))
 	breathe_projects = {}
 	if read_the_docs_build:
-		for file in glob.glob(output_dir+"/../Math/*.*",recursive=True):
+		for file in glob.glob("/../Math/*.*",recursive=True):
 			print(file)
 		input_dir = '"../Math","../Core","../CrossPlatform"'
 		output_dir = '../build_docs/Docs/doxygen'
