@@ -36,7 +36,7 @@ def generate_doxygen_xml(app):
 	if read_the_docs_build:
 		print('Executing doxygen at '+os.getcwd())
 		cwd = Path(os.getcwd())
-		root_dir=cwd.parent.absolute()
+		root_dir=str(cwd.parent.absolute())
 		print("root_dir = "+root_dir)
 		print('Contents of '+root_dir)
 		for file in glob.glob(root_dir+"/*.*",recursive=True):
