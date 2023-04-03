@@ -26,21 +26,24 @@ def configureDoxyfile(input_dir, output_dir):
 	with open('Doxyfile', 'w') as file:
 		file.write(filedata)
 
-# Check if we're running on Read the Docs' servers
-read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
-print("read_the_docs_build: "+str(read_the_docs_build))
-breathe_projects = {}
 
-if read_the_docs_build:
-	input_dir = './'
-	output_dir = '../build_docs/Docs/doxygen'
-	configureDoxyfile(input_dir, output_dir)
-	print('Executing doxygen at '+os.getcwd())
-	subprocess.call('doxygen', shell=True)
-	breathe_projects['Platform'] = output_dir + '/xml'
-	txtfiles = []
-	for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
-		print(file)
+def generate_doxygen_xml(app):
+	# Check if we're running on Read the Docs' servers
+	read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+	print("read_the_docs_build: "+str(read_the_docs_build))
+	breathe_projects = {}
+	if read_the_docs_build:
+		input_dir = './'
+		output_dir = '../build_docs/Docs/doxygen'
+		configureDoxyfile(input_dir, output_dir)
+		print('Executing doxygen at '+os.getcwd())
+		retcode=subprocess.call('doxygen', shell=True)
+		if retcode < 0:
+			sys.stderr.write("doxygen terminated by signal %s" % (-retcode))
+		breathe_projects['Platform'] = output_dir + '/xml'
+		txtfiles = []
+		for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
+			print(file)
 
 # -- Project information -----------------------------------------------------
 
@@ -83,3 +86,8 @@ html_static_path = ['_static']
 
 breathe_default_project = "Platform"
 master_doc = 'index'
+
+
+def setup(app):
+    # Add hook for building doxygen xml when needed
+    app.connect("builder-inited", generate_doxygen_xml)
