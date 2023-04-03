@@ -34,6 +34,8 @@ def generate_doxygen_xml(app):
 	print("read_the_docs_build: "+str(read_the_docs_build))
 	breathe_projects = {}
 	if read_the_docs_build:
+		for file in glob.glob(output_dir+"/../Math/*.*",recursive=True):
+			print(file)
 		input_dir = '"../Math","../Core","../CrossPlatform"'
 		output_dir = '../build_docs/Docs/doxygen'
 		if not os.path.exists(output_dir):
@@ -44,7 +46,6 @@ def generate_doxygen_xml(app):
 		if retcode < 0:
 			sys.stderr.write("doxygen terminated by signal %s" % (-retcode))
 		breathe_projects['Platform'] = output_dir + '/xml'
-		txtfiles = []
 		for file in glob.glob(output_dir+"/xml/*.*",recursive=True):
 			print(file)
 
