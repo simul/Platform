@@ -35,6 +35,8 @@ def generate_doxygen_xml(app):
 	if read_the_docs_build:
 		input_dir = './'
 		output_dir = '../build_docs/Docs/doxygen'
+		if not os.path.exists(output_dir):
+			os.makedirs(output_dir)
 		configureDoxyfile(input_dir, output_dir)
 		print('Executing doxygen at '+os.getcwd())
 		retcode=subprocess.call('doxygen', shell=True)
