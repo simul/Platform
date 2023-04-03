@@ -25,6 +25,7 @@ def configureDoxyfile(input_dir, output_dir):
 	
 	with open('Doxyfile', 'w') as file:
 		file.write(filedata)
+		print(filedata)
 
 
 def generate_doxygen_xml(app):
@@ -33,7 +34,7 @@ def generate_doxygen_xml(app):
 	print("read_the_docs_build: "+str(read_the_docs_build))
 	breathe_projects = {}
 	if read_the_docs_build:
-		input_dir = './'
+		input_dir = '"../Math","../Core","../CrossPlatform"'
 		output_dir = '../build_docs/Docs/doxygen'
 		if not os.path.exists(output_dir):
 			os.makedirs(output_dir)
