@@ -14,14 +14,14 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 import subprocess, os, glob
-
-def configureDoxyfile(input_dir, output_dir):
+from pathlib import Path
+def configureDoxyfile(input_dir, output_dir,root_dir):
 	with open('Doxyfile.in', 'r') as file :
 		filedata = file.read()
 
 	filedata = filedata.replace('@DOXYGEN_INPUT_DIR@', input_dir)
 	filedata = filedata.replace('@DOXYGEN_OUTPUT_DIR@', output_dir)
-	filedata = filedata.replace('@DOXYGEN_SEARCH_PATH@', '..')
+	filedata = filedata.replace('@DOXYGEN_SEARCH_PATH@', root_dir)
 	
 	with open('Doxyfile', 'w') as file:
 		file.write(filedata)
@@ -34,14 +34,18 @@ def generate_doxygen_xml(app):
 	print("read_the_docs_build: "+str(read_the_docs_build))
 	breathe_projects = {}
 	if read_the_docs_build:
-		for file in glob.glob("/../Math/*.*",recursive=True):
+		print('Executing doxygen at '+os.getcwd())
+		cwd = Path(os.getcwd())
+		root_dir=cwd.parent.absolute()
+		print("root_dir = "+root_dir)
+		print('Contents of '+root_dir)
+		for file in glob.glob(root_dir+"/*.*",recursive=True):
 			print(file)
-		input_dir = '"../Math","../Core","../CrossPlatform"'
-		output_dir = '../build_docs/Docs/doxygen'
+		input_dir = '"'+root_dir+'/Math","'+root_dir+'/Core","'+root_dir+'/CrossPlatform"'
+		output_dir = root_dir+'/build_docs/Docs/doxygen'
 		if not os.path.exists(output_dir):
 			os.makedirs(output_dir)
-		configureDoxyfile(input_dir, output_dir)
-		print('Executing doxygen at '+os.getcwd())
+		configureDoxyfile(input_dir, output_dir,root_dir)
 		retcode=subprocess.call('doxygen', shell=True)
 		if retcode < 0:
 			sys.stderr.write("doxygen terminated by signal %s" % (-retcode))
