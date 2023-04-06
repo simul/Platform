@@ -183,7 +183,7 @@ vec4 RoughnessMip(vec3 view,bool rough)
 {
 	vec4 outp;
 	float r = saturate(roughness);//exp2( ( 3 - numMips + mipIndex) / 1.2 );;
-	float CubeSize = float(1 << ( numMips - 1 ));
+	float CubeSize = float(1U << ( numMips - 1 ));
 	const float SolidAngleTexel = 4.0 *PI / float(( 6.0 * CubeSize * CubeSize ) * 2.0);
 	const uint NumSamples =  roughness < 0.1 ? 32 : 64;
 	vec4 result = vec4(0,0,0,0);
