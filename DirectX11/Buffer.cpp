@@ -41,7 +41,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 {
     D3D11_SUBRESOURCE_DATA InitData;
     memset( &InitData,0,sizeof(D3D11_SUBRESOURCE_DATA) );
-    InitData.pSysMem		= data?data->data():nullptr;
+    InitData.pSysMem		=data?data->data():nullptr;
     InitData.SysMemPitch	=layout->GetPitch();
 	D3D11_USAGE usage		=D3D11_USAGE_DYNAMIC;
 	//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
@@ -70,7 +70,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	ib_desc.StructureByteStride = index_size_bytes;
 
 	D3D11_SUBRESOURCE_DATA init_data;
-	init_data.pSysMem			= data ? data->data() : nullptr;
+	init_data.pSysMem			= data?data->data():nullptr;
 	init_data.SysMemPitch		= 0;
 	init_data.SysMemSlicePitch	= 0;
 
