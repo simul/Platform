@@ -1003,6 +1003,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::Dev
 	{
 		return &mainRenderTargetView12;
 	}
+	if (index < 0)
+		index = 0;
+	if (mip < 0)
+		mip = 0;
 	return &layerMipRenderTargetViews12[index][mip];
 }
 

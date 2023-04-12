@@ -1,5 +1,5 @@
 #ifdef _MSC_VER
-#include <Windows.h>// for DebugBreak etc Include this at the cpp-level, too much to add into a header.
+#include <Windows.h>// for DebugBreak etc. Include this at the cpp-level, too much to add into a header.
 #endif
 #include "Platform/Core/RuntimeError.h"
 
