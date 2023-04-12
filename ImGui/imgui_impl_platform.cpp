@@ -1082,9 +1082,10 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, c
 		size_t pos = tempName.find('.');
 		while (pos < tempName.length())
 		{
-			tempName.replace(pos, pos+1, ",");
+			tempName.replace(pos, pos + 1, ",");
 			pos = tempName.find('.');
 		}
+		tempName += "__";
 		scratch.textures.push_back(bd->renderPlatform->CreateTexture(tempName.c_str()));
 		scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform,&textureCreate);
 	}

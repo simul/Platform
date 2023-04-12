@@ -615,6 +615,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		return;
 	if(mips<0|| mips>16)
 		mips=1;
+	if (!wicContents.size())
+		return;
 	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -689,7 +691,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		// must flush before copying:
 		((dx12::RenderPlatform*)renderPlatform)->FlushBarriers(deviceContext);
 		for(int i=0;i<wicContents.size();i++)
-			{
+		{
 			WicContents &wic						=wicContents[i];
 			// Perform the texture copy
 			D3D12_SUBRESOURCE_DATA &textureSubData	=textureSubDatas[i];
@@ -810,6 +812,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Set the properties of this texture
 	mLoadedFromFile = true;
 	textureLoadComplete=false;
+	textureUploadComplete = true;
 }
 
 bool Texture::IsValid() const
@@ -861,6 +864,7 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 		mip_length = (mip_length + 1) / 2;
 	}
 	//renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
+	
 	UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, numImages, textureSubDatas.data());
 	// no need to flush?
 	SetLayout(deviceContext, D3D12_RESOURCE_STATE_GENERIC_READ,-1,-1,true);
@@ -1521,6 +1525,7 @@ void Texture::InitFormats(crossplatform::PixelFormat f)
 		yuvFormat = true;
 	}
 }
+
 bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											int w,int l, int m
 											,crossplatform::PixelFormat f
@@ -1695,6 +1700,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			textureUploadComplete = false;
 		else
 			textureUploadComplete = true;
+		textureLoadComplete = true;
 		upload_data = data;
 
 		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -2101,6 +2107,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		textureUploadComplete = false;
 	else
 		textureUploadComplete = true;
+	textureLoadComplete = true;
 	upload_data = data;
 	return true;
 }
@@ -2416,15 +2423,17 @@ void Texture::CreateUploadResource(int slices)
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;	// Use D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET to generate mips.
-	UINT64 sliceSize[64];
-	UINT64 textureUploadBufferSize = 0;
-	UINT   numRows[64];
 	int totalNum = slices;
+	size_t numSub = totalNum * textureDesc.MipLevels;
+	std::vector<UINT64> sliceSizes(numSub);
+	UINT64 textureUploadBufferSize = 0;
+	std::vector<UINT>   numRows(numSub);
+	pLayouts.resize(numSub);
 	renderPlatform->AsD3D12Device()->GetCopyableFootprints
 	(
 		&textureDesc,
-		0, totalNum* textureDesc.MipLevels, 0,
-		pLayouts, numRows, sliceSize,
+		0, numSub, 0,
+		pLayouts.data(), numRows.data(), sliceSizes.data(),
 		&textureUploadBufferSize
 	);
 	HRESULT res = renderPlatform->AsD3D12Device()->CreateCommittedResource

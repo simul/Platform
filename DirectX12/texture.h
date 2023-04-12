@@ -222,8 +222,7 @@ namespace platform
 			void ClearFileContents();
 			unsigned GetSubresourceIndex(int mip, int layer);
 			void CreateUploadResource(int slices);
-			// for upload texture:
-			D3D12_PLACED_SUBRESOURCE_FOOTPRINT pLayouts[16];
+			std::vector <D3D12_PLACED_SUBRESOURCE_FOOTPRINT> pLayouts;
 			DXGI_FORMAT genericDxgiFormat = DXGI_FORMAT_UNKNOWN;
 			DXGI_FORMAT srvFormat		= DXGI_FORMAT_UNKNOWN;
 			DXGI_FORMAT uavFormat	=DXGI_FORMAT_UNKNOWN;
