@@ -342,9 +342,19 @@ EffectPass *EffectTechnique::GetPass(int i) const
 	return passes_by_index.at(i);
 }
 
-EffectPass *EffectTechnique::GetPass(const char *name) const
+EffectPass* EffectTechnique::GetPass(const char* name) const
 {
 	return passes_by_name.at(name);
+}
+
+bool EffectTechnique::HasPass(int i) const
+{
+	return (passes_by_index.find(i) != passes_by_index.end());
+}
+
+bool EffectTechnique::HasPass(const char* name) const
+{
+	return (passes_by_name.find(name) != passes_by_name.end());
 }
 
 
