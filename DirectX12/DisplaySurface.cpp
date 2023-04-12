@@ -46,7 +46,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mDeviceRef = renderPlatform->AsD3D12Device();
 
 #if defined(WINVER) && !defined(_GAMING_XBOX)
-	GetWindowRect(mHwnd, &rect);
+	GetClientRect(mHwnd, &rect);
 #endif
 
 	int screenWidth = abs(rect.right - rect.left);
@@ -318,7 +318,7 @@ void DisplaySurface::Resize()
 {
 	RECT rect = {};
 #if defined(WINVER) && !defined(_GAMING_XBOX)
-	GetWindowRect(mHwnd, &rect);
+	GetClientRect(mHwnd, &rect);
 #endif
 	int screenWidth = abs(rect.right - rect.left);
 	int screenHeight = abs(rect.bottom - rect.top);

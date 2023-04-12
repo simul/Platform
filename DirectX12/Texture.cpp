@@ -820,9 +820,8 @@ ID3D12Resource* Texture::AsD3D12Resource()
 
 void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 {
-	wicContents.resize(1);
 	CreateUploadResource(1);
-	SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0);
+	SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST,-1,-1,true);
 
 	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 	uint32_t m = (uint32_t)upload_data->size();
@@ -853,9 +852,11 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 		mip_width = (mip_width + 1) / 2;
 		mip_length = (mip_length + 1) / 2;
 	}
-	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
+	//renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
 	UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, m, textureSubDatas.data());
-	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
+	// no need to flush?
+	SetLayout(deviceContext, D3D12_RESOURCE_STATE_GENERIC_READ,-1,-1,true);
+//	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
 	upload_data = nullptr;
 }
 
@@ -872,6 +873,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 	}
 	if (!textureUploadComplete)
 	{
+		std::cout << "Finish Uploading texture " << name.c_str() << std::endl;
 		FinishUploading(deviceContext);
 		textureUploadComplete = true;
 	}
@@ -2289,7 +2291,7 @@ unsigned Texture::GetSubresourceIndex(int mip, int layer)
 	return D3D12CalcSubresource(curMip, curLayer, 0, mips, totalArray);
 }
 
-void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index /*= -1*/)
+void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index /*= -1*/,bool flush)
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
 	int curArray = cubemap ? arraySize * 6 : arraySize;
@@ -2309,7 +2311,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 					for (int m = 0; m < mips; m++)
 					{
 						if(mSubResourcesStates[l][m]!=state)
-							rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mSubResourcesStates[l][m], state, false, GetSubresourceIndex(m,l));
+							rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mSubResourcesStates[l][m], state, flush, GetSubresourceIndex(m,l));
 						mSubResourcesStates[l][m] = state;
 					}
 				}
@@ -2318,7 +2320,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		}
 		else if(mResourceState!=state)
 		{
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state, false, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state,flush, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			for (int l = 0; l < numLayers; l++)
 			{
 		    	for (int m = 0; m < mips; m++)
@@ -2359,7 +2361,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 				if(state!=oldState)
 				{
 					int resourceIndex=GetSubresourceIndex(m, l);
-					rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, oldState, state, true, resourceIndex);
+					rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, oldState, state, flush, resourceIndex);
 				}
 
 				mSubResourcesStates[l][m] = state;

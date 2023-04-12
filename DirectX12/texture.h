@@ -119,7 +119,7 @@ namespace platform
 			//! Returns the current state of the resource or subresource if provided.
 			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext &deviceContext,int mip = -1, int index = -1);
 			//! Sets the state of the resource or subresource if provided.
-			void SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
+			void SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip = -1, int index = -1, bool flush=false);
 			
 			void SwitchToContext(crossplatform::DeviceContext &deviceContext);
 			DXGI_FORMAT	dxgi_format;
