@@ -594,10 +594,11 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	return true;
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m, crossplatform::PixelFormat f,
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int m, crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data,
 	bool computable, bool rendertarget, bool depthstencil,
 	int num_samples, int aa_quality, bool wrap, vec4 clear, float clearDepth, uint clearStencil,
-	bool shared, crossplatform::CompressionFormat cf, const uint8_t** initData)
+	bool shared, crossplatform::CompressionFormat cf)
 {
 	if (IsSame(w, l, 1, 1, m,f, num_samples, computable, rendertarget, depthstencil, true))
 	{
@@ -686,7 +687,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	this->renderTarget=rendertarget;
 	SetVulkanName(renderPlatform,mImage,name.c_str());
 	
-	if(initData)
+	if(data)
 	{
 		int mip_width=width;
 		int mip_length=length;
@@ -696,7 +697,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		{
 			uint32_t n = CalculateSubresourceIndex(i, 0, 0, mips, 1);
 			LoadedTexture& loadedTexture=loadedTextures[i][0];
-			SetTextureData(loadedTexture, initData[i], mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
+			SetTextureData(loadedTexture, (*data)[i].data(), mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
 			mip_width=(mip_width+1)/2;
 			mip_length=(mip_length+1)/2;
 		}
@@ -852,8 +853,8 @@ void Texture::InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,in
 		mMipLayerLayouts[i].resize(totalNum);
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f,
-	bool computable, bool rendertarget, bool depthstencil, bool cb, crossplatform::CompressionFormat cf, const uint8_t** initData)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int mips, crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data,bool computable, bool rendertarget, bool depthstencil, bool cb, crossplatform::CompressionFormat cf)
 {
 	if (IsSame(w, l, 1, num, mips, f, 1, computable, rendertarget, depthstencil, true, cb))
 	{
@@ -944,7 +945,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	
 	InitViewTables(2, f, w, l, mips, num, rendertarget, cb, depthstencil, true);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
-	if(initData)
+	if(data)
 	{
 		ResizeLoadedTextures(mips, totalNum);
 		for (uint32_t i = 0; i < uint32_t(totalNum); i++)
@@ -955,7 +956,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			{
 				uint32_t n = CalculateSubresourceIndex(j, i, 0, mips, totalNum);
 				LoadedTexture& loadedTexture = loadedTextures[j][i];
-				SetTextureData(loadedTexture, initData[n], mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
+				SetTextureData(loadedTexture, (*data)[n].data(), mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
 				mip_width=(mip_width+1)/2;
 				mip_length=(mip_length+1)/2;
 			}

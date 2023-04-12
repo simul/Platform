@@ -1,4 +1,3 @@
-
 #include "RenderPlatform.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/FileLoader.h"
@@ -22,6 +21,7 @@
 #include <array>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define __STDC_LIB_EXT1__
 #include "Platform/External/stb/stb_image_write.h"
 #include "Platform/Math/Float16.h"
 

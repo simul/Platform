@@ -82,12 +82,17 @@ namespace platform
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
 			bool ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1,bool rendertargets=false);
 			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				, int m,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
+				, int m,crossplatform::PixelFormat f
+				, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+				,bool computable=false,bool rendertarget=false,bool depthstencil=false
 				,int num_samples=1,int aa_quality=0,bool wrap=false,
 				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0, bool shared = false
-				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
-			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
-				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED,const uint8_t **initData=nullptr) override;
+				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
+			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips
+				,crossplatform::PixelFormat f
+				, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+				,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
+				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
 			void GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext) override;
@@ -113,10 +118,12 @@ namespace platform
 			int GetSampleCount() const;
 		protected:
 			bool EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,int m
-				, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil
+				, crossplatform::PixelFormat f
+				, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+				, bool computable, bool rendertarget, bool depthstencil
 				, int num_samples, int aa_quality, bool wrap,
 				vec4 clear, float clearDepth, uint clearStencil
-				, crossplatform::CompressionFormat compressionFormat,const uint8_t** initData=nullptr);
+				, crossplatform::CompressionFormat compressionFormat);
 			int GetMemorySize() const;
 			ID3D11DeviceContext			*last_context;
 			ID3D11Resource*				texture;

@@ -145,16 +145,13 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 	if (tc->vidTexType != VideoTextureType::NONE)
 		res = ensureVideoTexture(r, tc->w, tc->l, tc->f, tc->vidTexType);
 	else if (tc->d < 2&&tc->arraysize==1&&!tc->cubemap)
-		res=ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil,false
-		,tc->compressionFormat,tc->initialData);
+		res=ensureTexture2DSizeAndFormat(r, tc->w, tc->l, tc->mips, tc->f,tc->initialData, tc->computable , tc->make_rt , tc->setDepthStencil , tc->numOfSamples , tc->aa_quality , false ,tc->clear, tc->clearDepth , tc->clearStencil,false
+		,tc->compressionFormat);
 	else if(tc->d<2)
-		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->computable , tc->make_rt, tc->setDepthStencil, tc->cubemap, tc->compressionFormat, tc->initialData) ;
+		res=ensureTextureArraySizeAndFormat( r, tc->w, tc->l, tc->arraysize, tc->mips, tc->f, tc->initialData, tc->computable , tc->make_rt, tc->setDepthStencil, tc->cubemap, tc->compressionFormat);
 	else
 		res=ensureTexture3DSizeAndFormat(r, tc->w, tc->l, tc->d, tc->f, tc->computable , tc->mips , tc->make_rt) ;
-/*	if(tc->initialData)
-	{
-		setTexels(tc->initialData,0,tc->mips*);
-	}*/
+
 	return res;
 }
 
@@ -185,4 +182,61 @@ uint3 Texture::CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uin
 	uint y = Index / MipSlice;
 	uint x = Index % MipSlice;
 	return uint3(x, y, z);
+}
+
+bool Texture::ensureTexture2DSizeAndFormat(RenderPlatform* renderPlatform, int w, int l, int m
+	, PixelFormat f, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
+	vec4 clear, float clearDepth, uint clearStencil, bool shared
+	, crossplatform::CompressionFormat compressionFormat, const uint8_t** initData)
+{
+	std::shared_ptr< std::vector<std::vector<uint8_t>>> data;
+	// initData is ordered by slice (outer) and mip (inner)
+	if (initData)
+	{
+		data = std::make_shared<std::vector<std::vector<uint8_t>>>();
+		size_t bytesPerTexel = crossplatform::GetByteSize(f);
+		size_t n = 0;
+		int total_num = cubemap ? 6 :1;
+		size_t SysMemPitch = 0;
+		size_t SysMemSlicePitch=0;
+
+		for (size_t j = 0; j < total_num; j++)
+		{
+			int mip_width = width;
+			int mip_length = length;
+			for (size_t i = 0; i < m; i++)
+			{
+				const uint8_t *src = initData[n];
+				static int uu = 4;
+				switch (compressionFormat)
+				{
+				case crossplatform::CompressionFormat::BC1:
+				case crossplatform::CompressionFormat::BC3:
+				case crossplatform::CompressionFormat::BC5:
+				{
+					size_t block_width = std::max(1, (mip_width + 3) / 4);
+					size_t block_height = std::max(1, (mip_length + 3) / 4);
+					size_t block_size_bytes = (bytesPerTexel == 4) ? 16 : 8;
+					SysMemPitch = (size_t)(block_size_bytes * block_width);
+					SysMemSlicePitch = (size_t)std::max(block_size_bytes, SysMemPitch * block_height);
+				}
+				break;
+				default:
+					SysMemPitch = mip_width * crossplatform::GetByteSize(f);;
+					SysMemSlicePitch = SysMemPitch * mip_length;
+					break;
+				};
+				(*data)[n].resize(SysMemSlicePitch);
+				uint8_t* target = (*data)[n].data();
+				memcpy(target,src, SysMemSlicePitch);
+				mip_width = (mip_width + 1) / 2;
+				mip_length = (mip_length + 1) / 2;
+				n++;
+			}
+		}
+	}
+	return ensureTexture2DSizeAndFormat(renderPlatform, w, l, m
+		, f, data, computable, rendertarget, depthstencil, num_samples, aa_quality, wrap,
+		clear, clearDepth, clearStencil, shared
+		, compressionFormat);
 }

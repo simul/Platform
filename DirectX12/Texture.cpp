@@ -599,12 +599,12 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	
 	// ok to free loaded data??
 	ClearFileContents();
-	textureUploadComplete=false;
+	textureLoadComplete=false;
 }
 
 void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 {
-	if(textureUploadComplete)
+	if(textureLoadComplete)
 		return;
 	if(mips<0|| mips>16)
 		mips=1;
@@ -714,7 +714,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		InitRTVTables(totalNum, mips);
 		CreateRTVTables(totalNum, mips);
 	}
-	textureUploadComplete=true;
+	textureLoadComplete=true;
 	shouldGenerateMips=false;
 	if (mips > 1)
 	{
@@ -801,14 +801,14 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// The texture will be considered "valid" from here.
 	// Set the properties of this texture
 	mLoadedFromFile = true;
-	textureUploadComplete=false;
+	textureLoadComplete=false;
 }
 
 bool Texture::IsValid() const
 {
 	if (mTextureDefault != NULL)
 		return true;
-	if(mLoadedFromFile&&!textureUploadComplete)
+	if(mLoadedFromFile&&!textureLoadComplete)
 		return true;
 	return false;
 }
@@ -818,30 +818,63 @@ ID3D12Resource* Texture::AsD3D12Resource()
 	return mTextureDefault;
 }
 
+void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
+{
+	wicContents.resize(1);
+	CreateUploadResource(1);
+	SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0);
+
+	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+	uint32_t m = (uint32_t)upload_data->size();
+	std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas(m);
+	int mip_width = width;
+	int mip_length = length;
+	size_t bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
+	for (size_t i = 0; i < m; i++)
+	{
+		D3D12_SUBRESOURCE_DATA& textureSubData = textureSubDatas[i];
+		textureSubData.pData = (*upload_data)[i].data();
+		textureSubData.RowPitch = mip_width * bytes_per_pixel;
+		textureSubData.SlicePitch = textureSubData.RowPitch * mip_length;
+
+		static int uu = 4;
+		textureSubData.SlicePitch = 0;
+		switch (compressionFormat)
+		{
+		case crossplatform::CompressionFormat::BC1:
+		case crossplatform::CompressionFormat::BC3:
+		case crossplatform::CompressionFormat::BC5:
+			textureSubData.RowPitch = bytes_per_pixel * (mip_width / uu);
+			textureSubData.SlicePitch = textureSubData.RowPitch * mip_length / 4;
+			break;
+		default:
+			break;
+		};
+		mip_width = (mip_width + 1) / 2;
+		mip_length = (mip_length + 1) / 2;
+	}
+	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
+	UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, m, textureSubDatas.data());
+	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
+	upload_data = nullptr;
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState /*= true*/, crossplatform::ShaderResourceType t, int index, int mip,bool pixel_shader)
 {
     if (mip >= mips)
     {
         mip = 0;
     }
-	if(!textureUploadComplete)
+	if(!textureLoadComplete)
 	{
 		FinishLoading(deviceContext);
-		textureUploadComplete=true;
+		textureLoadComplete=true;
 	}
-#if 0
-	if(!subResourcesUpdated)
+	if (!textureUploadComplete)
 	{
-		// Perform the texture copy
-		D3D12_SUBRESOURCE_DATA textureSubData	= {};
-		textureSubData.pData					= image->pixels; 
-		textureSubData.RowPitch					= image->rowPitch; 
-		textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height;
-		UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
-		subResourcesUpdated=true;
+		FinishUploading(deviceContext);
+		textureUploadComplete = true;
 	}
-#endif
-
 	// Ensure a valid state for the resource
 	if (setState)
 	{
@@ -1132,7 +1165,6 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		SAFE_RELEASE(_t);
 	}
 	renderPlatform = r;
-	auto &deviceContext=renderPlatform->GetImmediateContext();
 	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
 	// If it's the same as before, return.
 	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 
@@ -1287,7 +1319,6 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		{
 			m--;
 		}
-		auto &deviceContext=renderPlatform->GetImmediateContext();
 		dxgi_format = genericDxgiFormat;
 		width		= w;
 		length		= l;
@@ -1431,12 +1462,13 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 
 bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 											int w,int l, int m,
-											crossplatform::PixelFormat f,
-											bool computable,bool rendertarget,bool depthstencil,
+											crossplatform::PixelFormat f
+											, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+											, bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat)
 {
-	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil,shared,compressionFormat,initData);
+	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,data,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil,shared,compressionFormat);
 }
 void Texture::InitFormats(crossplatform::PixelFormat f)
 {
@@ -1480,12 +1512,13 @@ void Texture::InitFormats(crossplatform::PixelFormat f)
 	}
 }
 bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
-											int w,int l, int m,
-											crossplatform::PixelFormat f,
-											bool computable,bool rendertarget,bool depthstencil,
+											int w,int l, int m
+											,crossplatform::PixelFormat f
+											, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+											,bool computable,bool rendertarget,bool depthstencil,
 											int num_samples,int aa_quality,bool wrap,
 											vec4 clear, float clearDepth, uint clearStencil, bool shared
-											,crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+											,crossplatform::CompressionFormat compressionFormat)
 {
 	// Define pixel formats of this texture
 	renderPlatform	= r;
@@ -1529,7 +1562,6 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		InvalidateDeviceObjects();
 		pixelFormat		= f;
 		InitFormats(f);
-		//auto &deviceContext=renderPlatform->GetImmediateContext();
 		width = w;
 		length = l;
 		mips		= m;
@@ -1644,44 +1676,11 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 #endif
 		mTextureDefault->SetName(n.c_str());
 		
-		if (initData)
-		{
-			auto& deviceContext = renderPlatform->GetImmediateContext();
-			wicContents.resize(1);
-			CreateUploadResource(1);
-			SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0);
-
-			std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas(m);
-			int mip_width=w;
-			int mip_length=l;
-			for(size_t i=0;i<m;i++)
-			{
-				D3D12_SUBRESOURCE_DATA &textureSubData=textureSubDatas[i];
-				textureSubData.pData = initData[i];
-				textureSubData.RowPitch = mip_width* bytes_per_pixel;
-				textureSubData.SlicePitch = textureSubData.RowPitch*mip_length;
-				
-				static int uu = 4;
-				textureSubData.SlicePitch = 0;
-				switch (compressionFormat)
-				{
-				case crossplatform::CompressionFormat::BC1:
-				case crossplatform::CompressionFormat::BC3:
-				case crossplatform::CompressionFormat::BC5:
-					textureSubData.RowPitch		= bytes_per_pixel * (mip_width / uu);
-					textureSubData.SlicePitch	= textureSubData.RowPitch * mip_length / 4;
-					break;
-				default:
-					break;
-				};
-				mip_width=(mip_width+1)/2;
-				mip_length=(mip_length+1)/2;
-			}
-			renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
-			UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, m,textureSubDatas.data());
-			renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
-		
-		}
+		if (data)
+			textureUploadComplete = false;
+		else
+			textureUploadComplete = true;
+		upload_data = data;
 
 		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 		InitStateTable(1, m);
@@ -1819,7 +1818,6 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 	{
 		if (w * l <= 0)
 			return false;
-		auto& deviceContext = renderPlatform->GetImmediateContext();
 		width = w;
 		length = l;
 
@@ -1888,7 +1886,8 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 #endif
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat)
 {
 	bool ok = true;
 	int totalNum = cubemap ? 6 * num : num;
@@ -1923,7 +1922,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	}
 	HRESULT res = S_OK;
 	renderPlatform = r;
-	auto& deviceContext = renderPlatform->GetImmediateContext();
 	pixelFormat = f;
 	InitFormats(f);
 	dxgi_format = dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
@@ -2081,6 +2079,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	auto rPlat		= (dx12::RenderPlatform*)renderPlatform;
 	//rPlat->FlushBarriers(deviceContext);
 
+
+	if (data)
+		textureUploadComplete = false;
+	else
+		textureUploadComplete = true;
+	upload_data = data;
 	return true;
 }
 
