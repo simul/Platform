@@ -947,7 +947,7 @@ vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceTy
 		if (!mDummyTextureCubeArray)
 		{
 			mDummyTextureCubeArray = (vulkan::Texture*)CreateTexture("mDummyTextureCubeArray");
-			mDummyTextureCubeArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,true);
+			mDummyTextureCubeArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM,nullptr,false,false,false,true);
 		}
 		return mDummyTextureCubeArray;
 	}
@@ -961,7 +961,7 @@ vulkan::Texture* RenderPlatform::GetDummyTextureCube()
 	if (!mDummyTextureCube)
 	{
 		mDummyTextureCube = (vulkan::Texture*)CreateTexture("mDummyTextureCube");
-		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,true);
+		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,nullptr,false,false,false,true);
 		
 		const float whiteTexels[24] = { 1.0f,1.0f,1.0f,1.0f
 										,1.0f,1.0f,1.0f,1.0f
