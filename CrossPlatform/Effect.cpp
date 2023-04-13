@@ -347,7 +347,6 @@ EffectPass* EffectTechnique::GetPass(const char* name) const
 	return passes_by_name.at(name);
 }
 
-<<<<<<< Updated upstream
 bool EffectTechnique::HasPass(int i) const
 {
 	return (passes_by_index.find(i) != passes_by_index.end());
@@ -358,9 +357,6 @@ bool EffectTechnique::HasPass(const char* name) const
 	return (passes_by_name.find(name) != passes_by_name.end());
 }
 
-
-=======
->>>>>>> Stashed changes
 EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 {
 	auto i=groupCharMap.find(name);
