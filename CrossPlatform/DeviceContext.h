@@ -189,6 +189,7 @@ namespace simul
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
 			Topology topology = Topology::UNDEFINED;
+			int4 scissor = { 0,0,INT_MAX,INT_MAX };
 			int apply_count = 0;
 			int test=0;
 			bool contextActive=true;

@@ -856,7 +856,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault)
 	{
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
-	
+		InitStateTable(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 		// Assume cubemap
 		if (textureDesc.DepthOrArraySize == 6 && (textureDesc.Width == textureDesc.Height))
 		{
@@ -872,7 +872,6 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		width		= (int)textureDesc.Width;
 		length		= (int)textureDesc.Height;
 		mNumSamples = textureDesc.SampleDesc.Count;
-		InitStateTable(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 		if (!srv&&(textureDesc.Flags&D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE)==0)
 		{
 			InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
