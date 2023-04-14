@@ -144,8 +144,11 @@ RenderPlatform::RenderPlatform():
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
 #if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
+	//We need a better way to load binaries from the Platform submodules. It can't just be relative to the working directory.
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
+	if (hWinPixEventRuntime == 0)
+		hWinPixEventRuntime = LoadLibraryA("../firstParty/Platform/External/PIX/lib/WinPixEventRuntime.dll");
 #endif
 }
 
