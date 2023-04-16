@@ -753,7 +753,7 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 	if (io.MouseDown[0] && all_released)
 	{
 		io.MouseDown[0] = false;
-		//io.MousePos= last_pos;
+		io.MousePos= last_pos;
 	}
 	last_pos = io.MousePos;
 }
