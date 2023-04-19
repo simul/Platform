@@ -2432,7 +2432,7 @@ void Texture::CreateUploadResource(int slices)
 	renderPlatform->AsD3D12Device()->GetCopyableFootprints
 	(
 		&textureDesc,
-		0, numSub, 0,
+		0, (UINT)numSub, 0,
 		pLayouts.data(), numRows.data(), sliceSizes.data(),
 		&textureUploadBufferSize
 	);
