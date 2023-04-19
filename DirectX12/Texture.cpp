@@ -1325,7 +1325,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		}
 
 		// Find the initial texture state
-		D3D12_RESOURCE_STATES initialState=D3D12_RESOURCE_STATE_GENERIC_READ;
+		D3D12_RESOURCE_STATES initialState= computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
 
 		// Clean resources
 		SAFE_RELEASE_LATER(mTextureDefault); 

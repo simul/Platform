@@ -3001,9 +3001,12 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;
 	
 	//Scissor
-	D3D12_RECT rect = { (LONG)cs->scissor.x, (LONG)cs->scissor.y, 
-		(LONG)cs->scissor.z + (LONG)cs->scissor.x, (LONG)cs->scissor.w + (LONG)cs->scissor.y };
-	cmdList->RSSetScissorRects(1, &rect);
+	if (!(pass->IsCompute() || pass->IsRaytrace()))
+	{
+		D3D12_RECT rect = { (LONG)cs->scissor.x, (LONG)cs->scissor.y,
+			(LONG)cs->scissor.z + (LONG)cs->scissor.x, (LONG)cs->scissor.w + (LONG)cs->scissor.y };
+		cmdList->RSSetScissorRects(1, &rect);
+	}
 
 	#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
 	// TODO: Workout why the ViewInstanceMask in broken - AJR.
