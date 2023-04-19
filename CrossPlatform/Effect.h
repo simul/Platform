@@ -483,6 +483,8 @@ namespace platform
 			virtual EffectPass *AddPass(const char *name,int i)=0;
 			EffectPass *GetPass(int i) const;
 			EffectPass *GetPass(const char *name) const;
+			bool		HasPass(int i) const;
+			bool		HasPass(const char *name) const;
 		protected:
 			RenderPlatform *renderPlatform;
 			crossplatform::Effect *effect;

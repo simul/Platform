@@ -945,21 +945,24 @@ void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT &genericDxgiFormat,DXGI_FORM
 bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	, int w, int l, int m
 	, crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
 	, bool computable, bool rendertarget, bool depthstencil
 	, int num_samples, int aa_quality, bool
-	, vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+	, vec4 clear, float clearDepth, uint clearStencil, bool shared
+	, crossplatform::CompressionFormat compressionFormat)
 {
-	return EnsureTexture2DSizeAndFormat(r, w, l,m, f, computable, rendertarget, depthstencil, num_samples, aa_quality, false, clear, clearDepth, clearStencil,compressionFormat,initData);
+	return EnsureTexture2DSizeAndFormat(r, w, l,m, f, data,computable, rendertarget, depthstencil, num_samples, aa_quality, false, clear, clearDepth, clearStencil,compressionFormat);
 }
 
 bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	, int w, int l,int m
 	, crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
 	, bool computable, bool rendertarget, bool depthstencil
 	, int num_samples, int aa_quality, bool
 	, vec4 clear, float clearDepth, uint clearStencil
 	, crossplatform::CompressionFormat compressionFormat
-	, const uint8_t** initData)
+	)
 {
 	renderPlatform=r;
 	pixelFormat=f;
@@ -1031,25 +1034,25 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			std::vector<D3D11_SUBRESOURCE_DATA> initialSubresourceData(m*arraySize);
 			int mip_width=width;
 			int mip_length=length;
-			if(initData)
+			if(data)
 			{
 				for(size_t i=0;i<m;i++)
 				{
 					for(size_t j=0;j<arraySize;j++)
 					{
 						size_t n=i*arraySize+j;
-						D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
-						data.pSysMem						=initData[n];
-						data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
+						D3D11_SUBRESOURCE_DATA& subresource_data =initialSubresourceData[n];
+						subresource_data.pSysMem			= (*data)[n].data();
+						subresource_data.SysMemPitch		=mip_width*ByteSizeOfFormatElement(dxgi_format);
 						static int uu = 4;
-						data.SysMemSlicePitch = data.SysMemPitch*mip_length;
+						subresource_data.SysMemSlicePitch = subresource_data.SysMemPitch*mip_length;
 						switch (compressionFormat)
 						{
 						case crossplatform::CompressionFormat::BC1:
 						case crossplatform::CompressionFormat::BC3:
 						case crossplatform::CompressionFormat::BC5:
-							data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
-							data.SysMemSlicePitch			= data.SysMemPitch*std::max(1,mip_length/4);
+							subresource_data.SysMemPitch				= ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
+							subresource_data.SysMemSlicePitch			= subresource_data.SysMemPitch*std::max(1,mip_length/4);
 							break;
 						default:
 							break;
@@ -1072,7 +1075,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 				desc.SampleDesc.Count=1;
 				desc.SampleDesc.Quality=0;
 				ID3D11Texture2D *tex;
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex));
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc, data ? initialSubresourceData.data():nullptr,&tex));
 				stagingBuffer=tex;
 				if(renderPlatform->GetMemoryInterface())
 					renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
@@ -1177,7 +1180,9 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	return !ok;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool depthstencil,bool cubemap,crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+	,bool computable,bool rendertarget,bool depthstencil,bool cubemap,crossplatform::CompressionFormat compressionFormat)
 {
 	renderPlatform=r;
 	if(m<=0||m>16)
@@ -1242,8 +1247,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 	
 	std::vector<D3D11_SUBRESOURCE_DATA> initialSubresourceData(m*total_num);
-	//std::vector<std::vector<uint32_t>> tempData(m*total_num);
-	if(initData)
+	if(data)
 	{
 		size_t bytesPerTexel	=crossplatform::GetByteSize(f);
 		size_t n=0;
@@ -1253,13 +1257,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			int mip_length=length;
 			for(size_t i=0;i<m;i++)
 			{
-				/*tempData[n].resize(mip_width*mip_width);
-				for(int k=0;k<mip_width*mip_width;k++)
-				{
-					tempData[n][k]=0xFF00FF00;
-				}*/
-				D3D11_SUBRESOURCE_DATA &data=initialSubresourceData[n];
-				data.pSysMem						=initData[n];
+				D3D11_SUBRESOURCE_DATA &subresource_data =initialSubresourceData[n];
+				subresource_data.pSysMem						=(*data)[n].data();
 				static int uu = 4;
 				switch (compressionFormat)
 				{
@@ -1270,13 +1269,13 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 						size_t block_width		=std::max(1,(mip_width+3)/4);
 						size_t block_height		=std::max(1,(mip_length+3)/4);
 						size_t block_size_bytes	=(bytesPerTexel==4)?16:8;
-						data.SysMemPitch				= (UINT)(block_size_bytes*block_width);//ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
-						data.SysMemSlicePitch			= (UINT)std::max(block_size_bytes,data.SysMemPitch*block_height);//data.SysMemPitch*std::max(1,mip_length/4);
+						subresource_data.SysMemPitch				= (UINT)(block_size_bytes*block_width);//ByteSizeOfFormatElement(dxgi_format)*std::max(1,mip_width / uu);
+						subresource_data.SysMemSlicePitch			= (UINT)std::max(block_size_bytes, subresource_data.SysMemPitch*block_height);//data.SysMemPitch*std::max(1,mip_length/4);
 					}
 					break;
 				default:
-					data.SysMemPitch					=mip_width*ByteSizeOfFormatElement(dxgi_format);
-					data.SysMemSlicePitch = data.SysMemPitch*mip_length;
+					subresource_data.SysMemPitch		=mip_width*ByteSizeOfFormatElement(dxgi_format);
+					subresource_data.SysMemSlicePitch = subresource_data.SysMemPitch*mip_length;
 					break;
 				};
 				mip_width=(mip_width+1)/2;
@@ -1298,7 +1297,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		desc.SampleDesc.Count=1;
 		desc.SampleDesc.Quality=0;
 		ID3D11Texture2D *tex;
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,initData? initialSubresourceData.data():nullptr,&tex));
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,data? initialSubresourceData.data():nullptr,&tex));
 		stagingBuffer=tex;
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());

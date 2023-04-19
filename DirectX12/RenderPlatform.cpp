@@ -144,8 +144,11 @@ RenderPlatform::RenderPlatform():
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
 #if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
+	//We need a better way to load binaries from the Platform submodules. It can't just be relative to the working directory.
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
+	if (hWinPixEventRuntime == 0)
+		hWinPixEventRuntime = LoadLibraryA("../firstParty/Platform/External/PIX/lib/WinPixEventRuntime.dll");
 #endif
 }
 
@@ -269,6 +272,12 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
 	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
+#if 1
+	if (!res)
+	{
+		SIMUL_BREAK("Null resource in barrier\n");
+	}
+#endif
 #if PLATFORM_DEBUG_BARRIERS1
 	const size_t MAX_NAME_LENGTH = 30;
 	char name[MAX_NAME_LENGTH];

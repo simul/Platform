@@ -1942,6 +1942,7 @@ inline UINT64 UpdateSubresources(
         (DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER &&
             (FirstSubresource != 0 || NumSubresources != 1)))
     {
+        DebugBreak();// "Failed to UpdateSubresources\n";
         return 0;
     }
 

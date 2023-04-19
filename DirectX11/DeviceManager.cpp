@@ -38,7 +38,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	D3D11_RASTERIZER_DESC rasterDesc;
 	RECT rect;
 #if defined(WINVER) && !defined(_XBOX_ONE)
-	GetWindowRect((HWND)hwnd,&rect);
+	GetClientRect((HWND)hwnd,&rect);
 #endif
 	int screenWidth	=abs(rect.right-rect.left);
 	int screenHeight=abs(rect.bottom-rect.top);
@@ -171,7 +171,7 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 {
 	RECT rect;
 #if defined(WINVER) &&!defined(_XBOX_ONE)
-	if(!GetWindowRect((HWND)hwnd,&rect))
+	if(!GetClientRect((HWND)hwnd,&rect))
 		return;
 #endif
 	UINT W	=abs(rect.right-rect.left);
@@ -220,7 +220,7 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 {
 	RECT rect;
 #if defined(WINVER) &&!defined(_XBOX_ONE)
-	GetWindowRect((HWND)hwnd,&rect);
+	GetClientRect((HWND)hwnd,&rect);
 #endif
 	int screenWidth	=abs(rect.right-rect.left);
 	int screenHeight=abs(rect.bottom-rect.top);

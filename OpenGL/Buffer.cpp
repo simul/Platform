@@ -38,7 +38,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* renderPlatform,in
 
     glGenBuffers(1, &mBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, mBufferID);
-    glBufferData(GL_ARRAY_BUFFER, layout->GetStructSize() * num_vertices, data->data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, layout->GetStructSize() * num_vertices, data?data->data():nullptr, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     mBufferLayout = (crossplatform::Layout*)layout;
@@ -50,7 +50,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* renderPlatform,int
 
     glGenBuffers(1, &mBufferID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBufferID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_size_bytes * num_indices, data->data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_size_bytes * num_indices, data?data->data():nullptr, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 

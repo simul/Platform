@@ -947,7 +947,7 @@ vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceTy
 		if (!mDummyTextureCubeArray)
 		{
 			mDummyTextureCubeArray = (vulkan::Texture*)CreateTexture("mDummyTextureCubeArray");
-			mDummyTextureCubeArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,true);
+			mDummyTextureCubeArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM,nullptr,false,false,false,true);
 		}
 		return mDummyTextureCubeArray;
 	}
@@ -961,7 +961,7 @@ vulkan::Texture* RenderPlatform::GetDummyTextureCube()
 	if (!mDummyTextureCube)
 	{
 		mDummyTextureCube = (vulkan::Texture*)CreateTexture("mDummyTextureCube");
-		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,false,false,false,true);
+		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,nullptr,false,false,false,true);
 		
 		const float whiteTexels[24] = { 1.0f,1.0f,1.0f,1.0f
 										,1.0f,1.0f,1.0f,1.0f
@@ -979,7 +979,12 @@ vulkan::Texture* RenderPlatform::GetDummy2D()
 	if (!mDummy2D)
 	{
 		mDummy2D = (vulkan::Texture*)CreateTexture("dummy2d");
-		mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+		crossplatform::TextureCreate textureCreate;
+		textureCreate.w = 1;
+		textureCreate.l = 1;
+		textureCreate.d = 1;
+		textureCreate.f = crossplatform::PixelFormat::RGBA_8_UNORM;
+		mDummy2D->EnsureTexture(this, &textureCreate);
 		mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
 	}
 	return mDummy2D;
@@ -990,7 +995,8 @@ vulkan::Texture* RenderPlatform::GetDummy2DMS()
 	if (!mDummy2DMS)
 	{
 		mDummy2DMS = (vulkan::Texture*)CreateTexture("dummy2dms");
-		mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, false, false, false, 2);
+		std::shared_ptr<std::vector<std::vector<uint8_t>>> data;
+		mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM,data, false, false, false, 2);
 		mDummy2DMS->setTexels(immediateContext, &whiteTexel[0], 0, 1);
 
 	}

@@ -327,8 +327,10 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 }
 
 bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, int w, int l, int m,
-											crossplatform::PixelFormat f, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+											crossplatform::PixelFormat f
+											, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+											, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool wrap,
+											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat)
 {
 	if (!IsSame(w, l, 1, 1, m, num_samples))
 	{
@@ -411,9 +413,10 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 
 	return false;
 }
-
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f, bool computable, bool rendertarget, bool ascubemap, bool depthstencil
-											, crossplatform::CompressionFormat compressionFormat,const uint8_t **initData)
+// TODO: support initial texture data in OpenGL
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool ascubemap, bool depthstencil
+											, crossplatform::CompressionFormat compressionFormat)
 {
 	int totalCount = ascubemap ? 6 * num : num;
 	if (!IsSame(w, l, 1, num, nmips, 1))
