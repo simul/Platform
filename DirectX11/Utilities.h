@@ -137,16 +137,6 @@ namespace platform
 			UINT offset=0;
 			pContext->SOSetTargets(1,&pBuffer,&offset);
 		}
-		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
-		{
-			static int instance_count;
-		public:
-			UtilityRenderer();
-			~UtilityRenderer();
-			static void DrawQuad(			crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
-			static void DrawQuad(			crossplatform::DeviceContext &deviceContext);
-			static void DrawSphere(			crossplatform::DeviceContext &deviceContext,int latitudes,int longitudes);
-		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		
 		//! Usage: You \em must use the following member functions to use this buffer.

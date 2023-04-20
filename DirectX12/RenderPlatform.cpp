@@ -144,8 +144,11 @@ RenderPlatform::RenderPlatform():
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
 #if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
+	//We need a better way to load binaries from the Platform submodules. It can't just be relative to the working directory.
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
+	if (hWinPixEventRuntime == 0)
+		hWinPixEventRuntime = LoadLibraryA("../firstParty/Platform/External/PIX/lib/WinPixEventRuntime.dll");
 #endif
 }
 
@@ -269,6 +272,12 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext& devi
 												bool flush /*= false*/, UINT subRes /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
 {
 	RenderPlatform::ContextBarriers &barrierList=GetBarriers(deviceContext);
+#if 1
+	if (!res)
+	{
+		SIMUL_BREAK("Null resource in barrier\n");
+	}
+#endif
 #if PLATFORM_DEBUG_BARRIERS1
 	const size_t MAX_NAME_LENGTH = 30;
 	char name[MAX_NAME_LENGTH];
@@ -2999,6 +3008,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 	auto cmdList    = deviceContext.asD3D12Context();
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;
+	
+	//Scissor
+	if (!(pass->IsCompute() || pass->IsRaytrace()))
+	{
+		D3D12_RECT rect = { (LONG)cs->scissor.x, (LONG)cs->scissor.y,
+			(LONG)cs->scissor.z + (LONG)cs->scissor.x, (LONG)cs->scissor.w + (LONG)cs->scissor.y };
+		cmdList->RSSetScissorRects(1, &rect);
+	}
 
 	#if PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
 	// TODO: Workout why the ViewInstanceMask in broken - AJR.

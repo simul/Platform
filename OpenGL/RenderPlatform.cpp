@@ -229,7 +229,7 @@ crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 	return b;
 }
 
-GLenum platform::opengl::RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
     if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
@@ -238,7 +238,7 @@ GLenum platform::opengl::RenderPlatform::toGLMinFiltering(crossplatform::Sampler
     return GL_NEAREST_MIPMAP_NEAREST;
 }
 
-GLenum platform::opengl::RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
+GLenum RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
     if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
     {
