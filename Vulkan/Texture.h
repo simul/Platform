@@ -56,13 +56,18 @@ namespace platform
 			bool	InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt = false, bool setDepthStencil = false, bool need_srv = true, int numOfSamples = 1) override;
 			bool	InitFromExternalTexture(crossplatform::RenderPlatform* renderPlatform, const crossplatform::TextureCreate* textureCreate) override;
 
-			bool	ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int m, crossplatform::PixelFormat f, 
-													bool computable = false, bool rendertarget = false, bool depthstencil = false,
-													int num_samples = 1, int aa_quality = 0, bool wrap = false, vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, 
-													bool shared = false, crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED, const uint8_t** initData = nullptr) override;
-			bool	ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int mips, crossplatform::PixelFormat f,
-													bool computable = false, bool rendertarget = false, bool depthstencil = false, bool cubemap = false,
-													crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED, const uint8_t** initData = nullptr) override;
+			bool	ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int m, crossplatform::PixelFormat f
+													,std::shared_ptr<std::vector<std::vector<uint8_t>>> data
+													,bool computable = false, bool rendertarget = false, bool depthstencil = false
+													,int num_samples = 1, int aa_quality = 0, bool wrap = false
+													,vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f)
+													,float clearDepth = 0.0f
+													,uint clearStencil = 0
+													,bool shared = false
+													,crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED) override;
+			bool	ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int mips, crossplatform::PixelFormat f
+													, std::shared_ptr<std::vector<std::vector<uint8_t>>> data,bool computable = false, bool rendertarget = false, bool depthstencil = false, bool cubemap = false,
+													crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED ) override;
 			bool	ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable = false, int nmips = 1, bool rendertargets = false) override;
 
 			bool	ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;

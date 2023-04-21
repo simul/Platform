@@ -748,7 +748,7 @@ shader vec4 PS_UltraSimpleClear(posVertexOutput IN) : SV_TARGET
 shader vec4 PS_UltraSimpleClear_MV(posVertexOutput IN, uint viewID : SV_ViewID) : SV_TARGET
 {
 	vec4 ret = debugColour;
-	ret.g = viewID == 1 ? 1.0 - ret.g : ret.g;
+	//ret.g = viewID == 1 ? 1.0 - ret.g : ret.g;
 	return ret;
 }
 

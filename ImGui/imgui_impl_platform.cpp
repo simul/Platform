@@ -753,7 +753,7 @@ void ImGui_ImplPlatform_Update3DTouchPos(const std::vector<vec4> &position_press
 	if (io.MouseDown[0] && all_released)
 	{
 		io.MouseDown[0] = false;
-		//io.MousePos= last_pos;
+		io.MousePos= last_pos;
 	}
 	last_pos = io.MousePos;
 }
@@ -1068,20 +1068,29 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, c
 		return;
 	
 	platform::crossplatform::Texture* texture = nullptr;
-		platform::crossplatform::TextureCreate textureCreate;
-		textureCreate.w=width;
-		textureCreate.l=height;
-		textureCreate.make_rt=true;
-		textureCreate.f=platform::crossplatform::PixelFormat::RGB_11_11_10_FLOAT;
-		auto h=MakeTextureHash(&textureCreate);
-		auto &scratch=bd->scratchTextures[h];
-		if(scratch.scratchIndex==scratch.textures.size())
+	platform::crossplatform::TextureCreate textureCreate;
+	textureCreate.w=width;
+	textureCreate.l=height;
+	textureCreate.make_rt=true;
+	textureCreate.f=platform::crossplatform::PixelFormat::RGB_11_11_10_FLOAT;
+	auto h=MakeTextureHash(&textureCreate);
+	auto &scratch=bd->scratchTextures[h];
+	if(scratch.scratchIndex==scratch.textures.size())
+	{
+		// no dots in name, or it will try to load a file!
+		std::string tempName = textureName;
+		size_t pos = tempName.find('.');
+		while (pos < tempName.length())
 		{
-			scratch.textures.push_back(bd->renderPlatform->CreateTexture(textureName));
-			scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform,&textureCreate);
+			tempName.replace(pos, pos + 1, ",");
+			pos = tempName.find('.');
 		}
-		texture=scratch.textures[scratch.scratchIndex];
-		scratch.scratchIndex++;
+		tempName += "__";
+		scratch.textures.push_back(bd->renderPlatform->CreateTexture(tempName.c_str()));
+		scratch.textures[scratch.scratchIndex]->EnsureTexture(bd->renderPlatform,&textureCreate);
+	}
+	texture=scratch.textures[scratch.scratchIndex];
+	scratch.scratchIndex++;
 	
 	if (!texture)
 		return;

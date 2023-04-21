@@ -62,7 +62,7 @@ void DisplaySurface::InitSwapChain()
     RECT rect;
 
 #if defined(WINVER) && !defined(_XBOX_ONE)
-    GetWindowRect((HWND)mHwnd, &rect);
+    GetClientRect((HWND)mHwnd, &rect);
 #endif
 
     int screenWidth  = abs(rect.right - rect.left);

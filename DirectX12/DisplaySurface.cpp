@@ -46,7 +46,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mDeviceRef = renderPlatform->AsD3D12Device();
 
 #if defined(WINVER) && !defined(_GAMING_XBOX)
-	GetWindowRect(mHwnd, &rect);
+	GetClientRect(mHwnd, &rect);
 #endif
 
 	int screenWidth = abs(rect.right - rect.left);
@@ -318,7 +318,7 @@ void DisplaySurface::Resize()
 {
 	RECT rect = {};
 #if defined(WINVER) && !defined(_GAMING_XBOX)
-	GetWindowRect(mHwnd, &rect);
+	GetClientRect(mHwnd, &rect);
 #endif
 	int screenWidth = abs(rect.right - rect.left);
 	int screenHeight = abs(rect.bottom - rect.top);
@@ -347,22 +347,22 @@ void DisplaySurface::Resize()
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	for (UINT i = 0; i < FrameCount; i++)
 	{
-		mCommandAllocators[i]->Reset();
+	//	mCommandAllocators[i]->Reset();
 	}
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
 
 	// DX12 viewport
-	mCurViewport.TopLeftX   = 0;
-	mCurViewport.TopLeftY   = 0;
-	mCurViewport.Width	  = (float)screenWidth;
-	mCurViewport.Height	 = (float)screenHeight;
-	mCurViewport.MinDepth   = 0.0f;
-	mCurViewport.MaxDepth   = 1.0f;
+	mCurViewport.TopLeftX	= 0;
+	mCurViewport.TopLeftY	= 0;
+	mCurViewport.Width		= (float)screenWidth;
+	mCurViewport.Height		= (float)screenHeight;
+	mCurViewport.MinDepth	= 0.0f;
+	mCurViewport.MaxDepth	= 1.0f;
 
 	// DX12 scissor rect	
 	mCurScissor.left		= 0;
-	mCurScissor.top		 = 0;
-	mCurScissor.right	   = screenWidth;
+	mCurScissor.top			= 0;
+	mCurScissor.right		= screenWidth;
 	mCurScissor.bottom	  = screenHeight;
 
 	viewport.w			  = screenWidth;
