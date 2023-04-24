@@ -2646,6 +2646,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 
 	auto cmdList    = deviceContext.asD3D12Context();
 	auto dx12Effect = (dx12::Effect*)cs->currentEffect;
+	
+	//Scissor
+	D3D12_RECT rect = { (LONG)cs->scissor.x, (LONG)cs->scissor.y, 
+		(LONG)cs->scissor.z + (LONG)cs->scissor.x, (LONG)cs->scissor.w + (LONG)cs->scissor.y };
+	cmdList->RSSetScissorRects(1, &rect);
 
 	// Set the frame descriptor heaps
 	Heap* currentSamplerHeap                = dx12Effect->GetEffectSamplerHeap();
