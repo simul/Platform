@@ -549,7 +549,7 @@ opengl::Texture* RenderPlatform::GetDummy2D()
     if (!mDummy2D)
     {
         mDummy2D = (opengl::Texture*)CreateTexture("dummy2d");
-        mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+        mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, nullptr);
         mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
     }
     return mDummy2D;
