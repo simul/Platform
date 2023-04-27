@@ -292,7 +292,10 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 					ta.texture = rPlat->GetDummy2D();
 				}
 			}
-			mSrvSrcHandles[slot] = *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
+			const crossplatform::SubresourceRange& subres = ta.subresource;
+			int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+			int mip = subres.mipLevelCount == -1 ? -1 : subres.baseMipLevel;
+			mSrvSrcHandles[slot] = *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, index, mip, is_pixel_shader);
 		}
 		if (slot < 25)
 		{
@@ -376,7 +379,10 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 				ta.texture = rPlat->GetDummy2D();
 			}
 		}
-		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, ta.index, ta.mip);
+		const crossplatform::SubresourceRange& subres = ta.subresource;
+		int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+		int mip = subres.baseMipLevel;
+		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, index, mip);
 		mUavUsedSlotsArray[slot] = true;
 		usedRwTextureSlots |= (1 << slot);
 	}

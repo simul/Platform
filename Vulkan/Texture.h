@@ -53,7 +53,7 @@ namespace simul
 			void			LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
 			bool			IsValid() const override;
 			void			InvalidateDeviceObjects() override;
-			virtual bool	InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
+			virtual bool	InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false, int numOfSamples = 1) override;
 			virtual bool	InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const crossplatform::TextureCreate *textureCreate) override;
 			
 			bool			ensureTexture2DSizeAndFormat(   crossplatform::RenderPlatform *renderPlatform, int w, int l, int m,
@@ -100,7 +100,7 @@ namespace simul
 											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
 											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages,int m=0,int num_mips=0);
 			void			InvalidateDeviceObjectsExceptLoaded();
-			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, int msaa_samples,bool computable,bool rt,bool ds,bool need_srv,bool cb=false);
+			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, int msaa_samples,bool computable,bool rt,bool ds,bool cb=false);
 			
 			void			LoadTextureData(LoadedTexture &lt,const char* path);
 			void			SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f);

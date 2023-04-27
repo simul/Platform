@@ -105,7 +105,6 @@ namespace simul
 		struct TextureCreate
 		{
 			void *external_texture=nullptr;
-			void *srv = nullptr;
 			int w=0;
 			int l=0;
 			int d=1;
@@ -116,7 +115,6 @@ namespace simul
 			bool make_rt=false;
 			bool setDepthStencil=false;
 			VideoTextureType vidTexType = VideoTextureType::NONE;
-			bool need_srv=true;
 			bool computable = true;
 			int numOfSamples=1;
 			int aa_quality = 0;
@@ -205,11 +203,49 @@ namespace simul
 			crossplatform::RenderPlatform *renderPlatform;
 		};
 		enum class ShaderResourceType;
-		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
-		class SIMUL_CROSSPLATFORM_EXPORT TextureView
+
+		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
 		{
-		public:
-			ShaderResourceType type;
+			uint32_t	baseMipLevel = 0;
+			uint32_t	mipLevelCount = -1;
+			uint32_t	baseArrayLayer = 0;
+			uint32_t	arrayLayerCount = -1;
+
+			SubresourceRange() = default;
+			SubresourceRange(uint32_t baseMip, uint32_t mipCount, uint32_t baseLayer, uint32_t layerCount)
+				: baseMipLevel(baseMip), mipLevelCount(mipCount), baseArrayLayer(baseLayer), arrayLayerCount(layerCount) {}
+			SubresourceRange(int32_t baseMip, int32_t mipCount, int32_t baseLayer, int32_t layerCount)
+				: baseMipLevel((uint32_t)baseMip), mipLevelCount((uint32_t)mipCount), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
+		};
+		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceLayers
+		{
+			uint32_t	mipLevel = 0;
+			uint32_t	baseArrayLayer = 0;
+			uint32_t	arrayLayerCount = -1;
+
+			SubresourceLayers() = default;
+			SubresourceLayers(uint32_t mip, uint32_t baseLayer, uint32_t layerCount)
+				: mipLevel(mip), baseArrayLayer(baseLayer), arrayLayerCount(layerCount) {}
+			SubresourceLayers(int32_t mip, int32_t baseLayer, int32_t layerCount)
+				: mipLevel((uint32_t)mip), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
+		};
+
+		class Texture;
+		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
+		struct SIMUL_CROSSPLATFORM_EXPORT TextureView
+		{
+			ShaderResourceType	type				= ShaderResourceType::UNKNOWN;
+			SubresourceRange	subresourceRange	= {};
+
+			TextureView() = default;
+			inline uint64_t GetHash() const 
+			{
+				return uint64_t((uint32_t)type) << 32
+					| uint64_t((uint8_t)subresourceRange.baseMipLevel) << 24
+					| uint64_t((uint8_t)subresourceRange.mipLevelCount) << 16
+					| uint64_t((uint8_t)subresourceRange.baseArrayLayer) << 8
+					| uint64_t((uint8_t)subresourceRange.arrayLayerCount) << 0;
+			}
 		};
 
 		/// A Texture base class.
@@ -264,18 +300,19 @@ namespace simul
 			virtual ID3D12Resource *AsD3D12Resource() { return 0; }
 			//! Returns the SRV specified by layer,mip. The type t ensures that the assigned resource is compatible (UNKNWON matches anything).
 			//! Layer -1 means all layers at the given mip, while mip -1 defaults to the whole texture/layer.
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(const crossplatform::TextureView& textureView){return 0;}
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool = true,crossplatform::ShaderResourceType = crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1,bool=true) { return 0; }
 			//! Returns the UAV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1,int=-1){return 0;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(const crossplatform::TextureView& textureView){return 0;}
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = -1, int = -1) { return 0; }
-			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
+
+			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(const crossplatform::TextureView& textureView){return 0;}
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext) { return 0; }
 			//! Returns the RTV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
-			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int=-1,int=-1){return 0;}
+			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(const crossplatform::TextureView& textureView){return 0;}
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext,int = -1, int = -1) { return 0; }
-			virtual bool HasRenderTargets() const {return 0;}
-			virtual bool IsComputable() const=0;
+			virtual bool HasRenderTargets() const { return renderTarget; }
+			virtual bool IsComputable() const { return computable; }
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.
 			virtual void MoveToFastRAM() {}
@@ -289,10 +326,10 @@ namespace simul
 			{
 				return pixelFormat;
 			}
-			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent. Returns true if successful.
-			virtual bool InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1)=0;
+			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t is platform-dependent. Returns true if successful.
+			virtual bool InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,int w=0,int l=0,PixelFormat f=PixelFormat::UNKNOWN,bool make_rt=false, bool setDepthStencil=false, int numOfSamples = 1)=0;
 			virtual bool InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate);
-			virtual bool InitFromExternalTexture3D(crossplatform::RenderPlatform*, void*, void*, bool = false) { return false; }
+			virtual bool InitFromExternalTexture3D(crossplatform::RenderPlatform*, void*, bool = false) { return false; }
 			virtual bool EnsureTexture(RenderPlatform *, TextureCreate*);
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int m
@@ -311,7 +348,7 @@ namespace simul
 			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
-			virtual void activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index=-1,int mip_index=0);
+			virtual void activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView = crossplatform::TextureView());
 			//! Deactivate as a rendertarget.
 			virtual void deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext);
 			virtual int GetLength() const
@@ -349,6 +386,7 @@ namespace simul
 				return cubemap?arraySize*6:arraySize;
 			}
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
+			virtual ShaderResourceType GetShaderResourceTypeForRTVAndDSV();
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat= PixelFormat::UNKNOWN;
 			RenderPlatform *renderPlatform=nullptr;
@@ -367,6 +405,7 @@ namespace simul
 			// a wrapper around stbi_load_from_memory.
 			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
 			void FreeTranslatedTextureData(void *data);
+			bool ValidateTextureView(const TextureView& textureView);
 		private:
 			bool stbi_loaded = false;
 		};

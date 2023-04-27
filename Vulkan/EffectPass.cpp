@@ -128,8 +128,11 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			texture=((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
 		}
 		texture->FinishLoading(deviceContext);
-		t=texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip);
-		texture->SetLayout(deviceContext,vk::ImageLayout::eShaderReadOnlyOptimal,ta.index,ta.mip);
+		const crossplatform::SubresourceRange& subres = ta.subresource;
+		int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+		int mip = subres.mipLevelCount == -1 ? -1 : subres.baseMipLevel;
+		t=texture->AsVulkanImageView(ta.resourceType,index,mip);
+		texture->SetLayout(deviceContext,vk::ImageLayout::eShaderReadOnlyOptimal,index,mip);
 		write.setDstBinding(GenerateTextureSlot(slot));
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eSampledImage);
@@ -150,8 +153,11 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		vulkan::Texture *texture=(vulkan::Texture *)(ta.texture);
 		if(texture&&texture->IsValid())
 		{
-			t=texture->AsVulkanImageView(ta.resourceType,ta.index,ta.mip,true);
-			texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,ta.index,ta.mip);
+			const crossplatform::SubresourceRange& subres = ta.subresource;
+			int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+			int mip = subres.baseMipLevel;
+			t=texture->AsVulkanImageView(ta.resourceType,index,mip,true);
+			texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,index,mip);
 		}
 		else
 		{

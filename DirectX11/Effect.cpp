@@ -448,7 +448,7 @@ void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatf
 			continue;
 		}
 		((dx11::Texture*)ta.texture)->FinishLoading(deviceContext);
-		auto* res = ta.texture->AsD3D11ShaderResourceView(ta.resourceType, ta.index, ta.mip);
+		auto* res = ta.texture->AsD3D11ShaderResourceView({ ta.resourceType, ta.subresource });
 		if (compute)
 		{
 			cmdList->CSSetShaderResources(slot, 1, &res);
@@ -508,7 +508,7 @@ void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatf
 		{
 			continue;
 		}
-		auto *uav = ta.texture->AsD3D11UnorderedAccessView( ta.index, ta.mip);
+		auto *uav = ta.texture->AsD3D11UnorderedAccessView({ ta.resourceType, ta.subresource });
 		if (compute)
 		{
 			cmdList->CSSetUnorderedAccessViews(slot, 1, &uav,nullptr);

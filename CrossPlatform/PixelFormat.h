@@ -144,6 +144,29 @@ namespace simul
 		{
 			return static_cast<ShaderResourceType>(static_cast<unsigned int>(a) & static_cast<unsigned int>(b));
 		}
+		inline ShaderResourceType operator^(ShaderResourceType a, ShaderResourceType b)
+		{
+			return static_cast<ShaderResourceType>(static_cast<unsigned int>(a) ^ static_cast<unsigned int>(b));
+		}
+		inline ShaderResourceType operator~(ShaderResourceType a)
+		{
+			return static_cast<ShaderResourceType>(~static_cast<unsigned int>(a));
+		}
+		inline ShaderResourceType& operator|=(ShaderResourceType& a, ShaderResourceType b)
+		{
+			a = static_cast<ShaderResourceType>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b));
+			return a; 
+		}
+		inline ShaderResourceType& operator&=(ShaderResourceType& a, ShaderResourceType b)
+		{
+			a = static_cast<ShaderResourceType>(static_cast<unsigned int>(a) & static_cast<unsigned int>(b));
+			return a;
+		}
+		inline ShaderResourceType& operator^=(ShaderResourceType& a, ShaderResourceType b)
+		{
+			a = static_cast<ShaderResourceType>(static_cast<unsigned int>(a) ^ static_cast<unsigned int>(b));
+			return a;
+		}
 		inline int GetElementSize(PixelFormat p)
 		{
 			switch(p)

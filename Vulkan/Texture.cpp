@@ -392,9 +392,7 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::ShaderResourceType type
 		mip = 0;
 	}
 
-	int realArray	= GetArraySize();
 	bool no_array	= !cubemap && (arraySize <= 1);
-	bool isUAV		= (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
 
 	// Base view:
 	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
@@ -444,7 +442,7 @@ vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
 	return &(mFramebuffers[layer][mip]);
 }
 
-bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds,bool need_srv
+bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds
 	, bool cubemap)
 {
 	// If we are not created yet...
@@ -458,7 +456,7 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 }
 
 #include "Platform/Core/StringFunctions.h"
-bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, int numOfSamples)
 {
 	mExternalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	if (rendertarget)
@@ -468,7 +466,6 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	crossplatform::TextureCreate textureCreate;
 	textureCreate.arraysize = 1;
 	textureCreate.external_texture = t;
-	textureCreate.srv = srv;
 	textureCreate.w = w;
 	textureCreate.l = l;
 	textureCreate.d = 1;
@@ -477,7 +474,6 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	textureCreate.f = f;
 	textureCreate.make_rt = rendertarget;
 	textureCreate.setDepthStencil = depthstencil;
-	textureCreate.need_srv = need_srv;
 	textureCreate.numOfSamples = numOfSamples;
 	return InitFromExternalTexture(r,&textureCreate);
 }
@@ -487,7 +483,6 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	//AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
 	if (IsSame(textureCreate->w, textureCreate->l, textureCreate->d, textureCreate->arraysize, textureCreate->mips, textureCreate->f
 		, textureCreate->numOfSamples, textureCreate->computable, textureCreate->make_rt, textureCreate->setDepthStencil
-		, textureCreate->need_srv
 		, textureCreate->cubemap))
 	{
 		if (textureCreate->external_texture == (void*)mImage)
@@ -783,7 +778,7 @@ void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable , bool rendertarget , bool ascubemap )
 {
-	if (IsSame(w, l, 1, num, m,f,1,computable,rendertarget,depthStencil, true, ascubemap))
+	if (IsSame(w, l, 1, num, m,f,1,computable,rendertarget,depthStencil,ascubemap))
 	{
 		return false;
 	}

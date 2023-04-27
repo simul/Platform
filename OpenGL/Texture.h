@@ -48,7 +48,7 @@ namespace simul
 			void            LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
 			bool            IsValid() const override;
 			void            InvalidateDeviceObjects() override;
-			virtual bool    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
+			virtual bool    InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false, int numOfSamples = 1) override;
 			bool            ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform, int w, int l,int m,
                                                          crossplatform::PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
                                                          vec4 clear = vec4(0.0f, 0.0f, 0.0f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
@@ -57,7 +57,7 @@ namespace simul
 			void            ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void            GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void            setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
-			void            activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext,int array_index=-1,int mip_index=0) override;
+			void            activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView = {}) override;
 			void            deactivateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			int             GetLength() const override;
 			int             GetWidth() const override;

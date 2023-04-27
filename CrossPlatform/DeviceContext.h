@@ -52,8 +52,7 @@ namespace simul
 			crossplatform::TopLevelAccelerationStructure *accelerationStructure;
 			int dimensions;
 			bool uav;
-			int mip;// if -1, it's the whole texture.
-			int index;	// if -1 it's the whole texture
+			SubresourceRange subresource;
 			crossplatform::ShaderResourceType resourceType;
 		};
 		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
