@@ -823,7 +823,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			startInfo.wShowWindow = SW_HIDE;
 			startInfo.hStdOutput = coutWrite;
 			startInfo.hStdError = cerrWrite;
-			//startInfo.wShowWindow = SW_SHOW;;
+			SIMUL_COUT<<"Launching:\n"<<cmdLine.c_str()<<"\n";
 			PROCESS_INFORMATION processInfo = {};
 			bool success = (bool)CreateProcessW
 			(
