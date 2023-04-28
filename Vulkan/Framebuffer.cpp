@@ -140,7 +140,8 @@ void Framebuffer::InvalidateFramebuffers()
 		for(auto f:mFramebuffers[i])
 			vulkanDevice->destroyFramebuffer(f,nullptr);
         mFramebuffers[i].clear();
-		vulkanDevice->destroyRenderPass(mDummyRenderPasses[i],nullptr);
+		if(mDummyRenderPasses[i])
+			vulkanDevice->destroyRenderPass(mDummyRenderPasses[i],nullptr);
 	}
 	initialized=false;
 }
