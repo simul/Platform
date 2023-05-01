@@ -21,7 +21,9 @@
 #include <array>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#ifdef _MSC_VER
 #define __STDC_LIB_EXT1__
+#endif
 #include "Platform/External/stb/stb_image_write.h"
 #include "Platform/Math/Float16.h"
 
