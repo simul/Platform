@@ -328,7 +328,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	dx12::Texture* t12 = (dx12::Texture*)tex;
 
 	ID3D12Resource* res = t12->AsD3D12Resource();
-	if (!res || !t12->AsD3D12UnorderedAccessView(deviceContext))
+	if (!res || !t12->IsComputable())
 	{
 		SIMUL_CERR_ONCE << "No valid UAV resource for this barrier. No barrier was inserted into this command list.";
 		return;
@@ -1122,24 +1122,24 @@ void RenderPlatform::ResourceTransition(crossplatform::DeviceContext& deviceCont
 		case simul::crossplatform::ReadableCompute:
 		{
 			bool pixelShader = (transition == simul::crossplatform::ReadableGraphics);
-			t12->AsD3D12ShaderResourceView(deviceContext,true, crossplatform::ShaderResourceType::TEXTURE_2D, -1, -1, pixelShader);
+			t12->AsD3D12ShaderResourceView(deviceContext, { crossplatform::ShaderResourceType::TEXTURE_2D, { 0, -1, 0, -1} }, true, pixelShader);
 			break;
 		}
 		case simul::crossplatform::Writeable:
 		{
 			if (t12->HasRenderTargets())
 			{
-				t12->AsD3D12RenderTargetView(deviceContext);
+				t12->AsD3D12RenderTargetView(deviceContext, { t->GetShaderResourceTypeForRTVAndDSV(), { 0, -1, 0, -1} });
 			}
 			else if (t12->IsDepthStencil())
 			{
-				t12->AsD3D12DepthStencilView(deviceContext);
+				t12->AsD3D12DepthStencilView(deviceContext, { t->GetShaderResourceTypeForRTVAndDSV(), { 0, -1, 0, -1} });
 			}
 			break;
 		}
 		case simul::crossplatform::UnorderedAccess:
 		{
-			t12->AsD3D12UnorderedAccessView(deviceContext);
+			t12->AsD3D12UnorderedAccessView(deviceContext, { crossplatform::ShaderResourceType::TEXTURE_2D, { 0, -1, 0, -1} });
 			break;
 		}
 	}
@@ -1998,6 +1998,68 @@ DXGI_FORMAT RenderPlatform::TypelessToSrvFormat(DXGI_FORMAT fmt)
 	return (DXGI_FORMAT)u;
 }
 
+void RenderPlatform::DepthFormatToResourceAndSrvFormats(DXGI_FORMAT& texture2dFormat, DXGI_FORMAT& srvFormat)
+{
+	switch (texture2dFormat)
+	{
+	case DXGI_FORMAT_D32_FLOAT:
+		texture2dFormat = DXGI_FORMAT_R32_TYPELESS;
+		srvFormat = DXGI_FORMAT_R32_FLOAT;
+		break;
+	case DXGI_FORMAT_D16_UNORM:
+		texture2dFormat = DXGI_FORMAT_R16_TYPELESS;
+		srvFormat = DXGI_FORMAT_R16_UNORM;
+		break;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		texture2dFormat = DXGI_FORMAT_R24G8_TYPELESS;
+		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		break;
+	case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		texture2dFormat = DXGI_FORMAT_R32G8X24_TYPELESS;
+		srvFormat = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC1_UNORM:
+	case DXGI_FORMAT_BC1_UNORM_SRGB:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC1_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC2_UNORM:
+	case DXGI_FORMAT_BC2_UNORM_SRGB:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC2_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC3_UNORM:
+	case DXGI_FORMAT_BC3_UNORM_SRGB:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC3_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC4_UNORM:
+	case DXGI_FORMAT_BC4_SNORM:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC4_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC5_UNORM:
+	case DXGI_FORMAT_BC5_SNORM:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC5_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC6H_UF16:
+	case DXGI_FORMAT_BC6H_SF16:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC6H_TYPELESS;
+		break;
+	case DXGI_FORMAT_BC7_UNORM:
+	case DXGI_FORMAT_BC7_UNORM_SRGB:
+		srvFormat = texture2dFormat;
+		texture2dFormat = DXGI_FORMAT_BC7_TYPELESS;
+		break;
+	default:
+		srvFormat = texture2dFormat;
+		break;
+	};
+}
+
+
 D3D12_QUERY_TYPE RenderPlatform::ToD3dQueryType(crossplatform::QueryType t)
 {
 	switch (t)
@@ -2345,12 +2407,12 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	mTargets.num    = num;
 	for (int i = 0; i < num; i++)
 	{
-		mTargets.m_rt[i]        = targs[i]->AsD3D12RenderTargetView(deviceContext,0, 0);
+		mTargets.m_rt[i]        = targs[i]->AsD3D12RenderTargetView(deviceContext, { targs[i]->GetShaderResourceTypeForRTVAndDSV(), {0, 1, 0, 1} });
 		mTargets.rtFormats[i]   = targs[i]->pixelFormat;
 	}
 	if (depth)
 	{
-		mTargets.m_dt           = depth->AsD3D12DepthStencilView(deviceContext);
+		mTargets.m_dt           = depth->AsD3D12DepthStencilView(deviceContext, { depth->GetShaderResourceTypeForRTVAndDSV(), {0, 1, 0, 1} });
 		mTargets.depthFormat    = depth->pixelFormat;
 	}
 	mTargets.viewport           = { 0,0,targs[0]->GetWidth(),targs[0]->GetLength() };
@@ -2404,12 +2466,12 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 		{
 			auto &t=deviceContext.defaultTargetsAndViewport.textureTargets[i];
 			if(t.texture)
-				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
+				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext, { t.texture->GetShaderResourceTypeForRTVAndDSV(), { t.mip, 1, t.layer, 1 } }));
 		}
 	}
 	auto &d=deviceContext.defaultTargetsAndViewport.depthTarget;
 	if(d.texture)
-		D=d.texture->AsD3D12DepthStencilView(deviceContext);
+		D=d.texture->AsD3D12DepthStencilView(deviceContext, { d.texture->GetShaderResourceTypeForRTVAndDSV(), { d.mip, 1, d.layer, 1 } });
 	else
 		D=(D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt;
 	
@@ -2582,9 +2644,9 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext
 	
 	// NOTE: we resolve from/to mip = 0 & index = 0
 	// Transition the resources:
-	auto srcInitState = src->GetCurrentState(deviceContext,0,0);
+	auto srcInitState = src->GetCurrentState(deviceContext,{0,1,0,1});
 	ResourceTransitionSimple(deviceContext,src->AsD3D12Resource(), srcInitState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, true);
-	auto dstInitState = dst->GetCurrentState(deviceContext,0,0);
+	auto dstInitState = dst->GetCurrentState(deviceContext,{0,1,0,1});
 	ResourceTransitionSimple(deviceContext,dst->AsD3D12Resource(), dstInitState, D3D12_RESOURCE_STATE_RESOLVE_DEST, true);
 	{
 		commandList->ResolveSubresource(dst->AsD3D12Resource(),0,src->AsD3D12Resource(),0,src->dxgi_format);
