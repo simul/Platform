@@ -84,17 +84,9 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	SIMUL_ASSERT(IsValid());
 	
 	crossplatform::TextureView rtv_tv, dsv_tv;
-	bool layered = buffer_texture->NumFaces() > 1;
-	bool ms = buffer_texture->GetSampleCount() > 1;
-	rtv_tv.type = crossplatform::ShaderResourceType::TEXTURE_2D
-		| (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0))
-		| (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
+	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
 	rtv_tv.subresourceRange = { 0, 1, (is_cubemap ? current_face : 0), 1 };
-	layered = buffer_depth_texture ? buffer_depth_texture->NumFaces() > 1: false;
-	ms = buffer_depth_texture ? buffer_depth_texture->GetSampleCount() > 1 : false;
-	dsv_tv.type = crossplatform::ShaderResourceType::TEXTURE_2D
-		| (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0))
-		| (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
+	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
 	dsv_tv.subresourceRange = { 0, 1, 0, 1 };
 
 	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView(rtv_tv);
