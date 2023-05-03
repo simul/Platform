@@ -470,19 +470,11 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 			d = (d + 1) / 2;
 		}
 	}
-	vk::ImageLayout srcLayout = src->GetLayout();
-	vk::ImageLayout dstLayout = dst->GetLayout();
-
 	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
 	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal);
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
 	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
 													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
-
-	// often, the textures might have been in ePreinitialized or eUndefined, which we CANNOT
-	//   transition TO, so we CAN't restore the previous layouts here:
-	//src->SetLayout(deviceContext, srcLayout);
-	//dst->SetLayout(deviceContext, dstLayout);
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const 
@@ -1591,7 +1583,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	mTargets.num = num;
 	for (int i = 0; i < num; i++)
 	{
-		mTargets.m_rt[i] = targs[i]->AsVulkanImageView();
+		mTargets.m_rt[i] = targs[i]->AsVulkanImageView({ targs[i]->GetShaderResourceTypeForRTVAndDSV(), { 0, 1, 0, 1 } });
 		mTargets.rtFormats[i] = targs[i]->GetFormat();
 		mTargets.textureTargets[i].texture = targs[i];
 		mTargets.textureTargets[i].layer = 0;
@@ -1599,7 +1591,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 	}
 	if (depth)
 	{
-		mTargets.m_dt = depth->AsVulkanImageView();
+		mTargets.m_dt = depth->AsVulkanImageView({ depth->GetShaderResourceTypeForRTVAndDSV(), { 0, 1, 0, 1 } });
 		mTargets.depthFormat = depth->pixelFormat;
 		mTargets.depthTarget.texture = depth;
 		mTargets.depthTarget.layer = 0;
@@ -1794,14 +1786,20 @@ void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
 RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 {
 	RenderPassHash hashval=0;
-	if (tv->textureTargets[0].texture)
+	crossplatform::TargetsAndViewport::TextureTarget colour = tv->textureTargets[0];
+	if (colour.texture)
 	{
-		hashval+=(unsigned long long)tv->textureTargets[0].texture->AsVulkanImageView();
-		hashval += (unsigned long long)tv->textureTargets[0].texture->width;	//Deal with resizing the framebuffer!
-		hashval += (unsigned long long)tv->textureTargets[0].texture->length;
+		hashval += (unsigned long long)colour.texture->AsVulkanImageView({ colour.texture->GetShaderResourceTypeForRTVAndDSV(), { colour.mip, 1, colour.layer, 1 } });
+		hashval += (unsigned long long)colour.texture->width;	//Deal with resizing the framebuffer!
+		hashval += (unsigned long long)colour.texture->length;
 	}
-	if(tv->depthTarget.texture)
-		hashval+=(unsigned long long)tv->depthTarget.texture->AsVulkanImageView();
+
+	crossplatform::TargetsAndViewport::TextureTarget depth = tv->depthTarget;
+	if (depth.texture)
+	{
+		hashval += (unsigned long long)depth.texture->AsVulkanImageView({ depth.texture->GetShaderResourceTypeForRTVAndDSV(), { depth.mip, 1, depth.layer, 1 } });
+	}
+	
 	hashval+=tv->num;
 	return hashval;
 }
@@ -1858,10 +1856,14 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		framebufferCreateInfo.height = length;
 		for (int j= 0; j < tv->num; j++)
 		{
-			attachments[j]=*(tv->textureTargets[j].texture->AsVulkanImageView());
+			crossplatform::TargetsAndViewport::TextureTarget colour = tv->textureTargets[j];
+			attachments[j]=*(colour.texture->AsVulkanImageView({ colour.texture->GetShaderResourceTypeForRTVAndDSV(), { colour.mip, 1, colour.layer, 1 } }));
 		}
-		if(tv->depthTarget.texture)
-			attachments[tv->num]=*(tv->depthTarget.texture->AsVulkanImageView());
+		if (tv->depthTarget.texture)
+		{
+			crossplatform::TargetsAndViewport::TextureTarget depth = tv->depthTarget;
+			attachments[tv->num] = *(depth.texture->AsVulkanImageView({ depth.texture->GetShaderResourceTypeForRTVAndDSV(), { depth.mip, 1, depth.layer, 1 } }));
+		}
 		framebufferCreateInfo.pAttachments = attachments;
 		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
 		SetVulkanName(this,(uint64_t*)&mFramebuffers[hashval],"mFramebuffers");

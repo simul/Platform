@@ -131,7 +131,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 		const crossplatform::SubresourceRange& subres = ta.subresource;
 		int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
 		int mip = subres.mipLevelCount == -1 ? -1 : subres.baseMipLevel;
-		t=texture->AsVulkanImageView(ta.resourceType,index,mip);
+		t=texture->AsVulkanImageView({ ta.resourceType, ta.subresource });
 		texture->SetLayout(deviceContext,vk::ImageLayout::eShaderReadOnlyOptimal,index,mip);
 		write.setDstBinding(GenerateTextureSlot(slot));
 		write.setDescriptorCount(1);
@@ -156,7 +156,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 			const crossplatform::SubresourceRange& subres = ta.subresource;
 			int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
 			int mip = subres.baseMipLevel;
-			t=texture->AsVulkanImageView(ta.resourceType,index,mip,true);
+			t=texture->AsVulkanImageView({ ta.resourceType, ta.subresource });
 			texture->SetLayout(deviceContext,vk::ImageLayout::eGeneral,index,mip);
 		}
 		else

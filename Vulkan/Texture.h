@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Texture.h"
+#include <unordered_map>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -64,18 +65,15 @@ namespace simul
 			void			ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void			GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void			setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
-			int			 GetLength() const override;
-			int			 GetWidth() const override;
-			int			 GetDimension() const override;
-			int			 GetSampleCount() const override;
+			int				GetLength() const override;
+			int				GetWidth() const override;
+			int				GetDimension() const override;
+			int				GetSampleCount() const override;
 			bool			IsComputable() const override;
 			bool			HasRenderTargets() const override;
 			void			copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;
-			vk::Image		&AsVulkanImage()
-			{
-				return mImage;
-			}
-			vk::ImageView	*AsVulkanImageView(crossplatform::ShaderResourceType type=crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
+			vk::Image		&AsVulkanImage() { return mImage; }
+			vk::ImageView	*AsVulkanImageView(const crossplatform::TextureView& textureView) override;
 			vk::Framebuffer *GetVulkanFramebuffer(int layer = -1, int mip = -1);
 		//	static vk::ImageView *GetDummyVulkanImageView(crossplatform::ShaderResourceType type);
 			vk::RenderPass &GetRenderPass(crossplatform::DeviceContext &deviceContext);
@@ -87,14 +85,14 @@ namespace simul
 			void			InitFramebuffers(crossplatform::DeviceContext &deviceContext);
 			void			StoreExternalState(crossplatform::ResourceState) override;
 			void			RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
+
+			bool			AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const;
 			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
 			void			SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLayout imageLayout,int layer=-1,int mip=-1);
 			/// Assume the texture will be in this layout due to internal Vulkan shenanigans.
 			void			AssumeLayout(vk::ImageLayout imageLayout);
-			/// Admit we have no idea what the layouts will end up as, so reset them when needed.
-			void			SplitLayouts();
 			/// Get the tracked current layout.
-			vk::ImageLayout GetLayout(int layer=-1, int mip=-1) const;
+			vk::ImageLayout GetLayout(const crossplatform::SubresourceRange& subresourceRange) const;
 		private:
 			void			SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask
 											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
@@ -109,27 +107,33 @@ namespace simul
 			//! Applies default sampling parameters to the texId texture
 			void			SetDefaultSampling(GLuint texId);
 
-			void			InitViewTables(int dim,crossplatform::PixelFormat f,int w,int h,int mipCount, int layers, bool isRenderTarget,bool cubemap,bool isDepthTarget, bool isArray = false);
-			
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;
-			vk::ImageLayout								currentImageLayout{ vk::ImageLayout::eUndefined };
-			std::vector<std::vector<vk::ImageLayout>>	mLayerMipLayouts;
-			vk::ImageView								mMainView;
-			vk::ImageView								mCubeArrayView;
-			vk::ImageView								mFaceArrayView;
+			
+			//! Full resource state
+			vk::ImageLayout								mCurrentImageLayout{ vk::ImageLayout::eUndefined };
+			//! States of the subresources mSubResourcesLayouts[index][mip]
+			std::vector<std::vector<vk::ImageLayout>>	mSubResourcesLayouts;
+
 			vk::RenderPass								mRenderPass;
 
-			std::vector<vk::ImageView>					mLayerViews;
-			std::vector<vk::ImageView>					mMainMipViews;
+			//vk::ImageView								mMainView;
+			//vk::ImageView								mCubeArrayView;
+			//vk::ImageView								mFaceArrayView;
+
+			//std::vector<vk::ImageView>					mLayerViews;
+			//std::vector<vk::ImageView>					mMainMipViews;
 
 			// For cubemaps/cubemap arrays there are two kinds of layer mip view.
 			// we can have a cubemap view that's one layer and mip, but a cubemap.
 			// or we can have a 2d view that's one layer, face and mip.
 			// so we really need two arrays.
-			std::vector<std::vector<vk::ImageView>>		mCubemapLayerMipViews;
-			std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
-			
+			//std::vector<std::vector<vk::ImageView>>		mCubemapLayerMipViews;
+			//std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
+
+			std::unordered_map<uint64_t, vk::ImageView*> colourImageViews;
+			std::unordered_map<uint64_t, vk::ImageView*> depthImageViews;
+
 			std::vector<std::vector<vk::Framebuffer>>	mFramebuffers;
 		
 			vk::MemoryAllocateInfo mem_alloc;
