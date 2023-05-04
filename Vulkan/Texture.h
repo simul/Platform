@@ -86,17 +86,20 @@ namespace simul
 			void			StoreExternalState(crossplatform::ResourceState) override;
 			void			RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
 
+			void			InitViewTable(int l, int m);
+
 			bool			AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const;
 			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
-			void			SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLayout imageLayout,int layer=-1,int mip=-1);
+			void			SetLayout(crossplatform::DeviceContext &deviceContext,vk::ImageLayout imageLayout, const crossplatform::SubresourceRange& subresourceRange);
 			/// Assume the texture will be in this layout due to internal Vulkan shenanigans.
 			void			AssumeLayout(vk::ImageLayout imageLayout);
 			/// Get the tracked current layout.
-			vk::ImageLayout GetLayout(const crossplatform::SubresourceRange& subresourceRange) const;
+			vk::ImageLayout GetLayout(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange);
 		private:
 			void			SetImageLayout(vk::CommandBuffer *commandBuffer,vk::Image image, vk::ImageAspectFlags aspectMask
 											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
-											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages,int m=0,int num_mips=0);
+											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages
+											, const crossplatform::SubresourceRange& subresourceRange = {});
 			void			InvalidateDeviceObjectsExceptLoaded();
 			bool			IsSame(int w, int h, int d, int arr, int , crossplatform::PixelFormat f, int msaa_samples,bool computable,bool rt,bool ds,bool cb=false);
 			
@@ -139,7 +142,6 @@ namespace simul
 			vk::MemoryAllocateInfo mem_alloc;
 			vk::DeviceMemory mMem;
 			std::vector<LoadedTexture>					loadedTextures;
-			bool split_layouts;
 			int	 mNumSamples = 1;
 			vk::ImageLayout mExternalLayout;
 		public:

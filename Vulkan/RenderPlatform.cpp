@@ -67,44 +67,6 @@ const std::map<VkDebugReportObjectTypeEXT, std::string> vulkan::RenderPlatform::
 	{VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT, "VK_DEBUG_REPORT_OBJECT_TYPE_MAX_ENUM_EXT"},
 };
 
-void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const char *name)
-{
-#if 0
-	vk::Instance *instance=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanInstance();
-	vk::Device *device=renderPlatform->AsVulkanDevice();
-	vk::DebugMarkerObjectNameInfoEXT nameInfo=vk::DebugMarkerObjectNameInfoEXT()
-		.setObjectType(vk::DebugReportObjectTypeEXT::eImage)
-		.setObject((uint64_t)ds)
-		.setPObjectName(name);
-	auto inf=nameInfo.operator const VkDebugMarkerObjectNameInfoEXT &();
-	//* It would be nice if this worked reliably on most drivers:
-	PFN_vkDebugMarkerSetObjectNameEXT vkDebugMarkerSetObjectNameEXT	=reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT> (instance->getProcAddr("vkDebugMarkerSetObjectNameEXT"));
-	if(vkDebugMarkerSetObjectNameEXT)
-	{
-		if(ds!=0)
-		{
-			vkDebugMarkerSetObjectNameEXT(device->operator VkDevice(),&inf);
-		}
-	}
-#endif
-
-	// But it doesn't. So instead we just list the objects and names.
-#if 1//def _DEBUG
-	if(platform::core::SimulInternalChecks)
-	{
-		uint64_t *u=(uint64_t*)ds;
-		RenderPlatform::ResourceMap[*u]=name;
-#ifdef _DEBUG
-		std::cout<<"0x"<<std::hex<<*u<<"\t"<<name<<"\n";
-		#endif
-	}
-#endif
-}
-void simul::vulkan::SetVulkanName(crossplatform::RenderPlatform *renderPlatform,void *ds,const std::string &name)
-{
-	SetVulkanName(renderPlatform,ds,name.c_str());
-}
-
 RenderPlatform::RenderPlatform():
 	mDummy2D(nullptr)
 	,mDummy3D(nullptr)
@@ -470,8 +432,8 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 			d = (d + 1) / 2;
 		}
 	}
-	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
-	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal);
+	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal, {});
+	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, {});
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
 	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
 													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
@@ -486,36 +448,44 @@ float RenderPlatform::GetDefaultOutputGamma() const
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
 {
 #if 0
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	vk::DebugUtilsLabelEXT labelInfo;
 	labelInfo.pNext = nullptr;
 	labelInfo.pLabelName = name;
-	labelInfo.color[0]= labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
-	
-	commandBuffer->beginDebugUtilsLabelEXT(&labelInfo);
+	labelInfo.color[0] = labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
+
+	vk::DispatchLoaderDynamic d;
+	d.vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdBeginDebugUtilsLabelEXT");
+	commandBuffer->beginDebugUtilsLabelEXT(&labelInfo, d);
 #endif
 
 #if 0
-	VkDebugMarkerMarkerInfoEXT markerInfo = {};
-	markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
-	// Color to display this region with (if supported by debugger)
-	float color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
-	memcpy(markerInfo.color, &color[0], sizeof(float) * 4);
-	// Name of the region displayed by the debugging application
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	vk::DebugMarkerMarkerInfoEXT markerInfo = {};
+	markerInfo.pNext = nullptr;
 	markerInfo.pMarkerName = name;
-	commandBuffer->debugMarkerBegin(markerInfo);
+	markerInfo.color[0] = markerInfo.color[1] = markerInfo.color[2] = markerInfo.color[3] = 1.0f;
+
+	vk::DispatchLoaderDynamic d;
+	d.vkCmdDebugMarkerBeginEXT = (PFN_vkCmdDebugMarkerBeginEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerBeginEXT");
+	commandBuffer->debugMarkerBeginEXT(markerInfo, d);
 #endif
 }
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 {
 #if 0
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	commandBuffer->endDebugUtilsLabelEXT();
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	vk::DispatchLoaderDynamic d;
+	d.vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdEndDebugUtilsLabelEXT");
+	commandBuffer->endDebugUtilsLabelEXT(d);
 #endif
+
 #if 0
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	commandBuffer->debugMarkerEnd();
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	vk::DispatchLoaderDynamic d;
+	d.vkCmdDebugMarkerEndEXT = (PFN_vkCmdDebugMarkerEndEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerEndEXT");
+	commandBuffer->debugMarkerEndEXT(d);
 #endif
 }
 
@@ -1525,7 +1495,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	vulkan::Texture* t = (vulkan::Texture*)texture;
-	t->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
+	t->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal, { 0, 1, 0, texture->GetArraySize() });
 	vk::BufferImageCopy bic = vk::BufferImageCopy(0, 0, 0,
 		{ vk::ImageAspectFlagBits::eColor, 0, 0, (uint32_t)texture->GetArraySize() },
 		{ 0, 0, 0 },
@@ -1552,14 +1522,14 @@ void RenderPlatform::RestoreColourTextureState(crossplatform::DeviceContext& dev
 	if (!tex)
 		return;
 	vulkan::Texture* t = (vulkan::Texture*)tex;
-	t->SetLayout(deviceContext, vk::ImageLayout::eColorAttachmentOptimal);
+	t->SetLayout(deviceContext, vk::ImageLayout::eColorAttachmentOptimal, {});
 }
 void RenderPlatform::RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {
 	if (!tex)
 		return;
 	vulkan::Texture* t = (vulkan::Texture*)tex;
-	t->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	t->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal, {});
 }
 
 void* RenderPlatform::GetDevice()
@@ -1866,7 +1836,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		}
 		framebufferCreateInfo.pAttachments = attachments;
 		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
-		SetVulkanName(this,(uint64_t*)&mFramebuffers[hashval],"mFramebuffers");
+		SetVulkanName(this,mFramebuffers[hashval],"mFramebuffers");
 	}
 	return hashval;
 }
@@ -2016,7 +1986,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 		.setPDependencies(nullptr);
 
 	auto result = vulkanDevice->createRenderPass(&rp_info, nullptr, &renderPass);
-	SetVulkanName(this,&renderPass,platform::core::QuickFormat("RenderPass"));
+	SetVulkanName(this,renderPass,platform::core::QuickFormat("RenderPass"));
 	delete [] attachments;
 	delete [] colour_reference;
 	SIMUL_ASSERT(result == vk::Result::eSuccess);

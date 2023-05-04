@@ -38,7 +38,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	{
 		auto result = vulkanDevice->createBuffer(&buf_info, nullptr, &mBuffers[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform,&(mBuffers[i]),"Pipeline layout");
+		SetVulkanName(renderPlatform,mBuffers[i],"Pipeline layout");
 
 		vk::MemoryRequirements mem_reqs;
 		vulkanDevice->getBufferMemoryRequirements(mBuffers[i], &mem_reqs);
@@ -52,7 +52,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 
 		result = vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMemory[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform,&(mMemory[i]),"cb memory");
+		SetVulkanName(renderPlatform,mMemory[i],"cb memory");
 		if(addr)
 		{
 			auto pData = vulkanDevice->mapMemory(mMemory[i], 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());

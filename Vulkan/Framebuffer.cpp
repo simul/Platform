@@ -235,8 +235,9 @@ void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &de
 			framebufferCreateInfo.attachmentCount=1+((buffer_depth_texture!=nullptr&&(i&RPType::DEPTH)!=0&&(i&RPType::COLOUR)!=0)?1:0);
 			framebufferCreateInfo.renderPass = mDummyRenderPasses[i];
 			attachments[0]=*(buffer_texture->AsVulkanImageView({ crossplatform::ShaderResourceType::TEXTURE_2D, {0, 1, j, 1} }));
-			SIMUL_ASSERT(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j])==vk::Result::eSuccess);
-			SetVulkanName(renderPlatform,(uint64_t*)&mFramebuffers[i][j],platform::core::QuickFormat(+"%s mFramebuffers %d %d",name.c_str(),i,j));
+			vk::Result res = vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]);
+			SIMUL_ASSERT(res==vk::Result::eSuccess);
+			SetVulkanName(renderPlatform,mFramebuffers[i][j],platform::core::QuickFormat(+"%s mFramebuffers %d %d",name.c_str(),i,j));
 		}
 	}
 	initialized=true;
