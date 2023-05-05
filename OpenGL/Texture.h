@@ -4,6 +4,7 @@
 #include "Platform/CrossPlatform/Texture.h"
 #include "glad/glad.h"
 #include <set>
+#include <unordered_map>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -66,7 +67,7 @@ namespace simul
 			bool            IsComputable() const override;
 			void            copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;
 
-            GLuint          AsOpenGLView(crossplatform::ShaderResourceType type, int layer = -1, int mip = -1, bool rw = false);
+            GLuint          AsOpenGLView(crossplatform::TextureView textureView = {});
             GLuint          GetGLMainView();
 
 			/// This is used to make a handle (created from the GL texture view, or from the view and a sampler state) resident, and also for the texture to keep track of its own
@@ -87,12 +88,9 @@ namespace simul
             GLenum                              mInternalGLFormat;
             GLenum                              mGLFormat;
             GLuint                              mTextureID;
-            GLuint                              mCubeArrayView;
+			GLuint								mCubeArrayView;
+            std::unordered_map<uint64_t, GLuint>mTextureViews;
 
-            std::vector<GLuint>                 mLayerViews;
-            std::vector<GLuint>                 mMainMipViews;
-            std::vector<std::vector<GLuint>>    mLayerMipViews;
-		
             std::vector<std::vector<GLuint>>    mTextureFBOs;
 			std::set<GLuint64>					residentHandles;
 

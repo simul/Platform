@@ -831,13 +831,13 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &,crossplatfor
 	glGenFramebuffers(1, &dstFBO);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, srcFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, src->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D|crossplatform::ShaderResourceType::MS), 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, src->AsOpenGLView({ crossplatform::ShaderResourceType::TEXTURE_2DMS, {} } ), 0);
 	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 		SIMUL_CERR << "FBO is not complete!\n";
 
 	glBindFramebuffer(GL_FRAMEBUFFER, dstFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D), 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst->AsOpenGLView({ crossplatform::ShaderResourceType::TEXTURE_2D, {} }), 0);
 	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 		SIMUL_CERR << "FBO is not complete!\n";

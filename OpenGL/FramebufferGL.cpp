@@ -154,15 +154,15 @@ bool FramebufferGL::CreateBuffers()
 		glBindFramebuffer(GL_FRAMEBUFFER,*f);
 		{
 			GLenum target = numAntialiasingSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
-			crossplatform::ShaderResourceType srt = numAntialiasingSamples == 1 ? crossplatform::ShaderResourceType::TEXTURE_2D : (crossplatform::ShaderResourceType::TEXTURE_2D|crossplatform::ShaderResourceType::MS);
+			crossplatform::ShaderResourceType srt = numAntialiasingSamples == 1 ? crossplatform::ShaderResourceType::TEXTURE_2D : crossplatform::ShaderResourceType::TEXTURE_2DMS;
 
 			auto glcolour = (opengl::Texture*)buffer_texture;
 			auto gldepth = (opengl::Texture*)buffer_depth_texture;
 			
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, glcolour->AsOpenGLView(srt, j, i), 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, glcolour->AsOpenGLView({ srt, {i, 1, j, 1} }), 0);
 			if (depth_format != crossplatform::UNKNOWN)
 			{
-				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, gldepth->AsOpenGLView(srt, j, i), 0);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, gldepth->AsOpenGLView({ srt, {i, 1, j, 1} }), 0);
 			}
 		}
 		f++;

@@ -425,9 +425,8 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 	opengl::Texture* gTex = (opengl::Texture*)tex;
 	if (gTex)
 	{
-		int index = subresource.arrayLayerCount == -1 ? -1 : subresource.baseArrayLayer;
-		int mip = subresource.mipLevel;
-		GLuint imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
+		const crossplatform::SubresourceRange subresourceRange = { subresource.mipLevel, uint32_t(1), subresource.baseArrayLayer, subresource.arrayLayerCount };
+		GLuint imageView = gTex->AsOpenGLView({ name.shaderResourceType, subresourceRange });
 		if (glIsTexture(imageView))
 		{
 			glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLInternalFormat(tex->GetFormat()));
@@ -762,10 +761,14 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 			if (ta.dimensions == 3)
 			{
 				tex = rPlat->GetDummy3D();
+				ta.resourceType = crossplatform::ShaderResourceType::TEXTURE_3D;
+				ta.subresource = {};
 			}
 			else
 			{
 				tex = rPlat->GetDummy2D();
+				ta.resourceType = crossplatform::ShaderResourceType::TEXTURE_2D;
+				ta.subresource = {};
 			}
 		}
 
@@ -782,10 +785,7 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 		}
 
 		// We first bind the texture handle alone (for fetch and get size operations)
-		const crossplatform::SubresourceRange& subres = ta.subresource;
-		int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
-		int mip = subres.mipLevelCount == -1 ? -1 : subres.baseMipLevel;
-		GLuint tview        = tex->AsOpenGLView(ta.resourceType, index, mip, ta.uav);
+		GLuint tview        = tex->AsOpenGLView({ta.resourceType, ta.subresource});
 		GLuint64 thandle    = glGetTextureHandleARB(tview);
 		tex->MakeHandleResident(thandle);
 		for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)
