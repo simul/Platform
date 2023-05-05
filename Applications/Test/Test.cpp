@@ -578,8 +578,8 @@ public:
 		texture->ensureTextureArraySizeAndFormat(renderPlatform, 128, 128, 2, 1, crossplatform::PixelFormat::R_32_FLOAT, true);
 
 		renderPlatform->ApplyPass(deviceContext, lut->GetPass("trigonometric"));
-		renderPlatform->SetUnorderedAccessView(deviceContext, res0, texture, 0);
-		renderPlatform->SetUnorderedAccessView(deviceContext, res1, texture, 1);
+		renderPlatform->SetUnorderedAccessView(deviceContext, res0, texture, { 0, 0, 1 });
+		renderPlatform->SetUnorderedAccessView(deviceContext, res1, texture, { 0, 1, 1 });
 		renderPlatform->DispatchCompute(deviceContext, 1, 133, 1);
 		renderPlatform->SetUnorderedAccessView(deviceContext, res0, nullptr);
 		renderPlatform->SetUnorderedAccessView(deviceContext, res1, nullptr);
