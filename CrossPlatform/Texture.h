@@ -294,7 +294,7 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			virtual nvn::Texture* AsNVNTexture() { return 0; };
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
-			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
+			virtual sce::Gnm::Texture *AsGnmTexture(const crossplatform::TextureView& textureView){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
 			virtual ID3D11Resource *AsD3D11Resource(){return 0;}
 			virtual ID3D12Resource *AsD3D12Resource() { return 0; }
