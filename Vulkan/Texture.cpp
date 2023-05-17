@@ -167,18 +167,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(vulkanDevice)
 	{
-		for(auto i:mFramebuffers)
-		{
-			for(auto j:i)
-			{
-				r->PushToReleaseManager(j);
-			}
-		}
-		mFramebuffers.clear();
-
-		r->PushToReleaseManager(mRenderPass);
-		mRenderPass = nullptr;
-
 		if(!external_texture)
 		{
 			r->PushToReleaseManager(mImage);
@@ -362,20 +350,6 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 	return imageView;
 }
 
-vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
-{
-	if(layer<0&&mip<0)
-	{
-		AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
-	}
-
-	if(layer<0)
-		layer=0;
-	if(mip<0)
-		mip=0;
-	return &(mFramebuffers[layer][mip]);
-}
-
 bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds, bool cubemap)
 {
 	// If we are not created yet...
@@ -540,60 +514,6 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	this->renderTarget=rendertarget;
 	SetVulkanName(renderPlatform,mImage,name.c_str());
 	return true;
-}
-
-vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceContext)
-{
-	if (!mRenderPass)
-	{
-		auto *r = (vulkan::RenderPlatform*)renderPlatform;
-		if(mCurrentImageLayout==vk::ImageLayout::eUndefined||mCurrentImageLayout==vk::ImageLayout::ePreinitialized)
-		{
-			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal,{});
-		}
-		vk::ImageLayout layouts[]={mCurrentImageLayout};
-		vk::ImageLayout end_layouts[]={(mCurrentImageLayout==vk::ImageLayout::eUndefined||mCurrentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:mCurrentImageLayout};
-		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,GetSampleCount(),layouts,end_layouts);
-		AssumeLayout(end_layouts[0]);
-	}
-	return mRenderPass;
-}
-
-void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
-{
-	if(mFramebuffers.size())
-		return;
-	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);
-	
-	vk::ImageView attachments[1]={nullptr};
-
-	vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
-	framebufferCreateInfo.renderPass = vkRenderPass;
-	framebufferCreateInfo.attachmentCount = 1;
-	framebufferCreateInfo.width = width;
-	framebufferCreateInfo.height = length;
-	framebufferCreateInfo.layers = 1;
-	
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	int totalNum	= cubemap ? 6 * arraySize : arraySize;
-	mFramebuffers.resize(totalNum);
-	for (int i = 0; i < totalNum; i++)
-	{
-		mFramebuffers[i].resize(mips);
-		framebufferCreateInfo.width = width;
-		framebufferCreateInfo.height = length;
-		for (int j= 0; j < mips; j++)
-		{
-			attachments[0] = *AsVulkanImageView({ GetShaderResourceTypeForRTVAndDSV(), { j, 1, i, 1 } });
-			framebufferCreateInfo.pAttachments = attachments;
-			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
-	
-			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
-			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
-		}
-	}
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable , bool rendertarget , bool ascubemap )
