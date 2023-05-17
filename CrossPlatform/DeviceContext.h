@@ -172,6 +172,7 @@ namespace simul
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
+			bool IsDepthActive() const;
 			bool last_action_was_compute = false;
 			Viewport viewports[8];
 			const Buffer *indexBuffer=nullptr;
