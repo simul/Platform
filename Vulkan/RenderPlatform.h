@@ -201,6 +201,8 @@ namespace simul
 			vulkan::Texture*						GetDummyTextureCube();
 			//! Returns 2DMS dummy texture 1 white texel at 2x MS
 			vulkan::Texture*						GetDummy2DMS();
+			//! Returns 2D Array dummy texture 1 white texel
+			vulkan::Texture*						GetDummy2DArray();
 			//! Returns 2D dummy texture 1 white texel
 			vulkan::Texture*						GetDummy2D();
 			//! Returns 3D dummy texture 1 white texel
@@ -247,6 +249,7 @@ namespace simul
 			std::set<vk::DescriptorPool>					releaseDescriptorPools;
 
 			vulkan::Texture*								mDummy2D=nullptr;
+			vulkan::Texture*								mDummy2DArray=nullptr;
 			vulkan::Texture*								mDummy2DMS=nullptr;
 			vulkan::Texture*								mDummy3D=nullptr;
 			vulkan::Texture*								mDummyTextureCube=nullptr;

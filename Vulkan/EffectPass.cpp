@@ -413,7 +413,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext,v
 				texture->SetLayout(*graphicsDeviceContext, vk::ImageLayout::eColorAttachmentOptimal, { tt.mip,1,tt.layer,1 });
 			}
 		}
-		if (tv->depthTarget.texture && depthStencilState);
+		if (tv->depthTarget.texture && depthStencilState)
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 			const bool& depthWrite = depthStencilState->desc.depth.write;

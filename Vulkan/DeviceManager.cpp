@@ -23,7 +23,7 @@
 #ifdef NOMINMAX
 #undef NOMINMAX
 #endif
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #ifndef NOMINMAX
 
 #ifndef _countof

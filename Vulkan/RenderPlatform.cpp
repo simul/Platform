@@ -430,7 +430,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal, {});
 	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, {});
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
-	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
+	commandBuffer->copyImage(*src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, *dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
 													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 }
 
@@ -820,6 +820,8 @@ vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceTy
 		return GetDummy2DMS();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_3D)==crossplatform::ShaderResourceType::TEXTURE_3D)
 		return GetDummy3D();
+	if ((t & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
+		return GetDummy2DArray();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_2D)==crossplatform::ShaderResourceType::TEXTURE_2D)
 		return GetDummy2D();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)==crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)
@@ -863,6 +865,17 @@ vulkan::Texture* RenderPlatform::GetDummy2D()
 		mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
 	}
 	return mDummy2D;
+}
+
+vulkan::Texture* RenderPlatform::GetDummy2DArray()
+{
+	if (!mDummy2DArray)
+	{
+		mDummy2DArray = (vulkan::Texture*)CreateTexture("dummy2darray");
+		mDummy2DArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+		mDummy2DArray->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+	}
+	return mDummy2DArray;
 }
 
 vulkan::Texture* RenderPlatform::GetDummy2DMS()
@@ -1540,7 +1553,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 		{ vk::ImageAspectFlagBits::eColor, 0, 0, (uint32_t)texture->GetArraySize() },
 		{ 0, 0, 0 },
 		{ (uint32_t)texture->width, (uint32_t)texture->length, (uint32_t)texture->depth });
-	cmdBuffer->copyImageToBuffer(t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
+	cmdBuffer->copyImageToBuffer(*t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
 	FlushImmediateContext();
 
 	void* ptr = vulkanDevice->mapMemory(imageBufferMemory, 0, memoryAI.allocationSize, vk::MemoryMapFlags(0));
@@ -1820,7 +1833,9 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 
 		vk::Device *vulkanDevice=AsVulkanDevice();
 		SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[hashval]));
-		SetVulkanName(this,mFramebuffers[hashval],"mFramebuffers");
+		const std::string& colourName = tv->textureTargets[0].texture ? tv->textureTargets[0].texture->GetName() : "None";
+		const std::string& depthName = tv->depthTarget.texture ? tv->depthTarget.texture->GetName() : "None";
+		SetVulkanName(this, mFramebuffers[hashval], "Framebuffer: " + colourName + " | " + depthName);
 	}
 	return hashval;
 }

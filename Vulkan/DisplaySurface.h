@@ -34,10 +34,7 @@ namespace simul
             void Resize();
 			crossplatform::DeviceContext deferredContext;
 			crossplatform::PixelFormat pixelFormat;
-#ifdef _MSC_VER
-			HDC             hDC;
-			HGLRC           hRC;
-#endif
+
 			vk::Format		vulkanFormat;
 			vk::ColorSpaceKHR colour_space;
 			vk::SwapchainKHR swapchain;
