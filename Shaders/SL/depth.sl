@@ -107,7 +107,7 @@ void discardUnlessFar(float depth,bool reverseDepth)
 //									0->0.07/(300000*0).
 //									i.e. infinite.
 //									1->0.07/(300000) -> v small value.
-float depthToFadeDistance(float depth,vec2 xy,DepthInterpretationStruct dis,vec4 tanHalf)
+float depthToFadeDistance(float depth,vec2 xy,in DepthInterpretationStruct dis,vec4 tanHalf)
 {
 	if(dis.reverseDepth)
 	{

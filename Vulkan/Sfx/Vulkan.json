@@ -1,7 +1,7 @@
 {
 	"compiler": {
 		"command": "glslangValidator -V -S {stage}",
-		"commandPaths":["$VULKAN_SDK/Bin/"],
+		"commandPaths": [ "$VULKAN_SDK/Bin/" ],
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",
@@ -16,7 +16,7 @@
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
-	"debugOption": "-g -Od",
+	"debugOption": "-g -Od ",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",

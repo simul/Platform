@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <string>
+using std::string_literals::operator""s;
 
 using namespace platform;
 using namespace dx12;
