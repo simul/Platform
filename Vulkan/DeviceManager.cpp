@@ -486,6 +486,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	ExclusivePushBack(required_device_extensions, VK_KHR_MULTIVIEW_EXTENSION_NAME);
 #endif
+	ExclusivePushBack(required_device_extensions, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
 
 	uint32_t device_extension_count = 0;
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, (vk::ExtensionProperties*)nullptr);
@@ -555,6 +556,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		nextPropsAddr = &physicalDeviceMultiviewProperties.pNext;
 	}
 #endif
+	if (IsInVector(device_extension_names, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME))
+	{
+		*nextFeatsAddr = &physicalDeviceShaderFloat16Int8Features;
+		nextFeatsAddr = &physicalDeviceShaderFloat16Int8Features.pNext;
+	}
 
 	//Execute calls into VK_KHR_get_physical_device_properties2
 	if (apiVersion >= VK_API_VERSION_1_1)
@@ -571,6 +577,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		deviceManagerInternal->gpu.getProperties2(&deviceManagerInternal->gpu_props2, d);
 	}
 	
+	SIMUL_ASSERT_WARN(physicalDeviceShaderFloat16Int8Features.shaderFloat16, "Vulkan: No 16 bit float support in shaders.");
+
  	ERRNO_BREAK
 
 	if(use_debug)
