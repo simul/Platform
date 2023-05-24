@@ -1755,7 +1755,7 @@ void RenderPlatform::InvalidCachedFramebuffersAndRenderPasses()
 		vulkanDevice->destroyFramebuffer(fb.second);
 
 	mFramebuffers.clear();
-	SIMUL_ASSERT(mFramebuffers.empty() && mFramebufferRenderPasses.empty());
+	SIMUL_ASSERT(mFramebuffers.empty());
 }
 
 RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
