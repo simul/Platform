@@ -270,7 +270,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	// naming objects.
 	vk::Bool32 nameExtFound=VK_FALSE;
 
-	auto result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
+	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	extension_names.resize(instance_extension_count);
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
