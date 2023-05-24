@@ -219,6 +219,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			}
 		}
 
+		D3D12_FEATURE_DATA_D3D12_OPTIONS d3d12Options;
+		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &d3d12Options, sizeof(d3d12Options));
+		SIMUL_ASSERT_WARN(((d3d12Options.MinPrecisionSupport& D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT) == D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT), "D3D12: No 16 bit precision in shaders.");
+
+		D3D12_FEATURE_DATA_D3D12_OPTIONS4 d3d12Options4;
+		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &d3d12Options4, sizeof(d3d12Options4));
+		SIMUL_ASSERT_WARN(d3d12Options4.Native16BitShaderOpsSupported, "D3D12: No native 16 bit shaders ops.");
+
 		// Store information about the GPU
 		char gpuDesc[128];
 		int gpuMem = (int)(hardwareAdapterDesc.DedicatedVideoMemory / 1024 / 1024);

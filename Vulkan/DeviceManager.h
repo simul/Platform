@@ -72,6 +72,8 @@ namespace simul
 			bool separate_present_queue;
 			uint32_t queue_family_count;
 			std::vector<vk::QueueFamilyProperties> queue_props;
+
+			vk::PhysicalDeviceShaderFloat16Int8Features physicalDeviceShaderFloat16Int8Features;
 		};
 		extern DeviceManager *deviceManager;
 	}
