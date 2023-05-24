@@ -577,7 +577,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		deviceManagerInternal->gpu.getProperties2(&deviceManagerInternal->gpu_props2, d);
 	}
 	
-	SIMUL_ASSERT_WARN(physicalDeviceShaderFloat16Int8Features.shaderFloat16, "Vulkan: No 16 bit float support in shaders.");
+	SIMUL_ASSERT_WARN((bool)physicalDeviceShaderFloat16Int8Features.shaderFloat16, "Vulkan: No 16 bit float support in shaders.");
+	SIMUL_ASSERT_WARN((bool)deviceManagerInternal->gpu_features.shaderInt16, "Vulkan: No 16 bit int/uint support in shaders.");
 
  	ERRNO_BREAK
 
