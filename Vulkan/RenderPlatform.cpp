@@ -442,7 +442,7 @@ float RenderPlatform::GetDefaultOutputGamma() const
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
 {
-#if 0
+#if VK_DEBUG_UTILS
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	vk::DebugUtilsLabelEXT labelInfo;
 	labelInfo.pNext = nullptr;
@@ -469,7 +469,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 {
-#if 0
+#if VK_DEBUG_UTILS
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	vk::DispatchLoaderDynamic d;
 	d.vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdEndDebugUtilsLabelEXT");
@@ -914,7 +914,7 @@ crossplatform::Query* RenderPlatform::CreateQuery(crossplatform::QueryType type)
 	return q;
 }
 
-vk::Filter simul::vulkan::RenderPlatform::toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
+vk::Filter RenderPlatform::toVulkanMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
 	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
 	{
@@ -923,7 +923,7 @@ vk::Filter simul::vulkan::RenderPlatform::toVulkanMinFiltering(crossplatform::Sa
 	return vk::Filter::eNearest;
 }
 
-vk::Filter simul::vulkan::RenderPlatform::toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
+vk::Filter RenderPlatform::toVulkanMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
 	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
 	{
@@ -932,7 +932,7 @@ vk::Filter simul::vulkan::RenderPlatform::toVulkanMaxFiltering(crossplatform::Sa
 	return vk::Filter::eNearest;
 }
 
-vk::SamplerMipmapMode simul::vulkan::RenderPlatform::toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f)
+vk::SamplerMipmapMode RenderPlatform::toVulkanMipmapMode(crossplatform::SamplerStateDesc::Filtering f)
 {
 	if (f == simul::crossplatform::SamplerStateDesc::LINEAR)
 	{

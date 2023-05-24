@@ -13,6 +13,7 @@
 	#pragma warning(disable:4275)
 #endif
 
+#define VK_DEBUG_UTILS 0
 
 #ifdef UNIX
 template <typename T, std::size_t N>
@@ -37,7 +38,7 @@ namespace simul
 			vk::Device* device = renderPlatform->AsVulkanDevice();
 			uint64_t objectHandle = *((uint64_t*)&ds);
 
-		#if 0
+		#if VK_DEBUG_UTILS
 			vk::DispatchLoaderDynamic d;
 			d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
 			if (d.vkSetDebugUtilsObjectNameEXT)
