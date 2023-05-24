@@ -9,6 +9,10 @@ using namespace std;
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& shaderResource)
 {
+#if SIMUL_INTERNAL_CHECKS
+	if (shaderResource.shaderResourceType != simul::crossplatform::ShaderResourceType::RW)
+		SIMUL_INTERNAL_CERR << "ShaderResource Type incorrect" << std::endl;
+#endif
 	if (shaderResource.slot >= 1000)
 		deviceContext.contextState.applyRwStructuredBuffers[shaderResource.slot- 1000] = this;
 	else if (shaderResource.slot >= 0)
@@ -17,6 +21,10 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, const ShaderResource& shaderResource)
 {
+#if SIMUL_INTERNAL_CHECKS
+	if (shaderResource.shaderResourceType == simul::crossplatform::ShaderResourceType::UNKNOWN)
+		SIMUL_INTERNAL_CERR << "ShaderResource Type has not been set" << std::endl;
+#endif
 	if (shaderResource.slot >= 0)
 		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
 }
