@@ -1191,6 +1191,10 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 {
 	if(num>0&&vps!=nullptr)
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
+	//deviceContext.contextState.scissor.x=vps->x;
+	//deviceContext.contextState.scissor.y=vps->y;
+	//deviceContext.contextState.scissor.z=vps->w;
+	//deviceContext.contextState.scissor.w=vps->h;
 	if(deviceContext.GetFrameBufferStack().size())
 	{
 		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();

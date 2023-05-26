@@ -608,6 +608,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 				commandBuffer->bindIndexBuffer(indexBuffer, 0, indexType);
 		}
 
+
+		//Set up clear colours
+		crossplatform::TargetsAndViewport* tv = graphicsDeviceContext->GetCurrentTargetsAndViewport();
+		vk::Extent2D extent = GetTargetAndViewportExtext2D(tv);
 		vk::Framebuffer *framebuffer=GetCurrentVulkanFramebuffer(*graphicsDeviceContext);
 		size_t clearColoursCount = (size_t)mTargets.num + (mTargets.m_dt ? 1 : 0);
 		vk::ClearColorValue colourClear(std::array<float, 4>({ {0.0f, 0.0f, 0.0f, 0.0f} }));
@@ -628,8 +632,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			clearValues[1] = depthClear;
 		}
 
-		crossplatform::Viewport vp=GetViewport(*graphicsDeviceContext,0);
-		vk::Rect2D renderArea(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
+
+		crossplatform::Viewport vp = { 0, 0, static_cast<int>(extent.width), static_cast<int>(extent.height) };
+		if (extent.width * extent.height == 0)
+			vp = GetViewport(*graphicsDeviceContext, 0);
+		vk::Rect2D renderArea(vk::Offset2D(vp.x, vp.y), vk::Extent2D((uint32_t)vp.w, (uint32_t)vp.h));
 		vk::RenderPassBeginInfo renderPassBeginInfo=vk::RenderPassBeginInfo()
 													.setRenderPass(renderPassPipeline.mRenderPass)
 													.setFramebuffer(*framebuffer)
@@ -638,14 +645,20 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 													.setRenderArea(renderArea);
 		commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
 
+		//Set the Viewports and Scissors
 		vk::Viewport vkViewports[1];
 		vk::Rect2D vkScissors[1];
 		for(int i=0;i<1;i++)
 		{
-			crossplatform::Viewport &vp=cs->viewports[i];
-			vkViewports[0].setHeight((float)vp.h).setWidth((float)vp.w).setX((float)vp.x).setY((float)vp.y)
-				.setMaxDepth(1.0f).setMinDepth(0.0f);
-			vkScissors[0].setExtent(vk::Extent2D(vp.w,vp.h)).setOffset(vk::Offset2D(vp.x,vp.y));
+			crossplatform::Viewport& _vp = cs->viewports[i];
+			if (!(_vp.w * _vp.h))
+				_vp = vp;
+			if (!(_vp.w * _vp.h))
+				SIMUL_BREAK("Viewport width and/or height is 0. This is invalid for Vulkan.");
+
+			int4 scissor = cs->scissor;
+			vkViewports[0].setHeight((float)_vp.h).setWidth((float)_vp.w).setX((float)_vp.x).setY((float)_vp.y).setMaxDepth(1.0f).setMinDepth(0.0f);
+			vkScissors[0].setExtent(vk::Extent2D(scissor.z, scissor.w)).setOffset(vk::Offset2D(scissor.x, scissor.y));
 		}
 		commandBuffer->setViewport(0,1,vkViewports);
 		commandBuffer->setScissor(0,1,vkScissors);
@@ -1652,6 +1665,7 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceCo
 	{
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(crossplatform::Viewport));
 	}
+	crossplatform::RenderPlatform::SetViewports(deviceContext, num, vps);
 }
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *)

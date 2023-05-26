@@ -226,7 +226,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #if !defined(_GAMING_XBOX_XBOXONE)
 		D3D12_FEATURE_DATA_D3D12_OPTIONS4 d3d12Options4;
 		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &d3d12Options4, sizeof(d3d12Options4));
-		SIMUL_ASSERT_WARN(d3d12Options4.Native16BitShaderOpsSupported, "D3D12: No native 16 bit shaders ops.");
+		SIMUL_ASSERT_WARN(d3d12Options4.Native16BitShaderOpsSupported!=0, "D3D12: No native 16 bit shaders ops.");
 #endif
 		// Store information about the GPU
 		char gpuDesc[128];

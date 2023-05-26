@@ -21,8 +21,9 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::BufferUsageHint bufferUsageHint)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::BufferUsageHint h)
 {
+	bufferUsageHint = h;
     renderPlatform                          = r;
 	mNumElements		= ct;
 	mElementByteSize	= unit_size;
@@ -158,6 +159,8 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	auto rPlat = (vulkan::RenderPlatform*)deviceContext.renderPlatform;
 
 	// If new frame, update current frame index and reset the apply count
+	if (bufferUsageHint != crossplatform::BufferUsageHint::ONCE)
+	{
 	if (mLastFrame != deviceContext.frame_number || lastBuffer == perFrameBuffers.end())
 	{
 		if(lastBuffer!=perFrameBuffers.end())
@@ -172,6 +175,11 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	}
 	if(lastBuffer==perFrameBuffers.end())
 		SIMUL_BREAK("bad buffer iterator");
+	}
+	else
+	{
+		lastBuffer = perFrameBuffers.begin();
+	}
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
 	uint8_t* pDest	=nullptr;
