@@ -41,7 +41,7 @@
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
 	"compilerMessageRegex": [ "(ERROR|WARNING): ([0-9]+):([\\?0-9]+)[ ]*:[ ]*(.*)", "$2($3): $1: $4" ],
-	"preamble": "#version 450\n#extension GL_ARB_gpu_shader5 : enable\n#extension GL_ARB_bindless_texture : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n",
+	"preamble": "#version 450\n#extension GL_ARB_gpu_shader5 : enable\n#extension GL_ARB_bindless_texture : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable\n",
 	"computePreamble": "#extension GL_ARB_shader_storage_buffer_object : enable\n#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
 	"vertexSemantics": {
 		"SV_VertexId": "gl_VertexID",
