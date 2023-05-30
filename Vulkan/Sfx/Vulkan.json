@@ -51,7 +51,7 @@
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
 	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
-	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n",
+	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable\n",
 	"computePreamble": "#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
 	"vertexSemantics": {
 		"SV_VertexId": "gl_VertexIndex",
@@ -84,7 +84,8 @@
 		"ivec4": "rgba32i",
 		"uint": "r32ui",
 		"float": "r32f",
-		"float4": "rgba32f"
+		"float4": "rgba32f",
+		"f16vec4": "rgba16f"
 	},
 	"toImageType": {
 		"vec4": "image",
@@ -98,7 +99,8 @@
 		"uvec3": "uimage",
 		"uvec4": "uimage",
 		"float": "image",
-		"float4": "image"
+		"float4": "image",
+		"f16vec4": "image"
 	},
 	"toTextureType": {
 		"default": "sampler",
@@ -114,7 +116,8 @@
 		"uvec4": "usampler",
 		"float": "sampler",
 		"float4": "sampler",
-		"half4": "sampler"
+		"half4": "sampler",
+		"f16vec4": "sampler"
 	},
 	"templateTypes": {
 		"Texture2D<uint>": "utexture2D",

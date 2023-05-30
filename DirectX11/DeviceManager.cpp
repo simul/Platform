@@ -551,6 +551,12 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 		}
 		//ReportMessageFilterState();
 	}
+
+	D3D11_FEATURE_DATA_SHADER_MIN_PRECISION_SUPPORT shaderMinPrecisionSupport;
+	d3dDevice->CheckFeatureSupport(D3D11_FEATURE_SHADER_MIN_PRECISION_SUPPORT, &shaderMinPrecisionSupport, sizeof(shaderMinPrecisionSupport));
+	SIMUL_ASSERT_WARN(((shaderMinPrecisionSupport.PixelShaderMinPrecision & D3D11_SHADER_MIN_PRECISION_16_BIT) == D3D11_SHADER_MIN_PRECISION_16_BIT), "D3D11: No 16 bit precision in Pixel shaders.");
+	SIMUL_ASSERT_WARN(((shaderMinPrecisionSupport.AllOtherShaderStagesMinPrecision & D3D11_SHADER_MIN_PRECISION_16_BIT) == D3D11_SHADER_MIN_PRECISION_16_BIT), "D3D11: No 16 bit precision in Non-Pixel shaders.");
+
 	REFCT
 	SIMUL_ASSERT(result==S_OK);
 }
