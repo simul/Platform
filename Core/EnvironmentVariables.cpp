@@ -118,6 +118,14 @@ std::string EnvironmentVariables::GetExecutableDirectory()
 	}
 	else
 		str="";
+#else
+//Linux:
+	char pBuf[512];
+	size_t len = sizeof(pBuf);
+	int bytes = MIN(readlink("/proc/self/exe", pBuf, len), len - 1);
+	if (bytes >= 0)
+		pBuf[bytes] = '\0';
+	str = pBuf;
 #endif
 	return str;
 }

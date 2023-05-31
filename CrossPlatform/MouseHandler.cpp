@@ -11,7 +11,6 @@ MouseHandler::MouseHandler()
 	,CameraDamping(1e5f)
 	,minAlt(0.f)
 	,maxAlt(10000.f)
-	,fov(40.f)
 	,speed_factor(100.f)
 	,y_vertical(false)
 	,aspect(1.f)
@@ -38,7 +37,6 @@ MouseHandler::MouseHandler()
 		std::swap(cameraPos.y,cameraPos.z);
 	}
 	camera->LookInDirection(lookAtPos-cameraPos);
-	camera->SetHorizontalFieldOfViewDegrees(fov);
 }
 
 MouseHandler::~MouseHandler()
@@ -110,6 +108,7 @@ void MouseHandler::mouseWheel(int delta,int modifiers)
 {
 	BaseMouseHandler::mouseWheel(delta,modifiers);
 	static float min_deg=5.0f;
+	float fov = camera->GetHorizontalFieldOfViewDegrees();
 	if(delta<0&&fov<180.f/1.1f)
 		fov*=1.1f;
 	else if(delta>0&&fov>min_deg*1.1f)
@@ -131,7 +130,8 @@ void MouseHandler::setFov(float f)
 		f=0.1f;
 	if(f>100.f)
 		f=100.f;
-	fov=f;
+	
+	camera->SetHorizontalFieldOfViewDegrees(f);
 }
 
 float MouseHandler::GetSpeed() const
@@ -140,8 +140,6 @@ float MouseHandler::GetSpeed() const
 }
 void MouseHandler::Update(float time_step)
 {
-	camera->SetHorizontalFieldOfViewDegrees(fov);
-	camera->SetVerticalFieldOfViewDegrees(0);
 	platform::math::Vector3 offset_camspace;
 	if(cameraMode==CENTRED)
 	{

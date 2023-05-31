@@ -344,7 +344,10 @@ EffectPass *EffectTechnique::GetPass(int i) const
 
 EffectPass* EffectTechnique::GetPass(const char* name) const
 {
-	return passes_by_name.at(name);
+	auto p = passes_by_name.find(name);
+	if(p==passes_by_name.end())
+		return nullptr;
+	return p->second;
 }
 
 bool EffectTechnique::HasPass(int i) const
