@@ -90,12 +90,6 @@ shader vec4 DebugPS(v2f IN) : SV_TARGET
 	return c;
 }
 
-shader vec4 DebugFP16PS(v2f IN) : SV_TARGET
-{
-    vec4 c = uint16_t(2) * f16vec4(IN.colour);
-	return c;
-}
-
 vec4 ShowDepthCube(posTexVertexOutput IN,bool reverseDepth) 
 {
 	vec2 texc		=IN.texCoords.xy;
@@ -697,15 +691,6 @@ technique lines_2d
 		SetVertexShader(CompileShader(vs_5_0,Debug2dVS()));
 		SetPixelShader(debugps_5_0);
     }
-	pass p1
-	{
-		SetRasterizerState(wireframeRasterizer);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(AlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
-		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0, Debug2dVS()));
-		SetPixelShader(CompileShader(ps_5_0, DebugFP16PS()));
-	}
 }
 fxgroup circle
 {
