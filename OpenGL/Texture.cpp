@@ -297,6 +297,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 
 		mTextureID				= gt;
 		external_texture		= true;
+		mInternalGLFormat		= opengl::RenderPlatform::ToGLInternalFormat(f);
 
 		dim			= 2;
 		cubemap		= false;
