@@ -1516,6 +1516,10 @@ assignment_exp : conditional_exp
 						{
 							find_and_replace(s,"{cast}","vec4");
 						}
+						else if (toStoreDec->second->structureType == "f16vec4")
+						{
+							find_and_replace(s, "{cast}", "f16vec4");
+						}
 						else
 						{
 							// God almighty.

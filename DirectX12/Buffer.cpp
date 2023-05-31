@@ -3,6 +3,7 @@
 #include "RenderPlatform.h"
 #include <iomanip>
 
+using std::string_literals::operator""s;
 using namespace platform;
 using namespace dx12;
 
@@ -48,8 +49,9 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		SIMUL_PPV_ARGS(&d3d12Buffer)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(d3d12Buffer, mBufferSize)
-	SetD3DName(d3d12Buffer,(name+" VertexUpload").c_str());
+	std::string n = (name + " VertexUpload");
+	SetD3DName(d3d12Buffer,n.c_str());
+	SIMUL_GPU_TRACK_MEMORY_NAMED(d3d12Buffer, mBufferSize, n.c_str())
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -60,7 +62,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 		SIMUL_PPV_ARGS(&mIntermediateHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
+	SIMUL_GPU_TRACK_MEMORY_NAMED(mIntermediateHeap, mBufferSize, n.c_str())
 	mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
 
 	upload_data=data;
@@ -92,7 +94,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		SIMUL_PPV_ARGS(&d3d12Buffer)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(d3d12Buffer, mBufferSize)
+	SIMUL_GPU_TRACK_MEMORY_NAMED(d3d12Buffer, mBufferSize, (name= " IndexUpload").c_str())
 	d3d12Buffer->SetName(L"IndexUpload");
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
@@ -104,7 +106,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 		SIMUL_PPV_ARGS(&mIntermediateHeap)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
+	SIMUL_GPU_TRACK_MEMORY_NAMED(mIntermediateHeap, mBufferSize, (name = " IntermediateIndexBuffer").c_str())
 	mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
 	DXGI_FORMAT indexFormat;
 	if (index_size_bytes == 4)

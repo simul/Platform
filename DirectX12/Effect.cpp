@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <string>
+using std::string_literals::operator""s;
 
 using namespace platform;
 using namespace dx12;
@@ -127,7 +128,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 	}
 	else
 	{
-		cmdList->SetPipelineState(GetGraphicsPso(*deviceContext.AsGraphicsDeviceContext()));
+		auto *pso=GetGraphicsPso(*deviceContext.AsGraphicsDeviceContext());
+		if(pso)
+			cmdList->SetPipelineState(pso);
+		else
+		{
+			SIMUL_INTERNAL_CERR<<"No pso found.\n";
+		}
 	}
 }
 

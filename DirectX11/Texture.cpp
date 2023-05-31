@@ -1172,7 +1172,6 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			SAFE_RELEASE(depthStencilView);
 			V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 		}
-		SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	}
 	this->depthStencil = depthstencil;
 	mips=m;

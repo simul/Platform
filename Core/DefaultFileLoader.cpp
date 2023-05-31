@@ -197,6 +197,8 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 		((char*)pointer)[bytes]=0;
 	
 	fclose(fp);
+	if(recordFilesLoaded)
+		filesLoaded.insert(filename_utf8);
 }
 
 static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int min,int sec)

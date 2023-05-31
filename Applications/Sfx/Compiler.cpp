@@ -424,11 +424,13 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	for(const auto &p:sfxConfig.compilerPaths)
 	{
 		std::string t=p+"/"s+sfxConfig.compiler;
+		std::cout << "Checking " << t.c_str() << std::endl;
 		if(fs::exists(t))
 		{
 			usePath=p;
 		}
 	}
+	std::cout<< "Using path " << usePath.c_str() << std::endl;
 	wstring command;
 	
 	string stageName = "NO_STAGES_IN_JSON";
