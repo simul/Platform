@@ -196,11 +196,9 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 	targetsAndViewport.viewport.w       = Width;
 	targetsAndViewport.viewport.h       = Height;
 
-
-	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
-
 	// Cache it:
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
+	deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
 }
 #include "Platform/Core/StringFunctions.h"
 void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext)
