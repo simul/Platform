@@ -421,9 +421,20 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	if (sfxConfig.compiler.empty())
 		return L"";
 	std::string usePath="";
+	std::string compiler_exe = sfxConfig.compiler;
+	size_t space_pos=compiler_exe.find(" ");
+	if(space_pos<compiler_exe.size())
+	{
+		compiler_exe=compiler_exe.substr(0,space_pos);
+	}
+	size_t dot_pos=compiler_exe.find(".");
+	if(dot_pos>= compiler_exe.size())
+	{
+		compiler_exe+=".exe";
+	}
 	for(const auto &p:sfxConfig.compilerPaths)
 	{
-		std::string t=p+"/"s+sfxConfig.compiler;
+		std::string t=p+"/"s+compiler_exe;
 		std::cout << "Checking " << t.c_str() << std::endl;
 		if(fs::exists(t))
 		{
@@ -484,7 +495,7 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
 	}
 	string filename_root=WStringToString(outputFile);
-	size_t dot_pos=filename_root.find_last_of(".");
+	dot_pos=filename_root.find_last_of(".");
 	if(dot_pos<filename_root.size())
 		filename_root=filename_root.substr(0,dot_pos);
 	if(sfxOptions.debugInfo)
@@ -840,7 +851,7 @@ int Compile(ShaderInstance *shader
 	else
 		shader->sbFilenames[0] = sbf;
 	// Get the compile command
-	wstring psslc = BuildCompileCommand
+	wstring compile_command = BuildCompileCommand
 	(
 		shader,
 		sfxConfig,
@@ -854,7 +865,7 @@ int Compile(ShaderInstance *shader
 	ostringstream log;
 	// If no compiler provided, we can return now (perhaps we are only interested in
 	// the shader source)
-	if (psslc.empty()||sfxConfig.compiler.empty())
+	if (compile_command.empty())
 	{
 		if(sfxOptions.verbose)
 			std::cout<<WStringToUtf8(tempFilename).c_str()<<"\n";
@@ -886,12 +897,12 @@ int Compile(ShaderInstance *shader
 		return true;
 	}
 	if(sfxOptions.verbose)
-		std::cout<<WStringToUtf8(psslc).c_str()<<std::endl;
+		std::cout<<WStringToUtf8(compile_command).c_str()<<std::endl;
 
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);
 
-	bool res=RunDOSCommand(psslc.c_str(),wd,log,sfxConfig,cc);
+	bool res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
 	if (res)
 	{
 		bool write_log=false;

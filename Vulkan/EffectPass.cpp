@@ -228,7 +228,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		crossplatform::PlatformStructuredBuffer* sb = cs->applyStructuredBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_CERR << "No structured buffer found\n";
+			SIMUL_CERR << "No structured buffer found for slot "<<slot<<" in pass "<< name.c_str()<<"\n";
 		}
 		else
 		{

@@ -301,7 +301,6 @@ void platform::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,
 
 const float *platform::crossplatform::GetCameraPosVector(const float *v)
 {
-	
 	platform::math::Matrix4x4 view(v);
 	static float cam_pos[4],view_dir[4];
 	GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir);
