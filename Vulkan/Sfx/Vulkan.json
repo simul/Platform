@@ -1,6 +1,7 @@
 {
 	"compiler": {
-		"command": "$VULKAN_SDK/Bin/glslangValidator -V -S {stage}",
+		"command": "glslangValidator -V -S {stage}",
+		"commandPaths": [ "$VULKAN_SDK/Bin/", "$VULKAN_SDK_DIR/Bin/", "C:/VulkanSDK/1.3.250.0/Bin", "C:/VulkanSDK/1.2.162.1/Bin" ],
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",
@@ -54,10 +55,14 @@
 		"SV_VertexId": "gl_VertexIndex",
 		"SV_VertexID": "gl_VertexIndex",
 		"SV_InstanceId": "gl_InstanceIndex",
-		"SV_POSITION": "gl_Position"
+		"SV_POSITION": "gl_Position",
+		"SV_ViewID": "gl_ViewIndex",
+		"SV_ViewId": "gl_ViewIndex"
 	},
 	"pixelSemantics": {
-		"SV_IsFrontFace": "gl_FrontFacing"
+		"SV_IsFrontFace": "gl_FrontFacing",
+		"SV_ViewID": "gl_ViewIndex",
+		"SV_ViewId": "gl_ViewIndex"
 	},
 	"vertexOutputAssignment": {
 		"SV_POSITION": "gl_Position"
@@ -84,8 +89,13 @@
 		"vec4": "image",
 		"char4": "image",
 		"uchar4": "image",
+		"ivec2": "iimage",
+		"ivec3": "iimage",
 		"ivec4": "iimage",
 		"uint": "uimage",
+		"uvec2": "uimage",
+		"uvec3": "uimage",
+		"uvec4": "uimage",
 		"float": "image",
 		"float4": "image",
 		"f16vec4": "image"
@@ -95,15 +105,27 @@
 		"vec4": "sampler",
 		"char4": "sampler",
 		"uchar4": "sampler",
+		"ivec2": "isampler",
+		"ivec3": "isampler",
 		"ivec4": "isampler",
 		"uint": "usampler",
+		"uvec2": "usampler",
+		"uvec3": "usampler",
+		"uvec4": "usampler",
 		"float": "sampler",
 		"float4": "sampler",
 		"half4": "sampler",
 		"f16vec4": "sampler"
 	},
 	"templateTypes": {
-		"Texture2D<uint>": "utexture2D"
+		"Texture2D<uint>": "utexture2D",
+		"Texture2D<uvec2>": "utexture2D",
+		"Texture2D<uvec3>": "utexture2D",
+		"Texture2D<uvec4>": "utexture2D",
+		"Texture2D<int>": "itexture2D",
+		"Texture2D<ivec2>": "itexture2D",
+		"Texture2D<ivec3>": "itexture2D",
+		"Texture2D<ivec4>": "itexture2D"
 	},
 	"computeLayout": "layout(local_size_x=$1,local_size_y=$2,local_size_z=$3) in;",
 	"structuredBufferDeclaration": "layout(std430,binding={slot})buffer {name}\n{\n\t{content} \n};",
@@ -135,6 +157,10 @@
 		"SV_GroupThreadID": "S_GROUP_THREAD_ID",
 		"SV_GroupID": "S_GROUP_ID",
 		"SV_Target": "S_TARGET_OUTPUT",
+		"SV_ViewID": "gl_ViewIndex",
+		"SV_ViewId": "gl_ViewIndex",
+		"SV_RenderTargetArrayIndex": "gl_Layer",
+		"SV_ViewportArrayIndex": "gl_ViewportIndex",
 		"ivec1": "int",
 		"int2": "ivec2",
 		"int3": "ivec3",
