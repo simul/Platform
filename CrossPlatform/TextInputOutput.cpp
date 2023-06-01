@@ -227,9 +227,13 @@ void TextFileInput::Load(const char *filename_utf8)
 		unsigned int bytes=0;
 		fileLoader->AcquireFileContents(pointer,bytes,filename_utf8,true);
 		good=(pointer!=nullptr);
-		if(pointer)
-			text=(const char *)pointer;
-		fileLoader->ReleaseFileContents(pointer);
+		if (pointer)
+		{
+			text = (const char*)pointer;
+			fileLoader->ReleaseFileContents(pointer);
+		}
+		else
+			return;
 	}
 	else
 	{
