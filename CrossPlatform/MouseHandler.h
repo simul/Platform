@@ -33,7 +33,7 @@ namespace platform
 			void	mouseWheel(int delta,int modifiers);
 			void	KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown);
 
-			float	getFov() const{return fov;}
+			float	getFov() const;
 			void	setFov(float f) ;
 			void	Update(float time_step);
 			void	SetCameraDamping(float d)
@@ -52,7 +52,6 @@ namespace platform
 			float centre[3];
 			float CameraDamping;
 			float minAlt,maxAlt;
-			float fov;
 			float speed_factor;
 			bool y_vertical;
 			float aspect;

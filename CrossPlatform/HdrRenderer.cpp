@@ -15,22 +15,13 @@ using namespace platform;
 using namespace crossplatform;
 
 HdrRenderer::HdrRenderer()
-	:Glow(false)
-	,renderPlatform(NULL)
-	,blurTexture(NULL)
+	:renderPlatform(NULL)
 	,Width(0)
 	,Height(0)
 	,hdr_effect(NULL)
 	,exposureGammaTechnique(NULL)
-	,glowExposureGammaTechnique(NULL)
-	,glowTechnique(NULL)
 	,m_pGaussianEffect(NULL)
 {
-	for(int i=0;i<4;i++)
-	{
-		brightpassTextures[i]=NULL;
-		glowTextures[i]=NULL;
-	}
 }
 
 HdrRenderer::~HdrRenderer()
@@ -46,27 +37,6 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		return;
 	Width=w;
 	Height=h;
-	if(Width>0&&Height>0)
-	{
-		int H=Height;
-		int W=Width;
-		for(int i=0;i<4;i++)
-		{
-			W/=2;
-			H/=2;
-			if (W*H <= 0)
-				continue;
-			brightpassTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,1,crossplatform::RGBA_16_FLOAT,false,true);
-			glowTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W, H, 1,crossplatform::R_32_UINT,true,false);
-		}
-		H=Height/35;
-		W=Width/35;
-		if(blurTexture&&W*H > 0)
-		{
-			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W, H, 1,crossplatform::RGBA_16_FLOAT,false,true);
-		}
-	}
-	//RecompileShaders();
 }
 
 void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -74,15 +44,6 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	renderPlatform=r;
 	if(!renderPlatform)
 		return;
-	for(int i=0;i<4;i++)
-	{
-		SAFE_DELETE(brightpassTextures[i]);
-		brightpassTextures[i]=renderPlatform->CreateTexture("brightpass");
-		SAFE_DELETE(glowTextures[i]);
-		glowTextures[i]=renderPlatform->CreateTexture("glow");
-	}
-	SAFE_DELETE(blurTexture);
-	blurTexture		=renderPlatform->CreateTexture("blur");
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	imageConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
@@ -137,11 +98,8 @@ void HdrRenderer::RecompileShaders()
 	hdr_effect					=renderPlatform->CreateEffect("hdr");
 
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
-	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
 	
 	exposureGammaMainPass		=exposureGammaTechnique->GetPass("main");
-	exposureGammaMSAAPass		=glowExposureGammaTechnique->GetPass("msaa");
-	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
 	m_pGaussianEffect			=NULL;//renderPlatform->CreateEffect("gaussian",defs);
@@ -151,21 +109,10 @@ void HdrRenderer::RecompileShaders()
 	hdr_effect_imageTextureMS=hdr_effect->GetShaderResource("imageTextureMS");
 }
 
-crossplatform::Texture *HdrRenderer::GetBlurTexture()
-{
-	return blurTexture;
-}
-
 void HdrRenderer::InvalidateDeviceObjects()
 {
 	hdrConstants.InvalidateDeviceObjects();
 	imageConstants.InvalidateDeviceObjects();
-	for(int i=0;i<4;i++)
-	{
-		SAFE_DELETE(brightpassTextures[i]);
-		SAFE_DELETE(glowTextures[i]);
-	}
-	SAFE_DELETE(blurTexture);
 	if (renderPlatform)
 	{
 		renderPlatform->Destroy(hdr_effect);
@@ -188,47 +135,12 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	
-	bool doGlow = true;		// nachoooooooo
-	bool doBlur=false;
-	if(Glow && doGlow)
-	{
-		RenderGlowTexture(deviceContext,texture);
-		tech=glowExposureGammaTechnique;
-		hdr_effect->SetTexture(deviceContext,"glowTexture",glowTextures[0]);
-	}
 	bool msaa=texture?(texture->GetSampleCount()>1):false;
 	if(msaa)
 		hdr_effect->SetTexture(deviceContext,hdr_effect_imageTextureMS	,texture);
 	else
 		hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture	,texture);
-	if(blurTexture->IsValid() && doBlur)
-	{	
-		crossplatform::Texture *src=texture;
-		SIMUL_COMBINED_PROFILE_START(deviceContext,"blur")
-		crossplatform::Texture *dst=blurTexture;
-		float htexel=1.0f/blurTexture->width;
-		float vtexel=1.0f/blurTexture->length;
-		//static int num_steps =2;
-		static int randomSeed=0;
-		{
-			static float kernelSize=3.0f;
-			static float alpha	=0.05f;
-			hdrConstants.fullResDims		=uint2(texture->width,texture->length);
-			hdrConstants.offset				=kernelSize*vec2(htexel,vtexel);
-			hdrConstants.randomSeed			=randomSeed++;
-			randomSeed=randomSeed%100;
-			hdrConstants.alpha				=alpha;
-			hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
-			hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture,src);
-			dst->activateRenderTarget(deviceContext);
-			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName(msaa?"blur_msaa":"blur"),0);
-			renderPlatform->DrawQuad(deviceContext);
-			hdr_effect->Unapply(deviceContext);
-			dst->deactivateRenderTarget(deviceContext);
-			std::swap(src,dst);
-		}
-		SIMUL_COMBINED_PROFILE_END(deviceContext)
-	}
+	
 	renderPlatform->ApplyPass(deviceContext,msaa?exposureGammaMSAAPass:exposureGammaMainPass);
 	renderPlatform->DrawQuad(deviceContext);
 
@@ -292,14 +204,7 @@ hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
 	hdrConstants.offset				=vec2(offsetX,0.0f);
 	hdr_effect->SetConstantBuffer(deviceContext,&	hdrConstants);
-	if(Glow)
-	{
-		RenderGlowTexture(deviceContext,texture);
-		hdr_effect->SetTexture(deviceContext,"glowTexture",glowTextures[0]);
-		hdr_effect->Apply(deviceContext,warpGlowExposureGamma,0);
-	}
-	else
-		hdr_effect->Apply(deviceContext,warpExposureGamma,0);
+	hdr_effect->Apply(deviceContext,warpExposureGamma,0);
 	renderPlatform->DrawQuad(deviceContext);
 	
 	hdr_effect->SetTexture(deviceContext,"imageTexture",NULL);
@@ -318,117 +223,6 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 	return box_width;
 }
 
-void HdrRenderer::RenderGlowTexture(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture)
-{
-	if(!m_pGaussianEffect)
-		return;
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"RenderGlowTexture")
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"downscale")
-		
-	// Render to the low-res glow.
-	if(glowTechnique)
-	{
-		hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
-		hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
-		hdrConstants.offset				=vec2(1.f/Width,1.f/Height);
-		hdr_effect->SetConstantBuffer(deviceContext,&		hdrConstants);
-		hdr_effect->Apply(deviceContext,glowTechnique,(0));
-		brightpassTextures[0]->activateRenderTarget(deviceContext);
-		renderPlatform->DrawQuad(deviceContext);
-		brightpassTextures[0]->deactivateRenderTarget(deviceContext);
-		hdr_effect->Unapply(deviceContext);
-		
-		for(int i=1;i<4;i++)
-		{
-			hdr_effect->SetTexture(deviceContext,"imageTexture",brightpassTextures[i-1]);
-			brightpassTextures[i]->activateRenderTarget(deviceContext);
-			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("downscale2"),0);
-			renderPlatform->DrawQuad(deviceContext);
-			hdr_effect->Unapply(deviceContext);
-			brightpassTextures[i]->deactivateRenderTarget(deviceContext);
-		}
-	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	for(int i=0;i<4;i++)
-	{
-		char c[]={'0',0};
-		c[0]='0'+(char)i;
-		SIMUL_COMBINED_PROFILE_START(deviceContext,c)
-		DoGaussian(deviceContext,brightpassTextures[i],glowTextures[i]);
-		SIMUL_COMBINED_PROFILE_END(deviceContext)
-	}
-
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-}
-void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture)
-{
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"H")
-	static int g_NumApproxPasses	=3;
-	//static int	g_MaxApproxPasses	=8;
-	static float g_FilterRadius		=6;
-	float box_width					= CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
-	float half_box_width			= box_width * 0.5f;
-	float frac_half_box_width		= (half_box_width + 0.5f) - (int)(half_box_width + 0.5f);
-	float inv_frac_half_box_width	= 1.0f - frac_half_box_width;
-	float rcp_box_width				= 1.0f / box_width;
-	// Step 1. Vertical passes: Each thread group handles a column in the image
-	// Input texture
-	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",brightpassTextures[0]);
-	// Output texture
-	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",glowTextures[0]);
-	imageConstants.imageSize					=uint2(brightpassTextures[0]->width,brightpassTextures[0]->length);
-	// Each thread is a chunk of threadsPerGroup(=128) texels, so to cover all of them we divide by threadsPerGroup
-	imageConstants.texelsPerThread				=(brightpassTextures[0]->length + threadsPerGroup - 1)/threadsPerGroup;
-	imageConstants.g_NumApproxPasses			=g_NumApproxPasses-1;
-	imageConstants.g_HalfBoxFilterWidth			=half_box_width;
-	imageConstants.g_FracHalfBoxFilterWidth		=frac_half_box_width;
-	imageConstants.g_InvFracHalfBoxFilterWidth	=inv_frac_half_box_width;
-	imageConstants.g_RcpBoxFilterWidth			=rcp_box_width;
-	m_pGaussianEffect->SetConstantBuffer(deviceContext,&imageConstants);
-	// Select pass
-	gaussianColTechnique						=m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
-	m_pGaussianEffect->Apply(deviceContext,gaussianColTechnique,0);
-	// We perform the Gaussian blur for each column. Each group is a column, and each thread 
-	renderPlatform->DispatchCompute(deviceContext,brightpassTextures[0]->width,1,1);
-	m_pGaussianEffect->UnbindTextures(deviceContext);
-	
-	m_pGaussianEffect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"W")
-	// Step 2. Horizontal passes: Each thread group handles a row in the image
-	// Input texture
-	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",brightpassTextures[0]);
-	// Output texture
-	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",glowTextures[0]);
-	imageConstants.texelsPerThread				=(brightpassTextures[0]->width + threadsPerGroup - 1)/threadsPerGroup;
-	m_pGaussianEffect->SetConstantBuffer(deviceContext,&	imageConstants);
-	// Select pass
-	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
-	m_pGaussianEffect->Apply(deviceContext,gaussianRowTechnique,0);
-	renderPlatform->DispatchCompute(deviceContext,brightpassTextures[0]->length,1,1);
-	m_pGaussianEffect->UnbindTextures(deviceContext);
-	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",NULL);
-	m_pGaussianEffect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-}
-
 void HdrRenderer::RenderDebug(GraphicsDeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	int w=width/4-8;
-	int h=(int)(w*((float)brightpassTextures[0]->length/(float)brightpassTextures[0]->width));
-	int x=x0;
-	int y=y0;
-	int y1=y+h+8;
-	int y2 = y + 2 * (h + 8);
-	renderPlatform->DrawTexture(deviceContext, x, y, w, h, blurTexture);
-	x = x0;
-	for(int i=0;i<4;i++)
-	{
-		renderPlatform->DrawTexture(deviceContext,x,y2,w,h,brightpassTextures[i]);
-		renderPlatform->DrawTexture(deviceContext,x,y1,w,h,glowTextures[i]);
-		x+=w;
-		//w/=2;
-		//h/=2;
-	}
 }

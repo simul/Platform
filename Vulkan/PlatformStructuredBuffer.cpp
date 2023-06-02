@@ -21,8 +21,9 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::BufferUsageHint bufferUsageHint)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::BufferUsageHint h)
 {
+	bufferUsageHint = h;
     renderPlatform                          = r;
 	mNumElements		= ct;
 	mElementByteSize	= unit_size;
@@ -160,20 +161,27 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	auto rPlat = (vulkan::RenderPlatform*)deviceContext.renderPlatform;
 
 	// If new frame, update current frame index and reset the apply count
-	if (mLastFrame != renderPlatform->GetFrameNumber() || lastBuffer == perFrameBuffers.end())
+	if (bufferUsageHint != crossplatform::BufferUsageHint::ONCE)
 	{
-		if(lastBuffer!=perFrameBuffers.end())
-			lastBuffer++;
-		if(lastBuffer==perFrameBuffers.end())
-			lastBuffer=firstBuffer;
-		if(lastBuffer==perFrameBuffers.end())
+		if (mLastFrame != renderPlatform->GetFrameNumber() || lastBuffer == perFrameBuffers.end())
+		{
+			if (lastBuffer != perFrameBuffers.end())
+				lastBuffer++;
+			if (lastBuffer == perFrameBuffers.end())
+				lastBuffer = firstBuffer;
+			if (lastBuffer == perFrameBuffers.end())
+				SIMUL_BREAK("bad buffer iterator");
+			mLastFrame = renderPlatform->GetFrameNumber();
+			mCurApplyCount = 0;
+			mFrameIndex = (mFrameIndex + 1) % kNumBuffers;
+		}
+		if (lastBuffer == perFrameBuffers.end())
 			SIMUL_BREAK("bad buffer iterator");
-		mLastFrame = renderPlatform->GetFrameNumber();
-		mCurApplyCount = 0;
-		mFrameIndex = (mFrameIndex + 1) % kNumBuffers;
 	}
-	if(lastBuffer==perFrameBuffers.end())
-		SIMUL_BREAK("bad buffer iterator");
+	else
+	{
+		lastBuffer = perFrameBuffers.begin();
+	}
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
 	uint8_t* pDest	=nullptr;

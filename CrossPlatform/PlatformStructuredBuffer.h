@@ -44,7 +44,7 @@ namespace platform
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
 			std::string name;
-			BufferUsageHint bufferUsageHint;
+			BufferUsageHint bufferUsageHint= BufferUsageHint::MANY_PER_FRAME;
 		public:
 			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(BufferUsageHint::MANY_PER_FRAME) {}
 			virtual ~PlatformStructuredBuffer() = default;
