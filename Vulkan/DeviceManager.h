@@ -88,6 +88,8 @@ namespace platform
 			vk::PhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures;
 			vk::PhysicalDeviceMultiviewProperties physicalDeviceMultiviewProperties;
 
+			vk::PhysicalDeviceShaderFloat16Int8Features physicalDeviceShaderFloat16Int8Features;
+
 			friend platform::vulkan::RenderPlatform;
 		};
 		extern DeviceManager *deviceManager;

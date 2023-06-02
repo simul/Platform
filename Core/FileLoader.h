@@ -1,6 +1,7 @@
 #ifndef SIMUL_BASE_FILEINTERFACE_H
 #define SIMUL_BASE_FILEINTERFACE_H
 #include <vector>
+#include <set>
 #include <string>
 #include "Platform/Core/Export.h"
 namespace platform
@@ -45,14 +46,26 @@ namespace platform
 			// If more than one exists, the newest file is used.
 
 			int FindIndexInPathStack(const char *filename_utf8,const std::vector<std::string> &path_stack_utf8) const;
-
-
-
+			//! Record all the files we load - useful for installers etc.
+			void SetRecordFilesLoaded(bool b)
+			{
+				recordFilesLoaded=b;
+			}
+			bool GetRecordFilesLoaded() const
+			{
+				return recordFilesLoaded;
+			}
+			const std::set<std::string> &GetFilesLoaded() const
+			{
+				return filesLoaded;
+			}
 		protected:
 			//! Find the named file relative to one of a given list of paths. Searches from the top of the stack.
 			std::string FindFileInPathStack(const char *filename_utf8,const char * const* path_stack_utf8) const;
 			//! Find the named file relative to one of a given list of paths, and return the index in the list, -1 if the file was found on the general search path, or path_stack_utf8.size() if it was not found. Searches from the top of the stack.
 			int FindIndexInPathStack(const char *filename_utf8,const char * const* path_stack_utf8) const;
+			bool recordFilesLoaded=false;
+			std::set<std::string> filesLoaded;
 		};
 	}
 }

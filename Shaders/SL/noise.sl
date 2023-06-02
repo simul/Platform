@@ -3,6 +3,56 @@
 #define PLATFORM_CROSSPLATFORM_NOISE_SL
 
 
+// This is the PCG hash by Jarzynski and Olano (https://jcgt.org/published/0009/03/02/) - see https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+uint pcg_hash(uint seed)
+{
+	uint state = seed * 747796405u + 2891336453u;
+	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
+}
+
+float PcgRand(uint seed)
+{
+	return (pcg_hash(seed)) % uint(0xFFFFFFF) / float(0xFFFFFFF);
+}
+
+vec2 PcgRand2(uint seed)
+{
+	vec2 r;
+	uint hash0 = pcg_hash(seed);
+	uint hash1 = pcg_hash(seed^hash0);
+	r.x=float(hash0 % uint(0xFFFFFFF));
+	r.y=float(hash1 % uint(0xFFFFFFF));
+	r /= float(0xFFFFFFF);
+	return r;
+}
+
+vec3 PcgRand3(uint seed)
+{
+	vec3 r;
+	uint hash0 = pcg_hash(seed);
+	uint hash1 = pcg_hash(seed ^ hash0);
+	uint hash2 = pcg_hash(seed ^ hash1);
+	r.x = float(hash0% uint(0xFFFFFFF));
+	r.y = float(hash1% uint(0xFFFFFFF));
+	r.z = float(hash2% uint(0xFFFFFFF));
+	r/=float(0xFFFFFFF);
+	return r;
+}
+
+vec4 PcgRand4(uint seed)
+{
+	uint4 hash;
+	hash.x	=pcg_hash(seed);
+	hash.y	=pcg_hash(seed ^ hash.x);
+	hash.z	=pcg_hash(seed ^ hash.y);
+	hash.w	=pcg_hash(seed ^ hash.z);
+	uint f	=uint(0xFFFFFFF);
+	hash	=hash % f;
+	vec4 r = vec4(hash);
+	r /= float(0xFFFFFFF);
+	return r;
+}
 
 float rand(float c)
 {
@@ -335,55 +385,6 @@ vec3 CombinedTauswortheSphericalRandom(inout RandomResult result)
 	v.y				=r*cos(az)*cos_el;
 	v.z				=r*sine_el;
 	return v;
-}
-
-vec4 TauswortheVirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool pfilter)
-{
-	vec4 result		=vec4(0,0,0,0);
-	vec3 pos		=frac(texCoords)*gridsize;
-	vec3 intpart,floatpart;
-	floatpart		=modf(pos,intpart);
-	int3 seedpos	=int3(1271*seed,167*seed*seed+931*seed+129,135567*seed+398*seed*seed+3198);
-	int3 firstCorner=int3(intpart);
-	RandomResult randomResult;
-	//randomResult.state=uint4(seed+128+intpart.x,seed+23465+intpart.y,seed+2174+intpart.z,seed+1902847+intpart.x);
-	if (pfilter)
-	{
-		for (int i = 0; i < 2; i++)
-		{
-			for (int j = 0; j < 2; j++)
-			{
-				for (int k = 0; k < 2; k++)
-				{
-					int3 corner_pos = firstCorner + int3(1 - i, 1 - j, 1 - k);
-					// NOTE: operator % does NOT seem to work properly here.
-					if (corner_pos.x == gridsize)
-						corner_pos.x = 0;
-					if (corner_pos.y == gridsize)
-						corner_pos.y = 0;
-					if (corner_pos.z == gridsize)
-						corner_pos.z = 0;
-					vec3 lookup_pos		=seedpos + vec3(corner_pos);
-                    
-	int3 v= seedpos+corner_pos;
-	randomResult.state=uint4(v,v.z+v.x+v.y);
-					CombinedTauswortheRandom(randomResult);
-					vec4 rnd_lookup		=vec4(randomResult.value,randomResult.value,randomResult.value,randomResult.value);
-					float proportion	=abs(i - floatpart.x)*abs(j - floatpart.y)*abs(k - floatpart.z);
-					result				+=rnd_lookup*proportion;
-				}
-			}
-		}
-	}
-	else
-	{
-		// nearest.
-		int3 corner_pos = int3(pos+vec3(0.5, 0.5, 0.5));
-		vec3 lookup_pos = seedpos + vec3(corner_pos);
-        float rndTap = rand3(lookup_pos);
-		result       = vec4(rndTap,rndTap,rndTap,rndTap);
-	}
-	return result;
 }
 
 #endif

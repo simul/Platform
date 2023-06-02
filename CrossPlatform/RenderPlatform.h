@@ -15,9 +15,16 @@
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Allocator.h"
 
+#define PLATFORM_STRINGIZE(x) PLATFORM_STRINGIZE2(x)
+#define PLATFORM_STRINGIZE2(x) #x
+#define PLATFORM_LNSTR PLATFORM_STRINGIZE(__LINE__)
+
 #define SIMUL_GPU_TRACK_MEMORY(mem,size) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
-		renderPlatform->GetMemoryInterface()->TrackVideoMemory(mem,size, __FILE__);
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(mem,size,__FILE__ "(" PLATFORM_LNSTR "): ");
+#define SIMUL_GPU_TRACK_MEMORY_NAMED(mem,size,name) \
+	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(mem,size,(std::string(+__FILE__ "(" PLATFORM_LNSTR "): ")+name).c_str());
 #define SIMUL_GPU_UNTRACK_MEMORY(mem) \
 	if (renderPlatform && renderPlatform->GetMemoryInterface()) \
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(mem);

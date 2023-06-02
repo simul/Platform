@@ -28,6 +28,21 @@
 	#define mat2 float2x2
 	#define mat3 float3x3
 	#define mat4 float4x4
+	#define float16_t min16float
+	#define f16vec2 min16float2
+	#define f16vec3 min16float3
+	#define f16vec4 min16float4
+	#define f16mat2 min16float2x2
+	#define f16mat3 min16float3x3
+	#define f16mat4 min16float4x4
+	#define int16_t min16int
+	#define i16vec2 min16int2
+	#define i16vec3 min16int3
+	#define i16vec4 min16int4
+	#define uint16_t min16uint
+	#define u16vec2 min16uint2
+	#define u16vec3 min16uint3
+	#define u16vec4 min16uint4
 	#define mix lerp
 	#define fract frac
 	#define layout(a)

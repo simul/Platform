@@ -671,7 +671,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 			n+=std::wstring(name.begin(), name.end());
 			mTextureDefault->SetName(n.c_str());
 			size_t texSize = textureDesc.Width * textureDesc.Height  * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-			SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
+			SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 		}
 		num_loaded++; 
 	}
@@ -841,27 +841,42 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 	int mip_width = width;
 	int mip_length = length;
 	size_t bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
+	size_t i=0;
+			int m=0;
 	for (size_t i=0;i<numImages;i++)
 	{
-		D3D12_SUBRESOURCE_DATA& textureSubData = textureSubDatas[i];
-		textureSubData.pData = (*upload_data)[i].data();
-		textureSubData.RowPitch = mip_width * bytes_per_pixel;
-		textureSubData.SlicePitch = textureSubData.RowPitch * mip_length;
-
-		static int uu = 4;
-		switch (compressionFormat)
+		if(m==mips)
 		{
-		case crossplatform::CompressionFormat::BC1:
-		case crossplatform::CompressionFormat::BC3:
-		case crossplatform::CompressionFormat::BC5:
-			textureSubData.RowPitch = bytes_per_pixel * (mip_width / uu);
-			textureSubData.SlicePitch = textureSubData.RowPitch * mip_length / 4;
-			break;
-		default:
-			break;
-		};
-		mip_width = (mip_width + 1) / 2;
-		mip_length = (mip_length + 1) / 2;
+			mip_width = width;
+			mip_length = length;
+			m=0;
+		}
+	//for (size_t m=0;m<numImages;m++)
+	//{
+		//for(size_t a=0;i<totalNum;a++)
+	//	{
+			//i=m*totalNum+a;
+			D3D12_SUBRESOURCE_DATA& textureSubData = textureSubDatas[i];
+			textureSubData.pData = (*upload_data)[i].data();
+			textureSubData.RowPitch = mip_width * bytes_per_pixel;
+			textureSubData.SlicePitch = textureSubData.RowPitch * mip_length;
+
+			static int uu = 4;
+			switch (compressionFormat)
+			{
+			case crossplatform::CompressionFormat::BC1:
+			case crossplatform::CompressionFormat::BC3:
+			case crossplatform::CompressionFormat::BC5:
+				textureSubData.RowPitch = bytes_per_pixel * (mip_width / uu);
+				textureSubData.SlicePitch = textureSubData.RowPitch * mip_length / 4;
+				break;
+			default:
+				break;
+			};
+			mip_width = (mip_width + 1) / 2;
+			mip_length = (mip_length + 1) / 2;
+			m++;
+		//}
 	}
 	//renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
 	
@@ -1103,7 +1118,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
             SIMUL_PPV_ARGS(&mTextureUpload)
 		);
 		SIMUL_ASSERT(res == S_OK);
-		SIMUL_GPU_TRACK_MEMORY(mTextureUpload, texSize)
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureUpload, texSize,name.c_str())
 		mTextureUpload->SetName(L"TextureSetTexelsUpload");
 
 		// Parameters
@@ -1387,7 +1402,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		);
 		SIMUL_ASSERT(res == S_OK);
 		size_t texSize = w * l * d * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-		SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
 		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
@@ -1648,7 +1663,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 		// Clean resources
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault,  (name+" mTextureDefault").c_str());
+		if(mTextureDefault)
+			renderPlatformDx12->PushToReleaseManager(mTextureDefault,  (name+" mTextureDefault").c_str());
 		mTextureDefault = nullptr;
 
 
@@ -1685,7 +1701,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			texSize = sizeInPixels * bytes_per_pixel;
 		}
 		
-		SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
 		std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 #if SIMUL_INTERNAL_CHECKS
@@ -1891,7 +1907,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		);
 		SIMUL_ASSERT(res == S_OK);
 		size_t texSize = w * l * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-		SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
 			std::wstring n = L"GPU_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
@@ -2031,10 +2047,10 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	);
 	SIMUL_ASSERT(res == S_OK);
 	size_t texSize = w * l * totalNum * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-	SIMUL_GPU_TRACK_MEMORY(mTextureDefault, texSize)
 	std::wstring n = L"GPU_";
 	n += std::wstring(name.begin(), name.end());
 	mTextureDefault->SetName(n.c_str());
+	SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 
 	FreeSRVTables();
 	FreeRTVTables();
@@ -2446,8 +2462,8 @@ void Texture::CreateUploadResource(int slices)
 		SIMUL_PPV_ARGS(&mTextureUpload)
 	);
 	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY(mTextureUpload, textureUploadBufferSize)
 	std::wstring n = L"UPLOAD_";
 	n += std::wstring(name.begin(), name.end());
 	mTextureUpload->SetName(n.c_str());
+	SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureUpload, textureUploadBufferSize, name.c_str())
 }

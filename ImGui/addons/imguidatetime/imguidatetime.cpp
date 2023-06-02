@@ -149,7 +149,7 @@ namespace ImGui
         const float calendar_width = month_width + year_width + CalcTextSize(today).x + 3 * space.x + 30.f;
         const float textbox_width = label_size.x + CalcTextSize(currentText).x;
         const float w = calendar_width > textbox_width ? calendar_width : textbox_width;
-        const float h = 8 * label_size.y + 7 * space.y + 2 * style.FramePadding.y + 20;
+        const float h = 8 * label_size.y + 7 * space.y + 2 * style.FramePadding.y + 30.0f;
         SetNextWindowSize(ImVec2(w, h));
         SetNextWindowSizeConstraints(ImVec2(w, h), ImVec2(w, h));
 

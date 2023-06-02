@@ -196,8 +196,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				{
 					D3D12_MESSAGE_ID msgs[] =
 					{
-						D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
-						D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+						D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE
+						,D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+					#if defined(NTDDI_WIN10_NI) && (NTDDI_VERSION >= NTDDI_WIN10_NI)
+						,D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED
+					#endif
 					};
 					D3D12_INFO_QUEUE_FILTER filter	= {};
 					filter.DenyList.pIDList			= msgs;
@@ -236,6 +239,16 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				SAFE_RELEASE(infoQueue);
 			}
 		}
+
+		D3D12_FEATURE_DATA_D3D12_OPTIONS d3d12Options;
+		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &d3d12Options, sizeof(d3d12Options));
+		SIMUL_ASSERT_WARN(((d3d12Options.MinPrecisionSupport & D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT) == D3D12_SHADER_MIN_PRECISION_SUPPORT_16_BIT), "D3D12: No 16 bit precision in shaders.");
+
+#if !defined(_GAMING_XBOX_XBOXONE)
+		D3D12_FEATURE_DATA_D3D12_OPTIONS4 d3d12Options4;
+		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &d3d12Options4, sizeof(d3d12Options4));
+		SIMUL_ASSERT_WARN((bool)d3d12Options4.Native16BitShaderOpsSupported, "D3D12: No native 16 bit shaders ops.");
+#endif
 
 		// Store information about the GPU
 		char gpuDesc[128];

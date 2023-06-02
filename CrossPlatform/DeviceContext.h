@@ -337,6 +337,7 @@ namespace platform
 			bool initialized=false;
 			int framePrintX=0;
 			int framePrintY=0;
+			double predictedDisplayTimeS = 0.0;
 			GraphicsDeviceContext();
 			~GraphicsDeviceContext();
 			ViewStruct viewStruct;

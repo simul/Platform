@@ -1156,29 +1156,6 @@ void RenderPlatform::BeginFrame()
 	{
 		b.second->mCurBarriers=0;
 	}
-}
-
-void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
-{
-	if (GetFrameNumber() == frameNumber)
-		return;
-	// Store a reference to the device context
-	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
-
-	//platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
-	//SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
-
-
-	// Create dummy textures
-	static bool createDummy = true;
-	if (createDummy)
-	{
-		const uint_fast8_t dummyData[4] = { 1,1,1,1 };
-		mDummy2D->setTexels(deviceContext, &dummyData[0], 0, 1);
-		mDummy3D->setTexels(deviceContext, &dummyData[0], 0, 1);
-		createDummy = false;
-	}
-
 	// Age and delete old objects
 	unsigned int kMaxAge = 80;
 	if (!mResourceBin.empty())
@@ -1199,7 +1176,7 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 					if (!chkptr || res != S_OK) //The chkptr failed, so we can not release the main ptr. Just remove it from the container at the end of the current iteration of the loop.
 					{
 						std::string lastErrorStr = "";
-					#if !defined(_GAMING_XBOX)
+#if !defined(_GAMING_XBOX)
 						DWORD err = GetLastError();
 						char* msg = nullptr;
 						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -1209,7 +1186,7 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 							lastErrorStr = std::string(msg, msgSize);
 							LocalFree(msg);
 						}
-					#endif
+#endif
 						SIMUL_INTERNAL_CERR << "Fatal error in Release Manager." << std::endl;
 						SIMUL_INTERNAL_CERR << resource.freeName << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
 						SIMUL_INTERNAL_CERR << "QueryInterface<ID3D12DeviceChild> failed to validate the resource." << std::endl;
@@ -1231,13 +1208,38 @@ void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& dev
 					SIMUL_CERR << resource.second.first << " is still being referenced " << remainRefs << "." << std::endl;
 				}
 #endif
-				if (!remainRefs&&resource.owned&&GetMemoryInterface())
+				if (!remainRefs && resource.owned && GetMemoryInterface())
 					GetMemoryInterface()->UntrackVideoMemory(ptr);
+				else if (GetMemoryInterface())
+				{
+					SIMUL_INTERNAL_CERR << "Release Manager: Resource " << resource.freeName.c_str() << " " << ptr << " was not released. It is still being referenced " << remainRefs << " times.\n";
+				}
 
 				mResourceBin.erase(mResourceBin.begin() + i);
 			}
 		}
 	}
+}
+
+void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext)
+{
+	// Store a reference to the device context
+	ID3D12GraphicsCommandList*	commandList                        = deviceContext.asD3D12Context();
+
+	//platform::crossplatform::Frustum frustum = platform::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	//SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
+
+
+	// Create dummy textures
+	static bool createDummy = true;
+	if (createDummy)
+	{
+		const uint_fast8_t dummyData[4] = { 1,1,1,1 };
+		mDummy2D->setTexels(deviceContext, &dummyData[0], 0, 1);
+		mDummy3D->setTexels(deviceContext, &dummyData[0], 0, 1);
+		createDummy = false;
+	}
+
 }
 
 void RenderPlatform::EndFrame()
