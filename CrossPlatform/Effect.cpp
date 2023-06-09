@@ -1399,6 +1399,15 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					layoutOffset=0;
 					layoutSlot=0;
 				}
+				else if (_stricmp(type.c_str(), "numthreads") == 0)
+				{
+					if (words.size() > 1)
+						p->numThreads.x=atoi(words[1].c_str());
+					if (words.size() > 2)
+						p->numThreads.y=atoi(words[2].c_str());
+					if(words.size()>3)
+						p->numThreads.z=atoi(words[3].c_str());
+				}
 				else if(_stricmp(type.c_str(),"blend")==0)
 				{
 					if(blendStates.find(name)!=blendStates.end())

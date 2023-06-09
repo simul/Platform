@@ -164,6 +164,10 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 		types_used.clear();
 		if(returnType!="void")
 			types_used.insert(returnType);
+		for (auto i : constantBuffers)
+		{
+			types_used.insert(i->structureType);
+		}
 		for(auto i:parameters)
 		{
 			types_used.insert(i.type);
@@ -227,6 +231,15 @@ void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::
 	if(d)
 	switch(d->declarationType)
 	{
+	case DeclarationType::CONSTANT_BUFFER:
+	{
+		const ConstantBuffer* st = (const ConstantBuffer*)d;
+		s.insert(d);
+		for (int j = 0; j < st->m_structMembers.size(); j++)
+		{
+			AccumulateStructDeclarations(s, st->m_structMembers[j].type);
+		}
+	}
 	case DeclarationType::STRUCT:
 	{
 		const Struct *st=(const Struct*)d;
@@ -330,6 +343,7 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, const Stru
 	cb->declarationType=DeclarationType::CONSTANT_BUFFER;
 	cb->slot = slot;
 	cb->name=name;
+	cb->structureType = name;
 	declarations[name]=cb;
 }
 
@@ -1094,7 +1108,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			{
 				const Pass *pass=&(*j);
 				string passName=j->name;
-				outstr<<"\t\tpass "<<passName<<"\n\t\t{\n";
+				outstr<<"\t\tpass "<<passName<<"\n\t\t{\n"; 
 				if(pass->passState.rasterizerState.objectName.length()>0)
 				{
 					outstr<<"\t\t\trasterizer: "<<pass->passState.rasterizerState.objectName<<"\n";
@@ -1115,6 +1129,13 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					outstr<<pass->passState.blendState.blendFactor[2]<<",";
 					outstr<<pass->passState.blendState.blendFactor[3]<<") ";
 					outstr<<pass->passState.blendState.sampleMask<<"\n";
+				}
+				if (pass->HasShader(sfx::ShaderType::COMPUTE_SHADER))
+				{
+					const string &shaderInstanceName=pass->GetShader(sfx::ShaderType::COMPUTE_SHADER);
+					ShaderInstance *shaderInstance=GetShaderInstance(shaderInstanceName, sfx::ShaderType::COMPUTE_SHADER);
+					Function* function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+					outstr << "\t\t\tnumthreads: " << function->numThreads[0] << " " << function->numThreads[1] <<" "<< function->numThreads[2] << "\n";
 				}
 				if(pass->passState.topologyState.apply)
 				{

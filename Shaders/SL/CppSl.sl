@@ -1177,6 +1177,20 @@
 			ret.z=z+v2.z;
 			return ret;
 		}
+		const int3 &operator+=(int3 v2) 
+		{
+			x +=v2.x;
+			y +=v2.y;
+			z +=v2.z;
+			return *this;
+		}
+		const int3& operator/=(int3 v2)
+		{
+			x /= v2.x;
+			y /= v2.y;
+			z /= v2.z;
+			return *this;
+		}
 		void operator=(const int *v)
 		{
 			x=v[0];
