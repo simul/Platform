@@ -6,6 +6,7 @@
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/Effect.h"
+#include "Platform/Core/StringFunctions.h"
 
 #ifdef _MSC_VER
     #include <windows.h>
@@ -203,7 +204,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
     // Cache it:
     deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
-#include "Platform/Core/StringFunctions.h"
+
 void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();

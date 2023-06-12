@@ -38,10 +38,6 @@
 												struct name {static const int bindingIndex=buff_num;
 	#define SIMUL_CONSTANT_BUFFER_END };\
 									prag(pack(pop))
-
-	#define SIMUL_TEMPLATIZED_CONSTANT_BUFFER(struct_name, buff_num) SIMUL_CONSTANT_BUFFER(struct_name,buff_num)
-	#define SIMUL_TEMPLATIZED_CONSTANT_BUFFER_END(struct_name, name, buff_num) SIMUL_CONSTANT_BUFFER_END
-
 	struct mat2
 	{
 		float m[8];

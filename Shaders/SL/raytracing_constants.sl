@@ -56,13 +56,13 @@ struct Raytracing_AABB
 //Negative Z = 5
 #define Raytracing_AABB_FaceIndex uint
 
-//Constant Bufffer Structs
-
-SIMUL_TEMPLATIZED_CONSTANT_BUFFER(TraceRayParameters, 0)
+//Constant Buffer Structs
+NamedConstantBuffer<TraceRayParameters> traceRayParameters : register(b0)
+{
 	uint instanceInclusionMask;								//Inclusion Mask for instances
 	uint rayContributionToHitGroupIndex;					//HitGroup Index for Ray into the SBT.
 	uint multiplierForGeometryContributionToHitGroupIndex;	//HitGroup Stride for Geometry into the SBT.
 	uint missShaderIndex;									//MissShader Index into the SBT.
-SIMUL_TEMPLATIZED_CONSTANT_BUFFER_END(TraceRayParameters, traceRayParameters, 0)
+};
 
 #endif

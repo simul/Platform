@@ -256,6 +256,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"cbuffer"								{
 													modReturn(CONSTANT_BUFFER, "cbuffer");
 												}
+<INITIAL>"NamedConstantBuffer"					{
+													modReturn(NAMED_CONSTANT_BUFFER, "NamedConstantBuffer");
+												}
 <INITIAL>"register"								{
 													stdReturn(REGISTER);
 												}
@@ -363,7 +366,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn(RW_TEXTURE2D);
 												}
 <INITIAL>"ConstantBuffer"						{
-													stdReturn(TEMPLATIZED_CONSTANT_BUFFER);
+													stdReturn(NAMED_CONSTANT_BUFFER);
 												}
 <INITIAL>"RaytracingAccelerationStructure"		{
 													stdReturn(RAYTRACE_ACCELERATION_STRUCT);
