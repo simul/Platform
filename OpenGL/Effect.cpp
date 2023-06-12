@@ -434,13 +434,13 @@ crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
 	return techniques_by_index[index];
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index, int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource)
 {
 	auto res = GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext, res, tex, index, mip);
+	SetUnorderedAccessView(deviceContext, res, tex, subresource);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index, int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource)
 {
 	if (!name.valid)
 		return;
@@ -448,6 +448,8 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 	opengl::Texture* gTex = (opengl::Texture*)tex;
 	if (gTex)
 	{
+		int index = subresource.arrayLayerCount == -1 ? -1 : subresource.baseArrayLayer;
+		int mip = subresource.mipLevel;
 		GLuint imageView = gTex->AsOpenGLView(name.shaderResourceType, index, mip, true);
 		if (glIsTexture(imageView))
 		{
@@ -803,7 +805,10 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 		}
 
 		// We first bind the texture handle alone (for fetch and get size operations)
-		GLuint tview        = tex->AsOpenGLView(ta.resourceType, ta.index, ta.mip, ta.uav);
+		const crossplatform::SubresourceRange& subres = ta.subresource;
+		int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+		int mip = subres.mipLevelCount == -1 ? -1 : subres.baseMipLevel;
+		GLuint tview = tex->AsOpenGLView(ta.resourceType, index, mip, ta.uav);
 		GLuint64 thandle    = glGetTextureHandleARB(tview);
 		tex->MakeHandleResident(thandle);
 		for(int j=0;j<crossplatform::ShaderType::SHADERTYPE_COUNT;j++)

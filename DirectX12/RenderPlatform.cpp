@@ -2640,12 +2640,12 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		else
 			rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, 0, 0);
 
-		mTargets.m_rt[i]						= rtv;
-		mTargets.rtFormats[i]					= targs[i]->pixelFormat;
-		mTargets.textureTargets[i].texture		= targs[i];
-		mTargets.textureTargets[i].layer		= 0;
-		mTargets.textureTargets[i].layerCount	= targs[i]->NumFaces();
-		mTargets.textureTargets[i].mip			= 0;
+		mTargets.m_rt[i]										= rtv;
+		mTargets.rtFormats[i]									= targs[i]->pixelFormat;
+		mTargets.textureTargets[i].texture						= targs[i];
+		mTargets.textureTargets[i].subresource.baseArrayLayer	= 0;
+		mTargets.textureTargets[i].subresource.arrayLayerCount	= targs[i]->NumFaces();
+		mTargets.textureTargets[i].subresource.mipLevel			= 0;
 	}
 	if (depth)
 	{
@@ -2655,12 +2655,12 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		else
 			dsv = depth->AsD3D12DepthStencilView(deviceContext, 0, 0);
 
-		mTargets.m_dt					= dsv;
-		mTargets.depthFormat			= depth->pixelFormat;
-		mTargets.depthTarget.texture	= depth;
-		mTargets.depthTarget.layer		= 0;
-		mTargets.depthTarget.layerCount	= depth->NumFaces();
-		mTargets.depthTarget.mip		= 0;
+		mTargets.m_dt										= dsv;
+		mTargets.depthFormat								= depth->pixelFormat;
+		mTargets.depthTarget.texture						= depth;
+		mTargets.depthTarget.subresource.baseArrayLayer		= 0;
+		mTargets.depthTarget.subresource.arrayLayerCount	= depth->NumFaces();
+		mTargets.depthTarget.subresource.mipLevel			= 0;
 	}
 	mTargets.viewport				= { 0, 0, targs[0]->GetWidth(), targs[0]->GetLength() };
 
@@ -2713,7 +2713,7 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
 		{
 			auto &t=deviceContext.defaultTargetsAndViewport.textureTargets[i];
 			if(t.texture)
-				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,t.layer,t.mip));
+				h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext, t.subresource.baseArrayLayer,t.subresource.mipLevel));
 		}
 	}
 	auto &d=deviceContext.defaultTargetsAndViewport.depthTarget;

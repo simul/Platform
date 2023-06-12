@@ -1108,11 +1108,21 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext 
 {
 	ID3D11RenderTargetView *rt[8];
 	SIMUL_ASSERT(num<=8);
-	for(int i=0;i<num;i++)
-		rt[i]=targs[i]->AsD3D11RenderTargetView();
+	for (int i = 0; i < num; i++)
+	{
+		crossplatform::TextureView tv;
+		tv.type = targs[i]->GetShaderResourceTypeForRTVAndDSV();
+		tv.subresourceRange = { 0, 1, 0, 1 };
+		rt[i] = targs[i]->AsD3D11RenderTargetView(tv);
+	}
 	ID3D11DepthStencilView *d=NULL;
-	if(depth)
-		d=depth->AsD3D11DepthStencilView();
+	if (depth)
+	{
+		crossplatform::TextureView tv;
+		tv.type = depth->GetShaderResourceTypeForRTVAndDSV();
+		tv.subresourceRange = { 0, 1, 0, 1 };
+		d = depth->AsD3D11DepthStencilView(tv);
+	}
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
 
 	int w=targs[0]->width, h = targs[0]->length;

@@ -281,13 +281,12 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		else
 		{
 			D3D12_CPU_DESCRIPTOR_HANDLE * srv=nullptr;
+			const crossplatform::SubresourceRange& subres = ta.subresource;
+			int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+			int mip = subres.mipLevelCount == -1 ? -1 : subres.baseMipLevel;
 			if (ta.texture &&ta.texture->IsValid())
 			{
-				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
-				if(!srv)
-				{
-					srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
-				}
+				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, index, mip, is_pixel_shader);
 			}
 			// If the texture is null or invalid, set a dummy:
 			// NOTE: this basically disables any slot checks as we will always
@@ -302,7 +301,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				{
 					ta.texture = rPlat->GetDummy2D();
 				}
-				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip, is_pixel_shader);
+				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, index, mip, is_pixel_shader);
 			}
 			mSrvSrcHandles[slot] = *srv;
 		}
@@ -388,7 +387,10 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 				ta.texture = rPlat->GetDummy2D();
 			}
 		}
-		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, ta.index, ta.mip);
+		const crossplatform::SubresourceRange& subres = ta.subresource;
+		int index = subres.arrayLayerCount == -1 ? -1 : subres.baseArrayLayer;
+		int mip = subres.baseMipLevel;
+		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, index, mip);
 		mUavUsedSlotsArray[slot] = true;
 		usedRwTextureSlots |= (1 << slot);
 	}

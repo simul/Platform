@@ -200,8 +200,8 @@ namespace platform
 			bool							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8)override;
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
-			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
-			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, int index = -1, int mip = -1)override;
+			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource = crossplatform::SubresourceLayers()) override;
+			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource = crossplatform::SubresourceLayers()) override;
 			void							SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase* s)override;
 			
 			void							Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass);

@@ -814,7 +814,7 @@ vk::Extent2D RenderPlatform::GetTextureTargetExtext2D(const crossplatform::Targe
 		width = targetTexture.texture->width;
 		length = targetTexture.texture->length;
 
-		const int& mip = targetTexture.mip;
+		const int& mip = targetTexture.subresource.mipLevel;
 		width >>= mip;
 		length >>= mip;
 	}
@@ -1754,18 +1754,18 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.m_rt[i] = nullptr;
 		target.rtFormats[i] = targs[i]->GetFormat();
 		target.textureTargets[i].texture = targs[i];
-		target.textureTargets[i].layer = 0;
-		target.textureTargets[i].layerCount = targs[i]->NumFaces();
-		target.textureTargets[i].mip= 0;
+		target.textureTargets[i].subresource.baseArrayLayer = 0;
+		target.textureTargets[i].subresource.arrayLayerCount = targs[i]->NumFaces();
+		target.textureTargets[i].subresource.mipLevel= 0;
 	}
 	if (depth)
 	{
 		target.m_dt = nullptr;
 		target.depthFormat = depth->pixelFormat;
 		target.depthTarget.texture = depth;
-		target.depthTarget.layer = 0;
-		target.depthTarget.layerCount = depth->NumFaces();
-		target.depthTarget.mip = 0;
+		target.depthTarget.subresource.baseArrayLayer = 0;
+		target.depthTarget.subresource.arrayLayerCount = depth->NumFaces();
+		target.depthTarget.subresource.mipLevel = 0;
 	}
 	target.viewport = int4(0, 0, targs[0]->width, targs[0]->length);
 
@@ -1892,9 +1892,9 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 	{
 		crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[0];
 		vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
-		bool allLayers = texture->NumFaces() == tt.layerCount;
+		bool allLayers = texture->NumFaces() == tt.subresource.arrayLayerCount;
 
-		hashval += (unsigned long long)(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.layer, tt.mip))->operator VkImageView();
+		hashval += (unsigned long long)(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.subresource.baseArrayLayer, tt.subresource.mipLevel))->operator VkImageView();
 		hashval += (unsigned long long)texture->width;	//Deal with resizing the framebuffer!
 		hashval += (unsigned long long)texture->length;
 		hashval += (unsigned long long)texture->GetArraySize();
@@ -1905,9 +1905,9 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		vulkan::Texture* d = (vulkan::Texture*)tv->depthTarget.texture;
 		crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 		vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
-		bool allLayers = texture->NumFaces() == dt.layerCount;
+		bool allLayers = texture->NumFaces() == dt.subresource.arrayLayerCount;
 
-		hashval += (unsigned long long)(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip))->operator VkImageView();
+		hashval += (unsigned long long)(texture->AsVulkanDepthView(allLayers ? -1 : dt.subresource.baseArrayLayer, dt.subresource.mipLevel))->operator VkImageView();
 	}
 	hashval+=tv->num;
 	return hashval;
@@ -1955,15 +1955,15 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[j];
 			vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
-			bool allLayers = texture->NumFaces() == tt.layerCount;
-			attachments[j] = *(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.layer, tt.mip));
+			bool allLayers = texture->NumFaces() == tt.subresource.arrayLayerCount;
+			attachments[j] = *(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.subresource.baseArrayLayer, tt.subresource.mipLevel));
 		}
 		if (deviceContext.contextState.IsDepthActive())
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 			vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
-			bool allLayers = texture->NumFaces() == dt.layerCount;
-			attachments[tv->num] = *(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip));
+			bool allLayers = texture->NumFaces() == dt.subresource.arrayLayerCount;
+			attachments[tv->num] = *(texture->AsVulkanDepthView(allLayers ? -1 : dt.subresource.baseArrayLayer, dt.subresource.mipLevel));
 		}
 		framebufferCreateInfo.attachmentCount = count;
 		framebufferCreateInfo.pAttachments = attachments;

@@ -402,8 +402,8 @@ namespace platform
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(GraphicsDeviceContext &deviceContext,Topology t);
 
-			virtual void					SetTexture						(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int array_idx = -1, int mip = -1);
-			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, int index = -1, int mip = -1);
+			virtual void					SetTexture						(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceRange& subresource = SubresourceRange());
+			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
 

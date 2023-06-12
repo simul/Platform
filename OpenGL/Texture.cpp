@@ -298,7 +298,7 @@ void Texture::MakeHandleResident(GLuint64 thandle)
 	residentHandles.insert(thandle);
 }
 
-bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, int numOfSamples)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -620,20 +620,10 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 	}
 }
 
-void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, int array_index, int mip_index)
+void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView)
 {
-	if (array_index == -1)
-	{
-		array_index = 0;
-	}
-	if (mip_index == -1)
-	{
-		mip_index = 0;
-	}
-	if (mTextureFBOs[array_index][mip_index] == 0)
-	{
-		CreateFBOs(mNumSamples);
-	}
+	const int& array_index = textureView.subresourceRange.baseArrayLayer;
+	const int& mip_index = textureView.subresourceRange.baseMipLevel;
 
 	targetsAndViewport.num				= 1;
 	targetsAndViewport.m_rt[0]			= (crossplatform::ApiRenderTarget*)(uint64_t)mTextureFBOs[array_index][mip_index];

@@ -45,30 +45,27 @@ Texture::~Texture()
 
 bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatform, const TextureCreate *textureCreate)
 {
-	return InitFromExternalTexture2D(renderPlatform, textureCreate->external_texture, textureCreate->srv, textureCreate->w, textureCreate->l, textureCreate->f, textureCreate->make_rt, textureCreate->setDepthStencil, textureCreate->need_srv, textureCreate->numOfSamples);
+	return InitFromExternalTexture2D(renderPlatform, textureCreate->external_texture, textureCreate->w, textureCreate->l, textureCreate->f, textureCreate->make_rt, textureCreate->setDepthStencil, textureCreate->numOfSamples);
 }
 
-void Texture::activateRenderTarget(GraphicsDeviceContext &deviceContext,int array_index,int mip_index )
+void Texture::activateRenderTarget(GraphicsDeviceContext& deviceContext, TextureView textureView)
 {
-	if (array_index == -1)
-	{
-		array_index = 0;
-	}
-	if (mip_index == -1)
-	{
-		mip_index = 0;
-	}
-	targetsAndViewport.num							=1;
-	targetsAndViewport.m_rt[0]						=nullptr;
-	targetsAndViewport.textureTargets[0].texture	=this;
-	targetsAndViewport.textureTargets[0].mip		=mip_index;
-	targetsAndViewport.textureTargets[0].layer		=array_index;
-	targetsAndViewport.textureTargets[0].layerCount =NumFaces();
-	targetsAndViewport.m_dt							=nullptr;
-	targetsAndViewport.viewport.x					=0;
-	targetsAndViewport.viewport.y					=0;
-	targetsAndViewport.viewport.w					=std::max(1, (width >> mip_index));
-	targetsAndViewport.viewport.h					=std::max(1, (length >> mip_index));
+	const int& array_index = textureView.subresourceRange.baseArrayLayer;
+	const int& mip_index = textureView.subresourceRange.baseMipLevel;
+	if (textureView.type == ShaderResourceType::UNKNOWN)
+		textureView.type = GetShaderResourceTypeForRTVAndDSV();
+
+	targetsAndViewport.num												=1;
+	targetsAndViewport.m_rt[0]											=nullptr;
+	targetsAndViewport.textureTargets[0].texture						=this;
+	targetsAndViewport.textureTargets[0].subresource.mipLevel			=mip_index;
+	targetsAndViewport.textureTargets[0].subresource.baseArrayLayer		=array_index;
+	targetsAndViewport.textureTargets[0].subresource.arrayLayerCount	=NumFaces();
+	targetsAndViewport.m_dt												=nullptr;
+	targetsAndViewport.viewport.x										=0;
+	targetsAndViewport.viewport.y										=0;
+	targetsAndViewport.viewport.w										=std::max(1, (width >> mip_index));
+	targetsAndViewport.viewport.h										=std::max(1, (length >> mip_index));
 	/*deviceContext.renderPlatform->SetViewports(deviceContext, 1, &targetsAndViewport.viewport);
 
 	// Cache it:
@@ -182,6 +179,71 @@ uint3 Texture::CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uin
 	uint y = Index / MipSlice;
 	uint x = Index % MipSlice;
 	return uint3(x, y, z);
+}
+
+bool Texture::ValidateTextureView(const TextureView& textureView)
+{
+	const ShaderResourceType& type = textureView.type;
+	const SubresourceRange& subres = textureView.subresourceRange;
+	const uint32_t& layers = (uint32_t)NumFaces();
+	const uint32_t& mips = (uint32_t)this->mips;
+	const int& samples = GetSampleCount();
+	bool ok = true;
+
+	ok &= (subres.baseMipLevel < mips);
+	if (subres.mipLevelCount != -1)
+		ok &= (subres.baseMipLevel + subres.mipLevelCount <= mips);
+
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a range outside the texture's mip levels.");
+
+	ok &= (subres.baseArrayLayer < layers);
+	if (subres.arrayLayerCount != -1)
+		ok &= (subres.baseArrayLayer + subres.arrayLayerCount <= layers);
+
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a range outside the texture's array layers.");
+
+	if (type == ShaderResourceType::TEXTURE_1D || type == ShaderResourceType::RW_TEXTURE_1D)
+		ok &= dim == 1 && width > 0;
+	if (type == ShaderResourceType::TEXTURE_1D_ARRAY || type == ShaderResourceType::RW_TEXTURE_1D_ARRAY)
+		ok &= dim == 1 && width > 0 && layers > 1;
+	if (type == ShaderResourceType::TEXTURE_2D || type == ShaderResourceType::RW_TEXTURE_2D)
+		ok &= dim == 2 && width > 0 && length > 0;
+	if (type == ShaderResourceType::TEXTURE_2D_ARRAY || type == ShaderResourceType::RW_TEXTURE_2D_ARRAY)
+		ok &= dim == 2 && width > 0 && length > 0 && layers > 1;
+	if (type == ShaderResourceType::TEXTURE_2DMS)
+		ok &= dim == 2 && width > 0 && length > 0 && samples > 1;
+	if (type == ShaderResourceType::TEXTURE_2DMS_ARRAY)
+		ok &= dim == 2 && width > 0 && length > 0 && samples > 1 && layers > 1;
+	if (type == ShaderResourceType::TEXTURE_3D || type == ShaderResourceType::RW_TEXTURE_3D)
+		ok &= dim == 3 && width > 0 && length > 0 && depth > 0;
+	if (type == ShaderResourceType::TEXTURE_CUBE || type == ShaderResourceType::TEXTURE_CUBE_ARRAY)
+		ok &= dim == 2 && width > 0 && length > 0 && layers >= 6 && cubemap;
+
+	SIMUL_ASSERT_WARN_ONCE(ok, "ShaderResourceType is incompatible with the texture.");
+
+	return ok;
+}
+
+ShaderResourceType Texture::GetShaderResourceTypeForRTVAndDSV()
+{
+	const uint32_t& layers = (uint32_t)NumFaces();
+	const int& samples = GetSampleCount();
+
+	ShaderResourceType type = ShaderResourceType::UNKNOWN;
+
+	if (dim == 1)
+		type |= ShaderResourceType::TEXTURE_1D;
+	else if (dim == 2)
+		type |= ShaderResourceType::TEXTURE_2D;
+	else if (dim == 3)
+		type |= ShaderResourceType::TEXTURE_3D;
+
+	if (layers > 1)
+		type |= ShaderResourceType::ARRAY;
+	if (samples > 1)
+		type |= ShaderResourceType::MS;
+
+	return type;
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(RenderPlatform* renderPlatform, int w, int l, int m
