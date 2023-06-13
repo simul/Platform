@@ -57,6 +57,9 @@
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
+	//
+	#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name,instance_name,buff_num) NamedConstantBuffer<struct_name> instance_name SIMUL_BUFFER_REGISTER(buff_num) {
+	#define PLATFORM_NAMED_CONSTANT_BUFFER_END };
 
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET
 	#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n
