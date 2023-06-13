@@ -1112,7 +1112,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext 
 	{
 		crossplatform::TextureView tv;
 		tv.type = targs[i]->GetShaderResourceTypeForRTVAndDSV();
-		tv.subresourceRange = { 0, 1, 0, 1 };
+		tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 };
 		rt[i] = targs[i]->AsD3D11RenderTargetView(tv);
 	}
 	ID3D11DepthStencilView *d=NULL;
@@ -1120,7 +1120,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext 
 	{
 		crossplatform::TextureView tv;
 		tv.type = depth->GetShaderResourceTypeForRTVAndDSV();
-		tv.subresourceRange = { 0, 1, 0, 1 };
+		tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 		d = depth->AsD3D11DepthStencilView(tv);
 	}
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);

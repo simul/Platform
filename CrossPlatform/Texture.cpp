@@ -32,7 +32,6 @@ Texture::Texture(const char *n)
 				,external_texture(false)
 				,depthStencil(false)
 				,unfenceable(false)
-				,yuvLayerIndex(-1)
 {
 	if(n)
 		name=n;
@@ -189,6 +188,33 @@ bool Texture::ValidateTextureView(const TextureView& textureView)
 	const uint32_t& mips = (uint32_t)this->mips;
 	const int& samples = GetSampleCount();
 	bool ok = true;
+
+	if ((subres.aspectMask & TextureAspectFlags::DEPTH) == TextureAspectFlags::DEPTH
+		|| (subres.aspectMask & TextureAspectFlags::STENCIL) == TextureAspectFlags::STENCIL)
+		ok &= depthStencil;
+
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a Depth and/or Stencil aspect that's incompatible with the texture.");
+
+	if ((subres.aspectMask & TextureAspectFlags::PLANE_0) == TextureAspectFlags::PLANE_0)
+	{
+		ok &= (subres.aspectMask & TextureAspectFlags::PLANE_1) != TextureAspectFlags::PLANE_1;
+		ok &= (subres.aspectMask & TextureAspectFlags::PLANE_2) != TextureAspectFlags::PLANE_2;
+	}
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a Plane 0 aspect along with a Plane 1 and/or a Plane 2 aspect.");
+
+	if ((subres.aspectMask & TextureAspectFlags::PLANE_1) == TextureAspectFlags::PLANE_1)
+	{
+		ok &= (subres.aspectMask & TextureAspectFlags::PLANE_2) != TextureAspectFlags::PLANE_2;
+		ok &= (subres.aspectMask & TextureAspectFlags::PLANE_0) != TextureAspectFlags::PLANE_0;
+	}
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a Plane 1 aspect along with a Plane 2 and/or a Plane 0 aspect.");
+
+	if ((subres.aspectMask & TextureAspectFlags::PLANE_2) == TextureAspectFlags::PLANE_2)
+	{
+		ok &= (subres.aspectMask & TextureAspectFlags::PLANE_0) != TextureAspectFlags::PLANE_0;
+		ok &= (subres.aspectMask & TextureAspectFlags::PLANE_1) != TextureAspectFlags::PLANE_1;
+	}
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a Plane 2 aspect along with a Plane 0 and/or a Plane 1 aspect.");
 
 	ok &= (subres.baseMipLevel < mips);
 	if (subres.mipLevelCount != -1)

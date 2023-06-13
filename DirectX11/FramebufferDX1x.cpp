@@ -87,11 +87,11 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	bool layered = buffer_texture->NumFaces() > 1;
 	bool ms = buffer_texture->GetSampleCount() > 1;
 	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.subresourceRange = { 0, 1, (is_cubemap ? current_face : 0), 1 };
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, (is_cubemap ? current_face : 0), 1 };
 	layered = buffer_depth_texture ? buffer_depth_texture->NumFaces() > 1: false;
 	ms = buffer_depth_texture ? buffer_depth_texture->GetSampleCount() > 1 : false;
 	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
-	dsv_tv.subresourceRange = { 0, 1, 0, 1 };
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
 	ID3D11RenderTargetView* renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
 	ID3D11DepthStencilView* dt = buffer_depth_texture ? buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv) : NULL;
@@ -152,9 +152,9 @@ void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceCont
 	
 	crossplatform::TextureView rtv_tv, dsv_tv;
 	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.subresourceRange = { 0, 1, 0, 1 };
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 };
 	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
-	dsv_tv.subresourceRange = { 0, 1, 0, 1 };
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
 	ID3D11RenderTargetView* renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
 	ID3D11DepthStencilView* depthStencilView = buffer_depth_texture ? buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv) : NULL;
@@ -181,7 +181,7 @@ void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext
 	{
 		crossplatform::TextureView tv;
 		tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-		tv.subresourceRange = { 0, -1, 0, -1 };
+		tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1 };
 		pContext->GenerateMips(buffer_texture->AsD3D11ShaderResourceView(tv));
 	}
 	colour_active=false;
@@ -193,7 +193,7 @@ void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceCo
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	crossplatform::TextureView rtv_tv;
 	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.subresourceRange = { 0, 1, 0, 1 };
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
 	if (!buffer_texture->AsD3D11RenderTargetView(rtv_tv))
 	{
@@ -220,9 +220,9 @@ void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext,floa
 
 	crossplatform::TextureView rtv_tv, dsv_tv;
 	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.subresourceRange = { 0, 1, (is_cubemap ? current_face : 0), 1 };
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, (is_cubemap ? current_face : 0), 1 };
 	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
-	dsv_tv.subresourceRange = { 0, 1, 0, 1 };
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
 	if(is_cubemap&&buffer_texture)
 	{
@@ -263,7 +263,7 @@ void Framebuffer::ClearDepth(crossplatform::GraphicsDeviceContext &context,float
 {
 	crossplatform::TextureView dsv_tv;
 	dsv_tv.type = buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV();
-	dsv_tv.subresourceRange = { 0, 1, 0, 1 };
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
 	ID3D11DepthStencilView* dsv = buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv);
 	if (dsv)
@@ -274,7 +274,7 @@ void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContex
 {
 	crossplatform::TextureView rtv_tv;
 	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.subresourceRange = { 0, 1, 0, 1 };
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 };
 
 	float clearColor[4]={r,g,b,a};
 	if(is_cubemap)

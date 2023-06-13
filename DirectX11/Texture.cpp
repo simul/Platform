@@ -1315,10 +1315,8 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	bool layered = NumFaces() > 1;
 	bool ms = GetSampleCount() > 1;
 	crossplatform::TextureView tv;
-	tv.type = crossplatform::ShaderResourceType::TEXTURE_2D
-		| (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0))
-		| (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
-	tv.subresourceRange = { 0, 1, 0, 1 };
+	tv.type = GetShaderResourceTypeForRTVAndDSV();
+	tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
 	ID3D11DepthStencilView* dsv = AsD3D11DepthStencilView(tv);
 	deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(dsv, (D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL), depthClear, stencilClear);
