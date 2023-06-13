@@ -12,7 +12,9 @@ if(PLATFORM_LOAD_WINPIXGPUCAPTURER)
 endif()
 
 if(PLATFORM_USE_ASSIMP)
-	set(INCLUDE_DIRS "${SIMUL_PLATFORM_DIR}/External/assimp/include" "${CMAKE_BINARY_DIR}/External/assimp/include")
+	set(INCLUDE_DIRS "${SIMUL_PLATFORM_DIR}/External/assimp/include" "${CMAKE_BINARY_DIR}/External/assimp/include"
+					 "${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/include" "${CMAKE_BINARY_DIR}/External/assimp/build_mt/include"
+					 "${SIMUL_PLATFORM_DIR}/External/assimp/build_md/include" "${CMAKE_BINARY_DIR}/External/assimp/build_md/include")
 	set(ADDITIONAL_LIBS "")
 else()
 	set(INCLUDE_DIRS "")

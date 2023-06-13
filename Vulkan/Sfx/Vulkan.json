@@ -16,7 +16,7 @@
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
-	"debugOption": "-g -Od ",
+	"debugOption": "-g -Od -gVS",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
@@ -43,7 +43,8 @@
 	"loadSyntax": "{command}({texture},{params})",
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
 	"structDeclaration": "struct {name}\n{\n[\t{type} {name};]};",
-	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]};",
+	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} ;",
+	"namedConstantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
 	"pixelInputDeclaration": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
 	"vertexInputDeclaration": "[layout(location={slot}) in {type} {name};]",
 	"outputDeclarationX": "layout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",

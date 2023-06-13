@@ -9,6 +9,8 @@
 	"outputExtension": "cso",
 	"outputOption": "/Fo",
 	"releaseOptions": "/O3",
+	"constantBufferDeclaration": "cbuffer {name}: register(b{slot})\n{\n[\t{type} {name};]} ;",
+	"namedConstantBufferDeclaration": "struct {name}\n{\n[\t{type} {name};]};\n\nConstantBuffer<{name}> {instance_name}: register(b{slot});",
 	"debugOutputFileOption_comment": "/O0 often causes dxc.exe to fail without error messages. Therefore we use /O3. /Od /O1 -Vd -Qembed_debug also dodgy",
 	"debugOutputFileOption": "/Od /O2 -Fd\"{filename_root}.pdb\"",
 	"entryPointOption": "/E{name}",

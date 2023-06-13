@@ -462,6 +462,14 @@ long long RenderPlatform::GetFrameNumber() const
 	return frameNumber;
 }
 
+void RenderPlatform::DispatchComputeAuto(DeviceContext &deviceContext,int3 d)
+{
+	int3 threads=deviceContext.contextState.currentEffectPass->numThreads;
+	d += int3(threads.x - 1, threads.y - 1, threads.z - 1);
+	d /= threads;
+	DispatchCompute(deviceContext, d.x, d.y, d.z);
+}
+
 void RenderPlatform::BeginFrame(long long f)
 {
 	if (f==frameNumber)
@@ -1255,7 +1263,10 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	static unsigned long long framenumber=0;
 	float displayLod=mip;
 	static int lod=0;
-	
+	if (tex!=nullptr&&dy == 0&& tex->width>0)
+	{
+		dy = (dx * tex->length) / tex->width;
+	}
 	if(debug&&mip<0)
 	{
 		if(framenumber!=GetFrameNumber())

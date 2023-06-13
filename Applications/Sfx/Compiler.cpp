@@ -23,7 +23,8 @@ namespace fs = std::filesystem;
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #else
-#error
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 #ifndef _MSC_VER
@@ -435,13 +436,14 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	for(const auto &p:sfxConfig.compilerPaths)
 	{
 		std::string t=p+"/"s+compiler_exe;
-		std::cout << "Checking " << t.c_str() << std::endl;
+		//std::cout << "Checking " << t.c_str() << std::endl;
 		if(fs::exists(t))
 		{
 			usePath=p;
+			break;
 		}
 	}
-	std::cout<< "Using path " << usePath.c_str() << std::endl;
+//	std::cout<< "Using path " << usePath.c_str() << std::endl;
 	wstring command;
 	
 	string stageName = "NO_STAGES_IN_JSON";

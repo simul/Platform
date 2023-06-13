@@ -302,6 +302,8 @@ int main(int argc, char** argv)
 			sfxConfig.structDeclaration						=j["structDeclaration"];
 		if (j.count("constantBufferDeclaration")>0)
 			sfxConfig.constantBufferDeclaration				=j["constantBufferDeclaration"];
+		if (j.count("namedConstantBufferDeclaration")>0)
+			sfxConfig.namedConstantBufferDeclaration		=j["namedConstantBufferDeclaration"];
 		if (j.count("inputDeclaration")>0)
 		{
 			std::cerr<<platformFilename.c_str()<<": inputDeclaration is deprecated, please use pixelInputDeclaration\n";

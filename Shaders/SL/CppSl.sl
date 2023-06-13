@@ -38,10 +38,6 @@
 												struct name {static const int bindingIndex=buff_num;
 	#define SIMUL_CONSTANT_BUFFER_END };\
 									prag(pack(pop))
-
-	#define SIMUL_TEMPLATIZED_CONSTANT_BUFFER(struct_name, buff_num) SIMUL_CONSTANT_BUFFER(struct_name,buff_num)
-	#define SIMUL_TEMPLATIZED_CONSTANT_BUFFER_END(struct_name, name, buff_num) SIMUL_CONSTANT_BUFFER_END
-
 	struct mat2
 	{
 		float m[8];
@@ -1176,6 +1172,20 @@
 			ret.y=y+v2.y;
 			ret.z=z+v2.z;
 			return ret;
+		}
+		const int3 &operator+=(int3 v2) 
+		{
+			x +=v2.x;
+			y +=v2.y;
+			z +=v2.z;
+			return *this;
+		}
+		const int3& operator/=(int3 v2)
+		{
+			x /= v2.x;
+			y /= v2.y;
+			z /= v2.z;
+			return *this;
 		}
 		void operator=(const int *v)
 		{

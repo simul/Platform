@@ -231,7 +231,7 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 	std::string short_filename=scene->GetShortFilename(filenameUtf8);
 	std::vector< Material*> materials;
 	std::string file;
-	std::vector<std::string>pathsplit=base::SplitPath(filenameUtf8);
+	std::vector<std::string>pathsplit=platform::core::SplitPath(filenameUtf8);
 	if(pathsplit.size())
 		renderPlatform->PushTexturePath(pathsplit[0].c_str());
 	for(unsigned i=0;i<scene->mNumMaterials;i++)

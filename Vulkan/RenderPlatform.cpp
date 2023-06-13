@@ -1962,8 +1962,11 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 			vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
-			bool allLayers = texture->NumFaces() == dt.layerCount;
-			attachments[tv->num] = *(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip));
+			if (texture)
+			{
+				bool allLayers = texture->NumFaces() == dt.layerCount;
+				attachments[tv->num] = *(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip));
+			}
 		}
 		framebufferCreateInfo.attachmentCount = count;
 		framebufferCreateInfo.pAttachments = attachments;

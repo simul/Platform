@@ -73,45 +73,44 @@ struct vertexOutput
 
 shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 {
-    vertexOutput OUT;
-	vec4 opos		=vec4(IN.position.xyz,1.0);
-    OUT.wpos		=mul(world, opos).xyz;
-	OUT.view		=normalize(OUT.wpos.xyz- viewPosition);
-    OUT.clip_pos	=mul(opos,worldViewProj);
-	OUT.texCoords0	=vec2(0,0);
-	OUT.texCoords1	=vec2(0,0);
+	vertexOutput OUT;
+	vec4 opos		= vec4(IN.position.xyz, 1.0);
+	OUT.wpos		= mul(world, opos).xyz;
+	OUT.view		= normalize(OUT.wpos.xyz - viewPosition);
+	OUT.clip_pos	= mul(opos, worldViewProj);
+	OUT.texCoords0	= vec2(0, 0);
+	OUT.texCoords1	= vec2(0, 0);
 #ifdef SFX_OPENGL
-    OUT.normal.xyz	=mul(IN.position.xyz, mat3(world));
+	OUT.normal.xyz	= mul(IN.position.xyz, mat3(world));
 	OUT.tangent.xyz = mul(vec3(1.0, 0.0, 0.0), mat3(world));
 #else
-    OUT.normal.xyz	=mul(vec4(IN.position.xyz, 0.0), world).xyz;
-	OUT.tangent		=mul(vec4(1.0, 0.0, 0.0, 0.0), world).xyz;
+	OUT.normal.xyz	= mul(vec4(IN.position.xyz, 0.0), world).xyz;
+	OUT.tangent		= mul(vec4(1.0, 0.0, 0.0, 0.0), world).xyz;
 #endif
-	OUT.hPosition	=OUT.clip_pos;
-    return OUT;
+	OUT.hPosition	= OUT.clip_pos;
+	return OUT;
 }
 
 shader vertexOutput VS_Solid(vertexInput IN)
 {
-    vertexOutput OUT;
-	vec4 opos		=vec4(IN.position.xyz,1.0);
-    vec4 wpos		=mul(opos, world);
-	OUT.view		=normalize(wpos.xyz-viewPosition);
-	vec4 viewspace_pos = mul( view, vec4(wpos.xyz, 1.0));
-	OUT.clip_pos	=mul(proj,vec4(viewspace_pos.xyz,1.0));
-	OUT.wpos		= wpos.xyz;
-	//OUT.clip_pos	=mul( opos, worldViewProj);
-	OUT.texCoords0	=IN.texCoords;
-	OUT.texCoords1	=IN.texCoords;
+	vertexOutput OUT;
+	vec4 opos			= vec4(IN.position.xyz, 1.0);
+	vec4 wpos			= mul(world, opos);
+	OUT.view			= normalize(wpos.xyz - viewPosition);
+	vec4 viewspace_pos	= mul(view, vec4(wpos.xyz, 1.0));
+	OUT.clip_pos		= mul(proj, vec4(viewspace_pos.xyz, 1.0));
+	OUT.wpos			= wpos.xyz;
+	OUT.texCoords0		= IN.texCoords;
+	OUT.texCoords1		= IN.texCoords;
 #ifdef SFX_OPENGL
-	OUT.normal.xyz = mul(IN.normal, mat3(world));
-	OUT.tangent.xyz = mul(IN.tangent.xyz, mat3(world));
+	OUT.normal.xyz		= mul(IN.normal, mat3(world));
+	OUT.tangent.xyz		= mul(IN.tangent.xyz, mat3(world));
 #else
-	OUT.normal = normalize(mul(vec4(IN.normal, 0.0), world).xyz);
-	OUT.tangent = normalize(mul(vec4(IN.tangent.xyz, 0.0), world).xyz);
+	OUT.normal			= normalize(mul(vec4(IN.normal, 0.0), world).xyz);
+	OUT.tangent			= normalize(mul(vec4(IN.tangent.xyz, 0.0), world).xyz);
 #endif
-	OUT.hPosition	=OUT.clip_pos;
-    return OUT;
+	OUT.hPosition		= OUT.clip_pos;
+	return OUT;
 }
 
 vec3 EnvBRDFApprox(vec3 specularColour, float roughness, float n_v)
