@@ -545,10 +545,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " SrvHeap").c_str(), false);
 	}
 
-	UINT baseMipLevel = textureView.subresourceRange.baseMipLevel;
-	UINT mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips : textureView.subresourceRange.mipLevelCount;
-	UINT baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	UINT arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	const UINT& baseMipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT& mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.subresourceRange.mipLevelCount;
+	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
@@ -677,9 +677,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::
 		mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " UavHeap").c_str(), false);
 	}
 
-	UINT mipLevel = textureView.subresourceRange.baseMipLevel;
-	UINT baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	UINT arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0) 
@@ -770,9 +770,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::Dev
 		mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, (name + " DsvHeap").c_str(), false);
 	}
 
-	UINT mipLevel = textureView.subresourceRange.baseMipLevel;
-	UINT baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	UINT arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Format = RenderPlatform::TypelessToDsvFormat(dxgi_format);
@@ -856,9 +856,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::Dev
 		mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, (name + " RtHeap").c_str(), false);
 	}
 
-	UINT mipLevel = textureView.subresourceRange.baseMipLevel;
-	UINT baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	UINT arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
