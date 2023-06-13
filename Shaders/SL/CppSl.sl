@@ -36,8 +36,13 @@
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) prag(pack(push)) \
 												prag(pack(4)) \
 												struct name {static const int bindingIndex=buff_num;
+
+	#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name, instance_name, buff_num) prag(pack(push)) \
+												prag(pack(4)) \
+												struct struct_name {static const int bindingIndex=buff_num;
 	#define SIMUL_CONSTANT_BUFFER_END };\
 									prag(pack(pop))
+	#define PLATFORM_NAMED_CONSTANT_BUFFER_END SIMUL_CONSTANT_BUFFER_END
 	struct mat2
 	{
 		float m[8];
