@@ -1470,7 +1470,7 @@ HRESULT DirectX::GetMetadataFromDDSFile(
     if (!szFile)
         return E_INVALIDARG;
 
-#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+#if (!SUPPORT_WINDOWS_7)
     ScopedHandle hFile(safe_handle(CreateFile2(szFile, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, nullptr)));
 #else
     ScopedHandle hFile(safe_handle(CreateFileW(szFile, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
@@ -1603,7 +1603,7 @@ HRESULT DirectX::LoadFromDDSFile(
 
     image.Release();
 
-#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+#if (!SUPPORT_WINDOWS_7)
     ScopedHandle hFile(safe_handle(CreateFile2(szFile, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, nullptr)));
 #else
     ScopedHandle hFile(safe_handle(CreateFileW(szFile, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
@@ -2028,7 +2028,7 @@ HRESULT DirectX::SaveToDDSFile(
         return hr;
 
     // Create file and write header
-#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+#if (!SUPPORT_WINDOWS_7)
     ScopedHandle hFile(safe_handle(CreateFile2(szFile, GENERIC_WRITE | DELETE, 0, CREATE_ALWAYS, nullptr)));
 #else
     ScopedHandle hFile(safe_handle(CreateFileW(szFile, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, nullptr)));
