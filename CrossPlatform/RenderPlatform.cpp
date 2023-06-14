@@ -1292,6 +1292,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
 	debugConstants.displayLevel=0;
+	debugConstants.debugTime = float(this->frameNumber);
 	if(texc_scale.x==0||texc_scale.y==0)
 	{
 		texc_scale.x=1.0f;

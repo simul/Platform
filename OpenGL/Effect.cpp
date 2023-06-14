@@ -110,6 +110,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	}
 }
 
+// TODO: Get rid of bindingIndex.
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex)
 {
 	mBindingSlot = bindingIndex;

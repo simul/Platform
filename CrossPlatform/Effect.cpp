@@ -730,7 +730,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if (index < 0)
 				return true;// (index == -2 ? false : true); TODO: Deal missing .sfx files - AJR.
 			if (index < paths.size())
-				filenameUtf8 = paths[index] + filenameUtf8;
+				filenameUtf8 = std::filesystem::canonical(paths[index] + filenameUtf8).generic_string();
 			std::string platformName = r->GetName();
 
 			platform::core::find_and_replace(platformName, " ", "");
