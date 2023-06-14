@@ -283,6 +283,7 @@ namespace platform
 			int maxAttributeSize = 0;
 			int maxTraceRecursionDepth = 0;
 			bool multiview = false;
+			int3 numThreads = { 0,0,0 };
 			std::string rtFormatState;
 			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);
@@ -693,7 +694,7 @@ namespace platform
 					SIMUL_ASSERT(platformConstantBuffer == nullptr);
 					if (platformConstantBuffer)
 						delete platformConstantBuffer;
-					platformConstantBuffer = p->CreatePlatformConstantBuffer();
+					platformConstantBuffer=p->CreatePlatformConstantBuffer();
 					platformConstantBuffer->SetName(typeid(T).name());
 					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
 					platformConstantBuffer->LinkToEffect(nullptr, typeid(T).name(), T::bindingIndex);

@@ -8,6 +8,7 @@
 #include "sampler_states.sl"
 #include "quaternion.sl"
 #include "cubemap_matrices.sl"
+#include "random.sl"
 
 uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2DArray imageTextureArray SIMUL_TEXTURE_REGISTER(0);
@@ -25,6 +26,33 @@ uniform RWTexture3D<uchar4> FastClearTarget3DU8 SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWStructuredBuffer<vec4> textureQueryResults SIMUL_RWTEXTURE_REGISTER(0);
 
 uniform Texture3D volumeTexture;
+
+bool IsNaN(float x)
+{
+	return !(x < 0.f || x > 0.f || x == 0.f);
+}
+void DetectNaNs(vec2 texc, inout vec3 clr)
+{
+	if (IsNaN(clr.r) || IsNaN(clr.g) || IsNaN(clr.b))
+	{
+		vec3 rnd = PcgRand3(55 + int(debugTime * 135136 + 26432.11 * texc.x + 10024611.5 * texc.y));
+		clr.rgb = rnd;
+	}
+}
+void DetectNaNs(vec3 texc, inout vec3 clr)
+{
+	if (IsNaN(clr.r) || IsNaN(clr.g) || IsNaN(clr.b))
+	{
+		vec3 rnd = PcgRand3(55 + int(debugTime * 135136 + 26432.11 * texc.x + 10024611.5 * texc.y + 63241247.81 * texc.z));
+		clr.rgb = rnd;
+	}
+}
+
+#ifdef DEBUG
+#define DETECT_NANS(x,y) DetectNaNs(x,y)
+#else
+#define DETECT_NANS(x,y)
+#endif
 
 struct a2v
 {
@@ -397,6 +425,7 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
 	vec4 u			=vec4(saturate(result.rgb),1.0);
 	//u.rgb+=0.6*saturate(view);
+	DETECT_NANS(view, u.rgb);
 	return u;
 }
 
@@ -408,6 +437,7 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	texc.xy		=viewport.xy+texc.xy*viewport.zw;
 	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
 	res.rgb		+=res.aaa;
+	DETECT_NANS(texc, res.rgb);
 	return res;
 }
 
@@ -418,6 +448,7 @@ shader vec4 PS_ShowTextureArray(posTexVertexOutput IN) : SV_TARGET
 	texc.y = 1.0 - texc.y;
 	vec4 res = multiplier * texture_nearest_lod(imageTextureArray,texc.xyz,0);
 	res.rgb += res.aaa;
+	DETECT_NANS(texc, res.rgb);
 	return res;
 }
 
@@ -430,6 +461,7 @@ shader vec4 PS_ShowTextureRadial(posTexVertexOutput IN) : SV_TARGET
 	vec4 res	=texture_nearest_lod(imageTexture,texc.xy,0);
 	res			*=step(rad,1.0);
 	//res.rgb=IN.texCoords.xyy;
+	DETECT_NANS(texc, res.rgb);
 	return res;
 }
 
@@ -464,45 +496,24 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	
 	if(X.z>0&&X.z<1.0&&X.y>0&&X.y<1.0)
 	{
-		res.rgb=texture_3d_wrap_lod(volumeTexture,X,0).rgb;
+		res.rgb= multiplier.rgb*texture_3d_nearest_lod(volumeTexture,X,0).rgb;
 		res.rgb+=0.05;
 		res.rgb+=vec3(0.1,0,0);
 	}
 	if(Y.x>0&&Y.x<1.0&&Y.z>0&&Y.z<1.0)
 	{
-		res.rgb=texture_3d_wrap_lod(volumeTexture,Y,0).rgb;
+		res.rgb= multiplier.rgb * texture_3d_nearest_lod(volumeTexture,Y,0).rgb;
 		res.rgb+=vec3(0,0.1,0);
 	}
 	if(Z.x>0&&Z.x<1.0&&Z.y>0&&Z.y<1.0)
 	{
-		res.rgb=texture_3d_wrap_lod(volumeTexture,Z,0).rgb;
+		res.rgb= multiplier.rgb * texture_3d_nearest_lod(volumeTexture,Z,0).rgb;
 		res.rgb+=0.1;
 		res.rgb+=vec3(0,0,0.1);
 	}
+	DETECT_NANS(texc,res.rgb);
 //	res=vec4(texc,0,0);
 	return res;
-	/*
-	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
-	texc.y			=1.0-texc.y;
-	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	if(texc.y>.5)
-	{
-		z			=1.0;
-		texc.y		=2.0*(texc.y-.5);
-	}
-	else
-	{
-		texc.y		*=2.0;
-		texc.x		=frac(8.0f*IN.texCoords.x);
-	}
-	vec3 tc			=vec3(texc.x,lerp(texc.y,z,sideview),lerp(z,texc.y,sideview));
-///tc = vec3(IN.texCoords.x, 0.5, IN.texCoords.y);
-	vec4 colour		=texture_3d_wrap_lod(volumeTexture,tc,0);
-	colour.rgb		*=multiplier.rgb;
-	colour.rgb		=abs(colour.rgb);
-	//colour.rgb		*=colour.a;
-	colour.rgb		=lerp(colour.rgb,tc,0.1);
-	return colour;*/
 }
 
 shader vec4 PS_TraceVolume(posTexVertexOutput IN) : SV_Target

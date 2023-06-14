@@ -102,6 +102,7 @@ struct SfxConfig
 	std::string samplerDeclaration;
 	std::string structDeclaration;
 	std::string constantBufferDeclaration;
+	std::string namedConstantBufferDeclaration;
 	std::string pixelInputDeclaration;
 	std::string vertexInputDeclaration;
 	std::string vertexOutputDeclaration;

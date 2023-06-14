@@ -1952,7 +1952,10 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 			vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
-			attachments[tv->num] = *(texture->AsVulkanImageView({ texture->GetShaderResourceTypeForRTVAndDSV(), { dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount} }));
+			if (texture)
+			{
+				attachments[tv->num] = *(texture->AsVulkanImageView({ texture->GetShaderResourceTypeForRTVAndDSV(), { dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount} }));
+			}
 		}
 		framebufferCreateInfo.attachmentCount = count;
 		framebufferCreateInfo.pAttachments = attachments;

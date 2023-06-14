@@ -164,6 +164,10 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 		types_used.clear();
 		if(returnType!="void")
 			types_used.insert(returnType);
+		for (auto i : constantBuffers)
+		{
+			types_used.insert(i->structureType);
+		}
 		for(auto i:parameters)
 		{
 			types_used.insert(i.type);
@@ -190,9 +194,9 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 				}
 			}
 				break;
-			case DeclarationType::CONSTANT_BUFFER:
+			case DeclarationType::NAMED_CONSTANT_BUFFER:
 			{
-				DeclaredConstantBuffer *dt=(DeclaredConstantBuffer*)d;
+				NamedConstantBuffer*dt=static_cast<NamedConstantBuffer*>(d);
 				// Is is something like ConstantBuffer<StructureType>..?
 				if(dt->structureType.length())
 				{
@@ -227,6 +231,15 @@ void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::
 	if(d)
 	switch(d->declarationType)
 	{
+	case DeclarationType::CONSTANT_BUFFER:
+	{
+		const ConstantBuffer* st = (const ConstantBuffer*)d;
+		s.insert(d);
+		for (int j = 0; j < st->m_structMembers.size(); j++)
+		{
+			AccumulateStructDeclarations(s, st->m_structMembers[j].type);
+		}
+	}
 	case DeclarationType::STRUCT:
 	{
 		const Struct *st=(const Struct*)d;
@@ -330,6 +343,7 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, const Stru
 	cb->declarationType=DeclarationType::CONSTANT_BUFFER;
 	cb->slot = slot;
 	cb->name=name;
+	cb->structureType = name;
 	declarations[name]=cb;
 }
 
@@ -958,16 +972,15 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			}
 		}
 	}
-	// templatized constant buffers.
+	// Named constant buffers.
 	for (auto t = declarations.begin(); t != declarations.end(); ++t)
 	{
-		if (t->second->declarationType != DeclarationType::CONSTANT_BUFFER)
+		if (t->second->declarationType != DeclarationType::NAMED_CONSTANT_BUFFER)
 			continue;
 		if (!t->second->ref_count)
 			continue;
-		DeclaredConstantBuffer *dt = (DeclaredConstantBuffer*)t->second;
-		outstr << "constantbuffer " << t->first << " ";
-		
+		NamedConstantBuffer *dt = static_cast<NamedConstantBuffer*>(t->second);
+		outstr << "namedconstantbuffer " << t->first << " ";
 		outstr << " " <<dt->slot<< std::endl;
 	}
 	// Add samplers to the effect file
@@ -1094,7 +1107,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			{
 				const Pass *pass=&(*j);
 				string passName=j->name;
-				outstr<<"\t\tpass "<<passName<<"\n\t\t{\n";
+				outstr<<"\t\tpass "<<passName<<"\n\t\t{\n"; 
 				if(pass->passState.rasterizerState.objectName.length()>0)
 				{
 					outstr<<"\t\t\trasterizer: "<<pass->passState.rasterizerState.objectName<<"\n";
@@ -1115,6 +1128,13 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 					outstr<<pass->passState.blendState.blendFactor[2]<<",";
 					outstr<<pass->passState.blendState.blendFactor[3]<<") ";
 					outstr<<pass->passState.blendState.sampleMask<<"\n";
+				}
+				if (pass->HasShader(sfx::ShaderType::COMPUTE_SHADER))
+				{
+					const string &shaderInstanceName=pass->GetShader(sfx::ShaderType::COMPUTE_SHADER);
+					ShaderInstance *shaderInstance=GetShaderInstance(shaderInstanceName, sfx::ShaderType::COMPUTE_SHADER);
+					Function* function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+					outstr << "\t\t\tnumthreads: " << function->numThreads[0] << " " << function->numThreads[1] <<" "<< function->numThreads[2] << "\n";
 				}
 				if(pass->passState.topologyState.apply)
 				{
@@ -1392,7 +1412,7 @@ bool Effect::IsDeclared(const string &name)
 
 bool Effect::IsConstantBufferMemberAlignmentValid(const Declaration* d)
 {
-	const Struct* structure = (const Struct*)d;
+	const Struct* structure = static_cast<const Struct*>(d);
 	int offset = 0;
 	for (const StructMember& member : structure->m_structMembers)
 	{
@@ -1458,16 +1478,20 @@ string Effect::GetDeclaredType(const string &name) const
 	return "unknown";
 }
 
-DeclaredConstantBuffer* Effect::DeclareTemplatizedConstantBuffer(const string &name,int slot,int space,const string &structureType,const string &original)
+NamedConstantBuffer* Effect::DeclareNamedConstantBuffer(const string &name,int slot,int space,const string &structureType, const Struct& ts,const string &original)
 {
-	DeclaredConstantBuffer* t	  = new DeclaredConstantBuffer();
+	NamedConstantBuffer* t	  = new NamedConstantBuffer();
+	*(static_cast<Struct*>(t)) = ts;
+	t->declarationType		=DeclarationType::NAMED_CONSTANT_BUFFER;
 	t->structureType		= structureType;
 	t->original			 = original;
 	t->name				 = name;
 	t->slot				=slot;
 	t->space			=space;
+	t->instance_name = name;
 	declarations[name] = (t);
-	if (!IsConstantBufferMemberAlignmentValid(declarations[structureType]))
+	declarations[structureType] = (t);
+	if (!IsConstantBufferMemberAlignmentValid(declarations[name]))
 	{
 		delete t;
 		return nullptr;
@@ -1496,7 +1520,7 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 			num=slot;
 		}
 		// RW texture
-		else if (shaderResourceType==ShaderResourceType::TEMPLATIZED_CONSTANT_BUFFER)
+		else if (shaderResourceType==ShaderResourceType::NAMED_CONSTANT_BUFFER)
 		{
 			//find a good buffer slot later...
 		}
@@ -1984,68 +2008,9 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 		}
 		break;
 		case DeclarationType::CONSTANT_BUFFER:
-		{
-			if(d->structureType.length())
-			{
-				// templatized.
-				DeclaredConstantBuffer *c = (DeclaredConstantBuffer*)d;
-				string str = sfxConfig.constantBufferDeclaration;
-				if (str.empty())
-				{
-					if (sfxConfig.sourceExtension.compare("pssl") == 0)
-					{
-						str = "ConstantBuffer {name} : register(b{slot})\n{\n[\t{type} {name};]};";
-
-						Struct* s = (Struct*)declarations[d->structureType];
-						for (auto& member : s->m_structMembers)
-						{
-							//Don't append to start for each shader instance, only needs to be done once.
-							if (member.name.find(c->name + "_") == std::string::npos) 
-								member.name = c->name + "_" + member.name;
-						}
-					}
-					else
-					{
-						str = d->original;
-						find_and_replace(str, "{slot}", ToString(c->slot));
-						os << str.c_str() << endl;
-						return;
-					}
-				}
-				else
-				{
-					str.insert(str.find_last_of(';'), "{instance_name}");
-				}
-
-				Struct* s = (Struct*)declarations[d->structureType];
-				string members;
-				// in square brackets [] is the definition for ONE member.
-				std::regex re_member("\\[(.*)\\]");
-				std::smatch match;
-				string structMemberDeclaration;
-				if (std::regex_search(str, match, re_member))
-				{
-					structMemberDeclaration = match[1].str();
-					str.replace(match[0].first, match[0].first + match[0].length(), "{members}");
-				}
-				for (int i = 0; i < s->m_structMembers.size(); i++)
-				{
-					string m = structMemberDeclaration;
-					find_and_replace(m, "{type}", s->m_structMembers[i].type);
-					find_and_replace(m, "{name}", s->m_structMembers[i].name);
-					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
-					members += m + "\n";
-				}
-				find_and_replace(str, "{members}", members);
-				find_and_replace(str, "{name}", s->name);
-				find_and_replace(str, "{slot}", ToString(c->slot));
-				find_and_replace(str, "{instance_name}", d->name);
-				os << str.c_str() << endl;
-			}
-			else
 			{
 				// Anonymous.
-				ConstantBuffer *s = (ConstantBuffer*)d;
+				ConstantBuffer* s = (ConstantBuffer*)d;
 				string str = sfxConfig.constantBufferDeclaration;
 				if (str.length() == 0)
 				{
@@ -2068,7 +2033,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				for (int i = 0; i < s->m_structMembers.size(); i++)
 				{
 					string m = structMemberDeclaration;
-					string type=s->m_structMembers[i].type;
+					string type = s->m_structMembers[i].type;
 					find_and_replace(m, "{type}", type);
 					find_and_replace(m, "{name}", s->m_structMembers[i].name);
 					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
@@ -2085,6 +2050,47 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				{
 					find_and_replace(str, "{slot}", ToString(GenerateConstantBufferSlot(s->slot)));
 				}
+				os << str.c_str() << endl;
+			}
+			break;
+		case DeclarationType::NAMED_CONSTANT_BUFFER:
+		{
+			if (!d->structureType.length())
+			{
+				std::cerr << "Could not find structureType:" << d->name << std::endl;
+			}
+			else if (!sfxConfig.namedConstantBufferDeclaration.length())
+			{
+				std::cerr << "No namedConstantBufferDeclaration in json file:" << d->name << std::endl;
+			}
+			else
+			{
+				// templatized.
+				const NamedConstantBuffer *c = static_cast<const NamedConstantBuffer*>(d);
+				string str = sfxConfig.namedConstantBufferDeclaration;
+				Struct* s = (Struct*)declarations[d->structureType];
+				string members;
+				// in square brackets [] is the definition for ONE member.
+				std::regex re_member("\\[(.*)\\]");
+				std::smatch match;
+				string structMemberDeclaration;
+				if (std::regex_search(str, match, re_member))
+				{
+					structMemberDeclaration = match[1].str();
+					str.replace(match[0].first, match[0].first + match[0].length(), "{members}");
+				}
+				for (int i = 0; i < s->m_structMembers.size(); i++)
+				{
+					string m = structMemberDeclaration;
+					find_and_replace(m, "{type}", s->m_structMembers[i].type);
+					find_and_replace(m, "{name}", s->m_structMembers[i].name);
+					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
+					members += m + "\n";
+				}
+				find_and_replace(str, "{members}", members);
+				find_and_replace(str, "{name}", s->structureType);
+				find_and_replace(str, "{slot}", ToString(c->slot));
+				find_and_replace(str, "{instance_name}", c->instance_name);
 				os << str.c_str() << endl;
 			}
 		}

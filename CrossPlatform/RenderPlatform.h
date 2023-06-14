@@ -76,12 +76,12 @@ namespace platform
 		struct TargetsAndViewport;
 		class SwapChain;
 		struct Window;
+		class Shader;
 		class DisplaySurface;
 		class BottomLevelAccelerationStructure;
 		class TopLevelAccelerationStructure;
 		class AccelerationStructureManager;
 		class ShaderBindingTable;
-
 		//! Type of resource transition, some platforms used this (dx12)
 		enum ResourceTransition
 		{
@@ -268,6 +268,8 @@ namespace platform
 			virtual void ResourceBarrierUAV (DeviceContext& deviceContext, PlatformStructuredBuffer* sb) {};
 			//! Copy a given texture to another.
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *dst,crossplatform::Texture *src){};
+			//! Execute the currently applied compute shader.
+			virtual void DispatchComputeAuto	(DeviceContext &deviceContext,int3 d);
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Execute the currently applied raytracing shaders.

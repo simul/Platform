@@ -730,7 +730,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if (index < 0)
 				return true;// (index == -2 ? false : true); TODO: Deal missing .sfx files - AJR.
 			if (index < paths.size())
-				filenameUtf8 = paths[index] + filenameUtf8;
+				filenameUtf8 = std::filesystem::canonical(paths[index] + filenameUtf8).generic_string();
 			std::string platformName = r->GetName();
 
 			platform::core::find_and_replace(platformName, " ", "");
@@ -1398,6 +1398,15 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					layoutCount=0;
 					layoutOffset=0;
 					layoutSlot=0;
+				}
+				else if (_stricmp(type.c_str(), "numthreads") == 0)
+				{
+					if (words.size() > 1)
+						p->numThreads.x=atoi(words[1].c_str());
+					if (words.size() > 2)
+						p->numThreads.y=atoi(words[2].c_str());
+					if(words.size()>3)
+						p->numThreads.z=atoi(words[3].c_str());
 				}
 				else if(_stricmp(type.c_str(),"blend")==0)
 				{

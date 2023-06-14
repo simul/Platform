@@ -26,6 +26,9 @@ namespace sfx
 			main_linenumber=0;
 			min_parameters = 0;
 			initialized=false;
+			numThreads[0] = 0;
+			numThreads[1] = 0;
+			numThreads[2] = 0;
 		}
 		std::string						declaration;
 		std::set<std::string>			declarations;
@@ -53,6 +56,7 @@ namespace sfx
 		int								main_linenumber;
 		int								local_linenumber;
 		std::string						filename;
+		int								numThreads[3];
 	protected:
 		mutable std::set<std::string>	types_used;
 		mutable bool					initialized;

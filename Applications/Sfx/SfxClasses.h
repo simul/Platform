@@ -73,7 +73,7 @@ namespace sfx
 		, RW_TEXTURE_2D_ARRAY = RW | TEXTURE_2D | ARRAY
 		, RW_TEXTURE_3D_ARRAY = RW | TEXTURE_3D | ARRAY
 		, RAYTRACE_ACCELERATION_STRUCT =65536
-		, TEMPLATIZED_CONSTANT_BUFFER =131072
+		, NAMED_CONSTANT_BUFFER =131072
 		, COUNT
 	};
 	inline ShaderResourceType operator|(ShaderResourceType a, ShaderResourceType b)
@@ -204,7 +204,7 @@ namespace sfx
 	};
 	enum class DeclarationType
 	{
-		TEXTURE,SAMPLER,BLENDSTATE,RASTERIZERSTATE,DEPTHSTATE,BUFFER,STRUCT,CONSTANT_BUFFER,RENDERTARGETFORMAT_STATE,VARIABLE
+		TEXTURE,SAMPLER,BLENDSTATE,RASTERIZERSTATE,DEPTHSTATE,BUFFER,STRUCT,CONSTANT_BUFFER, NAMED_CONSTANT_BUFFER,RENDERTARGETFORMAT_STATE,VARIABLE
 	};
 	struct Declaration
 	{
@@ -228,6 +228,10 @@ namespace sfx
 		std::string original;
 		std::string structureType; // e.g. Buffer<structType> if used.
 		DeclarationType declarationType;
+		// Not used for all:
+		int slot = 0;
+		int space = 0;
+		std::string type;
 	};
 	struct Variable : public Declaration
 	{
@@ -323,8 +327,8 @@ namespace sfx
 	};
 	struct Struct: public Declaration
 	{
-		Struct()
-			: Declaration (DeclarationType::STRUCT)
+		Struct(DeclarationType t= DeclarationType::STRUCT)
+			: Declaration (t)
 		{
 		}
 		std::vector<StructMember> m_structMembers;
@@ -332,9 +336,8 @@ namespace sfx
 	struct ConstantBuffer : public Struct
 	{
 		int slot;
-		ConstantBuffer()
+		ConstantBuffer(DeclarationType t= DeclarationType::CONSTANT_BUFFER):Struct(t)
 		{
-			declarationType=DeclarationType::CONSTANT_BUFFER;
 		}
 	};
 
@@ -343,9 +346,6 @@ namespace sfx
 		DeclaredResource(DeclarationType t):Declaration(t)
 		{
 		}
-		int slot=0;
-		int space=0;
-		std::string type;
 	};
 
 	struct DeclaredTexture: public DeclaredResource
@@ -359,11 +359,12 @@ namespace sfx
 		ShaderResourceType shaderResourceType;
 	};
 
-	struct DeclaredConstantBuffer: public DeclaredResource
+	struct NamedConstantBuffer: public ConstantBuffer
 	{
-		DeclaredConstantBuffer():DeclaredResource(DeclarationType::CONSTANT_BUFFER)
+		NamedConstantBuffer():ConstantBuffer(DeclarationType::NAMED_CONSTANT_BUFFER)
 		{
 		}
+		std::string instance_name;
 	};
 
 	struct PassRasterizerState

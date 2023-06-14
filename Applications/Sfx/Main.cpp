@@ -141,7 +141,9 @@ int main(int argc, char** argv)
 				else if (argtype == 'o' || argtype == 'O')
 					outputfile = StripQuotes(arg);
 				else if (argtype == 'd' || argtype == 'D')
+				{
 					sfxOptions.debugInfo = true;
+				}
 				else if (argtype == 'e' || argtype == 'E')
 				{
 					std::string c=StripQuotes(arg);
@@ -193,6 +195,8 @@ int main(int argc, char** argv)
 		sfxOptions.optimizationLevel=atoi(optimization.c_str());
 	}
 	SfxConfig sfxConfig;
+	if(sfxOptions.debugInfo)
+		sfxConfig.define["DEBUG"] = "1";
 	sfxConfig.platformFilename=platformFilename;
 	json j;
 	try
@@ -302,6 +306,8 @@ int main(int argc, char** argv)
 			sfxConfig.structDeclaration						=j["structDeclaration"];
 		if (j.count("constantBufferDeclaration")>0)
 			sfxConfig.constantBufferDeclaration				=j["constantBufferDeclaration"];
+		if (j.count("namedConstantBufferDeclaration")>0)
+			sfxConfig.namedConstantBufferDeclaration		=j["namedConstantBufferDeclaration"];
 		if (j.count("inputDeclaration")>0)
 		{
 			std::cerr<<platformFilename.c_str()<<": inputDeclaration is deprecated, please use pixelInputDeclaration\n";

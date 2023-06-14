@@ -22,5 +22,6 @@ namespace sfx
 		std::set<ConstantBuffer*> constantBuffers;
 		int global_line_number;
 		std::string rtFormatStateName;
+		int numThreads[3];
 	};
 }
