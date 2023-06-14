@@ -85,7 +85,8 @@ GraphicsDeviceContext::GraphicsDeviceContext()
 
 GraphicsDeviceContext::~GraphicsDeviceContext()
 {
-	renderPlatform->EndRenderPass(*(DeviceContext*)this);
+	if (renderPlatform)
+		renderPlatform->EndRenderPass(*(DeviceContext*)this);
 }
 
 std::stack<crossplatform::TargetsAndViewport*>& GraphicsDeviceContext::GetFrameBufferStack()

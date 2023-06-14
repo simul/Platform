@@ -564,8 +564,8 @@ public:
 		renderPlatform->ApplyPass(deviceContext, multiview->GetPass(0));
 		crossplatform::TargetsAndViewport targets;
 		targets.num = 1;
-		targets.m_rt[0] = texture->AsD3D12RenderTargetView(deviceContext, 0, 0);
-		targets.textureTargets[0] = {texture, 0, 0};
+		targets.m_rt[0] = texture->AsD3D12RenderTargetView(deviceContext, { texture->GetShaderResourceTypeForRTVAndDSV(), { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 } });
+		targets.textureTargets[0] = {texture, { crossplatform::TextureAspectFlags::COLOUR, 0, 0, 1 } };
 		targets.viewport = { 0,0,texture->GetWidth(),texture->GetLength() };
 		renderPlatform->ActivateRenderTargets(deviceContext, &targets);
 		renderPlatform->Draw(deviceContext, 4, 0);
