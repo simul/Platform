@@ -49,8 +49,9 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatf
 
 void Texture::activateRenderTarget(GraphicsDeviceContext& deviceContext, TextureView textureView)
 {
-	const int& array_index = textureView.subresourceRange.baseArrayLayer;
 	const int& mip_index = textureView.subresourceRange.baseMipLevel;
+	const int& array_count = textureView.subresourceRange.arrayLayerCount;
+	const int& array_index = textureView.subresourceRange.baseArrayLayer;
 	if (textureView.type == ShaderResourceType::UNKNOWN)
 		textureView.type = GetShaderResourceTypeForRTVAndDSV();
 
@@ -59,7 +60,7 @@ void Texture::activateRenderTarget(GraphicsDeviceContext& deviceContext, Texture
 	targetsAndViewport.textureTargets[0].texture						=this;
 	targetsAndViewport.textureTargets[0].subresource.mipLevel			=mip_index;
 	targetsAndViewport.textureTargets[0].subresource.baseArrayLayer		=array_index;
-	targetsAndViewport.textureTargets[0].subresource.arrayLayerCount	=NumFaces();
+	targetsAndViewport.textureTargets[0].subresource.arrayLayerCount	=array_count;
 	targetsAndViewport.m_dt												=nullptr;
 	targetsAndViewport.viewport.x										=0;
 	targetsAndViewport.viewport.y										=0;

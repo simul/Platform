@@ -184,7 +184,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 	// Construct targets and viewport:
 	targetsAndViewport.num												= 1;
 	targetsAndViewport.textureTargets[0].texture						= buffer_texture;
-	targetsAndViewport.textureTargets[0].subresource.baseArrayLayer		= is_cubemap ? current_face : 0;
+	targetsAndViewport.textureTargets[0].subresource.baseArrayLayer		= (is_cubemap && current_face != -1 ? current_face : 0);
 	targetsAndViewport.textureTargets[0].subresource.arrayLayerCount	= 1;
 	targetsAndViewport.textureTargets[0].subresource.mipLevel			= 0;
 	targetsAndViewport.depthTarget.texture						= buffer_depth_texture;
@@ -226,7 +226,7 @@ void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &de
 	vk::ImageView attachments[2]={nullptr,nullptr};
 	framebufferCreateInfo.pAttachments = attachments;
 	if(buffer_depth_texture)
-		attachments[1]=*(buffer_depth_texture->AsVulkanImageView(crossplatform::ShaderResourceType::TEXTURE_2D,0,0));
+		attachments[1] = *(buffer_depth_texture->AsVulkanImageView({ crossplatform::ShaderResourceType::TEXTURE_2D, { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 } }));
 	int totalNum	= is_cubemap ? 6  : 1;
 	for(int i=1;i<8;i++)
 	{
@@ -237,7 +237,7 @@ void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &de
 		{
 			framebufferCreateInfo.attachmentCount=1+((buffer_depth_texture!=nullptr&&(i&RPType::DEPTH)!=0&&(i&RPType::COLOUR)!=0)?1:0);
 			framebufferCreateInfo.renderPass = mDummyRenderPasses[i];
-			attachments[0]=*(buffer_texture->AsVulkanImageView(crossplatform::ShaderResourceType::TEXTURE_2D,j,0));
+			attachments[0]=*(buffer_texture->AsVulkanImageView({ crossplatform::ShaderResourceType::TEXTURE_2D, { crossplatform::TextureAspectFlags::COLOUR, 0, 1, j, 1 } }));
 			SIMUL_ASSERT(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j])==vk::Result::eSuccess);
 			SetVulkanName(renderPlatform,mFramebuffers[i][j],platform::core::QuickFormat(+"%s mFramebuffers %d %d",name.c_str(),i,j));
 		}
@@ -251,10 +251,6 @@ vk::Framebuffer *Framebuffer::GetVulkanFramebuffer(crossplatform::GraphicsDevice
 		InitVulkanFramebuffer(deviceContext);
 	if(cube_face<0)
 		cube_face=0;
-	if(buffer_texture&&colour_active)
-		((vulkan::Texture*)buffer_texture)->SplitLayouts();
-	if(buffer_depth_texture&&depth_active)
-		((vulkan::Texture*)buffer_depth_texture)->SplitLayouts();
 	if(depth_active)
 	{
 		if(colour_active)
