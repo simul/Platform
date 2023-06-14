@@ -477,19 +477,12 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 			d = (d + 1) / 2;
 		}
 	}
-	vk::ImageLayout srcLayout = src->GetLayout();
-	vk::ImageLayout dstLayout = dst->GetLayout();
 
-	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
-	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal);
+	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal, {});
+	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, {});
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
 	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
 													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
-
-	// often, the textures might have been in ePreinitialized or eUndefined, which we CANNOT
-	//   transition TO, so we CAN't restore the previous layouts here:
-	//src->SetLayout(deviceContext, srcLayout);
-	//dst->SetLayout(deviceContext, dstLayout);
 }
 
 float RenderPlatform::GetDefaultOutputGamma() const 
@@ -814,7 +807,7 @@ vk::Extent2D RenderPlatform::GetTextureTargetExtext2D(const crossplatform::Targe
 		width = targetTexture.texture->width;
 		length = targetTexture.texture->length;
 
-		const int& mip = targetTexture.mip;
+		const int& mip = targetTexture.subresource.mipLevel;
 		width >>= mip;
 		length >>= mip;
 	}
@@ -1691,7 +1684,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 	vulkanDevice->bindBufferMemory(imageBuffer, imageBufferMemory, 0);
 
 	vulkan::Texture* t = (vulkan::Texture*)texture;
-	t->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal);
+	t->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal, { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, texture->GetArraySize() });
 	vk::BufferImageCopy bic = vk::BufferImageCopy(0, 0, 0,
 		{ vk::ImageAspectFlagBits::eColor, 0, 0, (uint32_t)texture->GetArraySize()},
 		{ 0, 0, 0 },
@@ -1714,14 +1707,14 @@ void RenderPlatform::RestoreColourTextureState(crossplatform::DeviceContext& dev
 	if (!tex)
 		return;
 	vulkan::Texture* t = (vulkan::Texture*)tex;
-	t->SetLayout(deviceContext, vk::ImageLayout::eColorAttachmentOptimal);
+	t->SetLayout(deviceContext, vk::ImageLayout::eColorAttachmentOptimal, {});
 }
 void RenderPlatform::RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {
 	if (!tex)
 		return;
 	vulkan::Texture* t = (vulkan::Texture*)tex;
-	t->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	t->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal, {});
 }
 
 void* RenderPlatform::GetDevice()
@@ -1754,18 +1747,18 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		target.m_rt[i] = nullptr;
 		target.rtFormats[i] = targs[i]->GetFormat();
 		target.textureTargets[i].texture = targs[i];
-		target.textureTargets[i].layer = 0;
-		target.textureTargets[i].layerCount = targs[i]->NumFaces();
-		target.textureTargets[i].mip= 0;
+		target.textureTargets[i].subresource.baseArrayLayer = 0;
+		target.textureTargets[i].subresource.arrayLayerCount = targs[i]->NumFaces();
+		target.textureTargets[i].subresource.mipLevel= 0;
 	}
 	if (depth)
 	{
 		target.m_dt = nullptr;
 		target.depthFormat = depth->pixelFormat;
 		target.depthTarget.texture = depth;
-		target.depthTarget.layer = 0;
-		target.depthTarget.layerCount = depth->NumFaces();
-		target.depthTarget.mip = 0;
+		target.depthTarget.subresource.baseArrayLayer = 0;
+		target.depthTarget.subresource.arrayLayerCount = depth->NumFaces();
+		target.depthTarget.subresource.mipLevel = 0;
 	}
 	target.viewport = int4(0, 0, targs[0]->width, targs[0]->length);
 
@@ -1892,9 +1885,8 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 	{
 		crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[0];
 		vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
-		bool allLayers = texture->NumFaces() == tt.layerCount;
 
-		hashval += (unsigned long long)(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.layer, tt.mip))->operator VkImageView();
+		hashval += (unsigned long long)(texture->AsVulkanImageView({ texture->GetShaderResourceTypeForRTVAndDSV(), { tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount} }))->operator VkImageView();
 		hashval += (unsigned long long)texture->width;	//Deal with resizing the framebuffer!
 		hashval += (unsigned long long)texture->length;
 		hashval += (unsigned long long)texture->GetArraySize();
@@ -1905,9 +1897,8 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		vulkan::Texture* d = (vulkan::Texture*)tv->depthTarget.texture;
 		crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 		vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
-		bool allLayers = texture->NumFaces() == dt.layerCount;
 
-		hashval += (unsigned long long)(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip))->operator VkImageView();
+		hashval += (unsigned long long)(texture->AsVulkanImageView({ texture->GetShaderResourceTypeForRTVAndDSV(), { dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount} }))->operator VkImageView();
 	}
 	hashval+=tv->num;
 	return hashval;
@@ -1955,8 +1946,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[j];
 			vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
-			bool allLayers = texture->NumFaces() == tt.layerCount;
-			attachments[j] = *(texture->AsVulkanImageView(crossplatform::ShaderResourceType::UNKNOWN, allLayers ? -1 : tt.layer, tt.mip));
+			attachments[j] = *(texture->AsVulkanImageView({ texture->GetShaderResourceTypeForRTVAndDSV(), { tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount} }));
 		}
 		if (deviceContext.contextState.IsDepthActive())
 		{
@@ -1964,8 +1954,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 			vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
 			if (texture)
 			{
-				bool allLayers = texture->NumFaces() == dt.layerCount;
-				attachments[tv->num] = *(texture->AsVulkanDepthView(allLayers ? -1 : dt.layer, dt.mip));
+				attachments[tv->num] = *(texture->AsVulkanImageView({ texture->GetShaderResourceTypeForRTVAndDSV(), { dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount} }));
 			}
 		}
 		framebufferCreateInfo.attachmentCount = count;

@@ -96,8 +96,22 @@ DXGI_FORMAT platform::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
 	return (DXGI_FORMAT)u;
 }
 
+bool IsDepthFomart(DXGI_FORMAT fmt)
+{
+	if (fmt == DXGI_FORMAT_D32_FLOAT_S8X24_UINT
+		|| fmt == DXGI_FORMAT_D32_FLOAT
+		|| fmt == DXGI_FORMAT_D24_UNORM_S8_UINT
+		|| fmt == DXGI_FORMAT_D16_UNORM)
+		return true;
+	else
+		return false;
+}
+
 DXGI_FORMAT platform::dx11::ResourceToDsvFormat(DXGI_FORMAT fmt)
 {
+	if (IsDepthFomart(fmt))
+		return fmt;
+
 	int u=fmt+ 1;
 	switch(fmt)
 	{

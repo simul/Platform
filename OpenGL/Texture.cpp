@@ -235,56 +235,41 @@ void Texture::InvalidateDeviceObjects()
 		glMakeTextureHandleNonResidentARB(u);
 	}
 	residentHandles.clear();
+
 	for(auto i:mTextureFBOs)
 	{
 		glDeleteFramebuffers((GLsizei)i.size(),i.data());
 	}
 	mTextureFBOs.clear();
-    std::set<GLuint> toDeleteTextures;
-    for (auto &texIdVector: mLayerMipViews)
-    {
-        for (GLuint texId : texIdVector)
-        {
-            if (texId && texId != mTextureID)
-                toDeleteTextures.insert(texId);
-        }
-        texIdVector.clear();
-    }
-    mLayerMipViews.clear();
-    for (GLuint texId : mMainMipViews)
-    {
-        if (texId && texId != mTextureID)
-            toDeleteTextures.insert(texId);
-    }
-    mMainMipViews.clear();
-    for (GLuint texId : mLayerViews)
-    {
-        if (texId && texId != mTextureID)
-            toDeleteTextures.insert(texId);
-    }
-    mLayerViews.clear();
-    if (mCubeArrayView != 0 && mCubeArrayView != mTextureID)
-    {
-        toDeleteTextures.insert(mCubeArrayView);
-    }
+
+	std::set<GLuint> toDeleteTextures;
+	for (auto textureView : mTextureViews)
+	{
+		if (textureView.second && textureView.second != mTextureID)
+			toDeleteTextures.insert(textureView.second);
+	}
+	mTextureViews.clear();
+
+	if (mCubeArrayView != 0 && mCubeArrayView != mTextureID)
+	{
+		//OpenGL weirdness here: Deleting this texture id can
+		// cause random crashes, when generating new TextureViews.
+		//toDeleteTextures.insert(mCubeArrayView);
+	}
 	toDeleteTextures.insert(mTextureID);
+
 	for(auto t:toDeleteTextures)
 	{
 		if(external_texture&&t==mTextureID)
 			toDeleteTextures.erase(t);
 	}
-	/*auto *rp=(opengl::RenderPlatform*)renderPlatform;
-	if(rp)
-	{
-		//rp->ClearResidentTextures();
-		//rp->DeleteGLTextures(toDeleteTextures);
-	}*/
+
 	for(auto t:toDeleteTextures)
 	{
 		glDeleteTextures(1,&t);
 	}
 
-    mCubeArrayView = 0;
+	mCubeArrayView = 0;
 	mTextureID = 0;
 }
 
@@ -298,7 +283,7 @@ void Texture::MakeHandleResident(GLuint64 thandle)
 	residentHandles.insert(thandle);
 }
 
-bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, bool need_srv, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, int numOfSamples)
 {
 	float qw, qh;
 	GLuint gt=GLuint(uintptr_t(t));
@@ -312,8 +297,6 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 
 		mTextureID				= gt;
 		external_texture		= true;
-		mMainMipViews[0]		= mTextureID;
-		mLayerMipViews[0][0]	= mMainMipViews[0];
 
 		dim			= 2;
 		cubemap		= false;
@@ -364,37 +347,6 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		SetName(name.c_str());
 
 		InitViews(1, 1, rendertarget);
-
-		// Layer view:
-		{
-
-		}
-		std::string viewName;
-		// Mip views:
-		{
-			glGenTextures(mips, mMainMipViews.data());
-			for (int mip = 0; mip < mips; mip++)
-			{
-				glTextureView(mMainMipViews[mip], target, mTextureID, mInternalGLFormat, mip, 1, 0, arraySize);
-
-				// Debug name:
-				viewName = name + "_mip_" + std::to_string(mip);
-				SetGLName(viewName.c_str(), mMainMipViews[mip]);
-			}
-		}
-		// Layer mip views:
-		{
-			for (int i = 0; i < arraySize; i++)
-			{
-				glGenTextures(mips, mLayerMipViews[i].data());
-				for (int mip = 0; mip < mips; mip++)
-				{
-					glTextureView(mLayerMipViews[i][mip], target, mTextureID, mInternalGLFormat, mip, 1, i, 1);
-					viewName = name + "_layer_" + std::to_string(i) + "_mip_" + std::to_string(mip);
-					SetGLName(viewName.c_str(), mLayerMipViews[i][mip]);
-				}
-			}
-		}
 
 		// Render targets
 		if (rendertarget)
@@ -467,66 +419,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 			}
 		}
 
-		std::string viewName;
-
-		// Layer view:
-		{
-			glGenTextures(totalCount, mLayerViews.data());
-			for (int i = 0; i < totalCount; i++)
-			{
-				glTextureView(mLayerViews[i], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, 0, mips, i, 1);
-				
-				// Debug name:
-				viewName = name + "_layer_" + std::to_string(i);
-				SetGLName(viewName.c_str(), mLayerViews[i]);
-			}
-		}
-
-		// Mip views:
-		{
-			if (cubemap)
-			{
-				glGenTextures(nmips, mMainMipViews.data());
-				GLenum target = num > 1 ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
-				for (int mip = 0; mip < mips; mip++)
-				{
-					glTextureView(mMainMipViews[mip], target, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
-					
-					// Debug name:
-					viewName = name + "_mip_" + std::to_string(mip);
-					SetGLName(viewName.c_str(), mMainMipViews[mip]);
-				}
-			}
-			else
-			{
-				glGenTextures(mips, mMainMipViews.data());
-				for (int mip = 0; mip < mips; mip++)
-				{
-					glTextureView(mMainMipViews[mip], GL_TEXTURE_2D_ARRAY, mCubeArrayView, mInternalGLFormat, mip, 1, 0, totalCount);
-
-					// Debug name:
-					viewName = name + "_mip_" + std::to_string(mip);
-					SetGLName(viewName.c_str(), mMainMipViews[mip]);
-				}
-			}
-		}
-
-		// Layer mip views:
-		{
-			for (int i = 0; i < totalCount; i++)
-			{
-				glGenTextures(mips, mLayerMipViews[i].data());
-				for (int mip = 0; mip < mips; mip++)
-				{
-					glTextureView(mLayerMipViews[i][mip], GL_TEXTURE_2D, mCubeArrayView, mInternalGLFormat, mip, 1, i, 1);
-
-					// Debug name:
-					viewName = name + "_layer_" + std::to_string(i) + "_mip_" + std::to_string(mip);
-					SetGLName(viewName.c_str(), mLayerMipViews[i][mip]);
-				}
-			}
-		}
-
 		return true;
 	}
 
@@ -559,35 +451,6 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		SetName(name.c_str());
 
 		InitViews(nmips, 1, false);
-
-		std::string viewName;
-
-		// Layer views:
-		{
-
-		}
-
-		// Mip views:
-		{
-			glGenTextures(mips, mMainMipViews.data());
-			for (int mip = 0; mip < mips; mip++)
-			{
-				glTextureView(mMainMipViews[mip], GL_TEXTURE_3D, mTextureID, mInternalGLFormat, mip, 1, 0, 1);
-
-				// Debug name:
-				viewName = name + "_mip_" + std::to_string(mip);
-				SetGLName(viewName.c_str(), mMainMipViews[mip]);
-			}
-		}
-
-		// Layer mips:
-		{
-			for (int mip = 0; mip < nmips; mip++)
-			{
-				// Same as mip views (we just have 1 layer):
-				mLayerMipViews[0][mip] = mMainMipViews[mip];
-			}
-		}
 	
 		return true;
 	}
@@ -620,20 +483,10 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 	}
 }
 
-void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, int array_index, int mip_index)
+void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView)
 {
-	if (array_index == -1)
-	{
-		array_index = 0;
-	}
-	if (mip_index == -1)
-	{
-		mip_index = 0;
-	}
-	if (mTextureFBOs[array_index][mip_index] == 0)
-	{
-		CreateFBOs(mNumSamples);
-	}
+	const int& array_index = textureView.subresourceRange.baseArrayLayer;
+	const int& mip_index = textureView.subresourceRange.baseMipLevel;
 
 	targetsAndViewport.num				= 1;
 	targetsAndViewport.m_rt[0]			= (crossplatform::ApiRenderTarget*)(uint64_t)mTextureFBOs[array_index][mip_index];
@@ -687,73 +540,55 @@ void Texture::copyToMemory(crossplatform::DeviceContext& deviceContext, void* ta
 
 }
 
-GLuint Texture::AsOpenGLView(crossplatform::ShaderResourceType type, int layer, int mip, bool rw)
+GLuint Texture::AsOpenGLView(crossplatform::TextureView textureView)
 {
-	if (mip == mips)
-	{
-		mip = 0;
-	}
+	if (!ValidateTextureView(textureView))
+		return 0;
 
-	int realArray = GetArraySize();
-	bool no_array = !cubemap && (arraySize <= 1);
-	bool isUAV = (crossplatform::ShaderResourceType::RW & type) == crossplatform::ShaderResourceType::RW;
+	uint64_t hash = textureView.GetHash();
+	if (mTextureViews.find(hash) != mTextureViews.end())
+		return mTextureViews[hash];
 
-	auto bounds_check_return_texture_view = [&](const std::vector<GLuint>& arr, int idx) -> GLuint
-	{
-	#if _DEBUG
-		if (idx > -1 && idx < arr.size())
-			return arr[idx];
-		else
-			return mTextureID;
-	#else
-		return arr[idx];
-	#endif
+	uint32_t baseMipLevel = textureView.subresourceRange.baseMipLevel;
+	uint32_t mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips : textureView.subresourceRange.mipLevelCount;
+	uint32_t baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	uint32_t arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
 
-	};
-	auto bounds_check_nested_return_texture_view = [&](const std::vector<std::vector<GLuint>>& arr, int idx0, int idx1) -> GLuint
-	{
-	#if _DEBUG
-		if (idx0 > -1 && idx0 < arr.size())
-		{
-			if (idx1 > -1 && idx1 < arr[idx0].size())
-			{
-				return arr[idx0][idx1];
-			}
-			else
-				return mTextureID;
-		}
-		else
-			return mTextureID;
-	#else
-		return arr[idx0][idx1];
-	#endif
-	};
+	const crossplatform::ShaderResourceType& type = textureView.type;
+	GLenum target = 0;
+	if (type == crossplatform::ShaderResourceType::TEXTURE_1D || type == crossplatform::ShaderResourceType::RW_TEXTURE_1D)
+		target = GL_TEXTURE_1D;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY || type == crossplatform::ShaderResourceType::RW_TEXTURE_1D_ARRAY)
+		target = GL_TEXTURE_1D_ARRAY;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_2D || type == crossplatform::ShaderResourceType::RW_TEXTURE_2D)
+		target = GL_TEXTURE_2D;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY || type == crossplatform::ShaderResourceType::RW_TEXTURE_2D_ARRAY)
+		target = GL_TEXTURE_2D_ARRAY;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+		target = GL_TEXTURE_2D_MULTISAMPLE;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
+		target = GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_3D || type == crossplatform::ShaderResourceType::RW_TEXTURE_3D)
+		target = GL_TEXTURE_3D;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_CUBE)
+		target = GL_TEXTURE_CUBE_MAP;
+	else if (type == crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)
+		target = GL_TEXTURE_CUBE_MAP_ARRAY;
+	else
+		SIMUL_BREAK_ONCE("Unsupported crossplatform::ShaderResourceType.");
 
-	// Base view:
-	if ((mips <= 1 && no_array) || (layer < 0 && mip < 0))
-	{
-		if (cubemap && ((type & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY))
-		{
-			return mCubeArrayView;
-		}
+	GLint status;
+	glGetTextureParameteriv(mTextureID, GL_TEXTURE_IMMUTABLE_FORMAT, &status);
+	if (status == GL_FALSE)
 		return mTextureID;
-	}
-	// Layer view:
-	if (mip < 0 || mips <= 1)
-	{
-		if (layer < 0 || no_array)
-		{
-			return mTextureID;
-		}
-		return bounds_check_return_texture_view(mLayerViews,layer);
-	}
-	// Mip view:
-	if (layer < 0)
-	{
-		return bounds_check_return_texture_view(mMainMipViews,mip);
-	}
-	// Layer mip view:
-	return bounds_check_nested_return_texture_view(mLayerMipViews,layer,mip);
+
+	GLuint imageView;
+	glGenTextures(1, &imageView);
+	glTextureView(imageView, target, mTextureID, mInternalGLFormat, baseMipLevel, mipLevelCount, baseArrayLayer, arrayLayerCount);
+	SetGLName(std::string(name + "_TextureView").c_str(), imageView);
+
+	mTextureViews[hash] = imageView;
+	return imageView;
 }
 
 GLuint Texture::GetGLMainView()
@@ -835,15 +670,6 @@ void Texture::InitViews(int mipCount, int layers, bool isRenderTarget)
 	{
 		SIMUL_BREAK("OpenGL nVidia driver cannot cope with compute writing/reading 16 bit float textures.");
 	}
-	mLayerViews.resize(layers);
-
-	mMainMipViews.resize(mipCount);
-
-	mLayerMipViews.resize(layers);
-	for (int i = 0; i < layers; i++)
-	{
-		mLayerMipViews[i].resize(mipCount);
-	}
 
 	if (isRenderTarget)
 	{
@@ -864,7 +690,8 @@ void Texture::CreateFBOs(int sampleCount)
 			glGenFramebuffers(1, &mTextureFBOs[i][mip]);
 			glBindFramebuffer(GL_FRAMEBUFFER, mTextureFBOs[i][mip]);
 			GLenum texture_target = sampleCount == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_target, mLayerMipViews[i][mip], 0);
+			crossplatform::ShaderResourceType srt = sampleCount == 1 ? crossplatform::ShaderResourceType::TEXTURE_2D : crossplatform::ShaderResourceType::TEXTURE_2DMS;
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_target, AsOpenGLView({ srt, { crossplatform::TextureAspectFlags::COLOUR, mip, 1, i, 1} }), 0);
 			GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 			if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 			{

@@ -3,7 +3,7 @@
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/Shaders/Sl/CppSl.sl"
 #include <string>
-#include <map>
+#include <unordered_map>
 #include "DirectXHeader.h"
 #include "Platform/Core/RuntimeError.h"
 
@@ -42,38 +42,13 @@ namespace platform
 			{
 				return texture;
 			}
-			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t=crossplatform::ShaderResourceType::UNKNOWN,int index=-1,int mip=-1);
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int index=-1,int mip=-1);
-			ID3D11DepthStencilView *AsD3D11DepthStencilView()
-			{
-				return depthStencilView;
-			}
-			ID3D11RenderTargetView *AsD3D11RenderTargetView(int index=-1,int mip=-1)
-			{
-				if(!renderTargetViews)
-					return NULL;
-				if(index<0)
-					index=0;
-				if(mip<0)
-					mip=0;
-#ifdef _DEBUG
-				if(mip>=mips)
-				{
-					SIMUL_BREAK_ONCE("AsD3D11RenderTargetView: mip out of range");
-					return NULL;
-				}
-				if(index>=NumFaces())
-				{
-					SIMUL_BREAK_ONCE("AsD3D11RenderTargetView: layer index out of range");
-					return NULL;
-				}
-#endif
-				return renderTargetViews[index][mip];
-			}
-			bool IsComputable() const override;
-			bool HasRenderTargets() const override;
-			bool InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			bool InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
+			ID3D11ShaderResourceView* AsD3D11ShaderResourceView(const crossplatform::TextureView& textureView);
+			ID3D11UnorderedAccessView* AsD3D11UnorderedAccessView(const crossplatform::TextureView& textureView);
+			ID3D11DepthStencilView* AsD3D11DepthStencilView(const crossplatform::TextureView& textureView);
+			ID3D11RenderTargetView* AsD3D11RenderTargetView(const crossplatform::TextureView& textureView);
+
+			bool InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, int w, int l, crossplatform::PixelFormat f, bool make_rt = false, bool setDepthStencil = false, int numOfSamples = 1) override;
+			bool InitFromExternalTexture3D(crossplatform::RenderPlatform* renderPlatform, void* t, bool make_uav = false) override;
 			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
@@ -100,7 +75,7 @@ namespace platform
 			bool isMapped() const;
 			void unmap();
 			vec4 GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
-			void activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index=-1,int mip_index=0) override;
+			void activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView = crossplatform::TextureView()) override;
 			void deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			virtual int GetLength() const
 			{
@@ -129,23 +104,15 @@ namespace platform
 			ID3D11Resource*				texture;
 			ID3D11Resource				*external_copy_source;			// If this is a copy of an external texture, but that texture was stupidly not created to have SRV's,
 																		// we must copy it for every update.
-			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	
-			ID3D11ShaderResourceView*	arrayShaderResourceView;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
-			ID3D11ShaderResourceView**	layerShaderResourceViews;		// SRV's for each layer, including all mips
-			ID3D11ShaderResourceView**  mainMipShaderResourceViews;		// SRV's for the whole texture at different mips.
-			ID3D11ShaderResourceView***	layerMipShaderResourceViews;	// SRV's for each layer at different mips.
-			ID3D11UnorderedAccessView**  mipUnorderedAccessViews;		// UAV for the whole texture at various mips: only for 2D arrays.
-			ID3D11UnorderedAccessView***  layerMipUnorderedAccessViews;	// UAV's for the layers and mips
-			ID3D11DepthStencilView*		depthStencilView;
-			ID3D11RenderTargetView***	renderTargetViews;				// 2D table: layers and mips.
+			std::unordered_map<uint64_t, ID3D11ShaderResourceView*> shaderResourceViews;
+			std::unordered_map<uint64_t, ID3D11UnorderedAccessView*> unorderedAccessViews;
+			std::unordered_map<uint64_t, ID3D11DepthStencilView*> depthStencilViews;
+			std::unordered_map<uint64_t, ID3D11RenderTargetView*> renderTargetViews;
 		
-			void InitUAVTables(int l,int m);
 			void FreeUAVTables();
-			void InitSRVTables(int l,int m);
 			void FreeSRVTables();
 			void FreeRTVTables();
-			void InitRTVTables(int l,int m);
-			void CreateSRVTables(int num,int m,bool cubemap,bool volume=false,bool msaa=false);
+			void FreeDSVTables();
 			DXGI_FORMAT genericDxgiFormat=DXGI_FORMAT_UNKNOWN;
 			DXGI_FORMAT srvFormat=DXGI_FORMAT_UNKNOWN;
 		};

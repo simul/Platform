@@ -386,26 +386,26 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,cross
 	renderPlatform->SetConstantBuffer(deviceContext,s);
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceRange& subresource)
 {
-	renderPlatform->SetTexture(deviceContext,res,tex,index,mip);
+	renderPlatform->SetTexture(deviceContext, res, tex, subresource);
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const SubresourceRange& subresource)
 {
-	const ShaderResource &i = GetShaderResource(name);
-	SetTexture(deviceContext,i,tex,index,mip);
+	const ShaderResource& i = GetShaderResource(name);
+	SetTexture(deviceContext, i, tex, subresource);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceLayers& subresource)
 {
-	renderPlatform->SetUnorderedAccessView(deviceContext,  res,  tex,  index,  mip);
+	renderPlatform->SetUnorderedAccessView(deviceContext, res, tex, subresource);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* t, const SubresourceLayers& subresource)
 {
-	const ShaderResource &i=GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext,i,t,index,mip);
+	const ShaderResource& i = GetShaderResource(name);
+	SetUnorderedAccessView(deviceContext, i, t, subresource);
 }
 
 const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
@@ -730,7 +730,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if (index < 0)
 				return true;// (index == -2 ? false : true); TODO: Deal missing .sfx files - AJR.
 			if (index < paths.size())
-				filenameUtf8 = paths[index] + filenameUtf8;
+				filenameUtf8 = std::filesystem::canonical(paths[index] + filenameUtf8).generic_string();
 			std::string platformName = r->GetName();
 
 			platform::core::find_and_replace(platformName, " ", "");
