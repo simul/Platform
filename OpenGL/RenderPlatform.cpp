@@ -20,17 +20,17 @@ using namespace platform;
 using namespace opengl;
 
 RenderPlatform::RenderPlatform():
-    mNullVAO(0)
+	mNullVAO(0)
 	,mDummy2D(nullptr)
-    ,mDummy3D(nullptr)
+	,mDummy3D(nullptr)
 {
-    mirrorY     = true;
-    mirrorY2    = true;
-    mirrorYText = true;
+	mirrorY     = true;
+	mirrorY2    = true;
+	mirrorYText = true;
 
-    mCachedState.Vao            = 0;
-    mCachedState.Program        = 0;
-    mCachedState.Framebuffer    = 0;
+	mCachedState.Vao            = 0;
+	mCachedState.Program        = 0;
+	mCachedState.Framebuffer    = 0;
 }
 
 RenderPlatform::~RenderPlatform()
@@ -40,39 +40,39 @@ RenderPlatform::~RenderPlatform()
 
 const char* RenderPlatform::GetName()const
 {
-    return "OpenGL";
+	return "OpenGL";
 }
 
 void RenderPlatform::RestoreDeviceObjects(void* hrc)
 {
-    if (!gladLoadGL())
-    {
-        std::cout << "[ERROR] Could not initialize glad.\n";
-        return;
-    }
+	if (!gladLoadGL())
+	{
+		std::cout << "[ERROR] Could not initialize glad.\n";
+		return;
+	}
 
-    // Generate and bind a dummy vao:
-    glGenVertexArrays(1, &mNullVAO);
-    glBindVertexArray(mNullVAO);
+	// Generate and bind a dummy vao:
+	glGenVertexArrays(1, &mNullVAO);
+	glBindVertexArray(mNullVAO);
 
-    // Query limits:
-    glGetIntegerv(GL_MAX_VIEWPORTS, &mMaxViewports);
-    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &mMaxColorAttatch);
+	// Query limits:
+	glGetIntegerv(GL_MAX_VIEWPORTS, &mMaxViewports);
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &mMaxColorAttatch);
 
-    // Lets configure OpenGL:
-    //  glClipControl() needs OpenGL >= 4.5
-    glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
-    
+	// Lets configure OpenGL:
+	//  glClipControl() needs OpenGL >= 4.5
+	glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+	
 
-    crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
+	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 
 	immediateContext.platform_context=hrc;
-    RecompileShaders();
+	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
-    // glDeleteVertexArrays(1, &mNullVAO);
+	// glDeleteVertexArrays(1, &mNullVAO);
 	for(int i=0;i<3;i++)
 	{
 		for(auto t:texturesToDelete[i])
@@ -105,31 +105,31 @@ void RenderPlatform::EndFrame()
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)
 {
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 123, -1, name);
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 123, -1, name);
 }
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 {
-    glPopDebugGroup();
+	glPopDebugGroup();
 }
 
 void RenderPlatform::StoreGLState()
 {
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING,      &mCachedState.Vao);
-    glGetIntegerv(GL_CURRENT_PROGRAM,           &mCachedState.Program);
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,  &mCachedState.Framebuffer); //draw, read col0,1 etc -_-
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING,      &mCachedState.Vao);
+	glGetIntegerv(GL_CURRENT_PROGRAM,           &mCachedState.Program);
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,  &mCachedState.Framebuffer); //draw, read col0,1 etc -_-
 
-    // TO-DO: blend,depth,raster
+	// TO-DO: blend,depth,raster
 
-    // Lets bind our dummy vao
-    glBindVertexArray(mNullVAO);
+	// Lets bind our dummy vao
+	glBindVertexArray(mNullVAO);
 }
 
 void RenderPlatform::RestoreGLState()
 {
-    glBindVertexArray(mCachedState.Vao);
-    glUseProgram(mCachedState.Program);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mCachedState.Framebuffer);
+	glBindVertexArray(mCachedState.Vao);
+	glUseProgram(mCachedState.Program);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mCachedState.Framebuffer);
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture)
@@ -145,19 +145,19 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	const char* effectPass = ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str();
-    BeginEvent(deviceContext, effectPass);
-    ApplyCurrentPass(deviceContext);
-    glDispatchCompute(w, l, d);
-    InsertFences(deviceContext);
-    EndEvent(deviceContext);
+	BeginEvent(deviceContext, effectPass);
+	ApplyCurrentPass(deviceContext);
+	glDispatchCompute(w, l, d);
+	InsertFences(deviceContext);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext)   
 {
-    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-    ApplyCurrentPass(deviceContext);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EndEvent(deviceContext);
+	BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyCurrentPass(deviceContext);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceContext)
@@ -169,7 +169,7 @@ void RenderPlatform::ApplyCurrentPass(crossplatform::DeviceContext & deviceConte
 			ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 	}
 
-    crossplatform::ContextState* cs = &deviceContext.contextState;
+	crossplatform::ContextState* cs = &deviceContext.contextState;
 	opengl::EffectPass* pass = (opengl::EffectPass*)cs->currentEffectPass;
 	
 	pass->SetTextureHandles(deviceContext);
@@ -187,20 +187,20 @@ void RenderPlatform::ApplyPass(crossplatform::DeviceContext& deviceContext, cros
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 {
-    auto pass = (opengl::EffectPass*)deviceContext.contextState.currentEffectPass;
+	auto pass = (opengl::EffectPass*)deviceContext.contextState.currentEffectPass;
 
-    if (pass->usesRwSBs())
-    {
-        for (int i = 0; i < pass->numRwSbResourceSlots; i++)
-        {
-            int slot    = pass->rwSbResourceSlots[i];
-            auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
-            if (rwsb && pass->usesRwTextureSlotForSB(slot))
-            {
-                rwsb->AddFence(deviceContext);
-            }
-        }
-    }
+	if (pass->usesRwSBs())
+	{
+		for (int i = 0; i < pass->numRwSbResourceSlots; i++)
+		{
+			int slot    = pass->rwSbResourceSlots[i];
+			auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
+			if (rwsb && pass->usesRwTextureSlotForSB(slot))
+			{
+				rwsb->AddFence(deviceContext);
+			}
+		}
+	}
 	if (pass->usesRwTextures())
 	{
 		//glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -231,20 +231,20 @@ crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 
 GLenum RenderPlatform::toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
-    {
-        return GL_LINEAR_MIPMAP_LINEAR;
-    }
-    return GL_NEAREST_MIPMAP_NEAREST;
+	if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
+	{
+		return GL_LINEAR_MIPMAP_LINEAR;
+	}
+	return GL_NEAREST_MIPMAP_NEAREST;
 }
 
 GLenum RenderPlatform::toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f)
 {
-    if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
-    {
-        return GL_LINEAR;
-    }
-    return GL_NEAREST;
+	if (f == platform::crossplatform::SamplerStateDesc::LINEAR)
+	{
+		return GL_LINEAR;
+	}
+	return GL_NEAREST;
 }
 
 GLint RenderPlatform::toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
@@ -267,7 +267,7 @@ GLint RenderPlatform::toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
 crossplatform::SamplerState* RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc* desc)
 {
 	opengl::SamplerState* s = new opengl::SamplerState();
-    s->Init(desc);
+	s->Init(desc);
 	return s;
 }
 
@@ -304,8 +304,8 @@ GLuint RenderPlatform::ToGLInternalFormat(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return GL_R11F_G11F_B10F;
+	case RGB_11_11_10_FLOAT:
+		return GL_R11F_G11F_B10F;
 	case RGBA_16_FLOAT:
 		return GL_RGBA16F;
 	case RGBA_32_FLOAT:
@@ -411,8 +411,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return GL_RGB;
+	case RGB_11_11_10_FLOAT:
+		return GL_RGB;
 	case RGBA_16_FLOAT:
 		return GL_RGBA;
 	case RGBA_32_FLOAT:
@@ -467,8 +467,8 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return 3;
+	case RGB_11_11_10_FLOAT:
+		return 3;
 	case RGBA_16_FLOAT:
 		return 4;
 	case RGBA_32_FLOAT:
@@ -535,38 +535,38 @@ void RenderPlatform::DeleteGLTextures(const std::set<GLuint> &t)
 
 void RenderPlatform::MakeTextureResident(GLuint64 handle)
 {
-    if (mResidentTextures.find(handle) == mResidentTextures.end())
-    {
-        mResidentTextures.insert(handle);
-        glMakeTextureHandleResidentARB(handle);
-    }
+	if (mResidentTextures.find(handle) == mResidentTextures.end())
+	{
+		mResidentTextures.insert(handle);
+		glMakeTextureHandleResidentARB(handle);
+	}
 }
 
 const float whiteTexel[4] = { 1.0f,1.0f,1.0f,1.0f};
 
 opengl::Texture* RenderPlatform::GetDummy2D()
 {
-    if (!mDummy2D)
-    {
+	if (!mDummy2D)
+	{
 		crossplatform::TextureCreate tc;
 		tc.w=tc.l=tc.d=1;
 		tc.f=crossplatform::PixelFormat::RGBA_8_UNORM;
-        mDummy2D = (opengl::Texture*)CreateTexture("dummy2d");
-        mDummy2D->EnsureTexture(this,&tc);
-        mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
-    }
-    return mDummy2D;
+		mDummy2D = (opengl::Texture*)CreateTexture("dummy2d");
+		mDummy2D->EnsureTexture(this,&tc);
+		mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+	}
+	return mDummy2D;
 }
 
 opengl::Texture* RenderPlatform::GetDummy3D()
 {
-    if (!mDummy3D)
-    {
-        mDummy3D = (opengl::Texture*)CreateTexture("dummy3d");
-        mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
-        mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
-    }
-    return mDummy3D;
+	if (!mDummy3D)
+	{
+		mDummy3D = (opengl::Texture*)CreateTexture("dummy3d");
+		mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
+		mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+	}
+	return mDummy3D;
 }
 
 GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
@@ -574,8 +574,8 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
-    case RGB_11_11_10_FLOAT:
-        return GL_FLOAT;
+	case RGB_11_11_10_FLOAT:
+		return GL_FLOAT;
 	case RGBA_16_FLOAT:
 		return GL_FLOAT;
 	case RGBA_32_FLOAT:
@@ -627,8 +627,8 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 
 crossplatform::Layout* RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc,bool in)
 {
-    opengl::Layout* l = new opengl::Layout();
-    l->SetDesc(desc, num_elements, in);
+	opengl::Layout* l = new opengl::Layout();
+	l->SetDesc(desc, num_elements, in);
 	return l;
 }
 
@@ -648,36 +648,36 @@ crossplatform::Query* RenderPlatform::CreateQuery(crossplatform::QueryType type)
 
 static GLenum toGlCullFace(crossplatform::CullFaceMode c)
 {
-    switch (c)
-    {
-    case platform::crossplatform::CULL_FACE_FRONT:
-        return GL_FRONT;
-    case platform::crossplatform::CULL_FACE_BACK:
-        return GL_BACK;
-    case platform::crossplatform::CULL_FACE_FRONTANDBACK:
-        return GL_FRONT_AND_BACK;
-    default:
-        break;
-    }
-    return GL_FRONT;
+	switch (c)
+	{
+	case platform::crossplatform::CULL_FACE_FRONT:
+		return GL_FRONT;
+	case platform::crossplatform::CULL_FACE_BACK:
+		return GL_BACK;
+	case platform::crossplatform::CULL_FACE_FRONTANDBACK:
+		return GL_FRONT_AND_BACK;
+	default:
+		break;
+	}
+	return GL_FRONT;
 }
 
 static GLenum toGlFun(crossplatform::BlendOperation o)
 {
-    switch (o)
-    {
-    case platform::crossplatform::BLEND_OP_ADD:
-        return GL_FUNC_ADD;
-    case platform::crossplatform::BLEND_OP_SUBTRACT:
-        return GL_FUNC_SUBTRACT;
-    case platform::crossplatform::BLEND_OP_MAX:
-        return GL_MAX;
-    case platform::crossplatform::BLEND_OP_MIN:
-        return GL_MIN;
-    default:
-        break;
-    }
-    return GL_FUNC_ADD;
+	switch (o)
+	{
+	case platform::crossplatform::BLEND_OP_ADD:
+		return GL_FUNC_ADD;
+	case platform::crossplatform::BLEND_OP_SUBTRACT:
+		return GL_FUNC_SUBTRACT;
+	case platform::crossplatform::BLEND_OP_MAX:
+		return GL_MAX;
+	case platform::crossplatform::BLEND_OP_MIN:
+		return GL_MIN;
+	default:
+		break;
+	}
+	return GL_FUNC_ADD;
 }
 
 static GLenum toGlComparison(crossplatform::DepthComparison d)
@@ -750,78 +750,78 @@ static GLenum toGlBlendOp(crossplatform::BlendOption o)
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,const crossplatform::RenderState* s)
 {
-    auto state = (opengl::RenderState*)s;
-    if (state->type == crossplatform::RenderStateType::BLEND)
-    {
-        crossplatform::BlendDesc bdesc = state->desc.blend;
-        // We need to iterate over all the rts as we may have some settings
-        // from older passes:
-        const int kBlendMaxRt = 8;
-        for (int i = 0; i < kBlendMaxRt; i++)
-        {
-            if (i >= bdesc.numRTs || bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
-            {
-                glDisablei(GL_BLEND, i);
-            }
-            else
-            {
-                glEnablei(GL_BLEND, i);
-                glBlendEquationSeparate(toGlFun(bdesc.RenderTarget[i].blendOperation), toGlFun(bdesc.RenderTarget[i].blendOperationAlpha));
-                glBlendFuncSeparate
-                (
-                    toGlBlendOp(bdesc.RenderTarget[i].SrcBlend), toGlBlendOp(bdesc.RenderTarget[i].DestBlend),
-                    toGlBlendOp(bdesc.RenderTarget[i].SrcBlendAlpha), toGlBlendOp(bdesc.RenderTarget[i].DestBlendAlpha)
-                );
-                unsigned char msk = bdesc.RenderTarget[i].RenderTargetWriteMask;
-                glColorMaski
-                (
-                    i, 
-                    (GLboolean)(msk & (1 << 0)), 
-                    (GLboolean)(msk & (1 << 1)), 
-                    (GLboolean)(msk & (1 << 2)), 
-                    (GLboolean)(msk & (1 << 3))
-                );
-            }
-        }
-    }
-    else if (state->type == crossplatform::RenderStateType::DEPTH)
-    {
-        crossplatform::DepthStencilDesc ddesc = state->desc.depth;
-        glDepthMask((GLboolean)ddesc.write);
-        if (ddesc.test)
-        {
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(toGlComparison(ddesc.comparison));
-        }
-        else
-        {
-            glDisable(GL_DEPTH_TEST);
-        }
-    }
-    else if (state->type == crossplatform::RenderStateType::RASTERIZER)
-    {
-        crossplatform::RasterizerDesc rdesc = state->desc.rasterizer;
-        if (rdesc.cullFaceMode == crossplatform::CullFaceMode::CULL_FACE_NONE)
-        {
-            glDisable(GL_CULL_FACE);
-        }
-        else
-        {
-            glEnable(GL_CULL_FACE);
-            glCullFace(toGlCullFace(rdesc.cullFaceMode));
-        }
-        // Reversed
-        glFrontFace(rdesc.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE ? GL_CCW : GL_CW);
-    }
-    else
-    {
-        SIMUL_CERR << "Trying to set an invalid render state \n";
-    }
+	auto state = (opengl::RenderState*)s;
+	if (state->type == crossplatform::RenderStateType::BLEND)
+	{
+		crossplatform::BlendDesc bdesc = state->desc.blend;
+		// We need to iterate over all the rts as we may have some settings
+		// from older passes:
+		const int kBlendMaxRt = 8;
+		for (int i = 0; i < kBlendMaxRt; i++)
+		{
+			if (i >= bdesc.numRTs || bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
+			{
+				glDisablei(GL_BLEND, i);
+			}
+			else
+			{
+				glEnablei(GL_BLEND, i);
+				glBlendEquationSeparate(toGlFun(bdesc.RenderTarget[i].blendOperation), toGlFun(bdesc.RenderTarget[i].blendOperationAlpha));
+				glBlendFuncSeparate
+				(
+					toGlBlendOp(bdesc.RenderTarget[i].SrcBlend), toGlBlendOp(bdesc.RenderTarget[i].DestBlend),
+					toGlBlendOp(bdesc.RenderTarget[i].SrcBlendAlpha), toGlBlendOp(bdesc.RenderTarget[i].DestBlendAlpha)
+				);
+				unsigned char msk = bdesc.RenderTarget[i].RenderTargetWriteMask;
+				glColorMaski
+				(
+					i, 
+					(GLboolean)(msk & (1 << 0)), 
+					(GLboolean)(msk & (1 << 1)), 
+					(GLboolean)(msk & (1 << 2)), 
+					(GLboolean)(msk & (1 << 3))
+				);
+			}
+		}
+	}
+	else if (state->type == crossplatform::RenderStateType::DEPTH)
+	{
+		crossplatform::DepthStencilDesc ddesc = state->desc.depth;
+		glDepthMask((GLboolean)ddesc.write);
+		if (ddesc.test)
+		{
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(toGlComparison(ddesc.comparison));
+		}
+		else
+		{
+			glDisable(GL_DEPTH_TEST);
+		}
+	}
+	else if (state->type == crossplatform::RenderStateType::RASTERIZER)
+	{
+		crossplatform::RasterizerDesc rdesc = state->desc.rasterizer;
+		if (rdesc.cullFaceMode == crossplatform::CullFaceMode::CULL_FACE_NONE)
+		{
+			glDisable(GL_CULL_FACE);
+		}
+		else
+		{
+			glEnable(GL_CULL_FACE);
+			glCullFace(toGlCullFace(rdesc.cullFaceMode));
+		}
+		// Reversed
+		glFrontFace(rdesc.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE ? GL_CCW : GL_CW);
+	}
+	else
+	{
+		SIMUL_CERR << "Trying to set an invalid render state \n";
+	}
 }
 
 void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)
 {
-    SetRenderState(deviceContext, standardRenderStates[s]);
+	SetRenderState(deviceContext, standardRenderStates[s]);
 }
 
 void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)
@@ -835,13 +835,13 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &,crossplatfor
 	glGenFramebuffers(1, &dstFBO);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, srcFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, src->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D|crossplatform::ShaderResourceType::MS), 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, src->AsOpenGLView({ crossplatform::ShaderResourceType::TEXTURE_2DMS, {} }), 0);
 	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 		SIMUL_CERR << "FBO is not complete!\n";
 
 	glBindFramebuffer(GL_FRAMEBUFFER, dstFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst->AsOpenGLView(crossplatform::ShaderResourceType::TEXTURE_2D), 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst->AsOpenGLView({ crossplatform::ShaderResourceType::TEXTURE_2D, {} }), 0);
 	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 		SIMUL_CERR << "FBO is not complete!\n";
@@ -873,18 +873,18 @@ void* RenderPlatform::GetDevice()
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext& deviceContext, int slot, int num_buffers, const crossplatform::Buffer* const* buffers, const crossplatform::Layout* layout, const int* vertexSteps)
 {
-    if (!buffers)
-    {
-        return;
-    }
-    for (int i = 0; i < num_buffers; i++)
-    {
-        opengl::Buffer* glBuffer = (opengl::Buffer*)buffers[i];
-        if (glBuffer)
-        {
-            glBuffer->BindVBO(deviceContext);
-        }
-    }
+	if (!buffers)
+	{
+		return;
+	}
+	for (int i = 0; i < num_buffers; i++)
+	{
+		opengl::Buffer* glBuffer = (opengl::Buffer*)buffers[i];
+		if (glBuffer)
+		{
+			glBuffer->BindVBO(deviceContext);
+		}
+	}
 }
 
 void RenderPlatform::SetStreamOutTarget(crossplatform::GraphicsDeviceContext&,crossplatform::Buffer *buffer,int/* start_index*/)
@@ -893,50 +893,50 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::GraphicsDeviceContext&,cr
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext,int num,crossplatform::Texture** targs,crossplatform::Texture* depth)
 {
-    if (num >= mMaxColorAttatch)
-    {
-        SIMUL_CERR << "Too many targets \n";
-        return;
-    }
+	if (num >= mMaxColorAttatch)
+	{
+		SIMUL_CERR << "Too many targets \n";
+		return;
+	}
 }
 #include <cstdint>
 void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-    deviceContext.GetFrameBufferStack().pop();
+	deviceContext.GetFrameBufferStack().pop();
 
-    // Default FBO:
-    if (deviceContext.GetFrameBufferStack().empty())
-    {
-        auto defT = deviceContext.defaultTargetsAndViewport;
+	// Default FBO:
+	if (deviceContext.GetFrameBufferStack().empty())
+	{
+		auto defT = deviceContext.defaultTargetsAndViewport;
 		const uintptr_t ll= uintptr_t(defT.m_rt[0]);
 		GLuint id = GLuint(ll);
-        glBindFramebuffer(GL_FRAMEBUFFER, id);
-        SetViewports(deviceContext, 1, &defT.viewport);
-    }
-    // Plugin FBO:
-    else
-    {
-        auto topRt = deviceContext.GetFrameBufferStack().top();
+		glBindFramebuffer(GL_FRAMEBUFFER, id);
+		SetViewports(deviceContext, 1, &defT.viewport);
+	}
+	// Plugin FBO:
+	else
+	{
+		auto topRt = deviceContext.GetFrameBufferStack().top();
 		uintptr_t ll=uintptr_t(topRt->m_rt[0]);
 		GLuint id = GLuint(ll);
-        glBindFramebuffer(GL_FRAMEBUFFER, id);
-        SetViewports(deviceContext, 1, &topRt->viewport);
-    }
+		glBindFramebuffer(GL_FRAMEBUFFER, id);
+		SetViewports(deviceContext, 1, &topRt->viewport);
+	}
 }
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {
-    if (num >= mMaxViewports)
-    {
-        SIMUL_CERR << "Too many viewports \n";
-        return;
-    }
+	if (num >= mMaxViewports)
+	{
+		SIMUL_CERR << "Too many viewports \n";
+		return;
+	}
 	crossplatform::RenderPlatform::SetViewports(deviceContext,num,vps);
-    for (int i = 0; i < num; i++)
-    {
-        glViewportIndexedf(i, (GLfloat)vps[i].x, (GLfloat)vps[i].y, (GLfloat)vps[i].w, (GLfloat)vps[i].h);
-        glScissorIndexed(i,     (GLint)vps[i].x, (GLint)vps[i].y,   (GLsizei)vps[i].w, (GLsizei)vps[i].h);
-    }
+	for (int i = 0; i < num; i++)
+	{
+		glViewportIndexedf(i, (GLfloat)vps[i].x, (GLfloat)vps[i].y, (GLfloat)vps[i].w, (GLfloat)vps[i].h);
+		glScissorIndexed(i,     (GLint)vps[i].x, (GLint)vps[i].y,   (GLsizei)vps[i].w, (GLsizei)vps[i].h);
+	}
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &, const crossplatform::Buffer *buffer)
@@ -945,7 +945,7 @@ void RenderPlatform::SetIndexBuffer(crossplatform::GraphicsDeviceContext &, cons
 
 void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &,crossplatform::Topology t)
 {
-    mCurTopology = toGLTopology(t);
+	mCurTopology = toGLTopology(t);
 }
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *)
@@ -956,7 +956,7 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *)
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
 	static int view_id=1;
-    return new opengl::DisplaySurface(view_id++);
+	return new opengl::DisplaySurface(view_id++);
 }
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
@@ -973,38 +973,38 @@ void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &)
 
 GLenum RenderPlatform::toGLTopology(crossplatform::Topology t)
 {
-    switch (t)
-    {
-    case crossplatform::Topology::POINTLIST:
-        return GL_POINTS;
-    case crossplatform::Topology::LINELIST:
-        return GL_LINES;
-    case crossplatform::Topology::LINESTRIP:
-        return GL_LINE_STRIP;
-    case crossplatform::Topology::TRIANGLELIST:
-        return GL_TRIANGLES;
-    case crossplatform::Topology::TRIANGLESTRIP:
-        return GL_TRIANGLE_STRIP;
-    case crossplatform::Topology::LINELIST_ADJ:
-        return GL_LINES_ADJACENCY;
-    case crossplatform::Topology::LINESTRIP_ADJ:
-        return GL_LINE_STRIP_ADJACENCY;
-    case crossplatform::Topology::TRIANGLELIST_ADJ:
-        return GL_TRIANGLES_ADJACENCY;
-    case crossplatform::Topology::TRIANGLESTRIP_ADJ:
-        return GL_TRIANGLE_STRIP_ADJACENCY;
-    default:
-        break;
-    };
-    return GL_LINE_LOOP;
+	switch (t)
+	{
+	case crossplatform::Topology::POINTLIST:
+		return GL_POINTS;
+	case crossplatform::Topology::LINELIST:
+		return GL_LINES;
+	case crossplatform::Topology::LINESTRIP:
+		return GL_LINE_STRIP;
+	case crossplatform::Topology::TRIANGLELIST:
+		return GL_TRIANGLES;
+	case crossplatform::Topology::TRIANGLESTRIP:
+		return GL_TRIANGLE_STRIP;
+	case crossplatform::Topology::LINELIST_ADJ:
+		return GL_LINES_ADJACENCY;
+	case crossplatform::Topology::LINESTRIP_ADJ:
+		return GL_LINE_STRIP_ADJACENCY;
+	case crossplatform::Topology::TRIANGLELIST_ADJ:
+		return GL_TRIANGLES_ADJACENCY;
+	case crossplatform::Topology::TRIANGLESTRIP_ADJ:
+		return GL_TRIANGLE_STRIP_ADJACENCY;
+	default:
+		break;
+	};
+	return GL_LINE_LOOP;
 }
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
-    BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-    ApplyCurrentPass(deviceContext);
-    glDrawArrays(mCurTopology, start_vert, num_verts);
-    EndEvent(deviceContext);
+	BeginEvent(deviceContext, ((opengl::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyCurrentPass(deviceContext);
+	glDrawArrays(mCurTopology, start_vert, num_verts);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
@@ -1013,7 +1013,7 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 
 void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
 {
-    t->GenerateMips(deviceContext);
+	t->GenerateMips(deviceContext);
 }
 
 crossplatform::Shader* RenderPlatform::CreateShader()
