@@ -554,7 +554,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 			{
 				debugConstants.texSize=uint4(w,l,d,1);
 				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-				texture->activateRenderTarget(*graphicsDeviceContext,i,j);
+				texture->activateRenderTarget(*graphicsDeviceContext, { texture->GetShaderResourceTypeForRTVAndDSV(), { TextureAspectFlags::COLOUR, j, 1, i, 1 } });
 				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
 					DrawQuad(*graphicsDeviceContext);
 				debugEffect->Unapply(*graphicsDeviceContext);
@@ -582,7 +582,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 			int d=texture->depth;
 			for(int j=0;j<texture->mips;j++)
 			{
-				const char *techname="compute_clear";
+				const char* techname = nullptr;
 				int W=(w+4-1)/4;
 				int L=(l+4-1)/4;
 				int D=(d+4-1)/4;
@@ -591,20 +591,29 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				{
 					W=(w+8-1)/8;
 					L=(l+8-1)/8;
-					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, i, j);
 					D=1;
+					if (a == 1)
+					{
+						techname = "compute_clear";
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, { TextureAspectFlags::COLOUR, j, i, 1 });
+					}
+					else
+					{
+						techname = "compute_clear_2d_array";
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, { TextureAspectFlags::COLOUR,  j, i, 1 });
+					}
 				}
 				else if(texture->dim==3)
 				{
 					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
 					{
 						techname = "compute_clear_3d_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, { TextureAspectFlags::COLOUR, j, 0, 1 });
 					}
 					else
 					{
 						techname="compute_clear_3d";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, { TextureAspectFlags::COLOUR, j, 0, 1 });
 					}
 				}
 				else
@@ -649,8 +658,8 @@ void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m1=i+1;
-		t->activateRenderTarget(deviceContext,array_idx,m1);
-		SetTexture(deviceContext,_imageTexture,t,array_idx,0);
+		t->activateRenderTarget(deviceContext, { t->GetShaderResourceTypeForRTVAndDSV(), { TextureAspectFlags::COLOUR, m1, 1, array_idx, 1 } });
+		SetTexture(deviceContext, _imageTexture, t, { TextureAspectFlags::COLOUR,  0, 1, array_idx, 1 });
 		DrawQuad(deviceContext);
 		//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
 		t->deactivateRenderTarget(deviceContext);
@@ -693,8 +702,8 @@ void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,T
 	debugConstants.multiplier=vec4(scale,scale,scale,scale);
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	ApplyPass(deviceContext,pass);
-	normalMap->activateRenderTarget(deviceContext,0,0);
-	SetTexture(deviceContext,_imageTexture,heightMap,0,0);
+	normalMap->activateRenderTarget(deviceContext,{normalMap->GetShaderResourceTypeForRTVAndDSV(),{TextureAspectFlags::COLOUR,0,1,0,1 }});
+	SetTexture(deviceContext,_imageTexture,heightMap,{TextureAspectFlags::COLOUR,0,1,0,1});
 	DrawQuad(deviceContext);
 	//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
 	normalMap->deactivateRenderTarget(deviceContext);
@@ -1359,7 +1368,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		if(tex->arraySize>1)
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
-			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex,-1,(int)displayLod);
+			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
 			if(debug)
 			{
 				static char c=0;
@@ -1376,14 +1385,14 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		else
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap");
-			debugEffect->SetTexture(deviceContext,"cubeTexture",tex,-1,(int)displayLod);
+			debugEffect->SetTexture(deviceContext,"cubeTexture",tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
 			debugConstants.displayLevel=0;
 		}
 	}
 	else if(tex&&tex->arraySize>1)
 	{
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
-		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex,-1,(int)displayLod);
+		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
 		{
 			static char c = 0;
 			static char cc = 20;
@@ -1399,7 +1408,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 	else if(tex)
 	{
-		debugEffect->SetTexture(deviceContext,imageTexture,tex,-1,(int)displayLod);
+		debugEffect->SetTexture(deviceContext,imageTexture,tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
 	}
 	else
 	{
@@ -1628,7 +1637,7 @@ void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBuff
 
 void RenderPlatform::SetStructuredBuffer(DeviceContext& deviceContext, BaseStructuredBuffer* s, const ShaderResource& shaderResource)
 {
-	if((shaderResource.shaderResourceType& ShaderResourceType::RW)== ShaderResourceType::RW)
+	if((shaderResource.shaderResourceType & ShaderResourceType::RW) == ShaderResourceType::RW)
 		s->platformStructuredBuffer->ApplyAsUnorderedAccessView(deviceContext, shaderResource);
 	else
 		s->platformStructuredBuffer->Apply(deviceContext,shaderResource);
@@ -1851,20 +1860,20 @@ void RenderPlatform::FinishGeneratingTextureMips(DeviceContext& deviceContext)
 	unMippedTextures.clear();
 }
 
-void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceRange& subresource)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if (!res.valid)
 		return;
 	ContextState* cs = GetContextState(deviceContext);
-	if(cs->apply_count==0)
+	if (cs->apply_count == 0)
 	{
 		FinishLoadingTextures(deviceContext);
 	}
 	unsigned long slot = res.slot;
 	unsigned long dim = res.dimensions;
 #ifdef _DEBUG
-	if (!tex) 
+	if (!tex)
 	{
 		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
 	}
@@ -1876,20 +1885,19 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 #endif
 	TextureAssignment& ta = cs->textureAssignmentMap[slot];
 	ta.resourceType = res.shaderResourceType;
-	ta.texture = tex ;
-	if(!res.valid)
+	ta.texture = tex;
+	if (!res.valid)
 		ta.texture = nullptr;
-	else if(tex)
+	else if (tex)
 	{
-		if(!tex->IsValid())
+		if (!tex->IsValid())
 		{
-			ta.texture=nullptr;
+			ta.texture = nullptr;
 		}
 	}
 	ta.dimensions = dim;
 	ta.uav = false;
-	ta.index = index;
-	ta.mip = mip;
+	ta.subresource = subresource;
 	cs->textureAssignmentMapValid = false;
 }
 
@@ -1905,12 +1913,10 @@ void RenderPlatform::SetAccelerationStructure(DeviceContext& deviceContext, cons
 	ta.accelerationStructure = a ;
 	ta.dimensions = 0;
 	ta.uav = false;
-	ta.index = 0;
-	ta.mip = 0;
 	cs->textureAssignmentMapValid = false;
 }
 
-void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, int index, int mip)
+void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceLayers& subresource)
 {
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if (!res.valid)
@@ -1929,8 +1935,7 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 		ta.texture=nullptr;
 	ta.dimensions = dim;
 	ta.uav = true;
-	ta.mip = mip;
-	ta.index = index;
+	ta.subresource = { subresource.aspectMask, subresource.mipLevel, (uint32_t)1, subresource.baseArrayLayer, subresource.arrayLayerCount };;
 	cs->rwTextureAssignmentMapValid = false;
 }
 

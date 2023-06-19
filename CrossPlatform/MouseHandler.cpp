@@ -124,6 +124,11 @@ platform::crossplatform::Camera *MouseHandler::GetCamera()
 	return camera;
 }
 
+float MouseHandler::getFov() const 
+{
+	return camera->GetHorizontalFieldOfViewDegrees();
+}
+
 void MouseHandler::setFov(float f)
 {
 	if(f<0.1f)

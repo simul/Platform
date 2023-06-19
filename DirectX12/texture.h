@@ -6,6 +6,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Heap.h"
 #include <string>
+#include <unordered_map>
 
 #pragma warning(disable:4251)
 namespace DirectX
@@ -60,18 +61,18 @@ namespace platform
 			void RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
 
 			ID3D12Resource*					AsD3D12Resource() override;
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext,bool setState = true,crossplatform::ShaderResourceType t= crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1,bool=true);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext, int index = -1, int mip = -1);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext, int index = -1, int mip = -1);
-			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext, int index = -1, int mip = -1);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView, bool setState = true, bool pixelShader = true);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12DepthStencilView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12RenderTargetView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView);
 
 			bool							IsComputable() const override;
 			bool							HasRenderTargets() const override;
 
 			//! Initializes this texture from an external (already created texture)
-			bool							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false, bool setDepthStencil = false,bool need_srv=true);
-			bool							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false,bool need_srv=true, int numOfSamples = 1) override;
-			bool							InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
+			bool							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* renderPlatform, ID3D12Resource* t, bool make_rt = false, bool setDepthStencil = false);
+			bool							InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, int w, int l, crossplatform::PixelFormat f, bool make_rt = false, bool setDepthStencil = false, int numOfSamples = 1) override;
+			bool							InitFromExternalTexture3D(crossplatform::RenderPlatform* renderPlatform, void* t, bool make_uav = false) override;
 
 			void							copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void							setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
@@ -94,7 +95,7 @@ namespace platform
 			bool							isMapped() const;
 			void							unmap();
 			vec4							GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
-			void							activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext,int array_index=-1,int mip_index=0);
+			void							activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView = crossplatform::TextureView());
 			void							deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext);
 
 			virtual int GetLength() const
@@ -116,15 +117,19 @@ namespace platform
 
 			int GetSampleCount()const;
 
+			bool AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange);
+
 			//! Returns the current state of the resource or subresource if provided.
-			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext &deviceContext,int mip = -1, int index = -1);
+			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange = {});
 			//! Sets the state of the resource or subresource if provided.
-			void SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, int mip = -1, int index = -1, bool flush=false);
+			void SetLayout(crossplatform::DeviceContext& deviceContext, D3D12_RESOURCE_STATES state, const crossplatform::SubresourceRange& subresourceRange = {}, bool flush = false);
 			
 			void SwitchToContext(crossplatform::DeviceContext &deviceContext);
 			DXGI_FORMAT	dxgi_format;
 			// Need an active command list to finish loading a texture!
 			void FinishLoading(crossplatform::DeviceContext &deviceContext) override;
+
+			bool IsYUV() const override { return yuv; }
 
 		protected:
 			void InitFormats(crossplatform::PixelFormat f);
@@ -136,22 +141,11 @@ namespace platform
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0
 																			, bool shared = false,crossplatform::CompressionFormat cf=crossplatform::CompressionFormat::UNCOMPRESSED);
 			void											FreeUAVTables();
-			void											InitUAVTables(int l, int m);
-
 			void											FreeSRVTables();
-			void											InitSRVTables(int l, int m);
-			void											CreateSRVTables(int num, int m, bool cubemap, bool volume = false, bool msaa = false);
-
 			void											FreeRTVTables();
-			void											InitRTVTables(int l, int m);
-			void											CreateRTVTables(int l, int m, bool msaa = false);
-
 			void											FreeDSVTables();
-			void											InitDSVTables(int l, int m);
-			void											CreateDSVTables(int l, int m, bool msaa = false);
 
 			void											InitStateTable(int l, int m);
-			
 
 			dx12::Heap						mTextureSrvHeap;
 			dx12::Heap						mTextureUavHeap;
@@ -167,42 +161,21 @@ namespace platform
 			//! Full resource state
 			D3D12_RESOURCE_STATES			mResourceState;
 			D3D12_RESOURCE_STATES			mExternalLayout;
-			bool split_layouts=true;
 
 			bool							mLoadedFromFile;	
 			bool							mInitializedFromExternal = false;
 			
-			D3D12_CPU_DESCRIPTOR_HANDLE		mainShaderResourceView12;		// SRV for the whole texture including all layers and mips or y layer for yuv.	
-			D3D12_CPU_DESCRIPTOR_HANDLE		uvLayerShaderResourceView12;    // SRV for uv layer in a yuv texture.
-
-			D3D12_CPU_DESCRIPTOR_HANDLE		arrayShaderResourceView12;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
-
-			D3D12_CPU_DESCRIPTOR_HANDLE*	layerShaderResourceViews12;		// SRVs for each layer, including all mips
-			D3D12_CPU_DESCRIPTOR_HANDLE*	mainMipShaderResourceViews12;	// SRVs for the whole texture at different mips.
-			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipShaderResourceViews12;	// SRVs for each layer at different mips.
-
-			D3D12_CPU_DESCRIPTOR_HANDLE*	mipUnorderedAccessViews12;		// UAV for the whole texture at various mips: only for 2D arrays.
-			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipUnorderedAccessViews12;	// UAVs for the layers and mips
-
-			D3D12_CPU_DESCRIPTOR_HANDLE		mainDepthStencilView12;			// DSV for the whole texture.
-			D3D12_CPU_DESCRIPTOR_HANDLE*	layerDepthStencilViews12;		// DSVs for each layer, including all mips
-
-			D3D12_CPU_DESCRIPTOR_HANDLE		mainRenderTargetView12;			// RTV for the whole texture.
-			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipRenderTargetViews12;	// RTVs for each layer at different mips.
-
-			size_t							layerMipShaderResourceViews12Size = 0;
-			size_t							layerMipUnorderedAccessViews12Size = 0;
-			size_t							layerMipRenderTargetViews12Size = 0;
+			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> shaderResourceViews;
+			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> unorderedAccessViews;
+			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> depthStencilViews;
+			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> renderTargetViews;
 
             //! We need to store the old MSAA state
             DXGI_SAMPLE_DESC                mCachedMSAAState;
-
             int                             mNumSamples;
-			//DirectX::TexMetadata	*metadata;
-			//DirectX::ScratchImage	*scratchImage;
-			//void *loadedData;
-			void SplitLayouts();
+			
 			void AssumeLayout(D3D12_RESOURCE_STATES state);
+			unsigned GetSubresourceIndex(int mip, int layer);
 			
 			struct WicContents
 			{
@@ -220,13 +193,14 @@ namespace platform
 			std::vector<FileContents> fileContents;
 			void ClearLoadingData();
 			void ClearFileContents();
-			unsigned GetSubresourceIndex(int mip, int layer);
 			void CreateUploadResource(int slices);
 			std::vector <D3D12_PLACED_SUBRESOURCE_FOOTPRINT> pLayouts;
 			DXGI_FORMAT genericDxgiFormat = DXGI_FORMAT_UNKNOWN;
 			DXGI_FORMAT srvFormat		= DXGI_FORMAT_UNKNOWN;
-			DXGI_FORMAT uavFormat	=DXGI_FORMAT_UNKNOWN;
-			bool yuvFormat = false;
+			DXGI_FORMAT uavFormat		=DXGI_FORMAT_UNKNOWN;
+			DXGI_FORMAT Y_Format		=DXGI_FORMAT_UNKNOWN;
+			DXGI_FORMAT UV_Format		=DXGI_FORMAT_UNKNOWN;
+			bool yuv = false;
 			bool textureLoadComplete = true;
 			void FinishUploading(crossplatform::DeviceContext& deviceContext);
 		};

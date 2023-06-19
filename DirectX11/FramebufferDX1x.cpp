@@ -82,22 +82,29 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
 	SIMUL_ASSERT(IsValid());
-	ID3D11RenderTargetView *renderTargetView=NULL;
-	dx11::Texture *t=(dx11::Texture *)buffer_texture;
-	if(is_cubemap)
-		renderTargetView=t->AsD3D11RenderTargetView(current_face);
-	else
-		renderTargetView=buffer_texture->AsD3D11RenderTargetView();
-	ID3D11DepthStencilView *dt=buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL;
+
+	crossplatform::TextureView rtv_tv, dsv_tv;
+	bool layered = buffer_texture->NumFaces() > 1;
+	bool ms = buffer_texture->GetSampleCount() > 1;
+	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, (is_cubemap ? current_face : 0), 1 };
+	layered = buffer_depth_texture ? buffer_depth_texture->NumFaces() > 1: false;
+	ms = buffer_depth_texture ? buffer_depth_texture->GetSampleCount() > 1 : false;
+	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
+
+	ID3D11RenderTargetView* renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
+	ID3D11DepthStencilView* dt = buffer_depth_texture ? buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv) : NULL;
+
 	if(renderTargetView)
 	{
 		colour_active=true;
-		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+		depth_active=buffer_depth_texture&&(dt!=NULL);
 		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,dt);
 	}
 	else if(buffer_depth_texture&&buffer_depth_texture->IsValid())
 	{
-		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+		depth_active=buffer_depth_texture&&(dt!=NULL);
 		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(0,nullptr,dt);
 	}
 	else
@@ -107,11 +114,9 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 	targetsAndViewport.m_rt[0]=renderTargetView;
 	targetsAndViewport.textureTargets[0].texture=buffer_texture;
-	targetsAndViewport.textureTargets[0].layer=0;
-	targetsAndViewport.textureTargets[0].mip=0;
+	targetsAndViewport.textureTargets[0].subresource={};
 	targetsAndViewport.depthTarget.texture=buffer_depth_texture;
-	targetsAndViewport.depthTarget.layer=0;
-	targetsAndViewport.depthTarget.mip=0;
+	targetsAndViewport.depthTarget.subresource={};
 	targetsAndViewport.m_dt=dt;
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
 	targetsAndViewport.viewport.w=Width;
@@ -145,12 +150,16 @@ void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceCont
 		CreateBuffers();
 	HRESULT hr=S_OK;
 	
-	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
+	crossplatform::TextureView rtv_tv, dsv_tv;
+	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 };
+	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
 
-	{
-		pContext->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
-	}
-	depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+	ID3D11RenderTargetView* renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
+	ID3D11DepthStencilView* depthStencilView = buffer_depth_texture ? buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv) : NULL;
+	pContext->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+	depth_active = buffer_depth_texture && (depthStencilView);
 	D3D11_VIEWPORT viewport;
 	// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
@@ -169,7 +178,12 @@ void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	renderPlatform->PopRenderTargets(deviceContext);
 	if(GenerateMips)
-		pContext->GenerateMips(buffer_texture->AsD3D11ShaderResourceView());
+	{
+		crossplatform::TextureView tv;
+		tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+		tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1 };
+		pContext->GenerateMips(buffer_texture->AsD3D11ShaderResourceView(tv));
+	}
 	colour_active=false;
 	depth_active=false;
 }
@@ -177,15 +191,16 @@ void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext
 void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	if(!buffer_texture->AsD3D11RenderTargetView())
+	crossplatform::TextureView rtv_tv;
+	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
+
+	if (!buffer_texture->AsD3D11RenderTargetView(rtv_tv))
 	{
 		Deactivate(deviceContext);
 		return;
 	}
-	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
-		dx11::Texture *t=(dx11::Texture *)buffer_texture;
-	if(is_cubemap)
-		renderTargetView=t->AsD3D11RenderTargetView(current_face);
+	ID3D11RenderTargetView* renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
 	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	depth_active=false;
 
@@ -202,54 +217,74 @@ void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext,floa
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
+
+	crossplatform::TextureView rtv_tv, dsv_tv;
+	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, (is_cubemap ? current_face : 0), 1 };
+	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
+
 	if(is_cubemap&&buffer_texture)
 	{
-		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 		if(current_face>=0)
 		{
-			for(int i=0;i<t->GetMipCount();i++)
+			for(int i=0;i< buffer_texture->GetMipCount();i++)
 			{
-				pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(current_face,i),clearColor);
+				rtv_tv.subresourceRange.baseMipLevel = i;
+				rtv_tv.subresourceRange.baseArrayLayer = current_face;
+				pContext->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(rtv_tv), clearColor);
 			}
 		}
 		else
 		{
-			for(int i=0;i<6*t->arraySize;i++)
+			for(int i=0;i<6*buffer_texture->arraySize;i++)
 			{
-				for(int j=0;j<t->GetMipCount();j++)
+				for(int j=0;j<buffer_texture->GetMipCount();j++)
 				{
-					if(t->AsD3D11RenderTargetView(i,j))
-						pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(i,j),clearColor);
+					rtv_tv.subresourceRange.baseMipLevel = j;
+					rtv_tv.subresourceRange.baseArrayLayer = i;
+					ID3D11RenderTargetView* rtv = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
+					if (rtv)
+						pContext->ClearRenderTargetView(rtv, clearColor);
 				}
 			}
 		}
 	}
 	else
 	{
-		if(buffer_texture&&buffer_texture->AsD3D11RenderTargetView())
-			pContext->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
+		if (buffer_texture && buffer_texture->AsD3D11RenderTargetView(rtv_tv))
+			pContext->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(rtv_tv), clearColor);
 	}
-	if(buffer_depth_texture&&buffer_depth_texture->AsD3D11DepthStencilView())
-		pContext->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),mask,depth,0);
+	if (buffer_depth_texture && buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv))
+		pContext->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv), mask, depth, 0);
 }
 
 void Framebuffer::ClearDepth(crossplatform::GraphicsDeviceContext &context,float depth)
 {
-	if(buffer_depth_texture->AsD3D11DepthStencilView())
-		context.asD3D11DeviceContext()->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
+	crossplatform::TextureView dsv_tv;
+	dsv_tv.type = buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV();
+	dsv_tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
+
+	ID3D11DepthStencilView* dsv = buffer_depth_texture->AsD3D11DepthStencilView(dsv_tv);
+	if (dsv)
+		context.asD3D11DeviceContext()->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, depth, 0);
 }
 
 void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext,float r,float g,float b,float a)
 {
+	crossplatform::TextureView rtv_tv;
+	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+	rtv_tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 };
+
 	float clearColor[4]={r,g,b,a};
 	if(is_cubemap)
 	{
-		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 		for(int i=0;i<6;i++)
 		{
-			deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(t->AsD3D11RenderTargetView(i), clearColor);
+			rtv_tv.subresourceRange.baseArrayLayer = i;
+			deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(rtv_tv), clearColor);
 		}
 	}
-	else if(buffer_texture->AsD3D11RenderTargetView())
-		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
+	else if (buffer_texture->AsD3D11RenderTargetView(rtv_tv))
+		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(rtv_tv), clearColor);
 }

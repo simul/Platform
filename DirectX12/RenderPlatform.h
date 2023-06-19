@@ -260,6 +260,7 @@ namespace platform
 			static DXGI_FORMAT						TypelessToSrvFormat(DXGI_FORMAT fmt);
 			static DXGI_FORMAT						TypelessToDsvFormat(DXGI_FORMAT fmt);
 			static DXGI_FORMAT						DsvToTypelessFormat(DXGI_FORMAT fmt);
+			static void								DepthFormatToResourceAndSrvFormats(DXGI_FORMAT& texture2dFormat, DXGI_FORMAT& srvFormat);
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
 			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
 			static std::string						D3D12ResourceStateToString(D3D12_RESOURCE_STATES states);

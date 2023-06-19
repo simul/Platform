@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Texture.h"
+#include <unordered_map>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -47,16 +48,16 @@ namespace platform
 			Texture();
 			~Texture() override;
 
-			void	SetName(const char* n)override;
+			void			SetName(const char* n)override;
 
-			void	LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips) override;
-			void	LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files, bool gen_mips) override;
-			bool	IsValid() const override;
-			void	InvalidateDeviceObjects() override;
-			bool	InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, void* srv, int w, int l, crossplatform::PixelFormat f, bool make_rt = false, bool setDepthStencil = false, bool need_srv = true, int numOfSamples = 1) override;
-			bool	InitFromExternalTexture(crossplatform::RenderPlatform* renderPlatform, const crossplatform::TextureCreate* textureCreate) override;
+			void			LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips) override;
+			void			LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files, bool gen_mips) override;
+			bool			IsValid() const override;
+			void			InvalidateDeviceObjects() override;
+			bool			InitFromExternalTexture2D(crossplatform::RenderPlatform* renderPlatform, void* t, int w, int l, crossplatform::PixelFormat f, bool make_rt = false, bool setDepthStencil = false, int numOfSamples = 1) override;
+			bool			InitFromExternalTexture(crossplatform::RenderPlatform* renderPlatform, const crossplatform::TextureCreate* textureCreate) override;
 
-			bool	ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int m, crossplatform::PixelFormat f
+			bool			ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int m, crossplatform::PixelFormat f
 													,std::shared_ptr<std::vector<std::vector<uint8_t>>> data
 													,bool computable = false, bool rendertarget = false, bool depthstencil = false
 													,int num_samples = 1, int aa_quality = 0, bool wrap = false
@@ -65,91 +66,72 @@ namespace platform
 													,uint clearStencil = 0
 													,bool shared = false
 													,crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED) override;
-			bool	ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int mips, crossplatform::PixelFormat f
+			bool			ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int num, int mips, crossplatform::PixelFormat f
 													, std::shared_ptr<std::vector<std::vector<uint8_t>>> data,bool computable = false, bool rendertarget = false, bool depthstencil = false, bool cubemap = false,
 													crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED ) override;
-			bool	ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable = false, int nmips = 1, bool rendertargets = false) override;
+			bool			ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* renderPlatform, int w, int l, int d, crossplatform::PixelFormat frmt, bool computable = false, int nmips = 1, bool rendertargets = false) override;
 
-			bool	ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
-			void	ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
-			void	GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
-			void	setTexels(crossplatform::DeviceContext& deviceContext, const void* src, int texel_index, int num_texels) override;
-			void	setTexels(const void* src, int texel_index, int num_texels) override;
-			int		GetLength() const override;
-			int		GetWidth() const override;
-			int		GetDimension() const override;
-			int		GetSampleCount() const override;
-			bool	IsComputable() const override;
-			bool	HasRenderTargets() const override;
-			void	copyToMemory(crossplatform::DeviceContext& deviceContext, void* target, int start_texel, int num_texels) override;
+			bool			ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType) override;
+			void			ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
+			void			GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
+			void			setTexels(crossplatform::DeviceContext& deviceContext, const void* src, int texel_index, int num_texels) override;
+			void			setTexels(const void* src, int texel_index, int num_texels) override;
+			int				GetLength() const override;
+			int				GetWidth() const override;
+			int				GetDimension() const override;
+			int				GetSampleCount() const override;
+			bool			IsComputable() const override;
+			bool			HasRenderTargets() const override;
+			void			copyToMemory(crossplatform::DeviceContext& deviceContext, void* target, int start_texel, int num_texels) override;
 
-			vk::Image& AsVulkanImage() { return mImage; }
-
-			vk::ImageView* AsVulkanImageView(crossplatform::ShaderResourceType type = crossplatform::ShaderResourceType::UNKNOWN, int layer = -1, int mip = -1, bool rw = false) override;
-			//! returns the imageview in the depth format - only applicable for depth textures.
-			vk::ImageView* AsVulkanDepthView(int layer = -1, int mip = -1);
+			vk::Image&		AsVulkanImage() { return mImage; }
+			vk::ImageView*	AsVulkanImageView(const crossplatform::TextureView& textureView) override;
 
 			/// We need an active command list to finish loading a texture!
-			void	FinishLoading(crossplatform::DeviceContext& deviceContext) override;
+			void			FinishLoading(crossplatform::DeviceContext& deviceContext) override;
 
-			void	StoreExternalState(crossplatform::ResourceState) override;
-			void	RestoreExternalTextureState(crossplatform::DeviceContext& deviceContext) override;
+			void			StoreExternalState(crossplatform::ResourceState) override;
+			void			RestoreExternalTextureState(crossplatform::DeviceContext& deviceContext) override;
+
+			void			InitViewTable(int l, int m);
+
+			bool			AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const;
 			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
-			void	SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLayout imageLayout, int layer = -1, int mip = -1);
+			void			SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLayout imageLayout, const crossplatform::SubresourceRange& subresourceRange);
 			/// Assume the texture will be in this layout due to internal Vulkan shenanigans.
-			void	AssumeLayout(vk::ImageLayout imageLayout);
-			/// Admit we have no idea what the layouts will end up as, so reset them when needed.
-			void	SplitLayouts();
+			void			AssumeLayout(vk::ImageLayout imageLayout);
 			/// Get the tracked current layout.
-			vk::ImageLayout GetLayout(int layer = -1, int mip = -1) const;
+			vk::ImageLayout GetLayout(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange);
 
 		private:
-			void	SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, vk::ImageAspectFlags aspectMask
-				, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
-				, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages, int m = 0, int num_mips = 0);
-			void	InvalidateDeviceObjectsExceptLoaded();
-			bool	IsSame(int w, int h, int d, int arr, int, crossplatform::PixelFormat f, int msaa_samples, bool computable, bool rt, bool ds, bool need_srv, bool cb = false);
+			void			SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, vk::ImageAspectFlags aspectMask
+											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
+											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages
+											, const crossplatform::SubresourceRange& subresourceRange = {});
+			void			InvalidateDeviceObjectsExceptLoaded();
+			bool			IsSame(int w, int h, int d, int arr, int, crossplatform::PixelFormat f, int msaa_samples, bool computable, bool rt, bool ds, bool cb = false);
 
-			void	LoadTextureData(LoadedTexture& lt, const char* path);
-			void	SetTextureData(LoadedTexture& lt, const void* data, int x, int y, int z, int n, crossplatform::PixelFormat f,crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
-			//! Creates the Framebuffers for this texture
-			void	CreateFBOs(int sampleCount);
-			//! Applies default sampling parameters to the texId texture
-			void	SetDefaultSampling(GLuint texId);
-			void	InitViewTables(int dim, crossplatform::PixelFormat f, int w, int h, int mipCount, int layers, bool isRenderTarget, bool cubemap, bool isDepthTarget, bool isArray = false);
+			void			LoadTextureData(LoadedTexture& lt, const char* path);
+			void			SetTextureData(LoadedTexture& lt, const void* data, int x, int y, int z, int n, crossplatform::PixelFormat f,crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
 			
-			void	ClearLoadedTextures();
-			void	ResizeLoadedTextures(size_t mips, size_t layers);
-			void	PushLoadedTexturesToReleaseManager();
+			void			ClearLoadedTextures();
+			void			ResizeLoadedTextures(size_t mips, size_t layers);
+			void			PushLoadedTexturesToReleaseManager();
 
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;
-			vk::ImageLayout								currentImageLayout{ vk::ImageLayout::eUndefined };
-			std::vector<std::vector<vk::ImageLayout>>	mMipLayerLayouts;
+
+			//! Full resource state
+			vk::ImageLayout								mCurrentImageLayout{ vk::ImageLayout::eUndefined };
+			//! States of the subresources mSubResourcesLayouts[index][mip]
+			std::vector<std::vector<vk::ImageLayout>>	mSubResourcesLayouts;
 			
-			vk::ImageView								mMainView;
-			vk::ImageView								mCubeArrayView;
-			vk::ImageView								mFaceArrayView;
-
-			std::vector<vk::ImageView>					mLayerViews;
-			std::vector<vk::ImageView>					mMainMipViews;
-			std::vector<vk::ImageView>					faceArrayMipViews;
-
-			vk::ImageView								mainDepthView;
-			std::vector<vk::ImageView>					layerDepthViews;
-
-			// For cubemaps/cubemap arrays there are two kinds of layer mip view.
-			// we can have a cubemap view that's one layer and mip, but a cubemap.
-			// or we can have a 2d view that's one layer, face and mip.
-			// so we really need two arrays.
-			std::vector<std::vector<vk::ImageView>>		mCubemapMipLayerViews;
-			std::vector<std::vector<vk::ImageView>>		mMipLayerViews;
+			std::unordered_map<uint64_t, vk::ImageView*> mImageViews;
 			
 			vk::MemoryAllocateInfo mem_alloc;
 			vk::DeviceMemory mMem;
 			std::vector<std::vector<LoadedTexture>>		loadedTextures; //By mip, then by layer.
-			bool split_layouts;
-			int	 mNumSamples = 1;
+			int mNumSamples = 1;
 			vk::ImageLayout mExternalLayout;
 		};
 	}
