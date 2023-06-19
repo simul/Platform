@@ -50,6 +50,7 @@ option(PLATFORM_BUILD_DOCS "Whether to build html documentation with Doxygen and
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set( WINDOWS ON )
 	set(PLATFORM_WINDOWS ON)
+	option(PLATFORM_SUPPORT_WIN7 "" ON )
 	option(PLATFORM_SUPPORT_OPENGL "" ON)
 	option(PLATFORM_SUPPORT_D3D11 "" ON )
 	set(PLATFORM_D3D11_SFX ON )
