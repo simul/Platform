@@ -693,7 +693,7 @@ void prepro_error(const char *errmsg)
 	if(txt)
 	{
 		string str(txt);
-		errMsg<<currentFilename<<"("<< true_linenumber<<"): Preprocessor error: \""<< txt<<"\""<<errmsg;
+		errMsg<<currentFilename<<"("<< true_linenumber<<"): Preprocessor error: \""<< txt<<"\"\n"<<errmsg;
 	}
 	else
 		errMsg<<currentFilename<<"("<< true_linenumber<<"): Preprocessor error: "<<errmsg;

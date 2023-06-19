@@ -629,7 +629,8 @@ bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::
 		double platformfile_datetime=GetFileDate(config->platformFilename);
 		latest_datetime= std::max(exe_datetime,platformfile_datetime);
 
-		preprocess(file,config->define,sfxOptions->disableLineWrites);
+		if (!preprocess(file, config->define, sfxOptions->disableLineWrites))
+			return false;
 		double output_filedatetime=GetFileDate(sfxoFilename);
 		if(!sfxOptions->force&&latest_datetime<output_filedatetime)
 		{

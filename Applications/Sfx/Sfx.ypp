@@ -1902,6 +1902,10 @@ postfix_exp : primary_exp
 		if( config->samplingSyntax.length() > 0)
 		{
 			ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
+			if (ShaderResourceType::UNKNOWN == type)
+			{
+				//errSem("Unknown texture type: " + textureName);
+			}
 			string samplerType	  = GetSamplerConstructor(type,textureName,&buildFunction);
 			string cmd			  = config->samplingSyntax;
 			find_and_replace(cmd,"{command}",command);
