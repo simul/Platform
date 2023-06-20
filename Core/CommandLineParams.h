@@ -80,6 +80,12 @@ namespace platform
 							commandLineParams.screenshot=true;
 							commandLineParams.screenshotFilenameUtf8=right;
 						}
+						if(left.compare("-test")==0)
+						{
+							commandLineParams.screenshot=true;
+							commandLineParams.screenshotFilenameUtf8=right;
+							commandLineParams.quitafterframe=30;
+						}
 					}
 					else if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())
 					{

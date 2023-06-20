@@ -1181,7 +1181,6 @@ void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m
 	mat4 wvp;
 	crossplatform::MakeWorldViewProjMatrix((float*)&wvp,m,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	debugConstants.debugWorldViewProj=wvp;
-	static float rr=1.f;
 	debugConstants.radius			=size;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,"axes",0);

@@ -132,7 +132,7 @@ float VisibilityTerm(float m2, float n_v, float n_l)
 
 float DistributionTerm(float m2, float n_h)
 {
-	float d = (n_h * m2 - n_h) * n_h + 1.0;
+	//float d = (n_h * m2 - n_h) * n_h + 1.0;
 	return n_h;//m2 / (d * d * SIMUL_PI_F);
 }
 
