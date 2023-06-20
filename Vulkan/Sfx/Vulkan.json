@@ -198,6 +198,8 @@
 		"lerp": "mix",
 		"atan2": "atan",
 		"frac": "fract",
-		"flat": ""
+		"flat": "",
+		"ddx": "dFdx",
+		"ddy": "dFdy"
 	}
 }

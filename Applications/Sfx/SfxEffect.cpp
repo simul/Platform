@@ -202,6 +202,11 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 				{
 					types_used.insert(dt->structureType);
 				}
+				Struct* st = static_cast<Struct*>(d);
+				for (auto s : st->m_structMembers)
+				{
+					types_used.insert(s.type);
+				}
 			}
 				break;
 			case DeclarationType::STRUCT:
@@ -731,8 +736,11 @@ void Effect::CalculateResourceSlots(ShaderInstance *shaderInstance,set<int> &tex
 		}
 		else if(d->declarationType==DeclarationType::CONSTANT_BUFFER)
 		{
-			DeclaredTexture *td=(DeclaredTexture *)(d);
-			constantBufferSlots.insert(td->slot);
+			constantBufferSlots.insert(d->slot);
+		}
+		else if (d->declarationType == DeclarationType::NAMED_CONSTANT_BUFFER)
+		{
+			constantBufferSlots.insert(d->slot);
 		}
 		else
 		{
@@ -2065,7 +2073,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			}
 			else
 			{
-				// templatized.
+				// named.
 				const NamedConstantBuffer *c = static_cast<const NamedConstantBuffer*>(d);
 				string str = sfxConfig.namedConstantBufferDeclaration;
 				Struct* s = (Struct*)declarations[d->structureType];

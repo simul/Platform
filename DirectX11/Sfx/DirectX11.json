@@ -22,6 +22,7 @@
 	"outputExtension": "cso",
 	"outputOption": "/Fo",
 	"releaseOptions": "/O3",
+	"namedConstantBufferDeclaration": "struct {name}struct\n{\n[\t{type} {name};]};\n\ncbuffer {name}: register(b{slot})\n{\n{name}struct {instance_name};\n}\n",
 	"debugOutputFileOption": "/Od -Fd\"{filename_root}.pdb\"",
 	"entryPointOption": "/E{name}",
 	"multiplePixelOutputFormats": false,

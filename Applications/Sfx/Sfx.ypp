@@ -1004,6 +1004,8 @@ primary_exp : IDENTIFIER
 		else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
 		{
 			buildFunction.constantBuffers.insert(cb);
+			buildFunction.declarations.insert(varName);
+			buildFunction.resources.insert(varName);
 		}
 	}
 	| SATURATE

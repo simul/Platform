@@ -181,6 +181,8 @@
 		"imageStore(uav,pos, c)": "imageStore(uav,pos,c)",
 		"lerp": "mix",
 		"atan2": "atan",
-		"frac": "fract"
+		"frac": "fract",
+		"ddx": "dFdx",
+		"ddy": "dFdy"
 	}
 }

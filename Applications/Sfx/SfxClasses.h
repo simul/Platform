@@ -335,7 +335,6 @@ namespace sfx
 	};
 	struct ConstantBuffer : public Struct
 	{
-		int slot;
 		ConstantBuffer(DeclarationType t= DeclarationType::CONSTANT_BUFFER):Struct(t)
 		{
 		}
