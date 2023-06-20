@@ -1,6 +1,7 @@
 #include "RenderPlatform.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/Core/FileLoader.h"
+#include "Platform/Core/StringFunctions.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/CrossPlatform/TextRenderer.h"
 #include "Platform/CrossPlatform/Camera.h"
@@ -17,8 +18,12 @@
 #include "Platform/CrossPlatform/AccelerationStructureManager.h"
 #include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Effect.h"
+#include <filesystem>
 #include <algorithm>
 #include <array>
+using namespace std::literals;
+using namespace std::string_literals;
+using namespace std::literals::string_literals;
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #ifdef _MSC_VER
@@ -129,6 +134,22 @@ GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
 	ERRNO_BREAK
+	if (!initializedDefaultShaderPaths)
+	{
+		std::string exe_dir = platform::core::GetExeDirectory();
+		std::string binary_dir = std::filesystem::weakly_canonical((exe_dir + "/../..").c_str()).generic_string();
+		std::string source_dir = std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
+		std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_BUILD_DIR);
+		std::string cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
+		std::string platform_source_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_SOURCE_DIR);
+		std::string render_platform = GetPathName();
+		if (exe_dir.length())
+		{
+			std::string simul_dir = std::filesystem::weakly_canonical((exe_dir + "../../../").c_str()).generic_string();
+			PushShaderPath((simul_dir + "/../").c_str());
+		}
+		initializedDefaultShaderPaths = true;
+	}
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -303,7 +324,14 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
 {
-	texturePathsUtf8.push_back(path_utf8);
+	std::filesystem::path path(path_utf8);
+	std::error_code ec;
+	auto canonical=std::filesystem::weakly_canonical(path,ec);
+	std::string str = canonical.generic_string();
+	char c = str.back();
+	if (c != '\\' && c != '/')
+		str += '/';
+	texturePathsUtf8.push_back(str);
 }
 
 void RenderPlatform::PopTexturePath()
@@ -352,11 +380,15 @@ void RenderPlatform::LatLongTextureToCubemap(DeviceContext &deviceContext,Textur
 
 void RenderPlatform::PushShaderPath(const char *path_utf8)
 {
-	shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
+	std::string dir = std::filesystem::weakly_canonical(path_utf8).generic_string();
+	char c = dir.back();
+	if (c != '\\' && c != '/')
+		dir += '/';
+	shaderPathsUtf8.push_back(dir+"/");
 }
 void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
 {
-	std::string str = std::string(path_utf8) ;
+	std::string str = std::filesystem::weakly_canonical(path_utf8).generic_string();
 	char c = str.back();
 	if (c != '\\' && c != '/')
 		str += '/';
@@ -372,6 +404,7 @@ void RenderPlatform::SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf
 {
 	shaderPathsUtf8.clear();
 	shaderPathsUtf8=pathsUtf8;
+	initializedDefaultShaderPaths = false;
 }
 
 void RenderPlatform::PopShaderPath()

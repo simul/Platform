@@ -9,6 +9,10 @@
 #endif
 #include "Platform/Core/Export.h"
 
+
+#define PLATFORM_STRING_OF_MACRO1(x) #x
+#define PLATFORM_STRING_OF_MACRO(x) PLATFORM_STRING_OF_MACRO1(x)
+
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp

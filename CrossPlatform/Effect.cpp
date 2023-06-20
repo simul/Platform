@@ -730,7 +730,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			if (index < 0)
 				return true;// (index == -2 ? false : true); TODO: Deal missing .sfx files - AJR.
 			if (index < paths.size())
-				filenameUtf8 = std::filesystem::canonical(paths[index] + filenameUtf8).generic_string();
+				filenameUtf8 = std::filesystem::weakly_canonical(paths[index] + filenameUtf8).generic_string();
 			std::string platformName = r->GetName();
 
 			platform::core::find_and_replace(platformName, " ", "");
@@ -764,7 +764,13 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\HLSL;" + sourceCurrentPlatformPath + "\\GLSL;" + sourceCurrentPlatformPath + "\\Sfx;";
 				cmdLine += sourcePlatformPath + "\\Shaders\\SL;";
 				cmdLine += paths[index] + "..\\SL;";
-				cmdLine += +"..\\SL";
+				cmdLine += +"..\\SL;";
+				// include all the shader source paths.
+				const auto& p = r->GetShaderPathsUtf8();
+				for(auto& path : p)
+				{
+					cmdLine += path + ";";
+				}
 				cmdLine += "\"";
 
 				// Platform file
@@ -793,7 +799,10 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				{
 					cmdLine += " -F";
 				}
+				#if PLATFORM_DEBUG_SHADERS
+#else
 				if ((buildMode & crossplatform::ShaderBuildMode::DEBUG_SHADERS) != 0)
+#endif
 				{
 					cmdLine += " -D";
 				}

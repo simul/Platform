@@ -556,6 +556,7 @@ namespace platform
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
+			bool initializedDefaultShaderPaths = false;
 		};
 
 		/// Draw a horizontal grid in 3D.
