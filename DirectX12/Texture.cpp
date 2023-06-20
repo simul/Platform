@@ -305,7 +305,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 			);
 			SIMUL_ASSERT(res == S_OK);
 			//D3D12_GPU_VIRTUAL_ADDRESS va=mTextureDefault->GetGPUVirtualAddress();
-			std::wstring	n = L"GPU_";
+			std::wstring	n = L"mTextureDefault_";
 			n+=std::wstring(name.begin(), name.end());
 			mTextureDefault->SetName(n.c_str());
 			size_t texSize = textureDesc.Width * textureDesc.Height  * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
@@ -1259,7 +1259,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		SIMUL_ASSERT(res == S_OK);
 		size_t texSize = w * l * d * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
-		std::wstring n = L"GPU_";
+		std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
 		AssumeLayout(initialState);
@@ -1513,7 +1513,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 		
 		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
-		std::wstring n = L"GPU_";
+		std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
 #if SIMUL_INTERNAL_CHECKS
 		if (name.length() == 0)
@@ -1654,7 +1654,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		SIMUL_ASSERT(res == S_OK);
 		size_t texSize = w * l * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
-			std::wstring n = L"GPU_";
+			std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
 
@@ -1793,7 +1793,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	);
 	SIMUL_ASSERT(res == S_OK);
 	size_t texSize = w * l * totalNum * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-	std::wstring n = L"GPU_";
+	std::wstring n = L"mTextureDefault_";
 	n += std::wstring(name.begin(), name.end());
 	mTextureDefault->SetName(n.c_str());
 	SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
