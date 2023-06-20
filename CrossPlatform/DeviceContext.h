@@ -7,11 +7,16 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <limits.h> 
 #include <string.h>	// for memset
 
 #ifdef _MSC_VER
 	#pragma warning(push)  
 	#pragma warning(disable : 4251)  
+#endif
+
+#ifndef INT_MAX
+#define INT_MAX 2147483647
 #endif
 
 struct ID3D11DeviceContext;
