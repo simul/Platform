@@ -104,7 +104,7 @@ namespace platform
 			void									PopRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
-			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
+			void									SaveTexture(crossplatform::GraphicsDeviceContext&, crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p, crossplatform::CompressionFormat c=crossplatform::CompressionFormat::UNCOMPRESSED);
 			

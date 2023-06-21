@@ -2966,9 +2966,8 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext
 	ResourceTransitionSimple(deviceContext,dst->AsD3D12Resource(), D3D12_RESOURCE_STATE_RESOLVE_DEST, dstInitState);
 }
 
-void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
+void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
-	crossplatform::DeviceContext deviceContext = GetImmediateContext();
 	ID3D12GraphicsCommandList* cmdList = (ID3D12GraphicsCommandList*)deviceContext.platform_context;
 	if (!cmdList)
 		return;
@@ -3021,14 +3020,22 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 	FlushBarriers(deviceContext);
 
 	cmdList->CopyTextureRegion(&dstCopyLocation, 0, 0, 0, &srcCopyLocation, nullptr);
-	FlushImmediateCommandList();
+	ExecuteCommands(deviceContext);
 	immediateContext.contextState.contextActive = false;
-	ResetImmediateCommandList();
+	RestartCommands(deviceContext);
 
 	void* ptr;
 	D3D12_RANGE readRange = { 0, imageBufferDesc.Width };
 	imageBuffer->Map(0, &readRange, &ptr);
-	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, ptr);
+	std::vector<char> pixelData;
+	pixelData.resize(NumRows * RowSizesInBytes);
+	for (int row = 0; row < NumRows; row++)
+	{
+		auto index = row * RowSizesInBytes;
+		memcpy(&pixelData[index], ptr, RowSizesInBytes);
+		ptr = static_cast<char*>(ptr) + Layout.Footprint.RowPitch;
+	}
+	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, pixelData.data());
 	imageBuffer->Unmap(0, nullptr);
 
 	SAFE_RELEASE(imageBuffer);

@@ -84,7 +84,7 @@ namespace platform
 			bool			HasRenderTargets() const override;
 			void			copyToMemory(crossplatform::DeviceContext& deviceContext, void* target, int start_texel, int num_texels) override;
 
-			vk::Image&		AsVulkanImage() { return mImage; }
+			vk::Image*		AsVulkanImage() override { return &mImage; }
 			vk::ImageView*	AsVulkanImageView(const crossplatform::TextureView& textureView) override;
 
 			/// We need an active command list to finish loading a texture!

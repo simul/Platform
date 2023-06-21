@@ -1273,7 +1273,7 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &deviceContext
 	deviceContext.asD3D11DeviceContext()->ResolveSubresource(destination->AsD3D11Texture2D(),0,source->AsD3D11Texture2D(),0,dx11::RenderPlatform::ToDxgiFormat(destination->GetFormat()));
 }
 
-void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
+void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
 	dx11::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }

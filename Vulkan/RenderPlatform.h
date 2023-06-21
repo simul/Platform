@@ -143,8 +143,8 @@ namespace platform
 				}
 			}
 
-			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
-			void FlushImmediateContext();
+			void ExecuteCommands(crossplatform::DeviceContext& deviceContext) override;
+			void RestartCommands(crossplatform::DeviceContext& deviceContext) override;
 
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
@@ -221,7 +221,7 @@ namespace platform
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
-			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
+			void									SaveTexture(crossplatform::GraphicsDeviceContext&,crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			void									RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void									RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			
@@ -250,6 +250,8 @@ namespace platform
 			vulkan::Texture*						GetDummyTextureCube();
 			//! Returns 2DMS dummy texture 1 white texel at 2x MS
 			vulkan::Texture*						GetDummy2DMS();
+			//! Returns 2D Array dummy texture 1 white texel
+			vulkan::Texture*						GetDummy2DArray();
 			//! Returns 2D dummy texture 1 white texel
 			vulkan::Texture*						GetDummy2D();
 			//! Returns 3D dummy texture 1 white texel
@@ -307,8 +309,9 @@ namespace platform
 			std::set<vk::DescriptorPool>					releaseDescriptorPools;
 
 			vulkan::Texture*								mDummy2D=nullptr;
+			vulkan::Texture*								mDummy2DArray = nullptr;
 			vulkan::Texture*								mDummy2DMS=nullptr;
-			vulkan::Texture*								mDummy3D=nullptr;
+			vulkan::Texture* mDummy3D = nullptr;
 			vulkan::Texture*								mDummyTextureCube=nullptr;
 			vulkan::Texture*								mDummyTextureCubeArray=nullptr;
 			vk::DescriptorPool								mDescriptorPool;
