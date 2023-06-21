@@ -1237,7 +1237,11 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 {
 	using namespace crossplatform;
 	switch(p)
-	{
+    {
+   // case A2_BGR10_UNORM:
+   //     return vk::Format::eA2B10G10R10UnormPack32;
+    case RGB10_A2_UNORM:
+        return vk::Format::eA2B10G10R10UnormPack32;
 	case RGB_11_11_10_FLOAT:
 		return vk::Format::eB10G11R11UfloatPack32;
 	case RGBA_16_FLOAT:
