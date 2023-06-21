@@ -171,8 +171,9 @@ struct SfxOptions
 	std::string outputFile;
 	int optimizationLevel;
 };
-
-/**************************************************
+extern const SfxOptions &GetSfxOptions();
+extern std::string ppfile;
+    /**************************************************
 * sfxGenEffect
 * Return value: Effect id
 **************************************************/

@@ -702,7 +702,7 @@ bool preprocess(const char *filenameUtf8, map<string, string> defines,bool disab
 	disableLineWrites=disable_line_writes;
 	ClearParserState();
 	vector<string> s;
-	//DefineMacro("PSSL","",s);
+
 	BEGIN INITIAL;
 	preproOutput.str("");
 	for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
@@ -716,7 +716,7 @@ bool preprocess(const char *filenameUtf8, map<string, string> defines,bool disab
 	filenamesUtf8.clear();
 	last_filenumber=0;
 	newfile(filenameUtf8);
-	//	prepro__scan_string(newsrc.c_str());
+
 	prepro_parse();
 	return !preproError;
 }

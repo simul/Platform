@@ -3627,7 +3627,12 @@ void errSyn(const char* e)
 	ostringstream errMsg;
 	int lex_linenumber=sfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-	errMsg<<current_filename<<"("<< true_linenumber<<") : sfx syntax error: \""<<sfxget_text()<<"\" "<<e;
+    if (GetSfxOptions().disableLineWrites)
+        errMsg << ppfile;
+    else
+		errMsg << current_filename;
+    
+	errMsg<< "(" << true_linenumber << ") : sfx syntax error: \"" << sfxget_text() << "\" " << e;
 	const char *st=GetStartModeText();
 	if(st)
 		errMsg<<" in "<<st;
@@ -3642,8 +3647,12 @@ void errSem(const string& str, int lex_linenumber)
 	
 	if(lex_linenumber==-1)
 		lex_linenumber= sfxget_lineno();
-	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-	errMsg<<current_filename<<"("<<true_linenumber<<") : sfx error: "<<str;
+    int true_linenumber = lex_linenumber + last_linenumber - global_linenumber;
+    if (GetSfxOptions().disableLineWrites)
+        errMsg << ppfile;
+    else
+        errMsg << current_filename;
+	errMsg<<"("<<true_linenumber<<") : sfx error: "<<str;
 	const char *st=GetStartModeText();
 	if(st)
 		errMsg<<" in "<<st;

@@ -548,7 +548,9 @@ std::string GetExecutableDirectory()
 	return WStringToUtf8(str);
 }
 std::vector<std::string> extra_arguments;
-bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::string> &paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args)
+std::string ppfile;
+
+bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std::string> &paths, const char *outputfile, SfxConfig *config, const SfxOptions *sfxOptions, const char **args)
 {
 	bool retVal=true;
 	const char *filenamesUtf8[]={file,NULL};
@@ -599,7 +601,6 @@ bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::
 	}
 	sfxoFilename=std::filesystem::absolute(sfxoFilename.c_str()).u8string();
 
-	
 	vector<string> sourceFilesUtf8;
 	string exedir = GetExecutableDirectory();
 	shaderPathsUtf8.push_back(exedir);
@@ -656,7 +657,7 @@ bool sfxParseEffectFromFile(int effect, const char* file,const std::vector<std::
 			if(_getcwd(buffer,_MAX_PATH))
 				wd=string(buffer)+"/";
 			mkpath(sfxOptions->intermediateDirectory);
-			string ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
+			ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
 			ofstream pps(ppfile);
 			pps<<newsrc;
 			std::cerr<<ppfile<<": warning: preprocessed source"<<std::endl;
