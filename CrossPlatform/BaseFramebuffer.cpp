@@ -44,18 +44,17 @@ BaseFramebuffer::~BaseFramebuffer()
 
 void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	renderPlatform=r;
-	if(!external_texture)
-		SAFE_DELETE(buffer_texture);
-	if(!external_depth_texture)
-		SAFE_DELETE(buffer_depth_texture);
-	if(renderPlatform)
-	{
-		if(!external_texture)
-			buffer_texture=renderPlatform->CreateTexture((name+"_Colour").c_str());
-		if(!external_depth_texture&&depth_format!=UNKNOWN)
-			buffer_depth_texture=renderPlatform->CreateTexture((name+"_Depth").c_str());
-	}
+    renderPlatform = r;
+    if (!renderPlatform)
+        return;
+    if (!external_texture && !buffer_texture)
+    {
+        buffer_texture = renderPlatform->CreateTexture((name + "_Colour").c_str());
+    }
+    if (!external_depth_texture && depth_format != UNKNOWN && !buffer_depth_texture)
+    {
+        buffer_depth_texture = renderPlatform->CreateTexture((name + "_Depth").c_str());
+    }
 	CreateBuffers();
 }
 

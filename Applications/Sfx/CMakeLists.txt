@@ -33,7 +33,7 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 
 	source_group("Flex Bison" FILES ${FLEX_BISON} )
 	source_group("Generated Files" FILES ${GeneratedFiles} )
-	add_dynamic_executable(Sfx CONSOLE SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${FLEX_BISON} ${GeneratedFiles} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+	add_static_executable(Sfx CONSOLE SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${FLEX_BISON} ${GeneratedFiles} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 	target_include_directories(Sfx PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles" )
 	
 	set( SFX_TEST_PLATFORM "DirectX11" CACHE STRING "Which platform to use when debugging the Sfx executable" )
@@ -46,7 +46,7 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 	if(PLATFORM_WINDOWS)
 		set_target_properties(Sfx PROPERTIES
 			VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}"
-			VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -b\"${CMAKE_BINARY_DIR}\" -I\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${PLATFORM_ROOT}/Shaders/SL\" -O\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/shaderbin\" -P\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx/${SFX_TEST_PLATFORM}.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v ${SFX_TEST_DEFINES}"
+			VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -b\"${CMAKE_BINARY_DIR}\" -I\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx\" -I\"${CMAKE_SOURCE_DIR}/..\" -I\"${CMAKE_SOURCE_DIR}/Shaders/SL\" -I\"${PLATFORM_ROOT}/Shaders/SL\" -O\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/shaderbin\" -P\"${PLATFORM_ROOT}/${SFX_TEST_PLATFORM}/Sfx/${SFX_TEST_PLATFORM}.json\" -M\"${CMAKE_CURRENT_BINARY_DIR}/../../${SFX_TEST_PLATFORM}/sfx_intermediate\" -w -f -l -v ${SFX_TEST_DEFINES}"
 			)
 	endif()
 	if(PLATFORM_LINUX)

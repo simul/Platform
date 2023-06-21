@@ -33,6 +33,11 @@ std::string StripQuotes(const std::string &s)
 		a=a.substr(0,a.length()-1);
 	return a;
 }
+SfxOptions sfxOptions;
+const SfxOptions &GetSfxOptions()
+{
+    return sfxOptions;
+}
 std::string outputfile;
 int main(int argc, char** argv) 
 {
@@ -48,7 +53,6 @@ int main(int argc, char** argv)
 		return 5;
 	}
 
-	SfxOptions sfxOptions;
 	std::string SIMUL=GetEnv("SIMUL");
 	std::string SIMUL_BUILD= "";
 	std::map<std::string, std::string> environment;

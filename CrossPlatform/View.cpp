@@ -42,19 +42,19 @@ View::View()
 void View::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	SAFE_DELETE(hdrFramebuffer);
-	SAFE_DELETE(resolvedTexture);
-	if(renderPlatform)
-	{
-		hdrFramebuffer		=renderPlatform->CreateFramebuffer("hdrFramebuffer");
+     if (!renderPlatform)
+        return;
+	
+    if(!hdrFramebuffer)
+        hdrFramebuffer		= renderPlatform->CreateFramebuffer("hdrFramebuffer");
+    if (!resolvedTexture)
 		resolvedTexture		=renderPlatform->CreateTexture("Resolved");	
-		if(!useExternalFramebuffer)
-		{
-			hdrFramebuffer->SetUseFastRAM(true,true);
-			hdrFramebuffer->SetFormat(RGBA_16_FLOAT);
-			hdrFramebuffer->SetDepthFormat(D_MAX_FLOAT);
-			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
-		}
+	if(!useExternalFramebuffer)
+	{
+		hdrFramebuffer->SetUseFastRAM(true,true);
+		hdrFramebuffer->SetFormat(RGBA_16_FLOAT);
+		hdrFramebuffer->SetDepthFormat(D_MAX_FLOAT);
+		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 	}
 }
 

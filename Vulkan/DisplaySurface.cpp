@@ -101,7 +101,8 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		return;
 	}
 	renderPlatform = r;
-	pixelFormat = outFmt;
+    pixelFormat = outFmt;
+    requestedPixelFormat = outFmt;
 	crossplatform::DeviceContext &immediateContext = r->GetImmediateContext();
 	mHwnd = handle;
 	
@@ -316,31 +317,56 @@ void DisplaySurface::InitSwapChain()
 	viewport.x = 0;
 	viewport.y = 0;
 
+	// what formats are supported?
+    uint32_t surfaceformats = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
+    std::vector<VkSurfaceFormatKHR> vkSurfaceFormats;
+    vkSurfaceFormats.resize(surfaceformats);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, vkSurfaceFormats.data());
+    vulkanFormat = vk::Format::eUndefined;
+    colour_space = vk::ColorSpaceKHR::eSrgbNonlinear;
+    pixelFormat = requestedPixelFormat;
+	// Initialize the swap chain description. Let's try to find a format/colourspace combo that matches our specified pixelFormat.
+    {
+        for (int i = 0; i < vkSurfaceFormats.size(); i++)
+        {
+            vk::Format vf=(vk::Format)vkSurfaceFormats[i].format;
+            if (RenderPlatform::ToVulkanFormat(pixelFormat) == vf)
+			{
+				vulkanFormat = vf;
+				colour_space = (vk::ColorSpaceKHR)vkSurfaceFormats[i].colorSpace;
+				break;
+			}
+        }
+		// failed to find a match? Then change the pixelFormat to match the swapchain format.
+        if (vulkanFormat == vk::Format::eUndefined)
+        {
+            for (int i = 0; i < vkSurfaceFormats.size(); i++)
+            {
+                vk::Format vf = (vk::Format)vkSurfaceFormats[i].format;
+                pixelFormat = RenderPlatform::FromVulkanFormat(vf);
+                if (pixelFormat != crossplatform::PixelFormat::UNKNOWN)
+                {
+                    vulkanFormat = vf;
+                    colour_space = (vk::ColorSpaceKHR)vkSurfaceFormats[i].colorSpace;
+                    break;
+                }
+            }
+        }
+        switch (colour_space)
+        {
+        case vk::ColorSpaceKHR::eSrgbNonlinear:
+        case vk::ColorSpaceKHR::eExtendedSrgbLinearEXT:
+        case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:
+        case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:
+            swapChainIsGammaCorrected = true;
+            break;
+            default:
+            swapChainIsGammaCorrected = false;
+            break;
+        };
+    }
 
-	// Initialize the swap chain description.
-
-	std::vector<vk::SurfaceFormatKHR> surfFormats;
-	
-	{
-		surfFormats.push_back(vk::SurfaceFormatKHR());
-		surfFormats[0].format = vk::Format::eUndefined;
-		surfFormats[0].colorSpace = vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear;
-	}
-
-	// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
-	// the mSurface has no preferred format.  Otherwise, at least one
-	// supported format will be returned.
-	size_t formatCount = surfFormats.size();
-	if (formatCount == 1 && (surfFormats)[0].format == vk::Format::eUndefined)
-	{
-		vulkanFormat = vk::Format::eB8G8R8A8Unorm;
-	}
-	else
-	{
-		assert(formatCount >= 1);
-		vulkanFormat = surfFormats[0].format;
-	}
-	colour_space = surfFormats[0].colorSpace;
 	//if(!swapchain)
 //		swapchain.swap(new vk::SwapchainKHR);
 	vk::SwapchainKHR oldSwapchain = swapchain;
@@ -426,11 +452,6 @@ void DisplaySurface::InitSwapChain()
 		}
 	}
 //	gpu->GetPhysicalDeviceSurfaceSupportKHR(mSurface);
-	uint32_t surfaceformats = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
-	std::vector<VkSurfaceFormatKHR> vkSurfaceFormats;
-	vkSurfaceFormats.resize(surfaceformats);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, vkSurfaceFormats.data());
 	auto const swapchain_ci = vk::SwapchainCreateInfoKHR()
 		.setSurface(mSurface)
 		.setMinImageCount(desiredNumOfSwapchainImages)

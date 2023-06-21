@@ -15,6 +15,10 @@
 	#pragma warning(disable : 4251)  
 #endif
 
+#ifndef INT_MAX
+#define INT_MAX 2147483647
+#endif
+
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
 struct ID3D12GraphicsCommandList;

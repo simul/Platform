@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+//  Copyright (c) 2015-2023 Simul Software Ltd. All rights reserved.
 #ifndef COMMON_SL
 #define COMMON_SL
 #define SIMUL_PI_F 3.1415926536

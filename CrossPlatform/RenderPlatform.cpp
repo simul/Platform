@@ -837,59 +837,59 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 			switch (type)
 			{
 				using namespace crossplatform;
-			case PixelFormatType::DOUBLE:
-			{
-				double value = std::clamp<double>(*(double*)_ptr, 0.0, 1.0);
-				u8value = static_cast<uint8_t>(value * UINT8_MAX);
-				break;
-			}
-			case PixelFormatType::FLOAT:
-			{
-				float value = std::clamp<float>(*(float*)_ptr, 0.0f, 1.0f);
-				u8value = static_cast<uint8_t>(value * UINT8_MAX);
-				break;
-			}
-			case PixelFormatType::HALF:
-			{
-				float value = std::clamp<float>(math::ToFloat32(*(uint16_t*)_ptr), 0.0f, 1.0f);
-				u8value = static_cast<uint8_t>(value * UINT8_MAX);
-				break;
-			}
-			case PixelFormatType::UINT:
-			{
-				uint32_t value = std::clamp<uint32_t>(*(uint32_t*)_ptr, 0, UINT32_MAX);
-				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(UINT32_MAX));
-				break;
-			}
-			case PixelFormatType::USHORT:
-			{
-				uint16_t value = std::clamp<uint16_t>(*(uint16_t*)_ptr, 0, UINT16_MAX);
-				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(UINT16_MAX));
-				break;
-			}
-			case PixelFormatType::UCHAR:
-			{
-				u8value = std::clamp<uint8_t>(*(uint8_t*)_ptr, 0, UINT8_MAX);
-				break;
-			}
-			case PixelFormatType::INT:
-			{
-				int32_t value = std::clamp<int32_t>(*(int32_t*)_ptr, 0, INT32_MAX);
-				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(INT32_MAX));
+				case PixelFormatType::DOUBLE:
+				{
+					double value = std::clamp<double>(*(double*)_ptr, 0.0, 1.0);
+					u8value = static_cast<uint8_t>(value * UINT8_MAX);
+					break;
+				}
+				case PixelFormatType::FLOAT:
+				{
+					float value = std::clamp<float>(*(float*)_ptr, 0.0f, 1.0f);
+					u8value = static_cast<uint8_t>(value * UINT8_MAX);
+					break;
+				}
+				case PixelFormatType::HALF:
+				{
+					float value = std::clamp<float>(math::ToFloat32(*(uint16_t*)_ptr), 0.0f, 1.0f);
+					u8value = static_cast<uint8_t>(value * UINT8_MAX);
+					break;
+				}
+				case PixelFormatType::UINT:
+				{
+					uint32_t value = std::clamp<uint32_t>(*(uint32_t*)_ptr, 0, UINT32_MAX);
+					u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(UINT32_MAX));
+					break;
+				}
+				case PixelFormatType::USHORT:
+				{
+					uint16_t value = std::clamp<uint16_t>(*(uint16_t*)_ptr, 0, UINT16_MAX);
+					u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(UINT16_MAX));
+					break;
+				}
+				case PixelFormatType::UCHAR:
+				{
+					u8value = std::clamp<uint8_t>(*(uint8_t*)_ptr, 0, UINT8_MAX);
+					break;
+				}
+				case PixelFormatType::INT:
+				{
+					int32_t value = std::clamp<int32_t>(*(int32_t*)_ptr, 0, INT32_MAX);
+					u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(INT32_MAX));
 
-				break;
-			}
-			case PixelFormatType::SHORT:
-			{
-				int16_t value = std::clamp<int16_t>(*(int16_t*)_ptr, 0, INT16_MAX);
-				u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(INT16_MAX));
-				break;
-			}
-			case PixelFormatType::CHAR:
-			{
-				u8value = std::clamp<int8_t>(*(int8_t*)_ptr, 0, INT8_MAX);
-				break;
-			}
+					break;
+				}
+				case PixelFormatType::SHORT:
+				{
+					int16_t value = std::clamp<int16_t>(*(int16_t*)_ptr, 0, INT16_MAX);
+					u8value = static_cast<uint8_t>(static_cast<float>(value) / static_cast<float>(INT16_MAX));
+					break;
+				}
+				case PixelFormatType::CHAR:
+				{
+					u8value = std::clamp<int8_t>(*(int8_t*)_ptr, 0, INT8_MAX);
+					break;
+				}
 			}
 			imageData.push_back(u8value);
 		}
