@@ -499,11 +499,14 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		device_extensions.resize(device_extension_count);
 		result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, device_extensions.data());
 		SIMUL_VK_ASSERT_RETURN(result);
-		
+		#if SIMUL_INTERNAL_CHECKS
 		std::cerr<<"Available device extensions: "<<device_extension_count<<std::endl;
+		#endif
 		for (uint32_t i = 0; i < device_extension_count; i++)
-		{
-			std::cerr<<device_extensions[i].extensionName<<std::endl;
+        {
+#if SIMUL_INTERNAL_CHECKS
+            std::cerr << device_extensions[i].extensionName << std::endl;
+#endif
 			for(size_t j=0;j<required_device_extensions.size();j++)
 			{
 				if (!strcmp(required_device_extensions[j].c_str(), device_extensions[i].extensionName))

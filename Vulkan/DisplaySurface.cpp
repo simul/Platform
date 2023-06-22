@@ -358,7 +358,6 @@ void DisplaySurface::InitSwapChain()
         case vk::ColorSpaceKHR::eSrgbNonlinear:
         case vk::ColorSpaceKHR::eExtendedSrgbLinearEXT:
         case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:
-        case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:
             swapChainIsGammaCorrected = true;
             break;
             default:
@@ -1091,10 +1090,23 @@ void DisplaySurface::Resize()
 #ifdef _MSC_VER
 	RECT rect;
 	if (!GetClientRect((HWND)mHwnd, &rect))
-		return;
+        return;
+    bool regen = false;
+    RECT wrect;
+    if(GetWindowRect((HWND)mHwnd,&wrect))
+	{
+        if (wrect.left != lastWindow.x || wrect.top != lastWindow.y)
+            regen = true;
+        lastWindow.x = wrect.left;
+        lastWindow.y = wrect.top;
+        lastWindow.z =wrect.right- wrect.left;
+        lastWindow.w = wrect.bottom-wrect.top;
+    }
 	UINT W = abs(rect.right - rect.left);
 	UINT H = abs(rect.bottom - rect.top);
-	if (viewport.w == W&&viewport.h == H)
+    if (viewport.w != W || viewport.h != H)
+        regen = true;
+	if (!regen)
 		return;
 	if(W*H>0)
 		InitSwapChain();

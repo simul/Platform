@@ -393,7 +393,7 @@ void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
 	if (c != '\\' && c != '/')
 		str += '/';
 	shaderBinaryPathsUtf8.push_back(str);
-	SIMUL_COUT << "Shader binary path: " << str.c_str() << std::endl;
+//	SIMUL_COUT << "Shader binary path: " << str.c_str() << std::endl;
 }
 
 std::vector<std::string> RenderPlatform::GetShaderPathsUtf8()
@@ -1297,7 +1297,7 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 	Print(deviceContext, positions[0].data(), positions[1].data(), text, colr, bkg);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale,float mip,int slice)
+int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int slice)
 {
 	int level=slice;
 	static int frames=25;
@@ -1439,6 +1439,7 @@ void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(l)).c_str(), white, semiblack);
 		}
 	}
+    return int2(dx, dy);
 }
 
 void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
@@ -1459,12 +1460,12 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 	effect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma,bool debug,vec2 texc,vec2 texc_scale,float mip,int slice)
+int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, float mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int slice)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale, mip, slice);
+	return DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale, mip, slice);
 }
 
-void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
+int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, const crossplatform::Viewport *v
 	,const float *proj)
 {
 	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
@@ -1509,6 +1510,7 @@ void RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext,int x1,int y
 		debugEffect->UnbindTextures(deviceContext);
 		debugEffect->Unapply(deviceContext);
 	}
+    return int2(dx, dy);
 }
 
 void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)

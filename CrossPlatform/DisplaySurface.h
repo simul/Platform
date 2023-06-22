@@ -44,6 +44,7 @@ namespace platform
 			int                         mViewId;	
             cp_hwnd                     mHwnd;
 			bool                        mIsVSYNC;
+			int4						lastWindow={0,0,0,0};
 		};
 	}
 }
