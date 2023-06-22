@@ -451,7 +451,7 @@ namespace platform
 
 			void							LatLongTextureToCubemap			(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
-			virtual void					SaveTexture						(Texture *,const char *){}
+			virtual void					SaveTexture						(GraphicsDeviceContext &, Texture *,const char *){}
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture					(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 

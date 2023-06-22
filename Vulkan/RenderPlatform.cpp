@@ -220,41 +220,10 @@ bool RenderPlatform::CheckDeviceExtension(const std::string& deviceExtensionName
 static vk::CommandPool cmdPool;
 static vk::CommandBuffer cmdBuffer;
 
-crossplatform::GraphicsDeviceContext& RenderPlatform::GetImmediateContext()
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
 {
-	if (immediateContext.platform_context == nullptr && vulkanDevice != nullptr)
-	{
-		vk::CommandPoolCreateInfo cmdPoolCI;
-		cmdPoolCI.setPNext(nullptr)
-			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-			.setQueueFamilyIndex(0);
-		cmdPool = vulkanDevice->createCommandPool(cmdPoolCI);
-
-		vk::CommandBufferAllocateInfo cmdBufferAI;
-		cmdBufferAI.setPNext(nullptr)
-			.setCommandPool(cmdPool)
-			.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandBufferCount(1);
-		cmdBuffer = vulkanDevice->allocateCommandBuffers(cmdBufferAI)[0];
-
-		vk::CommandBufferBeginInfo cmdBufferBI;
-		cmdBufferBI.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-		cmdBuffer.begin(cmdBufferBI);
-
-		immediateContext.platform_context = &cmdBuffer;
-		immediateContext.renderPlatform = this;
-		immediateContext.contextState.contextActive = true;
-	}
-	return crossplatform::RenderPlatform::GetImmediateContext();
-}
-
-void RenderPlatform::FlushImmediateContext()
-{
-	if (!immediateContext.contextState.contextActive)
-	{
-		return;
-	}
-	cmdBuffer.end();
+	vk::CommandBuffer* cmdBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	cmdBuffer->end();
 
 	vk::FenceCreateInfo fenceCI;
 	fenceCI.setPNext(nullptr).setFlags(vk::FenceCreateFlags(0));
@@ -263,14 +232,20 @@ void RenderPlatform::FlushImmediateContext()
 	vk::SubmitInfo si;
 	si.setWaitSemaphoreCount(0).setPWaitSemaphores(nullptr)
 		.setWaitDstStageMask(nullptr)
-		.setCommandBufferCount(1).setPCommandBuffers(&cmdBuffer)
+		.setCommandBufferCount(1).setPCommandBuffers(cmdBuffer)
 		.setSignalSemaphoreCount(0).setPSignalSemaphores(nullptr)
 		.setPNext(nullptr);
 	vk::Queue queue = vulkanDevice->getQueue(0, 0);
 	SIMUL_VK_CHECK(queue.submit(1, &si, fence));
 	SIMUL_VK_CHECK(vulkanDevice->waitForFences(1, &fence, true, UINT64_MAX));
+}
 
-	cmdBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext)
+{
+	vk::CommandBuffer* cmdBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	cmdBuffer->reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+	cmdBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
+
 }
 
 void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
@@ -481,7 +456,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext& deviceContext, cr
 	src->SetLayout(deviceContext, vk::ImageLayout::eTransferSrcOptimal, {});
 	dst->SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, {});
 	// Perform the copy. This is done GPU side and does not incur much CPU overhead (if copying full resources)
-	commandBuffer->copyImage(src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
+	commandBuffer->copyImage(*src->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, *dst->AsVulkanImage(), vk::ImageLayout::eTransferDstOptimal
 													,static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 }
 
@@ -933,6 +908,8 @@ vulkan::Texture *RenderPlatform::GetDummyTexture(crossplatform::ShaderResourceTy
 		return GetDummy2DMS();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_3D)==crossplatform::ShaderResourceType::TEXTURE_3D)
 		return GetDummy3D();
+	if ((t & crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY) == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
+		return GetDummy2DArray();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_2D)==crossplatform::ShaderResourceType::TEXTURE_2D)
 		return GetDummy2D();
 	if((t&crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)==crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)
@@ -996,6 +973,17 @@ vulkan::Texture* RenderPlatform::GetDummy2DMS()
 	return mDummy2DMS;
 }
 
+vulkan::Texture* RenderPlatform::GetDummy2DArray()
+{
+	if (!mDummy2DArray)
+	{
+		mDummy2DArray = (vulkan::Texture*)CreateTexture("dummy2darray");
+		mDummy2DArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM, nullptr);
+		mDummy2DArray->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+	}
+	return mDummy2DArray;
+}
+
 vulkan::Texture* RenderPlatform::GetDummy3D()
 {
 	if (!mDummy3D)
@@ -1006,6 +994,7 @@ vulkan::Texture* RenderPlatform::GetDummy3D()
 	}
 	return mDummy3D;
 }
+
 crossplatform::RenderState* RenderPlatform::CreateRenderState(const crossplatform::RenderStateDesc &desc)
 {
 	vulkan::RenderState* s  = new vulkan::RenderState;
@@ -1659,11 +1648,10 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext
 	}*/
 }
 
-void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
+void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
 	vk::Result result = vk::Result::eSuccess;
 
-	crossplatform::DeviceContext deviceContext = GetImmediateContext();
 	vk::CommandBuffer* cmdBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if (!cmdBuffer)
 		return;
@@ -1694,8 +1682,11 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 		{ 0, 0, 0 },
 		{ (uint32_t)texture->width, (uint32_t)texture->length, (uint32_t)texture->depth });
 
-	cmdBuffer->copyImageToBuffer(t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
-	FlushImmediateContext();
+	cmdBuffer->copyImageToBuffer(*t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
+
+	ExecuteCommands(deviceContext);
+
+	RestartCommands(deviceContext);
 
 	void* ptr = vulkanDevice->mapMemory(imageBufferMemory, 0, memoryAI.allocationSize, vk::MemoryMapFlags(0));
 	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, ptr);
