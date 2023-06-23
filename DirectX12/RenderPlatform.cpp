@@ -2988,6 +2988,9 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
     D3D12_TEXTURE_COPY_LOCATION dstCopyLocation = CD3DX12_TEXTURE_COPY_LOCATION(imageBuffer, Layout);
     D3D12_TEXTURE_COPY_LOCATION srcCopyLocation = CD3DX12_TEXTURE_COPY_LOCATION(texture->AsD3D12Resource(), 0);
 
+    dx12::Texture *t = (dx12::Texture *)texture;
+    t->SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    FlushBarriers(deviceContext);
 
 	cmdList->CopyTextureRegion(&dstCopyLocation, 0, 0, 0, &srcCopyLocation, nullptr);
 	ExecuteCommands(deviceContext);
@@ -3007,12 +3010,6 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	}
 	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, pixelData.data());
 	imageBuffer->Unmap(0, nullptr);
-
-    void *ptr;
-    D3D12_RANGE readRange = {0, imageBufferDesc.Width};
-    imageBuffer->Map(0, &readRange, &ptr);
-    crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, ptr);
-    imageBuffer->Unmap(0, nullptr);
 
     SAFE_RELEASE(imageBuffer);
 }
