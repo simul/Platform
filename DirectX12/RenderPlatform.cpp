@@ -2999,7 +2999,7 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	imageBuffer->Map(0, &readRange, &ptr);
 	std::vector<char> pixelData;
 	pixelData.resize(NumRows * RowSizesInBytes);
-	for (int row = 0; row < NumRows; row++)
+	for (int row = 0; row < (int)NumRows; row++)
 	{
 		auto index = row * RowSizesInBytes;
 		memcpy(&pixelData[index], ptr, RowSizesInBytes);
@@ -3008,11 +3008,6 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, pixelData.data());
 	imageBuffer->Unmap(0, nullptr);
 
-    void *ptr;
-    D3D12_RANGE readRange = {0, imageBufferDesc.Width};
-    imageBuffer->Map(0, &readRange, &ptr);
-    crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, ptr);
-    imageBuffer->Unmap(0, nullptr);
 
     SAFE_RELEASE(imageBuffer);
 }

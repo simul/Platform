@@ -12,6 +12,7 @@ SIMUL_CONSTANT_BUFFER(CameraConstants,1)
 	uniform mat4 viewProj;
 	uniform vec3 viewPosition;
 	uniform int frameNumber;
+	vec4 depthToLinFadeDistParams;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)
@@ -30,6 +31,8 @@ SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)
 	uniform mat4 rightView;
 	uniform mat4 rightProj;
 	uniform mat4 rightViewProj;
+
+    vec4 depthToLinFadeDistParams;
 
 	uniform vec3 stereoViewPosition;
 SIMUL_CONSTANT_BUFFER_END

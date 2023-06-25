@@ -20,6 +20,25 @@ float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitude
 	return sun_alt_texc;
 }
 
+float linearDistanceToDepth(float d_km, DepthInterpretationStruct dis)
+{
+    if (dis.reverseDepth)
+    {
+        if (d_km <= 0)
+            return UNITY_DIST; // max_fade_distance_metres;
+    }
+    else
+    {
+        if (d_km >= 1.0)
+            return UNITY_DIST; // max_fade_distance_metres;
+    }
+    vec4 param = dis.depthToLinFadeDistParams;
+    float yz = param.y + param.z;
+    // param.w*yz * depth^2 - dist*yz*depth + param.x=0;
+	float depth = (yz - sqrt(yz*yz - 4.0*param.w*(param.x - d_km*yz))) / (2.0*param.w);
+    return depth;
+}
+
 float depthToLinearDistance(float depth,DepthInterpretationStruct dis)
 {
 	if(dis.reverseDepth)

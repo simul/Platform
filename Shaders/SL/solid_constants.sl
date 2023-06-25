@@ -3,7 +3,6 @@
 #define SOLID_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
-	vec4 depthToLinFadeDistParams;
 	vec4 fullResToLowResTransformXYWH;
 
 	int lightCount;

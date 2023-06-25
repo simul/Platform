@@ -2532,7 +2532,9 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 							else if (member.semantic == "SV_DEPTH")
 							{
 								// TO-DO: replace with gl_Depth = value;
-								slotidx = "1";
+                                slotidx = "1";
+                                content += "gl_FragDepth = tmp." + member.name + ";\n";
+                                
 							}
 							else if (member.semantic.size() == std::string("SV_TARGET688366XX").size()) //SV_TARGET6883660##n for Dual Source Blending
 							{

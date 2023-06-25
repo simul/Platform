@@ -70,7 +70,8 @@
 		"SV_POSITION": "gl_Position"
 	},
 	"fragmentOutputAssignment": {
-		"SV_TARGET": "gl_FragColor"
+		"SV_TARGET": "gl_FragColor",
+		"SV_DEPTH": "gl_FragDepth"
 	},
 	"computeSemantics": {
 		"SV_GroupID": "gl_WorkGroupID",

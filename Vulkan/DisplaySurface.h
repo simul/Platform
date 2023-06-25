@@ -29,10 +29,6 @@ namespace platform
             virtual void InvalidateDeviceObjects() override;
             virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
             virtual void EndFrame() override;
-            bool IsSwapChainIsGammaCorrected() const
-            {
-                return swapChainIsGammaCorrected;
-            }
         protected:
             //! Will resize the swap chain only if needed
             void Resize();
@@ -40,7 +36,6 @@ namespace platform
             crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNDEFINED;
 			// The format requested - may not be available.
             crossplatform::PixelFormat requestedPixelFormat = crossplatform::PixelFormat::UNDEFINED;
-            bool swapChainIsGammaCorrected = false;
 #ifdef _MSC_VER
 			HDC             hDC;
 			HGLRC           hRC;

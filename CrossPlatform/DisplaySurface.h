@@ -28,6 +28,10 @@ namespace platform
             virtual void    Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) {};
 			virtual void	StartFrame() {}
 			virtual void	EndFrame() {}
+            bool IsSwapChainIsGammaCorrected() const
+            {
+                return swapChainIsGammaCorrected;
+            }
 			virtual void* GetPlatformDeviceContext()
 			{
 				return nullptr;
@@ -39,6 +43,7 @@ namespace platform
 			RenderDelegaterInterface*  renderer;
 
 		protected:
+            bool swapChainIsGammaCorrected = false;
 			RenderPlatform*             renderPlatform;
 			//! The id assigned by the renderer to correspond to this hwnd
 			int                         mViewId;	
