@@ -199,6 +199,7 @@ namespace simul
 			int test=0;
 			bool contextActive=true;
 			bool externalContext=false;
+			bool vulkanInsideRenderPass = false;
 
 			bool effectPassValid=false;
 			bool vertexBuffersValid=false;
@@ -326,6 +327,7 @@ namespace simul
 			int framePrintX=0;
 			int framePrintY=0;
 			GraphicsDeviceContext();
+			~GraphicsDeviceContext();
 			ViewStruct viewStruct;
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();

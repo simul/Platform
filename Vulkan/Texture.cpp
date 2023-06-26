@@ -196,7 +196,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext& deviceContext)
 		return;
 	SIMUL_ASSERT(loadedTextures.size() != 0)
 
-		vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
+
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 
 	if (GetSampleCount() > 1)
 	{
@@ -447,7 +450,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 	// include eTransferDst IN CASE this is for a texture file loaded.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst;
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst|vk::ImageUsageFlagBits::eTransferSrc;;
 	if(m>1)
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	if(rendertarget)
@@ -683,6 +686,7 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	clear_value.depth=depthClear;
 	clear_value.stencil=stencilClear;
 
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
 	SetLayout(deviceContext, prev_image_layout, { 0, 1, 0, 1 });
 }
@@ -932,7 +936,10 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 			flags = vk::AccessFlagBits::eColorAttachmentWrite;
 			break;
 		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentRead;
+			break;
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentRead;
 			break;
 		case vk::ImageLayout::eShaderReadOnlyOptimal:
 			// Make sure any Copy or CPU writes to image are flushed
@@ -944,7 +951,10 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 		case vk::ImageLayout::ePresentSrcKHR:
 			flags = vk::AccessFlagBits::eMemoryRead;
 			break;
+		case vk::ImageLayout::eGeneral:
+			break;
 		default:
+			SIMUL_BREAK_ONCE("Unknown layout.");
 			break;
 		}
 
@@ -983,6 +993,9 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 						continue;
 					barrier.setOldLayout(imageLayout);
 					barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+
+					vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 					commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 					imageLayout = newLayout;
 				}
@@ -995,6 +1008,9 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 				return;
 			barrier.setOldLayout(mCurrentImageLayout);
 			barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, mips, 0, totalNum));
+
+			vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 			commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 			AssumeLayout(newLayout);
 		}
@@ -1010,6 +1026,9 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 				vk::ImageLayout& imageLayout = mSubResourcesLayouts[l][m];
 				barrier.setOldLayout(imageLayout);
 				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+
+				vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 				imageLayout = newLayout;
 			}

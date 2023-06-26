@@ -422,7 +422,7 @@ namespace simul
 
 			void							LatLongTextureToCubemap			(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
-			virtual void					SaveTexture						(Texture *,const char *){}
+			virtual void					SaveTexture						(crossplatform::GraphicsDeviceContext& deviceContext, Texture *,const char *){}
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture					(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 
@@ -437,6 +437,7 @@ namespace simul
 			virtual void					RestoreColourTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
+			virtual void					EndRenderPass					(DeviceContext& deviceContext) {};
 
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			base::MemoryInterface *GetAllocator()
@@ -467,6 +468,7 @@ namespace simul
 			static PixelFormat ToColourFormat(PixelFormat f);
 			static bool IsDepthFormat(PixelFormat f);
 			static bool IsStencilFormat(PixelFormat f);
+			static bool SaveTextureDataToDisk(const char* filename, int width, int height, PixelFormat format, const void* data);
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 		protected:

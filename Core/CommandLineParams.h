@@ -79,7 +79,12 @@ namespace platform
 						{
 							commandLineParams.screenshot=true;
 							commandLineParams.screenshotFilenameUtf8=right;
-							commandLineParams.quitafterframe = 20; //If we specify a screenshot on the command line, we can assume we want to close the program after the shot is taken.
+						}
+						if (left.compare("-test") == 0)
+						{
+							commandLineParams.screenshot = true;
+							commandLineParams.screenshotFilenameUtf8 = right;
+							commandLineParams.quitafterframe = 30;
 						}
 					}
 					else if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())

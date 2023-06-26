@@ -851,7 +851,7 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &,crossplatfor
 	glDeleteFramebuffers(1, &dstFBO);
 }
 
-void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
+void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
 }
 
