@@ -91,6 +91,8 @@ namespace platform
 			void									ActivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext) override;
 		
+			void									ExecuteCommands(crossplatform::DeviceContext &deviceContext) override;
+			void									RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 		//	crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
 			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
 			void									SetScissor(crossplatform::GraphicsDeviceContext &deviceContext,int4 sc) override;
