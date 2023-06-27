@@ -73,8 +73,6 @@ namespace platform
 							commandLineParams.win_w=val;
 						if(left.compare("-height")==0)
 							commandLineParams.win_h=val;
-						if(left.compare("-quitafterframe")==0)
-							commandLineParams.quitafterframe=val;
 						if(left.compare("-screenshot")==0)
 						{
 							commandLineParams.screenshot=true;
@@ -84,8 +82,10 @@ namespace platform
 						{
 							commandLineParams.screenshot = true;
 							commandLineParams.screenshotFilenameUtf8 = right;
-							commandLineParams.quitafterframe = 30;
+							commandLineParams.quitafterframe = 50;
 						}
+						if (left.compare("-quitafterframe") == 0)
+							commandLineParams.quitafterframe = val;
 					}
 					else if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())
 					{
