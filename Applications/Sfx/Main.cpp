@@ -62,13 +62,14 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 
         // CTRL-CLOSE: confirm that the user wants to exit.
     case CTRL_CLOSE_EVENT:
-        printf("Ctrl-Close event\n\n");
+		std::cerr<<("Received Ctrl-Close event.\n");
 		terminate_command=true;
         return TRUE;
 
         // Pass other signals to the next handler.
     case CTRL_BREAK_EVENT:
-        printf("Ctrl-Break event\n\n");
+		std::cerr<<("Received Ctrl-Break event.\n");
+		terminate_command=true;
         return FALSE;
 
     case CTRL_LOGOFF_EVENT:
@@ -76,7 +77,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
 
     case CTRL_SHUTDOWN_EVENT:
-        printf("Ctrl-Shutdown event\n\n");
+		std::cerr<<("Received Ctrl-Shutdown event.\n");
 		terminate_command=true;
         return FALSE;
 
@@ -204,7 +205,6 @@ int main(int argc, char** argv)
 		std::ifstream i(platformFilename);
 		if(!i.good())
 		{
-			//printf(platformFilename.c_str());
 			std::cerr<<"Error: Can't find config file "<<platformFilename.c_str()<<std::endl;
 			return 18;
 		}

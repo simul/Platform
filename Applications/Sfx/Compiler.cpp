@@ -182,9 +182,9 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	{
 		if(terminate_command)
 		{
+			std::cerr<<"Terminating process.\n";
 			if(TerminateProcess(processInfo.hProcess,1))
 			{
-				std::cerr<<"Terminated process.\n";
 				break;
 			}
 		}
@@ -197,9 +197,11 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		{
 			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
 			{
-			  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-			  std::string str((char*)buff, (size_t)dwBytesRead);
-			  outputDelegate(str);
+				ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+				std::string str((char*)buff, (size_t)dwBytesRead);
+				outputDelegate(str);
+				if(terminate_command)
+					break;
 			}
 			while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
 			{
@@ -209,6 +211,8 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 				// Force to failed if error...
 				if(sfxConfig.failOnCerr)
 					has_errors = true;
+				if(terminate_command)
+					break;
 			}
 		}
 		// Process is done, or we timed out:

@@ -1,6 +1,6 @@
 # Copyright 2021 Simul Software Ltd, All rights reserved.
 
-cmake_minimum_required( VERSION 3.2 )
+cmake_minimum_required(VERSION 3.5)
 
 if(UNIX)
 set(OS_CPP imgui_impl_glfw.cpp)

@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 2.9)
+cmake_minimum_required(VERSION 3.5)
 
 file(GLOB CMAKE "*.cmake" )
 
@@ -29,7 +29,6 @@ endif()
 if(PLATFORM_SUPPORT_ANGLE)
 	if(${SAMPLE_API} MATCHES "SAMPLE_USE_GLES")
 		target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/GLES")
-		target_link_directories( Sample_MT PUBLIC ${PLATFORM_ANGLE_LIB_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../External/glfw/build_mt/lib/${CMAKE_BUILD_TYPE})
 		target_link_libraries(Sample_MT SimulGLES_MT libGLESv2.dll.lib libEGL.dll.lib)
 		if(SIMUL_BUILD_SHADERS)
 			add_dependencies( Sample_MT GLESCoreShaders )
