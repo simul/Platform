@@ -27,6 +27,7 @@ file(GLOB SHADER_DEFS
 add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
 	target_link_directories( SimulOpenGL_MT PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/build_mt/lib/${CMAKE_BUILD_TYPE})
+	add_dependencies( SimulOpenGL_MT SimulCrossPlatform_MT )
 	target_include_directories(SimulOpenGL_MT PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")
 	target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
 	target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/include")
@@ -39,7 +40,7 @@ if(PLATFORM_BUILD_MD_LIBS)
 endif()
 
 if(SIMUL_SOURCE_BUILD)
-	add_sfx_shader_project( OpenGLCoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${CMAKE_CURRENT_SOURCE_DIR}/../Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} ${in_rs} OPTIONS -w -l OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/../OpenGL/shaderbin" INTERMEDIATE "${CMAKE_CURRENT_BINARY_DIR}/../OpenGL/sfx_intermediate"  FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders)
+	add_sfx_shader_project( OpenGLCoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} ${in_rs} OPTIONS -w -l OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/../OpenGL/shaderbin" INTERMEDIATE "${CMAKE_CURRENT_BINARY_DIR}/../OpenGL/sfx_intermediate"  FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders)
  
 	if(PLATFORM_BUILD_MD_LIBS)
 		target_link_directories( SimulOpenGL_MD PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/build_md/lib/${CMAKE_BUILD_TYPE})

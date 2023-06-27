@@ -33,10 +33,23 @@ float linearDistanceToDepth(float d_km, DepthInterpretationStruct dis)
             return UNITY_DIST; // max_fade_distance_metres;
     }
     vec4 param = dis.depthToLinFadeDistParams;
-    float yz = param.y + param.z;
-    // param.w*yz * depth^2 - dist*yz*depth + param.x=0;
-	float depth = (yz - sqrt(yz*yz - 4.0*param.w*(param.x - d_km*yz))) / (2.0*param.w);
-    return depth;
+
+	//dist = saturate(x/(depth*y + z)+w*depth);
+	// if w==0
+	//dist = x/(depth*y + z)
+	//dist*(depth*y + z)=x
+	// depth*y+z=x/dist
+	// depth*y=x/dist-z
+	// depth=(x/dist-z)/y
+    float depth =0.0;
+	if(param.y!=0)
+		depth=(param.x/d_km -  param.z)/param.y;
+	else if(param.w!=0&&param.y==0)
+	//dist = x/z+w*depth;
+		depth=(d_km- param.x/param.z)/param.w;
+	else
+		depth=1.0/(2.0*param.w*param.y)*(d_km*param.y-param.w*param.z+sqrt((d_km*param.y-param.w*param.z)*(d_km*param.y-param.w*param.z)+4*param.w*param.y*param.x));
+	return depth;
 }
 
 float depthToLinearDistance(float depth,DepthInterpretationStruct dis)

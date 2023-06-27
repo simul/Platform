@@ -110,7 +110,7 @@ namespace platform
 				,projection(DEPTH_REVERSE)
 				,nearZ(1.f)
 				,farZ(300000.f)
-				,InfiniteFarPlane(false)
+				,InfiniteFarPlane(true)
 			{
 			}
 			float exposure;

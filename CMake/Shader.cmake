@@ -51,7 +51,7 @@ function ( add_sfx_shader_project targetName configJsonFile )
 				string(REPLACE ".sfx" ".sfxo" out_f ${name})
 				set(out_f "${out_folder}/${out_f}")
 				add_custom_command(OUTPUT ${out_f}
-					COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" -M"${intermediate_folder}" ${EXTRA_OPTS_S}
+					COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" ${EXTRA_OPTS_S}
 					MAIN_DEPENDENCY ${in_f}
 					WORKING_DIRECTORY ${out_folder}
 					DEPENDS ${PLATFORM_SFX_EXECUTABLE}
@@ -80,9 +80,9 @@ function ( add_sfx_shader_project targetName configJsonFile )
 endfunction()
 
 
-function ( add_sfx_shaders_to_project targetName configJsonFile )
+function ( add_multiplatform_sfx_shader_project targetName  )
 	if(SIMUL_BUILD_SHADERS)
-		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES" ${ARGN} )
+		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES;CONFIG_FILES" ${ARGN} )
 		if (NOT TARGET ${targetName})
 			if("${sfx_FOLDER}" STREQUAL "")
 				set(sfx_FOLDER Shaders)
@@ -92,6 +92,11 @@ function ( add_sfx_shaders_to_project targetName configJsonFile )
 		foreach(opt_d ${sfx_DEFINES})
 			set(SET_DEFINES "${SET_DEFINES} -E\"${opt_d}\"" )
 		endforeach() 
+		set(SET_CONFIGS )
+		foreach(opt_cfg ${sfx_CONFIG_FILES})
+			set(SET_CONFIGS "${SET_CONFIGS} -P\"${opt_cfg}\"" )
+		endforeach() 
+		
 		set(EXTRA_OPTS)
 		foreach(opt_in ${sfx_OPTIONS})
 			set(EXTRA_OPTS "${EXTRA_OPTS} ${opt_in}" )
@@ -120,12 +125,6 @@ function ( add_sfx_shaders_to_project targetName configJsonFile )
 		endif()
 		foreach(in_f ${sfx_SOURCES})
 			list(APPEND srcs ${in_f})
-		endforeach()
-		if (NOT TARGET ${targetName})
-			add_custom_target(${targetName} DEPENDS ${outputs${targetName}} SOURCES ${srcs} ${configJsonFile} )
-			set_target_properties( ${targetName} PROPERTIES FOLDER ${sfx_FOLDER})
-		endif()
-		foreach(in_f ${sfx_SOURCES})
 			string(FIND ${in_f} ".sl" slpos REVERSE)
 			if(NOT slpos EQUAL -1)
 				list(APPEND srcs_includes ${in_f}) 
@@ -136,8 +135,8 @@ function ( add_sfx_shaders_to_project targetName configJsonFile )
 				get_filename_component(name ${in_f} NAME )
 				string(REPLACE ".sfx" ".sfxo" out_f ${name})
 				set(out_f "${out_folder}/${out_f}")
-				add_custom_command(TARGET ${targetName} 
-					COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" -P"${configJsonFile}" -M"${intermediate_folder}" ${EXTRA_OPTS_S}
+				add_custom_command(OUTPUT ${out_f}
+					COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${out_folder}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
 					MAIN_DEPENDENCY ${in_f}
 					WORKING_DIRECTORY ${out_folder}
 					DEPENDS ${PLATFORM_SFX_EXECUTABLE}
@@ -151,6 +150,10 @@ function ( add_sfx_shaders_to_project targetName configJsonFile )
 		endforeach()
 		source_group("Shaders" FILES  ${srcs_shaders} )
 		source_group("Shader Includes" FILES ${srcs_includes} )
+		if (NOT TARGET ${targetName})
+			add_custom_target(${targetName} DEPENDS ${outputs${targetName}} SOURCES ${srcs} ${configJsonFile} )
+			set_target_properties( ${targetName} PROPERTIES FOLDER ${sfx_FOLDER})
+		endif()
 		set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_ALL FALSE )
 		set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG FALSE )
 		set_target_properties( ${targetName} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE FALSE )
