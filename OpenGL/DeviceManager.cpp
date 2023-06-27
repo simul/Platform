@@ -26,7 +26,6 @@ using namespace platform;
 using namespace opengl;
 using namespace std;
 
-#pragma comment(lib, "glfw3")
 #pragma comment(lib, "opengl32")
 
 static std::vector<std::string> debugMsgGroups;
