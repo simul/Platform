@@ -84,7 +84,7 @@ namespace platform
 						{
 							commandLineParams.screenshot=true;
 							commandLineParams.screenshotFilenameUtf8=right;
-							commandLineParams.quitafterframe=30;
+							commandLineParams.quitafterframe=50;
 						}
 					}
 					else if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())

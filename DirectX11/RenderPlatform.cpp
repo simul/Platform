@@ -1318,8 +1318,9 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)
 {
     ID3D11CommandList *commandList = nullptr;
-    deviceContext.asD3D11DeviceContext()->FinishCommandList(FALSE, &commandList);
-    deviceContext.renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(commandList, FALSE);
+    HRESULT hr = deviceContext.asD3D11DeviceContext()->FinishCommandList(FALSE, &commandList);
+    if (SUCCEEDED(hr))
+		deviceContext.renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(commandList, FALSE);
     deviceContext.contextState.contextActive = false;
     SAFE_RELEASE(commandList);
 }
