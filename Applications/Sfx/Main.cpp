@@ -49,9 +49,47 @@ const SfxOptions &GetSfxOptions()
 {
     return sfxOptions;
 }
+extern bool terminate_command;
+// A ctrl message handler to detect "close" events.
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+    switch (fdwCtrlType)
+    {
+        // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+        printf("Ctrl-C event\n\n");
+        return TRUE;
+
+        // CTRL-CLOSE: confirm that the user wants to exit.
+    case CTRL_CLOSE_EVENT:
+        printf("Ctrl-Close event\n\n");
+		terminate_command=true;
+        return TRUE;
+
+        // Pass other signals to the next handler.
+    case CTRL_BREAK_EVENT:
+        printf("Ctrl-Break event\n\n");
+        return FALSE;
+
+    case CTRL_LOGOFF_EVENT:
+        printf("Ctrl-Logoff event\n\n");
+        return FALSE;
+
+    case CTRL_SHUTDOWN_EVENT:
+        printf("Ctrl-Shutdown event\n\n");
+		terminate_command=true;
+        return FALSE;
+
+    default:
+        return FALSE;
+    }
+}
 std::string outputfile;
 int main(int argc, char** argv) 
 {
+    if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
+	{
+	}
 	#ifdef _MSC_VER
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT);
 	_set_abort_behavior(0, _WRITE_ABORT_MSG);

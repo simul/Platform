@@ -108,9 +108,12 @@ static void FixRelativePaths(std::string &str,const std::string &sourcePathUtf8)
 		eol=(int)str.find("\n",pos);
 	}
 }
-
+bool terminate_command=false;
+bool command_running=false;
 bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostringstream& log,const SfxConfig &sfxConfig, OutputDelegate outputDelegate)
 {
+	if(terminate_command)
+		return false;
 	bool has_errors=false;
 #ifndef _MSC_VER
 	int res=system(WStringToString(wcommand).c_str());
@@ -168,6 +171,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		log <<"Error: Could not find the executable for "<<WStringToUtf8(com)<<std::endl;
 		return false;
 	}
+	command_running=true;
 	HANDLE WaitHandles[] = {
 			processInfo.hProcess, hReadOutPipe, hReadErrorPipe
 		};
@@ -176,6 +180,14 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	BYTE buff[BUFSIZE];
 	while (1)
 	{
+		if(terminate_command)
+		{
+			if(TerminateProcess(processInfo.hProcess,1))
+			{
+				std::cerr<<"Terminated process.\n";
+				break;
+			}
+		}
 		DWORD dwBytesRead, dwBytesAvailable=100000;
 		DWORD numObjects = pipe_compiler_output ? 3 : 1;
 		DWORD dwWaitResult = WaitForMultipleObjects(numObjects, WaitHandles, FALSE, 20000L);
@@ -228,7 +240,9 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 			}
 		}
 	}
-	
+	command_running=false;
+	if(terminate_command)
+		exit(1);
 	DWORD exitCode=0;
 	if(!GetExitCodeProcess(processInfo.hProcess, &exitCode))
 	{
@@ -329,6 +343,12 @@ static int do_mkdir(const wchar_t *path_w)
 	{
 		/* Directory does not exist. EEXIST for race condition */
 #ifdef _MSC_VER
+		// no slash? It's not a directory.
+		if(wstr.find_first_of(L'/')>=wstr.length()&&wstr.find_first_of(L'\\')>=wstr.length())
+		{
+			errno=0;
+			return 0;
+		}
 		if (_wmkdir(wstr.c_str()) != 0 && errno != EEXIST)
 #else
 		if (mkdir(path_utf8.c_str(),S_IRWXU) != 0 && errno != EEXIST)
