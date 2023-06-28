@@ -86,7 +86,7 @@ if(SIMUL_SOURCE_BUILD)
 		set( PLATFORM_SUPPORT_D3D12_RAYTRACING True)
 	endif()
 	#message(STATUS JSON_FILE ${JSON_FILE} )
-	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaderbin" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
+	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
 	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
 
 	option(PLATFORM_DX12_LOAD_GFX "" OFF)
@@ -94,7 +94,7 @@ if(SIMUL_SOURCE_BUILD)
 		if(GDK AND NOT PLATFORM_WINGDK)
 			set(in_RootSignature "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/GFX.hlsl")
 		# ROOT SIG BLOB!
-			set(out_RootSignatureFolder "${CMAKE_CURRENT_BINARY_DIR}/shaderbin")
+			set(out_RootSignatureFolder "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
 		# Create the target directory for the cso file:
 			file(MAKE_DIRECTORY ${out_RootSignatureFolder})
 			add_custom_command(TARGET DirectX12CoreShaders

@@ -85,7 +85,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
     }
 }
-std::string outputfile;
+std::string templateOutputFile;
 int main(int argc, char** argv) 
 {
     if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
@@ -108,7 +108,6 @@ int main(int argc, char** argv)
 	std::map<std::string, std::string> environment;
 	if (SIMUL_BUILD == "" || SIMUL_BUILD == "1")
 		SIMUL_BUILD = SIMUL;
-	effect = sfxGenEffect();
 	
 	char log[50000];
 	const char **paths=NULL;
@@ -119,6 +118,7 @@ int main(int argc, char** argv)
 	std::vector<std::string> platformFilenames;
 	std::string optimization;
 	std::vector<std::string> genericPathStrings;
+	std::string outputFile=templateOutputFile;
 	if(argc>1) 
 	{
 		paths=new const char *[argc];
@@ -159,9 +159,11 @@ int main(int argc, char** argv)
 					std::cout << "Disabling #line directives" << std::endl;
 				}
 				else if (argtype == 'p' || argtype == 'P')
-					platformFilenames.push_back(StripQuotes(arg));
+				{
+					platformFilenames.push_back(std::filesystem::weakly_canonical(StripQuotes(arg)).generic_string());
+				}
 				else if (argtype == 'o' || argtype == 'O')
-					outputfile = StripQuotes(arg);
+					templateOutputFile = StripQuotes(arg);
 				else if (argtype == 'd' || argtype == 'D')
 				{
 					sfxOptions.debugInfo = true;
@@ -196,10 +198,13 @@ int main(int argc, char** argv)
 	if(sourcefile.length()==0)
 	{
 		std::cerr<<("No source file from args :\n");
-		sfxGetEffectLog(effect, log, sizeof(log));
-		std::cerr<<log<<std::endl;
+		///sfxGetEffectLog(effect, log, sizeof(log));
+		//std::cerr<<log<<std::endl;
 		return 2;
 	}
+	std::filesystem::path sourcePath(sourcefile);
+	std::string sourceName=sourcePath.filename().generic_string();
+	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
 	for(auto platformFilename:platformFilenames)
 	{
 		std::ifstream i(platformFilename);
@@ -211,6 +216,7 @@ int main(int argc, char** argv)
 		std::filesystem::path p=std::filesystem::weakly_canonical(platformFilename);
 		std::string filename_only=p.filename().string();
 		std::string platformName=filename_only.replace(filename_only.find(".json"),5,"");
+		SetEnv("PLATFORM_NAME",platformName.c_str());
 		json_path=std::filesystem::weakly_canonical(p.parent_path()).generic_string();
 		std::string exe_dir=GetExecutableDirectory();
 		std::string build_dir=std::filesystem::weakly_canonical((exe_dir+"/../..").c_str()).generic_string();
@@ -222,10 +228,10 @@ int main(int argc, char** argv)
 			if(p.filename()=="Platform")
 			{
 				platform_dir=p.generic_string();
-				SetEnv("PLATFORM_DIR",platform_dir.c_str());
 				break;
 			}
 		}
+		SetEnv("PLATFORM_DIR",platform_dir.c_str());
 		auto pathStrings=genericPathStrings;
 		pathStrings.push_back(json_path);
 		pathStrings.push_back(platform_dir+"/Shaders/SL"s);
@@ -303,17 +309,19 @@ int main(int argc, char** argv)
 					pathStrings.push_back(ProcessPath(ProcessEnvironmentVariables(b)));
 				}
 			}
-			if(outputfile.length()==0)
+			outputFile=templateOutputFile;
+			if(outputFile.length()==0)
 			{
 				if(j.count("outputPath")>0)
 				{
-					outputfile										=ProcessEnvironmentVariables(j["outputPath"]);
+					outputFile										=j["outputPath"];
 				}
 				else
 				{
-					outputfile										=ProcessEnvironmentVariables("$BUILD_DIR/Shaders/"+platformName+"/shaderbin"s);
+					outputFile										="$BUILD_DIR/Shaders/"+platformName+"/shaderbin"s;
 				}
 			}
+			outputFile=ProcessEnvironmentVariables(outputFile);
 			if(sfxOptions.intermediateDirectory.length()==0)
 			{
 				if(j.count("intermediateDirectory")>0)
@@ -543,9 +551,9 @@ int main(int argc, char** argv)
 			std::cerr<<e.what()<<std::endl;
 			return 3;
 		}
-	
+		effect = sfxGenEffect();
 		//std::cout<<"Sfx compiling"<<sourcefile<<std::endl;
-		if (!sfxParseEffectFromFile(effect,sourcefile.c_str(),pathStrings,outputfile.c_str(),&sfxConfig,&sfxOptions,args))
+		if (!sfxParseEffectFromFile(effect,sourcefile.c_str(),pathStrings,outputFile.c_str(),&sfxConfig,&sfxOptions,args))
 		{
 			std::cerr<<("Error creating effect:\n");
 			sfxGetEffectLog(effect, log, sizeof(log));
@@ -556,6 +564,14 @@ int main(int argc, char** argv)
 			ret = 0;
 		}
 		sfxDeleteEffect(effect);
+	}
+	// write a summary output file, so we have a single output with the build time on it.
+	{
+		SetEnv("PLATFORM_NAME","");
+		templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
+		std::ofstream summary(templateOutputFile+"/"s+sourceName+".sfx_summary");
+		summary << "" << std::endl;
+		summary.close();
 	}
 	return ret;
  }
