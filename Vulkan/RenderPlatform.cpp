@@ -1346,6 +1346,7 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 	case ResourceState::UNKNOWN:
 	case ResourceState::COMMON:
 	default:
+        SIMUL_BREAK_ONCE("Vulkan Image Layout not found.");
 		return vk::ImageLayout::eUndefined;
 	};
 
