@@ -20,7 +20,7 @@ target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/Direc
 target_compile_definitions(Sample_MT PRIVATE DO_PROFILING=0 )
 set_target_properties(Sample_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 						VS_DEBUGGER_ENVIRONMENT "PATH=${PLATFORM_ANGLE_LIB_DIR};${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
-target_link_libraries(Sample_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT mt_fmt$<$<CONFIG:DEBUG>:d>)
+target_link_libraries(Sample_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT )
 if(PLATFORM_USE_ASSIMP)
 	target_link_directories( Sample_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE})
 	target_link_libraries( Sample_MT ${ASSIMP_LIBNAME} )

@@ -26,7 +26,6 @@ file(GLOB SHADER_DEFS
 
 add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
-	target_link_directories( SimulOpenGL_MT PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/build_mt/lib/${CMAKE_BUILD_TYPE})
 	add_dependencies( SimulOpenGL_MT SimulCrossPlatform_MT )
 	target_include_directories(SimulOpenGL_MT PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")
 	target_include_directories(SimulOpenGL_MT PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
@@ -49,6 +48,6 @@ if(SIMUL_SOURCE_BUILD)
 		target_include_directories(SimulOpenGL_MD PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
 		target_include_directories(SimulOpenGL_MD PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/include")
 
-		target_link_libraries(SimulOpenGL_MD SimulCrossPlatform_MD SimulMath_MD Core_MD glfw3)
+		target_link_libraries(SimulOpenGL_MD SimulCrossPlatform_MD SimulMath_MD Core_MD glfw)
 	endif()
 endif()
