@@ -964,6 +964,10 @@ int Compile(ShaderInstance *shader
 			#else
 			std::ifstream if_c(WStringToUtf8(outputFile).c_str(), std::ios_base::binary);
 			#endif
+			for(int i=0;!if_c.good()&&i<10000;i++)
+			{
+				Sleep(10);
+			}
 			std::streampos startp=combinedBinary.tellp();
 			combinedBinary << if_c.rdbuf();
 			std::streampos endp = combinedBinary.tellp();
