@@ -367,7 +367,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 }
 // TODO: support initial texture data in OpenGL
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f
-	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool ascubemap, bool depthstencil
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, bool ascubemap
 											, crossplatform::CompressionFormat compressionFormat)
 {
 	int totalCount = ascubemap ? 6 * num : num;

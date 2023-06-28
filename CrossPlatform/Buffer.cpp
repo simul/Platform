@@ -1,4 +1,5 @@
 #include "Buffer.h"
+#include <memory.h>
 using namespace platform;
 using namespace crossplatform;
 

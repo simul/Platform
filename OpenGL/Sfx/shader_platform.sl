@@ -67,6 +67,10 @@ uint4 typed_mod(uint4 a,uint4 b)
 {
 	return uint4(mod(a,b));
 }
+uint4 typed_mod(uint4 a, uint b)
+{
+    return uint4(mod(a.x, b), mod(a.y, b), mod(a.z, b), mod(a.w, b));
+}
 
 #define fmod(a,b) (a-b*trunc(a/b))
 
