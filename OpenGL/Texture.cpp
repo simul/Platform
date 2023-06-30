@@ -305,6 +305,9 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 		length		= int(qh);
 		depth		= 1;
 		mNumSamples = numOfSamples;
+        pixelFormat = f;
+        mGLFormat = opengl::RenderPlatform::ToGLFormat(f);
+        mInternalGLFormat = opengl::RenderPlatform::ToGLInternalFormat(f);
 	}
 	return true;
 }
@@ -328,6 +331,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		dim					= 2;
 		pixelFormat			= f;
 		cubemap				= false;
+		mGLFormat			= opengl::RenderPlatform::ToGLFormat(f);
 		mInternalGLFormat	= opengl::RenderPlatform::ToGLInternalFormat(f);
 		mNumSamples			= num_samples;
 
@@ -367,7 +371,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 }
 // TODO: support initial texture data in OpenGL
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int nmips, crossplatform::PixelFormat f
-	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool ascubemap, bool depthstencil
+	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, bool ascubemap
 											, crossplatform::CompressionFormat compressionFormat)
 {
 	int totalCount = ascubemap ? 6 * num : num;

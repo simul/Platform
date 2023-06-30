@@ -224,7 +224,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	if (!cpu_read)
 		return nullptr;
 
-	if (renderPlatform->GetFrameNumber() >= mNumBuffers && mBinding != -1)
+	if (renderPlatform && renderPlatform->GetFrameNumber() >= mNumBuffers && mBinding != -1)
 	{
 		// We want to map from the oldest buffer:
 		int idx = GetIndex(deviceContext, 1);
@@ -572,8 +572,7 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		glGetShaderInfoLog(shaderId, maxLength, &maxLength, infoLog.data());
 
 		SIMUL_CERR << "Failed to compile the shader: " << filename_utf8 << "\n";
-		if(infoLog.data() && infoLog.size())
-			SIMUL_COUT << infoLog.data() << std::endl;
+		if(infoLog.data() && infoLog.size())			SIMUL_COUT << infoLog.data() << std::endl;
 		SIMUL_BREAK_ONCE("");
 	}
 	else
