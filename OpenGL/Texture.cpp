@@ -305,6 +305,9 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 		length		= int(qh);
 		depth		= 1;
 		mNumSamples = numOfSamples;
+        pixelFormat = f;
+        mGLFormat = opengl::RenderPlatform::ToGLFormat(f);
+        mInternalGLFormat = opengl::RenderPlatform::ToGLInternalFormat(f);
 	}
 	return true;
 }
@@ -328,6 +331,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		dim					= 2;
 		pixelFormat			= f;
 		cubemap				= false;
+		mGLFormat			= opengl::RenderPlatform::ToGLFormat(f);
 		mInternalGLFormat	= opengl::RenderPlatform::ToGLInternalFormat(f);
 		mNumSamples			= num_samples;
 
