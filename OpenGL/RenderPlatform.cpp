@@ -573,7 +573,7 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
     case RGB_11_11_10_FLOAT:
         return GL_FLOAT;
 	case RGBA_16_FLOAT:
-		return GL_FLOAT;
+		return GL_HALF_FLOAT;
 	case RGBA_32_FLOAT:
 		return GL_FLOAT;
 	case RGB_32_FLOAT:
@@ -853,6 +853,45 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &,crossplatfor
 
 void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
+	crossplatform::PixelFormat format = texture->GetFormat();
+	uint64_t elementCount = static_cast<uint64_t>(GetElementCount(format));
+	uint64_t elementSize = static_cast<uint64_t>(GetElementSize(format));
+	GLuint glFormat = ToGLFormat(format);
+	GLuint glType = DataType(format);
+	uint64_t texelCount = static_cast<uint64_t>(texture->width * texture->length);
+	uint64_t texelSize = elementCount * elementSize;
+	uint64_t size = texelCount * texelSize;
+
+	opengl::Texture* tex = (opengl::Texture*)texture;
+	glBindTexture(GL_TEXTURE_2D, tex->AsGLuint());
+	std::vector<char> pixelData;
+	pixelData.resize(size);
+
+	
+	glReadPixels(0, 0, texture->width ,texture->length, glFormat, glType, pixelData.data());
+
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cerr << "OpenGL error: " << error << std::endl;
+		return;
+	}
+	int width = texture->width;
+	int length = texture->length;
+
+	//flip data vertically
+	for (int y = 0; y < length / 2; ++y) {
+		int rowStartIndexA = y * width * (int)elementSize * 4;
+		int rowStartIndexB = (length - y - 1) * width * (int)elementSize * 4;
+
+		std::swap_ranges(
+			pixelData.begin() + rowStartIndexA,
+			pixelData.begin() + rowStartIndexA + width * elementSize * 4,
+			pixelData.begin() + rowStartIndexB
+		);
+	}
+
+	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, pixelData.data());
+
 }
 
 void RenderPlatform::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& res, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource)

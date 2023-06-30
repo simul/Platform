@@ -1241,9 +1241,7 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &deviceContext
 
 void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext,crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
-	//dx11::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 	crossplatform::PixelFormat format = texture->GetFormat();
-	crossplatform::PixelFormatType type = GetElementType(format);
 
 	ID3D11Resource* stagingBuffer(NULL);
 	D3D11_TEXTURE2D_DESC textureDesc;
