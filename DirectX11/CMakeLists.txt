@@ -32,10 +32,10 @@ if(SIMUL_SOURCE_BUILD)
 	endif()
 	
 	#message(STATUS JSON_FILE ${JSON_FILE} )
-	add_sfx_shader_project( DirectX11CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
+	#add_sfx_shader_project( DirectX11CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" "${SIMUL_PLATFORM_DIR}/Shaders/SL" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
 
 	if(PLATFORM_WINDOWS)
-		add_dependencies(SimulDirectX11_MT DirectX11CoreShaders )
+		add_dependencies(SimulDirectX11_MT CoreShaders )
 		#add_dependencies(DirectX12Shaders Sfx )
 	endif()
 	if(PLATFORM_BUILD_MD_LIBS)
@@ -45,7 +45,7 @@ if(SIMUL_SOURCE_BUILD)
 		target_include_directories(SimulDirectX11_MD PUBLIC "${SIMUL_PLATFORM_DIR}/DirectX11")
 		target_include_directories(SimulDirectX11_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 		LibraryDefaults(SimulDirectX11_MD)
-		add_dependencies(SimulDirectX11_MD DirectX11CoreShaders )
+		add_dependencies(SimulDirectX11_MD CoreShaders )
 
 		target_link_libraries(SimulDirectX11_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
 

@@ -204,7 +204,6 @@ int main(int argc, char** argv)
 	}
 	std::filesystem::path sourcePath(sourcefile);
 	std::string sourceName=sourcePath.filename().generic_string();
-	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
 	for(auto platformFilename:platformFilenames)
 	{
 		std::ifstream i(platformFilename);
@@ -231,6 +230,7 @@ int main(int argc, char** argv)
 				break;
 			}
 		}
+		std::cout << std::setw(4)<< "info: building "<<sourceName<<" for "<<platformName<<"."<< std::endl;
 		SetEnv("PLATFORM_DIR",platform_dir.c_str());
 		auto pathStrings=genericPathStrings;
 		pathStrings.push_back(json_path);
@@ -251,7 +251,6 @@ int main(int argc, char** argv)
 		{
 			i >> j;
 			//if(sfxOptions.verbose)
-			//	std::cout << std::setw(4)<< j << std::endl;
 			json compiler = j["compiler"];
 			if (compiler.type() == json::value_t::string)
 			{
@@ -569,6 +568,7 @@ int main(int argc, char** argv)
 	{
 		SetEnv("PLATFORM_NAME","");
 		templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
+	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
 		std::ofstream summary(templateOutputFile+"/"s+sourceName+".sfx_summary");
 		summary << "" << std::endl;
 		summary.close();

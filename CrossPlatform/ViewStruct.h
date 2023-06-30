@@ -23,6 +23,7 @@ namespace platform
 			ViewStruct(const ViewStruct& vs) = default;
 			void PushModelMatrix(math::Matrix4x4 m);
 			void PopModelMatrix();
+			vec4 GetDepthToLinearDistanceParameters(float unit_distance_metres) const;
 			bool initialized;
 			int view_id;			///< An id unique to each rendered view, but persistent across frames.
 			math::Matrix4x4 model;	///< The model matrix
@@ -34,8 +35,10 @@ namespace platform
 			math::Matrix4x4 viewProj;
 			// derived vectors.
 			vec3 cam_pos, view_dir, up;
+			// coefficients to convert from frustum depth to linear distance, in metres.
+			vec4 depthToLinearDistanceParameters;
 			platform::crossplatform::Frustum frustum;	///< The viewing frustum, calculated from the proj matrix and stored for convenience using platform::crossplatform::GetFrustumFromProjectionMatrix.
-			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
+			DepthTextureStyle depthTextureStyle;		///< How to interpret any depth texture passed from outside.
 			//! MUST be called whenever view or proj change.
 			void Init();
 		protected:

@@ -54,6 +54,7 @@ add_subdirectory(Core)
 add_subdirectory(Math)
 add_subdirectory(CrossPlatform)
 add_subdirectory(Applications/Sfx)
+add_subdirectory(Shaders)
 
 if(PLATFORM_SUPPORT_GLES)
 	add_subdirectory(GLES)

@@ -1488,7 +1488,7 @@ int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int
 	platform::crossplatform::Frustum frustum=platform::crossplatform::GetFrustumFromProjectionMatrix(proj);
 	debugConstants.debugTanHalfFov=(frustum.tanHalfFov);
 
-	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,isinf(frustum.farZ)?300000.0f:frustum.farZ);
+	vec4 depthToLinFadeDistParams=deviceContext.viewStruct.GetDepthToLinearDistanceParameters(isinf(frustum.farZ)?500000.0f:frustum.farZ);
 	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	if(mirrorY2)

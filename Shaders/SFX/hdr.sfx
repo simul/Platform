@@ -28,7 +28,7 @@ vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
 	d/=float(numberOfSamples);
 	return d;
 }
-
+ 
 shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth = depthTexture.Sample(clampSamplerState,IN.texCoords);

@@ -86,7 +86,7 @@ if(SIMUL_SOURCE_BUILD)
 		set( PLATFORM_SUPPORT_D3D12_RAYTRACING True)
 	endif()
 	#message(STATUS JSON_FILE ${JSON_FILE} )
-	add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
+	#add_sfx_shader_project( DirectX12CoreShaders ${JSON_FILE} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Sfx" SOURCES ${SHADERS} ${SHADER_INCLUDES} ${JSON} ${CMAKE} OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" DEFINES SIMUL_XDK_VERSION=${XDK_TOOLCHAIN_VERSION} GDK_BIN_PATH=${GDK_BIN_PATH} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/Shaders )
 	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
 
 	option(PLATFORM_DX12_LOAD_GFX "" OFF)
@@ -97,7 +97,7 @@ if(SIMUL_SOURCE_BUILD)
 			set(out_RootSignatureFolder "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
 		# Create the target directory for the cso file:
 			file(MAKE_DIRECTORY ${out_RootSignatureFolder})
-			add_custom_command(TARGET DirectX12CoreShaders
+			add_custom_command(TARGET CoreShaders
 						COMMAND ${GDK_BIN_PATH}/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"Sfx" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
 						MAIN_DEPENDENCY ${in_RootSignature}
 						WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -106,11 +106,11 @@ if(SIMUL_SOURCE_BUILD)
 		endif()
 	endif()
 	if(PLATFORM_WINDOWS)
-		add_dependencies(SimulDirectX12_MT DirectX12CoreShaders )
+		add_dependencies(SimulDirectX12_MT CoreShaders )
 		#add_dependencies(DirectX12Shaders Sfx )
 	endif()
 	if(PLATFORM_BUILD_MD_LIBS)
-		add_dependencies(SimulDirectX12_MD DirectX12CoreShaders )
+		add_dependencies(SimulDirectX12_MD CoreShaders )
 
 		target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
 	endif()

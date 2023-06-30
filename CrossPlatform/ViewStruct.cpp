@@ -5,6 +5,7 @@
 #include "Platform/Math/Matrix4x4.h"
 #include "Platform/Math/MatrixVector3.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
+#include "Platform/CrossPlatform/Camera.h"
 #include "Platform/Math/Pi.h"
 #include <memory.h>
 #include <algorithm>
@@ -47,5 +48,12 @@ void ViewStruct::Init()
 	MakeInvViewProjMatrix((float*)&invViewProj, (const float*)&view, (const float*)&proj);
 	view.Inverse(*((platform::math::Matrix4x4*) & invView));
 	GetCameraPosVector((const float*)&view, (float*)&cam_pos, (float*)&view_dir, (float*)&up);
+	depthToLinearDistanceParameters=GetDepthToLinearDistanceParameters(1.0f);
 	initialized = true;
+}
+
+
+vec4 ViewStruct::GetDepthToLinearDistanceParameters(float unit_distance_metres) const
+{
+	return GetDepthToDistanceParameters(depthTextureStyle,*this, unit_distance_metres);
 }
