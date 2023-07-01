@@ -7,7 +7,7 @@
 
 RaytracingAccelerationStructure Scene : register(t25, space0);
 RWTexture2D<vec4> RenderTarget : register(u0);
-ConstantBuffer<RayGenConstantBuffer> g_rayGenCB : register(b0);
+//ConstantBuffer<RayGenConstantBuffer> g_rayGenCB : register(b0);
 uniform StructuredBuffer<Light> lights;
 
 struct RayPayload

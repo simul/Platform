@@ -42,12 +42,14 @@ void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::
 	mBufferType = bufferType;
 
 	mState = D3D12_RESOURCE_STATE_COMMON;
-
+	
+	auto defaultProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&defaultProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+		&defaultDesc,
 		mState,
 		nullptr,
 		SIMUL_PPV_ARGS(&mGpuHeap)
@@ -55,12 +57,13 @@ void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::
 	SIMUL_ASSERT(res == S_OK);
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
 	mGpuHeap->SetName(L"VideoBufferUpload");
-
+	auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto bufferDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&uploadProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+		&bufferDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		SIMUL_PPV_ARGS(&mIntermediateHeap)

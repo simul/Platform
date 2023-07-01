@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-
+cmake_policy(SET CMP0091 NEW)
 if(SIMUL_PLATFORM_DIR)
 	set(SIMUL_PLATFORM_FOLDER_PREFIX Platform)
 else()

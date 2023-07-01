@@ -39,10 +39,11 @@ void TimestampQueryManager::RestoreDeviceObjects(crossplatform::RenderPlatform *
 
 void TimestampQueryManager::InvalidateDeviceObjects()
 {
+	CD3DX12_RANGE zeroRange(0, 0);
 	for(int i=0;i<5;i++)
 	{
 		if(bMapped[i]&& mTimestampQueryReadBuffer[i])
-			mTimestampQueryReadBuffer[i]->Unmap(0, &CD3DX12_RANGE(0, 0));
+			mTimestampQueryReadBuffer[i]->Unmap(0, &zeroRange);
 		SAFE_RELEASE_LATER(mTimestampQueryHeap[i]);
 		SAFE_RELEASE_LATER(mTimestampQueryReadBuffer[i]);
 		mTimestampQueryHeap[i]=nullptr;
@@ -55,9 +56,10 @@ void TimestampQueryManager::InvalidateDeviceObjects()
 
 void TimestampQueryManager::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
+	CD3DX12_RANGE zeroRange(0, 0);
 	if(bMapped[mTimestampQueryCurrFrame])
 	{
-		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &CD3DX12_RANGE(0, 0));
+		mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &zeroRange);
 		//SIMUL_COUT<<"UnMapped 0x"<<std::hex<<(unsigned long long)mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]<<std::endl;
 	}
 	if(mTimestampQueryData)
@@ -78,19 +80,16 @@ void TimestampQueryManager::EndFrame(crossplatform::DeviceContext &deviceContext
 
 void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset)
 {
-/*	if(deviceContext.GetFrameNumber()!=last_frame_number)
-	{
-		StartFrame(deviceContext);
-	}*/
-		if(mTimestampQueryHeapOffset>=mTimestampQueryHeapSize[mTimestampQueryCurrFrame])
+	if(mTimestampQueryHeapOffset>=mTimestampQueryHeapSize[mTimestampQueryCurrFrame])
 	{
 		if(mTimestampQueryData)
 		{
 			mTimestampQueryData=nullptr;
 		}
+	CD3DX12_RANGE zeroRange(0, 0);
 		if(bMapped[mTimestampQueryCurrFrame])
 		{
-			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &CD3DX12_RANGE(0, 0));
+			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &zeroRange);
 			//SIMUL_COUT<<"UnMapped 0x"<<std::hex<<(unsigned long long)mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]<<std::endl;
 		}
 		bMapped[mTimestampQueryCurrFrame]=false;
@@ -112,11 +111,13 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 		SAFE_RELEASE_LATER(mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]);
 		// Create a readback buffer to get data
 		size_t sz = mTimestampQueryHeapSize[mTimestampQueryCurrFrame] * sizeof(UINT64);
+		auto readbackProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
+		auto bufferDesc=CD3DX12_RESOURCE_DESC::Buffer(sz);
 		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+			&readbackProperties,
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(sz),
+			&bufferDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			nullptr,
 			SIMUL_PPV_ARGS(&mTimestampQueryReadBuffer[mTimestampQueryCurrFrame])
@@ -142,7 +143,8 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 	{
 		if(bMapped[mTimestampQueryCurrFrame])
 		{
-			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &CD3DX12_RANGE(0, 0));
+			CD3DX12_RANGE zeroRange(0, 0);
+			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &zeroRange);
 			//SIMUL_COUT<<"UnMapped 0x"<<std::hex<<(unsigned long long)mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]<<std::endl;
 		}
 	// At frame end, do all the resolves.
@@ -155,12 +157,16 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 		int lastFrame=(mTimestampQueryCurrFrame)%4;
 		if(mTimestampQueryReadBuffer[lastFrame])
 		{
-			HRESULT res				=mTimestampQueryReadBuffer[lastFrame]->Map(0, &CD3DX12_RANGE(0, mTimestampQueryHeapOffset), reinterpret_cast<void**>(&mTimestampQueryData));
+			auto offsetRange	=CD3DX12_RANGE(0, mTimestampQueryHeapOffset);
+			HRESULT res					=mTimestampQueryReadBuffer[lastFrame]->Map(0
+											,&offsetRange
+											,reinterpret_cast<void**>(&mTimestampQueryData));
 			if(res != S_OK)
 				return 0;
 			bMapped[lastFrame]=true;
 			unsigned long long result = mTimestampQueryData[offset];
-			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &CD3DX12_RANGE(0, 0));
+			CD3DX12_RANGE zeroRange(0, 0);
+			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &zeroRange);
 			bMapped[lastFrame] = false;
 			//SIMUL_COUT<<"Mapped 0x"<<std::hex<<(unsigned long long)mTimestampQueryReadBuffer[lastFrame]<<std::endl;
 			if(mTimestampQueryData)

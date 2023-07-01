@@ -57,13 +57,14 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	D3D12_RESOURCE_STATES finalState	=computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS        : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	D3D12_RESOURCE_FLAGS bufferFlags    = computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS   : D3D12_RESOURCE_FLAG_NONE;
     mCurrentState                       = initState;
-
+	auto defaultHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	auto defaultBufferDesc=CD3DX12_RESOURCE_DESC::Buffer(mTotalSize, bufferFlags);
     // Default heap:
     res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
     (
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        &defaultHeapProperties,
         D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize, bufferFlags),
+        &defaultBufferDesc,
         initState,
         nullptr,
         SIMUL_PPV_ARGS(&mGPUBuffer)
@@ -72,13 +73,14 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	SIMUL_GPU_TRACK_MEMORY(mGPUBuffer, mTotalSize)
     std::wstring wstr=platform::core::StringToWString(name);
     mGPUBuffer->SetName((wstr+L" GPU_SB").c_str());
-
+	auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto uploadBufferDesc=CD3DX12_RESOURCE_DESC::Buffer(mTotalSize);
     // Upload heap:
     res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
     (
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        &uploadProperties,
         D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize),
+        &uploadBufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
         SIMUL_PPV_ARGS(&mUploadBuffer)
@@ -116,11 +118,12 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		}
         for (unsigned int i = 0; i < mBuffering; i++)
         {
+			auto readbackProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
             res = mRenderPlatform->AsD3D12Device()->CreateCommittedResource
             (
-                &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+                &readbackProperties,
                 D3D12_HEAP_FLAG_NONE,
-                &CD3DX12_RESOURCE_DESC::Buffer(mTotalSize),
+                &uploadBufferDesc,
                 D3D12_RESOURCE_STATE_COPY_DEST,
                 nullptr,
                 SIMUL_PPV_ARGS(&mReadBuffers[i])

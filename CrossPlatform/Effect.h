@@ -685,55 +685,10 @@ namespace platform
 				return T::bindingIndex;
 			}
 			//! Create the buffer object.
-#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
-			void RestoreDeviceObjects(RenderPlatform* p)
-			{
-				InvalidateDeviceObjects();
-				if (p)
-				{
-					SIMUL_ASSERT(platformConstantBuffer == nullptr);
-					if (platformConstantBuffer)
-						delete platformConstantBuffer;
-					platformConstantBuffer=p->CreatePlatformConstantBuffer();
-					platformConstantBuffer->SetName(typeid(T).name());
-					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
-					platformConstantBuffer->LinkToEffect(nullptr, typeid(T).name(), T::bindingIndex);
-				}
-			}
-			void LinkToEffect(Effect* effect, const char* name)
-			{
-				if (!effect)
-					return;
-				if (IsLinkedToEffect(effect))
-					return;
-				SIMUL_ASSERT(platformConstantBuffer != nullptr);
-				SIMUL_ASSERT(effect != nullptr);
-				defaultName = name;
-				platformConstantBuffer->SetName(defaultName.c_str());
-				if (effect && platformConstantBuffer)
-				{
-					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
-					linkedEffects.insert(effect);
-					effect->StoreConstantBufferLink(this);
-				}
-			}
-			bool IsLinkedToEffect(crossplatform::Effect* effect)
-			{
-				if (!effect)
-					return false;
-				if (linkedEffects.find(effect) != linkedEffects.end())
-				{
-					if (effect->IsLinkedToConstantBuffer(this))
-						return true;
-				}
-				return false;
-			}
-#else
 			void RestoreDeviceObjects(RenderPlatform* p);
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect* effect, const char* name);
 			bool IsLinkedToEffect(crossplatform::Effect* effect);
-#endif
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()
 			{

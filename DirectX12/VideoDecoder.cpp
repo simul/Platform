@@ -258,7 +258,8 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	D3D12_RESOURCE_STATES outputTextureStateAfter = D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
 
 	// Change output texture state.
-	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter));
+	auto tr=CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateBefore, outputTextureStateAfter);
+	decodeCommandList->ResourceBarrier(1, &tr);
 
 	decodeCommandList->DecodeFrame(mDecoder, &outputArgs, &inputArgs);
 	
@@ -274,7 +275,8 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 	mInputBuffer->ChangeState(decodeCommandList, cp::VideoBufferState::COMMON);
 
 	// Change output texture state back.
-	decodeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateAfter, outputTextureStateBefore));
+	auto tr2=CD3DX12_RESOURCE_BARRIER::Transition(outputResource, outputTextureStateAfter, outputTextureStateBefore);
+	decodeCommandList->ResourceBarrier(1, &tr2);
 
 	// Ensure gpu waits for the buffer to be uploaded before decoding.
 	WaitOnFence(mDecodeCLC.GetCommandQueue(), mDecodeFence);
@@ -446,12 +448,14 @@ cp::VideoDecoderResult VideoDecoder::CreateQueryObjects()
 	}
 
 	uint32_t bufferSize = sizeof(D3D12_QUERY_DATA_VIDEO_DECODE_STATISTICS);
-
+	
+	auto readbackProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
+	auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
 	if (FAILED(mRenderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		&readbackProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+		&bufferDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		SIMUL_PPV_ARGS(&mQueryBuffer)
@@ -583,6 +587,7 @@ void DecoderTexture::ChangeState(ID3D12VideoDecodeCommandList* commandList, bool
 		return;
 	}
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTextureDefault, stateBefore, stateAfter));
+	auto tr=CD3DX12_RESOURCE_BARRIER::Transition(mTextureDefault, stateBefore, stateAfter);
+	commandList->ResourceBarrier(1, &tr);
 	mResourceState = stateAfter;
 }

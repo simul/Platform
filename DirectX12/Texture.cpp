@@ -272,6 +272,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	mTextureDefault = nullptr;
 	mTextureUpload = nullptr;
 	size_t num_loaded=0;
+
 	// Convert into WIC 
 	for(int i=0;i<wicContents.size();i++)
 	{
@@ -293,10 +294,11 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		if(!mTextureDefault)
 		{
 			dxgi_format	= wicContents[0].metadata->format;
+			auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		// Create the texture resource (GPU, with an implicit heap)
 			res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 			(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				&defaultProperties,
 				D3D12_HEAP_FLAG_NONE,
 				&textureDesc,
 				D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -954,20 +956,22 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 
 		// We neen to know the size of the texture (DEFAULT)
 		UINT64 texSize = 0;
+		auto resourceDesc = mTextureDefault->GetDesc();
 		renderPlat->AsD3D12Device()->GetCopyableFootprints
 		(
-			&mTextureDefault->GetDesc(),
+			&resourceDesc,
 			0, 1, 0,
 			nullptr, nullptr, nullptr,
 			&texSize
 		);
-
+		auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		// Create the upload buffer
+		auto texBufferDesc=CD3DX12_RESOURCE_DESC::Buffer(texSize);
 		res = renderPlat->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			&uploadProperties,
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(texSize),
+			&texBufferDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			SIMUL_PPV_ARGS(&mTextureUpload)
@@ -1246,10 +1250,10 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		// Clean resources
 		SAFE_RELEASE_LATER(mTextureDefault); 
 
-
+		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		res = r->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			&defaultProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
 			initialState,
@@ -1484,11 +1488,12 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		{
 			heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_SHARED;
 		}
-
+		
+		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		// Create the texture resource
 		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			&defaultProperties,
 			heapFlags,
 			&textureDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -1640,11 +1645,11 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
 		mTextureDefault = nullptr;
-			
+		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		// Create the texture resource
 		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			&defaultProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
 			initialState,
@@ -1782,9 +1787,10 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	{
 		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
+	auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	res = r->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&defaultProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&textureDesc,
 		mResourceState,
@@ -2099,11 +2105,13 @@ void Texture::CreateUploadResource(int slices)
 		pLayouts.data(), numRows.data(), sliceSizes.data(),
 		&textureUploadBufferSize
 	);
+	auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
 	HRESULT res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&uploadProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize),
+		&uploadDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		SIMUL_PPV_ARGS(&mTextureUpload)

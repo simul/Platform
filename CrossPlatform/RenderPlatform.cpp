@@ -554,7 +554,10 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 			{
 				debugConstants.texSize=uint4(w,l,d,1);
 				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-				texture->activateRenderTarget(*graphicsDeviceContext, { texture->GetShaderResourceTypeForRTVAndDSV(), { TextureAspectFlags::COLOUR, j, 1, i, 1 } });
+				platform::crossplatform::SubresourceRange rng={TextureAspectFlags::COLOUR, j, 1, i, 1 };
+				ShaderResourceType tp=texture->GetShaderResourceTypeForRTVAndDSV();
+				platform::crossplatform::TextureView tv={tp,rng};
+				texture->activateRenderTarget(*graphicsDeviceContext, tv);
 				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
 					DrawQuad(*graphicsDeviceContext);
 				debugEffect->Unapply(*graphicsDeviceContext);

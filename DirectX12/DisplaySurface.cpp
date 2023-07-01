@@ -153,6 +153,7 @@ unsigned DisplaySurface::GetCurrentBackBufferIndex() const
 #endif
 	return curIdx;
 }
+
 void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
@@ -172,7 +173,10 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	mCommandList->RSSetScissorRects(1, &mCurScissor);
 
 	// Indicate that the back buffer will be used as a render target.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	auto tr=CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx]
+												, D3D12_RESOURCE_STATE_PRESENT
+												, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	mCommandList->ResourceBarrier(1, &tr);
 	mCommandList->OMSetRenderTargets(1, &mRTHandles[curIdx], FALSE, nullptr);
 
 	// Submit commands
@@ -185,7 +189,8 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	}
 
 	// Get ready to present
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	auto tr2=CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	mCommandList->ResourceBarrier(1, &tr2);
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }

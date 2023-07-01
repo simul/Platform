@@ -251,8 +251,8 @@ namespace platform
 		public:
 			ShaderResourceType	type = ShaderResourceType::UNKNOWN;
 			SubresourceRange	subresourceRange = {};
-
-			TextureView() = default;
+// https://stackoverflow.com/questions/57271400/why-does-aggregate-initialization-not-work-anymore-since-c20-if-a-constructor
+//			TextureView() = default;
 			inline uint64_t GetHash() const
 			{
 				return uint64_t((uint16_t)type) << 48
@@ -271,7 +271,8 @@ namespace platform
 		{
 			struct TextureTarget
 			{
-				TextureTarget() = default;
+				// TODO: C++20: this prevents initializer lists from being used. Why do we want it?
+				//TextureTarget() = default;
 
 				Texture* texture = nullptr;
 				SubresourceLayers subresource = {};

@@ -134,7 +134,8 @@ bool FramebufferGL::CreateBuffers()
 		}
 		else
 		{
-			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform, Width, Height, 1, mips, target_format, false, true, false, true);
+			std::shared_ptr<std::vector<std::vector<uint8_t>>> nodata;
+			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform, Width, Height, 1, mips, target_format,nodata, false, true, false, true);
 		}
 	}
 	if (!external_depth_texture && depth_format != crossplatform::UNKNOWN)
@@ -149,7 +150,7 @@ bool FramebufferGL::CreateBuffers()
 	mFBOId.resize((size_t)mips*(size_t)faces);
 	// Generate GL FBO:
 	glGenFramebuffers((GLsizei)mFBOId.size(), mFBOId.data());
-	auto &f=mFBOId.begin();
+	auto f=mFBOId.begin();
 	for(int i=0;i<mips;i++)
 	for(int j=0;j<faces;j++)
 	{

@@ -599,7 +599,7 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 			shaderbin+="/";
 		sfxoFilename=shaderbin+sfxoFilename;
 	}
-	sfxoFilename=std::filesystem::absolute(sfxoFilename.c_str()).u8string();
+	sfxoFilename=std::filesystem::absolute(sfxoFilename.c_str()).generic_string();
 
 	vector<string> sourceFilesUtf8;
 	string exedir = GetExecutableDirectory();

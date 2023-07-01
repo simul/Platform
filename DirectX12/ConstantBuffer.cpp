@@ -68,11 +68,13 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		HRESULT res;
+		auto uploadHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			&uploadHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+			&uploadDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			SIMUL_PPV_ARGS(&mUploadHeap[i])

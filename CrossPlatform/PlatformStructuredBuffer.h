@@ -99,21 +99,7 @@ namespace platform
 			{
 				InvalidateDeviceObjects();
 			}
-#if defined( _MSC_VER) && !defined( _GAMING_XBOX )
-
-			void RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr)
-			{
-				if (!p)
-					return;
-				count = ct;
-				delete platformStructuredBuffer;
-				platformStructuredBuffer = NULL;
-				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
-				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
-			}
-#else 
 			void RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr);
-#endif
 			T* GetBuffer(crossplatform::DeviceContext& deviceContext)
 			{
 				if (!platformStructuredBuffer)

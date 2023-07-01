@@ -218,7 +218,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 		// Process is done, or we timed out:
 		if (dwWaitResult == WAIT_TIMEOUT)
 		{
-			log << "Timeout executing " << com << std::endl;
+			log << "Timeout executing " << WStringToString(com)<< std::endl;
 			has_errors = true;
 		}
 		if (dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
