@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/CrossPlatform/Export.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include <math.h>
 namespace platform
 {

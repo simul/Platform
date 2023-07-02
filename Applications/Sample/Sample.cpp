@@ -47,7 +47,7 @@
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Platform/Shaders/Sl/camera_constants.sl"
+#include "Platform/CrossPlatform/Shaders/camera_constants.sl"
 #include "Platform/CrossPlatform/BaseAccelerationStructure.h"
 #include "Platform/CrossPlatform/AccelerationStructureManager.h"
 

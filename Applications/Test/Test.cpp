@@ -45,7 +45,7 @@
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Platform/CrossPlatform/RenderDelegater.h"
-#include "Platform/Shaders/Sl/camera_constants.sl"
+#include "Platform/CrossPlatform/Shaders/camera_constants.sl"
 
 
 #ifdef _MSC_VER

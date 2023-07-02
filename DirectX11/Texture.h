@@ -1,7 +1,7 @@
 #pragma once
 #include "Platform/DirectX11/Export.h"
 #include "Platform/CrossPlatform/Texture.h"
-#include "Platform/Shaders/Sl/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include <string>
 #include <unordered_map>
 #include "DirectXHeader.h"

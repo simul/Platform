@@ -9,8 +9,8 @@
 #include "Platform/CrossPlatform/Buffer.h"
 #include "Platform/CrossPlatform/Topology.h"
 #include "Platform/CrossPlatform/AxesStandard.h"
-#include "Platform/Shaders/SL/CppSl.sl"
-#include "Platform/Shaders/SL/solid_constants.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/solid_constants.sl"
 #include "Platform/Math/Orientation.h"
 
 #ifdef _MSC_VER

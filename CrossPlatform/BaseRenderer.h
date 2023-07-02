@@ -1,7 +1,7 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
 #include "Platform/Math/Matrix4x4.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/ViewStruct.h"

@@ -9,7 +9,7 @@
 #endif
 #include "Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
-#include "Platform/Shaders/SL/sphere_constants.sl"
+#include "Platform/CrossPlatform/Shaders/sphere_constants.sl"
 
 namespace platform
 {

@@ -1,7 +1,7 @@
 #pragma once
 #include "Export.h"
 #include "Platform/CrossPlatform/PixelFormat.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Topology.h"

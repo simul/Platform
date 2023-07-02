@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 #include "Platform/DirectX11/CreateEffectDX1x.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Math/Matrix4x4.h"
 struct ID3DX11EffectConstantBuffer;

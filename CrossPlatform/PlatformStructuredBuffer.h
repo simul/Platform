@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/CrossPlatform/Export.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/CrossPlatform/Topology.h"
 #include "Platform/CrossPlatform/Layout.h"
 #include "Platform/CrossPlatform/PixelFormat.h"

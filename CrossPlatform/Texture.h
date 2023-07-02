@@ -2,7 +2,7 @@
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/PixelFormat.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include <vector>
 #include <string>
 #ifdef _MSC_VER

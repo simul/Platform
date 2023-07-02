@@ -6,8 +6,8 @@
 #include "Platform/CrossPlatform/BaseRenderer.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/DirectX12/GpuProfiler.h"
-#include "Platform/Shaders/SL/solid_constants.sl"
-#include "Platform/Shaders/SL/debug_constants.sl"
+#include "Platform/CrossPlatform/Shaders/solid_constants.sl"
+#include "Platform/CrossPlatform/Shaders/debug_constants.sl"
 #include "SimulDirectXHeader.h"
 #include "ThisPlatform/Direct3D12.h"
 #include <vector>

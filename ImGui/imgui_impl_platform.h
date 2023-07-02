@@ -14,7 +14,7 @@
 #include "Export.h"			// IMGUI_IMPL_API
 #include "imgui.h"			// IMGUI_IMPL_API
 #include <vector>
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/CrossPlatform/RenderDelegate.h"
 
 namespace platform

@@ -10,8 +10,8 @@
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Topology.h"
-#include "Platform/Shaders/SL/CppSl.sl"
-#include "Platform/Shaders/SL/debug_constants.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/debug_constants.sl"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Allocator.h"
 

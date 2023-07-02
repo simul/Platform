@@ -565,10 +565,11 @@ int main(int argc, char** argv)
 		sfxDeleteEffect(effect);
 	}
 	// write a summary output file, so we have a single output with the build time on it.
+	if(ret==0)
 	{
 		SetEnv("PLATFORM_NAME","");
 		templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
-	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
+		sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
 		std::ofstream summary(templateOutputFile+"/"s+sourceName+".sfx_summary");
 		summary << "" << std::endl;
 		summary.close();

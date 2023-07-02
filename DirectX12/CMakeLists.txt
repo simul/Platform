@@ -97,7 +97,7 @@ if(SIMUL_SOURCE_BUILD)
 			set(out_RootSignatureFolder "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
 		# Create the target directory for the cso file:
 			file(MAKE_DIRECTORY ${out_RootSignatureFolder})
-			add_custom_command(TARGET CoreShaders
+			add_custom_command(TARGET SimulDirectX12_MT
 						COMMAND ${GDK_BIN_PATH}/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"Sfx" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
 						MAIN_DEPENDENCY ${in_RootSignature}
 						WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -105,13 +105,7 @@ if(SIMUL_SOURCE_BUILD)
 						)
 		endif()
 	endif()
-	if(PLATFORM_WINDOWS)
-		add_dependencies(SimulDirectX12_MT CoreShaders )
-		#add_dependencies(DirectX12Shaders Sfx )
-	endif()
 	if(PLATFORM_BUILD_MD_LIBS)
-		add_dependencies(SimulDirectX12_MD CoreShaders )
-
 		target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
 	endif()
 

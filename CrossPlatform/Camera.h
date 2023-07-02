@@ -5,7 +5,7 @@
 #include "Platform/CrossPlatform/CameraInterface.h"
 #include "Platform/Math/OrientationInterface.h"
 #include "Platform/CrossPlatform/Export.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 
 #ifdef _MSC_VER
 	#pragma warning(push)

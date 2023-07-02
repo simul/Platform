@@ -2,7 +2,7 @@
 #define QuaterniondH
 
 #include "Platform/Math/Matrix.h"    
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Export.h"
 #include <algorithm>
 #include <math.h>

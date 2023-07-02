@@ -1,7 +1,7 @@
 #pragma once
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/Quaterniond.h"
-#include "Platform/Shaders/SL/CppSl.sl"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/MemoryInterface.h"
 #include <map>
