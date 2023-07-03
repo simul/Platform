@@ -22,14 +22,11 @@ namespace platform
 		public:
             Framebuffer(const char *name = nullptr);
             virtual ~Framebuffer();
-            void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
             void SetAntialiasing(int s) override;
-
             void InvalidateDeviceObjects() override;
             bool CreateBuffers() override;
             void Activate(crossplatform::GraphicsDeviceContext &deviceContext) override;
             void ActivateDepth(crossplatform::GraphicsDeviceContext &) override;
-            void SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth) override;
             void Deactivate(crossplatform::GraphicsDeviceContext &deviceContext) override;
             void DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
             void Clear(crossplatform::GraphicsDeviceContext &deviceContext,float,float,float,float,float,int mask = 0) override;

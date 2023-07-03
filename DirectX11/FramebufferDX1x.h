@@ -15,8 +15,6 @@ namespace platform
 		public:
 			Framebuffer(const char *name);
 			virtual ~Framebuffer();
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			void InvalidateDeviceObjects();
 			virtual void SetUseFastRAM(bool colour,bool depth)
 			{
 				useESRAM=colour;

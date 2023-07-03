@@ -76,7 +76,7 @@ bool FramebufferGL::IsValid() const
 
 void FramebufferGL::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	Framebuffer::RestoreDeviceObjects(r);
+	crossplatform::Framebuffer::RestoreDeviceObjects(r);
 }
 
 void FramebufferGL::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
@@ -180,7 +180,7 @@ void FramebufferGL::InvalidateDeviceObjects()
 {
 	glDeleteFramebuffers((GLsizei)mFBOId.size(),mFBOId.data());
 	mFBOId.clear();
-	Framebuffer::InvalidateDeviceObjects();
+	crossplatform::Framebuffer::InvalidateDeviceObjects();
 }
 
 void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -231,7 +231,7 @@ void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext
 
 void FramebufferGL::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
 {
-	Framebuffer::SetExternalTextures(colour, depth);
+	crossplatform::Framebuffer::SetExternalTextures(colour, depth);
 }
 
 void FramebufferGL::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)

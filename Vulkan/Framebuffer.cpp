@@ -63,11 +63,6 @@ bool Framebuffer::IsValid() const
 	return ((buffer_texture != nullptr && buffer_texture->IsValid()) || (buffer_depth_texture != nullptr && buffer_depth_texture->IsValid()));
 }
 
-void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
-{
-	Framebuffer::RestoreDeviceObjects(r);
-}
-
 void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 }
@@ -154,7 +149,7 @@ void Framebuffer::InvalidateDeviceObjects()
 		InvalidateFramebuffers();
 		renderPlatform=nullptr;
 	}
-	Framebuffer::InvalidateDeviceObjects();
+	crossplatform::Framebuffer::InvalidateDeviceObjects();
 }
 
 void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -272,11 +267,6 @@ vk::RenderPass *Framebuffer::GetVulkanRenderPass(crossplatform::GraphicsDeviceCo
 	if(colour_active)
 		return &mDummyRenderPasses[RPType::COLOUR];
 	return nullptr;
-}
-
-void Framebuffer::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
-{
-	Framebuffer::SetExternalTextures(colour, depth);
 }
 
 void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)

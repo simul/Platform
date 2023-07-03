@@ -45,16 +45,6 @@ Framebuffer::~Framebuffer()
 	InvalidateDeviceObjects();
 }
 
-void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
-{
-	Framebuffer::RestoreDeviceObjects(r);
-}
-
-void Framebuffer::InvalidateDeviceObjects()
-{
-	Framebuffer::InvalidateDeviceObjects();
-}
-
 void Framebuffer::MoveToFastRAM()
 {
 	if(useESRAM&&buffer_texture)

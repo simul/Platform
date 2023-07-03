@@ -14,8 +14,6 @@ namespace platform
 		public:
 			                Framebuffer(const char *name);
 			virtual         ~Framebuffer();
-			void            RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			void            InvalidateDeviceObjects();
             virtual void    SetAntialiasing(int a);
 			virtual void    Activate(crossplatform::GraphicsDeviceContext &deviceContext);
 			virtual void    ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext);
