@@ -633,20 +633,34 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		if (!preprocess(file, config->define, sfxOptions->disableLineWrites))
 			return false;
 		double output_filedatetime=GetFileDate(sfxoFilename);
-		if(!sfxOptions->force&&latest_datetime<output_filedatetime)
+		bool recompile=false;
+		if(sfxOptions->force)
+		{
+			recompile=true;
+			if(sfxOptions->verbose)
+				std::cout<<"force compiling.\n";
+		}
+		else if(!fileLoader.FileExists(sfxoFilename.c_str()))
+		{
+			recompile=true;
+			if(sfxOptions->verbose)
+				std::cout<<sfxoFilename<<" does not exist, compiling.\n";
+		}
+		else if(exe_datetime>output_filedatetime)
+		{
+			recompile=true;
+			if(sfxOptions->verbose)
+				std::cout<<"Newer Sfx.exe: recompiling.\n";
+		}
+		else if(platformfile_datetime>output_filedatetime)
+		{
+			recompile=true;
+			if(sfxOptions->verbose)
+				std::cout<<"Newer platform json file: recompiling.\n";
+		}
+		if(!recompile)
 		{
 			return true;
-		}
-		if(sfxOptions->verbose)
-		{
-			if(exe_datetime>output_filedatetime)
-			{
-				std::cout<<"Newer Sfx.exe: recompiling.\n";
-			}
-			if(platformfile_datetime>output_filedatetime)
-			{
-				std::cout<<"Newer platform json file: recompiling.\n";
-			}
 		}
 		newsrc=preproOutput.str();
 		// if verbose, save the preprocessed text to a temporary file.
@@ -660,7 +674,7 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 			ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
 			ofstream pps(ppfile);
 			pps<<newsrc;
-			std::cerr<<ppfile<<": warning: preprocessed source"<<std::endl;
+			std::cerr<<ppfile<<": info: preprocessed source"<<std::endl;
 		}
 	}
 	catch(...)

@@ -482,18 +482,25 @@ string& Effect::Dir()
 {
 	return m_dir;
 }
-
+extern int mkpath(const std::string &filename_utf8);
+#include <filesystem>
 unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,string& log, BinaryMap &binaryMap)
 {
 	ostringstream sLog;
 	int res=1;
 	PixelOutputFormat pixelOutputFormat=FMT_UNKNOWN;
 	std::ofstream combinedBinary;
+	mkpath(std::filesystem::path(sfxoFilename).generic_string());
 	if (sfxOptions.wrapOutput)
 	{
 		std::string sfxbFilename = sfxoFilename;
 		find_and_replace(sfxbFilename, ".sfxo", ".sfxb");
 		combinedBinary.open(sfxbFilename, std::ios_base::binary);
+		if(!combinedBinary.is_open())
+		{
+			std::cerr << "Failed to open " << sfxbFilename << " for writing.\n";
+			exit(3);
+		}
 	}
 	for(ShaderInstanceMap::iterator i=m_shaderInstances.begin();i!=m_shaderInstances.end();i++)
 	{

@@ -331,7 +331,6 @@ string ToPragmaString(PixelOutputFormat pixelOutputFormat)
 	}
 }
 
-
 static int do_mkdir(const wchar_t *path_w)
 {
 	int			 status = 0;
@@ -375,7 +374,7 @@ static int nextslash(const std::wstring &str,int pos)
 		slash=back;
 	return slash;
 }
-static int mkpath(const std::wstring &filename_utf8)
+ int mkpath(const std::wstring &filename_utf8)
 {
 	int status = 0;
 	int pos=1;// skip first / in Unix pathnames.
