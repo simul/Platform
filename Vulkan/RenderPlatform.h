@@ -96,8 +96,8 @@ namespace simul
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
 
-			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
-			void FlushImmediateContext();
+			void ExecuteCommands(crossplatform::DeviceContext& deviceContext) override;
+			void RestartCommands(crossplatform::DeviceContext& deviceContext) override;
 
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
@@ -173,7 +173,7 @@ namespace simul
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
             void									SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
-			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
+			void									SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			void									RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void									RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			
@@ -224,6 +224,8 @@ namespace simul
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
+			void									EndRenderPass(crossplatform::DeviceContext& deviceContext) override;
+			static std::string						VulkanResultString(vk::Result res);
 
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 

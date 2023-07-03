@@ -10,7 +10,7 @@ using namespace std;
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& shaderResource)
 {
 #if SIMUL_INTERNAL_CHECKS
-	if (shaderResource.shaderResourceType != simul::crossplatform::ShaderResourceType::RW)
+	if (!(static_cast<int>(shaderResource.shaderResourceType) & static_cast<int>(simul::crossplatform::ShaderResourceType::RW)))
 		SIMUL_INTERNAL_CERR << "ShaderResource Type incorrect" << std::endl;
 #endif
 	if (shaderResource.slot >= 1000)

@@ -32,6 +32,11 @@ GraphicsDeviceContext::GraphicsDeviceContext():
 	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
 }
 
+GraphicsDeviceContext::~GraphicsDeviceContext()
+{
+	if (renderPlatform)
+		renderPlatform->EndRenderPass(*(DeviceContext*)this);
+}
 
 crossplatform::TargetsAndViewport *GraphicsDeviceContext::GetCurrentTargetsAndViewport()
 {

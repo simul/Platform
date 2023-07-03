@@ -327,6 +327,7 @@ bool Texture::ensureTexture2DSizeAndFormat( crossplatform::RenderPlatform* r, in
 		dim					= 2;
 		pixelFormat			= f;
 		cubemap				= false;
+		mGLFormat			= opengl::RenderPlatform::ToGLFormat(f);
 		mInternalGLFormat	= opengl::RenderPlatform::ToGLInternalFormat(f);
 		mNumSamples			= num_samples;
 
