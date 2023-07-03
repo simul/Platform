@@ -1,4 +1,4 @@
-#include "BaseFramebuffer.h"
+#include "Framebuffer.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
@@ -13,7 +13,7 @@ using namespace platform;
 using namespace crossplatform;
 
 
-BaseFramebuffer::BaseFramebuffer(const char *n)
+Framebuffer::Framebuffer(const char *n)
 	:Width(0)
 	,Height(0)
 	,mips(0)
@@ -37,12 +37,12 @@ BaseFramebuffer::BaseFramebuffer(const char *n)
 		name=n;
 }
 
-BaseFramebuffer::~BaseFramebuffer()
+Framebuffer::~Framebuffer()
 {
 	InvalidateDeviceObjects();
 }
 
-void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
     renderPlatform = r;
     if (!renderPlatform)
@@ -58,7 +58,7 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	CreateBuffers();
 }
 
-void BaseFramebuffer::InvalidateDeviceObjects()
+void Framebuffer::InvalidateDeviceObjects()
 {
 	if(!external_texture)
 		SAFE_DELETE(buffer_texture);
@@ -69,7 +69,7 @@ void BaseFramebuffer::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 }
 
-void BaseFramebuffer::SetWidthAndHeight(int w,int h,int m)
+void Framebuffer::SetWidthAndHeight(int w,int h,int m)
 {
 	if(Width!=w||Height!=h||mips!=m)
 	{
@@ -83,7 +83,7 @@ void BaseFramebuffer::SetWidthAndHeight(int w,int h,int m)
 	}
 }
 
-void BaseFramebuffer::SetFormat(crossplatform::PixelFormat f)
+void Framebuffer::SetFormat(crossplatform::PixelFormat f)
 {
 	if(f==target_format)
 		return;
@@ -92,7 +92,7 @@ void BaseFramebuffer::SetFormat(crossplatform::PixelFormat f)
 		buffer_texture->InvalidateDeviceObjects();
 }
 
-void BaseFramebuffer::SetDepthFormat(crossplatform::PixelFormat f)
+void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
 {
 	if(f==depth_format)
 		return;
@@ -101,19 +101,19 @@ void BaseFramebuffer::SetDepthFormat(crossplatform::PixelFormat f)
 		buffer_depth_texture->InvalidateDeviceObjects();
 }
 
-void BaseFramebuffer::SetGenerateMips(bool m)
+void Framebuffer::SetGenerateMips(bool m)
 {
 	GenerateMips=m;
 }
 
-void BaseFramebuffer::SetAsCubemap(int w,int num_mips,crossplatform::PixelFormat f)
+void Framebuffer::SetAsCubemap(int w,int num_mips,crossplatform::PixelFormat f)
 {
 	SetWidthAndHeight(w,w,num_mips);
 	SetFormat(f);
 	is_cubemap=true;
 }
 
-void BaseFramebuffer::SetCubeFace(int f)
+void Framebuffer::SetCubeFace(int f)
 {
 	if(!is_cubemap)
 	{
@@ -122,23 +122,23 @@ void BaseFramebuffer::SetCubeFace(int f)
 	current_face=f;
 }
 
-bool BaseFramebuffer::IsDepthActive() const
+bool Framebuffer::IsDepthActive() const
 {
 	return depth_active;
 }
 
-bool BaseFramebuffer::IsColourActive() const
+bool Framebuffer::IsColourActive() const
 {
 	return colour_active;
 }
 
-bool BaseFramebuffer::IsValid() const
+bool Framebuffer::IsValid() const
 {
 	bool ok=(buffer_texture!=NULL)||(buffer_depth_texture!=NULL);
 	return ok;
 }
 
-void BaseFramebuffer::SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth)
+void Framebuffer::SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth)
 {
 	if(buffer_texture==colour&&buffer_depth_texture==depth&&(!colour||(colour->width==Width&&colour->length==Height)))
 		return;
@@ -164,7 +164,7 @@ void BaseFramebuffer::SetExternalTextures(crossplatform::Texture *colour,crosspl
 	}
 }
 
-bool BaseFramebuffer::CreateBuffers()
+bool Framebuffer::CreateBuffers()
 {
 	if(!Width||!Height)
 		return false;

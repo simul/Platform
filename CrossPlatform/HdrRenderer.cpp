@@ -7,7 +7,7 @@
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/Math/RandomNumberGenerator.h"
 #include "Platform/CrossPlatform/Texture.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/Math/Pi.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"

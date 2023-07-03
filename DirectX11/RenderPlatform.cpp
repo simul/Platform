@@ -379,7 +379,7 @@ crossplatform::Texture *RenderPlatform::createTexture()
 	return tex;
 }
 
-crossplatform::BaseFramebuffer *RenderPlatform::CreateFramebuffer(const char *name)
+crossplatform::Framebuffer *RenderPlatform::CreateFramebuffer(const char *name)
 {
 	return new dx11::Framebuffer(name);
 }

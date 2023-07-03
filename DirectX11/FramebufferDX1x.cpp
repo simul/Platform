@@ -34,7 +34,7 @@ UINT64 iCurrentESRAMOffset = 0; // We allow this to grow beyond ESRAM_SIZE
 const UINT64 ESRAM_SIZE = 32 * 1024 * 1024;
 
 Framebuffer::Framebuffer(const char *n) :
-	BaseFramebuffer(n)
+	crossplatform::Framebuffer(n)
 	,useESRAM(false)
 	,useESRAMforDepth(false)
 {
@@ -47,12 +47,12 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	BaseFramebuffer::RestoreDeviceObjects(r);
+	Framebuffer::RestoreDeviceObjects(r);
 }
 
 void Framebuffer::InvalidateDeviceObjects()
 {
-	BaseFramebuffer::InvalidateDeviceObjects();
+	Framebuffer::InvalidateDeviceObjects();
 }
 
 void Framebuffer::MoveToFastRAM()

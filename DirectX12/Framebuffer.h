@@ -2,14 +2,14 @@
 #include "SimulDirectXHeader.h"
 #include "Platform/DirectX12/Export.h"
 #include "Platform/DirectX12/Texture.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 
 namespace platform
 {
 	namespace dx12
 	{
 		//! A DirectX 12 framebuffer class.
-		class SIMUL_DIRECTX12_EXPORT Framebuffer: public crossplatform::BaseFramebuffer
+		class SIMUL_DIRECTX12_EXPORT Framebuffer: public crossplatform::Framebuffer
 		{
 		public:
 			                Framebuffer(const char *name);

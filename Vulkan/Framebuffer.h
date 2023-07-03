@@ -5,7 +5,7 @@
 #include "stdint.h"
 #include "Platform/Vulkan/Export.h"
 #include "Platform/Vulkan/Texture.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -17,7 +17,7 @@ namespace platform
 	namespace vulkan
 	{
         //! Vulkan Framebuffer implementation
-		class SIMUL_VULKAN_EXPORT Framebuffer:public platform::crossplatform::BaseFramebuffer
+		class SIMUL_VULKAN_EXPORT Framebuffer:public platform::crossplatform::Framebuffer
 		{
 		public:
             Framebuffer(const char *name = nullptr);
