@@ -101,10 +101,6 @@ namespace simul
 			
 			void			LoadTextureData(LoadedTexture &lt,const char* path);
 			void			SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f);
-			//! Creates the Framebuffers for this texture
-			void			CreateFBOs(int sampleCount);
-			//! Applies default sampling parameters to the texId texture
-			void			SetDefaultSampling(GLuint texId);
 
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;

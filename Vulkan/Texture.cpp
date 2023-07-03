@@ -843,20 +843,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	textureLoadComplete=false;
 }
 
-void Texture::CreateFBOs(int sampleCount)
-{
-	for (int i = 0; i < arraySize; i++)
-	{
-		for (int mip = 0; mip < mips; mip++)
-		{
-		}
-	}
-}
-
-void Texture::SetDefaultSampling(GLuint texId)
-{
-}
-
 void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 {
 	mExternalLayout=vulkan::RenderPlatform::ToVulkanImageLayout(resourceState);
