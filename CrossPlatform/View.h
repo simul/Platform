@@ -18,7 +18,7 @@ namespace platform
 	{
 		class Texture;
 		class Effect;
-		class BaseFramebuffer;
+		class Framebuffer;
 		struct Viewport;
 		class RenderPlatform;
 		///
@@ -73,7 +73,7 @@ namespace platform
 			bool										vrDistortion;
 		protected:
 			/// A framebuffer with depth.
-			platform::crossplatform::BaseFramebuffer		*hdrFramebuffer;
+			platform::crossplatform::Framebuffer		*hdrFramebuffer;
 			/// The resolved texture.
 			platform::crossplatform::Texture				*resolvedTexture;
 			/// The render platform.

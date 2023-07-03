@@ -223,7 +223,7 @@ crossplatform::Texture* RenderPlatform::createTexture()
 	return tex;
 }
 
-crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
+crossplatform::Framebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 {
 	opengl::FramebufferGL* b=new opengl::FramebufferGL(n);
 	return b;

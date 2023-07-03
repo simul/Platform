@@ -19,11 +19,11 @@ namespace platform
 		struct DeviceContext;
 		class RenderPlatform;
 		//! A base class for API-dependent framebuffer classes.
-		class SIMUL_CROSSPLATFORM_EXPORT BaseFramebuffer
+		class SIMUL_CROSSPLATFORM_EXPORT Framebuffer
 		{
 		public:
-			BaseFramebuffer(const char *n);
-			virtual ~BaseFramebuffer();
+			Framebuffer(const char *n);
+			virtual ~Framebuffer();
 			//! Platform-dependent function called when initializing the framebuffer.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			//! Platform-dependent function called when uninitializing the framebuffer.

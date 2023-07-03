@@ -209,7 +209,7 @@ namespace platform
 
 			void									ApplyDefaultMaterial();
 
-			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
+			crossplatform::Framebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d) override;
 			crossplatform::Effect					*CreateEffect() override;
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer() override;

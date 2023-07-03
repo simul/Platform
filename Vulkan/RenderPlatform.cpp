@@ -865,7 +865,7 @@ crossplatform::Texture* RenderPlatform::createTexture()
 	return tex;
 }
 
-crossplatform::BaseFramebuffer* RenderPlatform::CreateFramebuffer(const char *n)
+crossplatform::Framebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 {
 	vulkan::Framebuffer* b=new vulkan::Framebuffer(n);
 	return b;

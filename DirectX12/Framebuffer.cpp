@@ -15,7 +15,7 @@ using namespace platform;
 using namespace dx12;
 
 Framebuffer::Framebuffer(const char *n) :
-	BaseFramebuffer(n)
+	crossplatform::Framebuffer(n)
 {
     targetsAndViewport = {};
 }
@@ -27,12 +27,12 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	BaseFramebuffer::RestoreDeviceObjects(r);
+	Framebuffer::RestoreDeviceObjects(r);
 }
 
 void Framebuffer::InvalidateDeviceObjects()
 {
-	BaseFramebuffer::InvalidateDeviceObjects();
+	Framebuffer::InvalidateDeviceObjects();
 }
 
 void Framebuffer::SetAntialiasing(int a)

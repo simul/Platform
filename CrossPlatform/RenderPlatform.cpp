@@ -10,7 +10,7 @@
 #include "Platform/CrossPlatform/Material.h"
 #include "Platform/CrossPlatform/Mesh.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include "Platform/CrossPlatform/DisplaySurface.h"
 #include "Platform/CrossPlatform/BaseAccelerationStructure.h"
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"

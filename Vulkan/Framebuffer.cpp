@@ -16,7 +16,7 @@ using namespace platform;
 using namespace vulkan;
 
 Framebuffer::Framebuffer(const char* name):
-	BaseFramebuffer(name)
+	crossplatform::Framebuffer(name)
 {
 	if(name)
 		this->name = name;
@@ -65,7 +65,7 @@ bool Framebuffer::IsValid() const
 
 void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	BaseFramebuffer::RestoreDeviceObjects(r);
+	Framebuffer::RestoreDeviceObjects(r);
 }
 
 void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
@@ -154,7 +154,7 @@ void Framebuffer::InvalidateDeviceObjects()
 		InvalidateFramebuffers();
 		renderPlatform=nullptr;
 	}
-	BaseFramebuffer::InvalidateDeviceObjects();
+	Framebuffer::InvalidateDeviceObjects();
 }
 
 void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -276,7 +276,7 @@ vk::RenderPass *Framebuffer::GetVulkanRenderPass(crossplatform::GraphicsDeviceCo
 
 void Framebuffer::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
 {
-	BaseFramebuffer::SetExternalTextures(colour, depth);
+	Framebuffer::SetExternalTextures(colour, depth);
 }
 
 void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)

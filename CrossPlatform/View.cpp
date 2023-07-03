@@ -6,7 +6,7 @@
 #include "Platform/Math/Vector3.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/CrossPlatform/Texture.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include "Platform/CrossPlatform/Camera.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/Core/ProfilingInterface.h"

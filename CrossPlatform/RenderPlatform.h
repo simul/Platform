@@ -59,7 +59,7 @@ namespace platform
 		struct Viewport;
 		class Light;
 		class Texture;
-		class BaseFramebuffer;
+		class Framebuffer;
 		class SamplerState;
 		class Mesh;
 		class PlatformConstantBuffer;
@@ -342,7 +342,7 @@ namespace platform
 			/// called automatically from invalidate to clear the texture from e.g. the unfinishedTextures list. Do not call this directly.
 			void							InvalidatingTexture(Texture *t);
 			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
-			virtual BaseFramebuffer			*CreateFramebuffer				(const char * =nullptr)	=0;
+			virtual Framebuffer			*CreateFramebuffer				(const char * =nullptr)	=0;
 			/// Create a platform-specific sampler state instance.
 			virtual SamplerState			*CreateSamplerState				(SamplerStateDesc *)	=0;
 			/// Look for a sampler state of the stated name, and create one if it does not exist. The resulting state will be owned by the RenderPlatform, so do not destroy it.

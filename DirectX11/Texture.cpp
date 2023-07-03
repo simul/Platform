@@ -5,7 +5,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include <string>
 #include <math.h>
 #include <algorithm>

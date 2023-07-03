@@ -194,7 +194,7 @@ namespace platform
 			void									InsertFences(crossplatform::DeviceContext& deviceContext);
 
 			crossplatform::Material*				CreateMaterial();
-			crossplatform::BaseFramebuffer*			CreateFramebuffer(const char *name=nullptr) override;
+			crossplatform::Framebuffer*			CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
 			crossplatform::PlatformConstantBuffer*	CreatePlatformConstantBuffer() override;

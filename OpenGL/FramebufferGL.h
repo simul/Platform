@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "Platform/OpenGL/Export.h"
 #include "Platform/OpenGL/Texture.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include "glad/glad.h"
 
 #ifdef _MSC_VER
@@ -17,7 +17,7 @@ namespace platform
 	namespace opengl
 	{
         //! GL Framebuffer implementation
-		class SIMUL_OPENGL_EXPORT FramebufferGL:public platform::crossplatform::BaseFramebuffer
+		class SIMUL_OPENGL_EXPORT FramebufferGL:public platform::crossplatform::Framebuffer
 		{
 		public:
             FramebufferGL(const char *name = nullptr);

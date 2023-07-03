@@ -6,7 +6,7 @@
 #include "Platform/Core/FileLoader.h"
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include <string>
 #include <algorithm>
 #include <DirectXTex.h>

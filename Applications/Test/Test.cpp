@@ -43,7 +43,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/CrossPlatform/Shaders/camera_constants.sl"
 
@@ -120,7 +120,7 @@ public:
 	crossplatform::RenderPlatform* renderPlatform = nullptr;
 	crossplatform::Texture* depthTexture = nullptr;
 	crossplatform::HdrRenderer* hdrRenderer = nullptr;
-	crossplatform::BaseFramebuffer* hdrFramebuffer = nullptr;
+	crossplatform::Framebuffer* hdrFramebuffer = nullptr;
 	crossplatform::Effect* effect = nullptr;
 	crossplatform::Effect* test = nullptr;
 	crossplatform::Texture* texture = nullptr;
@@ -243,7 +243,7 @@ public:
 		depthTexture = renderPlatform->CreateTexture("Depth-Stencil"); //Calls new
 		hdrRenderer = new crossplatform::HdrRenderer();
 
-		//Set up BaseFramebuffer
+		//Set up Framebuffer
 		hdrFramebuffer = renderPlatform->CreateFramebuffer(); //Calls new
 		hdrFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
 		hdrFramebuffer->SetDepthFormat(crossplatform::D_32_FLOAT);

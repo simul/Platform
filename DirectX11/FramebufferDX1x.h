@@ -3,14 +3,14 @@
 #include "Platform/DirectX11/MacrosDx1x.h"
 #include "Platform/DirectX11/Export.h"
 #include "Platform/DirectX11/Texture.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 
 namespace platform
 {
 	namespace dx11
 	{
 		//! A DirectX 11 framebuffer class.
-		class SIMUL_DIRECTX11_EXPORT Framebuffer: public crossplatform::BaseFramebuffer
+		class SIMUL_DIRECTX11_EXPORT Framebuffer: public crossplatform::Framebuffer
 		{
 		public:
 			Framebuffer(const char *name);

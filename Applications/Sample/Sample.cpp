@@ -46,7 +46,7 @@
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Platform/CrossPlatform/Framebuffer.h"
 #include "Platform/CrossPlatform/Shaders/camera_constants.sl"
 #include "Platform/CrossPlatform/BaseAccelerationStructure.h"
 #include "Platform/CrossPlatform/AccelerationStructureManager.h"
@@ -122,7 +122,7 @@ class PlatformRenderer:public crossplatform::RenderDelegaterInterface
 	static const bool reverseDepth=true;
 	//! A framebuffer to store the colour and depth textures for the view.
 	crossplatform::Texture* hdrTexture =nullptr;
-	crossplatform::BaseFramebuffer	*hdrFramebuffer = nullptr;
+	crossplatform::Framebuffer	*hdrFramebuffer = nullptr;
 	crossplatform::Texture* specularCubemapTexture	= nullptr;
 	crossplatform::Texture* diffuseCubemapTexture	= nullptr;
 	//! An HDR Renderer to put the contents of hdrFramebuffer to the screen. In practice you will probably have your own method for this.
