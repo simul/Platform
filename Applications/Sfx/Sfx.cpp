@@ -629,7 +629,7 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		double exe_datetime=GetFileDate(exeNameUtf8);
 		double platformfile_datetime=GetFileDate(config->platformFilename);
 		latest_datetime= std::max(exe_datetime,platformfile_datetime);
-
+		latest_file=file;
 		if (!preprocess(file, config->define, sfxOptions->disableLineWrites))
 			return false;
 		double output_filedatetime=GetFileDate(sfxoFilename);
@@ -658,9 +658,12 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 			if(sfxOptions->verbose)
 				std::cout<<"Newer platform json file: recompiling.\n";
 		}
-		if(!recompile)
+	// preprocess establishes what the newest source/include file is, so we can check if we need to recompile.if(platformfile_datetime>output_filedatetime)
+		else if(latest_datetime>output_filedatetime)
 		{
-			return true;
+			recompile=true;
+			if(sfxOptions->verbose)
+				std::cout<<"Newer source file: "<<latest_file<<", recompiling.\n";
 		}
 		newsrc=preproOutput.str();
 		// if verbose, save the preprocessed text to a temporary file.
@@ -675,6 +678,10 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 			ofstream pps(ppfile);
 			pps<<newsrc;
 			std::cerr<<ppfile<<": info: preprocessed source"<<std::endl;
+		}
+		if(!recompile)
+		{
+			return true;
 		}
 	}
 	catch(...)

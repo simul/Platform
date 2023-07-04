@@ -626,7 +626,10 @@ int newfile(const char *fn)
 		return 0;
 	}
 	if(datetime>latest_datetime)
+	{
+		latest_file=fn;
 		latest_datetime=datetime;
+	}
 	BufferStack *bs		=new BufferStack;
 	if(!bs)
 	{

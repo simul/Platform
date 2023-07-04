@@ -29,6 +29,7 @@ struct MacroDefinition
 // prevent echoing of unprocessed chars:
 #define ECHO
 extern double latest_datetime;
+extern std::string latest_file;
 #undef PREPRO_STYPE
 #define PREPRO_STYPE PreprocessorType
 #undef PREPRO_DEBUG
