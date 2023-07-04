@@ -106,11 +106,11 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 	bool bExists = (res!=NO_FILE);
 	if(errno==EACCES)
 	{
-		std::cerr<<"DefaultFileLoader::FileExists Access denied: for "<<filename_utf8<<" the file's permission setting does not allow specified access."<<std::endl;
+		SIMUL_CERR<<"DefaultFileLoader::FileExists Access denied: for "<<filename_utf8<<" the file's permission setting does not allow specified access."<<std::endl;
 	}
 	else if(errno==EINVAL)
 	{
-		std::cerr<<"DefaultFileLoader::FileExists Invalid parameter: for "<<filename_utf8<<".\n";
+		SIMUL_CERR<<"DefaultFileLoader::FileExists Invalid parameter: for "<<filename_utf8<<".\n";
 	}
 	else if(errno==ENOENT)
 	{

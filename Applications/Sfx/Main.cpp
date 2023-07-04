@@ -119,6 +119,7 @@ int main(int argc, char** argv)
 	std::string optimization;
 	std::vector<std::string> genericPathStrings;
 	std::string outputFile=templateOutputFile;
+	std::string intermediateDirectory;
 	if(argc>1) 
 	{
 		paths=new const char *[argc];
@@ -140,7 +141,7 @@ int main(int argc, char** argv)
 				if(argtype=='i'||argtype=='I')
 					genericPathStrings.push_back(StripQuotes(arg));
 				else if (argtype == 'm' || argtype == 'M')
-					sfxOptions.intermediateDirectory = StripQuotes(arg);
+					intermediateDirectory = StripQuotes(arg);
 				else if (argtype == 's' || argtype == 'S')
 				{
 					SIMUL=StripQuotes(arg);
@@ -321,7 +322,7 @@ int main(int argc, char** argv)
 				}
 			}
 			outputFile=ProcessEnvironmentVariables(outputFile);
-			if(sfxOptions.intermediateDirectory.length()==0)
+			if(intermediateDirectory.length()==0)
 			{
 				if(j.count("intermediateDirectory")>0)
 				{
@@ -331,9 +332,11 @@ int main(int argc, char** argv)
 				{
 					sfxOptions.intermediateDirectory				=ProcessEnvironmentVariables("$BUILD_DIR/Shaders/"+platformName+"/sfx_intermediate"s);
 				}
+				if(j.count("intermediatePath")>0&&sfxOptions.intermediateDirectory.length()==0)
+					sfxOptions.intermediateDirectory				=ProcessEnvironmentVariables(j["intermediatePath"]);
 			}
-			if(j.count("intermediatePath")>0&&sfxOptions.intermediateDirectory.length()==0)
-				sfxOptions.intermediateDirectory				=ProcessEnvironmentVariables(j["intermediatePath"]);
+			else
+				sfxOptions.intermediateDirectory=intermediateDirectory;
 			if(sfxOptions.intermediateDirectory.length()==0)
 			{
 				sfxOptions.intermediateDirectory="sfx_intermediate";

@@ -116,6 +116,15 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 		return -1;
 	if (path_stack_utf8 == nullptr || path_stack_utf8[0] == nullptr)
 		return -2;
+	std::string abs_path = std::string(filename_utf8);
+	if(abs_path.find(":")!=std::string::npos)
+	{
+		if (FileExists(abs_path.c_str())) 
+		// absolute path
+			return -1;
+		else
+			return -2;
+	}
 	int i = 0;
 	for (i = 0; i < 100; i++)
 	{

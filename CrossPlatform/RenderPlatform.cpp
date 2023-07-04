@@ -139,15 +139,35 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		std::string exe_dir = platform::core::GetExeDirectory();
 		std::string binary_dir = std::filesystem::weakly_canonical((exe_dir + "/../..").c_str()).generic_string();
 		std::string source_dir = std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
-		std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_BUILD_DIR);
-		std::string cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
-		std::string platform_source_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_SOURCE_DIR);
 		std::string render_platform = GetPathName();
 		if (exe_dir.length())
 		{
 			std::string simul_dir = std::filesystem::weakly_canonical((exe_dir + "../../../").c_str()).generic_string();
 			PushShaderPath((simul_dir + "/../").c_str());
 		}
+		std::string local_shader_binary_path = "shaderbin/"s + render_platform;
+		PushShaderBinaryPath(local_shader_binary_path.c_str());
+		if (binary_dir.length())
+		{
+			std::string shader_binary_path = binary_dir + "/"s + render_platform + "/shaderbin"s;
+			std::string platform_build_path = binary_dir + "/Platform"s;
+			std::string this_platform_build_path = platform_build_path+"/"s + render_platform;
+			PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
+			PushShaderBinaryPath((binary_dir + "/shaderbin/"s+render_platform).c_str());
+			PushTexturePath((source_dir + "/Resources/Textures").c_str());
+		}
+		std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_BUILD_DIR);
+		std::string cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
+		std::string platform_source_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_SOURCE_DIR);
+		if (cmake_binary_dir.length())
+		{
+			std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + GetPathName());
+			PushShaderBinaryPath(((cmake_binary_dir + "/") + GetPathName() + "/shaderbin").c_str());
+			PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
+			PushTexturePath((cmake_source_dir + "/Resources/Textures").c_str());
+		}
+		PushShaderBinaryPath((std::string("shaderbin/") + GetPathName()).c_str());
+
 		initializedDefaultShaderPaths = true;
 	}
 	crossplatform::RenderStateDesc desc;

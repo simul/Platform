@@ -822,10 +822,10 @@ shader vec4 PS_HeightToNormal(posTexVertexOutput IN) : SV_TARGET
 {
 	float me = imageTexture.SampleLevel(wrapSamplerState,IN.texCoords,0).x;
 	vec2 sz	=vec2(texSize.xy);
-	float n =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+float2(0, 2.0/sz.y),0).x;
-	float s =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+float2(0,-2.0/sz.y),0).x;
-	float e =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+float2( 2.0/sz.x,0),0).x;
-	float w =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+float2(-2.0/sz.x,0),0).x;
+	float n =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+vec2(0, 2.0/sz.y),0).x;
+	float s =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+vec2(0,-2.0/sz.y),0).x;
+	float e =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+vec2( 2.0/sz.x,0),0).x;
+	float w =imageTexture.SampleLevel(wrapSamplerState,IN.texCoords+vec2(-2.0/sz.x,0),0).x;
 	
 	// defining starting normal as color has some interesting effects, generally makes this more flexible
 	vec3 norm = vec3(0.5,0.5,1.0);

@@ -17,7 +17,7 @@
 	},
 	"generateSlots": true,
 	"supportMultiview": true,
-	"identicalIOBlocks": true,
+	"identicalIOBlocks": false,
 	"lineDirectiveFilenames": true,
 	"passThroughSamplers": false,
 	"combineTexturesSamplers": true,

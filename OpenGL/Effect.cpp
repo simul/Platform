@@ -571,7 +571,7 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		std::vector<GLchar> infoLog(maxLength);
 		glGetShaderInfoLog(shaderId, maxLength, &maxLength, infoLog.data());
 
-		SIMUL_CERR << "Failed to compile the shader: " << filename_utf8 << "\n";
+		std::cerr<<filename_utf8<<": error: " << "Failed to compile the shader: " << filename_utf8 << "\n";
 		if(infoLog.data() && infoLog.size())			SIMUL_COUT << infoLog.data() << std::endl;
 		SIMUL_BREAK_ONCE("");
 	}
