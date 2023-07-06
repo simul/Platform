@@ -2504,7 +2504,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					regex re("return\\s+(.*);");
 					string ret="{";
 					// CHECK
-					ret += returnName + "=$1;}";
+					ret += returnName + "=$1;return;}";
 					//ret+=returnName+"=$1;return;}";
 					content = std::regex_replace(content, re, ret);
 				}
