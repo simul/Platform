@@ -33,43 +33,10 @@ if(PLATFORM_SUPPORT_D3D12)
 endif()
 
 if(PLATFORM_SUPPORT_VULKAN)
-	target_include_directories(Test_MT PUBLIC "${VULKAN_SDK_DIR}/Include")
+	target_include_directories(Test_MT PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_link_libraries(Test_MT SimulVulkan_MT glfw)
 endif()
 
 if(PLATFORM_SUPPORT_OPENGL)
 	target_link_libraries(Test_MT SimulOpenGL_MT glfw)
-endif()
-
-set( JSON_FILE_D3D12 "${SIMUL_PLATFORM_DIR}/DirectX12/Sfx/DirectX12.json" )
-set( JSON_FILE_VULKAN "${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/Vulkan.json" )
-
-if(PLATFORM_BUILD_MD_LIBS)
-	add_dynamic_executable(Test_MD WIN32 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${shaders} DEFINITIONS ${SAMPLE_USE_APIS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-	target_compile_definitions(Test_MD PRIVATE SIMUL_DYNAMIC_LINK=1 DO_PROFILING=0)
-	target_include_directories(Test_MD PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
-	target_include_directories(Test_MD PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
-	set_target_properties(Test_MD PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-								VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
-	target_link_libraries(Test_MD SimulCrossPlatform_MD SimulMath_MD Core_MD)
-
-	add_sfx_shader_project ( Test_MD ${JSON_FILE_VULKAN} SOURCES ${shaders} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" "${SIMUL_PLATFORM_DIR}/Shaders/SL" "${SIMUL_PLATFORM_DIR}/Vulkan/Sfx" OPTIONS -w OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/shaderbin/Vulkan)
-	add_sfx_shader_project ( Test_MD ${JSON_FILE_D3D12} SOURCES ${shaders} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" "${SIMUL_PLATFORM_DIR}/Shaders/SL" "${SIMUL_PLATFORM_DIR}/DirectX12/Sfx" OPTIONS -w OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/shaderbin/DirectX12)
-
-	if(PLATFORM_SUPPORT_D3D11)
-		target_link_libraries(Test_MD SimulDirectX11_MD)
-	endif()
-
-	if(PLATFORM_SUPPORT_D3D12)
-		target_link_libraries(Test_MD SimulDirectX12_MD)
-	endif()
-
-	if(PLATFORM_SUPPORT_VULKAN)
-		target_include_directories(Test_MD PUBLIC "${VULKAN_SDK_DIR}/Include")
-		target_link_libraries(Test_MD SimulVulkan_MD)
-	endif()
-
-	if(PLATFORM_SUPPORT_OPENGL)
-		target_link_libraries(Test_MD SimulOpenGL_MD)
-	endif()
 endif()

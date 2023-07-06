@@ -40,7 +40,7 @@ if(PLATFORM_WINDOWS)
 	set(MSVC 1)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Od /Ob2 /DNDEBUG /Zi /JMC")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Ob0 /Od /RTC1 /JMC")
-	link_directories(${VULKAN_SDK_DIR}/Lib)
+	#link_directories(${VULKAN_SDK_DIR}/Lib)
 	#Specify C++ 17 in the CMAKE_CXX_FLAGS after project() and before add_subdirectory().
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++${PLATFORM_CPP_VERSION} /Zc:__cplusplus")
 	#message(${CMAKE_CXX_FLAGS})

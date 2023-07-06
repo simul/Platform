@@ -57,18 +57,19 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
     {
         // Handle the CTRL-C signal.
     case CTRL_C_EVENT:
-        printf("Ctrl-C event\n\n");
+		std::cerr<<"Received Ctrl-C event.\n";
+		terminate_command=true;
         return TRUE;
 
         // CTRL-CLOSE: confirm that the user wants to exit.
     case CTRL_CLOSE_EVENT:
-		std::cerr<<("Received Ctrl-Close event.\n");
+		std::cerr<<"Received Ctrl-Close event.\n";
 		terminate_command=true;
         return TRUE;
 
         // Pass other signals to the next handler.
     case CTRL_BREAK_EVENT:
-		std::cerr<<("Received Ctrl-Break event.\n");
+		std::cerr<<"Received Ctrl-Break event.\n";
 		terminate_command=true;
         return FALSE;
 
@@ -77,7 +78,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
 
     case CTRL_SHUTDOWN_EVENT:
-		std::cerr<<("Received Ctrl-Shutdown event.\n");
+		std::cerr<<"Received Ctrl-Shutdown event.\n";
 		terminate_command=true;
         return FALSE;
 

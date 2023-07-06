@@ -56,6 +56,8 @@ namespace platform
 					device->setDebugUtilsObjectNameEXT(nameInfo, d);
 				}
 			}
+			#if 0
+			// TODO: this won't compile if the Vulkan version is too early
 			if(debugMarkerSupported)
 			{
 				vk::DispatchLoaderDynamic d;
@@ -72,6 +74,7 @@ namespace platform
 					device->debugMarkerSetObjectNameEXT(nameInfo, d);
 				}
 			}
+			#endif
 
 			if (platform::core::SimulInternalChecks)
 			{
