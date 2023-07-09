@@ -223,7 +223,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	offscreen_context = glfwCreateWindow(640, 480, "",nullptr,NULL);
 	if (!offscreen_context)
     {
-        SIMUL_CERR << "[ERROR] Coult not create a glfw window \n";
+        SIMUL_CERR << "[ERROR] Could not create a glfw window \n";
         return ;
     }
     glfwSetWindowUserPointer(offscreen_context, this);

@@ -65,7 +65,7 @@ shader void Copy2DFromVideo( uint3 position : SV_DispatchThreadID )
 	float2 texCoords = float2(float(position.x), float(position.y)) / size;
 	vec4 clr = SourceTex2.SampleLevel(YCbCrSampler, texCoords, 0.0);
 #else
-	float3 value = SourceTex2.Load(int3(position.x, position.y, 0)).rgb;
+	vec3 value = SourceTex2.Load(int3(position.x, position.y, 0)).rgb;
 	float Cr = value.r - 0.5;
 	float Cb = value.b - 0.5;
 	float Y1 = value.g;
