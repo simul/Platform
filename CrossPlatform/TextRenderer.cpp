@@ -156,6 +156,13 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		defaultTextHeight=font_texture->length;
 		fontWidth = 0;
 	}
+	SAFE_DELETE(effect);
+	effect=renderPlatform->CreateEffect("font");
+	constantBuffer.LinkToEffect(effect,"TextConstants");
+	backgTech		=effect->GetTechniqueByName("backg");
+	textTech		=effect->GetTechniqueByName("text");
+	textureResource	=effect->GetShaderResource("fontTexture");
+	_fontChars		=effect->GetShaderResource("fontChars");
 }
 
 void TextRenderer::InvalidateDeviceObjects()
@@ -184,14 +191,8 @@ void TextRenderer::RecompileShaders()
 
 void TextRenderer::Recompile()
 {
+	renderPlatform->ScheduleRecompile(effect);
 	recompile = false;
-	SAFE_DELETE(effect);
-	effect=renderPlatform->CreateEffect("font");
-	constantBuffer.LinkToEffect(effect,"TextConstants");
-	backgTech	=effect->GetTechniqueByName("backg");
-	textTech	=effect->GetTechniqueByName("text");
-	textureResource	=effect->GetShaderResource("fontTexture");
-	_fontChars		=effect->GetShaderResource("fontChars");
 }
 
 int TextRenderer::GetDefaultTextHeight() const

@@ -533,6 +533,10 @@ namespace platform
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
 		public:
+			RenderPlatform* GetRenderPlatform()
+			{
+			return renderPlatform;
+			}
 			GroupMap groups;
 			TechniqueMap techniques;
 			TechniqueCharMap techniqueCharMap;
@@ -556,7 +560,7 @@ namespace platform
 			}
 			virtual void InvalidateDeviceObjects();
 			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
-			virtual bool Compile(const char *);
+			virtual bool Recompile();
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{

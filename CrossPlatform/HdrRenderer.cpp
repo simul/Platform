@@ -81,14 +81,6 @@ template<typename t> t max3(t a,t b,t c)
 }
 	static int	threadsPerGroup = 128;
 
-
-void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
-{
-	if (!r)
-		return;
-	r->EnsureEffectIsBuilt("hdr");
-}
-
 void HdrRenderer::RecompileShaders()
 {
 	if(!renderPlatform)

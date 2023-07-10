@@ -33,7 +33,6 @@ namespace platform
 			void RenderWithOculusCorrection(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Draw the debug textures
 			void RenderDebug(GraphicsDeviceContext &deviceContext, int x0, int y0, int w, int h);
-			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			void RecompileShaders();
 		protected:
 			crossplatform::RenderPlatform		*renderPlatform;

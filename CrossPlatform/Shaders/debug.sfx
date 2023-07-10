@@ -48,7 +48,7 @@ void DetectNaNs(vec3 texc, inout vec3 clr)
 	}
 }
 
-#ifdef DEBUG
+#if 1
 #define DETECT_NANS(x,y) DetectNaNs(x,y)
 #else
 #define DETECT_NANS(x,y)

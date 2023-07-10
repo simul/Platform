@@ -355,6 +355,8 @@ namespace platform
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8);
+			/// Asynchronously recompile the effect.
+			void ScheduleRecompile(Effect *effect) ;
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
@@ -419,9 +421,7 @@ namespace platform
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			///
 			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
-			/// This function is called to ensure that the named shader is compiled.
-			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8);
-
+		
 			/// <summary>
 			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
 			/// </summary>
@@ -504,6 +504,9 @@ namespace platform
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
+			static void recompileAsync();
+			bool RecompileEffect(Effect *effect);
+			static void NotifyEffectRecompiled(Effect *effect);
 			void EnsureContextFrameHasBegun(DeviceContext& deviceContext);
 			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
 			virtual void ContextFrameBegin(GraphicsDeviceContext&);

@@ -705,13 +705,13 @@ static bool toBool(string s)
 	SIMUL_CERR<<"Unknown bool "<<s<<std::endl;
 	return false;
 }
-
-bool Effect::Compile(const char *filename_utf8)
-{
-	return EnsureEffect(renderPlatform,filename_utf8);
-}
 #define STRINGIFY(a) STRINGIFY2(a)
 #define STRINGIFY2(a) #a
+
+bool Effect::Recompile()
+{
+	return EnsureEffect(renderPlatform,filename.c_str());
+}
 
 bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
@@ -761,10 +761,9 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				if (platform::core::SimulInternalChecks)
 					cmdLine += " -V";
 				// Includes
-				cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\HLSL;" + sourceCurrentPlatformPath + "\\GLSL;" + sourceCurrentPlatformPath + "\\Sfx;";
-				cmdLine += sourcePlatformPath + "\\Shaders\\SL;";
-				cmdLine += paths[index] + "..\\SL;";
-				cmdLine += +"..\\SL;";
+				cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\Sfx;";
+				cmdLine += sourcePlatformPath + "\\CrossPlatform\\Shaders;";
+				cmdLine += paths[index] ;
 				// include all the shader source paths.
 				const auto& p = r->GetShaderPathsUtf8();
 				for(auto& path : p)
@@ -984,7 +983,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				already = true;
 			}
 			// We now attempt to build the shader from source.
-			Compile(filename_utf8);
+			Recompile();
 			if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 			{
 				binFilenameUtf8 =filename_utf8;

@@ -53,7 +53,6 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 	vulkanGpu = (vk::PhysicalDevice*)ptr[2];
 	immediateContext.platform_context = nullptr;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-	RecompileShaders();
 
 	// Check feature support.
 	renderingFeatures = crossplatform::RenderingFeatures::None;
@@ -144,14 +143,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	ClearReleaseManager();
 
 	vulkanDevice = nullptr;
-}
-
-void RenderPlatform::RecompileShaders()
-{
-	if (!vulkanDevice)
-		return;
-	//shaders.clear();
-	crossplatform::RenderPlatform::RecompileShaders();
 }
 
 vk::Device *RenderPlatform::AsVulkanDevice()
@@ -1774,11 +1765,6 @@ void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceCo
 {
 	crossplatform::RenderPlatform::SetViewports(deviceContext, num, vps);
 }
-
-void RenderPlatform::EnsureEffectIsBuilt(const char *)
-{
-}
-
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {

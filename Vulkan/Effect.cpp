@@ -17,6 +17,10 @@
 #include "Platform/Core/CommandLine.h"
 #include "Platform/Core/EnvironmentVariables.h"
 
+#include <filesystem>
+using namespace std::literals;
+using namespace std::string_literals;
+using namespace std::literals::string_literals;
 using namespace platform;
 using namespace vulkan;
 
@@ -134,15 +138,9 @@ Effect::Effect()
 {
 }
 
-bool Effect::Compile(const char *filename_utf8)
+bool Effect::Recompile()
 {
-	/* SIMUL/Tools/bin/Sfx.exe  -I"SIMUL\Platform\Vulkan\GLSL;SIMUL\Platform\CrossPlatform\SL"
-											-O"SIMUL\Platform\Vulkan\shaderbin"
-												-P"SIMUL\Platform\Vulkan\GLSL\GLSL.json"
-												-m"SIMUL\Platform\Vulkan\shaderbin" 
-												*/
-
-	std::string filename_fx(filename_utf8);
+	std::string filename_fx(filename.c_str());
 	if(filename_fx.find(".")>=filename_fx.length())
 		filename_fx+=".sfx";
 	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
@@ -150,17 +148,16 @@ bool Effect::Compile(const char *filename_utf8)
 	if(index==-2||index>=(int)renderPlatform->GetShaderPathsUtf8().size())
 	{
 		filenameInUseUtf8=filename_fx;
-		SIMUL_CERR<<"Failed to find shader source file "<<filename_utf8<<std::endl;
+		SIMUL_CERR<<"Failed to find shader source file "<<filename.c_str()<<std::endl;
 		return false;
 	}
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
-	//wchar_t wd[1000];
-	//_wgetcwd(wd,1000);
 	std::string shaderbin = renderPlatform->GetShaderBinaryPathsUtf8().back();
-	std::string SIMUL=core::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
+	std::string exe_dir = platform::core::GetExeDirectory();
+	std::string SIMUL= std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
 #ifdef _MSC_VER
-	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";
+	std::string sfxcmd="{SIMUL}/build/bin/Release/Sfx.exe";
 	if (SIMUL == "")
 		SIMUL = "d:/jarvis/releases/simulversion/4.2/simul/"; //Find a better way of fixing this, this is a temp fix
 #else
@@ -186,10 +183,10 @@ Effect::~Effect()
 
 bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-	if (EnsureEffect(r, filename_utf8))
+	//if (EnsureEffect(r, filename_utf8))
 		return crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
+	//else
+	//	return false;
 }
 
 EffectTechnique* Effect::CreateTechnique()

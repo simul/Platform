@@ -37,12 +37,14 @@ using namespace std::literals::string_literals;
 #else
 #include <cmath>		// for isinf()
 #endif
+#include <Platform/Core/CommandLine.h>
 
 using namespace platform;
 using namespace crossplatform;
 
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
-
+std::thread effectCompileThread;
+bool recompileThreadActive=true;
 RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	:mirrorY(false)
 	,mirrorY2(false)
@@ -62,6 +64,9 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 {
 	immediateContext.renderPlatform=this;
 	computeContext.renderPlatform=this;
+
+	if(!effectCompileThread.joinable())
+		effectCompileThread = std::thread(&RenderPlatform::recompileAsync);
 }
 
 RenderPlatform::~RenderPlatform()
@@ -76,6 +81,80 @@ RenderPlatform::~RenderPlatform()
 		delete mat;
 	}
 	materials.clear();
+}
+
+std::vector<Effect*> effectsToCompile;
+void RenderPlatform::recompileAsync()
+{
+	while(recompileThreadActive)
+	{
+		if(!effectsToCompile.size())
+		{
+			Sleep(1000);
+			std::this_thread::yield();
+			continue;
+		}
+		Effect *effect=effectsToCompile[0];
+		effectsToCompile.erase(effectsToCompile.begin());
+		// Do next shader compile.
+		auto *renderPlatform=effect->GetRenderPlatform();
+		if(renderPlatform->RecompileEffect(effect))
+		{
+			NotifyEffectRecompiled(effect);
+		}
+	}
+}
+
+void RenderPlatform::NotifyEffectRecompiled(Effect *effect)
+{
+}
+static bool RewriteOutput(std::string str)
+{
+	std::cerr<<str.c_str();
+	return true;
+}
+
+
+bool RenderPlatform::RecompileEffect(Effect *effect)
+{
+	std::string filename_fx=effect->filename;
+	if(filename_fx.find(".")>=filename_fx.length())
+		filename_fx+=".sfx";
+	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),GetShaderPathsUtf8());
+	std::string filenameInUseUtf8=filename_fx;
+	if(index==-2||index>=(int)GetShaderPathsUtf8().size())
+	{
+		filenameInUseUtf8=filename_fx;
+		SIMUL_CERR<<"Failed to find shader source file "<<effect->filename.c_str()<<std::endl;
+		return false;
+	}
+	else if(index<GetShaderPathsUtf8().size())
+		filenameInUseUtf8=(GetShaderPathsUtf8()[index]+"/")+filename_fx;
+	std::string shaderbin = GetShaderBinaryPathsUtf8().back();
+	std::string exe_dir = platform::core::GetExeDirectory();
+	std::string SIMUL= std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
+#ifdef _MSC_VER
+	std::string sfxcmd="{SIMUL}/build/bin/Release/Sfx.exe";
+#else
+	std::string sfxcmd="{SIMUL}/build/bin/Sfx";
+	if(SIMUL=="")
+		SIMUL="/home/roderick/Documents/Simul/4.2/Simul";
+#endif
+	std::string json_file=GetSfxConfigFilename();
+	std::string command=sfxcmd+" -I\"{SIMUL}/..;{SIMUL};{SIMUL}/Platform/"+std::string(GetName())+"/Sfx;{SIMUL}/Platform/CrossPlatform/Shaders\""
+											" -O\""+shaderbin+"\""
+												" -P\""+json_file+"\""
+												" -m\"" + shaderbin + "\" ";
+	command+=filenameInUseUtf8.c_str();
+	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
+
+	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
+	return platform::core::RunCommandLine(command.c_str(),  cc);
+}
+
+void RenderPlatform::ScheduleRecompile(Effect *effect) 
+{
+	effectsToCompile.push_back(effect);
 }
 
 bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
@@ -248,6 +327,39 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
 		mat->SetEffect(solidEffect);
 	}
+	for (auto s : shaders)
+	{
+		s.second->Release();
+		delete s.second;
+	}
+	shaders.clear();
+	
+	Destroy(debugEffect);
+	
+	debugEffect=CreateEffect("debug");
+
+	Destroy(solidEffect);
+	solidEffect=CreateEffect("solid");
+	
+	Destroy(copyEffect);
+	copyEffect=CreateEffect("copy");
+	
+	Destroy(mipEffect);
+	mipEffect=CreateEffect("mip");
+	
+	textRenderer->RecompileShaders();
+	
+	if(debugEffect)
+	{
+		textured				=debugEffect->GetTechniqueByName("textured");
+		untextured				=debugEffect->GetTechniqueByName("untextured");
+		showVolume				=debugEffect->GetTechniqueByName("show_volume");
+		draw_cubemap_sphere		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
+		volumeTexture			=debugEffect->GetShaderResource("volumeTexture");
+		imageTexture			=debugEffect->GetShaderResource("imageTexture");
+		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
+	}		
+	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -305,26 +417,16 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::RecompileShaders()
 {
-	for (auto s : shaders)
+	ScheduleRecompile(debugEffect);
+/*	for (auto s : shaders)
 	{
 		s.second->Release();
 		delete s.second;
 	}
 	shaders.clear();
-	
-	Destroy(debugEffect);
-	
-	debugEffect=CreateEffect("debug");
-
-	Destroy(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip");
-	
+	solidEffect->Recompile();
+	copyEffect->Recompile();
+	mipEffect->Recompile();
 	
 	textRenderer->RecompileShaders();
 	
@@ -338,7 +440,7 @@ void RenderPlatform::RecompileShaders()
 		imageTexture			=debugEffect->GetShaderResource("imageTexture");
 		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
 	}		
-	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
+	debugConstants.LinkToEffect(debugEffect,"DebugConstants");*/
 	
 }
 
@@ -1720,9 +1822,8 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
-		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
-		delete e;
-		return nullptr;
+		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect will be placeholder.\n", filename_utf8));
+		return e;
 	}
 	return e;
 }
@@ -1788,12 +1889,6 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,con
 	s->load(this,filenameUtf8, (unsigned char*)sfxb_ptr+inline_offset, inline_length, t);
 	shaders[name] = s;
 	return s;
-}
-
-void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8)
-{
-	crossplatform::Effect* e = CreateEffect(filename_utf8);
-	delete e;
 }
 
 void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
