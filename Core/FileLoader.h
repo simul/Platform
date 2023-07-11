@@ -8,7 +8,7 @@ namespace platform
 {
 	namespace core
 	{
-		extern std::string GetExeDirectory();
+		extern std::string PLATFORM_CORE_EXPORT_FN GetExeDirectory();
 		//! An interface to derive from so you can provide your own file load/save functions.
 		//! Use SetFileLoader to define the object that Simul will use for file handling.
 		//! The default is platform::core::DefaultFileLoader, which uses standard file handling.
