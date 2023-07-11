@@ -18,9 +18,17 @@
 #include "Platform/CrossPlatform/AccelerationStructureManager.h"
 #include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Effect.h"
+
+#if PLATFORM_STD_FILESYSTEM==0
+#define SIMUL_FILESYSTEM 0
+#elif PLATFORM_STD_FILESYSTEM==1
+#define SIMUL_FILESYSTEM 1
 #include <filesystem>
+#endif
+
 #include <algorithm>
 #include <array>
+
 using namespace std::literals;
 using namespace std::string_literals;
 using namespace std::literals::string_literals;
@@ -134,6 +142,7 @@ GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
 	ERRNO_BREAK
+	#if SIMUL_FILESYSTEM
 	if (!initializedDefaultShaderPaths)
 	{
 		std::string exe_dir = platform::core::GetExeDirectory();
@@ -170,6 +179,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 
 		initializedDefaultShaderPaths = true;
 	}
+	#endif
+
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -344,6 +355,7 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
 {
+#if SIMUL_FILESYSTEM
 	std::filesystem::path path(path_utf8);
 	std::error_code ec;
 	auto canonical=std::filesystem::weakly_canonical(path,ec);
@@ -352,6 +364,9 @@ void RenderPlatform::PushTexturePath(const char *path_utf8)
 	if (c != '\\' && c != '/')
 		str += '/';
 	texturePathsUtf8.push_back(str);
+#else
+	texturePathsUtf8.push_back(path_utf8);
+#endif
 }
 
 void RenderPlatform::PopTexturePath()
@@ -400,20 +415,28 @@ void RenderPlatform::LatLongTextureToCubemap(DeviceContext &deviceContext,Textur
 
 void RenderPlatform::PushShaderPath(const char *path_utf8)
 {
+#if SIMUL_FILESYSTEM
 	std::string dir = std::filesystem::weakly_canonical(path_utf8).generic_string();
 	char c = dir.back();
 	if (c != '\\' && c != '/')
 		dir += '/';
 	shaderPathsUtf8.push_back(dir+"/");
+#else
+	shaderPathsUtf8.push_back(path_utf8);
+#endif
 }
 void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
 {
+#if SIMUL_FILESYSTEM
 	std::string str = std::filesystem::weakly_canonical(path_utf8).generic_string();
 	char c = str.back();
 	if (c != '\\' && c != '/')
 		str += '/';
 	shaderBinaryPathsUtf8.push_back(str);
 //	SIMUL_COUT << "Shader binary path: " << str.c_str() << std::endl;
+#else
+	shaderBinaryPathsUtf8.push_back(path_utf8);
+#endif
 }
 
 std::vector<std::string> RenderPlatform::GetShaderPathsUtf8()
