@@ -914,7 +914,7 @@ int Compile(ShaderInstance *shader
 			size_t sz=endp - startp;
 			if(!sz)
 			{
-				SFX_BREAK("Empty output binary");
+				SFX_BREAK("Empty output shader "<<tempFilename.c_str());
 				exit(1001);
 			}
 			binaryMap[sbf] = std::make_tuple(startp, sz);
@@ -966,6 +966,11 @@ int Compile(ShaderInstance *shader
 			for(int i=0;!if_c.good()&&i<10000;i++)
 			{
 				Sleep(10);
+			}
+			if(!if_c.good())
+			{
+				std::cerr << "Failed to create binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
+				exit(1);
 			}
 			std::streampos startp=combinedBinary.tellp();
 			combinedBinary << if_c.rdbuf();
