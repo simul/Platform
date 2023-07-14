@@ -1,5 +1,6 @@
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/StringToWString.h"
+#include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/RuntimeError.h"
 #include <iostream>
 #if PLATFORM_STD_FILESYSTEM==1
@@ -36,7 +37,23 @@ std::string platform::core::GetExeDirectory()
     szPath[count] = '\0';
 #endif
 
+	//TODO! Need a better solution. -AJR
+	//This is based on the Local Path in the Visual Studio Project seting,
+	//where the PS5 Standard Debugger maps the Local Path to /app0/.
+	//CMake sets the Local Path (VS_DEBUGGER_WORKING_DIRECTORY) to ${CMAKE_SOURCe_DIR}.
+#ifdef __COMMODORE__
+	std::filesystem::path cmake_binary_dir = PLATFORM_STRING_OF_MACRO(CMAKE_BINARY_DIR);
+	std::filesystem::path cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
+	std::filesystem::path relative_path = cmake_binary_dir.lexically_relative(cmake_source_dir);
+	#ifdef DEBUG
+		return "/app0/" + relative_path.generic_string() + "/bin/Debug/";
+	#else
+		return "/app0/" + relative_path.generic_string() + "/bin/Release/";
+	#endif
+#endif
+
 #if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
+    char szPath[PATH_MAX];
 	std::filesystem::path p=std::filesystem::path{ szPath }.parent_path() / ""; // to finish the folder path with (back)slash
 	return p.string();
 #else

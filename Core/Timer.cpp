@@ -16,7 +16,7 @@ using namespace platform::core;
 #else
 	#define LARGE_INTEGER long
 #endif
-#ifdef __ORBIS__
+#if defined(__ORBIS__) | defined(__COMMODORE__)
 #include <perf.h>
 static uint64_t performanceCounter()
 	{
@@ -69,16 +69,11 @@ Timer::Timer()
 	Oht = OverheadTicks;
 
 #endif
-#ifdef PLAYSTATION_2
-	Control  = SCE_PC0_CPU_CYCLE|SCE_PC_U0;
-	Control |= (SCE_PC1_DCACHE_MISS | SCE_PC_U1);
-	Control |= SCE_PC_CTE;
-#endif
 	StartTime();
 }
 
 Timer::~Timer()
-{          
+{
 }
 
 void Timer::StartTime()
@@ -89,20 +84,11 @@ void Timer::StartTime()
 	LARGE_INTEGER &tStart=*(reinterpret_cast<LARGE_INTEGER*>(&iStart));
 	QueryPerformanceCounter(&tStart);
 #endif
-#ifdef __ORBIS__
+#if defined(__ORBIS__) | defined(__COMMODORE__)
 	iStart=(double)performanceCounter();
 #endif
 }
-#ifdef PLAYSTATION_2
-void AccurateTimer::PS2FrameStart()
-{
-	scePcStart(Control,0,0);
-}
-void AccurateTimer::PS2FrameFinish()
-{
-	scePcStop();
-}
-#endif
+
 float Timer::FinishTime()
 {
 #ifdef _MSC_VER
@@ -115,7 +101,7 @@ float Timer::FinishTime()
 		Time=((float)(tStop.QuadPart-tStart.QuadPart-Oht))/(float)dPerfFreq;
 	TimeSum+=Time;
 #endif
-#ifdef __ORBIS__
+#if defined(__ORBIS__) | defined(__COMMODORE__)
 	iStop=(double)performanceCounter();
 	Time=(float)(1000.0*(double)(iStop-iStart)/(double)performanceFrequency());
 	iStart=iStop;
