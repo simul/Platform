@@ -21,6 +21,9 @@ namespace platform
 		/// The implementing class should keep a list of integer view id's
 		class RenderDelegaterInterface
 		{
+		protected:
+			virtual ~RenderDelegaterInterface() = default;
+
 		public:
 			//! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called. It returns an identifier for that view.
 			virtual int					AddView()=0;
