@@ -140,7 +140,7 @@ void SphereRenderer::DrawLatLongSphere(GraphicsDeviceContext &deviceContext,int 
 	effect->Unapply(deviceContext);
 }
 
-void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour, vec4 fill_colour)
+void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, vec4 fill_colour, bool cheq)
 {
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
@@ -167,7 +167,7 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext,vec3 origin,v
 	effect->SetConstantBuffer(deviceContext,&sphereConstants);
 	if(fill_colour.w>0.0f)
 	{
-		effect->Apply(deviceContext, tech, "chequer");
+        effect->Apply(deviceContext, tech, cheq ? "chequer" : "fill");
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 		renderPlatform->Draw(deviceContext, 4, 0);
 		effect->Unapply(deviceContext);

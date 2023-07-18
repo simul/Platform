@@ -24,8 +24,7 @@ std::string platform::core::GetExeDirectory()
     // Windows specific
     wchar_t szPath[MAX_PATH];
     GetModuleFileNameW( NULL, szPath, MAX_PATH );
-#endif
-
+#else 
 #ifdef UNIX
 #include <linux/limits.h>
     // Linux specific
@@ -34,6 +33,7 @@ std::string platform::core::GetExeDirectory()
     if( count < 0 || count >= PATH_MAX )
         return {}; // some error
     szPath[count] = '\0';
+#endif
 #endif
 
 #if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
