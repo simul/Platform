@@ -25,7 +25,7 @@ std::string platform::core::GetExeDirectory()
     // Windows specific
     wchar_t szPath[MAX_PATH];
     GetModuleFileNameW( NULL, szPath, MAX_PATH );
-#else 
+#endif
 #ifdef UNIX
 #include <linux/limits.h>
     // Linux specific
@@ -34,7 +34,6 @@ std::string platform::core::GetExeDirectory()
     if( count < 0 || count >= PATH_MAX )
         return {}; // some error
     szPath[count] = '\0';
-#endif
 #endif
 
 	//TODO! Need a better solution. -AJR
@@ -53,7 +52,6 @@ std::string platform::core::GetExeDirectory()
 #endif
 
 #if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
-    char szPath[PATH_MAX];
 	std::filesystem::path p=std::filesystem::path{ szPath }.parent_path() / ""; // to finish the folder path with (back)slash
 	return p.string();
 #else
