@@ -267,11 +267,7 @@ void DisplaySurface::StartFrame()
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
-	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
-	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
-		WaitForSingleObject(mWindowEvent, INFINITE);
-	}
+	WaitForAllWorkDone();
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 
