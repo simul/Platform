@@ -216,13 +216,14 @@ namespace platform
 			return a;
 		}
 		
+		//! Structure to describe range of subresources in a Texture/Images for mip levels and array layers.
 		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
 		{
-			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR;
-			uint32_t baseMipLevel = 0;
-			uint32_t mipLevelCount = -1;
-			uint32_t baseArrayLayer = 0;
-			uint32_t arrayLayerCount = -1;
+			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR; //! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
+			uint32_t baseMipLevel = 0;									//! The first mip level in the view.
+			uint32_t mipLevelCount = -1;								//! The number of mip levels, starting from the baseMipLevel, in the view.
+			uint32_t baseArrayLayer = 0;								//! The first array layer in the view.
+			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
 
 			SubresourceRange() = default;
 			SubresourceRange(TextureAspectFlags aspect, uint32_t baseMip, uint32_t mipCount, uint32_t baseLayer, uint32_t layerCount)
@@ -230,12 +231,13 @@ namespace platform
 			SubresourceRange(TextureAspectFlags aspect, int32_t baseMip, int32_t mipCount, int32_t baseLayer, int32_t layerCount)
 				: baseMipLevel((uint32_t)baseMip), mipLevelCount((uint32_t)mipCount), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
 		};
+		//! Structure to describe range of subresources in a Texture/Images for a single mip level and array layers.
 		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceLayers
 		{
-			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR;
-			uint32_t mipLevel = 0;
-			uint32_t baseArrayLayer = 0;
-			uint32_t arrayLayerCount = -1;
+			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR; //! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
+			uint32_t mipLevel = 0;										//! The single mip level in the view.
+			uint32_t baseArrayLayer = 0;								//! The first array layer in the view.
+			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
 
 			SubresourceLayers() = default;
 			SubresourceLayers(TextureAspectFlags aspect, uint32_t mip, uint32_t baseLayer, uint32_t layerCount)
