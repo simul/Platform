@@ -53,7 +53,7 @@ IMGUI_IMPL_API void     ImGui_ImplPlatform_RenderDrawData(platform::crossplatfor
 IMGUI_IMPL_API void     ImGui_ImplPlatform_InvalidateDeviceObjects();
 IMGUI_IMPL_API bool     ImGui_ImplPlatform_CreateDeviceObjects();
 
-IMGUI_IMPL_API void		ImGui_ImplPlatform_RecompileShaders();
+IMGUI_IMPL_API void		ImGui_ImplPlatform_LoadShaders();
 
 //! Set the mouse position and screen size, per-frame.
 IMGUI_IMPL_API void		ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H);

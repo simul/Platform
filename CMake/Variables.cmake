@@ -24,7 +24,8 @@ elseif(PLATFORM_LINUX)
 endif()
 set_property(CACHE PLATFORM_STD_FILESYSTEM PROPERTY STRINGS 0 1 2)
 
-set( VULKAN_SDK_DIR "$ENV{VULKAN_SDK}" CACHE STRING "Set the location of the Vulkan SDK directory." )
+find_package(Vulkan REQUIRED)
+set( VULKAN_SDK_DIR "{Vulkan_INCLUDE_DIR}/.."  )
 set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
 
 set( PLATFORM_DEBUG_DISABLE 0 CACHE STRING "Set disable-level for debugging. Zero for full functionality." )
@@ -80,7 +81,7 @@ else()
 endif()
 
 if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
-	if("${VULKAN_SDK_DIR}" STREQUAL "")
+	if("${Vulkan_INCLUDE_DIR}" STREQUAL "")
 		set(PLATFORM_SUPPORT_VULKAN OFF )
 	else()
 		option(PLATFORM_SUPPORT_VULKAN "" ON)

@@ -57,18 +57,19 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
     {
         // Handle the CTRL-C signal.
     case CTRL_C_EVENT:
-        printf("Ctrl-C event\n\n");
+		std::cerr<<"Received Ctrl-C event.\n";
+		terminate_command=true;
         return TRUE;
 
         // CTRL-CLOSE: confirm that the user wants to exit.
     case CTRL_CLOSE_EVENT:
-		std::cerr<<("Received Ctrl-Close event.\n");
+		std::cerr<<"Received Ctrl-Close event.\n";
 		terminate_command=true;
         return TRUE;
 
         // Pass other signals to the next handler.
     case CTRL_BREAK_EVENT:
-		std::cerr<<("Received Ctrl-Break event.\n");
+		std::cerr<<"Received Ctrl-Break event.\n";
 		terminate_command=true;
         return FALSE;
 
@@ -77,7 +78,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
 
     case CTRL_SHUTDOWN_EVENT:
-		std::cerr<<("Received Ctrl-Shutdown event.\n");
+		std::cerr<<"Received Ctrl-Shutdown event.\n";
 		terminate_command=true;
         return FALSE;
 
@@ -104,10 +105,7 @@ int main(int argc, char** argv)
 	}
 
 	std::string SIMUL=GetEnv("SIMUL");
-	std::string SIMUL_BUILD= "";
 	std::map<std::string, std::string> environment;
-	if (SIMUL_BUILD == "" || SIMUL_BUILD == "1")
-		SIMUL_BUILD = SIMUL;
 	
 	char log[50000];
 	const char **paths=NULL;
@@ -146,10 +144,6 @@ int main(int argc, char** argv)
 				{
 					SIMUL=StripQuotes(arg);
 				}
-				else if (argtype == 'b' || argtype == 'B')
-				{
-					SIMUL_BUILD=StripQuotes(arg);
-				}
 				else if (argtype == 'f' || argtype == 'F')
 					sfxOptions.force = true;
 				else if (argtype == 'v' || argtype == 'V')
@@ -177,8 +171,8 @@ int main(int argc, char** argv)
 				}
 				else if (argtype == 'z')
 					optimization = arg;
-				else if (argtype == 'w')
-					sfxOptions.wrapOutput = true;
+				else if (argtype == 'k')
+					sfxOptions.wrapOutput = false;
 				else
 					args[a++]=argv[i];
 			}

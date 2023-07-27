@@ -33,9 +33,10 @@ namespace platform
 			void RenderWithOculusCorrection(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Draw the debug textures
 			void RenderDebug(GraphicsDeviceContext &deviceContext, int x0, int y0, int w, int h);
-			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			void RecompileShaders();
+			void LoadShaders();
 		protected:
+			void NotifyEffectsRecompiled();
 			crossplatform::RenderPlatform		*renderPlatform;
 			int Width,Height;
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
@@ -45,9 +46,6 @@ namespace platform
 			crossplatform::EffectPass*			exposureGammaMSAAPass;
 			crossplatform::EffectTechnique*		warpExposureGamma;
 			
-			crossplatform::Effect*				m_pGaussianEffect;
-			crossplatform::EffectTechnique*		gaussianRowTechnique;
-			crossplatform::EffectTechnique*		gaussianColTechnique;
 			crossplatform::ShaderResource hdr_effect_imageTexture;
 			crossplatform::ShaderResource hdr_effect_imageTextureMS;
 			crossplatform::ConstantBuffer<HdrConstants>			hdrConstants;

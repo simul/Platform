@@ -56,6 +56,8 @@ namespace platform
 					device->setDebugUtilsObjectNameEXT(nameInfo, d);
 				}
 			}
+			#if 0
+			// TODO: this won't compile if the Vulkan version is too early
 			if(debugMarkerSupported)
 			{
 				vk::DispatchLoaderDynamic d;
@@ -72,6 +74,7 @@ namespace platform
 					device->debugMarkerSetObjectNameEXT(nameInfo, d);
 				}
 			}
+			#endif
 
 			if (platform::core::SimulInternalChecks)
 			{
@@ -171,7 +174,6 @@ namespace platform
 			}
 			void									RestoreDeviceObjects(void*) override;
 			void									InvalidateDeviceObjects() override;
-			void									RecompileShaders() override;
 			void									BeginFrame() override;
 			void									EndFrame() override;
 			void									CopyTexture(crossplatform::DeviceContext& deviceContext, crossplatform::Texture *, crossplatform::Texture *) override;
@@ -212,8 +214,6 @@ namespace platform
 			void									DeactivateRenderTargets(crossplatform::GraphicsDeviceContext& deviceContext) override;
 
 			void									SetViewports(crossplatform::GraphicsDeviceContext &deviceContext,int num,const crossplatform::Viewport *vps) override;
-
-			void									EnsureEffectIsBuilt(const char *filename_utf8) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;
