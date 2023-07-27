@@ -2,8 +2,11 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/Core/RuntimeError.h"
-#define STB_IMAGE_IMPLEMENTATION
+
+//#define STB_IMAGE_IMPLEMENTATION
+
 #include "stb_image.h"
+
 #include <iostream>
 #include <algorithm>
 

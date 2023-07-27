@@ -955,7 +955,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	else if (index < binaryPaths.size())
 		filepathUtf8 = binaryPaths[index];
 
-	binFilenameUtf8 = filepathUtf8 + binFilenameUtf8;
+	binFilenameUtf8 = filepathUtf8 +"/"s+ binFilenameUtf8;
 	platform::core::find_and_replace(binFilenameUtf8,"\\","/");
 	if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{

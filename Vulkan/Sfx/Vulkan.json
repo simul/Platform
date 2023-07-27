@@ -10,7 +10,7 @@
 		}
 	},
 	"api": "Vulkan",
-	"defaultOptions": "",
+	"defaultOptions": "-Os",
 	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",
@@ -47,7 +47,6 @@
 	"namedConstantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
 	"pixelInputDeclaration": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
 	"vertexInputDeclaration": "[layout(location={slot}) in {type} {name};]",
-	"outputDeclarationX": "layout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\nlayout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",

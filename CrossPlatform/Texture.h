@@ -240,10 +240,11 @@ namespace platform
 			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
 
 			SubresourceLayers() = default;
-			SubresourceLayers(TextureAspectFlags aspect, uint32_t mip, uint32_t baseLayer, uint32_t layerCount)
+			SubresourceLayers(TextureAspectFlags aspect, uint32_t mip=0, uint32_t baseLayer=0, uint32_t layerCount= 0xFFFFFFFF)
 				: aspectMask(aspect), mipLevel(mip), baseArrayLayer(baseLayer), arrayLayerCount(layerCount) {}
-			SubresourceLayers(TextureAspectFlags aspect, int32_t mip, int32_t baseLayer, int32_t layerCount)
+			SubresourceLayers(TextureAspectFlags aspect, int32_t mip=0, int32_t baseLayer=0, int32_t layerCount= 0xFFFFFFFF)
 				: aspectMask(aspect), mipLevel((uint32_t)mip), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
+		
 		};
 
 		enum class ShaderResourceType;

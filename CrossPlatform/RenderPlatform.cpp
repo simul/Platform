@@ -33,11 +33,16 @@ using namespace std::literals;
 using namespace std::string_literals;
 using namespace std::literals::string_literals;
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
 #ifdef _MSC_VER
 #define __STDC_LIB_EXT1__
 #endif
-#include "Platform/External/stb/stb_image_write.h"
+
+// Disambiguate stb usage, prevent double-definition errors at link time.
+namespace platform
+{
+	#include "Platform/External/stb/stb_image_write.h"
+}
 #include "Platform/Math/Float16.h"
 
 #ifdef _MSC_VER

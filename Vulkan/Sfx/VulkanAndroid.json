@@ -1,6 +1,7 @@
 {
 	"compiler": {
-		"command": "$VULKAN_SDK/Bin/glslangValidator -V -S {stage}",
+		"command": "glslangValidator -V -S {stage}",
+		"commandPaths": [ "$VULKAN_SDK/Bin/" ],
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",
@@ -15,7 +16,7 @@
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
-	"debugOption": "-g -Od",
+	"debugOption": "-g -Od -gVS",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
@@ -26,7 +27,7 @@
 	"sharedSlots": false,
 	"supportMultiview": true,
 	"lineDirectiveFilenames": true,
-	"passThroughSamplers": false,
+	"passThroughSamplers": true,
 	"combineTexturesSamplers": true,
 	"combineInShader": true,
 	"reverseTexCoordY": false,
@@ -43,12 +44,10 @@
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
 	"structDeclaration": "struct {name}\n{\n[\t{type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]};",
-
-	"inputDeclarationX": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
-	"pixelInputDeclaration": "[layout(location={slot}) in {member_type} {type}{name}{member_name};]",
-
+	"namedConstantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
+	"pixelInputDeclaration": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
 	"vertexInputDeclaration": "[layout(location={slot}) in {type} {name};]",
-	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\n[layout(location ={slot}) out {member_type} {type}{name}{member_name};]",
+	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\nlayout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
@@ -64,7 +63,9 @@
 		"SV_ViewId": "gl_ViewIndex"
 	},
 	"pixelSemantics": {
-		"SV_IsFrontFace": "gl_FrontFacing"
+		"SV_IsFrontFace": "gl_FrontFacing",
+		"SV_ViewID": "gl_ViewIndex",
+		"SV_ViewId": "gl_ViewIndex"
 	},
 	"vertexOutputAssignment": {
 		"SV_POSITION": "gl_Position"
@@ -198,6 +199,8 @@
 		"lerp": "mix",
 		"atan2": "atan",
 		"frac": "fract",
-		"flat": ""
+		"flat": "",
+		"ddx": "dFdx",
+		"ddy": "dFdy"
 	}
 }

@@ -1175,11 +1175,7 @@ bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
 	renderPlatform = r;
 	bool success = true;
-	if (EnsureEffect(r, filename_utf8))
-		success = crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
-
+	success = crossplatform::Effect::Load(r, filename_utf8);
 	// Init the samplers heap:
 	SAFE_DELETE(mSamplersHeap);
 	auto rPlat = (dx12::RenderPlatform*)r;
