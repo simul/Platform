@@ -411,15 +411,6 @@ Effect::Effect()
 {
 }
 
-bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
-{
-	if (EnsureEffect(r, filename_utf8))
-		return crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
-
-}
-
 Effect::~Effect()
 {
 	platform_effect=0;

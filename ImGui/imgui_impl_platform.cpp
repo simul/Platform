@@ -42,6 +42,7 @@ struct ImGui_ImplPlatform_Data
 	RenderPlatform*			renderPlatform = nullptr;
 	Buffer*					pVB = nullptr;
 	Buffer*					pIB = nullptr;
+	bool reload_shaders=false;
 	Effect*					effect = nullptr;
 	EffectPass*				effectPass_testDepth=nullptr;
 	EffectPass*				effectPass_noDepth=nullptr;
@@ -161,6 +162,11 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
 		return;
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if(bd->reload_shaders)
+	{
+		ImGui_ImplPlatform_LoadShaders();
+		bd->reload_shaders=false;
+	}
 	RenderPlatform* renderPlatform = bd->renderPlatform;
 
 	renderPlatform->BeginEvent(deviceContext, "ImGui_ImplPlatform_RenderDrawData");
@@ -520,6 +526,16 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 	SAFE_DELETE(bd->effect);
 	SAFE_DELETE(bd->framebufferTexture);
 }
+void ImGui_ImplPlatform_RecompileShaders()
+{
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if (!bd)
+		return;
+	if(!bd->renderPlatform)
+		return;
+	bd->renderPlatform->ScheduleRecompileEffect("imgui",[bd](){bd->reload_shaders=true;});
+}
+
 void	ImGui_ImplPlatform_LoadShaders()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();

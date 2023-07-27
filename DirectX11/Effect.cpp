@@ -238,19 +238,6 @@ EffectTechnique *Effect::CreateTechnique()
 	return new dx11::EffectTechnique(renderPlatform,this);
 }
 
-bool Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8)
-{
-	renderPlatform=r;
-	if(!renderPlatform)
-		return false;
-
-	if (EnsureEffect(r, filename_utf8))
-		return crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
-
-}
-
 void Effect::PostLoad()
 {
 	// Ensure slots are correct

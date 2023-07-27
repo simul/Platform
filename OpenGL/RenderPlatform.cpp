@@ -987,10 +987,6 @@ void RenderPlatform::SetTopology(crossplatform::GraphicsDeviceContext &,crosspla
 	mCurTopology = toGLTopology(t);
 }
 
-void RenderPlatform::EnsureEffectIsBuilt(const char *)
-{
-}
-
 
 crossplatform::DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {

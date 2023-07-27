@@ -231,14 +231,14 @@ void Text3DRenderer::InvalidateDeviceObjects()
 	fontWidth = 0;
 }
 
-void Text3DRenderer::LoadShaders()
+void Text3DRenderer::RecompileShaders()
 {
 	if (!renderPlatform)
 		return;
-	recompile = true;
+	renderPlatform->ScheduleRecompileEffect("font",[this](){recompile=true;});
 }
 
-void Text3DRenderer::Recompile()
+void Text3DRenderer::LoadShaders()
 {
 	recompile = false;
 	SAFE_DELETE(effect);

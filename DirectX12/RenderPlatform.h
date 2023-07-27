@@ -180,8 +180,6 @@ namespace platform
 			void							RestoreDeviceObjects(void* device);
 			//! Platform-dependent function called when uninitializing the render platform.
 			void							InvalidateDeviceObjects();
-			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
-			void							RecompileShaders();
 			void							SynchronizeCacheAndState(crossplatform::DeviceContext &) override;
 
 			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;

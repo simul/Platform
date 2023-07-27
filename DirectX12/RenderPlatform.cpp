@@ -1072,14 +1072,6 @@ void RenderPlatform::InvalidateDeviceObjects()
     }
 }
 
-void RenderPlatform::RecompileShaders()
-{
-    if (!m12Device)
-        return;
-    shaders.clear();
-    crossplatform::RenderPlatform::RecompileShaders();
-}
-
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, const char *name)
 {
 #if SIMUL_ENABLE_PIX
