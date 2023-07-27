@@ -914,7 +914,8 @@ int Compile(ShaderInstance *shader
 			size_t sz=endp - startp;
 			if(!sz)
 			{
-				SFX_BREAK("Empty output shader "<<tempFilename.c_str());
+				SFX_BREAK("Empty output shader ");
+				std::cerr<<"Empty output shader "<<WStringToUtf8(tempFilename)<<"\n";
 				exit(1001);
 			}
 			binaryMap[sbf] = std::make_tuple(startp, sz);

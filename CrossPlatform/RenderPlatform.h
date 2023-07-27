@@ -214,7 +214,7 @@ namespace platform
 			//! Recompile the shaders asynchronously with Sfx. Shaders will be reloaded when done.
 			void RecompileShaders();
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
-			virtual void LoadShaders	();
+			virtual void LoadShaders();
 			//! Implementations of RenderPlatform will cache the API state in order to reduce driver overhead.
 			//! But we can't always be sure that external render code hasn't modified the API state. So by calling SynchronizeCacheAndState()
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.

@@ -468,6 +468,7 @@ void RenderPlatform::NotifyEffectRecompiled()
 {
 	recompiled=true;
 }
+
 void RenderPlatform::RecompileShaders()
 {
 	ScheduleRecompileEffects({"debug","solid","copy","mip"},[this]{NotifyEffectRecompiled();});

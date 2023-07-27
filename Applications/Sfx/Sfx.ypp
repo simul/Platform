@@ -434,6 +434,7 @@
 
 	void FinalizeFunction(Function& f)
 	{
+	// TODO: if we use GetDimensions on an undeclared texture, we get a confusing error.
 		f.min_parameters = 0;
 		for (auto j : f.parameters)
 		{
