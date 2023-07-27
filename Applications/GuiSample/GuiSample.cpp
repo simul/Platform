@@ -249,7 +249,7 @@ bool CreateDevice(HWND hWnd)
     std::string cmake_source_dir = STRING_OF_MACRO(CMAKE_SOURCE_DIR);
     if (cmake_binary_dir.length())
     {
-        platformRenderer->renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + platformRenderer->renderPlatform->GetPathName() + "/HLSL").c_str());
+        platformRenderer->renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + platformRenderer->renderPlatform->GetPathName() + "/Sfx").c_str());
         platformRenderer->renderPlatform->PushShaderBinaryPath(((cmake_binary_dir + "/") + platformRenderer->renderPlatform->GetPathName() + "/shaderbin").c_str());
         std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + platformRenderer->renderPlatform->GetPathName());
         platformRenderer->renderPlatform->PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());

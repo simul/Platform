@@ -183,7 +183,7 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
-	RecompileShaders();
+	LoadShaders();
 	ERRNO_BREAK
 	SAFE_DELETE(font_texture);
 	font_texture = renderPlatform->CreateTexture("Font16-11.png");
@@ -231,7 +231,7 @@ void Text3DRenderer::InvalidateDeviceObjects()
 	fontWidth = 0;
 }
 
-void Text3DRenderer::RecompileShaders()
+void Text3DRenderer::LoadShaders()
 {
 	if (!renderPlatform)
 		return;

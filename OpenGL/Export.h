@@ -29,7 +29,7 @@
 		#ifdef _DLL
 			#pragma comment(lib,"SimulOpenGL_MD")
 		#else
-			#pragma comment(lib,"SimulOpenGL_MT")
+			#pr agma comment(lib,"SimulOpenGL_MT")
 		#endif
 	#endif
 #endif

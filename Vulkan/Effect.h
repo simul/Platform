@@ -87,7 +87,6 @@ namespace platform
 											Effect();
 			virtual							~Effect();
 			bool							Load(crossplatform::RenderPlatform* r, const char* filename_utf8) override;
-			bool							Recompile() override;
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index) override;
 			void							Reapply(crossplatform::DeviceContext& deviceContext) override;
 			void							Unapply(crossplatform::DeviceContext& deviceContext) override;

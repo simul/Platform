@@ -23,7 +23,7 @@ namespace platform
 			virtual ~SphereRenderer();
 			void RestoreDeviceObjects(RenderPlatform *r);
 			void InvalidateDeviceObjects();
-			void RecompileShaders();
+			void LoadShaders();
 
 			void DrawLatLongSphere			(GraphicsDeviceContext &deviceContext,int lat,int longi,vec3 origin,float sph_radius,vec4 colour);
 			void DrawQuad					(GraphicsDeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,float sph_radius,vec4, vec4 fill_colour = vec4(0.f, 0.f, 0.f, 0.f));

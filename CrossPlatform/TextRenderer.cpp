@@ -111,7 +111,6 @@ TextRenderer::TextRenderer()
 	:effect(NULL)
 	, font_texture(NULL)
 	, renderPlatform(NULL)
-	, recompile(false)
 {
 }
 
@@ -127,8 +126,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
-	RecompileShaders();
-	ERRNO_BREAK
+	LoadShaders();
 	SAFE_DELETE(font_texture);
 	font_texture = renderPlatform->CreateTexture("Font16-11.png");
 	fontWidth = 11;
@@ -156,13 +154,6 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		defaultTextHeight=font_texture->length;
 		fontWidth = 0;
 	}
-	SAFE_DELETE(effect);
-	effect=renderPlatform->CreateEffect("font");
-	constantBuffer.LinkToEffect(effect,"TextConstants");
-	backgTech		=effect->GetTechniqueByName("backg");
-	textTech		=effect->GetTechniqueByName("text");
-	textureResource	=effect->GetShaderResource("fontTexture");
-	_fontChars		=effect->GetShaderResource("fontChars");
 }
 
 void TextRenderer::InvalidateDeviceObjects()
@@ -182,17 +173,25 @@ void TextRenderer::InvalidateDeviceObjects()
 	fontWidth = 0;
 }
 
-void TextRenderer::RecompileShaders()
+void TextRenderer::LoadShaders()
 {
+	SAFE_DELETE(effect);
 	if (!renderPlatform)
 		return;
-	recompile = true;
+	effect=renderPlatform->CreateEffect("font");
+	constantBuffer.LinkToEffect(effect,"TextConstants");
+	backgTech	=effect->GetTechniqueByName("backg");
+	textTech	=effect->GetTechniqueByName("text");
+	textureResource	=effect->GetShaderResource("fontTexture");
+	_fontChars		=effect->GetShaderResource("fontChars");
+	recompiled = false;
 }
 
-void TextRenderer::Recompile()
+void TextRenderer::RecompileShaders()
 {
-	renderPlatform->ScheduleRecompile(effect);
-	recompile = false;
+	if(renderPlatform)
+        renderPlatform->ScheduleRecompileEffect("font", [this]
+                                          { recompiled=true; });
 }
 
 int TextRenderer::GetDefaultTextHeight() const
@@ -203,9 +202,11 @@ int TextRenderer::GetDefaultTextHeight() const
 int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
 	int max_chars = (int)strnlen(txt, 8192);
-
-	if (recompile)
-		Recompile();
+	if (recompiled)
+	{
+		LoadShaders();
+		recompiled=false;
+	}
 	float transp[]={0.f,0.f,0.f,0.f};
 	float white[]={1.f,1.f,1.f,1.f};
 	if(!clr)
@@ -315,9 +316,12 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	SIMUL_ASSERT_WARN(supportShaderViewID, "Graphics API doesn't support SV_ViewID/gl_ViewIndex in the shader. Falling back to single view rendering.");
 
 	int max_chars = (int)strnlen(txt, 8192);
-
-	if (recompile)
-		Recompile();
+	
+	if (recompiled)
+	{
+		LoadShaders();
+		recompiled=false;
+	}
 	float transp[] = { 0.f,0.f,0.f,0.f };
 	float white[] = { 1.f,1.f,1.f,1.f };
 	if (!clr)

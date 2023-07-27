@@ -31,7 +31,7 @@ void SphereRenderer::InvalidateDeviceObjects()
 	delete effect;
 	effect=nullptr;
 }
-void SphereRenderer::RecompileShaders()
+void SphereRenderer::LoadShaders()
 {
 	delete effect;
 	effect=renderPlatform->CreateEffect("sphere");

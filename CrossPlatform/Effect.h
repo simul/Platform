@@ -560,7 +560,6 @@ namespace platform
 			}
 			virtual void InvalidateDeviceObjects();
 			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
-			virtual bool Recompile();
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{
@@ -619,7 +618,9 @@ namespace platform
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
 			//! Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
+			#if 0
 			bool EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
+			#endif
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{

@@ -102,7 +102,6 @@ namespace platform
 			void									SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext, const crossplatform::Buffer *buffer) override;
 			
 			void									SetTopology(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Topology t) override;
-			void									EnsureEffectIsBuilt(const char *filename_utf8) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;

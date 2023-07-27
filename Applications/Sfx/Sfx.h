@@ -153,23 +153,19 @@ struct SfxConfig
 
 struct SfxOptions
 {
-	SfxOptions():force(false)
-		,verbose(false)
-		,debugInfo(false)
-		,disableLineWrites(false)
-		,optimizationLevel(-1)
+	SfxOptions()
 	{
 	}
-	bool force;
-	bool verbose;
-	bool debugInfo;
+	bool force=false;
+	bool verbose=false;
+	bool debugInfo=false;
 	//! If true, the output file will contain all the compiled binaries, with a table to point to their offsets.
-	bool wrapOutput;
+	bool wrapOutput=true;
 	//! If true, #line directives will not be put in, so that compile output will show the line number from the generated file.
-	bool disableLineWrites;
+	bool disableLineWrites=false;
 	std::string intermediateDirectory;
 	std::string outputFile;
-	int optimizationLevel;
+	int optimizationLevel=-1;
 };
 extern const SfxOptions &GetSfxOptions();
 extern std::string ppfile;

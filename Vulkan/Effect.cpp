@@ -138,44 +138,6 @@ Effect::Effect()
 {
 }
 
-bool Effect::Recompile()
-{
-	std::string filename_fx(filename.c_str());
-	if(filename_fx.find(".")>=filename_fx.length())
-		filename_fx+=".sfx";
-	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
-	filenameInUseUtf8=filename_fx;
-	if(index==-2||index>=(int)renderPlatform->GetShaderPathsUtf8().size())
-	{
-		filenameInUseUtf8=filename_fx;
-		SIMUL_CERR<<"Failed to find shader source file "<<filename.c_str()<<std::endl;
-		return false;
-	}
-	else if(index<renderPlatform->GetShaderPathsUtf8().size())
-		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
-	std::string shaderbin = renderPlatform->GetShaderBinaryPathsUtf8().back();
-	std::string exe_dir = platform::core::GetExeDirectory();
-	std::string SIMUL= std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
-#ifdef _MSC_VER
-	std::string sfxcmd="{SIMUL}/build/bin/Release/Sfx.exe";
-	if (SIMUL == "")
-		SIMUL = "d:/jarvis/releases/simulversion/4.2/simul/"; //Find a better way of fixing this, this is a temp fix
-#else
-	std::string sfxcmd="{SIMUL}/build/bin/Sfx";
-	if(SIMUL=="")
-		SIMUL="/home/roderick/Documents/Simul/4.2/Simul";
-#endif
-	std::string command=sfxcmd+" -I\"{SIMUL}/Platform/Vulkan/GLSL;{SIMUL}/Platform/CrossPlatform/SL\""
-											" -O\""+shaderbin+"\""
-												" -P\"{SIMUL}/Platform/Vulkan/GLSL/GLSL.json\""
-												" -m\"" + shaderbin + "\" ";
-	command+=filenameInUseUtf8.c_str();
-	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
-
-	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	return platform::core::RunCommandLine(command.c_str(),  cc);
-}
-
 Effect::~Effect()
 {
 	platform_effect=0;
@@ -183,10 +145,10 @@ Effect::~Effect()
 
 bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-	//if (EnsureEffect(r, filename_utf8))
+	
 		return crossplatform::Effect::Load(r, filename_utf8);
-	//else
-	//	return false;
+	
+
 }
 
 EffectTechnique* Effect::CreateTechnique()

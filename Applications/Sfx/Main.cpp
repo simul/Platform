@@ -105,10 +105,7 @@ int main(int argc, char** argv)
 	}
 
 	std::string SIMUL=GetEnv("SIMUL");
-	std::string SIMUL_BUILD= "";
 	std::map<std::string, std::string> environment;
-	if (SIMUL_BUILD == "" || SIMUL_BUILD == "1")
-		SIMUL_BUILD = SIMUL;
 	
 	char log[50000];
 	const char **paths=NULL;
@@ -147,10 +144,6 @@ int main(int argc, char** argv)
 				{
 					SIMUL=StripQuotes(arg);
 				}
-				else if (argtype == 'b' || argtype == 'B')
-				{
-					SIMUL_BUILD=StripQuotes(arg);
-				}
 				else if (argtype == 'f' || argtype == 'F')
 					sfxOptions.force = true;
 				else if (argtype == 'v' || argtype == 'V')
@@ -178,8 +171,8 @@ int main(int argc, char** argv)
 				}
 				else if (argtype == 'z')
 					optimization = arg;
-				else if (argtype == 'w')
-					sfxOptions.wrapOutput = true;
+				else if (argtype == 'k')
+					sfxOptions.wrapOutput = false;
 				else
 					args[a++]=argv[i];
 			}

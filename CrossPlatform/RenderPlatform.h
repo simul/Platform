@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <functional>
 #include "Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
@@ -155,7 +156,7 @@ namespace platform
 			and /link CreateBuffer buffers/endlink
 
 			Be sure to make the following calls at the appropriate places:
-			RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders()
+			RestoreDeviceObjects(), InvalidateDeviceObjects(), LoadShaders()
 			*/
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
@@ -210,8 +211,10 @@ namespace platform
 			virtual void RestoreDeviceObjects(void*);
 			//! Platform-dependent function called when uninitializing the Render Platform.
 			virtual void InvalidateDeviceObjects();
+			//! Recompile the shaders asynchronously with Sfx. Shaders will be reloaded when done.
+			void RecompileShaders();
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
-			virtual void RecompileShaders	();
+			virtual void LoadShaders	();
 			//! Implementations of RenderPlatform will cache the API state in order to reduce driver overhead.
 			//! But we can't always be sure that external render code hasn't modified the API state. So by calling SynchronizeCacheAndState()
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
@@ -356,7 +359,10 @@ namespace platform
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8);
 			/// Asynchronously recompile the effect.
-			void ScheduleRecompile(Effect *effect) ;
+			void ScheduleRecompileEffect			(std::string effect_name,std::function <void()> f) ;
+			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
+			void ScheduleRecompileEffects			(std::vector<std::string> effect_names,std::function <void()> f);
+			float GetRecompileStatus(std::string &txt);
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
@@ -504,9 +510,19 @@ namespace platform
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
-			static void recompileAsync();
-			bool RecompileEffect(Effect *effect);
-			static void NotifyEffectRecompiled(Effect *effect);
+			struct EffectRecompile
+			{
+				std::string effect_name;
+				std::function <void()> callback;
+			};
+			std::thread effectCompileThread;
+			std::vector<EffectRecompile> effectsToCompile;
+			bool recompileThreadActive=true;
+			bool recompiled=false;
+			static std::atomic<int> numPlatforms;
+			void recompileAsync();
+			bool RecompileEffect(std::string effect_filename);
+			void NotifyEffectRecompiled();
 			void EnsureContextFrameHasBegun(DeviceContext& deviceContext);
 			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
 			virtual void ContextFrameBegin(GraphicsDeviceContext&);
@@ -523,7 +539,7 @@ namespace platform
 			std::vector<std::string> shaderBinaryPathsUtf8;
 			std::map<std::string,SamplerState*> sharedSamplerStates;
 
-			ShaderBuildMode					shaderBuildMode;
+			ShaderBuildMode					shaderBuildMode=ShaderBuildMode::NEVER_BUILD;
 			GraphicsDeviceContext			immediateContext;
 			ComputeDeviceContext			computeContext;
 			// All for debug Effect
@@ -554,7 +570,7 @@ namespace platform
 			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.
-			std::map<std::string, Shader*> shaders;
+			//std::map<std::string, Shader*> shaders;
 			std::unordered_map<const void *,ContextState *> contextState;
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;

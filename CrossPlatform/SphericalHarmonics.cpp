@@ -41,6 +41,17 @@ void SphericalHarmonics::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void SphericalHarmonics::RecompileShaders()
 {
+	renderPlatform->ScheduleRecompileEffects({"spherical_harmonics","light_probes"},[this]{NotifyEffectsRecompiled();});
+}
+
+void SphericalHarmonics::NotifyEffectsRecompiled()
+{
+	SAFE_DESTROY(renderPlatform, sphericalHarmonicsEffect);
+	SAFE_DESTROY(renderPlatform, lightProbesEffect);
+}
+
+void SphericalHarmonics::LoadShaders()
+{
 	if (!renderPlatform)
 		return;
 	SAFE_DESTROY(renderPlatform, sphericalHarmonicsEffect);
@@ -103,7 +114,7 @@ void SphericalHarmonics::CopyMip(GraphicsDeviceContext &deviceContext,Texture *t
 {
 	if (!lightProbesEffect)
 	{
-		RecompileShaders();
+		LoadShaders();
 	}
 	renderPlatform->WaitForFencedResources(deviceContext);
 	lightProbeConstants.alpha = 1.0f-blend;
@@ -193,7 +204,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true,true,nullptr,"sphericalSamples");
 	}
 	if(!sphericalHarmonicsEffect)
-		RecompileShaders();
+		LoadShaders();
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"clear")
 	sphericalHarmonicsConstants.num_bands			=bands;
 	sphericalHarmonicsConstants.numCoefficients		=num_coefficients;
@@ -284,7 +295,7 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 		return;
 	if (!lightProbesEffect)
 	{
-		RecompileShaders();
+		LoadShaders();
 	}
 	if (!lightProbesEffect)
 		return;

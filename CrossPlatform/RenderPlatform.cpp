@@ -43,17 +43,13 @@ using namespace platform;
 using namespace crossplatform;
 
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
-std::thread effectCompileThread;
-bool recompileThreadActive=true;
+std::atomic<int> RenderPlatform::numPlatforms=0;
+
 RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
-	,solidEffect(nullptr)
-	,copyEffect(nullptr)
 	,memoryInterface(m)
-	,shaderBuildMode(NEVER_BUILD)
-	,debugEffect(nullptr)
 	,textured(nullptr)
 	,untextured(nullptr)
 	,showVolume(nullptr)
@@ -64,13 +60,16 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 {
 	immediateContext.renderPlatform=this;
 	computeContext.renderPlatform=this;
-
-	if(!effectCompileThread.joinable())
-		effectCompileThread = std::thread(&RenderPlatform::recompileAsync);
+#if defined(WIN32) && !defined(_GAMING_XBOX)
+	effectCompileThread = std::thread(&RenderPlatform::recompileAsync,this);
+#endif
+	numPlatforms++;
 }
-
 RenderPlatform::~RenderPlatform()
 {
+	numPlatforms--;
+	recompileThreadActive=false;
+	effectCompileThread.join();
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
@@ -83,7 +82,6 @@ RenderPlatform::~RenderPlatform()
 	materials.clear();
 }
 
-std::vector<Effect*> effectsToCompile;
 void RenderPlatform::recompileAsync()
 {
 	while(recompileThreadActive)
@@ -94,20 +92,32 @@ void RenderPlatform::recompileAsync()
 			std::this_thread::yield();
 			continue;
 		}
-		Effect *effect=effectsToCompile[0];
+		std::string effect_name=effectsToCompile[0].effect_name;
+		auto callback=effectsToCompile[0].callback;
 		effectsToCompile.erase(effectsToCompile.begin());
+		if(!effect_name.length())
+			continue;
 		// Do next shader compile.
-		auto *renderPlatform=effect->GetRenderPlatform();
-		if(renderPlatform->RecompileEffect(effect))
+		if(RecompileEffect(effect_name))
 		{
-			NotifyEffectRecompiled(effect);
+			if(recompileThreadActive)
+			{
+				if(callback)
+					callback();
+			}
 		}
 	}
 }
+static std::string recompiling_effect_name;
 
-void RenderPlatform::NotifyEffectRecompiled(Effect *effect)
+float RenderPlatform::GetRecompileStatus(std::string &txt)
 {
+	if(!effectsToCompile.size())
+		return 0.0f;
+	txt=recompiling_effect_name;
+	return (float)effectsToCompile.size();
 }
+
 static bool RewriteOutput(std::string str)
 {
 	std::cerr<<str.c_str();
@@ -115,17 +125,23 @@ static bool RewriteOutput(std::string str)
 }
 
 
-bool RenderPlatform::RecompileEffect(Effect *effect)
+bool RenderPlatform::RecompileEffect(std::string effect_filename)
 {
-	std::string filename_fx=effect->filename;
+#if defined(WIN32) && !defined(_GAMING_XBOX)
+	recompiling_effect_name=effect_filename;
+	std::string filename_fx=effect_filename;
 	if(filename_fx.find(".")>=filename_fx.length())
 		filename_fx+=".sfx";
+	auto buildMode = GetShaderBuildMode();
+	if ((buildMode & crossplatform::BUILD_IF_CHANGED) == 0)
+		return false;
 	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),GetShaderPathsUtf8());
 	std::string filenameInUseUtf8=filename_fx;
 	if(index==-2||index>=(int)GetShaderPathsUtf8().size())
 	{
 		filenameInUseUtf8=filename_fx;
-		SIMUL_CERR<<"Failed to find shader source file "<<effect->filename.c_str()<<std::endl;
+		SIMUL_CERR<<"Failed to find shader source file "<<effect_filename.c_str()<<std::endl;
+		recompiling_effect_name="";
 		return false;
 	}
 	else if(index<GetShaderPathsUtf8().size())
@@ -133,6 +149,7 @@ bool RenderPlatform::RecompileEffect(Effect *effect)
 	std::string shaderbin = GetShaderBinaryPathsUtf8().back();
 	std::string exe_dir = platform::core::GetExeDirectory();
 	std::string SIMUL= std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
+	std::string PLATFORM= std::filesystem::weakly_canonical((exe_dir + "/../../../Platform").c_str()).generic_string();
 #ifdef _MSC_VER
 	std::string sfxcmd="{SIMUL}/build/bin/Release/Sfx.exe";
 #else
@@ -140,21 +157,42 @@ bool RenderPlatform::RecompileEffect(Effect *effect)
 	if(SIMUL=="")
 		SIMUL="/home/roderick/Documents/Simul/4.2/Simul";
 #endif
-	std::string json_file=GetSfxConfigFilename();
-	std::string command=sfxcmd+" -I\"{SIMUL}/..;{SIMUL};{SIMUL}/Platform/"+std::string(GetName())+"/Sfx;{SIMUL}/Platform/CrossPlatform/Shaders\""
+	std::string name=std::string(GetName());
+	std::string json_file=PLATFORM+"/"s+name+"/"s+GetSfxConfigFilename();
+	std::string command=sfxcmd+" -I\"{SIMUL}/..;{SIMUL};{SIMUL}/Platform/"+name+"/Sfx;{SIMUL}/Platform/CrossPlatform/Shaders\""
 											" -O\""+shaderbin+"\""
 												" -P\""+json_file+"\""
-												" -m\"" + shaderbin + "\" ";
-	command+=filenameInUseUtf8.c_str();
+												" -m\"" + shaderbin + "/intermediate\" ";
+	command+= std::string(" -EPLATFORM=") + PLATFORM;
+	if ((buildMode & crossplatform::ALWAYS_BUILD) != 0)
+		command+=" -F";
+	if (platform::core::SimulInternalChecks)
+		command += " -V";
+	command+=" "s+filenameInUseUtf8.c_str();
 	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
 
 	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	return platform::core::RunCommandLine(command.c_str(),  cc);
+	bool result= platform::core::RunCommandLine(command.c_str(),  cc);
+	
+	recompiling_effect_name="";
+	return result;
+#else
+	return false;
+#endif
 }
 
-void RenderPlatform::ScheduleRecompile(Effect *effect) 
+void RenderPlatform::ScheduleRecompileEffects(std::vector<std::string> effect_names,std::function <void()> f)
 {
-	effectsToCompile.push_back(effect);
+	if(!effect_names.size())
+		return;
+	for(size_t i=0;i<effect_names.size()-1;i++)
+		effectsToCompile.push_back({effect_names[i],nullptr});
+	effectsToCompile.push_back({effect_names.back(),f});
+}
+
+void RenderPlatform::ScheduleRecompileEffect(std::string effect_name,std::function <void()> f) 
+{
+	effectsToCompile.push_back({effect_name,f});
 }
 
 bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
@@ -224,14 +262,14 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 			std::string simul_dir = std::filesystem::weakly_canonical((exe_dir + "../../../").c_str()).generic_string();
 			PushShaderPath((simul_dir + "/../").c_str());
 		}
-		std::string local_shader_binary_path = "shaderbin/"s + render_platform;
-		PushShaderBinaryPath(local_shader_binary_path.c_str());
+		//std::string local_shader_binary_path = "shaderbin/"s + render_platform;
+		//PushShaderBinaryPath(local_shader_binary_path.c_str());
 		if (binary_dir.length())
 		{
 			std::string shader_binary_path = binary_dir + "/"s + render_platform + "/shaderbin"s;
 			std::string platform_build_path = binary_dir + "/Platform"s;
 			std::string this_platform_build_path = platform_build_path+"/"s + render_platform;
-			PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
+			//PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
 			PushShaderBinaryPath((binary_dir + "/shaderbin/"s+render_platform).c_str());
 			PushTexturePath((source_dir + "/Resources/Textures").c_str());
 		}
@@ -241,11 +279,11 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		if (cmake_binary_dir.length())
 		{
 			std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + GetPathName());
-			PushShaderBinaryPath(((cmake_binary_dir + "/") + GetPathName() + "/shaderbin").c_str());
-			PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
+			//PushShaderBinaryPath(((cmake_binary_dir + "/") + GetPathName() + "/shaderbin").c_str());
+			//PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
 			PushTexturePath((cmake_source_dir + "/Resources/Textures").c_str());
 		}
-		PushShaderBinaryPath((std::string("shaderbin/") + GetPathName()).c_str());
+		//PushShaderBinaryPath((std::string("shaderbin/") + GetPathName()).c_str());
 
 		initializedDefaultShaderPaths = true;
 	}
@@ -327,12 +365,12 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
 		mat->SetEffect(solidEffect);
 	}
-	for (auto s : shaders)
+/*	for (auto s : shaders)
 	{
 		s.second->Release();
 		delete s.second;
 	}
-	shaders.clear();
+	shaders.clear();*/
 	
 	Destroy(debugEffect);
 	
@@ -347,7 +385,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	Destroy(mipEffect);
 	mipEffect=CreateEffect("mip");
 	
-	textRenderer->RecompileShaders();
+	textRenderer->LoadShaders();
 	
 	if(debugEffect)
 	{
@@ -395,12 +433,12 @@ void RenderPlatform::InvalidateDeviceObjects()
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
 	}
-	for(auto s:shaders)
+	/*for(auto s:shaders)
 	{
 		s.second->Release();
 		delete s.second;
 	}
-	shaders.clear();
+	shaders.clear();*/
 	for(auto s:sharedSamplerStates)
 	{
 		s.second->InvalidateDeviceObjects();
@@ -415,20 +453,38 @@ void RenderPlatform::InvalidateDeviceObjects()
 	last_begin_frame_number=0;
 }
 
+void RenderPlatform::NotifyEffectRecompiled()
+{
+	recompiled=true;
+}
 void RenderPlatform::RecompileShaders()
 {
-	ScheduleRecompile(debugEffect);
+	ScheduleRecompileEffects({"debug","solid","copy","mip"},[this]{NotifyEffectRecompiled();});
+	textRenderer->RecompileShaders();
+}
+
+void RenderPlatform::LoadShaders()
+{
 /*	for (auto s : shaders)
 	{
 		s.second->Release();
 		delete s.second;
 	}
-	shaders.clear();
-	solidEffect->Recompile();
-	copyEffect->Recompile();
-	mipEffect->Recompile();
+	shaders.clear();*/
 	
-	textRenderer->RecompileShaders();
+	Destroy(debugEffect);
+	debugEffect=CreateEffect("debug");
+
+	Destroy(solidEffect);
+	solidEffect=CreateEffect("solid");
+	
+	Destroy(copyEffect);
+	copyEffect=CreateEffect("copy");
+	
+	Destroy(mipEffect);
+	mipEffect=CreateEffect("mip");
+	
+	textRenderer->LoadShaders();
 	
 	if(debugEffect)
 	{
@@ -440,7 +496,7 @@ void RenderPlatform::RecompileShaders()
 		imageTexture			=debugEffect->GetShaderResource("imageTexture");
 		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
 	}		
-	debugConstants.LinkToEffect(debugEffect,"DebugConstants");*/
+	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
 	
 }
 
@@ -605,6 +661,11 @@ void RenderPlatform::BeginFrame()
 	}
 	frameNumber++;
 	frame_started = true;
+	if(recompiled)
+	{
+		LoadShaders();
+		recompiled=false;
+	}
 }
 
 bool RenderPlatform::FrameStarted() const
@@ -1883,11 +1944,11 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, cr
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
 {
 	std::string name(filenameUtf8);
-	if(shaders.find(name) != shaders.end())
-		return shaders[name];
+	//if(shaders.find(name) != shaders.end())
+	//	return shaders[name];
 	Shader *s = CreateShader();
 	s->load(this,filenameUtf8, (unsigned char*)sfxb_ptr+inline_offset, inline_length, t);
-	shaders[name] = s;
+	//shaders[name] = s;
 	return s;
 }
 

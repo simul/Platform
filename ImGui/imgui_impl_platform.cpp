@@ -520,7 +520,7 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 	SAFE_DELETE(bd->effect);
 	SAFE_DELETE(bd->framebufferTexture);
 }
-void	ImGui_ImplPlatform_RecompileShaders()
+void	ImGui_ImplPlatform_LoadShaders()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (!bd)

@@ -707,12 +707,7 @@ static bool toBool(string s)
 }
 #define STRINGIFY(a) STRINGIFY2(a)
 #define STRINGIFY2(a) #a
-
-bool Effect::Recompile()
-{
-	return EnsureEffect(renderPlatform,filename.c_str());
-}
-
+#if 0
 bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
 #if defined(WIN32) && !defined(_GAMING_XBOX)
@@ -933,7 +928,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	return true;
 #endif
 }
-
+#endif
 bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
 	renderPlatform=r;
@@ -982,8 +977,6 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				}
 				already = true;
 			}
-			// We now attempt to build the shader from source.
-			Recompile();
 			if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 			{
 				binFilenameUtf8 =filename_utf8;
