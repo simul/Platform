@@ -336,6 +336,36 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_name.size();
 }
 
+EffectVariantPass *EffectTechnique::AddVariantPass(const char *name)
+{
+	auto vp=std::make_shared<EffectVariantPass>();
+	vp->name=name;
+	variantPasses[name]=vp;
+	return vp.get();
+}
+
+EffectVariantPass *EffectTechnique::GetVariantPass(const char *name)
+{
+	auto i=variantPasses.find(name);
+	if(i==variantPasses.end())
+		return nullptr;
+	return i->second.get();
+}
+
+
+EffectPass* EffectVariantPass::GetPass(const char *shader1,const char *shader2)
+{
+	for(auto i:passes)
+	{
+		vector<string> parts=platform::core::split(i.first,'.');
+		if(parts[1]==shader1)
+		{
+			if(!shader2||parts[2]==shader2)
+				return i.second;
+		}
+	}
+	return nullptr;
+}
 
 EffectPass *EffectTechnique::GetPass(int i) const
 {
@@ -1007,10 +1037,12 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,MISS_SHADERS=5,CALLABLE_SHADERS=5,RAYTRACING_CONFIG=5,TOO_FAR=6
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,VARIANT_PASS=3,PASS=4,LAYOUT=5,HITGROUP=6,MISS_SHADERS=6,CALLABLE_SHADERS=6,RAYTRACING_CONFIG=6,TOO_FAR=7
 	};
 	Level level				=OUTSIDE;
+	bool variant_mode		=false;
 	EffectTechnique *tech	=nullptr;
+	EffectVariantPass *variantPass=nullptr;
 	EffectPass *p			=nullptr;
 	RaytraceHitGroup *hg	=nullptr;
 	crossplatform::LayoutDesc layoutDesc[32];
@@ -1055,7 +1087,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		if(open_brace>=0)
 		{
 			if(level!=HITGROUP || level!=MISS_SHADERS || level!=CALLABLE_SHADERS || level!=RAYTRACING_CONFIG)
+			{
 				level=(Level)(level+1);
+				if(level==VARIANT_PASS&&!variant_mode)
+					level=PASS;
+			}
 		}
 		string word;
 		if(sp >= 0)
@@ -1307,7 +1343,26 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				pass_name=line.substr(sp+1,line.length()-sp-1);
 				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
-				//(((filenameUtf8+".")+tech_name+".")+pass_name).c_str(),0);
+				shaderCount=0;
+				layoutCount=0;
+				layoutOffset=0;
+				layoutSlot=0;
+				passNum++;
+			}
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"variant_pass")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				variantPass=tech->AddVariantPass(pass_name.c_str());
+				variant_mode=true;
+			}
+		}
+		else if (level==VARIANT_PASS)
+		{
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"variant")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
+				variantPass->passes[pass_name]=p;
 				shaderCount=0;
 				layoutCount=0;
 				layoutOffset=0;
@@ -1328,7 +1383,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				desc.alignedByteOffset	=layoutOffset;
 				desc.inputSlot			=layoutSlot;
 				desc.perInstance		=false;
+				// TODO: add semantic name/index to sfxo layouts.
 				desc.semanticName		="";
+				desc.semanticIndex		=0;
 				layoutCount++;
 				layoutOffset			+=GetByteSize(desc.format);
 				layoutSlot++;
@@ -1336,6 +1393,16 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		}
 		else if(level==PASS||level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
 		{
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"variant")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
+				shaderCount=0;
+				layoutCount=0;
+				layoutOffset=0;
+				layoutSlot=0;
+				passNum++;
+			}
 			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
@@ -1752,7 +1819,16 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			if(level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
 				level=PASS;
 			else
+			{
 				level = (Level)(level - 1);
+				if(level==VARIANT_PASS&&!variant_mode)
+					level=TECHNIQUE;
+			}
+			if(level==TECHNIQUE)
+			{
+				variantPass=nullptr;
+				variant_mode=false;
+			}
 			if (level == OUTSIDE)
 				group_name = "";
 		}

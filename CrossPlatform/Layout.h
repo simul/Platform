@@ -26,6 +26,7 @@ namespace platform
 			bool		perInstance;		// otherwise it's per vertex.
 			int			instanceDataStepRate;
 		};
+		extern bool LayoutMatches(const std::vector<LayoutDesc> &desc1,const std::vector<LayoutDesc> &desc2);
 		//! A cross-platform class representing vertex input layouts. Create with RenderPlatform::CreateLayout.
 		class SIMUL_CROSSPLATFORM_EXPORT Layout
 		{
@@ -33,7 +34,7 @@ namespace platform
 			int apply_count=0;
 			int struct_size=0;
 			std::vector<LayoutDesc> parts;
-			Topology topology=Topology::UNDEFINED;
+			//Topology topology=Topology::UNDEFINED;
 			bool interleaved=false;
 		public:
 			Layout();

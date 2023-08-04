@@ -13,7 +13,8 @@ namespace sfx
 			returnType.clear();
 			name.clear();
 			content.clear();
-			parameters.clear();		
+			parameters.clear();
+			variant_parameters.clear();
 			globals.clear();
 			rwTexturesLoaded.clear();
 			localTextures.clear();
@@ -44,6 +45,8 @@ namespace sfx
 		int								min_parameters;
 		//! Passed in from the caller.
 		std::vector<sfxstype::variable> parameters;		
+		//! Passed in from the variant generator.
+		std::vector<sfxstype::variable> variant_parameters;		
 		//! Passed in from the caller.
 		std::vector<sfxstype::variable> locals;		
 		//! Referenced but not passed - must be global.

@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <array>
+#include <fmt/core.h>
 
 using namespace std::literals;
 using namespace std::string_literals;
@@ -101,7 +102,7 @@ void RenderPlatform::recompileAsync()
 	{
 		if(!effectsToCompile.size())
 		{
-			Sleep(1000);
+			std::this_thread::sleep_for(1000ms);
 			std::this_thread::yield();
 			continue;
 		}
@@ -143,7 +144,9 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 #if defined(WIN32) && !defined(_GAMING_XBOX)
 	recompiling_effect_name=effect_filename;
 	std::string filename_fx=effect_filename;
-	if(filename_fx.find(".")>=filename_fx.length())
+	size_t dot_pos=filename_fx.find(".");
+	size_t len=filename_fx.size();
+	if(dot_pos>=len)
 		filename_fx+=".sfx";
 	auto buildMode = GetShaderBuildMode();
 	if ((buildMode & crossplatform::BUILD_IF_CHANGED) == 0)
@@ -162,20 +165,27 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 	std::string shaderbin = GetShaderBinaryPathsUtf8().back();
 	std::string exe_dir = platform::core::GetExeDirectory();
 	std::string SIMUL= std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
-	std::string PLATFORM= std::filesystem::weakly_canonical((exe_dir + "/../../../Platform").c_str()).generic_string();
+	std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(CMAKE_BINARY_DIR);
+	std::string platform_source_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_SOURCE_DIR);
+	auto bin_to_platform=std::filesystem::relative(std::filesystem::path(platform_source_dir),std::filesystem::path(cmake_binary_dir)).generic_string();
+	std::string PLATFORM= std::filesystem::weakly_canonical((exe_dir + "/../../"s+bin_to_platform).c_str()).generic_string();
+	std::string BUILD_DIR= std::filesystem::weakly_canonical((exe_dir + "/../..").c_str()).generic_string();
 #ifdef _MSC_VER
-	std::string sfxcmd="{SIMUL}/build/bin/Release/Sfx.exe";
+	std::string sfxcmd=BUILD_DIR+"/bin/Release/Sfx.exe";
 #else
-	std::string sfxcmd="{SIMUL}/build/bin/Sfx";
-	if(SIMUL=="")
-		SIMUL="/home/roderick/Documents/Simul/4.2/Simul";
+	std::string sfxcmd=BUILD_DIR+"/bin/Sfx";
 #endif
 	std::string name=std::string(GetName());
-	std::string json_file=PLATFORM+"/"s+name+"/"s+GetSfxConfigFilename();
-	std::string command=sfxcmd+" -I\"{SIMUL}/..;{SIMUL};{SIMUL}/Platform/"+name+"/Sfx;{SIMUL}/Platform/CrossPlatform/Shaders\""
-											" -O\""+shaderbin+"\""
-												" -P\""+json_file+"\""
-												" -m\"" + shaderbin + "/intermediate\" ";
+	std::string json_file=PLATFORM+"/"s+GetSfxConfigFilename();
+	std::string this_platform_dir=std::filesystem::path(json_file).parent_path().generic_string();
+	std::string command=sfxcmd+fmt::format(" -I\"{PLATFORM}/../..;{PLATFORM}/..;{PLATFORM};{this_platform_dir};{PLATFORM}/CrossPlatform/Shaders\""
+											" -O\"{shaderbin}\""
+												" -P\"{json_file}\""
+												" -m\"{shaderbin}/intermediate\" "
+												,fmt::arg("PLATFORM", PLATFORM)
+												,fmt::arg("this_platform_dir",this_platform_dir)
+												,fmt::arg("shaderbin", shaderbin)
+												,fmt::arg("json_file", json_file));
 	command+= std::string(" -EPLATFORM=") + PLATFORM;
 	if ((buildMode & crossplatform::ALWAYS_BUILD) != 0)
 		command+=" -F";

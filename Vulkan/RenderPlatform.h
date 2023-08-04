@@ -170,7 +170,7 @@ namespace platform
 			}
 			virtual const char *GetSfxConfigFilename() const override
 			{
-				return "Sfx/Vulkan.json";
+				return "Vulkan/Sfx/Vulkan.json";
 			}
 			void									RestoreDeviceObjects(void*) override;
 			void									InvalidateDeviceObjects() override;

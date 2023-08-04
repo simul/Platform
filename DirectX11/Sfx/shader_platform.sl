@@ -39,41 +39,22 @@
 #endif
 
 #ifndef __cplusplus
-#define char4 snorm float4
-#define vec2 float2
-#define vec3 float3
-#define vec4 float4
-#define uchar4 unorm float4
-#define mat2 float2x2
-#define mat3 float3x3
-#define mat4 float4x4
-#define float16_t min16float
-#define f16vec2 min16float2
-#define f16vec3 min16float3
-#define f16vec4 min16float4
-#define f16mat2 min16float2x2
-#define f16mat3 min16float3x3
-#define f16mat4 min16float4x4
-#define int16_t min16int
-#define i16vec2 min16int2
-#define i16vec3 min16int3
-#define i16vec4 min16int4
-#define uint16_t min16uint
-#define u16vec2 min16uint2
-#define u16vec3 min16uint3
-#define u16vec4 min16uint4
-#define mix lerp
-#define fract frac
-#define layout(a)
-// This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
-// we will pass a dummy SetGeometryShader(a), we should 
-#if PLATFORM_D3D11_SFX
-#define SetRenderTargetFormatState(a) //
-#else
-#define SetRenderTargetFormatState SetGeometryShader
+	#define layout(a)
+	// This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
+	// we will pass a dummy SetGeometryShader(a), we should 
+	#if PLATFORM_D3D11_SFX
+		#define SetRenderTargetFormatState(a) //
+	#else
+		#define SetRenderTargetFormatState SetGeometryShader
+	#endif
+	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
+	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
+	vec2 BottomUpTextureCoordinates(vec2 texc)
+	{
+		return vec2(texc.x,1.0-texc.y);
+	}
+	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 #endif
-#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
-#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
-#endif
+
 
 #endif

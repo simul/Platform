@@ -463,7 +463,7 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 	int mip_length = length;
 	size_t bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
 	size_t i=0;
-			int m=0;
+	int m=0;
 	for (size_t i=0;i<numImages;i++)
 	{
 		if(m==mips)
@@ -472,32 +472,26 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 			mip_length = length;
 			m=0;
 		}
-	//for (size_t m=0;m<numImages;m++)
-	//{
-		//for(size_t a=0;i<totalNum;a++)
-	//	{
-			//i=m*totalNum+a;
-			D3D12_SUBRESOURCE_DATA& textureSubData = textureSubDatas[i];
-			textureSubData.pData = (*upload_data)[i].data();
-			textureSubData.RowPitch = mip_width * bytes_per_pixel;
-			textureSubData.SlicePitch = textureSubData.RowPitch * mip_length;
+		D3D12_SUBRESOURCE_DATA& textureSubData = textureSubDatas[i];
+		textureSubData.pData = (*upload_data)[i].data();
+		textureSubData.RowPitch = mip_width * bytes_per_pixel;
+		textureSubData.SlicePitch = textureSubData.RowPitch * mip_length;
 
-			static int uu = 4;
-			switch (compressionFormat)
-			{
-			case crossplatform::CompressionFormat::BC1:
-			case crossplatform::CompressionFormat::BC3:
-			case crossplatform::CompressionFormat::BC5:
-				textureSubData.RowPitch = bytes_per_pixel * (mip_width / uu);
-				textureSubData.SlicePitch = textureSubData.RowPitch * mip_length / 4;
-				break;
-			default:
-				break;
-			};
-			mip_width = (mip_width + 1) / 2;
-			mip_length = (mip_length + 1) / 2;
-			m++;
-		//}
+		static int uu = 4;
+		switch (compressionFormat)
+		{
+		case crossplatform::CompressionFormat::BC1:
+		case crossplatform::CompressionFormat::BC3:
+		case crossplatform::CompressionFormat::BC5:
+			textureSubData.RowPitch = bytes_per_pixel * (mip_width / uu);
+			textureSubData.SlicePitch = textureSubData.RowPitch * mip_length / 4;
+			break;
+		default:
+			break;
+		};
+		mip_width = (mip_width + 1) / 2;
+		mip_length = (mip_length + 1) / 2;
+		m++;
 	}
 	//renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
 	

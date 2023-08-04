@@ -36,6 +36,8 @@
 	extern int yy_start;
 	static void errSyn(const char *e);
 	void errSem(const string& str, int line=-1);
+	VariantSpec buildVariantSpec;
+	VariantVariableSpec buildVariantVariableSpec;
 	Function buildFunction;
 	Struct buildStruct;
 	RenderTargetFormatState buildrtFormatState;
@@ -580,7 +582,7 @@
 	}
 %}
 
-%token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
+%token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
 %token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
@@ -700,15 +702,15 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
 		string shaderInstanceName		=$2.strs[0];
-		ShaderInstance *cs				=gEffect->m_shaderInstances[$4.strs[0]];
-		ShaderInstance *shaderInstance	=NULL;
+		auto cs				=gEffect->m_shaderInstances[$4.strs[0]];
 		ShaderInstanceMap::iterator i	=gEffect->m_shaderInstances.find(shaderInstanceName);
 		if(i!=gEffect->m_shaderInstances.end())
 		{
-			delete i->second;
+			//delete i->second;
 			// TODO: Warn here about double-compiling a shader.
 		}
-		gEffect->m_shaderInstances[shaderInstanceName]=shaderInstance=cs;
+		cs->names.insert(shaderInstanceName);
+		gEffect->m_shaderInstances[shaderInstanceName]=cs;
 	}
 	| optional_uniform resource_type optional_template_type IDENTIFIER optional_register_semantic ';'
 	{
@@ -883,11 +885,14 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		ostringstream shaderCode,inputs;
 		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
-		GetInputs(inputs,($5.vars));
 		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
 		{
-			buildFunction.parameters.push_back(*it);
+			if((*it).storage=="variant")
+				buildFunction.variant_parameters.push_back(*it);
+			else
+				buildFunction.parameters.push_back(*it);
 		}
+		GetInputs(inputs,&buildFunction.parameters);
 		delete $5.vars;
 		std::string returnType=$2.strs[0];
 		std::string shaderName=$3.strs[0];
@@ -2555,7 +2560,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 // point particleVertexOutput inp[1]
 // and inout TriangleStream<particleGeometryOutput> SpriteStream
 
-// storage is in/out/inout.
+// storage is in/out/inout or, for Sfx, variant.
 // param is a type followed by an identifier.
 // location is a semantic preceded with a colon, e.g. :TEXCOORD0 or :3
 
@@ -2842,7 +2847,7 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 		string vec4text=$5.strs[0];
 		buildPassState.blendState.objectName=blend_name;
 		buildPassState.blendState.sampleMask=$7.unum;
-		// buildPassState.blendState.blendFactor=
+		
 		auto dec=gEffect->GetDeclaration(buildPassState.blendState.objectName);
 		if(dec)
 			dec->ref_count++;
@@ -2858,7 +2863,7 @@ raytrace_shader_def : set_raytrace_shader '=' shader_compile_or_instance ';'
 		$$.strs[0]=$3.strs[0];
 		buildPassState.shaders[$1.sType]=$3.strs[0];
 		// the compiled shader:
-		ShaderInstance *shaderInstance=gEffect->GetShaderInstance($3.strs[0],$1.sType);
+		auto shaderInstance=gEffect->GetShaderInstance($3.strs[0],$1.sType);
 	}
 	| SET_HIT_GROUP IDENTIFIER '{' hit_group_shader_list '}' ';'
 	{
@@ -3005,7 +3010,7 @@ shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
 		}
 		else
 		{
-			ShaderInstance *shaderInstance	=i->second;
+			auto shaderInstance	=i->second;
 	
 			$$.sCommand						=$1.sCommand;
 			$$.sType						=$1.sType;
@@ -3020,8 +3025,120 @@ shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
 			}
 			$$.strs[0]=shaderInstanceName;
 		}
-	};
-
+	} | SHADER_VARIANTS_COMMAND '(' shader_variants_list ')' ';'
+	{
+		string shaderInstanceNames=$3.strs[0];
+		vector<string> shaderInstances;
+		for(const auto i:$3.children)
+		{
+			shaderInstances.push_back(i.strs[0]);
+		}
+		for(auto i:shaderInstances)
+		{
+			ShaderInstanceMap::iterator it=gEffect->m_shaderInstances.find(i);
+			if(it!=gEffect->m_shaderInstances.end())
+			{
+				auto shaderInstance	=it->second;
+				sfx::ShaderType shaderType=$1.sType;
+				shaderInstance->shaderType=shaderType;
+			}
+			else
+			{
+				std::cerr<<"Shader instance not found: "<<i<<"\n";
+			}
+		}
+		if(shaderInstances.size())
+		{
+		shaderInstanceNames=join_vector(shaderInstances,",");
+		}
+		$$.strs[0]=shaderInstanceNames;
+		$$.sCommand						=$1.sCommand;
+		$$.sType						=$1.sType;
+	}
+shader_variants_list: shader_variants_list ',' shader_variant
+	{
+		$$.strs[0]		=($1.strs[0]+",")+$3.strs[0];
+		if($3.children.size())
+		{
+			for(auto i:$3.children)
+				$$.children.push_back(i);
+		}
+		else
+			$$.children.push_back($3);
+		//buildVariantInputs.push_back(buildVariantList);
+	}
+	| shader_variant
+	{
+		$$.strs[0]		=$1.strs[0];
+		$$.children.clear();
+		if($1.children.size())
+		{
+			for(auto i:$1.children)
+				$$.children.push_back(i);
+		}
+		else
+			$$.children.push_back($1);
+		//buildVariantInputs.clear();
+		//buildVariantInputs.push_back(buildVariantList);
+	}
+shader_variant: shader_compile_or_instance optional_variants_values
+{
+	$$.strs[0]		=$1.strs[0];
+	$$.children.clear();
+	if($2.strs[0].length())
+	{
+		std::string baseName=$1.strs[0];
+		std::string vars=$2.strs[0];
+		std::vector<std::string> generatedVariants=gEffect->GenerateShaderInstanceVariants(baseName,buildVariantSpec);
+		if(generatedVariants.size())
+		{
+			for(auto i:generatedVariants)
+			{
+				sfxstype s;
+				s.strs[0]=i;
+				$$.children.push_back(s);
+			}
+		}
+	}
+	$$.strs[1]		=$2.strs[0];
+}
+optional_variants_values: '(' variants_list ')'
+{
+	$$.strs[0]		=$2.strs[0];
+} | %empty
+{
+	$$.strs[0]="";
+}
+variants_list: variants_list ',' variant_values
+{
+	$$.strs[0]		=($1.strs[0]+"_")+$3.strs[0];
+	buildVariantSpec.variableSpecs.push_back(buildVariantVariableSpec);
+	buildVariantVariableSpec.clear();
+} | variant_values
+{
+	$$.strs[0]		=$1.strs[0];
+	buildVariantSpec.clear();
+	buildVariantSpec.variableSpecs.push_back(buildVariantVariableSpec);
+	buildVariantVariableSpec.clear();
+}
+variant_values: '{' variant_values_list '}'
+{
+	$$.strs[0]		=$2.strs[0];
+}
+variant_values_list: variant_values_list ',' variant_value
+{
+	$$.strs[0]		=($1.strs[0]+",")+$3.strs[0];
+	buildVariantVariableSpec.variableOptions.push_back($3.strs[0]);
+} | variant_value
+{
+	$$.strs[0]		=$1.strs[0];
+	buildVariantVariableSpec.clear();
+	buildVariantVariableSpec.variableOptions.push_back($1.strs[0]);
+}
+variant_value: NUM
+{
+	$$.strs[0]=$1.strs[0];
+}
 shader_compile_or_instance : IDENTIFIER
 	{
 	// an identifier for a shader instance could be an existing instance, or just a function name. For the latter, we create a default instance.
@@ -3054,11 +3171,11 @@ shader_compile : CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
 		string declar									=$5.strs[0];
 		if(gEffect->m_shaderInstances.find(vertexShaderName)!=gEffect->m_shaderInstances.end())
 		{
-			ShaderInstance *compiledVertexShader	=gEffect->m_shaderInstances[vertexShaderName];
+			auto compiledVertexShader	=gEffect->m_shaderInstances[vertexShaderName];
 			stringstream ss;
 			ss << vertexShaderName<<"_streamout";
 			// we duplicate the vertex shader that's mentioned:
-			ShaderInstance *compiledStreamOutVertexShader	=new ShaderInstance(*compiledVertexShader);
+			std::shared_ptr<ShaderInstance> compiledStreamOutVertexShader	=std::make_shared<ShaderInstance>(*compiledVertexShader);
 			// slightly modify declaration to match PSSL streamout format:
 			// declar already contains enclosing quotes:
 			find_and_replace(declar,"\"POSITION","\"S_POSITION");
@@ -3080,6 +3197,7 @@ shader_compile : CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
 			string ps4_declar=declar;//QuickFormat("%d,%d,":,stream_num,byte_stride)+declar;
 			compiledStreamOutVertexShader->m_preamble	+=string("\n#pragma argument (gsstream="+ps4_declar+")\n");
 			gEffect->m_shaderInstances[ss.str()]		=compiledStreamOutVertexShader;
+			gEffect->m_uniqueShaderInstances.insert(compiledStreamOutVertexShader);
 			$$.strs[0]									=ss.str();
 		}
 	}
@@ -3090,7 +3208,7 @@ shader_compile : CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
 		string shaderName								=$5.strs[0];
 		string shaderInstanceName						=(shaderName+"Compiled")+profileName;
 		$$.strs[0]										=shaderInstanceName;
-		ShaderInstance *shaderInstance					=NULL;
+		std::shared_ptr<ShaderInstance> shaderInstance;
 		if(gEffect->m_shaderInstances.find(shaderInstanceName)!=gEffect->m_shaderInstances.end())
 			shaderInstance	=gEffect->m_shaderInstances[shaderInstanceName];
 		else

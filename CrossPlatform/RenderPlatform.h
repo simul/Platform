@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <thread>
 #include <functional>
 #include "Export.h"
 #include "Platform/Core/MemoryInterface.h"
@@ -358,8 +359,6 @@ namespace platform
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8);
-			/// Asynchronously recompile the effect.
-			void ScheduleRecompileEffect			(std::string effect_name,std::function <void()> f) ;
 			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
 			void ScheduleRecompileEffects			(std::vector<std::string> effect_names,std::function <void()> f);
 			float GetRecompileStatus(std::string &txt);
@@ -510,6 +509,8 @@ namespace platform
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
+			/// Asynchronously recompile the effect.
+			void ScheduleRecompileEffect			(std::string effect_name,std::function <void()> f) ;
 			struct EffectRecompile
 			{
 				std::string effect_name;

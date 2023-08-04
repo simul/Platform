@@ -63,7 +63,7 @@ typedef struct stat Stat;
 using namespace std;
 typedef std::function<void(const std::string &)> OutputDelegate;
 
-extern bool ShaderInstanceHasSemanic(ShaderInstance* shaderInstance, const char* semantic);
+extern bool ShaderInstanceHasSemantic(std::shared_ptr<ShaderInstance> shaderInstance, const char* semantic);
 
 #if 0
 static std::string WStringToUtf8(const wchar_t *src_w)
@@ -386,14 +386,14 @@ static int nextslash(const std::wstring &str,int pos)
 	return (status);
 }
 
-string FillInVariablesSM51(const string &src,ShaderInstance *shader)
+string FillInVariablesSM51(const string &src,std::shared_ptr<ShaderInstance> shaderInstance)
 {
 	std::regex param_re("\\{shader_model\\}");
 	string ret=src;
-	if (shader)
+	if (shaderInstance)
 	{
 		std::string sm = "";
-		switch (shader->shaderType)
+		switch (shaderInstance->shaderType)
 		{
 		case ShaderType::VERTEX_SHADER:
 			sm = "vs_5_1";
@@ -421,12 +421,12 @@ string FillInVariable(const string &src, const std::string &var,const std::strin
 	return ret;
 }
 
-string FillInVariables(const string &src, ShaderInstance *shader)
+string FillInVariables(const string &src, std::shared_ptr<ShaderInstance> shaderInstance)
 {
 	std::regex param_re("\\{shader_model\\}");
 	string ret = src;
-	if (shader)
-		ret = std::regex_replace(src, param_re, shader->m_profile);
+	if (shaderInstance)
+		ret = std::regex_replace(src, param_re, shaderInstance->m_profile);
 	return ret;
 }
 
@@ -439,7 +439,7 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 	}
 }
 
-wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
+wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
 							wstring tempFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
 {
 	if (sfxConfig.compiler.empty())
@@ -489,11 +489,11 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	string options;
 	if (sfxConfig.forceSM51)
 	{
-		options = FillInVariablesSM51(sfxConfig.defaultOptions, shader);
+		options = FillInVariablesSM51(sfxConfig.defaultOptions, shaderInstance);
 	}
 	else
 	{
-		options = FillInVariables(sfxConfig.defaultOptions, shader);
+		options = FillInVariables(sfxConfig.defaultOptions, shaderInstance);
 	}
 	command += wstring(L" ") + Utf8ToWString(options);
 
@@ -515,9 +515,9 @@ wstring BuildCompileCommand(ShaderInstance *shader,const SfxConfig &sfxConfig,co
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length() && shader->m_profile.find("lib_6_") == std::string::npos)
+	if (sfxConfig.entryPointOption.length() && shaderInstance->m_profile.find("lib_6_") == std::string::npos)
 	{
-		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shader->entryPoint)) + L" ";
+		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shaderInstance->entryPoint)) + L" ";
 	}
 	string filename_root=WStringToString(outputFile);
 	dot_pos=filename_root.find_last_of(".");
@@ -642,7 +642,7 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	return has_errors;
 }
 
-int Compile(ShaderInstance *shader
+int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		,const string &sourceFile
 		,string targetFile
 		,ShaderType t
@@ -661,17 +661,18 @@ int Compile(ShaderInstance *shader
 	int pos=(int)targetFilename.find_last_of(L".");
 	if(pos>=0)
 		targetFilename=targetFilename.substr(0,pos);
-	targetFilename+=L"_"+StringToWString(shader->m_functionName);
-
-	string preamble = "";
+	if(shaderInstance->variantName.size())
+		targetFilename+=L"_"+StringToWString(shaderInstance->variantName);
+	else
+		targetFilename+=L"_"+StringToWString(shaderInstance->m_functionName);
 
 	// Add the preamble:
-	
+	string preamble = "";
 	preamble += sfxConfig.preamble + "\n";
 	if(t==COMPUTE_SHADER)
 		preamble += sfxConfig.computePreamble;
-	
-	// Pssl recognizes the shader type using a suffix to the filename, before the .pssl extension:
+
+	// Pssl recognizes the shaderInstance type using a suffix to the filename, before the .pssl extension:
 	wstring shaderTypeSuffix;
 	switch(t)
 	{
@@ -748,7 +749,7 @@ int Compile(ShaderInstance *shader
 				}
 			};
 
-			std::cout << "Warning: Raytracing shader not supported. Type: " << RTShaderTypeToStr(t) << " Name: " << shader->m_functionName << ".\n";
+			std::cout << "Warning: Raytracing shaderInstance not supported. Type: " << RTShaderTypeToStr(t) << " Name: " << shaderInstance->m_functionName << ".\n";
 			return 1; //Return 1 here, not compiling raytracing shaders is okay.
 		}
 	}
@@ -760,11 +761,11 @@ int Compile(ShaderInstance *shader
 
 	//Check for multiview compatibility
 	bool multiview = false;
-	multiview |= ShaderInstanceHasSemanic(shader, "SV_ViewID");
-	multiview |= ShaderInstanceHasSemanic(shader, "SV_ViewId");
+	multiview |= ShaderInstanceHasSemantic(shaderInstance, "SV_ViewID");
+	multiview |= ShaderInstanceHasSemantic(shaderInstance, "SV_ViewId");
 	if (!sfxConfig.supportMultiview && multiview)
 	{
-		std::cout << "Warning: Multiview shader not supported. Name: " << shader->m_functionName << ".\n";
+		std::cout << "Warning: Multiview shaderInstance not supported. Name: " << shaderInstance->m_functionName << ".\n";
 		return 1; //Return 1 here, not compiling multiview shaders is okay.
 	}
 
@@ -775,7 +776,7 @@ int Compile(ShaderInstance *shader
 		const char* rsSourcePath = fileLoader.FindFileInPathStack(sfxConfig.graphicsRootSignatureSource.c_str(), sfxConfig.shaderPaths);
 		if (!rsSourcePath)
 		{
-			std::cerr << "This platform requires a rootsignature file but no file was found in the shader paths" << std::endl;
+			std::cerr << "This platform requires a rootsignature file but no file was found in the shaderInstance paths" << std::endl;
 			return 0;
 		}
 		std::ifstream rootSrcFile(rsSourcePath);
@@ -808,7 +809,7 @@ int Compile(ShaderInstance *shader
 	size_t lineno=count_lines_in_string(preamble)+1;// add 1 because we're inserting a line into the same file.
 	preamble+=stringFormat("#line %d \"%s\"\n",lineno,tempf.c_str());
 
-	preamble += shader->m_preamble;
+	preamble += shaderInstance->m_preamble;
 
 	if(t==COMPUTE_SHADER)
 	{
@@ -823,10 +824,16 @@ int Compile(ShaderInstance *shader
 		preamble+=" "+i.second;
 		preamble+="\n";
 	}
+	for(auto i:sfxConfig.keywords)
+	{
+		preamble+="#define "+i.first;
+		preamble+=" "+i.second;
+		preamble+="\n";
+	}
 	// Shader source!
 	string src = preamble;
 	src += sharedSource;
-	src+=shader->m_augmentedSource;
+	src+=shaderInstance->m_augmentedSource;
 	ReplaceRegexes(src, sfxConfig.replace);
 	const char *strSrc=src.c_str();
 
@@ -867,18 +874,18 @@ int Compile(ShaderInstance *shader
 	string sbf = WStringToUtf8(outputFile.substr(slash + 1, outputFile.length() - slash - 1).c_str());
 	if (t == FRAGMENT_SHADER)
 	{
-		shader->sbFilenames[pixelOutputFormat] = sbf;
+		shaderInstance->sbFilenames[pixelOutputFormat] = sbf;
 	}
 	else if (t == EXPORT_SHADER)
 	{
-		shader->sbFilenames[1] = sbf;
+		shaderInstance->sbFilenames[1] = sbf;
 	}
 	else
-		shader->sbFilenames[0] = sbf;
+		shaderInstance->sbFilenames[0] = sbf;
 	// Get the compile command
 	wstring compile_command = BuildCompileCommand
 	(
-		shader,
+		shaderInstance,
 		sfxConfig,
 		sfxOptions,
 		targetDir,
@@ -940,7 +947,7 @@ int Compile(ShaderInstance *shader
 		}
 		if (log.str().find("warning") < log_str.length()||log.str().find("Warning") < log_str.length())
 		{
-			std::cerr << (sourceFile).c_str() << "(0): Warning: warnings compiling " << shader->m_functionName.c_str() << std::endl;
+			std::cerr << (sourceFile).c_str() << "(0): Warning: warnings compiling " << shaderInstance->m_functionName.c_str() << std::endl;
 			write_log=true;
 		}
 		if (log_str.find("error") < log_str.length()||log_str.find("Error") < log_str.length())
@@ -989,9 +996,9 @@ int Compile(ShaderInstance *shader
 	}
 	else
 	{
-		std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shader->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
+		std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shaderInstance->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
 		if (sfxOptions.verbose)
-			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shader->m_functionName.c_str()<<std::endl;
+			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shaderInstance->m_functionName.c_str()<<std::endl;
 	}
 
 	return res;

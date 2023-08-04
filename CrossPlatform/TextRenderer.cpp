@@ -190,7 +190,7 @@ void TextRenderer::LoadShaders()
 void TextRenderer::RecompileShaders()
 {
 	if(renderPlatform)
-        renderPlatform->ScheduleRecompileEffect("font", [this]
+        renderPlatform->ScheduleRecompileEffects({"font"}, [this]
                                           { recompiled=true; });
 }
 
