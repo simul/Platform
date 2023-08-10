@@ -34,7 +34,7 @@ endif()
 
 if(PLATFORM_SUPPORT_VULKAN)
 	target_include_directories(Test_MT PUBLIC "${Vulkan_INCLUDE_DIR}")
-	target_link_libraries(Test_MT SimulVulkan_MT glfw)
+	target_link_libraries(Test_MT SimulVulkan_MT glfw ${Vulkan_LIBRARY})
 endif()
 
 if(PLATFORM_SUPPORT_OPENGL)

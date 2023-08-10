@@ -26,7 +26,7 @@ if(PLATFORM_USE_ASSIMP)
 	target_link_libraries( Sample_MT ${ASSIMP_LIBNAME} )
 endif()
 
-add_multiplatform_sfx_shader_project (Sample_MT SOURCES ${shaders} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"  OPTIONS -w OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
+add_multiplatform_sfx_shader_project (Sample_MT SOURCES ${shaders} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"  OPTIONS OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
 
 if(PLATFORM_SUPPORT_ANGLE)
 	if(${SAMPLE_API} MATCHES "SAMPLE_USE_GLES")
