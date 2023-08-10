@@ -8,6 +8,7 @@
 #include <set>
 #include <regex>
 #include <map>
+#include <fmt/core.h>
 
 #ifndef _MSC_VER
 typedef int errno_t;
@@ -44,7 +45,7 @@ void process_member_decl(string &str,string &memberDeclaration)
 	}
 }
 
-bool ShaderInstanceHasSemanic(ShaderInstance* shaderInstance, const char* semantic)
+bool ShaderInstanceHasSemantic(std::shared_ptr<ShaderInstance> shaderInstance, const char* semantic)
 {
 	bool found = false;
 	Function* function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
@@ -504,8 +505,13 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 	}
 	for(ShaderInstanceMap::iterator i=m_shaderInstances.begin();i!=m_shaderInstances.end();i++)
 	{
+		m_uniqueShaderInstances.insert(i->second);
+	}
+	for(auto i=m_uniqueShaderInstances.begin();i!=m_uniqueShaderInstances.end();i++)
+	{
+		std::shared_ptr<ShaderInstance> shaderInstance=(*i);
 	// Hold on, is this even supported?
-		std::string profile_text=i->second->m_profile;
+		std::string profile_text=shaderInstance->m_profile;
 		find_and_replace(profile_text, "ps_", "");
 		find_and_replace(profile_text, "vs_", "");
 		find_and_replace(profile_text, "cs_", "");
@@ -513,11 +519,11 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 		double profile_number=atof(profile_text.c_str());
 		if(profile_number>sfxConfig.maxShaderModel)
 		{
-			std::cout<<"Skipping "<<i->first.c_str()<<" as profile "<<i->second->m_profile.c_str()<<" is not supported.\n";
+			std::cout<<"Skipping "<<shaderInstance->m_functionName.c_str()<<" as profile "<<shaderInstance->m_profile.c_str()<<" is not supported.\n";
 			continue;
 		}
-		ConstructSource(i->second);
-		if(i->second->shaderType==FRAGMENT_SHADER)
+		ConstructSource(shaderInstance.get());
+		if(shaderInstance->shaderType==FRAGMENT_SHADER)
 		{
 			if(sfxConfig.multiplePixelOutputFormats)
 			{
@@ -537,13 +543,17 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 							{
 								continue;
 							}
-							if (pass->HasShader(ShaderType::FRAGMENT_SHADER) && pass->GetShader(ShaderType::FRAGMENT_SHADER) == i->first)
+							if (pass->HasShader(ShaderType::FRAGMENT_SHADER))
 							{
-								// We found a rt format state!
-								rtFormat = declarations[pass->passState.renderTargetFormatState.objectName];
-								// We cache the name so when we save to the SFXO we don't have to search it again
-								i->second->rtFormatStateName = rtFormat->name;
-								break;
+								auto v=pass->GetShaderVariants(ShaderType::FRAGMENT_SHADER);
+								if(shaderInstance->names.find(v[0])!=shaderInstance->names.end())
+								{
+									// We found a rt format state!
+									rtFormat = declarations[pass->passState.renderTargetFormatState.objectName];
+									// We cache the name so when we save to the SFXO we don't have to search it again
+									shaderInstance->rtFormatStateName = rtFormat->name;
+									break;
+								}
 							}
 						}
 						if (rtFormat) { break; }
@@ -554,40 +564,41 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 				// Just output generic formats that we may use
 				if (!rtFormat)
 				{
-					res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,FMT_32_ABGR,sharedCode, sLog,sfxConfig,sfxOptions,fileList ,combinedBinary,binaryMap);
-					res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,FMT_FP16_ABGR,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
-					res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,FMT_UNORM16_ABGR,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
-					res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,FMT_SNORM16_ABGR,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+					res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,FMT_32_ABGR,sharedCode, sLog,sfxConfig,sfxOptions,fileList ,combinedBinary,binaryMap);
+					res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,FMT_FP16_ABGR,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+					res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,FMT_UNORM16_ABGR,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+					res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,FMT_SNORM16_ABGR,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
 				}
 				// We know the output format
 				else
 				{
-					res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,FMT_UNKNOWN,sharedCode,sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap,rtFormat);
+					res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,FMT_UNKNOWN,sharedCode,sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap,rtFormat);
 				}
 			}
 			else
 			{
-				res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,FMT_UNKNOWN,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+				res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,FMT_UNKNOWN,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
 			}
 			if(!res)
 				return 0;
 		}
-		else if(i->second->shaderType==VERTEX_SHADER)
+		else if(shaderInstance->shaderType==VERTEX_SHADER)
 		{
-			res&=Compile(i->second,Filename(),sfxoFilename,VERTEX_SHADER,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+			res&=Compile(shaderInstance,Filename(),sfxoFilename,VERTEX_SHADER,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
 			if(!res)
 				return 0;
-			res&=Compile(i->second,Filename(),sfxoFilename,EXPORT_SHADER,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+			res&=Compile(shaderInstance,Filename(),sfxoFilename,EXPORT_SHADER,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
 			if(!res)
 				return 0;
 		}
-		else if(i->second->shaderType==UNKNOWN_SHADER_TYPE)
+		else if(shaderInstance->shaderType==UNKNOWN_SHADER_TYPE)
 		{
-			std::cerr<<"Warning: shader is not used "<<i->first<<std::endl;
+			//	 TODO: this could be a template shader for variants, and therefore ok not to use it, the variants may be used.
+			//std::cerr<<"Warning: shader is not used "<<shaderInstance->m_functionName<<std::endl;
 		}
 		else
 		{
-			res&=Compile(i->second,Filename(),sfxoFilename,i->second->shaderType,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
+			res&=Compile(shaderInstance,Filename(),sfxoFilename,shaderInstance->shaderType,pixelOutputFormat,sharedCode, sLog,sfxConfig,sfxOptions, fileList, combinedBinary, binaryMap);
 			if(!res)
 				return 0;
 		}
@@ -761,7 +772,7 @@ void Effect::CalculateResourceSlots(ShaderInstance *shaderInstance,set<int> &tex
 	}
 }
 
-ShaderInstance *Effect::AddShaderInstance(const std::string &shaderInstanceName,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno)
+std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &shaderInstanceName,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno)
 {
 	auto i=m_shaderInstances.find(shaderInstanceName);
 	if(i!=m_shaderInstances.end())
@@ -784,7 +795,8 @@ ShaderInstance *Effect::AddShaderInstance(const std::string &shaderInstanceName,
 		declarations.insert(dec);
 	}
 
-	ShaderInstance *shaderInstance=new ShaderInstance(declarations);
+	std::shared_ptr<ShaderInstance> shaderInstance=std::make_shared<ShaderInstance>(declarations);
+	m_uniqueShaderInstances.insert(shaderInstance);
 	m_shaderInstances[shaderInstanceName]	=shaderInstance;
 	
 	if(GetConfig()->entryPointOption.length()>0)
@@ -804,6 +816,70 @@ ShaderInstance *Effect::AddShaderInstance(const std::string &shaderInstanceName,
 	return shaderInstance;
 }
 
+std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::string &baseName,const VariantSpec &variantSpec)
+{
+	std::vector<std::string> variantInstanceNames;
+	std::shared_ptr<ShaderInstance> baseInstance=m_shaderInstances.find(baseName)->second;
+	if(!baseInstance)
+	{
+		std::cerr<<"No base shader instance "<<baseName<<"\n";
+		return variantInstanceNames;
+	}
+	int numVariants=1;
+	for(auto i:variantSpec.variableSpecs)
+	{
+		numVariants*=(int)i.variableOptions.size();
+	}
+    std::vector<int> mul(variantSpec.variableSpecs.size());
+	int last_mul=1;
+	for(int k=0;k<variantSpec.variableSpecs.size();k++)
+	{
+		mul[k]=last_mul;
+		last_mul*=(int)variantSpec.variableSpecs[k].variableOptions.size();
+	}
+	Function *function=gEffect->GetFunction(baseInstance->m_functionName,0);
+	if(!function)
+	{
+		std::cerr<<"No function found: "<<baseInstance->m_functionName<<"\n";
+		return variantInstanceNames;
+	}
+	// each variant has N indices representing which value to use for each variable.
+	for(int i=0;i<numVariants;i++)
+	{
+		// Create a unique instance
+		std::shared_ptr<ShaderInstance> variantInstance=std::make_shared<ShaderInstance>(*baseInstance);
+		//each variant corresponds to a set of indices:
+		variantInstance->variantVariableIndex.resize(variantSpec.variableSpecs.size());
+		for(int j=0;j<variantSpec.variableSpecs.size();j++)
+		{
+			auto &variableSpec=variantSpec.variableSpecs[j];
+			int v=i;
+			int n=v;
+			for(int k=(int)variantSpec.variableSpecs.size()-1;k>=0;k--)
+			{
+				variantInstance->variantVariableIndex[k]=n/mul[k];
+				n-=variantInstance->variantVariableIndex[k]*mul[k];
+			}
+		}
+		std::string variant_spec;
+		std::string variantInstanceName=baseName;
+		for(int k=0;k<variantSpec.variableSpecs.size();k++)
+		{
+			auto this_value=variantSpec.variableSpecs[k].variableOptions[variantInstance->variantVariableIndex[k]];
+			variantInstanceName+="_";
+			variantInstanceName+=this_value;
+			const auto &vp=function->variant_parameters[k];
+			std::string decl=vp.type+" "s+vp.identifier+"="s+this_value+";\n"s;
+			variantInstance->variantDeclarations+=decl;
+		}
+		variantInstance->variantName=variantInstanceName;
+		m_uniqueShaderInstances.insert(variantInstance);
+		m_shaderInstances[variantInstanceName]	=variantInstance;
+		variantInstanceNames.push_back(variantInstanceName);
+	}
+	return variantInstanceNames;
+}
+		
 std::size_t hash(const char *s)
 {
 	size_t len = strlen(s);
@@ -812,7 +888,7 @@ std::size_t hash(const char *s)
 	return h1;
 }
 
-ShaderInstance *Effect::GetShaderInstance(const std::string &instanceName,ShaderType type)
+std::shared_ptr<ShaderInstance> Effect::GetShaderInstance(const std::string &instanceName,ShaderType type)
 {
 	auto s=m_shaderInstances.find(instanceName);
 	if(s!=m_shaderInstances.end())
@@ -937,6 +1013,10 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 		return 0;
 	// Now we will write a sfxo definition file that enumerates all the techniques and their shader filenames.
 	ofstream outstr(sfxoFilename);
+	auto Tab=[this](int tabcount)
+	{
+		return std::string(tabcount, '\t');
+	};
 	outstr<<"SFX:"<<sfxConfig.api<<"\n";
 
 	for (auto b : m_constantBuffers)
@@ -1116,285 +1196,312 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			std::string techName=it->first;
 			const Technique *tech=it->second;
 			outstr<<"\ttechnique "<<techName<<"\n\t{\n";
-			const std::vector< Pass> &passes=tech->GetPasses();
+			const std::vector<Pass> &passes=tech->GetPasses();
 			vector<Pass>::const_iterator j=passes.begin();
 			for(;j!=passes.end();j++)
 			{
 				const Pass *pass=&(*j);
-				string passName=j->name;
-				outstr<<"\t\tpass "<<passName<<"\n\t\t{\n"; 
-				if(pass->passState.rasterizerState.objectName.length()>0)
+				string passName=pass->name;
+				if(pass->GetNumVariants()>1)
+					outstr<<Tab(2)<<"variant_pass "<<passName<<"\n"; 
+				else
+					outstr<<Tab(2)<<"pass "<<passName<<"\n"; 
+				outstr<<Tab(2)<<"{\n";
+				for(int var=0;var<pass->GetNumVariants();var++)
 				{
-					outstr<<"\t\t\trasterizer: "<<pass->passState.rasterizerState.objectName<<"\n";
-				}
-				if (pass->passState.renderTargetFormatState.objectName.length() > 0)
-				{
-					outstr << "\t\t\ttargetformat: " << pass->passState.renderTargetFormatState.objectName << "\n";
-				}
-				if(pass->passState.depthStencilState.objectName.length()>0)
-				{
-					outstr<<"\t\t\tdepthstencil: "<<pass->passState.depthStencilState.objectName<<" "<<pass->passState.depthStencilState.stencilRef<<"\n";
-				}
-				if(pass->passState.blendState.objectName.length()>0)
-				{
-					outstr<<"\t\t\tblend: "<<pass->passState.blendState.objectName<<" (";
-					outstr<<pass->passState.blendState.blendFactor[0]<<",";
-					outstr<<pass->passState.blendState.blendFactor[1]<<",";
-					outstr<<pass->passState.blendState.blendFactor[2]<<",";
-					outstr<<pass->passState.blendState.blendFactor[3]<<") ";
-					outstr<<pass->passState.blendState.sampleMask<<"\n";
-				}
-				if (pass->HasShader(sfx::ShaderType::COMPUTE_SHADER))
-				{
-					const string &shaderInstanceName=pass->GetShader(sfx::ShaderType::COMPUTE_SHADER);
-					ShaderInstance *shaderInstance=GetShaderInstance(shaderInstanceName, sfx::ShaderType::COMPUTE_SHADER);
-					Function* function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
-					outstr << "\t\t\tnumthreads: " << function->numThreads[0] << " " << function->numThreads[1] <<" "<< function->numThreads[2] << "\n";
-				}
-				if(pass->passState.topologyState.apply)
-				{
-					outstr<<"\t\t\ttopology: "<<stringOf(pass->passState.topologyState.topology)<<"\n";
-				}
-				
-				auto writeSb=[&] (ofstream &outstr,ShaderInstance *shaderInstance,const std::string &sbFilename,std::string pfm="")
+					string variantName=pass->GetVariantName(var);
+					int t=3;
+					if(pass->GetNumVariants()>1)
 					{
-						if(!sbFilename.size())
-							return;
-						std::set<int> textureSlots,uavSlots,cbufferSlots,samplerSlots,textureSlotsForSB,uavTextureSlotsForSB;
-						CalculateResourceSlots(shaderInstance,textureSlots,uavSlots,textureSlotsForSB,uavTextureSlotsForSB,cbufferSlots,samplerSlots);
-						outstr<<stringOf((ShaderCommand)shaderInstance->shaderType);
-						if (!shaderInstance->rtFormatStateName.empty())
-						{
-							outstr << "(" << shaderInstance->rtFormatStateName << ")";
-						}
-						else if(shaderInstance->shaderType==FRAGMENT_SHADER&&pfm.length())
-							outstr<<"("<<pfm<<")";
-						outstr << ": " << sbFilename;
-						outstr << "("<<shaderInstance->entryPoint.c_str()<<")";
-						if (sfxOptions.wrapOutput)
-						{
-							if(binaryMap.find(sbFilename)!=binaryMap.end())
-							{
-							// Write the offset and size.
-								std::streampos pos;
-								size_t sz;
-								std::tie(pos, sz) = binaryMap[sbFilename];
-								if((int)pos<0)
-								{
-									SFX_CERR << sbFilename.c_str()<< " has bad entry in binary map."<< std::endl;
-									exit(153);
-								}
-								outstr << " inline:(0x" << std::hex << pos <<",0x"<< sz <<std::dec<<")";
-							}
-							else
-							{
-								SFX_CERR << sbFilename.c_str()<< "wasn't found in the binary map."<< std::endl;
-							}
-
-						}
-						// Print texture slots
-						outstr<<", t:(";
-						for(auto w:textureSlots)
-						{
-							if(w!=*(textureSlots.begin()))
-								outstr<<",";
-							outstr<<GenerateTextureSlot(w,false);
-						}
-						// Print uav slots
-						outstr<<"), u:(";
-						for(auto w:uavSlots)
-						{
-							if(w!=*(uavSlots.begin()))
-								outstr<<",";
-							outstr<<GenerateTextureWriteSlot(w,false);
-						}
-						// Print structured buffer slots
-						outstr<<"), b:(";
-						for(auto w:textureSlotsForSB)
-						{
-							if(w!=*(textureSlotsForSB.begin()))
-								outstr<<",";
-							outstr<<GenerateTextureSlot(w,false);
-						}
-						// Print structured buffer slots
-						outstr<<"), z:(";
-						for(auto w:uavTextureSlotsForSB)
-						{
-							if(w!=*(uavTextureSlotsForSB.begin()))
-								outstr<<",";
-							outstr<<GenerateTextureWriteSlot(w,false);
-						}
-						// Print constant buffer slots
-						outstr<<"), c:(";
-						for(auto w: cbufferSlots)
-						{
-							if(w!=*(cbufferSlots.begin()))
-								outstr<<",";
-							outstr<<GenerateConstantBufferSlot(w,false);
-						}
-						// Print sampler slots
-						outstr<<"), s:(";
-						for(auto w:samplerSlots)
-						{
-							if(w!=*(samplerSlots.begin()))
-								outstr<<",";
-							outstr<<GenerateSamplerSlot(w,false);
-						}
-						outstr<<")\n";
-					};
-				
-				bool multiviewDeclared = false;
-				for(int s=0;s<NUM_OF_SHADER_TYPES;s++)
-				{
-					ShaderType shaderType=(ShaderType)s;
-					if(!pass->HasShader(shaderType))
-						continue;
-					if(shaderType==ShaderType::EXPORT_SHADER)	// either/or.
-						continue;
-
-					if(shaderType==ShaderType::VERTEX_SHADER&&pass->HasShader(GEOMETRY_SHADER))
-						shaderType=EXPORT_SHADER;
-					const string &shaderInstanceName=pass->GetShader(shaderType);
-					ShaderInstance *shaderInstance=GetShaderInstance(shaderInstanceName,shaderType);
-					int vertex_or_export=0;
-					if(shaderType==EXPORT_SHADER)
-						vertex_or_export=1;
-
-					Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
-
-					bool multiview = false;
-					multiview |= ShaderInstanceHasSemanic(shaderInstance, "SV_ViewID");
-					multiview |= ShaderInstanceHasSemanic(shaderInstance, "SV_ViewId");
-					if (multiview && !multiviewDeclared)
-					{
-						outstr << "\t\t\tmultiview: 1\n";
-						multiviewDeclared = true;
+						outstr<<Tab(t)<<"variant "<<variantName<<"\n"; 
+						outstr<<Tab(t)<<"{\n";
+						t++;
 					}
-
-					if(shaderType==VERTEX_SHADER&&function->parameters.size())
+					if(pass->passState.rasterizerState.objectName.length()>0)
 					{
-						outstr<<"\t\t\tlayout:\n";
-						outstr<<"\t\t\t{\n";
-						
-						for(auto p:function->parameters)
+						outstr<<Tab(t)<<"rasterizer: "<<pass->passState.rasterizerState.objectName<<"\n";
+					}
+					if (pass->passState.renderTargetFormatState.objectName.length() > 0)
+					{
+						outstr << Tab(t)<<"targetformat: " << pass->passState.renderTargetFormatState.objectName << "\n";
+					}
+					if(pass->passState.depthStencilState.objectName.length()>0)
+					{
+						outstr<<Tab(t)<<"depthstencil: "<<pass->passState.depthStencilState.objectName<<" "<<pass->passState.depthStencilState.stencilRef<<"\n";
+					}
+					if(pass->passState.blendState.objectName.length()>0)
+					{
+						outstr<<Tab(t)<<"blend: "<<pass->passState.blendState.objectName<<" (";
+						outstr<<pass->passState.blendState.blendFactor[0]<<",";
+						outstr<<pass->passState.blendState.blendFactor[1]<<",";
+						outstr<<pass->passState.blendState.blendFactor[2]<<",";
+						outstr<<pass->passState.blendState.blendFactor[3]<<") ";
+						outstr<<pass->passState.blendState.sampleMask<<"\n";
+					}
+					if (pass->HasShader(sfx::ShaderType::COMPUTE_SHADER))
+					{
+						const string &shaderInstanceName=pass->GetShader(sfx::ShaderType::COMPUTE_SHADER,var);
+						auto shaderInstance=GetShaderInstance(shaderInstanceName, sfx::ShaderType::COMPUTE_SHADER);
+						Function* function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+						outstr << Tab(t)<<"numthreads: " << function->numThreads[0] << " " << function->numThreads[1] <<" "<< function->numThreads[2] << "\n";
+					}
+					if(pass->passState.topologyState.apply)
+					{
+						outstr<<Tab(t)<<"topology: "<<stringOf(pass->passState.topologyState.topology)<<"\n";
+					}
+				
+					auto writeSb=[&] (ofstream &outstr,ShaderInstance *shaderInstance,const std::string &sbFilename,std::string pfm="")
 						{
-							auto D = declarations.find(p.type);
-							Declaration *d=nullptr;
-							if (D != declarations.end())
-								d=D->second;
-							// It is a struct and we are in a vertex shader
-							if (d  && d->declarationType == DeclarationType::STRUCT)
+							if(!sbFilename.size())
+								return;
+							outstr<<Tab(t)<<"";
+							std::set<int> textureSlots,uavSlots,cbufferSlots,samplerSlots,textureSlotsForSB,uavTextureSlotsForSB;
+							CalculateResourceSlots(shaderInstance,textureSlots,uavSlots,textureSlotsForSB,uavTextureSlotsForSB,cbufferSlots,samplerSlots);
+							outstr<<stringOf((ShaderCommand)shaderInstance->shaderType);
+							if (!shaderInstance->rtFormatStateName.empty())
 							{
-								Struct *s=(Struct *)d;
-								if(s)
+								outstr << "(" << shaderInstance->rtFormatStateName << ")";
+							}
+							else if(shaderInstance->shaderType==FRAGMENT_SHADER&&pfm.length())
+								outstr<<"("<<pfm<<")";
+							outstr << ": " << sbFilename;
+							outstr << "("<<shaderInstance->entryPoint.c_str()<<")";
+							if (sfxOptions.wrapOutput)
+							{
+								if(binaryMap.find(sbFilename)!=binaryMap.end())
 								{
-									for(auto m:s->m_structMembers)
+								// Write the offset and size.
+									std::streampos pos;
+									size_t sz;
+									std::tie(pos, sz) = binaryMap[sbFilename];
+									if((int)pos<0)
 									{
-										// ignore automatic semantics.
-										size_t sem_pos=m.semantic.find("SV_");
-										if(sem_pos<m.semantic.length())
-											continue;
-										outstr<<"\t\t\t\t"<<m.type<<" "<<m.name<<";\n";
+										SFX_CERR << sbFilename.c_str()<< " has bad entry in binary map."<< std::endl;
+										exit(153);
+									}
+									outstr << " inline:(0x" << std::hex << pos <<",0x"<< sz <<std::dec<<")";
+								}
+								else
+								{
+									SFX_CERR << sbFilename.c_str()<< "wasn't found in the binary map."<< std::endl;
+								}
+
+							}
+							// Print texture slots
+							outstr<<", t:(";
+							for(auto w:textureSlots)
+							{
+								if(w!=*(textureSlots.begin()))
+									outstr<<",";
+								outstr<<GenerateTextureSlot(w,false);
+							}
+							// Print uav slots
+							outstr<<"), u:(";
+							for(auto w:uavSlots)
+							{
+								if(w!=*(uavSlots.begin()))
+									outstr<<",";
+								outstr<<GenerateTextureWriteSlot(w,false);
+							}
+							// Print structured buffer slots
+							outstr<<"), b:(";
+							for(auto w:textureSlotsForSB)
+							{
+								if(w!=*(textureSlotsForSB.begin()))
+									outstr<<",";
+								outstr<<GenerateTextureSlot(w,false);
+							}
+							// Print structured buffer slots
+							outstr<<"), z:(";
+							for(auto w:uavTextureSlotsForSB)
+							{
+								if(w!=*(uavTextureSlotsForSB.begin()))
+									outstr<<",";
+								outstr<<GenerateTextureWriteSlot(w,false);
+							}
+							// Print constant buffer slots
+							outstr<<"), c:(";
+							for(auto w: cbufferSlots)
+							{
+								if(w!=*(cbufferSlots.begin()))
+									outstr<<",";
+								outstr<<GenerateConstantBufferSlot(w,false);
+							}
+							// Print sampler slots
+							outstr<<"), s:(";
+							for(auto w:samplerSlots)
+							{
+								if(w!=*(samplerSlots.begin()))
+									outstr<<",";
+								outstr<<GenerateSamplerSlot(w,false);
+							}
+							outstr<<")\n";
+						};
+				
+					bool multiviewDeclared = false;
+					for(int s=0;s<NUM_OF_SHADER_TYPES;s++)
+					{
+						ShaderType shaderType=(ShaderType)s;
+						if(!pass->HasShader(shaderType))
+							continue;
+						if(shaderType==ShaderType::EXPORT_SHADER)	// either/or.
+							continue;
+
+						if(shaderType==ShaderType::VERTEX_SHADER&&pass->HasShader(GEOMETRY_SHADER))
+							shaderType=EXPORT_SHADER;
+						const std::vector<string> shaderVariantNames=pass->GetShaderVariants(shaderType);
+						
+						{
+							auto shaderInstance=GetShaderInstance(pass->GetShader(shaderType,var),shaderType);
+							if(!shaderInstance)
+							{
+								std::cerr<<"No shaderInstance found.\n";
+								return false;
+							}
+							int vertex_or_export=0;
+							if(shaderType==EXPORT_SHADER)
+								vertex_or_export=1;
+
+							Function *function = gEffect->GetFunction(shaderInstance->m_functionName, 0);
+
+							bool multiview = false;
+							multiview |= ShaderInstanceHasSemantic(shaderInstance, "SV_ViewID");
+							multiview |= ShaderInstanceHasSemantic(shaderInstance, "SV_ViewId");
+							if (multiview && !multiviewDeclared)
+							{
+								outstr << Tab(t)<<"multiview: 1\n";
+								multiviewDeclared = true;
+							}
+
+							if(shaderType==VERTEX_SHADER&&function->parameters.size())
+							{
+								outstr<<Tab(t)<<"layout:\n";
+								outstr<<Tab(t)<<"{\n";
+						
+								for(auto p:function->parameters)
+								{
+									auto D = declarations.find(p.type);
+									Declaration *d=nullptr;
+									if (D != declarations.end())
+										d=D->second;
+									// It is a struct and we are in a vertex shader
+									if (d  && d->declarationType == DeclarationType::STRUCT)
+									{
+										Struct *s=(Struct *)d;
+										if(s)
+										{
+											for(auto m:s->m_structMembers)
+											{
+												// ignore automatic semantics.
+												size_t sem_pos=m.semantic.find("SV_");
+												if(sem_pos<m.semantic.length())
+													continue;
+												outstr<<Tab(t)<<"\t"<<m.type<<" "<<m.name<<";\n";
+											}
+										}
 									}
 								}
+								outstr<<Tab(t)<<"}\n";
+							}
+							for(auto v=shaderInstance->sbFilenames.begin();v!=shaderInstance->sbFilenames.end();v++)
+							{
+								string sbFilename=v->second;
+								PixelOutputFormat pixelOutputFormat=(PixelOutputFormat)v->first;
+								string pfm=ToString(pixelOutputFormat);
+								if(shaderType==FRAGMENT_SHADER||(int)pixelOutputFormat==vertex_or_export)
+									writeSb(outstr,shaderInstance.get(),sbFilename,pfm);
 							}
 						}
-						outstr<<"\t\t\t}\n";
 					}
-					for(auto v=shaderInstance->sbFilenames.begin();v!=shaderInstance->sbFilenames.end();v++)
-					{
-						string sbFilename=v->second;
-						PixelOutputFormat pixelOutputFormat=(PixelOutputFormat)v->first;
-						string pfm=ToString(pixelOutputFormat);
-						outstr<<"\t\t\t";
-						if(shaderType==FRAGMENT_SHADER||(int)pixelOutputFormat==vertex_or_export)
-							writeSb(outstr,shaderInstance,sbFilename,pfm);
-					}
-				}
 				
-				// If it's raytrace, go through the hitgroups.
-				for(auto h:pass->passState.raytraceHitGroups)
-				{
-					outstr<<"\t\t\thitgroup: "<<h.first<<"\n\t\t\t{\n";
-					if(h.second.closestHit.length())
+					// If it's raytrace, go through the hitgroups.
+					for(auto h:pass->passState.raytraceHitGroups)
 					{
-						ShaderInstance *shaderInstance=GetShaderInstance(h.second.closestHit,CLOSEST_HIT_SHADER);
-						outstr<<"\t\t\t\t";
-						writeSb(outstr,shaderInstance,shaderInstance->sbFilenames[0]);
-					}
-					if(h.second.anyHit.length())
-					{
-						ShaderInstance *shaderInstance=GetShaderInstance(h.second.anyHit,ANY_HIT_SHADER);
-						outstr<<"\t\t\t\t";
-						writeSb(outstr,shaderInstance,shaderInstance->sbFilenames[0]);
-					}
-					if(h.second.intersection.length())
-					{
-						ShaderInstance *shaderInstance=GetShaderInstance(h.second.intersection,INTERSECTION_SHADER);
-						outstr<<"\t\t\t\t";
-						writeSb(outstr,shaderInstance,shaderInstance->sbFilenames[0]);
-					}
-					outstr<<"\t\t\t}\n";
-				}
-
-				//If it's raytrace, go through the miss shaders.
-				if (!pass->passState.missShaders.empty())
-				{
-					outstr << "\t\t\tMissShaders:" << "\n\t\t\t{\n";
-					for (auto m : pass->passState.missShaders)
-					{
-						if (m.length())
+						outstr<<Tab(t)<<"hitgroup: "<<h.first<<"\n\t\t\t{\n";
+						if(h.second.closestHit.length())
 						{
-							ShaderInstance* shaderInstance = GetShaderInstance(m, MISS_SHADER);
-							outstr << "\t\t\t\t";
-							writeSb(outstr, shaderInstance, shaderInstance->sbFilenames[0]);
+							auto shaderInstance=GetShaderInstance(h.second.closestHit,CLOSEST_HIT_SHADER);
+							outstr<<Tab(t)<<"\t";
+							writeSb(outstr,shaderInstance.get(),shaderInstance->sbFilenames[0]);
 						}
-					}
-					outstr << "\t\t\t}\n";
-				}
-
-				//If it's raytrace, go through the callable shaders.
-				if (!pass->passState.callableShaders.empty())
-				{
-					outstr << "\t\t\tCallableShaders:" << "\n\t\t\t{\n";
-					for (auto c : pass->passState.callableShaders)
-					{
-						if (c.length())
+						if(h.second.anyHit.length())
 						{
-							ShaderInstance* shaderInstance = GetShaderInstance(c, CALLABLE_SHADER);
-							outstr << "\t\t\t\t";
-							writeSb(outstr, shaderInstance, shaderInstance->sbFilenames[0]);
+							auto shaderInstance=GetShaderInstance(h.second.anyHit,ANY_HIT_SHADER);
+							outstr<<Tab(t)<<"\t";
+							writeSb(outstr,shaderInstance.get(),shaderInstance->sbFilenames[0]);
 						}
+						if(h.second.intersection.length())
+						{
+							auto shaderInstance=GetShaderInstance(h.second.intersection,INTERSECTION_SHADER);
+							outstr<<Tab(t)<<"\t";
+							writeSb(outstr,shaderInstance.get(),shaderInstance->sbFilenames[0]);
+						}
+						outstr<<Tab(t)<<"}\n";
 					}
-					outstr << "\t\t\t}\n";
-				}
 
-				//If it's raytrace, define the Shader and Pipeline configs
-				if (!pass->passState.raytraceHitGroups.empty())
-				{
-					//---RayTracingShaderConfig---
-					outstr << "\t\t\tRayTracingShaderConfig:" << "\n\t\t\t{\n";
+					//If it's raytrace, go through the miss shaders.
+					if (!pass->passState.missShaders.empty())
+					{
+						outstr << Tab(t)<<"MissShaders:" << "\n\t\t\t{\n";
+						for (auto m : pass->passState.missShaders)
+						{
+							if (m.length())
+							{
+								auto shaderInstance = GetShaderInstance(m, MISS_SHADER);
+								outstr << Tab(t)<<"\t";
+								writeSb(outstr, shaderInstance.get(), shaderInstance->sbFilenames[0]);
+							}
+						}
+						outstr << Tab(t)<<"}\n";
+					}
+
+					//If it's raytrace, go through the callable shaders.
+					if (!pass->passState.callableShaders.empty())
+					{
+						outstr << Tab(t)<<"CallableShaders:" << "\n\t\t\t{\n";
+						for (auto c : pass->passState.callableShaders)
+						{
+							if (c.length())
+							{
+								auto shaderInstance = GetShaderInstance(c, CALLABLE_SHADER);
+								outstr << Tab(t)<<"\t";
+								writeSb(outstr, shaderInstance.get(), shaderInstance->sbFilenames[0]);
+							}
+						}
+						outstr << Tab(t)<<"}\n";
+					}
+
+					//If it's raytrace, define the Shader and Pipeline configs
+					if (!pass->passState.raytraceHitGroups.empty())
+					{
+						//---RayTracingShaderConfig---
+						outstr << Tab(t)<<"RayTracingShaderConfig:" << "\n\t\t\t{\n";
 					
-					//Default is sizeof(float) * 8.
-					int maxPayloadSize = pass->passState.maxPayloadSize != 0 ? pass->passState.maxPayloadSize : 32; 
-					outstr << "\t\t\t\t" << "MaxPayloadSize: " << std::to_string(maxPayloadSize) << "\n";
+						//Default is sizeof(float) * 8.
+						int maxPayloadSize = pass->passState.maxPayloadSize != 0 ? pass->passState.maxPayloadSize : 32; 
+						outstr << Tab(t)<<"\t" << "MaxPayloadSize: " << std::to_string(maxPayloadSize) << "\n";
 
-					//Default is sizeof(BuiltInTriangleIntersectionAttributes).
-					int maxAttributeSize = pass->passState.maxAttributeSize != 0 ? pass->passState.maxAttributeSize : 8; 
-					outstr << "\t\t\t\t" << "MaxAttributeSize: " << std::to_string(maxAttributeSize) << "\n";
+						//Default is sizeof(BuiltInTriangleIntersectionAttributes).
+						int maxAttributeSize = pass->passState.maxAttributeSize != 0 ? pass->passState.maxAttributeSize : 8; 
+						outstr << Tab(t)<<"\t" << "MaxAttributeSize: " << std::to_string(maxAttributeSize) << "\n";
 
-					outstr << "\t\t\t}\n";
+						outstr << Tab(t)<<"}\n";
 					
-					//---RayTracingPipelineConfig---
-					outstr << "\t\t\tRayTracingPipelineConfig:" << "\n\t\t\t{\n";
+						//---RayTracingPipelineConfig---
+						outstr << Tab(t)<<"RayTracingPipelineConfig:" << "\n\t\t\t{\n";
 
-					//Default is 2 for inital hit and shadow.
-					int maxTraceRecursionDepth = pass->passState.maxTraceRecursionDepth != 0 ? pass->passState.maxTraceRecursionDepth : 2; 
-					outstr << "\t\t\t\t" << "MaxTraceRecursionDepth: " << std::to_string(maxTraceRecursionDepth) << "\n";
+						//Default is 2 for inital hit and shadow.
+						int maxTraceRecursionDepth = pass->passState.maxTraceRecursionDepth != 0 ? pass->passState.maxTraceRecursionDepth : 2; 
+						outstr << Tab(t)<<"\t" << "MaxTraceRecursionDepth: " << std::to_string(maxTraceRecursionDepth) << "\n";
 
-					outstr << "\t\t\t}\n";
+						outstr << Tab(t)<<"}\n";
+					}
+					if(pass->GetNumVariants()>1)
+					{
+						t--;
+						outstr<<Tab(t)<<"}\n";
+					}
 				}
-
 				outstr<<"\t\t}\n";
 			}
 			outstr<<"\t}\n";
@@ -2758,7 +2865,10 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	// Add entry declaration:
 	theShader << dec << endl;
 	// Add main function content:
-	theShader << "{\n" << content << "\n}";
+	theShader << "{\n";
+	theShader << shaderInstance->variantDeclarations;
+	theShader<<content;
+	theShader<< "\n}";
 
 	shaderInstance->m_augmentedSource = theShader.str();
 }

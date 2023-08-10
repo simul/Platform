@@ -827,7 +827,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 #endif
 #endif
     crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-    RecompileShaders();
+    LoadShaders();
 }
 
 void RenderPlatform::FlushImmediateCommandList()
@@ -1737,8 +1737,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p, crossplat
         case crossplatform::CompressionFormat::BC3:
             return DXGI_FORMAT_BC3_UNORM;
         default:
-            // TODO: Not idea. This adds alpha.
-            return DXGI_FORMAT_R8G8B8A8_UNORM;
+            // TODO: Not ideal. This adds alpha.
+            return DXGI_FORMAT_B8G8R8X8_UNORM;
         };
     case BGRA_8_UNORM:
         switch (c)

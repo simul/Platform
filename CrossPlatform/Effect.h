@@ -405,6 +405,13 @@ namespace platform
 			crossplatform::Effect* effect;
 			crossplatform::Topology topology=Topology::UNDEFINED;
 		};
+		class SIMUL_CROSSPLATFORM_EXPORT EffectVariantPass
+		{
+		public:
+			std::string name;
+			std::map<std::string,EffectPass*> passes;
+			EffectPass* GetPass(const char *shader1,const char *shader2=nullptr);
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		protected:
@@ -481,12 +488,15 @@ namespace platform
 			}
 			bool should_fence_outputs;
 			int NumPasses() const;
+			EffectVariantPass *AddVariantPass(const char *name);
+			EffectVariantPass *GetVariantPass(const char *name);
 			virtual EffectPass *AddPass(const char *name,int i)=0;
 			EffectPass *GetPass(int i) const;
 			EffectPass *GetPass(const char *name) const;
 			bool		HasPass(int i) const;
 			bool		HasPass(const char *name) const;
 		protected:
+			std::map<std::string,std::shared_ptr<EffectVariantPass>> variantPasses;
 			RenderPlatform *renderPlatform;
 			crossplatform::Effect *effect;
 		};

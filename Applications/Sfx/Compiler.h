@@ -5,7 +5,7 @@
 #include "SfxEffect.h"
 #include "ShaderInstance.h"
 
-extern int Compile(sfx::ShaderInstance *shader, const std::string &sourceFile, std::string targetFile
+extern int Compile(std::shared_ptr<sfx::ShaderInstance> shader, const std::string &sourceFile, std::string targetFile
 					, sfx::ShaderType t
 					, sfx::PixelOutputFormat pixelOutputFormat
 					, const std::string &sharedSource

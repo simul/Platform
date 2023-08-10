@@ -47,7 +47,7 @@ namespace platform
 			}
 			virtual const char *GetSfxConfigFilename() const override
 			{
-				return "GLSL/GLSL.json";
+				return "OpenGL/Sfx/OpenGL.json";
 			}
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;

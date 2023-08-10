@@ -43,7 +43,6 @@ namespace platform
 			};
 		private:
 			std::vector<std::string> fontPaths;
-			void Recompile();
 			crossplatform::Effect						*effect=nullptr;
 			crossplatform::EffectTechnique				*backgTech=nullptr;
 			crossplatform::EffectTechnique				*textTech=nullptr;

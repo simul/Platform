@@ -235,7 +235,7 @@ void Text3DRenderer::RecompileShaders()
 {
 	if (!renderPlatform)
 		return;
-	renderPlatform->ScheduleRecompileEffect("font",[this](){recompile=true;});
+	renderPlatform->ScheduleRecompileEffects({"font"},[this](){recompile=true;});
 }
 
 void Text3DRenderer::LoadShaders()
@@ -260,7 +260,7 @@ int Text3DRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y
 	int passIndex = supportShaderViewID ? 0 : 1;
 
 	if (recompile)
-		Recompile();
+		LoadShaders();
 	float transp[]={0.f,0.f,0.f,0.f};
 	float white[]={1.f,1.f,1.f,1.f};
 	if(!clr)
@@ -370,7 +370,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 	SIMUL_ASSERT_WARN(supportShaderViewID, "Graphics API doesn't support SV_ViewID/gl_ViewIndex in the shader. Falling back to single view rendering.");
 
 	if (recompile)
-		Recompile();
+		LoadShaders();
 	float transp[] = { 0.f,0.f,0.f,0.f };
 	float white[] = { 1.f,1.f,1.f,1.f };
 	if (!clr)

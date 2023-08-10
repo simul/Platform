@@ -526,6 +526,13 @@ int main(int argc, char** argv)
 				std::string b=it.value();
 				sfxConfig.define[a]			=b;
 			}
+			json kw=j["keywords"];
+			for (json::iterator it = kw.begin();it != kw.end(); ++it)
+			{
+				std::string a=it.key();
+				std::string b=it.value();
+				sfxConfig.keywords[a]			=b;
+			}
 			sfxConfig.define["SFX"]="1";
 			if (j.count("graphicsRootSignatureSource") > 0)
 				sfxConfig.graphicsRootSignatureSource = j["graphicsRootSignatureSource"];
@@ -562,14 +569,20 @@ int main(int argc, char** argv)
 		sfxDeleteEffect(effect);
 	}
 	// write a summary output file, so we have a single output with the build time on it.
+	SetEnv("PLATFORM_NAME","");
+	templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
+	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
+	std::string summaryFilename=templateOutputFile+"/"s+sourceName+".sfx_summary";
 	if(ret==0)
 	{
-		SetEnv("PLATFORM_NAME","");
-		templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
-		sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
-		std::ofstream summary(templateOutputFile+"/"s+sourceName+".sfx_summary");
+		std::ofstream summary(summaryFilename);
 		summary << "" << std::endl;
 		summary.close();
+	}
+	else
+	{
+	// make sure the summary is not there.
+	std::filesystem::remove(summaryFilename);
 	}
 	return ret;
  }

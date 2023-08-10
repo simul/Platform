@@ -127,6 +127,8 @@ struct SfxConfig
 	std::map<std::string,std::string> replace;
 	//! Macros to be defined
 	std::map<std::string, std::string> define;
+	//! keywords to be translated for compilation
+	std::map<std::string, std::string> keywords;
 	//! SFX format to language format
 	std::map<std::string, std::string> toImageFormat;
 	//! SFX format to object type

@@ -403,6 +403,26 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(SHADER_COMMAND);
 													}
 												}
+<INITIAL,IN_SHADER>"SetVertexShaderVariants"	{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.sType=VERTEX_SHADER;
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_VARIANTS_COMMAND);
+													}
+												}
+<INITIAL,IN_SHADER>"SetPixelShaderVariants"	{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.sType=FRAGMENT_SHADER;
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_VARIANTS_COMMAND);
+													}
+												}
 <INITIAL,IN_SHADER>"SetHullShader"				{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
@@ -775,12 +795,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"|"									{
 													stdReturn('|');
 												}
-<IN_SHADER>"{"									{
+<IN_SHADER,IN_SHADER_COMPILE>"{"				{
 													sfxlval.strs[0]=yytext;
 													brace++;
 													stdReturn('{');
 												}
-<IN_SHADER>"}"									{
+<IN_SHADER,IN_SHADER_COMPILE>"}"				{
 													sfxlval.strs[0]=yytext;
 													brace--;
 													if(!brace)
@@ -856,7 +876,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER_COMPILE>"ConstructGSWithSO"			{
 													sfxlval.lineno=yylineno;
 													stdReturn(CONSTRUCT_GS);
-												}
+												}											
 <IN_SHADER_COMPILE>{STR_BLCK}					{
 													sfxlval.strs[0]=yytext;
 													stdReturn(QUOTED_STRING);
@@ -937,8 +957,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn(COMPARISON);
 												}
 
-
-
+<IN_SHADER_COMPILE>"true"				{sfxlval.num=1; stdReturn(NUM);}
+<IN_SHADER_COMPILE>"false"				{sfxlval.num=0; stdReturn(NUM);}	
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>{ID_BLCK}	{
 												sfxlval.lineno=yylineno;
 												sfxlval.strs[0]=yytext;
@@ -1020,7 +1040,16 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(P_FLOAT);
 													}
 												}
-<INITIAL>"in"|"out"|"inout"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(STORAGEQ);}
+<INITIAL>"in"|"out"|"inout"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(STORAGEQ);
+												}
+<INITIAL>"variant"								{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(STORAGEQ);
+												}
 
 <INITIAL>"TriangleBuffer"|"TriangleStream"		{
 													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
@@ -1084,13 +1113,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														modReturn(STORAGEQ,"triangleadj");
 													}
 												}
-<INITIAL>"gl_FragDepth"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
-<INITIAL>"true"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.num=1; stdReturn(NUM);}
-<INITIAL>"false"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {sfxlval.num=0; stdReturn(NUM);}
+<INITIAL>"gl_FragDepth"							{sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
+<INITIAL>"true"				{sfxlval.num=1; stdReturn(NUM);}
+<INITIAL>"false"				{sfxlval.num=0; stdReturn(NUM);}
 <INITIAL>{ID_BLCK}								{
-													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
-													else
 													{
 														sfxlval.lineno=yylineno;
 														sfxlval.strs[0]=yytext;

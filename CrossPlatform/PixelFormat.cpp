@@ -1,4 +1,5 @@
 #include "PixelFormat.h"
+#include "Platform/Core/RuntimeError.h"
 #include <iostream>
 #ifndef _MSC_VER
 #include <stdio.h>
@@ -48,5 +49,6 @@ PixelFormat platform::crossplatform::TypeToFormat(const char *txt)
 		//return D_24_UNORM_S_8_UINT ;
 		//return D_16_UNORM ;
 		//return BGRA_8_UNORM ;
+	SIMUL_INTERNAL_CERR<<"Unknown or unsupported type string "<<txt<<"\n";
 	return UNKNOWN;
 };

@@ -8,6 +8,20 @@
 using namespace platform;
 using namespace crossplatform;
 
+bool crossplatform::LayoutMatches(const std::vector<LayoutDesc> &desc1,const std::vector<LayoutDesc> &desc2)
+{
+	if(desc1.size()==0||desc1.size()!=desc2.size())
+		return false;
+	for(size_t i=0;i<desc1.size();i++)
+	{
+		const auto &d1=desc1[i];
+		const auto &d2=desc2[i];
+		if(d1.format!=d2.format)
+			return false;
+	}
+	return true;
+}
+
 Layout::Layout()
 	:apply_count(0)
 	,struct_size(0)

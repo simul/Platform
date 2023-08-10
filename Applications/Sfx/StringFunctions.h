@@ -46,6 +46,7 @@ std::string ToString(sfx::FilterMode x);
 std::string ToString(sfx::AddressMode x);
 extern std::string GetEnv(const std::string &name);
 extern std::string join(const std::set<std::string> &replacements,std::string sep);
+extern std::string join_vector(const std::vector<std::string> &replacements,std::string sep);
 extern size_t count_lines_in_string(const std::string &str);
 #endif
 

@@ -33,5 +33,32 @@
 		"SFX": "1",
 		"PLATFORM_D3D11_SFX": "1"
 	},
+	"keywords": {
+		"vec2": "float2",
+		"vec3": "float3",
+		"vec4": "float4",
+		"char4":"snorm float4",
+		"uchar4":"unorm float4",
+		"mat2":"float2x2",
+		"mat3":"float3x3",
+		"mat4":"float4x4",
+		"float16_t":"min16float",
+		"f16vec2":"min16float2",
+		"f16vec3":"min16float3",
+		"f16vec4":"min16float4",
+		"f16mat2":"min16float2x2",
+		"f16mat3":"min16float3x3",
+		"f16mat4":"min16float4x4",
+		"int16_t":"min16int",
+		"i16vec2":"min16int2",
+		"i16vec3":"min16int3",
+		"i16vec4":"min16int4",
+		"uint16_t":"min16uint",
+		"u16vec2":"min16uint2",
+		"u16vec3":"min16uint3",
+		"u16vec4":"min16uint4",
+		"mix":"lerp",
+		"fract":"frac"
+	},
 	"maxShaderModel": 5.0
 }

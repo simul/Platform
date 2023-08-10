@@ -9,18 +9,36 @@ namespace sfx
 {
 
 	typedef std::map<std::string,std::vector<Function*> > FunctionMap;
-	typedef std::map<std::string,ShaderInstance*> ShaderInstanceMap;
+	typedef std::map<std::string,std::shared_ptr<ShaderInstance>> ShaderInstanceMap;
 	typedef std::map<std::string,std::string> StringMap;
 	struct TechniqueGroup
 	{
 		std::map<std::string, Technique*> m_techniques;
 	};
+	//! e.g. {var1_option1,var1_option2}
+	struct VariantVariableSpec
+	{
+		std::vector<std::string> variableOptions;
+		void clear()
+		{
+			variableOptions.clear();
+		}
+	};
+	//! e.g. base_shader({var1_option1,var1_option2},{var2_option1,var2_option2})
+	struct VariantSpec
+	{
+		std::vector<VariantVariableSpec> variableSpecs;
+		void clear()
+		{
+			variableSpecs.clear();
+		}
+	};
 	class Effect
 	{
 		std::map<std::string,Declaration *>		declarations;
 		std::map<std::string, Pass*>			m_programs;
-		std::vector<std::string>						m_programNames;
-		std::map<std::string, TechniqueGroup>		m_techniqueGroups;
+		std::vector<std::string>				m_programNames;
+		std::map<std::string, TechniqueGroup>	m_techniqueGroups;
 		FunctionMap								m_declaredFunctions;
 		std::map<std::string,Struct*>			m_structs;
 		std::map<std::string, ConstantBuffer*>	m_constantBuffers;
@@ -32,7 +50,9 @@ namespace sfx
 
 		std::map<std::string,std::string>			m_cslayout;
 		std::map<std::string,std::string>			m_gslayout;
-		ShaderInstanceMap						m_shaderInstances;
+		std::set<std::shared_ptr<ShaderInstance>>	m_uniqueShaderInstances;
+		ShaderInstanceMap							m_shaderInstances;
+		//std::map<std::string,ShaderInstanceSet>		m_shaderInstanceSets;
 		struct InterfaceDcl
 		{
 			std::string id;
@@ -143,9 +163,10 @@ namespace sfx
 			return nullptr;
 		}
 		/// Get the named instance, or create it if it's a function without a default instance.
-		ShaderInstance *GetShaderInstance(const std::string &functionName,ShaderType type);
+		std::shared_ptr<ShaderInstance> GetShaderInstance(const std::string &functionName,ShaderType type);
 		void ConstructSource(ShaderInstance *cs);
-		ShaderInstance *AddShaderInstance(const std::string &name,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno);
+		std::shared_ptr<ShaderInstance> AddShaderInstance(const std::string &name,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno);
+		std::vector<std::string> GenerateShaderInstanceVariants(const std::string &basename,const VariantSpec &shaderInstances);
 		void DeclareStruct(const std::string &name, const Struct &ts,const std::string &original);
 		void DeclareConstantBuffer(const std::string &name, int slot,const Struct &ts,const std::string &original);
 		void DeclareVariable(const Variable *v);

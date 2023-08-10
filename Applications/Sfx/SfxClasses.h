@@ -181,7 +181,7 @@ namespace sfx
 	enum ShaderCommand
 	{
 		Unknown=0
-		,SetVertexShader			//VS Vertex Shader			|	Vertex Shader
+		,SetVertexShader		//VS Vertex Shader			|	Vertex Shader
 		,SetHullShader			//TC Tessellation Control	|	Hull Shader
 		,SetDomainShader		//TE Tessellation Evaluation	|	Domain Shader
 		,SetGeometryShader		//GS Geometry Shader			|	Geometry Shader
