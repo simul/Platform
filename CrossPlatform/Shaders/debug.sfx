@@ -424,8 +424,9 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	result.rgb		*=multiplier.rgb;
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
 	vec4 u			=vec4(saturate(result.rgb),1.0);
-	//u.rgb+=0.6*saturate(view);
-	DETECT_NANS(view, u.rgb);
+//u.rgb+=0.6*saturate(view);
+//	DETECT_NANS(view, u.rgb);
+//u.a=1.0;
 	return u;
 }
 

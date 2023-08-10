@@ -1494,7 +1494,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			(rendertarget || depthstencil) ? &clearValues : nullptr,
 			SIMUL_PPV_ARGS(&mTextureDefault)
 		);
-		SIMUL_COUT << "Creating texture "<<name.c_str()<<". "<<"\n";
+//		SIMUL_COUT << "Creating texture "<<name.c_str()<<". "<<"\n";
 		SIMUL_ASSERT(res == S_OK);
 		auto desc = mTextureDefault->GetDesc();
 		size_t texSize;

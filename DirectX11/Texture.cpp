@@ -1149,6 +1149,10 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 
 	pixelFormat=f;
+	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
+	genericDxgiFormat=dxgi_format;
+	srvFormat=dxgi_format;
+	DepthFormatToResourceAndSrvFormats(genericDxgiFormat,srvFormat);
 	InvalidateDeviceObjects();
 	//dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
 	D3D11_TEXTURE2D_DESC desc;
@@ -1162,7 +1166,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	dim						=2;
 	desc.Width				=w;
 	desc.Height				=l;
-	desc.Format				=dxgi_format;
+	desc.Format				=genericDxgiFormat;
 	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
 	desc.Usage				=D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags		=0;
@@ -1248,6 +1252,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	
 	this->computable = computable;
 	this->renderTarget = rendertarget;
+	this->depthStencil = depthstencil;
 
 	mips=m;
 	arraySize=num;

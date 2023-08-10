@@ -14,6 +14,23 @@ namespace platform
 	{
 		class RenderPlatform;
 		struct DeviceContext;
+		enum class LayoutSemantic
+		{
+			UNKNOWN=0
+			,POSITION
+			,NORMAL
+			,TANGENT
+			,TEXCOORD
+			,POSITIONT
+			,BINORMAL
+			,COLOUR
+			,BLENDINDICES
+			,BLENDWEIGHT
+			,PSIZE
+			,CUSTOM
+			,TESSFACTOR
+			,COLOR=COLOUR
+		};
 		//! A cross-platform equivalent to D3D11_INPUT_ELEMENT_DESC, used
 		//! to create layouts. MEMBERS: const char *semanticName,int semanticIndex,	PixelFormat	format,	int inputSlot,	int alignedByteOffset,	bool perInstance,int instanceDataStepRate
 		struct LayoutDesc
@@ -26,6 +43,14 @@ namespace platform
 			bool		perInstance;		// otherwise it's per vertex.
 			int			instanceDataStepRate;
 		};
+		struct SimpleLayoutSpec
+		{
+			PixelFormat	format;
+			LayoutSemantic semantic;
+			int			inputSlot;
+		};
+		extern uint64_t GetLayoutHash(const LayoutDesc &d);
+		extern uint64_t GetLayoutHash(const std::vector<SimpleLayoutSpec> &l);
 		extern bool LayoutMatches(const std::vector<LayoutDesc> &desc1,const std::vector<LayoutDesc> &desc2);
 		//! A cross-platform class representing vertex input layouts. Create with RenderPlatform::CreateLayout.
 		class SIMUL_CROSSPLATFORM_EXPORT Layout
@@ -57,6 +82,8 @@ namespace platform
 			virtual void Apply(DeviceContext &deviceContext);
 			virtual void Unapply(DeviceContext &deviceContext);
 			int GetStructSize() const;
+			//! Get a 64-bit number unique to this layout.
+			uint64_t GetHash() const;
 		};
 	}
 }

@@ -53,6 +53,10 @@
 	{
 		return vec2(texc.x,1.0-texc.y);
 	}
+	vec4 BottomUpTextureCoordinates(vec4 texc)
+	{
+		return vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w);
+	}
 	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 #endif
 
