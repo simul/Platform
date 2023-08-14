@@ -462,9 +462,17 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	return false;
 }
 
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext& deviceContext, vec4 colourClear)
+{
+	glClearColor(colourClear.x, colourClear.y, colourClear.z, colourClear.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+}
+
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
-
+	glClearDepthf(depthClear);
+	glClearStencil(stencilClear);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)

@@ -60,6 +60,7 @@ namespace platform
 																, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable = false, bool rendertarget = false, bool depthstencil = false,bool ascubemap = false
 														, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			bool			ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false) override;
+			void			ClearColour(crossplatform::GraphicsDeviceContext& deviceContext, vec4 colourClear) override;
 			void			ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void			GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void			setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;

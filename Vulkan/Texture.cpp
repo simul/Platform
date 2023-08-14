@@ -743,6 +743,34 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, 
 	return false;
 }
 
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
+{
+	const int &layerCount = NumFaces();
+	crossplatform::SubresourceRange subres = {crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, layerCount};
+
+	vk::ImageLayout prev_image_layout = mCurrentImageLayout;
+	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subres);
+
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::ImageLayout image_layout = mCurrentImageLayout;
+	std::vector<vk::ImageSubresourceRange> image_subresource_ranges;
+	// if stencil, may need |vk::ImageAspectFlagBits::eStencil
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, layerCount);
+	image_subresource_ranges.push_back(imageSubresourceRange);
+
+	vk::ClearColorValue clear_value;
+	clear_value.float32[0] = colourClear[0];
+	clear_value.float32[1] = colourClear[1];
+	clear_value.float32[2] = colourClear[2];
+	clear_value.float32[3] = colourClear[3];
+
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
+	commandBuffer->clearColorImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data());
+	// can't go back to these layouts so just stay in eTransferDstOptimal for now:
+	if (prev_image_layout != vk::ImageLayout::ePreinitialized && prev_image_layout != vk::ImageLayout::eUndefined)
+		SetLayout(deviceContext, prev_image_layout, subres);
+}
+
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 	const int& layerCount = NumFaces();
