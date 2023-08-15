@@ -185,5 +185,6 @@
 		"frac": "fract",
 		"ddx": "dFdx",
 		"ddy": "dFdy"
-	}
+	},
+	"maxShaderModel": 5.0
 }

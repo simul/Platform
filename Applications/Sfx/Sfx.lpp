@@ -413,12 +413,22 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(SHADER_VARIANTS_COMMAND);
 													}
 												}
-<INITIAL,IN_SHADER>"SetPixelShaderVariants"	{
+<INITIAL,IN_SHADER>"SetPixelShaderVariants"		{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
 														sfxlval.sType=FRAGMENT_SHADER;
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_VARIANTS_COMMAND);
+													}
+												}
+<INITIAL,IN_SHADER>"SetComputeShaderVariants"	{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.sType=COMPUTE_SHADER;
 														SetLexStartState(IN_SHADER_COMPILE);
 														stdReturn(SHADER_VARIANTS_COMMAND);
 													}
