@@ -1307,6 +1307,21 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 	mips=m;
 }
 
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
+{
+    if (!renderTarget)
+        SIMUL_CERR << "Attempting to clear a texture that is not a Render Target" << std::endl;
+
+    bool layered = NumFaces() > 1;
+    bool ms = GetSampleCount() > 1;
+    crossplatform::TextureView tv;
+    tv.type = GetShaderResourceTypeForRTVAndDSV();
+    tv.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1};
+
+    ID3D11RenderTargetView *rtv = AsD3D11RenderTargetView(tv);
+    deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(rtv, colourClear);
+}
+
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 	if (!depthStencil)

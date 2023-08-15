@@ -540,7 +540,9 @@ void RenderPlatform::PushTexturePath(const char *path_utf8)
 	std::error_code ec;
 	auto canonical=std::filesystem::weakly_canonical(path,ec);
 	std::string str = canonical.generic_string();
-	char c = str.back();
+    char c = 'x';
+    if (str.length())
+		c = str.back();
 	if (c != '\\' && c != '/')
 		str += '/';
 	texturePathsUtf8.push_back(str);

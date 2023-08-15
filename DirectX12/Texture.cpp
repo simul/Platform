@@ -1814,10 +1814,14 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	return true;
 }
 
-
-
 void Texture::ensureTexture1DSizeAndFormat(ID3D12Device* pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
 {
+}
+
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE *rtv = AsD3D12RenderTargetView(deviceContext, {GetShaderResourceTypeForRTVAndDSV(), {}});
+	deviceContext.asD3D12Context()->ClearRenderTargetView(*rtv, colourClear, 0, nullptr);
 }
 
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
