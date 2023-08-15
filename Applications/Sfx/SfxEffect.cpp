@@ -2535,7 +2535,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					{
 						// In GLSL io blocks should match, i.e. the names of
 						// the members should be the same.		
-						customId = "BlockData";
+						customId = "BlockData0";
 						find_and_replace(content, i.identifier, customId);
 					}
 					else
@@ -2728,7 +2728,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			{
 				members=m;
 			}
-			string returnName = "BlockData";
+			string returnName = "BlockData0";
 			find_and_replace(members,"{type}",function->returnType);
 			find_and_replace(members,"{name}",returnName);
 			find_and_replace(vertexOutputDeclaration,"{members}",members+"\n");
