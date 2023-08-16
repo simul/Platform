@@ -1,22 +1,21 @@
 
 #include "Texture.h"
-#include "Platform/Core/RuntimeError.h"
-#include "Platform/Core/StringToWString.h"
-#include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/FileLoader.h"
-#include "Platform/DirectX12/RenderPlatform.h"
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/StringToWString.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Framebuffer.h"
-#include <string>
-#include <algorithm>
+#include "Platform/DirectX12/RenderPlatform.h"
 #include <DirectXTex.h>
+#include <algorithm>
+#include <string>
 using namespace std::string_literals;
 
 using namespace platform;
 using namespace dx12;
 
-SamplerState::SamplerState(crossplatform::SamplerStateDesc *d):
-	mCachedDesc(*d)
+SamplerState::SamplerState(crossplatform::SamplerStateDesc *d) : mCachedDesc(*d)
 {
 }
 
@@ -29,13 +28,12 @@ void SamplerState::InvalidateDeviceObjects()
 {
 }
 
-Texture::Texture():
-	mTextureDefault(nullptr),
-	mTextureUpload(nullptr),
-	mResourceState (D3D12_RESOURCE_STATE_GENERIC_READ),
-	mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
-	mLoadedFromFile(false),
-	mNumSamples(1)
+Texture::Texture() : mTextureDefault(nullptr),
+					 mTextureUpload(nullptr),
+					 mResourceState(D3D12_RESOURCE_STATE_GENERIC_READ),
+					 mExternalLayout(D3D12_RESOURCE_STATE_GENERIC_READ),
+					 mLoadedFromFile(false),
+					 mNumSamples(1)
 {
 }
 
@@ -46,7 +44,7 @@ Texture::~Texture()
 
 void Texture::ClearLoadingData()
 {
-	for(auto &w: wicContents)
+	for (auto &w : wicContents)
 	{
 		delete w.metadata;
 		delete w.scratchImage;
@@ -56,7 +54,7 @@ void Texture::ClearLoadingData()
 }
 void Texture::ClearFileContents()
 {
-	for(auto &f: fileContents)
+	for (auto &f : fileContents)
 	{
 		platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(f.ptr);
 	}
@@ -65,7 +63,7 @@ void Texture::ClearFileContents()
 
 void Texture::FreeRTVTables()
 {
-	for (auto& rtv : renderTargetViews)
+	for (auto &rtv : renderTargetViews)
 		delete rtv.second;
 	renderTargetViews.clear();
 	mTextureRtHeap.Release();
@@ -73,7 +71,7 @@ void Texture::FreeRTVTables()
 
 void Texture::FreeDSVTables()
 {
-	for (auto& dsv : depthStencilViews)
+	for (auto &dsv : depthStencilViews)
 		delete dsv.second;
 	depthStencilViews.clear();
 	mTextureDsHeap.Release();
@@ -81,7 +79,7 @@ void Texture::FreeDSVTables()
 
 void Texture::FreeSRVTables()
 {
-	for (auto& srv : shaderResourceViews)
+	for (auto &srv : shaderResourceViews)
 		delete srv.second;
 	shaderResourceViews.clear();
 	mTextureSrvHeap.Release();
@@ -89,7 +87,7 @@ void Texture::FreeSRVTables()
 
 void Texture::FreeUAVTables()
 {
-	for (auto& uav : unorderedAccessViews)
+	for (auto &uav : unorderedAccessViews)
 		delete uav.second;
 	unorderedAccessViews.clear();
 	mTextureUavHeap.Release();
@@ -99,8 +97,8 @@ void Texture::InitStateTable(int l, int m)
 {
 	// Create state table, at this point, we expect that the state
 	// has already being set !!!
-	auto curState = mResourceState;//GetCurrentState(deviceContext);
-	//mSubResourcesStates.clear();
+	auto curState = mResourceState; // GetCurrentState(deviceContext);
+	// mSubResourcesStates.clear();
 	mSubResourcesStates.resize(l);
 	for (int layer = 0; layer < l; layer++)
 	{
@@ -119,11 +117,11 @@ void Texture::InvalidateDeviceObjects()
 	FreeUAVTables();
 	FreeSRVTables();
 	ClearLoadingData();
-	
-	arraySize				= 0;
-	mips					= 0;
 
-	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
+	arraySize = 0;
+	mips = 0;
+
+	auto rPlat = (dx12::RenderPlatform *)(renderPlatform);
 	// We dont want to release the resources of the external texture
 	// BUT: we DO want to decrement the refcount, because we added a ref when it was initialized.
 	if (mInitializedFromExternal)
@@ -133,16 +131,16 @@ void Texture::InvalidateDeviceObjects()
 	}
 	else
 	{
-		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
+		// Critical resources like textures that could be in use by the GPU will be destroyed by the
 		// release manager
-		if(mTextureDefault)
+		if (mTextureDefault)
 			rPlat->PushToReleaseManager(mTextureDefault, (name + "_Default").c_str());
-		if(mTextureUpload)
+		if (mTextureUpload)
 			rPlat->PushToReleaseManager(mTextureUpload, (name + "_Upload").c_str());
 	}
 
-	mTextureDefault=nullptr;
-	mTextureUpload=nullptr;
+	mTextureDefault = nullptr;
+	mTextureUpload = nullptr;
 	// Same for heaps (The release method will handle it)
 	mTextureSrvHeap.Release();
 	mTextureUavHeap.Release();
@@ -150,59 +148,58 @@ void Texture::InvalidateDeviceObjects()
 	mTextureDsHeap.Release();
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8, bool gen_mips)
+void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform, const char *pFilePathUtf8, bool gen_mips)
 {
-	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
+	const std::vector<std::string> &pathsUtf8 = renderPlatform->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 
 	HRESULT res = S_FALSE;
 
 	// Set initial properties of the texture
-	name					= pFilePathUtf8;
-	mips					= 1;
-	arraySize				= 1;
-	depth					= 1;
-	dim						= 2;
-	cubemap					= false;
-	this->renderPlatform	= renderPlatform;
+	name = pFilePathUtf8;
+	mips = 1;
+	arraySize = 1;
+	depth = 1;
+	dim = 2;
+	cubemap = false;
+	this->renderPlatform = renderPlatform;
 
 	std::string filename_utf8 = std::string(pFilePathUtf8);
 	// Find the path to the file
 	std::string strPath;
 	strPath = pFilePathUtf8;
 	int idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
-	if (idx<-1 || idx >= (int)pathsUtf8.size())
+	if (idx < -1 || idx >= (int)pathsUtf8.size())
 	{
 		std::string file;
-		std::vector<std::string> split_path= platform::core::SplitPath( filename_utf8);
-		if(split_path.size()>1)
+		std::vector<std::string> split_path = platform::core::SplitPath(filename_utf8);
+		if (split_path.size() > 1)
 		{
-			strPath=split_path[1];
+			strPath = split_path[1];
 			idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(strPath.c_str(), pathsUtf8);
 		}
 		errno = 0;
 		if (idx < -1 || idx >= (int)pathsUtf8.size())
 			return;
 	}
-	errno=0;
+	errno = 0;
 	if (idx >= 0)
 		strPath = (pathsUtf8[idx] + "/") + strPath;
-	 name= strPath;
-	 fileContents.resize(1);
-	 auto &f=fileContents[0];
+	name = strPath;
+	fileContents.resize(1);
+	auto &f = fileContents[0];
 	// Load the data
-	f.flags		= DirectX::WIC_FLAGS_NONE;
-	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(f.ptr,f.bytes, strPath.c_str(), false);
+	f.flags = DirectX::WIC_FLAGS_NONE;
+	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(f.ptr, f.bytes, strPath.c_str(), false);
 	wicContents.resize(1);
-	auto &wic=wicContents[0];
-	if(!wic.metadata)
-		wic.metadata=new DirectX::TexMetadata();
-	if(!wic.scratchImage)
-		wic.scratchImage=new DirectX::ScratchImage;
-	if(name.find(".hdr")==name.length()-4)
+	auto &wic = wicContents[0];
+	if (!wic.metadata)
+		wic.metadata = new DirectX::TexMetadata();
+	if (!wic.scratchImage)
+		wic.scratchImage = new DirectX::ScratchImage;
+	if (name.find(".hdr") == name.length() - 4)
 	{
-		res= DirectX::LoadFromHDRMemory(f.ptr, (size_t)f.bytes, wic.metadata, *wic.scratchImage);
-
+		res = DirectX::LoadFromHDRMemory(f.ptr, (size_t)f.bytes, wic.metadata, *wic.scratchImage);
 	}
 	else if (name.find(".dds") != std::string::npos)
 	{
@@ -213,29 +210,29 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		res = DirectX::LoadFromWICMemory(f.ptr, f.bytes, f.flags, wic.metadata, *wic.scratchImage);
 	}
 	SIMUL_ASSERT(res == S_OK)
-	
-	if(res == S_OK)
+
+	if (res == S_OK)
 	{
-	// The texture will be considered "valid" from here.
-	// Set the properties of this texture
-		width			= (int)wic.metadata->width;
-		length			= (int)wic.metadata->height;
-		if(gen_mips)
+		// The texture will be considered "valid" from here.
+		// Set the properties of this texture
+		width = (int)wic.metadata->width;
+		length = (int)wic.metadata->height;
+		if (gen_mips)
 		{
-			int m=100;
-			m = std::min(m, int(floor(log2(std::max(width, length)))) +1);
-			m=std::min(16,std::max(1,m));
-			mips=m;
+			int m = 100;
+			m = std::min(m, int(floor(log2(std::max(width, length)))) + 1);
+			m = std::min(16, std::max(1, m));
+			mips = m;
 		}
 		else
-			mips=1;
-		pixelFormat		=RenderPlatform::FromDxgiFormat(wic.metadata->format);
+			mips = 1;
+		pixelFormat = RenderPlatform::FromDxgiFormat(wic.metadata->format);
 	}
 	mLoadedFromFile = true;
-	
+
 	// ok to free loaded data??
 	ClearFileContents();
-	textureLoadComplete=false;
+	textureLoadComplete = false;
 }
 
 void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
@@ -247,39 +244,39 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		textureLoadComplete = true;
 		return;
 	}
-	if(textureLoadComplete)
+	if (textureLoadComplete)
 		return;
-	if(mips<0|| mips>16)
-		mips=1;
+	if (mips < 0 || mips > 16)
+		mips = 1;
 	if (!wicContents.size())
 		return;
-	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+	auto renderPlatformDx12 = (dx12::RenderPlatform *)renderPlatform;
 	D3D12_RESOURCE_DESC textureDesc = {};
-	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	textureDesc.DepthOrArraySize	= (UINT16)wicContents.size();
-	textureDesc.MipLevels			= mips;
-	textureDesc.SampleDesc.Count	= 1;
-	textureDesc.SampleDesc.Quality	= 0;
-	textureDesc.Layout				= D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
-	textureDesc.Flags				= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;	// to generate mips.
-	textureDesc.Alignment			= 0;							// Let runtime decide
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureDesc.DepthOrArraySize = (UINT16)wicContents.size();
+	textureDesc.MipLevels = mips;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;			 // Let runtime decide
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET; // to generate mips.
+	textureDesc.Alignment = 0;									 // Let runtime decide
 
 	renderTarget = true;
 
 	// Clear resources
-	renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
-	renderPlatformDx12->PushToReleaseManager(mTextureUpload, (name+" mTextureUpload").c_str());
+	renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name + " mTextureDefault").c_str());
+	renderPlatformDx12->PushToReleaseManager(mTextureUpload, (name + " mTextureUpload").c_str());
 	mTextureDefault = nullptr;
 	mTextureUpload = nullptr;
-	size_t num_loaded=0;
+	size_t num_loaded = 0;
 
-	// Convert into WIC 
-	for(int i=0;i<wicContents.size();i++)
+	// Convert into WIC
+	for (int i = 0; i < wicContents.size(); i++)
 	{
-		WicContents &wic=wicContents[i];
-		HRESULT res=S_OK;
-		wic.image   = wic.scratchImage->GetImage(0, 0, 0);
-	 
+		WicContents &wic = wicContents[i];
+		HRESULT res = S_OK;
+		wic.image = wic.scratchImage->GetImage(0, 0, 0);
+
 		if (!wic.image)
 		{
 			SIMUL_BREAK_INTERNAL("Failed to load this texture.");
@@ -287,108 +284,106 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		}
 
 		// Make the texture description
-		textureDesc.Width				= (UINT)wic.metadata->width;
-		textureDesc.Height				= (UINT)wic.metadata->height;
-		textureDesc.Format				= wic.metadata->format;
+		textureDesc.Width = (UINT)wic.metadata->width;
+		textureDesc.Height = (UINT)wic.metadata->height;
+		textureDesc.Format = wic.metadata->format;
 
-		if(!mTextureDefault)
+		if (!mTextureDefault)
 		{
-			dxgi_format	= wicContents[0].metadata->format;
+			dxgi_format = wicContents[0].metadata->format;
 			auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		// Create the texture resource (GPU, with an implicit heap)
-			res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-			(
+			// Create the texture resource (GPU, with an implicit heap)
+			res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
 				&defaultProperties,
 				D3D12_HEAP_FLAG_NONE,
 				&textureDesc,
 				D3D12_RESOURCE_STATE_GENERIC_READ,
 				nullptr,
-				SIMUL_PPV_ARGS(&mTextureDefault)
-			);
+				SIMUL_PPV_ARGS(&mTextureDefault));
 			SIMUL_ASSERT(res == S_OK);
-			//D3D12_GPU_VIRTUAL_ADDRESS va=mTextureDefault->GetGPUVirtualAddress();
-			std::wstring	n = L"mTextureDefault_";
-			n+=std::wstring(name.begin(), name.end());
+			// D3D12_GPU_VIRTUAL_ADDRESS va=mTextureDefault->GetGPUVirtualAddress();
+			std::wstring n = L"mTextureDefault_";
+			n += std::wstring(name.begin(), name.end());
 			mTextureDefault->SetName(n.c_str());
-			size_t texSize = textureDesc.Width * textureDesc.Height  * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
+			size_t texSize = textureDesc.Width * textureDesc.Height * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 			SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 		}
-		num_loaded++; 
+		num_loaded++;
 	}
-	if(num_loaded)
+	if (num_loaded)
 	{
-		//pixelFormat		=RenderPlatform::FromDxgiFormat(textureDesc.Format);
-		// Create an upload heap
-		// only single mip in the upload.
+		// pixelFormat		=RenderPlatform::FromDxgiFormat(textureDesc.Format);
+		//  Create an upload heap
+		//  only single mip in the upload.
 		CreateUploadResource(arraySize);
 		// Init states
 		InitStateTable(arraySize, mips);
 		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-	
+
 		std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas;
 		textureSubDatas.resize(arraySize);
-		SetLayout(deviceContext,D3D12_RESOURCE_STATE_COPY_DEST);
+		SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST);
 		// must flush before copying:
-		((dx12::RenderPlatform*)renderPlatform)->FlushBarriers(deviceContext);
-		for(int i=0;i<wicContents.size();i++)
+		((dx12::RenderPlatform *)renderPlatform)->FlushBarriers(deviceContext);
+		for (int i = 0; i < wicContents.size(); i++)
 		{
-			WicContents &wic						=wicContents[i];
+			WicContents &wic = wicContents[i];
 			// Perform the texture copy
-			D3D12_SUBRESOURCE_DATA &textureSubData	=textureSubDatas[i];
-			textureSubData.pData					=wic.image->pixels; 
-			textureSubData.RowPitch					=wic.image->rowPitch; 
-			textureSubData.SlicePitch				=wic.image->rowPitch * textureDesc.Height;
-		
-			UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload,pLayouts[i].Offset, i*mips, 1, &textureSubDatas[i]);
+			D3D12_SUBRESOURCE_DATA &textureSubData = textureSubDatas[i];
+			textureSubData.pData = wic.image->pixels;
+			textureSubData.RowPitch = wic.image->rowPitch;
+			textureSubData.SlicePitch = wic.image->rowPitch * textureDesc.Height;
+
+			UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, pLayouts[i].Offset, i * mips, 1, &textureSubDatas[i]);
 		}
 	}
-	textureLoadComplete=true;
+	textureLoadComplete = true;
 	textureUploadComplete = true;
-	shouldGenerateMips=false;
+	shouldGenerateMips = false;
 	if (mips > 1)
 	{
-		if(deviceContext.deviceContextType!=crossplatform::DeviceContextType::GRAPHICS)
+		if (deviceContext.deviceContextType != crossplatform::DeviceContextType::GRAPHICS)
 		{
 			SIMUL_BREAK_ONCE("Unable to generate mips as context is compute.");
 		}
 		else
 		{
-			shouldGenerateMips=true;
+			shouldGenerateMips = true;
 		}
 	}
-	
-	SetLayout(deviceContext,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	SetLayout(deviceContext, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	ClearLoadingData();
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips)
 {
-	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
+	const std::vector<std::string> &pathsUtf8 = r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 
 	HRESULT res = S_FALSE;
 
 	// Set initial properties of the texture
-	name			= "Array:" + texture_files[0] + ",...";
-	arraySize		= (int)texture_files.size();
-	depth			= (int)texture_files.size();
-	cubemap			= false;
-	renderPlatform	= r;
-	dim				= 2;
-	renderTarget	= true;
+	name = "Array:" + texture_files[0] + ",...";
+	arraySize = (int)texture_files.size();
+	depth = (int)texture_files.size();
+	cubemap = false;
+	renderPlatform = r;
+	dim = 2;
+	renderTarget = true;
 	// Find all the paths
 	std::vector<std::string> strPaths;
 	strPaths.resize(arraySize);
 	for (int i = 0; i < arraySize; i++)
 	{
 		int idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(texture_files[i].c_str(), pathsUtf8);
-		if (idx<-1 || idx >= (int)pathsUtf8.size())
+		if (idx < -1 || idx >= (int)pathsUtf8.size())
 			return;
 		strPaths[i] = texture_files[i];
 		if (idx >= 0)
 			strPaths[i] = (pathsUtf8[idx] + "/") + strPaths[i];
 	}
-	
+
 	ClearLoadingData();
 	// Load the data
 	fileContents.resize(arraySize);
@@ -397,15 +392,15 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		auto curContents = &fileContents[i];
 		platform::core::FileLoader::GetFileLoader()->AcquireFileContents(curContents->ptr, curContents->bytes, strPaths[i].c_str(), false);
 	}
-	// Convert into WIC 
+	// Convert into WIC
 	wicContents.resize(arraySize);
-	for (int i = 0; i < arraySize;i++)
+	for (int i = 0; i < arraySize; i++)
 	{
-		auto &curContents	= fileContents[i];
-		auto &wic			= wicContents[i];
-		wic.metadata		=new DirectX::TexMetadata;
-		wic.scratchImage	=new DirectX::ScratchImage;
-		wic.image		=new DirectX::Image;
+		auto &curContents = fileContents[i];
+		auto &wic = wicContents[i];
+		wic.metadata = new DirectX::TexMetadata;
+		wic.scratchImage = new DirectX::ScratchImage;
+		wic.image = new DirectX::Image;
 		if (texture_files[0].find(".dds") != std::string::npos)
 		{
 			res = DirectX::LoadFromDDSMemory(curContents.ptr, curContents.bytes, curContents.flags, wic.metadata, *wic.scratchImage);
@@ -416,7 +411,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		}
 		width = (int)wic.metadata->width;
 		length = (int)wic.metadata->height;
-		pixelFormat		=RenderPlatform::FromDxgiFormat(wic.metadata->format);
+		pixelFormat = RenderPlatform::FromDxgiFormat(wic.metadata->format);
 		wic.image = wic.scratchImage->GetImage(0, 0, 0);
 	}
 
@@ -432,7 +427,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// The texture will be considered "valid" from here.
 	// Set the properties of this texture
 	mLoadedFromFile = true;
-	textureLoadComplete=false;
+	textureLoadComplete = false;
 	textureUploadComplete = true;
 }
 
@@ -440,39 +435,39 @@ bool Texture::IsValid() const
 {
 	if (mTextureDefault != NULL)
 		return true;
-	if(mLoadedFromFile&&!textureLoadComplete)
+	if (mLoadedFromFile && !textureLoadComplete)
 		return true;
 	return false;
 }
 
-ID3D12Resource* Texture::AsD3D12Resource()
+ID3D12Resource *Texture::AsD3D12Resource()
 {
 	return mTextureDefault;
 }
 
-void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
+void Texture::FinishUploading(crossplatform::DeviceContext &deviceContext)
 {
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
 	SetLayout(deviceContext, D3D12_RESOURCE_STATE_COPY_DEST, {}, true);
 
-	auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+	auto renderPlatformDx12 = (dx12::RenderPlatform *)renderPlatform;
 	uint32_t numImages = (uint32_t)upload_data->size();
 	CreateUploadResource(totalNum);
 	std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas(numImages);
 	int mip_width = width;
 	int mip_length = length;
 	size_t bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
-	size_t i=0;
-	int m=0;
-	for (size_t i=0;i<numImages;i++)
+	size_t i = 0;
+	int m = 0;
+	for (size_t i = 0; i < numImages; i++)
 	{
-		if(m==mips)
+		if (m == mips)
 		{
 			mip_width = width;
 			mip_length = length;
-			m=0;
+			m = 0;
 		}
-		D3D12_SUBRESOURCE_DATA& textureSubData = textureSubDatas[i];
+		D3D12_SUBRESOURCE_DATA &textureSubData = textureSubDatas[i];
 		textureSubData.pData = (*upload_data)[i].data();
 		textureSubData.RowPitch = mip_width * bytes_per_pixel;
 		textureSubData.SlicePitch = textureSubData.RowPitch * mip_length;
@@ -493,21 +488,21 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 		mip_length = (mip_length + 1) / 2;
 		m++;
 	}
-	//renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
-	
+	// renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
+
 	UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, numImages, textureSubDatas.data());
 	// no need to flush?
 	SetLayout(deviceContext, D3D12_RESOURCE_STATE_GENERIC_READ, {}, true);
-//	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
+	//	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
 	upload_data = nullptr;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView, bool setState, bool pixelShader)
+D3D12_CPU_DESCRIPTOR_HANDLE *Texture::AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext, const crossplatform::TextureView &textureView, bool setState, bool pixelShader)
 {
-	if(!textureLoadComplete)
+	if (!textureLoadComplete)
 	{
 		FinishLoading(deviceContext);
-		textureLoadComplete=true;
+		textureLoadComplete = true;
 	}
 	if (!textureUploadComplete)
 	{
@@ -520,9 +515,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 	{
 		auto curState = GetCurrentState(deviceContext, textureView.subresourceRange);
 		auto newState = pixelShader ? D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-		if	((curState & (newState)) != (newState) )
+		if ((curState & (newState)) != (newState))
 		{
-			SetLayout(deviceContext,newState,textureView.subresourceRange);
+			SetLayout(deviceContext, newState, textureView.subresourceRange);
 		}
 	}
 
@@ -530,21 +525,21 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 	if (shaderResourceViews.find(hash) != shaderResourceViews.end())
 		return shaderResourceViews[hash];
 
-	D3D12_CPU_DESCRIPTOR_HANDLE* srv = new D3D12_CPU_DESCRIPTOR_HANDLE();
+	D3D12_CPU_DESCRIPTOR_HANDLE *srv = new D3D12_CPU_DESCRIPTOR_HANDLE();
 	if (mTextureSrvHeap.GetCount() == 0)
 	{
-		//https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
-		//https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
+		// https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
+		// https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
 		int layers = NumFaces();
 		UINT totalCount = (mips * mips + mips) / 2 * (layers * layers + layers) / 2;
-		totalCount += (mips + layers); //For aliasing -1 ranges for mips and layers.
-		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " SrvHeap").c_str(), false);
+		totalCount += (mips + layers); // For aliasing -1 ranges for mips and layers.
+		mTextureSrvHeap.Restore((dx12::RenderPlatform *)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " SrvHeap").c_str(), false);
 	}
 
-	const UINT& baseMipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.subresourceRange.mipLevelCount;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &baseMipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT &mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.subresourceRange.mipLevelCount;
+	const UINT &baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
@@ -640,7 +635,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 	return srv;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView)
+D3D12_CPU_DESCRIPTOR_HANDLE *Texture::AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext, const crossplatform::TextureView &textureView)
 {
 	if (!ValidateTextureView(textureView))
 		return nullptr;
@@ -651,7 +646,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::
 		return nullptr;
 	}
 
-	//Ensure a valid state for the resource
+	// Ensure a valid state for the resource
 	auto curState = GetCurrentState(deviceContext, textureView.subresourceRange);
 	if ((curState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	{
@@ -662,27 +657,27 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::
 	if (unorderedAccessViews.find(hash) != unorderedAccessViews.end())
 		return unorderedAccessViews[hash];
 
-	D3D12_CPU_DESCRIPTOR_HANDLE* uav = new D3D12_CPU_DESCRIPTOR_HANDLE();
+	D3D12_CPU_DESCRIPTOR_HANDLE *uav = new D3D12_CPU_DESCRIPTOR_HANDLE();
 	if (mTextureUavHeap.GetCount() == 0)
 	{
-		//https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
-		//https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
+		// https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
+		// https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
 		int layers = NumFaces();
 		UINT totalCount = (mips * mips + mips) / 2 * (layers * layers + layers) / 2;
-		totalCount += (mips + layers); //For aliasing -1 ranges for mips and layers.
-		mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " UavHeap").c_str(), false);
+		totalCount += (mips + layers); // For aliasing -1 ranges for mips and layers.
+		mTextureUavHeap.Restore((dx12::RenderPlatform *)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " UavHeap").c_str(), false);
 	}
 
-	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
-	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0) 
+	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
 		planeSlice = 0;
-	else if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_1) == crossplatform::TextureAspectFlags::PLANE_1) 
+	else if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_1) == crossplatform::TextureAspectFlags::PLANE_1)
 		planeSlice = 1;
-	else if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_2) == crossplatform::TextureAspectFlags::PLANE_2) 
+	else if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_2) == crossplatform::TextureAspectFlags::PLANE_2)
 		planeSlice = 2;
 	else
 		planeSlice = 0;
@@ -733,7 +728,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::
 	return uav;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView)
+D3D12_CPU_DESCRIPTOR_HANDLE *Texture::AsD3D12DepthStencilView(crossplatform::DeviceContext &deviceContext, const crossplatform::TextureView &textureView)
 {
 	if (!ValidateTextureView(textureView))
 		return nullptr;
@@ -755,20 +750,20 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::Dev
 	if (depthStencilViews.find(hash) != depthStencilViews.end())
 		return depthStencilViews[hash];
 
-	D3D12_CPU_DESCRIPTOR_HANDLE* dsv = new D3D12_CPU_DESCRIPTOR_HANDLE();
+	D3D12_CPU_DESCRIPTOR_HANDLE *dsv = new D3D12_CPU_DESCRIPTOR_HANDLE();
 	if (mTextureDsHeap.GetCount() == 0)
 	{
-		//https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
-		//https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
+		// https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
+		// https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
 		int layers = NumFaces();
 		UINT totalCount = (mips * mips + mips) / 2 * (layers * layers + layers) / 2;
-		totalCount += (mips + layers); //For aliasing -1 ranges for mips and layers.
-		mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, (name + " DsvHeap").c_str(), false);
+		totalCount += (mips + layers); // For aliasing -1 ranges for mips and layers.
+		mTextureDsHeap.Restore((dx12::RenderPlatform *)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, (name + " DsvHeap").c_str(), false);
 	}
 
-	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Format = RenderPlatform::TypelessToDsvFormat(dxgi_format);
@@ -819,7 +814,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::Dev
 	return dsv;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext, const crossplatform::TextureView& textureView)
+D3D12_CPU_DESCRIPTOR_HANDLE *Texture::AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext, const crossplatform::TextureView &textureView)
 {
 	if (!ValidateTextureView(textureView))
 		return nullptr;
@@ -836,25 +831,25 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::Dev
 	{
 		SetLayout(deviceContext, D3D12_RESOURCE_STATE_RENDER_TARGET, textureView.subresourceRange);
 	}
-	
+
 	uint64_t hash = textureView.GetHash();
 	if (renderTargetViews.find(hash) != renderTargetViews.end())
 		return renderTargetViews[hash];
 
-	D3D12_CPU_DESCRIPTOR_HANDLE* rtv = new D3D12_CPU_DESCRIPTOR_HANDLE();
+	D3D12_CPU_DESCRIPTOR_HANDLE *rtv = new D3D12_CPU_DESCRIPTOR_HANDLE();
 	if (mTextureRtHeap.GetCount() == 0)
 	{
-		//https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
-		//https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
+		// https://math.stackexchange.com/questions/1656686/how-many-rectangles-can-be-observed-in-the-grid
+		// https://math.stackexchange.com/questions/1240264/how-many-rectangles-or-triangles
 		int layers = NumFaces();
 		UINT totalCount = (mips * mips + mips) / 2 * (layers * layers + layers) / 2;
-		totalCount += (mips + layers); //For aliasing -1 ranges for mips and layers.
-		mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, (name + " RtHeap").c_str(), false);
+		totalCount += (mips + layers); // For aliasing -1 ranges for mips and layers.
+		mTextureRtHeap.Restore((dx12::RenderPlatform *)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, (name + " RtHeap").c_str(), false);
 	}
 
-	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
@@ -923,15 +918,15 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::Dev
 	return rtv;
 }
 
-void Texture::copyToMemory(crossplatform::DeviceContext &,void *,int ,int )
+void Texture::copyToMemory(crossplatform::DeviceContext &, void *, int, int)
 {
 	SIMUL_BREAK_ONCE("This is not implemented yet.");
 }
 
-void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
+void Texture::setTexels(crossplatform::DeviceContext &deviceContext, const void *src, int texel_index, int num_texels)
 {
 	HRESULT res = S_FALSE;
-	
+
 	if (mLoadedFromFile)
 	{
 		SIMUL_BREAK_ONCE("This is not yet supported for textures loaded from file.");
@@ -939,8 +934,8 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	}
 	else
 	{
-		auto renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-		
+		auto renderPlat = (dx12::RenderPlatform *)deviceContext.renderPlatform;
+
 		if (!mTextureDefault)
 		{
 			SIMUL_BREAK_INTERNAL("The texture is invalid");
@@ -951,33 +946,29 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		// We neen to know the size of the texture (DEFAULT)
 		UINT64 texSize = 0;
 		auto resourceDesc = mTextureDefault->GetDesc();
-		renderPlat->AsD3D12Device()->GetCopyableFootprints
-		(
+		renderPlat->AsD3D12Device()->GetCopyableFootprints(
 			&resourceDesc,
 			0, 1, 0,
 			nullptr, nullptr, nullptr,
-			&texSize
-		);
-		auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+			&texSize);
+		auto uploadProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		// Create the upload buffer
-		auto texBufferDesc=CD3DX12_RESOURCE_DESC::Buffer(texSize);
-		res = renderPlat->AsD3D12Device()->CreateCommittedResource
-		(
+		auto texBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(texSize);
+		res = renderPlat->AsD3D12Device()->CreateCommittedResource(
 			&uploadProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&texBufferDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			SIMUL_PPV_ARGS(&mTextureUpload)
-		);
+			SIMUL_PPV_ARGS(&mTextureUpload));
 		SIMUL_ASSERT(res == S_OK);
-		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureUpload, texSize,name.c_str())
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureUpload, texSize, name.c_str())
 		mTextureUpload->SetName(L"TextureSetTexelsUpload");
 
 		// Parameters
-		int texelSize	= RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
-		int srcPitch	= texelSize * width;
-		int srcSlice	= srcPitch * length;
+		int texelSize = RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
+		int srcPitch = texelSize * width;
+		int srcSlice = srcPitch * length;
 
 		// Checks
 		if (texel_index != 0)
@@ -986,17 +977,17 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			SIMUL_BREAK_INTERNAL("Nacho has to implement this")
 
 		// Transition main texture to copy dest
-		renderPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, GetCurrentState(deviceContext), D3D12_RESOURCE_STATE_COPY_DEST,true);
+		renderPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, GetCurrentState(deviceContext), D3D12_RESOURCE_STATE_COPY_DEST, true);
 
 		// Copy the data
 		D3D12_SUBRESOURCE_DATA srcData;
-		srcData.pData			= src;
-		srcData.RowPitch		= srcPitch;
-		srcData.SlicePitch		= srcSlice;
+		srcData.pData = src;
+		srcData.RowPitch = srcPitch;
+		srcData.SlicePitch = srcSlice;
 		UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, 1, &srcData);
 
 		// Transition main texture to pixel shader resource
-		renderPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(deviceContext),true);
+		renderPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(deviceContext), true);
 	}
 }
 
@@ -1010,43 +1001,43 @@ bool Texture::HasRenderTargets() const
 	return renderTarget;
 }
 
-bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,int w,int l,crossplatform::PixelFormat f,bool make_rt, bool setDepthStencil, int numOfSamples)
+bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform, void *t, int w, int l, crossplatform::PixelFormat f, bool make_rt, bool setDepthStencil, int numOfSamples)
 {
-	return InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,make_rt,setDepthStencil);
+	return InitFromExternalD3D12Texture2D(renderPlatform, (ID3D12Resource *)t, make_rt, setDepthStencil);
 }
 
 void Texture::SetName(const char *n)
 {
 	crossplatform::Texture::SetName(n);
-	if(!mTextureDefault)
+	if (!mTextureDefault)
 		return;
-	std::wstring ws=platform::core::Utf8ToWString(n);
+	std::wstring ws = platform::core::Utf8ToWString(n);
 	mTextureDefault->SetName(ws.c_str());
 }
 
 void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 {
-	mExternalLayout=(D3D12_RESOURCE_STATES)resourceState;
-	if(resourceState==crossplatform::ResourceState::UNKNOWN)
+	mExternalLayout = (D3D12_RESOURCE_STATES)resourceState;
+	if (resourceState == crossplatform::ResourceState::UNKNOWN)
 		return;
 	AssumeLayout(mExternalLayout);
 }
 
-void Texture::RestoreExternalTextureState(crossplatform::DeviceContext& deviceContext)
+void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
 	if ((crossplatform::ResourceState)mExternalLayout == crossplatform::ResourceState::UNKNOWN)
 		return;
-	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
+	auto rPlat = (dx12::RenderPlatform *)(renderPlatform);
 	SetLayout(deviceContext, mExternalLayout);
 }
 
-bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, bool make_rt, bool setDepthStencil)
+bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *r, ID3D12Resource *t, bool make_rt, bool setDepthStencil)
 {
-	//Check that the texture pointer is valid.
+	// Check that the texture pointer is valid.
 	if (t)
 	{
-		ID3D12Resource* _t;
-		if (t->QueryInterface(__uuidof(ID3D12Resource), (void**)&_t) != S_OK)
+		ID3D12Resource *_t;
+		if (t->QueryInterface(__uuidof(ID3D12Resource), (void **)&_t) != S_OK)
 		{
 			SIMUL_CERR << "Can't initialise from external texture: 0x" << std::hex << t << std::dec << std::endl;
 			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
@@ -1055,7 +1046,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		SAFE_RELEASE(_t);
 	}
 	renderPlatform = r;
-	mExternalLayout=D3D12_RESOURCE_STATE_COMMON;
+	mExternalLayout = D3D12_RESOURCE_STATE_COMMON;
 	// If it's the same as before, return.
 	if (mTextureDefault == t)
 	{
@@ -1068,10 +1059,9 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	}
 	if (mTextureDefault)
 	{
-		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
+		auto renderPlatformDx12 = (dx12::RenderPlatform *)renderPlatform;
 		// Pass "owned=false" so we don't try to untrack memory we never tracked.
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" changing mTextureDefault").c_str(),!mInitializedFromExternal);
-		
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name + " changing mTextureDefault").c_str(), !mInitializedFromExternal);
 	}
 	if (!t)
 	{
@@ -1079,8 +1069,8 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	}
 	t->AddRef();
 	FreeSRVTables();
-	mTextureDefault				= t;
-	mInitializedFromExternal	= true;
+	mTextureDefault = t;
+	mInitializedFromExternal = true;
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
@@ -1088,33 +1078,33 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault)
 	{
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
-	
+
 		// Assume cubemap
 		if (textureDesc.DepthOrArraySize == 6 && (textureDesc.Width == textureDesc.Height))
 		{
-			cubemap							= true;
-			textureDesc.DepthOrArraySize	= 1;
+			cubemap = true;
+			textureDesc.DepthOrArraySize = 1;
 		}
 		else
 		{
-			cubemap							= false;
+			cubemap = false;
 		}
 		dxgi_format = RenderPlatform::DsvToTypelessFormat(textureDesc.Format);
-		
+
 		pixelFormat = RenderPlatform::FromDxgiFormat(dxgi_format);
-		compressionFormat=RenderPlatform::DxgiFormatToCompressionFormat(dxgi_format);
+		compressionFormat = RenderPlatform::DxgiFormatToCompressionFormat(dxgi_format);
 		InitFormats(pixelFormat);
-		width		= (int)textureDesc.Width;
-		length		= (int)textureDesc.Height;
+		width = (int)textureDesc.Width;
+		length = (int)textureDesc.Height;
 		mNumSamples = textureDesc.SampleDesc.Count;
 		InitStateTable(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
-		if ((textureDesc.Flags&D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE)==0)
+		if ((textureDesc.Flags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE) == 0)
 		{
-			arraySize	= textureDesc.DepthOrArraySize;
-			mips		= textureDesc.MipLevels;
+			arraySize = textureDesc.DepthOrArraySize;
+			mips = textureDesc.MipLevels;
 		}
-		//InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels); //Depth Texture was not having its InitStateTable updating, thus mSubResourcesStates.size() was 0. -AJR
-		depth       = textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D ? textureDesc.DepthOrArraySize : 1;
+		// InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels); //Depth Texture was not having its InitStateTable updating, thus mSubResourcesStates.size() was 0. -AJR
+		depth = textureDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D ? textureDesc.DepthOrArraySize : 1;
 
 		// Create render target views for this external texture:
 		if (make_rt && !setDepthStencil)
@@ -1147,29 +1137,29 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		}
 	}
 	AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
-	dim			= 2;
+	dim = 2;
 	return true;
 }
 
-bool Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,bool make_uav)
+bool Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r, void *ta, bool make_uav)
 {
 	return false;
 }
 
-bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
+bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r, int w, int l, int d, crossplatform::PixelFormat pf, bool computable, int m, bool rendertargets)
 {
 	HRESULT res = S_FALSE;
 
-	renderPlatform  = r;
-	bool ok			= true;
+	renderPlatform = r;
+	bool ok = true;
 
 	if (mTextureDefault)
 	{
 		D3D12_RESOURCE_DESC desc = mTextureDefault->GetDesc();
-		if (dim!=3||desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || pixelFormat != pf)
+		if (dim != 3 || desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || pixelFormat != pf)
 		{
-			int mindim=std::min(std::min(w,l),d);
-			while(m>1&&(1<<(m-1))>mindim)
+			int mindim = std::min(std::min(w, l), d);
+			while (m > 1 && (1 << (m - 1)) > mindim)
 			{
 				m--;
 			}
@@ -1191,47 +1181,42 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	if (!ok)
 	{
 		InvalidateDeviceObjects();
-		dim				= 3;
+		dim = 3;
 		InitFormats(pf);
-		int mindim=std::min(std::min(w,l),d);
-		while(m>1&&(1<<(m-1))>mindim)
+		int mindim = std::min(std::min(w, l), d);
+		while (m > 1 && (1 << (m - 1)) > mindim)
 		{
 			m--;
 		}
 		dxgi_format = genericDxgiFormat;
-		width		= w;
-		length		= l;
-		depth		= d;
+		width = w;
+		length = l;
+		depth = d;
 
 		SIMUL_ASSERT(w > 0 && l > 0 && w <= 65536 && l <= 65536);
 
 		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
-		textureFlags = (D3D12_RESOURCE_FLAGS)
-		(
-			textureFlags | 
-			(computable		? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS	: 0) |
-			(rendertargets	? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET		: 0)
-		);
+		textureFlags = (D3D12_RESOURCE_FLAGS)(textureFlags |
+											  (computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |
+											  (rendertargets ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0));
 
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex3D
-		(
+		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex3D(
 			dxgi_format,
 			width,
 			length,
 			depth,
 			m,
-			textureFlags
-		);
+			textureFlags);
 
 		// Make the clear values
 		D3D12_CLEAR_VALUE clearValues = {};
 		if (rendertargets)
 		{
-			clearValues.Format		= genericDxgiFormat;
-			clearValues.Color[0]	= 1.0f;
-			clearValues.Color[1]	= 0.0f;
-			clearValues.Color[2]	= 0.0f;
-			clearValues.Color[3]	= 1.0f;
+			clearValues.Format = genericDxgiFormat;
+			clearValues.Color[0] = 1.0f;
+			clearValues.Color[1] = 0.0f;
+			clearValues.Color[2] = 0.0f;
+			clearValues.Color[3] = 1.0f;
 		}
 
 		mips = m;
@@ -1239,24 +1224,22 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		InitStateTable(1, m);
 
 		// Find the initial texture state
-		D3D12_RESOURCE_STATES initialState= computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
+		D3D12_RESOURCE_STATES initialState = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
 
 		// Clean resources
-		SAFE_RELEASE_LATER(mTextureDefault); 
+		SAFE_RELEASE_LATER(mTextureDefault);
 
 		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		res = r->AsD3D12Device()->CreateCommittedResource
-		(
+		res = r->AsD3D12Device()->CreateCommittedResource(
 			&defaultProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
 			initialState,
-			rendertargets? &clearValues : nullptr,
-			SIMUL_PPV_ARGS(&mTextureDefault)
-		);
+			rendertargets ? &clearValues : nullptr,
+			SIMUL_PPV_ARGS(&mTextureDefault));
 		SIMUL_ASSERT(res == S_OK);
 		size_t texSize = w * l * d * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 		std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
@@ -1264,12 +1247,12 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 
 		// Create the main SRV
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping			= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format							= genericDxgiFormat;
-		srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_TEXTURE3D;
-		srvDesc.Texture3D.MipLevels				= m;
-		srvDesc.Texture3D.MostDetailedMip		= 0;
-		InitStateTable(1,m);
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = genericDxgiFormat;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		srvDesc.Texture3D.MipLevels = m;
+		srvDesc.Texture3D.MostDetailedMip = 0;
+		InitStateTable(1, m);
 
 		if (name.length() == 0)
 			SIMUL_BREAK_INTERNAL("Unnamed texture")
@@ -1291,55 +1274,65 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		}
 	}
 
-	mips		= m;
-	arraySize	= 1;
+	mips = m;
+	arraySize = 1;
 
 	return changed;
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
-											int w,int l, int m,
-											crossplatform::PixelFormat f
-											, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
-											, bool computable,bool rendertarget,bool depthstencil,
-											int num_samples,int aa_quality,bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat)
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r,
+										   int w,
+										   int l,
+										   int m,
+										   crossplatform::PixelFormat f,
+										   std::shared_ptr<std::vector<std::vector<uint8_t>>> data,
+										   bool computable,
+										   bool rendertarget,
+										   bool depthstencil,
+										   int num_samples,
+										   int aa_quality,
+										   bool wrap,
+										   vec4 clear,
+										   float clearDepth,
+										   uint clearStencil,
+										   bool shared,
+										   crossplatform::CompressionFormat compressionFormat)
 {
-	return EnsureTexture2DSizeAndFormat(r,w,l,m,f,data,computable,rendertarget,depthstencil,num_samples,aa_quality,wrap,clear,clearDepth,clearStencil,shared,compressionFormat);
+	return EnsureTexture2DSizeAndFormat(r, w, l, m, f, data, computable, rendertarget, depthstencil, num_samples, aa_quality, wrap, clear, clearDepth, clearStencil, shared, compressionFormat);
 }
 void Texture::InitFormats(crossplatform::PixelFormat f)
 {
-	pixelFormat		= f;
-	dxgi_format		= (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
+	pixelFormat = f;
+	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
 	genericDxgiFormat = dxgi_format;
-	srvFormat		= dxgi_format;
+	srvFormat = dxgi_format;
 	// needed for video decoder.
 	yuv = false;
-	if(genericDxgiFormat==DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
+	if (genericDxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
 	{
-		srvFormat	=genericDxgiFormat;
-		genericDxgiFormat	=DXGI_FORMAT_R8G8B8A8_TYPELESS;
-		uavFormat	=DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvFormat = genericDxgiFormat;
+		genericDxgiFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
 	if (genericDxgiFormat == DXGI_FORMAT_D32_FLOAT)
 	{
 		genericDxgiFormat = DXGI_FORMAT_R32_TYPELESS;
-		srvFormat		= DXGI_FORMAT_R32_FLOAT;
+		srvFormat = DXGI_FORMAT_R32_FLOAT;
 	}
 	if (genericDxgiFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
 	{
 		genericDxgiFormat = DXGI_FORMAT_R32G8X24_TYPELESS;
-		srvFormat		= DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+		srvFormat = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 	}
 	if (genericDxgiFormat == DXGI_FORMAT_D16_UNORM)
 	{
 		genericDxgiFormat = DXGI_FORMAT_R16_TYPELESS;
-		srvFormat		= DXGI_FORMAT_R16_UNORM;
+		srvFormat = DXGI_FORMAT_R16_UNORM;
 	}
 	if (genericDxgiFormat == DXGI_FORMAT_D24_UNORM_S8_UINT)
 	{
 		genericDxgiFormat = DXGI_FORMAT_R24G8_TYPELESS;
-		srvFormat		= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
 	if (genericDxgiFormat == DXGI_FORMAT_NV12)
 	{
@@ -1350,37 +1343,46 @@ void Texture::InitFormats(crossplatform::PixelFormat f)
 	}
 }
 
-bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
-											int w,int l, int m
-											,crossplatform::PixelFormat f
-											, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
-											,bool computable,bool rendertarget,bool depthstencil,
-											int num_samples,int aa_quality,bool wrap,
-											vec4 clear, float clearDepth, uint clearStencil, bool shared
-											,crossplatform::CompressionFormat compr)
+bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r,
+										   int w,
+										   int l,
+										   int m,
+										   crossplatform::PixelFormat f,
+										   std::shared_ptr<std::vector<std::vector<uint8_t>>> data,
+										   bool computable,
+										   bool rendertarget,
+										   bool depthstencil,
+										   int num_samples,
+										   int aa_quality,
+										   bool wrap,
+										   vec4 clear,
+										   float clearDepth,
+										   uint clearStencil,
+										   bool shared,
+										   crossplatform::CompressionFormat compr)
 {
 	// Define pixel formats of this texture
-	renderPlatform	= r;
-	dim			= 2;
+	renderPlatform = r;
+	dim = 2;
 	HRESULT res = S_FALSE;
-	
+
 	bool ok = true;
 	if (mTextureDefault)
 	{
 		auto desc = mTextureDefault->GetDesc();
-		if (desc.Width != w || desc.Height != l || desc.MipLevels != m || f != pixelFormat||mips!=m)
+		if (desc.Width != w || desc.Height != l || desc.MipLevels != m || f != pixelFormat || mips != m)
 		{
 			ok = false;
 		}
-		if (computable != ((desc.Flags&D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
+		if (computable != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
 		{
 			ok = false;
 		}
-		if (rendertarget != ((desc.Flags&D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
+		if (rendertarget != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
 		{
 			ok = false;
 		}
-		if (depthstencil != ((desc.Flags&D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) == D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL))
+		if (depthstencil != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) == D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL))
 		{
 			ok = false;
 		}
@@ -1398,48 +1400,42 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 	if (!ok)
 	{
-		if (w*l <= 0)
+		if (w * l <= 0)
 			return false;
 		InvalidateDeviceObjects();
-		pixelFormat		= f;
+		pixelFormat = f;
 		compressionFormat = compr;
 		InitFormats(f);
 		width = w;
 		length = l;
-		mips		= m;
-		arraySize	= 1;
+		mips = m;
+		arraySize = 1;
 
 		// Check msaa support
 		if (num_samples > 1)
 		{
 			D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQuery = {};
-			msaaQuery.SampleCount		= num_samples;
-			msaaQuery.NumQualityLevels	= aa_quality;
-			msaaQuery.Format			= srvFormat;
-			res                         = renderPlatform->AsD3D12Device()->CheckFeatureSupport
-			(
-				D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaQuery, sizeof(msaaQuery)
-			);
+			msaaQuery.SampleCount = num_samples;
+			msaaQuery.NumQualityLevels = aa_quality;
+			msaaQuery.Format = srvFormat;
+			res = renderPlatform->AsD3D12Device()->CheckFeatureSupport(
+				D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaQuery, sizeof(msaaQuery));
 			if (FAILED(res))
 			{
 				SIMUL_CERR << "The provided quality settings are not supported by this device. \n";
 				num_samples = 1;
-				aa_quality	= 0;
+				aa_quality = 0;
 			}
 			mNumSamples = num_samples;
 		}
 
 		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
-		textureFlags = (D3D12_RESOURCE_FLAGS)
-		(
-			textureFlags | 
-			(computable		? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS	: 0) |
-			(rendertarget	? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET		: 0) |
-			(depthstencil	? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL		: 0)
-		);
+		textureFlags = (D3D12_RESOURCE_FLAGS)(textureFlags |
+											  (computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |
+											  (rendertarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0) |
+											  (depthstencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : 0));
 
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
-		(
+		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(
 			genericDxgiFormat,
 			width,
 			length,
@@ -1447,8 +1443,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			m,
 			num_samples,
 			aa_quality,
-			textureFlags
-		);
+			textureFlags);
 
 		// Make the clear values
 		D3D12_CLEAR_VALUE clearValues = {};
@@ -1457,9 +1452,9 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			clearValues.Format = genericDxgiFormat;
 			if (depthstencil)
 			{
-				clearValues.Format					= dxgi_format;	// Clear format can't be typeless
-				clearValues.DepthStencil.Depth		= clearDepth;
-				clearValues.DepthStencil.Stencil	= clearStencil;
+				clearValues.Format = dxgi_format; // Clear format can't be typeless
+				clearValues.DepthStencil.Depth = clearDepth;
+				clearValues.DepthStencil.Stencil = clearStencil;
 			}
 			else if (!depthstencil && rendertarget)
 			{
@@ -1471,30 +1466,28 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 
 		// Clean resources
-		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		if(mTextureDefault)
-			renderPlatformDx12->PushToReleaseManager(mTextureDefault,  (name+" mTextureDefault").c_str());
+		auto renderPlatformDx12 = (dx12::RenderPlatform *)renderPlatform;
+		if (mTextureDefault)
+			renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name + " mTextureDefault").c_str());
 		mTextureDefault = nullptr;
-
 
 		D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE;
 		if (shared)
 		{
 			heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_SHARED;
 		}
-		
+
 		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		// Create the texture resource
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-		(
+		res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
 			&defaultProperties,
 			heapFlags,
 			&textureDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			(rendertarget || depthstencil) ? &clearValues : nullptr,
-			SIMUL_PPV_ARGS(&mTextureDefault)
-		);
-		SIMUL_COUT << "Creating texture "<<name.c_str()<<". "<<"\n";
+			SIMUL_PPV_ARGS(&mTextureDefault));
+		SIMUL_COUT << "Creating texture " << name.c_str() << ". "
+				   << "\n";
 		SIMUL_ASSERT(res == S_OK);
 		auto desc = mTextureDefault->GetDesc();
 		size_t texSize;
@@ -1502,7 +1495,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		size_t sizeInPixels = w * l;
 		if (yuv)
 		{
-			// Y * UV	
+			// Y * UV
 			texSize = sizeInPixels + (sizeInPixels / 2);
 		}
 		else
@@ -1510,8 +1503,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			bytes_per_pixel = dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format);
 			texSize = sizeInPixels * bytes_per_pixel;
 		}
-		
-		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
+
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 		std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
 #if SIMUL_INTERNAL_CHECKS
@@ -1521,7 +1514,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 #endif
 		mTextureDefault->SetName(n.c_str());
-		
+
 		if (data)
 			textureUploadComplete = false;
 		else
@@ -1534,7 +1527,8 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 		if (computable)
 		{
-			this->computable = true;;
+			this->computable = true;
+			;
 			FreeUAVTables();
 		}
 		if (rendertarget)
@@ -1548,11 +1542,11 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			FreeDSVTables();
 		}
 	}
-	
+
 	return !ok;
 }
 
-bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
+bool Texture::ensureVideoTexture(crossplatform::RenderPlatform *r, int w, int l, crossplatform::PixelFormat f, crossplatform::VideoTextureType texType)
 {
 #if SIMUL_D3D12_VIDEO_SUPPORTED
 	// Define pixel formats of this texture
@@ -1560,7 +1554,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 	pixelFormat = f;
 	compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED;
 	InitFormats(f);
-	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
+	dxgi_format = (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
 	genericDxgiFormat = dxgi_format;
 	if (genericDxgiFormat == DXGI_FORMAT_D32_FLOAT)
 	{
@@ -1605,7 +1599,6 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 		length = l;
 
 		InvalidateDeviceObjects();
-		
 
 		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
@@ -1623,8 +1616,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 			initialState = D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
 		}
 
-		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
-		(
+		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(
 			genericDxgiFormat,
 			width,
 			length,
@@ -1632,28 +1624,25 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 			mipLevels,
 			1,
 			1,
-			textureFlags
-		);
+			textureFlags);
 
 		// Clean resources
-		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
+		auto renderPlatformDx12 = (dx12::RenderPlatform *)renderPlatform;
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name + " mTextureDefault").c_str());
 		mTextureDefault = nullptr;
 		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		// Create the texture resource
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-		(
+		res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
 			&defaultProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
 			initialState,
 			nullptr,
-			SIMUL_PPV_ARGS(&mTextureDefault)
-		);
+			SIMUL_PPV_ARGS(&mTextureDefault));
 		SIMUL_ASSERT(res == S_OK);
 		size_t texSize = w * l * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
-			std::wstring n = L"mTextureDefault_";
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
+		std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
 		mTextureDefault->SetName(n.c_str());
 
@@ -1669,8 +1658,7 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 #endif
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f
-	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compr)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r, int w, int l, int num, int m, crossplatform::PixelFormat f, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compr)
 {
 	bool ok = true;
 	int totalNum = cubemap ? 6 * num : num;
@@ -1708,7 +1696,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	pixelFormat = f;
 	compressionFormat = compr;
 	InitFormats(f);
-	dxgi_format = dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
+	dxgi_format = dx12::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
 	width = w;
 	length = l;
 	depth = 1;
@@ -1721,16 +1709,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	this->computable = computable;
 
 	D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
-	textureFlags = (D3D12_RESOURCE_FLAGS)
-		(
-			textureFlags |
-			(computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |
-			(rendertarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0) |
-			(depthstencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL :0)
-			);
+	textureFlags = (D3D12_RESOURCE_FLAGS)(textureFlags |
+										  (computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |
+										  (rendertarget ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0) |
+										  (depthstencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : 0));
 
-	CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D
-	(
+	CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(
 		dxgi_format,
 		width,
 		length,
@@ -1738,8 +1722,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		m,
 		1,
 		0,
-		textureFlags
-	);
+		textureFlags);
 
 	// Make the clear values
 	// Make the clear values
@@ -1749,7 +1732,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		clearValues.Format = genericDxgiFormat;
 		if (depthstencil)
 		{
-			clearValues.Format = dxgi_format;	// Clear format can't be typeless
+			clearValues.Format = dxgi_format; // Clear format can't be typeless
 			clearValues.DepthStencil.Depth = 0.0f;
 			clearValues.DepthStencil.Stencil = 0;
 		}
@@ -1782,15 +1765,13 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
 	auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	res = r->AsD3D12Device()->CreateCommittedResource
-	(
+	res = r->AsD3D12Device()->CreateCommittedResource(
 		&defaultProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&textureDesc,
 		mResourceState,
 		(rendertarget || depthstencil) ? &clearValues : nullptr,
-		SIMUL_PPV_ARGS(&mTextureDefault)
-	);
+		SIMUL_PPV_ARGS(&mTextureDefault));
 	SIMUL_ASSERT(res == S_OK);
 	size_t texSize = w * l * totalNum * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 	std::wstring n = L"mTextureDefault_";
@@ -1802,9 +1783,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	FreeRTVTables();
 	FreeDSVTables();
 	FreeUAVTables();
-	
+
 	InitStateTable(totalNum, m);
-	
+
 	if (data)
 		textureUploadComplete = false;
 	else
@@ -1814,24 +1795,85 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	return true;
 }
 
-void Texture::ensureTexture1DSizeAndFormat(ID3D12Device* pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
+void Texture::ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice, int w, crossplatform::PixelFormat pf, bool computable)
 {
 }
 
 void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE *rtv = AsD3D12RenderTargetView(deviceContext, {GetShaderResourceTypeForRTVAndDSV(), {}});
-	deviceContext.asD3D12Context()->ClearRenderTargetView(*rtv, colourClear, 0, nullptr);
+	bool clearRTV = renderTarget;
+	bool clearUAV = computable;
+
+	if (clearRTV && clearUAV)
+	{
+		if (AreSubresourcesInSameState({}))
+		{
+			clearRTV = GetState() == D3D12_RESOURCE_STATE_RENDER_TARGET;
+			clearUAV = GetState() == D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+	}
+	if (!clearRTV && !clearUAV)
+	{
+		clearRTV |= !deviceContext.contextState.last_action_was_compute;
+		clearUAV |= deviceContext.contextState.last_action_was_compute;
+	}
+	if (clearRTV && clearUAV)
+	{
+		SIMUL_BREAK("");
+	}
+
+	if (clearRTV)
+		SetLayout(deviceContext, D3D12_RESOURCE_STATE_RENDER_TARGET, {}, true);
+	if (clearUAV)
+		SetLayout(deviceContext, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, {}, true);
+	
+	const int &layerCount = NumFaces();
+	crossplatform::TextureView tv;
+	tv.type = GetShaderResourceTypeForRTVAndDSV();
+	for (int mip = 0; mip < mips; mip++) // Must clear mip by mip.
+	{
+		tv.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, mip, 0, layerCount};
+
+		if (clearRTV)
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE *rtv = AsD3D12RenderTargetView(deviceContext, tv);
+			deviceContext.asD3D12Context()->ClearRenderTargetView(*rtv, colourClear, 0, nullptr);
+		}
+		else if (clearUAV)
+		{
+			tv.type |= platform::crossplatform::ShaderResourceType::RW;
+			D3D12_CPU_DESCRIPTOR_HANDLE *uav = AsD3D12UnorderedAccessView(deviceContext, tv);
+			dx12::RenderPlatform *r = (dx12::RenderPlatform *)renderPlatform;
+			dx12::Heap heap;
+			heap.Restore(r, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Temp GPU Heap", true);
+			r->AsD3D12Device()->CopyDescriptorsSimple(1, heap.CpuHandle(), *uav, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			ID3D12DescriptorHeap *d3d12Heap = heap.GetHeap();
+			deviceContext.asD3D12Context()->SetDescriptorHeaps(1, &d3d12Heap);
+			deviceContext.asD3D12Context()->ClearUnorderedAccessViewFloat(heap.GpuHandle(), *uav, mTextureDefault, colourClear, 0, nullptr);
+		}
+		else
+		{
+			SIMUL_CERR << "No method was found to clear this texture." << std::endl;
+		}
+	}
 }
 
-void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
+void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear)
 {
-	const D3D12_CLEAR_FLAGS kFlags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
-	D3D12_CPU_DESCRIPTOR_HANDLE* dsv = AsD3D12DepthStencilView(deviceContext, { GetShaderResourceTypeForRTVAndDSV(), {} });
-	deviceContext.asD3D12Context()->ClearDepthStencilView(*dsv, kFlags, depthClear, stencilClear, 0, nullptr);
+	const int &layerCount = NumFaces();
+	crossplatform::TextureView tv;
+	tv.type = GetShaderResourceTypeForRTVAndDSV();
+	for (int mip = 0; mip < mips; mip++) // Must clear mip by mip.
+	{
+		tv.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH | crossplatform::TextureAspectFlags::STENCIL, 0, mip, 0, layerCount};
+
+		D3D12_CPU_DESCRIPTOR_HANDLE *dsv = AsD3D12DepthStencilView(deviceContext, tv);
+		const D3D12_CLEAR_FLAGS kFlags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
+		deviceContext.asD3D12Context()->ClearDepthStencilView(*dsv, kFlags, depthClear, stencilClear, 0, nullptr);
+	}
 }
 
-void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
+void Texture::GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	if (mips <= 1)
 	{
@@ -1839,7 +1881,6 @@ void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
 	}
 	deviceContext.renderPlatform->GenerateMips(deviceContext, this, true);
 }
-
 
 bool Texture::isMapped() const
 {
@@ -1850,37 +1891,37 @@ void Texture::unmap()
 {
 }
 
-vec4 Texture::GetTexel(crossplatform::DeviceContext &,vec2 ,bool )
+vec4 Texture::GetTexel(crossplatform::DeviceContext &, vec2, bool)
 {
 	SIMUL_BREAK_INTERNAL("");
-	return vec4(0.0f,0.0f,0.0f,0.0f);
+	return vec4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::TextureView textureView)
 {
-	const int& mip = textureView.subresourceRange.baseMipLevel;
-	const int& array_index = textureView.subresourceRange.baseArrayLayer;
+	const int &mip = textureView.subresourceRange.baseMipLevel;
+	const int &array_index = textureView.subresourceRange.baseArrayLayer;
 	if (textureView.type == crossplatform::ShaderResourceType::UNKNOWN)
 		textureView.type = GetShaderResourceTypeForRTVAndDSV();
 
 	SetLayout(deviceContext, D3D12_RESOURCE_STATE_RENDER_TARGET, textureView.subresourceRange);
 	if (renderTarget)
 	{
-		auto rp		= (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		auto rp = (dx12::RenderPlatform *)deviceContext.renderPlatform;
 		rp->FlushBarriers(deviceContext);
 		auto rtView = AsD3D12RenderTargetView(deviceContext, textureView);
 
-		targetsAndViewport.num				= 1;
-		targetsAndViewport.m_dt				= nullptr;
-		targetsAndViewport.m_rt[0]			= rtView;
-		targetsAndViewport.rtFormats[0]     = pixelFormat;
-		targetsAndViewport.viewport.w		= (int)(std::max(1, (width >> mip)));
-		targetsAndViewport.viewport.h		= (int)(std::max(1, (length >> mip)));
-		targetsAndViewport.viewport.x		= 0;
-		targetsAndViewport.viewport.y		= 0;
+		targetsAndViewport.num = 1;
+		targetsAndViewport.m_dt = nullptr;
+		targetsAndViewport.m_rt[0] = rtView;
+		targetsAndViewport.rtFormats[0] = pixelFormat;
+		targetsAndViewport.viewport.w = (int)(std::max(1, (width >> mip)));
+		targetsAndViewport.viewport.h = (int)(std::max(1, (length >> mip)));
+		targetsAndViewport.viewport.x = 0;
+		targetsAndViewport.viewport.y = 0;
 
 		rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
-		
+
 		// Inform the render platform of the current number of MSAA samples
 		mCachedMSAAState = rp->GetMSAAInfo();
 		rp->SetCurrentSamples(mNumSamples);
@@ -1889,28 +1930,28 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 
 void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext)
 {
-	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-	if(deviceContext.GetFrameBufferStack().top()!=&targetsAndViewport)
+	auto rp = (dx12::RenderPlatform *)deviceContext.renderPlatform;
+	if (deviceContext.GetFrameBufferStack().top() != &targetsAndViewport)
 	{
 		SIMUL_BREAK_ONCE("Trying to deactivate a texture that wasn't bound as rendertarget.");
 		return;
 	}
 	rp->DeactivateRenderTargets(deviceContext);
 	// Restore MSAA state
-	rp->SetCurrentSamples(mCachedMSAAState.Count,mCachedMSAAState.Quality);
+	rp->SetCurrentSamples(mCachedMSAAState.Count, mCachedMSAAState.Quality);
 }
 
-int Texture::GetSampleCount()const
+int Texture::GetSampleCount() const
 {
 	return mNumSamples == 1 ? 0 : mNumSamples;
 }
 
-bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange)
+bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange &subresourceRange)
 {
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
 
 	std::vector<D3D12_RESOURCE_STATES> stateCheck;
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)
@@ -1920,7 +1961,7 @@ bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& 
 	return std::equal(stateCheck.begin() + 1, stateCheck.end(), stateCheck.begin());
 }
 
-D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &deviceContext, const crossplatform::SubresourceRange& subresourceRange)
+D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &deviceContext, const crossplatform::SubresourceRange &subresourceRange)
 {
 	if (mSubResourcesStates.empty())
 		return mResourceState;
@@ -1931,10 +1972,10 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 	if (AreSubresourcesInSameState(subresourceRange))
 		return mSubResourcesStates[subresourceRange.baseArrayLayer][subresourceRange.baseMipLevel];
 
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
 
 	// Return the resource state of a mip or array layer, or the whole resource
 	if (numMips > 1 || numLayers > 1)
@@ -1942,7 +1983,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 		// If we request the state of the ranges of subresource, we have to make sure
 		// that all of the subresources are in the correct state. The correct state
 		// will be the main resource state.
-		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+		auto rPlat = (dx12::RenderPlatform *)renderPlatform;
 		for (uint32_t l = startLayer; l < startLayer + numLayers; l++)
 		{
 			for (uint32_t m = startMip; m < startMip + numMips; m++)
@@ -1962,16 +2003,16 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 	return mSubResourcesStates[startLayer][startMip];
 }
 
-void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state, const crossplatform::SubresourceRange& subresourceRange, bool flush)
+void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, D3D12_RESOURCE_STATES state, const crossplatform::SubresourceRange &subresourceRange, bool flush)
 {
-	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+	auto rPlat = (dx12::RenderPlatform *)renderPlatform;
 	int curArray = cubemap ? arraySize * 6 : arraySize;
 	const bool split_layouts = !AreSubresourcesInSameState({});
 
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? curArray : subresourceRange.arrayLayerCount;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? curArray : subresourceRange.arrayLayerCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
 
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == curArray));
 
@@ -1993,9 +2034,9 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 				}
 			}
 		}
-		else if(mResourceState != state)
+		else if (mResourceState != state)
 		{
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state,flush, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+			rPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, mResourceState, state, flush, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			for (int l = 0; l < numLayers; l++)
 			{
 				for (int m = 0; m < mips; m++)
@@ -2068,7 +2109,7 @@ unsigned Texture::GetSubresourceIndex(int mip, int layer)
 	return D3D12CalcSubresource(curMip, curLayer, 0, mips, totalArray);
 }
 
-void Texture::SwitchToContext(crossplatform::DeviceContext& deviceContext)
+void Texture::SwitchToContext(crossplatform::DeviceContext &deviceContext)
 {
 	if (deviceContext.deviceContextType != crossplatform::DeviceContextType::COMPUTE)
 		return;
@@ -2079,41 +2120,37 @@ void Texture::CreateUploadResource(int slices)
 {
 	SAFE_RELEASE_LATER(mTextureUpload);
 	D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
-	textureDesc.Alignment = 0;							// Let runtime decide
-	textureDesc.DepthOrArraySize =slices;
+	textureDesc.Alignment = 0; // Let runtime decide
+	textureDesc.DepthOrArraySize = slices;
 	textureDesc.Width = width;
 	textureDesc.Height = length;
 	textureDesc.MipLevels = mips;
-	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
+	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
 	textureDesc.Format = dxgiFormat;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
-	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;	// Use D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET to generate mips.
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;	   // Use D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET to generate mips.
 	int totalNum = slices;
 	size_t numSub = totalNum * textureDesc.MipLevels;
 	std::vector<UINT64> sliceSizes(numSub);
 	UINT64 textureUploadBufferSize = 0;
-	std::vector<UINT>   numRows(numSub);
+	std::vector<UINT> numRows(numSub);
 	pLayouts.resize(numSub);
-	renderPlatform->AsD3D12Device()->GetCopyableFootprints
-	(
+	renderPlatform->AsD3D12Device()->GetCopyableFootprints(
 		&textureDesc,
 		0, (UINT)numSub, 0,
 		pLayouts.data(), numRows.data(), sliceSizes.data(),
-		&textureUploadBufferSize
-	);
-	auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
-	HRESULT res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
+		&textureUploadBufferSize);
+	auto uploadProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto uploadDesc = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
+	HRESULT res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
 		&uploadProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&uploadDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		SIMUL_PPV_ARGS(&mTextureUpload)
-	);
+		SIMUL_PPV_ARGS(&mTextureUpload));
 	SIMUL_ASSERT(res == S_OK);
 	std::wstring n = L"UPLOAD_";
 	n += std::wstring(name.begin(), name.end());

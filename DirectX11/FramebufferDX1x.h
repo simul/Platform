@@ -37,9 +37,6 @@ namespace platform
 			virtual void ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			virtual void Deactivate(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			virtual void DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
-			virtual void Clear(crossplatform::GraphicsDeviceContext &context,float,float,float,float,float,int mask=0) override;
-			virtual void ClearDepth(crossplatform::GraphicsDeviceContext &context,float) ;
-			virtual void ClearColour(crossplatform::GraphicsDeviceContext &context, float, float, float, float ) override;
 
 		protected:
 			bool useESRAM,useESRAMforDepth;

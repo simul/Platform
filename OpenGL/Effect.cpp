@@ -9,7 +9,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/OpenGL/Effect.h"
 #include "Platform/OpenGL/RenderPlatform.h"
-#include "Platform/OpenGL/FramebufferGL.h"
+#include "Platform/OpenGL/Framebuffer.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/Core/DefaultFileLoader.h"
 #include "Platform/Core/StringFunctions.h"
