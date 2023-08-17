@@ -375,7 +375,7 @@ namespace platform
 			/// Asynchronously move this texture to slow RAM.
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
-			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
+			virtual GLuint AsGLuint(){return 0;}
 			virtual vk::Image* AsVulkanImage() { return nullptr; }
 			virtual vk::ImageView* AsVulkanImageView(const crossplatform::TextureView& textureView) { return nullptr; }
 			//! Get the crossplatform pixel format.

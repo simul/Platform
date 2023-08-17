@@ -56,7 +56,7 @@ namespace platform
 														, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
 														 vec4 clear = vec4(0.0f, 0.0f, 0.0f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0, bool shared = false
 														 , crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
-			bool	ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f
+			bool			ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f
 																, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable = false, bool rendertarget = false, bool depthstencil = false,bool ascubemap = false
 														, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			bool			ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false) override;
@@ -75,6 +75,8 @@ namespace platform
 
 			GLuint			AsOpenGLView(crossplatform::TextureView textureView = {});
 			GLuint			GetGLMainView();
+
+			inline GLuint	AsGLuint() override { return GetGLMainView(); }
 
 			/// This is used to make a handle (created from the GL texture view, or from the view and a sampler state) resident, and also for the texture to keep track of its own
 			/// handles so they can be made unresident when it is deleted.
