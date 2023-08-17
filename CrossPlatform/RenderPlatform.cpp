@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <fmt/core.h>
 
 using namespace std::literals;
