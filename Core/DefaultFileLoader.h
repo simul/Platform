@@ -13,6 +13,7 @@ namespace platform
 		{
 		public:
 			DefaultFileLoader();
+			~DefaultFileLoader() = default;
 			bool FileExists(const char *filename_utf8) const override;
 			void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text) override;
 			double GetFileDate(const char* filename_utf8) const override;

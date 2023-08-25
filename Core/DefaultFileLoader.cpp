@@ -90,7 +90,6 @@ DefaultFileLoader::DefaultFileLoader()
 {
 }
 
-
 #ifdef _MSC_VER
 #pragma optimize("",off)
 #endif
@@ -270,11 +269,15 @@ void DefaultFileLoader::ReleaseFileContents(void* pointer)
 	free(pointer);
 }
 
-static DefaultFileLoader fl;
-static FileLoader *fileLoader=&fl;
+static FileLoader *fileLoader = nullptr;
 
 FileLoader *FileLoader::GetFileLoader()
 {
+	if (!fileLoader)
+	{
+		static DefaultFileLoader defaultFileLoader = DefaultFileLoader();
+		fileLoader = &defaultFileLoader;
+	}
 	return fileLoader;
 }
 
