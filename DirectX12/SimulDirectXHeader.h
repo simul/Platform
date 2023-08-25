@@ -28,7 +28,7 @@
 #else //PC
 	#include <D3Dcompiler.h>
 	#include <dxgi.h>
-	#include <dxgi1_5.h>
+	#include <dxgi1_6.h>
 	#include <d3d12.h>
 	#include "d3dx12.h"
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
