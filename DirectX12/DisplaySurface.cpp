@@ -99,6 +99,50 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	);
 	SIMUL_ASSERT(res == S_OK);
 
+	//Set Colour Space
+	IDXGISwapChain4 *swapchain4 = reinterpret_cast<IDXGISwapChain4 *>(swapChain);
+	IDXGIOutput6 *output = nullptr;
+	res = swapchain4->GetContainingOutput((IDXGIOutput **)&output);
+	SIMUL_ASSERT(res == S_OK);
+	DXGI_OUTPUT_DESC1 outputDesc = {};
+	res = output->GetDesc1(&outputDesc);
+	SIMUL_ASSERT(res == S_OK);
+	
+	DXGI_COLOR_SPACE_TYPE colourSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+	DXGI_COLOR_SPACE_TYPE colourSpaces[3] = {
+		DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020,	//BT2022 Gamma Encoded
+		DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709,	//sRGB Linear
+		DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,	//sRGB Gamma Encoded
+	};
+	
+	if (outputDesc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) // HDR
+	{
+		for (size_t i = 0; i < 3; i++)
+		{
+			UINT colourSpaceSupport;
+			res = swapchain4->CheckColorSpaceSupport(colourSpaces[i], &colourSpaceSupport);
+			SIMUL_ASSERT(res == S_OK);
+			if ((DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG(colourSpaceSupport) & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)
+			{
+				res = swapchain4->SetColorSpace1(colourSpaces[i]);
+				SIMUL_ASSERT(res == S_OK);
+				colourSpace = colourSpaces[i];
+				break;
+			}
+		}
+	}
+	else if (outputDesc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709) // SDR
+	{
+		colourSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+	}
+	else
+	{
+		SIMUL_BREAK("Unknown colour space.")
+	}
+
+	swapChainIsGammaEncoded != (colourSpace == DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+	SAFE_RELEASE(output);
+
 	// Assign and query
 	factory->MakeWindowAssociation(mHwnd, DXGI_MWA_NO_ALT_ENTER);
 	if (swapChain)
