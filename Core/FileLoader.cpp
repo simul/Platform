@@ -37,9 +37,9 @@ std::string platform::core::GetExeDirectory()
 #endif
 
 	//TODO! Need a better solution. -AJR
-	//This is based on the Local Path in the Visual Studio Project seting,
+	//This is based on the Local Path in the Visual Studio Project settings,
 	//where the PS5 Standard Debugger maps the Local Path to /app0/.
-	//CMake sets the Local Path (VS_DEBUGGER_WORKING_DIRECTORY) to ${CMAKE_SOURCe_DIR}.
+	//CMake sets the Local Path (VS_DEBUGGER_WORKING_DIRECTORY) to ${CMAKE_SOURCE_DIR}.
 #ifdef __COMMODORE__
 	std::filesystem::path cmake_binary_dir = PLATFORM_STRING_OF_MACRO(CMAKE_BINARY_DIR);
 	std::filesystem::path cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);

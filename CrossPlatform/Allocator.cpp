@@ -89,7 +89,7 @@ void Allocator::Deallocate(void* address)
 //! Allocate \a nbytes bytes of memory, aligned to \a align and return a pointer to them.
 void* Allocator::AllocateVideoMemoryTracked(size_t nbytes,size_t align,const char *fn)
 {
-	return memoryInterface->AllocateVideoMemoryTracked(nbytes, align,  fn);
+	return memoryInterface->AllocateVideoMemoryTracked(nbytes, align, fn);
 }
 //! De-allocate the memory at \param address (requires that this memory was allocated with Allocate()).
 void Allocator::DeallocateVideoMemory(void* address)
