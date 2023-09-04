@@ -99,8 +99,8 @@ void Texture::InitStateTable(int l, int m)
 	// has already being set !!!
 	auto curState = mResourceState; // GetCurrentState(deviceContext);
 	// mSubResourcesStates.clear();
-	if (cubemap && l < 6)
-		SIMUL_INTERNAL_CERR << "Cubemap" << name.c_str() << "is being initialized with only 1 layer.\n";
+	if (cubemap)
+		l *= 6;
 	mSubResourcesStates.resize(l);
 	for (int layer = 0; layer < l; layer++)
 	{
@@ -1099,7 +1099,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *r, I
 		width = (int)textureDesc.Width;
 		length = (int)textureDesc.Height;
 		mNumSamples = textureDesc.SampleDesc.Count;
-		InitStateTable(cubemap ? textureDesc.DepthOrArraySize *6 : textureDesc.DepthOrArraySize, textureDesc.MipLevels);
+		InitStateTable(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 		if ((textureDesc.Flags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE) == 0)
 		{
 			arraySize = textureDesc.DepthOrArraySize;
@@ -1786,7 +1786,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r, 
 	FreeDSVTables();
 	FreeUAVTables();
 
-	InitStateTable(totalNum, m);
+	InitStateTable(num, m);
 
 	if (data)
 		textureUploadComplete = false;
