@@ -324,10 +324,10 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 
 	//TODO: Should we override aspect if the texture is a depth stencil? - AJR
 	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.subresourceRange.aspectMask);
-	uint32_t baseMipLevel = textureView.subresourceRange.baseMipLevel;
-	uint32_t mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips : textureView.subresourceRange.mipLevelCount;
-	uint32_t baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	uint32_t arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	const uint32_t &startMip = textureView.subresourceRange.baseMipLevel;
+	const uint32_t &numMips = textureView.subresourceRange.mipLevelCount == -1 ? mips - startMip : textureView.subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = textureView.subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : textureView.subresourceRange.arrayLayerCount;
 
 	const crossplatform::ShaderResourceType& type = textureView.type;
 	vk::ImageViewType viewType;
@@ -356,7 +356,7 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 	imageViewCI.viewType = viewType;
 	imageViewCI.format = vulkan::RenderPlatform::ToVulkanFormat(pixelFormat);
 	imageViewCI.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
-	imageViewCI.subresourceRange = { aspect, baseMipLevel, mipLevelCount, baseArrayLayer, arrayLayerCount };
+	imageViewCI.subresourceRange = {aspect, startMip, numMips, startLayer, numLayers};
 
 	vk::ImageView* imageView = new vk::ImageView();
 	SIMUL_VK_CHECK(renderPlatform->AsVulkanDevice()->createImageView(&imageViewCI, nullptr, imageView));
@@ -1013,10 +1013,10 @@ void Texture::InitViewTable(int l, int m)
 
 bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const
 {
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	std::vector<vk::ImageLayout> stateCheck;
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)

@@ -99,6 +99,8 @@ void Texture::InitStateTable(int l, int m)
 	// has already being set !!!
 	auto curState = mResourceState; // GetCurrentState(deviceContext);
 	// mSubResourcesStates.clear();
+	if (cubemap && l < 6)
+		SIMUL_INTERNAL_CERR << "Cubemap" << name.c_str() << "is being initialized with only 1 layer.\n";
 	mSubResourcesStates.resize(l);
 	for (int layer = 0; layer < l; layer++)
 	{
@@ -1097,7 +1099,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *r, I
 		width = (int)textureDesc.Width;
 		length = (int)textureDesc.Height;
 		mNumSamples = textureDesc.SampleDesc.Count;
-		InitStateTable(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
+		InitStateTable(cubemap ? textureDesc.DepthOrArraySize *6 : textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 		if ((textureDesc.Flags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE) == 0)
 		{
 			arraySize = textureDesc.DepthOrArraySize;
@@ -1948,10 +1950,10 @@ int Texture::GetSampleCount() const
 
 bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange &subresourceRange)
 {
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	std::vector<D3D12_RESOURCE_STATES> stateCheck;
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)
@@ -1972,10 +1974,11 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 	if (AreSubresourcesInSameState(subresourceRange))
 		return mSubResourcesStates[subresourceRange.baseArrayLayer][subresourceRange.baseMipLevel];
 
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+
 
 	// Return the resource state of a mip or array layer, or the whole resource
 	if (numMips > 1 || numLayers > 1)
@@ -2009,11 +2012,11 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, D3D12_RESOU
 	int curArray = cubemap ? arraySize * 6 : arraySize;
 	const bool split_layouts = !AreSubresourcesInSameState({});
 
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? curArray : subresourceRange.arrayLayerCount;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &startMip = subresourceRange.baseMipLevel;
-
+	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == curArray));
 
 	// Set the whole resource state
