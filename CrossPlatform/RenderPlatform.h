@@ -6,6 +6,7 @@
 #include <vector>
 #include <thread>
 #include <functional>
+#include <atomic>
 #include "Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"

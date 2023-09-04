@@ -303,6 +303,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 			//PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
 			PushShaderBinaryPath((binary_dir + "/shaderbin/"s+render_platform).c_str());
 			PushTexturePath((source_dir + "/Resources/Textures").c_str());
+			PushTexturePath((source_dir + "/Media/textures").c_str());
 		}
 		std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_BUILD_DIR);
 		std::string cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
@@ -381,7 +382,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	standardRenderStates[STANDARD_DOUBLE_SIDED]=CreateRenderState(desc);
 	
 	SAFE_DELETE(textRenderer);
-	
 	textRenderer=new TextRenderer;
 	
 	textRenderer->RestoreDeviceObjects(this);
@@ -406,7 +406,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	shaders.clear();*/
 	
 	Destroy(debugEffect);
-	
 	debugEffect=CreateEffect("debug");
 
 	Destroy(solidEffect);

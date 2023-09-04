@@ -18,11 +18,11 @@ return (_stricmp(str,tst) == 0);
 PixelFormat platform::crossplatform::TypeToFormat(const char *txt)
 {
 		//return R_16_FLOAT;
-	if(is_equal(txt,"vec4"))
+	if(is_equal(txt,"vec4")||is_equal(txt,"float4"))
 		return RGBA_32_FLOAT;
-	if(is_equal(txt,"vec3"))
+	if(is_equal(txt,"vec3")||is_equal(txt,"float3"))
 		return RGB_32_FLOAT;
-	if(is_equal(txt,"vec2"))
+	if(is_equal(txt,"vec2")||is_equal(txt,"float2"))
 		return RG_32_FLOAT ;
 		//return RG_16_FLOAT ;
 	if(is_equal(txt,"float"))
