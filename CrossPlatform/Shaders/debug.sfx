@@ -653,34 +653,18 @@ PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
 VertexShader vs_simplefullscreen_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
 VertexShader vs_ultrasimplefullscreen_5_0=CompileShader(vs_5_0,VS_UltraSimpleFullscreen());
 
-group lines_3d_depth
-{
-	technique depth_forward
-    {
-		pass lines3d
-		{
-			SetRasterizerState(wireframeRasterizer);
-			SetDepthStencilState(TestForwardDepth,0);
-			SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF );
-			SetGeometryShader(NULL);
-			SetVertexShader(debugvs_5_0);
-			SetPixelShader(debugps_5_0);
-		}
-    }
-    technique depth_reverse
-    {
-		pass lines3d
-		{
-			SetRasterizerState( wireframeRasterizer );
-			SetDepthStencilState( TestReverseDepth, 0 );
-			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-			SetGeometryShader(NULL);
-			SetVertexShader(debugvs_5_0);
-			SetPixelShader(debugps_5_0);
-		}
-    }
-}
 
+shader v2f LinesNoVBVS(idOnly IN)
+{
+	v2f OUT;
+	vec3 poss[2];
+	poss[0]			=line_start;
+	poss[1]			=line_end;
+	vec3 pos		=poss[IN.vertex_id];
+    OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	OUT.colour		=debugColour;
+    return OUT;
+}
 shader v2f AxesVS(idOnly IN)
 {
 	v2f OUT;
@@ -700,6 +684,7 @@ shader v2f AxesVS(idOnly IN)
 	OUT.colour		=colours[IN.vertex_id/2];
     return OUT;
 }
+VertexShader lines_novb=CompileShader(vs_5_0,LinesNoVBVS());
 VertexShader axesvs_5_0=CompileShader(vs_5_0,AxesVS());
 PixelShader axesps_5_0=CompileShader(ps_5_0,DebugPS());
 technique axes
@@ -714,21 +699,46 @@ technique axes
 		SetPixelShader(axesps_5_0);
 	}
 }
-fxgroup lines_3d
+technique lines_3d
 {
-	technique lines_3d
+	pass lines3d_novb
 	{
-		pass lines3d
-		{
-			SetRasterizerState( wireframeRasterizer );
-			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-			SetGeometryShader(NULL);
-			SetVertexShader(debugvs_5_0);
-			SetPixelShader(debugps_5_0);
-		}
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(lines_novb);
+		SetPixelShader(debugps_5_0);
+	}
+	pass lines3d_nodepth
+	{
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(debugvs_5_0);
+		SetPixelShader(debugps_5_0);
+	}
+	pass lines3d_forwarddepth
+	{
+		SetRasterizerState(wireframeRasterizer);
+		SetDepthStencilState(TestForwardDepth,0);
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(debugvs_5_0);
+		SetPixelShader(debugps_5_0);
+	}
+	pass lines3d_reversedepth
+	{
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( TestReverseDepth, 0 );
+		SetBlendState(AddBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(debugvs_5_0);
+		SetPixelShader(debugps_5_0);
 	}
 }
+
 technique lines_2d
 {
     pass p0

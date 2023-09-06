@@ -16,7 +16,7 @@ Buffer::~Buffer()
 {
 }
 
- void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,const void *data,bool cpu_access,bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,const void *data,bool cpu_access,bool streamout_target)
 {
 	if(data)
 	{

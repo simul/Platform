@@ -603,6 +603,20 @@
 		{
 			return m;
 		}
+		tmatrix4 operator+(const tmatrix4 &b)
+		{
+			tmatrix4 r;
+			for(int i=0;i<16;i++)
+				r.m[i]=m[i]+b.m[i];
+			return r;
+		}
+		tmatrix4 operator-(const tmatrix4 &b)
+		{
+			tmatrix4 r;
+			for(int i=0;i<16;i++)
+				r.m[i]=m[i]-b.m[i];
+			return r;
+		}
 		const tmatrix4& operator=(const T *v)
 		{
 			for(int i=0;i<16;i++)

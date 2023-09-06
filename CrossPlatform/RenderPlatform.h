@@ -294,7 +294,7 @@ namespace platform
 			virtual void Draw				(GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
 			virtual void DrawIndexed		(GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
-			virtual void DrawLine			(GraphicsDeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
+			virtual void DrawLine			(GraphicsDeviceContext &deviceContext,vec3 pGlobalBasePosition, vec3 pGlobalEndPosition,vec4 colour,float width);
 		
 			virtual void DrawLineLoop		(GraphicsDeviceContext &,const double *,int ,const double *,const float [4]){}
 
@@ -311,7 +311,7 @@ namespace platform
 			virtual int Print				(MultiviewGraphicsDeviceContext &deviceContext,float* xs,float* ys,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			//! Print diagnostics, starting from the top, and going down the screen one line each time as the frame progresses, then restarting next frame.
 			void LinePrint					(GraphicsDeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
+			void DrawLines					(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false);
 			void Draw2dLine					(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
 			virtual void Draw2dLines		(GraphicsDeviceContext &/*deviceContext*/,PosColourVertex * /*lines*/,int /*vertex_count*/,bool /*strip*/){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.
@@ -443,7 +443,7 @@ namespace platform
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
 			virtual void					RestoreRenderState				(DeviceContext &){}
-			/// Apply the RenderState to the device context - e.g. blend state, depth masking etc.
+			/// Apply the RenderState to the device context - e.g. blend state, depth maskeletong etc.
 			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
@@ -577,6 +577,8 @@ namespace platform
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			bool initializedDefaultShaderPaths = false;
+			std::shared_ptr<Buffer> debugVertexBuffer;
+			std::shared_ptr<Layout> posColourLayout;
 		};
 
 		/// Draw a horizontal grid in 3D.

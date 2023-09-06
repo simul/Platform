@@ -49,15 +49,9 @@
 
 #ifndef __cplusplus
 #ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
-	vec2 BottomUpTextureCoordinates(vec2 texc)
-	{
-		return texc;
-	}
-	vec4 BottomUpTextureCoordinates(vec4 texc)
-	{
-		return texc;
-	}
-	#endif
+	#define BottomUpTextureCoordinates(original_texc) original_texc
+	#define BottomUpTextureCoordinates4(original_texc) original_texc
+#endif
 	#define ALIGN_16
 	#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
 	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)

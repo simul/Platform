@@ -49,16 +49,10 @@
 	#endif
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
-	vec2 BottomUpTextureCoordinates(vec2 texc)
-	{
-		return vec2(texc.x,1.0-texc.y);
-	}
-	vec4 BottomUpTextureCoordinates(vec4 texc)
-	{
-		return vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w);
-	}
-	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
+	#define BottomUpTextureCoordinates4(texc) vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w)
+	#define BottomUpTextureCoordinates(texc) vec2(texc.x,1.0-texc.y)
 #endif
 
+#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 
 #endif

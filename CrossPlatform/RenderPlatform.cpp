@@ -1135,16 +1135,70 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 	return true;
 }
 
-void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
+void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, vec3 endp, vec4 colour,float width)
 {
-	PosColourVertex line_vertices[2];
-	line_vertices[0].pos= vec3(startp)-deviceContext.viewStruct.cam_pos;
-	line_vertices[0].colour=colour;
-	line_vertices[1].pos= vec3(endp)-deviceContext.viewStruct.cam_pos;
-	line_vertices[1].colour=colour;
-
-	DrawLines(deviceContext,line_vertices,2,true,false,true);
+	debugConstants.line_start=startp;
+	debugConstants.line_end=endp;
+	debugConstants.debugColour=colour;
+	mat4 wvp;
+	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj=wvp;//deviceContext.viewStruct.viewProj;
+	debugConstants.debugWorldViewProj.transpose();
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetLayout(deviceContext,posColourLayout.get());
+	debugEffect->Apply(deviceContext,"lines_3d","lines3d_novb");
+	SetTopology(deviceContext,Topology::LINELIST);
+	Draw(deviceContext, 2, 0);
+	debugEffect->Unapply(deviceContext);
+	
 }
+
+void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVertex * lines,int count,bool strip,bool test_depth,bool view_centred)
+{
+	if (!debugVertexBuffer )
+	{
+		debugVertexBuffer.reset(CreateBuffer());
+	}
+	// Create and grow vertex/index buffers if needed
+	if ( debugVertexBuffer->count < count)
+	{
+		if(!posColourLayout)
+		{
+			crossplatform::LayoutDesc local_layout[] =
+			{
+				{ "POSITION", 0, crossplatform::RGB_32_FLOAT,	0, (uint32_t)0, false, 0 },
+				{ "TEXCOORD", 0, crossplatform::RGBA_32_FLOAT,	0, (uint32_t)12,  false, 0 },
+			};
+			posColourLayout.reset(CreateLayout(2,local_layout,true));
+		}
+		debugVertexBuffer->EnsureVertexBuffer(this, 2*count, posColourLayout.get(), nullptr,true);
+	}
+	// Upload vertex/index data into a single contiguous GPU buffer
+	PosColourVertex* vtx_dst= (PosColourVertex*)debugVertexBuffer->Map(deviceContext);
+	if (!vtx_dst)
+	{
+	// Force recreate to find error.
+		debugVertexBuffer.reset();
+		return;
+	}
+	memcpy(vtx_dst,lines,count*sizeof(PosColourVertex));
+	debugVertexBuffer->Unmap(deviceContext);
+
+	mat4 wvp;
+	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj=wvp;//deviceContext.viewStruct.viewProj;
+	debugConstants.debugWorldViewProj.transpose();
+	auto *b=debugVertexBuffer.get();
+	SetVertexBuffers(deviceContext,0,1,&b,posColourLayout.get());
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetLayout(deviceContext,posColourLayout.get());
+	debugEffect->Apply(deviceContext,"lines_3d","lines3d_nodepth");
+	SetTopology(deviceContext,Topology::LINELIST);
+	Draw(deviceContext, count, 0);
+	SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
+	debugEffect->Unapply(deviceContext);
+}
+
 
 static float length(const vec3 &u)
 {
@@ -1458,27 +1512,6 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 
 	auto CreateViewProjectionMatrix = [&](size_t index) -> mat4
 	{
-		/*math::Matrix4x4 matrix = deviceContext.viewStructs[index].view;
-		matrix.Transpose();
-
-		//Translation
-		math::Vector3 translation(matrix.m03, matrix.m13, matrix.m23);
-
-		//Scale
-		float scale_x = math::Vector3(matrix.m00, matrix.m10, matrix.m20).Magnitude();
-		float scale_y = math::Vector3(matrix.m01, matrix.m11, matrix.m21).Magnitude();
-		float scale_z = math::Vector3(matrix.m02, matrix.m12, matrix.m22).Magnitude();
-		math::Vector3 scale(scale_x, scale_y, scale_z);
-
-		//Orientation
-		math::Matrix4x4 rotation(
-			matrix.m00 / scale_x, matrix.m01 / scale_y, matrix.m02 / scale_z, 0.0f,
-			matrix.m10 / scale_x, matrix.m11 / scale_y, matrix.m12 / scale_z, 0.0f,
-			matrix.m20 / scale_x, matrix.m21 / scale_y, matrix.m22 / scale_z, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f);
-		math::Quaternion orientation;
-		math::MatrixToQuaternion(orientation, rotation);*/
-
 		mat4 vp;
 		crossplatform::MakeViewProjMatrix((float*)&vp, deviceContext.viewStructs[index].view, deviceContext.viewStructs[index].proj);
 		return vp;
