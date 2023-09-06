@@ -1,14 +1,14 @@
 
 #include "Texture.h"
 #include "CreateEffectDX1x.h"
-#include "Utilities.h"
 #include "Platform/Core/RuntimeError.h"
-#include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Framebuffer.h"
-#include <string>
-#include <math.h>
+#include "Platform/DirectX11/RenderPlatform.h"
+#include "Utilities.h"
 #include <algorithm>
+#include <math.h>
+#include <string>
 
 using namespace platform;
 using namespace dx11;
@@ -33,14 +33,10 @@ void SamplerState::InvalidateDeviceObjects()
 void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT& texture2dFormat, DXGI_FORMAT& srvFormat);
 
 Texture::Texture()
-	:stagingBuffer(NULL)
-	,last_context(NULL)
-	,texture(NULL)
-	,external_copy_source(nullptr)
+	: stagingBuffer(NULL), last_context(NULL), texture(NULL), external_copy_source(nullptr)
 {
 	memset(&mapped,0,sizeof(mapped));
 }
-
 
 Texture::~Texture()
 {
@@ -180,15 +176,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		{
 			// Copy the resource directly, no CPU mapping
 			pContext->CopySubresourceRegion(
-							texture
-							,i*m
-							,0
-							,0
-							,0
-							,textures[i]
-							,0
-							,NULL
-							);
+					texture, i * m, 0, 0, 0, textures[i], 0, NULL);
 		}
 		//void FreeSRVTables();
 		//void FreeRTVTables();
@@ -266,7 +254,6 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
 		srvDesc.Texture2DMSArray.FirstArraySlice = baseArrayLayer;
 		srvDesc.Texture2DMSArray.ArraySize = arrayLayerCount;
-
 	}
 	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_3D)
 	{
@@ -560,14 +547,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 ((ID3D11DeviceContextX*)last_context)->InsertWaitUntilIdle(0);
 
 // flush and invalidate all caches at PFP
-((ID3D11DeviceContextX*)last_context)->FlushGpuCacheRange(  D3D11_FLUSH_TEXTURE_L1_INVALIDATE  |
-		     D3D11_FLUSH_TEXTURE_L2_INVALIDATE |
-		     D3D11_FLUSH_COLOR_BLOCK_INVALIDATE |
-		     D3D11_FLUSH_DEPTH_BLOCK_INVALIDATE |
-		     D3D11_FLUSH_KCACHE_INVALIDATE |
-		     D3D11_FLUSH_ICACHE_INVALIDATE |
-		     D3D11_FLUSH_ENGINE_PFP
-				,nullptr,0);
+	((ID3D11DeviceContextX *)last_context)->FlushGpuCacheRange(D3D11_FLUSH_TEXTURE_L1_INVALIDATE | D3D11_FLUSH_TEXTURE_L2_INVALIDATE | D3D11_FLUSH_COLOR_BLOCK_INVALIDATE | D3D11_FLUSH_DEPTH_BLOCK_INVALIDATE | D3D11_FLUSH_KCACHE_INVALIDATE | D3D11_FLUSH_ICACHE_INVALIDATE | D3D11_FLUSH_ENGINE_PFP, nullptr, 0);
 #endif
 	D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
 /*	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
@@ -636,14 +616,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 ((ID3D11DeviceContextX*)last_context)->InsertWaitUntilIdle(0);
 
 // flush and invalidate all caches at PFP
-((ID3D11DeviceContextX*)last_context)->FlushGpuCacheRange(  D3D11_FLUSH_TEXTURE_L1_INVALIDATE  |
-		     D3D11_FLUSH_TEXTURE_L2_INVALIDATE |
-		     D3D11_FLUSH_COLOR_BLOCK_INVALIDATE |
-		     D3D11_FLUSH_DEPTH_BLOCK_INVALIDATE |
-		     D3D11_FLUSH_KCACHE_INVALIDATE |
-		     D3D11_FLUSH_ICACHE_INVALIDATE |
-		     D3D11_FLUSH_ENGINE_PFP
-				,nullptr,0);
+	((ID3D11DeviceContextX *)last_context)->FlushGpuCacheRange(D3D11_FLUSH_TEXTURE_L1_INVALIDATE | D3D11_FLUSH_TEXTURE_L2_INVALIDATE | D3D11_FLUSH_COLOR_BLOCK_INVALIDATE | D3D11_FLUSH_DEPTH_BLOCK_INVALIDATE | D3D11_FLUSH_KCACHE_INVALIDATE | D3D11_FLUSH_ICACHE_INVALIDATE | D3D11_FLUSH_ENGINE_PFP, nullptr, 0);
 #endif
 }
 
@@ -944,28 +917,12 @@ void DepthFormatToResourceAndSrvFormats(DXGI_FORMAT &genericDxgiFormat,DXGI_FORM
 	};
 }
 
-
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
-	, int w, int l, int m
-	, crossplatform::PixelFormat f
-	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
-	, bool computable, bool rendertarget, bool depthstencil
-	, int num_samples, int aa_quality, bool
-	, vec4 clear, float clearDepth, uint clearStencil, bool shared
-	, crossplatform::CompressionFormat compressionFormat)
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r, int w, int l, int m, crossplatform::PixelFormat f, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool, vec4 clear, float clearDepth, uint clearStencil, bool shared, crossplatform::CompressionFormat compressionFormat)
 {
 	return EnsureTexture2DSizeAndFormat(r, w, l,m, f, data,computable, rendertarget, depthstencil, num_samples, aa_quality, false, clear, clearDepth, clearStencil,compressionFormat);
 }
 
-bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
-	, int w, int l,int m
-	, crossplatform::PixelFormat f
-	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
-	, bool computable, bool rendertarget, bool depthstencil
-	, int num_samples, int aa_quality, bool
-	, vec4 clear, float clearDepth, uint clearStencil
-	, crossplatform::CompressionFormat compressionFormat
-	)
+bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r, int w, int l, int m, crossplatform::PixelFormat f, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, int num_samples, int aa_quality, bool, vec4 clear, float clearDepth, uint clearStencil, crossplatform::CompressionFormat compressionFormat)
 {
 	renderPlatform=r;
 	pixelFormat=f;
@@ -1088,7 +1045,6 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 				{
 					textureUploadComplete=false;
 				}
-
 			}
 			HRESULT hr=pd3dDevice->CreateTexture2D(&textureDesc, nullptr,(ID3D11Texture2D**)(&texture));
 			if (hr != S_OK)
@@ -1113,9 +1069,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	return !ok;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f
-	, std::shared_ptr<std::vector<std::vector<uint8_t>>> data
-	,bool computable,bool rendertarget,bool depthstencil,bool cubemap,crossplatform::CompressionFormat compressionFormat)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r, int w, int l, int num, int m, crossplatform::PixelFormat f, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable, bool rendertarget, bool depthstencil, bool cubemap, crossplatform::CompressionFormat compressionFormat)
 {
 	renderPlatform=r;
 	if(m<=0||m>16)
@@ -1146,7 +1100,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		ok=false; 
 	if(ok)
 		return false;
-
 
 	pixelFormat=f;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
@@ -1179,7 +1132,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		return false;
 	ID3D11Texture2D *pArrayTexture;
 
-	
 	std::vector<D3D11_SUBRESOURCE_DATA> initialSubresourceData(m*total_num);
 	if(data)
 	{
@@ -1312,19 +1264,45 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 	mips=m;
 }
 
-void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
 {
-	if (!depthStencil)
-		SIMUL_CERR << "Attempting to clear a texture that is not a Depth Stencil" << std::endl;
-
-	bool layered = NumFaces() > 1;
-	bool ms = GetSampleCount() > 1;
+	const int &layerCount = NumFaces();
 	crossplatform::TextureView tv;
 	tv.type = GetShaderResourceTypeForRTVAndDSV();
-	tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
+	for (int mip = 0; mip < mips; mip++) // Must clear mip by mip.
+	{
+		tv.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, mip, 0, layerCount};
+
+		if (renderTarget)
+		{
+			ID3D11RenderTargetView *rtv = AsD3D11RenderTargetView(tv);
+			deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(rtv, colourClear);
+		}
+		else if (computable)
+		{
+			tv.type |= platform::crossplatform::ShaderResourceType::RW;
+			ID3D11UnorderedAccessView *uav = AsD3D11UnorderedAccessView(tv);
+			deviceContext.asD3D11DeviceContext()->ClearUnorderedAccessViewFloat(uav, colourClear);
+		}
+		else
+		{
+			SIMUL_CERR << "No method was found to clear this texture." << std::endl;
+		}
+	}
+}
+
+void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
+{
+	const int &layerCount = NumFaces();
+	crossplatform::TextureView tv;
+	tv.type = GetShaderResourceTypeForRTVAndDSV();
+	for (int mip = 0; mip < mips; mip++) // Must clear mip by mip.
+	{
+		tv.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH | crossplatform::TextureAspectFlags::STENCIL, 0, mip, 0, layerCount};
 
 	ID3D11DepthStencilView* dsv = AsD3D11DepthStencilView(tv);
 	deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(dsv, (D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL), depthClear, stencilClear);
+}
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext)
@@ -1336,9 +1314,7 @@ void Texture::GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext)
 	bool layered = NumFaces() > 1;
 	bool ms = GetSampleCount() > 1;
 	crossplatform::TextureView tv;
-	tv.type = crossplatform::ShaderResourceType::TEXTURE_2D
-		| (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0))
-		| (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
+	tv.type = crossplatform::ShaderResourceType::TEXTURE_2D | (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0)) | (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
 
 	deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView(tv));
 }
@@ -1459,7 +1435,6 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceC
 	if (textureView.type == crossplatform::ShaderResourceType::UNKNOWN)
 		textureView.type = GetShaderResourceTypeForRTVAndDSV();
 
-
 	D3D11_VIEWPORT viewport;
 	if (renderTarget)
 	{
@@ -1484,7 +1459,6 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceC
 	targetsAndViewport.num=1;
 	
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
-
 }
 
 void Texture::deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext)

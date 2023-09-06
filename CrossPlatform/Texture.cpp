@@ -249,7 +249,7 @@ bool Texture::ValidateTextureView(const TextureView& textureView)
 	if (type == ShaderResourceType::TEXTURE_CUBE || type == ShaderResourceType::TEXTURE_CUBE_ARRAY)
 		ok &= dim == 2 && width > 0 && length > 0 && layers >= 6 && cubemap;
 
-	SIMUL_ASSERT_WARN_ONCE(ok, "ShaderResourceType is incompatible with the texture.");
+	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a ShaderResourceType that's incompatible with the texture.");
 
 	return ok;
 }

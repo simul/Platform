@@ -24,8 +24,11 @@ elseif(PLATFORM_LINUX)
 endif()
 set_property(CACHE PLATFORM_STD_FILESYSTEM PROPERTY STRINGS 0 1 2)
 
-find_package(Vulkan REQUIRED)
-set( VULKAN_SDK_DIR "{Vulkan_INCLUDE_DIR}/.."  )
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	find_package(Vulkan REQUIRED)
+	set( VULKAN_SDK_DIR "{Vulkan_INCLUDE_DIR}/.."  )
+endif()
+
 set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
 
 set( PLATFORM_DEBUG_DISABLE 0 CACHE STRING "Set disable-level for debugging. Zero for full functionality." )

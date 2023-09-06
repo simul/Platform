@@ -6,6 +6,7 @@
 #include <vector>
 #include <thread>
 #include <functional>
+#include <atomic>
 #include "Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
@@ -488,8 +489,8 @@ namespace platform
 			}
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
-			crossplatform::Effect *solidEffect;
-			crossplatform::Effect *copyEffect;
+			crossplatform::Effect *solidEffect = nullptr;
+			crossplatform::Effect *copyEffect = nullptr;
 			std::map<std::string,crossplatform::Material*> materials;
 			std::map<std::string, crossplatform::Texture*> textures;
 			std::vector<std::string> GetTexturePathsUtf8(); 

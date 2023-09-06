@@ -375,7 +375,7 @@ namespace platform
 			/// Asynchronously move this texture to slow RAM.
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
-			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
+			virtual GLuint AsGLuint(){return 0;}
 			virtual vk::Image* AsVulkanImage() { return nullptr; }
 			virtual vk::ImageView* AsVulkanImageView(const crossplatform::TextureView& textureView) { return nullptr; }
 			//! Get the crossplatform pixel format.
@@ -408,8 +408,10 @@ namespace platform
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED)=0;
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
-			//! Clear the depth stencil
-			virtual void ClearDepthStencil(GraphicsDeviceContext &deviceContext, float = 0, int = 0) = 0;
+			//! Clear the colour aspect
+			virtual void ClearColour(GraphicsDeviceContext &deviceContext, vec4 colourClear = vec4(0.0f, 0.0f, 0.0f, 0.0f)) = 0;
+			//! Clear the depth stencil aspect
+			virtual void ClearDepthStencil(GraphicsDeviceContext &deviceContext, float depthClear = 0, int stencilClear = 0) = 0;
 			//! Generate the mipmaps automatically.
 			virtual void GenerateMips(GraphicsDeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.

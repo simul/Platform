@@ -21,10 +21,10 @@ file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.sl"
 )
 file(GLOB SHADER_DEFS
-	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.*" 
+	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.json" 
 	)
 
-add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
 	add_dependencies( SimulOpenGL_MT SimulCrossPlatform_MT )
 	target_include_directories(SimulOpenGL_MT PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")

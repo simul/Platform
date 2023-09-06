@@ -90,6 +90,7 @@ namespace platform
 												,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
 												,crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
+			void							ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear) override;
 			void							ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
 			void							GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			bool							isMapped() const;

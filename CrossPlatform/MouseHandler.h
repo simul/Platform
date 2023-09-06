@@ -24,7 +24,6 @@ namespace platform
 		public:
 			MouseHandler();
 			virtual ~MouseHandler();
-			void	setSpeed(float s);
 			void	setCentre(const float *c);
 			void	setCameraMode(CameraMode c);
 			void	setAltitudeRange(float m,float M);
@@ -41,6 +40,8 @@ namespace platform
 				CameraDamping=d;
 			}
 			float GetSpeed() const;
+            void	SetSpeedFactor(float s);
+			float	GetSpeedFactor() const;
 			platform::crossplatform::Camera *GetCamera();
 			void	getMousePosition(int &x,int &y) const;
 			bool	getLeftButton() const;

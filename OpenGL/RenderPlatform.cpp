@@ -6,7 +6,7 @@
 #include "Platform/OpenGL/Effect.h"
 #include "Platform/OpenGL/Light.h"
 #include "Platform/OpenGL/Buffer.h"
-#include "Platform/OpenGL/FramebufferGL.h"
+#include "Platform/OpenGL/Framebuffer.h"
 #include "Platform/OpenGL/Layout.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
@@ -225,7 +225,7 @@ crossplatform::Texture* RenderPlatform::createTexture()
 
 crossplatform::Framebuffer* RenderPlatform::CreateFramebuffer(const char *n)
 {
-	opengl::FramebufferGL* b=new opengl::FramebufferGL(n);
+	opengl::Framebuffer* b=new opengl::Framebuffer(n);
 	return b;
 }
 

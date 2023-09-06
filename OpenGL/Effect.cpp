@@ -9,7 +9,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/OpenGL/Effect.h"
 #include "Platform/OpenGL/RenderPlatform.h"
-#include "Platform/OpenGL/FramebufferGL.h"
+#include "Platform/OpenGL/Framebuffer.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/Core/DefaultFileLoader.h"
 #include "Platform/Core/StringFunctions.h"
@@ -654,12 +654,20 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 			glAttachShader(mProgramId, c->ShaderId);
 		}
 		glGetProgramiv(mProgramId, GL_ATTACHED_SHADERS, &attachedShaders);
+		
 
+		GLint isLinked = 0;
 		//Link program:
 		if ((v && f && attachedShaders == 2) || (c && attachedShaders == 1))
 		{
 			glLinkProgram(mProgramId);
-			glValidateProgram(mProgramId);
+			glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
+			if(isLinked)
+				glValidateProgram(mProgramId);
+			else
+			{
+				SIMUL_CERR << "Failed to link program for pass: " << this->name.c_str() << "\n";
+			}
 		}
 		else
 		{
@@ -668,15 +676,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		}
 		
 		// Check link and validate status:
-
-		GLint isLinked = 0;
-		glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
 		GLint isValid = 0;
 		glGetProgramiv(mProgramId, GL_VALIDATE_STATUS, &isValid);
 
 		if (isLinked == 0 || isValid == 0)
 		{
 			GLint maxLength = 0;
+			glLinkProgram(mProgramId);
 			glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
 			std::vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);

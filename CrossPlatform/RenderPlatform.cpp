@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <fmt/core.h>
 
 using namespace std::literals;
@@ -302,6 +303,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 			//PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
 			PushShaderBinaryPath((binary_dir + "/shaderbin/"s+render_platform).c_str());
 			PushTexturePath((source_dir + "/Resources/Textures").c_str());
+			PushTexturePath((source_dir + "/Media/textures").c_str());
 		}
 		std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_BUILD_DIR);
 		std::string cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
@@ -380,7 +382,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	standardRenderStates[STANDARD_DOUBLE_SIDED]=CreateRenderState(desc);
 	
 	SAFE_DELETE(textRenderer);
-	
 	textRenderer=new TextRenderer;
 	
 	textRenderer->RestoreDeviceObjects(this);
@@ -405,7 +406,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	shaders.clear();*/
 	
 	Destroy(debugEffect);
-	
 	debugEffect=CreateEffect("debug");
 
 	Destroy(solidEffect);
@@ -540,7 +540,9 @@ void RenderPlatform::PushTexturePath(const char *path_utf8)
 	std::error_code ec;
 	auto canonical=std::filesystem::weakly_canonical(path,ec);
 	std::string str = canonical.generic_string();
-	char c = str.back();
+	char c = 'x';
+	if (str.length())
+		c = str.back();
 	if (c != '\\' && c != '/')
 		str += '/';
 	texturePathsUtf8.push_back(str);
@@ -743,19 +745,29 @@ void RenderPlatform::BeginFrame(long long f)
 
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
-	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
-	if (deviceContext.AsMultiviewGraphicsDeviceContext())
-		clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear_multiview");
+	if (deviceContext.targetStack.empty() && deviceContext.defaultTargetsAndViewport.m_rt)
+	{
+		crossplatform::EffectTechnique *clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear");
+		if (deviceContext.AsMultiviewGraphicsDeviceContext())
+			clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear_multiview");
 
-	debugConstants.debugColour=colour_rgba;
-	//if(debugConstants.debugColour.x+debugConstants.debugColour.y+debugConstants.debugColour.z==0)
-	//{
-	//	SIMUL_BREAK("");
-	//}
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->Apply(deviceContext,clearTechnique,0);
-	DrawQuad(deviceContext);
-	debugEffect->Unapply(deviceContext);
+		debugConstants.debugColour = colour_rgba;
+		debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
+		debugEffect->Apply(deviceContext, clearTechnique, 0);
+		DrawQuad(deviceContext);
+		debugEffect->Unapply(deviceContext);
+	}
+	else
+	{
+		for (size_t i = 0; i < 8; i++)
+		{
+			crossplatform::Texture* texture = deviceContext.targetStack.top()->textureTargets[i].texture;
+			if (texture)
+			{
+				texture->ClearColour(deviceContext, colour_rgba);
+			}
+		}
+	}
 }
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)
@@ -763,117 +775,18 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	// Silently return if not initialized
 	if(!texture->IsValid())
 		return;
-	bool cleared				= false;
-	debugConstants.debugColour=colour;
-	debugConstants.texSize=uint4(texture->width,texture->length,texture->depth,1);
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	// Clear the texture: how we do this depends on what kind of texture it is.
-	// Does it have rendertargets? We can clear each of these in turn.
+
 	auto *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
-	if(texture->HasRenderTargets()&&texture->arraySize&&graphicsDeviceContext!=nullptr)
+	if (graphicsDeviceContext != nullptr)
 	{
-		int total_num=texture->arraySize*(texture->IsCubemap()?6:1);
-		for(int i=0;i<total_num;i++)
+		if (texture->IsDepthStencil())
 		{
-			int w=texture->width;
-			int l=texture->length;
-			int d=texture->depth;
-			for(int j=0;j<texture->mips;j++)
-			{
-				debugConstants.texSize=uint4(w,l,d,1);
-				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-				platform::crossplatform::SubresourceRange rng={TextureAspectFlags::COLOUR, j, 1, i, 1 };
-				ShaderResourceType tp=texture->GetShaderResourceTypeForRTVAndDSV();
-				platform::crossplatform::TextureView tv={tp,rng};
-				texture->activateRenderTarget(*graphicsDeviceContext, tv);
-				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
-					DrawQuad(*graphicsDeviceContext);
-				debugEffect->Unapply(*graphicsDeviceContext);
-				texture->deactivateRenderTarget(*graphicsDeviceContext);
-				w=(w+1)/2;
-				l=(l+1)/2;
-				d=(d+1)/2;
-			}
+			texture->ClearDepthStencil(*graphicsDeviceContext, colour.x, 0);
 		}
-		debugEffect->UnbindTextures(deviceContext);
-		cleared = true;
-	}
-	// Otherwise, is it computable? We can set the colour value with a compute shader.
-	// Is it mappable? We can set the colour from CPU memory.
-	else if (texture->IsComputable() && !cleared)
-	{
-		int a=texture->NumFaces();
-		if(a==0)
-			a=1;
-#if 1
-		for(int i=0;i<a;i++)
+		else 
 		{
-			int w=texture->width;
-			int l=texture->length;
-			int d=texture->depth;
-			for(int j=0;j<texture->mips;j++)
-			{
-				const char* techname = nullptr;
-				int W=(w+4-1)/4;
-				int L=(l+4-1)/4;
-				int D=(d+4-1)/4;
-		
-				if(texture->dim==2)
-				{
-					W=(w+8-1)/8;
-					L=(l+8-1)/8;
-					D=1;
-					if (a == 1)
-					{
-						techname = "compute_clear";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, { TextureAspectFlags::COLOUR, j, i, 1 });
-					}
-					else
-					{
-						techname = "compute_clear_2d_array";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, { TextureAspectFlags::COLOUR,  j, i, 1 });
-					}
-				}
-				else if(texture->dim==3)
-				{
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
-					{
-						techname = "compute_clear_3d_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, { TextureAspectFlags::COLOUR, j, 0, 1 });
-					}
-					else
-					{
-						techname="compute_clear_3d";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, { TextureAspectFlags::COLOUR, j, 0, 1 });
-					}
-				}
-				else
-				{
-					SIMUL_BREAK_ONCE("Can't clear texture dim.");
-				}
-				debugConstants.texSize=uint4(w,l,d,1);
-				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-				debugEffect->Apply(deviceContext,techname,0);
-				DispatchCompute(deviceContext,W,L,D);
-				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",nullptr);
-				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",nullptr);
-				w=(w+1)/2;
-				l=(l+1)/2;
-				d=(d+1)/2;
-				debugEffect->Unapply(deviceContext);
-			}
+			texture->ClearColour(*graphicsDeviceContext, colour);
 		}
-#endif
-		debugEffect->UnbindTextures(deviceContext);
-	}
-	//Finally, is the texture a depth stencil? In this case, we call the specified API's clear function in order to clear it.
-	else if (texture->IsDepthStencil() && !cleared&&graphicsDeviceContext!=nullptr)
-	{
-		texture->ClearDepthStencil(*graphicsDeviceContext, colour.x, 0);
-	}
-	else
-	{
-		SIMUL_CERR_ONCE<<("No method was found to clear this texture.\n");
 	}
 }
 #include "Platform/Core/StringFunctions.h"
@@ -942,7 +855,7 @@ void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,T
 	UnapplyPass(deviceContext);
 }
 
-        
+		
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
@@ -1703,7 +1616,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(l)).c_str(), white, semiblack);
 		}
 	}
-    return int2(dx, dy);
+	return int2(dx, dy);
 }
 
 void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
@@ -1774,7 +1687,7 @@ int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int
 		debugEffect->UnbindTextures(deviceContext);
 		debugEffect->Unapply(deviceContext);
 	}
-    return int2(dx, dy);
+	return int2(dx, dy);
 }
 
 void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)
@@ -2061,7 +1974,7 @@ void RenderPlatform::UnapplyPass(DeviceContext& deviceContext)
 
 DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-    return nullptr;
+	return nullptr;
 }
 
 GpuProfiler* RenderPlatform::CreateGpuProfiler()

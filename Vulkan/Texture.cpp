@@ -324,10 +324,10 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 
 	//TODO: Should we override aspect if the texture is a depth stencil? - AJR
 	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.subresourceRange.aspectMask);
-	uint32_t baseMipLevel = textureView.subresourceRange.baseMipLevel;
-	uint32_t mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips : textureView.subresourceRange.mipLevelCount;
-	uint32_t baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	uint32_t arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	const uint32_t &startMip = textureView.subresourceRange.baseMipLevel;
+	const uint32_t &numMips = textureView.subresourceRange.mipLevelCount == -1 ? mips - startMip : textureView.subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = textureView.subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : textureView.subresourceRange.arrayLayerCount;
 
 	const crossplatform::ShaderResourceType& type = textureView.type;
 	vk::ImageViewType viewType;
@@ -356,7 +356,7 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 	imageViewCI.viewType = viewType;
 	imageViewCI.format = vulkan::RenderPlatform::ToVulkanFormat(pixelFormat);
 	imageViewCI.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
-	imageViewCI.subresourceRange = { aspect, baseMipLevel, mipLevelCount, baseArrayLayer, arrayLayerCount };
+	imageViewCI.subresourceRange = {aspect, startMip, numMips, startLayer, numLayers};
 
 	vk::ImageView* imageView = new vk::ImageView();
 	SIMUL_VK_CHECK(renderPlatform->AsVulkanDevice()->createImageView(&imageViewCI, nullptr, imageView));
@@ -436,8 +436,8 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *r, const cr
 	dim = dimen;
 	mNumSamples = textureCreate->numOfSamples;
 	cubemap = textureCreate->cubemap;
-	depthStencil = depthstencil;
-	this->computable = computable;
+	this->depthStencil = depthstencil;
+	this->computable = textureCreate->computable;
 	this->renderTarget = textureCreate->make_rt;
 	
 	external_texture = true;
@@ -743,30 +743,52 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, 
 	return false;
 }
 
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
+{
+	const int &layerCount = NumFaces();
+	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::COLOUR, 0, mips, 0, layerCount};
+
+	vk::ImageLayout prevImageLayout = mCurrentImageLayout;
+	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subresource);
+
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mips, 0, layerCount);
+
+	vk::ClearColorValue clearValue;
+	clearValue.float32[0] = colourClear[0];
+	clearValue.float32[1] = colourClear[1];
+	clearValue.float32[2] = colourClear[2];
+	clearValue.float32[3] = colourClear[3];
+
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	commandBuffer->clearColorImage(mImage, mCurrentImageLayout, &clearValue, 1, &imageSubresourceRange);
+
+	// We can't go back to these layouts below, so just stay in eTransferDstOptimal for now:
+	if (prevImageLayout != vk::ImageLayout::ePreinitialized && prevImageLayout != vk::ImageLayout::eUndefined)
+		SetLayout(deviceContext, prevImageLayout, subresource);
+}
+
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 	const int& layerCount = NumFaces();
-	crossplatform::SubresourceRange subres = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, layerCount };
+	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::DEPTH, 0, mips, 0, layerCount};
 
-	vk::ImageLayout prev_image_layout=mCurrentImageLayout;
-	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subres);
+	vk::ImageLayout prevImageLayout = mCurrentImageLayout;
+	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subresource);
 
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
-	vk::ImageLayout image_layout=mCurrentImageLayout;
-	std::vector<vk::ImageSubresourceRange> image_subresource_ranges;
-	// if stencil, may need |vk::ImageAspectFlagBits::eStencil
 	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, layerCount);
-	image_subresource_ranges.push_back(imageSubresourceRange);
 
-	vk::ClearDepthStencilValue clear_value;
-	clear_value.depth=depthClear;
-	clear_value.stencil=stencilClear;
+	vk::ClearDepthStencilValue clearValue;
+	clearValue.depth = depthClear;
+	clearValue.stencil = stencilClear;
 
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
-	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
-	// can't go back to these layouts so just stay in eTransferDstOptimal for now:
-	if(prev_image_layout!=vk::ImageLayout::ePreinitialized&&prev_image_layout!=vk::ImageLayout::eUndefined)
-		SetLayout(deviceContext, prev_image_layout, subres);
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	commandBuffer->clearDepthStencilImage(mImage, mCurrentImageLayout, &clearValue, 1, &imageSubresourceRange);
+
+	// We can't go back to these layouts below, so just stay in eTransferDstOptimal for now:
+	if (prevImageLayout != vk::ImageLayout::ePreinitialized && prevImageLayout != vk::ImageLayout::eUndefined)
+		SetLayout(deviceContext, prevImageLayout, subresource);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)
@@ -991,10 +1013,10 @@ void Texture::InitViewTable(int l, int m)
 
 bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const
 {
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() : subresourceRange.arrayLayerCount;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	std::vector<vk::ImageLayout> stateCheck;
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)

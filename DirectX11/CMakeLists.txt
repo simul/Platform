@@ -14,6 +14,9 @@ file(GLOB SHADER_INCLUDES
 	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl" 
 	"${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/*.sl"
 )
+file(GLOB SHADER_DEFS
+	"${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/*.json" 
+	)
 
 file(GLOB SHADER_DEFS
 	"${CMAKE_CURRENT_SOURCE_DIR}/Sfx/*.json" 

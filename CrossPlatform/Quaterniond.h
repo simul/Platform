@@ -370,6 +370,57 @@ namespace platform
 			ret.y=-s1*q.y+q.s*y1-q.z*x1+q.x*z1,
 			ret.z=-s1*q.z+q.s*z1-q.x*y1+q.y*x1;
 		}
+
+		template<typename T> Quaternion<T> slerp( const Quaternion<T>& q1, const Quaternion<T>& q2, T l)
+		{
+			Quaternion<T> ret;
+			// v0 and v1 should be unit length or else
+			// something broken will happen.
+
+			// Compute the cosine of the angle between the two vectors.
+			Quaternion Q2 = q2;
+			T dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.s * q2.s;
+			if (dot < 0)
+			{
+				dot = -dot;
+				Q2.x *= -1.0;
+				Q2.y *= -1.0;
+				Q2.z *= -1.0;
+				Q2.s *= -1.0;
+			}
+			//dot+=q1.s*Q2.s;
+
+			const T DOT_THRESHOLD = T(0.9995);
+			if (dot > DOT_THRESHOLD)
+			{
+				// If the inputs are too close for comfort, linearly interpolate
+				// and normalize the result.
+				ret.x = q1.x + l * (Q2.x - q1.x);
+				ret.y = q1.y + l * (Q2.y - q1.y);
+				ret.z = q1.z + l * (Q2.z - q1.z);
+				ret.s = q1.s + l * (Q2.s - q1.s);
+				ret.MakeUnit();
+				return;
+			}
+			if (dot < -T(1.0))
+				dot = -T(1.0);
+			if (dot > T(1.0))
+				dot = T(1.0);
+			T theta_0 = acos(dot);  // theta_0 = half angle between input vectors
+			T theta1 = theta_0 * (T(1.0) - l);    // theta = angle between v0 and result 
+			T theta2 = theta_0 * l;    // theta = angle between v0 and result 
+
+			T s1 = sin(theta1);
+			T s2 = sin(theta2);
+			T ss = sin(theta_0);
+
+			ret.x = (q1.x * s1 + Q2.x * s2) / ss;
+			ret.y = (q1.y * s1 + Q2.y * s2) / ss;
+			ret.z = (q1.z * s1 + Q2.z * s2) / ss;
+			ret.s = (q1.s * s1 + Q2.s * s2) / ss;
+			ret.MakeUnit();
+			return ret;
+		}
 		//! Quaternion with doubles.
 		typedef Quaternion<double> Quaterniond;
 		//! Quaternion with floats.

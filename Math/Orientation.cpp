@@ -524,7 +524,7 @@ void SimulOrientation::Rotate(float angle,const Vector3 &axis)
 {
 	ALIGN16 Quaternion dq;
 #ifdef DEBUG
-	if(axis.Magnitude()>1.01f||axis.Magnitude()<.99f)
+	if((axis.Magnitude()>1.01f||axis.Magnitude()<.99f)&&angle!=0.0f)
 		throw OrientationError();
 #endif
 	dq.Define(angle,axis);
@@ -544,7 +544,7 @@ void SimulOrientation::LocalRotate(float angle,const Vector3 &axis)
 {
 	ALIGN16 Quaternion dq;
 #ifdef DEBUG
-	if(axis.Magnitude()>1.01f||axis.Magnitude()<.99f)
+	if((axis.Magnitude()>1.01f||axis.Magnitude()<.99f)&&angle!=0.0f)
 		throw OrientationError();
 #endif
 	Vector3 local_axis;
