@@ -20,8 +20,7 @@ void SphereRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	if(!renderPlatform)
 		return;
 	sphereConstants.RestoreDeviceObjects(r);
-	delete effect;
-	effect=renderPlatform->CreateEffect("sphere");
+	LoadShaders();
 }
 
 void SphereRenderer::InvalidateDeviceObjects()
@@ -30,6 +29,14 @@ void SphereRenderer::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 	delete effect;
 	effect=nullptr;
+}
+void SphereRenderer::RecompileShaders()
+{
+	renderPlatform->ScheduleRecompileEffects(
+		{"sphere"},
+		[this]
+		{
+		});
 }
 void SphereRenderer::LoadShaders()
 {
