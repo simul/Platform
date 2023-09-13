@@ -60,5 +60,12 @@
 		"mix":"lerp",
 		"fract":"frac"
 	},
-	"maxShaderModel": 5.0
+	"minShaderModel": 4.0,
+	"maxShaderModel": 5.1,
+	
+	"numSamplerSlots": 16,
+	"numTextureSlots": 128,
+	"numRWTextureSlots": 8,
+	"numRWStructuredBufferSlots": 8,
+	"numConstantBufferSlots": 14
 }

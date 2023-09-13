@@ -49,5 +49,13 @@
 		"u16vec4":"min16uint4",
 		"mix":"lerp",
 		"fract":"frac"
-	}
+	},
+	"minShaderModel": 6.0,
+	"maxShaderModel": 6.7,
+
+	"numSamplerSlots": 16,
+	"numTextureSlots": 128,
+	"numRWTextureSlots": 8,
+	"numRWStructuredBufferSlots": 8,
+	"numConstantBufferSlots": 14
 }

@@ -201,5 +201,11 @@
 		"flat": "",
 		"ddx": "dFdx",
 		"ddy": "dFdy"
-	}
+	},
+
+	"numSamplerSlots": 16,
+	"numTextureSlots": 128,
+	"numRWTextureSlots": 8,
+	"numRWStructuredBufferSlots": 8,
+	"numConstantBufferSlots": 14
 }
