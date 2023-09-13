@@ -181,15 +181,6 @@ void DisplaySurface::InvalidateDeviceObjects()
 		vulkanDevice->destroyDescriptorSetLayout(desc_layout, nullptr);
 	}
 	// vulkanDevice->destroysurface(mSurface,nullptr);
-
-#ifdef _MSC_VER
-	if (hDC && !ReleaseDC(mHwnd, hDC)) // Are We Able To Release The DC
-	{
-		SIMUL_CERR << "Release Device Context Failed." << GetErr() << std::endl;
-		hDC = NULL; // Set DC To NULL
-	}
-	hDC = nullptr; // Set DC To NULL
-#endif
 }
 
 void DisplaySurface::GetQueues()
