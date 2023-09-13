@@ -517,10 +517,37 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 		find_and_replace(profile_text, "cs_", "");
 		find_and_replace(profile_text, "_", ".");
 		double profile_number=atof(profile_text.c_str());
-		if(profile_number>sfxConfig.maxShaderModel)
+		if(profile_number > sfxConfig.maxShaderModel)
 		{
-			std::cout<<"Skipping "<<shaderInstance->m_functionName.c_str()<<" as profile "<<shaderInstance->m_profile.c_str()<<" is not supported.\n";
+			std::cout << "Skipping " << shaderInstance->m_functionName.c_str() << " as profile " << shaderInstance->m_profile.c_str() << " is not supported.\n";
 			continue;
+		}
+		if (profile_number < sfxConfig.minShaderModel)
+		{
+			//Upgrade the shader model to the minimum for that the compiler supports.
+			int sm_major = int(sfxConfig.minShaderModel);
+			int sm_minor = int(sfxConfig.minShaderModel * 10.0) - (sm_major * 10);
+
+			std::string sm = "";
+			switch (shaderInstance->shaderType)
+			{
+			case ShaderType::VERTEX_SHADER:
+				sm = "vs_";
+				break;
+			case ShaderType::FRAGMENT_SHADER:
+				sm = "ps_";
+				break;
+			case ShaderType::COMPUTE_SHADER:
+				sm = "cs_";
+				break;
+			default:
+				sm = "null_";
+				break;
+			}
+			sm += std::to_string(sm_major) + "_" + std::to_string(sm_minor);
+
+			std::cout << "Upgrading " << shaderInstance->m_functionName.c_str() << " to profile " << sm << " as profile " << shaderInstance->m_profile.c_str() << " in shader source is not supported by the compiler.\n";
+			shaderInstance->m_profile = sm;
 		}
 		ConstructSource(shaderInstance.get());
 		if(shaderInstance->shaderType==FRAGMENT_SHADER)
@@ -1061,9 +1088,9 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			outstr << " " << rw << " " << (writeable?GenerateTextureWriteSlot(dt->slot,false):GenerateTextureSlot(dt->slot,false))<< " " << ar << std::endl;
 			if (dt->slot >= 32)
 			{
-				std::cerr << sfxFilename.c_str() << "(0): error: by default, only 16 texture slots are enabled in Gnmx." << std::endl;
-				std::cerr << sfxoFilename.c_str() << "(0): warning: See output." << std::endl;
-				exit(31);
+				//std::cerr << sfxFilename.c_str() << "(0): error: by default, only 16 texture slots are enabled in Gnmx." << std::endl;
+				//std::cerr << sfxoFilename.c_str() << "(0): warning: See output." << std::endl;
+				//exit(31);
 			}
 		}
 	}
@@ -1677,6 +1704,11 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 				}
 				else // TRY using the slot that's specified, if one IS specified...
 				{
+					std::cout << "Max Textures: " << sfxConfig.numTextureSlots << std::endl;
+					for (const auto& textureNum : textureNumberMap)
+					{
+						std::cerr << textureNum.first << " - " << textureNum.second << std::endl;
+					}
 					std::cerr << this->Filename().c_str()<< ": error: ran out of texture slots."<< std::endl;
 					exit(1);
 					num = GetTextureNumber(name.c_str(), slot);
@@ -2371,6 +2403,14 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					}
 				}
 			}
+			for (auto &decl : declarations)
+			{
+				if (decl.second->declarationType == DeclarationType::TEXTURE)
+				{
+					const std::string &structureType = decl.second->structureType.length() ? decl.second->structureType : "vec4";
+					find_and_replace(function->content, "{" + decl.second->name + "_structureType}", structureType);
+				}
+			}
 		}
 	}
 	std::set<const Variable*> vars;
@@ -2414,6 +2454,22 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 				{
 					find_and_replace(newCont, decl.second->name + ".", decl.second->name + "_");
 				}
+			}
+		}
+		for (const auto &param : f->parameters)
+		{
+			if (((uint64_t)param.shaderResourceType & (uint64_t)ShaderResourceType::TEXTURE) == (uint64_t)ShaderResourceType::TEXTURE)
+			{
+				const std::string &structureType = param.templ.length() ? param.templ : "vec4";
+				find_and_replace(newCont, "{" + param.identifier + "_structureType}", structureType);
+			}
+		}
+		for (auto &decl : declarations)
+		{
+			if (decl.second->declarationType == DeclarationType::TEXTURE)
+			{
+				const std::string &structureType = decl.second->structureType.length() ? decl.second->structureType : "vec4";
+				find_and_replace(newCont, "{" + decl.second->name + "_structureType}", structureType);
 			}
 		}
 

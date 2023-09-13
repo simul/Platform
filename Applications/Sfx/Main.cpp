@@ -287,6 +287,8 @@ int main(int argc, char** argv)
 			sfxConfig.sourceExtension							=j["sourceExtension"];
 			sfxConfig.outputExtension							=j["outputExtension"];
 			sfxConfig.outputOption								=j["outputOption"];
+			if (j.count("minShaderModel") > 0)
+				sfxConfig.minShaderModel						=j["minShaderModel"];
 			if (j.count("maxShaderModel") > 0)
 				sfxConfig.maxShaderModel						=j["maxShaderModel"];
 			if (j.count("failOnCerr") > 0)

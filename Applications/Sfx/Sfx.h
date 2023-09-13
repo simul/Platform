@@ -149,6 +149,8 @@ struct SfxConfig
 	bool supportMultiview;
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
+	//! Minimum shader model number
+	double minShaderModel = 4.0;
 	//! Maximum shader model number
 	double maxShaderModel=7.0;
 };

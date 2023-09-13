@@ -122,6 +122,35 @@
 			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 		}
 	}
+	std::string convertHalfTypeSuffix(const std::string &str)
+	{
+		std::string out = str;
+		const std::string &sourcefileExt = gEffect->GetConfig()->sourceExtension;
+		bool hlsl = sourcefileExt.compare("hlsl") == 0;
+		bool glsl = sourcefileExt.compare("glsl") == 0;
+		bool pssl = sourcefileExt.compare("pssl") == 0;
+		if (!hlsl)
+		{
+			size_t suffixPos = str.find('h');
+			if (suffixPos != std::string::npos)
+			{
+				const std::string &newSuffix = glsl ? "hf" : "h";
+				out.replace(suffixPos, 1, newSuffix);
+			}
+		}
+
+		if (hlsl)
+		{
+			size_t suffixPos = str.find('h');
+			if (suffixPos != std::string::npos)
+			{
+				out = out.substr(0, out.size() - 1); //Remove 'h' suffix
+				out = "float16_t(" + out + ")";
+			}
+		}
+
+		return out;
+	}
 	ShaderResourceType ToShaderResourceType(int t);
 	ShaderResourceType GetShaderResourceType(const Function &function, const string &textureName);
 	bool IsRW(ShaderResourceType t);
@@ -583,7 +612,7 @@
 %}
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
-%token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
+%token REGISTER NUM INCLUDE SAMPLER P_FLOAT P_HALF CONST
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D NAMED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
@@ -1154,6 +1183,10 @@ int_or_float : NUM
 	| P_FLOAT
 	{
 		$$.strs[0]=$1.strs[0];
+	}
+	| P_HALF
+	{
+		$$.strs[0]=convertHalfTypeSuffix($1.strs[0]);
 	}
 number_exp : additive_num
 	{
@@ -1867,21 +1900,22 @@ postfix_exp : primary_exp
 		}
 		if(config->loadSyntax.size() > 0)
 		{
+			string templ_type = "{" + textureName + "_structureType}";
 			ShaderResourceType resourceType	= GetShaderResourceType(buildFunction,textureName);
 			if(resourceType!=ShaderResourceType::UNKNOWN)
 			{
 				if(pos.size() > 0 && msaa_index.size() > 0)
 				{
-					full_expr << GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index);
+					full_expr << templ_type << "(" << GetLoadExprMSAA(textureName,command,params,resourceType,pos,msaa_index) << ")";
 				}
 				else
 				{
-					full_expr << GetLoadExpr(textureName,command,params,resourceType);
+					full_expr << templ_type << "(" << GetLoadExpr(textureName,command,params,resourceType) << ")";
 				}
 			}
 			else
 			{
-				full_expr<<"{load_expr "<<textureName<<" "<<command<<" "<<params<<" "<<pos<<" "<<msaa_index<<"}";
+				full_expr << templ_type << "(" << "{load_expr "<<textureName<<" "<<command<<" "<<params<<" "<<pos<<" "<<msaa_index<<"}" << ")";
 			}
 		}
 		else
@@ -1931,6 +1965,7 @@ postfix_exp : primary_exp
 					combTexSamp = textureName + "[" + samplerStateName + "]";
 				}
 			}
+			string templ_type = "{" + textureName + "_structureType}";
 			const SfxConfig *config	= gEffect->GetConfig();
 			find_and_replace(cmd,"{textureSampler}",combTexSamp);
 			if(!config->reverseTexCoordY||!params||params->size()<1)
@@ -1948,7 +1983,7 @@ postfix_exp : primary_exp
 				for(auto u=j->second.begin();u!=j->second.end();u++)
 					buildFunction.functionsCalled.insert(*u);
 			}
-			full_expr << cmd;	
+			full_expr << templ_type << "(" << cmd << ")";	
 		}
 		else
 		{

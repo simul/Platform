@@ -150,6 +150,7 @@ NUM_BLCK ([0-9][0-9]*)[uU]?
 HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*[uU]?
 STR_BLCK \"[^"\n]*\"																								
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
+HALF_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?h
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions*/
 /*"sampler"							sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(SAMPLER);
@@ -617,6 +618,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.fnum=value;
 													stdReturn(P_FLOAT);
 												}
+<IN_SHADER>{HALF_BLCK}							{
+													sfxlval.lineno=yylineno;
+													float value=ToFloat(yytext);
+													sfxlval.fnum=value;
+													stdReturn(P_HALF);
+												}
 <IN_SHADER>{NUM_BLCK}							{
 													sfxlval.lineno=yylineno;
 													sfxlval.num=atoi(yytext);
@@ -985,6 +992,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.fnum=ToFloat(yytext);
 													stdReturn(P_FLOAT);
 												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>{HALF_BLCK}	{
+													sfxlval.lineno=yylineno;
+													sfxlval.fnum=ToFloat(yytext);
+													stdReturn(P_HALF);
+												}
 <IN_TEXTURE_DECL>":"							{
 													stdReturn(':');
 												}
@@ -1048,6 +1060,16 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														sfxlval.strs[0]=yytext;
 														sfxlval.fnum=ToFloat(yytext);
 														stdReturn(P_FLOAT);
+													}
+												}
+<INITIAL>{HALF_BLCK}							{
+													if(gLexPassthrough) 
+														gEffect->m_sharedCode<<yytext; 
+													else 
+													{
+														sfxlval.strs[0]=yytext;
+														sfxlval.fnum=ToFloat(yytext);
+														stdReturn(P_HALF);
 													}
 												}
 <INITIAL>"in"|"out"|"inout"						{
