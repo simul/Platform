@@ -20,6 +20,9 @@
 
 #ifndef __cplusplus
 	#define layout(a)
+	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
+	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
+
 #ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
 	vec2 BottomUpTextureCoordinates(vec2 texc)
 	{
