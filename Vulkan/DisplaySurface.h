@@ -10,8 +10,8 @@
 typedef struct GLFWwindow GLFWwindow;
 namespace platform
 {
-    namespace vulkan
-    {
+	namespace vulkan
+	{
 		struct SwapchainImageResources
 		{
 			vk::Image image;
@@ -20,26 +20,23 @@ namespace platform
 			vk::ImageView view;
 			vk::Framebuffer framebuffer;
 		} ;
-        class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
-        {
-        public:
-            DisplaySurface(int view_id);
-            virtual ~DisplaySurface();
-            virtual void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
-            virtual void InvalidateDeviceObjects() override;
-            virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
-            virtual void EndFrame() override;
-        protected:
-            //! Will resize the swap chain only if needed
-            void Resize();
+		class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
+		{
+		public:
+			DisplaySurface(int view_id);
+			virtual ~DisplaySurface();
+			virtual void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
+			virtual void InvalidateDeviceObjects() override;
+			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
+			virtual void EndFrame() override;
+		protected:
+			//! Will resize the swap chain only if needed
+			void Resize();
 			crossplatform::DeviceContext deferredContext;
-            crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNDEFINED;
+			crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNDEFINED;
 			// The format requested - may not be available.
-            crossplatform::PixelFormat requestedPixelFormat = crossplatform::PixelFormat::UNDEFINED;
-#ifdef _MSC_VER
-			HDC             hDC;
-			HGLRC           hRC;
-#endif
+			crossplatform::PixelFormat requestedPixelFormat = crossplatform::PixelFormat::UNDEFINED;
+
 			vk::Format		vulkanFormat;
 			vk::ColorSpaceKHR colour_space;
 			vk::SwapchainKHR swapchain;
@@ -66,7 +63,7 @@ namespace platform
 			void CreateFramebuffers();
 			void CreateDefaultLayout();
 			void CreateDefaultPipeline();
-            void Present();
+			void Present();
 			int frame_index;
 			uint32_t current_buffer;
 			uint32_t graphics_queue_family_index;
@@ -79,8 +76,8 @@ namespace platform
 			vk::PhysicalDevice* GetGPU();
 			void EnsureImageLayout();
 			void EnsureImagePresentLayout();
-        };
-    }
+		};
+	}
 }
 
 

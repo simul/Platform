@@ -108,6 +108,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	InitFromExternalTexture2D(renderPlatform, t, 0, 0, crossplatform::PixelFormat::UNKNOWN);
 	if(renderPlatform&&renderPlatform->GetMemoryInterface()&&t)
 	{
+		if (name.empty())
+			name = pFilePathUtf8;
 		renderPlatform->GetMemoryInterface()->TrackVideoMemory(t,width*length*4,name.c_str());
 	}
 	SAFE_RELEASE(t);

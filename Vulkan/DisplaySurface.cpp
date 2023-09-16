@@ -44,12 +44,7 @@ static const char *GetErr()
 
 DisplaySurface::DisplaySurface(int view_id)
 	: crossplatform::DisplaySurface(view_id), pixelFormat(crossplatform::UNKNOWN)
-#ifdef _MSC_VER
-	  ,
-	  hDC(nullptr), hRC(nullptr)
-#endif
-	  ,
-	  frame_index(0), current_buffer(0)
+	  ,frame_index(0), current_buffer(0)
 {
 }
 
@@ -104,15 +99,10 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mHwnd = handle;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-	hDC = GetDC(mHwnd);
-	if (!(hDC))
-	{
-		return;
-	}
 	auto hInstance = GetModuleHandle(nullptr);
 	vk::Win32SurfaceCreateInfoKHR createInfo = vk::Win32SurfaceCreateInfoKHR()
-												   .setHinstance(hInstance)
-												   .setHwnd(mHwnd);
+												.setHinstance(hInstance)
+												.setHwnd(mHwnd);
 	auto rv = (vulkan::RenderPlatform *)renderPlatform;
 	vk::Instance *inst = GetVulkanInstance();
 	if (inst)
@@ -124,12 +114,12 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 #ifdef VK_USE_PLATFORM_XCB_KHR
 #if 0
 
-        memset(&sci, 0, sizeof(sci));
-        sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-        sci.connection = connection;
-        sci.window = window->x11.handle;
+		memset(&sci, 0, sizeof(sci));
+		sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+		sci.connection = connection;
+		sci.window = window->x11.handle;
 
-        err = vkCreateXcbSurfaceKHR(instance, &sci, allocator, surface);
+		err = vkCreateXcbSurfaceKHR(instance, &sci, allocator, surface);
 
 	vk::XcbSurfaceCreateInfoKHR createInfo = vk::XcbSurfaceCreateInfoKHR()
 		.setWindow((xcb_window_t)mHwnd)
@@ -159,10 +149,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 void DisplaySurface::InvalidateDeviceObjects()
 {
-#ifdef _MSC_VER
-	if (!hDC)
-		return;
-#endif
 	vk::Device *vulkanDevice = GetVulkanDevice();
 	if (vulkanDevice)
 	{
@@ -195,15 +181,6 @@ void DisplaySurface::InvalidateDeviceObjects()
 		vulkanDevice->destroyDescriptorSetLayout(desc_layout, nullptr);
 	}
 	// vulkanDevice->destroysurface(mSurface,nullptr);
-
-#ifdef _MSC_VER
-	if (hDC && !ReleaseDC(mHwnd, hDC)) // Are We Able To Release The DC
-	{
-		SIMUL_CERR << "Release Device Context Failed." << GetErr() << std::endl;
-		hDC = NULL; // Set DC To NULL
-	}
-	hDC = nullptr; // Set DC To NULL
-#endif
 }
 
 void DisplaySurface::GetQueues()

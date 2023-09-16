@@ -197,40 +197,30 @@ D3D12_INDEX_BUFFER_VIEW* Buffer::GetIndexBufferView()
 
 void Buffer::Upload(crossplatform::DeviceContext &deviceContext)
 {
-	if (upload_data)
+	if (upload_data && upload_data->size())
 	{
-		if(upload_data->size())
-		{
-			auto& deviceContext = renderPlatform->GetImmediateContext();
-			D3D12_SUBRESOURCE_DATA subresourceData = {};
-			subresourceData.pData = upload_data->data();
-			subresourceData.RowPitch = mBufferSize;
-			subresourceData.SlicePitch = subresourceData.RowPitch;
-			
-			D3D12_RESOURCE_BARRIER barrier;
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource = d3d12Buffer;
-			barrier.Transition.Subresource = 0;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-		#if PLATFORM_DEBUG_BARRIERS
-			LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
-		#endif
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-			deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
-
-			UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
-
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-			if(bufferType == crossplatform::BufferType::INDEX)
-				barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-			else
-				barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-			deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
-#if PLATFORM_DEBUG_BARRIERS
+		//auto& deviceContext = renderPlatform->GetImmediateContext();
+		D3D12_SUBRESOURCE_DATA subresourceData = {};
+		subresourceData.pData = upload_data->data();
+		subresourceData.RowPitch = mBufferSize;
+		subresourceData.SlicePitch = subresourceData.RowPitch;
+		
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = d3d12Buffer;
+		barrier.Transition.Subresource = 0;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
-#endif
-		}
+		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+
+		UpdateSubresources(deviceContext.asD3D12Context(), d3d12Buffer, mIntermediateHeap, 0, 0, 1, &subresourceData);
+
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		barrier.Transition.StateAfter = bufferType == crossplatform::BufferType::INDEX ? D3D12_RESOURCE_STATE_INDEX_BUFFER : D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		deviceContext.asD3D12Context()->ResourceBarrier(1, &barrier);
+		LOG_BARRIER_INFO(name.c_str(), d3d12Buffer, barrier.Transition.StateBefore, barrier.Transition.StateAfter);
 		upload_data=nullptr;
 	}
 }
