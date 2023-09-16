@@ -52,9 +52,9 @@ namespace platform
 			//! Cleans all the resources related with this object
 			void							InvalidateDeviceObjects();
 			//! Loads this texture from a file
-			void							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips);
+			bool							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips);
 			//! Loads this texture from multiple files
-			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
+			bool							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
 			bool							IsValid() const;
 			
 			void StoreExternalState(crossplatform::ResourceState);

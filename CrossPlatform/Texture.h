@@ -344,8 +344,8 @@ namespace platform
 			{
 				return shouldGenerateMips;
 			}
-			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
-			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
+			virtual bool LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
+			virtual bool LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
             virtual nvn::Texture* AsNXTexture() { return 0; };

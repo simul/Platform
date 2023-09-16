@@ -1237,9 +1237,15 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 	{
 		if (strstr(fileNameUtf8, ".") != nullptr)
 		{
-			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
-			unfinishedTextures.insert(tex);
-			SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
+			if(tex->LoadFromFile(this, fileNameUtf8, gen_mips))
+			{
+				unfinishedTextures.insert(tex);
+				SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
+			}
+			else
+			{
+				SIMUL_INTERNAL_CERR<<"Failed to load texture: {0}"<<fileNameUtf8<<"\n";
+			}
 		}
 		tex->SetName(fileNameUtf8);
 	}

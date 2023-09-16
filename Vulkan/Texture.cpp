@@ -85,20 +85,18 @@ void Texture::SetName(const char* n)
 	
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
+bool Texture::LoadFromFile(crossplatform::RenderPlatform *r, const char *pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	std::vector<std::string> texture_files;
 	texture_files.push_back(pFilePathUtf8);
-	LoadTextureArray(r,texture_files,gen_mips?0:1);
+	return LoadTextureArray(r,texture_files,gen_mips?0:1);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files, bool gen_mips)
+bool Texture::LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	renderPlatform= r;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	vulkan::RenderPlatform* vr = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	PushLoadedTexturesToReleaseManager();
 	ResizeLoadedTextures(1, texture_files.size());
 	for (unsigned int i = 0; i < texture_files.size(); i++)
@@ -111,7 +109,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	{
 		// don't try to complete the load with empty data.
 		textureUploadComplete=true;
-		return;
+		return false;
 	}
 	size_t num= loadedTextures[0].size();
 	int m=1;
@@ -129,6 +127,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	else
 		ensureTextureArraySizeAndFormat(r,w,l,(int)num,m,crossplatform::PixelFormat::RGBA_8_UNORM,nullptr,false,false,false,false);
 	textureUploadComplete=false;
+	return true;
 }
 
 bool Texture::IsValid() const

@@ -140,7 +140,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		SIMUL_BREAK("Unknown colour space.")
 	}
 
-	swapChainIsGammaEncoded != (colourSpace == DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+	swapChainIsGammaEncoded =(colourSpace != DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 	SAFE_RELEASE(output);
 
 	// Assign and query

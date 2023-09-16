@@ -150,7 +150,7 @@ void Texture::InvalidateDeviceObjects()
 	mTextureDsHeap.Release();
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8, bool gen_mips)
+bool Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8, bool gen_mips)
 {
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
@@ -182,7 +182,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		}
 		errno = 0;
 		if (idx < -1 || idx >= (int)pathsUtf8.size())
-			return;
+			return false;
 	}
 	errno=0;
 	if (idx >= 0)
@@ -235,6 +235,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// ok to free loaded data??
 	ClearFileContents();
 	textureLoadComplete=false;
+	return true;
 }
 
 void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
@@ -358,7 +359,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	ClearLoadingData();
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips)
+bool Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
@@ -380,7 +381,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	{
 		int idx = platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(texture_files[i].c_str(), pathsUtf8);
 		if (idx<-1 || idx >= (int)pathsUtf8.size())
-			return;
+			return false;
 		strPaths[i] = texture_files[i];
 		if (idx >= 0)
 			strPaths[i] = (pathsUtf8[idx] + "/") + strPaths[i];
@@ -431,6 +432,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	mLoadedFromFile = true;
 	textureLoadComplete=false;
 	textureUploadComplete = true;
+	return true;
 }
 
 bool Texture::IsValid() const
