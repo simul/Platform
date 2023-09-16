@@ -245,7 +245,7 @@ int main(int argc, char** argv)
 		try
 		{
 			i >> j;
-			//if(sfxOptions.verbose)
+	
 			json compiler = j["compiler"];
 			if (compiler.type() == json::value_t::string)
 			{
