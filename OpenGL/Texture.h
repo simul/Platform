@@ -45,8 +45,8 @@ namespace platform
 			
 			void			SetName(const char* n) override;
 
-			void			LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips = false) override;
-			void			LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
+			bool LoadFromFile(crossplatform::RenderPlatform *r, const char *pFilePathUtf8, bool gen_mips = false) override;
+			bool LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips) override;
 			bool			IsValid() const override;
 			void			InvalidateDeviceObjects() override;
 			virtual bool	InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false, int numOfSamples = 1) override;

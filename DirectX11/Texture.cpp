@@ -98,7 +98,7 @@ void Texture::InvalidateDeviceObjects()
 }
 
 // Load a texture file
-void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8, bool gen_mips)
+bool Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform, const char *pFilePathUtf8, bool gen_mips)
 {
 	ERRNO_BREAK
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
@@ -114,7 +114,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	}
 	SAFE_RELEASE(t);
 	external_texture = false;
-	SetDebugObjectName(texture,pFilePathUtf8);
+	SetDebugObjectName(texture,pFilePathUtf8);	
+	return true;
 }
 
 int Texture::GetMemorySize() const
@@ -131,7 +132,7 @@ int Texture::GetMemorySize() const
 	return mem*ByteSizeOfFormatElement(dxgi_format);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips)
+bool Texture::LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	renderPlatform=r;
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
@@ -191,8 +192,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	}
 	//pContext->GenerateMips(mainShaderResourceView);
 	SAFE_RELEASE(pContext)
-	//mips=m;
-	//arraySize=(int)texture_files.size();
+	return true;
 }
 
 bool Texture::IsValid() const
