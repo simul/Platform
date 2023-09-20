@@ -1356,7 +1356,7 @@ bool Effect::Load(RenderPlatform *r, const char *filename_utf8)
 									}
 								}
 							}
-							s->samplerSlots.set(slot, false);
+							slots.set(slot, false);
 							if(slots.none())
 								break;
 						}

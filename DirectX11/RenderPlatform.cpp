@@ -1533,18 +1533,30 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	{
 		auto c = deviceContext.asD3D11DeviceContext();
-		static ID3D11ShaderResourceView* src[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
-		c->VSSetShaderResources(0, 32, src);
-		c->HSSetShaderResources(0, 32, src);
-		c->DSSetShaderResources(0, 32, src);
-		c->GSSetShaderResources(0, 32, src);
-		c->PSSetShaderResources(0, 32, src);
-		c->CSSetShaderResources(0, 32, src);
-		static ID3D11UnorderedAccessView* uav[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
-		c->CSSetUnorderedAccessViews(0, 8, uav, 0);
+
+		static ID3D11SamplerState *ss[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { 0 };
+		c->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, ss);
+		c->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, ss);
+		c->CSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, ss);
+		
+		static ID3D11ShaderResourceView *srv[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { 0 };
+		c->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, srv);
+		c->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, srv);
+		c->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, srv);
+
+		static ID3D11UnorderedAccessView *uav[D3D11_1_UAV_SLOT_COUNT] = { 0 };
+		c->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, uav, 0);
+
+		static ID3D11Buffer *cbv[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = { 0 };
+		c->VSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, cbv);
+		c->PSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, cbv);
+		c->CSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, cbv);
 	}
+
+	// Apply Samplers:
 	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
 	
+	// Apply CBVs:
 	pass->SetConstantBuffers(deviceContext,cs->applyBuffers);
 	
 	// Apply UAVs (RwTextures and RwSB):

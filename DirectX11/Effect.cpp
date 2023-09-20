@@ -327,15 +327,11 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext, cros
 	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
 }
 
-void Effect::CheckShaderSlots(dx11::Shader* shader, ID3DBlob* shaderBlob)
-{
-}
-
 void EffectPass::SetConstantBuffers(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferAssignmentMap& cBuffers)
 {
 	auto cmdList = deviceContext.asD3D11DeviceContext();
 	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
-	int usedSlots = 0;
+	crossplatform::Slots usedSlots = {};
 
 	// The handles for the required constant buffers:
 	for (const int &slot : collectedConstantBufferResourceSlots)
@@ -349,12 +345,14 @@ void EffectPass::SetConstantBuffers(crossplatform::DeviceContext& deviceContext,
 		}
 		auto d11cb = (dx11::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		appliedConstantBuffers[slot] = d11cb->asD3D11Buffer();
-		usedSlots |= (1 << slot);
+		usedSlots.set(slot);
 
 		cmdList->CSSetConstantBuffers(slot, 1, &(appliedConstantBuffers[slot]));
 		cmdList->VSSetConstantBuffers(slot, 1, &(appliedConstantBuffers[slot]));
 		cmdList->PSSetConstantBuffers(slot, 1, &(appliedConstantBuffers[slot]));
 	}
+
+	CheckSlots(GetConstantBufferSlots(), usedSlots, 14, "Constant Buffer");
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
@@ -396,7 +394,7 @@ void EffectPass::SetSamplers(crossplatform::DeviceContext& deviceContext, crossp
 {
 	auto cmdList = deviceContext.asD3D11DeviceContext();
 	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
-	int usedSlots = 0;
+	crossplatform::Slots usedSlots = {};
 
 	dx11::Shader* compute = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	for (const int &slot : collectedSamplerResourceSlots)
@@ -431,16 +429,18 @@ void EffectPass::SetSamplers(crossplatform::DeviceContext& deviceContext, crossp
 			cmdList->VSSetSamplers(slot, 1, &s);
 			cmdList->PSSetSamplers(slot, 1, &s);
 		}
-		usedSlots |= (1 << slot);
+		usedSlots.set(slot);
 	}
+
+	CheckSlots(GetSamplerSlots(), usedSlots, 14, "Sampler");
 }
 
 void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatform::TextureAssignmentMap& textures, crossplatform::StructuredBufferAssignmentMap& sBuffers)
 {
 	auto cmdList = deviceContext.asD3D11DeviceContext();
 	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
-	int usedSBSlots = 0;
-	int usedTextureSlots = 0;
+	crossplatform::Slots usedSBSlots = {};
+	crossplatform::Slots usedTextureSlots = {};
 
 	dx11::Shader* compute= (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	// Iterate over the textures:
@@ -462,12 +462,12 @@ void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatf
 			cmdList->VSSetShaderResources(slot, 1, &res);
 			cmdList->PSSetShaderResources(slot, 1, &res);
 		}
-		usedTextureSlots |= (1 << slot);
+		usedTextureSlots.set(slot);
 	}
 	// Iterate over the structured buffers:
 	for (const int &slot : collectedSbResourceSlots)
 	{
-		if ((usedTextureSlots&(1<<slot))!=0)
+		if (usedTextureSlots[slot])
 		{
 			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name.c_str() << " has already being used by a texture. \n";
 		}
@@ -487,16 +487,19 @@ void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatf
 			cmdList->VSSetShaderResources(slot, 1, &res);
 			cmdList->PSSetShaderResources(slot, 1, &res);
 		}
-		usedSBSlots |= (1 << slot);
+		usedSBSlots.set(slot);
 	}
+
+	CheckSlots(GetTextureSlots(), usedTextureSlots, 128, "Texture");
+	CheckSlots(GetStructuredBufferSlots(), usedSBSlots, 128, "Structured Buffer");
 }
 
 void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatform::TextureAssignmentMap& rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers)
 {
 	auto cmdList = deviceContext.asD3D11DeviceContext();
 	auto rPlat = (dx11::RenderPlatform*)deviceContext.renderPlatform;
-	int usedRwSBSlots = 0;
-	int usedRwTextureSlots = 0;
+	crossplatform::Slots usedRwSBSlots = {};
+	crossplatform::Slots usedRwTextureSlots = {};
 	dx11::Shader* compute = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 
 	// Iterate over the textures:
@@ -515,12 +518,12 @@ void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatf
 		{
 			cmdList->CSSetUnorderedAccessViews(slot, 1, &uav,nullptr);
 		}
-		usedRwTextureSlots |= (1 << slot);
+		usedRwTextureSlots.set(slot);
 	}
 	// Iterate over the structured buffers:
 	for (const int &slot : collectedRwSbResourceSlots)
 	{
-		if ((usedRwTextureSlots & (1 << slot)) != 0)
+		if (usedRwTextureSlots[slot])
 		{
 			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name.c_str() << ", has already being used by a RWTexture. \n";
 		}
@@ -535,13 +538,16 @@ void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatf
 		{
 			cmdList->CSSetUnorderedAccessViews(slot, 1, &uav, nullptr);
 		}
-		usedRwSBSlots |= (1 << slot);
+		usedRwSBSlots.set(slot);
 
 
 		// Temp:
 
 		renderPlatform->ResourceBarrierUAV(deviceContext, sb);
 	}
+
+	CheckSlots(GetRwTextureSlots(), usedRwTextureSlots, 16, "RWTexture");
+	CheckSlots(GetRwStructuredBufferSlots(), usedRwSBSlots, 16, "RWStructured Buffer");
 }
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::EffectTechnique* effectTechnique, int pass_num)
@@ -572,15 +578,15 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
 	auto c=deviceContext.asD3D11DeviceContext();
-	static ID3D11ShaderResourceView *src[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	c->VSSetShaderResources(0,32,src);
-	c->HSSetShaderResources(0,32,src);
-	c->DSSetShaderResources(0,32,src);
-	c->GSSetShaderResources(0,32,src);
-	c->PSSetShaderResources(0,32,src);
-	c->CSSetShaderResources(0,32,src);
-	static ID3D11UnorderedAccessView *uav[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	c->CSSetUnorderedAccessViews(0,8,uav,0);
+
+	static ID3D11ShaderResourceView *srv[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {0};
+	c->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, srv);
+	c->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, srv);
+	c->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, srv);
+
+	static ID3D11UnorderedAccessView *uav[D3D11_1_UAV_SLOT_COUNT] = {0};
+	c->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, uav, 0);
+
 	crossplatform::Effect::UnbindTextures(deviceContext);
 }
 
