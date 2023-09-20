@@ -41,6 +41,18 @@ bool crossplatform::LayoutMatches(const std::vector<LayoutDesc> &desc1,const std
 	return true;
 }
 
+bool crossplatform::LayoutContains(const std::vector<LayoutDesc> &desc, const char *semanticName)
+{
+	std::string str(semanticName);
+	for (size_t i = 0; i < desc.size(); i++)
+	{
+		const auto &d1 = desc[i];
+		if (d1.semanticName == str)
+			return true;
+	}
+	return false;
+}
+
 Layout::Layout()
 	:apply_count(0)
 	,struct_size(0)
@@ -102,8 +114,8 @@ uint64_t GetLayoutPartHash(const SimpleLayoutSpec &s)
 {
 	uint64_t h=0;
 	h|=(uint64_t)s.format;			// 5-6 bits.
-	h|=(uint64_t)(s.inputSlot<<6);
-	h|=(uint64_t)(s.semantic)<<8;	// 4 bits
+	//h|=(uint64_t)(s.inputSlot<<6);
+	//h|=(uint64_t)(s.semantic)<<8;	// 4 bits
 	return h;
 }
 uint64_t platform::crossplatform::GetLayoutHash(const platform::crossplatform::LayoutDesc &d)

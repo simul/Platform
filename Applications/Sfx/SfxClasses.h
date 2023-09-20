@@ -319,11 +319,32 @@ namespace sfx
 		AddressMode AddressW;
 		DepthComparison depthComparison;
 	};
+	//! Types of test for variant variables.
+	enum VariantTest
+	{
+		NoTest = 0,
+		NotEqual = 1,
+		Equal = 2,
+		Greater = 4,
+		Less = 8,
+		GreaterEqual = Greater | Equal,
+		LessEqual = Less | Equal
+	};
+	//! What to compare variant variables to.
+	union VariantComparator
+	{
+		float fval;
+		int ival;
+	};
 	struct StructMember
 	{
 		std::string type;
 		std::string name;
 		std::string semantic;
+		std::string variantCondition;// allows shader variants to modify struct makeup.
+		std::string variantVariable;
+		VariantTest variantTest;
+		VariantComparator variantComparator;
 	};
 	struct Struct: public Declaration
 	{
@@ -332,6 +353,7 @@ namespace sfx
 		{
 		}
 		std::vector<StructMember> m_structMembers;
+		bool hasVariants=false;
 	};
 	struct ConstantBuffer : public Struct
 	{

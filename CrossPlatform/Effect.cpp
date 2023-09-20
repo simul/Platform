@@ -353,6 +353,29 @@ EffectVariantPass *EffectTechnique::GetVariantPass(const char *name)
 }
 
 
+					//if (!crossplatform::LayoutMatches(vertexShader->layout.GetDesc(), meshLayout))
+EffectPass *EffectVariantPass::GetPass(const char *shader1, uint64_t layoutHash, const char *shader2)
+{
+	for(auto i:passes)
+	{
+		auto *vs = i.second->shaders[SHADERTYPE_VERTEX];
+		if(!vs)
+			continue;
+		if(vs->layout.GetHash()!=layoutHash)
+			continue;
+		vector<string> parts = platform::core::split(i.first, '.');
+		if(parts.size()<2)
+			continue;
+		size_t bracket=parts[1].find('(');
+		std::string basename=parts[1].substr(0,bracket);
+		if(basename!=shader1)
+			continue;
+		if (!shader2 || (parts.size() >=3&&parts [2] == shader2))
+			return i.second;
+	}
+	return nullptr;
+}
+
 EffectPass* EffectVariantPass::GetPass(const char *shader1,const char *shader2)
 {
 	for(auto i:passes)

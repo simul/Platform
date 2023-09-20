@@ -16,7 +16,9 @@ namespace sfx
 		std::string m_functionName;
 		std::string variantName;
 		std::string m_preamble;
+		std::string variantDefinitions;
 		std::string variantDeclarations;
+		std::map<std::string, std::string> variantValues;
 		std::string m_augmentedSource;
 		std::string entryPoint;
 		std::map<int,std::string> sbFilenames;// maps from PixelOutputFormat for pixel shaders, or int for vertex(0) and export(1) shaders.

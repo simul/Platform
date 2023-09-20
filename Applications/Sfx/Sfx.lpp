@@ -144,7 +144,7 @@ the last is C code to be copied verbatim to the output.
 #define stdReturn return stdReturn_
 #define modReturn return modReturn_
 %}
-%x renderstate_mode IN_SHADER IN_SHADER_COMPILE IN_LINE IN_RENDER_STATE IN_TEXTURE_DECL IN_LAYOUT IN_STRUCT IN_MULTILINE_COMMENT
+%x renderstate_mode IN_SHADER IN_SHADER_COMPILE IN_LINE IN_RENDER_STATE IN_TEXTURE_DECL IN_LAYOUT IN_STRUCT IN_MULTILINE_COMMENT IN_VARIANT_CASE
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*																	
 NUM_BLCK ([0-9][0-9]*)[uU]?
 HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*[uU]?
@@ -175,6 +175,26 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.boolean=false;
 													stdReturn(TECHNIQUE);
 												}
+<INITIAL>"variant"								{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(STORAGEQ);
+												}
+<IN_SHADER,IN_STRUCT>"variant" {
+													stdReturn(SFX_VARIANT);
+												}
+<IN_SHADER>"variant_if"						{
+													stdReturn(SFX_VARIANT_IF);
+												}
+<IN_SHADER>"variant_else"						{
+													stdReturn(SFX_VARIANT_ELSE);
+												}
+<IN_SHADER>"variant_end"						{
+													stdReturn(SFX_VARIANT_END);
+												}
+<IN_STRUCT>"=="									stdReturn(EQ_EQ);
+<IN_STRUCT>">"									stdReturn('>');
+<IN_STRUCT>"<"									stdReturn('<');
 <INITIAL>"unorm"								{
 													stdReturn(UNORM);
 												}
@@ -967,8 +987,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn(COMPARISON);
 												}
 
-<IN_SHADER_COMPILE>"true"				{sfxlval.num=1; stdReturn(NUM);}
-<IN_SHADER_COMPILE>"false"				{sfxlval.num=0; stdReturn(NUM);}	
+<IN_SHADER_COMPILE,IN_STRUCT>"true"				{sfxlval.num=1; stdReturn(NUM);}
+<IN_SHADER_COMPILE,IN_STRUCT>"false"				{sfxlval.num=0; stdReturn(NUM);}	
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_TEXTURE_DECL>{ID_BLCK}	{
 												sfxlval.lineno=yylineno;
 												sfxlval.strs[0]=yytext;
@@ -1055,11 +1075,6 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.strs[0]=yytext;
 													stdReturn(STORAGEQ);
 												}
-<INITIAL>"variant"								{
-													sfxlval.lineno=yylineno;
-													sfxlval.strs[0]=yytext;
-													stdReturn(STORAGEQ);
-												}
 
 <INITIAL>"TriangleBuffer"|"TriangleStream"		{
 													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
@@ -1124,8 +1139,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													}
 												}
 <INITIAL>"gl_FragDepth"							{sfxlval.lineno=yylineno; sfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
-<INITIAL>"true"				{sfxlval.num=1; stdReturn(NUM);}
-<INITIAL>"false"				{sfxlval.num=0; stdReturn(NUM);}
+<INITIAL>"true"									{sfxlval.num=1; stdReturn(NUM);}
+<INITIAL>"false"								{sfxlval.num=0; stdReturn(NUM);}
 <INITIAL>{ID_BLCK}								{
 													{
 														sfxlval.lineno=yylineno;
@@ -1313,5 +1328,7 @@ const char *GetStartModeText()
 		return "TEXTURE_DECL";
 	if (YYSTATE == IN_LAYOUT)
 		return "LAYOUT";
+	if (YYSTATE == IN_VARIANT_CASE)
+		return "VARIANT_CASE";
 	return (NULL);
 }

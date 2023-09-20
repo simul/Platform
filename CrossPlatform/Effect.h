@@ -270,6 +270,7 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
+			std::string name;
 			crossplatform::RenderState *blendState;
 			crossplatform::RenderState *depthStencilState;
 			crossplatform::RenderState *rasterizerState;
@@ -285,7 +286,6 @@ namespace platform
 			bool multiview = false;
 			int3 numThreads = { 0,0,0 };
 			std::string rtFormatState;
-			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);
 			virtual ~EffectPass();
 
@@ -409,8 +409,11 @@ namespace platform
 		{
 		public:
 			std::string name;
-			std::map<std::string,EffectPass*> passes;
-			EffectPass* GetPass(const char *shader1,const char *shader2=nullptr);
+			std::map<std::string, EffectPass *> passes;
+			//! Get the pass (if it exists) with the specified vertex input layout and named pixel shader.
+			EffectPass *GetPass(const char *shader1, uint64_t layoutHash, const char *pixel_shader);
+			//! Get the pass (if it exists) with the named shaders.
+			EffectPass* GetPass(const char *shader1,const char *shader2=nullptr); 
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{

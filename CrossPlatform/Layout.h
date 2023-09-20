@@ -52,6 +52,7 @@ namespace platform
 		extern uint64_t GetLayoutHash(const LayoutDesc &d);
 		extern uint64_t GetLayoutHash(const std::vector<SimpleLayoutSpec> &l);
 		extern bool LayoutMatches(const std::vector<LayoutDesc> &desc1,const std::vector<LayoutDesc> &desc2);
+		extern bool LayoutContains(const std::vector<LayoutDesc> &desc,const char *semanticName);
 		//! A cross-platform class representing vertex input layouts. Create with RenderPlatform::CreateLayout.
 		class SIMUL_CROSSPLATFORM_EXPORT Layout
 		{

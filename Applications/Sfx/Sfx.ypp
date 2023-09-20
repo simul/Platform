@@ -38,6 +38,10 @@
 	void errSem(const string& str, int line=-1);
 	VariantSpec buildVariantSpec;
 	VariantVariableSpec buildVariantVariableSpec;
+	VariantTest buildVariantTest;
+	std::string buildVariantVariable;
+	VariantComparator buildVariantComparator;
+	std::string buildVariantCase;
 	Function buildFunction;
 	Struct buildStruct;
 	RenderTargetFormatState buildrtFormatState;
@@ -605,6 +609,8 @@
 %token POINTLIST_TOPOLOGY LINELIST_TOPOLOGY LINESTRIP_TOPOLOGY TRIANGLELIST_TOPOLOGY TRIANGLESTRIP_TOPOLOGY LINELIST_ADJACENCY_TOPOLOGY LINESTRIP_ADJACENCY_TOPOLOGY TRIANGLELIST_ADJACENCY_TOPOLOGY TRIANGLESTRIP_ADJACENCY_TOPOLOGY
 
 %token SET_RAY_GENERATION SET_MISS SET_CALLABLE SET_HIT_GROUP SET_CLOSEST_HIT SET_ANY_HIT SET_INTERSECTION SET_MISS_SHADERS SET_CALLABLE_SHADERS SET_RAY_TRACING_SHADER_CONFIG SET_RAY_TRACING_PIPELINE_CONFIG SET_MAX_PAYLOAD_SIZE SET_MAX_ATTRIBUTE_SIZE SET_MAX_TRACE_RECURSION_DEPTH
+%token SFX_VARIANT SFX_VARIANT_IF SFX_VARIANT_ELSE SFX_VARIANT_END
+
 %%
 
 prog : prog tok
@@ -784,7 +790,6 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		buildStruct.file_number		=current_filenumber;
 		buildStruct.line_number		=sfxget_lineno()+(last_linenumber-global_linenumber);
 		buildStruct.global_line_number	=$2.lineno;
-		
 		
 		ostringstream ostr;
 		ostr<<"struct "<<$2.strs[0]<<"\n{\n";
@@ -2218,6 +2223,11 @@ statement : COMMENT
 	 {
 		$$.strs[0]=$1.strs[0];
 	 }
+	 | variant_conditional_expression
+	 {
+		$$.strs[0] = $1.strs[0];
+		$$.strs[1] = "";
+	 }
 	| expression ';'
 	{
 		$$.strs[0]=$1.strs[0]+$2.strs[0];
@@ -2315,6 +2325,19 @@ statement : COMMENT
 		$$.lineno=$1.lineno;
 	}
 
+variant_conditional_expression: SFX_VARIANT_IF '(' conditional_exp ')'
+{
+// TODO: Properly change the identifiers, instead of this hack.
+	$$.strs[0]=std::string("#if sfx_variant_var_")+$3.strs[0];
+}
+| SFX_VARIANT_ELSE
+{
+	$$.strs[0]="#else";
+}
+| SFX_VARIANT_END
+{
+	$$.strs[0]="#endif";
+}
 
 line_statement : LINE lex_fx NUM number_or_filename lex_passthrough
 	{
@@ -2461,18 +2484,25 @@ optional_uniform : UNIFORM
 	{
 		$$.strs[0]="";
 	}
-struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
+struct_memb : optional_variant_spec optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
 	{
-		$$.lineno		=$4.lineno;
-		string unif		=$1.strs[0];
-		string type		=$2.strs[0];
-		string name		=$3.strs[0];
-		string sq		=$4.strs[0];
-		string sem		=$5.strs[0];
+		string variantCondition=$1.strs[0];
+		string unif		=$2.strs[0];
+		string type		=$3.strs[0];
+		string name		=$4.strs[0];
+		$$.lineno		=$5.lineno;
+		string sq		=$5.strs[0];
+		string sem		=$6.strs[0];
 		StructMember s;
 		s.type		=type;
 		s.semantic	=sem;
 		s.name		=name+sq;
+		s.variantVariable = buildVariantVariable;
+		s.variantCondition = variantCondition;
+		if(variantCondition.length()>0)
+			buildStruct.hasVariants=true;
+		s.variantTest = buildVariantTest;
+		s.variantComparator=buildVariantComparator;
 		buildStruct.m_structMembers.push_back(s);
 		$$.strs[0]=(unif.length()?(unif+" "):"");
 		$$.strs[0]+=(type+" ")+name;
@@ -2480,8 +2510,66 @@ struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';
 		$$.strs[0]+=sem.length()?(string(": ")+sem):"";
 		$$.strs[0]+=";";
 	}
+optional_variant_spec: SFX_VARIANT '(' variant_condition ')'
+{
+	$$.strs[0]=$3.strs[0];
+} | %empty
+{
+	buildVariantVariable="";
+	$$.strs[0] = "";
+}
+variant_condition: variant_conditional_exp
+{
+// TODO: Properly change the identifiers, instead of this hack.
+	$$.strs[0] = std::string("sfx_variant_var_") + $1.strs[0];
+}
+variant_conditional_exp: IDENTIFIER optional_variant_comparison
+{
+	buildVariantVariable=$1.strs[0];
+	$$.strs[0] = $1.strs[0]+$2.strs[0];
+}
+optional_variant_comparison: %empty
+{
+	$$.strs[0] = "";
+	buildVariantTest = VariantTest::NotEqual;
+	buildVariantComparator.ival = 0;
+}| variant_test variant_comparator
+{
+	$$.strs[0] = $1.strs[0] + $2.strs[0];
+}
+variant_test: '<'
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantTest=VariantTest::Less;
+}| '>'
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantTest = VariantTest::Greater;
+}| LESS_EQ
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantTest = VariantTest::LessEqual;
+}| GRTR_EQ
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantTest = VariantTest::GreaterEqual;
+}| EQ_EQ
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantTest = VariantTest::Equal;
+}
+| NOT_EQ
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantTest = VariantTest::NotEqual;
+}
+variant_comparator : NUM
+{
+	$$.strs[0] = $1.strs[0];
+	buildVariantComparator.ival= atoi($1.strs[0].c_str());
+}
 
-opt_sq : '[' opt_num ']'
+	opt_sq : '[' opt_num ']'
 	{
 		$$.strs[0]=(string("[")+$2.strs[0])+"]";
 		$$.num=$2.num;

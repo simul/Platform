@@ -73,6 +73,41 @@ bool ShaderInstanceHasSemantic(std::shared_ptr<ShaderInstance> shaderInstance, c
 	return found;
 }
 
+bool CheckVariantCondition(const StructMember &m, std::string value)
+{
+	int ivalue = std::atoi(value.c_str());
+	if (value == "true")
+		ivalue = 1;
+	else if (value == "false")
+		ivalue = 0;
+	bool ok = false;
+	switch (m.variantTest)
+	{
+	case NoTest:
+		ok = true;
+		break;
+	case NotEqual:
+		ok = (ivalue != m.variantComparator.ival);
+		break;
+	case Equal:
+		ok = (ivalue == m.variantComparator.ival);
+		break;
+	case Greater:
+		ok = (ivalue > m.variantComparator.ival);
+		break;
+	case Less:
+		ok = (ivalue < m.variantComparator.ival);
+		break;
+	case GreaterEqual:
+		ok = (ivalue >= m.variantComparator.ival);
+		break;
+	case LessEqual:
+		ok = (ivalue <= m.variantComparator.ival);
+	default:
+		break;
+	};
+	return ok;
+}
 Effect::Effect()
 	: m_includes(0)
 	, m_active(true)
@@ -819,7 +854,13 @@ std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &sha
 std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::string &baseName,const VariantSpec &variantSpec)
 {
 	std::vector<std::string> variantInstanceNames;
-	std::shared_ptr<ShaderInstance> baseInstance=m_shaderInstances.find(baseName)->second;
+	auto b = m_shaderInstances.find(baseName);
+	if(b==m_shaderInstances.end())
+	{
+		std::cerr << "No base shader instance " << baseName << "\n";
+		return variantInstanceNames;
+	}
+	std::shared_ptr<ShaderInstance> baseInstance=b->second;
 	if(!baseInstance)
 	{
 		std::cerr<<"No base shader instance "<<baseName<<"\n";
@@ -866,11 +907,23 @@ std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::strin
 		for(int k=0;k<variantSpec.variableSpecs.size();k++)
 		{
 			auto this_value=variantSpec.variableSpecs[k].variableOptions[variantInstance->variantVariableIndex[k]];
-			variantInstanceName+="_";
+			if (!k)
+				variantInstanceName += "(";
+			else
+				variantInstanceName+="_";
 			variantInstanceName+=this_value;
 			const auto &vp=function->variant_parameters[k];
-			std::string decl=vp.type+" "s+vp.identifier+"="s+this_value+";\n"s;
-			variantInstance->variantDeclarations+=decl;
+			std::string def = "#define sfx_variant_var_"s + vp.identifier + " ("s + this_value + ")\n"s;
+			variantInstance->variantDefinitions+=def;
+
+			std::string decl = vp.type + " "s + vp.identifier + "=sfx_variant_var_"s + vp.identifier + ";\n"s;
+			variantInstance->variantDeclarations += decl;
+
+			variantInstance->variantValues[vp.identifier]=this_value;
+		}
+		if(variantSpec.variableSpecs.size())
+		{
+			variantInstanceName += ")";
 		}
 		variantInstance->variantName=variantInstanceName;
 		m_uniqueShaderInstances.insert(variantInstance);
@@ -1355,7 +1408,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 							auto shaderInstance=GetShaderInstance(pass->GetShader(shaderType,var),shaderType);
 							if(!shaderInstance)
 							{
-								std::cerr<<"No shaderInstance found.\n";
+								std::cerr << pass->name.c_str() << ": " << variantName<<": No shaderInstance found.\n ";
 								return false;
 							}
 							int vertex_or_export=0;
@@ -1377,7 +1430,6 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 							{
 								outstr<<Tab(t)<<"layout:\n";
 								outstr<<Tab(t)<<"{\n";
-						
 								for(auto p:function->parameters)
 								{
 									auto D = declarations.find(p.type);
@@ -1396,6 +1448,13 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 												size_t sem_pos=m.semantic.find("SV_");
 												if(sem_pos<m.semantic.length())
 													continue;
+												if(m.variantCondition.length()>0)
+												{
+													string value = shaderInstance->variantValues[m.variantVariable];
+												
+													if(!CheckVariantCondition(m,value))
+														continue;
+												}
 												outstr<<Tab(t)<<"\t"<<m.type<<" "<<m.name<<";\n";
 											}
 										}
@@ -1848,8 +1907,9 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 	 return false;
  }
 
- void Effect::Declare(ShaderType shaderType,ostream &os,const Declaration *d, ConstantBuffer& texCB, ConstantBuffer& sampCB, const std::set<std::string>& rwLoad, std::set<const SamplerState*>& declaredSS, const Function* mainFunction)
-{
+ void Effect::Declare( ShaderInstance *shaderInstance, ostream &os, const Declaration *d, ConstantBuffer &texCB, ConstantBuffer &sampCB, const std::set<std::string> &rwLoad, std::set<const SamplerState *> &declaredSS, const Function *mainFunction)
+ {
+	 ShaderType shaderType=shaderInstance->shaderType;
 	switch(d->declarationType)
 	{
 		case DeclarationType::TEXTURE:
@@ -2044,6 +2104,8 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 		{
 			Struct *s=(Struct*)d;
 			string str = sfxConfig.structDeclaration;
+			if(str.length()==0)
+				str = "struct {name}\n{\n[\t{type} {name};]};";
 
 			//Check if struct is used in templatized ConstantBuffer
 			//HLSL SM5.1 has the struct declared before ConstantBuffer<>
@@ -2094,13 +2156,12 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				}
 			}
 
-			if (str.length() == 0)
+			if (!s->hasVariants && sfxConfig.structDeclaration.length() == 0)
 			{
 				str = "{pass_through}";
 				os << s->original.c_str() << endl;
 				return;
 			}
-
 			find_and_replace(str, "{pass_through}", s->original);
 			string members;
 			// in square brackets [] is the definition for ONE member.
@@ -2108,10 +2169,17 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			process_member_decl(str, structMemberDeclaration);
 			for (int i = 0; i < s->m_structMembers.size(); i++)
 			{
+				auto &member = s->m_structMembers[i];
+				if (member.variantCondition.length() > 0)
+				{
+					string value = shaderInstance->variantValues[member.variantVariable];
+					if (!CheckVariantCondition(member, value))
+						continue;
+				}
 				string m = "";
 				// This should only be done for structs used for vertex output declaration
 				// GLSL requires the flat
-				if (s->m_structMembers[i].type.length() && (s->m_structMembers[i].type == "uint" || s->m_structMembers[i].type == "int"))
+				if (member.type.length() && (member.type == "uint" || member.type == "int"))
 				{
 					m += "\tflat " + structMemberDeclaration.substr(1);
 				}
@@ -2119,9 +2187,13 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				{
 					m += structMemberDeclaration;
 				}
-				find_and_replace(m, "{type}", s->m_structMembers[i].type);
-				find_and_replace(m, "{name}", s->m_structMembers[i].name);
-				find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
+				find_and_replace(m, "{type}", member.type);
+				find_and_replace(m, "{name}", member.name);
+				if(member.semantic.size())
+				{
+					string sem = ":"s+member.semantic;
+					find_and_replace(m, "{semantic}", sem);
+				}
 				members += m + "\n";
 			}
 			find_and_replace(str, "{members}", members);
@@ -2154,8 +2226,15 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				}
 				for (int i = 0; i < s->m_structMembers.size(); i++)
 				{
+					auto &member = s->m_structMembers[i];
+					if(member.variantCondition.length()>0)
+					{
+						string value = shaderInstance->variantValues[member.variantVariable];
+						if (!CheckVariantCondition(member, value))
+							continue;
+					}
 					string m = structMemberDeclaration;
-					string type = s->m_structMembers[i].type;
+					string type = member.type;
 					find_and_replace(m, "{type}", type);
 					find_and_replace(m, "{name}", s->m_structMembers[i].name);
 					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
@@ -2204,9 +2283,17 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				for (int i = 0; i < s->m_structMembers.size(); i++)
 				{
 					string m = structMemberDeclaration;
-					find_and_replace(m, "{type}", s->m_structMembers[i].type);
-					find_and_replace(m, "{name}", s->m_structMembers[i].name);
-					find_and_replace(m, "{semantic}", s->m_structMembers[i].semantic);
+					auto &member = s->m_structMembers[i];
+					if(member.variantCondition.length()>0)
+					{
+						string value = shaderInstance->variantValues[member.variantVariable];
+					
+						if (!CheckVariantCondition(member, value))
+							continue;
+					}
+					find_and_replace(m, "{type}", member.type);
+					find_and_replace(m, "{name}", member.name);
+					find_and_replace(m, "{semantic}", member.semantic);
 					members += m + "\n";
 				}
 				find_and_replace(str, "{members}", members);
@@ -2277,7 +2364,6 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	{
 		for (const auto s : samplerStates)
 		{
-		//Declare(shaderInstance->shaderType, theShader, s, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 			if(sfxConfig.samplerDeclaration.size() > 0)
 			{
 				string thisDeclaration=sfxConfig.samplerDeclaration;
@@ -2308,7 +2394,8 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		samplerCB.ref_count		 = 1;
 		samplerCB.slot			  = -1;
 	}
-
+	theShader << shaderInstance->variantDefinitions;
+	
 	// Declare them!
 	for(auto u=ordered_decs.begin();u!=ordered_decs.end();u++)
 	{
@@ -2323,7 +2410,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					theShader << "#line " << d->line_number << " " << GetFilenameOrNumber(d->file_number) << endl;
 			}
 		}
-		Declare(shaderInstance->shaderType, theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+		Declare(shaderInstance, theShader, d, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 	}
 
 	// Declare the texture and sampler CB:
@@ -2331,11 +2418,11 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	{
 		if (!textureCB.m_structMembers.empty())
 		{
-			Declare(shaderInstance->shaderType,theShader, (Declaration*)&textureCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates,function);
+			Declare(shaderInstance,theShader, (Declaration*)&textureCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates,function);
 		}
 		if (sfxConfig.combineInShader && !samplerCB.m_structMembers.empty())
 		{
-			Declare(shaderInstance->shaderType,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
+			Declare(shaderInstance,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 		}
 	}
 
@@ -2489,6 +2576,11 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					for(auto j:s->m_structMembers)
 					{
 						string m=memberDeclaration;
+						if(j.variantCondition.length()>0)
+						{
+							setup_code+="#if ";
+							setup_code+=j.variantCondition+"\n";
+						}
 						find_and_replace(m,"{struct_type}",i.type);
 						find_and_replace(m,"{struct_name}","BlocKData");
 						find_and_replace(m,"{member_type}",j.type);
@@ -2506,6 +2598,10 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 						{
 							members+=m+"\n";
 							setup_code+=((i.identifier+".")+j.name+"=")+structPrefix+j.name+";\n";
+						}
+						if (j.variantCondition.length() > 0)
+						{
+							setup_code += "#endif\n";
 						}
 					}
 				}
@@ -2715,6 +2811,12 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					Struct* retStruct = (Struct *)retDec;
 					for (auto j : retStruct->m_structMembers)
 					{
+						if(j.variantCondition.length()>0)
+						{
+							string value=shaderInstance->variantValues[j.name];
+							if(!CheckVariantCondition(j,value))
+								continue;
+						}
 						string this_member_decl=m;
 						find_and_replace(this_member_decl,"{member_type}",j.type);
 						find_and_replace(this_member_decl,"{member_name}",j.name);

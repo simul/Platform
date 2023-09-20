@@ -80,7 +80,7 @@ namespace sfx
 		mutable int last_filenumber;
 		bool CheckDeclaredGlobal(const Function* func,const std::string toCheck);
 		//! Declare in output format.
-		void Declare(ShaderType,std::ostream &os,const Declaration *d, ConstantBuffer& texCB, ConstantBuffer& sampCB, const std::set<std::string>& rwLoad, std::set<const SamplerState*>& declaredSS,const Function* mainFunction);
+		void Declare( ShaderInstance *shaderInstance, std::ostream &os, const Declaration *d, ConstantBuffer &texCB, ConstantBuffer &sampCB, const std::set<std::string> &rwLoad, std::set<const SamplerState *> &declaredSS, const Function *mainFunction);
 	public:
 		std::ostringstream m_sharedCode;
 		std::ostringstream& Log();
