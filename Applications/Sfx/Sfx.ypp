@@ -2510,9 +2510,9 @@ struct_memb : optional_variant_spec optional_uniform IDENTIFIER IDENTIFIER opt_s
 		$$.strs[0]+=sem.length()?(string(": ")+sem):"";
 		$$.strs[0]+=";";
 	}
-optional_variant_spec: SFX_VARIANT '(' variant_condition ')'
+optional_variant_spec: '[' SFX_VARIANT '(' variant_condition ')' ']'
 {
-	$$.strs[0]=$3.strs[0];
+	$$.strs[0]=$4.strs[0];
 } | %empty
 {
 	buildVariantVariable="";
@@ -2738,7 +2738,7 @@ optional_semantic : ':' IDENTIFIER
 	| %empty 
 	{
 		$$.strs[0]="";
-	}	;
+	};
 tech_def : pass_list
 	{
 		Technique *t = new Technique(*($1.passes));

@@ -520,6 +520,7 @@ string& Effect::Dir()
 }
 extern int mkpath(const std::string &filename_utf8);
 #include <filesystem>
+
 unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,string& log, BinaryMap &binaryMap)
 {
 	ostringstream sLog;
@@ -2167,6 +2168,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			// in square brackets [] is the definition for ONE member.
 			string structMemberDeclaration;
 			process_member_decl(str, structMemberDeclaration);
+			int texcoord_auto_index=0;
 			for (int i = 0; i < s->m_structMembers.size(); i++)
 			{
 				auto &member = s->m_structMembers[i];
@@ -2176,24 +2178,32 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					if (!CheckVariantCondition(member, value))
 						continue;
 				}
-				string m = "";
+				string m = structMemberDeclaration;
 				// This should only be done for structs used for vertex output declaration
 				// GLSL requires the flat
 				if (member.type.length() && (member.type == "uint" || member.type == "int"))
 				{
-					m += "\tflat " + structMemberDeclaration.substr(1);
+					find_and_replace(m, "{flat}", "flat");
 				}
 				else
 				{
-					m += structMemberDeclaration;
+					find_and_replace(m, "{flat}", "");
 				}
 				find_and_replace(m, "{type}", member.type);
 				find_and_replace(m, "{name}", member.name);
 				if(member.semantic.size())
 				{
 					string sem = ":"s+member.semantic;
+					if(member.semantic=="TEXCOORD_AUTO")
+					{
+						string number_str;
+						WriteInt(number_str,texcoord_auto_index++);
+						sem=":TEXCOORD"s+number_str;
+					}
 					find_and_replace(m, "{semantic}", sem);
 				}
+				else
+					find_and_replace(m, "{semantic}", "");
 				members += m + "\n";
 			}
 			find_and_replace(str, "{members}", members);

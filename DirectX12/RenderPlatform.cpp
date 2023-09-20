@@ -2398,20 +2398,15 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements, const cros
     l->Dx12InputLayout.resize(num_elements);
 
     for (int i = 0; i < num_elements; i++)
-    {
-        if (strcmp(desc[i].semanticName, "POSITION") != 0)
-        {
-            // strcat(desc[i].semanticName, std::to_string(desc[i].semanticIndex).c_str());
-        }
-        l->Dx12InputLayout[i].SemanticName = desc[i].semanticName;
+	{
+		l->Dx12InputLayout[i].SemanticName = desc[i].semanticName;
         l->Dx12InputLayout[i].SemanticIndex = desc[i].semanticIndex;
         l->Dx12InputLayout[i].Format = ToDxgiFormat(desc[i].format, platform::crossplatform::CompressionFormat::UNCOMPRESSED);
         l->Dx12InputLayout[i].InputSlot = desc[i].inputSlot;
         l->Dx12InputLayout[i].AlignedByteOffset = desc[i].alignedByteOffset;
         l->Dx12InputLayout[i].InputSlotClass = desc[i].perInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-        l->Dx12InputLayout[i].InstanceDataStepRate = desc[i].instanceDataStepRate;
-    }
-
+		l->Dx12InputLayout[i].InstanceDataStepRate = desc[i].instanceDataStepRate;
+	}
     // Fill the input layout description
     l->Dx12LayoutDesc.pInputElementDescs = l->Dx12InputLayout.data();
     l->Dx12LayoutDesc.NumElements = num_elements;

@@ -1443,9 +1443,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					uses=line.substr(cm+1,line.length()-cm-1);
 				platform::core::ClipWhitespace(uses);
 				platform::core::ClipWhitespace(type);
-				//base::ClipWhitespace(filename_entry);
 
-				std::regex re_file_entry("([a-z0-9A-Z_]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
+				std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
 				std::smatch fe_smatch;
 				
 				std::smatch sm;
@@ -1654,13 +1653,20 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 						continue;
 					}
 					Shader *s = nullptr;
-					if (bin_ptr)
+					if(filenamestr.length()>0)
 					{
-						s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+						if (bin_ptr)
+						{
+							s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+						}
+						else 
+						{
+							s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
+						}
 					}
-					else if(filenamestr.length())
+					else
 					{
-						s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
+						SIMUL_INTERNAL_CERR<<"No filename found in line: "<<line<<"\n";
 					}
 					if(s)
 					{
