@@ -84,7 +84,7 @@ void Texture::SetName(const char* n)
 	}
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
+bool Texture::LoadFromFile(crossplatform::RenderPlatform *r, const char *pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;
@@ -156,12 +156,13 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	// By default, generate mips:
 	crossplatform::GraphicsDeviceContext dc;
 	//if(gen_mips)
-		GenerateMips(dc);
+	GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
+	return true;
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
+bool Texture::LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;
@@ -221,6 +222,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	loadedTextures.clear();
 	
 	// CreateFBOs(1);
+	return true;
 }
 
 bool Texture::IsValid()const
