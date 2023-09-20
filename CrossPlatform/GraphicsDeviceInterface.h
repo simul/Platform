@@ -19,12 +19,13 @@ namespace platform
 	{
 		struct Output
 		{
-			std::string monitorName;
-			int desktopX;
-			int desktopY;
-			int width;
-			int height;
-			int numerator, denominator;
+			std::string monitorName = {};
+			int desktopX = 0;
+			int desktopY = 0;
+			int width = 0;
+			int height = 0;
+			int numerator = 0;
+			int denominator = 0;
 		};
 		class RenderDelegaterInterface;
 		/// An interface class for managing GPU-accelerated graphics windows.

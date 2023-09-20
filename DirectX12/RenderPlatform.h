@@ -59,9 +59,9 @@ namespace platform
 		int							MaxUAVPerStage;
 		int							MaxSamplersPerStage;
 
-		static const int NumCBV		 = 14;
-		static const int NumSRV		 = 24;
-		static const int NumUAV		 = 16;
+		static const int NumCBV			= 14;
+		static const int NumSRV			= 128;
+		static const int NumUAV			= 16;
 		static const int NumSamplers	= 16;
 	};
 

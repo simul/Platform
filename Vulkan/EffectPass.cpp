@@ -52,6 +52,7 @@ void EffectPass::InvalidateDeviceObjects()
 	renderPlatform = nullptr;
 	m_Initialized = false;
 }
+
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
 {
 	// If new frame, update current frame index and reset the apply count
@@ -103,29 +104,29 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
 	}
 
-	int numDescriptors = numResourceSlots + numRwResourceSlots
-		+ numSbResourceSlots
-		+ numRwSbResourceSlots
-		+ numSamplerResourceSlots
-		+ numConstantBufferResourceSlots;
+	size_t numDescriptors 
+		= collectedResourceSlots.size()
+		+ collectedRwResourceSlots.size()
+		+ collectedSbResourceSlots.size()
+		+ collectedRwSbResourceSlots.size()
+		+ collectedSamplerResourceSlots.size()
+		+ collectedConstantBufferResourceSlots.size();
 
-	vk::WriteDescriptorSet* writes = new vk::WriteDescriptorSet[numDescriptors];
+	std::vector<vk::WriteDescriptorSet> writes;
+	writes.reserve(numDescriptors);
 
-	cs->textureSlots = 0;
-	cs->rwTextureSlots = 0;
-	cs->bufferSlots = 0;
-	cs->rwTextureSlotsForSB = 0;
-	cs->textureSlotsForSB = 0;
+	crossplatform::Slots textureSlots = {};
+	crossplatform::Slots rwTextureSlots = {};
+	crossplatform::Slots textureSlotsForSB = {};
+	crossplatform::Slots rwTextureSlotsForSB = {};
+	crossplatform::Slots samplerSlots = {};
+	crossplatform::Slots bufferSlots = {};
 
-	vk::DescriptorImageInfo descriptorImageInfo[32];
-	int b = 0;
-	for (int i = 0; i < numResourceSlots; i++, b++)
+	std::vector<vk::DescriptorImageInfo> textureInfos;
+	textureInfos.reserve(collectedResourceSlots.size());
+	for (const int &slot : collectedResourceSlots)
 	{
-		int slot = resourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
-		write.setDstSet(descriptorSet);
 		crossplatform::TextureAssignment& ta = cs->textureAssignmentMap[slot];
-		vk::ImageView* vkImageView;
 		vulkan::Texture* texture = (vulkan::Texture*)(ta.texture);
 		const crossplatform::ShaderResource* res = effect->GetShaderResourceAtSlot(slot);
 		crossplatform::ShaderResourceType requiredType = crossplatform::ShaderResourceType::UNKNOWN;
@@ -158,131 +159,151 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 				texture = ((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
 			}
 		}
-		if (!texture)
+		if (!(texture && texture->IsValid()))
 		{
 			SIMUL_CERR_ONCE << "Texture is null.\n";
 			return;
 		}
-		if (!texture->IsValid())
-		{
-			SIMUL_CERR_ONCE << "Texture is invalid.\n";
-			return;
-		}
 		texture->FinishLoading(deviceContext);
 		texture->SetLayout(deviceContext, vk::ImageLayout::eShaderReadOnlyOptimal, ta.subresource);
-		write.setDstBinding(GenerateTextureSlot(slot));
-		write.setDescriptorCount(1);
-		vkImageView = texture->AsVulkanImageView({ ta.resourceType, ta.subresource });
-		if (vkImageView)
-			descriptorImageInfo[i].setImageView(*vkImageView);
-		descriptorImageInfo[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-		if (!m_VideoSource)
-		{
-			write.setDescriptorType(vk::DescriptorType::eSampledImage);
-		}
-		else
-		{
-			// video texture:
-			write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-			descriptorImageInfo[i].setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
-		}
-		write.setPImageInfo(&descriptorImageInfo[i]);
-		cs->textureSlots |= 1 << slot;
-	}
-	vk::DescriptorImageInfo img_desc[8];
-	for (int i = 0; i < numRwResourceSlots; i++, b++)
-	{
-		int slot = rwResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::ImageView *vkImageView= texture->AsVulkanImageView({ta.resourceType, ta.subresource});
+
+		vk::WriteDescriptorSet write = {};
 		write.setDstSet(descriptorSet);
-		crossplatform::TextureAssignment& ta = cs->rwTextureAssignmentMap[slot];
-		vk::ImageView* vkImageView;
-		vulkan::Texture* texture = (vulkan::Texture*)(ta.texture);
-		if (texture && texture->IsValid())
+		write.setDstBinding(GenerateTextureSlot(slot));
+		write.setDstArrayElement(0);
+		write.setDescriptorCount(1);
+		write.setDescriptorType(vk::DescriptorType::eSampledImage);
+		SIMUL_ASSERT(vkImageView != nullptr);
+		if (vkImageView)
 		{
-			vkImageView = texture->AsVulkanImageView({ ta.resourceType, ta.subresource });
-			texture->SetLayout(deviceContext, vk::ImageLayout::eGeneral, ta.subresource);
+			vk::DescriptorImageInfo textureInfo;
+			textureInfo.setImageView(*vkImageView);
+			textureInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+			//Video Texture:
+			if (m_VideoSource)
+			{
+				write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+				textureInfo.setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
+			}
+			textureInfos.push_back(textureInfo);
+			write.setPImageInfo(&textureInfos.back());
 		}
-		else
+		writes.push_back(write);
+
+		textureSlots.set(slot);
+	}
+
+	std::vector<vk::DescriptorImageInfo> rwTextureInfos;
+	rwTextureInfos.reserve(collectedRwResourceSlots.size());
+	for (const int &slot : collectedRwResourceSlots)
+	{
+		crossplatform::TextureAssignment& ta = cs->rwTextureAssignmentMap[slot];
+		vulkan::Texture* texture = (vulkan::Texture*)(ta.texture);
+		if (!(texture && texture->IsValid()))
 		{
-			// probably not actually used in the shader.
-			numDescriptors--;
-			b--;
+			SIMUL_ASSERT_WARN(!(texture && texture->IsValid()), "No valid buffer for RWTexture. No texture set.");
 			continue;
 		}
+		vk::ImageView *vkImageView = texture->AsVulkanImageView({ta.resourceType, ta.subresource});
+		texture->SetLayout(deviceContext, vk::ImageLayout::eGeneral, ta.subresource);
+		
+		vk::WriteDescriptorSet write = {};
+		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateTextureWriteSlot(slot));
+		write.setDstArrayElement(0);
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageImage);
+		SIMUL_ASSERT(vkImageView != nullptr);
 		if (vkImageView)
-			img_desc[i].setImageView(*vkImageView);
-		img_desc[i].setImageLayout(vk::ImageLayout::eGeneral);
-		write.setPImageInfo(&img_desc[i]);
+		{
+			vk::DescriptorImageInfo rwTextureInfo;
+			rwTextureInfo.setImageView(*vkImageView);
+			rwTextureInfo.setImageLayout(vk::ImageLayout::eGeneral);
+			rwTextureInfos.push_back(rwTextureInfo);
+			write.setPImageInfo(&rwTextureInfos.back());
+		}
+		writes.push_back(write);
 
-		cs->rwTextureSlots |= 1 << slot;
+		rwTextureSlots.set(slot);
 	}
-	vk::DescriptorBufferInfo sbInfo[8];
-	for (int i = 0; i < numSbResourceSlots; i++, b++)
+
+	std::vector<vk::DescriptorBufferInfo> sbInfos;
+	sbInfos.reserve(collectedSbResourceSlots.size());
+	for (const int &slot : collectedSbResourceSlots)
 	{
-		int slot = sbResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
-		write.setDstSet(descriptorSet);
-		write.setDstBinding(GenerateTextureSlot(slot));
 		crossplatform::PlatformStructuredBuffer* sb = cs->applyStructuredBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_CERR << "No structured buffer found for slot "<<slot<<" in pass "<< name.c_str()<<"\n";
-		}
-		else
-		{
-			vulkan::PlatformStructuredBuffer* psb = (vulkan::PlatformStructuredBuffer*)sb;
-			psb->ActualApply(deviceContext, this, slot, false);
-			vk::Buffer* vkBuffer = psb->GetLastBuffer();
-			write.setDescriptorCount(1);
-			write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
-			SIMUL_ASSERT(vkBuffer != nullptr);
-			if (vkBuffer)
-			{
-				sbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
-				write.setPBufferInfo(&sbInfo[i]);
-			}
-		}
-	}
-	vk::DescriptorBufferInfo rwSbInfo[8];
-	for (int i = 0; i < numRwSbResourceSlots; i++, b++)
-	{
-		int slot = rwSbResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
-		write.setDstSet(descriptorSet);
-		write.setDstBinding(GenerateTextureWriteSlot(slot));
-		crossplatform::PlatformStructuredBuffer* sb = cs->applyRwStructuredBuffers[slot];
-		if (!sb)
-		{
-			// probably not actually used in the shader.
-			numDescriptors--;
-			b--;
-			continue;
+			SIMUL_CERR << "No structured buffer found for slot " << slot << " in pass " << name.c_str() << "\n";
+			SIMUL_BREAK("No valid buffer for Structured Buffer.");
 		}
 		vulkan::PlatformStructuredBuffer* psb = (vulkan::PlatformStructuredBuffer*)sb;
-		psb->ActualApply(deviceContext, this, slot, true);
+		psb->ActualApply(deviceContext, this, slot, false);
 		vk::Buffer* vkBuffer = psb->GetLastBuffer();
+		
+		vk::WriteDescriptorSet write = {};
+		write.setDstSet(descriptorSet);
+		write.setDstBinding(GenerateTextureSlot(slot));
+		write.setDstArrayElement(0);
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
 		SIMUL_ASSERT(vkBuffer != nullptr);
 		if (vkBuffer)
 		{
-			rwSbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
-			write.setPBufferInfo(&rwSbInfo[i]);
+			vk::DescriptorBufferInfo sbInfo = {};
+			sbInfo.setBuffer(*vkBuffer);
+			sbInfo.setOffset(psb->GetLastOffset());
+			sbInfo.setRange(psb->GetSize());
+			sbInfos.push_back(sbInfo);
+			write.setPBufferInfo(&sbInfos.back());
 		}
+		writes.push_back(write);
+
+		textureSlotsForSB.set(slot);
+	}
+
+	std::vector<vk::DescriptorBufferInfo> rwSbInfos;
+	rwSbInfos.reserve(collectedRwSbResourceSlots.size());
+	for (const int &slot : collectedRwSbResourceSlots)
+	{
+		crossplatform::PlatformStructuredBuffer* sb = cs->applyRwStructuredBuffers[slot];
+		if (!sb)
+		{
+			SIMUL_ASSERT_WARN(!sb, "No valid buffer for RWStructureBuffer. No buffer set.");
+			continue;
+		}
+		vulkan::PlatformStructuredBuffer* psb = (vulkan::PlatformStructuredBuffer*)sb;
+		psb->ActualApply(deviceContext, this, slot, true);
+		vk::Buffer* vkBuffer = psb->GetLastBuffer();
+		
+		vk::WriteDescriptorSet write = {};
+		write.setDstSet(descriptorSet);
+		write.setDstBinding(GenerateTextureWriteSlot(slot));
+		write.setDstArrayElement(0);
+		write.setDescriptorCount(1);
+		write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
+		SIMUL_ASSERT(vkBuffer != nullptr);
+		if (vkBuffer)
+		{
+			vk::DescriptorBufferInfo rwSbInfo = {};
+			rwSbInfo.setBuffer(*vkBuffer);
+			rwSbInfo.setOffset(psb->GetLastOffset());
+			rwSbInfo.setRange(psb->GetSize());
+			rwSbInfos.push_back(rwSbInfo);
+			write.setPBufferInfo(&rwSbInfos.back());
+		}
+		writes.push_back(write);
+
 		// TODO: this is overkill, synchronizing all uav's
 		renderPlatform->ResourceBarrierUAV(deviceContext, sb);
+		rwTextureSlotsForSB.set(slot);
 	}
-	vk::DescriptorImageInfo samplerInfo[16];
-	for (int i = 0; i < numSamplerResourceSlots; i++, b++)
+
+	std::vector<vk::DescriptorImageInfo> samplerInfos;
+	samplerInfos.reserve(collectedSamplerResourceSlots.size());
+	for (const int &slot : collectedSamplerResourceSlots)
 	{
-		int slot = samplerResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
-		write.setDstSet(descriptorSet);
-		write.setDstBinding(GenerateSamplerSlot(slot));
 		crossplatform::SamplerState* ss = nullptr;
 		if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
 		{
@@ -293,114 +314,82 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			ss = effect->GetSamplers()[slot];
 		}
 		vk::Sampler* vkSampler = ss->AsVulkanSampler();
+		
+		vk::WriteDescriptorSet write = {};
+		write.setDstSet(descriptorSet);
+		write.setDstBinding(GenerateSamplerSlot(slot));
+		write.setDstArrayElement(0);
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eSampler);
 		SIMUL_ASSERT(vkSampler != nullptr);
 		if (vkSampler)
 		{
-			samplerInfo[i].setSampler(*vkSampler);
-			write.setPImageInfo(&samplerInfo[i]);
+			vk::DescriptorImageInfo samplerInfo;
+			samplerInfo.setSampler(*vkSampler);
+			samplerInfos.push_back(samplerInfo);
+			write.setPImageInfo(&samplerInfos.back());
 		}
+		writes.push_back(write);
 
+		samplerSlots.set(slot);
 	}
-	vk::DescriptorBufferInfo bufferInfo[8];
-	for (int i = 0; i < numConstantBufferResourceSlots; i++, b++)
+
+	std::vector<vk::DescriptorBufferInfo> constantBufferInfos;
+	constantBufferInfos.reserve(collectedConstantBufferResourceSlots.size());
+	for (const int &slot : collectedConstantBufferResourceSlots)
 	{
-		int slot = constantBufferResourceSlots[i];
 		crossplatform::ConstantBufferBase* cb = cs->applyBuffers[slot];
 		if (!cb)
 		{
-			numDescriptors--;
-			b--;
-			SIMUL_BREAK_ONCE("Possibly missing constant buffer");
-			continue;
+			SIMUL_BREAK("No valid buffer for ConstantBuffer.");
 		}
 		vulkan::PlatformConstantBuffer* pcb = (vulkan::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
-		vk::WriteDescriptorSet& write = writes[b];
-		write.setDstSet(descriptorSet);
-		write.setDstBinding(GenerateConstantBufferSlot(slot));
 		pcb->ActualApply(deviceContext, this, 0);
 		vk::Buffer* vkBuffer = pcb->GetLastBuffer();
-		vk::DeviceSize vkDeviceSize = pcb->GetSize();
+
+		vk::WriteDescriptorSet write = {};
+		write.setDstSet(descriptorSet);
+		write.setDstBinding(GenerateConstantBufferSlot(slot));
+		write.setDstArrayElement(0);
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
 		SIMUL_ASSERT(vkBuffer != nullptr);
 		if (vkBuffer)
 		{
-			bufferInfo[i].setOffset(pcb->GetLastOffset())
-				.setRange(vkDeviceSize)
-				.setBuffer(*vkBuffer);
-			write.setPBufferInfo(&bufferInfo[i]);
+			vk::DescriptorBufferInfo constantBufferInfo = {};
+			constantBufferInfo.setBuffer(*vkBuffer);
+			constantBufferInfo.setOffset(pcb->GetLastOffset());
+			constantBufferInfo.setRange(pcb->GetSize());
+			constantBufferInfos.push_back(constantBufferInfo);
+			write.setPBufferInfo(&constantBufferInfos.back());
 		}
-		cs->bufferSlots |= (1 << slot);
-	}
-	if (numDescriptors)
-	{
-		for (int i = 0; i < numDescriptors; i++)
-		{
-			vk::WriteDescriptorSet& write = writes[i];
-			bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
+		writes.push_back(write);
 
-			if (no_res)
-			{
-				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in pass '"
-					<< name.c_str() << "' has no valid resource associated with it." << std::endl;
-				SIMUL_BREAK("VkWriteDescriptorSet error.");
-			}
-		}
-		vulkanDevice->updateDescriptorSets(numDescriptors, writes, 0, nullptr);
+		bufferSlots.set(slot);
 	}
-	delete[] writes;
+
+	for (const vk::WriteDescriptorSet& write : writes)
+	{
+		bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
+		if (no_res)
+		{
+			SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in pass '"
+				<< name.c_str() << "' has no valid resource associated with it." << std::endl;
+			SIMUL_BREAK("VkWriteDescriptorSet error.");
+		}
+	}
+	vulkanDevice->updateDescriptorSets((uint32_t)writes.size(), writes.data(), 0, nullptr);
 
 	// Now verify that ALL resource are set:
 	static bool error_checking = true;
 	if (error_checking)
 	{
-		unsigned required_slots = GetTextureSlots();
-		if ((cs->textureSlots & required_slots) != required_slots)
-		{
-			static int count = 10;
-			count--;
-			if (count > 0)
-			{
-				SIMUL_CERR << "Not all texture slots are assigned:" << std::endl;
-				unsigned missing_slots = required_slots & (~cs->textureSlots);
-				for (unsigned i = 0; i < 32; i++)
-				{
-					unsigned slot = 1 << i;
-					if (slot & missing_slots)
-					{
-						std::string name;
-						if (cs->currentEffect)
-							name = cs->currentEffect->GetTextureForSlot(i);
-						SIMUL_CERR << "\tSlot " << i << ": " << name.c_str() << ", was not set." << std::endl;
-					}
-				}
-				SIMUL_BREAK_ONCE("Many API's require all used textures to have valid data.");
-			}
-		}
-		unsigned required_rw_slots = GetRwTextureSlots();
-		if ((cs->rwTextureSlots & required_rw_slots) != required_rw_slots)
-		{
-			static int count = 10;
-			count--;
-			if (count > 0)
-			{
-				//SIMUL_BREAK_ONCE("Not all rw texture slots are assigned.");
-				required_rw_slots = required_rw_slots & (~cs->rwTextureSlots);
-				for (unsigned i = 0; i < 32; i++)
-				{
-					unsigned slot = 1 << i;
-					if (slot & required_rw_slots)
-					{
-						std::string name;
-						if (cs->currentEffect)
-							name = cs->currentEffect->GetTextureForSlot(1000 + i);
-						SIMUL_CERR << "RW Slot " << i << " was not set (" << name.c_str() << ")." << std::endl;
-					}
-				}
-			}
-		}
+		CheckSlots(GetTextureSlots(), textureSlots, 128, "Texture");
+		CheckSlots(GetRwTextureSlots(), rwTextureSlots, 16, "RWTexture");
+		CheckSlots(GetStructuredBufferSlots(), textureSlotsForSB, 128, "Structured Buffer");
+		CheckSlots(GetRwStructuredBufferSlots(), rwTextureSlotsForSB, 16, "RWStructured Buffer");
+		CheckSlots(GetSamplerSlots(), samplerSlots, 16, "Sampler");
+		CheckSlots(GetConstantBufferSlots(), bufferSlots, 14, "Constant Buffers");
 	}
 		
 	m_DescriptorSet = descriptorSet;
@@ -481,13 +470,14 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
 	
 	// TODO: This is super-inefficient:
-	int numDescriptors = numResourceSlots
-		+ numRwResourceSlots
-		+ numSbResourceSlots
-		+ numRwSbResourceSlots
-		+ numSamplerResourceSlots
-		+ numConstantBufferResourceSlots
-		+ numResourceSlots;
+	size_t numDescriptors 
+		= collectedResourceSlots.size()
+		+ collectedRwResourceSlots.size()
+		+ collectedSbResourceSlots.size()
+		+ collectedRwSbResourceSlots.size()
+		+ collectedSamplerResourceSlots.size()
+		+ collectedConstantBufferResourceSlots.size()
+		+ collectedResourceSlots.size();
 	vk::Result result;
 
 	vk::DescriptorSetLayoutBinding* layoutBindings = nullptr;
@@ -500,26 +490,26 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			vk::DescriptorPoolSize* poolSizes = new vk::DescriptorPoolSize[numDescriptors];
 			int poolSizeIdx = 0;
 			static int countPerFrame = 1024;
-			if (numResourceSlots)
+			if (collectedResourceSlots.size())
 			{
 				vk::DescriptorType type = m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage; //Video needs Combined image sampler
-				poolSizes[poolSizeIdx++].setType(type).setDescriptorCount(countPerFrame * swapchainImageCount * numResourceSlots);
+				poolSizes[poolSizeIdx++].setType(type).setDescriptorCount(countPerFrame * swapchainImageCount * (int)collectedResourceSlots.size());
 			}
-			if (numSamplerResourceSlots)
+			if (collectedSamplerResourceSlots.size())
 			{
-				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampler).setDescriptorCount(countPerFrame * swapchainImageCount * numSamplerResourceSlots);
+				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampler).setDescriptorCount(countPerFrame * swapchainImageCount * (int)collectedSamplerResourceSlots.size());
 			}
-			if (numSbResourceSlots + numRwSbResourceSlots)
+			if (collectedSbResourceSlots.size() + collectedRwSbResourceSlots.size())
 			{
-				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eStorageBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (numSbResourceSlots + numRwSbResourceSlots));
+				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eStorageBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (int)(collectedSbResourceSlots.size() + collectedRwSbResourceSlots.size()));
 			}
-			if (numRwResourceSlots)
+			if (collectedRwResourceSlots.size())
 			{
-				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eStorageImage).setDescriptorCount(countPerFrame * swapchainImageCount * numRwResourceSlots);
+				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eStorageImage).setDescriptorCount(countPerFrame * swapchainImageCount * (int)collectedRwResourceSlots.size());
 			}
-			if (numConstantBufferResourceSlots)
+			if (collectedConstantBufferResourceSlots.size())
 			{
-				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * numConstantBufferResourceSlots);
+				poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (int)collectedConstantBufferResourceSlots.size());
 			}
 			const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
 			result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &m_DescriptorPool);
@@ -532,9 +522,8 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 		{
 			layoutBindings = new vk::DescriptorSetLayoutBinding[numDescriptors];
 			int bindingIndex = 0;
-			for (int i = 0; i < numResourceSlots; i++, bindingIndex++)
+			for (const int &slot : collectedResourceSlots)
 			{
-				int slot = resourceSlots[i];
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlot);
 				binding.setBinding(GenerateTextureSlot(slot))
@@ -547,10 +536,10 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					m_ImmutableSamplers.push_back(vulkanRenderPlatform->GetSamplerYcbcr());
 					binding.setPImmutableSamplers(m_ImmutableSamplers.data());
 				}
+				bindingIndex++;
 			}
-			for (int i = 0; i < numRwResourceSlots; i++, bindingIndex++)
+			for (const int &slot : collectedRwResourceSlots)
 			{
-				int slot = rwResourceSlots[i];
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesRwTextureSlot);
 				binding.setBinding(GenerateTextureWriteSlot(slot))
@@ -558,10 +547,10 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setDescriptorCount(1)
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
+				bindingIndex++;
 			}
-			for (int i = 0; i < numSbResourceSlots; i++, bindingIndex++)
+			for (const int &slot : collectedSbResourceSlots)
 			{
-				int slot = sbResourceSlots[i];
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlotForSB);
 				binding.setBinding(GenerateTextureSlot(slot))
@@ -569,10 +558,10 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setDescriptorCount(1)
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
+				bindingIndex++;
 			}
-			for (int i = 0; i < numRwSbResourceSlots; i++, bindingIndex++)
+			for (const int &slot : collectedRwSbResourceSlots)
 			{
-				int slot = rwSbResourceSlots[i];
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesRwTextureSlotForSB);
 				binding.setBinding(GenerateTextureWriteSlot(slot))
@@ -580,10 +569,10 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setDescriptorCount(1)
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
+				bindingIndex++;
 			}
-			for (int i = 0; i < numSamplerResourceSlots; i++, bindingIndex++)
+			for (const int &slot : collectedSamplerResourceSlots)
 			{
-				int slot = samplerResourceSlots[i];
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesSamplerSlot);
 				binding.setBinding(GenerateSamplerSlot(slot))
@@ -591,10 +580,10 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setDescriptorCount(1)
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
+				bindingIndex++;
 			}
-			for (int i = 0; i < numConstantBufferResourceSlots; i++, bindingIndex++)
+			for (const int &slot : collectedConstantBufferResourceSlots)
 			{
-				int slot = constantBufferResourceSlots[i];
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesConstantBufferSlot);
 				binding.setBinding(GenerateConstantBufferSlot(slot))
@@ -602,6 +591,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setDescriptorCount(1)
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
+				bindingIndex++;
 			}
 			
 			descriptorSetLayoutCI.setBindingCount(bindingIndex).setPBindings(layoutBindings);

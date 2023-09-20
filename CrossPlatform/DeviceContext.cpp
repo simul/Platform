@@ -44,11 +44,6 @@ ContextState& ContextState::operator=(const ContextState& cs)
 	textureAssignmentMapValid	=cs.textureAssignmentMapValid;
 	rwTextureAssignmentMapValid	=cs.rwTextureAssignmentMapValid;
 	streamoutTargetsValid		=cs.streamoutTargetsValid;
-	textureSlots				=cs.textureSlots;
-	rwTextureSlots				=cs.rwTextureSlots;
-	rwTextureSlotsForSB			=cs.rwTextureSlotsForSB;
-	textureSlotsForSB			=cs.textureSlotsForSB;
-	bufferSlots					=cs.bufferSlots;
 	viewMask					=cs.viewMask;
 	vulkanInsideRenderPass		=cs.vulkanInsideRenderPass;
 	return *this;

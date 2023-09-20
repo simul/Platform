@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <limits.h> 
 #include <string.h>	// for memset
+#include <bitset>
 
 #ifdef _MSC_VER
 	#pragma warning(push)  
@@ -46,6 +47,7 @@ namespace platform
 		class Layout;
 		class TopLevelAccelerationStructure;
 		enum class ShaderResourceType;
+		typedef std::bitset<128> Slots;
 		struct TextureFence
 		{
 			crossplatform::Texture *texture;
@@ -61,7 +63,7 @@ namespace platform
 			crossplatform::ShaderResourceType resourceType;
 		};
 		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
-		template<typename T,int count> class FastMap
+		template<typename T,int count> class FastMap //TODO: Have FastMap dynamically resize?
 		{
 			int index_limit;
 			int index_start;
@@ -162,11 +164,11 @@ namespace platform
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase;
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer;
-		typedef FastMap<ConstantBufferBase*,32> ConstantBufferAssignmentMap;
-		typedef FastMap<PlatformStructuredBuffer*,32> StructuredBufferAssignmentMap;
-		typedef FastMap<TextureAssignment,32> TextureAssignmentMap;
-		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
-		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
+		typedef FastMap<ConstantBufferBase*,128> ConstantBufferAssignmentMap;
+		typedef FastMap<PlatformStructuredBuffer*,128> StructuredBufferAssignmentMap;
+		typedef FastMap<TextureAssignment,128> TextureAssignmentMap;
+		typedef FastMap<Buffer*,128> VertexBufferAssignmentMap;
+		typedef FastMap<SamplerState*,128> SamplerStateAssignmentMap;
 		typedef std::unordered_map<const Texture*,TextureFence> FenceMap;
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
@@ -209,11 +211,6 @@ namespace platform
 			bool textureAssignmentMapValid=false;
 			bool rwTextureAssignmentMapValid=false;
 			bool streamoutTargetsValid=false;
-			unsigned int textureSlots=0;
-			unsigned int rwTextureSlots=0;
-			unsigned int rwTextureSlotsForSB=0;
-			unsigned int textureSlotsForSB=0;
-			unsigned int bufferSlots=0;
 
 			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
@@ -227,11 +224,6 @@ namespace platform
 				textureAssignmentMapValid=false;
 				rwTextureAssignmentMapValid=false;
 				streamoutTargetsValid=false;
-				textureSlots=0;
-				rwTextureSlots=0;
-				rwTextureSlotsForSB=0;
-				textureSlotsForSB=0;
-				bufferSlots=0;
 				viewMask=0;
 				contextActive = true;
 				externalContext = false;
@@ -396,5 +388,4 @@ namespace platform
 #ifdef _MSC_VER
 	#pragma warning(pop)  
 #endif
-
 #endif

@@ -338,9 +338,8 @@ void EffectPass::SetConstantBuffers(crossplatform::DeviceContext& deviceContext,
 	int usedSlots = 0;
 
 	// The handles for the required constant buffers:
-	for (int i = 0; i < numConstantBufferResourceSlots; i++)
+	for (const int &slot : collectedConstantBufferResourceSlots)
 	{
-		int slot = constantBufferResourceSlots[i];
 		auto cb = cBuffers[slot];
 		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
 		{
@@ -400,9 +399,8 @@ void EffectPass::SetSamplers(crossplatform::DeviceContext& deviceContext, crossp
 	int usedSlots = 0;
 
 	dx11::Shader* compute = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
-	for (int i = 0; i < numSamplerResourceSlots; i++)
+	for (const int &slot : collectedSamplerResourceSlots)
 	{
-		int slot = samplerResourceSlots[i];
 		crossplatform::SamplerState* samp = nullptr;
 		if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
 		{
@@ -446,9 +444,8 @@ void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatf
 
 	dx11::Shader* compute= (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	// Iterate over the textures:
-	for (int i = 0; i < numResourceSlots; i++)
+	for (const int &slot : collectedResourceSlots)
 	{
-		int slot = resourceSlots[i];
 		auto ta = textures[slot];
 		if (!ta.texture || !ta.texture->IsValid())
 		{
@@ -468,9 +465,8 @@ void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatf
 		usedTextureSlots |= (1 << slot);
 	}
 	// Iterate over the structured buffers:
-	for (int i = 0; i < numSbResourceSlots; i++)
+	for (const int &slot : collectedSbResourceSlots)
 	{
-		int slot = sbResourceSlots[i];
 		if ((usedTextureSlots&(1<<slot))!=0)
 		{
 			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name.c_str() << " has already being used by a texture. \n";
@@ -504,9 +500,8 @@ void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatf
 	dx11::Shader* compute = (dx11::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 
 	// Iterate over the textures:
-	for (int i = 0; i < numRwResourceSlots; i++)
+	for (const int &slot : collectedRwResourceSlots)
 	{
-		int slot = rwResourceSlots[i];
 		auto ta = rwTextures[slot];
 
 		// If the texture is null or invalid, set a dummy:
@@ -523,9 +518,8 @@ void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatf
 		usedRwTextureSlots |= (1 << slot);
 	}
 	// Iterate over the structured buffers:
-	for (int i = 0; i < numRwSbResourceSlots; i++)
+	for (const int &slot : collectedRwSbResourceSlots)
 	{
-		int slot = rwSbResourceSlots[i];
 		if ((usedRwTextureSlots & (1 << slot)) != 0)
 		{
 			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name.c_str() << ", has already being used by a RWTexture. \n";

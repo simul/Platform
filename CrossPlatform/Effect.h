@@ -15,16 +15,12 @@
 #include <vector>
 #include <set>
 #include <stdint.h>
-struct ID3DX11Effect;
-struct ID3DX11EffectTechnique;
-struct ID3D11ShaderResourceView;
-struct ID3D11UnorderedAccessView;
-typedef unsigned int GLuint;
-struct D3D12_CPU_DESCRIPTOR_HANDLE;
+
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
+
 namespace platform
 {
 	namespace crossplatform
@@ -146,7 +142,6 @@ namespace platform
 			CULL_FACE_BACK			  = 2,	//!< Cull back-facing primitives only.
 			CULL_FACE_FRONTANDBACK	  = 3,	//!< Cull front and back faces.
 		};
-	
 		enum FrontFace
 		{
 			FRONTFACE_CLOCKWISE					 = 1,	//! Clockwise is front-facing.
@@ -194,8 +189,8 @@ namespace platform
 			{
 				DepthStencilDesc		depth;
 				BlendDesc				blend;
-				RasterizerDesc		  rasterizer;
-				RenderTargetFormatDesc  rtFormat;
+				RasterizerDesc			rasterizer;
+				RenderTargetFormatDesc	rtFormat;
 			};
 			std::string name;
 		};
@@ -208,49 +203,44 @@ namespace platform
 			virtual ~RenderState(){}
 			virtual void InvalidateDeviceObjects() {}
 		};
+
 		class SIMUL_CROSSPLATFORM_EXPORT Shader
 		{
 		public:
-			Shader():
-				textureSlots(0)
-				,textureSlotsForSB(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,constantBufferSlots(0)
-				,samplerSlots(0)
-				,renderPlatform(nullptr)
-				{
-				}
+			Shader() {}
 			virtual ~Shader(){}
 			virtual void Release(){}
 			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
+			
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
-			void setUsesConstantBufferSlot(int s);
-			void setUsesSamplerSlot(int s);
 			void setUsesRwTextureSlot(int s);
 			void setUsesRwTextureSlotForSB(int s);
+			void setUsesSamplerSlot(int s);
+			void setUsesConstantBufferSlot(int s);
+			
 			bool usesTextureSlot(int s) const;
 			bool usesTextureSlotForSB(int s) const;
-			bool usesRwTextureSlotForSB(int s) const;
-			bool usesConstantBufferSlot(int s) const;
-			bool usesSamplerSlot(int s) const;
 			bool usesRwTextureSlot(int s) const;
-			std::string pixel_str;
-			std::string name;
-			std::string entryPoint;
-			crossplatform::ShaderType type;
-			// if it's a vertex shader...
-			crossplatform::Layout layout;
-			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
-			unsigned textureSlots;			//t
-			unsigned textureSlotsForSB;		//t
-			unsigned rwTextureSlots;		//u
-			unsigned rwTextureSlotsForSB;	//u
-			unsigned constantBufferSlots;	//b
-			unsigned samplerSlots;			//s
-			crossplatform::RenderPlatform *renderPlatform;
+			bool usesRwTextureSlotForSB(int s) const;
+			bool usesSamplerSlot(int s) const;
+			bool usesConstantBufferSlot(int s) const;
+
+			std::string pixel_str = {};
+			std::string name = {};
+			std::string entryPoint = {};
+			crossplatform::ShaderType type = {};
+			crossplatform::Layout layout = {}; // if it's a vertex shader...
+			std::unordered_map<int, crossplatform::SamplerState *> samplerStates = {};
+			Slots textureSlots = {};		//t
+			Slots textureSlotsForSB = {};	//t
+			Slots rwTextureSlots = {};		//u
+			Slots rwTextureSlotsForSB = {};	//u
+			Slots samplerSlots = {};		//s
+			Slots constantBufferSlots = {};	//b
+			crossplatform::RenderPlatform *renderPlatform = nullptr;
 		};
+
 		//! A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
@@ -261,12 +251,15 @@ namespace platform
 			int					dimensions=-1;
 			bool				valid=false;
 		};
+
+		//! A class representing a shaders for a raytracing group. Only AABB acceleration structure will use the intersection shader.
 		struct SIMUL_CROSSPLATFORM_EXPORT RaytraceHitGroup
 		{
 			Shader* closestHit=nullptr;
 			Shader* anyHit=nullptr;
 			Shader* intersection=nullptr;
 		};
+
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
@@ -276,8 +269,8 @@ namespace platform
 			crossplatform::RenderState *renderTargetFormatState;
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
-			std::map<std::string,RaytraceHitGroup> raytraceHitGroups;
-			std::map<std::string,Shader*> missShaders;
+			std::map<std::string, RaytraceHitGroup> raytraceHitGroups;
+			std::map<std::string, Shader*> missShaders;
 			std::map<std::string, Shader*> callableShaders;
 			int maxPayloadSize = 0;
 			int maxAttributeSize = 0;
@@ -286,6 +279,7 @@ namespace platform
 			int3 numThreads = { 0,0,0 };
 			std::string rtFormatState;
 			std::string name;
+
 			EffectPass(RenderPlatform *r,Effect *parent);
 			virtual ~EffectPass();
 
@@ -303,173 +297,121 @@ namespace platform
 			void MakeResourceSlotMap();
 
 			// These are efficient maps from the shader pass's resources to the effect's resource slots.
-			int numResourceSlots;
-			unsigned char resourceSlots[32];
-			int numRwResourceSlots;
-			unsigned char rwResourceSlots[32];
-			int numSbResourceSlots;
-			unsigned char sbResourceSlots[32];
-			int numRwSbResourceSlots;
-			unsigned char rwSbResourceSlots[32];
-			int numSamplerResourceSlots;
-			unsigned char samplerResourceSlots[32];
-			int numConstantBufferResourceSlots;
-			unsigned char constantBufferResourceSlots[32];
+
+			std::vector<int> collectedResourceSlots = {};
+			std::vector<int> collectedRwResourceSlots = {};
+			std::vector<int> collectedSbResourceSlots = {};
+			std::vector<int> collectedRwSbResourceSlots = {};
+			std::vector<int> collectedSamplerResourceSlots = {};
+			std::vector<int> collectedConstantBufferResourceSlots = {};
+
+			Slots resourceSlots = {};
+			Slots rwResourceSlots = {};
+			Slots sbResourceSlots = {};
+			Slots rwSbResourceSlots = {};
+			Slots samplerResourceSlots = {};
+			Slots constantBufferResourceSlots = {};
 
 			bool usesTextureSlot(int s) const;
+			bool usesRwTextureSlot(int s) const;
 			bool usesTextureSlotForSB(int s) const;
 			bool usesRwTextureSlotForSB(int s) const;
-			bool usesConstantBufferSlot(int s) const;
 			bool usesSamplerSlot(int s) const;
-			bool usesRwTextureSlot(int s) const;
+			bool usesConstantBufferSlot(int s) const;
 
 			bool usesTextures() const;
+			bool usesRwTextures() const;
 			bool usesSBs() const;
 			bool usesRwSBs() const;
-			bool usesConstantBuffers() const;
 			bool usesSamplers() const;
-			bool usesRwTextures() const;
-			bool shouldFenceOutputs() const
-			{
-				return should_fence_outputs;
-			}
-			void setShouldFenceOutputs(bool f) 
-			{
-				should_fence_outputs=f;
-			}
-			void SetUsesConstantBufferSlots(unsigned);
-			void SetUsesTextureSlots(unsigned);
-			void SetUsesTextureSlotsForSB(unsigned);
-			void SetUsesRwTextureSlots(unsigned);
-			void SetUsesRwTextureSlotsForSB(unsigned);
-			void SetUsesSamplerSlots(unsigned);
+			bool usesConstantBuffers() const;
 
-			void SetConstantBufferSlots(unsigned s)	{ constantBufferSlots = s; }
-			void SetTextureSlots(unsigned s)		{ textureSlots = s; }
-			void SetTextureSlotsForSB(unsigned s)	{ textureSlotsForSB = s; }
-			void SetRwTextureSlots(unsigned s)		{ rwTextureSlots = s; }
-			void SetRwTextureSlotsForSB(unsigned s) { rwTextureSlotsForSB = s; }
-			void SetSamplerSlots(unsigned s)		{ samplerSlots = s; }
+			void SetUsesTextureSlots(const Slots& s);
+			void SetUsesRwTextureSlots(const Slots& s);
+			void SetUsesTextureSlotsForSB(const Slots& s);
+			void SetUsesRwTextureSlotsForSB(const Slots& s);
+			void SetUsesSamplerSlots(const Slots& s);
+			void SetUsesConstantBufferSlots(const Slots& s);
 
-			unsigned GetSamplerSlots()const
-			{
-				return samplerSlots;
-			}
-			unsigned GetRwTextureSlots() const
-			{
-				return rwTextureSlots;
-			}
-			unsigned GetTextureSlots() const
-			{
-				return textureSlots;
-			}
-			unsigned GetRwStructuredBufferSlots() const
-			{
-				return rwTextureSlotsForSB;
-			}
-			unsigned GetStructuredBufferSlots() const
-			{
-				return textureSlotsForSB;
-			}
-			unsigned GetConstantBufferSlots() const
-			{
-				return constantBufferSlots;
-			}
-			void *GetPlatformPass()
-			{
-				return platform_pass;
-			}
-			void SetPlatformPass(void *p)
-			{
-				platform_pass=p;
-			}
-			void SetTopology(Topology t=Topology::UNDEFINED)
-			{
-				topology=t;
-			}
-			Topology GetTopology()
-			{
-				return topology;
-			}
-			virtual void Apply(crossplatform::DeviceContext &deviceContext,bool test=false)=0;
+			void SetTextureSlots(const Slots& s)		{ resourceSlots = s; }
+			void SetRwTextureSlots(const Slots& s)		{ rwResourceSlots = s; }
+			void SetTextureSlotsForSB(const Slots& s)	{ sbResourceSlots = s; }
+			void SetRwTextureSlotsForSB(const Slots& s)	{ rwSbResourceSlots = s; }
+			void SetSamplerSlots(const Slots& s)		{ samplerResourceSlots = s; }
+			void SetConstantBufferSlots(const Slots& s)	{ constantBufferResourceSlots = s; }
+
+			const Slots& GetTextureSlots() const			{ return resourceSlots; }
+			const Slots& GetRwTextureSlots() const			{ return rwResourceSlots; }
+			const Slots& GetStructuredBufferSlots() const	{ return sbResourceSlots; }
+			const Slots& GetRwStructuredBufferSlots() const	{ return rwSbResourceSlots; }
+			const Slots& GetSamplerSlots() const			{ return samplerResourceSlots; }
+			const Slots& GetConstantBufferSlots() const		{ return constantBufferResourceSlots; }
+
+			bool shouldFenceOutputs() const { return should_fence_outputs; }
+			void setShouldFenceOutputs(bool f) { should_fence_outputs=f; }
+			
+			void *GetPlatformPass() { return platform_pass; }
+			void SetPlatformPass(void *p) { platform_pass = p; }
+
+			void SetTopology(Topology t = Topology::UNDEFINED) { topology = t; }
+			Topology GetTopology() { return topology; }
+			virtual void Apply(crossplatform::DeviceContext &deviceContext, bool test = false) = 0;
+
+			void CheckSlots(crossplatform::Slots requiredSlots, crossplatform::Slots usedSlots, int numSlots, const char *type);
+		
 		protected:
-			unsigned samplerSlots;
-			unsigned constantBufferSlots;
-			unsigned textureSlots;
-			unsigned textureSlotsForSB;
-			unsigned rwTextureSlots;
-			unsigned rwTextureSlotsForSB;
 			bool should_fence_outputs;
 			void *platform_pass;
 			crossplatform::RenderPlatform *renderPlatform;
-			crossplatform::Effect* effect;
-			crossplatform::Topology topology=Topology::UNDEFINED;
+			crossplatform::Effect *effect;
+			crossplatform::Topology topology = Topology::UNDEFINED;
 		};
+
 		class SIMUL_CROSSPLATFORM_EXPORT EffectVariantPass
 		{
 		public:
 			std::string name;
 			std::map<std::string,EffectPass*> passes;
-			EffectPass* GetPass(const char *shader1,const char *shader2=nullptr);
-		};
-		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
-		{
-		protected:
-			crossplatform::RenderPlatform *renderPlatform;
-			long long validFrame;
-			int internalFrameNumber;
-			std::string name;
-		public:
-			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(-1), internalFrameNumber(0){}
-			virtual ~PlatformConstantBuffer(){}
-			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
-			virtual void InvalidateDeviceObjects()=0;
-			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
-			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
-			virtual void Reapply(DeviceContext &deviceContext,size_t size,void *addr)
-			{
-				Apply(deviceContext,size,addr);
-			}
-			virtual void Unbind(DeviceContext &deviceContext)=0;
-			void SetChanged()
-			{
-				validFrame =0;
-			}
-			void SetName(const char *n)
-			{
-				name=n;
-			}
-			//! For RenderPlatform's use only: do not call.
-			virtual void ActualApply(platform::crossplatform::DeviceContext &,EffectPass *,int){}
+			EffectPass *GetPass(const char *shader1, const char *shader2 = nullptr);
 		};
 		
-		class Texture;
-		class SamplerState;
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
-			typedef std::map<std::string,EffectPass *> PassMap;
-			typedef std::map<int,EffectPass *> PassIndexMap;
-			typedef std::map<std::string,int> IndexMap;
+			typedef std::map<std::string, EffectPass *> PassMap;
+			typedef std::map<int, EffectPass *> PassIndexMap;
+			typedef std::map<std::string, int> IndexMap;
+			typedef std::map<std::string, std::shared_ptr<EffectVariantPass>> VariantPassMap;
+
+		public:
+			void *platform_technique;
 			std::string name;
 			PassMap passes_by_name;
 			PassIndexMap passes_by_index;
 			IndexMap pass_indices;
+			VariantPassMap variantPasses;
+			bool should_fence_outputs;
+
+		protected:
+			RenderPlatform *renderPlatform;
+			crossplatform::Effect *effect;
+
+		public:
 			EffectTechnique(RenderPlatform *r,Effect *e);
 			virtual ~EffectTechnique();
-			void *platform_technique;
-			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
-			{
-				return (ID3DX11EffectTechnique*)platform_technique;
-			}
-			virtual GLuint passAsGLuint(int )
-			{
-				return (GLuint)0;
-			}
-			virtual GLuint passAsGLuint(const char *)
-			{
-				return (GLuint)0;
-			}
+
+			int NumPasses() const;
+
+			EffectVariantPass *AddVariantPass(const char *name);
+			EffectVariantPass *GetVariantPass(const char *name);
+
+			virtual EffectPass *AddPass(const char *name, int i) = 0;
+			
+			EffectPass *GetPass(int i) const;
+			EffectPass *GetPass(const char *name) const;
+			bool		HasPass(int i) const;
+			bool		HasPass(const char *name) const;
+			
 			inline int GetPassIndex(const char *n)
 			{
 				std::string str(n);
@@ -477,99 +419,72 @@ namespace platform
 					return -1;
 				return pass_indices[str];
 			}
-			bool shouldFenceOutputs() const
-			{
-				return should_fence_outputs;
-			}
 			
-			void setShouldFenceOutputs(bool f) 
-			{
-				should_fence_outputs=f;
-			}
-			bool should_fence_outputs;
-			int NumPasses() const;
-			EffectVariantPass *AddVariantPass(const char *name);
-			EffectVariantPass *GetVariantPass(const char *name);
-			virtual EffectPass *AddPass(const char *name,int i)=0;
-			EffectPass *GetPass(int i) const;
-			EffectPass *GetPass(const char *name) const;
-			bool		HasPass(int i) const;
-			bool		HasPass(const char *name) const;
-		protected:
-			std::map<std::string,std::shared_ptr<EffectVariantPass>> variantPasses;
-			RenderPlatform *renderPlatform;
-			crossplatform::Effect *effect;
+			bool shouldFenceOutputs() const { return should_fence_outputs; }
+			void setShouldFenceOutputs(bool f) { should_fence_outputs=f; }
 		};
-		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
-		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;
-		typedef std::map<int,EffectTechnique *> IndexMap;
+
 		//! Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
 		{
+		public:
+			typedef std::map<std::string, EffectTechnique *> TechniqueMap;
+			typedef std::unordered_map<const char *, EffectTechnique *> TechniqueCharMap;
+			typedef std::map<int, EffectTechnique *> IndexMap;
+
+		private:
 			TechniqueCharMap charMap;
+
 		public:
 			~EffectTechniqueGroup();
+
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
 			EffectTechnique *GetTechniqueByName(const char *name);
 			EffectTechnique *GetTechniqueByIndex(int index);
 		};
-		class Buffer;
 
-		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
-		typedef std::unordered_map<const char *,EffectTechniqueGroup *> GroupCharMap;
 		//! The cross-platform base class for shader effects.
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
+		public:
+			typedef std::map<std::string, EffectTechniqueGroup *> GroupMap;
+			typedef std::unordered_map<const char *, EffectTechniqueGroup *> GroupCharMap;
+			typedef std::unordered_map<std::string, ShaderResource*> TextureDetailsMap;
+			typedef std::unordered_map<const char *,ShaderResource*> TextureCharMap;
+			typedef std::unordered_map<int, ShaderResource*> TextureIndexMap;
+
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
-			virtual EffectTechnique *CreateTechnique()=0;
-			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
-			const char *GetTechniqueName(const EffectTechnique *t) const;
+
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
 			std::map<std::string,crossplatform::ShaderResource> shaderResources;
 			GroupCharMap groupCharMap;
-			typedef std::unordered_map<std::string,ShaderResource*> TextureDetailsMap;
-			typedef std::unordered_map<const char *,ShaderResource*> TextureCharMap;
 			TextureDetailsMap textureDetailsMap;
-			ShaderResource *textureResources[32];
-			mutable TextureCharMap textureCharMap;
-			std::unordered_map<std::string,crossplatform::SamplerState *> samplerStates;
-			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
-			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
-			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
+			TextureIndexMap textureResources;
+			TextureCharMap textureCharMap;
+			std::unordered_map<std::string, crossplatform::SamplerState *> samplerStates;
+			std::unordered_map<std::string, crossplatform::RenderState *> depthStencilStates;
+			std::unordered_map<std::string, crossplatform::RenderState *> blendStates;
+			std::unordered_map<std::string, crossplatform::RenderState *> rasterizerStates;
 			std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
-			const ShaderResource *GetTextureDetails(const char *name);
-			virtual void PostLoad(){}
+
 		public:
-			RenderPlatform* GetRenderPlatform()
-			{
-			return renderPlatform;
-			}
 			GroupMap groups;
-			TechniqueMap techniques;
-			TechniqueCharMap techniqueCharMap;
-			IndexMap techniques_by_index;
+			EffectTechniqueGroup::TechniqueMap techniques;
+			EffectTechniqueGroup::TechniqueCharMap techniqueCharMap;
+			EffectTechniqueGroup::IndexMap techniques_by_index;
 			std::string filename;
 			std::string filenameInUseUtf8;
 			void *platform_effect;
+
+		public:
 			Effect();
 			virtual ~Effect();
-			inline ID3DX11Effect *asD3DX11Effect()
-			{
-				return (ID3DX11Effect*)platform_effect;
-			}
-			void SetName(const char *n)
-			{
-				filename=n;
-			}
-			const char *GetName()const
-			{
-				return filename.c_str();
-			}
 			virtual void InvalidateDeviceObjects();
 			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
+
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{
@@ -583,10 +498,12 @@ namespace platform
 				return std::string("Unknown");
 
 			}
-			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s) ;
+			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s);
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
-			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
+			virtual EffectTechnique *GetTechniqueByIndex(int index) = 0;
+			virtual ShaderResource GetShaderResource(const char* name);
+
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture(DeviceContext& deviceContext, const ShaderResource& name, Texture* tex, const SubresourceRange& subresource = SubresourceRange());
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
@@ -595,7 +512,6 @@ namespace platform
 			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& name, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
-			virtual ShaderResource GetShaderResource(const char* name);
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const ShaderResource &name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
@@ -618,7 +534,7 @@ namespace platform
 			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext);
 
 			void StoreConstantBufferLink(crossplatform::ConstantBufferBase *);
-			bool IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase*) const;
+			bool IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase *) const;
 			
 			int GetSlot(const char *name);
 			int GetSamplerStateSlot(const char *name);
@@ -627,11 +543,55 @@ namespace platform
 
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
-			//! Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
 			#if 0
+			//! Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
 			bool EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
 			#endif
+
+			void SetName(const char *n) { filename = n; }
+			const char *GetName() const { return filename.c_str(); }
+			RenderPlatform *GetRenderPlatform() { return renderPlatform; }
+
+		protected:
+			virtual EffectTechnique *CreateTechnique() = 0;
+			EffectTechnique *EnsureTechniqueExists(const std::string &groupname, const std::string &techname, const std::string &passname);
+			const char *GetTechniqueName(const EffectTechnique *t) const;
+			const ShaderResource *GetTextureDetails(const char *name);
+			virtual void PostLoad() {}
 		};
+		
+		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
+		{
+		protected:
+			crossplatform::RenderPlatform *renderPlatform;
+			long long validFrame;
+			int internalFrameNumber;
+			std::string name;
+
+		public:
+			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(-1), internalFrameNumber(0){}
+			virtual ~PlatformConstantBuffer(){}
+			virtual void RestoreDeviceObjects(RenderPlatform *dev, size_t sz, void *addr) = 0;
+			virtual void InvalidateDeviceObjects() = 0;
+			virtual void LinkToEffect(crossplatform::Effect *effect, const char *name, int bindingIndex) = 0;
+			virtual void Apply(DeviceContext &deviceContext, size_t size, void *addr) = 0;
+			virtual void Reapply(DeviceContext &deviceContext, size_t size, void *addr)
+			{
+				Apply(deviceContext,size,addr);
+			}
+			virtual void Unbind(DeviceContext &deviceContext) = 0;
+			void SetChanged()
+			{
+				validFrame = 0;
+			}
+			void SetName(const char *n)
+			{
+				name = n;
+			}
+			//! For RenderPlatform's use only: do not call.
+			virtual void ActualApply(platform::crossplatform::DeviceContext &,EffectPass *,int){}
+		};
+
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{
 		protected:
@@ -656,11 +616,13 @@ namespace platform
 			virtual size_t GetSize() const = 0;
 			virtual void* GetAddr() const = 0;
 		};
+
 		template<class T,int slot> class ConstantBufferWithSlot: public T
 		{
 			public:
 			static const int bindingIndex=slot;
 		};
+
 		template<class T> class ConstantBuffer :public ConstantBufferBase, public T
 		{
 			std::set<Effect*> linkedEffects;

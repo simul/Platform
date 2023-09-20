@@ -590,10 +590,9 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
     // These heaps will be shader visible as they will be the ones bound to the command list
     mFrameHeap = new dx12::Heap[3];
     mFrameOverrideSamplerHeap = new dx12::Heap[3];
-    UINT maxFrameDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1 / 1;
     for (unsigned int i = 0; i < 3; i++)
     {
-        mFrameHeap[i].Restore(this, maxFrameDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("FrameHeap %d", i));
+		mFrameHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, platform::core::QuickFormat("FrameHeap %d", i));
         mFrameOverrideSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "FrameOverrideSamplerHeap");
     }
 
@@ -722,7 +721,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 
         D3D12_DESCRIPTOR_RANGE &srvDescriptorRange = cbvSrvUavDescriptorRanges[1];
         srvDescriptorRange.BaseShaderRegister = 0;
-        srvDescriptorRange.NumDescriptors = 24;
+        srvDescriptorRange.NumDescriptors = 128;
         srvDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
         srvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 

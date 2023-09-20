@@ -515,6 +515,7 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 		find_and_replace(profile_text, "ps_", "");
 		find_and_replace(profile_text, "vs_", "");
 		find_and_replace(profile_text, "cs_", "");
+		find_and_replace(profile_text, "lib_", "");
 		find_and_replace(profile_text, "_", ".");
 		double profile_number=atof(profile_text.c_str());
 		if(profile_number > sfxConfig.maxShaderModel)
@@ -539,6 +540,14 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 				break;
 			case ShaderType::COMPUTE_SHADER:
 				sm = "cs_";
+				break;
+			case ShaderType::RAY_GENERATION_SHADER:
+			case ShaderType::MISS_SHADER:
+			case ShaderType::CALLABLE_SHADER:
+			case ShaderType::CLOSEST_HIT_SHADER:
+			case ShaderType::ANY_HIT_SHADER:
+			case ShaderType::INTERSECTION_SHADER:
+				sm = "lib_";
 				break;
 			default:
 				sm = "null_";

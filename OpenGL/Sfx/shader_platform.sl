@@ -32,7 +32,6 @@ uint reversebits(uint value){return bitfieldReverse(value);}
 #define uint2 uvec2
 #define uint3 uvec3
 #define uint4 uvec4
-#define f16vec4 uvec4
 #define uint64_t uvec2
 
 

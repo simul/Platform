@@ -79,7 +79,6 @@ namespace platform
 			void		SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& cBuffers, dx12::Heap* frameHeap, ID3D12Device* device,crossplatform::DeviceContext& context);
 			void		SetSRVs(crossplatform::TextureAssignmentMap &textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
 			void		SetUAVs(crossplatform::TextureAssignmentMap &rwTextures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& context);
-			void		CheckSlots(int requiredSlots, int usedSlots, int numSlots, const char* type);
 			void		CreateComputePso(crossplatform::DeviceContext& deviceContext);
 			ID3D12PipelineState* GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext);
 			ID3D12PipelineState* GetComputePso() { return mComputePso; }
@@ -117,7 +116,6 @@ namespace platform
 			bool										mIsRaytrace = false;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>		mSrvCbvUavRanges;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE>		mSamplerRanges;
-			std::string									mTechName;
 			//! Arrays used by the Set* methods declared here to avoid runtime memory allocation
 			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumCBV>	mCbSrcHandles;
 

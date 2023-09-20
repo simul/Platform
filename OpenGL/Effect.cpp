@@ -768,10 +768,9 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 														we just set it for every applied texture
 					cloudVolume[samplerSlot + 1] --->   this is the texture + sampling state from 'samplerSlot'
 	*/
-	for (unsigned int i = 0; i < (unsigned)numResourceSlots; i++)
+	for (const int &slot : collectedResourceSlots)
 	{
 		// Find the texture in the texture assignment:
-		int slot                = resourceSlots[i];
 		auto ta                 = cs->textureAssignmentMap[slot];
 		opengl::Texture* tex    = (opengl::Texture*)ta.texture;
 		
@@ -816,9 +815,8 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 		}
 
 		// Texture + sampler
-		for (int i = 0; i < numSamplerResourceSlots; i++)
+		for (const int &sslot : collectedSamplerResourceSlots)
 		{
-			int sslot = samplerResourceSlots[i];
 			if (usesSamplerSlot(sslot))
 			{
 				if (sslot >= 23)

@@ -142,14 +142,13 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits = rPlat->GetResourceBindingLimits();
-	int usedSlots = 0;
+	crossplatform::Slots usedSlots = {};
 	auto nullSampler = rPlat->GetNullSampler();
 
 	// The handles for the required samplers:
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ResourceBindingLimits::NumSamplers> srcHandles;
-	for (int i = 0; i < numSamplerResourceSlots; i++)
+	for (const int &slot : collectedSamplerResourceSlots)
 	{
-		int slot = samplerResourceSlots[i];
 		crossplatform::SamplerState* samp = nullptr;
 		if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
 		{
@@ -166,12 +165,12 @@ void EffectPass::SetSamplers(crossplatform::SamplerStateAssignmentMap& samplers,
 		}
 		if (!samp)
 		{
-			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Sampler slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name << ". Sampler slot " << slot << " is invalid." << std::endl;
 			srcHandles[slot] = nullSampler;
 			continue;
 		}
 		srcHandles[slot] = *samp->AsD3D12SamplerState();
-		usedSlots |= (1 << slot);
+		usedSlots.set(slot);
 	}
 	// Iterate over all the slots and fill them:
 	for (int s = 0; s < ResourceBindingLimits::NumSamplers; s++)
@@ -200,27 +199,26 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits = rPlat->GetResourceBindingLimits();
-	int usedSlots = 0;
+	crossplatform::Slots usedSlots = {};
 	auto nullCbv = rPlat->GetNullCBV();
 
 	// Clean up the handles array
 	memset(mCbSrcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * mCbSrcHandles.size());
 
 	// The handles for the required constant buffers:
-	for (int i = 0; i < numConstantBufferResourceSlots; i++)
+	for (const int &slot : collectedConstantBufferResourceSlots)
 	{
-		int slot = constantBufferResourceSlots[i];
 		auto cb = cBuffers[slot];
 		if (!cb || !usesConstantBufferSlot(slot) || slot != cb->GetIndex())
 		{
-			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Constant buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name << ". Constant buffer slot " << slot << " is invalid." << std::endl;
 			mCbSrcHandles[slot] = nullCbv;
 			continue;
 		}
 		auto d12cb = (dx12::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
 		d12cb->ActualApply(deviceContext, this, slot);
 		mCbSrcHandles[slot] = d12cb->AsD3D12ConstantBuffer();
-		usedSlots |= (1 << slot);
+		usedSlots.set(slot);
 	}
 	// Iterate over all the slots and fill them:
 	for (int s = 0; s < ResourceBindingLimits::NumCBV; s++)
@@ -245,23 +243,23 @@ void EffectPass::SetConstantBuffers(crossplatform::ConstantBufferAssignmentMap& 
 #endif
 }
 
+#define D3D12_SLOT_25_CHECKS 0
 void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crossplatform::StructuredBufferAssignmentMap& sBuffers, dx12::Heap* frameHeap, ID3D12Device* device, crossplatform::DeviceContext& deviceContext)
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits = rPlat->GetResourceBindingLimits();
 	auto nullSrv = rPlat->GetNullSRV();
 	auto nullSBSrv = rPlat->GetNullSBSRV();
-	int usedSBSlots = 0;
-	int usedTextureSlots = 0;
+	crossplatform::Slots usedSBSlots = {};
+	crossplatform::Slots usedTextureSlots = {};
 
 	// The handles for the required SRVs:
 	memset(mSrvSrcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * ResourceBindingLimits::NumSRV);
 	memset(mSrvUsedSlotsArray.data(), 0, sizeof(bool) * ResourceBindingLimits::NumSRV);
 	bool is_pixel_shader = (deviceContext.contextState.currentEffectPass->shaders[crossplatform::SHADERTYPE_PIXEL] != nullptr);
 	// Iterate over the textures:
-	for (int i = 0; i < numResourceSlots; i++)
+	for (const int &slot : collectedResourceSlots)
 	{
-		int slot = resourceSlots[i];
 		auto ta = textures[slot];
 		if (ta.resourceType == crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE)
 		{
@@ -272,8 +270,10 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			ID3D12GraphicsCommandList4* rtc = (ID3D12GraphicsCommandList4*)cmdList;
 			//commandList->SetComputeRootDescriptorTable(GlobalRootSignatureParams::OutputViewSlot, m_raytracingOutputResourceUAVGpuDescriptor);
 			rtc->SetComputeRootShaderResourceView(2, a->GetGPUVirtualAddress());
+		#if D3D12_SLOT_25_CHECKS
 			if (slot < 25)
 				mSrvSrcHandles[slot] = nullSrv;
+		#endif
 			//device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), mCbSrcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			//mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
 #endif
@@ -306,32 +306,35 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			}
 			mSrvSrcHandles[slot] = *srv;
 		}
+		#if D3D12_SLOT_25_CHECKS
 		if (slot < 25)
 		{
 			mSrvUsedSlotsArray[slot] = true;
 		}
-		usedTextureSlots |= (1 << slot);
+		#endif
+		usedTextureSlots.set(slot);
 	}
 	// Iterate over the structured buffers:
-	for (int i = 0; i < numSbResourceSlots; i++)
+	for (const int &slot : collectedSbResourceSlots)
 	{
-		int slot = sbResourceSlots[i];
+		#if D3D12_SLOT_25_CHECKS
 		if (slot >= 25)
 			continue;
+		#endif
 		if (mSrvUsedSlotsArray[slot])
 		{
-			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a texture. \n";
+			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name << ", has already being used by a texture. \n";
 		}
 		auto sb = (dx12::PlatformStructuredBuffer*)sBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". Structured buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name << ". Structured buffer slot " << slot << " is invalid." << std::endl;
 			mSrvSrcHandles[slot] = nullSBSrv;
 			continue;
 		}
 		mSrvSrcHandles[slot] = *sb->AsD3D12ShaderResourceView(deviceContext);
 		mSrvUsedSlotsArray[slot] = true;
-		usedSBSlots |= (1 << slot);
+		usedSBSlots.set(slot);
 	}
 	// Iterate over all the slots and fill them:
 	for (int s = 0; s < ResourceBindingLimits::NumSRV; s++)
@@ -362,17 +365,16 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	const auto resLimits = rPlat->GetResourceBindingLimits();
 	auto nullUav = rPlat->GetNullUAV();
-	int usedRwSBSlots = 0;
-	int usedRwTextureSlots = 0;
+	crossplatform::Slots usedRwSBSlots = 0;
+	crossplatform::Slots usedRwTextureSlots = 0;
 
 	// The the handles for the required UAVs:
 	memset(mUavSrcHandles.data(), 0, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * ResourceBindingLimits::NumUAV);
 	memset(mUavUsedSlotsArray.data(), 0, sizeof(bool) * ResourceBindingLimits::NumUAV);
 
 	// Iterate over the textures:
-	for (int i = 0; i < numRwResourceSlots; i++)
+	for (const int &slot : collectedRwResourceSlots)
 	{
-		int slot = rwResourceSlots[i];
 		auto ta = rwTextures[slot];
 
 		// If the texture is null or invalid, set a dummy:
@@ -382,34 +384,37 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 			if (ta.dimensions == 3)
 			{
 				ta.texture = rPlat->GetDummy3D();
+				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_3D;
+				ta.subresource = {};
 			}
 			else
 			{
 				ta.texture = rPlat->GetDummy2D();
+				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_2D;
+				ta.subresource = {};
 			}
 		}
 		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, { ta.resourceType, ta.subresource });
 		mUavUsedSlotsArray[slot] = true;
-		usedRwTextureSlots |= (1 << slot);
+		usedRwTextureSlots.set(slot);
 	}
 	// Iterate over the structured buffers:
-	for (int i = 0; i < numRwSbResourceSlots; i++)
+	for (const int &slot : collectedRwSbResourceSlots)
 	{
-		int slot = rwSbResourceSlots[i];
 		if (mUavUsedSlotsArray[slot])
 		{
-			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a RWTexture. \n";
+			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << name << ", has already being used by a RWTexture. \n";
 		}
 		auto sb = (dx12::PlatformStructuredBuffer*)sBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". RWStructured buffer slot " << slot << " is invalid." << std::endl;
+			SIMUL_INTERNAL_CERR << "Resource binding error at: " << name << ". RWStructured buffer slot " << slot << " is invalid." << std::endl;
 			mUavSrcHandles[slot] = nullUav;
 			continue;
 		}
 		mUavSrcHandles[slot] = *sb->AsD3D12UnorderedAccessView(deviceContext);
 		mUavUsedSlotsArray[slot] = true;
-		usedRwSBSlots |= (1 << slot);
+		usedRwSBSlots.set(slot);
 
 
 		// Temp:
@@ -417,7 +422,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 		renderPlatform->ResourceBarrierUAV(deviceContext, sb);
 	}
 	// Iterate over all the slots and fill them:
-	for (int s = 0; s < ResourceBindingLimits::NumSRV; s++)
+	for (int s = 0; s < ResourceBindingLimits::NumUAV; s++)
 	{
 		// All UAV must have valid descriptors for hardware tier 2 and bellow:
 		if (!usesRwTextureSlot(s) && !usesRwTextureSlotForSB(s))
@@ -440,22 +445,6 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 #endif
 }
 
-void EffectPass::CheckSlots(int requiredSlots, int usedSlots, int numSlots, const char* type)
-{
-	if (requiredSlots != usedSlots)
-	{
-		unsigned int missingSlots = requiredSlots & (~usedSlots);
-		for (int i = 0; i < numSlots; i++)
-		{
-			unsigned int testSlot = 1 << i;
-			if (testSlot & missingSlots)
-			{
-				SIMUL_INTERNAL_CERR << "Resource binding error at: " << mTechName << ". " << type << " for slot:" << i << " was not set!\n";
-			}
-		}
-	}
-}
-
 void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 {
 	// Exit if we already have a PSO
@@ -464,12 +453,11 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 		return;
 	}
 
-	mTechName = this->name;
 	auto curRenderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	dx12::Shader* c = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	if (!c)
 	{
-		SIMUL_INTERNAL_CERR << "The pass " << mTechName << " does not have valid shaders!!! \n";
+		SIMUL_INTERNAL_CERR << "The pass " << name << " does not have valid shaders!!! \n";
 		return;
 	}
 
@@ -488,9 +476,9 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	if (res == S_OK)
 	{
 		SIMUL_GPU_TRACK_MEMORY(mComputePso, 100)	// TODO: not the real size!
-		std::wstring name = L"ComputePSO_";
-		name += std::wstring(mTechName.begin(), mTechName.end());
-		mComputePso->SetName(name.c_str());
+		std::wstring w_name = L"ComputePSO_";
+		w_name += std::wstring(name.begin(), name.end());
+		mComputePso->SetName(w_name.c_str());
 	}
 	else
 	{
@@ -503,7 +491,6 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	auto curRenderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-	mTechName = name;
 	dx12::Shader* v = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
 	dx12::Shader* p = (dx12::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
 	if (!v && !p)
@@ -780,7 +767,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	SIMUL_ASSERT(res == S_OK);
 	if (pso.pipelineState)
 	{
-		std::string psoName = ((mTechName + " PSO for ") + platform::core::QuickFormat("%d", finalRt ? finalRt->RTFormats[0] : 0));
+		std::string psoName = ((name + " PSO for ") + platform::core::QuickFormat("%d", finalRt ? finalRt->RTFormats[0] : 0));
 		pso.pipelineState->SetName(std::wstring(psoName.begin(), psoName.end()).c_str());
 	}
 
@@ -1086,9 +1073,8 @@ void EffectPass::CreateRaytracePso()
 	// Create the state object.
 	HRESULT res = pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
 	
-	mTechName = this->name;
 	std::wstring w_name = L"RaytracePSO_";
-	w_name += std::wstring(mTechName.begin(), mTechName.end());
+	w_name += std::wstring(name.begin(), name.end());
 	mRaytracePso->SetName(w_name.c_str());
 	V_CHECK(res);
 	SIMUL_GPU_TRACK_MEMORY(mRaytracePso, 100)	

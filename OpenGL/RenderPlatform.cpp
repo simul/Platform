@@ -191,9 +191,8 @@ void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
 
 	if (pass->usesRwSBs())
 	{
-		for (int i = 0; i < pass->numRwSbResourceSlots; i++)
+		for (const int &slot : pass->collectedRwSbResourceSlots)
 		{
-			int slot    = pass->rwSbResourceSlots[i];
 			auto rwsb   = (opengl::PlatformStructuredBuffer*)deviceContext.contextState.applyRwStructuredBuffers[slot];
 			if (rwsb && pass->usesRwTextureSlotForSB(slot))
 			{
