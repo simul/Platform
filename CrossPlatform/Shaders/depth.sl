@@ -20,6 +20,14 @@ float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitude
 	return sun_alt_texc;
 }
 
+float16_t GetAltTexCoord(float16_t alt_km,float16_t minSunlightAltitudeKm,float16_t fadeAltitudeRangeKm)
+{
+	float16_t diff_km			= alt_km - minSunlightAltitudeKm;
+	float16_t sun_alt_texc		=0.5h+0.5h*saturate(diff_km /fadeAltitudeRangeKm);
+	sun_alt_texc				-=0.5h*saturate(-diff_km /(minSunlightAltitudeKm+1.0h));
+	return sun_alt_texc;
+}
+
 float linearDistanceToDepth(float d_km, DepthInterpretationStruct dis)
 {
     if (dis.reverseDepth)

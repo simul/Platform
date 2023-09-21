@@ -11,17 +11,29 @@
 #define SCAN_SMEM_SIZE 128
 #define THREADS_PER_GROUP 128
 
-float saturate(float value)	{return clamp(value, 0.0, 1.0);}
-vec2 saturate(vec2 vvalue)	{return clamp(vvalue,vec2(0.0,0.0),vec2(1.0,1.0));}
-vec3 saturate(vec3 vvalue)	{return clamp(vvalue,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1.0));}
-vec4 saturate(vec4 vvalue)	{return clamp(vvalue,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1.0,1.0,1.0));}
+float saturate(float value)	{ return clamp(value, 0.0, 1.0); }
+vec2 saturate(vec2 value)	{ return clamp(value, vec2(0.0, 0.0), vec2(1.0, 1.0)); }
+vec3 saturate(vec3 value)	{ return clamp(value, vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0)); }
+vec4 saturate(vec4 value)	{ return clamp(value, vec4(0.0, 0.0, 0.0, 0.0), vec4(1.0, 1.0, 1.0, 1.0)); }
 
-vec4 mul(mat4 mat, vec4 vec){return mat * vec;}
-vec4 mul(vec4 vec, mat4 mat){return vec * mat;}
-vec3 mul(mat3 mat, vec3 vec){return mat * vec;}
-vec3 mul(vec3 vec, mat3 mat){return vec * mat;}
-vec2 mul(mat2 mat, vec2 vec){return mat * vec;}
-vec2 mul(vec2 vec, mat2 mat){return vec * mat;}
+float16_t saturate(float16_t value)	{ return clamp(value, 0.0h, 1.0h); }
+f16vec2 saturate(f16vec2 value)		{ return clamp(value, f16vec2(0.0h, 0.0h), f16vec2(1.0h, 1.0h)); }
+f16vec3 saturate(f16vec3 value)		{ return clamp(value, f16vec3(0.0h, 0.0h, 0.0h), f16vec3(1.0h, 1.0h, 1.0h)); }
+f16vec4 saturate(f16vec4 value)		{ return clamp(value, f16vec4(0.0h, 0.0h, 0.0h, 0.0h), f16vec4(1.0h, 1.0h, 1.0h, 1.0h)); }
+
+vec4 mul(mat4 mat, vec4 vec)	{ return mat * vec; }
+vec4 mul(vec4 vec, mat4 mat)	{ return vec * mat; }
+vec3 mul(mat3 mat, vec3 vec)	{ return mat * vec; }
+vec3 mul(vec3 vec, mat3 mat)	{ return vec * mat; }
+vec2 mul(mat2 mat, vec2 vec)	{ return mat * vec; }
+vec2 mul(vec2 vec, mat2 mat)	{ return vec * mat; }
+
+f16vec4 mul(f16mat4 mat, f16vec4 vec)	{ return mat * vec; }
+f16vec4 mul(f16vec4 vec, f16mat4 mat)	{ return vec * mat; }
+f16vec3 mul(f16mat3 mat, f16vec3 vec)	{ return mat * vec; }
+f16vec3 mul(f16vec3 vec, f16mat3 mat)	{ return vec * mat; }
+f16vec2 mul(f16mat2 mat, f16vec2 vec)	{ return mat * vec; }
+f16vec2 mul(f16vec2 vec, f16mat2 mat)	{ return vec * mat; }
 
 #define int2 ivec2
 #define int3 ivec3
