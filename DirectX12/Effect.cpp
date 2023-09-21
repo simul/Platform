@@ -1139,7 +1139,7 @@ Shader::~Shader()
 	SAFE_RELEASE(shaderTableResource);
 }
 
-void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t DataSize, crossplatform::ShaderType t)
+bool Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t DataSize, crossplatform::ShaderType t)
 {
 	struct FileBlob
 	{
@@ -1150,6 +1150,19 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	type = t;
 	shader12.resize(DataSize);
 	memcpy(shader12.data(), data, DataSize);
+	{
+#ifdef WIN64
+		HRESULT res = D3DReflect(shader12.data(), shader12.size(), IID_ID3D11ShaderReflection,(void**)&mShaderReflection);
+		if (res != S_OK)
+		{
+			return true;
+		}
+		// Get shader description to check it's working
+		D3D12_SHADER_DESC shaderDesc = {};
+		res = mShaderReflection->GetDesc(&shaderDesc);
+#endif
+	}
+	return true;
 }
 
 ///////////

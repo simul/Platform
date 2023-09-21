@@ -247,6 +247,7 @@ Effect::~Effect()
 
 void Effect::InvalidateDeviceObjects()
 {
+	shaders.clear();
 	shaderResources.clear();
 	for (auto i = groups.begin(); i != groups.end(); i++)
 	{
@@ -1657,11 +1658,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					{
 						if (bin_ptr)
 						{
-							s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+							s=EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
 						}
 						else 
 						{
-							s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
+							s =EnsureShader(filenamestr.c_str(), t);
 						}
 					}
 					else
@@ -1670,6 +1671,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					if(s)
 					{
+						if(s->type != t)
+						{
+							SIMUL_INTERNAL_CERR << "Shader: " << s->name << " is the wrong type.\n";
+						}
 						if(t==crossplatform::SHADERTYPE_PIXEL&&fmt!=FMT_UNKNOWN)
 							p->pixelShaders[fmt]=s;
 						else
@@ -1952,4 +1957,56 @@ bool Shader::usesRwTextureSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
 	return (rwTextureSlots&m)!=0;
+}
+
+crossplatform::Shader *Effect::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
+{
+	std::string name(filenameUtf8);
+	auto i = shaders.find(name);
+	if(i!=shaders.end())
+	{
+		return i->second.get();
+	}
+	platform::core::FileLoader *fileLoader = platform::core::FileLoader::GetFileLoader();
+
+	std::string shaderSourcePath = fileLoader->FindFileInPathStack(filenameUtf8, renderPlatform->GetShaderBinaryPathsUtf8());
+
+	// Load the shader source:
+	unsigned int fileSize = 0;
+	void *fileData = nullptr;
+	// load spirv file as binary data.
+	fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
+	if (!fileData)
+	{
+		// Some engines force filenames to lower case because reasons:
+		std::transform(shaderSourcePath.begin(), shaderSourcePath.end(), shaderSourcePath.begin(), ::tolower);
+		fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
+		if (!fileData)
+		{
+			SIMUL_CERR << "Failed to load the shader:" << filenameUtf8 << std::endl;
+			return nullptr;
+		}
+	}
+	Shader *s = EnsureShader(filenameUtf8, fileData, 0, fileSize, t);
+
+	// Free the loaded memory
+	fileLoader->ReleaseFileContents(fileData);
+	return s;
+}
+
+crossplatform::Shader *Effect::EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
+{
+	std::string name(filenameUtf8);
+	auto i = shaders.find(name);
+	if(i!=shaders.end())
+		return i->second.get();
+	Shader *s = renderPlatform->CreateShader();
+	if(s->load(renderPlatform, filenameUtf8, (unsigned char *)sfxb_ptr + inline_offset, inline_length, t))
+	{
+		shaders[name].reset(s);
+	}
+	else
+		return nullptr;
+
+	return s;
 }

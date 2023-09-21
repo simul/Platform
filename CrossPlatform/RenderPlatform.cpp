@@ -398,12 +398,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
 		mat->SetEffect(solidEffect);
 	}
-/*	for (auto s : shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
 	
 	Destroy(debugEffect);
 	debugEffect=CreateEffect("debug");
@@ -416,8 +410,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	
 	Destroy(mipEffect);
 	mipEffect=CreateEffect("mip");
-	
-	textRenderer->LoadShaders();
 	
 	if(debugEffect)
 	{
@@ -516,8 +508,6 @@ void RenderPlatform::LoadShaders()
 	
 	Destroy(mipEffect);
 	mipEffect=CreateEffect("mip");
-	
-	textRenderer->LoadShaders();
 	
 	if(debugEffect)
 	{

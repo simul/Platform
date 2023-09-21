@@ -223,7 +223,7 @@ namespace platform
 				}
 			virtual ~Shader(){}
 			virtual void Release(){}
-			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
+			virtual bool load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesConstantBufferSlot(int s);
@@ -545,11 +545,16 @@ namespace platform
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
+
+			/// Get or create an API-specific shader object.
+			Shader *EnsureShader(const char *filenameUtf8, ShaderType t);
+			Shader *EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
 		public:
 			RenderPlatform* GetRenderPlatform()
 			{
 			return renderPlatform;
 			}
+			std::map<std::string,std::shared_ptr<Shader>> shaders;
 			GroupMap groups;
 			TechniqueMap techniques;
 			TechniqueCharMap techniqueCharMap;

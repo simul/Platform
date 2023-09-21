@@ -17,7 +17,7 @@ Shader::~Shader()
     Release();
 }
 
-void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,const void *fileData, size_t fileSize, crossplatform::ShaderType t)
+bool Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,const void *fileData, size_t fileSize, crossplatform::ShaderType t)
 {
     Release();
 	renderPlatform=r;
@@ -48,9 +48,11 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,co
 	{
 		SIMUL_CERR<<"Vulkan error creating "<<filename_utf8<<std::endl;
 		SIMUL_BREAK_ONCE("failed to create shader module!");
+        return false;
 	}
 	SetVulkanName(renderPlatform,mShader,filename_utf8);
 	name=filename_utf8;
+    return true;
 }
 
 void Shader::Release()
