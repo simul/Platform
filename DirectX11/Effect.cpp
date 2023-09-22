@@ -184,7 +184,7 @@ void Shader::Release()
 	shader11.clear();
 }
 
-void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t DataSize, crossplatform::ShaderType t)
+bool Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t DataSize, crossplatform::ShaderType t)
 {
 	struct FileBlob
 	{
@@ -198,9 +198,10 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	auto* pd3dDevice = r->AsD3D11Device();
 	// Copy shader
 	type = t;
+	HRESULT hr = S_FALSE;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
 	{
-		if(HRESULT hr=pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader)!=S_OK)
+		if ((hr = pd3dDevice->CreatePixelShader(shader11.data(), shader11.size(), NULL, &pixelShader)) != S_OK)
 		{
 			SIMUL_INTERNAL_COUT<<"Unsupported Pixel shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
 			pixelShader=nullptr;
@@ -208,7 +209,7 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
-		if(HRESULT hr=pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader)!=S_OK)
+		if((hr=pd3dDevice->CreateVertexShader(shader11.data(), shader11.size(), NULL, &vertexShader))!=S_OK)
 		{
 			SIMUL_INTERNAL_COUT<<"Unsupported Vertex shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
 			vertexShader=nullptr;
@@ -216,7 +217,7 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	}
 	else if (t == crossplatform::SHADERTYPE_COMPUTE)
 	{
-		if(HRESULT hr=pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader)!=S_OK)
+		if((hr=pd3dDevice->CreateComputeShader(shader11.data(), shader11.size(), NULL, &computeShader))!=S_OK)
 		{
 		// TODO: Is this fine? This can happen if e.g. we try to load a shader model 5.1 shader in D3D11 and have not initialized at feature level 12.0
 			SIMUL_INTERNAL_COUT<<"Unsupported Compute shader "<<filename_utf8<<": "<<GetErrorText(hr)<<std::endl;
@@ -231,6 +232,8 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	{
 		SIMUL_INTERNAL_CERR << "This type of shader is not implemented." << std::endl;
 	}
+
+	return (hr == S_OK);
 }
 
 EffectTechnique *Effect::CreateTechnique()
