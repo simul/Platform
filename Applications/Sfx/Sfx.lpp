@@ -178,7 +178,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"variant"								{
 													sfxlval.lineno=yylineno;
 													sfxlval.strs[0]=yytext;
-													stdReturn(STORAGEQ);
+													stdReturn(SFX_VARIANT);
 												}
 <IN_SHADER,IN_STRUCT>"variant" {
 													stdReturn(SFX_VARIANT);

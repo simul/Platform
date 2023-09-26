@@ -192,6 +192,28 @@ void Effect::AccumulateFunctionsUsed(const Function *f,std::set<const Function *
 	}
 }
 
+void Effect::AccumulateFunctionsUsed(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Function *> &s) const
+{
+	AccumulateFunctionsUsed(f,s);
+	for (auto u = f->variant_parameters.begin(); u != f->variant_parameters.end(); u++)
+	{
+		if(u->type=="function")
+		{
+			auto v=variantValues.find(u->identifier);
+			if(v!=variantValues.end())
+			{
+				const Function *vf=GetFunction(v->second,0);
+				if(vf)
+				{
+					s.insert(vf);
+					AccumulateFunctionsUsed(vf, variantValues,s);
+				}
+			}
+		}
+	}
+}
+
+
 const std::set<std::string> &sfx::Function::GetTypesUsed() const
 {
 	if(!initialized)
@@ -261,7 +283,7 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 
 	return types_used;
 }
-void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::string i) const
+void Effect::AccumulateStructDeclarations(map<string, string> &variantValues,std::set<const Declaration *> &s, std::string i) const
 {
 	// Is the type declared?
 	auto decl=declarations.find(i);
@@ -278,7 +300,7 @@ void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::
 		s.insert(d);
 		for (int j = 0; j < st->m_structMembers.size(); j++)
 		{
-			AccumulateStructDeclarations(s, st->m_structMembers[j].type);
+			AccumulateStructDeclarations(variantValues,s, st->m_structMembers[j].type);
 		}
 	}
 	case DeclarationType::STRUCT:
@@ -287,7 +309,7 @@ void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::
 		s.insert(d);
 		for(int j=0;j<st->m_structMembers.size();j++)
 		{
-			AccumulateStructDeclarations(s,st->m_structMembers[j].type);
+			AccumulateStructDeclarations(variantValues,s,st->m_structMembers[j].type);
 		}
 	}
 	default:
@@ -296,7 +318,7 @@ void Effect::AccumulateStructDeclarations(std::set<const Declaration *> &s,std::
 	
 }
 
-void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration *> &s,std::set<std::string>& rwLoad) const
+void Effect::AccumulateDeclarationsUsed(const Function *f, map<string, string> &variantValues, set<const Declaration *> &s, std::set<std::string> &rwLoad) const
 {
 	// Accumulate rw textures used in load operations:
 	for (const auto& l : f->rwTexturesLoaded)
@@ -316,11 +338,26 @@ void Effect::AccumulateDeclarationsUsed(const Function *f,set<const Declaration 
 	const auto types_used=f->GetTypesUsed();
 	for(auto i:types_used)
 	{
-		AccumulateStructDeclarations(s,i);
+		AccumulateStructDeclarations(variantValues,s, i);
 	}
 	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
-		AccumulateDeclarationsUsed(*u,s,rwLoad);
+		AccumulateDeclarationsUsed(*u, variantValues,s, rwLoad);
+	}
+	for (auto u = f->variant_parameters.begin(); u != f->variant_parameters.end(); u++)
+	{
+		if(u->type=="function")
+		{
+			auto v=variantValues.find(u->identifier);
+			if(v!=variantValues.end())
+			{
+				const Function *vf=GetFunction(v->second,0);
+				if (vf)
+				{
+					AccumulateDeclarationsUsed(vf, variantValues, s,rwLoad);
+				}
+			}
+		}
 	}
 }
 
@@ -395,12 +432,60 @@ void Effect::DeclareVariable(const Variable* v)
 	declarations[variable->name] = variable;
 }
 
+Function *Effect::GetFunction(const std::string &functionName, std::map<std::string, std::string> &variantValues)
+{
+	if(!variantValues.size())
+		return GetFunction(functionName,0);
+	auto f=m_declaredFunctions.find(functionName);
+	if(f==m_declaredFunctions.end())
+		return nullptr;
+	if(!f->second.size())
+		return nullptr;
+	for(auto i:f->second)
+	{
+		Function *F=i;
+		if(F->variantValues==variantValues)
+			return F;
+	// Now create the specialized version.
+	}
+
+	Function *specializedFunction=DeclareFunction(functionName,*(f->second.begin().operator*()));
+	specializedFunction->variantValues = variantValues;
+	for (auto u = specializedFunction->variant_parameters.begin(); u != specializedFunction->variant_parameters.end(); u++)
+	{
+		if (u->type == "function")
+		{
+			auto v = variantValues.find(u->identifier);
+			if (v != variantValues.end())
+			{
+				Function *vf = GetFunction(v->second, 0);
+				if (vf)
+				{
+					specializedFunction->functionsCalled.insert(vf);
+				}
+			}
+			find_and_replace_identifier(specializedFunction->content, u->identifier, v->second);
+		}
+	}
+	return specializedFunction;
+}
+
 Function *Effect::GetFunction(const std::string &functionName,int i)
 {
 	auto f=m_declaredFunctions.find(functionName);
 	if(f==m_declaredFunctions.end())
 		return nullptr;
 	if(i<0||i>=f->second.size())
+		return nullptr;
+	return f->second[i];
+}
+
+const Function *Effect::GetFunction(const std::string &functionName, int i) const
+{
+	auto f = m_declaredFunctions.find(functionName);
+	if (f == m_declaredFunctions.end())
+		return nullptr;
+	if (i < 0 || i >= f->second.size())
 		return nullptr;
 	return f->second[i];
 }
@@ -879,12 +964,6 @@ std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::strin
 		mul[k]=last_mul;
 		last_mul*=(int)variantSpec.variableSpecs[k].variableOptions.size();
 	}
-	Function *function=gEffect->GetFunction(baseInstance->m_functionName,0);
-	if(!function)
-	{
-		std::cerr<<"No function found: "<<baseInstance->m_functionName<<"\n";
-		return variantInstanceNames;
-	}
 	// each variant has N indices representing which value to use for each variable.
 	for(int i=0;i<numVariants;i++)
 	{
@@ -905,20 +984,42 @@ std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::strin
 		}
 		std::string variant_spec;
 		std::string variantInstanceName=baseName;
+		std::map<string, string> variantValues;
+		Function *baseFunction = gEffect->GetFunction(baseInstance->m_functionName, 0);
+		for (int k = 0; k < variantSpec.variableSpecs.size(); k++)
+		{
+			const std::string &this_value = variantSpec.variableSpecs[k].variableOptions[variantInstance->variantVariableIndex[k]];
+			const auto &vp = baseFunction->variant_parameters[k];
+			variantValues[vp.identifier] = this_value;
+		}
+		Function *function = gEffect->GetFunction(baseInstance->m_functionName, variantValues);
+		if (!function)
+		{
+			std::cerr << "No function found: " << baseInstance->m_functionName << "\n";
+			continue;
+		}
 		for(int k=0;k<variantSpec.variableSpecs.size();k++)
 		{
-			auto this_value=variantSpec.variableSpecs[k].variableOptions[variantInstance->variantVariableIndex[k]];
+			const auto &vp = function->variant_parameters[k];
+			const std::string &this_value = variantSpec.variableSpecs[k].variableOptions[variantInstance->variantVariableIndex[k]];
 			if (!k)
 				variantInstanceName += "(";
 			else
 				variantInstanceName+="_";
 			variantInstanceName+=this_value;
-			const auto &vp=function->variant_parameters[k];
 			std::string def = "#define sfx_variant_var_"s + vp.identifier + " ("s + this_value + ")\n"s;
 			variantInstance->variantDefinitions+=def;
 
-			std::string decl = vp.type + " "s + vp.identifier + "=sfx_variant_var_"s + vp.identifier + ";\n"s;
-			variantInstance->variantDeclarations += decl;
+			if(vp.type!="function")
+			{
+				std::string decl = vp.type + " "s + vp.identifier + "=sfx_variant_var_"s + vp.identifier + ";\n"s;
+				variantInstance->variantDeclarations += decl;
+			}
+			else
+			{
+				std::string decl = "#define "s + vp.identifier + " sfx_variant_var_"s + vp.identifier + "\n"s;
+				variantInstance->variantDeclarations += decl;
+			}
 
 			variantInstance->variantValues[vp.identifier]=this_value;
 		}
@@ -2326,7 +2427,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		return;
 
 	ostringstream theShader;
-	Function *function = gEffect->GetFunction(shaderName, 0);
+	Function *function = gEffect->GetFunction(shaderName, shaderInstance->variantValues);
 	if (!function)
 	{
 		ostringstream errMsg;
@@ -2338,7 +2439,9 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	std::set<const Declaration *> decs;
 	std::set<const SamplerState*> samplerStates;
 	std::set<std::string> rwTexturesUsedForLoad;
-	AccumulateDeclarationsUsed(function,decs,rwTexturesUsedForLoad);
+	std::set<const Function *> fns;
+	AccumulateFunctionsUsed(function, shaderInstance->variantValues, fns);
+	AccumulateDeclarationsUsed(function, shaderInstance->variantValues,decs, rwTexturesUsedForLoad);
 	// Keep a set of the sampler states used:
 	for (const auto d : decs)
 	{
@@ -2435,9 +2538,6 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			Declare(shaderInstance,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 		}
 	}
-
-	std::set<const Function *> fns;
-	AccumulateFunctionsUsed(function,fns);
 	std::map<int,const Function *> ordered_fns;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
@@ -2588,9 +2688,15 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 						string m=memberDeclaration;
 						if(j.variantCondition.length()>0)
 						{
+							string value=shaderInstance->variantValues[j.variantVariable];
+							if(!CheckVariantCondition(j,value))
+								continue;
+						}
+						/*if(j.variantCondition.length()>0)
+						{
 							setup_code+="#if ";
 							setup_code+=j.variantCondition+"\n";
-						}
+						}*/
 						find_and_replace(m,"{struct_type}",i.type);
 						find_and_replace(m,"{struct_name}","BlocKData");
 						find_and_replace(m,"{member_type}",j.type);
@@ -2609,10 +2715,10 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 							members+=m+"\n";
 							setup_code+=((i.identifier+".")+j.name+"=")+structPrefix+j.name+";\n";
 						}
-						if (j.variantCondition.length() > 0)
+						/*if (j.variantCondition.length() > 0)
 						{
 							setup_code += "#endif\n";
-						}
+						}*/
 					}
 				}
 			}
@@ -2823,7 +2929,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					{
 						if(j.variantCondition.length()>0)
 						{
-							string value=shaderInstance->variantValues[j.name];
+							string value=shaderInstance->variantValues[j.variantVariable];
 							if(!CheckVariantCondition(j,value))
 								continue;
 						}

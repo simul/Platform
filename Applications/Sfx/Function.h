@@ -60,6 +60,9 @@ namespace sfx
 		int								local_linenumber;
 		std::string						filename;
 		int								numThreads[3];
+
+		//! Where a function has lambda [] parameters or variant inputs, we create specialized versions with values in this variable.
+		std::map<std::string, std::string> variantValues;
 	protected:
 		mutable std::set<std::string>	types_used;
 		mutable bool					initialized;

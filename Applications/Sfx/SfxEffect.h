@@ -91,8 +91,9 @@ namespace sfx
 		void SetFilenameList(const char **);
 		void PopulateProgramList();
 		bool Save(std::string sfxFilename, std::string sfxoFilename);
-		void AccumulateStructDeclarations(std::set<const Declaration *> &s,std::string i) const;
-		void AccumulateDeclarationsUsed(const Function *f,std::set<const Declaration *> &ss, std::set<std::string>& rwLoad) const;
+		void AccumulateStructDeclarations(std::map<std::string, std::string> &variantValues,std::set<const Declaration *> &s, std::string i) const;
+		void AccumulateDeclarationsUsed(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Declaration *> &ss, std::set<std::string> &rwLoad) const;
+		void AccumulateFunctionsUsed(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Function *> &s) const;
 		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
 		void AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const;
 		void AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const;
@@ -183,8 +184,11 @@ namespace sfx
 		RenderTargetFormatState *DeclareRenderTargetFormatState(const std::string &name);
 		BlendState *DeclareBlendState(const std::string &name);
 		DepthStencilState *DeclareDepthStencilState(const std::string &name);
-		Function* DeclareFunction(const std::string &functionName,Function &buildFunction);
-		Function* GetFunction(const std::string &functionName,int i);
+		Function *DeclareFunction(const std::string &functionName, Function &buildFunction);
+		//! Get the function, including variant specifications to create a specialized function if necessary.
+		Function *GetFunction(const std::string &functionName,  std::map<std::string, std::string> &variantValues);
+		Function *GetFunction(const std::string &functionName, int i);
+		const Function *GetFunction(const std::string &functionName, int i) const;
 		int GetSlot(const std::string &variableName) const;
 		int GetFilenumber(const std::string &fn) ;
 		std::string GetFilenameOrNumber(const std::string &fn) ;
