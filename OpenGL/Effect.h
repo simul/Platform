@@ -182,7 +182,7 @@ namespace platform
 		public:
 					Shader();
 					~Shader();
-					void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
+					bool load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
 			
 			GLuint	ShaderId;
 		private: 

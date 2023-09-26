@@ -510,7 +510,7 @@ Shader::~Shader()
 	Release();
 }
 
-void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t)
+bool Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t)
 {
 	Release();
 
@@ -565,11 +565,13 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		std::cerr<<filename_utf8<<": error: " << "Failed to compile the shader: " << filename_utf8 << "\n";
 		if(infoLog.data() && infoLog.size())			SIMUL_COUT << infoLog.data() << std::endl;
 		SIMUL_BREAK_ONCE("");
+		return false;
 	}
 	else
 	{
 		ShaderId = shaderId;
 	}
+	return true;
 }
 
 void Shader::Release()
