@@ -409,8 +409,28 @@ shader vec4 PS_DrawTextureOnSphere(posTexColVertexOutput IN) : SV_TARGET
 	vec2 texc	=IN.texCoords.xy;
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
-	vec4 res	=IN.colour*multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
+	vec4 res	=IN.colour*multiplier;
+	res			*=texture_nearest_lod(imageTexture,texc.xy,0);
 	return res;
+}
+
+shader vec4 PS_DrawColouredSphere(posTexVertexOutput IN) :SV_TARGET
+{
+	vec4 clip_pos = vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x += 2.0 * IN.texCoords.x;
+	clip_pos.y -= 2.0 * IN.texCoords.y;
+	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
+	// view.z gives the elevation angle.
+	float R = radius;
+	float Rh = length(sphereCamPos);
+	float theta = asin(R / Rh);
+	float dotp=dot(-normalize(sphereCamPos),view);
+	if (dotp < cos(theta))
+		discard;
+	
+	float opacity = 1.0 - ((dotp - cos(theta)) / (1.0 - cos(theta)));
+	
+	return vec4(debugColour.rgb, 1.0f);
 }
 
 shader vec4 PS_DrawTexturedSphere(posTexVertexOutput IN) :SV_TARGET
@@ -439,7 +459,7 @@ shader vec4 PS_DrawTexturedSphere(posTexVertexOutput IN) :SV_TARGET
 	vec2 texc=vec2(0.5+longitude/2.0/SIMUL_PI_F,0.5-latitude/SIMUL_PI_F);
 	vec4 lookup=debugColour*texture_nearest_lod(imageTexture,texc.xy,0);
 
-	return vec4(lookup.rgb,1.0f);
+	return vec4(lookup.rgb,1.0);
 }
 
 shader vec4 DebugPS(v2f IN) : SV_TARGET
@@ -588,6 +608,19 @@ technique draw_curved_texture_on_sphere
 	}
 }
 
+technique draw_coloured_sphere
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawColouredSphere()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+	}
+}
+
 technique draw_textured_sphere
 {
 	pass p0
@@ -600,6 +633,7 @@ technique draw_textured_sphere
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
 }
+
 technique draw_circle_on_sphere
 {
     pass fill 
