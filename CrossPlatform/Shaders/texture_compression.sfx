@@ -189,6 +189,40 @@ void LoadTexelsRGBABias(Texture2D tex, SamplerState samp, float oneOverTextureSi
 
 
 //--------------------------------------------------------------------------------------
+// Name: LoadTexelsU
+// Desc: Load the 16 U texels that form a block
+//--------------------------------------------------------------------------------------
+void LoadTexelsU(Texture2D tex, SamplerState samp, float oneOverTextureWidth, uint2 threadIDWithinDispatch, out float blockU[16])
+{
+	float2 uv = TexelToUV(float2(threadIDWithinDispatch * 4), oneOverTextureWidth);
+
+	float4 red = tex.GatherRed(samp, uv, int2(0, 0));
+	blockU[0] = red[3];
+	blockU[1] = red[2];
+	blockU[4] = red[0];
+	blockU[5] = red[1];
+
+	red = tex.GatherRed(samp, uv, int2(2, 0));
+	blockU[2] = red[3];
+	blockU[3] = red[2];
+	blockU[6] = red[0];
+	blockU[7] = red[1];
+
+	red = tex.GatherRed(samp, uv, int2(0, 2));
+	blockU[8] = red[3];
+	blockU[9] = red[2];
+	blockU[12] = red[0];
+	blockU[13] = red[1];
+
+	red = tex.GatherRed(samp, uv, int2(2, 2));
+	blockU[10] = red[3];
+	blockU[11] = red[2];
+	blockU[14] = red[0];
+	blockU[15] = red[1];
+}
+
+
+//--------------------------------------------------------------------------------------
 // Name: LoadTexelsUV
 // Desc: Load the 16 UV texels that form a block
 //--------------------------------------------------------------------------------------
@@ -268,6 +302,23 @@ void GetMinMaxChannel(float block[16], out float minC, out float maxC)
 	{
 		minC = min(minC, block[i]);
 		maxC = max(maxC, block[i]);
+	}
+}
+
+
+//--------------------------------------------------------------------------------------
+// Name: GetMinMaxU
+// Desc: Get the min and max of one channels (U)
+//--------------------------------------------------------------------------------------
+void GetMinMaxU(float blockU[16], out float minU, out float maxU)
+{
+	minU = blockU[0];
+	maxU = blockU[0];
+
+	for (int i = 1; i < 16; ++i)
+	{
+		minU = min(minU, blockU[i]);
+		maxU = max(maxU, blockU[i]);
 	}
 }
 
@@ -510,6 +561,30 @@ uint4 CompressBC3Block(float3 blockRGB[16], float blockA[16], float valueScale)
 	return uint4(outA.x, outA.y, (minColor565 << 16) | maxColor565, indices);
 }
 
+//--------------------------------------------------------------------------------------
+// Name: CompressBC4Block
+// Desc: Compress a BC4 block. valueScale is a scale value to be applied to the input 
+//          values; this used as an optimization when compressing two mips at a time.
+//          When compressing only a single mip, valueScale is always 1.0
+//--------------------------------------------------------------------------------------
+uint2 CompressBC4Block(float blockU[16], float valueScale)
+{
+	float minU, maxU;
+	GetMinMaxU(blockU, minU, maxU);
+
+	// Pack our min and max uv values
+	uint minUPacked = uint(round(minU * valueScale * 255.0f));
+	uint maxUPacked = uint(round(maxU * valueScale * 255.0f));
+
+	uint2 outU = uint2((minUPacked << 8) | maxUPacked, 0);
+
+	if (minUPacked < maxUPacked)
+	{
+		GetIndicesAlpha(blockU, minU, maxU, outU);
+	}
+
+	return uint2(outU.x, outU.y);
+}
 
 //--------------------------------------------------------------------------------------
 // Name: CompressBC5Block
@@ -609,6 +684,7 @@ Texture2D g_texIn : register(t0);
 
 RWTexture2D<uint2> g_texMip0OutBC1 : register(u0);    // Output BC1 texture as R32G32_UINT 
 RWTexture2D<uint4> g_texMip0OutBC3 : register(u0);    // Output BC3 texture as R32G32B32A32_UINT
+RWTexture2D<uint2> g_texMip0OutBC4 : register(u0);    // Output BC4 texture as R32G32_UINT 
 RWTexture2D<uint4> g_texMip0OutBC5 : register(u0);    // Output BC5 texture as R32G32B32A32_UINT
 
 //--------------------------------------------------------------------------------------
@@ -642,6 +718,23 @@ shader void CS_BC3Compress(uint3 threadIDWithinDispatch : SV_DispatchThreadID)
 }
 
 //--------------------------------------------------------------------------------------
+// BC4 Compress one mip level
+//--------------------------------------------------------------------------------------
+CS_LAYOUT(8, 8, 1)
+shader void CS_BC4Compress(uint3 threadIDWithinDispatch : SV_DispatchThreadID)
+{
+	float g_oneOverTextureWidth = 0.0f;
+	float2 g_texInDim;
+	g_texIn.GetDimensions(g_texInDim.x, g_texInDim.y);
+	g_oneOverTextureWidth = 1.0f / g_texInDim.x;
+	
+	float blockU[16];
+	LoadTexelsU(g_texIn, samplerStateNearest, g_oneOverTextureWidth, threadIDWithinDispatch.xy, blockU);
+
+	g_texMip0OutBC4[threadIDWithinDispatch.xy] = CompressBC4Block(blockU, 1.0f);
+}
+
+//--------------------------------------------------------------------------------------
 // BC5 Compress one mip level
 //--------------------------------------------------------------------------------------
 CS_LAYOUT(8, 8, 1)
@@ -667,6 +760,10 @@ technique texture_compression
 	pass bc3
 	{
 		SetComputeShader(CompileShader(cs_5_0, CS_BC3Compress()));
+	}
+	pass bc4
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_BC4Compress()));
 	}
 	pass bc5
 	{
