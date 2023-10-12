@@ -600,6 +600,7 @@
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ COMPARISON D_NEVER D_ALWAYS D_LESS D_EQUAL D_LESS_EQUAL D_GREATER D_NOT_EQUAL D_GREATER_EQUAL
 
 %token LOAD GET_DIMS SAMPLE SAMPLE_LOD
+%token GATHER_RED GATHER_GREEN GATHER_BLUE GATHER_ALPHA
 %token SATURATE 
 
 %token STRUCT UNIFORM FLAT CONSTANT_BUFFER GROUPSHARED
@@ -1581,13 +1582,36 @@ assignment_exp : conditional_exp
 						{
 							find_and_replace(s, "{cast}", "f16vec4");
 						}
+						else if (toStoreDec->second->structureType == "uvec4")
+						{
+							find_and_replace(s, "{cast}", "uvec4");
+						}
+						else if (toStoreDec->second->structureType == "uvec2")
+						{
+							find_and_replace(s, "{cast}", "uvec4");
+							assignment_exp += ".xyyy"; //TODO: Find generic method. - AJR
+						}
 						else
 						{
 							// God almighty.
-							//find_and_replace(s,"{cast}","nullcast");
+							// find_and_replace(s,"{cast}","nullcast");
 							errSem(string("Unsupported structure type for image store: ") + toStoreDec->second->structureType);
 						}
-					}							   
+
+						//TODO: This won't work for number r values. - AJR
+						/*const char& componentChar = toStoreDec->second->structureType.back();
+						uint32_t componentCount = 1;
+						uint32_t component = atoi(&componentChar);
+						if (component == 2 || component == 3 || component == 4)
+							componentCount = component;
+
+						if (componentCount == 1)
+							assignment_exp += ".xxxx";
+						else if (componentCount == 2)
+							assignment_exp += ".xyyy";
+						else if (componentCount == 3)
+							assignment_exp += ".xyzz";*/
+					}
 					else
 					{
 						find_and_replace(s,"{cast}","");
@@ -1980,6 +2004,93 @@ postfix_exp : primary_exp
 		buildFunction.resources.insert(samplerStateName);						
 		$$.strs[0] = full_expr.str();
 	}
+	| gather_exp '(' assignment_exp ',' argument_exp_list ')'
+	{
+		int component = $1.num;
+		string textureName = $1.strs[1];
+		string command = $1.strs[2];
+		string samplerStateName = $3.strs[0];
+		string otherParams = $5.strs[0];
+		vector<sfxstype::variable> *params = $5.vars;
+
+		ostringstream full_expr;
+		const SfxConfig *config = gEffect->GetConfig();
+		
+		string gatherSyntax = to_string(component);
+		switch (component)
+		{
+		//default:
+		case GATHER_RED:
+			gatherSyntax = config->gatherRedSyntax;
+			break;
+		case GATHER_GREEN:
+			gatherSyntax = config->gatherGreenSyntax;
+			break;
+		case GATHER_BLUE:
+			gatherSyntax = config->gatherBlueSyntax;
+			break;
+		case GATHER_ALPHA:
+			gatherSyntax = config->gatherAlphaSyntax;
+			break;
+		}
+
+		// Special syntax used to gather:
+		//  e.g noise3D.GatherRed(clampSampler,uv,off); -> textureGatherOffset(sampler3D(noise3D | clampSampler),uv,off,0);
+		//  e.g noise3D.GatherGreen(clampSampler,uv,off); -> textureGatherOffset(sampler3D(noise3D | clampSampler),uv,off,1);
+		//  We must choose the proper:			  {command}({samplerType}(tex|sampler),params);
+		if (gatherSyntax.length() > 0)
+		{
+			ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
+			if (ShaderResourceType::UNKNOWN == type)
+			{
+				// errSem("Unknown texture type: " + textureName);
+			}
+			string samplerType = GetSamplerConstructor(type, textureName, &buildFunction);
+			string cmd = gatherSyntax;
+			find_and_replace(cmd, "{command}", command);
+			find_and_replace(cmd, "{samplerType}", samplerType);
+			find_and_replace(cmd, "{component}", "?");
+			string combTexSamp = "";
+			if (config->combineTexturesSamplers)
+			{
+				if (config->combineInShader)
+				{
+					combTexSamp = textureName + ", " + samplerStateName;
+				}
+				else
+				{
+					// combTexSamp = textureName + "_xfs_" + samplerStateName;
+					combTexSamp = textureName + "[" + samplerStateName + "]";
+				}
+			}
+			const SfxConfig *config = gEffect->GetConfig();
+			find_and_replace(cmd, "{textureSampler}", combTexSamp);
+			if (!config->reverseTexCoordY || !params || params->size() < 1)
+				find_and_replace(cmd, "{otherParams}", otherParams);
+			else
+			{
+				ostringstream otherParams;
+				std::string firstParam = (*params)[0].identifier;
+				otherParams << "reverse_y_coord(" << firstParam << ")";
+				for (int i = 1; i < params->size(); i++)
+					otherParams << "," << (*params)[i].identifier;
+				find_and_replace(cmd, "{otherParams}", otherParams.str());
+				const std::map<std::string, std::vector<Function *>> &functions = gEffect->GetFunctions();
+				auto j = functions.find("reverse_y_coord");
+				for (auto u = j->second.begin(); u != j->second.end(); u++)
+					buildFunction.functionsCalled.insert(*u);
+			}
+			full_expr << cmd;
+		}
+		else
+		{
+			full_expr << textureName << "." << command << "(" << samplerStateName << "," << otherParams << ")";
+		}
+		buildFunction.declarations.insert(textureName);
+		buildFunction.resources.insert(textureName);
+		buildFunction.resources.insert(samplerStateName);
+		$$.strs[0] = full_expr.str();
+	}
 	| postfix_exp '(' argument_exp_list ')'
 	{
 		string expr1=$1.strs[0];
@@ -2152,6 +2263,26 @@ tex_load_command : LOAD
 	{
 		$$.strs[0]="Load";
 	}
+gather_command : GATHER_RED
+	{
+		$$.strs[0] = "GatherRed";
+		$$.num = GATHER_RED;
+	}
+	| GATHER_GREEN
+	{
+		$$.strs[0] = "GatherGreen";
+		$$.num = GATHER_GREEN;
+	}
+	| GATHER_BLUE
+	{
+		$$.strs[0] = "GatherBlue";
+		$$.num = GATHER_BLUE;
+	}
+	| GATHER_ALPHA
+	{
+		$$.strs[0] = "GatherAlpha";
+		$$.num = GATHER_ALPHA;
+	}
 decl_specs : IDENTIFIER
 	{
 		$$.strs[0] = $1.strs[0];
@@ -2187,6 +2318,17 @@ sampling_exp :	postfix_exp '.' sampling_command
 		$$.strs[1]=texture;
 		// We put the command into strs[2]
 		$$.strs[2]=command;
+	}
+gather_exp : postfix_exp '.' gather_command
+	{
+		string texture = $1.strs[0];
+		string command = $3.strs[0];
+		$$.strs[0] = "";
+		// Put the thing we're sampling into strs[1]
+		$$.strs[1] = texture;
+		// We put the command into strs[2]
+		$$.strs[2] = command;
+		$$.num = $3.num;
 	}
 get_dims_exp : postfix_exp '.' GET_DIMS
 	{

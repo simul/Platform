@@ -727,6 +727,26 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE_LOD);
 												}
+<IN_SHADER>"GatherRed"							{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(GATHER_RED);
+												}
+<IN_SHADER>"GatherGreen"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(GATHER_GREEN);
+												}
+<IN_SHADER>"GatherBlue"							{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(GATHER_BLUE);
+												}
+<IN_SHADER>"GatherAlpha"						{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(GATHER_ALPHA);
+												}
 <IN_SHADER>"break"								stdReturn(BREAK);
 <IN_SHADER>"continue"							stdReturn(CONTINUE);
 <IN_SHADER>"do"									stdReturn(DO);
