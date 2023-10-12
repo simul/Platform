@@ -447,8 +447,8 @@ void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const Shade
 
 void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const SubresourceRange& subresource)
 {
-	const ShaderResource& i = GetShaderResource(name);
-	SetTexture(deviceContext, i, tex, subresource);
+	const ShaderResource& res = GetShaderResource(name);
+	renderPlatform->SetTexture(deviceContext, res, tex, subresource);
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceLayers& subresource)
@@ -458,13 +458,32 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* t, const SubresourceLayers& subresource)
 {
-	const ShaderResource& i = GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext, i, t, subresource);
+	const ShaderResource& res = GetShaderResource(name);
+	renderPlatform->SetUnorderedAccessView(deviceContext, res, t, subresource);
 }
 
 const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
 {
 	return textureResources[s];
+}
+std::string Effect::GetShaderResourceNameAtSlot(int s)
+{
+	for(const auto i:textureCharMap)
+	{
+		if(i.second->slot==s)
+			return i.first;
+	}
+	return "";
+}
+
+std::string Effect::GetConstantBufferNameAtSlot(int s)
+{
+	for (const auto i : constantBufferSlots)
+	{
+		if (i.second == s)
+			return i.first;
+	}
+	return "";
 }
 
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
@@ -1138,6 +1157,13 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				res->shaderResourceType=crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE;
 				textureDetailsMap[name]=res;
 				textureResources[slot]=res;
+			}
+			else if (is_equal(word, "constant_buffer"))
+			{
+				const string &constant_buffer_name = words[1];
+				const string &constant_buffer_slot = words[2];
+				int slot = atoi(constant_buffer_slot.c_str());
+				constantBufferSlots[constant_buffer_name]=slot;
 			}
 			else if(is_equal(word,"texture"))
 			{

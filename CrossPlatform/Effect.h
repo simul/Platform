@@ -542,6 +542,7 @@ namespace platform
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
 			std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
+			std::unordered_map<std::string, int> constantBufferSlots;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
@@ -591,7 +592,9 @@ namespace platform
 				return std::string("Unknown");
 
 			}
-			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s) ;
+			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s);
+			std::string GetShaderResourceNameAtSlot(int s);
+			std::string GetConstantBufferNameAtSlot(int s);
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;

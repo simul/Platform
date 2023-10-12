@@ -51,6 +51,7 @@
 #ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
 	#define BottomUpTextureCoordinates(original_texc) original_texc
 	#define BottomUpTextureCoordinates4(original_texc) original_texc
+	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 #endif
 	#define ALIGN_16
 	#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
