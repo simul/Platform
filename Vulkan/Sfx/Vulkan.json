@@ -42,6 +42,10 @@
 	"samplingSyntax": "{command}({samplerType}({textureSampler}),{otherParams})",
 	"loadSyntax": "{command}({texture},{params})",
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
+	"gatherRedSyntax": "{command}({samplerType}({textureSampler}),{otherParams},0)",
+	"gatherGreenSyntax": "{command}({samplerType}({textureSampler}),{otherParams},1)",
+	"gatherBlueSyntax": "{command}({samplerType}({textureSampler}),{otherParams},2)",
+	"gatherAlphaSyntax": "{command}({samplerType}({textureSampler}),{otherParams},3)",
 	"structDeclaration": "struct {name}\n{\n[\t{flat} {type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} ;",
 	"namedConstantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
@@ -86,7 +90,9 @@
 		"uint": "r32ui",
 		"float": "r32f",
 		"float4": "rgba32f",
-		"f16vec4": "rgba16f"
+		"f16vec4": "rgba16f",
+		"uvec2": "rg32ui",
+		"uvec4": "rgba32ui"
 	},
 	"toImageType": {
 		"vec4": "image",
@@ -193,6 +199,10 @@
 		"Sample": "texture",
 		"SampleLevel": "textureLod",
 		"Load": "imageLoad",
+		"GatherRed": "textureGatherOffset",
+		"GatherGreen": "textureGatherOffset",
+		"GatherBlue": "textureGatherOffset",
+		"GatherAlpha": "textureGatherOffset",
 		"IMAGESTORE(a,b,c)": "imageStore(a,b,c);",
 		"imageStore(uav,pos, c)": "imageStore(uav,pos,c)",
 		"lerp": "mix",

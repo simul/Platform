@@ -32,6 +32,10 @@
 	"samplingSyntax": "{command}({samplerType}({textureSampler}),{otherParams})",
 	"loadSyntax": "{command}({texture},{params})",
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
+	"gatherRedSyntax": "{command}({samplerType}({textureSampler}),{otherParams},0)",
+	"gatherGreenSyntax": "{command}({samplerType}({textureSampler}),{otherParams},1)",
+	"gatherBlueSyntax": "{command}({samplerType}({textureSampler}),{otherParams},2)",
+	"gatherAlphaSyntax": "{command}({samplerType}({textureSampler}),{otherParams},3)",
 	"structDeclaration": "struct {name}\n{\n[\t{type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]};",
 	"namedConstantBufferDeclaration": "struct {name}struct\n{\n[\t{type} {name};]};\n\nlayout(std140, binding = {slot}) uniform {name}\n{\n{name}struct {instance_name};\n}\n",
@@ -74,7 +78,10 @@
 		"uint": "r32ui",
 		"float": "r32f",
 		"float4": "rgba32f",
-		"half4": "rgba16f"
+		"half4": "rgba16f",
+		"uvec2": "rg32ui",
+		"uvec3": "rgb32ui",
+		"uvec4": "rgba32ui"
 	},
 	"toImageType": {
 		"vec4": "image",
@@ -84,7 +91,10 @@
 		"uint": "uimage",
 		"float": "image",
 		"float4": "image",
-		"half4": "image"
+		"half4": "image",
+		"uvec2": "uimage",
+		"uvec3": "uimage",
+		"uvec4": "uimage"
 	},
 	"toTextureType": {
 		"default": "sampler",
@@ -95,7 +105,10 @@
 		"uint": "usampler",
 		"float": "sampler",
 		"float4": "sampler",
-		"half4": "sampler"
+		"half4": "sampler",
+		"uvec2": "usampler",
+		"uvec3": "usampler",
+		"uvec4": "usampler"
 	},
 	"templateTypes": {
 		"Texture2D<uint>": "uint64_t",
@@ -178,6 +191,10 @@
 		"Sample": "texture",
 		"SampleLevel": "textureLod",
 		"Load": "imageLoad",
+		"GatherRed": "textureGatherOffset",
+		"GatherGreen": "textureGatherOffset",
+		"GatherBlue": "textureGatherOffset",
+		"GatherAlpha": "textureGatherOffset",
 		"IMAGESTORE(a,b,c)": "imageStore(a,b,c);",
 		"imageStore(uav,pos, c)": "imageStore(uav,pos,c)",
 		"lerp": "mix",
