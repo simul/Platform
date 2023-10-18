@@ -111,6 +111,10 @@ struct SfxConfig
 	std::string samplingSyntax;
 	std::string loadSyntax;
 	std::string storeSyntax;
+	std::string gatherRedSyntax;
+	std::string gatherGreenSyntax;
+	std::string gatherBlueSyntax;
+	std::string gatherAlphaSyntax;
 	//! Generic preamble
 	std::string preamble;
 	std::string optimizationLevelOption;

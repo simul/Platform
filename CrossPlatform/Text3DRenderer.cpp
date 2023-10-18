@@ -154,7 +154,7 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 #if PLATFORM_USE_FREETYPE
 	{
 		platform::core::FileLoader *fileLoader=platform::core::FileLoader::GetFileLoader();
-		std::string filename = fileLoader->FindFileInPathStack("Exo-SemiBold.ttf", fontPaths);
+		std::string filename = fileLoader->FindFileInPathStack("Exo2-SemiBold.ttf", fontPaths);
 		if(filename.length()>0)
 		{
 			void *ttf_data=nullptr;

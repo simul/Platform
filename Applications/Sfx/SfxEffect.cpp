@@ -937,6 +937,21 @@ std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &sha
 	return shaderInstance;
 }
 
+std::string ToNumericString(std::string input)
+{
+// decimal? return as-is.
+	if(input.find('.')<input.length())
+	{
+		return input;
+	}
+// Boolean? Convert to integer.
+	if(input=="true")
+		return "1";
+	if(input=="false")
+		return "0";
+	return input;
+}
+
 std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::string &baseName,const VariantSpec &variantSpec)
 {
 	std::vector<std::string> variantInstanceNames;
@@ -1007,12 +1022,13 @@ std::vector<std::string> Effect::GenerateShaderInstanceVariants(const std::strin
 			else
 				variantInstanceName+="_";
 			variantInstanceName+=this_value;
-			std::string def = "#define sfx_variant_var_"s + vp.identifier + " ("s + this_value + ")\n"s;
+			// glSlangValidator evalues true as false. Therefore we have to convert "true" and "false" to integers!
+			std::string def = "#define sfx_variant_var_"s + vp.identifier + " ("s + ToNumericString(this_value)+ ")\n"s;
 			variantInstance->variantDefinitions+=def;
 
 			if(vp.type!="function")
 			{
-				std::string decl = vp.type + " "s + vp.identifier + "=sfx_variant_var_"s + vp.identifier + ";\n"s;
+				std::string decl = vp.type + " "s + vp.identifier + "="s+vp.type+"(sfx_variant_var_"s + vp.identifier + ");\n"s;
 				variantInstance->variantDeclarations += decl;
 			}
 			else
@@ -2977,10 +2993,12 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 					Struct* retStruct = (Struct *)retDec;
 					for (auto j : retStruct->m_structMembers)
 					{
+						std::string returnobject = (blockname + ".") + returnName; 
 						if(!as_blocks)
 						{
 							string this_member_fill= function->returnType+returnName+j.name + "=" + "$1" + "." + j.name + ";\n";
 							ret += this_member_fill;
+							returnobject = returnName;
 						}
 
 						// And fill in the "magic GLSL outputs":
@@ -2990,7 +3008,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 							std::string code;
 							if(sfxConfig.reverseVertexOutputY&&is_equal(j.semantic,"SV_POSITION"))
 							{
-								code += "\n" + sem->second + "=" + "vec4($1." + j.name + ".x,-$1." + j.name + ".y,$1."+j.name+".z,$1."+j.name+".w);\n";
+								code += "\n"s + sem->second + "="s + "vec4("s+returnobject+"." + j.name + ".x,-"s+returnobject+"." + j.name + ".y,"s+returnobject+"."+j.name+".z,"s+returnobject+"."+j.name+".w);\n ";
 							}
 							else
 							{

@@ -418,6 +418,14 @@ int main(int argc, char** argv)
 				sfxConfig.loadSyntax							=j["loadSyntax"];
 			if (j.count("storeSyntax")>0)
 				sfxConfig.storeSyntax							=j["storeSyntax"];
+			if (j.count("gatherRedSyntax") > 0)
+				sfxConfig.gatherRedSyntax						=j["gatherRedSyntax"];
+			if (j.count("gatherGreenSyntax") > 0)
+				sfxConfig.gatherGreenSyntax						=j["gatherGreenSyntax"];
+			if (j.count("gatherBlueSyntax") > 0)
+				sfxConfig.gatherBlueSyntax						=j["gatherBlueSyntax"];
+			if (j.count("gatherAlphaSyntax") > 0)
+				sfxConfig.gatherAlphaSyntax						=j["gatherAlphaSyntax"];
 			if (j.count("preamble")>0)
 				sfxConfig.preamble								=j["preamble"];
 			if (j.count("optimizationLevelOption")>0)
