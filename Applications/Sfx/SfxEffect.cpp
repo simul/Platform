@@ -1855,7 +1855,7 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 				else // TRY using the slot that's specified, if one IS specified...
 				{
 					std::cerr << this->Filename().c_str()<< ": error: ran out of texture slots."<< std::endl;
-					exit(1);
+					exit(1424);
 					num = GetTextureNumber(name.c_str(), slot);
 					textureNumberMap[name] = num;
 				}

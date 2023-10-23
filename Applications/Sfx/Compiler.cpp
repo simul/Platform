@@ -246,7 +246,7 @@ bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostrin
 	}
 	command_running=false;
 	if(terminate_command)
-		exit(1);
+		exit(1828);
 	DWORD exitCode=0;
 	if(!GetExitCodeProcess(processInfo.hProcess, &exitCode))
 	{
@@ -935,70 +935,86 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);
 
-	bool res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
-	if (res)
+	bool created_output=false;
+	bool res=false;
+	int repetitions=0;
+	while(!created_output)
 	{
-		bool write_log=false;
-		const string &log_str=log.str();
-		if (sfxOptions.verbose)
+		res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
+		if (res)
 		{
-			std::cout << tempf.c_str() << "(0): info: Temporary shader source file." << std::endl;
-			write_log=true;
-		}
-		if (log.str().find("warning") < log_str.length()||log.str().find("Warning") < log_str.length())
-		{
-			std::cerr << (sourceFile).c_str() << "(0): Warning: warnings compiling " << shaderInstance->m_functionName.c_str() << std::endl;
-			write_log=true;
-		}
-		if (log_str.find("error") < log_str.length()||log_str.find("Error") < log_str.length())
-		{
-			res = 0;
-			write_log = true;
-		}
-		if(log.str().length()&&write_log)
-			std::cerr << log.str() << std::endl;
-		// If we provide invalid args to fxc:
-		if (log.str().find("Unknown or invalid option") < log.str().length())
-		{
-			std::cerr << log.str() << std::endl;
-			res = 0;
-		}
-		if (sfxOptions.wrapOutput)
-		{
-			//concatenate
-			#ifdef _MSC_VER
-			std::ifstream if_c(outputFile.c_str(), std::ios_base::binary);
-			#else
-			std::ifstream if_c(WStringToUtf8(outputFile).c_str(), std::ios_base::binary);
-			#endif
-			for(int i=0;!if_c.good()&&i<10000;i++)
+			bool write_log=false;
+			const string &log_str=log.str();
+			if (sfxOptions.verbose)
 			{
-				Sleep(10);
+				std::cout << tempf.c_str() << "(0): info: Temporary shader source file." << std::endl;
+				write_log=true;
 			}
-			if(!if_c.good())
+			if (log.str().find("warning") < log_str.length()||log.str().find("Warning") < log_str.length())
 			{
-				std::cerr << "Failed to create binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
-				exit(1);
+				std::cerr << (sourceFile).c_str() << "(0): Warning: warnings compiling " << shaderInstance->m_functionName.c_str() << std::endl;
+				write_log=true;
 			}
-			std::streampos startp=combinedBinary.tellp();
-			combinedBinary << if_c.rdbuf();
-			std::streampos endp = combinedBinary.tellp();
-			size_t sz=endp - startp;
-			if(!sz)
+			if (log_str.find("error") < log_str.length()||log_str.find("Error") < log_str.length())
+			{
+				res = 0;
+				write_log = true;
+			}
+			if(log.str().length()&&write_log)
+				std::cerr << log.str() << std::endl;
+			// If we provide invalid args to fxc:
+			if (log.str().find("Unknown or invalid option") < log.str().length())
 			{
 				std::cerr << log.str() << std::endl;
-				std::cerr << "Empty output binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
-				SFX_BREAK("Empty output binary");
-				exit(1);
+				res = 0;
 			}
-			binaryMap[sbf] = std::make_tuple(startp, sz);
+			if (sfxOptions.wrapOutput)
+			{
+				//concatenate
+				#ifdef _MSC_VER
+				std::ifstream if_c(outputFile.c_str(), std::ios_base::binary);
+				#else
+				std::ifstream if_c(WStringToUtf8(outputFile).c_str(), std::ios_base::binary);
+				#endif
+				for(int i=0;!if_c.good()&&i<100;i++)
+				{
+					if (terminate_command)
+						exit(2000);
+					Sleep(10);
+				}
+				if(!if_c.good())
+				{
+					std::cerr << "Error: Failed to create binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
+					repetitions++;
+					if(repetitions<10)
+						continue;
+					std::cerr << "Error: Giving up." << std::endl;
+					exit(1727);
+				}
+				created_output=true;
+				std::streampos startp=combinedBinary.tellp();
+				combinedBinary << if_c.rdbuf();
+				std::streampos endp = combinedBinary.tellp();
+				size_t sz=endp - startp;
+				if(!sz)
+				{
+					std::cerr << log.str() << std::endl;
+					std::cerr << "Empty output binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
+					SFX_BREAK("Empty output binary");
+					exit(1626);
+				}
+				binaryMap[sbf] = std::make_tuple(startp, sz);
+			}
+			else
+				break;
 		}
-	}
-	else
-	{
-		std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shaderInstance->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
-		if (sfxOptions.verbose)
-			std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shaderInstance->m_functionName.c_str()<<std::endl;
+		else
+		{
+			std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shaderInstance->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
+			if (sfxOptions.verbose)
+				std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shaderInstance->m_functionName.c_str()<<std::endl;
+			break;
+		}
 	}
 
 	return res;

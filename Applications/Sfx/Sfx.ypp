@@ -3470,7 +3470,7 @@ shader_compile : CONSTRUCT_GS '(' IDENTIFIER ',' QUOTED_STRING ')'
 				ostringstream errMsg;
 				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 				errSem(errMsg.str(), $5.lineno);
-				exit(1);
+				exit(1525);
 			}
 		}
 		$$.strs[1]=profileName;

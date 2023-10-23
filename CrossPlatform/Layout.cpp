@@ -84,6 +84,36 @@ int Layout::GetPitch() const
 	return interleaved?struct_size:0;
 }
 
+static const char *GetSemanticText(LayoutSemantic s)
+{
+	switch(s)
+	{
+	case LayoutSemantic::UNKNOWN:				return "UNKNOWN";
+	case LayoutSemantic::POSITION:				return "POSITION";
+	case LayoutSemantic::NORMAL:				return "NORMAL";
+	case LayoutSemantic::TANGENT:				return "TANGENT";
+	case LayoutSemantic::TEXCOORD:				return "TEXCOORD";
+	case LayoutSemantic::POSITIONT:				return "POSITIONT";
+	case LayoutSemantic::BINORMAL:				return "BINORMAL";
+	case LayoutSemantic::COLOUR:				return "COLOR";
+	case LayoutSemantic::BLENDINDICES:			return "BLENDINDICES";
+	case LayoutSemantic::BLENDWEIGHT:			return "BLENDWEIGHT";
+	case LayoutSemantic::PSIZE:					return "PSIZE";
+	case LayoutSemantic::CUSTOM:				return "CUSTOM";
+	case LayoutSemantic::TESSFACTOR:			return "TESSFACTOR";
+	default:
+	return "";
+	};
+};
+bool Layout::HasSemantic(LayoutSemantic semantic) const
+{
+	for(const auto &p:parts)
+	{
+		if(std::string(p.semanticName)==GetSemanticText(semantic))
+			return true;
+	}
+	return false;
+}
 
 int Layout::GetStructSize() const
 {

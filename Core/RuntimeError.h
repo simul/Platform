@@ -57,13 +57,13 @@ namespace platform
 			std::cerr << fmt::format("{0} ({1}): error: {2}",__FILE__,__LINE__, str) << "\n";
 		}
 		template <typename... T>
-		void Warn(int x, const T &...args)
+		void Warn(const char *txt, const T &...args)
 		{
 			std::string str = fmt::format(txt, args...);
 			std::cerr << fmt::format("{0} ({1}): warning: {2}", __FILE__, __LINE__, str) << "\n";
 		}
 		template <typename... T>
-		void Info(int x, const T &...args)
+		void Info(const char *txt, const T &...args)
 		{
 			std::string str = fmt::format(txt, args...);
 			std::cerr << fmt::format("{0} ({1}): info: {2}", __FILE__, __LINE__, str) << "\n";

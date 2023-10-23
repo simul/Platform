@@ -67,6 +67,7 @@ namespace platform
 			virtual ~Layout();
 			void SetDesc(const LayoutDesc *d,int num,bool interleaved=true);
 			int GetPitch() const;
+			bool HasSemantic(LayoutSemantic semantic) const;
 			const std::vector<LayoutDesc> &GetDesc() const
 			{
 				return parts;

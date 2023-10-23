@@ -181,6 +181,7 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	#endif
 
 	constantBuffer.InvalidateDeviceObjects();
+	ERRNO_BREAK
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
 	LoadShaders();
@@ -242,7 +243,9 @@ void Text3DRenderer::LoadShaders()
 {
 	recompile = false;
 	SAFE_DELETE(effect);
-	effect=renderPlatform->CreateEffect("font");
+	ERRNO_BREAK
+	effect = renderPlatform->CreateEffect("font");
+	ERRNO_BREAK
 	constantBuffer.LinkToEffect(effect,"TextConstants");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");

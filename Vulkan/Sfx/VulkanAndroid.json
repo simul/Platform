@@ -16,7 +16,7 @@
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--entry-point {name} --source-entrypoint main",
-	"debugOption": "-g -Od -gVS",
+	"debugOption": "-g -Od",
 	"multiplePixelOutputFormats": false,
 	"define": {
 		"SFX_TYPED_UAV_LOADS": "1",
