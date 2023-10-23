@@ -50,6 +50,7 @@ def cmake(src,build_path,cmake_generator,flags):
 	vs_versions=[cmake_generator,'Visual Studio 17 2022','Visual Studio 16 2019','Visual Studio 15 2017']
 	for vs_version in vs_versions:
 		cmakeCmd = ["cmake.exe", '-G',vs_version, os.path.relpath(src, build_path)]
+		#print(' '.join(cmakeCmd+flags))
 		retCode = subprocess.check_call(cmakeCmd+flags, stderr=subprocess.STDOUT, shell=True)
 		if retCode!=0:
 			continue
@@ -117,21 +118,32 @@ def execute():
 	#We update only the submodules in "External" - others are private and must be handled manually.
 	sms = repo.submodules
 	for sm in sms:
-		if('External' in sm.module().working_tree_dir):
-			print("\tUpdating submodule "+sm.name)
-			sm.update(init=True,force=True,recursive=True)
-
+		if('External' in sm.name):
+			if sm.url[0:3] == '../':
+				repo.git.execute(command=['git', 'submodule', 'update', '--init', '--recursive', sm.name]) ##Alternate method for relative path
+			else:
+				sm.update(init=True,force=True,recursive=True)
+			print("Successfully Updated " + sm.name)
+		#else:
+			#print("Skipping " +sm.name)
+			
+	
+	
+	fmt_md_flags=["-DCMAKE_CONFIGURATION_TYPES=Debug;Release","-DFMT_DOC=false","-DFMT_TEST=false","-DFMT_INSTALL=false",
+	"-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib","-DCMAKE_STATIC_LIBRARY_PREFIX_CXX=md_","-DCMAKE_CXX_FLAGS_DEBUG=/MDd /Zi /Ob0 /Od /RTC1",
+	"-DCMAKE_CXX_FLAGS_RELEASE=/MD /Ob2 /DNDEBUG"]
+	#"--trace-source=CMakeLists.txt"]
+	cmake('External/fmt','External/fmt/build_md',cmake_gen,fmt_md_flags)	
 	fmt_mt_flags=["-DCMAKE_BUILD_TYPE=None","-DCMAKE_CONFIGURATION_TYPES=Debug;Release","-DFMT_DOC=false","-DFMT_TEST=false",
 	"-DFMT_INSTALL=false","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib","-DCMAKE_STATIC_LIBRARY_PREFIX_CXX=mt_",
-	"-DCMAKE_CXX_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_CXX_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG"
-	,"-DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\""]
+	"-DCMAKE_CXX_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_CXX_FLAGS_RELEASE=/MT /Ob2 /DNDEBUG"]
+	#,"--trace-source=CMakeLists.txt"]
 	cmake('External/fmt','External/fmt/build_mt',cmake_gen,fmt_mt_flags)
-	fmt_md_flags=["-DCMAKE_CONFIGURATION_TYPES=Debug;Release","-DFMT_DOC=false","-DFMT_TEST=false","-DFMT_INSTALL=false","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib","-DCMAKE_STATIC_LIBRARY_PREFIX_CXX=md_"]
-	cmake('External/fmt','External/fmt/build_md',cmake_gen,fmt_md_flags)
-	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
+
+	glfwflags=["-DGLFW_BUILD_DOCS=false","-DGLFW_BUILD_EXAMPLES=false","-DGLFW_BUILD_TESTS=false","-DGLFW_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
 	cmake('External/glfw','External/glfw/build_md',cmake_gen,glfwflags)
 	cmake('External/glfw','External/glfw/build_mt',cmake_gen,glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
-	assimpflags=["-DASSIMP_BUILD_DOCS=false","-DASSIMP_BUILD_EXAMPLES=false","-DASSIMP_BUILD_TESTS=false","-DASSIMP_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
+	assimpflags=["-DASSIMP_BUILD_DOCS=false","-DASSIMP_BUILD_EXAMPLES=false","-DASSIMP_BUILD_TESTS=false","-DASSIMP_INSTALL=false","-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1","-DCMAKE_C_FLAGS_RELEASE=/MT /Ob2 /DNDEBUG","-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=../lib"]
 	cmake('External/assimp','External/assimp/build_md',cmake_gen,glfwflags)
 	cmake('External/assimp','External/assimp/build_mt',cmake_gen,glfwflags+["-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false"])
 	platform_flags=[]
