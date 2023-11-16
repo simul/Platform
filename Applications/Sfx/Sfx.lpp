@@ -652,8 +652,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"saturate"							{
 													stdReturn(SATURATE);
 												}
-<INITIAL,IN_SHADER>"inline"|"const"|"static"|"STATIC"	{
-														}
+<INITIAL,IN_SHADER>"inline"|"const"				{
+												}
+<INITIAL,IN_SHADER>"static"						{
+													stdReturn(STATIC);
+												}
 <IN_SHADER>"asfloat"							{
 													modReturn(IDENTIFIER,"uintBitsToFloat");
 												}
