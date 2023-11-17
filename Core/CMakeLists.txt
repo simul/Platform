@@ -16,6 +16,7 @@ add_static_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} FOLDER ${SIMUL_PL
 
 if(PLATFORM_BUILD_MD_LIBS)
 # Setup and build the dynamic library.
-add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_CORE_DLL=1 LINK fmt FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_CORE_DLL=1 LINK fmt::fmt-header-only FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_compile_definitions( Core_MD PRIVATE FMT_HEADER_ONLY)
 endif()
 
