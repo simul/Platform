@@ -382,10 +382,14 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 			if (ta.dimensions == 3)
 			{
 				ta.texture = rPlat->GetDummy3D();
+				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_3D;
+				ta.subresource = {};
 			}
 			else
 			{
 				ta.texture = rPlat->GetDummy2D();
+				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_2D;
+				ta.subresource = {};
 			}
 		}
 		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, { ta.resourceType, ta.subresource });
