@@ -16,7 +16,6 @@ DisplaySurface::DisplaySurface():
 	{
 		mBackBuffers[i] = nullptr;
 		mCommandAllocators[i] = nullptr;
-		mWindowEvents[i] = nullptr;
 		mGPUFences[i] = nullptr;
 		mFenceValues[i] = 0;
 	}
@@ -246,9 +245,9 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 
 void DisplaySurface::CreateSyncObjects()
 {
+	mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	for (int i = 0; i < FrameCount; i++)
-	{
-		mWindowEvents[i] = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	{	
 		mFenceValues[i] = 0;
 		mDeviceRef->CreateFence(mFenceValues[i], D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&mGPUFences[i]));
 		mGPUFences[i]->SetName(L"DisplaySurfaceSwapchainSync");
@@ -264,14 +263,16 @@ void DisplaySurface::StartFrame()
 	}
 
 	HRESULT res = S_FALSE;
+	static UINT idx_old=0;
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
 	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
 	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvents[idx]);
-		WaitForSingleObject(mWindowEvents[idx], INFINITE);
+		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
+		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
+	FlushAllGPUWork();
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 
@@ -280,6 +281,7 @@ void DisplaySurface::StartFrame()
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
+	idx_old=idx;
 }
 
 void DisplaySurface::EndFrame()
@@ -325,8 +327,8 @@ void DisplaySurface::FlushAllGPUWork()
 
 		if (mGPUFences[i]->GetCompletedValue() < mFenceValues[i])
 		{
-			mGPUFences[i]->SetEventOnCompletion(mFenceValues[i], mWindowEvents[i]);
-			WaitForSingleObject(mWindowEvents[i], INFINITE);
+			mGPUFences[i]->SetEventOnCompletion(mFenceValues[i], mWindowEvent);
+			WaitForSingleObject(mWindowEvent, INFINITE);
 		}
 	}
 }
@@ -356,8 +358,8 @@ void DisplaySurface::Resize()
 	int idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
 	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
 	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvents[idx]);
-		WaitForSingleObject(mWindowEvents[idx], INFINITE);
+		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
+		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
 
 	SAFE_RELEASE(mRTHeap);
