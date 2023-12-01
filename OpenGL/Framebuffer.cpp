@@ -1,4 +1,4 @@
-#include "FramebufferGL.h"
+#include "Framebuffer.h"
 #include <iostream>
 #include <string>
 #include "Platform/Core/RuntimeError.h"
@@ -13,20 +13,20 @@
 using namespace platform;
 using namespace opengl;
 
-FramebufferGL::FramebufferGL(const char* name):
-	Framebuffer(name),
+Framebuffer::Framebuffer(const char* name):
+	crossplatform::Framebuffer(name),
 	mFBOId(0)
 {
 	if (name)
 		this->name = name;
 }
 
-FramebufferGL::~FramebufferGL()
+Framebuffer::~Framebuffer()
 {
 	InvalidateDeviceObjects();
 }
 
-void FramebufferGL::SetWidthAndHeight(int w, int h, int m)
+void Framebuffer::SetWidthAndHeight(int w, int h, int m)
 {
 	if (Width != w || Height != h || mips != m)
 	{
@@ -40,14 +40,14 @@ void FramebufferGL::SetWidthAndHeight(int w, int h, int m)
 	}
 }
 
-void FramebufferGL::SetAsCubemap(int w, int num_mips, crossplatform::PixelFormat f)
+void Framebuffer::SetAsCubemap(int w, int num_mips, crossplatform::PixelFormat f)
 {
 	SetWidthAndHeight(w, w, num_mips);
 	SetFormat(f);
 	is_cubemap = true;
 }
 
-void FramebufferGL::SetFormat(crossplatform::PixelFormat f)
+void Framebuffer::SetFormat(crossplatform::PixelFormat f)
 {
 	if (target_format == f)
 	{
@@ -58,7 +58,7 @@ void FramebufferGL::SetFormat(crossplatform::PixelFormat f)
 		buffer_texture->InvalidateDeviceObjects();
 }
 
-void FramebufferGL::SetDepthFormat(crossplatform::PixelFormat f)
+void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
 {
 	if ((int)depth_format == f)
 	{
@@ -69,26 +69,26 @@ void FramebufferGL::SetDepthFormat(crossplatform::PixelFormat f)
 		buffer_depth_texture->InvalidateDeviceObjects();
 }
 
-bool FramebufferGL::IsValid() const
+bool Framebuffer::IsValid() const
 {
 	return ((buffer_texture != nullptr && buffer_texture->IsValid()) || (buffer_depth_texture != nullptr && buffer_depth_texture->IsValid()));
 }
 
-void FramebufferGL::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	crossplatform::Framebuffer::RestoreDeviceObjects(r);
 }
 
-void FramebufferGL::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
+void Framebuffer::ActivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 }
 
-void FramebufferGL::SetAntialiasing(int s)
+void Framebuffer::SetAntialiasing(int s)
 {
 	numAntialiasingSamples = s;
 }
 
-bool FramebufferGL::CreateBuffers()
+bool Framebuffer::CreateBuffers()
 {
 	if (!Width || !Height)
 	{
@@ -176,14 +176,14 @@ bool FramebufferGL::CreateBuffers()
 	return true;
 }
 
-void FramebufferGL::InvalidateDeviceObjects()
+void Framebuffer::InvalidateDeviceObjects()
 {
 	glDeleteFramebuffers((GLsizei)mFBOId.size(),mFBOId.data());
 	mFBOId.clear();
 	crossplatform::Framebuffer::InvalidateDeviceObjects();
 }
 
-void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
+void Framebuffer::Activate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
@@ -229,50 +229,19 @@ void FramebufferGL::Activate(crossplatform::GraphicsDeviceContext& deviceContext
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
-void FramebufferGL::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
+void Framebuffer::SetExternalTextures(crossplatform::Texture* colour, crossplatform::Texture* depth)
 {
 	crossplatform::Framebuffer::SetExternalTextures(colour, depth);
 }
 
-void FramebufferGL::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
-{
-	// This call must be made within a Activate - Deactivate block!
-	bool changed = false;
-	if (!colour_active)
-	{
-		changed = true;
-		Activate(deviceContext);
-	}
-	glClearColor(r, g, b, a);
-	GLenum settings = GL_COLOR_BUFFER_BIT;
-	if (buffer_depth_texture)
-	{
-		glDepthMask(GL_TRUE);
-		glClearDepth(d);
-		settings |= GL_DEPTH_BUFFER_BIT;
-	}
-	glClear(settings);
-
-	// Leave it as it was:
-	if (changed)
-	{
-		Deactivate(deviceContext);
-	}
-}
-
-void FramebufferGL::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a)
-{
-	SIMUL_BREAK("");
-}
-
-void FramebufferGL::Deactivate(crossplatform::GraphicsDeviceContext& deviceContext)
+void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
 	deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
 	colour_active   = false;
 	depth_active    = false;
 }
 
-void FramebufferGL::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
+void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	// This call must be made inside Activate - Deactivate block!
 	GLenum target = numAntialiasingSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;

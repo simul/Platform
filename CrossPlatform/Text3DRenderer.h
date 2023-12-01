@@ -30,6 +30,7 @@ namespace platform
 			void PushFontPath(const char *p);
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
+			void LoadShaders();
 			void RecompileShaders();
 			int Render(GraphicsDeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
 			int Render(MultiviewGraphicsDeviceContext &deviceContext,float* xs,float* ys,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
@@ -42,7 +43,6 @@ namespace platform
 			};
 		private:
 			std::vector<std::string> fontPaths;
-			void Recompile();
 			crossplatform::Effect						*effect=nullptr;
 			crossplatform::EffectTechnique				*backgTech=nullptr;
 			crossplatform::EffectTechnique				*textTech=nullptr;

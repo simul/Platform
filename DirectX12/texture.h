@@ -52,9 +52,9 @@ namespace platform
 			//! Cleans all the resources related with this object
 			void							InvalidateDeviceObjects();
 			//! Loads this texture from a file
-			void							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips);
+			bool							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips);
 			//! Loads this texture from multiple files
-			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
+			bool							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
 			bool							IsValid() const;
 			
 			void StoreExternalState(crossplatform::ResourceState);
@@ -90,6 +90,7 @@ namespace platform
 												,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
 												,crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
+			void							ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear) override;
 			void							ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
 			void							GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			bool							isMapped() const;

@@ -827,7 +827,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 #endif
 #endif
     crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-    RecompileShaders();
+    LoadShaders();
 }
 
 void RenderPlatform::FlushImmediateCommandList()
@@ -1070,14 +1070,6 @@ void RenderPlatform::InvalidateDeviceObjects()
         SAFE_RELEASE(mIContext.IAllocator);
         SAFE_RELEASE(mIContext.ICommandList);
     }
-}
-
-void RenderPlatform::RecompileShaders()
-{
-    if (!m12Device)
-        return;
-    shaders.clear();
-    crossplatform::RenderPlatform::RecompileShaders();
 }
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, const char *name)
@@ -1745,8 +1737,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p, crossplat
         case crossplatform::CompressionFormat::BC3:
             return DXGI_FORMAT_BC3_UNORM;
         default:
-            // TODO: Not idea. This adds alpha.
-            return DXGI_FORMAT_R8G8B8A8_UNORM;
+            // TODO: Not ideal. This adds alpha.
+            return DXGI_FORMAT_B8G8R8X8_UNORM;
         };
     case BGRA_8_UNORM:
         switch (c)
@@ -2406,20 +2398,15 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements, const cros
     l->Dx12InputLayout.resize(num_elements);
 
     for (int i = 0; i < num_elements; i++)
-    {
-        if (strcmp(desc[i].semanticName, "POSITION") != 0)
-        {
-            // strcat(desc[i].semanticName, std::to_string(desc[i].semanticIndex).c_str());
-        }
-        l->Dx12InputLayout[i].SemanticName = desc[i].semanticName;
+	{
+		l->Dx12InputLayout[i].SemanticName = desc[i].semanticName;
         l->Dx12InputLayout[i].SemanticIndex = desc[i].semanticIndex;
         l->Dx12InputLayout[i].Format = ToDxgiFormat(desc[i].format, platform::crossplatform::CompressionFormat::UNCOMPRESSED);
         l->Dx12InputLayout[i].InputSlot = desc[i].inputSlot;
         l->Dx12InputLayout[i].AlignedByteOffset = desc[i].alignedByteOffset;
         l->Dx12InputLayout[i].InputSlotClass = desc[i].perInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-        l->Dx12InputLayout[i].InstanceDataStepRate = desc[i].instanceDataStepRate;
-    }
-
+		l->Dx12InputLayout[i].InstanceDataStepRate = desc[i].instanceDataStepRate;
+	}
     // Fill the input layout description
     l->Dx12LayoutDesc.pInputElementDescs = l->Dx12InputLayout.data();
     l->Dx12LayoutDesc.NumElements = num_elements;

@@ -24,6 +24,11 @@ namespace platform
 				,pos_x(16)
 				,pos_y(16)
 				,screenshot(false)
+				,dx11(false)
+				,dx12(false)
+				,opengl(false)
+				,vulkan(false)
+				,debug(false)
 			{
 			}
 			bool operator()(const char *);
@@ -34,6 +39,8 @@ namespace platform
 			std::string logfile_utf8;
 			bool screenshot;
 			std::string screenshotFilenameUtf8;
+			bool dx11, dx12, opengl, vulkan;
+			bool debug;
 			std::vector<std::string> strings;
 		};
 		/// Convert the inputs to an executable into a CommandLineParams struct.
@@ -46,6 +53,8 @@ namespace platform
 				for (int i = 1; i < argCount; i++)
 				{
 					std::string arg(szArgList[i]);
+					auto FoundArg = [&](const std::string& value)->bool { return (arg.find(value) != std::string::npos); };
+
 					if(arg.find(".seq")==arg.length()-4&&arg.length()>4)
 						commandLineParams.seq_filename_utf8=arg;
 					if(arg.find(".sq")==arg.length()-3&&arg.length()>3)
@@ -92,6 +101,26 @@ namespace platform
 					{
 						commandLineParams.screenshot=true;
 						sc=true;
+					}
+					else if (FoundArg("-d3d11") || FoundArg("-D3D11") || FoundArg("-dx11") || FoundArg("-DX11"))
+					{
+						commandLineParams.dx11 = true;
+					}
+					else if (FoundArg("-d3d12") || FoundArg("-D3D12") || FoundArg("-dx12") || FoundArg("-DX12"))
+					{
+						commandLineParams.dx12 = true;
+					}
+					else if (FoundArg("-opengl") || FoundArg("-OPENGL") || FoundArg("-gl") || FoundArg("-GL"))
+					{
+						commandLineParams.opengl = true;
+					}
+					else if (FoundArg("-vulkan") || FoundArg("-VULKAN") || FoundArg("-vk") || FoundArg("-VK"))
+					{
+						commandLineParams.vulkan= true;
+					}
+					else if (FoundArg("-debug") || FoundArg("-DEBUG"))
+					{
+						commandLineParams.debug = true;
 					}
 					else
 						commandLineParams.strings.push_back(arg);

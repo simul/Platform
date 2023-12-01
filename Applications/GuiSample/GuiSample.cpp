@@ -7,8 +7,6 @@
 #include "Platform/ImGui/imgui_impl_platform.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/RenderDelegater.h"
-#include "Platform/DirectX11/DeviceManager.h"
-#include "Platform/DirectX11/RenderPlatform.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/Core/Timer.h"
 #include <tchar.h>
@@ -19,7 +17,17 @@ VisualStudioDebugOutput debug_buffer(true, NULL, 128);
 
 using namespace platform;
 // Data
+#if PLATFORM_SUPPORT_D3D11
+#include "Platform/DirectX11/DeviceManager.h"
+#include "Platform/DirectX11/RenderPlatform.h"
 dx11::DeviceManager deviceManager;
+#else
+#if PLATFORM_SUPPORT_VULKAN
+#include "Platform/Vulkan/DeviceManager.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+vulkan::DeviceManager deviceManager;
+#endif
+#endif
 crossplatform::GraphicsDeviceInterface* graphicsDeviceInterface = &deviceManager;
 crossplatform::DisplaySurfaceManager displaySurfaceManager;
 platform::core::CommandLineParams commandLineParams;
@@ -238,7 +246,13 @@ int main(int, char**)
 
 bool CreateDevice(HWND hWnd)
 {
-    renderPlatform = new dx11::RenderPlatform(); 
+#if PLATFORM_SUPPORT_D3D11
+    renderPlatform = new dx11::RenderPlatform();
+#else
+#if PLATFORM_SUPPORT_VULKAN
+    renderPlatform = new vulkan::RenderPlatform();
+#endif
+#endif
     platformRenderer = new PlatformRenderer(renderPlatform);
     graphicsDeviceInterface->Initialize(true, false, false);//commandLineParams("debug")
 
@@ -249,7 +263,7 @@ bool CreateDevice(HWND hWnd)
     std::string cmake_source_dir = STRING_OF_MACRO(CMAKE_SOURCE_DIR);
     if (cmake_binary_dir.length())
     {
-        platformRenderer->renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + platformRenderer->renderPlatform->GetPathName() + "/HLSL").c_str());
+        platformRenderer->renderPlatform->PushShaderPath(((std::string(STRING_OF_MACRO(PLATFORM_SOURCE_DIR)) + "/") + platformRenderer->renderPlatform->GetPathName() + "/Sfx").c_str());
         platformRenderer->renderPlatform->PushShaderBinaryPath(((cmake_binary_dir + "/") + platformRenderer->renderPlatform->GetPathName() + "/shaderbin").c_str());
         std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + platformRenderer->renderPlatform->GetPathName());
         platformRenderer->renderPlatform->PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());

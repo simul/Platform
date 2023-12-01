@@ -26,8 +26,9 @@ namespace platform
 			//! Make sure no invalid data is retained.
 			void ClearBuffers(GraphicsDeviceContext &deviceContext);
 			void ResetBuffers();
-			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
 			void RecompileShaders();
+			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
+			void LoadShaders();
 			int bands;
 			void SetBands(int b)
 			{
@@ -62,6 +63,7 @@ namespace platform
 			/// Copy from a given mip face to the next one down, with blending or without (if blend is 0).
 			void CopyMip(GraphicsDeviceContext &deviceContext,Texture *tex,int face,int mip,float blend);
 		protected:
+			void NotifyEffectsRecompiled();
 			RenderPlatform *renderPlatform;
 			StructuredBuffer<vec4>	probeResultsRW;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;

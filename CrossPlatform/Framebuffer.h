@@ -58,9 +58,11 @@ namespace platform
 			}
 			virtual void SetGenerateMips(bool);
 			//! Clear the colour and depth buffers if present.
-			virtual void Clear(crossplatform::GraphicsDeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
-			//! Set the size of the framebuffer in pixel height and width.
-			virtual void ClearColour(crossplatform::GraphicsDeviceContext &context,float,float,float,float)=0;
+			virtual void Clear(crossplatform::GraphicsDeviceContext &context,float r,float g,float b,float a,float depth);
+			//! Clear the colour buffers if present.
+			virtual void ClearColour(crossplatform::GraphicsDeviceContext &context,float r,float g,float b,float a);
+			//! Clear the depth buffers if present.
+			virtual void ClearDepth(crossplatform::GraphicsDeviceContext &context,float depth);
 			//! Set the size of the framebuffer.
 			virtual void SetWidthAndHeight(int w,int h,int num_mips=1);
 			//! Set this to be a cubemap framebuffer, so that its texture object will be a cubemap. Equivalent to SetWidthAndHeight.

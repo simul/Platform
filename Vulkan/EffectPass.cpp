@@ -312,7 +312,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		{
 			numDescriptors--;
 			b--;
-			SIMUL_BREAK_ONCE("Possibly missing constant buffer");
+			SIMUL_BREAK_ONCE("Pass {0}, possibly missing constant buffer in slot {1}: {2}", name,slot, effect->GetConstantBufferNameAtSlot(slot));
 			continue;
 		}
 		vulkan::PlatformConstantBuffer* pcb = (vulkan::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
@@ -923,7 +923,7 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 		const auto& lDesc = layout->GetDesc();
 		for (const auto& l : lDesc)
 		{
-			hashval += ((unsigned long long)l.format) * 3279;
+			hashval += ((unsigned long long)l.format) * 3279 + ((unsigned long long)l.semanticIndex) * 6357;
 		}
 	}
 	if (blendState)

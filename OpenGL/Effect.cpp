@@ -9,7 +9,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/OpenGL/Effect.h"
 #include "Platform/OpenGL/RenderPlatform.h"
-#include "Platform/OpenGL/FramebufferGL.h"
+#include "Platform/OpenGL/Framebuffer.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/Core/DefaultFileLoader.h"
 #include "Platform/Core/StringFunctions.h"
@@ -411,15 +411,6 @@ Effect::Effect()
 {
 }
 
-bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
-{
-	if (EnsureEffect(r, filename_utf8))
-		return crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
-
-}
-
 Effect::~Effect()
 {
 	platform_effect=0;
@@ -519,7 +510,7 @@ Shader::~Shader()
 	Release();
 }
 
-void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t)
+bool Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *fileData, size_t DataSize, crossplatform::ShaderType t)
 {
 	Release();
 
@@ -574,11 +565,13 @@ void Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		std::cerr<<filename_utf8<<": error: " << "Failed to compile the shader: " << filename_utf8 << "\n";
 		if(infoLog.data() && infoLog.size())			SIMUL_COUT << infoLog.data() << std::endl;
 		SIMUL_BREAK_ONCE("");
+		return false;
 	}
 	else
 	{
 		ShaderId = shaderId;
 	}
+	return true;
 }
 
 void Shader::Release()
@@ -663,12 +656,20 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 			glAttachShader(mProgramId, c->ShaderId);
 		}
 		glGetProgramiv(mProgramId, GL_ATTACHED_SHADERS, &attachedShaders);
+		
 
+		GLint isLinked = 0;
 		//Link program:
 		if ((v && f && attachedShaders == 2) || (c && attachedShaders == 1))
 		{
 			glLinkProgram(mProgramId);
-			glValidateProgram(mProgramId);
+			glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
+			if(isLinked)
+				glValidateProgram(mProgramId);
+			else
+			{
+				SIMUL_CERR << "Failed to link program for pass: " << this->name.c_str() << "\n";
+			}
 		}
 		else
 		{
@@ -677,15 +678,13 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		}
 		
 		// Check link and validate status:
-
-		GLint isLinked = 0;
-		glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
 		GLint isValid = 0;
 		glGetProgramiv(mProgramId, GL_VALIDATE_STATUS, &isValid);
 
 		if (isLinked == 0 || isValid == 0)
 		{
 			GLint maxLength = 0;
+			glLinkProgram(mProgramId);
 			glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
 			std::vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &infoLog[0]);

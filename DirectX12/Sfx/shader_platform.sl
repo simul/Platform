@@ -3,6 +3,7 @@
 #include "CppSl.sl"
 
 #ifndef __cplusplus
+
 // Disable the warning "pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values..."
 // because it is not helpful for optimized code.
 #pragma warning(disable : 3571)
@@ -11,43 +12,28 @@
 // warning about using uint divides instead of int. Not always practical.
 #pragma warning(disable : 3556)
 // Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
-#define IN_COMPUTE_SHADER
-#define f32touint16 f32tof16
+
 
 #endif
-
 
 #define constant_buffer ALIGN_16 cbuffer
 
 #ifndef __cplusplus
-	#define char4 snorm float4
-	#define vec2 float2
-	#define vec3 float3
-	#define vec4 float4
-	#define uchar4 unorm float4
-	#define mat2 float2x2
-	#define mat3 float3x3
-	#define mat4 float4x4
-	#define float16_t min16float
-	#define f16vec2 min16float2
-	#define f16vec3 min16float3
-	#define f16vec4 min16float4
-	#define f16mat2 min16float2x2
-	#define f16mat3 min16float3x3
-	#define f16mat4 min16float4x4
-	#define int16_t min16int
-	#define i16vec2 min16int2
-	#define i16vec3 min16int3
-	#define i16vec4 min16int4
-	#define uint16_t min16uint
-	#define u16vec2 min16uint2
-	#define u16vec3 min16uint3
-	#define u16vec4 min16uint4
-	#define mix lerp
-	#define fract frac
 	#define layout(a)
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
+
+#ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
+	vec2 BottomUpTextureCoordinates(vec2 texc)
+	{
+		return vec2(texc.x,1.0-texc.y);
+	}
+	vec4 BottomUpTextureCoordinates4(vec4 texc)
+	{
+		return vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w);
+	}
+	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
+#endif
 #endif
 
 #endif

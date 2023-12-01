@@ -17,6 +17,7 @@ target_compile_definitions( Core_MT PUBLIC FMT_HEADER_ONLY )
 
 if(PLATFORM_BUILD_MD_LIBS)
 # Setup and build the dynamic library.
-add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_CORE_DLL=1 FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} LINK md_fmt$<$<CONFIG:DEBUG>:d>)
+add_dynamic_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} DEFINITIONS PLATFORM_CORE_DLL=1 LINK fmt::fmt-header-only FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_compile_definitions( Core_MD PRIVATE FMT_HEADER_ONLY)
 endif()
 

@@ -382,10 +382,14 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 			if (ta.dimensions == 3)
 			{
 				ta.texture = rPlat->GetDummy3D();
+				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_3D;
+				ta.subresource = {};
 			}
 			else
 			{
 				ta.texture = rPlat->GetDummy2D();
+				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_2D;
+				ta.subresource = {};
 			}
 		}
 		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, { ta.resourceType, ta.subresource });
@@ -1139,7 +1143,7 @@ Shader::~Shader()
 	SAFE_RELEASE(shaderTableResource);
 }
 
-void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t DataSize, crossplatform::ShaderType t)
+bool Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t DataSize, crossplatform::ShaderType t)
 {
 	struct FileBlob
 	{
@@ -1150,6 +1154,19 @@ void Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	type = t;
 	shader12.resize(DataSize);
 	memcpy(shader12.data(), data, DataSize);
+	{
+#ifdef WIN64
+		HRESULT res = D3DReflect(shader12.data(), shader12.size(), IID_ID3D11ShaderReflection,(void**)&mShaderReflection);
+		if (res != S_OK)
+		{
+			return true;
+		}
+		// Get shader description to check it's working
+		D3D12_SHADER_DESC shaderDesc = {};
+		res = mShaderReflection->GetDesc(&shaderDesc);
+#endif
+	}
+	return true;
 }
 
 ///////////
@@ -1175,11 +1192,7 @@ bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
 	renderPlatform = r;
 	bool success = true;
-	if (EnsureEffect(r, filename_utf8))
-		success = crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
-
+	success = crossplatform::Effect::Load(r, filename_utf8);
 	// Init the samplers heap:
 	SAFE_DELETE(mSamplersHeap);
 	auto rPlat = (dx12::RenderPlatform*)r;

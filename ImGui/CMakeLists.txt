@@ -33,7 +33,7 @@ target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/glfw/
 
 add_multiplatform_sfx_shader_project( ImGui_MT INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
 								"${SIMUL_PLATFORM_DIR}/.."
-							SOURCES ${SHADERS} ${SHADER_INCLUDES} OPTIONS -w DEFINES VULKAN_SDK=${VULKAN_SDK_DIR}
+							SOURCES ${SHADERS} ${SHADER_INCLUDES} OPTIONS DEFINES VULKAN_SDK=${VULKAN_SDK_DIR}
 					 		OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" )
 if(PLATFORM_BUILD_MD_LIBS)
 # Setup and build the dynamic library.

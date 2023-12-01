@@ -223,7 +223,7 @@ namespace platform
 				}
 			virtual ~Shader(){}
 			virtual void Release(){}
-			virtual void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
+			virtual bool load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesConstantBufferSlot(int s);
@@ -270,6 +270,7 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
+			std::string name;
 			crossplatform::RenderState *blendState;
 			crossplatform::RenderState *depthStencilState;
 			crossplatform::RenderState *rasterizerState;
@@ -285,7 +286,6 @@ namespace platform
 			bool multiview = false;
 			int3 numThreads = { 0,0,0 };
 			std::string rtFormatState;
-			std::string name;
 			EffectPass(RenderPlatform *r,Effect *parent);
 			virtual ~EffectPass();
 
@@ -405,6 +405,16 @@ namespace platform
 			crossplatform::Effect* effect;
 			crossplatform::Topology topology=Topology::UNDEFINED;
 		};
+		class SIMUL_CROSSPLATFORM_EXPORT EffectVariantPass
+		{
+		public:
+			std::string name;
+			std::map<std::string, EffectPass *> passes;
+			//! Get the pass (if it exists) with the specified vertex input layout and named pixel shader.
+			EffectPass *GetPass(const char *shader1, uint64_t layoutHash, const char *pixel_shader);
+			//! Get the pass (if it exists) with the named shaders.
+			EffectPass* GetPass(const char *shader1,const char *shader2=nullptr); 
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		protected:
@@ -481,12 +491,15 @@ namespace platform
 			}
 			bool should_fence_outputs;
 			int NumPasses() const;
+			EffectVariantPass *AddVariantPass(const char *name);
+			EffectVariantPass *GetVariantPass(const char *name);
 			virtual EffectPass *AddPass(const char *name,int i)=0;
 			EffectPass *GetPass(int i) const;
 			EffectPass *GetPass(const char *name) const;
 			bool		HasPass(int i) const;
 			bool		HasPass(const char *name) const;
 		protected:
+			std::map<std::string,std::shared_ptr<EffectVariantPass>> variantPasses;
 			RenderPlatform *renderPlatform;
 			crossplatform::Effect *effect;
 		};
@@ -529,10 +542,20 @@ namespace platform
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
 			std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
+			std::unordered_map<std::string, int> constantBufferSlots;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
+
+			/// Get or create an API-specific shader object.
+			Shader *EnsureShader(const char *filenameUtf8, ShaderType t);
+			Shader *EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t);
 		public:
+			RenderPlatform* GetRenderPlatform()
+			{
+			return renderPlatform;
+			}
+			std::map<std::string,std::shared_ptr<Shader>> shaders;
 			GroupMap groups;
 			TechniqueMap techniques;
 			TechniqueCharMap techniqueCharMap;
@@ -556,7 +579,6 @@ namespace platform
 			}
 			virtual void InvalidateDeviceObjects();
 			virtual bool Load(RenderPlatform *renderPlatform,const char *filename_utf8);
-			virtual bool Compile(const char *);
 			// Which texture is at this slot. Warning: slow.
 			std::string GetTextureForSlot(int s) const
 			{
@@ -570,7 +592,9 @@ namespace platform
 				return std::string("Unknown");
 
 			}
-			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s) ;
+			const crossplatform::ShaderResource *GetShaderResourceAtSlot(int s);
+			std::string GetShaderResourceNameAtSlot(int s);
+			std::string GetConstantBufferNameAtSlot(int s);
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
@@ -615,7 +639,9 @@ namespace platform
 			//! Map of sampler states used by this effect
 			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
 			//! Ensure it's built and up-to-date. Returns false if a required shader compilation fails.
+			#if 0
 			bool EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
+			#endif
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{

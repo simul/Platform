@@ -9,7 +9,7 @@ typedef ID3D12Device5 ID3D12DeviceType;
 #pragma comment(lib,"D3dcompiler.lib")
 #pragma comment(lib,"DXGI.lib")
 #define PLATFORM_NAME "DirectX 12"
-#define SFX_CONFIG_FILENAME "Sfx/DirectX12.json"
+#define SFX_CONFIG_FILENAME "DirectX12/Sfx/DirectX12.json"
 
 //https://github.com/microsoft/DirectX-Headers/blob/main/include/directx/d3dx12_pipeline_state_stream.h
 //https://www.techthoughts.info/windows-version-numbers/

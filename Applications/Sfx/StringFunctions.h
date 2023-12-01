@@ -7,6 +7,7 @@
 #include "SfxClasses.h"
 
 
+extern void WriteInt(std::string &out, size_t setting);
 extern std::vector<std::string> SplitPath(const std::string& fullPath);
 extern std::string NextName(const std::string &Line);
 extern std::string GetFilenameOnly(const std::string &str);
@@ -21,12 +22,6 @@ extern const float *NextVector3(const std::string &Line);
 extern const float *NextVector2(const std::string &Line);
 extern float NextFloat(const std::string &Line,size_t &idx);
 extern float NextFloat(const std::string &Line);
-extern float NextSpeed(const std::string &Line,size_t &idx);
-extern float NextTorque(const std::string &Line);
-extern float AsPhysicalValue(const std::string &Line);
-extern float NextPower(const std::string &Line);
-extern float NextTorque(const std::string &Line,size_t &idx);
-extern float NextPower(const std::string &Line,size_t &idx);
 extern size_t GoToLine(const std::string &Str,size_t line);
 extern std::string ToString(int i);
 extern std::string ToString(float i);
@@ -46,6 +41,7 @@ std::string ToString(sfx::FilterMode x);
 std::string ToString(sfx::AddressMode x);
 extern std::string GetEnv(const std::string &name);
 extern std::string join(const std::set<std::string> &replacements,std::string sep);
+extern std::string join_vector(const std::vector<std::string> &replacements,std::string sep);
 extern size_t count_lines_in_string(const std::string &str);
 #endif
 

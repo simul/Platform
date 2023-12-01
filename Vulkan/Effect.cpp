@@ -17,6 +17,10 @@
 #include "Platform/Core/CommandLine.h"
 #include "Platform/Core/EnvironmentVariables.h"
 
+#include <filesystem>
+using namespace std::literals;
+using namespace std::string_literals;
+using namespace std::literals::string_literals;
 using namespace platform;
 using namespace vulkan;
 
@@ -134,51 +138,6 @@ Effect::Effect()
 {
 }
 
-bool Effect::Compile(const char *filename_utf8)
-{
-	/* SIMUL/Tools/bin/Sfx.exe  -I"SIMUL\Platform\Vulkan\GLSL;SIMUL\Platform\CrossPlatform\SL"
-											-O"SIMUL\Platform\Vulkan\shaderbin"
-												-P"SIMUL\Platform\Vulkan\GLSL\GLSL.json"
-												-m"SIMUL\Platform\Vulkan\shaderbin" 
-												*/
-
-	std::string filename_fx(filename_utf8);
-	if(filename_fx.find(".")>=filename_fx.length())
-		filename_fx+=".sfx";
-	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
-	filenameInUseUtf8=filename_fx;
-	if(index==-2||index>=(int)renderPlatform->GetShaderPathsUtf8().size())
-	{
-		filenameInUseUtf8=filename_fx;
-		SIMUL_CERR<<"Failed to find shader source file "<<filename_utf8<<std::endl;
-		return false;
-	}
-	else if(index<renderPlatform->GetShaderPathsUtf8().size())
-		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
-	//wchar_t wd[1000];
-	//_wgetcwd(wd,1000);
-	std::string shaderbin = renderPlatform->GetShaderBinaryPathsUtf8().back();
-	std::string SIMUL=core::EnvironmentVariables::GetSimulEnvironmentVariable("SIMUL");
-#ifdef _MSC_VER
-	std::string sfxcmd="{SIMUL}/Tools/bin/Sfx.exe";
-	if (SIMUL == "")
-		SIMUL = "d:/jarvis/releases/simulversion/4.2/simul/"; //Find a better way of fixing this, this is a temp fix
-#else
-	std::string sfxcmd="{SIMUL}/build/bin/Sfx";
-	if(SIMUL=="")
-		SIMUL="/home/roderick/Documents/Simul/4.2/Simul";
-#endif
-	std::string command=sfxcmd+" -I\"{SIMUL}/Platform/Vulkan/GLSL;{SIMUL}/Platform/CrossPlatform/SL\""
-											" -O\""+shaderbin+"\""
-												" -P\"{SIMUL}/Platform/Vulkan/GLSL/GLSL.json\""
-												" -m\"" + shaderbin + "\" ";
-	command+=filenameInUseUtf8.c_str();
-	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
-
-	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	return platform::core::RunCommandLine(command.c_str(),  cc);
-}
-
 Effect::~Effect()
 {
 	platform_effect=0;
@@ -186,10 +145,10 @@ Effect::~Effect()
 
 bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-	if (EnsureEffect(r, filename_utf8))
+	
 		return crossplatform::Effect::Load(r, filename_utf8);
-	else
-		return false;
+	
+
 }
 
 EffectTechnique* Effect::CreateTechnique()

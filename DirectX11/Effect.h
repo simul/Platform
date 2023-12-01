@@ -49,7 +49,7 @@ namespace platform
 		public:
 			virtual ~Shader();
 			void Release() override;
-			void load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) override;
+			bool load(crossplatform::RenderPlatform* r, const char* filename_utf8, const void* data, size_t len, crossplatform::ShaderType t) override;
 
 			std::vector<uint8_t>		shader11;
 			union
@@ -88,7 +88,6 @@ namespace platform
 		public:
 			Effect();
 			virtual ~Effect();
-			bool Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8) override;
 
 			void PostLoad() override;
 

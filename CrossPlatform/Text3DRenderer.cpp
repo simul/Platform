@@ -154,7 +154,7 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 #if PLATFORM_USE_FREETYPE
 	{
 		platform::core::FileLoader *fileLoader=platform::core::FileLoader::GetFileLoader();
-		std::string filename = fileLoader->FindFileInPathStack("Exo-SemiBold.ttf", fontPaths);
+		std::string filename = fileLoader->FindFileInPathStack("Exo2-SemiBold.ttf", fontPaths);
 		if(filename.length()>0)
 		{
 			void *ttf_data=nullptr;
@@ -181,9 +181,10 @@ void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	#endif
 
 	constantBuffer.InvalidateDeviceObjects();
+	ERRNO_BREAK
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	ERRNO_BREAK
-	RecompileShaders();
+	LoadShaders();
 	ERRNO_BREAK
 	SAFE_DELETE(font_texture);
 	font_texture = renderPlatform->CreateTexture("Font16-11.png");
@@ -235,14 +236,16 @@ void Text3DRenderer::RecompileShaders()
 {
 	if (!renderPlatform)
 		return;
-	recompile = true;
+	renderPlatform->ScheduleRecompileEffects({"font"},[this](){recompile=true;});
 }
 
-void Text3DRenderer::Recompile()
+void Text3DRenderer::LoadShaders()
 {
 	recompile = false;
 	SAFE_DELETE(effect);
-	effect=renderPlatform->CreateEffect("font");
+	ERRNO_BREAK
+	effect = renderPlatform->CreateEffect("font");
+	ERRNO_BREAK
 	constantBuffer.LinkToEffect(effect,"TextConstants");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
@@ -260,7 +263,7 @@ int Text3DRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y
 	int passIndex = supportShaderViewID ? 0 : 1;
 
 	if (recompile)
-		Recompile();
+		LoadShaders();
 	float transp[]={0.f,0.f,0.f,0.f};
 	float white[]={1.f,1.f,1.f,1.f};
 	if(!clr)
@@ -370,7 +373,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 	SIMUL_ASSERT_WARN(supportShaderViewID, "Graphics API doesn't support SV_ViewID/gl_ViewIndex in the shader. Falling back to single view rendering.");
 
 	if (recompile)
-		Recompile();
+		LoadShaders();
 	float transp[] = { 0.f,0.f,0.f,0.f };
 	float white[] = { 1.f,1.f,1.f,1.f };
 	if (!clr)

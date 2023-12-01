@@ -4,6 +4,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <thread>
+#include <functional>
+#include <atomic>
 #include "Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
@@ -155,7 +158,7 @@ namespace platform
 			and /link CreateBuffer buffers/endlink
 
 			Be sure to make the following calls at the appropriate places:
-			RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders()
+			RestoreDeviceObjects(), InvalidateDeviceObjects(), LoadShaders()
 			*/
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
@@ -210,8 +213,10 @@ namespace platform
 			virtual void RestoreDeviceObjects(void*);
 			//! Platform-dependent function called when uninitializing the Render Platform.
 			virtual void InvalidateDeviceObjects();
+			//! Recompile the shaders asynchronously with Sfx. Shaders will be reloaded when done.
+			void RecompileShaders();
 			//! Platform-dependent function to reload the shaders - only use this for debug purposes.
-			virtual void RecompileShaders	();
+			virtual void LoadShaders();
 			//! Implementations of RenderPlatform will cache the API state in order to reduce driver overhead.
 			//! But we can't always be sure that external render code hasn't modified the API state. So by calling SynchronizeCacheAndState()
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
@@ -290,7 +295,7 @@ namespace platform
 			virtual void Draw				(GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
 			virtual void DrawIndexed		(GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
-			virtual void DrawLine			(GraphicsDeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
+			virtual void DrawLine			(GraphicsDeviceContext &deviceContext,vec3 pGlobalBasePosition, vec3 pGlobalEndPosition,vec4 colour,float width);
 		
 			virtual void DrawLineLoop		(GraphicsDeviceContext &,const double *,int ,const double *,const float [4]){}
 
@@ -307,7 +312,7 @@ namespace platform
 			virtual int Print				(MultiviewGraphicsDeviceContext &deviceContext,float* xs,float* ys,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			//! Print diagnostics, starting from the top, and going down the screen one line each time as the frame progresses, then restarting next frame.
 			void LinePrint					(GraphicsDeviceContext &deviceContext,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false){}
+			void DrawLines					(GraphicsDeviceContext &,PosColourVertex * /*lines*/,int /*count*/,bool /*strip*/=false,bool /*test_depth*/=false,bool /*view_centred*/=false);
 			void Draw2dLine					(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
 			virtual void Draw2dLines		(GraphicsDeviceContext &/*deviceContext*/,PosColourVertex * /*lines*/,int /*vertex_count*/,bool /*strip*/){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.
@@ -355,6 +360,9 @@ namespace platform
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8);
+			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
+			void ScheduleRecompileEffects			(std::vector<std::string> effect_names,std::function <void()> f);
+			float GetRecompileStatus(std::string &txt);
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
@@ -419,9 +427,7 @@ namespace platform
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
 			///
 			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
-			/// This function is called to ensure that the named shader is compiled.
-			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8);
-
+		
 			/// <summary>
 			/// Apply the specified effect pass for use in a draw or compute call. Must be followed by UnapplyPass() when done.
 			/// </summary>
@@ -438,7 +444,7 @@ namespace platform
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
 			virtual void					RestoreRenderState				(DeviceContext &){}
-			/// Apply the RenderState to the device context - e.g. blend state, depth masking etc.
+			/// Apply the RenderState to the device context - e.g. blend state, depth maskeletong etc.
 			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
@@ -483,8 +489,8 @@ namespace platform
 			}
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
-			crossplatform::Effect *solidEffect;
-			crossplatform::Effect *copyEffect;
+			crossplatform::Effect *solidEffect = nullptr;
+			crossplatform::Effect *copyEffect = nullptr;
 			std::map<std::string,crossplatform::Material*> materials;
 			std::map<std::string, crossplatform::Texture*> textures;
 			std::vector<std::string> GetTexturePathsUtf8(); 
@@ -504,6 +510,21 @@ namespace platform
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
+			/// Asynchronously recompile the effect.
+			void ScheduleRecompileEffect			(std::string effect_name,std::function <void()> f) ;
+			struct EffectRecompile
+			{
+				std::string effect_name;
+				std::function <void()> callback;
+			};
+			std::thread effectCompileThread;
+			std::vector<EffectRecompile> effectsToCompile;
+			bool recompileThreadActive=true;
+			bool recompiled=false;
+			static std::atomic<int> numPlatforms;
+			void recompileAsync();
+			bool RecompileEffect(std::string effect_filename);
+			void NotifyEffectRecompiled();
 			void EnsureContextFrameHasBegun(DeviceContext& deviceContext);
 			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
 			virtual void ContextFrameBegin(GraphicsDeviceContext&);
@@ -520,7 +541,7 @@ namespace platform
 			std::vector<std::string> shaderBinaryPathsUtf8;
 			std::map<std::string,SamplerState*> sharedSamplerStates;
 
-			ShaderBuildMode					shaderBuildMode;
+			ShaderBuildMode					shaderBuildMode=ShaderBuildMode::NEVER_BUILD;
 			GraphicsDeviceContext			immediateContext;
 			ComputeDeviceContext			computeContext;
 			// All for debug Effect
@@ -551,12 +572,14 @@ namespace platform
 			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.
-			std::map<std::string, Shader*> shaders;
+			//std::map<std::string, Shader*> shaders;
 			std::unordered_map<const void *,ContextState *> contextState;
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			bool initializedDefaultShaderPaths = false;
+			std::shared_ptr<Buffer> debugVertexBuffer;
+			std::shared_ptr<Layout> posColourLayout;
 		};
 
 		/// Draw a horizontal grid in 3D.

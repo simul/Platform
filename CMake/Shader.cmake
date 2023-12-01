@@ -88,6 +88,7 @@ endfunction()
 function ( add_multiplatform_sfx_shader_project targetName )
 	if(SIMUL_BUILD_SHADERS)
 		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES;CONFIG_FILES" ${ARGN} )
+		#message("Shaders files: " ${sfx_SOURCES})
 		# default include paths
 		set(sfx_INCLUDES ${sfx_INCLUDES} "${SIMUL_PLATFORM_DIR}/CrossPlatform/Shaders")
 		if (NOT TARGET ${targetName})
@@ -158,7 +159,7 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					string(REPLACE ".sfx" ".sfxo" out_f ${name})
 					set(out_f "${out_folder}/${out_f}")
 					string(REPLACE ".sfxo" ".sfx_summary" main_output_file ${out_f})
-					#message("main_output_file ${main_output_file}")
+					#message("add_custom_command ${in_f} ${main_output_file}")
 					add_custom_command(OUTPUT ${main_output_file}
 						COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
 						MAIN_DEPENDENCY ${in_f}

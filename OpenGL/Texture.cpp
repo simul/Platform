@@ -84,7 +84,7 @@ void Texture::SetName(const char* n)
 	}
 }
 
-void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips)
+bool Texture::LoadFromFile(crossplatform::RenderPlatform *r, const char *pFilePathUtf8, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;
@@ -156,12 +156,13 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePa
 	// By default, generate mips:
 	crossplatform::GraphicsDeviceContext dc;
 	//if(gen_mips)
-		GenerateMips(dc);
+	GenerateMips(dc);
 
 	glObjectLabel(GL_TEXTURE, mTextureID, -1, pFilePathUtf8);
+	return true;
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vector<std::string>& texture_files,bool gen_mips)
+bool Texture::LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips)
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;
@@ -221,6 +222,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform* r, const std::vect
 	loadedTextures.clear();
 	
 	// CreateFBOs(1);
+	return true;
 }
 
 bool Texture::IsValid()const
@@ -462,9 +464,45 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	return false;
 }
 
+void Texture::ClearColour(crossplatform::GraphicsDeviceContext& deviceContext, vec4 colourClear)
+{
+	GLuint framebuffer = 0;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mTextureID, 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		SIMUL_CERR << "FBO is not complete!\n";
+	}
+
+	glClearColor(colourClear.x, colourClear.y, colourClear.z, colourClear.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &framebuffer);
+}
+
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
+	GLuint framebuffer = 0;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
+	GLenum texture_target = mNumSamples == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture_target, mTextureID, 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		SIMUL_CERR << "FBO is not complete!\n";
+	}
+
+	glDepthMask(GL_TRUE);
+	glClearDepthf(depthClear);
+	glClearStencil(stencilClear);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &framebuffer);
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext)

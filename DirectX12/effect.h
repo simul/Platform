@@ -143,7 +143,7 @@ namespace platform
 		{
 		public:
 			~Shader();
-			void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
+			bool load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
 			std::vector<uint8_t>		shader12;
 			// If raytracing, store in D3D12Resource pointers.
 			ID3D12Resource *shaderTableResource=nullptr;

@@ -48,6 +48,11 @@
 #define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 
 #ifndef __cplusplus
+#ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
+	#define BottomUpTextureCoordinates(original_texc) original_texc
+	#define BottomUpTextureCoordinates4(original_texc) original_texc
+	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
+#endif
 	#define ALIGN_16
 	#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
 	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)

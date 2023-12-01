@@ -28,16 +28,29 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
+#include <fmt/core.h>
 
 using namespace std::literals;
 using namespace std::string_literals;
 using namespace std::literals::string_literals;
 
+#if PLATFORM_IMPLEMENT_STB_IMAGE
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif
 #ifdef _MSC_VER
 #define __STDC_LIB_EXT1__
 #endif
-#include "Platform/External/stb/stb_image_write.h"
+
+// Disambiguate stb usage, prevent double-definition errors at link time.
+namespace platform
+{
+	#include "Platform/External/stb/stb_image.h"
+	#include "Platform/External/stb/stb_image_write.h"
+}
+
+
 #include "Platform/Math/Float16.h"
 
 #ifdef _MSC_VER
@@ -45,21 +58,19 @@ using namespace std::literals::string_literals;
 #else
 #include <cmath>		// for isinf()
 #endif
+#include <Platform/Core/CommandLine.h>
 
 using namespace platform;
 using namespace crossplatform;
 
 std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
+std::atomic<int> RenderPlatform::numPlatforms=0;
 
 RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
-	,solidEffect(nullptr)
-	,copyEffect(nullptr)
 	,memoryInterface(m)
-	,shaderBuildMode(NEVER_BUILD)
-	,debugEffect(nullptr)
 	,textured(nullptr)
 	,untextured(nullptr)
 	,showVolume(nullptr)
@@ -70,10 +81,16 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 {
 	immediateContext.renderPlatform=this;
 	computeContext.renderPlatform=this;
+#if defined(WIN32) && !defined(_GAMING_XBOX)
+	effectCompileThread = std::thread(&RenderPlatform::recompileAsync,this);
+#endif
+	numPlatforms++;
 }
-
 RenderPlatform::~RenderPlatform()
 {
+	numPlatforms--;
+	recompileThreadActive=false;
+	effectCompileThread.join();
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
@@ -84,6 +101,128 @@ RenderPlatform::~RenderPlatform()
 		delete mat;
 	}
 	materials.clear();
+}
+
+void RenderPlatform::recompileAsync()
+{
+	while(recompileThreadActive)
+	{
+		if(!effectsToCompile.size())
+		{
+			std::this_thread::sleep_for(1000ms);
+			std::this_thread::yield();
+			continue;
+		}
+		std::string effect_name=effectsToCompile[0].effect_name;
+		auto callback=effectsToCompile[0].callback;
+		effectsToCompile.erase(effectsToCompile.begin());
+		if(!effect_name.length())
+			continue;
+		// Do next shader compile.
+		if(RecompileEffect(effect_name))
+		{
+			if(recompileThreadActive)
+			{
+				if(callback)
+					callback();
+			}
+		}
+	}
+}
+static std::string recompiling_effect_name;
+
+float RenderPlatform::GetRecompileStatus(std::string &txt)
+{
+	if(!effectsToCompile.size())
+		return 0.0f;
+	txt=recompiling_effect_name;
+	return (float)effectsToCompile.size();
+}
+
+static bool RewriteOutput(std::string str)
+{
+	std::cerr<<str.c_str();
+	return true;
+}
+
+
+bool RenderPlatform::RecompileEffect(std::string effect_filename)
+{
+#if defined(WIN32) && !defined(_GAMING_XBOX)
+	recompiling_effect_name=effect_filename;
+	std::string filename_fx=effect_filename;
+	size_t dot_pos=filename_fx.find(".");
+	size_t len=filename_fx.size();
+	if(dot_pos>=len)
+		filename_fx+=".sfx";
+	auto buildMode = GetShaderBuildMode();
+	if ((buildMode & crossplatform::BUILD_IF_CHANGED) == 0)
+		return false;
+	int index= platform::core::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),GetShaderPathsUtf8());
+	std::string filenameInUseUtf8=filename_fx;
+	if(index==-2||index>=(int)GetShaderPathsUtf8().size())
+	{
+		filenameInUseUtf8=filename_fx;
+		SIMUL_CERR<<"Failed to find shader source file "<<effect_filename.c_str()<<std::endl;
+		recompiling_effect_name="";
+		return false;
+	}
+	else if(index<GetShaderPathsUtf8().size())
+		filenameInUseUtf8=(GetShaderPathsUtf8()[index]+"/")+filename_fx;
+	std::string shaderbin = GetShaderBinaryPathsUtf8().back();
+	std::string exe_dir = platform::core::GetExeDirectory();
+	std::string SIMUL= std::filesystem::weakly_canonical((exe_dir + "/../../..").c_str()).generic_string();
+	std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(CMAKE_BINARY_DIR);
+	std::string platform_source_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_SOURCE_DIR);
+	auto bin_to_platform=std::filesystem::relative(std::filesystem::path(platform_source_dir),std::filesystem::path(cmake_binary_dir)).generic_string();
+	std::string PLATFORM= std::filesystem::weakly_canonical((exe_dir + "/../../"s+bin_to_platform).c_str()).generic_string();
+	std::string BUILD_DIR= std::filesystem::weakly_canonical((exe_dir + "/../..").c_str()).generic_string();
+#ifdef _MSC_VER
+	std::string sfxcmd=BUILD_DIR+"/bin/Release/Sfx.exe";
+#else
+	std::string sfxcmd=BUILD_DIR+"/bin/Sfx";
+#endif
+	std::string name=std::string(GetName());
+	std::string json_file=PLATFORM+"/"s+GetSfxConfigFilename();
+	std::string this_platform_dir=std::filesystem::path(json_file).parent_path().generic_string();
+	std::string command=sfxcmd+fmt::format(" -I\"{PLATFORM}/../..;{PLATFORM}/..;{PLATFORM};{this_platform_dir};{PLATFORM}/CrossPlatform/Shaders\""
+											" -O\"{shaderbin}\""
+												" -P\"{json_file}\""
+												" -m\"{shaderbin}/intermediate\" "
+												,fmt::arg("PLATFORM", PLATFORM)
+												,fmt::arg("this_platform_dir",this_platform_dir)
+												,fmt::arg("shaderbin", shaderbin)
+												,fmt::arg("json_file", json_file));
+	command+= std::string(" -EPLATFORM=") + PLATFORM;
+	if ((buildMode & crossplatform::ALWAYS_BUILD) != 0)
+		command+=" -F";
+	if (platform::core::SimulInternalChecks)
+		command += " -V";
+	command+=" "s+filenameInUseUtf8.c_str();
+	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
+
+	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
+	bool result= platform::core::RunCommandLine(command.c_str(),  cc);
+	
+	recompiling_effect_name="";
+	return result;
+#else
+	return false;
+#endif
+}
+
+void RenderPlatform::ScheduleRecompileEffects(std::vector<std::string> effect_names,std::function <void()> f)
+{
+	if(!effect_names.size())
+		return;
+	for(size_t i=0;i<effect_names.size()-1;i++)
+		effectsToCompile.push_back({effect_names[i],nullptr});
+	effectsToCompile.push_back({effect_names.back(),f});
+}
+
+void RenderPlatform::ScheduleRecompileEffect(std::string effect_name,std::function <void()> f) 
+{
+	effectsToCompile.push_back({effect_name,f});
 }
 
 bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
@@ -154,16 +293,17 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 			std::string simul_dir = std::filesystem::weakly_canonical((exe_dir + "../../../").c_str()).generic_string();
 			PushShaderPath((simul_dir + "/../").c_str());
 		}
-		std::string local_shader_binary_path = "shaderbin/"s + render_platform;
-		PushShaderBinaryPath(local_shader_binary_path.c_str());
+		//std::string local_shader_binary_path = "shaderbin/"s + render_platform;
+		//PushShaderBinaryPath(local_shader_binary_path.c_str());
 		if (binary_dir.length())
 		{
 			std::string shader_binary_path = binary_dir + "/"s + render_platform + "/shaderbin"s;
 			std::string platform_build_path = binary_dir + "/Platform"s;
 			std::string this_platform_build_path = platform_build_path+"/"s + render_platform;
-			PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
+			//PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
 			PushShaderBinaryPath((binary_dir + "/shaderbin/"s+render_platform).c_str());
 			PushTexturePath((source_dir + "/Resources/Textures").c_str());
+			PushTexturePath((source_dir + "/Media/textures").c_str());
 		}
 		std::string cmake_binary_dir = PLATFORM_STRING_OF_MACRO(PLATFORM_BUILD_DIR);
 		std::string cmake_source_dir = PLATFORM_STRING_OF_MACRO(CMAKE_SOURCE_DIR);
@@ -171,11 +311,11 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		if (cmake_binary_dir.length())
 		{
 			std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + GetPathName());
-			PushShaderBinaryPath(((cmake_binary_dir + "/") + GetPathName() + "/shaderbin").c_str());
-			PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
+			//PushShaderBinaryPath(((cmake_binary_dir + "/") + GetPathName() + "/shaderbin").c_str());
+			//PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
 			PushTexturePath((cmake_source_dir + "/Resources/Textures").c_str());
 		}
-		PushShaderBinaryPath((std::string("shaderbin/") + GetPathName()).c_str());
+		//PushShaderBinaryPath((std::string("shaderbin/") + GetPathName()).c_str());
 
 		initializedDefaultShaderPaths = true;
 	}
@@ -242,7 +382,6 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	standardRenderStates[STANDARD_DOUBLE_SIDED]=CreateRenderState(desc);
 	
 	SAFE_DELETE(textRenderer);
-	
 	textRenderer=new TextRenderer;
 	
 	textRenderer->RestoreDeviceObjects(this);
@@ -259,6 +398,30 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
 		mat->SetEffect(solidEffect);
 	}
+	
+	Destroy(debugEffect);
+	debugEffect=CreateEffect("debug");
+
+	Destroy(solidEffect);
+	solidEffect=CreateEffect("solid");
+	
+	Destroy(copyEffect);
+	copyEffect=CreateEffect("copy");
+	
+	Destroy(mipEffect);
+	mipEffect=CreateEffect("mip");
+	
+	if(debugEffect)
+	{
+		textured				=debugEffect->GetTechniqueByName("textured");
+		untextured				=debugEffect->GetTechniqueByName("untextured");
+		showVolume				=debugEffect->GetTechniqueByName("show_volume");
+		draw_cubemap_sphere		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
+		volumeTexture			=debugEffect->GetShaderResource("volumeTexture");
+		imageTexture			=debugEffect->GetShaderResource("imageTexture");
+		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
+	}		
+	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -294,12 +457,12 @@ void RenderPlatform::InvalidateDeviceObjects()
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
 	}
-	for(auto s:shaders)
+	/*for(auto s:shaders)
 	{
 		s.second->Release();
 		delete s.second;
 	}
-	shaders.clear();
+	shaders.clear();*/
 	for(auto s:sharedSamplerStates)
 	{
 		s.second->InvalidateDeviceObjects();
@@ -314,17 +477,27 @@ void RenderPlatform::InvalidateDeviceObjects()
 	last_begin_frame_number=0;
 }
 
+void RenderPlatform::NotifyEffectRecompiled()
+{
+	recompiled=true;
+}
+
 void RenderPlatform::RecompileShaders()
 {
-	for (auto s : shaders)
+	ScheduleRecompileEffects({"debug","solid","copy","mip"},[this]{NotifyEffectRecompiled();});
+	textRenderer->RecompileShaders();
+}
+
+void RenderPlatform::LoadShaders()
+{
+/*	for (auto s : shaders)
 	{
 		s.second->Release();
 		delete s.second;
 	}
-	shaders.clear();
+	shaders.clear();*/
 	
 	Destroy(debugEffect);
-	
 	debugEffect=CreateEffect("debug");
 
 	Destroy(solidEffect);
@@ -335,9 +508,6 @@ void RenderPlatform::RecompileShaders()
 	
 	Destroy(mipEffect);
 	mipEffect=CreateEffect("mip");
-	
-	
-	textRenderer->RecompileShaders();
 	
 	if(debugEffect)
 	{
@@ -360,7 +530,9 @@ void RenderPlatform::PushTexturePath(const char *path_utf8)
 	std::error_code ec;
 	auto canonical=std::filesystem::weakly_canonical(path,ec);
 	std::string str = canonical.generic_string();
-	char c = str.back();
+	char c = 'x';
+	if (str.length())
+		c = str.back();
 	if (c != '\\' && c != '/')
 		str += '/';
 	texturePathsUtf8.push_back(str);
@@ -526,6 +698,11 @@ void RenderPlatform::BeginFrame()
 	}
 	frameNumber++;
 	frame_started = true;
+	if(recompiled)
+	{
+		LoadShaders();
+		recompiled=false;
+	}
 }
 
 bool RenderPlatform::FrameStarted() const
@@ -558,19 +735,29 @@ void RenderPlatform::BeginFrame(long long f)
 
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
-	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
-	if (deviceContext.AsMultiviewGraphicsDeviceContext())
-		clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear_multiview");
+	if (deviceContext.targetStack.empty() && deviceContext.defaultTargetsAndViewport.m_rt)
+	{
+		crossplatform::EffectTechnique *clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear");
+		if (deviceContext.AsMultiviewGraphicsDeviceContext())
+			clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear_multiview");
 
-	debugConstants.debugColour=colour_rgba;
-	//if(debugConstants.debugColour.x+debugConstants.debugColour.y+debugConstants.debugColour.z==0)
-	//{
-	//	SIMUL_BREAK("");
-	//}
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->Apply(deviceContext,clearTechnique,0);
-	DrawQuad(deviceContext);
-	debugEffect->Unapply(deviceContext);
+		debugConstants.debugColour = colour_rgba;
+		debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
+		debugEffect->Apply(deviceContext, clearTechnique, 0);
+		DrawQuad(deviceContext);
+		debugEffect->Unapply(deviceContext);
+	}
+	else
+	{
+		for (size_t i = 0; i < 8; i++)
+		{
+			crossplatform::Texture* texture = deviceContext.targetStack.top()->textureTargets[i].texture;
+			if (texture)
+			{
+				texture->ClearColour(deviceContext, colour_rgba);
+			}
+		}
+	}
 }
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)
@@ -578,117 +765,18 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	// Silently return if not initialized
 	if(!texture->IsValid())
 		return;
-	bool cleared				= false;
-	debugConstants.debugColour=colour;
-	debugConstants.texSize=uint4(texture->width,texture->length,texture->depth,1);
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	// Clear the texture: how we do this depends on what kind of texture it is.
-	// Does it have rendertargets? We can clear each of these in turn.
+
 	auto *graphicsDeviceContext=deviceContext.AsGraphicsDeviceContext();
-	if(texture->HasRenderTargets()&&texture->arraySize&&graphicsDeviceContext!=nullptr)
+	if (graphicsDeviceContext != nullptr)
 	{
-		int total_num=texture->arraySize*(texture->IsCubemap()?6:1);
-		for(int i=0;i<total_num;i++)
+		if (texture->IsDepthStencil())
 		{
-			int w=texture->width;
-			int l=texture->length;
-			int d=texture->depth;
-			for(int j=0;j<texture->mips;j++)
-			{
-				debugConstants.texSize=uint4(w,l,d,1);
-				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-				platform::crossplatform::SubresourceRange rng={TextureAspectFlags::COLOUR, j, 1, i, 1 };
-				ShaderResourceType tp=texture->GetShaderResourceTypeForRTVAndDSV();
-				platform::crossplatform::TextureView tv={tp,rng};
-				texture->activateRenderTarget(*graphicsDeviceContext, tv);
-				debugEffect->Apply(*graphicsDeviceContext,"clear",0);
-					DrawQuad(*graphicsDeviceContext);
-				debugEffect->Unapply(*graphicsDeviceContext);
-				texture->deactivateRenderTarget(*graphicsDeviceContext);
-				w=(w+1)/2;
-				l=(l+1)/2;
-				d=(d+1)/2;
-			}
+			texture->ClearDepthStencil(*graphicsDeviceContext, colour.x, 0);
 		}
-		debugEffect->UnbindTextures(deviceContext);
-		cleared = true;
-	}
-	// Otherwise, is it computable? We can set the colour value with a compute shader.
-	// Is it mappable? We can set the colour from CPU memory.
-	else if (texture->IsComputable() && !cleared)
-	{
-		int a=texture->NumFaces();
-		if(a==0)
-			a=1;
-#if 1
-		for(int i=0;i<a;i++)
+		else 
 		{
-			int w=texture->width;
-			int l=texture->length;
-			int d=texture->depth;
-			for(int j=0;j<texture->mips;j++)
-			{
-				const char* techname = nullptr;
-				int W=(w+4-1)/4;
-				int L=(l+4-1)/4;
-				int D=(d+4-1)/4;
-		
-				if(texture->dim==2)
-				{
-					W=(w+8-1)/8;
-					L=(l+8-1)/8;
-					D=1;
-					if (a == 1)
-					{
-						techname = "compute_clear";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget", texture, { TextureAspectFlags::COLOUR, j, i, 1 });
-					}
-					else
-					{
-						techname = "compute_clear_2d_array";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, { TextureAspectFlags::COLOUR,  j, i, 1 });
-					}
-				}
-				else if(texture->dim==3)
-				{
-					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM||texture->GetFormat()==PixelFormat::RGBA_8_UNORM_SRGB||texture->GetFormat()==PixelFormat::BGRA_8_UNORM)
-					{
-						techname = "compute_clear_3d_u8";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, { TextureAspectFlags::COLOUR, j, 0, 1 });
-					}
-					else
-					{
-						techname="compute_clear_3d";
-						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, { TextureAspectFlags::COLOUR, j, 0, 1 });
-					}
-				}
-				else
-				{
-					SIMUL_BREAK_ONCE("Can't clear texture dim.");
-				}
-				debugConstants.texSize=uint4(w,l,d,1);
-				debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-				debugEffect->Apply(deviceContext,techname,0);
-				DispatchCompute(deviceContext,W,L,D);
-				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",nullptr);
-				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",nullptr);
-				w=(w+1)/2;
-				l=(l+1)/2;
-				d=(d+1)/2;
-				debugEffect->Unapply(deviceContext);
-			}
+			texture->ClearColour(*graphicsDeviceContext, colour);
 		}
-#endif
-		debugEffect->UnbindTextures(deviceContext);
-	}
-	//Finally, is the texture a depth stencil? In this case, we call the specified API's clear function in order to clear it.
-	else if (texture->IsDepthStencil() && !cleared&&graphicsDeviceContext!=nullptr)
-	{
-		texture->ClearDepthStencil(*graphicsDeviceContext, colour.x, 0);
-	}
-	else
-	{
-		SIMUL_CERR_ONCE<<("No method was found to clear this texture.\n");
 	}
 }
 #include "Platform/Core/StringFunctions.h"
@@ -757,7 +845,7 @@ void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,T
 	UnapplyPass(deviceContext);
 }
 
-        
+		
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
@@ -950,16 +1038,70 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 	return true;
 }
 
-void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
+void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, vec3 endp, vec4 colour,float width)
 {
-	PosColourVertex line_vertices[2];
-	line_vertices[0].pos= vec3(startp)-deviceContext.viewStruct.cam_pos;
-	line_vertices[0].colour=colour;
-	line_vertices[1].pos= vec3(endp)-deviceContext.viewStruct.cam_pos;
-	line_vertices[1].colour=colour;
-
-	DrawLines(deviceContext,line_vertices,2,true,false,true);
+	debugConstants.line_start=startp;
+	debugConstants.line_end=endp;
+	debugConstants.debugColour=colour;
+	mat4 wvp;
+	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj=wvp;//deviceContext.viewStruct.viewProj;
+	debugConstants.debugWorldViewProj.transpose();
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetLayout(deviceContext,posColourLayout.get());
+	debugEffect->Apply(deviceContext,"lines_3d","lines3d_novb");
+	SetTopology(deviceContext,Topology::LINELIST);
+	Draw(deviceContext, 2, 0);
+	debugEffect->Unapply(deviceContext);
+	
 }
+
+void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVertex * lines,int count,bool strip,bool test_depth,bool view_centred)
+{
+	if (!debugVertexBuffer )
+	{
+		debugVertexBuffer.reset(CreateBuffer());
+	}
+	// Create and grow vertex/index buffers if needed
+	if ( debugVertexBuffer->count < count)
+	{
+		if(!posColourLayout)
+		{
+			crossplatform::LayoutDesc local_layout[] =
+			{
+				{ "POSITION", 0, crossplatform::RGB_32_FLOAT,	0, (uint32_t)0, false, 0 },
+				{ "TEXCOORD", 0, crossplatform::RGBA_32_FLOAT,	0, (uint32_t)12,  false, 0 },
+			};
+			posColourLayout.reset(CreateLayout(2,local_layout,true));
+		}
+		debugVertexBuffer->EnsureVertexBuffer(this, 2*count, posColourLayout.get(), nullptr,true);
+	}
+	// Upload vertex/index data into a single contiguous GPU buffer
+	PosColourVertex* vtx_dst= (PosColourVertex*)debugVertexBuffer->Map(deviceContext);
+	if (!vtx_dst)
+	{
+	// Force recreate to find error.
+		debugVertexBuffer.reset();
+		return;
+	}
+	memcpy(vtx_dst,lines,count*sizeof(PosColourVertex));
+	debugVertexBuffer->Unmap(deviceContext);
+
+	mat4 wvp;
+	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj=wvp;//deviceContext.viewStruct.viewProj;
+	debugConstants.debugWorldViewProj.transpose();
+	auto *b=debugVertexBuffer.get();
+	SetVertexBuffers(deviceContext,0,1,&b,posColourLayout.get());
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetLayout(deviceContext,posColourLayout.get());
+	debugEffect->Apply(deviceContext,"lines_3d","lines3d_nodepth");
+	SetTopology(deviceContext,Topology::LINELIST);
+	Draw(deviceContext, count, 0);
+	SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
+	debugEffect->Unapply(deviceContext);
+}
+
 
 static float length(const vec3 &u)
 {
@@ -1085,9 +1227,15 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 	{
 		if (strstr(fileNameUtf8, ".") != nullptr)
 		{
-			tex->LoadFromFile(this, fileNameUtf8, gen_mips);
-			unfinishedTextures.insert(tex);
-			SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
+			if(tex->LoadFromFile(this, fileNameUtf8, gen_mips))
+			{
+				unfinishedTextures.insert(tex);
+				SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
+			}
+			else
+			{
+				SIMUL_INTERNAL_CERR<<"Failed to load texture: {0}"<<fileNameUtf8<<"\n";
+			}
 		}
 		tex->SetName(fileNameUtf8);
 	}
@@ -1273,27 +1421,6 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 
 	auto CreateViewProjectionMatrix = [&](size_t index) -> mat4
 	{
-		/*math::Matrix4x4 matrix = deviceContext.viewStructs[index].view;
-		matrix.Transpose();
-
-		//Translation
-		math::Vector3 translation(matrix.m03, matrix.m13, matrix.m23);
-
-		//Scale
-		float scale_x = math::Vector3(matrix.m00, matrix.m10, matrix.m20).Magnitude();
-		float scale_y = math::Vector3(matrix.m01, matrix.m11, matrix.m21).Magnitude();
-		float scale_z = math::Vector3(matrix.m02, matrix.m12, matrix.m22).Magnitude();
-		math::Vector3 scale(scale_x, scale_y, scale_z);
-
-		//Orientation
-		math::Matrix4x4 rotation(
-			matrix.m00 / scale_x, matrix.m01 / scale_y, matrix.m02 / scale_z, 0.0f,
-			matrix.m10 / scale_x, matrix.m11 / scale_y, matrix.m12 / scale_z, 0.0f,
-			matrix.m20 / scale_x, matrix.m21 / scale_y, matrix.m22 / scale_z, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f);
-		math::Quaternion orientation;
-		math::MatrixToQuaternion(orientation, rotation);*/
-
 		mat4 vp;
 		crossplatform::MakeViewProjMatrix((float*)&vp, deviceContext.viewStructs[index].view, deviceContext.viewStructs[index].proj);
 		return vp;
@@ -1485,7 +1612,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(l)).c_str(), white, semiblack);
 		}
 	}
-    return int2(dx, dy);
+	return int2(dx, dy);
 }
 
 void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
@@ -1556,7 +1683,7 @@ int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int
 		debugEffect->UnbindTextures(deviceContext);
 		debugEffect->Unapply(deviceContext);
 	}
-    return int2(dx, dy);
+	return int2(dx, dy);
 }
 
 void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)
@@ -1743,9 +1870,8 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
-		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect is nullptr.\n", filename_utf8));
-		delete e;
-		return nullptr;
+		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect will be placeholder.\n", filename_utf8));
+		return e;
 	}
 	return e;
 }
@@ -1805,18 +1931,12 @@ crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, cr
 crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8,const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
 {
 	std::string name(filenameUtf8);
-	if(shaders.find(name) != shaders.end())
-		return shaders[name];
+	//if(shaders.find(name) != shaders.end())
+	//	return shaders[name];
 	Shader *s = CreateShader();
 	s->load(this,filenameUtf8, (unsigned char*)sfxb_ptr+inline_offset, inline_length, t);
-	shaders[name] = s;
+	//shaders[name] = s;
 	return s;
-}
-
-void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8)
-{
-	crossplatform::Effect* e = CreateEffect(filename_utf8);
-	delete e;
 }
 
 void RenderPlatform::ApplyPass(DeviceContext& deviceContext, EffectPass* pass)
@@ -1850,7 +1970,7 @@ void RenderPlatform::UnapplyPass(DeviceContext& deviceContext)
 
 DisplaySurface* RenderPlatform::CreateDisplaySurface()
 {
-    return nullptr;
+	return nullptr;
 }
 
 GpuProfiler* RenderPlatform::CreateGpuProfiler()

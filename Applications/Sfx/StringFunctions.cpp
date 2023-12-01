@@ -686,3 +686,22 @@ string join(const std::set<string> &replacements,string sep)
 	}
 	return str;
 }
+
+string join_vector(const std::vector<string> &replacements,string sep)
+{
+	string str;
+	bool first=true;
+	for(auto i:replacements)
+	{
+		if(first)
+		{
+			first=false;
+		}
+		else
+		{
+			str+=sep;
+		}
+		str+=i;
+	}
+	return str;
+}

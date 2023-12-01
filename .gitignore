@@ -98,3 +98,4 @@ Simul_PGC/build
 
 *.tab.cpp
 lex.*.c
+/Applications/Sample/models

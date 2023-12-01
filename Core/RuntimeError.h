@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cerrno>
 #include <assert.h>
+#include <fmt/core.h>
 
 #ifndef SIMUL_INTERNAL_CHECKS
 #define SIMUL_INTERNAL_CHECKS 0
@@ -49,6 +50,24 @@ namespace platform
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
+		template <typename... T>
+		void Error(const char *txt, const T &...args)
+		{
+			std::string str = fmt::format(txt, args...);
+			std::cerr << fmt::format("{0} ({1}): error: {2}",__FILE__,__LINE__, str) << "\n";
+		}
+		template <typename... T>
+		void Warn(const char *txt, const T &...args)
+		{
+			std::string str = fmt::format(txt, args...);
+			std::cerr << fmt::format("{0} ({1}): warning: {2}", __FILE__, __LINE__, str) << "\n";
+		}
+		template <typename... T>
+		void Info(const char *txt, const T &...args)
+		{
+			std::string str = fmt::format(txt, args...);
+			std::cerr << fmt::format("{0} ({1}): info: {2}", __FILE__, __LINE__, str) << "\n";
+		}
 		//! This is a throwable error class derived from std::runtime_error.
 		//! It is used in builds that have C++ exceptions enabled. As it always outputs to std::cerr,
 		//! it is easier to see the nature of the error than with runtime_error alone.
@@ -129,17 +148,17 @@ namespace platform
 #define SIMUL_ASSERT(value)
 #endif
 
-#define SIMUL_BREAK(msg)\
+#define SIMUL_BREAK(msg,...)\
 	{\
-		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl;\
+		platform::core::Error(msg,##__VA_ARGS__);\
 		BREAK_IF_DEBUGGING\
 	}
 
-#define SIMUL_BREAK_ONCE(msg)\
+#define SIMUL_BREAK_ONCE(msg, ...)\
 	{\
 		static bool done=false;\
 		if(!done) \
-		{ std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<msg<<std::endl; BREAK_IF_DEBUGGING ; done=true; } \
+		{ platform::core::Error(msg,##__VA_ARGS__); BREAK_IF_DEBUGGING ; done=true; } \
 	}
 
 #if SIMUL_INTERNAL_CHECKS

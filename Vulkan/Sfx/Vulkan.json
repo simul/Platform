@@ -10,7 +10,7 @@
 		}
 	},
 	"api": "Vulkan",
-	"defaultOptions": "",
+	"defaultOptions": "-Os",
 	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",
@@ -42,12 +42,15 @@
 	"samplingSyntax": "{command}({samplerType}({textureSampler}),{otherParams})",
 	"loadSyntax": "{command}({texture},{params})",
 	"storeSyntax": "imageStore({varName},ivec{tex_dimension}({index}),{cast}({assignment_exp}))",
-	"structDeclaration": "struct {name}\n{\n[\t{type} {name};]};",
+	"gatherRedSyntax": "{command}({samplerType}({textureSampler}),{otherParams},0)",
+	"gatherGreenSyntax": "{command}({samplerType}({textureSampler}),{otherParams},1)",
+	"gatherBlueSyntax": "{command}({samplerType}({textureSampler}),{otherParams},2)",
+	"gatherAlphaSyntax": "{command}({samplerType}({textureSampler}),{otherParams},3)",
+	"structDeclaration": "struct {name}\n{\n[\t{flat} {type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} ;",
 	"namedConstantBufferDeclaration": "layout(std140, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
 	"pixelInputDeclaration": "layout(location ={slot}) in Block\n{\n[{type} {name};]} ioblock;",
 	"vertexInputDeclaration": "[layout(location={slot}) in {type} {name};]",
-	"outputDeclarationX": "layout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\nlayout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
@@ -77,7 +80,8 @@
 	"computeSemantics": {
 		"SV_GroupID": "gl_WorkGroupID",
 		"SV_GroupThreadID": "gl_LocalInvocationID",
-		"SV_DispatchThreadID": "gl_GlobalInvocationID"
+		"SV_DispatchThreadID": "gl_GlobalInvocationID",
+		"SV_GroupIndex": "gl_LocalInvocationIndex"
 	},
 	"toImageFormat": {
 		"vec4": "rgba32f",
@@ -87,7 +91,9 @@
 		"uint": "r32ui",
 		"float": "r32f",
 		"float4": "rgba32f",
-		"f16vec4": "rgba16f"
+		"f16vec4": "rgba16f",
+		"uvec2": "rg32ui",
+		"uvec4": "rgba32ui"
 	},
 	"toImageType": {
 		"vec4": "image",
@@ -194,6 +200,10 @@
 		"Sample": "texture",
 		"SampleLevel": "textureLod",
 		"Load": "imageLoad",
+		"GatherRed": "textureGatherOffset",
+		"GatherGreen": "textureGatherOffset",
+		"GatherBlue": "textureGatherOffset",
+		"GatherAlpha": "textureGatherOffset",
 		"IMAGESTORE(a,b,c)": "imageStore(a,b,c);",
 		"imageStore(uav,pos, c)": "imageStore(uav,pos,c)",
 		"lerp": "mix",
@@ -201,6 +211,7 @@
 		"frac": "fract",
 		"flat": "",
 		"ddx": "dFdx",
-		"ddy": "dFdy"
+		"ddy": "dFdy",
+		"static": ""
 	}
 }

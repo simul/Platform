@@ -216,13 +216,14 @@ namespace platform
 			return a;
 		}
 		
+		//! Structure to describe range of subresources in a Texture/Images for mip levels and array layers.
 		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
 		{
-			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR;
-			uint32_t baseMipLevel = 0;
-			uint32_t mipLevelCount = -1;
-			uint32_t baseArrayLayer = 0;
-			uint32_t arrayLayerCount = -1;
+			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR; //! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
+			uint32_t baseMipLevel = 0;									//! The first mip level in the view.
+			uint32_t mipLevelCount = -1;								//! The number of mip levels, starting from the baseMipLevel, in the view.
+			uint32_t baseArrayLayer = 0;								//! The first array layer in the view.
+			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
 
 			SubresourceRange() = default;
 			SubresourceRange(TextureAspectFlags aspect, uint32_t baseMip, uint32_t mipCount, uint32_t baseLayer, uint32_t layerCount)
@@ -230,18 +231,20 @@ namespace platform
 			SubresourceRange(TextureAspectFlags aspect, int32_t baseMip, int32_t mipCount, int32_t baseLayer, int32_t layerCount)
 				: baseMipLevel((uint32_t)baseMip), mipLevelCount((uint32_t)mipCount), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
 		};
+		//! Structure to describe range of subresources in a Texture/Images for a single mip level and array layers.
 		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceLayers
 		{
-			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR;
-			uint32_t mipLevel = 0;
-			uint32_t baseArrayLayer = 0;
-			uint32_t arrayLayerCount = -1;
+			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR; //! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
+			uint32_t mipLevel = 0;										//! The single mip level in the view.
+			uint32_t baseArrayLayer = 0;								//! The first array layer in the view.
+			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
 
 			SubresourceLayers() = default;
-			SubresourceLayers(TextureAspectFlags aspect, uint32_t mip, uint32_t baseLayer, uint32_t layerCount)
+			SubresourceLayers(TextureAspectFlags aspect, uint32_t mip=0, uint32_t baseLayer=0, uint32_t layerCount= 0xFFFFFFFF)
 				: aspectMask(aspect), mipLevel(mip), baseArrayLayer(baseLayer), arrayLayerCount(layerCount) {}
-			SubresourceLayers(TextureAspectFlags aspect, int32_t mip, int32_t baseLayer, int32_t layerCount)
+			SubresourceLayers(TextureAspectFlags aspect, int32_t mip=0, int32_t baseLayer=0, int32_t layerCount= 0xFFFFFFFF)
 				: aspectMask(aspect), mipLevel((uint32_t)mip), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
+		
 		};
 
 		enum class ShaderResourceType;
@@ -341,8 +344,8 @@ namespace platform
 			{
 				return shouldGenerateMips;
 			}
-			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
-			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
+			virtual bool LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,bool gen_mips=false)=0;
+			virtual bool LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
             virtual nvn::Texture* AsNXTexture() { return 0; };
@@ -372,7 +375,7 @@ namespace platform
 			/// Asynchronously move this texture to slow RAM.
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
-			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
+			virtual GLuint AsGLuint(){return 0;}
 			virtual vk::Image* AsVulkanImage() { return nullptr; }
 			virtual vk::ImageView* AsVulkanImageView(const crossplatform::TextureView& textureView) { return nullptr; }
 			//! Get the crossplatform pixel format.
@@ -405,8 +408,10 @@ namespace platform
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED)=0;
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
-			//! Clear the depth stencil
-			virtual void ClearDepthStencil(GraphicsDeviceContext &deviceContext, float = 0, int = 0) = 0;
+			//! Clear the colour aspect
+			virtual void ClearColour(GraphicsDeviceContext &deviceContext, vec4 colourClear = vec4(0.0f, 0.0f, 0.0f, 0.0f)) = 0;
+			//! Clear the depth stencil aspect
+			virtual void ClearDepthStencil(GraphicsDeviceContext &deviceContext, float depthClear = 0, int stencilClear = 0) = 0;
 			//! Generate the mipmaps automatically.
 			virtual void GenerateMips(GraphicsDeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.

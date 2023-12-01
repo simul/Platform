@@ -111,6 +111,10 @@ struct SfxConfig
 	std::string samplingSyntax;
 	std::string loadSyntax;
 	std::string storeSyntax;
+	std::string gatherRedSyntax;
+	std::string gatherGreenSyntax;
+	std::string gatherBlueSyntax;
+	std::string gatherAlphaSyntax;
 	//! Generic preamble
 	std::string preamble;
 	std::string optimizationLevelOption;
@@ -127,6 +131,8 @@ struct SfxConfig
 	std::map<std::string,std::string> replace;
 	//! Macros to be defined
 	std::map<std::string, std::string> define;
+	//! keywords to be translated for compilation
+	std::map<std::string, std::string> keywords;
 	//! SFX format to language format
 	std::map<std::string, std::string> toImageFormat;
 	//! SFX format to object type
@@ -153,23 +159,19 @@ struct SfxConfig
 
 struct SfxOptions
 {
-	SfxOptions():force(false)
-		,verbose(false)
-		,debugInfo(false)
-		,disableLineWrites(false)
-		,optimizationLevel(-1)
+	SfxOptions()
 	{
 	}
-	bool force;
-	bool verbose;
-	bool debugInfo;
+	bool force=false;
+	bool verbose=false;
+	bool debugInfo=false;
 	//! If true, the output file will contain all the compiled binaries, with a table to point to their offsets.
-	bool wrapOutput;
+	bool wrapOutput=true;
 	//! If true, #line directives will not be put in, so that compile output will show the line number from the generated file.
-	bool disableLineWrites;
+	bool disableLineWrites=false;
 	std::string intermediateDirectory;
 	std::string outputFile;
-	int optimizationLevel;
+	int optimizationLevel=-1;
 };
 extern const SfxOptions &GetSfxOptions();
 extern std::string ppfile;

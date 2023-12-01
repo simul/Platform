@@ -29,5 +29,11 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 	uniform float displayLevel;
 	uniform float debugTime;
 	uniform float dc_pad1;
+
+	uniform vec3 line_start;
+	uniform float dc_pad2;
+
+	uniform vec3 line_end;
+	uniform float dc_pad3;
 SIMUL_CONSTANT_BUFFER_END
 #endif

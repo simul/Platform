@@ -44,7 +44,7 @@ namespace platform
 			crossplatform::RenderPlatformType GetType() const override;
 			virtual const char* GetSfxConfigFilename() const override
 			{
-				return "Sfx/DirectX11.json";
+				return "DirectX11/Sfx/DirectX11.json";
 			}
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();

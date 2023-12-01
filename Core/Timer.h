@@ -20,7 +20,7 @@ namespace platform
 		{
 		private:
 			static __int64 OverheadTicks;			// overhead  in calling timer
-		#ifdef __ORBIS__
+		#if defined(__ORBIS__) | defined(__COMMODORE__)
 			uint64_t iStart,iStop;
 		#endif
 		#ifdef _MSC_VER     

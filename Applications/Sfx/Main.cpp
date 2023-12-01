@@ -57,18 +57,19 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
     {
         // Handle the CTRL-C signal.
     case CTRL_C_EVENT:
-        printf("Ctrl-C event\n\n");
+		std::cerr<<"Received Ctrl-C event.\n";
+		terminate_command=true;
         return TRUE;
 
         // CTRL-CLOSE: confirm that the user wants to exit.
     case CTRL_CLOSE_EVENT:
-		std::cerr<<("Received Ctrl-Close event.\n");
+		std::cerr<<"Received Ctrl-Close event.\n";
 		terminate_command=true;
         return TRUE;
 
         // Pass other signals to the next handler.
     case CTRL_BREAK_EVENT:
-		std::cerr<<("Received Ctrl-Break event.\n");
+		std::cerr<<"Received Ctrl-Break event.\n";
 		terminate_command=true;
         return FALSE;
 
@@ -77,7 +78,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
 
     case CTRL_SHUTDOWN_EVENT:
-		std::cerr<<("Received Ctrl-Shutdown event.\n");
+		std::cerr<<"Received Ctrl-Shutdown event.\n";
 		terminate_command=true;
         return FALSE;
 
@@ -104,10 +105,7 @@ int main(int argc, char** argv)
 	}
 
 	std::string SIMUL=GetEnv("SIMUL");
-	std::string SIMUL_BUILD= "";
 	std::map<std::string, std::string> environment;
-	if (SIMUL_BUILD == "" || SIMUL_BUILD == "1")
-		SIMUL_BUILD = SIMUL;
 	
 	char log[50000];
 	const char **paths=NULL;
@@ -146,10 +144,6 @@ int main(int argc, char** argv)
 				{
 					SIMUL=StripQuotes(arg);
 				}
-				else if (argtype == 'b' || argtype == 'B')
-				{
-					SIMUL_BUILD=StripQuotes(arg);
-				}
 				else if (argtype == 'f' || argtype == 'F')
 					sfxOptions.force = true;
 				else if (argtype == 'v' || argtype == 'V')
@@ -177,8 +171,8 @@ int main(int argc, char** argv)
 				}
 				else if (argtype == 'z')
 					optimization = arg;
-				else if (argtype == 'w')
-					sfxOptions.wrapOutput = true;
+				else if (argtype == 'k')
+					sfxOptions.wrapOutput = false;
 				else
 					args[a++]=argv[i];
 			}
@@ -251,7 +245,7 @@ int main(int argc, char** argv)
 		try
 		{
 			i >> j;
-			//if(sfxOptions.verbose)
+	
 			json compiler = j["compiler"];
 			if (compiler.type() == json::value_t::string)
 			{
@@ -424,6 +418,14 @@ int main(int argc, char** argv)
 				sfxConfig.loadSyntax							=j["loadSyntax"];
 			if (j.count("storeSyntax")>0)
 				sfxConfig.storeSyntax							=j["storeSyntax"];
+			if (j.count("gatherRedSyntax") > 0)
+				sfxConfig.gatherRedSyntax						=j["gatherRedSyntax"];
+			if (j.count("gatherGreenSyntax") > 0)
+				sfxConfig.gatherGreenSyntax						=j["gatherGreenSyntax"];
+			if (j.count("gatherBlueSyntax") > 0)
+				sfxConfig.gatherBlueSyntax						=j["gatherBlueSyntax"];
+			if (j.count("gatherAlphaSyntax") > 0)
+				sfxConfig.gatherAlphaSyntax						=j["gatherAlphaSyntax"];
 			if (j.count("preamble")>0)
 				sfxConfig.preamble								=j["preamble"];
 			if (j.count("optimizationLevelOption")>0)
@@ -532,6 +534,13 @@ int main(int argc, char** argv)
 				std::string b=it.value();
 				sfxConfig.define[a]			=b;
 			}
+			json kw=j["keywords"];
+			for (json::iterator it = kw.begin();it != kw.end(); ++it)
+			{
+				std::string a=it.key();
+				std::string b=it.value();
+				sfxConfig.keywords[a]			=b;
+			}
 			sfxConfig.define["SFX"]="1";
 			if (j.count("graphicsRootSignatureSource") > 0)
 				sfxConfig.graphicsRootSignatureSource = j["graphicsRootSignatureSource"];
@@ -568,14 +577,20 @@ int main(int argc, char** argv)
 		sfxDeleteEffect(effect);
 	}
 	// write a summary output file, so we have a single output with the build time on it.
+	SetEnv("PLATFORM_NAME","");
+	templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
+	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
+	std::string summaryFilename=templateOutputFile+"/"s+sourceName+".sfx_summary";
 	if(ret==0)
 	{
-		SetEnv("PLATFORM_NAME","");
-		templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
-		sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
-		std::ofstream summary(templateOutputFile+"/"s+sourceName+".sfx_summary");
+		std::ofstream summary(summaryFilename);
 		summary << "" << std::endl;
 		summary.close();
+	}
+	else
+	{
+	// make sure the summary is not there.
+	std::filesystem::remove(summaryFilename);
 	}
 	return ret;
  }

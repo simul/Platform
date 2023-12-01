@@ -20,7 +20,6 @@ HdrRenderer::HdrRenderer()
 	,Height(0)
 	,hdr_effect(NULL)
 	,exposureGammaTechnique(NULL)
-	,m_pGaussianEffect(NULL)
 {
 }
 
@@ -46,7 +45,7 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	imageConstants.RestoreDeviceObjects(renderPlatform);
-	RecompileShaders();
+	LoadShaders();
 }
 
 #if !defined(__ORBIS__) && !defined(__PROSPERO__)
@@ -80,21 +79,23 @@ template<typename t> t max3(t a,t b,t c)
 	return std::max(a,std::max(b,c));
 }
 	static int	threadsPerGroup = 128;
-
-
-void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
-{
-	if (!r)
-		return;
-	r->EnsureEffectIsBuilt("hdr");
-}
+	
 
 void HdrRenderer::RecompileShaders()
+{
+	renderPlatform->ScheduleRecompileEffects({"hdr"},[this]{NotifyEffectsRecompiled();});
+}
+
+void HdrRenderer::NotifyEffectsRecompiled()
+{
+	renderPlatform->Destroy(hdr_effect);
+}
+
+void HdrRenderer::LoadShaders()
 {
 	if(!renderPlatform)
 		return;
 	renderPlatform->Destroy(hdr_effect);
-	renderPlatform->Destroy(m_pGaussianEffect);
 	hdr_effect					=renderPlatform->CreateEffect("hdr");
 
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
@@ -102,9 +103,6 @@ void HdrRenderer::RecompileShaders()
 	exposureGammaMainPass		=exposureGammaTechnique->GetPass("main");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
-	m_pGaussianEffect			=NULL;//renderPlatform->CreateEffect("gaussian",defs);
-	//hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
-	//imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
 	hdr_effect_imageTexture=hdr_effect->GetShaderResource("imageTexture");
 	hdr_effect_imageTextureMS=hdr_effect->GetShaderResource("imageTextureMS");
 }
@@ -116,7 +114,6 @@ void HdrRenderer::InvalidateDeviceObjects()
 	if (renderPlatform)
 	{
 		renderPlatform->Destroy(hdr_effect);
-		renderPlatform->Destroy(m_pGaussianEffect);
 	}
 	renderPlatform=NULL;
 }
@@ -127,6 +124,8 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 
 void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float offsetX,float Exposure,float Gamma)
 {
+	if(!hdr_effect)
+		LoadShaders();
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"HDR")
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;

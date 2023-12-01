@@ -1,6 +1,7 @@
 #pragma once
 #include "Export.h"
 #include "Quaterniond.h"
+
 namespace platform
 {
 	namespace crossplatform
@@ -11,10 +12,11 @@ namespace platform
 			RightHanded = 1,
 			LeftHanded = 2,
 			YVertical = 4,
-			Engineering = 8 | RightHanded,
-			OpenGL = 16 | RightHanded,
-			Unreal = 32 | LeftHanded,
-			Unity = 64 | LeftHanded | YVertical,
+			ZVertical = 8,
+			Engineering = ZVertical | RightHanded,
+			OpenGL = 16 | YVertical | RightHanded,
+			Unreal = 32 | ZVertical | LeftHanded,
+			Unity = 64 | YVertical | LeftHanded ,
 		};
 
 		inline AxesStandard operator|(const AxesStandard& a, const AxesStandard& b)

@@ -45,8 +45,8 @@ namespace platform
 			
 			void			SetName(const char* n) override;
 
-			void			LoadFromFile(crossplatform::RenderPlatform* r, const char* pFilePathUtf8, bool gen_mips = false) override;
-			void			LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips) override;
+			bool LoadFromFile(crossplatform::RenderPlatform *r, const char *pFilePathUtf8, bool gen_mips = false) override;
+			bool LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips) override;
 			bool			IsValid() const override;
 			void			InvalidateDeviceObjects() override;
 			virtual bool	InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,int w,int l,crossplatform::PixelFormat f,bool make_rt=false, bool setDepthStencil=false, int numOfSamples = 1) override;
@@ -56,10 +56,11 @@ namespace platform
 														, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
 														 vec4 clear = vec4(0.0f, 0.0f, 0.0f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0, bool shared = false
 														 , crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
-			bool	ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f
+			bool			ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int nmips,crossplatform::PixelFormat f
 																, std::shared_ptr<std::vector<std::vector<uint8_t>>> data, bool computable = false, bool rendertarget = false, bool depthstencil = false,bool ascubemap = false
 														, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			bool			ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int nmips=1,bool rendertargets=false) override;
+			void			ClearColour(crossplatform::GraphicsDeviceContext& deviceContext, vec4 colourClear) override;
 			void			ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear) override;
 			void			GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void			setTexels(crossplatform::DeviceContext& deviceContext,const void* src,int texel_index,int num_texels) override;
@@ -74,6 +75,8 @@ namespace platform
 
 			GLuint			AsOpenGLView(crossplatform::TextureView textureView = {});
 			GLuint			GetGLMainView();
+
+			inline GLuint	AsGLuint() override { return GetGLMainView(); }
 
 			/// This is used to make a handle (created from the GL texture view, or from the view and a sampler state) resident, and also for the texture to keep track of its own
 			/// handles so they can be made unresident when it is deleted.

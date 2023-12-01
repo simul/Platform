@@ -499,7 +499,7 @@ math::Matrix4x4 platform::crossplatform::MakeOrthoProjectionMatrix(float left,
 Camera::Camera():Orientation()
 {
 	VerticalFieldOfViewInRadians=60.f*SIMUL_PI_F/180.f;
-	HorizontalFieldOfViewInRadians=0.f;
+    HorizontalFieldOfViewInRadians = 90.f * SIMUL_PI_F / 180.f;
 	Orientation.Rotate(3.14f/2.f,platform::math::Vector3(1,0,0));
 }
 

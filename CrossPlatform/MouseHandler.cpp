@@ -44,9 +44,14 @@ MouseHandler::~MouseHandler()
 	delete camera;
 }
 
-void MouseHandler::setSpeed(float s)
+void MouseHandler::SetSpeedFactor(float s)
 {
 	speed_factor=s;
+}
+
+float MouseHandler::GetSpeedFactor() const
+{
+    return speed_factor;
 }
 
 void MouseHandler::setCentre(const float *c)

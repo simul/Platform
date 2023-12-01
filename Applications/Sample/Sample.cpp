@@ -266,10 +266,10 @@ public:
 		environmentMesh->Load("models/Sponza/Sponza.gltf", 1.0f, crossplatform::AxesStandard::OpenGL);
 	}
 	// This allows live-recompile of shaders. 
-	void RecompileShaders()
+	void LoadShaders()
 	{
-		renderPlatform->RecompileShaders();
-		hDRRenderer->RecompileShaders();
+		renderPlatform->LoadShaders();
+		hDRRenderer->LoadShaders();
 		effect->Load(renderPlatform, "solid");
 		raytrace_effect->Load(renderPlatform,"raytrace");
 		renderPlatform->ClearTextures();
@@ -640,7 +640,7 @@ public:
 				show_textures=!show_textures;
 				break;
 			case 'R':
-				RecompileShaders();
+				LoadShaders();
 				break;
 			default: 
 			break;

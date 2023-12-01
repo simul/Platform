@@ -28,7 +28,7 @@
 #else //PC
 	#include <D3Dcompiler.h>
 	#include <dxgi.h>
-	#include <dxgi1_5.h>
+	#include <dxgi1_6.h>
 	#include <d3d12.h>
 	#include "d3dx12.h"
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
@@ -127,5 +127,7 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 	#define LOG_BARRIER_INFO(name, res, before, after);\
 	SIMUL_CERR << "Barrier: " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << ") - from "\
 	<< RenderPlatform::D3D12ResourceStateToString(before) << " to " << RenderPlatform::D3D12ResourceStateToString(after) << std::endl;
+#else
+	#define LOG_BARRIER_INFO(name, res, before, after)
 #endif
 

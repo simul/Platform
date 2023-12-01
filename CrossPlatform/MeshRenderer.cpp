@@ -24,7 +24,7 @@ void MeshRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	solidConstants.LinkToEffect(effect, "SolidConstants");
 }
 
-void MeshRenderer::RecompileShaders()
+void MeshRenderer::LoadShaders()
 {
 	delete effect;
 	effect = renderPlatform->CreateEffect("solid");
@@ -74,7 +74,7 @@ void MeshRenderer::DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap,Texture *screenspaceShadowTexture)
 {
 	if (!effect)
-		RecompileShaders();
+		LoadShaders();
 	if (!effect)
 		return;
 	deviceContext.viewStruct.PushModelMatrix(*((math::Matrix4x4*)&model));

@@ -235,37 +235,6 @@ void FramebufferGL::SetExternalTextures(crossplatform::Texture* colour, crosspla
     BaseFramebuffer::SetExternalTextures(colour, depth);
 }
 
-void FramebufferGL::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float d, int mask)
-{
-    // This call must be made within a Activate - Deactivate block!
-    bool changed = false;
-    if (!colour_active)
-    {
-        changed = true;
-        Activate(deviceContext);
-    }
-    glClearColor(r, g, b, a);
-    GLenum settings = GL_COLOR_BUFFER_BIT;
-    if (buffer_depth_texture)
-    {
-        glDepthMask(GL_TRUE);
-        glClearDepthf(d);
-        settings |= GL_DEPTH_BUFFER_BIT;
-    }
-    glClear(settings);
-
-    // Leave it as it was:
-    if (changed)
-    {
-        Deactivate(deviceContext);
-    }
-}
-
-void FramebufferGL::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a)
-{
-    SIMUL_BREAK("");
-}
-
 void FramebufferGL::Deactivate(crossplatform::GraphicsDeviceContext& deviceContext)
 {
     deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);

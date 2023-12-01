@@ -42,6 +42,7 @@ struct ImGui_ImplPlatform_Data
 	RenderPlatform*			renderPlatform = nullptr;
 	Buffer*					pVB = nullptr;
 	Buffer*					pIB = nullptr;
+	bool reload_shaders=false;
 	Effect*					effect = nullptr;
 	EffectPass*				effectPass_testDepth=nullptr;
 	EffectPass*				effectPass_noDepth=nullptr;
@@ -161,23 +162,26 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
 		return;
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if(bd->reload_shaders)
+	{
+		ImGui_ImplPlatform_LoadShaders();
+		bd->reload_shaders=false;
+	}
 	RenderPlatform* renderPlatform = bd->renderPlatform;
 
 	renderPlatform->BeginEvent(deviceContext, "ImGui_ImplPlatform_RenderDrawData");
 	renderPlatform->BeginEvent(deviceContext, "Draw Render Delegate Textures");
 	// Before setting renderstate etc., we will call all the callout delegates for this frame.
-	for(auto dt:bd->drawTextures)
+	for (auto &dt : bd->drawTextures)
 	{
-		if(dt.second.renderDelegate)
+		if(dt.second.renderDelegate && dt.second.texture)
 		{
-			if(dt.second.texture)
-			{
-				renderPlatform->BeginEvent(deviceContext, dt.second.texture->GetName().c_str());
-				dt.second.texture->activateRenderTarget(deviceContext);
-				dt.second.renderDelegate(deviceContext);
-				dt.second.texture->deactivateRenderTarget(deviceContext);
-				renderPlatform->EndEvent(deviceContext);
-			}
+			renderPlatform->BeginEvent(deviceContext, dt.second.texture->GetName().c_str());
+			dt.second.texture->activateRenderTarget(deviceContext);
+			dt.second.renderDelegate(deviceContext);
+			dt.second.texture->deactivateRenderTarget(deviceContext);
+			renderPlatform->EndEvent(deviceContext);
+			
 			dt.second.renderDelegate=0;
 		}
 	}
@@ -360,6 +364,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	for (int n = 0; n < draw_data->CmdListsCount; n++)
 	{
 		const ImDrawList* cmd_list = draw_data->CmdLists[n];
+		renderPlatform->BeginEvent(deviceContext, cmd_list->_OwnerName);
+
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 		{
 			const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
@@ -400,7 +406,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
 				if(texture_srv && texture_srv->texture)
 				{
-					SubresourceRange subres(TextureAspectFlags::COLOUR, int(texture_srv->mip), 1, texture_srv->slice, 1);
+					SubresourceRange subres(TextureAspectFlags::COLOUR, std::min(texture_srv->texture->mips-1,int(texture_srv->mip)), 1, texture_srv->slice, 1);
 					renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"), (Texture*)texture_srv->texture, subres);
 					renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
 					bd->pInputLayout->Apply(deviceContext);
@@ -411,8 +417,11 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				
 			}
 		}
+		
 		global_idx_offset += cmd_list->IdxBuffer.Size;
 		global_vtx_offset += cmd_list->VtxBuffer.Size;
+
+		renderPlatform->EndEvent(deviceContext);
 	}
 	renderPlatform->SetScissor(deviceContext, old_scissor);
 	if(bd->is3d)
@@ -520,7 +529,17 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 	SAFE_DELETE(bd->effect);
 	SAFE_DELETE(bd->framebufferTexture);
 }
-void	ImGui_ImplPlatform_RecompileShaders()
+void ImGui_ImplPlatform_RecompileShaders()
+{
+	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
+	if (!bd)
+		return;
+	if(!bd->renderPlatform)
+		return;
+	bd->renderPlatform->ScheduleRecompileEffects({"imgui"},[bd](){bd->reload_shaders=true;});
+}
+
+void	ImGui_ImplPlatform_LoadShaders()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (!bd)
@@ -628,8 +647,8 @@ void ImGui_ImplPlatform_SetMousePos(int x, int y, int W, int H)
 
 void ImGui_ImplPlatform_SetMouseDown(int button, bool value)
 {
-	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[button]=value;
+	ImGuiIO &io = ImGui::GetIO();
+	io.AddMouseButtonEvent(button, value);
 }
 
 void ImGui_ImplPlatform_Update3DMousePos()
@@ -807,11 +826,11 @@ static void ImGui_ImplPlatform_CreateWindow(ImGuiViewport* viewport)
 	IM_ASSERT(hwnd != 0);
 	if(displaySurfaceManagerInterface)
 	{
-	// All should be handled from within the displaySurface manager.
+		// All should be handled from within the displaySurface manager.
 		displaySurfaceManagerInterface->AddWindow(hwnd,crossplatform::PixelFormat::UNKNOWN);
-	displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
-	vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
-}
+		displaySurfaceManagerInterface->SetRenderer(platformRendererInterface);
+		vd->viewId=displaySurfaceManagerInterface->GetViewId(hwnd);
+	}
 }
 
 static void ImGui_ImplPlatform_DestroyWindow(ImGuiViewport* viewport)
@@ -833,7 +852,7 @@ static void ImGui_ImplPlatform_SetWindowSize(ImGuiViewport* viewport, ImVec2 siz
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
 	if(displaySurfaceManagerInterface)
-	displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
+		displaySurfaceManagerInterface->ResizeSwapChain(hwnd);
 	/*
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
@@ -867,7 +886,7 @@ static void ImGui_ImplPlatform_RenderWindow(ImGuiViewport* viewport, void* usr)
 	cp_hwnd hwnd = viewport->PlatformHandleRaw ? (cp_hwnd)viewport->PlatformHandleRaw : (cp_hwnd)viewport->PlatformHandle;
 	IM_ASSERT(hwnd != 0);
 	if(displaySurfaceManagerInterface)
-	displaySurfaceManagerInterface->Render(hwnd);
+		displaySurfaceManagerInterface->Render(hwnd);
 	ImGui_ImplPlatform_ViewportData* vd = (ImGui_ImplPlatform_ViewportData*)viewport->RendererUserData;
 	drawData[vd->viewId]=viewport->DrawData;
 }

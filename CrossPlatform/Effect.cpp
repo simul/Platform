@@ -247,6 +247,7 @@ Effect::~Effect()
 
 void Effect::InvalidateDeviceObjects()
 {
+	shaders.clear();
 	shaderResources.clear();
 	for (auto i = groups.begin(); i != groups.end(); i++)
 	{
@@ -336,6 +337,59 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_name.size();
 }
 
+EffectVariantPass *EffectTechnique::AddVariantPass(const char *name)
+{
+	auto vp=std::make_shared<EffectVariantPass>();
+	vp->name=name;
+	variantPasses[name]=vp;
+	return vp.get();
+}
+
+EffectVariantPass *EffectTechnique::GetVariantPass(const char *name)
+{
+	auto i=variantPasses.find(name);
+	if(i==variantPasses.end())
+		return nullptr;
+	return i->second.get();
+}
+
+
+					//if (!crossplatform::LayoutMatches(vertexShader->layout.GetDesc(), meshLayout))
+EffectPass *EffectVariantPass::GetPass(const char *shader1, uint64_t layoutHash, const char *shader2)
+{
+	for(auto i:passes)
+	{
+		auto *vs = i.second->shaders[SHADERTYPE_VERTEX];
+		if(!vs)
+			continue;
+		if(vs->layout.GetHash()!=layoutHash)
+			continue;
+		vector<string> parts = platform::core::split(i.first, '.');
+		if(parts.size()<2)
+			continue;
+		size_t bracket=parts[1].find('(');
+		std::string basename=parts[1].substr(0,bracket);
+		if(basename!=shader1)
+			continue;
+		if (!shader2 || (parts.size() >=3&&parts [2] == shader2))
+			return i.second;
+	}
+	return nullptr;
+}
+
+EffectPass* EffectVariantPass::GetPass(const char *shader1,const char *shader2)
+{
+	for(auto i:passes)
+	{
+		vector<string> parts=platform::core::split(i.first,'.');
+		if(parts[1]==shader1)
+		{
+			if(!shader2||parts[2]==shader2)
+				return i.second;
+		}
+	}
+	return nullptr;
+}
 
 EffectPass *EffectTechnique::GetPass(int i) const
 {
@@ -393,8 +447,8 @@ void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const Shade
 
 void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const SubresourceRange& subresource)
 {
-	const ShaderResource& i = GetShaderResource(name);
-	SetTexture(deviceContext, i, tex, subresource);
+	const ShaderResource& res = GetShaderResource(name);
+	renderPlatform->SetTexture(deviceContext, res, tex, subresource);
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceLayers& subresource)
@@ -404,13 +458,32 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* t, const SubresourceLayers& subresource)
 {
-	const ShaderResource& i = GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext, i, t, subresource);
+	const ShaderResource& res = GetShaderResource(name);
+	renderPlatform->SetUnorderedAccessView(deviceContext, res, t, subresource);
 }
 
 const crossplatform::ShaderResource *Effect::GetShaderResourceAtSlot(int s) 
 {
 	return textureResources[s];
+}
+std::string Effect::GetShaderResourceNameAtSlot(int s)
+{
+	for(const auto i:textureCharMap)
+	{
+		if(i.second->slot==s)
+			return i.first;
+	}
+	return "";
+}
+
+std::string Effect::GetConstantBufferNameAtSlot(int s)
+{
+	for (const auto i : constantBufferSlots)
+	{
+		if (i.second == s)
+			return i.first;
+	}
+	return "";
 }
 
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
@@ -705,14 +778,9 @@ static bool toBool(string s)
 	SIMUL_CERR<<"Unknown bool "<<s<<std::endl;
 	return false;
 }
-
-bool Effect::Compile(const char *filename_utf8)
-{
-	return EnsureEffect(renderPlatform,filename_utf8);
-}
 #define STRINGIFY(a) STRINGIFY2(a)
 #define STRINGIFY2(a) #a
-
+#if 0
 bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
 #if defined(WIN32) && !defined(_GAMING_XBOX)
@@ -761,10 +829,9 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 				if (platform::core::SimulInternalChecks)
 					cmdLine += " -V";
 				// Includes
-				cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\HLSL;" + sourceCurrentPlatformPath + "\\GLSL;" + sourceCurrentPlatformPath + "\\Sfx;";
-				cmdLine += sourcePlatformPath + "\\Shaders\\SL;";
-				cmdLine += paths[index] + "..\\SL;";
-				cmdLine += +"..\\SL;";
+				cmdLine += " -I\"" + sourceCurrentPlatformPath + "\\Sfx;";
+				cmdLine += sourcePlatformPath + "\\CrossPlatform\\Shaders;";
+				cmdLine += paths[index] ;
 				// include all the shader source paths.
 				const auto& p = r->GetShaderPathsUtf8();
 				for(auto& path : p)
@@ -934,7 +1001,7 @@ bool Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	return true;
 #endif
 }
-
+#endif
 bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 {
 	renderPlatform=r;
@@ -961,7 +1028,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	else if (index < binaryPaths.size())
 		filepathUtf8 = binaryPaths[index];
 
-	binFilenameUtf8 = filepathUtf8 + binFilenameUtf8;
+	binFilenameUtf8 = filepathUtf8 +"/"s+ binFilenameUtf8;
 	platform::core::find_and_replace(binFilenameUtf8,"\\","/");
 	if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 	{
@@ -983,8 +1050,6 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				}
 				already = true;
 			}
-			// We now attempt to build the shader from source.
-			Compile(filename_utf8);
 			if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 			{
 				binFilenameUtf8 =filename_utf8;
@@ -1015,10 +1080,12 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	//int line_number			=0;
 	enum Level
 	{
-		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,LAYOUT=4,HITGROUP=5,MISS_SHADERS=5,CALLABLE_SHADERS=5,RAYTRACING_CONFIG=5,TOO_FAR=6
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,VARIANT_PASS=3,PASS=4,LAYOUT=5,HITGROUP=6,MISS_SHADERS=6,CALLABLE_SHADERS=6,RAYTRACING_CONFIG=6,TOO_FAR=7
 	};
 	Level level				=OUTSIDE;
+	bool variant_mode		=false;
 	EffectTechnique *tech	=nullptr;
+	EffectVariantPass *variantPass=nullptr;
 	EffectPass *p			=nullptr;
 	RaytraceHitGroup *hg	=nullptr;
 	crossplatform::LayoutDesc layoutDesc[32];
@@ -1063,7 +1130,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		if(open_brace>=0)
 		{
 			if(level!=HITGROUP || level!=MISS_SHADERS || level!=CALLABLE_SHADERS || level!=RAYTRACING_CONFIG)
+			{
 				level=(Level)(level+1);
+				if(level==VARIANT_PASS&&!variant_mode)
+					level=PASS;
+			}
 		}
 		string word;
 		if(sp >= 0)
@@ -1086,6 +1157,13 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				res->shaderResourceType=crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE;
 				textureDetailsMap[name]=res;
 				textureResources[slot]=res;
+			}
+			else if (is_equal(word, "constant_buffer"))
+			{
+				const string &constant_buffer_name = words[1];
+				const string &constant_buffer_slot = words[2];
+				int slot = atoi(constant_buffer_slot.c_str());
+				constantBufferSlots[constant_buffer_name]=slot;
 			}
 			else if(is_equal(word,"texture"))
 			{
@@ -1315,7 +1393,26 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				pass_name=line.substr(sp+1,line.length()-sp-1);
 				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
-				//(((filenameUtf8+".")+tech_name+".")+pass_name).c_str(),0);
+				shaderCount=0;
+				layoutCount=0;
+				layoutOffset=0;
+				layoutSlot=0;
+				passNum++;
+			}
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"variant_pass")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				variantPass=tech->AddVariantPass(pass_name.c_str());
+				variant_mode=true;
+			}
+		}
+		else if (level==VARIANT_PASS)
+		{
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"variant")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
+				variantPass->passes[pass_name]=p;
 				shaderCount=0;
 				layoutCount=0;
 				layoutOffset=0;
@@ -1336,7 +1433,9 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				desc.alignedByteOffset	=layoutOffset;
 				desc.inputSlot			=layoutSlot;
 				desc.perInstance		=false;
+				// TODO: add semantic name/index to sfxo layouts.
 				desc.semanticName		="";
+				desc.semanticIndex		=0;
 				layoutCount++;
 				layoutOffset			+=GetByteSize(desc.format);
 				layoutSlot++;
@@ -1344,6 +1443,16 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		}
 		else if(level==PASS||level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
 		{
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"variant")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),passNum);
+				shaderCount=0;
+				layoutCount=0;
+				layoutOffset=0;
+				layoutSlot=0;
+				passNum++;
+			}
 			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
@@ -1361,9 +1470,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					uses=line.substr(cm+1,line.length()-cm-1);
 				platform::core::ClipWhitespace(uses);
 				platform::core::ClipWhitespace(type);
-				//base::ClipWhitespace(filename_entry);
 
-				std::regex re_file_entry("([a-z0-9A-Z_]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
+				std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
 				std::smatch fe_smatch;
 				
 				std::smatch sm;
@@ -1572,16 +1680,27 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 						continue;
 					}
 					Shader *s = nullptr;
-					if (bin_ptr)
+					if(filenamestr.length()>0)
 					{
-						s=renderPlatform->EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+						if (bin_ptr)
+						{
+							s=EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+						}
+						else 
+						{
+							s =EnsureShader(filenamestr.c_str(), t);
+						}
 					}
-					else if(filenamestr.length())
+					else
 					{
-						s=renderPlatform->EnsureShader(filenamestr.c_str(), t);
+						SIMUL_INTERNAL_CERR<<"No filename found in line: "<<line<<"\n";
 					}
 					if(s)
 					{
+						if(s->type != t)
+						{
+							SIMUL_INTERNAL_CERR << "Shader: " << s->name << " is the wrong type.\n";
+						}
 						if(t==crossplatform::SHADERTYPE_PIXEL&&fmt!=FMT_UNKNOWN)
 							p->pixelShaders[fmt]=s;
 						else
@@ -1760,7 +1879,16 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			if(level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
 				level=PASS;
 			else
+			{
 				level = (Level)(level - 1);
+				if(level==VARIANT_PASS&&!variant_mode)
+					level=TECHNIQUE;
+			}
+			if(level==TECHNIQUE)
+			{
+				variantPass=nullptr;
+				variant_mode=false;
+			}
 			if (level == OUTSIDE)
 				group_name = "";
 		}
@@ -1855,4 +1983,56 @@ bool Shader::usesRwTextureSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
 	return (rwTextureSlots&m)!=0;
+}
+
+crossplatform::Shader *Effect::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
+{
+	std::string name(filenameUtf8);
+	auto i = shaders.find(name);
+	if(i!=shaders.end())
+	{
+		return i->second.get();
+	}
+	platform::core::FileLoader *fileLoader = platform::core::FileLoader::GetFileLoader();
+
+	std::string shaderSourcePath = fileLoader->FindFileInPathStack(filenameUtf8, renderPlatform->GetShaderBinaryPathsUtf8());
+
+	// Load the shader source:
+	unsigned int fileSize = 0;
+	void *fileData = nullptr;
+	// load spirv file as binary data.
+	fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
+	if (!fileData)
+	{
+		// Some engines force filenames to lower case because reasons:
+		std::transform(shaderSourcePath.begin(), shaderSourcePath.end(), shaderSourcePath.begin(), ::tolower);
+		fileLoader->AcquireFileContents(fileData, fileSize, shaderSourcePath.c_str(), false);
+		if (!fileData)
+		{
+			SIMUL_CERR << "Failed to load the shader:" << filenameUtf8 << std::endl;
+			return nullptr;
+		}
+	}
+	Shader *s = EnsureShader(filenameUtf8, fileData, 0, fileSize, t);
+
+	// Free the loaded memory
+	fileLoader->ReleaseFileContents(fileData);
+	return s;
+}
+
+crossplatform::Shader *Effect::EnsureShader(const char *filenameUtf8, const void *sfxb_ptr, size_t inline_offset, size_t inline_length, ShaderType t)
+{
+	std::string name(filenameUtf8);
+	auto i = shaders.find(name);
+	if(i!=shaders.end())
+		return i->second.get();
+	Shader *s = renderPlatform->CreateShader();
+	if(s->load(renderPlatform, filenameUtf8, (unsigned char *)sfxb_ptr + inline_offset, inline_length, t))
+	{
+		shaders[name].reset(s);
+	}
+	else
+		return nullptr;
+
+	return s;
 }

@@ -44,17 +44,17 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-    renderPlatform = r;
-    if (!renderPlatform)
-        return;
-    if (!external_texture && !buffer_texture)
-    {
-        buffer_texture = renderPlatform->CreateTexture((name + "_Colour").c_str());
-    }
-    if (!external_depth_texture && depth_format != UNKNOWN && !buffer_depth_texture)
-    {
-        buffer_depth_texture = renderPlatform->CreateTexture((name + "_Depth").c_str());
-    }
+	renderPlatform = r;
+	if (!renderPlatform)
+		return;
+	if (!external_texture && !buffer_texture)
+	{
+		buffer_texture = renderPlatform->CreateTexture((name + "_Colour").c_str());
+	}
+	if (!external_depth_texture && depth_format != UNKNOWN && !buffer_depth_texture)
+	{
+		buffer_depth_texture = renderPlatform->CreateTexture((name + "_Depth").c_str());
+	}
 	CreateBuffers();
 }
 
@@ -67,6 +67,33 @@ void Framebuffer::InvalidateDeviceObjects()
 	buffer_texture=NULL;
 	buffer_depth_texture=NULL;
 	renderPlatform=nullptr;
+}
+
+void Framebuffer::Clear(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a, float depth)
+{
+	if ((!buffer_texture || !buffer_texture->IsValid()) && (!buffer_depth_texture || !buffer_depth_texture->IsValid()))
+	{
+		CreateBuffers();
+	}
+
+	ClearColour(deviceContext, r, g, b, a);
+	ClearDepth(deviceContext, depth);
+}
+
+void Framebuffer::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, float r, float g, float b, float a)
+{
+	if (buffer_texture && buffer_texture->IsValid())
+	{
+		buffer_texture->ClearColour(deviceContext, {r, g, b, a});
+	}
+}
+
+void Framebuffer::ClearDepth(crossplatform::GraphicsDeviceContext &deviceContext, float depth)
+{
+	if (buffer_depth_texture && buffer_depth_texture->IsValid())
+	{
+		buffer_depth_texture->ClearDepthStencil(deviceContext, depth);
+	}
 }
 
 void Framebuffer::SetWidthAndHeight(int w,int h,int m)

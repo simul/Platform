@@ -31,8 +31,8 @@ namespace platform
 			Texture();
 			virtual ~Texture() override;
 			void InvalidateDeviceObjects();
-			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8, bool gen_mips) override;
-			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files, bool gen_mips);
+			bool LoadFromFile(crossplatform::RenderPlatform *r, const char *pFilePathUtf8, bool gen_mips) override;
+			bool LoadTextureArray(crossplatform::RenderPlatform *r, const std::vector<std::string> &texture_files, bool gen_mips);
 			bool IsValid() const;
 			ID3D11Texture2D *AsD3D11Texture2D()
 			{
@@ -69,6 +69,7 @@ namespace platform
 				,bool computable=false,bool rendertarget=false,bool cubemap=false,bool depthstencil=false
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
+			void ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear) override;
 			void ClearDepthStencil(crossplatform::GraphicsDeviceContext &deviceContext, float depthClear, int stencilClear) override;
 			void GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			void map(ID3D11DeviceContext *context);

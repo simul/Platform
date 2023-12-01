@@ -15,12 +15,15 @@ namespace platform
 		class PLATFORM_CORE_EXPORT FileLoader
 		{
 		public:
+			FileLoader() {}
+			~FileLoader() = default;
+
 			//! Returns a pointer to the current file handler.
 			static FileLoader *GetFileLoader();
-			//! Returns true if and only if the named file exists. If it has a relative path, it is relative to the current directory.
-			virtual bool FileExists(const char *filename_utf8) const=0;
 			//! Set the file handling object: call this before any file operations, if at all.
 			static void SetFileLoader(FileLoader *f);
+			//! Returns true if and only if the named file exists. If it has a relative path, it is relative to the current directory.
+			virtual bool FileExists(const char *filename_utf8) const=0;
 			//! Put the file's entire contents into memory, by allocating sufficiently many bytes, and setting the pointer.
 			//! The memory should later be freed by a call to ReleaseFileContents.
 			//! The filename should be unicode UTF8-encoded.

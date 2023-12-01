@@ -366,6 +366,14 @@
 			this->z=v.z;
 			this->w=w;
 		}
+		template<typename U>
+		tvector4(const tvector4<U> &u)
+		{
+			this->x=T(u.x);
+			this->y=T(u.y);
+			this->z=T(u.z);
+			this->w=T(u.w);
+		}
 		tvector4(const T *v)
 		{
 			this->x=v[0];
@@ -377,12 +385,22 @@
 		{
 			return &x;
 		}
-		void operator=(const T *v)
+		const tvector4 &operator=(const T *v)
 		{
 			x=v[0];
 			y=v[1];
 			z=v[2];
 			w=v[3];
+			return *this;
+		}
+		template<typename U>
+		const tvector4 &operator=(const tvector4<U> &u)
+		{
+			this->x=T(u.x);
+			this->y=T(u.y);
+			this->z=T(u.z);
+			this->w=T(u.w);
+			return *this;
 		}
 		tvector4 operator*(T m)
 		{
@@ -584,6 +602,20 @@
 		operator const T *() const
 		{
 			return m;
+		}
+		tmatrix4 operator+(const tmatrix4 &b)
+		{
+			tmatrix4 r;
+			for(int i=0;i<16;i++)
+				r.m[i]=m[i]+b.m[i];
+			return r;
+		}
+		tmatrix4 operator-(const tmatrix4 &b)
+		{
+			tmatrix4 r;
+			for(int i=0;i<16;i++)
+				r.m[i]=m[i]-b.m[i];
+			return r;
 		}
 		const tmatrix4& operator=(const T *v)
 		{

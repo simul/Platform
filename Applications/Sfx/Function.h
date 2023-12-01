@@ -13,7 +13,8 @@ namespace sfx
 			returnType.clear();
 			name.clear();
 			content.clear();
-			parameters.clear();		
+			parameters.clear();
+			variant_parameters.clear();
 			globals.clear();
 			rwTexturesLoaded.clear();
 			localTextures.clear();
@@ -44,6 +45,8 @@ namespace sfx
 		int								min_parameters;
 		//! Passed in from the caller.
 		std::vector<sfxstype::variable> parameters;		
+		//! Passed in from the variant generator.
+		std::vector<sfxstype::variable> variant_parameters;		
 		//! Passed in from the caller.
 		std::vector<sfxstype::variable> locals;		
 		//! Referenced but not passed - must be global.
@@ -57,6 +60,9 @@ namespace sfx
 		int								local_linenumber;
 		std::string						filename;
 		int								numThreads[3];
+
+		//! Where a function has lambda [] parameters or variant inputs, we create specialized versions with values in this variable.
+		std::map<std::string, std::string> variantValues;
 	protected:
 		mutable std::set<std::string>	types_used;
 		mutable bool					initialized;

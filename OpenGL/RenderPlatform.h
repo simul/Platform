@@ -47,7 +47,7 @@ namespace platform
 			}
 			virtual const char *GetSfxConfigFilename() const override
 			{
-				return "GLSL/GLSL.json";
+				return "OpenGL/Sfx/OpenGL.json";
 			}
 			void        RestoreDeviceObjects(void*) override;
 			void        InvalidateDeviceObjects() override;
@@ -102,7 +102,6 @@ namespace platform
 			void									SetIndexBuffer(crossplatform::GraphicsDeviceContext &deviceContext, const crossplatform::Buffer *buffer) override;
 			
 			void									SetTopology(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Topology t) override;
-			void									EnsureEffectIsBuilt(const char *filename_utf8) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;

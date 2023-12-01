@@ -182,7 +182,7 @@ namespace platform
 		public:
 					Shader();
 					~Shader();
-					void load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
+					bool load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
 			
 			GLuint	ShaderId;
 		private: 
@@ -197,7 +197,6 @@ namespace platform
 		public:
 											Effect();
 											~Effect();
-			bool							Load(crossplatform::RenderPlatform* renderPlatform,const char* filename_utf8)override;
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
 			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource = crossplatform::SubresourceLayers()) override;
