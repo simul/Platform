@@ -1588,56 +1588,6 @@ void RenderPlatform::SetStandardRenderState(crossplatform::DeviceContext& device
 
 void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext& deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
-	/*vulkan::Texture* src = (vulkan::Texture*)source;
-	vulkan::Texture* dst = (vulkan::Texture*)destination;
-	if (!src || !dst)
-	{
-		SIMUL_CERR << "Failed to Resolve.\n";
-		return;
-	}
-
-	//Both have valid pixel formats
-	vk::Format resolveFormat;
-	if (src->pixelFormat != crossplatform::PixelFormat::UNKNOWN  && dst->pixelFormat != crossplatform::PixelFormat::UNKNOWN)
-	{
-		resolveFormat = vulkan::RenderPlatform::ToVulkanFormat(src->pixelFormat);
-	}
-
-	//Resolve src image to dst image
-	
-	vk::CommandBuffer* commandBuffer =(vk::CommandBuffer*)deviceContext.platform_context;
-	vk::CommandBufferBeginInfo beginInfo;
-	beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-
-	vk::ImageResolve imageResolve;
-	imageResolve.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
-	imageResolve.srcOffset = vk::Offset3D(0, 0, 0);
-	imageResolve.dstSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
-	imageResolve.dstOffset = vk::Offset3D(0, 0 ,0);
-	imageResolve.extent = vk::Extent3D(deviceContext.defaultTargetsAndViewport.viewport.w, deviceContext.defaultTargetsAndViewport.viewport.h, 1);
-	
-	vk::ImageMemoryBarrier barrier = {};
-	barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentRead;
-	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-	barrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
-	barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = src->GetImage();
-	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	vk::PipelineStageFlags srcAccessMask = vk::PipelineStageFlags::Flags(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-	vk::PipelineStageFlags dstAccessMask = vk::PipelineStageFlags::Flags(vk::PipelineStageFlagBits::eBottomOfPipe);
-	vk::DependencyFlags flags = vk::DependencyFlags::Flags(vk::DependencyFlagBits::eDeviceGroup);
-
-	if (commandBuffer)
-	{
-		commandBuffer->pipelineBarrier(srcAccessMask, dstAccessMask, flags, 0, nullptr, 0, nullptr, 1, &barrier);
-		commandBuffer->resolveImage(src->GetImage(), vk::ImageLayout::eTransferSrcOptimal, dst->GetImage(), vk::ImageLayout::eSharedPresentKHR, imageResolve);
-	}*/
 }
 
 void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)

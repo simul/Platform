@@ -221,8 +221,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 						std::string id = "";//std::string(magic_enum::enum_name<D3D12_MESSAGE_ID>(ID)); 
 						std::string description = pDescription;
 						
-						category = category.substr(category.find_last_of('_') + 1);
-						severity = severity.substr(severity.find_last_of('_') + 1);
+						category = category.substr(category.rfind('_') + 1);
+						severity = severity.substr(severity.rfind('_') + 1);
 
 						std::string errorMessage;
 						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + severity + " " + category + " #" + std::to_string(ID) + ": " + id + " ]");
@@ -312,12 +312,12 @@ void DeviceManager::Shutdown()
 	
 	SAFE_RELEASE(mDevice);
 #ifndef _GAMING_XBOX
-	IDXGIDebug1 *dxgiDebug;
+	IDXGIDebug1 *dxgiDebug = nullptr;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
 	{
-		dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL| DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+		dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+		dxgiDebug->Release();
 	}
-	dxgiDebug->Release();
 #endif
 }
 

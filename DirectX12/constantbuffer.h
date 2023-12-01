@@ -34,7 +34,7 @@ namespace platform
 			
 		private:
 			//! Total allocated size for each buffer
-			static const UINT				mBufferSize = 1024 * 64 * 8;
+			UINT							mBufferSize = 1024 * 64 * 8;
 			//! Number of ring buffers
 			static const UINT				kNumBuffers = 3;
 			UINT							mSlots;				//number of 256-byte chunks of memory...

@@ -196,6 +196,8 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 
 	// Cache it:
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
+//	if (buffer_depth_texture)
+//		((vulkan::Texture *)buffer_depth_texture)->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal, crossplatform::SubresourceRange());
 }
 
 void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext)
@@ -268,6 +270,9 @@ vk::RenderPass *Framebuffer::GetVulkanRenderPass(crossplatform::GraphicsDeviceCo
 void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext)
 {
 	deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
+	if(buffer_depth_texture)
+		((vulkan::Texture*)buffer_depth_texture)->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilReadOnlyOptimal, crossplatform::SubresourceRange());
+
 	colour_active = false;
 	depth_active = false;
 }

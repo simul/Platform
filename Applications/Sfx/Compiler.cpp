@@ -520,7 +520,7 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shaderInstance->entryPoint)) + L" ";
 	}
 	string filename_root=WStringToString(outputFile);
-	dot_pos=filename_root.find_last_of(".");
+	dot_pos = filename_root.rfind(".");
 	if(dot_pos<filename_root.size())
 		filename_root=filename_root.substr(0,dot_pos);
 	if(sfxOptions.debugInfo)
@@ -658,7 +658,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 {
 	string filenameOnly = GetFilenameOnly( sourceFile);
 	wstring targetFilename=StringToWString(filenameOnly);
-	int pos=(int)targetFilename.find_last_of(L".");
+	int pos = (int)targetFilename.rfind(L".");
 	if(pos>=0)
 		targetFilename=targetFilename.substr(0,pos);
 	if(shaderInstance->variantName.size())
@@ -867,8 +867,8 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 #endif
 	wstring outputFile = ((sfxOptions.wrapOutput ? StringToWString(sfxOptions.intermediateDirectory) : targetDir) + L"/") + (targetFilename + L".") + Utf8ToWString(sfxConfig.outputExtension);
 	// Add the output filename
-	int slash = (int)outputFile.find_last_of(L"/");
-	int backslash = (int)outputFile.find_last_of(L"\\");
+	int slash = (int)outputFile.rfind(L"/");
+	int backslash = (int)outputFile.rfind(L"\\");
 	if (backslash > slash)
 		slash = backslash;
 	string sbf = WStringToUtf8(outputFile.substr(slash + 1, outputFile.length() - slash - 1).c_str());

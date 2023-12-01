@@ -353,7 +353,7 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 	imageViewCI.flags = vk::ImageViewCreateFlagBits(0);
 	imageViewCI.image = mImage;
 	imageViewCI.viewType = viewType;
-	imageViewCI.format = vulkan::RenderPlatform::ToVulkanFormat(pixelFormat);
+	imageViewCI.format = vulkan::RenderPlatform::ToVulkanFormat(pixelFormat, compressionFormat);
 	imageViewCI.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
 	imageViewCI.subresourceRange = {aspect, startMip, numMips, startLayer, numLayers};
 
@@ -381,6 +381,7 @@ bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFo
 bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* t, int w, int l, crossplatform::PixelFormat f, bool rendertarget, bool depthstencil, int numOfSamples)
 {
 	mExternalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	split_layouts=false;
 	if (rendertarget)
 		mExternalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	if (crossplatform::RenderPlatform::IsDepthFormat(f))
@@ -983,7 +984,8 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 
 void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 {
-	mExternalLayout=vulkan::RenderPlatform::ToVulkanImageLayout(resourceState);
+	mExternalLayout = vulkan::RenderPlatform::ToVulkanImageLayout(resourceState);
+	split_layouts=false;
 	if(resourceState==crossplatform::ResourceState::UNKNOWN)
 		return;
 	AssumeLayout(mExternalLayout);
@@ -992,6 +994,7 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
 	SetLayout(deviceContext, mExternalLayout, {});
+	split_layouts = false;
 }
 
 void Texture::InitViewTable(int l, int m)
@@ -1017,12 +1020,16 @@ bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& 
 	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
 	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
-	std::vector<vk::ImageLayout> stateCheck;
+	vk::ImageLayout checkLayout = mSubResourcesLayouts[startLayer][startMip];
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)
+	{
 		for (uint32_t mip = startMip; mip < startMip + numMips; mip++)
-			stateCheck.push_back(mSubResourcesLayouts[layer][mip]);
-
-	return std::equal(stateCheck.begin() + 1, stateCheck.end(), stateCheck.begin());
+		{
+			if(mSubResourcesLayouts[layer][mip]!=checkLayout)
+				return false;
+		}
+	}
+	return true;
 }
 
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLayout newLayout, const crossplatform::SubresourceRange& subresourceRange)
@@ -1031,7 +1038,6 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		return;
 
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
-	const bool split_layouts = !AreSubresourcesInSameState({});
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
 	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
@@ -1040,6 +1046,23 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == totalNum));
 
+	if(!split_layouts&&mCurrentImageLayout == newLayout)
+		return;
+	if (!allSubresources)
+	{
+		bool same=true;
+		for (uint32_t l = startLayer; l < startLayer + numLayers; l++)
+		{
+			for (uint32_t m = startMip; m < startMip + numMips; m++)
+			{
+				vk::ImageLayout &imageLayout = mSubResourcesLayouts[l][m];
+				if (imageLayout != newLayout)
+					same=false;
+			}
+		}
+		if(same)
+			return;
+	}
 	auto* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	auto DstAccessMask = [](vk::ImageLayout const& layout)
 	{
@@ -1133,6 +1156,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 			AssumeLayout(newLayout);
 		}
+		split_layouts=false;
 		mCurrentImageLayout = newLayout;
 	}
 	// Set a subresource range states
@@ -1143,6 +1167,8 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			for (uint32_t m = startMip; m < startMip + numMips; m++)
 			{
 				vk::ImageLayout& imageLayout = mSubResourcesLayouts[l][m];
+				if(imageLayout==newLayout)
+					continue;
 				barrier.setOldLayout(imageLayout);
 				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
 
@@ -1152,9 +1178,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 				imageLayout = newLayout;
 			}
 		}
+		split_layouts = !AreSubresourcesInSameState({});
 	}
 	
-	if (AreSubresourcesInSameState({}))
+	if (!split_layouts)
 		mCurrentImageLayout = newLayout;
 }
 
@@ -1168,6 +1195,7 @@ void Texture::AssumeLayout(vk::ImageLayout layout)
 		}
 	}
 	mCurrentImageLayout = layout;
+	split_layouts = false;
 }
 
 vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange)
@@ -1175,7 +1203,7 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 	if (mSubResourcesLayouts.empty())
 		return mCurrentImageLayout;
 
-	if (AreSubresourcesInSameState({}))
+	if (!split_layouts)
 		return mCurrentImageLayout;
 
 	if (AreSubresourcesInSameState(subresourceRange))

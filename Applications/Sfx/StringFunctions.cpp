@@ -463,8 +463,8 @@ string GetFilenameOnly(const string &src)
 
 string GetDirectoryFromFilename(const string &str)
 {
-	int pos=(int)str.find_last_of("\\");
-	int fs_pos=(int)str.find_last_of("/");
+	int pos=(int)str.rfind("\\");
+	int fs_pos=(int)str.rfind("/");
 	if(pos<0||(fs_pos>=0&&fs_pos>pos))
 		pos=fs_pos;
 	if(pos<0)
@@ -474,10 +474,10 @@ string GetDirectoryFromFilename(const string &str)
 
 vector<string> SplitPath(const string &fullPath)
 {
-	size_t slash_pos = fullPath.find_last_of("/");
+	size_t slash_pos = fullPath.rfind("/");
 	if (slash_pos >= fullPath.length())
 		slash_pos = 0;
-	size_t back_pos = fullPath.find_last_of("\\");
+	size_t back_pos = fullPath.rfind("\\");
 	if (back_pos<fullPath.length() && back_pos>slash_pos)
 		slash_pos = back_pos;
 	if (slash_pos >= fullPath.length())

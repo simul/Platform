@@ -50,8 +50,6 @@ PlatformConstantBuffer::~PlatformConstantBuffer()
 void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, void* addr) 
 {
 	renderPlatform = r;
-	if (addr)
-		SIMUL_BREAK("Nacho has to check this");
 
 	// Create the heaps (storage for our descriptors)
 	// mBufferSize / 256 (this is the max number of descriptors we can hold with this upload heaps
@@ -176,7 +174,12 @@ void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceC
 	if (mCurApplyCount >= mMaxDescriptors)
 	{
 		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
-		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
+		if(mCurApplyCount == mMaxDescriptors)
+		{
+			SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
+			mBufferSize*=2;
+			CreateBuffers(renderPlatform,nullptr);
+		}
 		return;
 	}
 

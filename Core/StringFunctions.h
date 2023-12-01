@@ -90,6 +90,7 @@ namespace platform
 		extern PLATFORM_CORE_EXPORT const char *QuickFormat(const char *format_str,...);
 		//! Proper find-and-replace function for strings:
 		extern PLATFORM_CORE_EXPORT void find_and_replace(std::string& source, std::string const& find, std::string const& replace);
+		extern PLATFORM_CORE_EXPORT size_t find_case_insensitive(const std::string &source, const std::string &find);
 		//! Divide a string into a vector of smaller strings, based on the given separator
 		extern PLATFORM_CORE_EXPORT std::vector<std::string> split(const std::string& source, char separator);
 		extern PLATFORM_CORE_EXPORT std::string toNext(const std::string& source,char separator,size_t &pos);

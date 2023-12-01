@@ -37,9 +37,9 @@ namespace platform
 			//! This MUST be set to true before the first use of the shader, or it won't be applied to the shader's initialization.
 			void SetVideoSource(bool s) { m_VideoSource = s; }
 
-			//Lastets created PipelineLayout.
+			// TODO: this is completely inappropriate here. Latest created PipelineLayout.
 			inline const vk::PipelineLayout& GetLastestPipelineLayout() { return m_PipelineLayout; }
-			//Lastets created DescriptorSet.
+			// TODO: this is completely inappropriate here. Lastets created DescriptorSet.
 			inline const vk::DescriptorSet& GetLastestDescriptorSet() { return m_DescriptorSet; }
 		
 		private:

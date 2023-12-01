@@ -1712,6 +1712,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r, 
 	this->depthStencil = depthstencil;
 	this->computable = computable;
 
+	if(width*length==0)
+		return false;
 	D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
 	textureFlags = (D3D12_RESOURCE_FLAGS)(textureFlags |
 			(computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) |

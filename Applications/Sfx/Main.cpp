@@ -579,7 +579,7 @@ int main(int argc, char** argv)
 	// write a summary output file, so we have a single output with the build time on it.
 	SetEnv("PLATFORM_NAME","");
 	templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
-	sourceName=sourceName.replace(sourceName.find_last_of("."),sourceName.length(), "");
+	sourceName = sourceName.replace(sourceName.rfind("."), sourceName.length(), "");
 	std::string summaryFilename=templateOutputFile+"/"s+sourceName+".sfx_summary";
 	if(ret==0)
 	{

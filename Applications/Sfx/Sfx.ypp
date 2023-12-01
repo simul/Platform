@@ -272,7 +272,6 @@
 
 	string GetFixedParams(string params)
 	{
-		// TO-DO: why Nacho why ---> find_last_of find_last_of find_last_of find_last_of find_last_offind_last_of find_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_offind_last_of
 		string newParams;
 		string copy(params);
 		reverse(copy.begin(),copy.end());

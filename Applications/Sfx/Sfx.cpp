@@ -130,8 +130,8 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8,double &d
 	f=fopen(fullPathNameUtf8.c_str(),"r");
 	#endif
 	string path=fullPathNameUtf8;
-	int last_slash=(int)path.find_last_of("/");
-	int last_bslash=(int)path.find_last_of("\\");
+	int last_slash=(int)path.rfind("/");
+	int last_bslash=(int)path.rfind("\\");
 	if(last_bslash>last_slash)
 		last_slash=last_bslash;
 	if(last_slash>0)
@@ -536,8 +536,8 @@ std::string GetExecutableDirectory()
 	if(GetModuleFileNameW(NULL,filename,_MAX_PATH))
 	{
 		str=filename;
-		int pos=(int)str.find_last_of('/');
-		int back=(int)str.find_last_of('\\');
+		int pos=(int)str.rfind('/');
+		int back=(int)str.rfind('\\');
 		if(back>pos)
 			pos=back;
 		str=str.substr(0,pos);
@@ -568,7 +568,7 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		a++;
 	}
 	string sfxoFilename	=GetFilenameOnly(file);
-	int dotpos				=(int)sfxoFilename.find_last_of(".");
+	int dotpos				=(int)sfxoFilename.rfind(".");
 	if(dotpos>0)
 		sfxoFilename.replace(dotpos,sfxoFilename.length()-dotpos,".sfxo");
 	else
@@ -577,7 +577,7 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 	{
 		string outf=outputfile;
 		// Always assume it's a directory.
-		if(outf.find_last_of(".sfxo")!=outf.length()-6)
+		if(outf.rfind(".sfxo")!=outf.length()-6)
 		{
 			if(outf.length()>0)
 				outf+="/";
@@ -588,9 +588,9 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 	else
 	{
 		string shaderbin(file);
-		int slash_pos=(int)shaderbin.find_last_of("/");
+		int slash_pos=(int)shaderbin.rfind("/");
 		if(slash_pos<0)
-			slash_pos=(int)shaderbin.find_last_of("\\");
+			slash_pos=(int)shaderbin.rfind("\\");
 		if(slash_pos<0)
 			slash_pos=0;
 

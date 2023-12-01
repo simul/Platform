@@ -110,8 +110,8 @@ std::string EnvironmentVariables::GetExecutableDirectory()
 	if(GetModuleFileNameA(NULL,filename,_MAX_PATH))
 	{
 		str=filename;
-		int pos=(int)str.find_last_of('/');
-		int back=(int)str.find_last_of('\\');
+		int pos=(int)str.rfind('/');
+		int back=(int)str.rfind('\\');
 		if(back>pos)
 			pos=back;
 		str=str.substr(0,pos);

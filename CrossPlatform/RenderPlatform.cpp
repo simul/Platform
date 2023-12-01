@@ -2065,6 +2065,15 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	ta.dimensions = dim;
 	ta.uav = false;
 	ta.subresource = subresource;
+	if (ta.texture && ta.subresource.baseMipLevel + ta.subresource.mipLevelCount >= ta.texture->mips)
+	{
+		ta.subresource.baseMipLevel = ta.texture->mips - ta.subresource.mipLevelCount;
+		if (ta.subresource.baseMipLevel + ta.subresource.mipLevelCount >= ta.texture->mips)
+		{
+			ta.subresource.baseMipLevel=0;
+			ta.subresource.mipLevelCount = ta.texture->mips;
+		}
+	}
 	cs->textureAssignmentMapValid = false;
 }
 

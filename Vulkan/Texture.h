@@ -134,6 +134,7 @@ namespace platform
 			std::vector<std::vector<LoadedTexture>>		loadedTextures; //By mip, then by layer.
 			int mNumSamples = 1;
 			vk::ImageLayout mExternalLayout;
+			bool split_layouts=false;
 		};
 	}
 
