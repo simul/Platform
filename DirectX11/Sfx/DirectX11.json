@@ -60,5 +60,5 @@
 		"mix":"lerp",
 		"fract":"frac"
 	},
-	"maxShaderModel": 5.1
+	"maxShaderModel": 5.0
 }
