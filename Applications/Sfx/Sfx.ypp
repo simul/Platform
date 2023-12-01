@@ -586,7 +586,7 @@
 %}
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
-%token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST
+%token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D NAMED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
@@ -1498,7 +1498,7 @@ declarator : IDENTIFIER
 	{
 		$$.num=$3.num;
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
-		$$.strs[1]=$1.strs[0];
+		$$.strs[1]=$1.strs[1];
 		$$.strs[2]=$3.strs[0];
 	}
 	| declarator '[' ']'
@@ -2287,7 +2287,7 @@ decl_specs : IDENTIFIER
 		$$.strs[0] = $1.strs[0];
 		$$.strs[1] = $1.strs[0];
 	}
-	| type_qualifier type_spec
+	| type_qualifier_list type_spec
 	{
 		$$.strs[0] = ($1.strs[0]+" ")+$2.strs[0];
 		$$.strs[1] = $2.strs[0];
@@ -2366,7 +2366,9 @@ for_init_statement : expression
 		$$.strs[0]=$1.strs[0];
 	}
 	| %empty
-	{}
+	{
+		$$.strs[0]="";
+	}
 statement : COMMENT
 	{
 		$$.strs[0]=$1.strs[0];
@@ -2812,7 +2814,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 // so we need to accept point, line and so on as storage types.
 // we need for the name to be able to have an array dimension.
 // and we need the type to be able to have a template.
-param_declaration : type_qualifier storage param location
+param_declaration : type_qualifier_list storage param location
 	{
 		$$.strs[0]	=$3.strs[0];			// type
 		$$.strs[1]	=$3.strs[1];			// name
@@ -2825,17 +2827,30 @@ param_declaration : type_qualifier storage param location
 		$$.shaderResourceType	=$3.shaderResourceType;
 	}
 
-type_qualifier: CONST
-	{
-		$$.strs[0]	=$1.strs[0];
-	} 
-	| GROUPSHARED
+type_qualifier_list : type_qualifier
 	{
 		$$.strs[0] = $1.strs[0];
-	} 
+	}
+	| type_qualifier type_qualifier_list
+	{
+		$$.strs[0] = $1.strs[0] + " " + $2.strs[0];
+	}
 	| %empty
 	{
 		$$.strs[0] = "";
+	}
+
+type_qualifier: CONST
+	{
+		$$.strs[0] = $1.strs[0];
+	}
+	| STATIC
+	{
+		$$.strs[0] = $1.strs[0];
+	}
+	| GROUPSHARED
+	{
+		$$.strs[0] = $1.strs[0];
 	}
 		
 type : IDENTIFIER optional_template_type

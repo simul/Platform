@@ -68,7 +68,8 @@
 	"computeSemantics": {
 		"SV_GroupID": "gl_WorkGroupID",
 		"SV_GroupThreadID": "gl_LocalInvocationID",
-		"SV_DispatchThreadID": "gl_GlobalInvocationID"
+		"SV_DispatchThreadID": "gl_GlobalInvocationID",
+		"SV_GroupIndex": "gl_LocalInvocationIndex"
 	},
 	"toImageFormat": {
 		"vec4": "rgba32f",
@@ -201,7 +202,8 @@
 		"atan2": "atan",
 		"frac": "fract",
 		"ddx": "dFdx",
-		"ddy": "dFdy"
+		"ddy": "dFdy",
+		"static": ""
 	},
 	"maxShaderModel": 5.0
 }

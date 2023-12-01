@@ -250,8 +250,8 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 				{
 					types_used.insert(dt->structureType);
 				}
-			}
 				break;
+			}
 			case DeclarationType::NAMED_CONSTANT_BUFFER:
 			{
 				NamedConstantBuffer*dt=static_cast<NamedConstantBuffer*>(d);
@@ -265,8 +265,8 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 				{
 					types_used.insert(s.type);
 				}
-			}
 				break;
+			}
 			case DeclarationType::STRUCT:
 			{
 				Struct *st=(Struct*)d;
@@ -274,6 +274,11 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 				{
 					types_used.insert(s.type);
 				}
+			}
+			case DeclarationType::VARIABLE:
+			{
+				types_used.insert(d->structureType);
+				break;
 			}
 			default:
 				break;

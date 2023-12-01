@@ -80,7 +80,8 @@
 	"computeSemantics": {
 		"SV_GroupID": "gl_WorkGroupID",
 		"SV_GroupThreadID": "gl_LocalInvocationID",
-		"SV_DispatchThreadID": "gl_GlobalInvocationID"
+		"SV_DispatchThreadID": "gl_GlobalInvocationID",
+		"SV_GroupIndex": "gl_LocalInvocationIndex"
 	},
 	"toImageFormat": {
 		"vec4": "rgba32f",
@@ -210,6 +211,7 @@
 		"frac": "fract",
 		"flat": "",
 		"ddx": "dFdx",
-		"ddy": "dFdy"
+		"ddy": "dFdy",
+		"static": ""
 	}
 }

@@ -8,47 +8,50 @@
 
 struct DepthInterpretationStruct
 {
-	vec4 depthToLinFadeDistParams;
+	// For projection: 
+	//	x = m43	= NF/(N-F)
+	//	y = max_dist_metres
+	//	z = m33 * y	= (F/(N-F)) * y
+	//	w = 0.0f
+	vec4 depthToLinFadeDistParams; 
 	bool reverseDepth;
 };
 
-float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitudeRangeKm)
-{
-	float diff_km				= alt_km - minSunlightAltitudeKm;
-	float sun_alt_texc			=0.5+0.5*saturate(diff_km /fadeAltitudeRangeKm);
-	sun_alt_texc				-=0.5*saturate(-diff_km /(minSunlightAltitudeKm+1.0));
-	return sun_alt_texc;
-}
-
 float linearDistanceToDepth(float d_km, DepthInterpretationStruct dis)
 {
-    if (dis.reverseDepth)
-    {
-        if (d_km <= 0)
-            return UNITY_DIST; // max_fade_distance_metres;
-    }
-    else
-    {
-        if (d_km >= 1.0)
-            return UNITY_DIST; // max_fade_distance_metres;
-    }
-    vec4 param = dis.depthToLinFadeDistParams;
+	if (dis.reverseDepth)
+	{
+		if (d_km <= 0)
+			return UNITY_DIST; // max_fade_distance_metres;
+	}
+	else
+	{
+		if (d_km >= 1.0)
+			return UNITY_DIST; // max_fade_distance_metres;
+	}
+	vec4 param = dis.depthToLinFadeDistParams;
 
-	//dist = saturate(x/(depth*y + z)+w*depth);
+	// dist = saturate(x/(depth*y + z)+w*depth);
 	// if w==0
-	//dist = x/(depth*y + z)
-	//dist*(depth*y + z)=x
+	// dist = x/(depth*y + z)
+	// dist*(depth*y + z)=x
 	// depth*y+z=x/dist
 	// depth*y=x/dist-z
 	// depth=(x/dist-z)/y
-    float depth =0.0;
+	float depth =0.0;
 	if(param.y!=0)
-		depth=(param.x/d_km -  param.z)/param.y;
+	{
+		depth = (param.x / d_km - param.z) / param.y;
+	}
 	else if(param.w!=0&&param.y==0)
-	//dist = x/z+w*depth;
-		depth=(d_km- param.x/param.z)/param.w;
+	{ 
+		//dist = x/z+w*depth;
+		depth = (d_km - param.x / param.z) / param.w;
+	}
 	else
-		depth=1.0/(2.0*param.w*param.y)*(d_km*param.y-param.w*param.z+sqrt((d_km*param.y-param.w*param.z)*(d_km*param.y-param.w*param.z)+4*param.w*param.y*param.x));
+	{
+		depth = 1.0 / (2.0 * param.w * param.y) * (d_km * param.y - param.w * param.z + sqrt((d_km * param.y - param.w * param.z) * (d_km * param.y - param.w * param.z) + 4 * param.w * param.y * param.x));
+	}
 	return depth;
 }
 
