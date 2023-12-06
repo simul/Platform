@@ -251,8 +251,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #endif
 
 		// Store information about the GPU
-		char gpuDesc[128];
-		int gpuMem = (int)(hardwareAdapterDesc.DedicatedVideoMemory / 1024 / 1024);
+		gpuMem = (int)(hardwareAdapterDesc.DedicatedVideoMemory / 1024 / 1024);
 		size_t stringLength;
 		wcstombs_s(&stringLength, gpuDesc, 128, hardwareAdapterDesc.Description, 128);
 
@@ -409,6 +408,14 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	displayModeList = 0;
 #endif
 	return o;
+}
+
+crossplatform::GPUInfo DeviceManager::GetGPUInfo()
+{
+	crossplatform::GPUInfo info;
+	info.name = gpuDesc;
+	info.memorySize = gpuMem;
+	return info;
 }
 
 void DeviceManager::ReportMessageFilterState()

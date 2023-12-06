@@ -25,8 +25,9 @@ namespace platform
 			void* GetDeviceContext();
 			int GetNumOutputs();
 			crossplatform::Output GetOutput(int i);
-			void GetVideoCardInfo(char*, int&);
+			crossplatform::GPUInfo GetGPUInfo();
 			void ReportMessageFilterState();
+
 		protected:
 			bool m_vsync_enabled;
 			int m_videoCardMemory;

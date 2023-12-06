@@ -285,6 +285,11 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	return o;
 }
 
+crossplatform::GPUInfo DeviceManager::GetGPUInfo()
+{
+	crossplatform::GPUInfo info;
+	return info;
+}
 
 void DeviceManager::Activate()
 {
