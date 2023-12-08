@@ -37,10 +37,10 @@ namespace platform
 			//! This MUST be set to true before the first use of the shader, or it won't be applied to the shader's initialization.
 			void SetVideoSource(bool s) { m_VideoSource = s; }
 
-			//Lastets created PipelineLayout.
-			inline const vk::PipelineLayout& GetLastestPipelineLayout() { return m_PipelineLayout; }
-			//Lastets created DescriptorSet.
-			inline const vk::DescriptorSet& GetLastestDescriptorSet() { return m_DescriptorSet; }
+			//Latest created PipelineLayout.
+			inline const vk::PipelineLayout &GetLatestPipelineLayout() { return m_PipelineLayout; }
+			//Latest created DescriptorSet.
+			inline const vk::DescriptorSet &GetLatestDescriptorSet() { return m_DescriptorSet; }
 		
 		private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet);
