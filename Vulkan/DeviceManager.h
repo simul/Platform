@@ -36,6 +36,7 @@ namespace platform
 			void*	GetDeviceContext() override;
 			int		GetNumOutputs() override;
 			crossplatform::Output	GetOutput(int i) override;
+			crossplatform::GPUInfo	GetGPUInfo() override;
 
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();

@@ -37,6 +37,7 @@ namespace platform
 
 			int						GetNumOutputs();
 			crossplatform::Output	GetOutput(int i);
+			crossplatform::GPUInfo	GetGPUInfo();
 			void					ReportMessageFilterState();
 
 		protected:
@@ -44,7 +45,12 @@ namespace platform
 			OutputMap				mOutputs;
 			//! The D3D device
 			ID3D12DeviceType*		mDevice;
+			//! The D3D Debugging Callback Handle
 			DWORD					mCallbackCookie;
+			//! GPUInfo Name
+			char gpuDesc[128];
+			//! GPUInfo Memory
+			int gpuMem;
 		};
 	}
 }

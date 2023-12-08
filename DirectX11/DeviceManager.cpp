@@ -637,6 +637,14 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	return o;
 }
 
+crossplatform::GPUInfo DeviceManager::GetGPUInfo()
+{
+	crossplatform::GPUInfo info;
+	info.name = m_videoCardDescription;
+	info.memorySize = m_videoCardMemory;
+	return info;
+}
+
 void DeviceManager::Shutdown()
 {
 	// Release the adapter.

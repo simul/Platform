@@ -535,6 +535,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	//  If app has specific feature requirements it should check supported features based on this query.
 	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
 	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
+	deviceManagerInternal->gpu.getMemoryProperties(&deviceManagerInternal->memory_properties);
 
 	//Taken from UE4 for setting up chains of structures
 	void** nextFeatsAddr = nullptr;
@@ -922,6 +923,37 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 {
 	crossplatform::Output o;
 	return o;
+}
+
+crossplatform::GPUInfo DeviceManager::GetGPUInfo()
+{
+	crossplatform::GPUInfo info;
+	info.name = deviceManagerInternal->gpu_props.deviceName.operator std::string();
+
+	static uint64_t deviceLocalMemorySize = 0;
+	if (deviceLocalMemorySize == 0)
+	{
+		const vk::PhysicalDeviceMemoryProperties &memory_properties = deviceManagerInternal->memory_properties;
+		for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
+		{
+			const vk::MemoryType &memoryType = memory_properties.memoryTypes[i];
+			const vk::MemoryPropertyFlags &propertyFlags = memoryType.propertyFlags;
+
+			if ((propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal)
+			{
+				const uint32_t &heapIndex = memoryType.heapIndex;
+				if (heapIndex < memory_properties.memoryHeapCount)
+				{
+					const vk::MemoryHeap &memoryHeap = memory_properties.memoryHeaps[heapIndex];
+					deviceLocalMemorySize = (memoryHeap.size / 1024 / 1024);
+					break;
+				}
+			}
+		}
+	}
+	info.memorySize = deviceLocalMemorySize;
+
+	return info;
 }
 
 void DeviceManager::Activate()

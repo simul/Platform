@@ -527,13 +527,15 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 	{
 		command+=Utf8ToWString(sfxConfig.debugOption)+L" ";
 		if (sfxConfig.debugOutputFileOption.length())
+		{
 			command += Utf8ToWString(std::regex_replace(sfxConfig.debugOutputFileOption, std::regex("\\{filename_root\\}"), filename_root)) + L" ";
+		}
 	}
 	else
 	{
 		if(sfxConfig.releaseOptions.length())
 		{
-			command+=Utf8ToWString(sfxConfig.releaseOptions)+L" ";
+			command += Utf8ToWString(std::regex_replace(sfxConfig.releaseOptions, std::regex("\\{filename_root\\}"), filename_root)) + L" ";
 		}
 	}
 	if(sfxConfig.optimizationLevelOption.length()&&sfxOptions.optimizationLevel>=0)

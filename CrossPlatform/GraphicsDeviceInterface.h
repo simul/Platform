@@ -26,6 +26,11 @@ namespace platform
 			int height;
 			int numerator, denominator;
 		};
+		struct GPUInfo
+		{
+			std::string name;
+			uint64_t memorySize;
+		};
 		class RenderDelegaterInterface;
 		/// An interface class for managing GPU-accelerated graphics windows.
 		/// The derived class 
@@ -40,6 +45,7 @@ namespace platform
 			virtual int		GetNumOutputs()=0;
 			virtual Output	GetOutput(int i)=0;
 			virtual bool	IsActive() const=0;
+			virtual GPUInfo	GetGPUInfo() = 0;
 		};
 		
 		class DisplaySurfaceManagerInterface
