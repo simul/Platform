@@ -4,7 +4,7 @@
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 #include <functional>
-#include <unordered_map>
+#include <parallel_hashmap/phmap.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -41,8 +41,8 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT RenderDelegater
 			:public RenderDelegaterInterface
 		{
-			std::unordered_map<int,crossplatform::RenderDelegate> renderDelegate;
-			std::unordered_map<int,int2> viewSize;
+			phmap::flat_hash_map<int,crossplatform::RenderDelegate> renderDelegate;
+			phmap::flat_hash_map<int,int2> viewSize;
 			std::vector<crossplatform::StartupDeviceDelegate> startupDeviceDelegates;
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			int last_view_id;

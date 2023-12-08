@@ -102,14 +102,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	{
 		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
 	}
-
-	int numDescriptors = numResourceSlots + numRwResourceSlots
-		+ numSbResourceSlots
-		+ numRwSbResourceSlots
-		+ numSamplerResourceSlots
-		+ numConstantBufferResourceSlots;
-
-	vk::WriteDescriptorSet* writes = new vk::WriteDescriptorSet[numDescriptors];
+	int numImages = numResourceSlots + numRwResourceSlots + numSamplerResourceSlots;
+	int numBuffers = numSbResourceSlots + numRwSbResourceSlots + numConstantBufferResourceSlots;
+	int numDescriptors = numImages + numBuffers;
+	if(numDescriptors>m_writeDescriptorSets.size())
+		m_writeDescriptorSets.resize(numDescriptors);
+	vk::WriteDescriptorSet *writes = m_writeDescriptorSets.data();
 
 	cs->textureSlots = 0;
 	cs->rwTextureSlots = 0;
@@ -117,7 +115,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	cs->rwTextureSlotsForSB = 0;
 	cs->textureSlotsForSB = 0;
 
-	vk::DescriptorImageInfo descriptorImageInfo[32];
+	if(numImages>descriptorImageInfos.size())
+		descriptorImageInfos.resize(numImages);
+	vk::DescriptorImageInfo *descriptorImageInfo = descriptorImageInfos.data();
+	if(numBuffers>descriptorBufferInfos.size())
+		descriptorBufferInfos.resize(numBuffers);
+	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
 	int b = 0;
 	for (int i = 0; i < numResourceSlots; i++, b++)
 	{
@@ -172,10 +175,10 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		texture->SetLayout(deviceContext, vk::ImageLayout::eShaderReadOnlyOptimal, ta.subresource);
 		write.setDstBinding(GenerateTextureSlot(slot));
 		write.setDescriptorCount(1);
-		vkImageView = texture->AsVulkanImageView({ ta.resourceType, ta.subresource });
+		vkImageView = texture->AsVulkanImageView(MAKE_TEXTURE_VIEW_2(ta.resourceType, ta.subresource));
 		if (vkImageView)
-			descriptorImageInfo[i].setImageView(*vkImageView);
-		descriptorImageInfo[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+			descriptorImageInfo->setImageView(*vkImageView);
+		descriptorImageInfo->setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 		if (!m_VideoSource)
 		{
 			write.setDescriptorType(vk::DescriptorType::eSampledImage);
@@ -184,12 +187,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		{
 			// video texture:
 			write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-			descriptorImageInfo[i].setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
+			descriptorImageInfo->setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
 		}
-		write.setPImageInfo(&descriptorImageInfo[i]);
+		write.setPImageInfo(descriptorImageInfo);
 		cs->textureSlots |= 1 << slot;
+		descriptorImageInfo++;
 	}
-	vk::DescriptorImageInfo img_desc[8];
 	for (int i = 0; i < numRwResourceSlots; i++, b++)
 	{
 		int slot = rwResourceSlots[i];
@@ -200,7 +203,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		vulkan::Texture* texture = (vulkan::Texture*)(ta.texture);
 		if (texture && texture->IsValid())
 		{
-			vkImageView = texture->AsVulkanImageView({ ta.resourceType, ta.subresource });
+			vkImageView = texture->AsVulkanImageView(MAKE_TEXTURE_VIEW_2(ta.resourceType, ta.subresource));
 			texture->SetLayout(deviceContext, vk::ImageLayout::eGeneral, ta.subresource);
 		}
 		else
@@ -214,13 +217,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageImage);
 		if (vkImageView)
-			img_desc[i].setImageView(*vkImageView);
-		img_desc[i].setImageLayout(vk::ImageLayout::eGeneral);
-		write.setPImageInfo(&img_desc[i]);
-
+			descriptorImageInfo->setImageView(*vkImageView);
+		descriptorImageInfo->setImageLayout(vk::ImageLayout::eGeneral);
+		write.setPImageInfo(descriptorImageInfo);
 		cs->rwTextureSlots |= 1 << slot;
+		descriptorImageInfo++;
 	}
-	vk::DescriptorBufferInfo sbInfo[8];
 	for (int i = 0; i < numSbResourceSlots; i++, b++)
 	{
 		int slot = sbResourceSlots[i];
@@ -242,12 +244,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			SIMUL_ASSERT(vkBuffer != nullptr);
 			if (vkBuffer)
 			{
-				sbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
-				write.setPBufferInfo(&sbInfo[i]);
+				descriptorBufferInfo->setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
+				write.setPBufferInfo(descriptorBufferInfo);
+				descriptorBufferInfo++;
 			}
 		}
 	}
-	vk::DescriptorBufferInfo rwSbInfo[8];
 	for (int i = 0; i < numRwSbResourceSlots; i++, b++)
 	{
 		int slot = rwSbResourceSlots[i];
@@ -270,13 +272,13 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		SIMUL_ASSERT(vkBuffer != nullptr);
 		if (vkBuffer)
 		{
-			rwSbInfo[i].setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
-			write.setPBufferInfo(&rwSbInfo[i]);
+			descriptorBufferInfo->setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
+			write.setPBufferInfo(descriptorBufferInfo);
+			descriptorBufferInfo++;
 		}
 		// TODO: this is overkill, synchronizing all uav's
 		renderPlatform->ResourceBarrierUAV(deviceContext, sb);
 	}
-	vk::DescriptorImageInfo samplerInfo[16];
 	for (int i = 0; i < numSamplerResourceSlots; i++, b++)
 	{
 		int slot = samplerResourceSlots[i];
@@ -298,12 +300,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		SIMUL_ASSERT(vkSampler != nullptr);
 		if (vkSampler)
 		{
-			samplerInfo[i].setSampler(*vkSampler);
-			write.setPImageInfo(&samplerInfo[i]);
+			descriptorImageInfo->setSampler(*vkSampler);
+			write.setPImageInfo(descriptorImageInfo);
+			descriptorImageInfo++;
 		}
 
 	}
-	vk::DescriptorBufferInfo bufferInfo[8];
 	for (int i = 0; i < numConstantBufferResourceSlots; i++, b++)
 	{
 		int slot = constantBufferResourceSlots[i];
@@ -327,10 +329,11 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		SIMUL_ASSERT(vkBuffer != nullptr);
 		if (vkBuffer)
 		{
-			bufferInfo[i].setOffset(pcb->GetLastOffset())
+			descriptorBufferInfo->setOffset(pcb->GetLastOffset())
 				.setRange(vkDeviceSize)
 				.setBuffer(*vkBuffer);
-			write.setPBufferInfo(&bufferInfo[i]);
+			write.setPBufferInfo(descriptorBufferInfo);
+			descriptorBufferInfo++;
 		}
 		cs->bufferSlots |= (1 << slot);
 	}
@@ -350,10 +353,9 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		}
 		vulkanDevice->updateDescriptorSets(numDescriptors, writes, 0, nullptr);
 	}
-	delete[] writes;
 
 	// Now verify that ALL resource are set:
-	static bool error_checking = true;
+	static bool error_checking = false;
 	if (error_checking)
 	{
 		unsigned required_slots = GetTextureSlots();
@@ -920,11 +922,12 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)numOfSamples * 10 + (unsigned long long)topology;
 	if (layout)
 	{
-		const auto& lDesc = layout->GetDesc();
+		hashval += layout->GetHash();
+	/*	const auto& lDesc = layout->GetDesc();
 		for (const auto& l : lDesc)
 		{
 			hashval += ((unsigned long long)l.format) * 3279 + ((unsigned long long)l.semanticIndex) * 6357;
-		}
+		}*/
 	}
 	if (blendState)
 	{

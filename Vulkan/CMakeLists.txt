@@ -36,6 +36,8 @@ if(SIMUL_SOURCE_BUILD)
 	
 	target_include_directories(SimulVulkan_MT PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan_MT PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
+	# For parallel_hashmap
+	target_include_directories(SimulVulkan_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 	target_include_directories(SimulVulkan_MT PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
 
 	if(PLATFORM_BUILD_MD_LIBS)

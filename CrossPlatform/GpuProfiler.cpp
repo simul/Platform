@@ -14,7 +14,7 @@ using namespace platform;
 using namespace platform;
 using namespace crossplatform;
 using namespace std;
-static std::unordered_map<void*,platform::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
+static phmap::flat_hash_map<void*,platform::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int BOOL;
 

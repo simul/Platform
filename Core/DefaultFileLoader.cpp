@@ -15,6 +15,7 @@
 #endif
 #include <stdio.h> // for fopen, seek, fclose
 #include <stdlib.h> // for malloc, free
+// TODO: replace stdlib.h with cstdlib
 #include <time.h>
 typedef struct stat Stat;
 using namespace platform;

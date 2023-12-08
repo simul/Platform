@@ -12,7 +12,7 @@
 #endif
 
 #include "StringToWString.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <string.h>
 #include <stdio.h>
 const std::wstring &StringToWString(const std::string &text)

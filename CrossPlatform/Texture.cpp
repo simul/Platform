@@ -12,6 +12,10 @@
 
 using namespace platform;
 using namespace crossplatform;
+
+
+TextureView platform::crossplatform::DefaultTextureView;
+
 SamplerState::SamplerState():default_slot(-1),renderPlatform(nullptr)
 {
 }
@@ -36,6 +40,7 @@ Texture::Texture(const char *n)
 				,depthStencil(false)
 				,unfenceable(false)
 {
+	DefaultTextureView.elements = {ShaderResourceType::UNKNOWN, DefaultSubresourceRange};
 	if(n)
 		name=n;
 }
@@ -52,11 +57,11 @@ bool Texture::InitFromExternalTexture(crossplatform::RenderPlatform *renderPlatf
 
 void Texture::activateRenderTarget(GraphicsDeviceContext& deviceContext, TextureView textureView)
 {
-	const int& mip_index = textureView.subresourceRange.baseMipLevel;
-	const int& array_count = textureView.subresourceRange.arrayLayerCount;
-	const int& array_index = textureView.subresourceRange.baseArrayLayer;
-	if (textureView.type == ShaderResourceType::UNKNOWN)
-		textureView.type = GetShaderResourceTypeForRTVAndDSV();
+	const int& mip_index = textureView.elements.subresourceRange.baseMipLevel;
+	const int &array_count = textureView.elements.subresourceRange.arrayLayerCount;
+	const int &array_index = textureView.elements.subresourceRange.baseArrayLayer;
+	if (textureView.elements.type == ShaderResourceType::UNKNOWN)
+		textureView.elements.type = GetShaderResourceTypeForRTVAndDSV();
 
 	targetsAndViewport.num												=1;
 	targetsAndViewport.m_rt[0]											=nullptr;
@@ -186,8 +191,8 @@ uint3 Texture::CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uin
 
 bool Texture::ValidateTextureView(const TextureView& textureView)
 {
-	const ShaderResourceType& type = textureView.type;
-	const SubresourceRange& subres = textureView.subresourceRange;
+	const ShaderResourceType &type = textureView.elements.type;
+	const SubresourceRange &subres = textureView.elements.subresourceRange;
 	const uint32_t& layers = (uint32_t)NumFaces();
 	const uint32_t& mips = (uint32_t)this->mips;
 	const int& samples = GetSampleCount();
@@ -221,14 +226,14 @@ bool Texture::ValidateTextureView(const TextureView& textureView)
 	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a Plane 2 aspect along with a Plane 0 and/or a Plane 1 aspect.");
 
 	ok &= (subres.baseMipLevel < mips);
-	if (subres.mipLevelCount != -1)
-		ok &= (subres.baseMipLevel + subres.mipLevelCount <= mips);
+	if (subres.mipLevelCount != uint8_t(0xFF))
+		ok &= (uint32_t(subres.baseMipLevel)+ uint32_t(subres.mipLevelCount)<= mips);
 
 	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a range outside the texture's mip levels.");
 
 	ok &= (subres.baseArrayLayer < layers);
-	if (subres.arrayLayerCount != -1)
-		ok &= (subres.baseArrayLayer + subres.arrayLayerCount <= layers);
+	if (subres.arrayLayerCount != uint8_t(0xFF))
+		ok &= ((uint32_t)subres.baseArrayLayer + (uint32_t)subres.arrayLayerCount <= layers);
 
 	SIMUL_ASSERT_WARN_ONCE(ok, "SubresourceRange specifices a range outside the texture's array layers.");
 
@@ -331,4 +336,24 @@ bool Texture::ensureTexture2DSizeAndFormat(RenderPlatform* renderPlatform, int w
 		, f, data, computable, rendertarget, depthstencil, num_samples, aa_quality, wrap,
 		clear, clearDepth, clearStencil, shared
 		, compressionFormat);
+}
+
+crossplatform::ShaderResourceType Texture::GetDefaultShaderResourceType() const
+{
+	crossplatform::ShaderResourceType type;
+	type = crossplatform::ShaderResourceType::TEXTURE_2D;
+	if (depth > 1)
+		type = crossplatform::ShaderResourceType::TEXTURE_3D;
+	if (cubemap)
+		type = crossplatform::ShaderResourceType::TEXTURE_CUBE;
+	if (arraySize > 1)
+		type |= crossplatform::ShaderResourceType::ARRAY;
+	return type;
+}
+
+void Texture::SetDefaultTextureView()
+{
+	defaultTextureView.elements.type = GetDefaultShaderResourceType();
+	defaultTextureView.elements.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, (uint8_t)mips, 0, (uint8_t)arraySize};
+	defaultTextureView.elements.pad=0;
 }

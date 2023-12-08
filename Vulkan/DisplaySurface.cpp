@@ -914,7 +914,6 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	deferredContext.platform_context = &commandBuffer;
 	deferredContext.renderPlatform = renderPlatform;
 
-	renderPlatform->StoreRenderState(deferredContext);
 	EnsureImageLayout();
 
 	ERRNO_BREAK
@@ -925,7 +924,6 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 		renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
 	}
 
-	renderPlatform->RestoreRenderState(deferredContext);
 	EnsureImagePresentLayout();
 
 	commandBuffer.end();

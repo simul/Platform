@@ -75,6 +75,10 @@ namespace platform
 		private:
 			bool											m_VideoSource = false;
 			std::vector<vk::Sampler>						m_ImmutableSamplers;
+			// TODO: These should probably be per deviceContext:
+			std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
+			std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
+			std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
 
 			bool m_Initialized = false;
 			vk::DescriptorPool								m_DescriptorPool;

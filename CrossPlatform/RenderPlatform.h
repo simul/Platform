@@ -412,8 +412,8 @@ namespace platform
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(GraphicsDeviceContext &deviceContext,Topology t);
 
-			virtual void					SetTexture						(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceRange& subresource = SubresourceRange());
-			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
+			virtual void					SetTexture						(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
+			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceLayers& subresource = DefaultSubresourceLayers);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
 
@@ -573,7 +573,7 @@ namespace platform
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.
 			//std::map<std::string, Shader*> shaders;
-			std::unordered_map<const void *,ContextState *> contextState;
+			phmap::flat_hash_map<const void *,ContextState *> contextState;
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;

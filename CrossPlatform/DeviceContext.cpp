@@ -76,7 +76,7 @@ void DeviceContext::SetFrameNumber(long long n)
 }
 
 GraphicsDeviceContext::GraphicsDeviceContext()
-	:cur_backbuffer(0)
+	//:cur_backbuffer(0)
 {
 	deviceContextType=DeviceContextType::GRAPHICS;
 	viewStruct.depthTextureStyle=crossplatform::PROJECTION;

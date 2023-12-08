@@ -77,6 +77,7 @@ void Layout::SetDesc(const LayoutDesc *d,int num,bool i)
 		struct_size+=GetByteSize(d->format);
 		d++;
 	}
+	MakeHash();
 }
 
 int Layout::GetPitch() const
@@ -148,6 +149,7 @@ uint64_t GetLayoutPartHash(const SimpleLayoutSpec &s)
 	//h|=(uint64_t)(s.semantic)<<8;	// 4 bits
 	return h;
 }
+
 uint64_t platform::crossplatform::GetLayoutHash(const platform::crossplatform::LayoutDesc &d)
 {
 	SimpleLayoutSpec sp={d.format,TextToSemantic(d.semanticName),d.semanticIndex};
@@ -173,9 +175,9 @@ uint64_t platform::crossplatform::GetLayoutHash(const std::vector<SimpleLayoutSp
 	return hash;
 }
 
-uint64_t Layout::GetHash() const
+void Layout::MakeHash() 
 {
-	uint64_t hash=0;
+	hash=0;
 	std::vector<uint64_t> H(parts.size(),0);
 	for(size_t i=0;i<parts.size();i++)
 	{
@@ -187,6 +189,4 @@ uint64_t Layout::GetHash() const
 		hash=hash<<7;
 		hash^=H[i];
 	}
-
-	return hash;
 }

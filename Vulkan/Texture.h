@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Texture.h"
-#include <unordered_map>
+#include <parallel_hashmap/phmap.h>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -86,7 +86,7 @@ namespace platform
 			void			copyToMemory(crossplatform::DeviceContext& deviceContext, void* target, int start_texel, int num_texels) override;
 
 			vk::Image*		AsVulkanImage() override { return &mImage; }
-			vk::ImageView*	AsVulkanImageView(const crossplatform::TextureView& textureView) override;
+			vk::ImageView*	AsVulkanImageView( crossplatform::TextureView textureView) override;
 
 			/// We need an active command list to finish loading a texture!
 			void			FinishLoading(crossplatform::DeviceContext& deviceContext) override;
@@ -127,14 +127,15 @@ namespace platform
 			//! States of the subresources mSubResourcesLayouts[index][mip]
 			std::vector<std::vector<vk::ImageLayout>>	mSubResourcesLayouts;
 			
-			std::unordered_map<uint64_t, vk::ImageView*> mImageViews;
-			
+			phmap::flat_hash_map<uint64_t, vk::ImageView *> mImageViews;
+			vk::ImageView *defaultImageView=nullptr;
 			vk::MemoryAllocateInfo mem_alloc;
 			vk::DeviceMemory mMem;
 			std::vector<std::vector<LoadedTexture>>		loadedTextures; //By mip, then by layer.
 			int mNumSamples = 1;
 			vk::ImageLayout mExternalLayout;
-			bool split_layouts=false;
+			bool split_layouts = false;
+			vk::ImageView *CreateVulkanImageView(crossplatform::TextureView textureView);
 		};
 	}
 

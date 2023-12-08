@@ -323,7 +323,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 		SIMUL_CERR_ONCE << "groupCharMap size was 0 when getting technique: " << name << ".\n";
 		return nullptr;
 	}
-	return groupCharMap[0]->GetTechniqueByName(name);
+	return groupCharMap[nullptr]->GetTechniqueByName(name);
 }
 
 
@@ -662,7 +662,7 @@ crossplatform::ShaderResourceType Effect::GetResourceType(const char *name)
 {
 	const ShaderResource *i=GetTextureDetails(name);
 	if(!i)
-		return crossplatform::ShaderResourceType::COUNT;
+		return crossplatform::ShaderResourceType::UNKNOWN;
 	return i->shaderResourceType;
 }
 
@@ -1181,7 +1181,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
 				res->slot				=slot;
 				res->dimensions			=dim;
-				crossplatform::ShaderResourceType rt=crossplatform::ShaderResourceType::COUNT;
+				crossplatform::ShaderResourceType rt=crossplatform::ShaderResourceType::UNKNOWN;
 				if(!rw)
 				{
 					if(is_cubemap)

@@ -11,7 +11,7 @@
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
 #include <string>
 #include <map>
-#include <unordered_map>
+#include <parallel_hashmap/phmap.h>
 #include <vector>
 #include <set>
 #include <stdint.h>
@@ -242,7 +242,7 @@ namespace platform
 			crossplatform::ShaderType type;
 			// if it's a vertex shader...
 			crossplatform::Layout layout;
-			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
+			phmap::flat_hash_map<int,crossplatform::SamplerState *>	samplerStates;
 			unsigned textureSlots;			//t
 			unsigned textureSlotsForSB;		//t
 			unsigned rwTextureSlots;		//u
@@ -504,7 +504,7 @@ namespace platform
 			crossplatform::Effect *effect;
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
-		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;
+		typedef phmap::flat_hash_map<const char *,EffectTechnique *> TechniqueCharMap;
 		typedef std::map<int,EffectTechnique *> IndexMap;
 		//! Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
@@ -520,7 +520,7 @@ namespace platform
 		class Buffer;
 
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
-		typedef std::unordered_map<const char *,EffectTechniqueGroup *> GroupCharMap;
+		typedef phmap::flat_hash_map<const char *,EffectTechniqueGroup *> GroupCharMap;
 		//! The cross-platform base class for shader effects.
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
@@ -532,17 +532,17 @@ namespace platform
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
 			std::map<std::string,crossplatform::ShaderResource> shaderResources;
 			GroupCharMap groupCharMap;
-			typedef std::unordered_map<std::string,ShaderResource*> TextureDetailsMap;
-			typedef std::unordered_map<const char *,ShaderResource*> TextureCharMap;
+			typedef phmap::flat_hash_map<std::string,ShaderResource*> TextureDetailsMap;
+			typedef phmap::flat_hash_map<const char *,ShaderResource*> TextureCharMap;
 			TextureDetailsMap textureDetailsMap;
 			ShaderResource *textureResources[32];
 			mutable TextureCharMap textureCharMap;
-			std::unordered_map<std::string,crossplatform::SamplerState *> samplerStates;
-			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
-			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
-			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
-			std::unordered_map<std::string, crossplatform::RenderState *> rtFormatStates;
-			std::unordered_map<std::string, int> constantBufferSlots;
+			phmap::flat_hash_map<std::string,crossplatform::SamplerState *> samplerStates;
+			phmap::flat_hash_map<std::string,crossplatform::RenderState *> depthStencilStates;
+			phmap::flat_hash_map<std::string,crossplatform::RenderState *> blendStates;
+			phmap::flat_hash_map<std::string,crossplatform::RenderState *> rasterizerStates;
+			phmap::flat_hash_map<std::string, crossplatform::RenderState *> rtFormatStates;
+			phmap::flat_hash_map<std::string, int> constantBufferSlots;
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
@@ -599,9 +599,9 @@ namespace platform
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture(DeviceContext& deviceContext, const ShaderResource& name, Texture* tex, const SubresourceRange& subresource = SubresourceRange());
+			virtual void SetTexture(DeviceContext& deviceContext, const ShaderResource& name, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceRange& subresource = SubresourceRange());
+			virtual void SetTexture(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
 			//! Set the texture for read-write access by compute shaders in this effect.

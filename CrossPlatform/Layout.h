@@ -62,6 +62,8 @@ namespace platform
 			std::vector<LayoutDesc> parts;
 			//Topology topology=Topology::UNDEFINED;
 			bool interleaved=false;
+			uint64_t hash = 0;
+			void MakeHash();
 		public:
 			Layout();
 			virtual ~Layout();
@@ -85,7 +87,10 @@ namespace platform
 			virtual void Unapply(DeviceContext &deviceContext);
 			int GetStructSize() const;
 			//! Get a 64-bit number unique to this layout.
-			uint64_t GetHash() const;
+			uint64_t GetHash() const
+			{
+				return hash;
+			}
 		};
 	}
 }

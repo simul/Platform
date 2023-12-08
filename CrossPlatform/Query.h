@@ -9,7 +9,7 @@
 #include "Platform/Core/RuntimeError.h"
 #include <string>
 #include <map>
-#include <unordered_map>
+#include <parallel_hashmap/phmap.h>
 #include <vector>
 #include <set>
 #include <stdint.h>

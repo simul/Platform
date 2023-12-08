@@ -792,8 +792,11 @@ void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *
 	for(int i=0;i<t->mips-1;i++)
 	{
 		int m1=i+1;
-		t->activateRenderTarget(deviceContext, { t->GetShaderResourceTypeForRTVAndDSV(), { TextureAspectFlags::COLOUR, m1, 1, array_idx, 1 } });
-		SetTexture(deviceContext, _imageTexture, t, { TextureAspectFlags::COLOUR,  0, 1, array_idx, 1 });
+		TextureView textureView;
+		textureView.elements = { t->GetShaderResourceTypeForRTVAndDSV(),
+								 {TextureAspectFlags::COLOUR, uint8_t(m1), 1, uint8_t(array_idx), 1} };
+		t->activateRenderTarget(deviceContext,textureView);
+		SetTexture(deviceContext, _imageTexture, t, {TextureAspectFlags::COLOUR, 0, 1, uint8_t(array_idx), 1});
 		DrawQuad(deviceContext);
 		//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
 		t->deactivateRenderTarget(deviceContext);
@@ -836,7 +839,9 @@ void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,T
 	debugConstants.multiplier=vec4(scale,scale,scale,scale);
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	ApplyPass(deviceContext,pass);
-	normalMap->activateRenderTarget(deviceContext,{normalMap->GetShaderResourceTypeForRTVAndDSV(),{TextureAspectFlags::COLOUR,0,1,0,1 }});
+	TextureView tv;
+	tv.elements = {normalMap->GetShaderResourceTypeForRTVAndDSV(), TextureAspectFlags::COLOUR, 0, 1, 0, 1};
+	normalMap->activateRenderTarget(deviceContext,tv);
 	SetTexture(deviceContext,_imageTexture,heightMap,{TextureAspectFlags::COLOUR,0,1,0,1});
 	DrawQuad(deviceContext);
 	//Print(deviceContext,0,0,platform::core::QuickFormat("%d",m1),white,semiblack);
@@ -1540,7 +1545,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		if(tex->arraySize>1)
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
-			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
+			debugEffect->SetTexture(deviceContext, "cubeTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
 			if(debug)
 			{
 				static char c=0;
@@ -1557,14 +1562,14 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		else
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap");
-			debugEffect->SetTexture(deviceContext,"cubeTexture",tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
+			debugEffect->SetTexture(deviceContext, "cubeTexture", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
 			debugConstants.displayLevel=0;
 		}
 	}
 	else if(tex&&tex->arraySize>1)
 	{
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
-		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
+		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0,(uint8_t)-1});
 		{
 			static char c = 0;
 			static char cc = 20;
@@ -1580,7 +1585,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 	else if(tex)
 	{
-		debugEffect->SetTexture(deviceContext,imageTexture,tex,{TextureAspectFlags::COLOUR, (int32_t)displayLod, 1, 0, -1});
+		debugEffect->SetTexture(deviceContext, imageTexture, tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
 	}
 	else
 	{
@@ -2065,15 +2070,18 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	ta.dimensions = dim;
 	ta.uav = false;
 	ta.subresource = subresource;
-	if (ta.texture && ta.subresource.baseMipLevel + ta.subresource.mipLevelCount >= ta.texture->mips)
+/*	if (ta.texture)
 	{
-		ta.subresource.baseMipLevel = ta.texture->mips - ta.subresource.mipLevelCount;
-		if (ta.subresource.baseMipLevel + ta.subresource.mipLevelCount >= ta.texture->mips)
+		if ((uint32_t)ta.subresource.baseMipLevel + (uint32_t)ta.subresource.mipLevelCount >= ta.texture->mips)
 		{
-			ta.subresource.baseMipLevel=0;
-			ta.subresource.mipLevelCount = ta.texture->mips;
+			ta.subresource.baseMipLevel = (uint8_t)(ta.texture->mips - (int32_t)ta.subresource.mipLevelCount);
+			if ((uint32_t)ta.subresource.baseMipLevel + (uint32_t)ta.subresource.mipLevelCount >= (uint32_t)ta.texture->mips)
+			{
+				ta.subresource.baseMipLevel=0;
+				ta.subresource.mipLevelCount = ta.texture->mips;
+			}
 		}
-	}
+	}*/
 	cs->textureAssignmentMapValid = false;
 }
 

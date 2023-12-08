@@ -30,7 +30,8 @@ file(GLOB SHADER_INCLUDES "Shaders/*.sl")
 # Setup and build the static library.
 add_static_library( ImGui SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} DEFINITIONS PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} PUBLICINCLUDES ${SIMUL_PLATFORM_DIR}/External/imgui LINK SimulCrossPlatform_MT)
 target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/glfw/include")
-
+target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External")
+add_dependencies(ImGui_MT SimulCrossPlatform_MT)
 add_multiplatform_sfx_shader_project( ImGui_MT INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
 								"${SIMUL_PLATFORM_DIR}/.."
 							SOURCES ${SHADERS} ${SHADER_INCLUDES} OPTIONS DEFINES VULKAN_SDK=${VULKAN_SDK_DIR}

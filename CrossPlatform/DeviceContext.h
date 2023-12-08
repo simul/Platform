@@ -6,7 +6,7 @@
 #include "Topology.h"
 #include <set>
 #include <stack>
-#include <unordered_map>
+#include <parallel_hashmap/phmap.h>
 #include <limits.h> 
 #include <string.h>	// for memset
 
@@ -45,7 +45,7 @@ namespace platform
 		class SamplerState;
 		class Layout;
 		class TopLevelAccelerationStructure;
-		enum class ShaderResourceType;
+		
 		struct TextureFence
 		{
 			crossplatform::Texture *texture;
@@ -78,11 +78,13 @@ namespace platform
 			}
 			const T& operator[](size_t i) const
 			{
+			#ifdef _DEBUG
 				if(i>=index_limit||!HasValue(i))
 				{
 					return nullptr;
 					//throw std::runtime_error("");
 				}
+				#endif
 				return values[i];
 			}
 			bool HasValue(int index)
@@ -91,18 +93,12 @@ namespace platform
 			}
 			T& operator[](size_t i)
 			{
-				if(i>=count)
-				{
-					//throw std::runtime_error("");
-				}
 				unsigned value=(1<<i);
 				if(!(has_value&value))
 				{
 					sz++;
-					if(i>=index_limit)
-						index_limit=(int)(i+1);
-					if(i<index_start)
-						index_start=(int)i;
+					index_limit=std::max(index_limit,(int)(i+1));
+					index_start=std::min(index_start,(int)i);
 				}
 				has_value|=value;
 				return values[i];
@@ -167,7 +163,7 @@ namespace platform
 		typedef FastMap<TextureAssignment,32> TextureAssignmentMap;
 		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
 		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
-		typedef std::unordered_map<const Texture*,TextureFence> FenceMap;
+		typedef phmap::flat_hash_map<const Texture*,TextureFence> FenceMap;
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
@@ -180,8 +176,8 @@ namespace platform
 			bool last_action_was_compute = false;
 			Viewport viewports[8];
 			const Buffer *indexBuffer=nullptr;
-			std::unordered_map<int,const Buffer*> applyVertexBuffers;
-			std::unordered_map<int,Buffer*> streamoutTargets;
+			phmap::flat_hash_map<int,const Buffer*> applyVertexBuffers;
+			phmap::flat_hash_map<int,Buffer*> streamoutTargets;
 			ConstantBufferAssignmentMap applyBuffers;
 			StructuredBufferAssignmentMap applyStructuredBuffers;
 			StructuredBufferAssignmentMap applyRwStructuredBuffers;
@@ -344,7 +340,7 @@ namespace platform
 			GraphicsDeviceContext();
 			~GraphicsDeviceContext();
 			ViewStruct viewStruct;
-			uint cur_backbuffer;
+			//uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
 			

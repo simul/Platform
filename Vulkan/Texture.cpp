@@ -165,7 +165,7 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 			r->PushToReleaseManager(mMem);
 		}
 		r->PushToReleaseManager(mBuffer);
-
+		// don't free defaultImageView, it's a duplicate.
 		for (auto imageView : mImageViews)
 		{
 			r->PushToReleaseManager(*imageView.second);
@@ -278,7 +278,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 				blit.dstOffsets[1] = vk::Offset3D(dstWidth, dstLength, 1);
 				SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferDstOptimal,
 					vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
-					vk::PipelineStageFlagBits::eTransfer, { crossplatform::TextureAspectFlags::COLOUR, mip, 1, 0, -1 });
+							   vk::PipelineStageFlagBits::eTransfer, {crossplatform::TextureAspectFlags::COLOUR, uint8_t(mip), 1, 0, uint8_t(-1)});
 				if (mip < mips - 1)
 					commandBuffer->blitImage(mImage, vk::ImageLayout::eTransferSrcOptimal,
 						mImage, vk::ImageLayout::eTransferDstOptimal,
@@ -311,25 +311,22 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	textureUploadComplete = true;
 }
 
-vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& textureView)
+vk::ImageView *Texture::CreateVulkanImageView(crossplatform::TextureView textureView)
 {
-	if (!ValidateTextureView(textureView))
-		return nullptr;
+	// TODO: Should we override aspect if the texture is a depth stencil? - AJR
+	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.elements.subresourceRange.aspectMask);
+	const uint8_t &startMip = textureView.elements.subresourceRange.baseMipLevel;
+	const uint8_t &numMips = textureView.elements.subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : textureView.elements.subresourceRange.mipLevelCount;
+	const uint8_t &startLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const uint8_t &numLayers = textureView.elements.subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
-	uint64_t hash = textureView.GetHash();
-
-	if (mImageViews.find(hash) != mImageViews.end())
-		return mImageViews[hash];
-
-	//TODO: Should we override aspect if the texture is a depth stencil? - AJR
-	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.subresourceRange.aspectMask);
-	const uint32_t &startMip = textureView.subresourceRange.baseMipLevel;
-	const uint32_t &numMips = textureView.subresourceRange.mipLevelCount == -1 ? mips - startMip : textureView.subresourceRange.mipLevelCount;
-	const uint32_t &startLayer = textureView.subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : textureView.subresourceRange.arrayLayerCount;
-
-	const crossplatform::ShaderResourceType& type = textureView.type;
+	crossplatform::ShaderResourceType type = textureView.elements.type;
 	vk::ImageViewType viewType;
+	if(type==crossplatform::ShaderResourceType::UNKNOWN)
+	{
+		type = GetDefaultShaderResourceType();
+	}
+
 	if (type == crossplatform::ShaderResourceType::TEXTURE_1D || type == crossplatform::ShaderResourceType::RW_TEXTURE_1D)
 		viewType = vk::ImageViewType::e1D;
 	else if (type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY || type == crossplatform::ShaderResourceType::RW_TEXTURE_1D_ARRAY)
@@ -347,20 +344,43 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 	else
 		SIMUL_BREAK_ONCE("Unsupported crossplatform::ShaderResourceType.");
 
-
 	vk::ImageViewCreateInfo imageViewCI;
 	imageViewCI.pNext = nullptr;
 	imageViewCI.flags = vk::ImageViewCreateFlagBits(0);
 	imageViewCI.image = mImage;
 	imageViewCI.viewType = viewType;
 	imageViewCI.format = vulkan::RenderPlatform::ToVulkanFormat(pixelFormat, compressionFormat);
-	imageViewCI.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
+	imageViewCI.components = {vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA};
 	imageViewCI.subresourceRange = {aspect, startMip, numMips, startLayer, numLayers};
 
-	vk::ImageView* imageView = new vk::ImageView();
+	vk::ImageView *imageView = new vk::ImageView();
 	SIMUL_VK_CHECK(renderPlatform->AsVulkanDevice()->createImageView(&imageViewCI, nullptr, imageView));
 	SetVulkanName(renderPlatform, *imageView, (name + " imageView").c_str());
-
+	return imageView;
+}
+vk::ImageView* Texture::AsVulkanImageView( crossplatform::TextureView textureView)
+{
+#if PLATFORM_INTERNAL_CHECKS
+	if (!ValidateTextureView(textureView))
+		return nullptr;
+#endif
+	if(textureView.elements.subresourceRange.mipLevelCount==0xff)
+		textureView.elements.subresourceRange.mipLevelCount = mips;
+	if (textureView.elements.subresourceRange.arrayLayerCount == 0xff)
+		textureView.elements.subresourceRange.arrayLayerCount = arraySize;
+	// special case for the most common situation:
+	if (textureView.hash == 0 || textureView.hash == defaultTextureView.hash)
+		return defaultImageView;
+	uint64_t hash = textureView.hash;
+	auto v = mImageViews.find(textureView.hash);
+	if (v != mImageViews.end())
+		return v->second;
+	if(textureView.hash==0)
+	{
+		textureView=crossplatform::DefaultTextureView;
+		hash=0;
+	}
+	auto imageView = CreateVulkanImageView(textureView);
 	mImageViews[hash] = imageView;
 	return imageView;
 }
@@ -555,6 +575,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		}
 		textureUploadComplete=false;
 	}
+	defaultImageView = mImageViews[crossplatform::DefaultTextureView.hash] = CreateVulkanImageView(crossplatform::DefaultTextureView);
+	SetDefaultTextureView();
 	return true;
 }
 
@@ -668,6 +690,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		}
 		textureUploadComplete=false;
 	}
+	defaultImageView = mImageViews[crossplatform::DefaultTextureView.hash] = CreateVulkanImageView(crossplatform::DefaultTextureView);
+	SetDefaultTextureView();
 	return true;
 }
 
@@ -735,6 +759,8 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	this->renderTarget=false;
 	this->depthStencil = false;
 	this->cubemap = false;
+	defaultImageView = mImageViews[crossplatform::DefaultTextureView.hash] = CreateVulkanImageView(crossplatform::DefaultTextureView);
+	SetDefaultTextureView();
 	return true;
 }
 
@@ -746,12 +772,12 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, 
 void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
 {
 	const int &layerCount = NumFaces();
-	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::COLOUR, 0, mips, 0, layerCount};
+	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::COLOUR, 0, (uint8_t)mips, 0, (uint8_t)layerCount};
 
 	vk::ImageLayout prevImageLayout = mCurrentImageLayout;
 	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subresource);
 
-	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mips, 0, layerCount);
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, (uint8_t)mips, 0, (uint8_t)layerCount);
 
 	vk::ClearColorValue clearValue;
 	clearValue.float32[0] = colourClear[0];
@@ -771,12 +797,12 @@ void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, v
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 	const int& layerCount = NumFaces();
-	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::DEPTH, 0, mips, 0, layerCount};
+	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::DEPTH, 0, uint8_t(mips), 0, uint8_t(layerCount)};
 
 	vk::ImageLayout prevImageLayout = mCurrentImageLayout;
 	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subresource);
 
-	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, layerCount);
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, uint8_t(layerCount));
 
 	vk::ClearDepthStencilValue clearValue;
 	clearValue.depth = depthClear;
@@ -1016,9 +1042,9 @@ void Texture::InitViewTable(int l, int m)
 bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const
 {
 	const uint32_t &startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	vk::ImageLayout checkLayout = mSubResourcesLayouts[startLayer][startMip];
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)
@@ -1040,9 +1066,9 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == totalNum));
 
@@ -1210,9 +1236,9 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 		return mSubResourcesLayouts[subresourceRange.baseArrayLayer][subresourceRange.baseMipLevel];
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	// Return the resource state of a mip or array layer, or the whole resource
 	if (numMips > 1 || numLayers > 1)
@@ -1237,7 +1263,7 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 					// vk::AccessFlags dstAccessMask = DstAccessMask(newLayout);
 					vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
 					vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllCommands;	// very general..
-					SetImageLayout(commandBuffer, mImage, aspectMask, curState, mCurrentImageLayout, srcAccessMask, src_stages, dest_stages, { crossplatform::TextureAspectFlags::COLOUR, m, (uint32_t)1, l, (uint32_t)1 });
+					SetImageLayout(commandBuffer, mImage, aspectMask, curState, mCurrentImageLayout, srcAccessMask, src_stages, dest_stages, {crossplatform::TextureAspectFlags::COLOUR, (uint8_t)m, (uint8_t)1, (uint8_t)l, (uint8_t)1});
 					mSubResourcesLayouts[l][m] = mCurrentImageLayout;
 				}
 			}
@@ -1287,9 +1313,9 @@ void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, 
 	};
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == -1 ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t& numLayers = subresourceRange.arrayLayerCount == -1 ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	auto const barrier = vk::ImageMemoryBarrier()
 		.setSrcAccessMask(srcAccessMask)

@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 namespace platform
 {
 	namespace crossplatform
@@ -25,7 +26,7 @@ namespace platform
 			UNKNOWN=0xFFFF
 		};
 		//! A cross-platform equivalent to the OpenGL and DirectX pixel formats
-		enum PixelFormat
+		enum PixelFormat : uint8_t
 		{
 			UNKNOWN=0
 			,RGBA_32_FLOAT
@@ -98,7 +99,7 @@ namespace platform
 #endif 
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
-		enum PixelOutputFormat
+		enum PixelOutputFormat : uint8_t
 		{
 			FMT_UNKNOWN
 			,FMT_32_GR
@@ -112,7 +113,7 @@ namespace platform
 			,OUTPUT_FORMAT_COUNT
 		};
 		//! This refers to the type of a shader resource, which should be compatible with the type of any resource assigned to it.
-		enum class ShaderResourceType
+		enum class ShaderResourceType: uint16_t
 		{
 			UNKNOWN=0
 			,RW		=1
@@ -146,8 +147,8 @@ namespace platform
 			,RW_TEXTURE_1D_ARRAY		=RW|TEXTURE_1D|ARRAY
 			,RW_TEXTURE_2D_ARRAY		=RW|TEXTURE_2D|ARRAY  
 			,RW_TEXTURE_3D_ARRAY		=RW|TEXTURE_3D|ARRAY   
-			,COUNT  
 		};
+		static_assert(sizeof(ShaderResourceType)==sizeof(uint16_t),"ShaderResourceType is assumed to be 2 bytes.");
 		inline ShaderResourceType operator|(ShaderResourceType a, ShaderResourceType b)
 		{
 			return static_cast<ShaderResourceType>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b));
@@ -179,7 +180,7 @@ namespace platform
 			a = static_cast<ShaderResourceType>(static_cast<unsigned int>(a) ^ static_cast<unsigned int>(b));
 			return a;
 		}
-		enum class PixelFormatType { DOUBLE, FLOAT, HALF, UINT, USHORT, UCHAR, INT, SHORT, CHAR };
+		enum class PixelFormatType:uint8_t { DOUBLE, FLOAT, HALF, UINT, USHORT, UCHAR, INT, SHORT, CHAR };
 		inline PixelFormatType GetElementType(PixelFormat p)
 		{
 			switch (p)

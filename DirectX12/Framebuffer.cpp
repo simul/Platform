@@ -54,10 +54,10 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	D3D12_CPU_DESCRIPTOR_HANDLE *dsView = nullptr;
 
 	crossplatform::TextureView rtv_tv, dsv_tv;
-	rtv_tv.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, 1, (is_cubemap && current_face != -1 ? current_face : 0), 1};
-	dsv_tv.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
-	dsv_tv.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1};
+	rtv_tv.elements.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
+	rtv_tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, 1, (uint8_t)(is_cubemap && current_face != (uint8_t)-1 ? current_face : (uint8_t)0), (uint8_t)1};
+	rtv_tv.elements.type = buffer_depth_texture ? buffer_depth_texture->GetShaderResourceTypeForRTVAndDSV() : crossplatform::ShaderResourceType::UNKNOWN;
+	rtv_tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1};
 
 	rtView = buffer_texture->AsD3D12RenderTargetView(deviceContext, rtv_tv);
 	dsView = buffer_depth_texture ? buffer_depth_texture->AsD3D12DepthStencilView(deviceContext, dsv_tv) : NULL;

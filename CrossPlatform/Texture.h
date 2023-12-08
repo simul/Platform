@@ -9,7 +9,13 @@
 #pragma warning(push)
 #pragma warning(disable:4251)
 #endif
+#ifdef __GNUC__
+#define PLATFORM_PACK(__Declaration__) __Declaration__ __attribute__((__packed__))
+#endif
 
+#ifdef _MSC_VER
+#define PLATFORM_PACK(__Declaration__) __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
+#endif
 
 namespace sce
 {
@@ -217,56 +223,63 @@ namespace platform
 		}
 		
 		//! Structure to describe range of subresources in a Texture/Images for mip levels and array layers.
-		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
+		//! We do NOT set defaults for these structs, as this causes frequent unwanted execution of constructors, and we want these structs to be POD.
+		PLATFORM_PACK(struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
 		{
-			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR; //! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
-			uint32_t baseMipLevel = 0;									//! The first mip level in the view.
-			uint32_t mipLevelCount = -1;								//! The number of mip levels, starting from the baseMipLevel, in the view.
-			uint32_t baseArrayLayer = 0;								//! The first array layer in the view.
-			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
-
-			SubresourceRange() = default;
-			SubresourceRange(TextureAspectFlags aspect, uint32_t baseMip, uint32_t mipCount, uint32_t baseLayer, uint32_t layerCount)
-				: aspectMask(aspect), baseMipLevel(baseMip), mipLevelCount(mipCount), baseArrayLayer(baseLayer), arrayLayerCount(layerCount) {}
-			SubresourceRange(TextureAspectFlags aspect, int32_t baseMip, int32_t mipCount, int32_t baseLayer, int32_t layerCount)
-				: baseMipLevel((uint32_t)baseMip), mipLevelCount((uint32_t)mipCount), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
-		};
+			TextureAspectFlags aspectMask;		//! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
+			uint8_t baseMipLevel;				//! The first mip level in the view.
+			uint8_t mipLevelCount;				//! The number of mip levels, starting from the baseMipLevel, in the view.
+			uint8_t baseArrayLayer;				//! The first array layer in the view.
+			uint8_t arrayLayerCount;			//! The number of array layers, starting from the baseArrayLayer, in the view.
+		});
+		static_assert(sizeof(crossplatform::SubresourceRange) == 5, "size of SubresourceRange should be 5 bytes.");
+		static const SubresourceRange DefaultSubresourceRange = {TextureAspectFlags::COLOUR,0,0xff,0,0xff};
 		//! Structure to describe range of subresources in a Texture/Images for a single mip level and array layers.
-		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceLayers
+		PLATFORM_PACK(struct SIMUL_CROSSPLATFORM_EXPORT SubresourceLayers
 		{
-			TextureAspectFlags aspectMask = TextureAspectFlags::COLOUR; //! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
-			uint32_t mipLevel = 0;										//! The single mip level in the view.
-			uint32_t baseArrayLayer = 0;								//! The first array layer in the view.
-			uint32_t arrayLayerCount = -1;								//! The number of array layers, starting from the baseArrayLayer, in the view.
+			TextureAspectFlags aspectMask ;		//! How pixel data should be used: RGBA, Depth, Stencil, YCbCr layers, etc.
+			uint8_t mipLevel;					//! The single mip level in the view.
+			uint8_t baseArrayLayer;				//! The first array layer in the view.
+			uint8_t arrayLayerCount;			//! The number of array layers, starting from the baseArrayLayer, in the view.
+		});
+		static const SubresourceLayers DefaultSubresourceLayers = {TextureAspectFlags::COLOUR, 0, 0, 0xff};
 
-			SubresourceLayers() = default;
-			SubresourceLayers(TextureAspectFlags aspect, uint32_t mip=0, uint32_t baseLayer=0, uint32_t layerCount= 0xFFFFFFFF)
-				: aspectMask(aspect), mipLevel(mip), baseArrayLayer(baseLayer), arrayLayerCount(layerCount) {}
-			SubresourceLayers(TextureAspectFlags aspect, int32_t mip=0, int32_t baseLayer=0, int32_t layerCount= 0xFFFFFFFF)
-				: aspectMask(aspect), mipLevel((uint32_t)mip), baseArrayLayer((uint32_t)baseLayer), arrayLayerCount((uint32_t)layerCount) {}
-		
-		};
-
-		enum class ShaderResourceType;
+		PLATFORM_PACK(struct SIMUL_CROSSPLATFORM_EXPORT TextureViewElements
+		{
+			ShaderResourceType type;
+			SubresourceRange subresourceRange;
+			uint8_t pad;
+		});
+		static_assert(sizeof(crossplatform::TextureViewElements) <= 9, "size of TextureViewElements should be <=8 bytes.");
 		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
 		struct SIMUL_CROSSPLATFORM_EXPORT TextureView
 		{
-		public:
-			ShaderResourceType	type = ShaderResourceType::UNKNOWN;
-			SubresourceRange	subresourceRange = {};
-// https://stackoverflow.com/questions/57271400/why-does-aggregate-initialization-not-work-anymore-since-c20-if-a-constructor
-//			TextureView() = default;
-			inline uint64_t GetHash() const
+			union
 			{
-				return uint64_t((uint16_t)type) << 48
-					| uint64_t((uint8_t)subresourceRange.aspectMask) << 32
-					| uint64_t((uint8_t)subresourceRange.baseMipLevel) << 24
-					| uint64_t((uint8_t)subresourceRange.mipLevelCount) << 16
-					| uint64_t((uint8_t)subresourceRange.baseArrayLayer) << 8
-					| uint64_t((uint8_t)subresourceRange.arrayLayerCount) << 0;
-			}
+				uint64_t hash;
+				TextureViewElements elements;
+			};
 		};
-
+		static_assert(sizeof(crossplatform::TextureView) <= sizeof(uint64_t), "size of TextureView should be 8 bytes.");
+		inline TextureView MakeTextureView(ShaderResourceType t,TextureAspectFlags a,uint8_t m0,uint8_t m,uint8_t n0,uint8_t n)
+		{
+			TextureView v;
+			v.elements.type=t;
+			v.elements.subresourceRange = {a, m0, m, n0, n};
+			v.elements.pad=0;
+			return v;
+		}
+		inline TextureView MakeTextureView(ShaderResourceType t, SubresourceRange sr)
+		{
+			TextureView v;
+			v.elements.type = t;
+			v.elements.subresourceRange = sr;
+			v.elements.pad = 0;
+			return v;
+		}
+		#define MAKE_TEXTURE_VIEW(t, a, m0, m, n0, n) MakeTextureView(t, a, m0, m, n0, n)
+		#define MAKE_TEXTURE_VIEW_2(t, sr) MakeTextureView(t, sr)
+		extern TextureView DefaultTextureView;
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;
 		//! Stores information about the current render targets
@@ -377,7 +390,7 @@ namespace platform
 			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(){return 0;}
 			virtual vk::Image* AsVulkanImage() { return nullptr; }
-			virtual vk::ImageView* AsVulkanImageView(const crossplatform::TextureView& textureView) { return nullptr; }
+			virtual vk::ImageView* AsVulkanImageView(crossplatform::TextureView textureView) { return nullptr; }
 			//! Get the crossplatform pixel format.
 			PixelFormat GetFormat() const
 			{
@@ -419,7 +432,7 @@ namespace platform
 			//! Set the texture data from CPU memory, but defer the transfer until we next have a valid DeviceContext.
 			virtual void setTexels(const void *src,int texel_index,int num_texels){}
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
-			virtual void activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView = crossplatform::TextureView());
+			virtual void activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::TextureView textureView = DefaultTextureView);
 			//! Deactivate as a rendertarget.
 			virtual void deactivateRenderTarget(crossplatform::GraphicsDeviceContext &deviceContext);
 			virtual int GetLength() const
@@ -488,7 +501,10 @@ namespace platform
 			void FreeTranslatedTextureData(void *data);
 			uint32_t CalculateSubresourceIndex(uint32_t MipSlice, uint32_t ArraySlice, uint32_t PlaneSlice, uint32_t MipLevels, uint32_t ArraySize);
 			uint3 CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uint32_t ArraySlice); //Returned as { MipSlice, ArraySlice, PlaneSlice }
-			bool ValidateTextureView(const TextureView& textureView);
+			bool ValidateTextureView(const TextureView &textureView);
+			crossplatform::ShaderResourceType GetDefaultShaderResourceType() const;
+			crossplatform::TextureView defaultTextureView;
+			void SetDefaultTextureView();
 		private:
 			bool stbi_loaded = false;
 		};
