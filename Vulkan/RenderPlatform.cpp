@@ -239,140 +239,52 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext
 
 }
 
-void RenderPlatform::PushToReleaseManager(vk::Buffer &b)
-{
-	releaseBuffers.insert(b);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::BufferView &v)
-{
-	releaseBufferViews.insert(v);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::DeviceMemory &m)
-{
-	releaseMemories.insert(m);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::ImageView& i)
-{
-	releaseImageViews.insert(i);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::Framebuffer& f)
-{
-	releaseFramebuffers.insert(f);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::RenderPass& r)
-{
-	releaseRenderPasses.insert(r);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::Pipeline& r)
-{
-	releasePipelines.insert(r);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::PipelineCache& r)
-{
-	releasePipelineCaches.insert(r);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::Image& i)
-{
-	releaseImages.insert(i);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::Sampler& i)
-{
-	releaseSamplers.insert(i);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::PipelineLayout& i)
-{
-	releasePipelineLayouts.insert(i);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::DescriptorSetLayout& i)
-{
-	releaseDescriptorSetLayouts.insert(i);
-	resourcesToBeReleased = true;
-}
-void RenderPlatform::PushToReleaseManager(vk::DescriptorPool& i)
-{
-	releaseDescriptorPools.insert(i);
-	resourcesToBeReleased = true;
-}
 void RenderPlatform::ClearReleaseManager()
 {
-	for (auto i : releaseBuffers)
+	auto it = releaseResources.begin();
+	while (it != releaseResources.end())
 	{
-		vulkanDevice->destroyBuffer(i, nullptr);
-	}
-	releaseBuffers.clear();
-	for (auto i : releaseBufferViews)
-	{
-		vulkanDevice->destroyBufferView(i, nullptr);
-	}
-	releaseBufferViews.clear();
-	for (auto i : releaseMemories)
-	{
-		vulkanDevice->freeMemory(i, nullptr);
-	}
-	releaseMemories.clear();
-	for (auto i : releaseImageViews)
-	{
-		vulkanDevice->destroyImageView(i, nullptr);
-	}
-	releaseImageViews.clear();
-	for (auto i : releaseFramebuffers)
-	{
-		vulkanDevice->destroyFramebuffer(i, nullptr);
-	}
-	releaseFramebuffers.clear();
-	for (auto i : releaseRenderPasses)
-	{
-		vulkanDevice->destroyRenderPass(i, nullptr);
-	}
-	releaseRenderPasses.clear();
-	for (auto i : releaseImages)
-	{
-		vulkanDevice->destroyImage(i, nullptr);
-	}
-	releaseImages.clear();
-	for (auto i : releaseSamplers)
-	{
-		vulkanDevice->destroySampler(i, nullptr);
-	}
-	releaseSamplers.clear();
-	for (auto i : releasePipelines)
-	{
-		vulkanDevice->destroyPipeline(i, nullptr);
-	}
-	releasePipelines.clear();
-	for (auto i : releasePipelineCaches)
-	{
-		vulkanDevice->destroyPipelineCache(i, nullptr);
-	}
-	releasePipelineCaches.clear();
-	for (auto i : releasePipelineLayouts)
-	{
-		vulkanDevice->destroyPipelineLayout(i, nullptr);
-	}
-	releasePipelineLayouts.clear();
-	for (auto i : releaseDescriptorSetLayouts)
-	{
-		vulkanDevice->destroyDescriptorSetLayout(i, nullptr);
-	}
-	releaseDescriptorSetLayouts.clear();
-	for (auto i : releaseDescriptorPools)
-	{
-		vulkanDevice->destroyDescriptorPool(i, nullptr);
-	}
-	releaseDescriptorPools.clear();
+		if (it->releaseFrame < uint64_t(frameNumber))
+		{
+			const uint64_t &i = it->resourceHandle;
+			switch (it->type)
+			{
+			case vk::ObjectType::eBuffer:
+				vulkanDevice->destroyBuffer(*(vk::Buffer *)&i, nullptr); break;
+			case vk::ObjectType::eBufferView:
+				vulkanDevice->destroyBufferView(*(vk::BufferView *)&i, nullptr); break;
+			case vk::ObjectType::eDeviceMemory:
+				vulkanDevice->freeMemory(*(vk::DeviceMemory *)&i, nullptr); break;
+			case vk::ObjectType::eImageView:
+				vulkanDevice->destroyImageView(*(vk::ImageView *)&i, nullptr); break;
+			case vk::ObjectType::eFramebuffer:
+				vulkanDevice->destroyFramebuffer(*(vk::Framebuffer *)&i, nullptr); break;
+			case vk::ObjectType::eRenderPass:
+				vulkanDevice->destroyRenderPass(*(vk::RenderPass *)&i, nullptr); break;
+			case vk::ObjectType::eImage:
+				vulkanDevice->destroyImage(*(vk::Image *)&i, nullptr); break;
+			case vk::ObjectType::eSampler:
+				vulkanDevice->destroySampler(*(vk::Sampler *)&i, nullptr); break;
+			case vk::ObjectType::ePipeline:
+				vulkanDevice->destroyPipeline(*(vk::Pipeline *)&i, nullptr); break;
+			case vk::ObjectType::ePipelineCache:
+				vulkanDevice->destroyPipelineCache(*(vk::PipelineCache *)&i, nullptr); break;
+			case vk::ObjectType::ePipelineLayout:
+				vulkanDevice->destroyPipelineLayout(*(vk::PipelineLayout *)&i, nullptr); break;
+			case vk::ObjectType::eDescriptorSetLayout:
+				vulkanDevice->destroyDescriptorSetLayout(*(vk::DescriptorSetLayout *)&i, nullptr); break;
+			case vk::ObjectType::eDescriptorPool:
+				vulkanDevice->destroyDescriptorPool(*(vk::DescriptorPool *)&i, nullptr); break;
+			default:
+				SIMUL_BREAK("Unknown vk::ObjectType of vk::ObjectType::e{} (0x{}) in ReleaseManager.", vk::to_string(it->type), i);
+			}
 
-	resourcesToBeReleased = false;
+			releaseResources.erase(it);
+		}
+		it++;
+	}
+
+	resourcesToBeReleased = !releaseResources.empty();
 }
 
 void RenderPlatform::BeginFrame()
@@ -609,8 +521,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	pass->Apply(deviceContext, false);
 	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
 	const EffectPass::RenderPassPipeline& renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
-	const vk::PipelineLayout& pipelineLayout = pass->GetLastestPipelineLayout();
-	const vk::DescriptorSet& descriptorSet = pass->GetLastestDescriptorSet();
+	const vk::PipelineLayout& pipelineLayout = pass->GetLatestPipelineLayout();
+	const vk::DescriptorSet& descriptorSet = pass->GetLatestDescriptorSet();
 	bool setDescriptors = descriptorSet ? true : false;
 
 	// If not a compute shader, apply viewports:
