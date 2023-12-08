@@ -165,10 +165,10 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		}
 		if(profileData->DisjointQuery)
 		{
-		// Start a disjoint query first
+			// Start a disjoint query first
 			profileData->DisjointQuery->Begin(deviceContext);
 
-		// Insert the start timestamp   
+			// Insert the start timestamp
 			profileData->TimestampStartQuery->End(deviceContext);
 
 			profileData->QueryStarted = true;
