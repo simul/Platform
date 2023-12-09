@@ -252,6 +252,7 @@ function(LibraryDefaults targname)
 
 	if(PLATFORM_USE_FMT)
 		target_include_directories(${targname} PUBLIC ${SIMUL_PLATFORM_DIR}/External/fmt/include)
+		target_compile_definitions(${targname} PRIVATE FMT_HEADER_ONLY )
 	endif()
 
 	if(XBOXONE)
@@ -505,6 +506,7 @@ endfunction()
 function(ExecutableDefaults target)
 	set_target_properties(${target} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                                                VS_DEBUGGER_ENVIRONMENT       "PATH=${fx_path};${SIMUL_DEFAULT_BUILD_PATH}/bin/${CONFIG_NAME};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
+	target_compile_definitions(${target} PRIVATE FMT_HEADER_ONLY )
 endfunction()
 
 function(add_static_executable target)
