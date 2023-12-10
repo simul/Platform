@@ -159,7 +159,7 @@ void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext &devic
 	size=sz;
 }
 
-void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceContext, crossplatform::EffectPass* , int )
+void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext & deviceContext )
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	// If new frame, update current frame index and reset the apply count

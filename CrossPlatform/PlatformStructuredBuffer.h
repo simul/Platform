@@ -28,11 +28,16 @@ namespace platform
 {
 	namespace crossplatform
 	{
-		enum class BufferUsageHint
+		enum class ResourceUsageFrequency
 		{
-			ONCE,
-			ONCE_PER_FRAME,
-			MANY_PER_FRAME
+			OCTAVE_1 = 1,
+			OCTAVE_2 = 2,
+			OCTAVE_3 = 3,
+			OCTAVE_4 = 4,
+			ONCE=OCTAVE_1,
+			ONCE_PER_FRAME=OCTAVE_2,
+			FEW_PER_FRAME=OCTAVE_3,
+			MANY_PER_FRAME=OCTAVE_4
 		};
 		struct ShaderResource;
 		/// A base class for structured buffers, used by StructuredBuffer internally.
@@ -44,11 +49,11 @@ namespace platform
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
 			std::string name;
-			BufferUsageHint bufferUsageHint= BufferUsageHint::MANY_PER_FRAME;
+			ResourceUsageFrequency bufferUsageHint= ResourceUsageFrequency::MANY_PER_FRAME;
 		public:
-			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(BufferUsageHint::MANY_PER_FRAME) {}
+			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(ResourceUsageFrequency::MANY_PER_FRAME) {}
 			virtual ~PlatformStructuredBuffer() = default;
-			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, BufferUsageHint usageHint) = 0;
+			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, ResourceUsageFrequency usageHint) = 0;
 			virtual void InvalidateDeviceObjects() = 0;
 			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
 			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& shaderResource);
@@ -72,7 +77,7 @@ namespace platform
 				numCopies = 0;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(platform::crossplatform::DeviceContext& /*deviceContext*/, EffectPass* /*currentEffectPass*/, int /*slot*/, bool /*as uav*/) {}
+			virtual void ActualApply(platform::crossplatform::DeviceContext& /*deviceContext*/, bool /*as uav*/) {}
 		};
 
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
@@ -88,7 +93,7 @@ namespace platform
 		/// \code
 		/// 	StructuredBuffer<Example> example;
 		/// \endcode
-		template<class T, BufferUsageHint bufferUsageHint = BufferUsageHint::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
+		template<class T, ResourceUsageFrequency bufferUsageHint = ResourceUsageFrequency::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
 		{
 		public:
 			StructuredBuffer()

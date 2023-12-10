@@ -247,7 +247,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		constantBuffer.background_rect[0].y=-constantBuffer.background_rect[0].y;
 		constantBuffer.background_rect[0].w*=-1.0f;
 	}
-	effect->SetConstantBuffer(deviceContext,&constantBuffer);
+	renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 	if(constantBuffer.background.w>0.0f)
 	{
 		effect->Apply(deviceContext,backgTech, 1);
@@ -296,9 +296,9 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	constantBuffer.numChars = n;
 	if(n>0)
 	{
-		effect->SetTexture(deviceContext,textureResource,font_texture);
+		renderPlatform->SetTexture(deviceContext, textureResource, font_texture);
 		effect->Apply(deviceContext,textTech, 1);
-		effect->SetConstantBuffer(deviceContext,&constantBuffer);
+		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 		f.Apply(deviceContext,effect,_fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
@@ -380,7 +380,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 		//Call on the last iteration, when both background_rect[0] and background_rect1 are set.
 		if (constantBuffer.background.w > 0.0f && i == (viewCount - 1)) 
 		{
-			effect->SetConstantBuffer(deviceContext, &constantBuffer);
+			renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 			effect->Apply(deviceContext, backgTech, passIndex);
 			renderPlatform->DrawQuad(deviceContext);
 			effect->Unapply(deviceContext);
@@ -428,9 +428,9 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	constantBuffer.numChars = n;
 	if (n > 0)
 	{
-		effect->SetTexture(deviceContext, textureResource, font_texture);
+		renderPlatform->SetTexture(deviceContext, textureResource, font_texture);
 		effect->Apply(deviceContext, textTech, passIndex);
-		effect->SetConstantBuffer(deviceContext, &constantBuffer);
+		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
 		f.Apply(deviceContext, effect, _fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);

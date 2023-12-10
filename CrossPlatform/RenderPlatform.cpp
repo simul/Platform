@@ -742,7 +742,7 @@ void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba
 			clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear_multiview");
 
 		debugConstants.debugColour = colour_rgba;
-		debugEffect->SetConstantBuffer(deviceContext, &debugConstants);
+		SetConstantBuffer(deviceContext, &debugConstants);
 		debugEffect->Apply(deviceContext, clearTechnique, 0);
 		DrawQuad(deviceContext);
 		debugEffect->Unapply(deviceContext);
@@ -812,7 +812,7 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true,true,nullptr,"texel query");
 	}
 	debugConstants.queryPos=pos;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect,debugEffect->GetShaderResource("textureQueryResults"));
 	debugEffect->SetTexture(deviceContext,"imageTexture",texture);
 	debugEffect->Apply(deviceContext,"texel_query",0);
@@ -837,7 +837,7 @@ void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,T
 	auto pass=debugEffect->GetTechniqueByName("height_to_normal")->GetPass(0);
 	debugConstants.texSize=uint4(heightMap->width,heightMap->length,1,1);
 	debugConstants.multiplier=vec4(scale,scale,scale,scale);
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	ApplyPass(deviceContext,pass);
 	TextureView tv;
 	tv.elements = {normalMap->GetShaderResourceTypeForRTVAndDSV(), TextureAspectFlags::COLOUR, 0, 1, 0, 1};
@@ -1052,7 +1052,7 @@ void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, 
 	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	debugConstants.debugWorldViewProj=wvp;//deviceContext.viewStruct.viewProj;
 	debugConstants.debugWorldViewProj.transpose();
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	SetLayout(deviceContext,posColourLayout.get());
 	debugEffect->Apply(deviceContext,"lines_3d","lines3d_novb");
 	SetTopology(deviceContext,Topology::LINELIST);
@@ -1098,7 +1098,7 @@ void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVer
 	debugConstants.debugWorldViewProj.transpose();
 	auto *b=debugVertexBuffer.get();
 	SetVertexBuffers(deviceContext,0,1,&b,posColourLayout.get());
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	SetLayout(deviceContext,posColourLayout.get());
 	debugEffect->Apply(deviceContext,"lines_3d","lines3d_nodepth");
 	SetTopology(deviceContext,Topology::LINELIST);
@@ -1298,20 +1298,20 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.displayLod=displayLod;
-	debugEffect->SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
+	SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
 	static float rr=6.f;
 	debugConstants.latitudes		=16;
 	debugConstants.longitudes		=32;
 	debugConstants.radius			=rr;
 	debugConstants.multiplier		=vec4(exposure,exposure,exposure,0.0f);
 	debugConstants.debugGamma		=gamma;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,draw_cubemap_sphere,0);
 
 	SetTopology(deviceContext,Topology::TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 
-	debugEffect->SetTexture(deviceContext, debugEffect_cubeTexture, nullptr);
+	SetTexture(deviceContext, debugEffect_cubeTexture, nullptr);
 	debugEffect->Unapply(deviceContext);
 	SetViewports(deviceContext,1,&oldv);
 }
@@ -1357,20 +1357,20 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.displayLod=displayLod;
-	debugEffect->SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
+	SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
 	static float rr=6.f;
 	debugConstants.latitudes		=16;
 	debugConstants.longitudes		=32;
 	debugConstants.radius			=rr;
 	debugConstants.multiplier		=vec4(exposure,exposure,exposure,0.0f);
 	debugConstants.debugGamma		=gamma;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,draw_cubemap_sphere,0);
 
 	SetTopology(deviceContext,Topology::TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 
-	debugEffect->SetTexture(deviceContext, debugEffect_cubeTexture, nullptr);
+	SetTexture(deviceContext, debugEffect_cubeTexture, nullptr);
 	debugEffect->Unapply(deviceContext);
 	SetViewports(deviceContext,1,&oldv);
 }
@@ -1381,7 +1381,7 @@ void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m
 	crossplatform::MakeWorldViewProjMatrix((float*)&wvp,m,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.radius			=size;
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,"axes",0);
 	SetTopology(deviceContext,Topology::LINELIST);
 	Draw(deviceContext, 7, 0);
@@ -1538,7 +1538,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		else
 			tech=showVolume;
 
-		debugEffect->SetTexture(deviceContext,volumeTexture,tex);
+		SetTexture(deviceContext,volumeTexture,tex);
 	}
 	else if(tex&&tex->IsCubemap())
 	{
@@ -1585,7 +1585,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 	else if(tex)
 	{
-		debugEffect->SetTexture(deviceContext, imageTexture, tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
+		SetTexture(deviceContext, imageTexture, tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
 	}
 	else
 	{
@@ -1632,7 +1632,7 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 		,2.f*(float)dy/(float)viewport.h);
 	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
-	effect->SetConstantBuffer(deviceContext,&debugConstants);
+	SetConstantBuffer(deviceContext,&debugConstants);
 	effect->Apply(deviceContext,technique,pass);
 	DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
@@ -1682,7 +1682,7 @@ int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int
 								,1.f-2.f*(float)(y1+dy)/(float)viewport.h
 								,2.f*(float)dx/(float)viewport.w
 								,2.f*(float)dy/(float)viewport.h);
-		debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+		SetConstantBuffer(deviceContext,&debugConstants);
 		debugEffect->Apply(deviceContext,tech,frustum.reverseDepth?"reverse_depth":"forward_depth");
 		DrawQuad(deviceContext);
 		debugEffect->UnbindTextures(deviceContext);

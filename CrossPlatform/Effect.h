@@ -443,7 +443,7 @@ namespace platform
 				name=n;
 			}
 			//! For RenderPlatform's use only: do not call.
-			virtual void ActualApply(platform::crossplatform::DeviceContext &,EffectPass *,int){}
+			virtual void ActualApply(platform::crossplatform::DeviceContext &){}
 		};
 		
 		class Texture;
@@ -599,18 +599,13 @@ namespace platform
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture(DeviceContext& deviceContext, const ShaderResource& name, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
-			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
-			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& name, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
+			//! Obtain the named shader resource in this effect.
 			virtual ShaderResource GetShaderResource(const char* name);
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const ShaderResource &name	,SamplerState *s);
-			//! Set a constant buffer for this effect.
-			virtual void SetConstantBuffer(DeviceContext &deviceContext,ConstantBufferBase *s);
 			//! Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
 			//! Activate the shader. Unapply must be called after rendering is done.

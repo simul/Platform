@@ -237,7 +237,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		else
 		{
 			vulkan::PlatformStructuredBuffer* psb = (vulkan::PlatformStructuredBuffer*)sb;
-			psb->ActualApply(deviceContext, this, slot, false);
+			psb->ActualApply(deviceContext,  false);
 			vk::Buffer* vkBuffer = psb->GetLastBuffer();
 			write.setDescriptorCount(1);
 			write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
@@ -265,7 +265,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			continue;
 		}
 		vulkan::PlatformStructuredBuffer* psb = (vulkan::PlatformStructuredBuffer*)sb;
-		psb->ActualApply(deviceContext, this, slot, true);
+		psb->ActualApply(deviceContext,true);
 		vk::Buffer* vkBuffer = psb->GetLastBuffer();
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eStorageBuffer);
@@ -321,7 +321,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		vk::WriteDescriptorSet& write = writes[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateConstantBufferSlot(slot));
-		pcb->ActualApply(deviceContext, this, 0);
+		pcb->ActualApply(deviceContext);
 		vk::Buffer* vkBuffer = pcb->GetLastBuffer();
 		vk::DeviceSize vkDeviceSize = pcb->GetSize();
 		write.setDescriptorCount(1);

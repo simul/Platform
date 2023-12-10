@@ -695,7 +695,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		commandBuffer->setViewport(0, 1, vkViewports);
 		commandBuffer->setScissor(0, 1, vkScissors);
 
-		//Set the Desciptor Sets
+		//Set the Descriptor Sets
 		if (setDescriptors)
 			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 

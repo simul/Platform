@@ -20,7 +20,7 @@ namespace platform
 		public:
 											PlatformStructuredBuffer();
 			virtual							~PlatformStructuredBuffer();
-			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name, crossplatform::BufferUsageHint b);
+			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name, crossplatform::ResourceUsageFrequency b);
 			void							Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
             void                            ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
 			//! Returns an initialized pointer with the size of this structured buffer that can be used to set data. After
@@ -39,7 +39,7 @@ namespace platform
 			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
 			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
 			ID3D12Resource*					AsD3D12Resource(crossplatform::DeviceContext &deviceContext);
-			void							ActualApply(platform::crossplatform::DeviceContext& deviceContext, EffectPass* currentEffectPass, int slot);
+			void							ActualApply(platform::crossplatform::DeviceContext& deviceContext);
 
 		private:
             //! If we called GetBuffer, we need to update the GPU data, this methods, handles updating the data at 

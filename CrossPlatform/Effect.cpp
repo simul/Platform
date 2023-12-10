@@ -435,25 +435,10 @@ void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &
 	cs->samplerStateOverridesValid = false;
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)
-{
-	renderPlatform->SetConstantBuffer(deviceContext,s);
-}
-
-void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceRange& subresource)
-{
-	renderPlatform->SetTexture(deviceContext, res, tex, subresource);
-}
-
 void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const SubresourceRange& subresource)
 {
 	const ShaderResource& res = GetShaderResource(name);
 	renderPlatform->SetTexture(deviceContext, res, tex, subresource);
-}
-
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const ShaderResource& res, crossplatform::Texture* tex, const SubresourceLayers& subresource)
-{
-	renderPlatform->SetUnorderedAccessView(deviceContext, res, tex, subresource);
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* t, const SubresourceLayers& subresource)

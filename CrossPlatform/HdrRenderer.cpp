@@ -131,20 +131,20 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	hdrConstants.exposure	=Exposure;
 	hdrConstants.offset		=vec2(offsetX,0.0f);
 
-	hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&hdrConstants);
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	
 	bool msaa=texture?(texture->GetSampleCount()>1):false;
 	if(msaa)
-		hdr_effect->SetTexture(deviceContext,hdr_effect_imageTextureMS	,texture);
+		renderPlatform->SetTexture(deviceContext, hdr_effect_imageTextureMS, texture);
 	else
-		hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture	,texture);
+		renderPlatform->SetTexture(deviceContext, hdr_effect_imageTexture, texture);
 	
 	renderPlatform->ApplyPass(deviceContext,msaa?exposureGammaMSAAPass:exposureGammaMainPass);
 	renderPlatform->DrawQuad(deviceContext);
 
-	hdr_effect->SetTexture(deviceContext,hdr_effect_imageTexture,NULL);
-	hdr_effect->SetTexture(deviceContext,hdr_effect_imageTextureMS,NULL);
+	renderPlatform->SetTexture(deviceContext, hdr_effect_imageTexture, NULL);
+	renderPlatform->SetTexture(deviceContext, hdr_effect_imageTextureMS, NULL);
 	hdrConstants.Unbind(deviceContext);
 	imageConstants.Unbind(deviceContext);
 	
@@ -165,7 +165,7 @@ void HdrRenderer::RenderInfraRed(GraphicsDeviceContext &deviceContext,crossplatf
 	hdrConstants.exposure					=Exposure;
 	hdrConstants.infraredIntegrationFactors	=infrared_integration_factors;
 	hdrConstants.offset						=vec2(0.f,0.f);
-	hdr_effect->SetConstantBuffer(deviceContext,&	hdrConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &hdrConstants);
 	crossplatform::EffectTechnique *tech=hdr_effect->GetTechniqueByName("infra_red");
 	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
 	renderPlatform->DrawQuad(deviceContext);
@@ -202,7 +202,7 @@ hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdrConstants.warpScale			=vec2(0.5f* scaleFactor, 0.5f* scaleFactor * as);
 	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
 	hdrConstants.offset				=vec2(offsetX,0.0f);
-	hdr_effect->SetConstantBuffer(deviceContext,&	hdrConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &hdrConstants);
 	hdr_effect->Apply(deviceContext,warpExposureGamma,0);
 	renderPlatform->DrawQuad(deviceContext);
 	

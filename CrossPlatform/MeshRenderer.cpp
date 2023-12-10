@@ -143,5 +143,5 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	solidConstants.u_CombinedTexCoordIndex=2;
 	solidConstants.u_EmissiveTexCoordIndex=3;
 
-	effect->SetConstantBuffer(deviceContext, &solidConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &solidConstants);
 }

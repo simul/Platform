@@ -21,7 +21,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
     InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::BufferUsageHint h)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
 {
 	bufferUsageHint = h;
     renderPlatform                          = r;
@@ -136,7 +136,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
     }
 }
 
-void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectPass *,int slot,bool as_uav) 
+void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,bool as_uav) 
 {
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if (mCurApplyCount >= mMaxApplyCount)
@@ -161,7 +161,7 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	auto rPlat = (vulkan::RenderPlatform*)deviceContext.renderPlatform;
 
 	// If new frame, update current frame index and reset the apply count
-	if (bufferUsageHint != crossplatform::BufferUsageHint::ONCE)
+	if (bufferUsageHint != crossplatform::ResourceUsageFrequency::ONCE)
 	{
 		if (mLastFrame != renderPlatform->GetFrameNumber() || lastBuffer == perFrameBuffers.end())
 		{

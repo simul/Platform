@@ -26,7 +26,7 @@ namespace platform
 			void Apply(crossplatform::DeviceContext& deviceContext,size_t size,void* addr) override;
 			void Unbind(crossplatform::DeviceContext& deviceContext) override;
 
-			void ActualApply(crossplatform::DeviceContext &,crossplatform::EffectPass *,int) override;
+			void ActualApply(crossplatform::DeviceContext &) override;
 
 			size_t GetLastOffset();
 			vk::Buffer *GetLastBuffer();

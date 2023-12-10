@@ -94,11 +94,6 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex)
 {
-	std::string mName=name;
-	for (unsigned int i = 0; i < kNumBuffers; i++)
-	{
-	//	mBuffers[i].setName(name);
-	}
 }
 
 void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext& deviceContext,size_t sz,void* addr)
@@ -107,14 +102,14 @@ void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext& devic
 	size=sz;
 }
 
-void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectPass *,int) 
+void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceContext) 
 {
 	if(!src)
 		return;
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if (mCurApplyCount >= mMaxDescriptors)
 	{
-		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
+		// This should really be solved by having some kind of pool? Or allocating more space, something like that
 		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
 		return;
 	}
@@ -140,7 +135,6 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 	if(pData)
 	{
 		memcpy(pData,src, size);
-		//memset(pData,255,size);
 		vulkanDevice->unmapMemory(mMemory[currentFrameIndex]);
 	}
 	

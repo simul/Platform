@@ -27,7 +27,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable,bool cpu_read, void *init_data,const char *n, crossplatform::BufferUsageHint b)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable,bool cpu_read, void *init_data,const char *n, crossplatform::ResourceUsageFrequency b)
 {
 	HRESULT res			= S_FALSE;
     if(n)
@@ -454,6 +454,6 @@ ID3D12Resource *PlatformStructuredBuffer::AsD3D12Resource(crossplatform::DeviceC
     return mGPUBuffer;
 }
 
-void PlatformStructuredBuffer::ActualApply(platform::crossplatform::DeviceContext& , EffectPass* , int )
+void PlatformStructuredBuffer::ActualApply(platform::crossplatform::DeviceContext&  )
 {
 }
