@@ -44,33 +44,21 @@ namespace platform
 			vk::Queue graphics_queue,present_queue;
 			vk::CommandPool cmd_pool;
 			vk::CommandPool present_cmd_pool;
-			vk::CommandBuffer cmd;  
 			vk::Semaphore image_acquired_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
 			vk::Semaphore draw_complete_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
 			vk::Semaphore image_ownership_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
 			vk::Fence fences[SIMUL_VULKAN_FRAME_LAG+1];
 			vk::RenderPass render_pass;
 
-			vk::Pipeline default_pipeline;
-			vk::PipelineCache pipelineCache;
-			vk::PipelineLayout pipeline_layout;
-			vk::DescriptorSetLayout desc_layout;
-
 			vk::SurfaceKHR mSurface;
 			void InitSwapChain();
 			void GetQueues();
 			void CreateRenderPass();
 			void CreateFramebuffers();
-			void CreateDefaultLayout();
-			void CreateDefaultPipeline();
 			void Present();
-			int frame_index;
 			uint32_t current_buffer;
 			uint32_t graphics_queue_family_index;
 			uint32_t present_queue_family_index;
-			vk::ShaderModule prepare_shader_module(const uint32_t *, size_t);
-			vk::ShaderModule prepare_vs();
-			vk::ShaderModule prepare_fs();
 			vk::Instance *GetVulkanInstance();
 			vk::Device *GetVulkanDevice();
 			vk::PhysicalDevice* GetGPU();

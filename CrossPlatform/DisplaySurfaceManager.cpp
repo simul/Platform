@@ -143,6 +143,6 @@ void DisplaySurfaceManager::EndFrame(bool clear)
 	ERRNO_BREAK
 	for(auto s:surfaces)
 	{
-		s.second->EndFrame();
+	//	s.second->EndFrame();
 	}
 }

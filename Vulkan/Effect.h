@@ -37,18 +37,9 @@ namespace platform
 		// Vulkan Query implementation
 		struct SIMUL_VULKAN_EXPORT Query:public crossplatform::Query
 		{
-			Query(crossplatform::QueryType t):crossplatform::Query(t)
-			{
-				queryPoolCI.pNext = nullptr;
-				queryPoolCI.flags = (vk::QueryPoolCreateFlags)0;
-				queryPoolCI.queryType = toVkQueryType(t);
-				queryPoolCI.queryCount = crossplatform::Query::QueryLatency;
-				queryPoolCI.pipelineStatistics = (vk::QueryPipelineStatisticFlags)0;
-			}
-			~Query()
-			{
-				InvalidateDeviceObjects();
-			}
+			Query(crossplatform::QueryType t);
+			~Query();
+
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
@@ -59,9 +50,11 @@ namespace platform
 		private:
 			vk::Device* mDevice = nullptr;
 			vk::QueryPool mQueryPool = nullptr;
-			vk::QueryPoolCreateInfo queryPoolCI;
+			vk::QueryPoolCreateInfo mQueryPoolCI;
+			vk::CommandBuffer *mCmdBuffers[QueryLatency] = {nullptr, nullptr, nullptr, nullptr};
 
-			vk::QueryType toVkQueryType(crossplatform::QueryType t);
+			vk::QueryType ToVkQueryType(crossplatform::QueryType t);
+			void ResetQueries(crossplatform::DeviceContext &deviceContext);
 		};
 
 		//! Vulkan render state holder

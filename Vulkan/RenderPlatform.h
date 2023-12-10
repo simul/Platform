@@ -149,20 +149,35 @@ namespace platform
 			void ExecuteCommands(crossplatform::DeviceContext& deviceContext) override;
 			void RestartCommands(crossplatform::DeviceContext& deviceContext) override;
 
-			void PushToReleaseManager(vk::Buffer &);
-			void PushToReleaseManager(vk::Pipeline& r);
-			void PushToReleaseManager(vk::PipelineCache& r);
-			void PushToReleaseManager(vk::BufferView &);
-			void PushToReleaseManager(vk::DeviceMemory &);
-			void PushToReleaseManager(vk::ImageView&);
-			void PushToReleaseManager(vk::Framebuffer&);
-			void PushToReleaseManager(vk::RenderPass& r);
-			void PushToReleaseManager(vk::Image& i);
-			void PushToReleaseManager(vk::Sampler& i);
-			void PushToReleaseManager(vk::PipelineLayout& i);
-			void PushToReleaseManager(vk::DescriptorSetLayout& i);
-			void PushToReleaseManager(vk::DescriptorPool& i); //All descriptor sets allocated from the pool are implicitly freed and become invalid.
+			struct ReleaseResourceInfo
+			{
+				uint64_t resourceHandle; //vk::Buffer etc and uint64_t are the same size.
+				vk::ObjectType type;
+				uint64_t releaseFrame;
+				
+				//Overload the operator< for std::set
+				bool operator<(const ReleaseResourceInfo& rri) const
+				{
+					return resourceHandle < rri.resourceHandle;
+				}
+			};
+
+			template <typename T>
+			void PushToReleaseManager(T &r)
+			{
+				static_assert(sizeof(T) == sizeof(uint64_t), "VulkanHPP type are not 8 bytes is size.");
+				resourcesToBeReleased = true;
+
+				ReleaseResourceInfo rri;
+				rri.resourceHandle = *(uint64_t *)&r;
+				rri.type = T::objectType;
+				rri.releaseFrame = frameNumber + (SIMUL_VULKAN_FRAME_LAG + 1);
+
+				releaseResources.insert(rri);
+				// All descriptor sets allocated from the pool are implicitly freed and become invalid.
+			}
 			void ClearReleaseManager();
+
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
 			{
@@ -196,7 +211,7 @@ namespace platform
 			void									InsertFences(crossplatform::DeviceContext& deviceContext);
 
 			crossplatform::Material*				CreateMaterial();
-			crossplatform::Framebuffer*			CreateFramebuffer(const char *name=nullptr) override;
+			crossplatform::Framebuffer*				CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
 			crossplatform::PlatformConstantBuffer*	CreatePlatformConstantBuffer() override;
@@ -294,19 +309,7 @@ namespace platform
 			vk::Sampler										vulkanSamplerYcbcr;
 
 			bool											resourcesToBeReleased=false;
-			std::set<vk::Buffer>							releaseBuffers;
-			std::set<vk::BufferView>						releaseBufferViews;
-			std::set<vk::DeviceMemory>						releaseMemories;
-			std::set<vk::ImageView>							releaseImageViews;
-			std::set<vk::Framebuffer>						releaseFramebuffers;
-			std::set<vk::RenderPass>						releaseRenderPasses;
-			std::set<vk::Image>								releaseImages;
-			std::set<vk::Sampler>							releaseSamplers;
-			std::set<vk::Pipeline>							releasePipelines;
-			std::set<vk::PipelineCache>						releasePipelineCaches;
-			std::set<vk::PipelineLayout>					releasePipelineLayouts;
-			std::set<vk::DescriptorSetLayout>				releaseDescriptorSetLayouts;
-			std::set<vk::DescriptorPool>					releaseDescriptorPools;
+			std::set <ReleaseResourceInfo>					releaseResources;
 
 			vulkan::Texture*								mDummy2D=nullptr;
 			vulkan::Texture*								mDummy2DArray = nullptr;

@@ -30,6 +30,21 @@ bool RewriteOutput(std::string str)
 	return true;
 }
 
+Query::Query(crossplatform::QueryType t)
+	: crossplatform::Query(t)
+{
+	mQueryPoolCI.pNext = nullptr;
+	mQueryPoolCI.flags = (vk::QueryPoolCreateFlags)0;
+	mQueryPoolCI.queryType = ToVkQueryType(t);
+	mQueryPoolCI.queryCount = crossplatform::Query::QueryLatency;
+	mQueryPoolCI.pipelineStatistics = (vk::QueryPipelineStatisticFlags)0;
+}
+
+Query::~Query()
+{
+	InvalidateDeviceObjects();
+}
+
 void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
 	InvalidateDeviceObjects();
@@ -43,17 +58,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 		SIMUL_BREAK_ONCE("No valid Vulkan device available to create QueryPool.");
 		return;
 	}
-	mQueryPool = mDevice->createQueryPool(queryPoolCI);
-	for (int i = 0; i < QueryLatency; i++)
-	{
-		gotResults[i] = true;
-		doneQuery[i] = false;
-	}
-}
-
-void Query::SetName(const char*name)
-{
-	platform::vulkan::SetVulkanName(renderPlatform,mQueryPool,name);
+	mQueryPool = mDevice->createQueryPool(mQueryPoolCI);
 }
 
 void Query::InvalidateDeviceObjects() 
@@ -71,7 +76,7 @@ void Query::InvalidateDeviceObjects()
 	}
 }
 
-vk::QueryType Query::toVkQueryType(crossplatform::QueryType t)
+vk::QueryType Query::ToVkQueryType(crossplatform::QueryType t)
 {
 	switch (t)
 	{
@@ -86,23 +91,7 @@ vk::QueryType Query::toVkQueryType(crossplatform::QueryType t)
 	};
 }
 
-void Query::Begin(crossplatform::DeviceContext& deviceContext)
-{
-	deviceContext.renderPlatform->EndRenderPass(deviceContext);
-
-	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
-	if(!mQueryPool)
-	{
-		RestoreDeviceObjects(deviceContext.renderPlatform);
-		commandBuffer->resetQueryPool(mQueryPool,0,crossplatform::Query::QueryLatency);
-	}
-	else
-		commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
-	
-	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
-}
-
-void Query::End(crossplatform::DeviceContext& deviceContext)
+void Query::ResetQueries(crossplatform::DeviceContext &deviceContext)
 {
 	deviceContext.renderPlatform->EndRenderPass(deviceContext);
 
@@ -110,28 +99,59 @@ void Query::End(crossplatform::DeviceContext& deviceContext)
 	{
 		RestoreDeviceObjects(deviceContext.renderPlatform);
 	}
-	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
-	commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
-	commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
+
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	commandBuffer->resetQueryPool(mQueryPool, currFrame, 1);
+	mCmdBuffers[currFrame] = commandBuffer;
 
 	gotResults[currFrame] = false;
 	doneQuery[currFrame] = true;
 }
 
+void Query::Begin(crossplatform::DeviceContext& deviceContext)
+{
+	ResetQueries(deviceContext);
+
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (mQueryPoolCI.queryType == vk::QueryType::eTimestamp)
+		commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
+}
+
+void Query::End(crossplatform::DeviceContext& deviceContext)
+{
+	ResetQueries(deviceContext);
+
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (mQueryPoolCI.queryType == vk::QueryType::eTimestamp)
+		commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
+}
+
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data, size_t sz)
 {
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+
 	gotResults[currFrame] = true;
 	if (!doneQuery[currFrame])
 		return false;
-	
-	SIMUL_ASSERT(sizeof(sz) >= sizeof(uint64_t));
-	vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, currFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64 );
-				//| vk::QueryResultFlagBits::eWait);
-	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
-	//commandBuffer->resetQueryPool(mQueryPool,currFrame,1);
-	*(uint64_t*)data /= 1000000; //convert ns to ms
+
+	bool result = false;
+	int prevFrame = (currFrame - 1 + QueryLatency) % QueryLatency;
+	if (mCmdBuffers[prevFrame])
+	{
+		SIMUL_ASSERT(sizeof(sz) >= sizeof(uint64_t));
+		vk::Result ok = mDevice->getQueryPoolResults(mQueryPool, prevFrame, 1, sizeof(uint64_t), data, 0, vk::QueryResultFlagBits::e64);
+
+		*(uint64_t*)data /= 1000000; //convert ns to ms
+		result = (ok == vk::Result::eSuccess) && (data != nullptr);
+	}
+
 	currFrame = (currFrame + 1) % QueryLatency;
-	return (ok == vk::Result::eSuccess) && (data != nullptr);
+	return result;
+}
+
+void Query::SetName(const char *name)
+{
+	platform::vulkan::SetVulkanName(renderPlatform, mQueryPool, name);
 }
 
 Effect::Effect()

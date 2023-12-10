@@ -64,7 +64,7 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 		m_LastFrameIndex = renderPlatform->GetFrameNumber();
 	}
 	if (!m_Initialized)
-		 CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
+		CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
 
 	if (m_DescriptorSets_It[m_InternalFrameIndex] == m_DescriptorSets[m_InternalFrameIndex].end())
 	{
@@ -490,8 +490,8 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 		+ numSamplerResourceSlots
 		+ numConstantBufferResourceSlots
 		+ numResourceSlots;
-	vk::Result result;
 
+	vk::Result result;
 	vk::DescriptorSetLayoutBinding* layoutBindings = nullptr;
 	vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCI;
 
