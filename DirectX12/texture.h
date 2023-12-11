@@ -121,9 +121,9 @@ namespace platform
 			bool AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange);
 
 			//! Returns the current state of the resource or subresource if provided.
-			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange = {});
+			D3D12_RESOURCE_STATES GetCurrentState(crossplatform::DeviceContext &deviceContext, crossplatform::SubresourceRange subresourceRange = crossplatform::DefaultSubresourceRange);
 			//! Sets the state of the resource or subresource if provided.
-			void SetLayout(crossplatform::DeviceContext& deviceContext, D3D12_RESOURCE_STATES state, const crossplatform::SubresourceRange& subresourceRange = {}, bool flush = false);
+			void SetLayout(crossplatform::DeviceContext &deviceContext, D3D12_RESOURCE_STATES state, crossplatform::SubresourceRange subresourceRange = crossplatform::DefaultSubresourceRange, bool flush = false);
 			
 			void SwitchToContext(crossplatform::DeviceContext &deviceContext);
 			DXGI_FORMAT	dxgi_format;

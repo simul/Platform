@@ -1477,7 +1477,7 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 
 int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int slice)
 {
-	int level=slice;
+	static int level=0;
 	static int frames=25;
 	static int count=frames;
 	static unsigned long long framenumber=0;
@@ -2048,11 +2048,6 @@ void RenderPlatform::SetTexture(DeviceContext& deviceContext, const ShaderResour
 	if (!tex)
 	{
 		//SIMUL_BREAK_ONCE("Null texture applied"); This is ok.
-	}
-	else if (!tex->IsValid())
-	{
-		//SIMUL_BREAK_ONCE("Invalid texture applied");
-		return;
 	}
 #endif
 	TextureAssignment& ta = cs->textureAssignmentMap[slot];

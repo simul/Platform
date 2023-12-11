@@ -66,6 +66,7 @@ void Texture::activateRenderTarget(GraphicsDeviceContext& deviceContext, Texture
 	targetsAndViewport.num												=1;
 	targetsAndViewport.m_rt[0]											=nullptr;
 	targetsAndViewport.textureTargets[0].texture						=this;
+	targetsAndViewport.textureTargets[0].subresource.aspectMask			=TextureAspectFlags::COLOUR;
 	targetsAndViewport.textureTargets[0].subresource.mipLevel			=mip_index;
 	targetsAndViewport.textureTargets[0].subresource.baseArrayLayer		=array_index;
 	targetsAndViewport.textureTargets[0].subresource.arrayLayerCount	=array_count;

@@ -243,6 +243,7 @@ function(LibraryDefaults targname)
 	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}")
 	target_include_directories(${targname} PRIVATE "${CMAKE_SOURCE_DIR}/..")
 	target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/..")
+	target_include_directories(${targname} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 	set_target_properties(${targname} PROPERTIES CXX_STANDARD_REQUIRED ON)
 
 	# The prebuilt libraries live here if not a source build:

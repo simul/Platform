@@ -435,13 +435,13 @@ void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &
 	cs->samplerStateOverridesValid = false;
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const SubresourceRange& subresource)
+void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, SubresourceRange subresource)
 {
 	const ShaderResource& res = GetShaderResource(name);
 	renderPlatform->SetTexture(deviceContext, res, tex, subresource);
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* t, const SubresourceLayers& subresource)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* t, SubresourceLayers subresource)
 {
 	const ShaderResource& res = GetShaderResource(name);
 	renderPlatform->SetUnorderedAccessView(deviceContext, res, t, subresource);

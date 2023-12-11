@@ -110,7 +110,8 @@ namespace platform
             void					                SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::GraphicsDeviceContext&, crossplatform::Texture *texture,const char *lFileNameUtf8) override;
-			void									SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& res, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource) override;
+			void									SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const crossplatform::ShaderResource &name, crossplatform::Texture *tex, const crossplatform::SubresourceLayers &subresource = crossplatform::SubresourceLayers()) override;
+			void									SetConstantBuffer(crossplatform::DeviceContext &deviceContext, crossplatform::ConstantBufferBase *s) override;
 
             static GLenum                           toGLTopology(crossplatform::Topology t);
             static GLenum                           toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f);

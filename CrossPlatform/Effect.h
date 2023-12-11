@@ -599,9 +599,9 @@ namespace platform
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
+			virtual void SetTexture(DeviceContext& deviceContext, const char* name, Texture* tex, SubresourceRange subresource = DefaultSubresourceRange);
 			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const char* name, Texture* tex, const SubresourceLayers& subresource = SubresourceLayers());
+			virtual void SetUnorderedAccessView(DeviceContext& deviceContext, const char* name, Texture* tex, SubresourceLayers subresource = DefaultSubresourceLayers);
 			//! Obtain the named shader resource in this effect.
 			virtual ShaderResource GetShaderResource(const char* name);
 			//! Set the texture for this effect.

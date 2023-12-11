@@ -163,10 +163,10 @@ bool Framebuffer::CreateBuffers()
 			auto gldepth = (opengl::Texture*)buffer_depth_texture;
 			
 
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, glcolour->AsOpenGLView({ srt, {crossplatform::TextureAspectFlags::COLOUR, i, 1, j, 1} }), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, glcolour->AsOpenGLView({srt, {crossplatform::TextureAspectFlags::COLOUR, uint8_t(i), 1, uint8_t(j), 1}}), 0);
 			if (depth_format != crossplatform::UNKNOWN)
 			{
-				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, gldepth->AsOpenGLView({ srt, {crossplatform::TextureAspectFlags::DEPTH, i, 1, j, 1} }), 0);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, gldepth->AsOpenGLView({srt, {crossplatform::TextureAspectFlags::DEPTH, uint8_t(i), 1, uint8_t(j),1}}), 0);
 			}
 		}
 		f++;

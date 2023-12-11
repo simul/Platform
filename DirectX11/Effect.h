@@ -99,7 +99,6 @@ namespace platform
 			void Reapply(crossplatform::DeviceContext &deviceContext);
 			void Unapply(crossplatform::DeviceContext &deviceContext) override;
 			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
-			void SetConstantBuffer(crossplatform::DeviceContext& deviceContext, crossplatform::ConstantBufferBase* s) override;
 			void CheckShaderSlots(dx11::Shader* shader, ID3DBlob* shaderBlob);
 		};
 	}

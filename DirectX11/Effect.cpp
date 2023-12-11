@@ -323,13 +323,6 @@ crossplatform::EffectTechnique* dx11::Effect::GetTechniqueByIndex(int index)
 	return NULL;
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext, crossplatform::ConstantBufferBase* s)
-{
-	//RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
-	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
-}
-
 void Effect::CheckShaderSlots(dx11::Shader* shader, ID3DBlob* shaderBlob)
 {
 }
@@ -458,7 +451,10 @@ void EffectPass::SetSRVs(crossplatform::DeviceContext& deviceContext, crossplatf
 			continue;
 		}
 		((dx11::Texture*)ta.texture)->FinishLoading(deviceContext);
-		auto* res = ta.texture->AsD3D11ShaderResourceView({ ta.resourceType, ta.subresource });
+		crossplatform::TextureView tv;
+		tv.elements.type=ta.resourceType;
+		tv.elements.subresourceRange=ta.subresource;
+		auto* res = ta.texture->AsD3D11ShaderResourceView(tv);
 		if (compute)
 		{
 			cmdList->CSSetShaderResources(slot, 1, &res);
@@ -518,7 +514,10 @@ void EffectPass::SetUAVs(crossplatform::DeviceContext& deviceContext, crossplatf
 		{
 			continue;
 		}
-		auto *uav = ta.texture->AsD3D11UnorderedAccessView({ta.resourceType, ta.subresource});
+		crossplatform::TextureView tv;
+		tv.elements.type = ta.resourceType;
+		tv.elements.subresourceRange = ta.subresource;
+		auto *uav = ta.texture->AsD3D11UnorderedAccessView(tv);
 		if (compute)
 		{
 			cmdList->CSSetUnorderedAccessViews(slot, 1, &uav,nullptr);

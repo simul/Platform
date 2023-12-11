@@ -527,8 +527,8 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 
 void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView)
 {
-	const int& array_index = textureView.subresourceRange.baseArrayLayer;
-	const int& mip_index = textureView.subresourceRange.baseMipLevel;
+	const int& array_index = textureView.elements.subresourceRange.baseArrayLayer;
+	const int &mip_index = textureView.elements.subresourceRange.baseMipLevel;
 
 	targetsAndViewport.num				= 1;
 	targetsAndViewport.m_rt[0]			= (crossplatform::ApiRenderTarget*)(uint64_t)mTextureFBOs[array_index][mip_index];
@@ -587,16 +587,16 @@ GLuint Texture::AsOpenGLView(crossplatform::TextureView textureView)
 	if (!ValidateTextureView(textureView))
 		return 0;
 
-	uint64_t hash = textureView.GetHash();
+	uint64_t hash = textureView.hash;
 	if (mTextureViews.find(hash) != mTextureViews.end())
 		return mTextureViews[hash];
 
-	uint32_t baseMipLevel = textureView.subresourceRange.baseMipLevel;
-	uint32_t mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips : textureView.subresourceRange.mipLevelCount;
-	uint32_t baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	uint32_t arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.subresourceRange.arrayLayerCount;
+	uint32_t baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	uint32_t mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == -1 ? mips : textureView.elements.subresourceRange.mipLevelCount;
+	uint32_t baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	uint32_t arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() : textureView.elements.subresourceRange.arrayLayerCount;
 
-	const crossplatform::ShaderResourceType& type = textureView.type;
+	const crossplatform::ShaderResourceType &type = textureView.elements.type;
 	GLenum target = 0;
 	if (type == crossplatform::ShaderResourceType::TEXTURE_1D || type == crossplatform::ShaderResourceType::RW_TEXTURE_1D)
 		target = GL_TEXTURE_1D;
@@ -733,7 +733,7 @@ void Texture::CreateFBOs(int sampleCount)
 			glBindFramebuffer(GL_FRAMEBUFFER, mTextureFBOs[i][mip]);
 			GLenum texture_target = sampleCount == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
 			crossplatform::ShaderResourceType srt = sampleCount == 1 ? crossplatform::ShaderResourceType::TEXTURE_2D : crossplatform::ShaderResourceType::TEXTURE_2DMS;
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_target, AsOpenGLView({ srt, { crossplatform::TextureAspectFlags::COLOUR, mip, 1, i, 1} }), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_target, AsOpenGLView({ srt, { crossplatform::TextureAspectFlags::COLOUR, uint8_t(mip), 1,uint8_t(i), 1} }), 0);
 			GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 			if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 			{

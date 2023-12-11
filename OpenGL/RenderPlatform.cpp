@@ -897,13 +897,42 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, pixelData.data());
 
 }
-
+/*
 void RenderPlatform::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& res, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource)
 {
 	opengl::Effect* effect = reinterpret_cast<opengl::Effect*>(deviceContext.contextState.currentEffect);
-	effect->SetUnorderedAccessView(deviceContext, res, tex, subresource);
+	SetUnorderedAccessView(deviceContext, res, tex, subresource);
 	crossplatform::RenderPlatform::SetUnorderedAccessView(deviceContext, res, tex, subresource);
+}*/
+
+void RenderPlatform::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const crossplatform::ShaderResource &name, crossplatform::Texture *tex, const crossplatform::SubresourceLayers &subresource)
+{
+	if (!name.valid)
+		return;
+
+	opengl::Texture *gTex = (opengl::Texture *)tex;
+	if (gTex)
+	{
+		const crossplatform::SubresourceRange subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, subresource.mipLevel, uint32_t(1), subresource.baseArrayLayer, subresource.arrayLayerCount};
+		GLuint imageView = gTex->AsOpenGLView({name.shaderResourceType, subresourceRange});
+		if (glIsTexture(imageView))
+		{
+			glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLInternalFormat(tex->GetFormat()));
+		}
+		else
+		{
+			// Unbind it:
+			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+		}
+	}
+	else
+	{
+		// Unbind it:
+		if (name.slot >= 0 && name.slot < GL_MAX_IMAGE_UNITS)
+			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+	}
 }
+
 
 void* RenderPlatform::GetDevice()
 {
@@ -1055,4 +1084,11 @@ crossplatform::Shader* RenderPlatform::CreateShader()
 {
 	Shader* S = new Shader();
 	return S;
+}
+void RenderPlatform::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, crossplatform::ConstantBufferBase *s)
+{
+	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
+
+	SetConstantBuffer(deviceContext, s);
 }

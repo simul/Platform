@@ -76,7 +76,7 @@ void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,cross
 	sphereConstants.debugViewDir = view_dir;
 	sphereConstants.texcOffset = texcOffset;
 
-	effect->SetConstantBuffer(deviceContext, &sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &sphereConstants);
 
 	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext, tech, 0);
@@ -112,7 +112,7 @@ void SphereRenderer::DrawMultipleCrossSections(GraphicsDeviceContext& deviceCont
 	sphereConstants.debugViewDir = view_dir;
 	sphereConstants.texcOffset = texcOffset;
 	sphereConstants.slices = slices;
-	effect->SetConstantBuffer(deviceContext, &sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &sphereConstants);
 
 	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext, tech, 0);
@@ -146,7 +146,7 @@ void SphereRenderer::DrawLatLongSphere(GraphicsDeviceContext &deviceContext,int 
 	static int loop=100;
 	sphereConstants.loopSteps		=loop;
 	sphereConstants.radius			=radius;
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,0);
 
 	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
@@ -188,7 +188,7 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext, vec3 origin,
 	sphereConstants.debugColour			=colour;
 	sphereConstants.multiplier			=fill_colour;
 	sphereConstants.debugViewDir		=view_dir;
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 	if(fill_colour.w>0.0f)
 	{
         effect->Apply(deviceContext, tech, cheq ? "chequer" : "fill");
@@ -233,7 +233,7 @@ void SphereRenderer::DrawColouredSphere(GraphicsDeviceContext &deviceContext, ve
 	sphereConstants.sphereCamPos = cam_pos;
 	sphereConstants.debugViewDir = view_dir;
 	sphereConstants.multiplier = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	effect->SetConstantBuffer(deviceContext, &sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &sphereConstants);
 
 	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext, tech, 0);
@@ -263,14 +263,14 @@ void SphereRenderer::DrawTexturedSphere(GraphicsDeviceContext &deviceContext,vec
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_textured_sphere");
 	auto imageTexture=effect->GetShaderResource("imageTexture");
-	effect->SetTexture(deviceContext,imageTexture,texture);
+	renderPlatform->SetTexture(deviceContext, imageTexture, texture);
 	//sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius			=sph_rad;
 	sphereConstants.debugColour		=clr;
 	sphereConstants.sphereCamPos	=cam_pos;
 	sphereConstants.debugViewDir	=view_dir;
 	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 
 	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext,tech,0);
@@ -299,14 +299,14 @@ void SphereRenderer::DrawTexture(GraphicsDeviceContext &deviceContext,crossplatf
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_texture_on_sphere");
 	auto imageTexture=effect->GetShaderResource("imageTexture");
-	effect->SetTexture(deviceContext,imageTexture,t);
+	renderPlatform->SetTexture(deviceContext, imageTexture, t);
 	sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius			=sph_rad;
 	sphereConstants.sideview		=qsize*0.5f;
 	sphereConstants.debugColour		=colour;
 	sphereConstants.debugViewDir	=view_dir;
 	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 
 	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 	effect->Apply(deviceContext,tech,0);
@@ -335,14 +335,14 @@ void SphereRenderer::DrawCurvedTexture(GraphicsDeviceContext& deviceContext, cro
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float*)&cam_pos, (float*)&view_dir);
 	crossplatform::EffectTechnique* tech = effect->GetTechniqueByName("draw_curved_texture_on_sphere");
 	auto imageTexture = effect->GetShaderResource("imageTexture");
-	effect->SetTexture(deviceContext, imageTexture, t);
+	renderPlatform->SetTexture(deviceContext, imageTexture, t);
 	sphereConstants.quaternion = orient_quat;
 	sphereConstants.radius = sph_rad;
 	sphereConstants.sideview = qsize * 0.5f;
 	sphereConstants.debugColour = colour;
 	sphereConstants.debugViewDir = view_dir;
 	sphereConstants.multiplier = colour;
-	effect->SetConstantBuffer(deviceContext, &sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext, &sphereConstants);
 
 	renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 	effect->Apply(deviceContext, tech, 0);
@@ -376,7 +376,7 @@ void SphereRenderer::DrawCircle(GraphicsDeviceContext &deviceContext, vec3 origi
 	sphereConstants.sideview			=rad;
 	sphereConstants.debugColour		=colour; 
 	sphereConstants.multiplier		= fill_colour;
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 
 	if (fill_colour.w > 0.0f)
 	{
@@ -420,7 +420,7 @@ void SphereRenderer::DrawArc(GraphicsDeviceContext &deviceContext, vec3 origin, 
 	sphereConstants.multiplier		=colour;
 	sphereConstants.latitudes		=12;
 	sphereConstants.loopSteps		=12;
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 	effect->Apply(deviceContext,tech,"outline");
 	renderPlatform->SetTopology(deviceContext, Topology::LINESTRIP);
 	renderPlatform->Draw(deviceContext,(sphereConstants.loopSteps+1), 0);
@@ -454,7 +454,7 @@ void SphereRenderer::DrawAxes(GraphicsDeviceContext &deviceContext,vec4 orient_q
 	sphereConstants.debugColour			={1.f,1.f,1.f,1.f};
 	sphereConstants.multiplier			={1.f,1.f,1.f,1.f};
 	sphereConstants.debugViewDir		=view_dir;
-	effect->SetConstantBuffer(deviceContext,&sphereConstants);
+	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 	{
 		effect->Apply(deviceContext, tech,"main");
 		renderPlatform->SetTopology(deviceContext, Topology::LINELIST);

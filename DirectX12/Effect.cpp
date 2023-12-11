@@ -294,16 +294,15 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 				{
 					ta.texture = rPlat->GetDummy3D();
 					ta.resourceType = crossplatform::ShaderResourceType::TEXTURE_3D;
-					ta.subresource = {};
+					ta.subresource = crossplatform::DefaultSubresourceRange;
 				}
 				else
 				{
 					ta.texture = rPlat->GetDummy2D();
 					ta.resourceType = crossplatform::ShaderResourceType::TEXTURE_2D;
-					ta.subresource = {};
+					ta.subresource = crossplatform::DefaultSubresourceRange;
 				}
-				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, MAKE_TEXTURE_VIEW_2( ta.resourceType, ta.subresource
-			), true, is_pixel_shader);
+				srv=ta.texture->AsD3D12ShaderResourceView(deviceContext, MAKE_TEXTURE_VIEW_2( ta.resourceType, ta.subresource), true, is_pixel_shader);
 			}
 			mSrvSrcHandles[slot] = *srv;
 		}
@@ -384,13 +383,13 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 			{
 				ta.texture = rPlat->GetDummy3D();
 				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_3D;
-				ta.subresource = {};
+				ta.subresource = crossplatform::DefaultSubresourceRange;
 			}
 			else
 			{
 				ta.texture = rPlat->GetDummy2D();
 				ta.resourceType = crossplatform::ShaderResourceType::RW_TEXTURE_2D;
-				ta.subresource = {};
+				ta.subresource = crossplatform::DefaultSubresourceRange;
 			}
 		}
 		mUavSrcHandles[slot] = *ta.texture->AsD3D12UnorderedAccessView(deviceContext, MAKE_TEXTURE_VIEW_2( ta.resourceType, ta.subresource));

@@ -206,26 +206,26 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 		return nullptr;
 
 	ID3D11ShaderResourceView* srv = nullptr;
-	uint64_t hash = textureView.GetHash();
+	uint64_t hash = textureView.hash;
 	if (shaderResourceViews.find(hash) != shaderResourceViews.end())
 		return shaderResourceViews[hash];
 
-	const UINT& baseMipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& mipLevelCount = textureView.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.subresourceRange.mipLevelCount;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT& baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.elements.subresourceRange.mipLevelCount;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	DXGI_FORMAT srvFormat = TypelessToSrvFormat(dxgi_format);
 	DepthFormatToResourceAndSrvFormats(srvFormat, srvDesc.Format);
 
-	if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_1D)
+	if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_1D)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
 		srvDesc.Texture1D.MostDetailedMip = baseMipLevel;
 		srvDesc.Texture1D.MipLevels = mipLevelCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1DARRAY;
 		srvDesc.Texture1DArray.MostDetailedMip = baseMipLevel;
@@ -233,13 +233,13 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 		srvDesc.Texture1DArray.FirstArraySlice = baseArrayLayer;
 		srvDesc.Texture1DArray.ArraySize = arrayLayerCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2D)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MostDetailedMip = baseMipLevel;
 		srvDesc.Texture2D.MipLevels = mipLevelCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		srvDesc.Texture2DArray.MostDetailedMip = baseMipLevel;
@@ -247,29 +247,29 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 		srvDesc.Texture2DArray.FirstArraySlice = baseArrayLayer;
 		srvDesc.Texture2DArray.ArraySize = arrayLayerCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
 		srvDesc.Texture2DMSArray.FirstArraySlice = baseArrayLayer;
 		srvDesc.Texture2DMSArray.ArraySize = arrayLayerCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_3D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_3D)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 		srvDesc.Texture3D.MostDetailedMip = baseMipLevel;
 		srvDesc.Texture3D.MipLevels = mipLevelCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_CUBE)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_CUBE)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
 		srvDesc.TextureCube.MostDetailedMip = baseMipLevel;
 		srvDesc.TextureCube.MipLevels = mipLevelCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_CUBE_ARRAY)
 	{
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
 		srvDesc.TextureCubeArray.MostDetailedMip = baseMipLevel;
@@ -298,41 +298,41 @@ ID3D11UnorderedAccessView* Texture::AsD3D11UnorderedAccessView(const crossplatfo
 	}
 
 	ID3D11UnorderedAccessView* uav = nullptr;
-	uint64_t hash = textureView.GetHash();
+	uint64_t hash = textureView.hash;
 	if (unorderedAccessViews.find(hash) != unorderedAccessViews.end())
 		return unorderedAccessViews[hash];
 
-	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc;
 	uavDesc.Format = TypelessToSrvFormat(dxgi_format);
-	if (textureView.type == crossplatform::ShaderResourceType::RW_TEXTURE_1D)
+	if (textureView.elements.type == crossplatform::ShaderResourceType::RW_TEXTURE_1D)
 	{
 		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1D;
 		uavDesc.Texture1D.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::RW_TEXTURE_1D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::RW_TEXTURE_1D_ARRAY)
 	{
 		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1DARRAY;
 		uavDesc.Texture1DArray.FirstArraySlice = baseArrayLayer;
 		uavDesc.Texture1DArray.ArraySize = arrayLayerCount;
 		uavDesc.Texture1DArray.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::RW_TEXTURE_2D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::RW_TEXTURE_2D)
 	{
 		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 		uavDesc.Texture2D.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::RW_TEXTURE_2D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::RW_TEXTURE_2D_ARRAY)
 	{
 		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 		uavDesc.Texture2DArray.FirstArraySlice = baseArrayLayer;
 		uavDesc.Texture2DArray.ArraySize = arrayLayerCount;
 		uavDesc.Texture2DArray.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::RW_TEXTURE_3D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::RW_TEXTURE_3D)
 	{
 		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 		uavDesc.Texture3D.FirstWSlice = 0;
@@ -360,46 +360,46 @@ ID3D11DepthStencilView* Texture::AsD3D11DepthStencilView(const crossplatform::Te
 	}
 
 	ID3D11DepthStencilView* dsv = nullptr;
-	uint64_t hash = textureView.GetHash();
+	uint64_t hash = textureView.hash;
 	if (depthStencilViews.find(hash) != depthStencilViews.end())
 		return depthStencilViews[hash];
 
-	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Format = ResourceToDsvFormat(dxgi_format);
 	dsvDesc.Flags = 0;
-	if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_1D)
+	if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_1D)
 	{
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
 		dsvDesc.Texture1D.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY)
 	{
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1DARRAY;
 		dsvDesc.Texture1DArray.FirstArraySlice = baseArrayLayer;
 		dsvDesc.Texture1DArray.ArraySize = arrayLayerCount;
 		dsvDesc.Texture1DArray.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2D)
 	{
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		dsvDesc.Texture2D.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
 	{
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 		dsvDesc.Texture2DArray.FirstArraySlice = baseArrayLayer;
 		dsvDesc.Texture2DArray.ArraySize = arrayLayerCount;
 		dsvDesc.Texture2DArray.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
 	{
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
 	{
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
 		dsvDesc.Texture2DMSArray.FirstArraySlice = baseArrayLayer;
@@ -426,51 +426,51 @@ ID3D11RenderTargetView* Texture::AsD3D11RenderTargetView(const crossplatform::Te
 	}
 
 	ID3D11RenderTargetView* rtv = nullptr;
-	uint64_t hash = textureView.GetHash();
+	uint64_t hash = textureView.hash;
 	if (renderTargetViews.find(hash) != renderTargetViews.end())
 		return renderTargetViews[hash];
 
-	const UINT& mipLevel = textureView.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.subresourceRange.baseArrayLayer;
-	const UINT& arrayLayerCount = textureView.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 	rtvDesc.Format = TypelessToSrvFormat(dxgi_format);
-	if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_1D)
+	if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_1D)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1D;
 		rtvDesc.Texture1D.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_1D_ARRAY)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1DARRAY;
 		rtvDesc.Texture1DArray.FirstArraySlice = baseArrayLayer;
 		rtvDesc.Texture1DArray.ArraySize = arrayLayerCount;
 		rtvDesc.Texture1DArray.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2D)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		rtvDesc.Texture2DArray.FirstArraySlice = baseArrayLayer;
 		rtvDesc.Texture2DArray.ArraySize = arrayLayerCount;
 		rtvDesc.Texture2DArray.MipSlice = mipLevel;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2DMS)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_2DMS_ARRAY)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
 		rtvDesc.Texture2DMSArray.FirstArraySlice = baseArrayLayer;
 		rtvDesc.Texture2DMSArray.ArraySize = arrayLayerCount;
 	}
-	else if (textureView.type == crossplatform::ShaderResourceType::TEXTURE_3D)
+	else if (textureView.elements.type == crossplatform::ShaderResourceType::TEXTURE_3D)
 	{
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 		rtvDesc.Texture3D.FirstWSlice = 0;
@@ -1270,10 +1270,10 @@ void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, v
 {
 	const int &layerCount = NumFaces();
 	crossplatform::TextureView tv;
-	tv.type = GetShaderResourceTypeForRTVAndDSV();
+	tv.elements.type = GetShaderResourceTypeForRTVAndDSV();
 	for (int mip = 0; mip < mips; mip++) // Must clear mip by mip.
 	{
-		tv.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, mip, 0, layerCount};
+		tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, uint8_t(mip), 0,uint8_t(layerCount)};
 
 		if (renderTarget)
 		{
@@ -1282,7 +1282,7 @@ void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, v
 		}
 		else if (computable)
 		{
-			tv.type |= platform::crossplatform::ShaderResourceType::RW;
+			tv.elements.type |= platform::crossplatform::ShaderResourceType::RW;
 			ID3D11UnorderedAccessView *uav = AsD3D11UnorderedAccessView(tv);
 			deviceContext.asD3D11DeviceContext()->ClearUnorderedAccessViewFloat(uav, colourClear);
 		}
@@ -1297,10 +1297,10 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 {
 	const int &layerCount = NumFaces();
 	crossplatform::TextureView tv;
-	tv.type = GetShaderResourceTypeForRTVAndDSV();
+	tv.elements.type = GetShaderResourceTypeForRTVAndDSV();
 	for (int mip = 0; mip < mips; mip++) // Must clear mip by mip.
 	{
-		tv.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH | crossplatform::TextureAspectFlags::STENCIL, 0, mip, 0, layerCount};
+		tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH | crossplatform::TextureAspectFlags::STENCIL, 0, uint8_t(mip), 0, uint8_t(layerCount)};
 
 	ID3D11DepthStencilView* dsv = AsD3D11DepthStencilView(tv);
 	deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(dsv, (D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL), depthClear, stencilClear);
@@ -1316,7 +1316,7 @@ void Texture::GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext)
 	bool layered = NumFaces() > 1;
 	bool ms = GetSampleCount() > 1;
 	crossplatform::TextureView tv;
-	tv.type = crossplatform::ShaderResourceType::TEXTURE_2D | (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0)) | (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
+	tv.elements.type = crossplatform::ShaderResourceType::TEXTURE_2D | (layered ? crossplatform::ShaderResourceType::ARRAY : crossplatform::ShaderResourceType(0)) | (ms ? crossplatform::ShaderResourceType::MS : crossplatform::ShaderResourceType(0));
 
 	deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView(tv));
 }
@@ -1433,9 +1433,9 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceC
 		return;
 	last_context=deviceContext.asD3D11DeviceContext();
 
-	const int& mip = textureView.subresourceRange.baseMipLevel;
-	if (textureView.type == crossplatform::ShaderResourceType::UNKNOWN)
-		textureView.type = GetShaderResourceTypeForRTVAndDSV();
+	const int &mip = textureView.elements.subresourceRange.baseMipLevel;
+	if (textureView.elements.type == crossplatform::ShaderResourceType::UNKNOWN)
+		textureView.elements.type = GetShaderResourceTypeForRTVAndDSV();
 
 	D3D11_VIEWPORT viewport;
 	if (renderTarget)

@@ -1066,9 +1066,9 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
+	uint32_t numMips = (subresourceRange.mipLevelCount == uint8_t(0xFF)) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	uint32_t numLayers = (subresourceRange.arrayLayerCount == uint8_t(0xFF)) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == totalNum));
 
@@ -1276,13 +1276,12 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 }
 
 void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages, const crossplatform::SubresourceRange& subresourceRange)
+	vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages, crossplatform::SubresourceRange subresourceRange)
 {
 	assert(commandBuffer);
 	auto DstAccessMask = [](vk::ImageLayout const& layout)
 	{
 		vk::AccessFlags flags;
-
 		switch (layout)
 		{
 		case vk::ImageLayout::eTransferDstOptimal:
@@ -1313,9 +1312,9 @@ void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, 
 	};
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &numMips = (subresourceRange.mipLevelCount == 0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	uint32_t numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	auto const barrier = vk::ImageMemoryBarrier()
 		.setSrcAccessMask(srcAccessMask)

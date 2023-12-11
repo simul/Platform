@@ -150,7 +150,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 
 #define SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER 1
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n,crossplatform::BufferUsageHint b)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool computable,bool cpu_read,void* init_data,const char *n,crossplatform::ResourceUsageFrequency b)
 {
 	InvalidateDeviceObjects();
 	bufferUsageHint = b;
@@ -163,14 +163,14 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	}
 	
 	#if SIMUL_GL_MAP_PERSISTENT_WRITE_BUFFER
-	if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+	if (bufferUsageHint == crossplatform::ResourceUsageFrequency::ONCE)
 	{
 		flags |= GL_MAP_PERSISTENT_BIT;
 	}
 	#endif
 	
 	// Create the SSBO:
-	if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+	if (bufferUsageHint == crossplatform::ResourceUsageFrequency::ONCE)
 	{
 		glGenBuffers(1, &mGPUBuffer[0]);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, mGPUBuffer[0]);
@@ -367,15 +367,15 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext& deviceContex
 int PlatformStructuredBuffer::GetIndex(crossplatform::DeviceContext& deviceContext, int idxOffset )
 {
 	int idx = 0;
-	if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE)
+	if (bufferUsageHint == crossplatform::ResourceUsageFrequency::ONCE)
 	{
 		idx = mLastIdx = 0;
 	}
-	else if (bufferUsageHint == crossplatform::BufferUsageHint::ONCE_PER_FRAME)
+	else if (bufferUsageHint == crossplatform::ResourceUsageFrequency::ONCE_PER_FRAME)
 	{
 		idx = mLastIdx = (renderPlatform->GetFrameNumber() + idxOffset) % mNumBuffers;
 	}
-	else if (bufferUsageHint == crossplatform::BufferUsageHint::MANY_PER_FRAME)
+	else if (bufferUsageHint == crossplatform::ResourceUsageFrequency::MANY_PER_FRAME)
 	{
 		idx = mLastIdx = (mLastIdx + idxOffset) % mNumBuffers;
 	}
@@ -426,47 +426,6 @@ crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
 	return techniques_by_index[index];
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource)
-{
-	auto res = GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext, res, tex, subresource);
-}
-
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource)
-{
-	if (!name.valid)
-		return;
-
-	opengl::Texture* gTex = (opengl::Texture*)tex;
-	if (gTex)
-	{
-		const crossplatform::SubresourceRange subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, subresource.mipLevel, uint32_t(1), subresource.baseArrayLayer, subresource.arrayLayerCount };
-		GLuint imageView = gTex->AsOpenGLView({ name.shaderResourceType, subresourceRange });
-		if (glIsTexture(imageView))
-		{
-			glBindImageTexture(name.slot, imageView, 0, GL_TRUE, 0, GL_READ_WRITE, RenderPlatform::ToGLInternalFormat(tex->GetFormat()));
-		}
-		else
-		{
-			// Unbind it:
-			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
-		}
-	}
-	else
-	{
-		// Unbind it:
-		if(name.slot>=0&&name.slot<GL_MAX_IMAGE_UNITS)
-			glBindImageTexture(name.slot, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
-	}
-}
-
-void Effect::SetConstantBuffer(crossplatform::DeviceContext& deviceContext,crossplatform::ConstantBufferBase* s)
-{
-	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
-	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
-
-	crossplatform::Effect::SetConstantBuffer(deviceContext, s);
-}
 
 void Effect::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass)
 {
@@ -784,13 +743,13 @@ void EffectPass::SetTextureHandles(crossplatform::DeviceContext & deviceContext)
 			{
 				tex = rPlat->GetDummy3D();
 				ta.resourceType = crossplatform::ShaderResourceType::TEXTURE_3D;
-				ta.subresource = {};
+				ta.subresource = crossplatform::DefaultSubresourceRange;
 			}
 			else
 			{
 				tex = rPlat->GetDummy2D();
 				ta.resourceType = crossplatform::ShaderResourceType::TEXTURE_2D;
-				ta.subresource = {};
+				ta.subresource = crossplatform::DefaultSubresourceRange;
 			}
 		}
 

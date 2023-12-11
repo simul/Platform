@@ -147,7 +147,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 				ta.resourceType = requiredType;
 			}
 			texture = ((vulkan::RenderPlatform*)renderPlatform)->GetDummyTexture(ta.resourceType);
-			ta.subresource = {};
+			ta.subresource = crossplatform::DefaultSubresourceRange;
 		}
 		if (texture)
 		{

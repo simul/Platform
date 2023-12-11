@@ -91,7 +91,7 @@ namespace platform
 			PlatformStructuredBuffer();
 			virtual	 ~PlatformStructuredBuffer();
 
-			void		RestoreDeviceObjects(crossplatform::RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, crossplatform::BufferUsageHint b);
+			void		RestoreDeviceObjects(crossplatform::RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, crossplatform::ResourceUsageFrequency b);
 			void*		GetBuffer(crossplatform::DeviceContext& deviceContext);
 			const void* OpenReadBuffer(crossplatform::DeviceContext& deviceContext);
 			void		CloseReadBuffer(crossplatform::DeviceContext& deviceContext);
@@ -199,10 +199,6 @@ namespace platform
 											~Effect();
 			crossplatform::EffectTechnique* GetTechniqueByIndex(int index);
 		
-			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource = crossplatform::SubresourceLayers()) override;
-			void							SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& name, crossplatform::Texture* tex, const crossplatform::SubresourceLayers& subresource = crossplatform::SubresourceLayers()) override;
-			void							SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase* s)override;
-			
 			void							Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,int pass);
 			void							Apply(crossplatform::DeviceContext& deviceContext,crossplatform::EffectTechnique* effectTechnique,const char* pass);
 			void							Reapply(crossplatform::DeviceContext& deviceContext);

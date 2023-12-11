@@ -38,7 +38,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	delete[] stagingBuffers;
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable, bool cpu_r, void* init_data, const char* n, crossplatform::BufferUsageHint b)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r, int ct, int unit_size, bool computable, bool cpu_r, void* init_data, const char* n, crossplatform::ResourceUsageFrequency b)
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;

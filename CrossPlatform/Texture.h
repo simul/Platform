@@ -178,7 +178,7 @@ namespace platform
 			crossplatform::RenderPlatform *renderPlatform;
 			SamplerStateDesc samplerStateDesc;
 		};
-
+		// TODO: is this just a repro of Vulkan's Aspect flags?
 		enum class TextureAspectFlags : uint8_t
 		{
 			NONE		= 0x00,
@@ -256,8 +256,8 @@ namespace platform
 		{
 			union
 			{
-				uint64_t hash;
 				TextureViewElements elements;
+				uint64_t hash;
 			};
 		};
 		static_assert(sizeof(crossplatform::TextureView) <= sizeof(uint64_t), "size of TextureView should be 8 bytes.");
@@ -291,7 +291,7 @@ namespace platform
 				//TextureTarget() = default;
 
 				Texture* texture = nullptr;
-				SubresourceLayers subresource = {};
+				SubresourceLayers subresource = DefaultSubresourceLayers;
 			};
 			TargetsAndViewport()
 				:temp(false), num(0), m_dt(nullptr), depthFormat(UNKNOWN)

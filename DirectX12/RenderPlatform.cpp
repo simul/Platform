@@ -40,11 +40,12 @@ using namespace dx12;
 
 #if SIMUL_INTERNAL_CHECKS
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
-crossplatform::DeviceContextType barrierDeviceContextType = crossplatform::DeviceContextType::GRAPHICS;
 #else
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
 #endif
-
+#if PLATFORM_DEBUG_BARRIERS
+crossplatform::DeviceContextType barrierDeviceContextType = crossplatform::DeviceContextType::GRAPHICS;
+#endif
 ///////////////////////
 // D3D12ComputeContext//
 ///////////////////////
@@ -262,7 +263,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
         SIMUL_BREAK("Null resource in barrier\n");
     }
 #endif
-#if PLATFORM_DEBUG_BARRIERS1
+#if PLATFORM_DEBUG_BARRIERS
     const size_t MAX_NAME_LENGTH = 30;
     char name[MAX_NAME_LENGTH];
 #endif
@@ -277,7 +278,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
             SIMUL_ASSERT(before == b.Transition.StateAfter);
             if (before != b.Transition.StateAfter)
             {
-#if PLATFORM_DEBUG_BARRIERS1
+#if PLATFORM_DEBUG_BARRIERS
                 if (deviceContext.deviceContextType == barrierDeviceContextType)
                 {
                     GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -290,7 +291,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
                 if (barrierList.mCurBarriers > 1)
                 {
                     std::swap(b, barrierList.mPendingBarriers[barrierList.mCurBarriers - 1]);
-#if PLATFORM_DEBUG_BARRIERS1
+#if PLATFORM_DEBUG_BARRIERS
                     if (deviceContext.deviceContextType == barrierDeviceContextType)
                     {
                         GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -300,7 +301,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
                 }
                 else
                 {
-#if PLATFORM_DEBUG_BARRIERS1
+#if PLATFORM_DEBUG_BARRIERS
                     if (deviceContext.deviceContextType == barrierDeviceContextType)
                     {
                         GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -312,7 +313,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
             }
             else
             {
-#if PLATFORM_DEBUG_BARRIERS1
+#if PLATFORM_DEBUG_BARRIERS
                 if (deviceContext.deviceContextType == barrierDeviceContextType)
                 {
                     GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -327,7 +328,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
     if (!found)
     {
         auto &barrier = barrierList.mPendingBarriers[barrierList.mCurBarriers++];
-#if PLATFORM_DEBUG_BARRIERS1
+#if PLATFORM_DEBUG_BARRIERS
         if (deviceContext.deviceContextType == barrierDeviceContextType)
         {
             GetD3DName(res, name, MAX_NAME_LENGTH);
@@ -336,8 +337,10 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
 #endif
         barrier = CD3DX12_RESOURCE_BARRIER::Transition(
             res, before, after, subRes);
-    }
+	}
+#if !PLATFORM_DEBUG_BARRIERS
     if (flush)
+    #endif
     {
         FlushBarriers(deviceContext);
     }
@@ -3113,7 +3116,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
     }
 
     // Apply CBVs:
-    pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[frameHeapIndex], m12Device, deviceContext);
+	pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[frameHeapIndex], m12Device, deviceContext);
 
     // Apply SRVs (textures and SB):
     pass->SetSRVs(cs->textureAssignmentMap, cs->applyStructuredBuffers, &mFrameHeap[frameHeapIndex], m12Device, deviceContext);

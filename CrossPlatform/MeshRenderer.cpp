@@ -47,7 +47,7 @@ void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
 	mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
 	mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
-	//effect->SetConstantBuffer(deviceContext, &cameraConstants);
+	//renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	Mesh::SubMesh* subMesh = mesh->GetSubMesh(index);
 	

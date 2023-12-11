@@ -106,9 +106,7 @@ namespace platform
 
 		private:
 			void			SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, vk::ImageAspectFlags aspectMask
-											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout
-											, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages
-											, const crossplatform::SubresourceRange& subresourceRange = {});
+											, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages, crossplatform::SubresourceRange subresourceRange = crossplatform::DefaultSubresourceRange);
 			void			InvalidateDeviceObjectsExceptLoaded();
 			bool			IsSame(int w, int h, int d, int arr, int, crossplatform::PixelFormat f, int msaa_samples, bool computable, bool rt, bool ds, bool cb = false);
 

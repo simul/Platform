@@ -721,7 +721,7 @@ crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_
 	case D3D_SVT_CONSUME_STRUCTURED_BUFFER:
 		return ShaderResourceType::CONSUME_STRUCTURED_BUFFER;
 	default:
-		return ShaderResourceType::COUNT;
+		return ShaderResourceType::UNKNOWN;
 	}
 }
 
@@ -1111,16 +1111,16 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext 
 	for (int i = 0; i < num; i++)
 	{
 		crossplatform::TextureView tv;
-		tv.type = targs[i]->GetShaderResourceTypeForRTVAndDSV();
-		tv.subresourceRange = { crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1 };
+		tv.elements.type = targs[i]->GetShaderResourceTypeForRTVAndDSV();
+		tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1};
 		rt[i] = targs[i]->AsD3D11RenderTargetView(tv);
 	}
 	ID3D11DepthStencilView *d=NULL;
 	if (depth)
 	{
 		crossplatform::TextureView tv;
-		tv.type = depth->GetShaderResourceTypeForRTVAndDSV();
-		tv.subresourceRange = { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 };
+		tv.elements.type = depth->GetShaderResourceTypeForRTVAndDSV();
+		tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1};
 		d = depth->AsD3D11DepthStencilView(tv);
 	}
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
@@ -1545,7 +1545,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	pass->SetSamplers(deviceContext, cs->currentEffect->GetSamplers() );
 	
-	pass->SetConstantBuffers(deviceContext,cs->applyBuffers);
+	pass->SetConstantBuffers(deviceContext, cs->applyBuffers);
 	
 	// Apply UAVs (RwTextures and RwSB):
 	pass->SetUAVs(deviceContext,cs->rwTextureAssignmentMap, cs->applyRwStructuredBuffers);
