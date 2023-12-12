@@ -1730,7 +1730,7 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[0];
 		vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
 		// TODO: is AsVulkanImageView really necessary here?
-		hashval += (unsigned long long)(texture->AsVulkanImageView(MAKE_TEXTURE_VIEW(texture->GetShaderResourceTypeForRTVAndDSV(),tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount)))->operator VkImageView();
+		hashval += (unsigned long long)(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(),tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount)))->operator VkImageView();
 		hashval += (unsigned long long)texture->width;	//Deal with resizing the framebuffer!
 		hashval += (unsigned long long)texture->length;
 		hashval += (unsigned long long)texture->GetArraySize();
@@ -1742,7 +1742,7 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 		vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
 		// TODO: is AsVulkanImageView really necessary here?
-		hashval += (unsigned long long)(texture->AsVulkanImageView(MAKE_TEXTURE_VIEW(texture->GetShaderResourceTypeForRTVAndDSV(), dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount)))->operator VkImageView();
+		hashval += (unsigned long long)(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(), dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount)))->operator VkImageView();
 	}
 	hashval+=tv->num;
 	return hashval;
@@ -1790,7 +1790,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 		{
 			crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[j];
 			vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
-			attachments[j] = *(texture->AsVulkanImageView(MAKE_TEXTURE_VIEW(texture->GetShaderResourceTypeForRTVAndDSV(), 
+			attachments[j] = *(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(), 
 				tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount)));
 		}
 		if (deviceContext.contextState.IsDepthActive())
@@ -1799,7 +1799,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 			vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
 			if (texture)
 			{
-				attachments[tv->num] = *(texture->AsVulkanImageView(MAKE_TEXTURE_VIEW(texture->GetShaderResourceTypeForRTVAndDSV(), dt.subresource.aspectMask,(uint8_t)dt.subresource.mipLevel, uint8_t(1),(uint8_t)dt.subresource.baseArrayLayer, (uint8_t)dt.subresource.arrayLayerCount)
+				attachments[tv->num] = *(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(), dt.subresource.aspectMask,(uint8_t)dt.subresource.mipLevel, uint8_t(1),(uint8_t)dt.subresource.baseArrayLayer, (uint8_t)dt.subresource.arrayLayerCount)
 			));
 			}
 		}

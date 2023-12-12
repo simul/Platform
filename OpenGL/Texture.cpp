@@ -527,7 +527,7 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 
 void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::TextureView textureView)
 {
-	const int& array_index = textureView.elements.subresourceRange.baseArrayLayer;
+	const int &array_index = textureView.elements.subresourceRange.baseArrayLayer;
 	const int &mip_index = textureView.elements.subresourceRange.baseMipLevel;
 
 	targetsAndViewport.num				= 1;

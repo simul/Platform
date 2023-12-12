@@ -1232,26 +1232,26 @@ void RenderPlatform::ResourceTransition(crossplatform::DeviceContext &deviceCont
     case platform::crossplatform::ReadableCompute:
     {
         bool pixelShader = (transition == platform::crossplatform::ReadableGraphics);
-		t12->AsD3D12ShaderResourceView(deviceContext, MAKE_TEXTURE_VIEW(crossplatform::ShaderResourceType::TEXTURE_2D, crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1), true, pixelShader);
+		t12->AsD3D12ShaderResourceView(deviceContext, MakeTextureView(crossplatform::ShaderResourceType::TEXTURE_2D, crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1), true, pixelShader);
         break;
     }
     case platform::crossplatform::Writeable:
     {
         if (t12->HasRenderTargets())
         {
-			t12->AsD3D12RenderTargetView(deviceContext,MAKE_TEXTURE_VIEW(t->GetShaderResourceTypeForRTVAndDSV(), 
+			t12->AsD3D12RenderTargetView(deviceContext,MakeTextureView(t->GetShaderResourceTypeForRTVAndDSV(), 
 				crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1));
         }
         else if (t12->IsDepthStencil())
         {
-            t12->AsD3D12DepthStencilView(deviceContext,MAKE_TEXTURE_VIEW(t->GetShaderResourceTypeForRTVAndDSV(), 
+            t12->AsD3D12DepthStencilView(deviceContext,MakeTextureView(t->GetShaderResourceTypeForRTVAndDSV(), 
 			crossplatform::TextureAspectFlags::DEPTH, 0, -1, 0, -1));
         }
         break;
     }
     case platform::crossplatform::UnorderedAccess:
     {
-		t12->AsD3D12UnorderedAccessView(deviceContext, MAKE_TEXTURE_VIEW(crossplatform::ShaderResourceType::TEXTURE_2D,crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1));
+		t12->AsD3D12UnorderedAccessView(deviceContext, MakeTextureView(crossplatform::ShaderResourceType::TEXTURE_2D,crossplatform::TextureAspectFlags::COLOUR, 0, -1, 0, -1));
         break;
     }
     }
@@ -2664,10 +2664,10 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext 
     {
         D3D12_CPU_DESCRIPTOR_HANDLE *rtv = nullptr;
         if (deviceContext.deviceContextType == crossplatform::DeviceContextType::MULTIVIEW_GRAPHICS)
-			rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, MAKE_TEXTURE_VIEW(targs[i]->GetShaderResourceTypeForRTVAndDSV(),
+			rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, MakeTextureView(targs[i]->GetShaderResourceTypeForRTVAndDSV(),
 				crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, -1));
         else
-            rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, MAKE_TEXTURE_VIEW(targs[i]->GetShaderResourceTypeForRTVAndDSV(),
+            rtv = targs[i]->AsD3D12RenderTargetView(deviceContext, MakeTextureView(targs[i]->GetShaderResourceTypeForRTVAndDSV(),
 		crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1));
 
         mTargets.m_rt[i] = rtv;
@@ -2681,9 +2681,9 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext 
     {
         D3D12_CPU_DESCRIPTOR_HANDLE *dsv = nullptr;
         if (deviceContext.deviceContextType == crossplatform::DeviceContextType::MULTIVIEW_GRAPHICS)
-			dsv = depth->AsD3D12DepthStencilView(deviceContext, MAKE_TEXTURE_VIEW(depth->GetShaderResourceTypeForRTVAndDSV(),crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, -1));
+			dsv = depth->AsD3D12DepthStencilView(deviceContext, MakeTextureView(depth->GetShaderResourceTypeForRTVAndDSV(),crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, -1));
         else
-            dsv = depth->AsD3D12DepthStencilView(deviceContext, MAKE_TEXTURE_VIEW(depth->GetShaderResourceTypeForRTVAndDSV(),crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1));
+            dsv = depth->AsD3D12DepthStencilView(deviceContext, MakeTextureView(depth->GetShaderResourceTypeForRTVAndDSV(),crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1));
 
         mTargets.m_dt = dsv;
         mTargets.depthFormat = depth->pixelFormat;
@@ -2744,12 +2744,12 @@ void RenderPlatform::ApplyDefaultRenderTargets(crossplatform::GraphicsDeviceCont
             auto &t = deviceContext.defaultTargetsAndViewport.textureTargets[i];
             if (t.texture)
                 h[i] = *(t.texture->AsD3D12RenderTargetView(deviceContext,
-                                                            MAKE_TEXTURE_VIEW(t.texture->GetShaderResourceTypeForRTVAndDSV(),crossplatform::TextureAspectFlags::COLOUR, t.subresource.mipLevel, uint32_t(1), t.subresource.baseArrayLayer, t.subresource.arrayLayerCount)));
+                                                            MakeTextureView(t.texture->GetShaderResourceTypeForRTVAndDSV(),crossplatform::TextureAspectFlags::COLOUR, t.subresource.mipLevel, uint32_t(1), t.subresource.baseArrayLayer, t.subresource.arrayLayerCount)));
         }
     }
     auto &d = deviceContext.defaultTargetsAndViewport.depthTarget;
     if (d.texture)
-		D = d.texture->AsD3D12DepthStencilView(deviceContext, MAKE_TEXTURE_VIEW(d.texture->GetShaderResourceTypeForRTVAndDSV(),
+		D = d.texture->AsD3D12DepthStencilView(deviceContext, MakeTextureView(d.texture->GetShaderResourceTypeForRTVAndDSV(),
                                                                crossplatform::TextureAspectFlags::DEPTH, d.subresource.mipLevel, uint32_t(1), d.subresource.baseArrayLayer, d.subresource.arrayLayerCount));
     else
         D = (D3D12_CPU_DESCRIPTOR_HANDLE *)deviceContext.defaultTargetsAndViewport.m_dt;

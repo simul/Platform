@@ -175,7 +175,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		texture->SetLayout(deviceContext, vk::ImageLayout::eShaderReadOnlyOptimal, ta.subresource);
 		write.setDstBinding(GenerateTextureSlot(slot));
 		write.setDescriptorCount(1);
-		vkImageView = texture->AsVulkanImageView(MAKE_TEXTURE_VIEW_2(ta.resourceType, ta.subresource));
+		vkImageView = texture->AsVulkanImageView(MakeTextureView(ta.resourceType, ta.subresource));
 		if (vkImageView)
 			descriptorImageInfo->setImageView(*vkImageView);
 		descriptorImageInfo->setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -203,7 +203,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		vulkan::Texture* texture = (vulkan::Texture*)(ta.texture);
 		if (texture && texture->IsValid())
 		{
-			vkImageView = texture->AsVulkanImageView(MAKE_TEXTURE_VIEW_2(ta.resourceType, ta.subresource));
+			vkImageView = texture->AsVulkanImageView(MakeTextureView(ta.resourceType, ta.subresource));
 			texture->SetLayout(deviceContext, vk::ImageLayout::eGeneral, ta.subresource);
 		}
 		else

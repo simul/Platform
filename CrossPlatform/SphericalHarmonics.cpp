@@ -138,7 +138,7 @@ void SphericalHarmonics::CopyMip(GraphicsDeviceContext &deviceContext,Texture *t
 	// The source is the i'th mip of the faceIndex face of the cubemap texture.
 	lightProbesEffect->SetTexture(deviceContext, "sourceCubemap", tex, {TextureAspectFlags::COLOUR, 0, 1, 0, (uint8_t)-1});
 	// The target is the (i+1)'th mip of the faceIndex face.
-	tex->activateRenderTarget(deviceContext,MAKE_TEXTURE_VIEW(tex->GetShaderResourceTypeForRTVAndDSV(), 
+	tex->activateRenderTarget(deviceContext,MakeTextureView(tex->GetShaderResourceTypeForRTVAndDSV(), 
 		TextureAspectFlags::COLOUR, src_mip + 1, 1, face, 1));
 	lightProbesEffect->Apply(deviceContext, tech, passname); 
 	renderPlatform->DrawQuad(deviceContext);
@@ -314,7 +314,7 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 	}
 	for(int i=cube_start;i<cube_end;i++)
 	{
-		target_texture->activateRenderTarget(deviceContext, MAKE_TEXTURE_VIEW(target_texture->GetShaderResourceTypeForRTVAndDSV(),TextureAspectFlags::COLOUR, 0, 1, i, 1));
+		target_texture->activateRenderTarget(deviceContext, MakeTextureView(target_texture->GetShaderResourceTypeForRTVAndDSV(),TextureAspectFlags::COLOUR, 0, 1, i, 1));
 		//math::Matrix4x4 cube_proj = platform::crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F / 2.f, SIMUL_PI_F / 2.f, 0.2f, 200000.f);
 		{
 			//static bool rev = true;

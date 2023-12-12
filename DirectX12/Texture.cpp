@@ -540,10 +540,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " SrvHeap").c_str(), false);
 	}
 
-	const UINT& baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
-	const UINT& mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == 0xff ? mips - baseMipLevel : textureView.elements.subresourceRange.mipLevelCount;
-	const UINT& baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xff ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == 0xFF ? mips - baseMipLevel : textureView.elements.subresourceRange.mipLevelCount;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.elements.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
@@ -672,9 +672,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::
 		mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, (name + " UavHeap").c_str(), false);
 	}
 
-	const UINT& mipLevel = textureView.elements.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xff ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.elements.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0) 
@@ -765,9 +765,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::Dev
 		mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, (name + " DsvHeap").c_str(), false);
 	}
 
-	const UINT& mipLevel = textureView.elements.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xff ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Format = RenderPlatform::TypelessToDsvFormat(dxgi_format);
@@ -851,9 +851,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::Dev
 		mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, totalCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, (name + " RtHeap").c_str(), false);
 	}
 
-	const UINT& mipLevel = textureView.elements.subresourceRange.baseMipLevel;
-	const UINT& baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xff ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	UINT planeSlice = 0;
 	if ((textureView.elements.subresourceRange.aspectMask & crossplatform::TextureAspectFlags::PLANE_0) == crossplatform::TextureAspectFlags::PLANE_0)
@@ -1954,10 +1954,10 @@ int Texture::GetSampleCount()const
 
 bool Texture::AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange)
 {
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t& numMips = subresourceRange.mipLevelCount ==0xff ? mips - startMip : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xff ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == 0xFF ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	std::vector<D3D12_RESOURCE_STATES> stateCheck;
 	for (uint32_t layer = startLayer; layer < startLayer + numLayers; layer++)
@@ -1978,10 +1978,10 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 	if (AreSubresourcesInSameState(subresourceRange))
 		return mSubResourcesStates[subresourceRange.baseArrayLayer][subresourceRange.baseMipLevel];
 
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t& numMips = subresourceRange.mipLevelCount == 0xff ? mips - startMip : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xff ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == 0xFF ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 
 	// Return the resource state of a mip or array layer, or the whole resource
@@ -2016,10 +2016,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 	int curArray = cubemap ? arraySize * 6 : arraySize;
 	const bool split_layouts = !AreSubresourcesInSameState(crossplatform::DefaultSubresourceRange);
 
-	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t& numMips = subresourceRange.mipLevelCount ==0xff? mips - startMip : subresourceRange.mipLevelCount;
-	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xff ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t &startMip = subresourceRange.baseMipLevel;
+	const uint32_t &numMips = subresourceRange.mipLevelCount == 0xFF ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
+	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == curArray));
 

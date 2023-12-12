@@ -210,7 +210,7 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 	if (shaderResourceViews.find(hash) != shaderResourceViews.end())
 		return shaderResourceViews[hash];
 
-	const UINT& baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
 	const UINT &mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.elements.subresourceRange.mipLevelCount;
 	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
 	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;

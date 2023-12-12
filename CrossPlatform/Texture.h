@@ -232,8 +232,9 @@ namespace platform
 			uint8_t baseArrayLayer;				//! The first array layer in the view.
 			uint8_t arrayLayerCount;			//! The number of array layers, starting from the baseArrayLayer, in the view.
 		});
-		static_assert(sizeof(crossplatform::SubresourceRange) == 5, "size of SubresourceRange should be 5 bytes.");
-		static const SubresourceRange DefaultSubresourceRange = {TextureAspectFlags::COLOUR,0,0xff,0,0xff};
+		static_assert(sizeof(crossplatform::SubresourceRange) == 5, "Size of SubresourceRange should be 5 bytes.");
+		static constexpr SubresourceRange DefaultSubresourceRange = {TextureAspectFlags::COLOUR, 0, 0xFF, 0, 0xFF};
+
 		//! Structure to describe range of subresources in a Texture/Images for a single mip level and array layers.
 		PLATFORM_PACK(struct SIMUL_CROSSPLATFORM_EXPORT SubresourceLayers
 		{
@@ -242,7 +243,8 @@ namespace platform
 			uint8_t baseArrayLayer;				//! The first array layer in the view.
 			uint8_t arrayLayerCount;			//! The number of array layers, starting from the baseArrayLayer, in the view.
 		});
-		static const SubresourceLayers DefaultSubresourceLayers = {TextureAspectFlags::COLOUR, 0, 0, 0xff};
+		static_assert(sizeof(crossplatform::SubresourceLayers) == 4, "Size of SubresourceLayers should be 4 bytes.");
+		static constexpr SubresourceLayers DefaultSubresourceLayers = {TextureAspectFlags::COLOUR, 0, 0, 0xFF};
 
 		PLATFORM_PACK(struct SIMUL_CROSSPLATFORM_EXPORT TextureViewElements
 		{
@@ -250,7 +252,8 @@ namespace platform
 			SubresourceRange subresourceRange;
 			uint8_t pad;
 		});
-		static_assert(sizeof(crossplatform::TextureViewElements) <= 9, "size of TextureViewElements should be <=8 bytes.");
+		static_assert(sizeof(crossplatform::TextureViewElements) == 8, "Size of TextureViewElements should be 8 bytes.");
+
 		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
 		struct SIMUL_CROSSPLATFORM_EXPORT TextureView
 		{
@@ -260,26 +263,28 @@ namespace platform
 				uint64_t hash;
 			};
 		};
-		static_assert(sizeof(crossplatform::TextureView) <= sizeof(uint64_t), "size of TextureView should be 8 bytes.");
-		inline TextureView MakeTextureView(ShaderResourceType t,TextureAspectFlags a,uint8_t m0,uint8_t m,uint8_t n0,uint8_t n)
+		static_assert(sizeof(crossplatform::TextureView) <= sizeof(uint64_t), "Size of TextureView should be 8 bytes.");
+		static constexpr TextureView DefaultTextureView = {ShaderResourceType::UNKNOWN, DefaultSubresourceRange};
+
+		inline TextureView MakeTextureView(ShaderResourceType type, TextureAspectFlags aspect, uint8_t baseMip, uint8_t mipCount, uint8_t baseLayer, uint8_t layerCount)
 		{
-			TextureView v;
-			v.elements.type=t;
-			v.elements.subresourceRange = {a, m0, m, n0, n};
-			v.elements.pad=0;
-			return v;
+			TextureView view;
+			view.elements.type = type;
+			view.elements.subresourceRange = {aspect, baseMip, mipCount, baseLayer, layerCount};
+			view.elements.pad = 0;
+			return view;
 		}
-		inline TextureView MakeTextureView(ShaderResourceType t, SubresourceRange sr)
+		inline TextureView MakeTextureView(ShaderResourceType type, SubresourceRange subresourceRange)
 		{
-			TextureView v;
-			v.elements.type = t;
-			v.elements.subresourceRange = sr;
-			v.elements.pad = 0;
-			return v;
+			TextureView view;
+			view.elements.type = type;
+			view.elements.subresourceRange = subresourceRange;
+			view.elements.pad = 0;
+			return view;
 		}
-		#define MAKE_TEXTURE_VIEW(t, a, m0, m, n0, n) MakeTextureView(t, a, m0, m, n0, n)
-		#define MAKE_TEXTURE_VIEW_2(t, sr) MakeTextureView(t, sr)
-		extern TextureView DefaultTextureView;
+		//#define MAKE_TEXTURE_VIEW(type, aspect, baseMip, mipCount, baseLayer, layerCount) MakeTextureView(type, aspect, baseMip, mipCount, baseLayer, layerCount)
+		//#define MAKE_TEXTURE_VIEW_2(type, subresourceRange) MakeTextureView(type, subresourceRange)
+
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;
 		//! Stores information about the current render targets
@@ -287,9 +292,6 @@ namespace platform
 		{
 			struct TextureTarget
 			{
-				// TODO: C++20: this prevents initializer lists from being used. Why do we want it?
-				//TextureTarget() = default;
-
 				Texture* texture = nullptr;
 				SubresourceLayers subresource = DefaultSubresourceLayers;
 			};
