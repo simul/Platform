@@ -183,15 +183,17 @@ void Framebuffer::DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceCo
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	crossplatform::TextureView rtv_tv;
 	rtv_tv.elements.type = buffer_texture->GetShaderResourceTypeForRTVAndDSV();
-	rtv_tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1};
+	rtv_tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::COLOUR, 0, 1, 0, 1};
 
-	if (!buffer_texture->AsD3D11RenderTargetView(rtv_tv))
+	//Check for an RTV.
+	ID3D11RenderTargetView *renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
+	if (!renderTargetView)
 	{
 		Deactivate(deviceContext);
 		return;
 	}
-	ID3D11RenderTargetView* renderTargetView = buffer_texture->AsD3D11RenderTargetView(rtv_tv);
-	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
+	
+	pContext->OMSetRenderTargets(1,&renderTargetView,NULL); //Set only the RTV, no DSV.
 	depth_active=false;
 
 	auto &fb=deviceContext.GetFrameBufferStack().top();
