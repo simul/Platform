@@ -3,10 +3,7 @@
 #define CAMERA_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(CameraConstants,1)
-	uniform mat4 worldViewProj;
-	uniform mat4 world;
-	uniform mat4 invWorldViewProj;
-	uniform mat4 modelView;
+	uniform mat4 invViewProj;
 	uniform mat4 view;
 	uniform mat4 proj;
 	uniform mat4 viewProj;
@@ -16,18 +13,12 @@ SIMUL_CONSTANT_BUFFER(CameraConstants,1)
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)
-	uniform mat4 leftWorldViewProj;
-	uniform mat4 leftWorld;
-	uniform mat4 leftInvWorldViewProj;
-	uniform mat4 leftModelView;
+	uniform mat4 leftInvViewProj;
 	uniform mat4 leftView;
 	uniform mat4 leftProj;
 	uniform mat4 leftViewProj;
 
-	uniform mat4 rightWorldViewProj;
-	uniform mat4 rightWorld;
-	uniform mat4 rightInvWorldViewProj;
-	uniform mat4 rightModelView;
+	uniform mat4 rightInvViewProj;
 	uniform mat4 rightView;
 	uniform mat4 rightProj;
 	uniform mat4 rightViewProj;
@@ -43,14 +34,14 @@ SIMUL_CONSTANT_BUFFER_END
 
 vec3 ClipPosToView(vec4 clip_pos)
 {
-	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
+	vec3 view = normalize(mul(invViewProj, clip_pos).xyz);
 	return view;
 }
 
 vec3 ClipPosToView(vec2 clip_pos2)
 {
 	vec4 clip_pos = vec4(clip_pos2, 1.0, 1.0);
-	vec3 view = normalize(mul(invWorldViewProj, clip_pos).xyz);
+	vec3 view = normalize(mul(invViewProj, clip_pos).xyz);
 	return view;
 }
 
@@ -66,14 +57,14 @@ vec3 TexCoordsToView(vec2 texCoords)
 
 vec3 ClipPosToView(vec4 clip_pos, uint viewID)
 {
-	mat4 _invWorldViewProj = viewID == 0 ? leftInvWorldViewProj : rightInvWorldViewProj;
+	mat4 _invWorldViewProj = viewID == 0 ? leftInvViewProj : rightInvViewProj;
 	vec3 view = normalize(mul(_invWorldViewProj, clip_pos).xyz);
 	return view;
 }
 
 vec3 ClipPosToView(vec2 clip_pos2, uint viewID)
 {
-	mat4 _invWorldViewProj = viewID == 0 ? leftInvWorldViewProj : rightInvWorldViewProj;
+	mat4 _invWorldViewProj = viewID == 0 ? leftInvViewProj : rightInvViewProj;
 	vec4 clip_pos = vec4(clip_pos2, 1.0, 1.0);
 	vec3 view = normalize(mul(_invWorldViewProj, clip_pos).xyz);
 	return view;

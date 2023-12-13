@@ -30,14 +30,14 @@ namespace platform
 	{
 		enum class ResourceUsageFrequency
 		{
-			OCTAVE_1 = 1,
-			OCTAVE_2 = 2,
-			OCTAVE_3 = 3,
-			OCTAVE_4 = 4,
-			ONCE=OCTAVE_1,
-			ONCE_PER_FRAME=OCTAVE_2,
-			FEW_PER_FRAME=OCTAVE_3,
-			MANY_PER_FRAME=OCTAVE_4
+			ONCE = 1,
+			ONCE_PER_FRAME = 2,
+			FEW_PER_FRAME = 3,
+			MANY_PER_FRAME = 4,
+			OCTAVE_1 = ONCE,
+			OCTAVE_2 = ONCE_PER_FRAME,
+			OCTAVE_3 = FEW_PER_FRAME,
+			OCTAVE_4 = MANY_PER_FRAME
 		};
 		struct ShaderResource;
 		/// A base class for structured buffers, used by StructuredBuffer internally.

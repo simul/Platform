@@ -246,7 +246,6 @@ void Text3DRenderer::LoadShaders()
 	ERRNO_BREAK
 	effect = renderPlatform->CreateEffect("font");
 	ERRNO_BREAK
-	constantBuffer.LinkToEffect(effect,"TextConstants");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
 	textureResource	=effect->GetShaderResource("fontTexture");

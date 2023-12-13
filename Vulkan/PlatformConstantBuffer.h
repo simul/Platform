@@ -18,11 +18,10 @@ namespace platform
 		class SIMUL_VULKAN_EXPORT PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{
 		public:
-                PlatformConstantBuffer();
+			PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F);
                 ~PlatformConstantBuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void* addr) override;
 			void InvalidateDeviceObjects() override;
-			void LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex)override;
 			void Apply(crossplatform::DeviceContext& deviceContext,size_t size,void* addr) override;
 			void Unbind(crossplatform::DeviceContext& deviceContext) override;
 

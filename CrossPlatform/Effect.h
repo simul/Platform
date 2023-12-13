@@ -419,24 +419,24 @@ namespace platform
 		{
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
-			long long validFrame;
 			int internalFrameNumber;
 			std::string name;
+			ResourceUsageFrequency resourceUsageFrequency;
+			bool changed=false;
 		public:
-			PlatformConstantBuffer():renderPlatform(nullptr), validFrame(-1), internalFrameNumber(0){}
+			PlatformConstantBuffer(ResourceUsageFrequency ruf):renderPlatform(nullptr),internalFrameNumber(0),resourceUsageFrequency(ruf){}
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
 			virtual void Reapply(DeviceContext &deviceContext,size_t size,void *addr)
 			{
 				Apply(deviceContext,size,addr);
 			}
 			virtual void Unbind(DeviceContext &deviceContext)=0;
-			void SetChanged()
+			void SetHasChanged()
 			{
-				validFrame =0;
+				changed = true;
 			}
 			void SetName(const char *n)
 			{
@@ -667,7 +667,7 @@ namespace platform
 			public:
 			static const int bindingIndex=slot;
 		};
-		template<class T> class ConstantBuffer :public ConstantBufferBase, public T
+		template<class T,ResourceUsageFrequency F=ResourceUsageFrequency::MANY_PER_FRAME> class ConstantBuffer :public ConstantBufferBase, public T
 		{
 			std::set<Effect*> linkedEffects;
 		public:
@@ -707,9 +707,6 @@ namespace platform
 			}
 			//! Create the buffer object.
 			void RestoreDeviceObjects(RenderPlatform* p);
-			//! Find the constant buffer in the given effect, and link to it.
-			void LinkToEffect(Effect* effect, const char* name);
-			bool IsLinkedToEffect(crossplatform::Effect* effect);
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()
 			{
@@ -724,6 +721,11 @@ namespace platform
 			{
 				if (platformConstantBuffer)
 					platformConstantBuffer->Unbind(deviceContext);
+			}
+			void SetHasChanged()
+			{
+				if (platformConstantBuffer)
+					platformConstantBuffer->SetHasChanged();
 			}
 		};
 	}

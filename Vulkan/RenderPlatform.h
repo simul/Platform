@@ -31,65 +31,9 @@ namespace platform
 {
 	namespace vulkan
 	{
+		class RenderPlatform;
 		extern bool debugUtilsSupported;
 		extern bool debugMarkerSupported;
-		template<typename T>
-		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const char* name)
-		{
-			vk::Instance* instance = renderPlatform->AsVulkanInstance();
-			vk::Device* device = renderPlatform->AsVulkanDevice();
-			uint64_t objectHandle = *((uint64_t*)&ds);
-
-			if(debugUtilsSupported)
-			{
-				vk::DispatchLoaderDynamic d;
-				d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
-				if (d.vkSetDebugUtilsObjectNameEXT)
-				{
-					vk::DebugUtilsObjectNameInfoEXT nameInfo;
-					nameInfo
-						.setPNext(nullptr)
-						.setObjectType(ds.objectType)
-						.setObjectHandle(objectHandle)
-						.setPObjectName(name);
-
-					device->setDebugUtilsObjectNameEXT(nameInfo, d);
-				}
-			}
-			#if 0
-			// TODO: this won't compile if the Vulkan version is too early
-			if(debugMarkerSupported)
-			{
-				vk::DispatchLoaderDynamic d;
-				d.vkDebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)instance->getProcAddr("vkDebugMarkerSetObjectNameEXT");
-				if (d.vkDebugMarkerSetObjectNameEXT)
-				{
-					vk::DebugMarkerObjectNameInfoEXT nameInfo;
-					nameInfo
-						.setPNext(nullptr)
-						.setObjectType(ds.debugReportObjectType)
-						.setObject(objectHandle)
-						.setPObjectName(name);
-
-					device->debugMarkerSetObjectNameEXT(nameInfo, d);
-				}
-			}
-			#endif
-
-			if (platform::core::SimulInternalChecks)
-			{
-				crossplatform::RenderPlatform::ResourceMap[objectHandle] = name;
-		#ifdef _DEBUG
-				std::cout << "0x" << std::hex << objectHandle << "\t" << name << "\n";
-		#endif
-			}
-		}
-		template<typename T>
-		void SetVulkanName(crossplatform::RenderPlatform* renderPlatform, const T& ds, const std::string& name)
-		{
-			SetVulkanName(renderPlatform, ds, name.c_str());
-		}
-
 		class Material;
 		class Texture;
 
@@ -100,7 +44,11 @@ namespace platform
 						RenderPlatform();
 			virtual		~RenderPlatform() override;
 
-			vk::Device *AsVulkanDevice() override;
+			inline vk::Device *AsVulkanDevice()
+			{
+				return vulkanDevice;
+			}
+
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
 			uint32_t GetInstanceAPIVersion();
@@ -214,7 +162,7 @@ namespace platform
 			crossplatform::Framebuffer*				CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
-			crossplatform::PlatformConstantBuffer*	CreatePlatformConstantBuffer() override;
+			crossplatform::PlatformConstantBuffer*	CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency) override;
 			crossplatform::PlatformStructuredBuffer*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*					CreateBuffer() override;
 			crossplatform::RenderState*				CreateRenderState(const crossplatform::RenderStateDesc &desc) override;
@@ -323,6 +271,63 @@ namespace platform
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
 			std::map<unsigned long long,crossplatform::TargetsAndViewport>				mTargets;
 		};
+		template <typename T>
+		void SetVulkanName(crossplatform::RenderPlatform *renderPlatform, const T &ds, const char *name)
+		{
+			vk::Instance *instance = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanInstance();
+			vk::Device *device = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+			uint64_t objectHandle = *((uint64_t *)&ds);
+
+			if (debugUtilsSupported)
+			{
+				vk::DispatchLoaderDynamic d;
+				d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
+				if (d.vkSetDebugUtilsObjectNameEXT)
+				{
+					vk::DebugUtilsObjectNameInfoEXT nameInfo;
+					nameInfo
+						.setPNext(nullptr)
+						.setObjectType(ds.objectType)
+						.setObjectHandle(objectHandle)
+						.setPObjectName(name);
+
+					device->setDebugUtilsObjectNameEXT(nameInfo, d);
+				}
+			}
+#if 0
+			// TODO: this won't compile if the Vulkan version is too early
+			if(debugMarkerSupported)
+			{
+				vk::DispatchLoaderDynamic d;
+				d.vkDebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)instance->getProcAddr("vkDebugMarkerSetObjectNameEXT");
+				if (d.vkDebugMarkerSetObjectNameEXT)
+				{
+					vk::DebugMarkerObjectNameInfoEXT nameInfo;
+					nameInfo
+						.setPNext(nullptr)
+						.setObjectType(ds.debugReportObjectType)
+						.setObject(objectHandle)
+						.setPObjectName(name);
+
+					device->debugMarkerSetObjectNameEXT(nameInfo, d);
+				}
+			}
+#endif
+
+			if (platform::core::SimulInternalChecks)
+			{
+				crossplatform::RenderPlatform::ResourceMap[objectHandle] = name;
+#ifdef _DEBUG
+				std::cout << "0x" << std::hex << objectHandle << "\t" << name << "\n";
+#endif
+			}
+		}
+		template <typename T>
+		void SetVulkanName(crossplatform::RenderPlatform *renderPlatform, const T &ds, const std::string &name)
+		{
+			SetVulkanName(renderPlatform, ds, name.c_str());
+		}
+
 	}
 }
 

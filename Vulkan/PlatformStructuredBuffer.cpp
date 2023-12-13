@@ -39,7 +39,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	mCpuRead            =cpur;
 	mSlots = ((mTotalSize + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
 	
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	AddPerFrameBuffer(init_data);
 	firstBuffer=perFrameBuffers.begin();
 	for (unsigned int i = 1; i < kNumBuffers; i++)
@@ -74,7 +74,7 @@ void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo()
 		.setSize(alloc_size)
 		.setUsage(vk::BufferUsageFlagBits::eStorageBuffer);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	perFrameBuffers.push_back(PerFrameBuffer());
 	PerFrameBuffer &perFrameBuffer=perFrameBuffers.back();
 	vulkanRenderPlatform->CreateVulkanBuffer(alloc_size
@@ -101,7 +101,7 @@ const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 {
     if (renderPlatform->GetFrameNumber() >= kNumBuffers)
     {
-		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+		vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 		mCurReadMap = vulkanDevice->mapMemory(mReadBufferMemory[mFrameIndex], 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
 		return mCurReadMap;
     }
@@ -112,7 +112,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext& dev
 {
     if (mCurReadMap)
     {
-		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+		vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 		vulkanDevice->unmapMemory(mReadBufferMemory[mFrameIndex]);
     }
 }
@@ -138,7 +138,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 
 void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,bool as_uav) 
 {
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if (mCurApplyCount >= mMaxApplyCount)
 	{
 		mMaxApplyCount*=mCountMultiplier;
@@ -224,7 +224,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
 	vulkan::RenderPlatform *rPlat=(vulkan::RenderPlatform *)renderPlatform;

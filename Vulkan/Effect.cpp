@@ -51,7 +51,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	renderPlatform = r;
 	if (renderPlatform)
 	{
-		mDevice = renderPlatform->AsVulkanDevice();
+		mDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	}
 	if (!mDevice)
 	{

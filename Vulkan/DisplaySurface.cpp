@@ -457,7 +457,7 @@ void DisplaySurface::InitSwapChain()
 	result = gpu->getSurfaceSupportKHR(0, mSurface, (vk::Bool32 *)&supported);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SIMUL_ASSERT(supported != 0);
-	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
+	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform, swapchain, "Swapchain");
@@ -662,7 +662,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	if (!swapchain)
 		InitSwapChain();
 
-	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
+	auto *vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
 
 	vk::Result result = vk::Result::eSuccess;
 	do
@@ -777,7 +777,7 @@ void DisplaySurface::EnsureImagePresentLayout()
 
 void DisplaySurface::Present()
 {
-	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
+	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 
 	// update_data_buffer();
 

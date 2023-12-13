@@ -145,11 +145,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	vulkanDevice = nullptr;
 }
 
-vk::Device *RenderPlatform::AsVulkanDevice()
-{
-	return vulkanDevice;
-}
-
 vk::Instance *RenderPlatform::AsVulkanInstance()
 {
 	return vulkanInstance;
@@ -278,10 +273,15 @@ void RenderPlatform::ClearReleaseManager()
 			default:
 				SIMUL_BREAK("Unknown vk::ObjectType of vk::ObjectType::e{} (0x{}) in ReleaseManager.", vk::to_string(it->type), i);
 			}
-
+			auto next=it;
+			next++;
 			releaseResources.erase(it);
+			it=next;
 		}
-		it++;
+		else
+		{
+			it++;
+		}
 	}
 
 	resourcesToBeReleased = !releaseResources.empty();
@@ -787,9 +787,9 @@ crossplatform::Effect* RenderPlatform::CreateEffect()
 	return e;
 }
 
-crossplatform::PlatformConstantBuffer* RenderPlatform::CreatePlatformConstantBuffer()
+crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F)
 {
-	return new vulkan::PlatformConstantBuffer();
+	return new vulkan::PlatformConstantBuffer(F);
 }
 
 crossplatform::PlatformStructuredBuffer* RenderPlatform::CreatePlatformStructuredBuffer()

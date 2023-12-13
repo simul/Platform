@@ -406,7 +406,12 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 				const ImGui_ImplPlatform_TextureView* texture_srv = (ImGui_ImplPlatform_TextureView*)pcmd->GetTexID();
 				if(texture_srv && texture_srv->texture)
 				{
-					SubresourceRange subres = {TextureAspectFlags::COLOUR, std::min(uint8_t(texture_srv->texture->mips - 1), uint8_t(texture_srv->mip)), 1, uint8_t(texture_srv->slice), 1};
+					SubresourceRange subres;
+					subres.aspectMask= TextureAspectFlags::COLOUR;
+					subres.baseMipLevel=texture_srv->mip >= 0.f ? std::min(uint8_t(texture_srv->texture->mips - 1), uint8_t(texture_srv->mip)) : 0;
+					subres.mipLevelCount = uint8_t(texture_srv->mip >= 0.f ? 1 : 0xff);
+					subres.baseArrayLayer=uint8_t(texture_srv->slice);
+					subres.arrayLayerCount = uint8_t(0xff);
 					renderPlatform->SetTexture(deviceContext,bd->effect->GetShaderResource("texture0"), (Texture*)texture_srv->texture, subres);
 					renderPlatform->ApplyPass(deviceContext, bd->effectPass_noDepth);
 					bd->pInputLayout->Apply(deviceContext);

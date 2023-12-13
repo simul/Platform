@@ -210,7 +210,7 @@ namespace platform
 			crossplatform::Framebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d) override;
 			crossplatform::Effect					*CreateEffect() override;
-			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer() override;
+			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) override;
 			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer					*CreateBuffer() override;
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;			

@@ -24,7 +24,7 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 	InvalidateDeviceObjects();
 	samplerStateDesc=*desc;
 	renderPlatform=r;
-	vk::Device *vulkanDevice=r->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vk::SamplerCreateInfo samplerCreateInfo=vk::SamplerCreateInfo();
 	
 	samplerCreateInfo
@@ -55,7 +55,7 @@ void SamplerState::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
 	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
@@ -140,7 +140,7 @@ void Texture::InvalidateDeviceObjects()
 	if(!renderPlatform)
 		return;
 	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(vulkanDevice)
 	{
 		InvalidateDeviceObjectsExceptLoaded();
@@ -156,7 +156,7 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		return;
 	vulkan::RenderPlatform *r= static_cast<vulkan::RenderPlatform * >(renderPlatform);
 
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(vulkanDevice)
 	{
 		if(!external_texture)
@@ -354,7 +354,7 @@ vk::ImageView *Texture::CreateVulkanImageView(crossplatform::TextureView texture
 	imageViewCI.subresourceRange = {aspect, startMip, numMips, startLayer, numLayers};
 
 	vk::ImageView *imageView = new vk::ImageView();
-	SIMUL_VK_CHECK(renderPlatform->AsVulkanDevice()->createImageView(&imageViewCI, nullptr, imageView));
+	SIMUL_VK_CHECK(((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice()->createImageView(&imageViewCI, nullptr, imageView));
 	SetVulkanName(renderPlatform, *imageView, (name + " imageView").c_str());
 	return imageView;
 }
@@ -364,11 +364,11 @@ vk::ImageView* Texture::AsVulkanImageView( crossplatform::TextureView textureVie
 	if (!ValidateTextureView(textureView))
 		return nullptr;
 #endif
+	// special case for the most common situation:
 	if(textureView.elements.subresourceRange.mipLevelCount==0xff)
 		textureView.elements.subresourceRange.mipLevelCount = mips;
 	if (textureView.elements.subresourceRange.arrayLayerCount == 0xff)
 		textureView.elements.subresourceRange.arrayLayerCount = arraySize;
-	// special case for the most common situation:
 	if (textureView.hash == 0 || textureView.hash == defaultTextureView.hash)
 		return defaultImageView;
 	uint64_t hash = textureView.hash;
@@ -505,7 +505,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	
 	//SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
 
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
 
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
@@ -616,7 +616,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	if(cf!=crossplatform::CompressionFormat::UNCOMPRESSED)
 		SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
 
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
 	
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
@@ -708,7 +708,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	vk::FormatProperties props;
 	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
 	gpu->getFormatProperties(tex_format, &props);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	// eTransferDst in case we want to call setTexels.
 	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst ;
 	if(computable)
@@ -831,7 +831,7 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 
 void Texture::setTexels(const void *src,int texel_index,int num_texels)
 {
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *r=static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	PushLoadedTexturesToReleaseManager();
 	ClearLoadedTextures();
@@ -954,7 +954,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 		break;
 	};
 	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
 	auto const buffer_create_info = vk::BufferCreateInfo()
 		.setSize(bufferSize)//lt.x * lt.y *lt.z * 4 *texelBytes)

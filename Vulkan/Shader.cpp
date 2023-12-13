@@ -43,7 +43,7 @@ bool Shader::load(crossplatform::RenderPlatform *r, const char *filename_utf8,co
     default:
         break;
     }
-	vk::Device *device=renderPlatform->AsVulkanDevice();
+	vk::Device *device = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if (device->createShaderModule( &createInfo, nullptr,&mShader) != vk::Result::eSuccess)
 	{
 		SIMUL_CERR<<"Vulkan error creating "<<filename_utf8<<std::endl;
@@ -59,7 +59,7 @@ void Shader::Release()
 {
 	if(renderPlatform)
 	{
-		vk::Device *device=renderPlatform->AsVulkanDevice();
+		vk::Device *device = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 		if(device)
 			device->destroyShaderModule(mShader, nullptr);
 	}

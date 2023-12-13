@@ -27,7 +27,7 @@ EffectPass::~EffectPass()
 void EffectPass::InvalidateDeviceObjects()
 {
 	vulkan::RenderPlatform* rp = (vulkan::RenderPlatform*)renderPlatform;
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = rp->AsVulkanDevice();
 
 	if (!rp || !vulkanDevice)
 		return;
@@ -86,8 +86,9 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet)
 {
 	crossplatform::ContextState* cs = &deviceContext.contextState;
-	vulkan::Shader* c = (vulkan::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Device *vulkanDevice = rp->AsVulkanDevice();
 
 	// If valid, activate render states:
 	if (blendState)
@@ -317,19 +318,20 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			SIMUL_BREAK_ONCE("Pass {0}, possibly missing constant buffer in slot {1}: {2}", name,slot, effect->GetConstantBufferNameAtSlot(slot));
 			continue;
 		}
-		vulkan::PlatformConstantBuffer* pcb = (vulkan::PlatformConstantBuffer*)cb->GetPlatformConstantBuffer();
+		crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
 		vk::WriteDescriptorSet& write = writes[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateConstantBufferSlot(slot));
 		pcb->ActualApply(deviceContext);
-		vk::Buffer* vkBuffer = pcb->GetLastBuffer();
-		vk::DeviceSize vkDeviceSize = pcb->GetSize();
+		vulkan::PlatformConstantBuffer *vcb = (vulkan::PlatformConstantBuffer *)pcb;
+		vk::Buffer *vkBuffer = vcb->GetLastBuffer();
+		vk::DeviceSize vkDeviceSize = vcb->GetSize();
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
 		SIMUL_ASSERT(vkBuffer != nullptr);
 		if (vkBuffer)
 		{
-			descriptorBufferInfo->setOffset(pcb->GetLastOffset())
+			descriptorBufferInfo->setOffset(vcb->GetLastOffset())
 				.setRange(vkDeviceSize)
 				.setBuffer(*vkBuffer);
 			write.setPBufferInfo(descriptorBufferInfo);
@@ -478,7 +480,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 
 void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 {
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Device* vulkanDevice = rp->AsVulkanDevice();
 	m_Initialized = true;
 	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
 	
@@ -646,7 +649,8 @@ void EffectPass::AllocateDescriptorSets(vk::DescriptorSet& descriptorSet)
 	if (!m_DescriptorSetLayout)
 		return;
 
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Device* vulkanDevice = rp->AsVulkanDevice();
 	vk::DescriptorSetLayout descriptorSetLayout[s_DescriptorSetCount];
 
 	for (int i = 0; i < s_DescriptorSetCount; i++)
@@ -712,7 +716,8 @@ vk::ShaderStageFlags EffectPass::GetShaderFlagsForSlot(int slot, bool(platform::
 void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, int numOfSamples,
 	crossplatform::Topology topology, const crossplatform::RenderState* blendState, const crossplatform::RenderState* depthStencilState, const crossplatform::RenderState* rasterizerState, bool multiview)
 {
-	vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
+	vk::Device* vulkanDevice = rp->AsVulkanDevice();
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
 	vk::Result result = vulkanDevice->createPipelineCache(&pipelineCacheInfo, nullptr, &renderPassPipeline->pipelineCache);
 	SIMUL_VK_CHECK(result);

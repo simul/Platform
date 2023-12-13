@@ -33,7 +33,7 @@ namespace platform
 struct ImGui_ImplPlatform_TextureView
 {
 	platform::crossplatform::Texture *texture=nullptr;
-	float mip=0.0f;
+	float mip=-1.0f;
 	int slice=0;
 	//! If set, this delegate will be called to render into the texture.
 	platform::crossplatform::RenderDelegate renderDelegate;

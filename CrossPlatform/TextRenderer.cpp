@@ -179,7 +179,6 @@ void TextRenderer::LoadShaders()
 	if (!renderPlatform)
 		return;
 	effect=renderPlatform->CreateEffect("font");
-	constantBuffer.LinkToEffect(effect,"TextConstants");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
 	textureResource	=effect->GetShaderResource("fontTexture");

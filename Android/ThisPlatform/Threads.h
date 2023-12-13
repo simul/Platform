@@ -62,3 +62,30 @@ inline void SetThreadPriority(std::thread &thread,int p)
 	}
 	pthread_setschedparam(thread.native_handle(), SCHED_RR, &sch_params);
 }
+
+inline void SetThisThreadPriority( int p)
+{
+	sched_param sch_params;
+	switch (p)
+	{
+	case -2:
+		sch_params.sched_priority = 1;
+		break;
+	case -1:
+		sch_params.sched_priority = 25;
+		break;
+	case 0:
+		sch_params.sched_priority = 50;
+		break;
+	case 1:
+		sch_params.sched_priority = 75;
+		break;
+	case 2:
+		sch_params.sched_priority = 99;
+		break;
+	default:
+		sch_params.sched_priority = 50;
+		break;
+	}
+	pthread_setschedparam(pthread_self(), SCHED_RR, &sch_params);
+}

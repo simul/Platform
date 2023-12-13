@@ -29,7 +29,7 @@ void Buffer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
 	vulkan::RenderPlatform *rp=(vulkan::RenderPlatform *)renderPlatform;
@@ -61,7 +61,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	void* target_data;
 	if(src_data)
 	{
-		vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+		vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 		vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
 		if(result==vk::Result::eSuccess&&target_data)
 		{
@@ -93,7 +93,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	void* target_data=nullptr;
 	if (src_data)
 	{
-		vk::Device* vulkanDevice = renderPlatform->AsVulkanDevice();
+		vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 		SIMUL_VK_CHECK(vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size, vk::MemoryMapFlagBits(), &target_data));
 		if (target_data)
 		{
@@ -112,7 +112,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 {
 	loadingComplete=false;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	void* target_data= nullptr;
 	vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
 	if (result != vk::Result::eSuccess)
@@ -122,7 +122,7 @@ void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 
 void Buffer::Unmap(crossplatform::DeviceContext& deviceContext)
 {
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
 }
 

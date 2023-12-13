@@ -20,7 +20,7 @@
 #endif
 
 struct ID3D11DeviceContext;
-struct IDirect3DDevice9;
+struct IDirect3DDevice9;  
 struct ID3D12GraphicsCommandList;
 namespace sce
 {

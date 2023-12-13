@@ -320,8 +320,8 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			time=0.0f;
 		}
 	}
-	if ((strcmp(deviceContext.renderPlatform->GetName(), "OpenGL") == 0)
-		|| (deviceContext.renderPlatform->AsVulkanDevice() != nullptr))
+	if (deviceContext.renderPlatform->GetType()== RenderPlatformType::OpenGL ||
+		deviceContext.renderPlatform->GetType() == RenderPlatformType::Vulkan)
 	{
 		UINT64 delta = endTime - startTime;
 		if (endTime > startTime)

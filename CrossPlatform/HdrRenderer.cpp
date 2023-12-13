@@ -101,7 +101,6 @@ void HdrRenderer::LoadShaders()
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
 	
 	exposureGammaMainPass		=exposureGammaTechnique->GetPass("main");
-	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
 	hdr_effect_imageTexture=hdr_effect->GetShaderResource("imageTexture");
 	hdr_effect_imageTextureMS=hdr_effect->GetShaderResource("imageTextureMS");

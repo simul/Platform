@@ -207,7 +207,6 @@ namespace platform
 			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
 			virtual ID3D12Device* AsD3D12Device();
 			virtual ID3D11Device *AsD3D11Device();
-			virtual vk::Device *AsVulkanDevice();
 			virtual vk::Instance* AsVulkanInstance();
 			//! Platform-dependent function called when initializing the Render Platform.
 			virtual void RestoreDeviceObjects(void*);
@@ -367,7 +366,7 @@ namespace platform
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
 			/// platform::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
-			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
+			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	(ResourceUsageFrequency F)	=0;
 			/// Create a platform-specific structured buffer instance. This is not usually used directly, instead, create a
 			/// platform::crossplatform::StructuredBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformStructuredBuffer	*CreatePlatformStructuredBuffer	()	=0;
@@ -591,40 +590,16 @@ namespace platform
 		/// \param [in]	numLines	Number of gridlines to draw.
 		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::GraphicsDeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
 		// Clang works differently to VC++:
-		template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)
+		template<class T,ResourceUsageFrequency F> void ConstantBuffer<T,F>::RestoreDeviceObjects(RenderPlatform *p)
 		{
 			InvalidateDeviceObjects();
 			if (p)
 			{
-				platformConstantBuffer = p->CreatePlatformConstantBuffer();
+				platformConstantBuffer = p->CreatePlatformConstantBuffer(F);
 				platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
 			}
 		}
 
-		template<class T> void ConstantBuffer<T>::LinkToEffect(Effect *effect, const char *name)
-		{
-			if (IsLinkedToEffect(effect))
-				return;
-			if (effect&&platformConstantBuffer)
-			{
-				defaultName=name;
-				platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
-				linkedEffects.insert(effect);
-				effect->StoreConstantBufferLink(this);
-			}
-		}
-
-		template<class T> bool ConstantBuffer<T>::IsLinkedToEffect(crossplatform::Effect *effect)
-		{
-			if(!effect)
-				return false;
-			if (linkedEffects.find(effect) != linkedEffects.end())
-			{
-				if (effect->IsLinkedToConstantBuffer(this))
-					return true;
-			}
-			return false;
-		}
 		template<class T, ResourceUsageFrequency bufferUsageHint> void StructuredBuffer<T, bufferUsageHint>::RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable, bool cpu_read, T* data, const char* n)
 		{
 			count = ct;

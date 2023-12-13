@@ -15,7 +15,7 @@ namespace platform
 		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{	
 		public:
-			PlatformConstantBuffer();
+			PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F);
 			~PlatformConstantBuffer();
 
 			//! Returns the CPU descriptor handle of the current constant buffer, we need to apply the buffer at least once

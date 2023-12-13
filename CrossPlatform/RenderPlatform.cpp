@@ -258,10 +258,6 @@ ID3D11Device *RenderPlatform::AsD3D11Device()
 	return nullptr;
 }
 
-vk::Device *RenderPlatform::AsVulkanDevice()
-{
-	return nullptr;
-}
 vk::Instance* RenderPlatform::AsVulkanInstance() 
 {
 	return nullptr;
@@ -420,8 +416,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		volumeTexture			=debugEffect->GetShaderResource("volumeTexture");
 		imageTexture			=debugEffect->GetShaderResource("imageTexture");
 		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
-	}		
-	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
+	}
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -518,9 +513,7 @@ void RenderPlatform::LoadShaders()
 		volumeTexture			=debugEffect->GetShaderResource("volumeTexture");
 		imageTexture			=debugEffect->GetShaderResource("imageTexture");
 		debugEffect_cubeTexture	=debugEffect->GetShaderResource("cubeTexture");
-	}		
-	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
-	
+	}
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
@@ -1630,7 +1623,6 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.h
 		,2.f*(float)dx/(float)viewport.w
 		,2.f*(float)dy/(float)viewport.h);
-	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
 	SetConstantBuffer(deviceContext,&debugConstants);
 	effect->Apply(deviceContext,technique,pass);
@@ -1811,7 +1803,6 @@ void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBuff
 
 	deviceContext.contextState.applyBuffers[s->GetIndex()] = s;
 	deviceContext.contextState.constantBuffersValid = false;
-	pcb->SetChanged();
 }
 
 void RenderPlatform::SetStructuredBuffer(DeviceContext& deviceContext, BaseStructuredBuffer* s, const ShaderResource& shaderResource)
@@ -2100,6 +2091,9 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
 	if (!res.valid)
 		return;
+#if SIMUL_INTERNAL_CHECKS
+	SIMUL_ASSERT_WARN_ONCE(subresource.arrayLayerCount>0,"Must have at least one array layer in a subresourceLayers spec.");
+#endif
 	crossplatform::ContextState* cs = GetContextState(deviceContext);
 	unsigned long slot = res.slot;
 	if (slot >= 1000)

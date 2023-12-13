@@ -93,3 +93,34 @@ inline void SetThreadPriority(std::thread &thread,int p)
 		SIMUL_BREAK_ONCE_INTERNAL("SetThreadPriority failed\n");
 	}
 }
+
+inline void SetThisThreadPriority( int p)
+{
+	DWORD nPriority = 0;
+	// Roderick: Upping the priority to 99 really seems to help avoid dropped packets.
+	switch (p)
+	{
+	case -2:
+		nPriority = THREAD_PRIORITY_LOWEST;
+		break;
+	case -1:
+		nPriority = THREAD_PRIORITY_BELOW_NORMAL;
+		break;
+	case 0:
+		nPriority = THREAD_PRIORITY_NORMAL;
+		break;
+	case 1:
+		nPriority = THREAD_PRIORITY_ABOVE_NORMAL;
+		break;
+	case 2:
+		nPriority = THREAD_PRIORITY_HIGHEST;
+		break;
+	default:
+		break;
+	}
+	BOOL result = SetThreadPriority(GetCurrentThread(), nPriority);
+	if (!result)
+	{
+		SIMUL_BREAK_ONCE_INTERNAL("SetThreadPriority failed\n");
+	}
+}

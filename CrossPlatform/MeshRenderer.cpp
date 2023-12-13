@@ -21,7 +21,6 @@ void MeshRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	renderPlatform = r;
 	cameraConstants.RestoreDeviceObjects(r);
 	solidConstants.RestoreDeviceObjects(r);
-	solidConstants.LinkToEffect(effect, "SolidConstants");
 }
 
 void MeshRenderer::LoadShaders()
@@ -40,13 +39,13 @@ void MeshRenderer::InvalidateDeviceObjects()
 
 void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int index)
 {
-	cameraConstants.world = deviceContext.viewStruct.model;
-	cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+//	perNodeConstants.model = deviceContext.viewStruct.model;
+	cameraConstants.viewProj = deviceContext.viewStruct.viewProj;
 	cameraConstants.view = deviceContext.viewStruct.view;
 	cameraConstants.proj = deviceContext.viewStruct.proj;
 	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
-	mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
-	mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
+	//mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
+	//mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
 	//renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	Mesh::SubMesh* subMesh = mesh->GetSubMesh(index);

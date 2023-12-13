@@ -5,7 +5,7 @@ using namespace platform;
 using namespace vulkan;
 
 
-PlatformConstantBuffer::PlatformConstantBuffer():
+PlatformConstantBuffer::PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) : crossplatform::PlatformConstantBuffer(F),
 			mSlots(0)
 			,mMaxDescriptors(0)
 			,mLastFrameIndex(0)
@@ -33,7 +33,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 		.setSize(mBufferSize)
 		.setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
 		.setSharingMode(vk::SharingMode::eExclusive);
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		auto result = vulkanDevice->createBuffer(&buf_info, nullptr, &mBuffers[i]);
@@ -78,7 +78,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	if(!vulkanDevice)
 		return;
@@ -92,10 +92,6 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	renderPlatform=nullptr;
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect* effect,const char* name,int bindingIndex)
-{
-}
-
 void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext& deviceContext,size_t sz,void* addr)
 {
 	src=addr;
@@ -106,7 +102,10 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 {
 	if(!src)
 		return;
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
+	if (!changed&&resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE && mCurApplyCount > 0)
+		return;
+	changed=false;
+	vk::Device *vulkanDevice=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
 	if (mCurApplyCount >= mMaxDescriptors)
 	{
 		// This should really be solved by having some kind of pool? Or allocating more space, something like that

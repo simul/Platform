@@ -30,7 +30,8 @@ template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 	return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
 }
 
-PlatformConstantBuffer::PlatformConstantBuffer() :
+PlatformConstantBuffer::PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) :
+	crossplatform::PlatformConstantBuffer(F),
 	mSlots(0),
 	mMaxDescriptors(0),
 	mCurApplyCount(0)
