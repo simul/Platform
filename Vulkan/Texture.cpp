@@ -326,7 +326,7 @@ vk::ImageView* Texture::AsVulkanImageView( crossplatform::TextureView textureVie
 	if(textureView.elements.subresourceRange.mipLevelCount == 0xFF)
 		textureView.elements.subresourceRange.mipLevelCount = mips - startMip;
 	if (textureView.elements.subresourceRange.arrayLayerCount == 0xFF)
-		textureView.elements.subresourceRange.arrayLayerCount = NumFaces() - startLayer;
+		textureView.elements.subresourceRange.arrayLayerCount = NumFaces() - startLayer; //Not arraySize;
 
 	// Special case for the most common situation:
 	if (textureView.hash == 0 || textureView.hash == defaultTextureView.hash)
@@ -340,7 +340,7 @@ vk::ImageView* Texture::AsVulkanImageView( crossplatform::TextureView textureVie
 	if(textureView.hash == 0)
 	{
 		textureView = crossplatform::DefaultTextureView;
-		hash = 0; //Ok, 0x0000 0100FF00FF 00 is now aliased with 0?
+		hash = 0; //Ok, 0x0000 0100FF00FF 00 is now aliased with 0.
 	}
 
 	vk::ImageView* imageView = CreateVulkanImageView(textureView);
