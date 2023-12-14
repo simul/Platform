@@ -32,11 +32,11 @@ namespace platform
 			size_t GetSize();
         private:
 			//! Total allocated size for each buffer
-			static const unsigned			mBufferSize = 1024 * 64 * 8;
+			unsigned						mBufferSize = 1024 * 64 * 8;
 			//! Number of ring buffers
 			static const unsigned			kNumBuffers = (SIMUL_VULKAN_FRAME_LAG+1);
 			unsigned						mSlots;					//number of 256-byte chunks of memory...
-			unsigned						mMaxDescriptors;
+			unsigned						mMaxAppliesPerFrame=0;
 
 			int64_t							mLastFrameIndex;
 			unsigned						mCurApplyCount;

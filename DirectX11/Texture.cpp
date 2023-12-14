@@ -210,10 +210,10 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 	if (shaderResourceViews.find(hash) != shaderResourceViews.end())
 		return shaderResourceViews[hash];
 
-	const UINT& baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
-	const UINT &mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == -1 ? mips - baseMipLevel : textureView.elements.subresourceRange.mipLevelCount;
+	const UINT &baseMipLevel = textureView.elements.subresourceRange.baseMipLevel;
+	const UINT &mipLevelCount = textureView.elements.subresourceRange.mipLevelCount == 0xFF ? mips - baseMipLevel : textureView.elements.subresourceRange.mipLevelCount;
 	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	DXGI_FORMAT srvFormat = TypelessToSrvFormat(dxgi_format);
@@ -304,7 +304,7 @@ ID3D11UnorderedAccessView* Texture::AsD3D11UnorderedAccessView(const crossplatfo
 
 	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
 	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc;
 	uavDesc.Format = TypelessToSrvFormat(dxgi_format);
@@ -366,7 +366,7 @@ ID3D11DepthStencilView* Texture::AsD3D11DepthStencilView(const crossplatform::Te
 
 	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
 	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Format = ResourceToDsvFormat(dxgi_format);
@@ -432,7 +432,7 @@ ID3D11RenderTargetView* Texture::AsD3D11RenderTargetView(const crossplatform::Te
 
 	const UINT &mipLevel = textureView.elements.subresourceRange.baseMipLevel;
 	const UINT &baseArrayLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == -1 ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const UINT &arrayLayerCount = textureView.elements.subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - baseArrayLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 	rtvDesc.Format = TypelessToSrvFormat(dxgi_format);

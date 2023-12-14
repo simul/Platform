@@ -7,7 +7,7 @@ using namespace vulkan;
 
 PlatformConstantBuffer::PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) : crossplatform::PlatformConstantBuffer(F),
 			mSlots(0)
-			,mMaxDescriptors(0)
+			,mMaxAppliesPerFrame(0)
 			,mLastFrameIndex(0)
 			,mCurApplyCount(0)
 			,src(0)
@@ -24,11 +24,17 @@ PlatformConstantBuffer::~PlatformConstantBuffer()
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void *addr)
 {
-	renderPlatform=r;
+	renderPlatform = r;
+	if (resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE || resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE_PER_FRAME)
+	{
+	//TODO: is this efficient?
+		mBufferSize = (unsigned)sz + 2*kBufferAlign;
+	}
 	SIMUL_ASSERT(sz<=mBufferSize);
-	mSlots = ((sz + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
+	mSlots = unsigned(((sz + size_t(kBufferAlign - 1)) & ~size_t(kBufferAlign - 1)) / size_t(kBufferAlign));
 	SIMUL_ASSERT(mSlots>0);
-	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
+	mMaxAppliesPerFrame = mBufferSize / (kBufferAlign * mSlots);
+	SIMUL_ASSERT(mMaxAppliesPerFrame>0);
 	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo()
 		.setSize(mBufferSize)
 		.setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
@@ -87,35 +93,47 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 		r->PushToReleaseManager(mBuffers[i]);
 		r->PushToReleaseManager(mMemory[i]);
 	}
-	//vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
-	//vulkanDevice->destroyDescriptorSetLayout(mDescLayout, nullptr);
 	renderPlatform=nullptr;
 }
 
 void PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext& deviceContext,size_t sz,void* addr)
 {
 	src=addr;
-	size=sz;
+	//size=sz;
 }
 
 void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceContext) 
 {
 	if(!src)
 		return;
-	if (!changed&&resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE && mCurApplyCount > 0)
-		return;
+	if (!changed)
+	{
+		if(resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE && mCurApplyCount > 0)
+			return;
+		if (resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE_PER_FRAME && mCurApplyCount > 0)
+			return;
+		if (resourceUsageFrequency == crossplatform::ResourceUsageFrequency::FEW_PER_FRAME && mCurApplyCount > 0)
+			return;
+	}
 	changed=false;
+	bool resetframe=false;
 	vk::Device *vulkanDevice=((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
-	if (mCurApplyCount >= mMaxDescriptors)
+	if (mCurApplyCount >= mMaxAppliesPerFrame)
 	{
 		// This should really be solved by having some kind of pool? Or allocating more space, something like that
 		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
-		return;
+		mBufferSize*=2;
+		RestoreDeviceObjects(renderPlatform,size,nullptr);
+		resetframe=true;
 	}
 
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
 	// If new frame, update current frame index and reset the apply count
 	if (mLastFrameIndex != renderPlatform->GetFrameNumber())
+	{
+		resetframe = true;
+	}
+	if(resetframe)
 	{
 		mLastFrameIndex = renderPlatform->GetFrameNumber();
 		mCurApplyCount = 0;

@@ -87,6 +87,7 @@ namespace platform
 
 			vk::Image*		AsVulkanImage() override { return &mImage; }
 			vk::ImageView*	AsVulkanImageView( crossplatform::TextureView textureView) override;
+			vk::ImageView*	CreateVulkanImageView(crossplatform::TextureView textureView);
 
 			/// We need an active command list to finish loading a texture!
 			void			FinishLoading(crossplatform::DeviceContext& deviceContext) override;
@@ -96,10 +97,10 @@ namespace platform
 
 			void			InitViewTable(int l, int m);
 
-			bool			AreSubresourcesInSameState(const crossplatform::SubresourceRange& subresourceRange) const;
-			/// Transition EITHER the whole texture, OR a single mip/layer combination to the specified "layout" (actually more of a state than a layout.)
+			bool			AreSubresourcesInSameState(crossplatform::SubresourceRange subresourceRange = crossplatform::DefaultSubresourceRange) const;
+			/// Transition a Subresource Range to the specified layout.
 			void			SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLayout imageLayout, const crossplatform::SubresourceRange& subresourceRange);
-			/// Assume the texture will be in this layout due to internal Vulkan shenanigans.
+			/// Assume the texture will be in this layout.
 			void			AssumeLayout(vk::ImageLayout imageLayout);
 			/// Get the tracked current layout.
 			vk::ImageLayout GetLayout(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange);
@@ -117,23 +118,22 @@ namespace platform
 			void			ResizeLoadedTextures(size_t mips, size_t layers);
 			void			PushLoadedTexturesToReleaseManager();
 
-			vk::Image									mImage;
-			vk::Buffer									mBuffer;
+			vk::Image										mImage;
+			vk::Buffer										mBuffer;
 
 			//! Full resource state
-			vk::ImageLayout								mCurrentImageLayout{ vk::ImageLayout::eUndefined };
+			vk::ImageLayout									mCurrentImageLayout{ vk::ImageLayout::eUndefined };
 			//! States of the subresources mSubResourcesLayouts[index][mip]
-			std::vector<std::vector<vk::ImageLayout>>	mSubResourcesLayouts;
+			std::vector<std::vector<vk::ImageLayout>>		mSubResourcesLayouts;
 			
 			phmap::flat_hash_map<uint64_t, vk::ImageView *> mImageViews;
-			vk::ImageView *defaultImageView=nullptr;
-			vk::MemoryAllocateInfo mem_alloc;
-			vk::DeviceMemory mMem;
-			std::vector<std::vector<LoadedTexture>>		loadedTextures; //By mip, then by layer.
-			int mNumSamples = 1;
-			vk::ImageLayout mExternalLayout;
-			bool split_layouts = false;
-			vk::ImageView *CreateVulkanImageView(crossplatform::TextureView textureView);
+			vk::ImageView*									mDefaultImageView=nullptr;
+			vk::MemoryAllocateInfo							mMemAlloc;
+			vk::DeviceMemory								mMem;
+			std::vector<std::vector<LoadedTexture>>			mLoadedTextures; //By mip, then by layer.
+			int												mNumSamples = 1;
+			vk::ImageLayout									mExternalLayout;
+			
 		};
 	}
 

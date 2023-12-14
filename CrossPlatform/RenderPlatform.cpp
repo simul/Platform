@@ -2108,7 +2108,7 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 		ta.texture=nullptr;
 	ta.dimensions = dim;
 	ta.uav = true;
-	ta.subresource = { subresource.aspectMask, subresource.mipLevel, (uint32_t)1, subresource.baseArrayLayer, subresource.arrayLayerCount };;
+	ta.subresource = { subresource.aspectMask, subresource.mipLevel, (uint32_t)1, subresource.baseArrayLayer, subresource.arrayLayerCount };
 	cs->rwTextureAssignmentMapValid = false;
 }
 

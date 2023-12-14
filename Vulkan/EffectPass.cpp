@@ -108,7 +108,6 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	int numDescriptors = numImages + numBuffers;
 	if(numDescriptors>m_writeDescriptorSets.size())
 		m_writeDescriptorSets.resize(numDescriptors);
-	vk::WriteDescriptorSet *writes = m_writeDescriptorSets.data();
 
 	cs->textureSlots = 0;
 	cs->rwTextureSlots = 0;
@@ -119,14 +118,16 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	if(numImages>descriptorImageInfos.size())
 		descriptorImageInfos.resize(numImages);
 	vk::DescriptorImageInfo *descriptorImageInfo = descriptorImageInfos.data();
+
 	if(numBuffers>descriptorBufferInfos.size())
 		descriptorBufferInfos.resize(numBuffers);
 	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
+
 	int b = 0;
 	for (int i = 0; i < numResourceSlots; i++, b++)
 	{
 		int slot = resourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		crossplatform::TextureAssignment& ta = cs->textureAssignmentMap[slot];
 		vk::ImageView* vkImageView;
@@ -176,7 +177,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		texture->SetLayout(deviceContext, vk::ImageLayout::eShaderReadOnlyOptimal, ta.subresource);
 		write.setDstBinding(GenerateTextureSlot(slot));
 		write.setDescriptorCount(1);
-		vkImageView = texture->AsVulkanImageView(MAKE_TEXTURE_VIEW_2(ta.resourceType, ta.subresource));
+		vkImageView = texture->AsVulkanImageView(MakeTextureView(ta.resourceType, ta.subresource));
 		if (vkImageView)
 			descriptorImageInfo->setImageView(*vkImageView);
 		descriptorImageInfo->setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -197,14 +198,14 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	for (int i = 0; i < numRwResourceSlots; i++, b++)
 	{
 		int slot = rwResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		crossplatform::TextureAssignment& ta = cs->rwTextureAssignmentMap[slot];
 		vk::ImageView* vkImageView;
 		vulkan::Texture* texture = (vulkan::Texture*)(ta.texture);
 		if (texture && texture->IsValid())
 		{
-			vkImageView = texture->AsVulkanImageView(MAKE_TEXTURE_VIEW_2(ta.resourceType, ta.subresource));
+			vkImageView = texture->AsVulkanImageView(MakeTextureView(ta.resourceType, ta.subresource));
 			texture->SetLayout(deviceContext, vk::ImageLayout::eGeneral, ta.subresource);
 		}
 		else
@@ -227,7 +228,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	for (int i = 0; i < numSbResourceSlots; i++, b++)
 	{
 		int slot = sbResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateTextureSlot(slot));
 		crossplatform::PlatformStructuredBuffer* sb = cs->applyStructuredBuffers[slot];
@@ -254,7 +255,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	for (int i = 0; i < numRwSbResourceSlots; i++, b++)
 	{
 		int slot = rwSbResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateTextureWriteSlot(slot));
 		crossplatform::PlatformStructuredBuffer* sb = cs->applyRwStructuredBuffers[slot];
@@ -283,7 +284,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	for (int i = 0; i < numSamplerResourceSlots; i++, b++)
 	{
 		int slot = samplerResourceSlots[i];
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateSamplerSlot(slot));
 		crossplatform::SamplerState* ss = nullptr;
@@ -316,10 +317,10 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			numDescriptors--;
 			b--;
 			SIMUL_BREAK_ONCE("Pass {0}, possibly missing constant buffer in slot {1}: {2}", name,slot, effect->GetConstantBufferNameAtSlot(slot));
-			continue;
+			return;
 		}
 		crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
-		vk::WriteDescriptorSet& write = writes[b];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(GenerateConstantBufferSlot(slot));
 		pcb->ActualApply(deviceContext);
@@ -337,13 +338,18 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			write.setPBufferInfo(descriptorBufferInfo);
 			descriptorBufferInfo++;
 		}
+		else
+		{
+			SIMUL_BREAK_ONCE("Pass {0}, failed to get vkBuffer in slot {1}: {2}", name, slot, effect->GetConstantBufferNameAtSlot(slot));
+			continue;
+		}
 		cs->bufferSlots |= (1 << slot);
 	}
 	if (numDescriptors)
 	{
 		for (int i = 0; i < numDescriptors; i++)
 		{
-			vk::WriteDescriptorSet& write = writes[i];
+			vk::WriteDescriptorSet &write = m_writeDescriptorSets[i];
 			bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
 
 			if (no_res)
@@ -353,7 +359,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 				SIMUL_BREAK("VkWriteDescriptorSet error.");
 			}
 		}
-		vulkanDevice->updateDescriptorSets(numDescriptors, writes, 0, nullptr);
+		vulkanDevice->updateDescriptorSets(numDescriptors, m_writeDescriptorSets.data(), 0, nullptr);
 	}
 
 	// Now verify that ALL resource are set:

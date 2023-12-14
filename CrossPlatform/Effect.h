@@ -669,7 +669,6 @@ namespace platform
 		};
 		template<class T,ResourceUsageFrequency F=ResourceUsageFrequency::MANY_PER_FRAME> class ConstantBuffer :public ConstantBufferBase, public T
 		{
-			std::set<Effect*> linkedEffects;
 		public:
 			ConstantBuffer() :ConstantBufferBase(nullptr)
 			{
@@ -710,7 +709,6 @@ namespace platform
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()
 			{
-				linkedEffects.clear();
 				if (platformConstantBuffer)
 					platformConstantBuffer->InvalidateDeviceObjects();
 				delete platformConstantBuffer;

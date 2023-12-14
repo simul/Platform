@@ -14,8 +14,6 @@ using namespace platform;
 using namespace crossplatform;
 
 
-TextureView platform::crossplatform::DefaultTextureView;
-
 SamplerState::SamplerState():default_slot(-1),renderPlatform(nullptr)
 {
 }
@@ -40,7 +38,6 @@ Texture::Texture(const char *n)
 				,depthStencil(false)
 				,unfenceable(false)
 {
-	DefaultTextureView.elements = {ShaderResourceType::UNKNOWN, DefaultSubresourceRange};
 	if(n)
 		name=n;
 }
