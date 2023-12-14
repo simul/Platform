@@ -340,7 +340,7 @@ crossplatform::ShaderResourceType Texture::GetDefaultShaderResourceType() const
 {
 	crossplatform::ShaderResourceType type;
 	type = crossplatform::ShaderResourceType::TEXTURE_2D;
-	if (depth > 1)
+	if (dim == 3)
 		type = crossplatform::ShaderResourceType::TEXTURE_3D;
 	if (cubemap)
 		type = crossplatform::ShaderResourceType::TEXTURE_CUBE;
