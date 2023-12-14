@@ -720,7 +720,8 @@ vk::ShaderStageFlags EffectPass::GetShaderFlagsForSlot(int slot, bool(platform::
 }
 
 void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline, crossplatform::PixelFormat pixelFormat, int numOfSamples,
-	crossplatform::Topology topology, const crossplatform::RenderState* blendState, const crossplatform::RenderState* depthStencilState, const crossplatform::RenderState* rasterizerState, bool multiview)
+	crossplatform::Topology topology, const crossplatform::RenderState* blendState, const crossplatform::RenderState* depthStencilState
+	, const crossplatform::RenderState* rasterizerState, bool multiview)
 {
 	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
 	vk::Device* vulkanDevice = rp->AsVulkanDevice();

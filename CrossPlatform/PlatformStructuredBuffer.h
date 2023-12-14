@@ -6,6 +6,7 @@
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
+#include "Platform/CrossPlatform/Resource.h"
 #include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/Query.h"
 #include <string>

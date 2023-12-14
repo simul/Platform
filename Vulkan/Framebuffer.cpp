@@ -156,15 +156,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	if ((!buffer_texture || !buffer_texture->IsValid()) && (!buffer_depth_texture || !buffer_depth_texture->IsValid()))
 		CreateBuffers();
 	colour_active = true;
-	vulkan::Texture *col = (vulkan::Texture *)buffer_texture;
-	vulkan::Texture *depth = nullptr;
-	if (buffer_depth_texture)
-	{
-		depth = (vulkan::Texture *)buffer_depth_texture;
-		// Re-attach depth (we dont really to do this every time, only if we called deactivate depth)
-
-		depth_active = true;
-	}
+	depth_active = buffer_depth_texture != nullptr;
 
 	// We need to attach the requested face:
 	// For cubemap faces, we also include the native Vulkan framebuffer pointer in m_rt[1], which the renderplatform will handle.
@@ -196,8 +188,10 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 
 	// Cache it:
 	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
-//	if (buffer_depth_texture)
-//		((vulkan::Texture *)buffer_depth_texture)->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal, crossplatform::SubresourceRange());
+	if (buffer_depth_texture)
+	{
+		((vulkan::Texture *)buffer_depth_texture)->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilAttachmentOptimal, { crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1 });
+	}
 }
 
 void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext)
@@ -272,7 +266,7 @@ void Framebuffer::Deactivate(crossplatform::GraphicsDeviceContext &deviceContext
 {
 	deviceContext.renderPlatform->DeactivateRenderTargets(deviceContext);
 	if(buffer_depth_texture)
-		((vulkan::Texture*)buffer_depth_texture)->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilReadOnlyOptimal, crossplatform::SubresourceRange());
+		((vulkan::Texture *)buffer_depth_texture)->SetLayout(deviceContext, vk::ImageLayout::eDepthStencilReadOnlyOptimal, {crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1});
 
 	colour_active = false;
 	depth_active = false;

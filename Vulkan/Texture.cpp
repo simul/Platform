@@ -1040,6 +1040,7 @@ void Texture::InitViewTable(int l, int m)
 			mSubResourcesLayouts[layer][mip] = mCurrentImageLayout;
 		}
 	}
+	mSplitLayouts = false; //Eqv. to UpdateSplitLayoutsFlag();
 }
 
 bool Texture::AreSubresourcesInSameState(crossplatform::SubresourceRange subresourceRange) const
@@ -1067,7 +1068,6 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		return;
 
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
-	const bool split_layouts = !AreSubresourcesInSameState();
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
 	const uint32_t& numMips = (subresourceRange.mipLevelCount == uint8_t(0xFF)) ? mips - startMip : subresourceRange.mipLevelCount;
@@ -1076,7 +1076,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 
 	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == totalNum));
 
-	if(!split_layouts&&mCurrentImageLayout == newLayout)
+	if (!mSplitLayouts && mCurrentImageLayout == newLayout)
 		return;
 	if (AreSubresourcesInSameState(subresourceRange))
 	{
@@ -1144,7 +1144,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 	// Set the whole resource state
 	if (allSubresources)
 	{
-		if (split_layouts)
+		if (mSplitLayouts)
 		{
 			// This is the case going from split to unsplit layout.
 			for (int l = 0; l < totalNum; l++)
@@ -1174,7 +1174,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 		}
 
-			AssumeLayout(newLayout);
+		AssumeLayout(newLayout); //Will set mSplitLayouts to false.
 		mCurrentImageLayout = newLayout;
 	}
 	// Set a subresource range states
@@ -1196,9 +1196,10 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 				imageLayout = newLayout;
 			}
 		}
+		UpdateSplitLayoutsFlag();
 	}
 	
-	if (AreSubresourcesInSameState())
+	if (!mSplitLayouts)
 		mCurrentImageLayout = newLayout;
 }
 
@@ -1212,6 +1213,7 @@ void Texture::AssumeLayout(vk::ImageLayout layout)
 		}
 	}
 	mCurrentImageLayout = layout;
+	mSplitLayouts = false; //Eqv. to UpdateSplitLayoutsFlag();
 }
 
 vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange)
@@ -1219,7 +1221,7 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 	if (mSubResourcesLayouts.empty())
 		return mCurrentImageLayout;
 
-	if (AreSubresourcesInSameState())
+	if (!mSplitLayouts)
 		return mCurrentImageLayout;
 
 	if (AreSubresourcesInSameState(subresourceRange))
@@ -1258,6 +1260,7 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 				}
 			}
 		}
+		UpdateSplitLayoutsFlag();
 		return mCurrentImageLayout;
 	}
 
@@ -1351,4 +1354,9 @@ void Texture::PushLoadedTexturesToReleaseManager()
 			r->PushToReleaseManager(i.mem);
 		}
 	}
+}
+
+void Texture::UpdateSplitLayoutsFlag()
+{
+	mSplitLayouts = !AreSubresourcesInSameState();
 }

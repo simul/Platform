@@ -125,6 +125,7 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 		mBufferSize*=2;
 		RestoreDeviceObjects(renderPlatform,size,nullptr);
 		resetframe=true;
+		return;
 	}
 
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;

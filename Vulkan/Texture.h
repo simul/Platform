@@ -117,6 +117,7 @@ namespace platform
 			void			ClearLoadedTextures();
 			void			ResizeLoadedTextures(size_t mips, size_t layers);
 			void			PushLoadedTexturesToReleaseManager();
+			void			UpdateSplitLayoutsFlag(); //This must be called after modifying mCurrentImageLayout!
 
 			vk::Image										mImage;
 			vk::Buffer										mBuffer;
@@ -125,6 +126,7 @@ namespace platform
 			vk::ImageLayout									mCurrentImageLayout{ vk::ImageLayout::eUndefined };
 			//! States of the subresources mSubResourcesLayouts[index][mip]
 			std::vector<std::vector<vk::ImageLayout>>		mSubResourcesLayouts;
+			bool											mSplitLayouts = true;
 			
 			phmap::flat_hash_map<uint64_t, vk::ImageView *> mImageViews;
 			vk::ImageView*									mDefaultImageView=nullptr;

@@ -83,7 +83,7 @@ namespace platform
 			bool m_Initialized = false;
 			vk::DescriptorPool								m_DescriptorPool;
 			vk::DescriptorSetLayout							m_DescriptorSetLayout;
-			vk::DescriptorSet								m_DescriptorSet;		//Set by ApplyContextState().
+			vk::DescriptorSet								m_DescriptorSet;		// The pass's own internal desciptor set.
 			vk::PipelineLayout								m_PipelineLayout;
 			std::map<RenderPassHash, RenderPassPipeline>	m_RenderPasses;
 
