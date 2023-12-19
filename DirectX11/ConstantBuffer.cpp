@@ -31,8 +31,9 @@ template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 
 
 
-PlatformConstantBuffer::PlatformConstantBuffer() :
-	m_pD3D11Buffer(NULL)
+PlatformConstantBuffer::PlatformConstantBuffer(crossplatform::ResourceUsageFrequency ruf) :
+	crossplatform::PlatformConstantBuffer(ruf)
+	,m_pD3D11Buffer(NULL)
 #if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 	,framenumber(0)
 	,num_this_frame(0)
